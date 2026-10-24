@@ -140,7 +140,18 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             self.aplicarPlanLocal(empresaId, PLAN_GRATIS, null);
             return Map.of("status", "activado", "planNombre", PLAN_GRATIS);
         }
-        onvoBilling.cancelarAlVencer(sub.getOnvoSubscriptionId());
+        OnvoBillingClient.ResultadoCancelacion r = onvoBilling.cancelarAlVencer(sub.getOnvoSubscriptionId());
+        if (r == OnvoBillingClient.ResultadoCancelacion.CANCELADA) {
+            // ONVO ya no cobra: se refleja el estado local en vez de dejar la suscripción ACTIVA.
+            log.error("[ALERTA-PAGO] Suscripción ONVO cancelada de inmediato; se baja a {} empresa={}",
+                PLAN_GRATIS, empresaId);
+            self.procesarSuscripcionEliminada(sub.getOnvoSubscriptionId());
+            return Map.of("status", "cancelado", "planNombre", PLAN_GRATIS);
+        }
+        if (r != OnvoBillingClient.ResultadoCancelacion.PROGRAMADA) {
+            // Fail-closed: sin confirmación de ONVO no se toca el estado local.
+            throw new IllegalStateException("ONVO no confirmó la cancelación. No se cambió el plan.");
+        }
         self.marcarCancelarAlVencer(empresaId);
         return Map.of(
             "status", "pendiente_ciclo",

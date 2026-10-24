@@ -218,4 +218,61 @@ class SuscripcionOnvoChangeServiceTest {
             assertThat(service.mockPermitido()).as(perfil).isTrue();
         }
     }
+
+    private Suscripcion prepararBajaConSubOnvo() {
+        empresa.setPlan(planPyme);
+        empresa.setPlanSaas("PYME");
+        Suscripcion sub = new Suscripcion();
+        sub.setEmpresa(empresa);
+        sub.setEstado("ACTIVA");
+        sub.setOnvoSubscriptionId("sub_real_l210");
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        return sub;
+    }
+
+    @Test
+    @DisplayName("L210: ONVO responde canceled → suscripción local CANCELADO y empresa en Emprendedor")
+    void bajaGratis_onvoCanceled_actualizaEstadoLocal() {
+        Suscripcion sub = prepararBajaConSubOnvo();
+        when(onvoBilling.cancelarAlVencer("sub_real_l210"))
+            .thenReturn(OnvoBillingClient.ResultadoCancelacion.CANCELADA);
+        when(suscripcionRepo.findByOnvoSubscriptionId("sub_real_l210")).thenReturn(Optional.of(sub));
+        when(planRepo.findByNombre("EMPRENDEDOR")).thenReturn(Optional.of(planEmprendedor));
+
+        Map<String, Object> r = service.cambiarPlan(10L, 1L);
+
+        assertThat(r.get("status")).isEqualTo("cancelado");
+        assertThat(sub.getEstado()).isEqualTo("CANCELADO");
+        assertThat(sub.getFechaCancelacion()).isNotNull();
+        assertThat(empresa.getPlanSaas()).isEqualTo("EMPRENDEDOR");
+        assertThat(sub.getCancelarAlVencer()).isNotEqualTo(Boolean.TRUE);
+    }
+
+    @Test
+    @DisplayName("L210: ONVO confirma cancelAtPeriodEnd → solo se marca cancelarAlVencer")
+    void bajaGratis_programada_marcaAlVencer() {
+        Suscripcion sub = prepararBajaConSubOnvo();
+        when(onvoBilling.cancelarAlVencer("sub_real_l210"))
+            .thenReturn(OnvoBillingClient.ResultadoCancelacion.PROGRAMADA);
+
+        Map<String, Object> r = service.cambiarPlan(10L, 1L);
+
+        assertThat(r.get("status")).isEqualTo("pendiente_ciclo");
+        assertThat(sub.getCancelarAlVencer()).isTrue();
+        assertThat(sub.getEstado()).isEqualTo("ACTIVA");
+    }
+
+    @Test
+    @DisplayName("L210: sin resultado de ONVO → excepción y el estado local no cambia (fail-closed)")
+    void bajaGratis_sinResultado_failClosed() {
+        Suscripcion sub = prepararBajaConSubOnvo();
+        when(onvoBilling.cancelarAlVencer("sub_real_l210")).thenReturn(null);
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L)).isInstanceOf(IllegalStateException.class);
+        assertThat(sub.getEstado()).isEqualTo("ACTIVA");
+        assertThat(sub.getCancelarAlVencer()).isNotEqualTo(Boolean.TRUE);
+        verify(suscripcionRepo, never()).save(any());
+    }
 }
