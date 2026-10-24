@@ -116,4 +116,17 @@ class BodegaDefaultFallbackTest {
         when(repo.findById(1L)).thenReturn(Optional.of(b1));
         assertThat(validator().resolverBodegaDefault(1L)).isSameAs(b1);
     }
+
+    /** bodegaId=1 con fallback a bodega de otro negocio no dispara CMP-4; un id explícito ajeno sí. */
+    @Test
+    void cmp4_bodegaDefault1_noExige_peroIdAjenoSi() {
+        Empresa tienda = empresa(7L);
+        Bodega ajena = bodega(9L, empresa(2L));
+        PaymentCheckoutRequest r = req(3L);
+        r.setBodegaId(Constants.BODEGA_DEFAULT_ID);
+        CheckoutGrupoFactory.exigirBodegaDeLaTienda(r, Map.of(3L, producto(3L, tienda)), ajena);
+        r.setBodegaId(9L);
+        assertThatThrownBy(() -> CheckoutGrupoFactory.exigirBodegaDeLaTienda(r, Map.of(3L, producto(3L, tienda)), ajena))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
 }
