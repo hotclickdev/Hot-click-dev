@@ -1,5 +1,4 @@
-import { formatoColon } from '@/theme/formatoColon'
-import { PLAN_PRECIOS, textoComision, type ClavePlan } from '@/config/planesPrecios'
+import { PLAN_PRECIOS, textoComision, textoMensualidad, type ClavePlan } from '@/config/planesPrecios'
 import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 import type { Id } from '@/types/api'
 import type { PlanId } from './plan'
@@ -13,21 +12,24 @@ export type PlanUi = {
   cta: string | null
 }
 
-/** Beneficios sin montos: la comisión, los productos y las bodegas salen del plan del API (NP-1/NP-2). */
-export const BENEFICIOS_PLAN: Record<string, readonly string[]> = {
-  EMPRENDEDOR: ['Reportes básicos'],
-  PYME: ['Gestión de equipo (varios usuarios)', 'Reportes avanzados'],
-  NEGOCIO_PLUS: ['Todo lo de PYME', 'Multi-sucursal', 'Soporte prioritario'],
-}
-
 export type PlanApiTuPlan = {
   id: Id
   nombre: string
   precioMensual?: number
+  /** Mensualidad USD desde config del backend (registro-planes). */
+  precioUsd?: number | null
   comisionPorcentaje?: number | string
   comisionMinimaCrc?: number
   maxProductos?: number
   maxBodegas?: number
+  maxUsuarios?: number
+  maxCajas?: number
+  tienePos?: boolean
+  tieneReportes?: boolean
+  tieneCrm?: boolean
+  tieneCompras?: boolean
+  tieneAi?: boolean
+  tieneGiftCards?: boolean
 }
 
 function beneficiosDesdeApi(p: PlanApiTuPlan): string[] {
@@ -40,7 +42,15 @@ function beneficiosDesdeApi(p: PlanApiTuPlan): string[] {
     lista.push(`Comisión ${c}`)
   }
   if (p.maxBodegas != null) lista.push(p.maxBodegas < 0 ? 'Bodegas sin límite' : p.maxBodegas === 1 ? '1 bodega' : `${p.maxBodegas} bodegas`)
-  return [...lista, ...(BENEFICIOS_PLAN[p.nombre] ?? [])]
+  // Beneficios y límites: solo de las banderas del plan del API, nada escrito a mano.
+  if (p.maxUsuarios != null && p.maxUsuarios !== 1) lista.push(p.maxUsuarios < 0 ? 'Usuarios del equipo sin límite' : `Hasta ${p.maxUsuarios} usuarios del equipo`)
+  if (p.tienePos && p.maxCajas != null) lista.push(p.maxCajas < 0 ? 'Cajas (POS) sin límite' : p.maxCajas === 1 ? '1 caja (POS)' : `${p.maxCajas} cajas (POS)`)
+  if (p.tieneReportes) lista.push('Reportes de ventas')
+  if (p.tieneCompras) lista.push('Compras a proveedores')
+  if (p.tieneCrm) lista.push('Clientes (CRM)')
+  if (p.tieneAi) lista.push('Asistente con IA')
+  if (p.tieneGiftCards) lista.push('Tarjetas de regalo')
+  return lista
 }
 
 export const CTA_PLAN: Record<string, string> = {
@@ -73,9 +83,8 @@ export function mapApiPlanToUi(p: PlanApiTuPlan): PlanUi {
     id: p.id,
     nombreApi: p.nombre,
     nombre: etiquetaPlan(p.nombre),
-    precio: Number(p.precioMensual ?? 0) === 0
-      ? 'Gratis'
-      : `${formatoColon(Number(p.precioMensual))}/mes`,
+    // USD desde config del backend; el precioMensual en colones ya no se muestra.
+    precio: textoMensualidad(p.precioUsd),
     beneficios: beneficiosDesdeApi(p),
     cta: CTA_PLAN[p.nombre] ?? `Cambiar a ${p.nombre}`,
   }
@@ -83,7 +92,7 @@ export function mapApiPlanToUi(p: PlanApiTuPlan): PlanUi {
 
 /** NP-3: antes de confirmar un plan de pago hay que verificar el correo (el backend devuelve 400 si no). */
 export function requiereVerificarCorreo(plan: PlanUi | null, correoVerificado: boolean | null | undefined): boolean {
-  return plan != null && plan.precio !== 'Gratis' && correoVerificado !== true
+  return plan != null && plan.nombreApi.toUpperCase() !== 'EMPRENDEDOR' && correoVerificado !== true
 }
 
 export function validarPasoElegirPlan(

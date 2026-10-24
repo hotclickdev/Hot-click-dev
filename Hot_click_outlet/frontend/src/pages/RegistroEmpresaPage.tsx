@@ -24,6 +24,7 @@ import { mensajeErrorAuth } from './auth/authHelpers'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
 import { leerPlanQuery, esPlanPago } from './registro-empresa/planQueryParam'
+import PlanElegidoResumen from './registro-empresa/PlanElegidoResumen'
 import { useUbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
 import {
   MENSAJE_UBICACION_INCOMPLETA,
@@ -227,6 +228,7 @@ export default function RegistroEmpresaPage() {
                 Plan elegido: {t(`emprende.plan${planQuery === 'negocio-plus' ? 'Plus' : planQuery === 'pyme' ? 'Pyme' : 'Emprendedor'}Title`)}
               </div>
             ) : null}
+            {planQuery ? <PlanElegidoResumen plan={planQuery} /> : null}
             <div className="mt-4 text-left">
               <EmprendeCupoBanner compact />
             </div>

@@ -367,7 +367,7 @@
     "comoEntras1Titulo": "Te registrás",
     "comoEntras1Desc": "Creás tu cuenta en minutos.",
     "comoEntras2Titulo": "Pagás la mensualidad",
-    "comoEntras2Desc": "Con la pasarela Tilopay que ya usa el panel.",
+    "comoEntras2Desc": "Con la pasarela de pago segura del panel.",
     "comoEntras3Titulo": "Entrás al panel con PYME activo",
     "comoEntras3Desc": "Equipo, inventario y caja, listos para operar.",
     "comparativaNota": "PYME: mensualidad en dólares + 7,5% por venta. Emprendedor: gratis para los primeros 70 negocios, después mensualidad en dólares + 9% por venta. Ninguno cobra mínimo por venta.",
@@ -377,7 +377,7 @@
     "faq3q": "¿Y si necesito más de un local?",
     "faq3a": "Mirá Negocio Plus, que no tiene tope de sucursales.",
     "faq4q": "¿Cómo se cobra la mensualidad?",
-    "faq4a": "Con la pasarela Tilopay que ya usa el panel, se cobra automáticamente cada mes.",
+    "faq4a": "Con la pasarela de pago segura del panel. La mensualidad se cobra en dólares cada mes.",
     "ctaFinalTitle": "¿Listo para operar todo en un panel?"
   },
   "negocioPlus": {
@@ -397,7 +397,7 @@
     "trustSoporteTitulo": "Soporte",
     "trustSoporteSub": "prioritario",
     "trustPagosTitulo": "Pagos",
-    "trustPagosSub": "con Tilopay",
+    "trustPagosSub": "pasarela segura",
     "comparativaTitle": "Negocio Plus vs. PYME",
     "comparativaColPyme": "PYME",
     "comparativaColPlus": "Negocio Plus",

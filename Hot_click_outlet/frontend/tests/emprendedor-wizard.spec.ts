@@ -293,9 +293,9 @@ test.describe('Wizard conversacional Emprendedor', () => {
           body: JSON.stringify({
             success: true,
             data: [
-              { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0 },
-              { id: 2, nombre: 'PYME', precioMensual: 9900 },
-              { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900 },
+              { id: 1, nombre: 'EMPRENDEDOR', precioUsd: 9, comisionPorcentaje: 10, maxProductos: 30, maxBodegas: 1, maxUsuarios: 1, maxCajas: 0, tienePos: false, tieneReportes: false, tieneCrm: false, tieneCompras: false, tieneAi: false, tieneGiftCards: false },
+              { id: 2, nombre: 'PYME', precioUsd: 24, comisionPorcentaje: 0, maxProductos: 500, maxBodegas: 3, maxUsuarios: 5, maxCajas: 2, tienePos: true, tieneReportes: true, tieneCrm: false, tieneCompras: true, tieneAi: false, tieneGiftCards: false },
+              { id: 3, nombre: 'NEGOCIO_PLUS', precioUsd: 49, comisionPorcentaje: 0, maxProductos: null, maxBodegas: null, maxUsuarios: null, maxCajas: null, tienePos: true, tieneReportes: true, tieneCrm: true, tieneCompras: true, tieneAi: true, tieneGiftCards: true },
             ],
           }),
         })
@@ -327,7 +327,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await page.getByRole('button', { name: 'Continuar' }).click()
     await expect(page.getByText('Paso 2 de 3')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Confirmá el cambio' })).toBeVisible()
-    await expect(page.getByText('₡9.900/mes').first()).toBeVisible()
+    await expect(page.getByText('US$24/mes').first()).toBeVisible()
   })
 
   test('encargos: cotizar abre pasos de respuesta', async ({ page }) => {
