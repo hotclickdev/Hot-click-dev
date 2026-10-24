@@ -11,7 +11,7 @@ import java.util.List;
 
 public class PaymentCheckoutRequest {
 
-    @NotNull(message = "La bodega es requerida")
+    /** Opcional: solo se usa (y se exige, fail-closed) con RETIRO_EN_TIENDA. En envíos puede venir null. */
     private Long bodegaId;
 
     @NotBlank(message = "El método de envío es requerido")

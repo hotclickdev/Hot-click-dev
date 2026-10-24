@@ -138,6 +138,84 @@ class SinpeCheckoutSoloEfectivoTest extends BaseIntegrationTest {
         assertThat(pedidoRepository.count()).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("Bug bodega: envío a domicilio con bodegaId de otra tienda ya no da 'La bodega elegida no es de la tienda'")
+    void envioConBodegaDeOtraTienda_ok() throws Exception {
+        Empresa otra = new Empresa();
+        otra.setNombreEmpresa("Otra G1");
+        otra.setSlug("otra-g1-" + System.nanoTime());
+        otra.setCorreoEmpresa("otra" + System.nanoTime() + "@test.cr");
+        otra.setEstadoEmpresa("ACTIVO");
+        otra.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
+        otra = empresaRepository.saveAndFlush(otra);
+        Bodega ajena = new Bodega();
+        ajena.setNombreBodega("Bodega ajena");
+        ajena.setDireccionExacta("Calle Otra");
+        ajena.setTelefono("88880001");
+        ajena.setHorarioApertura(java.time.LocalTime.of(8, 0));
+        ajena.setHorarioCierre(java.time.LocalTime.of(18, 0));
+        ajena.setAdminCliente(adminUser);
+        ajena.setEmpresa(otra);
+        ajena.setEstado(Constants.ESTADO_ACTIVO);
+        ajena.setAceptaEfectivo(true);
+        ajena = bodegaRepository.saveAndFlush(ajena);
+
+        String body = """
+            {"bodegaId":%d,"metodoEnvio":"%s","provider":"EFECTIVO","guestEmail":"g1-env-%d@test.cr",
+             "guestPhone":"88887777","direccionEntrega":"Limón, Matina, Carrandi",
+             "items":[{"productoId":%d,"cantidad":1}]}
+            """.formatted(ajena.getId(), "ENVIO_NORMAL_GAM", System.nanoTime(), producto.getId());
+        mockMvc.perform(post("/api/sinpe/guest-checkout").contentType(MediaType.APPLICATION_JSON)
+                .header("X-Forwarded-For", "203.0.113.80").content(body))
+            .andExpect(status().isOk());
+        assertThat(pedidoRepository.count()).isEqualTo(1);
+    }
+
+    /** En prod la bodega 1 (HotClick) existe y es el fallback cuando bodegaId viene null; acá se crea. */
+    private void asegurarBodegaHotClick1() {
+        Integer hay = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM hot_click_bodega_tb WHERE id_bodega = 1", Integer.class);
+        if (hay != null && hay > 0) return;
+        Bodega hc = new Bodega();
+        hc.setNombreBodega("HotClick central");
+        hc.setDireccionExacta("Central");
+        hc.setTelefono("88880002");
+        hc.setHorarioApertura(java.time.LocalTime.of(8, 0));
+        hc.setHorarioCierre(java.time.LocalTime.of(18, 0));
+        hc.setAdminCliente(adminUser);
+        hc.setEstado(Constants.ESTADO_ACTIVO);
+        hc = bodegaRepository.saveAndFlush(hc);
+        jdbcTemplate.update("UPDATE hot_click_bodega_tb SET id_bodega = 1 WHERE id_bodega = ?", hc.getId());
+    }
+
+    @Test
+    @DisplayName("QA5-002: envío sin bodegaId (null) ya no da 400 de validación")
+    void envioConBodegaNull_ok() throws Exception {
+        asegurarBodegaHotClick1();
+        String body = """
+            {"bodegaId":null,"metodoEnvio":"ENVIO_NORMAL_GAM","provider":"EFECTIVO","guestEmail":"g1-null-%d@test.cr",
+             "guestPhone":"88886666","direccionEntrega":"Limón, Matina, Carrandi",
+             "items":[{"productoId":%d,"cantidad":1}]}
+            """.formatted(System.nanoTime(), producto.getId());
+        mockMvc.perform(post("/api/sinpe/guest-checkout").contentType(MediaType.APPLICATION_JSON)
+                .header("X-Forwarded-For", "203.0.113.81").content(body))
+            .andExpect(status().isOk());
+        assertThat(pedidoRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("QA5-002: retiro en tienda sin bodegaId da 400 (fail-closed) y no crea pedido")
+    void retiroSinBodega_400() throws Exception {
+        asegurarBodegaHotClick1();
+        String body = """
+            {"metodoEnvio":"%s","provider":"EFECTIVO","guestEmail":"g1-rsb-%d@test.cr",
+             "guestPhone":"88885555","items":[{"productoId":%d,"cantidad":1}]}
+            """.formatted(Constants.ENVIO_RETIRO, System.nanoTime(), producto.getId());
+        mockMvc.perform(post("/api/sinpe/guest-checkout").contentType(MediaType.APPLICATION_JSON)
+                .header("X-Forwarded-For", "203.0.113.82").content(body))
+            .andExpect(status().isBadRequest());
+        assertThat(pedidoRepository.count()).isZero();
+    }
+
     private String cuerpo(String proveedor) {
         String prov = proveedor == null ? "" : "\"provider\":\"" + proveedor + "\",";
         return """
