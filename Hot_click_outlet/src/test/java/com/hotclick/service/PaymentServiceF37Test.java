@@ -252,6 +252,7 @@ class PaymentServiceF37Test {
         req.setProvider("TILOPAY");
         req.setGuestEmail("buyer@test.cr");
         req.setMetodoEnvio("RETIRO_EN_TIENDA");
+        req.setBodegaId(1L); // QA5-002: con retiro la bodega es obligatoria
         req.setItems(List.of(
             item(10L, 1), item(11L, 1), item(12L, 1)
         ));

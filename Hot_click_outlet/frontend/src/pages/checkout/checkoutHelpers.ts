@@ -231,3 +231,11 @@ export function notasConEncomienda(
     .map((p) => `Encomienda ${p.empresaNombre || p.bodegaNombre}: ${encomiendas[p.bodegaId].trim()}`)
   return [notas.trim(), ...lineas].filter(Boolean).join(' | ')
 }
+
+/**
+ * `bodegaId` global del checkout: solo con retiro en tienda se manda la bodega de retiro.
+ * En envíos va `null` (nunca BODEGA_DEFAULT): cada paquete sale de su propia bodega de origen.
+ */
+export function bodegaIdDelCheckout(metodoEnvio: string, bodegaRetiro: BodegaRetiro | null): number | null {
+  return metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? (bodegaRetiro.id as number) : null
+}

@@ -47,16 +47,48 @@ public class CheckoutGrupoFactory {
     }
 
     /**
-     * CMP-4: la {@code bodegaId} del body tiene que ser de un negocio que vende algo del carrito.
-     * Si no se mandó (default HotClick) o la bodega no tiene negocio, no se exige.
+     * CMP-4: la bodega elegida para retirar tiene que ser de la tienda que vende los productos.
+     * Solo aplica si algún paquete es {@code RETIRO_EN_TIENDA}; en envíos a domicilio la bodega del
+     * body no decide nada (cada paquete sale de la bodega de origen de sus productos), así que no se exige.
+     * Fail-closed con retiro: si la bodega falta o es de otro negocio, se rechaza (bodega HotClick solo para productos HotClick).
      */
     static void exigirBodegaDeLaTienda(PaymentCheckoutRequest req, java.util.Map<Long, com.hotclick.model.Producto> productos,
-                                       Bodega bodega) {
-        if (req.getBodegaId() == null || bodega == null || bodega.getEmpresa() == null || productos == null || productos.isEmpty()) return;
-        Long empresaBodega = bodega.getEmpresa().getId();
+                                       Bodega bodega, List<CheckoutPaquetesPlanner.Paquete> paquetes) {
+        List<CheckoutPaquetesPlanner.Paquete> retiros = paquetes == null ? List.of() : paquetes.stream()
+            .filter(p -> com.hotclick.utils.Constants.ENVIO_RETIRO.equals(p.metodoEnvio())).toList();
+        if (retiros.isEmpty()) return;
+        // Por paquete: la bodega de retiro tiene que ser de la empresa de sus propios productos.
+        for (CheckoutPaquetesPlanner.Paquete paquete : retiros) {
+            java.util.Map<Long, com.hotclick.model.Producto> suyos = new java.util.HashMap<>();
+            if (paquete.items() != null && productos != null) {
+                for (PaymentCheckoutRequest.ItemDTO item : paquete.items()) {
+                    com.hotclick.model.Producto p = productos.get(item.getProductoId());
+                    if (p != null) suyos.put(item.getProductoId(), p);
+                }
+            }
+            exigirMismaEmpresa(paquete.bodega(), suyos);
+        }
+        // Retiro pedido con el método global (sin envios[] de retiro): la bodega del body también se valida.
+        boolean retiroPorPaquete = req.getEnvios() != null && req.getEnvios().stream()
+            .anyMatch(e -> com.hotclick.utils.Constants.ENVIO_RETIRO.equals(e.getMetodoEnvio()) && e.getBodegaId() != null);
+        if (!retiroPorPaquete) {
+            if (req.getBodegaId() == null) throw new IllegalArgumentException(MSG_BODEGA_AJENA);
+            exigirMismaEmpresa(bodega, productos);
+        }
+    }
+
+    static final String MSG_BODEGA_AJENA = "La bodega elegida no es de la tienda de estos productos.";
+
+    private static void exigirMismaEmpresa(Bodega bodega, java.util.Map<Long, com.hotclick.model.Producto> productos) {
+        if (bodega == null || productos == null || productos.isEmpty()) {
+            throw new IllegalArgumentException(MSG_BODEGA_AJENA);
+        }
+        // Bodega sin negocio = bodega propia de HotClick: solo sirve para productos sin negocio (HotClick).
+        Long empresaBodega = bodega.getEmpresa() == null ? null : bodega.getEmpresa().getId();
+        // allMatch: el planner agrupa por bodega de origen, no por empresa (productos sin bodega caen en la de HotClick).
         boolean coincide = productos.values().stream()
-            .anyMatch(p -> empresaBodega.equals(empresaDe(p)));
-        if (!coincide) throw new IllegalArgumentException("La bodega elegida no es de la tienda de estos productos.");
+            .allMatch(p -> java.util.Objects.equals(empresaBodega, empresaDe(p)));
+        if (!coincide) throw new IllegalArgumentException(MSG_BODEGA_AJENA);
     }
 
     private static Long empresaDe(com.hotclick.model.Producto p) {
@@ -66,9 +98,9 @@ public class CheckoutGrupoFactory {
 
     public Grupo crear(PaymentCheckoutRequest req, StockReservationResult reservation, Bodega bodegaDefault,
                        String provider, Usuario usuario, String estadoInicial) {
-        exigirBodegaDeLaTienda(req, reservation.productosMap(), bodegaDefault);
         List<CheckoutPaquetesPlanner.Paquete> paquetes =
             planner.planificar(req, reservation.productosMap(), bodegaDefault);
+        exigirBodegaDeLaTienda(req, reservation.productosMap(), bodegaDefault, paquetes);
         for (CheckoutPaquetesPlanner.Paquete paquete : paquetes) {
             checkoutValidator.assertBodegaTenant(paquete.bodega(), paquete.bodega().getId());
             checkoutValidator.validarRetiroPaquete(paquete.metodoEnvio(), paquete.bodega());
