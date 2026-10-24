@@ -11,9 +11,11 @@ import { PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA } from './pagoPrincipal'
 
 function deps(metodoPago: string, sinpeManualHabilitado?: boolean) {
   const iniciarPago = vi.fn()
+  const avisarSinMetodo = vi.fn()
   const noop = () => {}
   return {
     iniciarPago,
+    avisarSinMetodo,
     d: {
       aceptaDatos: true, validateDomicilio: () => true, token: 'tok',
       validateGuestEmail: () => '', validatePhone: () => '', guestEmail: '',
@@ -23,7 +25,7 @@ function deps(metodoPago: string, sinpeManualHabilitado?: boolean) {
       telefono: '', metodoEnvio: 'RETIRO_EN_TIENDA', paquetes: [], metodoEnvioPorPaquete: {},
       necesitaDireccion: false, notas: '', direccion: '', sinpeEmail: '', totalFinal: 0,
       items: [], bodegaRetiro: null, cuponCodigo: null, gcCodigo: null, sinpeTelefono: '',
-      iniciarPago, sinpeManualHabilitado,
+      iniciarPago, sinpeManualHabilitado, avisarSinMetodo,
     } as unknown as Parameters<typeof ejecutarPagarCheckout>[0],
   }
 }
@@ -58,5 +60,20 @@ describe('ejecutarPagarCheckout sin Tilopay', () => {
     ejecutarPagarCheckout(d)
     expect(iniciarPago.mock.calls[0][0].provider).toBe('EFECTIVO')
     expect(iniciarPago.mock.calls[0][2]).toBe(true)
+  })
+
+  it('sin método disponible: muestra el aviso y no inicia pago (nunca mudo)', () => {
+    for (const m of [PAGO_TARJETA, PAGO_SINPE]) {
+      const { d, iniciarPago, avisarSinMetodo } = deps(m, false)
+      ejecutarPagarCheckout(d)
+      expect(avisarSinMetodo).toHaveBeenCalledTimes(1)
+      expect(iniciarPago).not.toHaveBeenCalled()
+    }
+  })
+
+  it('con método disponible no avisa', () => {
+    const { d, avisarSinMetodo } = deps(PAGO_EFECTIVO, false)
+    ejecutarPagarCheckout(d)
+    expect(avisarSinMetodo).not.toHaveBeenCalled()
   })
 })

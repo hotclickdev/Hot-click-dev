@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, metodoProximamente, proveedorDe, sinpeManualDesdeConfig,
+  PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, metodoProximamente, metodoSeleccionable, proveedorDe, sinpeManualDesdeConfig,
 } from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
 
@@ -52,5 +52,18 @@ describe('pago sin Tilopay', () => {
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM', 'ENVIO_RAPIDO'], true)).toBe(false)
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM'], false)).toBe(false)
     expect(metodosDisponibles(false, true).map((m) => m.titulo)).toEqual(['pagoSinpe', 'pagoTarjeta', 'contraEntrega'])
+  })
+
+  it('método deshabilitado: pasa al primero disponible (Efectivo / contra entrega)', () => {
+    const todos = [PAGO_SINPE, PAGO_TARJETA, PAGO_EFECTIVO]
+    expect(metodoSeleccionable(PAGO_SINPE, todos, false)).toBe(PAGO_EFECTIVO)
+    expect(metodoSeleccionable(PAGO_TARJETA, todos, false)).toBe(PAGO_EFECTIVO)
+    expect(metodoSeleccionable(PAGO_TARJETA, todos, true)).toBe(PAGO_SINPE)
+    expect(metodoSeleccionable(PAGO_SINPE, todos, true)).toBe(PAGO_SINPE)
+    expect(metodoSeleccionable(PAGO_EFECTIVO, todos, false)).toBe(PAGO_EFECTIVO)
+  })
+
+  it('sin ningún método disponible: se queda el actual (Pagar avisa)', () => {
+    expect(metodoSeleccionable(PAGO_SINPE, [PAGO_SINPE, PAGO_TARJETA], false)).toBe(PAGO_SINPE)
   })
 })

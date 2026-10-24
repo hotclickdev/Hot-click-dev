@@ -23,6 +23,17 @@ export function proveedorDe(metodoUi: string, sinpeManualHabilitado = false): st
   return null
 }
 
+/**
+ * Si el método elegido quedó deshabilitado, devuelve el primero disponible (Efectivo / contra entrega).
+ * `disponibles` son los ids que se pueden elegir hoy (sin los bloqueados por envío rápido).
+ * Si no hay ninguno, devuelve el actual: «Pagar» avisa en vez de quedar mudo.
+ */
+export function metodoSeleccionable(actual: string, disponibles: string[], sinpeManualHabilitado: boolean): string {
+  const usables = disponibles.filter((m) => !metodoProximamente(m, sinpeManualHabilitado))
+  if (usables.includes(actual)) return actual
+  return usables[0] ?? actual
+}
+
 /** Lee el booleano de la config pública; cualquier otro valor (o error) = deshabilitado. */
 export function sinpeManualDesdeConfig(data: unknown): boolean {
   return (data as { sinpeManual?: unknown } | null | undefined)?.sinpeManual === true

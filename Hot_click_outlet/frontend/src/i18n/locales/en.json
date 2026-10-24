@@ -1572,6 +1572,7 @@
       "pagoTarjeta": "Card",
       "pagoTarjetaSub": "Credit or debit, on the secure gateway.",
       "proximamente": "Coming soon",
+      "sinMetodoPago": "No payment method is available for this order right now. Try Standard Shipping or contact us.",
       "contraEntrega": "Cash on delivery",
       "contraEntregaSub": "Pay in cash when it arrives (Normal shipping).",
       "sinpeTarjeta": "SINPE / Card",

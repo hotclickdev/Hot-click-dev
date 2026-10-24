@@ -1,4 +1,6 @@
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useToast } from '@/components/ui/Toast'
 import { ejecutarValidarGiftCard } from './ejecutarValidarGiftCard'
 import { ejecutarValidarCupon } from './ejecutarValidarCupon'
 import { ejecutarValidateDomicilio, ejecutarPagarCheckout } from './ejecutarPagarCheckout'
@@ -159,6 +161,8 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     setTelefonoDirty,
   ])
 
+  const { t } = useTranslation()
+  const { showToast } = useToast()
   const handlePagar = useCallback(() => {
     ejecutarPagarCheckout({
       aceptaDatos, validateDomicilio, token, validateGuestEmail, validatePhone, guestEmail,
@@ -168,6 +172,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
       metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
       notas, direccion, direccionPedido, sinpeEmail, totalFinal, items, bodegaRetiro,
       cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago, sinpeManualHabilitado,
+      avisarSinMetodo: () => showToast(t('checkout.f.sinMetodoPago'), 'error'),
     })
   }, [
     aceptaDatos,
@@ -203,6 +208,8 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     sinpeTelefono,
     iniciarPago,
     sinpeManualHabilitado,
+    showToast,
+    t,
   ])
 
   const handleSinpeWhatsApp = useCallback(() => {

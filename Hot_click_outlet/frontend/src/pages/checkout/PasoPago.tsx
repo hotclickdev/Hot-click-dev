@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
@@ -10,7 +10,7 @@ import { SINPE_NUMERO } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import type { CheckoutFormState } from './useCheckoutForm'
 import type { CodigosPedido } from './useCodigosPedido'
-import { PAGO_EFECTIVO, contraEntregaDisponible, efectivoDisponible, metodoProximamente } from './pagoPrincipal'
+import { PAGO_EFECTIVO, contraEntregaDisponible, efectivoDisponible, metodoProximamente, metodoSeleccionable } from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
 
 type MetodosPagoProps = {
@@ -28,6 +28,12 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
     efectivoDisponible(form.paquetes.flatMap((p) => p.items)),
     contraEntregaDisponible(Object.values(form.metodoEnvioPorPaquete), form.contraEntregaHabilitada),
   )
+  const disponibles = METODOS.filter((m) => !(m.id === PAGO_EFECTIVO && rapido)).map((m) => m.id as string)
+  const seleccionable = metodoSeleccionable(form.metodoPago, disponibles, form.sinpeManualHabilitado)
+  const { setMetodoPago } = form
+  useEffect(() => {
+    if (seleccionable !== form.metodoPago) setMetodoPago(seleccionable)
+  }, [seleccionable, form.metodoPago, setMetodoPago])
 
   if (escritorio) {
     return (

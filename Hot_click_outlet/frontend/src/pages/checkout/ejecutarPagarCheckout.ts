@@ -86,6 +86,8 @@ type PagarCheckoutDeps = {
   iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isSinpe?: boolean) => void
   /** Publicado por /public/checkout-config; sin él SINPE queda «Próximamente». */
   sinpeManualHabilitado?: boolean
+  /** Aviso visible cuando no hay método de pago disponible (nunca queda mudo). */
+  avisarSinMetodo?: () => void
 }
 
 /**
@@ -123,11 +125,15 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     sinpeTelefono,
     iniciarPago,
     sinpeManualHabilitado = false,
+    avisarSinMetodo,
   } = deps
 
   // Fail-closed: Tarjeta (y SINPE sin habilitar) no inician ningún pago.
   const provider = proveedorDe(metodoPago, sinpeManualHabilitado)
-  if (!provider) return
+  if (!provider) {
+    avisarSinMetodo?.()
+    return
+  }
   if (!aceptaDatos) return
   if (!validateDomicilio()) return
 
