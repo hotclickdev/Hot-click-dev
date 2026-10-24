@@ -73,6 +73,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         return false;
     }
 
+    /** Camino simulado solo si el cliente está en modo mock (sin llave + dev/test) y este servicio también lo permite. */
+    private boolean caminoMock() {
+        return onvoBilling.isMockMode() && mockPermitido();
+    }
+
     public SuscripcionOnvoChangeService(SuscripcionRepository suscripcionRepo,
                                         EmpresaRepository empresaRepo,
                                         PlanRepository planRepo,
@@ -111,7 +116,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             return bajarAGratis(empresaId, sub);
         }
 
-        if (onvoBilling.isMockMode() && !mockPermitido()) {
+        if ((onvoBilling.isMockMode() || onvoBilling.sinLlave()) && !caminoMock()) {
             // Falla cerrado: sin ONVO_SECRET_KEY ningún camino activa un plan pago.
             throw new IllegalStateException("Pagos no configurados. No se cambió el plan.");
         }
@@ -124,7 +129,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
 
     private String resolverPriceId(String planNombre) {
         String priceId = onvoBilling.getPriceIdForPlan(planNombre);
-        if (priceId == null && !onvoBilling.isMockMode()) {
+        if (priceId == null && !caminoMock()) {
             throw new IllegalArgumentException("Plan " + planNombre + " sin precio ONVO configurado");
         }
         return priceId != null ? priceId : "price_mock_" + planNombre;
@@ -149,7 +154,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         onvoBilling.cambiarPrecioSuscripcion(sub.getOnvoSubscriptionId(), itemId, priceId);
         self.guardarOnvoPricePendiente(empresaId, planDestino, priceId);
 
-        if (onvoBilling.isMockMode()) {
+        if (caminoMock()) {
             self.aplicarPlanLocal(empresaId, planDestino.getNombre(), priceId);
             return Map.of("status", "activado", "planNombre", planDestino.getNombre(), "mock", true);
         }
@@ -171,7 +176,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta);
         self.guardarAltaOnvo(empresaId, planDestino, customerId, onvoSub.id(), priceId);
 
-        if (onvoBilling.isMockMode()) {
+        if (caminoMock()) {
             self.aplicarPlanLocal(empresaId, planDestino.getNombre(), priceId);
             Map<String, Object> out = new LinkedHashMap<>();
             out.put("status", "activado");
