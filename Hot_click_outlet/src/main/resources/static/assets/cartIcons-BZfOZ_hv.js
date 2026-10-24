@@ -1,0 +1,1 @@
+import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{s as t}from"./vendor-clerk-DLyNCU1S.js";import{t as n}from"./TrustGlyph-CK8HAs8D.js";var r=e(t(),1);function i({className:e=`w-8 h-8 opacity-30`}){return(0,r.jsx)(n,{tipo:`paquete`,className:e})}export{i as t};
