@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpEntity;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
@@ -83,6 +84,10 @@ class OnvoOnBehalfOfTest {
             .thenReturn((ResponseEntity) ResponseEntity.ok(Map.of("id", "cs_1", "url", "https://checkout")));
         OnvoService s = new OnvoService(rt);
         ReflectionTestUtils.setField(s, "secretKey", "onvo_test_secret_key_abc");
+        // Llave de prueba solo se acepta en perfil test (master: fuera de dev/test falla cerrado).
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("test");
+        ReflectionTestUtils.setField(s, "environment", env);
         s.init();
         s.crearCheckoutSession(1000, "d", "https://ok", "https://ko", null, Map.of(), "cl_abc123");
         s.crearCheckoutSession(1000, "d", "https://ok", "https://ko", null, Map.of());
