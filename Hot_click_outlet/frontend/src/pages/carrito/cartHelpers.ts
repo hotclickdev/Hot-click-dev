@@ -36,7 +36,7 @@ export function urlWhatsApp(textoEncoded: string, numero = WHATSAPP_HOTCLICK): s
   return `https://wa.me/${numero}?text=${textoEncoded}`
 }
 
-/** Número de WhatsApp en formato visible: '50686667888' → '+506 8666 7888'. */
+/** Número de WhatsApp en formato visible: '506XXXXXXXX' → '+506 XXXX-XXXX'. */
 export function whatsAppVisible(numero = WHATSAPP_HOTCLICK): string {
   const m = /^506(\d{4})(\d{4})$/.exec(numero)
   return m ? `+506 ${m[1]} ${m[2]}` : `+${numero}`
