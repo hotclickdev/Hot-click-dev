@@ -3,9 +3,9 @@ import { PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, prove
 import { metodosDisponibles } from './metodosPago'
 
 describe('pago sin SINPE manual', () => {
-  it('SINPE y Tarjeta van a la pasarela; efectivo queda como efectivo', () => {
-    expect(proveedorDe(PAGO_SINPE)).toBe('TILOPAY')
-    expect(proveedorDe(PAGO_TARJETA)).toBe('TILOPAY')
+  it('el pago en línea va a ONVO; efectivo queda como efectivo', () => {
+    expect(proveedorDe(PAGO_SINPE)).toBe('ONVO')
+    expect(proveedorDe(PAGO_TARJETA)).toBe('ONVO')
     expect(proveedorDe(PAGO_EFECTIVO)).toBe('EFECTIVO')
   })
 

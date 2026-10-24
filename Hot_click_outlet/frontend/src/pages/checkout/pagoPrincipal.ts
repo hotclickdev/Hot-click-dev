@@ -1,14 +1,14 @@
 /**
  * Pago en el checkout (decisión HOT_CLICK 16-oct-2026): sin SINPE manual con comprobante.
- * Dos botones que llevan a la pasarela (SINPE Móvil y Tarjeta) y efectivo contra entrega.
- * La pasarela es neutral: hoy Tilopay; cuando se migre a ONVO cambia solo `proveedorPasarela`.
+ * Los botones de pago en línea llevan al checkout hospedado de ONVO (decisión HOT_CLICK 21-oct-2026:
+ * ONVO es la única pasarela); efectivo y contra entrega se pagan al recibir.
  */
 export const PAGO_SINPE = 'PASARELA_SINPE'
 export const PAGO_TARJETA = 'PASARELA_TARJETA'
 export const PAGO_EFECTIVO = 'EFECTIVO'
 
 export function proveedorPasarela(): string {
-  return 'TILOPAY'
+  return 'ONVO'
 }
 
 /** Valor que viaja como `provider` al API. */
