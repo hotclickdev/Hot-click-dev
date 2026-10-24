@@ -490,4 +490,33 @@ class OnvoBillingClientTest {
         assertThat(client.getPriceIdForPlan("OTRO")).isNull();
         assertThat(client.getPriceIdForPlan(null)).isNull();
     }
+
+    // ── Opt-in llave de prueba fuera de dev/test ─────────────────────────────
+
+    @Test
+    @DisplayName("Prod + llave onvo_test_ + opt-in: no aborta el arranque y billing queda deshabilitado (fail-closed)")
+    void prodLlaveTestConOptIn_noAbortaYBillingFallaCerrado() {
+        server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
+        OnvoBillingClient c = clienteConPerfiles("prod");
+        ReflectionTestUtils.setField(c, "secretKey", "onvo_test_ficticia");
+        ReflectionTestUtils.setField(c, "permitirLlaveTest", true);
+        c.validarLlaveAlArrancar();
+        assertThat(c.isBillingDeshabilitado()).isTrue();
+        assertThat(c.isMockMode()).isFalse();
+        assertThatThrownBy(() -> c.crearCustomer("a@test.cr", "A", Map.of())).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> c.crearSuscripcionIncompleta("cus_1", "price_pyme", null)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> c.cambiarPrecioSuscripcion("sub_1", "item_1", "price_x")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> c.cancelarAlVencer("sub_1")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> c.obtenerPrimerItemId("sub_1")).isInstanceOf(IllegalStateException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("Prod + llave onvo_test_ sin opt-in: el arranque aborta como antes")
+    void prodLlaveTestSinOptIn_abortaComoAntes() {
+        OnvoBillingClient c = clienteConPerfiles("prod");
+        ReflectionTestUtils.setField(c, "secretKey", "onvo_test_ficticia");
+        assertThatThrownBy(c::validarLlaveAlArrancar)
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining("arranque abortado");
+    }
 }
