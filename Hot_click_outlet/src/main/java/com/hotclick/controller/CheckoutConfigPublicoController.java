@@ -28,26 +28,49 @@ public class CheckoutConfigPublicoController {
      */
     private final boolean sinpeManual;
 
+    /**
+     * true solo si {@code payments.onvo.enabled} y ONVO puede cobrar ({@link com.hotclick.service.OnvoService#isPagosDisponibles()}:
+     * llave configurada, o simulación únicamente en dev/test). Fail-closed: si no, Tarjeta queda «Próximamente».
+     */
+    private final boolean tarjetaOnvo;
+
     public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
                                            com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard) {
-        this(contraEntregaPolitica, guestCheckoutGuard, false, false);
+        this(contraEntregaPolitica, guestCheckoutGuard, false, false, false);
     }
 
     public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
                                            com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard,
                                            boolean pagoPorTienda) {
-        this(contraEntregaPolitica, guestCheckoutGuard, pagoPorTienda, false);
+        this(contraEntregaPolitica, guestCheckoutGuard, pagoPorTienda, false, false);
+    }
+
+    public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
+                                           com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard,
+                                           boolean pagoPorTienda, boolean sinpeManual) {
+        this(contraEntregaPolitica, guestCheckoutGuard, pagoPorTienda, sinpeManual, false);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
     public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
                                            com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard,
                                            @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.pago-por-tienda:false}") boolean pagoPorTienda,
-                                           @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.sinpe-manual.habilitado:false}") boolean sinpeManual) {
+                                           @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.sinpe-manual.habilitado:false}") boolean sinpeManual,
+                                           @org.springframework.beans.factory.annotation.Value("${payments.onvo.enabled:false}") boolean onvoHabilitado,
+                                           org.springframework.beans.factory.ObjectProvider<com.hotclick.service.OnvoService> onvoService) {
+        this(contraEntregaPolitica, guestCheckoutGuard, pagoPorTienda, sinpeManual,
+            onvoHabilitado && onvoService != null && onvoService.getIfAvailable() != null
+                && onvoService.getIfAvailable().isPagosDisponibles());
+    }
+
+    public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
+                                           com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard,
+                                           boolean pagoPorTienda, boolean sinpeManual, boolean tarjetaOnvo) {
         this.contraEntregaPolitica = contraEntregaPolitica;
         this.guestCheckoutGuard = guestCheckoutGuard;
         this.pagoPorTienda = pagoPorTienda;
         this.sinpeManual = sinpeManual;
+        this.tarjetaOnvo = tarjetaOnvo;
     }
 
     /**
@@ -60,6 +83,7 @@ public class CheckoutConfigPublicoController {
             "contraEntregaNormal", contraEntregaPolitica.habilitada(),
             "maxUnidadesPorProducto", guestCheckoutGuard.getMaxPorProducto(),
             "pagoPorTienda", pagoPorTienda,
-            "sinpeManual", sinpeManual));
+            "sinpeManual", sinpeManual,
+            "tarjetaOnvo", tarjetaOnvo));
     }
 }

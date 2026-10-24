@@ -21,6 +21,7 @@ type CheckoutActionsDeps = {
   metodoEnvio: string
   metodoPago: string
   sinpeManualHabilitado?: boolean
+  tarjetaOnvoHabilitada?: boolean
   notas: string
   telefono: string
   direccion: string
@@ -79,6 +80,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     metodoEnvio,
     metodoPago,
     sinpeManualHabilitado,
+    tarjetaOnvoHabilitada,
     notas,
     telefono,
     direccion,
@@ -171,7 +173,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
       setSinpeNombreErr, setSinpeCedulaErr, telefono,
       metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
       notas, direccion, direccionPedido, sinpeEmail, totalFinal, items, bodegaRetiro,
-      cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago, sinpeManualHabilitado,
+      cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago, sinpeManualHabilitado, tarjetaOnvoHabilitada,
       avisarSinMetodo: () => showToast(t('checkout.f.sinMetodoPago'), 'error'),
     })
   }, [
@@ -208,6 +210,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     sinpeTelefono,
     iniciarPago,
     sinpeManualHabilitado,
+    tarjetaOnvoHabilitada,
     showToast,
     t,
   ])

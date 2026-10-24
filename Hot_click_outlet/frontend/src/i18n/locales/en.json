@@ -1570,7 +1570,7 @@
       "pagoSinpe": "SINPE Móvil",
       "pagoSinpeSub": "Pay by SINPE Móvil and upload the receipt.",
       "pagoTarjeta": "Card",
-      "pagoTarjetaSub": "Credit or debit, on the secure gateway.",
+      "pagoTarjetaSub": "Credit or debit, on ONVO's secure page.",
       "proximamente": "Coming soon",
       "sinMetodoPago": "No payment method is available for this order right now. Try Standard Shipping or contact us.",
       "contraEntrega": "Cash on delivery",

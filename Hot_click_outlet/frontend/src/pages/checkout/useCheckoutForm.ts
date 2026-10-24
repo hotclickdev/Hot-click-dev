@@ -18,7 +18,7 @@ import {
 } from './checkoutHelpers'
 import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
 import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
-import { metodoPagoPrincipal, sinpeManualDesdeConfig } from './pagoPrincipal'
+import { metodoPagoPrincipal, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig } from './pagoPrincipal'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 
 type UseCheckoutFormParams = {
@@ -49,6 +49,7 @@ export type CheckoutFormState = {
   metodoPago: string
   contraEntregaHabilitada: boolean
   sinpeManualHabilitado: boolean
+  tarjetaOnvoHabilitada: boolean
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
   setNotas: (value: string) => void
@@ -176,6 +177,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [metodoPago, setMetodoPago] = useState<string>(metodoPagoPrincipal)
   const [contraEntregaHabilitada, setContraEntregaHabilitada] = useState(false)
   const [sinpeManualHabilitado, setSinpeManualHabilitado] = useState(false)
+  const [tarjetaOnvoHabilitada, setTarjetaOnvoHabilitada] = useState(false)
   useEffect(() => {
     let vivo = true
     paymentService.getCheckoutConfig()
@@ -183,6 +185,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
         if (!vivo) return
         setContraEntregaHabilitada(data?.contraEntregaNormal === true)
         setSinpeManualHabilitado(sinpeManualDesdeConfig(data))
+        setTarjetaOnvoHabilitada(tarjetaOnvoDesdeConfig(data))
       })
       .catch(() => { /* sin config: sin contra entrega ni SINPE manual (fail-closed) */ })
     return () => { vivo = false }
@@ -330,6 +333,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setMetodoPago,
     contraEntregaHabilitada,
     sinpeManualHabilitado,
+    tarjetaOnvoHabilitada,
     notas,
     setNotas,
     sinpeNombre,

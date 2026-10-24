@@ -55,11 +55,20 @@ describe('ejecutarPagarCheckout sin Tilopay', () => {
     }
   })
 
-  it('Efectivo sigue por el flujo manual', () => {
-    const { d, iniciarPago } = deps(PAGO_EFECTIVO, false)
-    ejecutarPagarCheckout(d)
-    expect(iniciarPago.mock.calls[0][0].provider).toBe('EFECTIVO')
-    expect(iniciarPago.mock.calls[0][2]).toBe(true)
+  it('Efectivo ya no existe en el checkout web (solo POS): no inicia pago', () => {
+    const { d, iniciarPago, avisarSinMetodo } = deps(PAGO_EFECTIVO, true)
+    ejecutarPagarCheckout({ ...d, tarjetaOnvoHabilitada: true })
+    expect(iniciarPago).not.toHaveBeenCalled()
+    expect(avisarSinMetodo).toHaveBeenCalledTimes(1)
+  })
+
+  it('Tarjeta y SINPE con ONVO habilitado van a /payments/checkout con provider ONVO (nunca Tilopay)', () => {
+    for (const m of [PAGO_TARJETA, PAGO_SINPE]) {
+      const { d, iniciarPago } = deps(m, false)
+      ejecutarPagarCheckout({ ...d, tarjetaOnvoHabilitada: true })
+      expect(iniciarPago.mock.calls[0][0].provider).toBe('ONVO')
+      expect(iniciarPago.mock.calls[0][2]).toBe(false)
+    }
   })
 
   it('sin método disponible: muestra el aviso y no inicia pago (nunca mudo)', () => {
@@ -72,8 +81,8 @@ describe('ejecutarPagarCheckout sin Tilopay', () => {
   })
 
   it('con método disponible no avisa', () => {
-    const { d, avisarSinMetodo } = deps(PAGO_EFECTIVO, false)
-    ejecutarPagarCheckout(d)
+    const { d, avisarSinMetodo } = deps(PAGO_TARJETA, false)
+    ejecutarPagarCheckout({ ...d, tarjetaOnvoHabilitada: true })
     expect(avisarSinMetodo).not.toHaveBeenCalled()
   })
 })

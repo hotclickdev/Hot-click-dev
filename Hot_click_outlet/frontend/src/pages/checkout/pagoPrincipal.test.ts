@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, metodoProximamente, metodoSeleccionable, proveedorDe, sinpeManualDesdeConfig,
+  PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, metodoProximamente, metodoSeleccionable, proveedorDe, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig,
 } from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
 
@@ -38,29 +38,38 @@ describe('pago sin Tilopay', () => {
     expect(sinpeManualDesdeConfig(null)).toBe(false)
   })
 
-  it('efectivo sigue igual', () => {
-    expect(proveedorDe(PAGO_EFECTIVO, false)).toBe('EFECTIVO')
-    expect(metodoProximamente(PAGO_EFECTIVO, false)).toBe(false)
+  it('efectivo fuera del checkout web (solo POS)', () => {
+    expect(proveedorDe(PAGO_EFECTIVO, true, true)).toBeNull()
+    expect(metodoProximamente(PAGO_EFECTIVO, true, true)).toBe(true)
+  })
+
+  it('ONVO: Tarjeta y SINPE van a ONVO solo con tarjetaOnvo; fail-closed sin config', () => {
+    expect(proveedorDe(PAGO_TARJETA, false, true)).toBe('ONVO')
+    expect(proveedorDe(PAGO_SINPE, true, true)).toBe('ONVO')
+    expect(proveedorDe(PAGO_TARJETA, false, false)).toBeNull()
+    expect(metodoProximamente(PAGO_TARJETA, false, false)).toBe(true)
+    expect(metodoProximamente(PAGO_TARJETA, false, true)).toBe(false)
+    expect(tarjetaOnvoDesdeConfig({ tarjetaOnvo: true })).toBe(true)
+    expect(tarjetaOnvoDesdeConfig({ tarjetaOnvo: 'true' })).toBe(false)
+    expect(tarjetaOnvoDesdeConfig(null)).toBe(false)
   })
 
   it('muestra SINPE y Tarjeta por separado', () => {
-    expect(metodosDisponibles(false).map((m) => m.id)).toEqual([PAGO_SINPE, PAGO_TARJETA])
+    expect(metodosDisponibles().map((m) => m.id)).toEqual([PAGO_SINPE, PAGO_TARJETA])
   })
 
   it('contra entrega solo con Envío Normal y config activa', () => {
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM'], true)).toBe(true)
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM', 'ENVIO_RAPIDO'], true)).toBe(false)
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM'], false)).toBe(false)
-    expect(metodosDisponibles(false, true).map((m) => m.titulo)).toEqual(['pagoSinpe', 'pagoTarjeta', 'contraEntrega'])
+    expect(metodosDisponibles().map((m) => m.titulo)).toEqual(['pagoSinpe', 'pagoTarjeta'])
   })
 
-  it('método deshabilitado: pasa al primero disponible (Efectivo / contra entrega)', () => {
-    const todos = [PAGO_SINPE, PAGO_TARJETA, PAGO_EFECTIVO]
-    expect(metodoSeleccionable(PAGO_SINPE, todos, false)).toBe(PAGO_EFECTIVO)
-    expect(metodoSeleccionable(PAGO_TARJETA, todos, false)).toBe(PAGO_EFECTIVO)
+  it('método deshabilitado: pasa al primero disponible', () => {
+    const todos = [PAGO_SINPE, PAGO_TARJETA]
     expect(metodoSeleccionable(PAGO_TARJETA, todos, true)).toBe(PAGO_SINPE)
-    expect(metodoSeleccionable(PAGO_SINPE, todos, true)).toBe(PAGO_SINPE)
-    expect(metodoSeleccionable(PAGO_EFECTIVO, todos, false)).toBe(PAGO_EFECTIVO)
+    expect(metodoSeleccionable(PAGO_SINPE, todos, false, true)).toBe(PAGO_SINPE)
+    expect(metodoSeleccionable(PAGO_EFECTIVO, todos, false, true)).toBe(PAGO_SINPE)
   })
 
   it('sin ningún método disponible: se queda el actual (Pagar avisa)', () => {
