@@ -9,6 +9,7 @@ import useTenantStore from '@/store/tenantStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { debeRespetarRedirect, destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
+import { esCuentaPendiente, reenviarCodigoRegistro } from './verificacionPendiente'
 import { correoDesdeEstado } from './recuperar/recuperarHelpers'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
@@ -76,6 +77,7 @@ export function useLoginFlow() {
   const [needsVerification,  setNeedsVerification]  = useState(false)
   const [needsPasswordReset, setNeedsPasswordReset] = useState(false)
   const [resendLoading,      setResendLoading]      = useState(false)
+  const [codigoVerificacion, setCodigoVerificacion] = useState('')
   const refs2FA             = useRef<(HTMLInputElement | null)[]>([])
   const turnstileRef        = useRef<TurnstileInstance | null>(null)
   const [turnstileToken,    setTurnstileToken]     = useState('')
@@ -121,7 +123,11 @@ export function useLoginFlow() {
       const msg = mensajeErrorAuth(err, t('login.badCredentials'))
       const status = statusErrorAuth(err)
       // Solo lockout sigue en 403; verificación de correo se avisa por email.
-      if (status === 403 && msg.toLowerCase().includes('bloqueada')) {
+      if (esCuentaPendiente(status, msg)) {
+        // QA4-004: el backend ya reenvió el código; ofrecemos ingresarlo o reenviarlo acá mismo.
+        setNeedsVerification(true); setNeedsPasswordReset(false)
+        setCodigoVerificacion(''); setError(''); setStep('verificar-correo')
+      } else if (status === 403 && msg.toLowerCase().includes('bloqueada')) {
         setNeedsVerification(false); setNeedsPasswordReset(true)
         setError(msg)
       } else {
@@ -134,14 +140,31 @@ export function useLoginFlow() {
   }
 
   const handleResendVerification = async () => {
-    setResendLoading(true)
+    setResendLoading(true); setError('')
+    // Solo el correo; el backend responde genérico exista o no la cuenta.
+    const r = await reenviarCodigoRegistro(correo, (d) => authService.sendVerification(d, turnstileToken))
+    if (r === 'enviado') { toast({ message: t('register.resentGeneric'), type: 'success' }); setCodigoVerificacion('') }
+    else setError(r === 'limite' ? t('register.resendLimit') : t('register.resendFailed'))
+    setResendLoading(false)
+  }
+
+  const handleVerificarCorreo = async (e: FormEvent) => {
+    e.preventDefault()
+    if (codigoVerificacion.trim().length !== 6) { setError(t('register.codeSixDigits')); return }
+    setError(''); setLoading(true)
     try {
-      await authService.sendVerification({ correo })
-      toast({ message: t('login.codeResent'), type: 'success' })
-      setNeedsVerification(false); setError('')
+      const { data: res } = await authService.verifyRegistration(correo.trim().toLowerCase(), codigoVerificacion.trim())
+      const authData = (res as { data?: LoginApiData } | undefined)?.data
+      setNeedsVerification(false)
+      if (authData?.accessToken) { await handleLoginSuccess(authData) }
+      else { setStep('login'); toast({ message: t('register.verifiedLogin'), type: 'success' }) }
     } catch (err: unknown) {
-      toast({ message: mensajeErrorAuth(err, t('login.resendError')), type: 'error' })
-    } finally { setResendLoading(false) }
+      setError(mensajeErrorAuth(err, t('register.codeInvalid')))
+    } finally { setLoading(false) }
+  }
+
+  const volverAlLogin = () => {
+    setCodigoVerificacion(''); setError(''); setStep('login')
   }
 
   const sendEmailOtp = async (token?: string) => {
@@ -285,6 +308,9 @@ export function useLoginFlow() {
     resendCooldown,
     handleLogin,
     handleResendVerification,
+    codigoVerificacion, setCodigoVerificacion,
+    handleVerificarCorreo,
+    volverAlLogin,
     sendEmailOtp,
     handlePickMethod,
     handle2FA,

@@ -10,7 +10,7 @@ export default function RegisterPage() {
   const [params] = useSearchParams()
   const {
     t, navigate,
-    modo, setModo, step, setStep, loading, error, setError,
+    modo, setModo, step, loading, error, setError, volverAlFormulario,
     showCartRecovery, setShowCartRecovery, recoveryCart, addItem,
     correoRegistro, codigo, setCodigo, form, setForm,
     turnstileToken, setTurnstileToken, turnstileRef,
@@ -37,7 +37,7 @@ export default function RegisterPage() {
         error={error} loading={loading}
         onVerify={handleVerify}
         onReenviar={handleReenviar}
-        onBack={() => { setStep('form'); setError('') }}
+        onBack={volverAlFormulario}
         {...cartProps}
       />
     )
