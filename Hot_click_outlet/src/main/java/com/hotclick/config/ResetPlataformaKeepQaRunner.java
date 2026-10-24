@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -14,9 +15,12 @@ import org.springframework.stereotype.Component;
  * DataSeeder corre después y crea las 4 cuentas si faltan. Se reintenta si
  * quedaron tiendas/productos de una corrida anterior incompleta.
  * NUNCA activar fuera de dev — vacía datos reales de tiendas/productos.
+ * Doble guarda: perfil dev sin prod/production/staging Y propiedad explícita
+ * hotclick.reset-plataforma.enabled=true (solo en application-dev.properties).
  */
 @Component
-@Profile("dev")
+@Profile("dev & !prod & !production & !staging")
+@ConditionalOnProperty(name = "hotclick.reset-plataforma.enabled", havingValue = "true", matchIfMissing = false)
 @Order(90)
 public class ResetPlataformaKeepQaRunner implements ApplicationRunner {
 

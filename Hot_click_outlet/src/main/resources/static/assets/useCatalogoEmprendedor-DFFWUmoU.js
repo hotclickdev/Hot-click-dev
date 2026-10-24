@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-AEH-_yi_.js";function t(){return e()}export{t};
