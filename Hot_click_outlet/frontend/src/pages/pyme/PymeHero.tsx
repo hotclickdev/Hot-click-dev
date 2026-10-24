@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
 import PymeHeroPanel from './PymeHeroPanel'
+import { usePrecioPlan } from '@/hooks/usePrecioPlan'
 
 const copy = PLAN_LANDING_COPY.pyme
 
 /** Hero de /para-pymes: propuesta + precio + panel preview flotante. */
 export default function PymeHero() {
   const { t } = useTranslation()
+  const precio = usePrecioPlan('PYME').texto
 
   return (
     <header className="relative overflow-hidden rounded-3xl">
@@ -58,7 +60,7 @@ export default function PymeHero() {
             className="text-sm sm:text-base"
             style={{ color: 'var(--hc-primary-text)', fontFamily: 'var(--hc-font-mono)' }}
           >
-            {copy.precio}
+            {precio}
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 12 }}

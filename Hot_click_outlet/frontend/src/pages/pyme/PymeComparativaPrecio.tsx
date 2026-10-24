@@ -1,13 +1,11 @@
 import { useTranslation } from 'react-i18next'
-import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
-
-const copy = PLAN_LANDING_COPY.pyme
-// copy.precio ya viene aprobado con los montos correctos: mensualidad en dólares + comisión, sin mínimo (config/planesPrecios)
-const [montoMensual, comisionVenta] = copy.precio.split(' + ')
+import { usePrecioPlan } from '@/hooks/usePrecioPlan'
 
 /** Precio destacado del plan PYME + comparación de comisión frente a Emprendedor. */
 export default function PymeComparativaPrecio() {
   const { t } = useTranslation()
+  // Mensualidad real en USD desde GET /api/planes (QA2-003); respaldo genérico si no carga.
+  const { mensualidad: montoMensual, comision: comisionVenta } = usePrecioPlan('PYME')
 
   return (
     <div className="flex flex-col items-center gap-4 text-center">
