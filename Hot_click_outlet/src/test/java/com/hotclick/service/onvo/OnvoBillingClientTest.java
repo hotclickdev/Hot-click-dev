@@ -323,11 +323,23 @@ class OnvoBillingClientTest {
             .andExpect(jsonPath("$.cancelAtPeriodEnd").value(true))
             .andRespond(withSuccess("{\"id\":\"sub_real\",\"status\":\"active\",\"cancelAtPeriodEnd\":true}",
                 MediaType.APPLICATION_JSON));
-        client.cancelarAlVencer("sub_real");
+        assertThat(client.cancelarAlVencer("sub_real")).isEqualTo(OnvoBillingClient.ResultadoCancelacion.PROGRAMADA);
         server.verify();
         OnvoBillingClient dev = clienteConPerfiles("dev");
         ReflectionTestUtils.setField(dev, "secretKey", "onvo_test_ficticia");
         dev.cancelarAlVencer("sub_mock_1");
+    }
+
+    @Test
+    @DisplayName("L210: cancelarAlVencer con status canceled → CANCELADA (el llamador actualiza el estado local)")
+    void cancelar_statusCanceled_devuelveCancelada() {
+        conLlave();
+        server.expect(requestTo(BASE + "/subscriptions/sub_real"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{\"id\":\"sub_real\",\"status\":\"canceled\",\"cancelAtPeriodEnd\":false}",
+                MediaType.APPLICATION_JSON));
+        assertThat(client.cancelarAlVencer("sub_real")).isEqualTo(OnvoBillingClient.ResultadoCancelacion.CANCELADA);
+        server.verify();
     }
 
     @Test

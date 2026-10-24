@@ -92,7 +92,7 @@ Ninguna se implementó por inferencia. «Vigente» describe lo que hace el códi
 | # | Tema | Evidencia | Bloque |
 | --- | --- | --- | --- |
 | R1 | **Contraste de tokens debajo de AA:** n-400 da 2,6:1 sobre blanco; n-500 da 4,36:1 sobre n-50 y 4,13:1 sobre n-100; red-500 da 4,14:1; `--hc-success` da 4,39:1. Son colores de Figma | `styles/contrasteTokens.test.ts`; `SHELL_GLOBAL.md` P19 | P19 |
-| R2 | **Formato del teléfono:** el campo del checkout muestra `8888 1234` y el número SINPE `7019-6686` (los dos de Figma) | `SHELL_GLOBAL.md` P16 | P16 |
+| R2 | **Formato del teléfono:** el campo del checkout muestra `8888 1234` y el número SINPE `[número SINPE oficial]` (los dos de Figma) | `SHELL_GLOBAL.md` P16 | P16 |
 | R3 | **Pasos del checkout en la URL:** hoy viven en estado. «Atrás» del navegador sale del checkout y no hay enlace profundo a un paso | `SHELL_GLOBAL.md` P18 | P18 |
 | R4 | **`stock: 99`:** `RecuperarCarritoPage.tsx:57` agrega con 99 aunque desde P11 llega el stock real. El mismo valor por defecto está en `aiChatHelpers.ts:78`, `useAiChat.ts:99`, los topes de `cartStore.ts` (`?? 99`) y `MiniCartItems.tsx:59`. Usar el stock real cambia cuánto se puede agregar | `SHELL_GLOBAL.md` P12; `git grep` en `8e07c61c` | P11, P12 |
 | R5 | **FAB de WhatsApp:** en `/emprendimientos` móvil la nota `52:2422` lo hace global y nadie pidió quitarlo. En `/productos` a 390 tapa parte de una tarjeta (`QA_GLOBAL.md` #4). En la tienda va con D01/D20 | `SHELL_GLOBAL.md` P12 y P15 | P12, P15 |

@@ -4296,6 +4296,30 @@ WHERE r.nombre_rol IN ('ADMIN', 'EMPRENDEDOR')
   AND NOT EXISTS (SELECT 1 FROM hot_click_rol_permiso_tb rp
                   WHERE rp.fk_id_rol = r.id_rol AND rp.fk_id_permiso = p.id_permiso);
 
+-- ====================================================
+-- V187__empresa_cuenta_onvo.sql (copia de la migración Flyway)
+-- ====================================================
+-- Cuenta conectada ONVO (marketplace) por empresa. Aditiva: tabla nueva, no toca tablas existentes.
+-- estado: PENDIENTE_ONVO (sin cuenta creada todavía, se reintenta), PENDIENTE_ONBOARDING, EN_APROBACION,
+-- ACTIVA, INACTIVA, SUSPENDIDA. Solo ACTIVA habilita onBehalfOf en cobros.
+CREATE TABLE IF NOT EXISTS hot_click_empresa_cuenta_onvo_tb (
+    id_cuenta_onvo        BIGSERIAL PRIMARY KEY,
+    fk_id_empresa         BIGINT       NOT NULL REFERENCES hot_click_empresa_tb(id_empresa) ON DELETE CASCADE,
+    onvo_account_id       VARCHAR(100),
+    onvo_status           VARCHAR(40),
+    estado                VARCHAR(30)  NOT NULL DEFAULT 'PENDIENTE_ONVO',
+    onboarding_url        VARCHAR(1000),
+    onboarding_expira_en  TIMESTAMP,
+    intentos              INTEGER      NOT NULL DEFAULT 0,
+    ultimo_error          VARCHAR(300),
+    ultima_consulta_en    TIMESTAMP,
+    creado_en             TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_cuenta_onvo_empresa ON hot_click_empresa_cuenta_onvo_tb (fk_id_empresa);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_cuenta_onvo_account ON hot_click_empresa_cuenta_onvo_tb (onvo_account_id);
+CREATE INDEX IF NOT EXISTS ix_empresa_cuenta_onvo_estado ON hot_click_empresa_cuenta_onvo_tb (estado);
+
 -- V188: tipos de OTP REGISTRO y RESET_PASSWORD en hot_click_tipo_otp_tb (minúsculas). Aditiva e idempotente.
 -- fix/registro-cedula-otp: la semilla de V1 (REGISTRO, RESET_PASSWORD) cayó en la tabla citada
 -- "HOT_CLICK_TIPO_OTP_TB" (MAYÚSCULAS), distinta de hot_click_tipo_otp_tb que usa la entidad TipoOtp.

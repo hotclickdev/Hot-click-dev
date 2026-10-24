@@ -44,7 +44,7 @@ export function ContactoCanales() {
       <li>
         <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t('contacto.waDefault'))}`} target="_blank" rel="noopener noreferrer" className={FILA}>
           <IcoSrv nombre="cotizacionWhatsapp" size={20} />
-          <Texto titulo="WhatsApp · +506 8666-7888" detalle={t('contacto.waHint')} />
+          <Texto titulo="WhatsApp · contactanos por el chat de soporte" detalle={t('contacto.waHint')} />
           <Flecha />
         </a>
       </li>
