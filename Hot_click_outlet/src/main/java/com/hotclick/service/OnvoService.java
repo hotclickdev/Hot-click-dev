@@ -39,6 +39,10 @@ public class OnvoService {
     @Value("${onvo.webhook-secret:}")
     private String webhookSecret;
 
+    /** Opt-in explícito (PAYMENTS_ONVO_PERMITIR_LLAVE_TEST): acepta llave onvo_test_ fuera de dev/test. Nunca activa el mock. */
+    @Value("${payments.onvo.permitir-llave-test:false}")
+    private boolean permitirLlaveTest = false;
+
     @Value("${onvo.publishable-key:}")
     private String publishableKey;
 
@@ -66,6 +70,10 @@ public class OnvoService {
         }
         if (!credenciales) {
             log.error("[ALERTA-PAGO] ONVO sin ONVO_SECRET_KEY fuera de dev/test. Pagos con tarjeta deshabilitados.");
+            return;
+        }
+        if (esLlaveDePrueba() && !simulacion && permitirLlaveTest) {
+            log.warn("[ALERTA-PAGO] ONVO en MODO PRUEBA en perfil no-dev por opt-in (payments.onvo.permitir-llave-test). No se cobra plata real.");
             return;
         }
         if (esLlaveDePrueba() && !simulacion) {
