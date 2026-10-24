@@ -1,4 +1,4 @@
-import { COMISION_MINIMA_CRC, PLAN_PRECIOS, colones, textoComision, textoMensualidad } from '@/config/planesPrecios'
+import { PLAN_PRECIOS, textoComision, textoMensualidad } from '@/config/planesPrecios'
 
 const PYME = PLAN_PRECIOS.PYME
 const PLUS = PLAN_PRECIOS.NEGOCIO_PLUS
@@ -28,8 +28,9 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     query: 'emprendedor',
     eyebrow: 'Para empezar',
     headline: 'Publicá y cobrá en HotClick',
-    subheadline: 'Sin mensualidad: solo una comisión cuando vendés.',
-    precio: `₡0/mes · ${textoComision(EMP.comisionPct)}`,
+    // Gratis o US$/mes depende del cupo: PlanLandingLayout lo arma con datos del backend.
+    subheadline: 'Gratis para los primeros 70 negocios; después, mensualidad en dólares.',
+    precio: `${textoMensualidad()} · ${textoComision(EMP.comisionPct)}`,
     ctaLabel: 'Crear mi negocio',
     paraQuienSi: [
       'Vendés en feria, Instagram o WhatsApp',
@@ -40,8 +41,8 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       'Ya tenés equipo y varias bodegas — mirá PYME',
     ],
     faq: [
-      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: `No. La membresía es ₡0. Pagás ${EMP.comisionPct}% por venta, con un mínimo de ${colones(COMISION_MINIMA_CRC)}; siempre la vas a ver actualizada acá antes de vender.` },
-      { pregunta: '¿Hay cupo limitado?', respuesta: 'Sí, los primeros 70 registros del mes entran gratis. Si se llena, podés seguir con PYME.' },
+      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: `Mientras haya cupo gratis, no. Pagás ${textoComision(EMP.comisionPct)}, sin mínimo. Si el cupo ya se llenó, la mensualidad es en dólares y la ves acá antes de pagar.` },
+      { pregunta: '¿Hay cupo limitado?', respuesta: 'Sí, los primeros 70 negocios entran gratis. Después, Emprendedor tiene mensualidad en dólares.' },
     ],
   },
   pyme: {
@@ -50,19 +51,19 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     query: 'pyme',
     eyebrow: 'Para crecer',
     headline: 'Operá el negocio en un solo panel',
-    subheadline: `Equipo, inventario y caja, por ${colones(PYME.mensualCrc)} al mes.`,
-    precio: `${textoMensualidad(PYME.mensualCrc)} + ${textoComision(PYME.comisionPct)}`,
-    ctaLabel: `Suscribirme a PYME — ${textoMensualidad(PYME.mensualCrc)}`,
+    subheadline: 'Equipo, inventario y caja, con mensualidad en dólares.',
+    precio: `${textoMensualidad()} + ${textoComision(PYME.comisionPct)}`,
+    ctaLabel: 'Suscribirme a PYME',
     paraQuienSi: [
       'Ya vendés seguido, con 2 a 5 personas en el equipo',
       'Tenés stock en una o dos bodegas',
       'Se te quedó corto el cuaderno o el Excel',
     ],
     paraQuienNo: [
-      'Recién arrancás y vendés poco — probá Emprendedor sin mensualidad',
+      'Recién arrancás y vendés poco — probá Emprendedor',
     ],
     faq: [
-      { pregunta: '¿Por qué pagar si el otro plan es gratis?', respuesta: `El gratis se queda en 50 productos y sin compras. PYME suma equipo, compras, gift cards e IA. Comisión: ${PYME.comisionPct}% por venta (mínimo ${colones(COMISION_MINIMA_CRC)}).` },
+      { pregunta: '¿Por qué pagar si el otro plan es gratis?', respuesta: `El gratis se queda en 50 productos y sin compras. PYME suma equipo, compras, gift cards e IA. Comisión: ${textoComision(PYME.comisionPct)}, sin mínimo.` },
       { pregunta: '¿Cuándo se activa mi suscripción?', respuesta: 'Al confirmar el pago con la pasarela, tu plan PYME queda activo de inmediato.' },
     ],
   },
@@ -73,8 +74,8 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     eyebrow: 'Para operar en serio',
     headline: 'Todas las sucursales en un panel',
     subheadline: 'Pedidos por local, equipo sin tope y CRM.',
-    precio: `${textoMensualidad(PLUS.mensualCrc)} + ${textoComision(PLUS.comisionPct)}`,
-    ctaLabel: `Suscribirme a Negocio Plus — ${textoMensualidad(PLUS.mensualCrc)}`,
+    precio: `${textoMensualidad()} + ${textoComision(PLUS.comisionPct)}`,
+    ctaLabel: 'Suscribirme a Negocio Plus',
     paraQuienSi: [
       'Tenés más de un local',
       'Tu equipo ya no cabe en 5 usuarios',

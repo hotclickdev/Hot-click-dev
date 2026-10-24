@@ -61,7 +61,6 @@ export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
       >
         {t('emprende.heroPrecioLinea', {
           comision: PLAN_EMPRENDEDOR.comisionPct,
-          minimo: PLAN_EMPRENDEDOR.minimoColones,
         })}
       </motion.p>
       <motion.div

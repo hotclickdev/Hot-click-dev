@@ -90,7 +90,7 @@ export default function CompararPlanesVista({
 
   async function confirmarCambio() {
     if (!planElegido) return
-    await seleccionarPlan(planElegido.id)
+    await seleccionarPlan(planElegido.id, planElegido.nombreApi)
   }
 
   function volverDesdePago() {

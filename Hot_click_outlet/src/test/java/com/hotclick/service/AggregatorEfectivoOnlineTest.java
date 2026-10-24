@@ -36,7 +36,6 @@ class AggregatorEfectivoOnlineTest {
         aggregator = new AggregatorService(walletService, mock(WalletDlqTxOps.class), empresaRepo);
         ReflectionTestUtils.setField(aggregator, "pctGateway", 4);
         ReflectionTestUtils.setField(aggregator, "pctFallback", new BigDecimal("9"));
-        ReflectionTestUtils.setField(aggregator, "minimoEmprendedorCrc", 700L);
     }
 
     private static Pedido pedido(String origen, String metodoPago) {

@@ -57,7 +57,9 @@ public class VentaService {
         pedido.setEmpresa(empresa);
         pedido.setUsuarioFinal(usuario);
         pedido.setBodega(bodega);
-        pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");
+        String metodoPago = normalizarMetodo(dto.getMetodoPago());
+        String estadoInicialSeguro = resolverEstadoInicial(metodoPago, dto.getEstadoInicial());
+        pedido.setMetodoPago(metodoPago);
         pedido.setMetodoEnvio(resolverMetodoEnvio(dto));
         pedido.setNotas(dto.getNotas());
         pedido.setAplicaImpuesto(false);
@@ -118,10 +120,7 @@ public class VentaService {
                 : BigDecimal.ZERO
         );
         pedido.setItems(items);
-        String estadoInicial = dto.getEstadoInicial();
-        pedido.setEstadoPedido(estadoInicial != null && !estadoInicial.isBlank()
-            ? estadoInicial
-            : Constants.PEDIDO_COMPLETADO);
+        pedido.setEstadoPedido(estadoInicialSeguro);
         OrigenPedido origen = OrigenPedido.normalizar(dto.getOrigen());
         if (origen != null) {
             pedido.setOrigen(origen.codigo());
@@ -140,6 +139,55 @@ public class VentaService {
     }
 
     // ── Validaciones ────────────────────────────────────────────────────────────
+
+    /** Métodos cobrados fuera de la plataforma (en mano). Cualquier otro requiere cobro confirmado de pasarela. */
+    static final String METODO_EFECTIVO = "EFECTIVO";
+    static final String MSG_ESTADO_NO_PERMITIDO = "Estado inicial no permitido";
+    static final String MSG_SOLO_PENDIENTE =
+        "Este método de pago solo se registra PENDIENTE: el cobro lo confirma la pasarela";
+
+    /** Método normalizado (trim + mayúsculas); en blanco o ausente → EFECTIVO. Es el valor que se guarda. */
+    public static String normalizarMetodo(String metodoPago) {
+        String m = normalizar(metodoPago);
+        return m != null ? m : METODO_EFECTIVO;
+    }
+
+    static final java.util.Set<String> METODOS_SIN_PASARELA =
+        java.util.Set.of(METODO_EFECTIVO);
+
+    /** Lista blanca de estados con los que puede nacer una venta manual. */
+    static final java.util.Set<String> ESTADOS_INICIALES_PERMITIDOS = java.util.Set.of(
+        Constants.PEDIDO_PENDIENTE, Constants.PEDIDO_CONFIRMADO, Constants.PEDIDO_PAGADO,
+        Constants.PEDIDO_PREPARANDO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
+        Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
+
+    static String normalizar(String valor) {
+        return valor == null || valor.isBlank() ? null : valor.trim().toUpperCase(java.util.Locale.ROOT);
+    }
+
+    public static boolean esMetodoSinPasarela(String metodoPago) {
+        String m = normalizar(metodoPago);
+        return m != null && METODOS_SIN_PASARELA.contains(m);
+    }
+
+    /**
+     * Fail-closed (#221/#225): devuelve el estado inicial normalizado. Solo EFECTIVO puede nacer en cualquier
+     * estado de la lista blanca (por defecto COMPLETADO); SINPE (G1), TARJETA, ONVO, STRIPE, TILOPAY y métodos
+     * desconocidos solo nacen PENDIENTE, porque únicamente la pasarela confirma su cobro.
+     */
+    static String resolverEstadoInicial(String metodoPago, String estadoInicial) {
+        String estado = normalizar(estadoInicial);
+        if (estado != null && !ESTADOS_INICIALES_PERMITIDOS.contains(estado)) {
+            throw new IllegalArgumentException(MSG_ESTADO_NO_PERMITIDO);
+        }
+        if (esMetodoSinPasarela(metodoPago)) {
+            return estado != null ? estado : Constants.PEDIDO_COMPLETADO;
+        }
+        if (estado != null && !Constants.PEDIDO_PENDIENTE.equals(estado)) {
+            throw new IllegalArgumentException(MSG_SOLO_PENDIENTE);
+        }
+        return Constants.PEDIDO_PENDIENTE;
+    }
 
     private void validarProductoParaVenta(Producto producto, int cantidad, boolean desdeCarrito) {
         if (producto.getEstado() != Constants.ESTADO_ACTIVO) {

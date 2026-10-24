@@ -627,7 +627,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         postSinLimite(mensajeConId(CHAT_ID, "2", update));
         postSinLimite(mensajeConId(CHAT_ID, "2", update + 1));
         postSinLimite(callback(CHAT_ID, "vta:cont"));
-        postSinLimite(callback(CHAT_ID, "vta:pay:SINPE"));
+        postSinLimite(callback(CHAT_ID, "vta:pay:EFECTIVO"));
         postSinLimite(callback(CHAT_ID, "vta:nocli"));
 
         String confirmar = callbackConId(CHAT_ID, "vta:ok", update + 2);
@@ -643,6 +643,47 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
             Number.class, p.getId());
         assertThat(cantidad.intValue()).isEqualTo(2);
         assertThat(pedidos.intValue()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Venta: el bot ofrece solo SINPE y efectivo, sin opción de tarjeta")
+    @SuppressWarnings("unchecked")
+    void venta_sinOpcionTarjeta() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar sin tarjeta", 12, 3);
+        long update = System.nanoTime();
+        postSinLimite(callback(CHAT_ID, "vta:new"));
+        postSinLimite(callback(CHAT_ID, "vta:p:" + p.getId()));
+        postSinLimite(mensajeConId(CHAT_ID, "1", update));
+        clearInvocations(bot);
+        postSinLimite(callback(CHAT_ID, "vta:cont"));
+
+        ArgumentCaptor<List<List<Map<String, Object>>>> teclado = ArgumentCaptor.forClass(List.class);
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("Cómo te pagaron"), teclado.capture());
+        List<Object> callbacks = teclado.getValue().stream().flatMap(List::stream).map(b -> b.get("callback_data")).toList();
+        assertThat(callbacks).contains("vta:pay:SINPE", "vta:pay:EFECTIVO").doesNotContain("vta:pay:TARJETA");
+        assertThat(teclado.getValue().toString()).doesNotContain("Tarjeta");
+    }
+
+    @Test
+    @DisplayName("Venta: un botón viejo de tarjeta se rechaza con aviso y no registra venta")
+    void venta_botonTarjetaViejo_seRechaza() throws Exception {
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        Producto p = crearProducto("Gar boton viejo", 12, 3);
+        long update = System.nanoTime();
+        postSinLimite(callback(CHAT_ID, "vta:new"));
+        postSinLimite(callback(CHAT_ID, "vta:p:" + p.getId()));
+        postSinLimite(mensajeConId(CHAT_ID, "1", update));
+        postSinLimite(callback(CHAT_ID, "vta:cont"));
+        clearInvocations(bot);
+        postSinLimite(callback(CHAT_ID, "vta:pay:TARJETA"));
+        verify(bot).enviarMensaje(eq(CHAT_ID), contains("ya no está disponible. Elegí SINPE o efectivo"), any());
+
+        postSinLimite(callbackConId(CHAT_ID, "vta:ok", update + 1));
+        Number pedidos = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_pedido_tb WHERE metodo_pago = 'TARJETA' AND fk_id_empresa = ?",
+            Number.class, empresa.getId());
+        assertThat(pedidos.intValue()).isZero();
     }
 
     @Test

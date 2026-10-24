@@ -39,7 +39,6 @@ class WebhookIdempotencyTest {
     void setUp() {
         ReflectionTestUtils.setField(service, "pctGateway", 4);
         ReflectionTestUtils.setField(service, "pctFallback", new BigDecimal("8"));
-        ReflectionTestUtils.setField(service, "minimoEmprendedorCrc", 400L);
 
         Plan plan = new Plan();
         plan.setNombre("EMPRENDEDOR");

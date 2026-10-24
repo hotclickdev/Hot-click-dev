@@ -1,1 +1,0 @@
-import{o as e}from"./rolldown-runtime-CMxvf4Kt.js";import{s as t}from"./vendor-clerk-DL7QwBkg.js";import{r as n}from"./ui-DMhA0WaD.js";var r=e(t(),1);function i({valor:e,opciones:t,onChange:i}){return(0,r.jsx)(`div`,{className:`flex gap-2 overflow-x-auto`,children:t.map(t=>(0,r.jsx)(n,{activo:e===t,onClick:()=>i(t),children:t},t))})}export{i as t};

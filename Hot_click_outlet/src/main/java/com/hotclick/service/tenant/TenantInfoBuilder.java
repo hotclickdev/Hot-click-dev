@@ -4,7 +4,6 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.service.FeatureFlagService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +17,6 @@ public class TenantInfoBuilder {
 
     private final EmpresaRepository empresaRepo;
     private final FeatureFlagService flagService;
-
-    /** Mismo mínimo que AggregatorService aplica al liquidar EMPRENDEDOR — se expone para que el frontend pueda estimar la comisión antes de confirmar una venta. */
-    @Value("${hotclick.comision.emprendedor.min.crc:700}")
-    private long minimoEmprendedorCrc;
 
     public TenantInfoBuilder(EmpresaRepository empresaRepo, FeatureFlagService flagService) {
         this.empresaRepo = empresaRepo;
@@ -52,8 +47,8 @@ public class TenantInfoBuilder {
             info.put("maxCajas",       plan.getMaxCajas());
             info.put("maxCreditosAi",  plan.getMaxCreditosAi());
             info.put("comisionPorcentaje", plan.getComisionPorcentaje());
-            info.put("comisionMinimaCrc", plan.getComisionMinimaCrc() != null
-                ? plan.getComisionMinimaCrc().longValue() : minimoEmprendedorCrc);
+            // V185: ya no hay mínimo por venta; se mantiene la clave en 0 por compatibilidad del contrato.
+            info.put("comisionMinimaCrc", 0L);
             info.put("diaCobro", empresa.getDiaCobro());
             info.put("frecuenciaPayout", empresa.getFrecuenciaPayout());
         }

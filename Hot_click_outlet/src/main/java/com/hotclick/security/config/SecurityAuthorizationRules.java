@@ -259,6 +259,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, "/api/admin/reset-confirmacion").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/admin/reset-codigo").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Resto de /api/admin/** (plataforma) — solo ADMIN
+            // Revisión de confirmaciones manuales de SINPE del POS: ADMIN y EMPRENDEDOR, acotado a su empresa
+            .requestMatchers(GET, com.hotclick.controller.AdminPosSinpeController.RUTA)
+                .hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers("/api/admin/**").hasRole(Constants.ROL_ADMIN)
             // Pedidos admin — ADMIN, EMPRENDEDOR
             // Pedidos — roles de empresa + API keys con scope read:pedidos o write:pedidos

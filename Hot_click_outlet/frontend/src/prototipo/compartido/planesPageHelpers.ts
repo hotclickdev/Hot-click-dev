@@ -1,5 +1,5 @@
 import { formatoColon } from '@/theme/formatoColon'
-import { COMISION_MINIMA_CRC, PLAN_PRECIOS, textoComision, type ClavePlan } from '@/config/planesPrecios'
+import { PLAN_PRECIOS, textoComision, type ClavePlan } from '@/config/planesPrecios'
 import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 import type { Id } from '@/types/api'
 import type { PlanId } from './plan'
@@ -36,7 +36,7 @@ function beneficiosDesdeApi(p: PlanApiTuPlan): string[] {
   const lista: string[] = []
   if (p.maxProductos != null) lista.push(p.maxProductos < 0 ? 'Productos ilimitados' : `Hasta ${p.maxProductos} productos publicados`)
   if (pct != null && !Number.isNaN(pct)) {
-    const c = textoComision(pct, p.comisionMinimaCrc ?? COMISION_MINIMA_CRC)
+    const c = textoComision(pct, 0) // V185: sin mínimo por venta
     lista.push(`Comisión ${c}`)
   }
   if (p.maxBodegas != null) lista.push(p.maxBodegas < 0 ? 'Bodegas sin límite' : p.maxBodegas === 1 ? '1 bodega' : `${p.maxBodegas} bodegas`)

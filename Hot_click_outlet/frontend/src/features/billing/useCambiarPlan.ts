@@ -25,8 +25,19 @@ type Options = {
   rutaExito: string
 }
 
+/** Plan base sin mensualidad: bajar a él es cancelar, no cambiar de plan (precio 0 da 409 en /cambiar-plan). */
+export const PLAN_BASE = 'EMPRENDEDOR'
+
 /**
- * Orquesta POST /billing/cambiar-plan y el cobro Tilopay si hace falta.
+ * Decide el endpoint: bajar al plan base va por POST /billing/cancelar (al vencer el período);
+ * cualquier otro plan, por POST /billing/cambiar-plan. Ojo: /cancelar solo admite rol EMPRENDEDOR (no ADMIN).
+ */
+export function rutaCambioPlan(nombrePlanDestino?: string | null): 'cancelar' | 'cambiar-plan' {
+  return nombrePlanDestino?.toUpperCase() === PLAN_BASE ? 'cancelar' : 'cambiar-plan'
+}
+
+/**
+ * Orquesta POST /billing/cambiar-plan y el cobro Tilopay si hace falta; la baja a Emprendedor va por /billing/cancelar.
  */
 export function useCambiarPlan({ rutaExito }: Options) {
   const navigate = useNavigate()
@@ -42,10 +53,17 @@ export function useCambiarPlan({ rutaExito }: Options) {
     navigate(rutaExito)
   }, [loadTenantInfo, navigate, rutaExito])
 
-  const seleccionarPlan = useCallback(async (planId: Id) => {
+  const seleccionarPlan = useCallback(async (planId: Id, nombrePlanDestino?: string | null) => {
     setLoadingPlan(planId)
     setError(null)
     try {
+      if (rutaCambioPlan(nombrePlanDestino) === 'cancelar') {
+        await billingService.cancelar(false)
+        setError('Listo: al vencer tu período pasás a Emprendedor. Hasta entonces seguís con tu plan actual.')
+        setLoadingPlan(null)
+        await loadTenantInfo()
+        return
+      }
       const { data } = await billingService.cambiarPlan(planId)
       const result = data as CambiarPlanResultado
 

@@ -1,10 +1,18 @@
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { PLAN_EMPRENDEDOR } from './emprendePrecios'
+import useCupoEmprende from './useCupoEmprende'
 
-/** Banner de precio grande — refuerza el mensaje "sin mensualidad". */
+/** Banner de precio grande — «Sin mensualidad» solo si el backend confirma cupo gratis; si no, US$/mes desde config. */
 export default function EmprendePrecioDestacado() {
   const { t } = useTranslation()
+  const { cupo } = useCupoEmprende()
+  const usd = cupo?.mensualidadUsdSinCupo
+  const mensualidad = cupo != null && cupo.cuposGratisDisponibles > 0
+    ? t('emprende.precioMensualidad')
+    : usd != null && usd > 0
+      ? t('emprende.precioMensualidadUsd', { monto: usd })
+      : t('emprende.precioMensualidadDolares')
 
   return (
     <motion.div
@@ -16,10 +24,10 @@ export default function EmprendePrecioDestacado() {
       style={{ backgroundColor: 'var(--hc-primary)' }}
     >
       <p className="text-4xl sm:text-5xl font-bold text-white" style={{ fontFamily: 'var(--hc-font-display)' }}>
-        {t('emprende.precioMensualidad')}
+        {mensualidad}
       </p>
       <p className="text-[15px] mt-2 text-white/90">
-        {t('emprende.precioComision', { comision: PLAN_EMPRENDEDOR.comisionPct, minimo: PLAN_EMPRENDEDOR.minimoColones })}
+        {t('emprende.precioComision', { comision: PLAN_EMPRENDEDOR.comisionPct })}
       </p>
     </motion.div>
   )

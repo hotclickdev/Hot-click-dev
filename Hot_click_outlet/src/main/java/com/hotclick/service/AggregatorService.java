@@ -57,10 +57,6 @@ public class AggregatorService {
     @Value("${hotclick.comision.fallback.pct:9}")
     private BigDecimal pctFallback;
 
-    /** Mínimo por venta si la empresa no tiene plan; con plan manda comision_minima_crc. */
-    @Value("${hotclick.comision.emprendedor.min.crc:700}")
-    private long minimoEmprendedorCrc;
-
     private final WalletService walletService;
     private final WalletDlqTxOps dlqTxOps;
     private final EmpresaRepository empresaRepo;
@@ -191,13 +187,10 @@ public class AggregatorService {
         BigDecimal pct = plan != null && plan.getComisionPorcentaje() != null
             ? plan.getComisionPorcentaje()
             : pctFallback;
-        // Mínimo por venta del plan (V168: ₡700 en los tres); sin plan, el de configuración.
-        long minimo = plan != null && plan.getComisionMinimaCrc() != null
-            ? plan.getComisionMinimaCrc() : minimoEmprendedorCrc;
-        boolean min = minimo > 0;
+        // V185: sin mínimo por venta. comision_minima_crc queda en la BD solo como historia.
         Resultado resultado = AggregatorCommissionMath.calcular(
-            bruto, pct, min, minimo, pctGateway);
-        return new DetalleComision(nombrePlan, pct, min ? minimo : 0, resultado);
+            bruto, pct, false, 0, pctGateway);
+        return new DetalleComision(nombrePlan, pct, 0, resultado);
     }
 
     private static String nombrePlan(Empresa empresa, Plan plan) {

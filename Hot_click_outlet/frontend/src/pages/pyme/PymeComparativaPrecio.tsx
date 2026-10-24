@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
 
 const copy = PLAN_LANDING_COPY.pyme
-// copy.precio ya viene aprobado con los montos correctos: "₡12.900/mes + 7% por venta (mínimo ₡700)" (config/planesPrecios)
+// copy.precio ya viene aprobado con los montos correctos: mensualidad en dólares + comisión, sin mínimo (config/planesPrecios)
 const [montoMensual, comisionVenta] = copy.precio.split(' + ')
 
 /** Precio destacado del plan PYME + comparación de comisión frente a Emprendedor. */
