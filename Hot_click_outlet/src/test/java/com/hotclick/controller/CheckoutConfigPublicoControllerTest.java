@@ -20,8 +20,21 @@ class CheckoutConfigPublicoControllerTest {
         var body = new CheckoutConfigPublicoController(politica, guard).config().getBody();
 
         assertThat(body).containsEntry("maxUnidadesPorProducto", 3).containsEntry("contraEntregaNormal", true);
-        assertThat(body.keySet()).containsExactlyInAnyOrder("contraEntregaNormal", "maxUnidadesPorProducto", "pagoPorTienda");
+        assertThat(body.keySet()).containsExactlyInAnyOrder(
+            "contraEntregaNormal", "maxUnidadesPorProducto", "pagoPorTienda", "sinpeManual");
         assertThat(body).containsEntry("pagoPorTienda", false);
+        assertThat(body).containsEntry("sinpeManual", false);
+    }
+
+    @Test
+    void sinpeManualSaleDeLaConfiguracionYSoloEsBooleano() {
+        ContraEntregaPolitica politica = mock(ContraEntregaPolitica.class);
+        GuestCheckoutGuard guard = mock(GuestCheckoutGuard.class);
+        var on = new CheckoutConfigPublicoController(politica, guard, false, true).config().getBody();
+        var off = new CheckoutConfigPublicoController(politica, guard, false, false).config().getBody();
+        assertThat(on).containsEntry("sinpeManual", true);
+        assertThat(off).containsEntry("sinpeManual", false);
+        assertThat(on.get("sinpeManual")).isInstanceOf(Boolean.class);
     }
 
     @Test

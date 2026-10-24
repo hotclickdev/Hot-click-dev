@@ -1,19 +1,31 @@
 /**
- * Pago en el checkout (decisión HOT_CLICK 16-oct-2026): sin SINPE manual con comprobante.
- * Dos botones que llevan a la pasarela (SINPE Móvil y Tarjeta) y efectivo contra entrega.
- * La pasarela es neutral: hoy Tilopay; cuando se migre a ONVO cambia solo `proveedorPasarela`.
+ * Pago en el checkout. Tilopay está en retiro: ningún botón va a esa pasarela.
+ * - Tarjeta: siempre «Próximamente» (fail-closed) hasta que ONVO cobre con tarjeta.
+ * - SINPE Móvil: flujo manual con comprobante (/sinpe/checkout), solo si el backend publica
+ *   `sinpeManual: true` en /public/checkout-config. Sin config o con error: «Próximamente».
+ * - Efectivo / contra entrega: igual que antes.
  */
 export const PAGO_SINPE = 'PASARELA_SINPE'
 export const PAGO_TARJETA = 'PASARELA_TARJETA'
 export const PAGO_EFECTIVO = 'EFECTIVO'
 
-export function proveedorPasarela(): string {
-  return 'TILOPAY'
+/** true si el método se muestra deshabilitado con «Próximamente». */
+export function metodoProximamente(metodoUi: string, sinpeManualHabilitado: boolean): boolean {
+  if (metodoUi === PAGO_EFECTIVO) return false
+  if (metodoUi === PAGO_SINPE) return !sinpeManualHabilitado
+  return true
 }
 
-/** Valor que viaja como `provider` al API. */
-export function proveedorDe(metodoUi: string): string {
-  return metodoUi === PAGO_EFECTIVO ? PAGO_EFECTIVO : proveedorPasarela()
+/** Valor que viaja como `provider` al API; null = método no disponible (no se inicia ningún pago). */
+export function proveedorDe(metodoUi: string, sinpeManualHabilitado = false): string | null {
+  if (metodoUi === PAGO_EFECTIVO) return PAGO_EFECTIVO
+  if (metodoUi === PAGO_SINPE && sinpeManualHabilitado) return 'SINPE'
+  return null
+}
+
+/** Lee el booleano de la config pública; cualquier otro valor (o error) = deshabilitado. */
+export function sinpeManualDesdeConfig(data: unknown): boolean {
+  return (data as { sinpeManual?: unknown } | null | undefined)?.sinpeManual === true
 }
 
 /** Compat: método con el que abre el checkout. */

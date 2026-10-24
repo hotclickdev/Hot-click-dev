@@ -10,7 +10,7 @@ import { SINPE_NUMERO } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import type { CheckoutFormState } from './useCheckoutForm'
 import type { CodigosPedido } from './useCodigosPedido'
-import { PAGO_EFECTIVO, contraEntregaDisponible, efectivoDisponible } from './pagoPrincipal'
+import { PAGO_EFECTIVO, contraEntregaDisponible, efectivoDisponible, metodoProximamente } from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
 
 type MetodosPagoProps = {
@@ -35,13 +35,14 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
         <div role="radiogroup" aria-label={t('checkout.paymentMethod')} className="flex items-start gap-3">
           {METODOS.map((metodo) => {
             const activo = form.metodoPago === metodo.id
-            const bloqueado = metodo.id === PAGO_EFECTIVO && rapido
+            const proximamente = metodoProximamente(metodo.id, form.sinpeManualHabilitado)
+            const bloqueado = proximamente || (metodo.id === PAGO_EFECTIVO && rapido)
             return (
               <label key={metodo.id} className={`flex min-w-px flex-1 flex-col items-start gap-1 rounded-[12px] p-[14px] leading-[normal] ${bloqueado ? 'cursor-not-allowed opacity-45' : 'cursor-pointer'} ${activo ? 'border-2 border-hc-blue-600 bg-hc-blue-50' : 'border border-hc-n-200 bg-hc-n-0'}`}>
                 <input type="radio" name="pago" value={metodo.id} checked={activo} disabled={bloqueado} onChange={() => form.setMetodoPago(metodo.id)} className="sr-only" />
                 <IconoFigma src={metodo.icono} size={20} className={metodo.color} />
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
-                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>
+                <span className="text-[12px] text-hc-n-600">{proximamente ? t('checkout.f.proximamente') : t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>
               </label>
             )
           })}
@@ -56,8 +57,9 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
     <div role="radiogroup" aria-label={t('checkout.paymentMethod')} className="flex flex-col gap-3">
       {METODOS.map((metodo) => {
         const activo = form.metodoPago === metodo.id
-        const bloqueado = metodo.id === PAGO_EFECTIVO && rapido
-        const esPrincipal = metodo.id !== 'EFECTIVO'
+        const proximamente = metodoProximamente(metodo.id, form.sinpeManualHabilitado)
+            const bloqueado = proximamente || (metodo.id === PAGO_EFECTIVO && rapido)
+        const esPrincipal = metodo.id !== 'EFECTIVO' && !proximamente
         return (
           <div key={metodo.id} className={`flex flex-col gap-3 rounded-[14px] p-[14px] leading-[normal] ${activo ? 'border-2 border-hc-blue-600 bg-hc-blue-50' : 'border border-hc-n-200 bg-hc-n-0'} ${bloqueado ? 'opacity-45' : ''}`}>
             <label className={`flex items-center gap-3 ${bloqueado ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
@@ -73,7 +75,7 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
               <IconoFigma src={metodo.icono} size={20} className={metodo.color} />
               <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
                 <span className="text-[14px] font-semibold text-hc-n-900">{t(`checkout.f.${metodo.titulo}`)}</span>
-                <span className="text-[12px] text-hc-n-600">{t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>
+                <span className="text-[12px] text-hc-n-600">{proximamente ? t('checkout.f.proximamente') : t(`checkout.f.${metodo.subtitulo}`, { numero: SINPE_NUMERO })}</span>
               </span>
               {esPrincipal && METODOS.length > 1 && <span className="shrink-0 rounded-full bg-hc-success-bg px-[7px] py-[2px] text-[10px] font-semibold text-hc-success-text">{t('checkout.f.masUsado')}</span>}
             </label>

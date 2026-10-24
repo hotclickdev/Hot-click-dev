@@ -18,6 +18,7 @@ type CheckoutActionsDeps = {
   totalFinal: number
   metodoEnvio: string
   metodoPago: string
+  sinpeManualHabilitado?: boolean
   notas: string
   telefono: string
   direccion: string
@@ -75,6 +76,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     totalFinal,
     metodoEnvio,
     metodoPago,
+    sinpeManualHabilitado,
     notas,
     telefono,
     direccion,
@@ -165,7 +167,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
       setSinpeNombreErr, setSinpeCedulaErr, telefono,
       metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
       notas, direccion, direccionPedido, sinpeEmail, totalFinal, items, bodegaRetiro,
-      cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago,
+      cuponCodigo, gcCodigo, sinpeTelefono, iniciarPago, sinpeManualHabilitado,
     })
   }, [
     aceptaDatos,
@@ -200,6 +202,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     gcCodigo,
     sinpeTelefono,
     iniciarPago,
+    sinpeManualHabilitado,
   ])
 
   const handleSinpeWhatsApp = useCallback(() => {
