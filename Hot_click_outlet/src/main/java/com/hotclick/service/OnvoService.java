@@ -129,6 +129,53 @@ public class OnvoService {
      * Crea una sesión de checkout hospedado en modo pago único (one-time-link).
      * Los montos se envían en la unidad menor de la moneda (colones × 100).
      */
+    /**
+     * Igual que {@link #crearCheckoutSession(int, String, String, String, String, Map)} pero a nombre
+     * de una cuenta conectada (campo {@code onBehalfOf} de CreateOneTimeLink). Quien llama solo pasa
+     * el id si la cuenta está ACTIVA. No toca split pay ni comisiones.
+     */
+    @CircuitBreaker(name = "onvo", fallbackMethod = "crearCheckoutSessionOnBehalfFallback")
+    @Retry(name = "onvo")
+    public OnvoCheckoutSession crearCheckoutSession(int totalColones, String descripcion,
+                                                    String successUrl, String cancelUrl,
+                                                    String customerEmail, Map<String, String> metadata,
+                                                    String onBehalfOf) {
+        if (mockMode) {
+            return new OnvoCheckoutSession("onvo_mock_" + System.currentTimeMillis(), successUrl);
+        }
+        exigirPagosDisponibles();
+        Map<String, Object> lineItem = Map.of(
+            "quantity", 1,
+            "unitAmount", totalColones * 100L,
+            "currency", "CRC",
+            "description", descripcion
+        );
+        Map<String, Object> body = new HashMap<>();
+        body.put("lineItems", List.of(lineItem));
+        body.put("redirectUrl", successUrl);
+        body.put("cancelUrl", cancelUrl);
+        body.put("metadata", metadata);
+        if (customerEmail != null && !customerEmail.isBlank()) {
+            body.put("customerEmail", customerEmail);
+        }
+        if (onBehalfOf != null && ID_ONVO.matcher(onBehalfOf).matches()) {
+            body.put("onBehalfOf", onBehalfOf);
+        }
+        try {
+            return parseCheckout(postOnvo("/checkout/sessions/one-time-link", body));
+        } catch (HttpClientErrorException e) {
+            throw new IllegalStateException(OnvoErrorSupport.mensajeCliente(e));
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private OnvoCheckoutSession crearCheckoutSessionOnBehalfFallback(int totalColones, String descripcion,
+                                                                     String successUrl, String cancelUrl,
+                                                                     String customerEmail, Map<String, String> metadata,
+                                                                     String onBehalfOf, Throwable t) {
+        throw relanzarFalloOnvo("crearCheckoutSession", t);
+    }
+
     @CircuitBreaker(name = "onvo", fallbackMethod = "crearCheckoutSessionFallback")
     @Retry(name = "onvo")
     public OnvoCheckoutSession crearCheckoutSession(int totalColones, String descripcion,

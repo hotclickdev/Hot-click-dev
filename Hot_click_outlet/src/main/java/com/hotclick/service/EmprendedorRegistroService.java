@@ -37,6 +37,7 @@ public class EmprendedorRegistroService {
     @Autowired private InputSanitizer           sanitizer;
     @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
     @Autowired private BodegaDespachoInicialService bodegaDespachoInicialService;
+    @Autowired(required = false) private com.hotclick.service.onvo.cuenta.CuentaOnvoService cuentaOnvoService;
 
     @Transactional
     public Usuario registrar(RegistroEmpresaDTO dto) {
@@ -89,6 +90,7 @@ public class EmprendedorRegistroService {
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa.setEstado(Constants.ESTADO_ACTIVO);
         empresa = empresaRepository.save(empresa);
+        if (cuentaOnvoService != null) cuentaOnvoService.alRegistrarEmpresa(empresa);
         moderacionAdminAvisoService.avisarEmpresaPendiente(
             empresa.getId(),
             empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
@@ -198,6 +200,7 @@ public class EmprendedorRegistroService {
             }
         }
         empresa = empresaRepository.save(empresa);
+        if (cuentaOnvoService != null) cuentaOnvoService.alRegistrarEmpresa(empresa);
         moderacionAdminAvisoService.avisarEmpresaPendiente(
             empresa.getId(),
             empresa.getNombreComercial() != null ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
