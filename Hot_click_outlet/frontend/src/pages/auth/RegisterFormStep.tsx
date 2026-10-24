@@ -94,7 +94,7 @@ export default function RegisterFormStep({
           <PhoneField id="registro-telefono" variante="figma" value={form.telefono} onChange={(val) => setForm((f) => ({ ...f, telefono: val }))} required />
         </div>
         <CampoCuenta id="registro-identificacion" etiqueta={t('register.identification')} icono={<IcoUsuario size={18} />}>
-          <input id="registro-identificacion" value={form.identificacion} onChange={actualizarCampo('identificacion')} required maxLength={20} placeholder="1-2345-6789" className={CLASE_ENTRADA} />
+          <input id="registro-identificacion" value={form.identificacion} onChange={actualizarCampo('identificacion')} required maxLength={20} placeholder="1-2345-6789" inputMode="numeric" autoComplete="off" className={CLASE_ENTRADA} />
         </CampoCuenta>
         <CampoCuenta id="registro-clave" etiqueta={t('register.password')} icono={<IcoCandado size={18} />}>
           <input id="registro-clave" type="password" value={form.contrasenaHash} onChange={actualizarCampo('contrasenaHash')} required minLength={8} maxLength={128} autoComplete="new-password" placeholder={t('register.minChars')} className={CLASE_ENTRADA} />

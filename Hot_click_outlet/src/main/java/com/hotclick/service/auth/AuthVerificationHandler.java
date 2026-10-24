@@ -66,6 +66,7 @@ public class AuthVerificationHandler {
             throw new IllegalArgumentException(MSG_CONTRASENA);
         }
         MayoriaEdad.exigir(usuario.getDeclaraMayoriaEdad());
+        usuario.setIdentificacion(com.hotclick.utils.CedulaRegistro.normalizarOFallar(usuario.getIdentificacion()));
         usuario.setContrasenaHash(passwordEncoder.encode(clave));
     }
 

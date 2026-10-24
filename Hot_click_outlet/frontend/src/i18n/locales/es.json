@@ -1236,7 +1236,7 @@
     "motherLastName": "Apellido materno",
     "email": "Correo electrónico",
     "phone": "Teléfono",
-    "identification": "Identificación",
+    "identification": "Cédula",
     "password": "Contraseña",
     "minChars": "Mínimo 8 caracteres",
     "confirmPassword": "Confirmar contraseña",

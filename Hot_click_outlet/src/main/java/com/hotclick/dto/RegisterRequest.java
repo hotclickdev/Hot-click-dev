@@ -27,6 +27,10 @@ public class RegisterRequest {
     @Pattern(regexp = "^[0-9+\\-\\s()]{7,20}$", message = "Teléfono inválido")
     private String telefono;
 
+    // Cédula CR: se valida y normaliza en el servicio (CedulaRegistro). Sin toString: nunca a logs.
+    @Size(max = 30, message = "Ingresá una cédula válida (física, jurídica o DIMEX)")
+    private String identificacion;
+
     private String turnstileToken;
 
     private Boolean declaraMayoriaEdad;
@@ -39,6 +43,8 @@ public class RegisterRequest {
     public void setContrasena(String v) { this.contrasena = v; }
     public String getTelefono()  { return telefono; }
     public void setTelefono(String v)  { this.telefono = v; }
+    public String getIdentificacion() { return identificacion; }
+    public void setIdentificacion(String v) { this.identificacion = v; }
     public String getTurnstileToken() { return turnstileToken; }
     public void setTurnstileToken(String v) { this.turnstileToken = v; }
 

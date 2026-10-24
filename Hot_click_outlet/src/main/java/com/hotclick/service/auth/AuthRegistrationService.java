@@ -16,6 +16,7 @@ import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.TelegramService;
 import com.hotclick.service.TurnstileService;
 import com.hotclick.service.UsuarioService;
+import com.hotclick.utils.CedulaRegistro;
 import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -50,7 +51,9 @@ public class AuthRegistrationService {
         }
         try {
             MayoriaEdad.exigir(req.getDeclaraMayoriaEdad());
+            String cedula = CedulaRegistro.normalizarOFallar(req.getIdentificacion());
             Usuario usuario = new Usuario();
+            usuario.setIdentificacion(cedula);
             usuario.setNombre(req.getNombre().trim());
             usuario.setApellidoPaterno(""); // P1-04: la columna es NOT NULL; antes daba 500 con el SQL
             usuario.setCorreo(req.getCorreo().trim().toLowerCase());

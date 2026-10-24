@@ -7,6 +7,7 @@ import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { mensajeErrorAuth } from './authHelpers'
+import { MSG_CEDULA_INVALIDA, normalizarCedulaRegistro } from './cedulaRegistro'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
@@ -64,6 +65,8 @@ export function useRegisterFlow() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (form.contrasenaHash.length < 8) { setError(t('register.minChars')); return }
+    const cedula = normalizarCedulaRegistro(form.identificacion)
+    if (!cedula) { setError(MSG_CEDULA_INVALIDA); return }
     setError(''); setLoading(true)
     try {
       const trimmed = {
@@ -73,7 +76,7 @@ export function useRegisterFlow() {
         apellidoMaterno: form.apellidoMaterno.trim(),
         correo:          form.correo.trim().toLowerCase(),
         telefono:        form.telefono.trim(),
-        identificacion:  form.identificacion.trim(),
+        identificacion:  cedula,
       }
       authService.registrarConsentimiento('REGISTRO')
       authService.registrarConsentimiento('MAYORIA_EDAD')
@@ -117,6 +120,7 @@ export function useRegisterFlow() {
     try {
       await authService.sendVerification({
         ...form,
+        identificacion: normalizarCedulaRegistro(form.identificacion) ?? form.identificacion,
         declaraMayoriaEdad: true,
       }, turnstileToken)
       toast({ message: t('register.resentSuccess'), type: 'success' })
