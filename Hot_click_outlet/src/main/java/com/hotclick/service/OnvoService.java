@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -30,6 +31,7 @@ public class OnvoService {
     private static final Logger log = LoggerFactory.getLogger(OnvoService.class);
     private static final String API_BASE = "https://api.onvopay.com/v1";
     private static final Pattern ID_ONVO = Pattern.compile("[A-Za-z0-9_-]{1,100}");
+    private static final String PREFIJO_LLAVE_PRUEBA = "onvo_test_";
 
     @Value("${onvo.secret-key:}")
     private String secretKey;
@@ -55,7 +57,8 @@ public class OnvoService {
     @PostConstruct
     public void init() {
         boolean credenciales = secretKey != null && !secretKey.isBlank();
-        mockMode = !credenciales && perfilDeSimulacion();
+        boolean simulacion = perfilDeSimulacion();
+        mockMode = !credenciales && simulacion;
         pagosDisponibles = credenciales || mockMode;
         if (mockMode) {
             log.warn("[onvo] Sin ONVO_SECRET_KEY en perfil dev/test — modo simulado. No cobra tarjetas reales.");
@@ -65,11 +68,37 @@ public class OnvoService {
             log.error("[ALERTA-PAGO] ONVO sin ONVO_SECRET_KEY fuera de dev/test. Pagos con tarjeta deshabilitados.");
             return;
         }
-        log.info("[onvo] Cliente inicializado (live={})", !secretKey.startsWith("onvo_test_"));
+        if (esLlaveDePrueba() && !simulacion) {
+            // Con una llave de prueba, una tarjeta de prueba pública daría el pedido por pagado sin plata real.
+            pagosDisponibles = false;
+            log.error("[ALERTA-PAGO] ONVO con llave de prueba fuera de dev/test. Pagos con tarjeta deshabilitados.");
+            return;
+        }
+        log.info("[onvo] Cliente inicializado (live={})", !esLlaveDePrueba());
+    }
+
+    private boolean esLlaveDePrueba() {
+        return secretKey != null && secretKey.startsWith(PREFIJO_LLAVE_PRUEBA);
+    }
+
+    /** Modo («test» o «live») que tienen que traer la sesión y el intent de ONVO según la llave configurada. */
+    public String modoEsperado() {
+        return esLlaveDePrueba() ? "test" : "live";
     }
 
     private boolean perfilDeSimulacion() {
-        return environment != null && environment.acceptsProfiles(Profiles.of("dev", "test"));
+        return environment != null
+            && !perfilProduccionActivo()
+            && environment.acceptsProfiles(Profiles.of("(dev | test) & !prod & !production"));
+    }
+
+    /** prod/production activos en cualquier capitalización (PROD, Production…): nunca se simula. */
+    private boolean perfilProduccionActivo() {
+        for (String p : environment.getActiveProfiles()) {
+            String n = p == null ? "" : p.trim().toLowerCase(Locale.ROOT);
+            if (n.equals("prod") || n.equals("production")) return true;
+        }
+        return false;
     }
 
     /** Sin llave fuera de dev/test: falla antes de tocar ONVO o de inventar un id. */
@@ -294,14 +323,34 @@ public class OnvoService {
         return leer("/payment-intents/", intentId);
     }
 
-    /** 4xx (no existe o no es de esta cuenta) da vacío; 5xx y red se relanzan para reintentar después. */
+    /**
+     * Solo un 404 significa «ONVO no la tiene» y da vacío. 401/403/429 (llave revocada o mal rotada,
+     * límite de tasa) y 5xx o red se relanzan: no se sabe si hubo cobro, así que nadie cancela por eso.
+     */
     private Map<?, ?> leer(String ruta, String id) {
         if (!consultable(id)) return Map.of();
         try {
             Map<?, ?> body = getOnvo(ruta + id);
             return body == null ? Map.of() : body;
-        } catch (HttpClientErrorException e) {
-            log.warn("[onvo] No se pudo leer {}{}: {}", ruta, id, e.getStatusCode());
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("[onvo] ONVO no tiene {}{}", ruta, id);
+            return Map.of();
+        }
+    }
+
+    /**
+     * Expira la checkout session en ONVO (POST /v1/checkout/sessions/{id}/expire) para que ya no se pueda
+     * pagar. Devuelve la sesión que responde ONVO; vacío si ONVO no la tiene (404) o no hay llave.
+     * Cualquier otro error se relanza: sin confirmar que expiró no se cancela el pedido.
+     */
+    @CircuitBreaker(name = "onvo", fallbackMethod = "lecturaFallback")
+    public Map<?, ?> expirarCheckoutSession(String sessionId) {
+        if (!consultable(sessionId)) return Map.of();
+        try {
+            Map<?, ?> body = postOnvo("/checkout/sessions/" + sessionId + "/expire", Map.of());
+            return body == null ? Map.of() : body;
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("[onvo] ONVO no tiene la sesión {} para expirar", sessionId);
             return Map.of();
         }
     }

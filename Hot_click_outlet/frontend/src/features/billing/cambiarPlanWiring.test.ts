@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CambiarPlanResultado } from '@/services/billingService'
+import { rutaCambioPlan } from './useCambiarPlan'
 
 /**
  * Wiring del CTA de cambio de plan: no navega a éxito sin cobro cuando requiere_pago.
@@ -32,5 +33,17 @@ describe('cambiarPlan CTA wiring', () => {
   it('requiere_pago sin subscriptionId no abre cobro', () => {
     const result: CambiarPlanResultado = { status: 'requiere_pago' }
     expect(debeMostrarCobro(result)).toBe(false)
+  })
+})
+
+describe('bajar a Emprendedor', () => {
+  it('va por /billing/cancelar, nunca por cambiar-plan', () => {
+    expect(rutaCambioPlan('EMPRENDEDOR')).toBe('cancelar')
+    expect(rutaCambioPlan('emprendedor')).toBe('cancelar')
+  })
+  it('planes de pago siguen por cambiar-plan', () => {
+    expect(rutaCambioPlan('PYME')).toBe('cambiar-plan')
+    expect(rutaCambioPlan('NEGOCIO_PLUS')).toBe('cambiar-plan')
+    expect(rutaCambioPlan(undefined)).toBe('cambiar-plan')
   })
 })

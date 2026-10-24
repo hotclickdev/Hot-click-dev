@@ -133,7 +133,7 @@
     "title": "Publish and get paid on HotClick.",
     "sub": "No monthly fee: just a commission when you sell.",
     "heroBadge": "No team or storefront needed",
-    "heroPrecioLinea": "₡0 /mo · {{comision}}% commission (min ₡{{minimo}}, payment gateway included)",
+    "heroPrecioLinea": "₡0 /mo · {{comision}}% commission with no minimum (payment gateway included)",
     "titleOwner": "Keep growing in Sistema",
     "subOwner": "Complete your store brand, publish a product, and review your plan. The start checklist is in your panel.",
     "paso1": "Create my business",
@@ -184,7 +184,7 @@
       "1 warehouse and 1 POS till",
       "Card and SINPE payments",
       "Shipping across Costa Rica",
-      "Commission: 9% per sale (₡700 minimum)"
+      "Commission: 9% per sale, no minimum"
     ],
     "planPymeBadge": "To grow",
     "planPymeTitle": "PYME",
@@ -195,7 +195,7 @@
       "2 warehouses and 2 tills",
       "Purchasing and inventory",
       "AI and advanced reports",
-      "₡12,900/month + 7% per sale (₡700 minimum)"
+      "₡12,900/month + 7.5% per sale, no minimum"
     ],
     "planPlusBadge": "To operate at scale",
     "planPlusTitle": "Negocio Plus",
@@ -206,18 +206,18 @@
       "Multi-branch and orders per location",
       "Customer CRM",
       "Unlimited AI",
-      "₡28,900/month + 7% per sale (₡700 minimum)"
+      "₡28,900/month + 6% per sale, no minimum"
     ],
     "pymeCta": "Create my business",
     "plusCta": "Create my business",
     "faqTitle": "Frequently asked questions",
     "faqSub": "What people ask before signing up.",
     "faq1q": "Do you charge anything to sign up?",
-    "faq1a": "Nothing is charged when you sign up. The commission is 9% per sale, with a ₡700 minimum, and you will see it here before selling.",
+    "faq1a": "Nothing is charged when you sign up. The commission is 9% per sale, with no minimum, and you will see it here before selling.",
     "faq2q": "What happens if the free slots fill up?",
     "faq2a": "We'll let you know above and the button will offer PYME or Negocio Plus instead. Your signup won't be closed.",
     "faq3q": "How do I get paid?",
-    "faq3a": "By card or SINPE inside HotClick. The commission is 9% per sale (₡700 minimum) and you see it before selling.",
+    "faq3a": "By card or SINPE inside HotClick. The commission is 9% per sale, with no minimum, and you see it before selling.",
     "faq4q": "Can I upgrade later?",
     "faq4a": "Yes, you can move to PYME or Negocio Plus whenever you need to, without losing your catalog or orders.",
     "galeriaCaption": "Shops and small businesses: the same kind of store you can sell on HotClick.",
@@ -309,9 +309,11 @@
     "comoEntras2Titulo": "Publish your first product",
     "comoEntras2Desc": "Upload photos, price, and you're ready to sell.",
     "comoEntras3Titulo": "Get paid by card or SINPE",
-    "comoEntras3Desc": "HotClick withholds {{comision}}% (minimum ₡{{minimo}}) per sale, gateway included.",
+    "comoEntras3Desc": "HotClick withholds {{comision}}% per sale, no minimum, gateway included.",
     "precioMensualidad": "₡0 /mo",
-    "precioComision": "{{comision}}% commission per sale (minimum ₡{{minimo}}, payment gateway included)",
+    "precioMensualidadUsd": "US${{monto}}/mo",
+    "precioMensualidadDolares": "Monthly fee in US dollars",
+    "precioComision": "{{comision}}% commission per sale, no minimum (payment gateway included)",
     "ctaFinalTitle": "Ready to sell with no monthly fee?"
   },
   "pyme": {
@@ -368,7 +370,7 @@
     "comoEntras2Desc": "With the Tilopay gateway the panel already uses.",
     "comoEntras3Titulo": "You're in with PYME active",
     "comoEntras3Desc": "Team, inventory, and register, ready to operate.",
-    "comparativaNota": "PYME: ₡12,900/month + 7% per sale. Emprendedor: no monthly fee + 9% per sale. Both with a ₡700 minimum per sale.",
+    "comparativaNota": "PYME: ₡12,900/month + 7.5% per sale. Emprendedor: no monthly fee + 9% per sale. Neither has a minimum per sale.",
     "faqTitle": "Frequently asked questions",
     "faq2q": "How much do I need to sell for it to be worth it?",
     "faq2a": "If you sell regularly, the lower commission recovers the monthly fee fast. If you sell little, Emprendedor suits you better.",

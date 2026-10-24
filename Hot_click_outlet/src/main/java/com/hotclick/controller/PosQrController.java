@@ -68,12 +68,17 @@ public class PosQrController {
         try {
             Long usuarioId = extractUserId(request);
             Long empresaId = extractEmpresaId(request);
-            String notas   = body != null ? (String) body.get("notas") : null;
-            PosQrSesion sesion = posQrService.confirmarSinpe(token, usuarioId, empresaId, notas);
+            Object notasCrudas = body != null ? body.get("notas") : null;
+            String notas   = notasCrudas instanceof String n ? n : null;
+            Object referencia = body != null ? body.get("referencia") : null;
+            PosQrSesion sesion = posQrService.confirmarSinpe(token, usuarioId, empresaId, referencia, notas);
             return ResponseEntity.ok(ResponseDTO.success("SINPE confirmado", Map.of(
                 "estado",    sesion.getEstado(),
                 "pedidoId",  sesion.getPedidoId() != null ? sesion.getPedidoId() : 0
             )));
+        } catch (com.hotclick.exception.AutoconfirmacionSinpeException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage(),
+                Map.of("codigo", com.hotclick.exception.AutoconfirmacionSinpeException.CODIGO)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }

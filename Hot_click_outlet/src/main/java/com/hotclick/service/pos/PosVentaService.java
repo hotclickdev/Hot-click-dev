@@ -101,6 +101,17 @@ public class PosVentaService {
         }
     }
 
+    /**
+     * Fail-closed (#221): la venta directa de caja nace ENTREGADO, así que solo admite cobros en mano
+     * (EFECTIVO). SINPE (G1: solo se confirma por pasarela), tarjeta y cualquier otra van por el QR del POS.
+     */
+    static void exigirMetodoSinPasarela(String metodoPago) {
+        if (!com.hotclick.service.VentaService.esMetodoSinPasarela(metodoPago)) {
+            throw new IllegalArgumentException("En caja directa solo se registra EFECTIVO; "
+                + "para tarjeta o SINPE generá el QR de cobro");
+        }
+    }
+
     static java.util.Map<String, Object> aFilaHistorial(Pedido p) {
         java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
         m.put("id", p.getId());
@@ -152,7 +163,9 @@ public class PosVentaService {
         pedido.setOrigen(OrigenPedido.POS.codigo());
         pedido.setEstadoPedido("ENTREGADO");
         pedido.setMetodoEnvio("RETIRO");
-        pedido.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago() : "EFECTIVO");
+        String metodoPago = com.hotclick.service.VentaService.normalizarMetodo(dto.getMetodoPago());
+        exigirMetodoSinPasarela(metodoPago);
+        pedido.setMetodoPago(metodoPago);
         pedido.setCostoEnvio(0);
         pedido.setDescuentoTotal(resolverDescuento(dto.getDescuentoGlobal()));
         pedido.setAplicaImpuesto(false);

@@ -158,12 +158,12 @@ export function useAdminPOS() {
 
   const handleQrCliente = async () => {
     if (cartItems.length === 0) return
-    // QR para el cliente: la caja habilita SINPE Móvil y tarjeta y el cliente elige (decisión B16).
-    await crearSesionQr('TARJETA', ['TARJETA', 'SINPE'])
+    // QR para el cliente: el POS solo cobra SINPE por QR (sin tarjeta).
+    await crearSesionQr('SINPE', ['SINPE'])
   }
 
   const handleConfirmarPago = async (payload: PayloadCobroPos) => {
-    if (payload.metodoPago === 'SINPE' || payload.metodoPago === 'TARJETA') {
+    if (payload.metodoPago === 'SINPE') {
       await crearSesionQr(payload.metodoPago)
       return
     }
@@ -242,9 +242,12 @@ export function useAdminPOS() {
       return
     }
 
+    // Confirmación manual: el backend exige la referencia del comprobante SINPE (6-30 letras/números, única).
+    const referencia = window.prompt('Referencia del comprobante SINPE (6 a 30 letras o números)')?.trim()
+    if (!referencia) return
     setLoadingConfirm(true)
     try {
-      await posService.confirmarSinpeQr(token as string, {})
+      await posService.confirmarSinpeQr(token as string, { referencia })
       setReceipt(receiptBase)
       setQrData(null)
       setCartItems([])

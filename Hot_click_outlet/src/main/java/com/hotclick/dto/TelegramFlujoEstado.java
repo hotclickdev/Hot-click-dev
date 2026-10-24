@@ -71,7 +71,7 @@ public class TelegramFlujoEstado {
     private List<ItemBorrador> items;
     /** Producto pendiente de cantidad (paso CANT) */
     private Long pid;
-    /** Método de pago elegido: SINPE | EFECTIVO | TARJETA */
+    /** Método de pago elegido: SINPE | EFECTIVO (sin tarjeta en el bot) */
     private String pago;
     /** Cliente asociado (opcional) */
     private Long cli;

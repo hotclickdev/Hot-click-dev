@@ -100,17 +100,29 @@ public class PaymentExpirationCleanupService {
 
     /**
      * Antes de cancelar un pago ONVO vencido se le pregunta a ONVO: si cobró (webhook atrasado o perdido)
-     * se confirma; si no se pudo consultar o el monto no coincide, queda pendiente para la próxima vuelta.
+     * se confirma; si el cobro sigue en proceso, no se pudo consultar o el monto no coincide, queda
+     * pendiente para la próxima vuelta. Solo se cancela si ONVO no tiene la sesión o la deja expirada
+     * y sin cobro, así ya no se puede pagar un pedido cancelado.
      */
     private boolean onvoPermiteCancelar(Pago pago) {
         try {
             OnvoPaymentProvider.Verificacion v = onvoPaymentProvider.procesarPagoVerificado(
                 pago.getMerchantToken(), "cleanup");
-            if (v == OnvoPaymentProvider.Verificacion.OK || v == OnvoPaymentProvider.Verificacion.DUPLICADO) {
-                log.info("[payment-cleanup] ONVO ya cobrado — confirmado: {}", pago.getMerchantToken());
-                return false;
+            switch (v) {
+                case OK, DUPLICADO, COBRADO_SOBRE_CANCELADO -> {
+                    log.info("[payment-cleanup] ONVO ya cobrado — confirmado: {}", pago.getMerchantToken());
+                    return false;
+                }
+                case NO_ENCONTRADO -> {
+                    return true;
+                }
+                case NO_PAGADO -> {
+                    return onvoPaymentProvider.expirarSesionSinCobro(pago.getMerchantToken());
+                }
+                default -> {
+                    return false;
+                }
             }
-            return v != OnvoPaymentProvider.Verificacion.DATOS_DISTINTOS;
         } catch (Exception e) {
             log.warn("[payment-cleanup] Reconsulta ONVO falló token={}: {}", pago.getMerchantToken(), e.getMessage());
             return false;

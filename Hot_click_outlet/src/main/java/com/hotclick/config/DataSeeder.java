@@ -64,25 +64,25 @@ public class DataSeeder implements ApplicationRunner {
     // Montos de planes desde configuración (application.properties); ver finanzas/planes_pendientes.md.
     @Value("${hotclick.planes.emprendedor.precio-mensual-crc}") private int empPrecio;
     @Value("${hotclick.planes.emprendedor.comision-pct}") private BigDecimal empPct;
-    @Value("${hotclick.planes.emprendedor.comision-minima-crc}") private int empMin;
+    @Value("${hotclick.planes.emprendedor.precio-mensual-usd:#{null}}") private BigDecimal empUsd; // null = sin precio (la API da 409)
     @Value("${hotclick.planes.pyme.precio-mensual-crc}") private int pymePrecio;
     @Value("${hotclick.planes.pyme.comision-pct}") private BigDecimal pymePct;
-    @Value("${hotclick.planes.pyme.comision-minima-crc}") private int pymeMin;
+    @Value("${hotclick.planes.pyme.precio-mensual-usd:#{null}}") private BigDecimal pymeUsd; // null = sin precio (la API da 409)
     @Value("${hotclick.planes.negocio-plus.precio-mensual-crc}") private int plusPrecio;
     @Value("${hotclick.planes.negocio-plus.comision-pct}") private BigDecimal plusPct;
-    @Value("${hotclick.planes.negocio-plus.comision-minima-crc}") private int plusMin;
+    @Value("${hotclick.planes.negocio-plus.precio-mensual-usd:#{null}}") private BigDecimal plusUsd; // null = sin precio (la API da 409)
 
     private void seedPlanesSaas() {
-        seedPlan("EMPRENDEDOR", "Comisión por venta. Sin mensualidad para los primeros negocios.",
-            BigDecimal.ZERO, empPct, empMin, empPrecio,
+        seedPlan("EMPRENDEDOR", "Gratis para los primeros 70 negocios; después, mensualidad en dólares + 9% por venta.",
+            empUsd, empPct, 0, empPrecio,
             2, 50, 1, 1,
             true /*pos (V174)*/, false, false, true, false, false, 0, false);
         seedPlan("PYME", "Mensualidad + comisión por venta.",
-            new BigDecimal("11.99"), pymePct, pymeMin, pymePrecio,
+            pymeUsd, pymePct, 0, pymePrecio,
             5, 500, 2, 2,
             true, false, true, true, true, false, 80, true);
         seedPlan("NEGOCIO_PLUS", "Mensualidad + comisión por venta sin tope.",
-            new BigDecimal("19.99"), plusPct, plusMin, plusPrecio,
+            plusUsd, plusPct, 0, plusPrecio,
             -1, -1, -1, -1,
             true, true, true, true, true, false, -1, true);
         backfillSinPlan();
@@ -112,7 +112,8 @@ public class DataSeeder implements ApplicationRunner {
         plan.setNombre(nombre);
         plan.setDescripcion(descripcion);
         plan.setPrecioMensual(precioMensualCrc);
-        plan.setPrecioUsd(precioUsd);
+        // Columna legada NOT NULL: si no hay precio configurado queda en 0 en BD, pero la API no la publica (usa PreciosPlanesConfig).
+        plan.setPrecioUsd(precioUsd != null ? precioUsd : BigDecimal.ZERO);
         plan.setComisionPorcentaje(comision);
         plan.setComisionMinimaCrc(comisionMinimaCrc);
         plan.setMaxUsuarios(maxUsuarios);

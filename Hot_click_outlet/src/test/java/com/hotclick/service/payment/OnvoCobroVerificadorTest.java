@@ -46,32 +46,32 @@ class OnvoCobroVerificadorTest {
     @DisplayName("Sesión paid/complete + intent succeeded + monto ×100 en CRC → se acepta")
     void aceptaMontoEnCentimos() {
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
-            intent("succeeded", 1_250_000, "CRC"))).isEqualTo(Decision.ACEPTAR);
+            intent("succeeded", 1_250_000, "CRC"), "live")).isEqualTo(Decision.ACEPTAR);
     }
 
     @Test
     @DisplayName("ONVO manda el monto con decimales (1250000.0) → igual se acepta")
     void aceptaMontoConDecimalesCero() {
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
-            intent("succeeded", "1250000.0", "CRC"))).isEqualTo(Decision.ACEPTAR);
+            intent("succeeded", "1250000.0", "CRC"), "live")).isEqualTo(Decision.ACEPTAR);
     }
 
     @Test
     @DisplayName("Bug de #157: comparar céntimos contra colones. Un intent por 12.500 céntimos (₡125) no paga ₡12.500")
     void rechazaMontoEnColones() {
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
-            intent("succeeded", 12_500, "CRC"))).isEqualTo(Decision.RECHAZAR_MONTO);
+            intent("succeeded", 12_500, "CRC"), "live")).isEqualTo(Decision.RECHAZAR_MONTO);
     }
 
     @Test
     @DisplayName("Monto distinto, moneda distinta o sin monto → se rechaza")
     void rechazaDatosDistintos() {
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
-            intent("succeeded", 1_249_900, "CRC"))).isEqualTo(Decision.RECHAZAR_MONTO);
+            intent("succeeded", 1_249_900, "CRC"), "live")).isEqualTo(Decision.RECHAZAR_MONTO);
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
-            intent("succeeded", 1_250_000, "USD"))).isEqualTo(Decision.RECHAZAR_MONTO);
+            intent("succeeded", 1_250_000, "USD"), "live")).isEqualTo(Decision.RECHAZAR_MONTO);
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
-            intent("succeeded", null, "CRC"))).isEqualTo(Decision.RECHAZAR_MONTO);
+            intent("succeeded", null, "CRC"), "live")).isEqualTo(Decision.RECHAZAR_MONTO);
     }
 
     @Test
@@ -79,7 +79,7 @@ class OnvoCobroVerificadorTest {
     void rechazaOtroIntent() {
         Map<String, Object> otro = intent("succeeded", 1_250_000, "CRC");
         otro.put("id", "pi_ajeno");
-        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"), otro))
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"), otro, "live"))
             .isEqualTo(Decision.RECHAZAR_MONTO);
     }
 
@@ -87,12 +87,12 @@ class OnvoCobroVerificadorTest {
     @DisplayName("Sesión sin pagar, abierta o vencida, o intent no succeeded → no está pagado")
     void noPagado() {
         Map<String, Object> ok = intent("succeeded", 1_250_000, "CRC");
-        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("unpaid", "open"), ok)).isEqualTo(Decision.NO_PAGADO);
-        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "expired"), ok)).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("unpaid", "open"), ok, "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "expired"), ok, "live")).isEqualTo(Decision.NO_PAGADO);
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
-            intent("processing", 1_250_000, "CRC"))).isEqualTo(Decision.NO_PAGADO);
+            intent("canceled", 1_250_000, "CRC"), "live")).isEqualTo(Decision.NO_PAGADO);
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
-            intent("failed", 1_250_000, "CRC"))).isEqualTo(Decision.NO_PAGADO);
-        assertThat(OnvoCobroVerificador.decidir(pago(12_500), Map.of(), Map.of())).isEqualTo(Decision.NO_PAGADO);
+            intent("failed", 1_250_000, "CRC"), "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), Map.of(), Map.of(), "live")).isEqualTo(Decision.NO_PAGADO);
     }
 }

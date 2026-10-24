@@ -212,7 +212,7 @@ export default function AdminPlanes() {
               plan={plan}
               esCurrent={plan.nombre === planNombre}
               loading={loadingPlan === plan.id}
-              onSelect={(id) => { void seleccionarPlan(id) }}
+              onSelect={(id) => { void seleccionarPlan(id, plan.nombre) }}
             />
           ))}
         </div>
