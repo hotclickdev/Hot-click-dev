@@ -123,8 +123,8 @@ public class VectorSearchService {
                 + " AND (emb.embedding <=> ?::vector) <= ?"
                 + " ORDER BY "
                 + boostPers
-                + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
-                + "emb.embedding <=> ?::vector"
+                + "emb.embedding <=> ?::vector, "
+                + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END"
                 + " LIMIT ?";
 
             List<ProductoContexto> resultados = jdbc.query(sql, (rs, rowNum) -> mapProducto(rs), params.toArray());
@@ -210,8 +210,8 @@ public class VectorSearchService {
                 + " AND p.search_vector @@ websearch_to_tsquery('spanish', ?)"
                 + " ORDER BY "
                 + boostPers
-                + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END, "
-                + "rank DESC"
+                + "rank DESC, "
+                + "CASE WHEN p.imagen_principal_url IS NOT NULL AND TRIM(p.imagen_principal_url) <> '' THEN 0 ELSE 1 END"
                 + (synCount > 0 ? ", " + ChatKeywordRankSql.scoreExpr(synCount, 1, 1, 1, 0) + " DESC" : "")
                 + ", p.id_producto DESC"
                 + " LIMIT ?";

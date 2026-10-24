@@ -140,7 +140,7 @@ function VisitanteEstadoExito({
         <p className="mt-1 text-xs text-hc-muted">Si tenés un problema, escribinos por WhatsApp.</p>
       </div>
       <p className="mt-4 text-xs text-hc-muted">
-        Recibirás un correo de confirmación. ¿Dudas? Contáctanos por WhatsApp.
+        Recibirás un correo de confirmación. ¿Dudas? Contactanos por WhatsApp.
       </p>
       <div className="mt-6 flex flex-col gap-3">
         {token ? (

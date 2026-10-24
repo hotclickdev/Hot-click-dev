@@ -9,6 +9,8 @@ package com.hotclick.rag.classifier;
  */
 public enum QueryClassification {
     PRODUCTO,
+    /** Pregunta sobre el producto que el cliente está viendo (se responde con su ficha). */
+    PREGUNTA_PRODUCTO_ACTUAL,
     COMPRA,
     SOPORTE,
     FUERA_DE_DOMINIO,
