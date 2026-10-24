@@ -7,6 +7,7 @@ import useHojaAgregadoStore from '@/store/hojaAgregadoStore'
 import type { ProductoAgregado } from '@/store/hojaAgregadoStore'
 import { formatPrice } from '@/utils/format'
 import { ICONOS_COMPRA } from '@/pages/checkout/iconosCompra'
+import { VELO_HOJA } from '@/components/ui/sistema/estilosHoja'
 
 /** Hoja «Agregado a tu pedido» (Figma `45:1607`), montada una vez para todo el sitio. */
 export default function HojaAgregado() {
@@ -40,7 +41,7 @@ function Hoja({ agregado, onCerrar }: { agregado: ProductoAgregado; onCerrar: ()
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center">
-      <button type="button" aria-label={t('compra.agregado.cerrar')} onClick={onCerrar} className="absolute inset-0 bg-hc-n-900" />
+      <button type="button" aria-label={t('compra.agregado.cerrar')} onClick={onCerrar} className={`absolute inset-0 ${VELO_HOJA}`} />
       <section
         role="dialog"
         aria-modal="true"
