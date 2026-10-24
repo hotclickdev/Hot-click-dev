@@ -91,6 +91,10 @@ public class SinpeController {
             sinpeService.subirComprobante(numeroPedido, imagen, nombreRemitente,
                                           cedulaRemitente, telefonoRemitente, correo);
             return ResponseEntity.ok(ResponseDTO.success("Comprobante recibido. En revisión.", null));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("Pedido no encontrado"));
+        } catch (com.hotclick.exception.RateLimitExcedidoException e) {
+            return ResponseEntity.status(429).body(ResponseDTO.error(e.getMessage()));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.StockInsuficienteException e) {
@@ -98,7 +102,7 @@ public class SinpeController {
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("[comprobante] {}", e.getClass().getSimpleName());
             return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
     }
@@ -116,6 +120,10 @@ public class SinpeController {
             sinpeService.subirComprobante(numeroPedido, imagen, nombreRemitente,
                                           cedulaRemitente, telefonoRemitente, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Comprobante recibido. En revisión.", null));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("Pedido no encontrado"));
+        } catch (com.hotclick.exception.RateLimitExcedidoException e) {
+            return ResponseEntity.status(429).body(ResponseDTO.error(e.getMessage()));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.StockInsuficienteException e) {
@@ -123,7 +131,7 @@ public class SinpeController {
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("[comprobante] {}", e.getClass().getSimpleName());
             return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
         }
     }

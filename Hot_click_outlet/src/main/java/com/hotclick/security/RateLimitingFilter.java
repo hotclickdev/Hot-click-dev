@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -72,6 +73,29 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     @Autowired private SecurityAuditService auditService;
     @Autowired private RateLimiter          rateLimiter;
     @Autowired private ClientIpResolver     clientIpResolver;
+
+    // H-07: topes SINPE configurables (application.properties / env). Defaults conservadores.
+    @Value("${rate-limit.sinpe.guest-checkout.max:3}")            private int sinpeCheckoutMax = 3;
+    @Value("${rate-limit.sinpe.guest-checkout.window-seconds:60}") private int sinpeCheckoutWindow = 60;
+    /** Por IP, sumando todos los pedidos: frena subir comprobantes a pedidos ajenos en masa. */
+    @Value("${rate-limit.sinpe.comprobante.ip.max:10}")             private int sinpeCompIpMax = 10;
+    @Value("${rate-limit.sinpe.comprobante.ip.window-seconds:600}") private int sinpeCompIpWindow = 600;
+    /**
+     * Por pedido + IP (H-07 r2 (a)). El tope global por pedido ya no vive aquí: lo cuenta
+     * SinpeComprobanteService solo para intentos con correo válido, así un tercero que conoce
+     * el número no bloquea el comprobante de la víctima.
+     */
+    @Value("${rate-limit.sinpe.comprobante.pedido-ip.max:5}")               private int sinpeCompPedidoMax = 5;
+    @Value("${rate-limit.sinpe.comprobante.pedido-ip.window-seconds:3600}") private int sinpeCompPedidoWindow = 3600;
+    /** H-07 r2 (c): ruta autenticada /api/sinpe/{n}/comprobante. */
+    @Value("${rate-limit.sinpe.comprobante-auth.ip.max:20}")             private int sinpeAuthIpMax = 20;
+    @Value("${rate-limit.sinpe.comprobante-auth.ip.window-seconds:600}") private int sinpeAuthIpWindow = 600;
+    @Value("${rate-limit.sinpe.comprobante-auth.pedido-ip.max:5}")               private int sinpeAuthPedidoMax = 5;
+    @Value("${rate-limit.sinpe.comprobante-auth.pedido-ip.window-seconds:3600}") private int sinpeAuthPedidoWindow = 3600;
+
+    private static final String SINPE_GUEST_CHECKOUT = "/api/sinpe/guest-checkout";
+    private static final String SINPE_GUEST_PREFIX   = "/api/sinpe/guest/";
+    private static final String SINPE_COMPROBANTE    = "/comprobante";
 
     private record Limit(int maxRequests, int windowSeconds) {}
     /**
@@ -192,6 +216,15 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         if ("POST".equalsIgnoreCase(method)) {
             String ip    = clientIpResolver.resolve(request);
+            int sinpe = evaluarTopeSinpe(ip, path);
+            if (sinpe == 400) {
+                rechazarFormato(response);
+                return;
+            }
+            if (sinpe == 429) {
+                rechazar(response, ip, path);
+                return;
+            }
             Limit  limit = LIMITS.get(path);
             String bucket = path;
 
@@ -212,13 +245,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             if (limit != null) {
                 String key = "ip:" + ip + ":" + bucket;
                 if (!rateLimiter.tryAcquire(key, limit.maxRequests(), limit.windowSeconds())) {
-                    log.warn("[RATE-LIMIT] ip={} path={}", ip, RutaLogSegura.enmascarar(path));
-                    try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
-                    response.setStatus(429);
-                    response.setCharacterEncoding("UTF-8"); // ESC-8: sin mojibake en «Esperá»
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write(
-                        "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
+                    rechazar(response, ip, path);
                     return;
                 }
             }
@@ -243,5 +270,57 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    private static final String SINPE_PREFIX = "/api/sinpe/";
+
+    /**
+     * H-07: SINPE. guest-checkout: por IP. Comprobante (invitado y autenticado): por IP (todos los
+     * pedidos) y por pedido+IP. B-1: el número sale del segmento ya decodificado (igual que el
+     * @PathVariable de Spring) y normalizado; si no tiene formato de pedido, 400 sin gastar cupo.
+     * @return 0 = sigue, 400 = formato inválido, 429 = tope excedido
+     */
+    int evaluarTopeSinpe(String ip, String path) {
+        if (SINPE_GUEST_CHECKOUT.equals(path)) {
+            return rateLimiter.tryAcquire("ip:" + ip + ":" + path, sinpeCheckoutMax, sinpeCheckoutWindow) ? 0 : 429;
+        }
+        if (!path.startsWith(SINPE_PREFIX) || !path.endsWith(SINPE_COMPROBANTE)) return 0;
+        String[] seg = path.substring(SINPE_PREFIX.length()).split("/", -1);
+        boolean guest;
+        String crudo;
+        if (seg.length == 3 && "guest".equals(seg[0]) && "comprobante".equals(seg[2])) {
+            guest = true; crudo = seg[1];
+        } else if (seg.length == 2 && "comprobante".equals(seg[1])) {
+            guest = false; crudo = seg[0];
+        } else {
+            return 0;
+        }
+        String numero = NumeroPedidoNormalizer.normalizarSegmento(crudo);
+        if (numero == null) return 400;
+        String ruta = guest ? "guest" : "auth";
+        boolean ipOk = guest
+            ? rateLimiter.tryAcquire("ip:" + ip + ":" + SINPE_GUEST_PREFIX + "*" + SINPE_COMPROBANTE, sinpeCompIpMax, sinpeCompIpWindow)
+            : rateLimiter.tryAcquire("ip:" + ip + ":" + SINPE_PREFIX + "*" + SINPE_COMPROBANTE, sinpeAuthIpMax, sinpeAuthIpWindow);
+        boolean pedidoOk = guest
+            ? rateLimiter.tryAcquire("pedido-ip:" + ruta + ":" + numero + ":" + ip, sinpeCompPedidoMax, sinpeCompPedidoWindow)
+            : rateLimiter.tryAcquire("pedido-ip:" + ruta + ":" + numero + ":" + ip, sinpeAuthPedidoMax, sinpeAuthPedidoWindow);
+        return ipOk && pedidoOk ? 0 : 429;
+    }
+
+    private void rechazarFormato(HttpServletResponse response) throws IOException {
+        response.setStatus(400);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write("{\"success\":false,\"message\":\"Número de pedido inválido.\"}");
+    }
+
+    private void rechazar(HttpServletResponse response, String ip, String path) throws IOException {
+        log.warn("[RATE-LIMIT] ip={} path={}", ip, RutaLogSegura.enmascarar(path));
+        try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
+        response.setStatus(429);
+        response.setCharacterEncoding("UTF-8"); // ESC-8: sin mojibake en «Esperá»
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write(
+            "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
     }
 }

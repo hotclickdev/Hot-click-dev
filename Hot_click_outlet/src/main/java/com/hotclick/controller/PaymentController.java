@@ -146,9 +146,9 @@ public class PaymentController {
     public ResponseEntity<ResponseDTO> reintentarTilopay(@PathVariable String numeroPedido) {
         try {
             var session = tilopayConfirmacionService.reintentar(numeroPedido);
+            // H-07: endpoint permitAll; el sdkToken no se expone (cualquiera con el numero de pedido lo obtendria).
             return ResponseEntity.ok(ResponseDTO.success("Reintento Tilopay", Map.of(
                 "orderNumber", session.externalId(),
-                "sdkToken", session.sdkToken() != null ? session.sdkToken() : "",
                 "redirectUrl", session.redirectUrl() != null ? session.redirectUrl() : "",
                 "modoEmbebido", session.modoEmbebido()
             )));
