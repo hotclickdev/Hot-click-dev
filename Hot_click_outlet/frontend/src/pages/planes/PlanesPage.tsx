@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import api from '@/services/api'
-import { COMISION_MINIMA_CRC, PLAN_PRECIOS, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
+import { PLAN_PRECIOS, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 
 type PlanApi = {
   nombre: string
@@ -35,9 +35,11 @@ const PLANES: PlanVista[] = [
 type Fila = { etiqueta: string; valor: (p: PlanApi) => string }
 
 const respaldo = (p: PlanApi) => PLAN_PRECIOS[p.nombre as ClavePlan]
-const mensualDe = (p: PlanApi) => p.precioMensual ?? respaldo(p)?.mensualCrc ?? 0
+/** USD desde config del backend (precioUsd); el precioMensual en colones ya no se muestra. */
+const mensualDe = (p: PlanApi) => (p as { precioUsd?: number | null }).precioUsd ?? null
 const comisionDe = (p: PlanApi) => Number(p.comisionPorcentaje ?? respaldo(p)?.comisionPct ?? 0)
-const minimaDe = (p: PlanApi) => p.comisionMinimaCrc ?? COMISION_MINIMA_CRC
+/** V185: sin mínimo por venta; si un backend viejo manda 700 se ignora. */
+const minimaDe = (_p: PlanApi) => 0
 
 const limite = (n: number) => (n < 0 ? 'Ilimitado' : String(n))
 const si = (b: boolean) => (b ? 'Sí' : '—')

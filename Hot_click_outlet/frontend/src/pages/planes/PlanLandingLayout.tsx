@@ -5,6 +5,8 @@ import TrustGlyph from '@/components/ui/TrustGlyph'
 import EmprendeCupoBanner from '../emprende/EmprendeCupoBanner'
 import EmprendeSeccion from '../emprende/EmprendeSeccion'
 import { PLAN_LANDING_COPY, type LandingPlanId } from './planLandingCopy'
+import useCupoEmprende from '../emprende/useCupoEmprende'
+import { PLAN_PRECIOS, textoComision, textoMensualidadEmprendedor } from '@/config/planesPrecios'
 
 const TONO_VARS: Record<string, CSSProperties> = {
   artesanal: {
@@ -58,6 +60,12 @@ export default function PlanLandingLayout({ planId, mostrarCupo = false }: Props
   const { t } = useTranslation()
   const copy = PLAN_LANDING_COPY[planId]
   const destino = `/registro-empresa?plan=${copy.query}`
+  // «Sin mensualidad» solo si el backend confirma cupo gratis; si no, US$/mes desde config.
+  const { cupo } = useCupoEmprende()
+  const hayCupoGratis = cupo != null && cupo.cuposGratisDisponibles > 0
+  const precio = planId === 'emprendedor' && cupo != null
+    ? `${textoMensualidadEmprendedor(cupo)} · ${textoComision(PLAN_PRECIOS.EMPRENDEDOR.comisionPct)}`
+    : copy.precio
 
   return (
     <div style={TONO_VARS[copy.tono]}>
@@ -75,7 +83,7 @@ export default function PlanLandingLayout({ planId, mostrarCupo = false }: Props
             {copy.subheadline}
           </p>
           <p className="text-sm font-semibold mb-6" style={{ color: 'var(--hc-text)' }}>
-            {copy.precio}
+            {precio}
           </p>
           <Link
             to={destino}
@@ -86,7 +94,7 @@ export default function PlanLandingLayout({ planId, mostrarCupo = false }: Props
           </Link>
           {planId !== 'emprendedor' ? (
             <p className="text-xs mt-3" style={{ color: 'var(--hc-muted)' }}>
-              <Link to="/para-emprendedores" style={{ color: 'var(--hc-primary-text)' }}>Recién arranco, sin mensualidad</Link>
+              <Link to="/para-emprendedores" style={{ color: 'var(--hc-primary-text)' }}>{hayCupoGratis ? 'Recién arranco, sin mensualidad' : 'Recién arranco: plan Emprendedor'}</Link>
             </p>
           ) : null}
           {planId !== 'plus' && planId === 'emprendedor' ? (

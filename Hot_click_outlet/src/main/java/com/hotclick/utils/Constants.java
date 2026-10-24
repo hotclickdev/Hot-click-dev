@@ -80,6 +80,8 @@ public class Constants {
     public static final String PAGO_FALLIDO      = "FALLIDO";
     public static final String PAGO_CANCELADO    = "CANCELADO";
     public static final String PAGO_REEMBOLSADO  = "REEMBOLSADO";
+    /** ONVO cobró un pedido que HotClick ya había cancelado: no se vende, queda para reembolso del admin. */
+    public static final String PAGO_REEMBOLSO_PENDIENTE = "REEMBOLSO_PENDIENTE";
 
     // Estados de pedido extendidos
     public static final String PEDIDO_PAGADO        = "PAGADO";

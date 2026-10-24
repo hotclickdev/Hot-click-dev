@@ -27,7 +27,8 @@ public class TelegramFlujoSupport {
     public static final int  PAGINA          = 8;
     public static final int  MAX_FOTOS       = 5;
     public static final long MAX_FOTO_BYTES  = 10L * 1024 * 1024;
-    public static final List<String> METODOS_PAGO = List.of("SINPE", "EFECTIVO", "TARJETA");
+    /** Métodos de cobro en el bot. Sin tarjeta: no hay cobro con tarjeta desde Telegram. */
+    public static final List<String> METODOS_PAGO = List.of("SINPE", "EFECTIVO");
 
     public static final String BTN_CANCELAR = "flx:x";
 

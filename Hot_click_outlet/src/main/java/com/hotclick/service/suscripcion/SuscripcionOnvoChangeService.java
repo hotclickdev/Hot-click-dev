@@ -54,7 +54,23 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
 
     boolean mockPermitido() {
         return environment != null
-            && environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev", "test"));
+            && environment.acceptsProfiles(org.springframework.core.env.Profiles.of("(dev | test) & !prod & !production"))
+            && !esProduccion();
+    }
+
+    /** Rechaza prod/production sin importar mayúsculas (p. ej. "dev,PROD"). */
+    private boolean esProduccion() {
+        String[] activos = environment.getActiveProfiles();
+        if (activos == null) {
+            return false;
+        }
+        for (String p : activos) {
+            String n = p == null ? "" : p.trim().toLowerCase(java.util.Locale.ROOT);
+            if (n.equals("prod") || n.equals("production")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public SuscripcionOnvoChangeService(SuscripcionRepository suscripcionRepo,

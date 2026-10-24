@@ -59,8 +59,9 @@ public class RenovacionesTilopayService {
         for (Suscripcion sub : vencidas) {
             Long empresaId = sub.getEmpresa().getId();
             if (conPendiente.add(empresaId)) {
-                cobros.add(suscripciones.nuevoCobro(empresaId, sub.getPlan(), CobroSuscripcion.MOTIVO_RENOVACION,
-                    suscripciones.diaDe(sub.getEmpresa())));
+                // Cobro de planes por Tilopay prohibido: no se genera cobro de renovación (TODO: ONVO).
+                log.warn("[ALERTA-PAGO] renovación sin cobro: Tilopay deshabilitado para planes empresa={} plan={}",
+                    empresaId, sub.getPlan() != null ? sub.getPlan().getNombre() : null);
             }
             if ("ACTIVO".equals(sub.getEstado())) {
                 sub.setEstado("PAST_DUE");

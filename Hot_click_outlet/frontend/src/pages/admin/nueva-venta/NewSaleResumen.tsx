@@ -5,11 +5,10 @@ import useTenantStore from '@/store/tenantStore'
 import type { TFunction } from 'i18next'
 import type { TabVentaId } from './nuevaVentaHelpers'
 
-/** Misma fórmula que AggregatorCommissionMath.calcular (backend): % HALF_UP sobre el bruto, con piso ₡ para EMPRENDEDOR. */
-function estimarComision(bruto: number, pct: number, minimoCrc: number): number {
+/** Misma fórmula que AggregatorCommissionMath.calcular (backend): % HALF_UP sobre el bruto, sin mínimo (V185). */
+function estimarComision(bruto: number, pct: number): number {
   if (bruto <= 0 || pct <= 0) return 0
-  const total = Math.round((bruto * pct) / 100)
-  return minimoCrc > 0 ? Math.max(total, minimoCrc) : total
+  return Math.round((bruto * pct) / 100)
 }
 
 /**
@@ -33,8 +32,7 @@ export default function NewSaleResumen({
   onCotizar: () => void
 }) {
   const comisionPorcentaje = useTenantStore((s) => s.comisionPorcentaje)
-  const comisionMinimaCrc = useTenantStore((s) => s.comisionMinimaCrc)
-  const comision = estimarComision(total, comisionPorcentaje, comisionMinimaCrc)
+  const comision = estimarComision(total, comisionPorcentaje)
   const neto = Math.max(0, total - comision)
 
   return (

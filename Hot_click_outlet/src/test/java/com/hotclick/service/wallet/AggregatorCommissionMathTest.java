@@ -35,6 +35,28 @@ class AggregatorCommissionMathTest {
     }
 
     @Test
+    @DisplayName("V185: venta chica sin mínimo — 9% de ₡1.000 = ₡90")
+    void ventaChicaSinMinimo() {
+        var r = AggregatorCommissionMath.calcular(1_000L, new BigDecimal("9.00"), false, 0, 5);
+        assertThat(r.totalComision()).isEqualTo(90L);
+        assertThat(r.comisionGw()).isEqualTo(50L);
+        assertThat(r.comisionSaas()).isEqualTo(40L);
+        assertThat(r.neto()).isEqualTo(910L);
+    }
+
+    @Test
+    @DisplayName("V185: 7,5% redondea HALF_UP a colón entero")
+    void pymeSieteYMedioRedondeo() {
+        // 7,5% de ₡1.010 = 75,75 → ₡76; de ₡1.003 = 75,225 → ₡75; de ₡1.006 = 75,45 → ₡75
+        assertThat(AggregatorCommissionMath.calcular(1_010L, new BigDecimal("7.50"), false, 0, 5).totalComision()).isEqualTo(76L);
+        assertThat(AggregatorCommissionMath.calcular(1_003L, new BigDecimal("7.50"), false, 0, 5).totalComision()).isEqualTo(75L);
+        assertThat(AggregatorCommissionMath.calcular(1_006L, new BigDecimal("7.50"), false, 0, 5).totalComision()).isEqualTo(75L);
+        // 7,5% de ₡10 = 0,75 → ₡1; 7,5% de ₡6 = 0,45 → ₡0
+        assertThat(AggregatorCommissionMath.calcular(10L, new BigDecimal("7.50"), false, 0, 5).totalComision()).isEqualTo(1L);
+        assertThat(AggregatorCommissionMath.calcular(6L, new BigDecimal("7.50"), false, 0, 5).totalComision()).isEqualTo(0L);
+    }
+
+    @Test
     @DisplayName("PYME/Plus 4% — casi todo reserva gateway, neto 96%")
     void pymeCuatroPct() {
         var r = AggregatorCommissionMath.calcular(50_000L, CUATRO, false, 400, 4);

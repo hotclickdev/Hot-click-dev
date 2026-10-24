@@ -77,8 +77,8 @@ class CupoEmprendedorServiceTest {
     }
 
     @Test
-    @DisplayName("Cupo lleno y sin mensualidad fijada: entra activo, no hay nada que cobrar")
-    void cupoLlenoSinMensualidadEntraActivo() {
+    @DisplayName("Cupo lleno (negocio 71+): fail-closed, nunca entra gratis ni visible")
+    void cupoLlenoNuncaEntraGratis() {
         stubPlan();
         when(jdbc.query(contains("RETURNING usados"), any(RowMapper.class)))
             .thenReturn(List.of());
@@ -88,13 +88,13 @@ class CupoEmprendedorServiceTest {
         Empresa empresa = new Empresa();
         service.aplicarAlta(empresa, "nueva@correo.com");
 
-        assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
+        assertThat(empresa.getEstadoPlan()).isNotEqualTo("ACTIVO");
+        assertThat(empresa.getVisibilidadPublica()).isNotEqualTo(Boolean.TRUE);
     }
 
     @Test
     @DisplayName("Cupo lleno con mensualidad fijada: requiere membresía")
     void cupoLlenoRequiereMembresia() {
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "mensualidadDesdeCupo", "1");
         stubPlan();
         when(jdbc.query(contains("RETURNING usados"), any(RowMapper.class)))
             .thenReturn(List.of());
