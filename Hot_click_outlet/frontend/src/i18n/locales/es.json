@@ -679,7 +679,7 @@
         "envioTitulo": "Envío a todo Costa Rica",
         "envioTexto": "Desde ₡4.000 con Correos de Costa Rica o por encomienda",
         "pagoTitulo": "Pagá como prefieras",
-        "pagoTexto": "SINPE Móvil, tarjeta o efectivo",
+        "pagoTexto": "SINPE Móvil o tarjeta",
         "sinCuentaTitulo": "Comprá sin crear cuenta",
         "sinCuentaTexto": "Solo tu correo y teléfono",
         "devolucionesTitulo": "Devoluciones",
@@ -897,7 +897,7 @@
     "envioTitulo": "Envío a todo Costa Rica",
     "envioDetalle": "Desde {{monto}} · {{envioNormalDesde}} a {{envioNormalHasta}} días hábiles en GAM",
     "pagoTitulo": "Pagá como prefieras",
-    "pagoDetalle": "SINPE Móvil, tarjeta o efectivo · compra sin crear cuenta",
+    "pagoDetalle": "SINPE Móvil o tarjeta · compra sin crear cuenta",
     "preguntaTitulo": "Preguntale sobre este producto",
     "preguntaAyuda": "Responde con los datos de la ficha. Si no sabe algo, te lo dice.",
     "preguntaMedidas": "¿Qué medidas tiene?",
@@ -998,7 +998,7 @@
     "notaResumen": "Pagás todo junto a HotClick. Cada tienda despacha su paquete. IVA incluido en el precio de cada producto.",
     "notaResumenEscritorio": "Pagás todo junto a HotClick. Cada tienda despacha su paquete.",
     "ivaIncluido": "IVA incluido",
-    "pagoProtegido": "Pago protegido · SINPE Móvil, tarjeta o efectivo",
+    "pagoProtegido": "Pago protegido · SINPE Móvil o tarjeta",
     "continuar": "Continuar compra",
     "continuarPrecio": "Continuar compra · {{precio}}",
     "whatsapp": "Pedir por WhatsApp",
@@ -1752,14 +1752,14 @@
     "ctaBtn": "Contactarme"
   },
   "contacto": {
-    "title": "Contáctanos",
+    "title": "Contactanos",
     "subtitle": "Estamos aquí para ayudarte",
     "name": "Nombre",
     "email": "Correo",
     "message": "Mensaje",
     "send": "Enviar mensaje",
     "sent": "Mensaje enviado con éxito",
-    "whatsapp": "Escríbenos por WhatsApp",
+    "whatsapp": "Escribinos por WhatsApp",
     "schedule": "Horario de atención",
     "weekdays": "Lunes a Sábado",
     "weekdaysHours": "8:00–19:00",
@@ -1768,7 +1768,7 @@
     "country": "País",
     "waHint": "Respuesta rápida por chat",
     "waDefault": "Hola, me comunico desde la tienda HotClick.",
-    "sendForm": "Envíanos un mensaje",
+    "sendForm": "Envianos un mensaje",
     "sentSub": "Recibimos tu mensaje y te contactaremos pronto.",
     "sendAnother": "Enviar otro",
     "messagePlaceholder": "¿En qué podemos ayudarte?",
@@ -4054,7 +4054,7 @@
       "total": "Total",
       "ivaIncluido": "IVA incluido",
       "notaDesktop": "Pagás todo junto a HotClick. Cada tienda despacha su paquete.",
-      "pagoProtegido": "Pago protegido · SINPE Móvil, tarjeta o efectivo"
+      "pagoProtegido": "Pago protegido · SINPE Móvil o tarjeta"
     },
     "envio": {
       "ENVIO_NORMAL_GAM": {
