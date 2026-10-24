@@ -648,7 +648,7 @@
     },
     "compra": {
       "titulo": "¿Qué estás buscando hoy?",
-      "subtitulo": "Productos de emprendedores de Costa Rica. Pagás con SINPE Móvil o tarjeta y te llega a todo el país.",
+      "subtitulo": "Productos de emprendedores de Costa Rica. Pagás con SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte y te llega a todo el país.",
       "destacados": "Destacados",
       "verTodo": "Ver todo",
       "categorias": "Explorá por categoría",
@@ -679,7 +679,7 @@
         "envioTitulo": "Envío a todo Costa Rica",
         "envioTexto": "Desde ₡4.000 con Correos de Costa Rica o por encomienda",
         "pagoTitulo": "Pagá como prefieras",
-        "pagoTexto": "SINPE Móvil o tarjeta",
+        "pagoTexto": "SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte",
         "sinCuentaTitulo": "Comprá sin crear cuenta",
         "sinCuentaTexto": "Solo tu correo y teléfono",
         "devolucionesTitulo": "Devoluciones",
@@ -897,7 +897,7 @@
     "envioTitulo": "Envío a todo Costa Rica",
     "envioDetalle": "Desde {{monto}} · {{envioNormalDesde}} a {{envioNormalHasta}} días hábiles en GAM",
     "pagoTitulo": "Pagá como prefieras",
-    "pagoDetalle": "SINPE Móvil o tarjeta · compra sin crear cuenta",
+    "pagoDetalle": "SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte · compra sin crear cuenta",
     "preguntaTitulo": "Preguntale sobre este producto",
     "preguntaAyuda": "Responde con los datos de la ficha. Si no sabe algo, te lo dice.",
     "preguntaMedidas": "¿Qué medidas tiene?",
@@ -998,7 +998,7 @@
     "notaResumen": "Pagás todo junto a HotClick. Cada tienda despacha su paquete. IVA incluido en el precio de cada producto.",
     "notaResumenEscritorio": "Pagás todo junto a HotClick. Cada tienda despacha su paquete.",
     "ivaIncluido": "IVA incluido",
-    "pagoProtegido": "Pago protegido · SINPE Móvil o tarjeta",
+    "pagoProtegido": "Pago protegido · SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte",
     "continuar": "Continuar compra",
     "continuarPrecio": "Continuar compra · {{precio}}",
     "whatsapp": "Pedir por WhatsApp",
@@ -1465,7 +1465,7 @@
       "lineaGift": "Tarjeta de regalo {{codigo}}",
       "lineaDescuento": "Descuento ({{porcentaje}}%)",
       "totalRestante": "Total restante a pagar",
-      "notaRestante": "Pagás el resto con SINPE Móvil o tarjeta. Si la tarjeta de regalo cubre todo, el pedido queda pagado sin otro método.",
+      "notaRestante": "Pagás el resto con SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte. Si la tarjeta de regalo cubre todo, el pedido queda pagado sin otro método.",
       "unicoTitulo": "Tarjeta de regalo o cupón",
       "unicoPlaceholder": "Ingresá el código",
       "unicoAria": "Código de tarjeta de regalo o cupón",
@@ -1575,7 +1575,7 @@
       "contraEntregaSub": "Pagás en efectivo al recibir (Envío Normal).",
       "sinpeTarjeta": "SINPE / Tarjeta",
       "sinpeTarjetaSub": "SINPE Móvil al {{numero}} o tarjeta. El pago con tarjeta se habilita pronto.",
-      "sinpeTarjetaSubTilopay": "SINPE Móvil o tarjeta, en la pasarela segura.",
+      "sinpeTarjetaSubTilopay": "SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte, en la pasarela segura.",
       "correoCuenta": "Correo de tu cuenta"
     },
     "giftPagado": {
@@ -3509,7 +3509,7 @@
       "sinpeRecibido": "SINPE recibido",
       "autoDetecta": "Se confirma automáticamente al pagar",
       "pagoElegir": "Pago con QR",
-      "instruccionElegir": "El cliente escanea el código y elige SINPE Móvil o tarjeta"
+      "instruccionElegir": "El cliente escanea el código y elige SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte"
     },
     "pago": {
       "subtitulo": "Pago en tienda",
@@ -3715,7 +3715,7 @@
       "enviadoDesc": "{{negocio}} ya lo recibió. Te lo llevan a la {{mesa}}.",
       "enviadoEstado": "Pedido {{numero}} · En preparación",
       "pagoTitulo": "¿Cómo pagás?",
-      "pagoDesc": "Cuando termines, pedí la cuenta: te cobran en caja con SINPE Móvil o tarjeta.",
+      "pagoDesc": "Cuando termines, pedí la cuenta: te cobran en caja con SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte.",
       "agregarMas": "Agregar algo más"
     }
   },
@@ -4054,7 +4054,7 @@
       "total": "Total",
       "ivaIncluido": "IVA incluido",
       "notaDesktop": "Pagás todo junto a HotClick. Cada tienda despacha su paquete.",
-      "pagoProtegido": "Pago protegido · SINPE Móvil o tarjeta"
+      "pagoProtegido": "Pago protegido · SINPE Móvil, tarjeta o efectivo donde el negocio lo acepte"
     },
     "envio": {
       "ENVIO_NORMAL_GAM": {
