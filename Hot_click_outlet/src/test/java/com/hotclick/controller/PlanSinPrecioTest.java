@@ -36,8 +36,22 @@ class PlanSinPrecioTest {
         return p;
     }
 
+    private final com.hotclick.security.PropietarioGuard guard = mock(com.hotclick.security.PropietarioGuard.class);
+
     private SuscripcionController controller(PreciosPlanesConfig precios) {
-        return new SuscripcionController(null, planRepo, null, tilopay, precios);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        return new SuscripcionController(null, planRepo, null, tilopay, precios, guard);
+    }
+
+    @Test @DisplayName("QA3-012: un EDITOR recibe 403 en cambiar-plan antes de precio, límite o cobro")
+    void editorCambiarPlan403() throws Exception {
+        TenantContext.set(7L);
+        var c = controller(new PreciosPlanesConfig("9", "24", "49"));
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(false);
+        var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(c).build();
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/billing/cambiar-plan/3"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
+        verifyNoInteractions(tilopay, planRepo);
     }
 
     @Test @DisplayName("Con precios configurados, /planes publica 9/24/49 y no el valor de BD")

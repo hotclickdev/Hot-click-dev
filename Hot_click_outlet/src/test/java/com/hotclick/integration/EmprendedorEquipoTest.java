@@ -129,16 +129,97 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     // El rol ADMIN_CLIENTE fue eliminado en V89 (migrado a EMPRENDEDOR), que sí
     // puede invitar — la premisa del test ya no existe. Requiere redefinir la
     // matriz de permisos del equipo antes de reactivarlo.
-    @org.junit.jupiter.api.Disabled("Rol ADMIN_CLIENTE eliminado en V89 — premisa obsoleta")
+    // QA3-012: reactivado como EDITOR (rol Spring EMPRENDEDOR, rolEnEmpresa EDITOR).
     @Test
-    @DisplayName("T-EQ-007 | BÁSICO — ADMIN_CLIENTE no puede invitar miembros → 403")
+    @DisplayName("T-EQ-007 | QA3-012 — EDITOR no puede invitar (ni a un ADMIN) → 403 por rol, no por límite")
     void adminCliente_cannotInvitar_403() throws Exception {
         String body = "{\"nombre\":\"Hack Miembro\",\"correo\":\"hack@test.cr\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88001133\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"88001133\",\"rolEnEmpresa\":\"ADMIN\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenAdminCliente)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value("Solo el emprendedor puede agregar miembros"));
+        org.assertj.core.api.Assertions.assertThat(usuarioRepository.findByCorreo("hack@test.cr")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("QA3-012 — EDITOR no puede cambiar roles → 403")
+    void editor_cannotCambiarRol_403() throws Exception {
+        mockMvc.perform(put("/api/empresa/equipo/" + adminCliente.getId() + "/rol")
+                .header("Authorization", tokenAdminCliente)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"rolEnEmpresa\":\"ADMIN\"}"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value("Solo el emprendedor puede cambiar roles"));
+        org.assertj.core.api.Assertions.assertThat(miembroEmpresaRepository
+            .findByUsuarioIdAndEmpresaId(adminCliente.getId(), empresa.getId()).orElseThrow().getRolEnEmpresa())
+            .isEqualTo("EDITOR");
+    }
+
+    @Test
+    @DisplayName("QA3-012 — Emprendedor sí puede cambiar roles → 200")
+    void emprendedor_cambiaRol_200() throws Exception {
+        mockMvc.perform(put("/api/empresa/equipo/" + adminCliente.getId() + "/rol")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"rolEnEmpresa\":\"LECTOR\"}"))
+            .andExpect(status().isOk());
+    }
+
+    // cambiar-plan (QA3-012) se cubre en PlanSinPrecioTest: en este contexto de integración
+    // TenantContext queda nulo y el endpoint responde 401 antes de la guarda.
+
+    @Test
+    @DisplayName("QA3-019 — EDITOR no puede cambiar la visibilidad del negocio → 403")
+    void editor_cannotVisibilidad_403() throws Exception {
+        mockMvc.perform(put("/api/empresa/perfil/visibilidad")
+                .header("Authorization", tokenAdminCliente)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"visibilidadPublica\":false}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("QA3-019 — Emprendedor pasa el control de rol en visibilidad (no 403)")
+    void emprendedor_visibilidad_no403() throws Exception {
+        int st = mockMvc.perform(put("/api/empresa/perfil/visibilidad")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"visibilidadPublica\":true}"))
+            .andReturn().getResponse().getStatus();
+        org.assertj.core.api.Assertions.assertThat(st).isNotEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("QA3-019 — EDITOR no puede cambiar datos fiscales → 403")
+    void editor_cannotFiscal_403() throws Exception {
+        mockMvc.perform(put("/api/empresa/perfil/fiscal")
+                .header("Authorization", tokenAdminCliente)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cedulaJuridica\":\"3101123456\"}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("QA3-019 — Emprendedor pasa el control de rol en datos fiscales (no 403)")
+    void emprendedor_fiscal_no403() throws Exception {
+        int st = mockMvc.perform(put("/api/empresa/perfil/fiscal")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andReturn().getResponse().getStatus();
+        org.assertj.core.api.Assertions.assertThat(st).isNotEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("QA3-019 — EDITOR no puede subir el certificado .p12 → 403")
+    void editor_cannotCertP12_403() throws Exception {
+        var file = new org.springframework.mock.web.MockMultipartFile("file", "c.p12",
+            "application/x-pkcs12", new byte[]{1, 2, 3});
+        mockMvc.perform(multipart("/api/empresa/perfil/cert-p12").file(file)
+                .header("Authorization", tokenAdminCliente))
             .andExpect(status().isForbidden());
     }
 
@@ -216,13 +297,13 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
 
     // ── T-EQ-014: ADMIN_CLIENTE no puede eliminar miembros → 403 ─────────────
     // Ver nota en T-EQ-007: rol eliminado en V89, premisa obsoleta.
-    @org.junit.jupiter.api.Disabled("Rol ADMIN_CLIENTE eliminado en V89 — premisa obsoleta")
     @Test
-    @DisplayName("T-EQ-014 | BÁSICO — ADMIN_CLIENTE no puede eliminar miembros → 403")
+    @DisplayName("T-EQ-014 | QA3-012 — EDITOR no puede eliminar miembros → 403")
     void adminCliente_cannotEliminar_403() throws Exception {
         mockMvc.perform(delete("/api/empresa/equipo/" + emprendedor.getId())
                 .header("Authorization", tokenAdminCliente))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value("Solo el emprendedor puede eliminar miembros"));
     }
 
     // ── T-EQ-015: Emprendedor no puede eliminarse a sí mismo → 400 ───────────

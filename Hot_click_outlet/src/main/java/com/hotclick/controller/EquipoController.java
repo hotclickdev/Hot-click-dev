@@ -26,6 +26,7 @@ public class EquipoController {
 
     @Autowired private CompanyScope companyScope;
     @Autowired private EquipoService equipoService;
+    @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
@@ -87,7 +88,10 @@ public class EquipoController {
     }
 
     private ResponseEntity<ResponseDTO> denegarSiNoEmprendedor(String mensaje) {
-        if (!companyScope.isEmprendedor()) {
+        // QA3-012: los miembros de equipo (EDITOR, LECTOR, ADMIN) también llevan rol Spring
+        // EMPRENDEDOR; hace falta ser PROPIETARIO de la empresa (y no sesión de soporte).
+        if (!companyScope.isEmprendedor() || companyScope.isImpersonating()
+                || !propietarioGuard.puedeGestionarEmpresa(companyScope.getCurrentEmpresaIdOrOwn())) {
             return ResponseEntity.status(403).body(ResponseDTO.error(mensaje));
         }
         return null;

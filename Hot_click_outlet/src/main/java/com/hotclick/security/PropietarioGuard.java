@@ -34,6 +34,16 @@ public class PropietarioGuard {
         return empresaId.equals(u.getEmpresaId());
     }
 
+    /**
+     * QA3-012/017/019: guarda única de rol de empresa para acciones de gestión del negocio
+     * (equipo, plan, visibilidad, datos fiscales y .p12). Pasa el PROPIETARIO de la empresa
+     * (sin sesión de soporte) o el ADMIN de plataforma; EDITOR/LECTOR/ADMIN de equipo, no.
+     */
+    public boolean puedeGestionarEmpresa(Long empresaId) {
+        if (companyScope.isAdminIT()) return true;
+        return !companyScope.isImpersonating() && esPropietario(companyScope.getCurrentUser(), empresaId);
+    }
+
     /** Lanza 403 si el usuario actual no es propietario de la empresa del token. */
     public void exigirPropietario(Long empresaId) {
         if (companyScope.isImpersonating() || !esPropietario(companyScope.getCurrentUser(), empresaId)) {
