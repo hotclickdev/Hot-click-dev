@@ -110,7 +110,7 @@ export default function ActivarPlanPage() {
               ) : (
                 <div key="cargando" className="text-center py-6">
                   <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-                    {buscandoPlan || loadingPlan ? 'Preparando tu suscripción…' : (errorPlan || 'Un momento…')}
+                    {buscandoPlan || loadingPlan ? 'Preparando tu suscripción…' : (errorPlan || errorCobro || 'Un momento…')}
                   </p>
                 </div>
               )}

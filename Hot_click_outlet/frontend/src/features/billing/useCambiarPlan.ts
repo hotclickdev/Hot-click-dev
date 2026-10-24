@@ -4,10 +4,22 @@ import { billingService, type CambiarPlanResultado } from '@/services/billingSer
 import useTenantStore from '@/store/tenantStore'
 import type { Id } from '@/types/api'
 
-function mensajeErrorPlan(err: unknown, fallback: string): string {
+/** Códigos 409 del backend cuando el cobro de planes no está disponible: nunca se activa el plan. */
+const CODIGOS_PLAN_NO_DISPONIBLE = ['COBRO_PLAN_NO_DISPONIBLE', 'PLAN_SIN_PRECIO', 'PLAN_NO_DISPONIBLE'] as const
+
+export const MENSAJE_COBRO_PLAN_NO_DISPONIBLE =
+  'Por ahora no podés activar este plan en línea: el cobro de planes todavía no está habilitado. Tu plan actual sigue igual y no se te cobró nada. Escribinos a soporte si querés que te avisemos cuando esté listo.'
+
+/** Traduce el error del API a un texto para la persona; los 409 de plan no disponible nunca se muestran crudos. */
+export function mensajeErrorPlan(err: unknown, fallback: string): string {
   if (typeof err !== 'object' || err === null || !('response' in err)) return fallback
-  const error = (err as { response?: { data?: { error?: unknown } } }).response?.data?.error
-  return typeof error === 'string' && error ? error : fallback
+  const resp = (err as { response?: { status?: number; data?: { error?: unknown; codigo?: unknown } } }).response
+  const codigo = typeof resp?.data?.codigo === 'string' ? resp.data.codigo : ''
+  const error = resp?.data?.error
+  const texto = typeof error === 'string' ? error : ''
+  if (CODIGOS_PLAN_NO_DISPONIBLE.some((c) => c === codigo || texto.includes(c))) return MENSAJE_COBRO_PLAN_NO_DISPONIBLE
+  if (resp?.status === 409) return MENSAJE_COBRO_PLAN_NO_DISPONIBLE
+  return texto || fallback
 }
 
 export type PagoPlanPendiente = {
@@ -37,7 +49,7 @@ export function rutaCambioPlan(nombrePlanDestino?: string | null): 'cancelar' | 
 }
 
 /**
- * Orquesta POST /billing/cambiar-plan y el cobro Tilopay si hace falta; la baja a Emprendedor va por /billing/cancelar.
+ * Orquesta POST /billing/cambiar-plan y el cobro si hace falta; la baja a Emprendedor va por /billing/cancelar.
  */
 export function useCambiarPlan({ rutaExito }: Options) {
   const navigate = useNavigate()

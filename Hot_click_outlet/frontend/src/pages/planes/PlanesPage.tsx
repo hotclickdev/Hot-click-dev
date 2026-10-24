@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
-import api from '@/services/api'
+import { billingService } from '@/services/billingService'
 import { PLAN_PRECIOS, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 
 type PlanApi = {
@@ -25,7 +25,7 @@ type PlanApi = {
 
 type PlanVista = { clave: ClavePlan; titulo: string; para: string; detalle: string; destacado?: boolean }
 
-/** Las tres tarjetas. Montos y comisiones: de `GET /api/planes`; respaldo en config/planesPrecios. */
+/** Las tres tarjetas. Montos (USD, config registro-planes) y comisiones: de `GET /api/billing/planes`. */
 const PLANES: PlanVista[] = [
   { clave: 'EMPRENDEDOR', titulo: 'Emprendedor', para: 'Para quien vende desde la casa, redes o ferias.', detalle: '/emprende' },
   { clave: 'PYME', titulo: 'Pyme', para: 'Para negocios con local, equipo y caja.', detalle: '/para-pymes', destacado: true },
@@ -60,14 +60,14 @@ const FILAS: Fila[] = [
 
 const POR_QUE = [
   { titulo: 'Tu tienda sigue siendo tuya', texto: 'Seguí vendiendo en tu local, en tu feria o en tus redes. HotClick suma compradores que hoy no te encuentran.' },
-  { titulo: 'Hecho para Costa Rica', texto: 'Precios en colones, envíos dentro del país y pagos con tarjeta procesados con Tilopay.' },
+  { titulo: 'Hecho para Costa Rica', texto: 'Mensualidad clara en dólares, envíos dentro del país y pagos en línea seguros.' },
   { titulo: 'Cobrá en persona con la misma cuenta', texto: 'La caja (POS) viene incluida en todos los planes.' },
   { titulo: 'Reglas claras', texto: 'Antes de registrarte ves cuánto pagás de mensualidad y de comisión. No hay costos escondidos.' },
 ]
 
-const COMPARACION = [
+const comparacion = (comisionEmprendedor: string) => [
   { otros: 'Otros marketplaces venden sus propios productos y compiten con vos.', nosotros: 'En HotClick vendés vos.' },
-  { otros: 'Algunas plataformas cobran mensualidad aunque no vendás.', nosotros: `Con el plan Emprendedor solo pagás comisión cuando vendés: ${PLAN_PRECIOS.EMPRENDEDOR.comisionPct}% por venta.` },
+  { otros: 'Algunas plataformas esconden costos.', nosotros: `Con el plan Emprendedor ves la mensualidad y la comisión antes de registrarte: ${comisionEmprendedor}.` },
   { otros: 'Inventario, caja y tienda en línea en tres herramientas separadas.', nosotros: 'Todo en un solo lugar.' },
 ]
 
@@ -85,13 +85,15 @@ export default function PlanesPage() {
 
   useEffect(() => {
     let vivo = true
-    api.get<PlanApi[]>('/planes')
-      .then((r) => { if (vivo) setPlanes(Array.isArray(r.data) ? r.data : []) })
+    billingService.getPlanes()
+      .then((r) => { if (vivo) setPlanes(Array.isArray(r.data) ? (r.data as PlanApi[]) : []) })
       .catch(() => { if (vivo) setError(true) })
     return () => { vivo = false }
   }, [])
 
   const dePlan = (clave: string) => planes.find((p) => p.nombre === clave)
+  const emp = dePlan('EMPRENDEDOR')
+  const COMPARACION = comparacion(textoComision(emp ? comisionDe(emp) : PLAN_PRECIOS.EMPRENDEDOR.comisionPct))
 
   return (
     <MainLayout>
