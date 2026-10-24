@@ -193,13 +193,13 @@ public class OnvoBillingClient {
 
     @CircuitBreaker(name = "onvo", fallbackMethod = "cancelarFallback")
     @Retry(name = "onvo")
-    public void cancelarAlVencer(String subscriptionId) {
+    public ResultadoCancelacion cancelarAlVencer(String subscriptionId) {
         boolean idMock = subscriptionId != null && subscriptionId.startsWith("sub_mock");
         // Fail-closed: un id simulado fuera de dev/test nunca se da por cancelado.
         if (sinLlave() || idMock) exigirSimulacionPermitida("cancelarAlVencer");
         if (sinLlave() || subscriptionId == null || idMock) {
             log.info("[onvo-mock] cancelarAlVencer({})", subscriptionId);
-            return;
+            return ResultadoCancelacion.PROGRAMADA;
         }
         // ONVO: "Actualizar un Cargo recurrente" = POST /v1/subscriptions/{id} con cancelAtPeriodEnd
         // (https://docs.onvopay.com/api/actualizar-un-cargo-recurrente, schema UpdateSubscription).
@@ -207,11 +207,21 @@ public class OnvoBillingClient {
         Map<String, Object> body = Map.of("cancelAtPeriodEnd", true);
         Map<?, ?> resp = post("/subscriptions/" + subscriptionId, body);
         // Fail-closed: sin confirmación explícita de ONVO no se da por programada la cancelación.
-        if (!Boolean.TRUE.equals(resp.get("cancelAtPeriodEnd")) && !"canceled".equals(resp.get("status"))) {
+        // L210: status "canceled" = ONVO ya la canceló de inmediato; el llamador debe reflejarlo localmente.
+        if ("canceled".equals(resp.get("status"))) {
+            log.error("[ALERTA-PAGO] ONVO reportó la suscripción como canceled al pedir cancelAtPeriodEnd: sub={}",
+                subscriptionId);
+            return ResultadoCancelacion.CANCELADA;
+        }
+        if (!Boolean.TRUE.equals(resp.get("cancelAtPeriodEnd"))) {
             throw new IllegalStateException("ONVO no confirmó cancelAtPeriodEnd para " + subscriptionId);
         }
         log.info("[onvo] Suscripción marcada cancelAtPeriodEnd: {}", subscriptionId);
+        return ResultadoCancelacion.PROGRAMADA;
     }
+
+    /** Resultado confirmado por ONVO al pedir la cancelación al vencer. */
+    public enum ResultadoCancelacion { PROGRAMADA, CANCELADA }
 
     @SuppressWarnings("unchecked")
     public String obtenerPrimerItemId(String subscriptionId) {
@@ -294,7 +304,7 @@ public class OnvoBillingClient {
         throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
     }
 
-    private void cancelarFallback(String subscriptionId, Throwable t) {
+    private ResultadoCancelacion cancelarFallback(String subscriptionId, Throwable t) {
         log.error("[onvo-circuit] OPEN cancelar: {} status={}", t.getClass().getSimpleName(), statusDe(t));
         throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
     }
