@@ -226,7 +226,7 @@ Verificación: `tsc` (app y e2e) limpio; ESLint de `PhoneField` y del spec sin e
 
 | Qué | Por qué |
 | --- | --- |
-| Teléfono: el campo del checkout muestra `8888 1234` y el número SINPE `7019-6686` | Los dos vienen de Figma (checkout y QR de pago); unificarlos **REQUIERE_DECISION**. `formatPhone` (`8888-1234`) de `checkoutHelpers` no tiene usos. |
+| Teléfono: el campo del checkout muestra `8888 1234` y el número SINPE `[número SINPE oficial]` | Los dos vienen de Figma (checkout y QR de pago); unificarlos **REQUIERE_DECISION**. `formatPhone` (`8888-1234`) de `checkoutHelpers` no tiene usos. |
 | Helpers propios de paneles y POS (`formatMontoPos`, `fmt` de `components/admin` y `components/pos`, recibo de WhatsApp del POS, `formatoTarifa` de recolección) y avisos internos de Telegram para admin y vendedor (`%,d`) | Fuera de la superficie del comprador; `formatMontoPos` además llena un campo editable y cambiar el separador puede romper su lectura. |
 | Hora de `formatDateTime` (ICU puede meter espacios duros en «a. m.») | Se ve como un espacio y no hay spec registrada para la hora. |
 

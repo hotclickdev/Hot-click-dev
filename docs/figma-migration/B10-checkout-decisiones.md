@@ -121,7 +121,7 @@ Igualar `30:2385` al píxel quitando esos bloques sería interpretar la ausencia
 
 ### Código actual
 
-`AtajoInternacional` va después de las opciones de envío, en móvil y en escritorio. No hay `if` de viewport. Abre WhatsApp (`50686667888`) con un texto de consulta internacional.
+`AtajoInternacional` va después de las opciones de envío, en móvil y en escritorio. No hay `if` de viewport. Abre WhatsApp (`[número oficial]`) con un texto de consulta internacional.
 
 `tests/checkout-cta.spec.ts` comprueba el enlace «Consultar envío internacional por WhatsApp» en el paso 2 a 390. `envio-internacional.spec.ts` cubre el mismo enlace en Home y en `/envios`, no el checkout de escritorio.
 
