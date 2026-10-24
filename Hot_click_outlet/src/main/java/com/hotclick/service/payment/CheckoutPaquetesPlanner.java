@@ -18,6 +18,23 @@ import java.util.Map;
 @Service
 public class CheckoutPaquetesPlanner {
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.repository.BodegaRepository bodegaRepository;
+
+    public CheckoutPaquetesPlanner() {}
+
+    CheckoutPaquetesPlanner(com.hotclick.repository.BodegaRepository bodegaRepository) {
+        this.bodegaRepository = bodegaRepository;
+    }
+
+    /** Respaldo cuando no hay bodega default: la primera bodega activa del negocio del producto. */
+    private Bodega primeraBodegaActivaDeSuTienda(Producto p) {
+        if (bodegaRepository == null || p.getEmpresa() == null || p.getEmpresa().getId() == null) return null;
+        List<Bodega> activas = bodegaRepository.findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(
+            p.getEmpresa().getId(), Constants.ESTADO_ACTIVO);
+        return activas == null || activas.isEmpty() ? null : activas.get(0);
+    }
+
     public record Paquete(Bodega bodega, List<PaymentCheckoutRequest.ItemDTO> items,
                           int subtotal, int costoTotal, String metodoEnvio, String notas) {}
 
@@ -27,6 +44,11 @@ public class CheckoutPaquetesPlanner {
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             Producto p = productos.get(item.getProductoId());
             Bodega origen = bodegaDeOrigen(p, bodegaDefault);
+            if (origen == null) origen = primeraBodegaActivaDeSuTienda(p);
+            if (origen == null) {
+                throw new IllegalStateException("El producto " + (p.getNombreProducto() != null ? p.getNombreProducto() : p.getId())
+                    + " no tiene bodega de despacho configurada. Escribinos para coordinar tu pedido.");
+            }
             bodegas.putIfAbsent(origen.getId(), origen);
             itemsPorBodega.computeIfAbsent(origen.getId(), k -> new ArrayList<>()).add(item);
         }

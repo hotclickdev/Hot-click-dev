@@ -63,8 +63,7 @@ public class PaymentService {
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
 
-        Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
-        Bodega bodegaDefault = checkoutValidator.loadBodega(bodegaId);
+        Bodega bodegaDefault = checkoutValidator.resolverBodegaDefault(req.getBodegaId());
 
         StockReservationResult reservation = stockReservationService.reserveForCheckout(req.getItems());
         CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
