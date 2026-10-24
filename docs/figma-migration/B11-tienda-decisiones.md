@@ -63,7 +63,7 @@ El cuerpo de `29:922` ya está medido. La barra es un control que el frame no di
 
 ### Figma
 
-`51:2262` es el botón flotante global del Home (HotClick, `50686667888`). No es el de la tienda.
+`51:2262` es el botón flotante global del Home (HotClick, `[número oficial]`). No es el de la tienda.
 
 `29:922` y `51:2468` no dibujan un FAB de WhatsApp. El color de `51:2468` ya se aplica (`--t-secondary`, `--t-accent`).
 

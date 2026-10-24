@@ -388,7 +388,7 @@ Lo decide el backend (`service/contacto/ContactoPublicoPolicy`, `ContactoPublico
 | `GET /api/tienda/{slug}` | `whatsapp`, `instagram` | `""`, con `contactoDirecto: false` |
 | `GET /api/public/branding` | `whatsapp` | `null`, con `contactoDirecto: false` (el mapa de ADMIN no cambia) |
 | `GET /api/qr/{token}` (mesa) | `numeroWhatsapp` | `null` |
-| `POST /api/public/chat` (prompt, mensajes y respuestas) | WhatsApp o teléfono del vendedor | WhatsApp de HotClick `50686667888` |
+| `POST /api/public/chat` (prompt, mensajes y respuestas) | WhatsApp o teléfono del vendedor | WhatsApp de HotClick `[número oficial]` |
 | Toda `Empresa` serializada (p. ej. `GET /api/cotizaciones/publica/{token}`) | `correoEmpresa`, `telefonoEmpresa`, `numeroWhatsapp`, `instagram` | omitidos, salvo dueño o ADMIN |
 
 **Sin cambios porque ya no exponen contacto:**
