@@ -29,4 +29,13 @@ final class QueryClassifierSupport {
         }
         return count;
     }
+
+    private static final java.util.regex.Pattern PIDE_OTROS = java.util.regex.Pattern.compile(
+        "\\b(busco|buscando|algo|otro|otra|otros|otras|recomend|recomiend|mostr|muestr|opciones|alternativ|parecid|similar|populares|ver productos)",
+        java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE);
+
+    /** True si la consulta pide productos distintos al que se está viendo. */
+    public static boolean pideOtrosProductos(String query) {
+        return query != null && PIDE_OTROS.matcher(query).find();
+    }
 }

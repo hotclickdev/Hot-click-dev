@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-5WR8BudS.js";function t(){return e()}export{t};

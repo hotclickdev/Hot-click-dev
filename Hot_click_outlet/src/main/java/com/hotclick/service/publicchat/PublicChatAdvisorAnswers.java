@@ -26,13 +26,27 @@ class PublicChatAdvisorAnswers {
         if (intentHelper.isGreeting(mensaje) && n.split("\\s+").length <= 4) {
             return saludo(ficha, isEnglish);
         }
-        if (esGarantia(n)) return garantia(ficha, isEnglish);
-        if (esColor(n)) return color(ficha, isEnglish);
+        String atributos = atributos(ficha, n, isEnglish);
+        if (!atributos.isEmpty()) return atributos;
         if (esPrecio(n)) return precio(ficha, isEnglish);
         if (esUso(n)) return uso(ficha, isEnglish);
-        if (esTalla(n)) return talla(ficha, isEnglish);
         if (esQueEs(n)) return queEs(ficha, isEnglish);
         return resumen(ficha, isEnglish);
+    }
+
+    /** Garantía, medidas y color pueden venir juntas ("¿qué garantía tiene y cuáles son sus medidas?"). */
+    private String atributos(Map<String, Object> ficha, String n, boolean en) {
+        StringBuilder sb = new StringBuilder();
+        if (esGarantia(n)) sb.append(garantia(ficha, en));
+        if (esTalla(n)) sb.append(sb.isEmpty() ? "" : " ").append(talla(ficha, en));
+        if (esColor(n)) sb.append(sb.isEmpty() ? "" : " ").append(color(ficha, en));
+        return sb.toString();
+    }
+
+    /** Pregunta sobre un dato de la ficha (no una búsqueda de producto). */
+    boolean esPreguntaDeFicha(String mensaje) {
+        String n = intentHelper.normalize(mensaje == null ? "" : mensaje);
+        return esGarantia(n) || esTalla(n) || esColor(n) || esUso(n);
     }
 
     private String saludo(Map<String, Object> ficha, boolean en) {
@@ -98,6 +112,8 @@ class PublicChatAdvisorAnswers {
                 ? "The sheet lists a " + dias + "-day warranty for " + nombre + "."
                 : "La ficha de " + nombre + " indica garantía de " + dias + " días.";
         }
+        String snippet = snippetCon(textoFicha(ficha), "garantia", "warranty");
+        if (!snippet.isBlank()) return recorte(snippet, 280);
         return en
             ? "The sheet for " + nombre + " doesn't list a warranty period."
             : "En la ficha de " + nombre + " no consta la garantía.";

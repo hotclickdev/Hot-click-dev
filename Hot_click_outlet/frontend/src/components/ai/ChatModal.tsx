@@ -9,7 +9,7 @@ import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_CHAT } from './iconosChat'
 import { useVisualViewportBox } from '@/hooks/useVisualViewportBox'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
-import { sessionKeyFromPath } from './aiChat/chatSurface'
+import { productoIdFromPath, sessionKeyFromPath } from './aiChat/chatSurface'
 
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
@@ -45,6 +45,7 @@ export default function ChatModal() {
   const chips = [t('chat.chipOffer'), t('chat.chipSala'), t('chat.chipShipping')]
   const viewport = useVisualViewportBox(isOpen)
   const sessionKey = sessionKeyFromPath(pathname)
+  const productoId = productoIdFromPath(pathname)
   const panelRef = useRef<HTMLElement>(null)
   // Tab no sale del asistente y al cerrar el foco vuelve a quien lo abrió (el primer foco lo pone el efecto de abajo).
   useFocusTrap(panelRef, isOpen, 'ninguno')
@@ -124,6 +125,7 @@ export default function ChatModal() {
             <div className="min-h-0 flex-1 overflow-hidden">
               <AIChat
                 context={contexto ?? 'GENERAL'}
+                productoId={productoId}
                 sessionKey={sessionKey}
                 chips={chips}
                 placeholder={t('chat.placeholder')}
