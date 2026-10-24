@@ -9,9 +9,16 @@ import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
+/**
+ * Envío de correo por SendGrid. Es el bean por defecto en cualquier perfil fuera de dev/test
+ * y SIEMPRE que esté activo prod o production (fail-closed). En dev/test sin prod lo
+ * reemplaza {@link com.hotclick.service.email.SmtpDevEmailService} (Mailpit local).
+ */
 @Service
+@Profile("!((dev | test) & !prod & !production)")
 public class ResendEmailService {
 
     @Value("${sendgrid.api-key}")
