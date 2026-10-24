@@ -13,6 +13,8 @@ public class Constants {
      * cada uno su propia copia de este ID, con logica ya divergente entre si.
      */
     public static final long EMPRESA_PLATAFORMA_ID = 1L;
+    /** Bodega HotClick por defecto del checkout (puede no existir tras un reset de datos). */
+    public static final long BODEGA_DEFAULT_ID = 1L;
 
     public static boolean esEmpresaPlataforma(long empresaId) {
         return empresaId == EMPRESA_PLATAFORMA_ID;
