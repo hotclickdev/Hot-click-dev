@@ -7,6 +7,7 @@ import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { mensajeErrorAuth } from './authHelpers'
+import { guardarCorreoPendiente, leerCorreoPendiente, limpiarCorreoPendiente, pasoInicialRegistro, reenviarCodigoRegistro } from './verificacionPendiente'
 import { MSG_CEDULA_INVALIDA, normalizarCedulaRegistro } from './cedulaRegistro'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
@@ -45,13 +46,13 @@ export function useRegisterFlow() {
   const loginStore = useAuthStore((s) => s.login)
 
   const [modo,              setModo]              = useState('comprador') // 'comprador' | 'emprendedor'
-  const [step,              setStep]              = useState('form')
+  const [step,              setStep]              = useState<string>(() => pasoInicialRegistro())
   const [loading,           setLoading]           = useState(false)
   const [error,             setError]             = useState('')
   const [showCartRecovery,  setShowCartRecovery]  = useState(false)
   const [recoveryCart,      setRecoveryCart]      = useState<CarritoRecuperable | null>(null)
   const addItem             = useCartStore((s) => s.addItem)
-  const [correoRegistro,    setCorreoRegistro]    = useState('')
+  const [correoRegistro,    setCorreoRegistro]    = useState(() => leerCorreoPendiente())
   const [codigo,            setCodigo]            = useState('')
   const [turnstileToken,    setTurnstileToken]    = useState('')
   const turnstileRef        = useRef<TurnstileInstance | null>(null)
@@ -84,7 +85,8 @@ export function useRegisterFlow() {
         ...trimmed,
         declaraMayoriaEdad: true,
       }, turnstileToken)
-      setCorreoRegistro(form.correo)
+      setCorreoRegistro(trimmed.correo)
+      guardarCorreoPendiente(trimmed.correo)
       setStep('verify')
     } catch (err: unknown) {
       setError(mensajeErrorAuth(err, 'Error al enviar el código. Intentá de nuevo.') || 'Error al enviar el código. Intentá de nuevo.')
@@ -100,6 +102,7 @@ export function useRegisterFlow() {
     try {
       const res      = await authService.verifyRegistration(correoRegistro, codigo.trim())
       const authData = authDataDesdeVerify(res.data)
+      limpiarCorreoPendiente()
       if (authData?.accessToken) {
         loginStore(authData)
         toast({ message: '¡Bienvenido a HotClick! Tu cuenta fue verificada.', type: 'success' })
@@ -117,18 +120,16 @@ export function useRegisterFlow() {
 
   const handleReenviar = async () => {
     setError(''); setLoading(true)
-    try {
-      await authService.sendVerification({
-        ...form,
-        identificacion: normalizarCedulaRegistro(form.identificacion) ?? form.identificacion,
-        declaraMayoriaEdad: true,
-      }, turnstileToken)
-      toast({ message: t('register.resentSuccess'), type: 'success' })
-      setCodigo('')
-    } catch (err: unknown) {
-      setError(mensajeErrorAuth(err, 'Error al reenviar el código. Intentá de nuevo.') || 'Error al reenviar el código. Intentá de nuevo.')
-    }
-    finally { setLoading(false) }
+    // Solo el correo: el backend reenvía si la cuenta está pendiente y responde genérico.
+    const r = await reenviarCodigoRegistro(correoRegistro, (d) => authService.sendVerification(d, turnstileToken))
+    if (r === 'enviado') { toast({ message: t('register.resentGeneric'), type: 'success' }); setCodigo('') }
+    else setError(r === 'limite' ? t('register.resendLimit') : t('register.resendFailed'))
+    setLoading(false)
+  }
+
+  const volverAlFormulario = () => {
+    limpiarCorreoPendiente()
+    setCodigo(''); setError(''); setStep('form')
   }
 
   return {
@@ -137,6 +138,6 @@ export function useRegisterFlow() {
     showCartRecovery, setShowCartRecovery, recoveryCart, addItem,
     correoRegistro, codigo, setCodigo, form, setForm,
     turnstileToken, setTurnstileToken, turnstileRef,
-    actualizarCampo, handleSubmit, handleVerify, handleReenviar,
+    actualizarCampo, handleSubmit, handleVerify, handleReenviar, volverAlFormulario,
   }
 }

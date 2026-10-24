@@ -31,6 +31,9 @@ public class AuthVerificationHandler {
         if (!turnstileService.verify(turnstileToken, securityAuditService.getIp(httpRequest))) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
+        if (esReenvio(usuario)) {
+            return reenviarGenerico(usuario.getCorreo());
+        }
         try {
             prepararAltaSiAplica(usuario);
             emailVerificationService.iniciarRegistro(usuario);
@@ -39,6 +42,24 @@ public class AuthVerificationHandler {
             log.error("[send-verification] {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajePublico(e)));
         }
+    }
+
+    /** QA4-004: el reenvío (solo correo) responde igual exista o no la cuenta, para no enumerar. */
+    static final String MSG_REENVIO = "Si tu cuenta está pendiente de verificar, te enviamos un código nuevo.";
+
+    /** Sin contraseña = reenvío del código (paso de verificación o login no verificado). Nunca crea cuentas. */
+    static boolean esReenvio(Usuario usuario) {
+        String clave = usuario.getContrasenaHash();
+        return clave == null || clave.isBlank();
+    }
+
+    private ResponseEntity<ResponseDTO> reenviarGenerico(String correo) {
+        try {
+            emailVerificationService.reenviarSiPendiente(correo);
+        } catch (Exception e) {
+            log.warn("[send-verification] reenvío fallido: {}", e.getClass().getSimpleName());
+        }
+        return ResponseEntity.ok(ResponseDTO.success(MSG_REENVIO, null));
     }
 
     static final String MSG_GENERICO = "No se pudo enviar el código. Revisá tus datos e intentá de nuevo.";

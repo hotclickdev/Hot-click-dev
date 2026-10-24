@@ -48,6 +48,18 @@ public class EmailVerificationService {
     }
 
     /**
+     * QA4-004: reenvía el OTP de registro solo si la cuenta existe y sigue PENDIENTE.
+     * No crea cuentas ni avisa si el correo existe (el llamador responde genérico).
+     */
+    @Transactional
+    public void reenviarSiPendiente(String correo) {
+        if (correo == null || correo.isBlank()) return;
+        usuarioService.buscarPorCorreo(correo.trim().toLowerCase())
+                .filter(u -> u.getEstado() != null && u.getEstado() == Constants.ESTADO_PENDIENTE)
+                .ifPresent(u -> otpService.enviarOtp(u, Constants.OTP_TIPO_REGISTRO));
+    }
+
+    /**
      * Paso 2 del registro: verifica el OTP y activa la cuenta.
      */
     @Transactional

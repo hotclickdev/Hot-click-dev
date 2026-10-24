@@ -5,6 +5,7 @@ import TwoFaPickerStep from './auth/TwoFaPickerStep'
 import TwoFaEmailOtpStep from './auth/TwoFaEmailOtpStep'
 import TwoFaTotpStep from './auth/TwoFaTotpStep'
 import { useLoginFlow } from './auth/useLoginFlow'
+import RegisterVerifyStep from './auth/RegisterVerifyStep'
 import LoginPageLayout from './auth/LoginPageLayout'
 import { useClerkDisponible } from '@/components/auth/clerkDisponibleContext'
 
@@ -21,6 +22,26 @@ export default function LoginPage() {
     twoFaMethods, resendCooldown, handleLogin, handleResendVerification,
     sendEmailOtp, handlePickMethod, handle2FA, handleEmailOtp, handleLoginSuccess,
   } = flow
+
+  // QA4-004: cuenta pendiente de verificar → mismo paso del código que el registro.
+  if (step === 'verificar-correo') {
+    return (
+      <RegisterVerifyStep
+        t={flow.t}
+        codigo={flow.codigoVerificacion} setCodigo={flow.setCodigoVerificacion}
+        correoRegistro={correo}
+        error={error} loading={loading || resendLoading}
+        onVerify={flow.handleVerificarCorreo}
+        onReenviar={handleResendVerification}
+        onBack={flow.volverAlLogin}
+        showCartRecovery={flow.showCartRecovery}
+        recoveryCart={flow.recoveryCart}
+        addItem={flow.addItem}
+        onCloseCart={() => { flow.setShowCartRecovery(false); navigate(flow.recoveryDest, { replace: true }) }}
+        onDoneCart={() => { flow.setShowCartRecovery(false); navigate(flow.recoveryDest, { replace: true }) }}
+      />
+    )
+  }
 
   return (
     <LoginPageLayout flow={flow}>
