@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { cargarCatalogoCompleto, CATALOGO_LOTE, CATALOGO_MAX_LOTES } from './useCatalogoFetch'
+import { cargarCatalogoCompleto, CATALOGO_LOTE, CATALOGO_MAX_LOTES, CATALOGO_CONCURRENCIA } from './useCatalogoFetch'
 
 const pagina = (page: number, size: number, total: number) => ({
   data: {
@@ -27,5 +27,22 @@ describe('cargarCatalogoCompleto', () => {
     const getPage = vi.fn((p: number, s: number) => Promise.resolve(pagina(p, s, 1_000_000)))
     await cargarCatalogoCompleto(getPage)
     expect(getPage).toHaveBeenCalledTimes(CATALOGO_MAX_LOTES)
+  })
+
+  it('nunca hay más de 4 requests en vuelo y conserva el orden', async () => {
+    let enVuelo = 0
+    let maximo = 0
+    const getPage = vi.fn(async (p: number, s: number) => {
+      enVuelo++
+      maximo = Math.max(maximo, enVuelo)
+      await new Promise((r) => setTimeout(r, (7 - (p % 5)) * 2))
+      enVuelo--
+      return pagina(p, s, 500)
+    })
+    const todos = await cargarCatalogoCompleto(getPage)
+    expect(CATALOGO_CONCURRENCIA).toBe(4)
+    expect(maximo).toBeLessThanOrEqual(4)
+    expect(maximo).toBe(4)
+    expect(todos.map((p) => (p as { id: number }).id)).toEqual(Array.from({ length: 500 }, (_, i) => i))
   })
 })

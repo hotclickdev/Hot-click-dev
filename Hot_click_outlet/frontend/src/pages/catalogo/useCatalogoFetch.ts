@@ -10,6 +10,25 @@ export const CATALOGO_LOTE = 50
 /** Techo de seguridad: 40 lotes = 2000 productos. */
 export const CATALOGO_MAX_LOTES = 40
 
+/** Máximo de requests de lotes en vuelo a la vez. */
+export const CATALOGO_CONCURRENCIA = 4
+
+/** Map async con a lo sumo `limite` tareas en vuelo; conserva el orden de `items`. */
+export async function mapConConcurrencia<T, R>(
+  items: T[], limite: number, fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const out: R[] = new Array(items.length)
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++
+      out[i] = await fn(items[i])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(Math.max(1, limite), items.length) }, worker))
+  return out
+}
+
 /**
  * Trae el catálogo público completo en lotes. Filtros, facetas y conteos se calculan en el
  * cliente: con una sola página (24) /productos?cat=X mostraba 0 aunque la categoría tuviera productos.
@@ -21,8 +40,10 @@ export async function cargarCatalogoCompleto(
   const primera = listaDesdeRespuesta(data)
   const total = (data as PaginaProductos).totalElements
   const lotes = Math.min(CATALOGO_MAX_LOTES, total != null ? Math.ceil(total / CATALOGO_LOTE) : 1)
-  const resto = await Promise.all(
-    Array.from({ length: Math.max(0, lotes - 1) }, (_, i) => getPage(i + 1, CATALOGO_LOTE)),
+  const resto = await mapConConcurrencia(
+    Array.from({ length: Math.max(0, lotes - 1) }, (_, i) => i + 1),
+    CATALOGO_CONCURRENCIA,
+    (pg) => getPage(pg, CATALOGO_LOTE),
   )
   return [...primera, ...resto.flatMap((r) => listaDesdeRespuesta(r.data))]
 }
