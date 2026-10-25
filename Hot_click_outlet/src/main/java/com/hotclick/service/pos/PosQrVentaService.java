@@ -61,7 +61,7 @@ public class PosQrVentaService {
     public static final String MSG_TARJETA_NO_DISPONIBLE =
         "El pago con tarjeta por QR no está disponible. Pagá por SINPE Móvil o en caja.";
 
-    static final String MSG_SINPE_SOLO_ONVO = "SINPE Móvil se cobra por ONVO, no por Tilopay.";
+    public static final String MSG_SINPE_SOLO_ONVO = "SINPE Móvil se cobra por ONVO, no por Tilopay.";
 
     /** Tilopay retirado del QR: nunca inicia un cobro (no habría forma válida de confirmarlo). */
     public Map<String, Object> iniciarTilopay(String token, String metodo) {
