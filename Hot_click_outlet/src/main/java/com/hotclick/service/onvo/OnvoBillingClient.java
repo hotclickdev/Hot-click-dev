@@ -32,6 +32,11 @@ public class OnvoBillingClient {
     @Value("${onvo.secret-key:}")
     private String secretKey;
 
+    /** Opt-in (PAYMENTS_ONVO_PERMITIR_LLAVE_TEST): con llave de prueba fuera de dev/test no se aborta el arranque,
+     * pero billing queda deshabilitado (toda llamada falla cerrada). Default false = abortar como siempre. */
+    @Value("${payments.onvo.permitir-llave-test:false}")
+    private boolean permitirLlaveTest;
+
     @Value("${onvo.price-id.pyme:}")
     private String priceIdPyme;
 
@@ -73,11 +78,21 @@ public class OnvoBillingClient {
     @jakarta.annotation.PostConstruct
     void validarLlaveAlArrancar() {
         if (esLlaveDePrueba(secretKey) && !perfilDeSimulacion()) {
+            if (permitirLlaveTest) {
+                log.warn("[ALERTA-PAGO] ONVO billing con llave de prueba fuera de dev/test por opt-in "
+                    + "(payments.onvo.permitir-llave-test): suscripciones y facturación DESHABILITADAS (fail-closed)");
+                return;
+            }
             log.error("[ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; "
                 + "arranque abortado hasta configurar la llave live");
             throw new IllegalStateException(
                 "ONVO billing: llave de prueba (" + PREFIJO_LLAVE_TEST + ") fuera de dev/test; arranque abortado");
         }
+    }
+
+    /** Billing deshabilitado: llave de prueba fuera de dev/test (solo llega aquí con el opt-in activo). */
+    public boolean isBillingDeshabilitado() {
+        return esLlaveDePrueba(secretKey) && !perfilDeSimulacion();
     }
 
     boolean perfilDeSimulacion() {

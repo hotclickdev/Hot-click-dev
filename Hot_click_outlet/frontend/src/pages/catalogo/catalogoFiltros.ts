@@ -120,13 +120,13 @@ export function normalizarBusqueda(texto: string): string {
 
 
 
-/** El producto coincide con la búsqueda por nombre, marca o tienda, sin distinguir tildes. */
+/** El producto coincide con la búsqueda por nombre o marca (inicio de palabra), o por tienda con 4+ letras; sin distinguir tildes. */
 
 export function coincideBusqueda(p: Pick<Producto, 'nombre' | 'marcaNombre' | 'empresaNombre'>, search: string): boolean {
 
   if (!normalizarBusqueda(search)) return true
 
-  return camposCoincidenConsulta([p.nombre, p.marcaNombre, p.empresaNombre], search)
+  return camposCoincidenConsulta([p.nombre, p.marcaNombre], search, [p.empresaNombre])
 
 }
 

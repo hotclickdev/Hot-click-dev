@@ -28,3 +28,15 @@ export function surfaceFromPath(pathname?: string): AiChatSurface {
   if (path === '/' || path.startsWith('/descubri')) return 'home'
   return 'otra'
 }
+
+/** Id numérico de la ficha (`/productos/{id}`) para que el asistente responda sobre ese producto. */
+export function productoIdFromPath(pathname?: string): number | null {
+  const ficha = (pathname || '/').match(/^\/productos\/(\d+)(?:[/?#]|$)/)
+  return ficha ? Number(ficha[1]) : null
+}
+
+/** Asistente del marketplace: no encima de tienda vendedor, prototipo ni pago POS. La ficha sí lo monta (chips "Preguntale"). */
+export function chatModalVisible(pathname: string, esTienda: boolean, esClaudeclick: boolean): boolean {
+  if (esTienda || esClaudeclick) return false
+  return !pathname.startsWith('/pos') && !pathname.startsWith('/plataforma')
+}

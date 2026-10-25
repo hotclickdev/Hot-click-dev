@@ -81,7 +81,8 @@ public class RagPipeline {
                               List<Map<String, Object>> historial, String contexto,
                               String customerMemory, boolean marketplace, Long productoId) {
 
-        boolean asesorFicha = productoId != null && productoId > 0;
+        boolean asesorFicha = productoId != null && productoId > 0
+            && !com.hotclick.rag.classifier.QueryClassifier.pideOtrosProductos(query);
         List<ProductoContexto> productos = asesorFicha
             ? vectorSearchService.buscarPorId(empresaId, productoId, marketplace)
             : vectorSearchService.buscarSimilares(empresaId, query, TOP_K, marketplace);

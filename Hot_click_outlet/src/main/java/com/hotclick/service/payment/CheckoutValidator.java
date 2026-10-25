@@ -76,6 +76,28 @@ public class CheckoutValidator {
             .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
     }
 
+    /**
+     * Bodega por defecto del checkout. Si el body trae {@code bodegaId}, es estricta (404 si no existe).
+     * Si no, intenta la bodega HotClick (id 1) y, si ya no existe (reset de datos), la primera bodega
+     * activa del negocio activo o de la plataforma. Puede devolver null: los productos con bodega propia
+     * o de su tienda no la necesitan, y el planner falla con un mensaje claro si alguno sí la necesita.
+     */
+    public Bodega resolverBodegaDefault(Long bodegaIdSolicitada) {
+        boolean esDefault = bodegaIdSolicitada == null || bodegaIdSolicitada == Constants.BODEGA_DEFAULT_ID;
+        // El front manda bodegaId=1 (BODEGA_DEFAULT) en todo envío: si ya no existe, se trata como ausente.
+        if (!esDefault) return loadBodega(bodegaIdSolicitada);
+        java.util.Optional<Bodega> fija = bodegaRepository.findById(Constants.BODEGA_DEFAULT_ID);
+        if (fija.isPresent()) return fija.get();
+        Long tenantId = com.hotclick.security.TenantContext.get();
+        Long empresaId = tenantId != null ? tenantId : Constants.EMPRESA_PLATAFORMA_ID;
+        java.util.List<Bodega> activas =
+            bodegaRepository.findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresaId, Constants.ESTADO_ACTIVO);
+        if (activas != null && !activas.isEmpty()) return activas.get(0);
+        log.warn("[checkout] Sin bodega default: id {} no existe y la empresa {} no tiene bodegas activas",
+            Constants.BODEGA_DEFAULT_ID, empresaId);
+        return null;
+    }
+
     public void assertBodegaTenant(Bodega bodega, Long bodegaId) {
         // Tenant assertion: la bodega del checkout debe pertenecer al negocio activo
         // (slug de la tienda pública). Evita que un pedido de la Empresa A se asiente

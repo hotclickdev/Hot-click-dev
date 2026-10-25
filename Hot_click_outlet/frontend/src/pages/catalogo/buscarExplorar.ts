@@ -103,22 +103,57 @@ export function palabrasSignificativas(consulta: string): string[] {
   return salida
 }
 
-/** La frase completa o alguna de sus palabras aparece en alguno de los textos. */
-export function camposCoincidenConsulta(campos: (string | null | undefined)[], consulta: string): boolean {
+/** Palabras de un texto ya normalizado (sin tildes ni mayúsculas). */
+function palabrasDe(texto: string): string[] {
+  return texto.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+}
+
+/** La frase aparece al inicio de una palabra del texto ("ca" en "Camisa" sí, en "Guanacaste" no). */
+function fraseAlInicioDePalabra(texto: string, frase: string): boolean {
+  let desde = texto.indexOf(frase)
+  while (desde !== -1) {
+    if (desde === 0 || !/[\p{L}\p{N}]/u.test(texto[desde - 1])) return true
+    desde = texto.indexOf(frase, desde + 1)
+  }
+  return false
+}
+
+/** Largo mínimo para buscar en textos secundarios (tienda, categoría, descripción): así "ca" no trae todo "TicoTech Cartago". */
+const LARGO_MINIMO_SECUNDARIO = 4
+
+/**
+ * La frase completa o alguna de sus palabras coincide, sin distinguir tildes ("cafe" = "café").
+ * - `campos` (nombre, marca): basta con que la consulta sea el inicio de una palabra.
+ * - `secundarios` (tienda, categoría, descripción): solo con consultas de 4+ letras, y la palabra tiene que empezar igual.
+ * Nunca coincide por un trozo en medio de una palabra.
+ */
+export function camposCoincidenConsulta(
+  campos: (string | null | undefined)[],
+  consulta: string,
+  secundarios: (string | null | undefined)[] = [],
+): boolean {
   const q = normalizar(consulta)
   if (q.length < 2) return false
-  const textos = campos.filter((campo): campo is string => Boolean(campo?.trim())).map((campo) => normalizar(campo))
-  if (textos.some((texto) => texto.includes(q))) return true
+  const limpiar = (lista: (string | null | undefined)[]) =>
+    lista.filter((campo): campo is string => Boolean(campo?.trim())).map((campo) => normalizar(campo))
+  const principales = limpiar(campos)
+  const otros = limpiar(secundarios)
+  if (principales.some((texto) => fraseAlInicioDePalabra(texto, q))) return true
+  if (q.length >= LARGO_MINIMO_SECUNDARIO && otros.some((texto) => fraseAlInicioDePalabra(texto, q))) return true
   const palabras = palabrasSignificativas(consulta)
   if (palabras.length === 0) return false
-  const junto = textos.join(' ')
-  return palabras.some((palabra) => junto.includes(palabra))
+  const palabrasPrincipales = principales.flatMap(palabrasDe)
+  const palabrasOtras = otros.flatMap(palabrasDe)
+  return palabras.some((palabra) =>
+    palabrasPrincipales.some((p) => p.startsWith(palabra))
+    || (palabra.length >= LARGO_MINIMO_SECUNDARIO && palabrasOtras.some((p) => p.startsWith(palabra))))
 }
 
 export function productoCoincideConsulta(producto: Producto, consulta: string): boolean {
   return camposCoincidenConsulta(
-    [producto.nombre, producto.categoriaNombre, producto.marcaNombre, producto.descripcion, producto.empresaNombre],
+    [producto.nombre, producto.marcaNombre],
     consulta,
+    [producto.categoriaNombre, producto.descripcion, producto.empresaNombre],
   )
 }
 

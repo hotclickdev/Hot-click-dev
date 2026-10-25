@@ -25,6 +25,37 @@ class OnvoServiceModoTest {
 
     private final RestTemplate restTemplate = mock(RestTemplate.class);
 
+    private OnvoService servicioOptIn(boolean permitir, String llave, String... perfiles) {
+        OnvoService s = new OnvoService(restTemplate);
+        ReflectionTestUtils.setField(s, "permitirLlaveTest", permitir);
+        ReflectionTestUtils.setField(s, "secretKey", llave);
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles(perfiles);
+        ReflectionTestUtils.setField(s, "environment", env);
+        s.init();
+        return s;
+    }
+
+    @Test
+    @DisplayName("Opt-in llave test: default false cierra; true abre en modo prueba sin mock; live y sin llave no cambian")
+    void optInLlaveTest() {
+        String test = "onvo_test_secret_key_x", live = "onvo_live_secret_key_x";
+        assertThat(servicioOptIn(false, test, "prod").isPagosDisponibles()).isFalse();
+        OnvoService abierto = servicioOptIn(true, test, "prod");
+        assertThat(abierto.isPagosDisponibles()).isTrue();
+        assertThat(abierto.isMockMode()).isFalse();
+        assertThat(abierto.modoEsperado()).isEqualTo("test");
+        for (boolean f : new boolean[] {false, true}) {
+            OnvoService l = servicioOptIn(f, live, "prod");
+            assertThat(l.isPagosDisponibles()).isTrue();
+            assertThat(l.isMockMode()).isFalse();
+            assertThat(l.modoEsperado()).isEqualTo("live");
+        }
+        OnvoService sin = servicioOptIn(true, "", "prod");
+        assertThat(sin.isPagosDisponibles()).isFalse();
+        assertThat(sin.isMockMode()).isFalse();
+    }
+
     private OnvoService servicio(String llave, String... perfiles) {
         OnvoService s = new OnvoService(restTemplate);
         ReflectionTestUtils.setField(s, "secretKey", llave);

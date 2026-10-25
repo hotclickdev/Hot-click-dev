@@ -3,6 +3,7 @@ import { paymentService } from '../services/paymentService'
 import type { CheckoutPayload } from '@/types/pedido'
 import { sincronizarRetornoPagoAlIniciar } from '@/prototipo/visitante/pagoRetornoVisitante'
 import { POS_QR_TOKEN_KEY } from '@/pages/pos/POSPagoPage'
+import { MENSAJE_URL_PAGO_INVALIDA, esUrlPagoOnvo } from '@/utils/urlPagoOnvo'
 
 const MAX_INTENTOS = 3
 const POLL_INTERVAL_MS = 3000
@@ -114,6 +115,9 @@ export function usePayment() {
         setEstado('tilopay_card')
       } else if (!data.redirectUrl || data.proveedor === 'SINPE' || data.proveedor === 'EFECTIVO') {
         setEstado('sinpe_pendiente')
+      } else if (data.proveedor === 'ONVO' && !esUrlPagoOnvo(data.redirectUrl)) {
+        setError(MENSAJE_URL_PAGO_INVALIDA)
+        setEstado('failed')
       } else {
         setEstado('redirecting')
         if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current)

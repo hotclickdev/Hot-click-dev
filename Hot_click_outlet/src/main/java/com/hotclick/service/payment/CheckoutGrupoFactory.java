@@ -48,11 +48,13 @@ public class CheckoutGrupoFactory {
 
     /**
      * CMP-4: la {@code bodegaId} del body tiene que ser de un negocio que vende algo del carrito.
-     * Si no se mandó (default HotClick) o la bodega no tiene negocio, no se exige.
+     * Si no se mandó o es la default HotClick (id 1), o la bodega no tiene negocio, no se exige.
      */
     static void exigirBodegaDeLaTienda(PaymentCheckoutRequest req, java.util.Map<Long, com.hotclick.model.Producto> productos,
                                        Bodega bodega) {
-        if (req.getBodegaId() == null || bodega == null || bodega.getEmpresa() == null || productos == null || productos.isEmpty()) return;
+        // bodegaId=1 es la default HotClick que el front manda en todo envío: se trata como "no se mandó".
+        if (req.getBodegaId() == null || req.getBodegaId() == com.hotclick.utils.Constants.BODEGA_DEFAULT_ID
+            || bodega == null || bodega.getEmpresa() == null || productos == null || productos.isEmpty()) return;
         Long empresaBodega = bodega.getEmpresa().getId();
         boolean coincide = productos.values().stream()
             .anyMatch(p -> empresaBodega.equals(empresaDe(p)));

@@ -48,6 +48,21 @@ public class SinpeCheckoutService {
     @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.sinpe-manual.habilitado:false}")
     private boolean sinpeManualHabilitado;
 
+    /** Decisión 24-oct-2026: el efectivo (y contra entrega) queda solo en el POS. Default false = el checkout web lo rechaza. */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.efectivo-web.habilitado:false}")
+    private boolean efectivoWebHabilitado;
+
+    public static final String MSG_EFECTIVO_SOLO_POS =
+        "El pago en efectivo es solo en tienda (POS). En línea pagá con Tarjeta.";
+
+    /** Checkout web: EFECTIVO solo con la bandera; el resto sigue la regla G1 de {@link #exigirProveedorPermitido(String, boolean)}. */
+    static void exigirProveedorPermitido(String proveedor, boolean sinpeManualHabilitado, boolean efectivoWebHabilitado) {
+        if (!efectivoWebHabilitado && proveedor != null && "EFECTIVO".equalsIgnoreCase(proveedor.trim())) {
+            throw new IllegalStateException(MSG_EFECTIVO_SOLO_POS);
+        }
+        exigirProveedorPermitido(proveedor, sinpeManualHabilitado);
+    }
+
     public static final String MSG_SINPE_MANUAL =
         "Este checkout solo registra pagos en efectivo. Elegí SINPE Móvil o Tarjeta: te llevamos a la pasarela de pago.";
 
@@ -61,13 +76,12 @@ public class SinpeCheckoutService {
 
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
-        exigirProveedorPermitido(req.getProvider(), sinpeManualHabilitado);
+        exigirProveedorPermitido(req.getProvider(), sinpeManualHabilitado, efectivoWebHabilitado);
         checkoutValidator.validateCartNotEmpty(req);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
 
-        Long bodegaId = req.getBodegaId() != null ? req.getBodegaId() : 1L;
-        Bodega bodegaDefault = checkoutValidator.loadBodega(bodegaId);
+        Bodega bodegaDefault = checkoutValidator.resolverBodegaDefault(req.getBodegaId());
 
         StockReservationResult reservation = stockReservationService.reserveForCheckout(req.getItems());
         String proveedorEfectivo = req.getProvider() != null ? req.getProvider().trim() : Constants.PROVEEDOR_SINPE;

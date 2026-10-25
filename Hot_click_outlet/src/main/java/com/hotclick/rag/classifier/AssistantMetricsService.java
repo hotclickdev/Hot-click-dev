@@ -38,7 +38,7 @@ public class AssistantMetricsService {
     public void record(QueryClassification classification) {
         total.incrementAndGet();
         switch (classification) {
-            case PRODUCTO, COMPRA, SOPORTE -> validas.incrementAndGet();
+            case PRODUCTO, PREGUNTA_PRODUCTO_ACTUAL, COMPRA, SOPORTE -> validas.incrementAndGet();
             case FUERA_DE_DOMINIO          -> fueraDeDominio.incrementAndGet();
             case PROMPT_INJECTION          -> {
                 promptInjection.incrementAndGet();
