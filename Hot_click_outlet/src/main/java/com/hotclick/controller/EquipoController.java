@@ -22,7 +22,7 @@ import java.util.Set;
 @RequestMapping("/api/empresa/equipo")
 public class EquipoController {
 
-    private static final Set<String> ROLES_PERMITIDOS = Set.of("EDITOR", "LECTOR", "ADMIN");
+    private static final Set<String> ROLES_PERMITIDOS = Set.of("EDITOR", "LECTOR", "CAJERO", "ADMIN");
 
     @Autowired private CompanyScope companyScope;
     @Autowired private EquipoService equipoService;
@@ -69,7 +69,7 @@ public class EquipoController {
         }
         String nuevoRol = body.get("rolEnEmpresa");
         if (nuevoRol == null || !ROLES_PERMITIDOS.contains(nuevoRol)) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR"));
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR, CAJERO"));
         }
         return ResponseEntity.ok(ResponseDTO.success("Rol actualizado a " + nuevoRol,
             equipoService.cambiarRol(id, empresaId, nuevoRol)));
@@ -109,7 +109,7 @@ public class EquipoController {
         }
         String rolEnEmpresa = body.getOrDefault("rolEnEmpresa", "EDITOR");
         if (!ROLES_PERMITIDOS.contains(rolEnEmpresa)) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR"));
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR, CAJERO"));
         }
         return null;
     }

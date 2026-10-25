@@ -33,7 +33,7 @@ public class EmpresaAdminService {
     // Mismo set que EquipoController.ROLES_PERMITIDOS (equipo propio) — se
     // duplica acá porque ese campo es privado y este es un camino distinto
     // (ADMIN operando sobre una empresa ajena, sin impersonar).
-    private static final Set<String> ROLES_EQUIPO_VALIDOS = Set.of("EDITOR", "LECTOR", "ADMIN");
+    private static final Set<String> ROLES_EQUIPO_VALIDOS = Set.of("EDITOR", "LECTOR", "CAJERO", "ADMIN");
     private static final String ALFABETO_PASSWORD_TEMPORAL =
         "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
     private static final SecureRandom RNG = new SecureRandom();
@@ -175,7 +175,7 @@ public class EmpresaAdminService {
             throw new IllegalArgumentException("El correo es requerido");
         }
         if (rolEnEmpresa == null || !ROLES_EQUIPO_VALIDOS.contains(rolEnEmpresa)) {
-            throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR");
+            throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR, CAJERO");
         }
         Empresa empresa = empresa(id);
         String correoNorm = correo.trim().toLowerCase();
@@ -187,7 +187,7 @@ public class EmpresaAdminService {
 
     public Map<String, Object> cambiarRolMiembro(Long id, Long miembroId, String nuevoRol) {
         if (nuevoRol == null || !ROLES_EQUIPO_VALIDOS.contains(nuevoRol)) {
-            throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR");
+            throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR, CAJERO");
         }
         empresa(id);
         Map<String, Object> resultado = equipoService.cambiarRol(miembroId, id, nuevoRol);

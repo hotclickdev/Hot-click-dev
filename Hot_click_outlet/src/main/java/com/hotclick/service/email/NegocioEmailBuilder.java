@@ -87,6 +87,7 @@ public class NegocioEmailBuilder {
         String rolLabel = switch (rolEnEmpresa) {
             case "EDITOR" -> "Editor — puede editar productos y pedidos";
             case "LECTOR" -> "Lector — solo visualización";
+            case "CAJERO" -> "Cajero — solo opera el punto de venta";
             case "ADMIN"  -> "Admin — acceso completo";
             default -> rolEnEmpresa;
         };

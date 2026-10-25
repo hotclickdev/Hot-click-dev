@@ -44,14 +44,26 @@ public class PropietarioGuard {
         return !companyScope.isImpersonating() && esPropietario(companyScope.getCurrentUser(), empresaId);
     }
 
+    /** Roles de equipo con deny por defecto en escrituras (ver LectorSoloLecturaInterceptor). */
+    public static final java.util.Set<String> ROLES_RESTRINGIDOS = java.util.Set.of("LECTOR", "CAJERO");
+
     /** Miembro activo con rol LECTOR en esa empresa (no aplica a ADMIN de plataforma). */
     public boolean esLector(Long empresaId) {
-        if (empresaId == null || companyScope.isAdminIT()) return false;
+        return "LECTOR".equals(rolRestringido(empresaId));
+    }
+
+    /**
+     * Rol restringido (LECTOR o CAJERO) del usuario actual como miembro activo de esa empresa, o null si no
+     * aplica (sin empresa, ADMIN de plataforma, sin membresía activa, o rol EDITOR/ADMIN/PROPIETARIO).
+     */
+    public String rolRestringido(Long empresaId) {
+        if (empresaId == null || companyScope.isAdminIT()) return null;
         Usuario u = companyScope.getCurrentUser();
-        if (u == null) return false;
+        if (u == null) return null;
         return miembros.findByUsuarioIdAndEmpresaId(u.getId(), empresaId)
-            .map(f -> Integer.valueOf(1).equals(f.getEstado()) && "LECTOR".equals(f.getRolEnEmpresa()))
-            .orElse(false);
+            .filter(f -> Integer.valueOf(1).equals(f.getEstado()) && ROLES_RESTRINGIDOS.contains(f.getRolEnEmpresa()))
+            .map(f -> f.getRolEnEmpresa())
+            .orElse(null);
     }
 
     /** Lanza 403 si el usuario actual no es propietario de la empresa del token. */
