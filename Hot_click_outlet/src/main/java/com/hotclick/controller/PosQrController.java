@@ -120,7 +120,7 @@ public class PosQrController {
         }
     }
 
-    /** Cliente inicia cobro por Tilopay (SDK embebido): tarjeta o, con ?metodo=SINPE, SINPE Móvil. */
+    /** ALTO 3: Tilopay retirado del QR. Responde 503 (tarjeta no disponible) o 409 si piden SINPE por acá. */
     @PostMapping("/pago/{token}/tilopay")
     public ResponseEntity<?> iniciarTilopay(@PathVariable String token,
                                             @RequestParam(name = "metodo", required = false) String metodo) {
@@ -131,7 +131,8 @@ public class PosQrController {
         } catch (IllegalStateException e) {
             log.warn("[POS-QR] Tilopay no iniciado token={}: {}",
                 com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
+            boolean tarjeta = com.hotclick.service.pos.PosQrVentaService.MSG_TARJETA_NO_DISPONIBLE.equals(e.getMessage());
+            return ResponseEntity.status(tarjeta ? 503 : 409).body(Map.of("error", mensajePagoTarjeta(e)));
         }
     }
 
@@ -163,7 +164,7 @@ public class PosQrController {
         }
     }
 
-    /** Al volver del SDK: el backend consulta a Tilopay; el navegador no decide si se pagó. */
+    /** Compatibilidad: ya no consulta a Tilopay; solo informa si el webhook ONVO cerró la venta. */
     @PostMapping("/pago/{token}/tilopay/confirmar")
     public ResponseEntity<?> confirmarTilopay(@PathVariable String token) {
         try {

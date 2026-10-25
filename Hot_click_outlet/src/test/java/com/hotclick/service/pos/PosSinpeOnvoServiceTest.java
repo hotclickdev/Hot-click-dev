@@ -111,18 +111,38 @@ class PosSinpeOnvoServiceTest {
     @Test
     @DisplayName("Clasificación: solo succeeded + monto ×100 + CRC es pagado; deferred espera")
     void clasificar() {
-        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "succeeded", "amount", 500000, "currency", "CRC"), "pi_1", 5000))
+        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "succeeded", "mode", "live", "amount", 500000, "currency", "CRC"), "pi_1", 5000, "live"))
             .isEqualTo(PosSinpeOnvoService.EstadoIntent.PAGADO);
-        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "succeeded", "amount", 400000, "currency", "CRC"), "pi_1", 5000))
+        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "succeeded", "mode", "live", "amount", 400000, "currency", "CRC"), "pi_1", 5000, "live"))
             .isEqualTo(PosSinpeOnvoService.EstadoIntent.DESCONOCIDO);
-        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "succeeded", "amount", 500000, "currency", "USD"), "pi_1", 5000))
+        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "succeeded", "mode", "live", "amount", 500000, "currency", "USD"), "pi_1", 5000, "live"))
             .isEqualTo(PosSinpeOnvoService.EstadoIntent.DESCONOCIDO);
-        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_otro", "status", "succeeded", "amount", 500000, "currency", "CRC"), "pi_1", 5000))
+        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_otro", "status", "succeeded", "mode", "live", "amount", 500000, "currency", "CRC"), "pi_1", 5000, "live"))
             .isEqualTo(PosSinpeOnvoService.EstadoIntent.DESCONOCIDO);
-        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "deferred"), "pi_1", 5000))
+        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "deferred"), "pi_1", 5000, "live"))
             .isEqualTo(PosSinpeOnvoService.EstadoIntent.ESPERANDO);
-        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "canceled"), "pi_1", 5000))
+        assertThat(PosSinpeOnvoService.clasificar(Map.of("id", "pi_1", "status", "canceled"), "pi_1", 5000, "live"))
             .isEqualTo(PosSinpeOnvoService.EstadoIntent.CANCELADO);
+    }
+
+    @Test
+    @DisplayName("ALTO 3: succeeded sin mode, con otro mode o sin modo esperado nunca es pagado")
+    void modoExigido() {
+        Map<String, Object> sinModo = Map.of("id", "pi_1", "status", "succeeded", "amount", 500000, "currency", "CRC");
+        Map<String, Object> test = Map.of("id", "pi_1", "status", "succeeded", "mode", "test", "amount", 500000, "currency", "CRC");
+        assertThat(PosSinpeOnvoService.clasificar(sinModo, "pi_1", 5000, "live")).isEqualTo(PosSinpeOnvoService.EstadoIntent.DESCONOCIDO);
+        assertThat(PosSinpeOnvoService.clasificar(test, "pi_1", 5000, "live")).isEqualTo(PosSinpeOnvoService.EstadoIntent.DESCONOCIDO);
+        assertThat(PosSinpeOnvoService.clasificar(test, "pi_1", 5000, null)).isEqualTo(PosSinpeOnvoService.EstadoIntent.DESCONOCIDO);
+        assertThat(PosSinpeOnvoService.clasificar(test, "pi_1", 5000, "test")).isEqualTo(PosSinpeOnvoService.EstadoIntent.PAGADO);
+    }
+
+    @Test
+    @DisplayName("ALTO 3: ONVO no disponible (llave test sin opt-in) no consulta ni da por pagado")
+    void noDisponibleNoPaga() {
+        sesion.setStripeSessionId("ONVOPI:pi_1");
+        when(onvo.isPagosDisponibles()).thenReturn(false);
+        assertThat(svc.estadoIntent(sesion)).isEqualTo(PosSinpeOnvoService.EstadoIntent.DESCONOCIDO);
+        verify(onvo, never()).obtenerPaymentIntent(any());
     }
 
     @Test

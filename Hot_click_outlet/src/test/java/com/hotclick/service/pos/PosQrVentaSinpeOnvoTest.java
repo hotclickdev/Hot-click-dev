@@ -82,6 +82,27 @@ class PosQrVentaSinpeOnvoTest {
     }
 
     @Test
+    @DisplayName("ALTO 3: el sondeo con ONVO pagado no cierra la venta ni expira, aunque esté vencida")
+    void sondeoPagadoEsperaWebhook() {
+        sesion.setFechaExpiracion(LocalDateTime.now(Constants.ZONA_CR).minusMinutes(1));
+        when(sinpeOnvo.estadoIntent(sesion)).thenReturn(PosSinpeOnvoService.EstadoIntent.PAGADO);
+        assertThat(service.verificarEstado("tokensinpeonvo01")).isEqualTo("PENDIENTE");
+        verify(completionService, never()).completarVentaTarjeta(any());
+        verify(sinpeOnvo, never()).cancelarIntent(any());
+        verify(posQrRepo, never()).reclamarParaCompletar(any());
+    }
+
+    @Test
+    @DisplayName("ALTO 3: solo el webhook verificado por GET cierra la venta")
+    void webhookPagadoCierra() {
+        when(posQrRepo.findByStripeSessionId("ONVOPI:pi_1")).thenReturn(Optional.of(sesion));
+        when(sinpeOnvo.estadoIntent(sesion)).thenReturn(PosSinpeOnvoService.EstadoIntent.PAGADO);
+        when(posQrRepo.reclamarParaCompletar(sesion.getId())).thenReturn(1);
+        assertThat(service.confirmarSinpeOnvoPorWebhook("pi_1")).isTrue();
+        verify(completionService).completarVentaTarjeta(sesion);
+    }
+
+    @Test
     @DisplayName("Webhook de un intent que no es del POS: ignorado")
     void webhookAjeno() {
         when(posQrRepo.findByStripeSessionId("ONVOPI:pi_x")).thenReturn(Optional.empty());

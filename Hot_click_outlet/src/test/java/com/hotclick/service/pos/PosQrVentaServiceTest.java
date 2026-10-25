@@ -42,19 +42,19 @@ class PosQrVentaServiceTest {
     }
 
     @Test
-    @DisplayName("Poll confirma con Tilopay (monto, CRC y orden) y marca PAGADO")
+    @DisplayName("ALTO 3: el poll ya no confirma con Tilopay aunque Tilopay diga aprobado")
     void pollTilopayMarcaPagado() {
         PosQrSesion sesion = sesionTarjeta();
-        sesion.setMetodoPago("SINPE");
         sesion.setStripeSessionId("POSQR-ABC");
         sesion.setFechaExpiracion(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(10));
         when(posQrRepo.findByToken("tokentarjetaqr01")).thenReturn(Optional.of(sesion));
-        when(tilopayService.consultarTransaccion("POSQR-ABC")).thenReturn(new TilopayService.ConsultaResultado(
+        org.mockito.Mockito.lenient().when(tilopayService.consultarTransaccion("POSQR-ABC")).thenReturn(new TilopayService.ConsultaResultado(
             true, "1", "ok", "auth", new BigDecimal("5000"), "CRC", "POSQR-ABC", false));
-        when(posQrRepo.reclamarParaCompletar(sesion.getId())).thenReturn(1);
 
-        assertThat(service.verificarEstado("tokentarjetaqr01")).isEqualTo("PAGADO");
-        verify(completionService).completarVentaTarjeta(sesion);
+        assertThat(service.verificarEstado("tokentarjetaqr01")).isEqualTo("PENDIENTE");
+        assertThat(service.confirmarTilopay("tokentarjetaqr01")).isFalse();
+        verify(completionService, never()).completarVentaTarjeta(any());
+        org.mockito.Mockito.verifyNoInteractions(tilopayService);
     }
 
     @Test

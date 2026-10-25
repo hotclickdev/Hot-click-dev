@@ -149,7 +149,8 @@ public class PosSinpeOnvoService {
     public EstadoIntent estadoIntent(PosQrSesion sesion) {
         String intentId = intentIdDe(sesion);
         OnvoService onvo = onvoService;
-        if (intentId == null || onvo == null || onvo.isMockMode() || sesion.getTotal() == null) return EstadoIntent.DESCONOCIDO;
+        if (intentId == null || onvo == null || onvo.isMockMode() || !onvo.isPagosDisponibles()
+                || sesion.getTotal() == null) return EstadoIntent.DESCONOCIDO;
         Map<?, ?> pi;
         try {
             pi = onvo.obtenerPaymentIntent(intentId);
@@ -157,14 +158,25 @@ public class PosSinpeOnvoService {
             log.warn("[POS-SINPE-ONVO] No se pudo leer el intent de la sesión {}: {}", sesion.getId(), e.getMessage());
             return EstadoIntent.DESCONOCIDO;
         }
-        return clasificar(pi, intentId, sesion.getTotal());
+        return clasificar(pi, intentId, sesion.getTotal(), onvo.modoEsperado());
     }
 
-    static EstadoIntent clasificar(Map<?, ?> pi, String intentId, long totalColones) {
+    /**
+     * ALTO 3: el intent tiene que traer {@code mode} igual al de la llave. Con llave live, solo live; con llave
+     * test solo llega acá si ONVO está disponible, es decir en dev/test o con el opt-in
+     * {@code payments.onvo.permitir-llave-test}. Sin mode o con otro modo nunca es PAGADO.
+     */
+    static EstadoIntent clasificar(Map<?, ?> pi, String intentId, long totalColones, String modoEsperado) {
         if (pi == null || pi.isEmpty() || !intentId.equals(String.valueOf(pi.get("id")))) return EstadoIntent.DESCONOCIDO;
         String status = String.valueOf(pi.get("status"));
         if ("canceled".equalsIgnoreCase(status) || "failed".equalsIgnoreCase(status)) return EstadoIntent.CANCELADO;
         if (!"succeeded".equalsIgnoreCase(status)) return EstadoIntent.ESPERANDO;
+        Object modo = pi.get("mode");
+        if (modoEsperado == null || modoEsperado.isBlank() || modo == null
+                || !modoEsperado.equalsIgnoreCase(String.valueOf(modo).trim())) {
+            log.error("[ALERTA-PAGO] Intent POS {} con mode={} distinto del de la llave ({}); no se usa", intentId, modo, modoEsperado);
+            return EstadoIntent.DESCONOCIDO;
+        }
         Object amount = pi.get("amount");
         Object currency = pi.get("currency");
         boolean montoExacto = amount instanceof Number n && n.longValue() == totalColones * 100L;

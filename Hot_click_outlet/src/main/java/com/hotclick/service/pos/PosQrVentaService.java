@@ -27,7 +27,6 @@ public class PosQrVentaService {
 
     @Autowired private PosQrSesionRepository posQrRepo;
     @Autowired private PedidoRepository pedidoRepository;
-    @Autowired private com.hotclick.service.TilopayService tilopayService;
     @Autowired private PosQrSessionService   sessionService;
     @Autowired private PosQrVentaCompletionService completionService;
     @Autowired private TurnoCajaService       turnoCajaService;
@@ -54,67 +53,29 @@ public class PosQrVentaService {
         }
     }
 
-    static final String PREFIJO_TILOPAY = "POSQR-";
-
     /**
-     * Cobro con tarjeta por Tilopay (reemplaza ONVO): devuelve los datos del SDK embebido.
-     * El número de orden queda en la sesión para confirmar contra Tilopay al volver.
+     * ALTO 3: el QR del POS ya no cobra ni confirma por Tilopay. Tarjeta queda no disponible (fail-closed)
+     * hasta que exista el cobro con tarjeta por ONVO; el único cobro en línea del QR es SINPE Móvil por ONVO,
+     * confirmado solo por el webhook {@code payment-intent.succeeded}.
      */
-    @Transactional
-    public Map<String, Object> iniciarTilopay(String token) {
-        return iniciarTilopay(token, PosQrMetodos.TARJETA);
-    }
+    public static final String MSG_TARJETA_NO_DISPONIBLE =
+        "El pago con tarjeta por QR no está disponible. Pagá por SINPE Móvil o en caja.";
 
     static final String MSG_SINPE_SOLO_ONVO = "SINPE Móvil se cobra por ONVO, no por Tilopay.";
 
-    /** Tarjeta por el SDK de Tilopay. SINPE Móvil va solo por ONVO ({@link PosSinpeOnvoService}). */
-    @Transactional
+    /** Tilopay retirado del QR: nunca inicia un cobro (no habría forma válida de confirmarlo). */
     public Map<String, Object> iniciarTilopay(String token, String metodo) {
         if (PosQrMetodos.SINPE.equals(metodo)) {
             throw new IllegalStateException(MSG_SINPE_SOLO_ONVO);
         }
-        String elegido = PosQrMetodos.TARJETA;
-        PosQrSesion sesion = sessionService.findSesionActiva(token);
-        exigirMetodoPasarela(sesion);
-        elegirMetodo(sesion, elegido);
-        if (!tilopayService.isPagosDisponibles()) {
-            throw new IllegalStateException("Los pagos en línea no están disponibles.");
-        }
-        String order = sesion.getStripeSessionId();
-        if (order == null || !order.startsWith(PREFIJO_TILOPAY)) {
-            order = PREFIJO_TILOPAY + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
-            sesion.setStripeSessionId(order);
-            posQrRepo.save(sesion);
-        }
-        Map<String, Object> r = new java.util.LinkedHashMap<>();
-        r.put("orderNumber", order);
-        r.put("montoCrc", sesion.getTotal());
-        r.put("moneda", "CRC");
-        r.put("sdkToken", tilopayService.loginSdk());
-        return r;
+        sessionService.findSesionActiva(token);
+        throw new IllegalStateException(MSG_TARJETA_NO_DISPONIBLE);
     }
 
-    /** Confirma el cobro Tilopay del QR consultando a Tilopay (monto, CRC y orden exactos). */
-    @Transactional
+    /** Tilopay retirado del QR: el navegador nunca confirma un cobro; solo el webhook de ONVO. */
     public boolean confirmarTilopay(String token) {
         PosQrSesion sesion = posQrRepo.findByToken(token).orElseThrow(java.util.NoSuchElementException::new);
-        if ("PAGADO".equals(sesion.getEstado())) return true;
-        String order = sesion.getStripeSessionId();
-        if (order == null || !order.startsWith(PREFIJO_TILOPAY) || sesion.getTotal() == null) return false;
-        com.hotclick.service.TilopayService.ConsultaResultado c = tilopayService.consultarTransaccion(order);
-        if (!coincideTilopay(order, sesion.getTotal(), c, tilopayService.isMockMode())) {
-            log.warn("[POS-QR] Tilopay no confirmó token={} order={}", mascararToken(token), order);
-            return false;
-        }
-        return completarSiPagoPasarela(order);
-    }
-
-    static boolean coincideTilopay(String order, long monto, com.hotclick.service.TilopayService.ConsultaResultado c, boolean mock) {
-        if (c == null || !c.aprobada()) return false;
-        if (c.simulada()) return mock;
-        return c.amount() != null && c.amount().compareTo(java.math.BigDecimal.valueOf(monto)) == 0
-            && c.currency() != null && "CRC".equalsIgnoreCase(c.currency().trim())
-            && c.orderNumber() != null && order.equals(c.orderNumber().trim());
+        return "PAGADO".equals(sesion.getEstado());
     }
 
     @Transactional
@@ -240,24 +201,22 @@ public class PosQrVentaService {
             return "EXPIRADO";
         }
 
-        if (pagoPasarelaConfirmado(sesion)) {
-            if (reclamar(sesion)) completionService.completarVentaTarjeta(sesion);
-            return "PAGADO";
-        }
-
+        // ALTO 3: el sondeo nunca cierra una venta; solo el webhook ONVO verificado lo hace.
         return sesion.getEstado();
     }
 
     /**
-     * SINPE por ONVO: pagado solo con {@code succeeded} releído en ONVO; {@code deferred}/{@code processing} = esperar.
-     * Vencido el timeout propio, la sesión pasa a EXPIRADO solo cuando ONVO confirmó el intent cancelado: si no,
-     * la transferencia todavía podría entrar y la venta tiene que poder cerrarse.
+     * SINPE por ONVO (ALTO 3): el sondeo NO cierra la venta; eso lo hace solo el webhook
+     * {@code payment-intent.succeeded} ({@link #confirmarSinpeOnvoPorWebhook}). Si ONVO ya dice succeeded,
+     * se espera al webhook y nunca se expira ni cancela. Vencido el timeout propio, la sesión pasa a EXPIRADO
+     * solo cuando ONVO confirmó el intent cancelado.
      */
     private String verificarSinpeOnvo(PosQrSesion sesion) {
         PosSinpeOnvoService.EstadoIntent e = sinpeOnvo.estadoIntent(sesion);
         if (e == PosSinpeOnvoService.EstadoIntent.PAGADO) {
-            if (reclamar(sesion)) completionService.completarVentaTarjeta(sesion);
-            return "PAGADO";
+            log.info("[POS-SINPE-ONVO] Sesión {} cobrada en ONVO; se espera el webhook para cerrar",
+                mascararToken(sesion.getToken()));
+            return sesion.getEstado();
         }
         if (!estaVigente(sesion, LocalDateTime.now(clock))
                 && (e == PosSinpeOnvoService.EstadoIntent.CANCELADO || sinpeOnvo.cancelarIntent(sesion))) {
@@ -292,21 +251,6 @@ public class PosQrVentaService {
             if (s.getMetodoPago() != null) body.put("metodoPago", s.getMetodoPago());
         });
         return body;
-    }
-
-    private boolean pagoPasarelaConfirmado(PosQrSesion sesion) {
-        if (sesion == null || !esMetodoPasarela(sesion)) return false;
-        String pasarelaId = sesion.getStripeSessionId();
-        if (pasarelaId == null) return false;
-        try {
-            // Tarjeta va por Tilopay: se confirma consultando la orden (monto, CRC y orden). SINPE va por ONVO.
-            if (!pasarelaId.startsWith(PREFIJO_TILOPAY) || sesion.getTotal() == null) return false;
-            return coincideTilopay(pasarelaId, sesion.getTotal(), tilopayService.consultarTransaccion(pasarelaId),
-                tilopayService.isMockMode());
-        } catch (Exception e) {
-            log.warn("[POS-QR] Error verificando pasarela {}: {}", pasarelaId, e.getMessage());
-            return false;
-        }
     }
 
     /** Acción de auditoría (mecanismo existente {@code AuditoriaAdminRegistroService}). */
