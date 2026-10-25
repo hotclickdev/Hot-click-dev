@@ -24,9 +24,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
         registry.addInterceptor(slugTenantInterceptor)
                 .addPathPatterns("/api/tienda/**");
-        // LECTOR: solo lectura en productos, pedidos y wallet (escrituras -> 403).
+        // LECTOR: deny por defecto en escrituras de /api/** (opt-in con @PermiteLector). Se excluyen
+        // áreas sin negocio: auth, públicas, storefront, webhooks y checkout de comprador.
         registry.addInterceptor(lectorSoloLecturaInterceptor)
-                .addPathPatterns("/api/productos", "/api/productos/**", "/api/pedidos", "/api/pedidos/**",
-                                 "/api/wallet/**");
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/auth/**", "/api/public/**", "/api/tienda/**", "/api/webhooks/**",
+                                     "/api/payments/**", "/api/sinpe/**");
     }
 }

@@ -22,6 +22,7 @@ public class ContactoController {
     @Value("${sendgrid.from-email}")
     private String fromEmail;
 
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/contacto")
     public ResponseEntity<?> enviarMensaje(@RequestBody Map<String, String> body,
                                            HttpServletRequest httpRequest) {

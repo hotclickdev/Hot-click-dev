@@ -29,6 +29,7 @@ public class CarritoAbandonadoController {
      * Saves or updates the abandoned cart for a session.
      * Public — works for anonymous and authenticated users.
      */
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/abandoned")
     public ResponseEntity<ResponseDTO> guardar(
             @Valid @RequestBody CarritoAbandonadoRequestDTO dto,
@@ -107,6 +108,7 @@ public class CarritoAbandonadoController {
     }
 
     /** Quien tiene el token del email puede descartar el carrito recuperado. */
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @DeleteMapping("/abandoned/recover/{token}")
     public ResponseEntity<ResponseDTO> eliminarPorToken(@PathVariable String token) {
         return service.findByTokenRecuperacion(token)

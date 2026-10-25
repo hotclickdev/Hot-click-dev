@@ -64,6 +64,7 @@ public class EmpresaPerfilController {
     public ResponseEntity<ResponseDTO> update(@RequestBody Map<String, String> body) {
         Long empresaId = empresaIdO403();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // LECTOR/EDITOR: solo dueño
         return ResponseEntity.ok(ResponseDTO.success("Perfil actualizado", empresaPerfilService.update(empresaId, body)));
     }
 
@@ -82,6 +83,7 @@ public class EmpresaPerfilController {
     public ResponseEntity<ResponseDTO> subirLogo(@RequestParam("file") MultipartFile file) {
         Long empresaId = empresaIdO403();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // LECTOR/EDITOR: solo dueño
         try {
             String url = empresaPerfilService.subirLogo(empresaId, file);
             return ResponseEntity.ok(ResponseDTO.success("Logo subido", url));
@@ -97,6 +99,7 @@ public class EmpresaPerfilController {
     public ResponseEntity<ResponseDTO> subirPortada(@RequestParam("file") MultipartFile file) {
         Long empresaId = empresaIdO403();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // LECTOR/EDITOR: solo dueño
         try {
             String url = empresaPerfilService.subirPortada(empresaId, file);
             return ResponseEntity.ok(ResponseDTO.success("Portada subida", url));

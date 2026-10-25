@@ -20,6 +20,7 @@ public class ReporteProductoController {
         this.reporteProductoService = reporteProductoService;
     }
 
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/reportes-producto")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseDTO> crear(@Valid @RequestBody ReporteProductoCreateRequest req) {

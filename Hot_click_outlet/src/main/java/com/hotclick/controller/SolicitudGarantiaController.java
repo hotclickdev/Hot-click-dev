@@ -24,6 +24,7 @@ public class SolicitudGarantiaController {
     @Autowired private PedidoRepository pedidoRepo;
 
     /** Cliente: crea una solicitud de garantía sobre un producto que compró */
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping
     public ResponseEntity<ResponseDTO> crear(
             @RequestBody Map<String, Object> body,
