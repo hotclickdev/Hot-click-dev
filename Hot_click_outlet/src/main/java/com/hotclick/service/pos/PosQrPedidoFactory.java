@@ -59,7 +59,8 @@ public class PosQrPedidoFactory {
             Bodega bodega   = resolverBodega(sesion.getBodegaId(), empresa.getId());
 
             Pedido pedido = armarPedido(sesion, metodoPago, empresa, cliente, bodega, cajero);
-            TotalesQr totales = cargarItems(items, pedido, correoCajero(cajero));
+            TotalesQr totales = totalesCobrados(cargarItems(items, pedido, correoCajero(cajero)),
+                sesion.getTotal(), sesion.getToken());
             aplicarTotales(pedido, totales);
 
             Pedido saved = pedidoRepo.save(pedido);
@@ -165,11 +166,8 @@ public class PosQrPedidoFactory {
 
         Producto producto = productoRepo.findByIdForUpdate(productoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-        Integer precioObj = producto.getPrecioEfectivo();
-        if (precioObj == null) {
-            throw new IllegalStateException("Producto sin precio de venta: " + productoId);
-        }
-        int precio = precioObj;
+        // MEDIO 4: se registra el precio que se cobró (snapshot de la sesión), no el precio actual del producto.
+        int precio = precioCobrado(itemMap, productoId);
         if (producto.getStockDisponible() < cantidad) {
             throw new StockInsuficienteException(producto.getNombreProducto(),
                 producto.getStockDisponible(), cantidad);
@@ -187,6 +185,23 @@ public class PosQrPedidoFactory {
         pi.setDescuentoAplicado(0);
         pi.setEstado(Constants.ESTADO_ACTIVO);
         return pi;
+    }
+
+    /** Precio unitario guardado al crear la sesión; sin él no se sabe qué se cobró (fail-closed). */
+    static int precioCobrado(Map<String, Object> itemMap, Long productoId) {
+        Object raw = itemMap.get("precioUnitario");
+        if (raw instanceof Number n && n.longValue() >= 0 && n.longValue() <= Integer.MAX_VALUE) return n.intValue();
+        throw new IllegalStateException("Sesión POS sin precio cobrado para el producto " + productoId);
+    }
+
+    /** MEDIO 4: el total del pedido es lo cobrado (total de la sesión); si las líneas no cuadran, alerta. */
+    static TotalesQr totalesCobrados(TotalesQr lineas, Integer totalSesion, String token) {
+        if (totalSesion == null) throw new IllegalStateException("Sesión POS sin total cobrado");
+        if (lineas.subtotal() != totalSesion) {
+            log.error("[ALERTA-PAGO] POS QR {}: líneas suman {} y se cobró {}; el pedido registra lo cobrado",
+                PosQrVentaService.mascararToken(token), lineas.subtotal(), totalSesion);
+        }
+        return new TotalesQr(totalSesion, lineas.costoTotal());
     }
 
     private void aplicarTotales(Pedido pedido, TotalesQr totales) {
@@ -217,7 +232,7 @@ public class PosQrPedidoFactory {
         }
     }
 
-    private record TotalesQr(int subtotal, int costoTotal) {
+    record TotalesQr(int subtotal, int costoTotal) {
         int totalPedido() { return subtotal; }
     }
 }

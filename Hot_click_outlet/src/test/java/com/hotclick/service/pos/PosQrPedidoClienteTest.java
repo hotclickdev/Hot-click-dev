@@ -70,6 +70,7 @@ class PosQrPedidoClienteTest {
         sesion.setUsuario(emprendedor);
         sesion.setClienteId(42L);
         sesion.setBodegaId(3L);
+        sesion.setTotal(10_000);
         sesion.setItemsJson("[{\"productoId\":\"10\",\"cantidad\":2,\"precioUnitario\":5000,\"nombre\":\"Mouse\"}]");
 
         when(sessionService.getMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
@@ -97,6 +98,45 @@ class PosQrPedidoClienteTest {
         verify(telegramNotificacionClienteService).notificarVenta(
             eq(1L), anyString(), eq(10_000), eq("TARJETA"), eq("Carlos"), eq("POS"));
         verify(stockService).descontarPorVentaPOS(eq(mouse), eq(2), anyString(), eq("ana@tienda.cr"));
+    }
+
+    @Test
+    @DisplayName("MEDIO 4: el pedido registra el precio y total cobrados aunque el producto haya cambiado de precio")
+    void registraLoCobrado() {
+        Usuario cajero = usuario(7L, "Ana", "ana@tienda.cr");
+        Empresa empresa = empresa(1L);
+        Producto mouse = producto(10L, "Mouse", 5, 1000);
+        mouse.setPrecioVenta(7_000);
+        PosQrSesion sesion = new PosQrSesion();
+        sesion.setEmpresa(empresa);
+        sesion.setUsuario(cajero);
+        sesion.setBodegaId(3L);
+        sesion.setTotal(10_000);
+        sesion.setItemsJson("[{\"productoId\":10,\"cantidad\":2,\"precioUnitario\":5000}]");
+        when(sessionService.getMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
+        when(usuarioRepo.findById(Constants.ID_USUARIO_MOSTRADOR)).thenReturn(Optional.of(usuario(999L, "Mostrador", "m@x.test")));
+        when(bodegaRepo.findById(3L)).thenReturn(Optional.of(bodega(3L, empresa)));
+        when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
+        when(pedidoRepo.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        factory.crearPedidoPOS(sesion, "SINPE");
+
+        ArgumentCaptor<Pedido> cap = ArgumentCaptor.forClass(Pedido.class);
+        verify(pedidoRepo).save(cap.capture());
+        assertThat(cap.getValue().getItems().get(0).getPrecioUnitarioMomento()).isEqualTo(5_000);
+        assertThat(cap.getValue().getTotalPedido()).isEqualTo(10_000);
+    }
+
+    @Test
+    @DisplayName("MEDIO 4: sin precio cobrado en la sesión no se inventa uno; total = lo cobrado")
+    void sinSnapshotFallaCerrado() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PosQrPedidoFactory.precioCobrado(java.util.Map.of(), 1L))
+            .isInstanceOf(IllegalStateException.class);
+        var t = PosQrPedidoFactory.totalesCobrados(new PosQrPedidoFactory.TotalesQr(900, 100), 1000, "tokenx");
+        assertThat(t.totalPedido()).isEqualTo(1000);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+            PosQrPedidoFactory.totalesCobrados(new PosQrPedidoFactory.TotalesQr(900, 100), null, "tokenx"))
+            .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
