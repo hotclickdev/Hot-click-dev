@@ -4,6 +4,9 @@ import type { Id, JsonBody } from '@/types/api'
 
 const publicApi = axios.create({ baseURL: api.defaults.baseURL })
 
+/** Destino ONVO de config y monto exacto en colones que devuelve el backend. */
+export type SinpeOnvoQrDatos = { destino: string; monto: number; moneda: string; expiracion: string }
+
 export const posService = {
   crearVenta:    (dto: JsonBody)     => api.post('/pos/venta', dto).then(r => r.data),
   historial:     ()        => api.get('/pos/historial').then(r => r.data),
@@ -23,7 +26,10 @@ export const posService = {
   estadoQrSesion: (token: string)          => publicApi.get(`/pos/qr/pago/${token}/estado`).then(r => r.data),
   comprobanteQrSesion: (token: string)     => publicApi.get(`/pos/qr/pago/${token}/comprobante`).then(r => r.data),
   // Tarjeta y SINPE Móvil por Tilopay (ONVO ya no se usa en el POS)
-  iniciarTilopayQr: (token: string, metodo?: 'TARJETA' | 'SINPE') =>
+  /** SINPE Móvil por ONVO: crea y confirma el intent con la identificación del pagador. */
+  iniciarSinpeOnvoQr: (token: string, identificacion: string, tipoIdentificacion: number) =>
+    publicApi.post<SinpeOnvoQrDatos>(`/pos/qr/pago/${token}/sinpe-onvo`, { identificacion, tipoIdentificacion }).then(r => r.data),
+  iniciarTilopayQr: (token: string, metodo?: 'TARJETA') =>
     publicApi.post(`/pos/qr/pago/${token}/tilopay`, null, { params: metodo ? { metodo } : undefined }).then(r => r.data),
   confirmarTilopayQr: (token: string)      =>
     publicApi.post<{ pagado: boolean }>(`/pos/qr/pago/${token}/tilopay/confirmar`).then(r => r.data),

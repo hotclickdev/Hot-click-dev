@@ -5,7 +5,7 @@ describe('formatTelefonoCR (R2: 8888-1234)', () => {
   it('formatea con y sin prefijo del país', () => {
     expect(formatTelefonoCR('88881234')).toBe('8888-1234')
     expect(formatTelefonoCR('+50688881234')).toBe('8888-1234')
-    expect(formatTelefonoCR('+506 7019-6686')).toBe('7019-6686')
+    expect(formatTelefonoCR('+506 0000-0000')).toBe('0000-0000')
     expect(formatTelefonoCR('8888 1234')).toBe('8888-1234')
   })
 

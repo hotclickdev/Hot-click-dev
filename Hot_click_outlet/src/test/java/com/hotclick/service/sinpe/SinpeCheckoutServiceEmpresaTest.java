@@ -45,6 +45,7 @@ class SinpeCheckoutServiceEmpresaTest {
     @Mock private CuponService cuponService;
     @Mock private GiftCardService giftCardService;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private com.hotclick.service.OnvoService onvoService;
     @Mock private GuestCancelTokenService guestCancelTokenService;
     @Mock private AtribucionPedidoService atribucionPedidoService;
     @Mock private EncargoService encargoService;
@@ -65,6 +66,7 @@ class SinpeCheckoutServiceEmpresaTest {
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.when(onvoService.sinpeDestino()).thenReturn("DESTINO_ONVO_PRUEBA");
         empresa = new Empresa();
         empresa.setId(7L);
 
@@ -96,6 +98,7 @@ class SinpeCheckoutServiceEmpresaTest {
             checkoutValidator, planner, orderPricingService, checkoutOrderFactory, giftCardService);
 
         service = new SinpeCheckoutService();
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "onvoService", onvoService);
         ReflectionTestUtils.setField(service, "reservaAntiBot", reservaAntiBot);
         ReflectionTestUtils.setField(service, "autocompraGuard", guardAutocompra());
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);

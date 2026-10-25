@@ -27,6 +27,20 @@ export function sinpeNumeroVisible(numero: string | undefined | null): string {
   return formatTelefonoCR(numero)
 }
 
+/** Tipos de identificación que acepta ONVO para SINPE Móvil. */
+export const TIPOS_IDENTIFICACION = [
+  { valor: 1, clave: 'pos.pago.sinpeTipoFisica' },
+  { valor: 2, clave: 'pos.pago.sinpeTipoJuridica' },
+  { valor: 3, clave: 'pos.pago.sinpeTipoDimex' },
+  { valor: 4, clave: 'pos.pago.sinpeTipoNite' },
+] as const
+
+/** Misma regla que el backend: 12–30 caracteres, grupos alfanuméricos separados por guiones. */
+export function identificacionSinpeValida(valor: string): boolean {
+  const v = valor.trim()
+  return v.length >= 12 && v.length <= 30 && /^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$/.test(v)
+}
+
 const METODOS_QR: readonly MetodoQr[] = ['SINPE', 'TARJETA']
 
 function esMetodoQr(valor: unknown): valor is MetodoQr {

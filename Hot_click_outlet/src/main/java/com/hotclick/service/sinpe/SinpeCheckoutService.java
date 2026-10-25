@@ -43,6 +43,10 @@ public class SinpeCheckoutService {
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
     @Autowired(required = false) private com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica;
+    @Autowired(required = false) private com.hotclick.service.OnvoService onvoService;
+
+    public static final String MSG_SINPE_SIN_DESTINO =
+        "SINPE Móvil no está disponible por ahora. Pagá con Tarjeta.";
 
     /** Decisión HOT_CLICK 16-oct-2026: sin SINPE manual con comprobante; solo botones de pasarela (y efectivo). */
     @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.sinpe-manual.habilitado:false}")
@@ -77,6 +81,7 @@ public class SinpeCheckoutService {
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
         exigirProveedorPermitido(req.getProvider(), sinpeManualHabilitado, efectivoWebHabilitado);
+        String sinpeDestino = exigirDestinoSiSinpe(req.getProvider(), onvoService != null ? onvoService.sinpeDestino() : "");
         checkoutValidator.validateCartNotEmpty(req);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
@@ -117,9 +122,20 @@ public class SinpeCheckoutService {
         PaymentCheckoutResponse response = new PaymentCheckoutResponse(
             principal.getId(), principal.getNumeroPedido(),
             null, Constants.PAGO_PENDIENTE, grupo.totalCobro(), proveedorEfectivo);
+        response.setSinpeDestino(sinpeDestino);
         response.setCancelToken(guestCancelTokenService.emitir(principal.getNumeroPedido()));
         response.setPaquetes(CheckoutGrupoFactory.resumen(grupo.pedidos()));
         return response;
+    }
+
+    /**
+     * Fail-closed antes de reservar stock: SINPE manual sin destino ONVO configurado no crea pedido.
+     * Devuelve el destino para SINPE y null para efectivo.
+     */
+    static String exigirDestinoSiSinpe(String proveedor, String destino) {
+        if (proveedor != null && "EFECTIVO".equalsIgnoreCase(proveedor.trim())) return null;
+        if (destino == null || destino.isBlank()) throw new IllegalStateException(MSG_SINPE_SIN_DESTINO);
+        return destino;
     }
 
     /** Efectivo solo si todas las bodegas del pedido lo aceptan; si no, se revierte la transacción. */

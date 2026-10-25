@@ -26,11 +26,15 @@ class BillingPreferenciasTest extends BaseIntegrationTest {
         e.setCorreoEmpresa("pref-cobro@test.cr"); e.setEstadoEmpresa("ACTIVO"); e.setFechaRegistro(LocalDateTime.now());
         emp = empresaRepository.saveAndFlush(e);
         var u = crearUsuario("pref-cobro-u@test.cr", "P", obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5));
+        u.setEmpresa(emp); u = usuarioRepository.saveAndFlush(u); // A2: el que cambia preferencias es el dueño
         token = "Bearer " + jwtUtil.generateToken(u.getCorreo(), u.getId(), Constants.ROL_EMPRENDEDOR, emp.getId(), emp.getSlug());
     }
 
     @AfterEach
-    void tearDown() { empresaRepository.delete(emp); }
+    void tearDown() {
+        usuarioRepository.findAll().forEach(x -> { x.setEmpresa(null); usuarioRepository.save(x); });
+        empresaRepository.delete(emp);
+    }
 
     @Test
     void defaultsYCambios() throws Exception {

@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("QR de caja: pago con el método elegido (Tilopay)")
@@ -25,31 +26,30 @@ class PosQrMetodosPagoTest {
     @InjectMocks PosQrVentaService service;
 
     @Test
-    @DisplayName("SINPE en un cobro que también acepta tarjeta: queda como SINPE")
-    void sinpeEnCobroMixto() {
-        PosQrSesion s = PosQrMetodosTest.sesion("TARJETA", "TARJETA,SINPE");
-        when(sessionService.findSesionActiva("tok")).thenReturn(s);
-        when(tilopayService.isPagosDisponibles()).thenReturn(true);
-        service.iniciarTilopay("tok", "SINPE");
-        assertThat(s.getMetodoPago()).isEqualTo("SINPE");
+    @DisplayName("SINPE ya no se cobra por Tilopay: se rechaza antes de tocar la sesión")
+    void sinpePorTilopayRechazado() {
+        assertThatThrownBy(() -> service.iniciarTilopay("tok", "SINPE"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage(PosQrVentaService.MSG_SINPE_SOLO_ONVO);
+        verifyNoInteractions(tilopayService, sessionService);
     }
 
     @Test
-    @DisplayName("SINPE no habilitado por la caja: queda en tarjeta")
-    void sinpeNoHabilitado() {
-        PosQrSesion s = PosQrMetodosTest.sesion("TARJETA", "TARJETA");
+    @DisplayName("Tarjeta en un cobro mixto: queda en tarjeta")
+    void tarjetaEnCobroMixto() {
+        PosQrSesion s = PosQrMetodosTest.sesion("TARJETA", "TARJETA,SINPE");
         when(sessionService.findSesionActiva("tok")).thenReturn(s);
         when(tilopayService.isPagosDisponibles()).thenReturn(true);
-        service.iniciarTilopay("tok", "SINPE");
+        service.iniciarTilopay("tok", "TARJETA");
         assertThat(s.getMetodoPago()).isEqualTo("TARJETA");
     }
 
     @Test
     @DisplayName("Sin pasarela disponible: se rechaza")
     void sinPasarela() {
-        PosQrSesion s = PosQrMetodosTest.sesion("SINPE", "SINPE");
-        when(sessionService.findSesionActiva("tok")).thenReturn(s);
+        PosQrSesion s = PosQrMetodosTest.sesion("TARJETA", "TARJETA");
+        lenient().when(sessionService.findSesionActiva("tok")).thenReturn(s);
         lenient().when(tilopayService.isPagosDisponibles()).thenReturn(false);
-        assertThatThrownBy(() -> service.iniciarTilopay("tok", "SINPE")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> service.iniciarTilopay("tok", "TARJETA")).isInstanceOf(IllegalStateException.class);
     }
 }

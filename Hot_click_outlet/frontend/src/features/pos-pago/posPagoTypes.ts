@@ -17,7 +17,6 @@ export type QrPagoInfo = {
   logoUrl?: string | null
   colorPrimario?: string | null
   sinpeNumero?: string
-  sinpeRef?: string
   expiracion?: string
   /** Minutos que dura el cobro (backend `PosQrSessionService.VIGENCIA_MINUTOS`). */
   vigenciaMinutos?: number

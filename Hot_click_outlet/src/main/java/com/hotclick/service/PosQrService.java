@@ -19,6 +19,7 @@ public class PosQrService {
 
     @Autowired private PosQrSessionService sessionService;
     @Autowired private PosQrVentaService   ventaService;
+    @Autowired private com.hotclick.service.pos.PosSinpeOnvoService sinpeOnvo;
 
     /**
      * Crea la sesión y arma el payload del cajero en la misma transacción.
@@ -60,6 +61,14 @@ public class PosQrService {
     @Transactional
     public Map<String, Object> iniciarTilopay(String token, String metodo) {
         return ventaService.iniciarTilopay(token, metodo);
+    }
+
+    /**
+     * SINPE Móvil por ONVO. Sin @Transactional a propósito: el id del intent se guarda antes de confirmarlo
+     * y tiene que quedar aunque la confirmación falle, para que el barrido lo cancele.
+     */
+    public Map<String, Object> iniciarSinpeOnvo(String token, String identificacion, Integer tipoIdentificacion) {
+        return sinpeOnvo.iniciar(token, identificacion, tipoIdentificacion);
     }
 
     public boolean confirmarTilopay(String token) {
