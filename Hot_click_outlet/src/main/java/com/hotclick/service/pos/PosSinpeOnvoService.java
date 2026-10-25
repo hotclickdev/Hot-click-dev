@@ -37,7 +37,7 @@ public class PosSinpeOnvoService {
     public static final String PREFIJO_ONVO_PI = "ONVOPI:";
 
     public static final String MSG_NO_DISPONIBLE = "SINPE Móvil no está disponible por ahora. Cobrá con otro método.";
-    static final String MSG_IDENTIFICACION = "Ingresá la identificación con guiones (mínimo 12 caracteres) y su tipo.";
+    public static final String MSG_IDENTIFICACION = "Ingresá la identificación con guiones (mínimo 12 caracteres) y su tipo.";
 
     @Autowired private PosQrSesionRepository posQrRepo;
     @Autowired(required = false) private OnvoService onvoService;

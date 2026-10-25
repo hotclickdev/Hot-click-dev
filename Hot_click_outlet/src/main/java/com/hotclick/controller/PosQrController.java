@@ -151,7 +151,8 @@ public class PosQrController {
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado o expirado"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            // Mensaje constante: nunca se devuelve el detalle de la excepción (podría venir de ONVO o de un parser).
+            return ResponseEntity.badRequest().body(Map.of("error", com.hotclick.service.pos.PosSinpeOnvoService.MSG_IDENTIFICACION));
         } catch (IllegalStateException e) {
             log.warn("[POS-SINPE-ONVO] No iniciado token={}: {}",
                 com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());

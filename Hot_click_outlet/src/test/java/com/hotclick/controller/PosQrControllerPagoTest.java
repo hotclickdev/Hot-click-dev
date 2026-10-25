@@ -74,4 +74,15 @@ class PosQrControllerPagoTest {
     private static Map<String, Object> cuerpo(ResponseEntity<?> resp) {
         return (Map<String, Object>) resp.getBody();
     }
+
+    @Test
+    @DisplayName("SINPE ONVO: el 400 trae un mensaje constante, nunca el detalle de la excepción")
+    void sinpe400MensajeConstante() {
+        when(posQrService.iniciarSinpeOnvo("tokensinpeqr0001", "x", 1))
+            .thenThrow(new IllegalArgumentException("detalle interno sk_live_filtrado"));
+        ResponseEntity<?> resp = controller.iniciarSinpeOnvo("tokensinpeqr0001", new PosQrController.SinpeOnvoRequest("x", 1));
+        assertThat(resp.getStatusCode().value()).isEqualTo(400);
+        assertThat(resp.getBody().toString()).doesNotContain("detalle interno")
+            .contains(com.hotclick.service.pos.PosSinpeOnvoService.MSG_IDENTIFICACION);
+    }
 }
