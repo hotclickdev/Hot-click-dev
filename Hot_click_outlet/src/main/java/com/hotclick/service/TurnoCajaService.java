@@ -24,6 +24,23 @@ public class TurnoCajaService {
     @Autowired private UsuarioRepository   usuarioRepository;
     @Autowired private EmpresaRepository   empresaRepository;
     @Autowired private CompanyScope        companyScope;
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
+
+    /**
+     * A3: turno bloqueado FOR UPDATE y con valores frescos. Si el turno ya estaba en el contexto de persistencia
+     * (p. ej. crearVenta lo leyó con getTurnoActivo), la consulta con bloqueo devolvería la instancia vieja:
+     * se refresca bajo PESSIMISTIC_WRITE para no pisar una anulación concurrente.
+     * Orden de bloqueos: las ventas solo bloquean el turno (la venta es una fila nueva); la anulación bloquea
+     * venta → turno. No hay ciclo posible.
+     */
+    private TurnoCaja bloquearTurno(Long turnoId) {
+        TurnoCaja turno = turnoCajaRepository.findByIdForUpdate(turnoId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+        if (entityManager != null && entityManager.contains(turno)) {
+            entityManager.refresh(turno, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        }
+        return turno;
+    }
 
     @Transactional
     public TurnoCaja abrirTurno(Long usuarioId, Long empresaId, Integer montoInicial) {
@@ -48,8 +65,8 @@ public class TurnoCajaService {
 
     @Transactional
     public TurnoCaja cerrarTurno(Long turnoId, Integer montoDeclarado, String notas) {
-        TurnoCaja turno = turnoCajaRepository.findById(turnoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+        // A3: FOR UPDATE — una anulación en curso termina (o espera) antes de que se calcule el cierre.
+        TurnoCaja turno = bloquearTurno(turnoId);
         assertPuedeOperarTurno(turno);
         if (!"ABIERTO".equals(turno.getEstado())) {
             throw new IllegalStateException("El turno ya está cerrado");
@@ -83,8 +100,7 @@ public class TurnoCajaService {
     @Transactional
     public void actualizarTotales(Long turnoId, String metodoPago, Integer monto) {
         if (metodoPago == null || metodoPago.isBlank() || monto == null || monto <= 0) return;
-        TurnoCaja turno = turnoCajaRepository.findById(turnoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+        TurnoCaja turno = bloquearTurno(turnoId);
 
         switch (metodoPago.toUpperCase()) {
             case "EFECTIVO"      -> turno.setTotalEfectivo(turno.getTotalEfectivo() + monto);
@@ -93,6 +109,23 @@ public class TurnoCajaService {
             case "TRANSFERENCIA" -> turno.setTotalTransferencia(turno.getTotalTransferencia() + monto);
         }
         turno.setNumTransacciones(turno.getNumTransacciones() + 1);
+        turnoCajaRepository.save(turno);
+    }
+
+    /** A3: resta una venta anulada de un turno ABIERTO (nunca baja de 0; turnos cerrados no se tocan). */
+    @Transactional
+    public void revertirTotales(Long turnoId, String metodoPago, Integer monto) {
+        if (turnoId == null || metodoPago == null || metodoPago.isBlank() || monto == null || monto <= 0) return;
+        TurnoCaja turno = bloquearTurno(turnoId);
+        if (!"ABIERTO".equals(turno.getEstado())) return;
+        switch (metodoPago.toUpperCase()) {
+            case "EFECTIVO"      -> turno.setTotalEfectivo(Math.max(0, turno.getTotalEfectivo() - monto));
+            case "SINPE"         -> turno.setTotalSinpe(Math.max(0, turno.getTotalSinpe() - monto));
+            case "TARJETA"       -> turno.setTotalTarjeta(Math.max(0, turno.getTotalTarjeta() - monto));
+            case "TRANSFERENCIA" -> turno.setTotalTransferencia(Math.max(0, turno.getTotalTransferencia() - monto));
+            default -> { return; }
+        }
+        turno.setNumTransacciones(Math.max(0, turno.getNumTransacciones() - 1));
         turnoCajaRepository.save(turno);
     }
 

@@ -52,6 +52,7 @@ public class PosVentaService {
     @Autowired private VentaAvisoService ventaAvisoService;
     @Autowired private CompanyScope companyScope;
     @Autowired private ClienteMostradorResolver clienteMostradorResolver;
+    @Autowired private com.hotclick.repository.PosVentaTurnoRepository ventaTurnoRepository;
 
     @Transactional
     public Pedido crearVenta(PosVentaDTO dto, Long usuarioId, Long empresaId, String correo) {
@@ -71,6 +72,8 @@ public class PosVentaService {
         evictDashboard(empresaId);
         // C-05: dentro de la transacción; si falla, la venta no queda sin turno.
         turnoCajaService.actualizarTotales(turno.getId(), saved.getMetodoPago(), totales.totalPedido());
+        // A3: la venta queda ligada a su turno para decidir quién la puede anular.
+        ventaTurnoRepository.save(new com.hotclick.model.PosVentaTurno(saved.getId(), turno.getId()));
         telegramNotificacionClienteService.notificarVenta(empresaId, saved.getNumeroPedido(),
             totales.totalPedido(), saved.getMetodoPago(), cliente.getNombre(), "POS");
         ventaAvisoService.avisarVentaConfirmada(saved);

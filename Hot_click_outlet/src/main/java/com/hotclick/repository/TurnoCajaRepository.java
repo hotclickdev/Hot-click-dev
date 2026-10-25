@@ -10,6 +10,16 @@ import java.util.Optional;
 
 public interface TurnoCajaRepository extends JpaRepository<TurnoCaja, Long> {
 
+    /** A3: bloquea el turno (SELECT ... FOR UPDATE) para serializar cierre de caja y anulaciones. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM TurnoCaja t WHERE t.id = :id")
+    Optional<TurnoCaja> findByIdForUpdate(@Param("id") Long id);
+
+    /** A3: turno de una venta POS QR (solo el id, para luego bloquearlo con findByIdForUpdate). */
+    @Query("SELECT s.turno.id FROM PosQrSesion s WHERE s.pedidoId = :pedidoId")
+    List<Long> findTurnoIdDeSesionQr(@Param("pedidoId") Long pedidoId);
+
+
     Optional<TurnoCaja> findByUsuario_IdAndEstado(Long usuarioId, String estado);
 
     List<TurnoCaja> findByEmpresa_IdAndFechaAperturaAfterOrderByFechaAperturaDesc(
