@@ -185,8 +185,8 @@ public class ProductoWriteHandler {
             for (Producto p : productos) {
                 p.setEnOferta(enOferta);
                 if (enOferta && pct != null && pct > 0) {
+                    p.setPrecioOferta(com.hotclick.service.payment.OrderPricingService.calcularPrecioOferta(p.getPrecioVenta(), pct));
                     p.setPorcentajeDescuento(pct);
-                    p.setPrecioOferta((int) Math.round(p.getPrecioVenta() * (1 - pct / 100.0)));
                 } else if (!enOferta) {
                     p.setPrecioOferta(null);
                     p.setPorcentajeDescuento(null);
