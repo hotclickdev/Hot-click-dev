@@ -1,6 +1,6 @@
 package com.hotclick.monitoreo;
 
-import com.hotclick.repository.PedidoRepository;
+import com.hotclick.repository.PagoRepository;
 import com.hotclick.service.TelegramService;
 import org.junit.jupiter.api.Test;
 
@@ -12,23 +12,23 @@ import static org.mockito.Mockito.*;
 
 class OnvoPedidosPendientesJobTest {
 
-    PedidoRepository repo = mock(PedidoRepository.class);
+    PagoRepository repo = mock(PagoRepository.class);
     TelegramService telegram = mock(TelegramService.class);
     Clock clock = Clock.fixed(Instant.parse("2026-10-25T12:00:00Z"), ZoneOffset.UTC);
     OnvoPedidosPendientesJob job = new OnvoPedidosPendientesJob(repo, telegram, 30, clock);
 
     @Test
     void avisaSiHayPendientesViejosConCorteDe30Min() {
-        when(repo.countByMetodoPagoIgnoreCaseAndEstadoPedidoAndFechaPedidoBefore(any(), any(), any())).thenReturn(2L);
+        when(repo.countByProveedorIgnoreCaseAndEstadoPagoAndFechaCreacionBefore(any(), any(), any())).thenReturn(2L);
         assertThat(job.revisar()).isEqualTo(2L);
-        verify(repo).countByMetodoPagoIgnoreCaseAndEstadoPedidoAndFechaPedidoBefore(
+        verify(repo).countByProveedorIgnoreCaseAndEstadoPagoAndFechaCreacionBefore(
             "ONVO", "PENDIENTE", LocalDateTime.of(2026, 10, 25, 11, 30));
         verify(telegram).enviar(contains("2 pedido(s) ONVO"));
     }
 
     @Test
     void silencioSiNoHayPendientes() {
-        when(repo.countByMetodoPagoIgnoreCaseAndEstadoPedidoAndFechaPedidoBefore(any(), any(), any())).thenReturn(0L);
+        when(repo.countByProveedorIgnoreCaseAndEstadoPagoAndFechaCreacionBefore(any(), any(), any())).thenReturn(0L);
         assertThat(job.revisar()).isZero();
         verifyNoInteractions(telegram);
     }

@@ -1,6 +1,6 @@
 package com.hotclick.monitoreo;
 
-import com.hotclick.repository.PedidoRepository;
+import com.hotclick.repository.PagoRepository;
 import com.hotclick.service.TelegramService;
 import io.sentry.Sentry;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -15,19 +15,19 @@ import java.time.LocalDateTime;
 @Component
 public class OnvoPedidosPendientesJob {
 
-    private final PedidoRepository pedidos;
+    private final PagoRepository pagos;
     private final TelegramService telegram;
     private final int minutos;
     private final Clock clock;
 
     @org.springframework.beans.factory.annotation.Autowired
-    public OnvoPedidosPendientesJob(PedidoRepository pedidos, TelegramService telegram,
+    public OnvoPedidosPendientesJob(PagoRepository pagos, TelegramService telegram,
                                     @Value("${onvo.alertas.pendiente-minutos:30}") int minutos) {
-        this(pedidos, telegram, minutos, Clock.systemDefaultZone());
+        this(pagos, telegram, minutos, Clock.systemDefaultZone());
     }
 
-    OnvoPedidosPendientesJob(PedidoRepository pedidos, TelegramService telegram, int minutos, Clock clock) {
-        this.pedidos = pedidos;
+    OnvoPedidosPendientesJob(PagoRepository pagos, TelegramService telegram, int minutos, Clock clock) {
+        this.pagos = pagos;
         this.telegram = telegram;
         this.minutos = Math.max(1, minutos);
         this.clock = clock;
@@ -37,7 +37,7 @@ public class OnvoPedidosPendientesJob {
     @SchedulerLock(name = "onvo-pedidos-pendientes", lockAtMostFor = "PT9M", lockAtLeastFor = "PT1M")
     public long revisar() {
         LocalDateTime corte = LocalDateTime.now(clock).minusMinutes(minutos);
-        long n = pedidos.countByMetodoPagoIgnoreCaseAndEstadoPedidoAndFechaPedidoBefore("ONVO", "PENDIENTE", corte);
+        long n = pagos.countByProveedorIgnoreCaseAndEstadoPagoAndFechaCreacionBefore("ONVO", "PENDIENTE", corte);
         if (n > 0) {
             String texto = "⚠️ " + n + " pedido(s) ONVO pendientes hace más de " + minutos + " min (posible webhook perdido).";
             telegram.enviar(texto);

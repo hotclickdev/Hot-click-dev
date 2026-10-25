@@ -100,4 +100,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     List<Long> findIdsReservaMarcadaVencidaByEmpresa(@Param("ahora") LocalDateTime ahora,
                                                      @Param("desde") LocalDateTime desde,
                                                      @Param("empresaId") Long empresaId);
+
+    /** INF-03: pagos de un proveedor que siguen en un estado desde antes de un corte. */
+    long countByProveedorIgnoreCaseAndEstadoPagoAndFechaCreacionBefore(
+        String proveedor, String estadoPago, java.time.LocalDateTime corte);
 }
