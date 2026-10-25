@@ -14,11 +14,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Registro de empresa (perfil test, sin llave → cliente simulado) crea la cuenta conectada tras el commit. */
 @DisplayName("Registro de empresa — cuenta conectada ONVO")
+@TestPropertySource(properties = "onvo.secret-key=")
 class RegistroCuentaOnvoTest extends BaseIntegrationTest {
 
     @Autowired private EmprendedorRegistroService emprendedorRegistroService;
