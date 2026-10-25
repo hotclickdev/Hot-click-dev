@@ -105,12 +105,16 @@ public class PosAnulacionService {
         return ejecutar(PosAnulacion.DEVOLUCION, pedidoId, empresaToken, motivo);
     }
 
+    /** SCALE1: la bitácora se pagina; nunca se lista el tenant entero. */
+    public static final int MAX_LIST_BITACORA = 100;
+
     @Transactional(readOnly = true)
-    public List<PosAnulacion> bitacora(Long empresaToken) {
+    public List<PosAnulacion> bitacora(Long empresaToken, int page, int size) {
         Usuario actor = exigirActor();
         Long empresaId = exigirEmpresa(empresaToken, actor);
         if (!esPrivilegiado(actor, empresaId)) throw new SecurityException(MSG_SOLO_DUENIO);
-        return anulacionRepository.findByEmpresaIdOrderByFechaDesc(empresaId);
+        return anulacionRepository.findByEmpresaIdOrderByFechaDesc(empresaId,
+            org.springframework.data.domain.PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_LIST_BITACORA)));
     }
 
     /**
@@ -156,8 +160,8 @@ public class PosAnulacionService {
         if (PosAnulacion.ANULACION.equals(tipo) && turnoAbierto) {
             turnoCajaService.revertirTotales(turno.getId(), pedido.getMetodoPago(), pedido.getTotalPedido());
         }
+        // Entidad gestionada (cargada FOR UPDATE): el cambio de estado se escribe en el saveAndFlush de abajo.
         pedido.setEstadoPedido(PosAnulacion.ANULACION.equals(tipo) ? ESTADO_ANULADO : ESTADO_DEVUELTO);
-        pedidoRepository.save(pedido);
 
         PosAnulacion reg = new PosAnulacion();
         reg.setTipo(tipo);

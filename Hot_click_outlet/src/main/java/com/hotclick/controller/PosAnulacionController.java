@@ -49,8 +49,10 @@ public class PosAnulacionController {
 
     @GetMapping("/anulaciones")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
-    public ResponseEntity<?> bitacora(HttpServletRequest request) {
-        return responder("OK", () -> service.bitacora(empresaToken(request)));
+    public ResponseEntity<?> bitacora(@RequestParam(defaultValue = "0") int page,
+                                      @RequestParam(defaultValue = "50") int size, HttpServletRequest request) {
+        // SCALE1: paginado, tope PosAnulacionService.MAX_LIST_BITACORA por página.
+        return responder("OK", () -> service.bitacora(empresaToken(request), page, size));
     }
 
     private ResponseEntity<?> responder(String ok, Supplier<Object> accion) {
