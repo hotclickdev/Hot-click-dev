@@ -304,4 +304,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findTiendaPendientesVencidos(@Param("empresaId") Long empresaId,
                                               @Param("corte") java.time.LocalDateTime corte,
                                               Pageable pageable);
+
+    /** INF-03: pedidos de un método de pago que siguen en un estado desde antes de un corte. */
+    long countByMetodoPagoIgnoreCaseAndEstadoPedidoAndFechaPedidoBefore(
+        String metodoPago, String estadoPedido, java.time.LocalDateTime corte);
 }
