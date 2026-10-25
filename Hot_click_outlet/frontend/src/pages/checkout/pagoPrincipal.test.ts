@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, metodoProximamente, metodoSeleccionable, proveedorDe, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig,
+  PAGO_EFECTIVO, PAGO_SINPE, PAGO_TARJETA, contraEntregaDisponible, metodoProximamente, metodoSeleccionable, proveedorDe, sinpeDestinoDesdeConfig, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig,
 } from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
 
@@ -19,7 +19,11 @@ describe('pago sin Tilopay', () => {
   })
 
   it('SINPE manual habilitado: provider SINPE', () => {
-    expect(sinpeManualDesdeConfig({ sinpeManual: true })).toBe(true)
+    expect(sinpeManualDesdeConfig({ sinpeManual: true, sinpeDestino: 'DESTINO_ONVO_PRUEBA' })).toBe(true)
+    // Fail-closed: sin destino ONVO publicado, SINPE manual queda «Próximamente».
+    expect(sinpeManualDesdeConfig({ sinpeManual: true })).toBe(false)
+    expect(sinpeManualDesdeConfig({ sinpeManual: true, sinpeDestino: '  ' })).toBe(false)
+    expect(sinpeDestinoDesdeConfig({ sinpeDestino: 7 })).toBe('')
     expect(metodoProximamente(PAGO_SINPE, true)).toBe(false)
     expect(proveedorDe(PAGO_SINPE, true)).toBe('SINPE')
   })

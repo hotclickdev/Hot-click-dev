@@ -4,6 +4,8 @@ import en from '@/i18n/locales/en.json'
 import pt from '@/i18n/locales/pt.json'
 import { describe, expect, it } from 'vitest'
 import {
+  identificacionSinpeValida,
+  TIPOS_IDENTIFICACION,
   fechaComprobante,
   formatColones,
   inicialesProducto,
@@ -43,11 +45,23 @@ describe('tituloYCodigo', () => {
   })
 })
 
+describe('identificacionSinpeValida', () => {
+  it('exige 12+ caracteres en grupos con guiones', () => {
+    expect(identificacionSinpeValida('01-1111-1111')).toBe(true)
+    expect(identificacionSinpeValida('1-1111-1111')).toBe(false)
+    expect(identificacionSinpeValida('01--1111-1111')).toBe(false)
+    expect(identificacionSinpeValida('')).toBe(false)
+  })
+  it('ofrece los 4 tipos de ONVO', () => {
+    expect(TIPOS_IDENTIFICACION.map(t => t.valor)).toEqual([1, 2, 3, 4])
+  })
+})
+
 describe('sinpeNumeroVisible', () => {
   it('quita el prefijo +506 y usa el formato único 8888-1234', () => {
-    expect(sinpeNumeroVisible('+506 7019-6686')).toBe('7019-6686')
-    expect(sinpeNumeroVisible('50670196686')).toBe('7019-6686')
-    expect(sinpeNumeroVisible('7019-6686')).toBe('7019-6686')
+    expect(sinpeNumeroVisible('+506 0000-0000')).toBe('0000-0000')
+    expect(sinpeNumeroVisible('50600000000')).toBe('0000-0000')
+    expect(sinpeNumeroVisible('0000-0000')).toBe('0000-0000')
     expect(sinpeNumeroVisible(undefined)).toBe('')
   })
 })

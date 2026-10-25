@@ -1693,7 +1693,8 @@
       "efectivoTitulo": "Pedido registrado!",
       "efectivoSub": "Você paga em dinheiro ao receber o pedido, com o valor exato.",
       "efectivoMetodo": "Dinheiro na entrega",
-      "efectivoAviso": "Nosso entregador levará o pedido e cobrará o valor exato em dinheiro. Avisamos pelo WhatsApp antes de sair."
+      "efectivoAviso": "Nosso entregador levará o pedido e cobrará o valor exato em dinheiro. Avisamos pelo WhatsApp antes de sair.",
+      "noDisponible": "SINPE Móvil não está disponível no momento. Fale conosco para combinar o pagamento."
     },
     "carga": {
       "gracias": "Obrigado pela sua compra!",
@@ -3500,6 +3501,7 @@
       "instruccionSinpe": "Peça ao cliente para escanear e pagar com SINPE Móvil",
       "sinpeA": "SINPE Móvil para:",
       "configWhatsapp": "Número SINPE não configurado",
+      "sinpeNoDisponible": "SINPE indisponível",
       "referencia": "Referência:",
       "montoExacto": "Valor exato:",
       "esperandoConfirmacion": "Aguardando o cliente pagar no carrinho…",
@@ -3543,7 +3545,7 @@
       "sinpeInstruccion": "Envie o valor exato para o número exibido. O pagamento se confirma sozinho quando a Tilopay o recebe.",
       "sinpeAvisoCajero": "Não precisa avisar o caixa: o pagamento confirma sozinho.",
       "sinpeNombre": "Nome completo",
-      "sinpeCedula": "Cédula",
+      "sinpeCedula": "Documento (com hífens)",
       "sinpeTelefono": "Seu número SINPE (8 dígitos)",
       "sinpeRegistrar": "Ver dados do SINPE",
       "sinpeEsperando": "Aguardando a Tilopay receber o SINPE…",
@@ -3561,8 +3563,8 @@
       "copiar": "Copiar",
       "copiado": "Copiado",
       "sinpePaso1": "Envie {{monto}} para este número",
-      "sinpePaso1Nota": "É o número SINPE do gateway (Tilopay), não o da loja.",
-      "sinpePaso2": "Na descrição, escreva este código",
+      "sinpePaso1Nota": "É o destino SINPE da ONVO (o gateway de pagamento), não o número da loja.",
+      "sinpePaso2": "Transfira o valor exato da conta no nome do documento informado. Não precisa escrever nenhum código.",
       "sinpePaso3": "Não precisa registrar mais nada: a tela muda sozinha quando o pagamento chegar.",
       "registrarPago": "Registrar meu pagamento",
       "registrarPagoDesc": "Com os dados da conta que fez o SINPE",
@@ -3584,7 +3586,14 @@
       "comprobanteMetodo": "Método",
       "comprobanteReferencia": "Referência",
       "imprimirComprobante": "Imprimir ou salvar em PDF",
-      "sinpeDniIntro": "Para mostrar os dados do SINPE, o gateway (Tilopay) pede seu documento."
+      "sinpeDniIntro": "A ONVO, o gateway de pagamento, pede o documento de quem vai transferir para reconhecer o SINPE.",
+      "sinpeTipoId": "Tipo de documento",
+      "sinpeTipoFisica": "Cédula física",
+      "sinpeTipoJuridica": "Cédula jurídica",
+      "sinpeTipoDimex": "DIMEX",
+      "sinpeTipoNite": "NITE",
+      "sinpeCedulaAyuda": "Exemplo: 01-1111-1111 com hífens. Mínimo 12 caracteres.",
+      "sinpeNoDisponible": "O SINPE Móvil não está disponível agora. Peça ao caixa outro meio de pagamento."
     },
     "recibo": {
       "ventaRegistrada": "Venda registrada",

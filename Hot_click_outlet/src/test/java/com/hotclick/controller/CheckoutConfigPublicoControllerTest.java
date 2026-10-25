@@ -21,7 +21,8 @@ class CheckoutConfigPublicoControllerTest {
 
         assertThat(body).containsEntry("maxUnidadesPorProducto", 3).containsEntry("contraEntregaNormal", true);
         assertThat(body.keySet()).containsExactlyInAnyOrder(
-            "contraEntregaNormal", "maxUnidadesPorProducto", "pagoPorTienda", "sinpeManual", "tarjetaOnvo");
+            "contraEntregaNormal", "maxUnidadesPorProducto", "pagoPorTienda", "sinpeManual", "sinpeDestino", "tarjetaOnvo");
+        assertThat(body).containsEntry("sinpeDestino", "");
         assertThat(body).containsEntry("pagoPorTienda", false);
         assertThat(body).containsEntry("sinpeManual", false);
     }
@@ -30,7 +31,7 @@ class CheckoutConfigPublicoControllerTest {
     void sinpeManualSaleDeLaConfiguracionYSoloEsBooleano() {
         ContraEntregaPolitica politica = mock(ContraEntregaPolitica.class);
         GuestCheckoutGuard guard = mock(GuestCheckoutGuard.class);
-        var on = new CheckoutConfigPublicoController(politica, guard, false, true).config().getBody();
+        var on = new CheckoutConfigPublicoController(politica, guard, false, true).conSinpeDestino("DESTINO_ONVO_PRUEBA").config().getBody();
         var off = new CheckoutConfigPublicoController(politica, guard, false, false).config().getBody();
         assertThat(on).containsEntry("sinpeManual", true);
         assertThat(off).containsEntry("sinpeManual", false);
@@ -60,5 +61,13 @@ class CheckoutConfigPublicoControllerTest {
         org.mockito.Mockito.when(onvo.isPagosDisponibles()).thenReturn(true);
         assertThat(new CheckoutConfigPublicoController(politica, guard, false, false, false, prov).config().getBody()).containsEntry("tarjetaOnvo", false);
         assertThat(new CheckoutConfigPublicoController(politica, guard, false, false, true, prov).config().getBody()).containsEntry("tarjetaOnvo", true);
+    }
+
+    @Test
+    void sinpeManualSinDestinoOnvoQuedaApagado() {
+        ContraEntregaPolitica politica = mock(ContraEntregaPolitica.class);
+        GuestCheckoutGuard guard = mock(GuestCheckoutGuard.class);
+        var body = new CheckoutConfigPublicoController(politica, guard, false, true).config().getBody();
+        assertThat(body).containsEntry("sinpeManual", false).containsEntry("sinpeDestino", "");
     }
 }

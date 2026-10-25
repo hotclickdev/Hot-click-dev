@@ -38,7 +38,13 @@ export function metodoSeleccionable(actual: string, disponibles: string[], sinpe
 
 /** Lee el booleano de la config pública; cualquier otro valor (o error) = deshabilitado. */
 export function sinpeManualDesdeConfig(data: unknown): boolean {
-  return (data as { sinpeManual?: unknown } | null | undefined)?.sinpeManual === true
+  return (data as { sinpeManual?: unknown } | null | undefined)?.sinpeManual === true && sinpeDestinoDesdeConfig(data) !== ''
+}
+
+/** Destino SINPE Móvil de ONVO publicado por el backend; cualquier otro valor = '' (SINPE manual «Próximamente»). */
+export function sinpeDestinoDesdeConfig(data: unknown): string {
+  const d = (data as { sinpeDestino?: unknown } | null | undefined)?.sinpeDestino
+  return typeof d === 'string' ? d.trim() : ''
 }
 
 /** Tarjeta por ONVO solo con `tarjetaOnvo === true` en la config pública; cualquier otro valor = «Próximamente». */

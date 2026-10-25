@@ -559,8 +559,8 @@ public class Producto extends BaseEntity {
     public String getCodigoCabys() { return codigoCabys; }
     public void setCodigoCabys(String v) { this.codigoCabys = v; }
 
-    /** Precio efectivo para el cliente: precioOferta si está en oferta, sino precioVenta */
+    /** Precio efectivo para el cliente (M-07: regla única en OrderPricingService.precioEfectivo). */
     public Integer getPrecioEfectivo() {
-        return Boolean.TRUE.equals(enOferta) && precioOferta != null ? precioOferta : precioVenta;
+        return com.hotclick.service.payment.OrderPricingService.precioEfectivo(this);
     }
 }

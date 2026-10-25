@@ -24,6 +24,7 @@ class PosVentaEfectivoTest extends BaseIntegrationTest {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private CategoriaRepository categoriaRepository;
+    @Autowired private TurnoCajaRepository turnoCajaRepository;
 
     private Empresa empresa;
     private Bodega bodega;
@@ -43,6 +44,11 @@ class PosVentaEfectivoTest extends BaseIntegrationTest {
         Usuario dueno = crearUsuario("pos-ef-dueno@test.cr", "Dueno Pos", rolEmp);
         dueno.setEmpresa(empresa);
         dueno = usuarioRepository.saveAndFlush(dueno);
+        // C-05: la caja exige un turno ABIERTO del cajero en este negocio.
+        TurnoCaja turno = new TurnoCaja();
+        turno.setUsuario(dueno);
+        turno.setEmpresa(empresa);
+        turnoCajaRepository.saveAndFlush(turno);
         token = "Bearer " + jwtUtil.generateToken(dueno.getCorreo(), dueno.getId(), Constants.ROL_EMPRENDEDOR, empresa.getId(), empresa.getSlug());
 
         Categoria categoria = categoriaRepository.findAll().stream().findFirst().orElseGet(() -> {
@@ -83,6 +89,7 @@ class PosVentaEfectivoTest extends BaseIntegrationTest {
     void tearDown() {
         jdbcTemplate.update("DELETE FROM hot_click_movimiento_stock_tb");
         pedidoRepository.deleteAll();
+        turnoCajaRepository.deleteAll();
         productoRepository.deleteAll();
         bodegaRepository.deleteAll();
         categoriaRepository.deleteAll();

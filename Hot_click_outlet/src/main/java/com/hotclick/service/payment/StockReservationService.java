@@ -72,7 +72,7 @@ public class StockReservationService {
 
             int precioUnitario = item.getPrecioUnitarioOverride() != null
                 ? item.getPrecioUnitarioOverride()
-                : p.getPrecioVenta();
+                : OrderPricingService.precioEfectivo(p);
             subtotal   += precioUnitario * item.getCantidad();
             costoTotal += p.getPrecioCompra() * item.getCantidad();
         }

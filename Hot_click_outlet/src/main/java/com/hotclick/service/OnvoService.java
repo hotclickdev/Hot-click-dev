@@ -46,6 +46,12 @@ public class OnvoService {
     @Value("${onvo.publishable-key:}")
     private String publishableKey;
 
+    /** Número destino SINPE Móvil que asigna ONVO (ONVO_SINPE_DESTINO). Sin valor por defecto: vacío = SINPE manual no disponible. */
+    @Value("${onvo.sinpe-destino:}")
+    private String sinpeDestino;
+
+    private static final Pattern TELEFONO_SINPE = Pattern.compile("\\+?[0-9]{8,15}");
+
     private final RestTemplate restTemplate;
 
     @Autowired(required = false)
@@ -117,6 +123,48 @@ public class OnvoService {
     }
 
     public boolean isPagosDisponibles() { return pagosDisponibles; }
+
+    /**
+     * Destino SINPE Móvil de ONVO desde la configuración (la API de ONVO no lo devuelve). Fail-closed: vacío
+     * si falta o no tiene forma de teléfono; quien lo use debe tratar el vacío como «SINPE no disponible».
+     */
+    public String sinpeDestino() {
+        if (sinpeDestino == null) return "";
+        String limpio = sinpeDestino.replaceAll("[\\s-]", "");
+        return TELEFONO_SINPE.matcher(limpio).matches() ? limpio : "";
+    }
+
+    /** Solo para tests. */
+    void setSinpeDestinoParaTest(String valor) { this.sinpeDestino = valor; }
+
+    /**
+     * SINPERefNumber (25 caracteres) de la transferencia SINPE ligada al payment intent, leído de
+     * GET /v1/mobile-transfers/list (la API no filtra por intent: se filtra aquí). null si no hay, si no hay
+     * llave o si la cuenta no tiene habilitada la consulta (ONVO responde 400 sin número personalizado).
+     * Nunca lanza: es un dato informativo que no decide ningún cobro.
+     */
+    public String sinpeRefNumberDe(String intentId) {
+        if (!consultable(intentId)) return null;
+        try {
+            Map<?, ?> body = getOnvo("/mobile-transfers/list?status=received&limit=100");
+            return sinpeRefDeLista(body, intentId);
+        } catch (RuntimeException e) {
+            log.info("[onvo] SINPERefNumber no disponible para intent {}: {}", intentId, e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    static String sinpeRefDeLista(Map<?, ?> body, String intentId) {
+        if (body == null || !(body.get("data") instanceof java.util.List<?> lista)) return null;
+        for (Object o : lista) {
+            if (o instanceof Map<?, ?> t && intentId.equals(String.valueOf(t.get("paymentIntentId")))) {
+                Object ref = t.get("SINPERefNumber");
+                String r = ref == null ? "" : String.valueOf(ref).trim();
+                return r.isEmpty() || r.length() > 25 ? null : r;
+            }
+        }
+        return null;
+    }
 
     public String getWebhookSecret() { return webhookSecret; }
 
@@ -277,6 +325,65 @@ public class OnvoService {
         }
     }
 
+    /** Tipos de identificación que acepta ONVO para mobile_number: 1 física, 2 jurídica, 3 DIMEX, 4 NITE. */
+    public static boolean tipoIdentificacionValido(Integer tipo) {
+        return tipo != null && tipo >= 1 && tipo <= 4;
+    }
+
+    private static final Pattern IDENTIFICACION_SINPE = Pattern.compile("[0-9A-Za-z]++(?:-[0-9A-Za-z]++)++");
+
+    /** ONVO exige la identificación con guiones y al menos 12 caracteres (openapi mobileNumber.identification). */
+    public static boolean identificacionSinpeValida(String identificacion) {
+        if (identificacion == null) return false;
+        String v = identificacion.trim();
+        return v.length() >= 12 && v.length() <= 30 && IDENTIFICACION_SINPE.matcher(v).matches();
+    }
+
+    /**
+     * Método mobile_number para un cobro presencial (POS): identificación y tipo del pagador, que ONVO
+     * compara con la transferencia entrante junto con el monto. Sin número del pagador ni correo.
+     */
+    @CircuitBreaker(name = "onvo", fallbackMethod = "crearMetodoPagoSinpePosFallback")
+    public OnvoPaymentMethod crearMetodoPagoSinpePos(String identificacion, int tipoIdentificacion, String nombre) {
+        if (!identificacionSinpeValida(identificacion) || !tipoIdentificacionValido(tipoIdentificacion)) {
+            throw new IllegalArgumentException("Identificación inválida para SINPE Móvil");
+        }
+        if (mockMode) {
+            return new OnvoPaymentMethod("onvo_pm_mock_" + System.currentTimeMillis());
+        }
+        exigirPagosDisponibles();
+        Map<String, Object> mobile = new HashMap<>();
+        mobile.put("identification", identificacion.trim());
+        mobile.put("identificationType", tipoIdentificacion);
+        Map<String, Object> billing = new HashMap<>();
+        billing.put("name", nombre == null || nombre.isBlank() ? "Cliente" : nombre.trim());
+        Map<String, Object> body = new HashMap<>();
+        body.put("type", "mobile_number");
+        body.put("mobileNumber", mobile);
+        body.put("billing", billing);
+        try {
+            return parsePaymentMethod(postOnvo("/payment-methods", body));
+        } catch (HttpClientErrorException e) {
+            throw new IllegalStateException(OnvoErrorSupport.mensajeCliente(e));
+        }
+    }
+
+    /**
+     * Cancela el payment intent (POST /v1/payment-intents/{id}/cancel). Un intent SINPE no vence solo en ONVO:
+     * el POS lo cancela al cumplirse su propio timeout. Devuelve el status que responde ONVO
+     * ("" si no se pudo: sin llave, id inválido o error); quien llama solo da por cancelado con "canceled".
+     */
+    public String cancelarPaymentIntent(String intentId) {
+        if (!consultable(intentId)) return "";
+        try {
+            Map<?, ?> body = postOnvo("/payment-intents/" + intentId + "/cancel", Map.of());
+            return body == null || body.get("status") == null ? "" : String.valueOf(body.get("status"));
+        } catch (RuntimeException e) {
+            log.warn("[onvo] No se pudo cancelar el payment intent {}: {}", intentId, e.getMessage());
+            return "";
+        }
+    }
+
     static Map<String, Object> cuerpoMetodoSinpe(String identificacion, String numeroE164,
                                                  String nombre, String email) {
         Map<String, Object> mobile = new HashMap<>();
@@ -410,6 +517,10 @@ public class OnvoService {
             throw new IllegalStateException("Respuesta inválida de ONVO al crear método SINPE");
         }
         return new OnvoPaymentMethod(String.valueOf(respBody.get("id")));
+    }
+
+    private OnvoPaymentMethod crearMetodoPagoSinpePosFallback(String identificacion, int tipo, String nombre, Throwable t) {
+        throw relanzarFalloOnvo("crearMetodoPagoSinpePos", t);
     }
 
     /** Solo cuando el circuito está OPEN. Cualquier otro fallo se relanza con su causa real. */

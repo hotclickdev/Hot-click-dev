@@ -1,5 +1,7 @@
 package com.hotclick.service.producto;
 
+import com.hotclick.service.payment.OrderPricingService;
+
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
@@ -119,9 +121,10 @@ public class ProductoWriteOperations {
         p.setEnOferta(enOferta);
         if (enOferta) {
             if (porcentajeDescuento != null && porcentajeDescuento > 0) {
+                p.setPrecioOferta(OrderPricingService.calcularPrecioOferta(p.getPrecioVenta(), porcentajeDescuento));
                 p.setPorcentajeDescuento(porcentajeDescuento);
-                p.setPrecioOferta((int) Math.round(p.getPrecioVenta() * (1 - porcentajeDescuento / 100.0)));
             } else if (precioOferta != null) {
+                OrderPricingService.validarPrecioOferta(p.getPrecioVenta(), precioOferta);
                 p.setPrecioOferta(precioOferta);
                 int diff = p.getPrecioVenta() - precioOferta;
                 p.setPorcentajeDescuento(diff > 0 ? (int) Math.round(diff * 100.0 / p.getPrecioVenta()) : 0);

@@ -27,11 +27,14 @@ public class BillingPreferenciasController {
     static final Set<String> FRECUENCIAS = Set.of("QUINCENAL", "MENSUAL");
 
     private final CompanyScope companyScope;
+    private final com.hotclick.security.PropietarioGuard propietarioGuard;
     private final EmpresaRepository empresaRepository;
     private final com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica;
 
     public BillingPreferenciasController(CompanyScope companyScope, EmpresaRepository empresaRepository,
-                                         com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica) {
+                                         com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica,
+                                         com.hotclick.security.PropietarioGuard propietarioGuard) {
+        this.propietarioGuard = propietarioGuard;
         this.contraEntregaPolitica = contraEntregaPolitica;
         this.companyScope = companyScope;
         this.empresaRepository = empresaRepository;
@@ -46,6 +49,9 @@ public class BillingPreferenciasController {
     @PutMapping
     @Transactional
     public ResponseEntity<ResponseDTO> guardar(@RequestBody Map<String, Object> body) {
+        if (!propietarioGuard.puedeGestionarEmpresa(companyScope.requireEmpresaId())) { // A2
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.security.PropietarioGuard.MSG));
+        }
         Empresa e = empresaPropia();
         if (body.containsKey("diaCobro")) {
             Integer dia = body.get("diaCobro") instanceof Number n ? n.intValue() : null;

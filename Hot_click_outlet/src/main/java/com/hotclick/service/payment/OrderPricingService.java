@@ -18,6 +18,39 @@ public class OrderPricingService {
     @Autowired private CuponService    cuponService;
     @Autowired private GiftCardService giftCardService;
 
+    /**
+     * M-07: regla única de precio efectivo (catálogo, carrito, checkout y POS).
+     * La oferta aplica solo si está activa y 0 &lt; precioOferta &lt; precioVenta; si no, precio normal.
+     * Producto no tiene campos de vigencia; si se agregan, se validan acá.
+     */
+    public static Integer precioEfectivo(com.hotclick.model.Producto p) {
+        Integer venta = p.getPrecioVenta();
+        Integer oferta = p.getPrecioOferta();
+        if (Boolean.TRUE.equals(p.getEnOferta()) && oferta != null && oferta > 0
+                && venta != null && oferta < venta) {
+            return oferta;
+        }
+        return venta;
+    }
+
+    /** M-07: precio de oferta a partir de un porcentaje; rechaza descuentos que dejan el precio en ≤ 0. */
+    public static int calcularPrecioOferta(int precioVenta, int porcentajeDescuento) {
+        if (porcentajeDescuento <= 0 || porcentajeDescuento >= 100) {
+            throw new IllegalArgumentException("El descuento tiene que estar entre 1 % y 99 %.");
+        }
+        int oferta = (int) Math.round(precioVenta * (1 - porcentajeDescuento / 100.0));
+        validarPrecioOferta(precioVenta, oferta);
+        return oferta;
+    }
+
+    /** M-07: un precio de oferta fijo tiene que ser mayor que cero y menor que el precio normal. */
+    public static void validarPrecioOferta(int precioVenta, int precioOferta) {
+        if (precioOferta <= 0 || precioOferta >= precioVenta) {
+            throw new IllegalArgumentException(
+                "El precio de oferta tiene que ser mayor que cero y menor que el precio normal.");
+        }
+    }
+
     public OrderPricingResult calculate(PaymentCheckoutRequest req, Bodega bodega, int subtotal) {
         return calcularPaquete(req, bodega, subtotal, req.getMetodoEnvio(), Integer.MAX_VALUE);
     }

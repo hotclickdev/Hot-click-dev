@@ -4319,3 +4319,9 @@ CREATE TABLE IF NOT EXISTS hot_click_empresa_cuenta_onvo_tb (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_cuenta_onvo_empresa ON hot_click_empresa_cuenta_onvo_tb (fk_id_empresa);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_cuenta_onvo_account ON hot_click_empresa_cuenta_onvo_tb (onvo_account_id);
 CREATE INDEX IF NOT EXISTS ix_empresa_cuenta_onvo_estado ON hot_click_empresa_cuenta_onvo_tb (estado);
+
+-- ====================================================
+-- V189__pago_sinpe_ref_number.sql (copia de la migración Flyway)
+-- ====================================================
+-- SINPERefNumber de ONVO (25 caracteres) guardado tras confirmar el pago. Aditiva: columna nueva nullable.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS sinpe_ref_number VARCHAR(25);

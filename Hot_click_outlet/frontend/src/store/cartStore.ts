@@ -6,6 +6,12 @@ import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 import { formatPrice } from '@/utils/format'
 import { topeStock } from '@/utils/stock'
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
+
+/** M-01: la línea del carrito guarda el precio efectivo que cobra el backend. */
+function conPrecioEfectivo<T extends Parameters<typeof precioUnitarioEfectivo>[0]>(item: T): T {
+  return { ...item, precio: precioUnitarioEfectivo(item) }
+}
 
 type ProductoConExtras = Producto & {
   tallaSeleccionada?: string
@@ -53,7 +59,7 @@ const useCartStore = create<CartState>()(
             items: [
               ...items,
               {
-                ...product,
+                ...conPrecioEfectivo(product),
                 cantidad: Math.min(qty, topeStock(product.stock)),
                 cartLineId,
                 personalizacion: product.personalizacion,
@@ -77,7 +83,7 @@ const useCartStore = create<CartState>()(
           })
         } else {
           set({
-            items: [...items, { ...product, cantidad: Math.min(qty, topeStock(product.stock)) }],
+            items: [...items, { ...conPrecioEfectivo(product), cantidad: Math.min(qty, topeStock(product.stock)) }],
             cartUpdatedAt: Date.now(),
           })
         }
@@ -110,7 +116,7 @@ const useCartStore = create<CartState>()(
       getCartItems: () => get().items,
 
       total: () =>
-        get().items.reduce((sum, i) => sum + (i.precio ?? i.precioVenta ?? 0) * i.cantidad, 0),
+        get().items.reduce((sum, i) => sum + precioUnitarioEfectivo(i) * i.cantidad, 0),
 
       count: () =>
         get().items.reduce((sum, i) => sum + i.cantidad, 0),
@@ -120,7 +126,7 @@ const useCartStore = create<CartState>()(
         const lines = items.map((i) => {
           const talla = i.tallaSeleccionada || i.personalizacion?.tallaSeleccionada
           const pers = i.personalizacion ? ' [personalizado]' : ''
-          return `  • ${i.nombre ?? i.nombreProducto}${talla ? ` (Talla ${talla})` : ''}${pers} x${i.cantidad} — ${formatPrice((i.precio ?? i.precioVenta ?? 0) * i.cantidad)}`
+          return `  • ${i.nombre ?? i.nombreProducto}${talla ? ` (Talla ${talla})` : ''}${pers} x${i.cantidad} — ${formatPrice(precioUnitarioEfectivo(i) * i.cantidad)}`
         })
         const detalle = items.length
           ? `${lines.join('\n')}\n\nTotal: ${formatPrice(total())}\n\n`
@@ -130,7 +136,14 @@ const useCartStore = create<CartState>()(
         )
       },
     }),
-    { name: 'hotclick-cart' },
+    {
+      name: 'hotclick-cart',
+      // M-01: carritos guardados antes del fix tenían el precio de lista en `precio`.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<CartState>
+        return { ...current, ...p, items: (p.items ?? current.items).map(conPrecioEfectivo) }
+      },
+    },
   ),
 )
 

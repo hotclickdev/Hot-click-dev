@@ -1,11 +1,10 @@
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import { isValidEmail } from '@/utils/validators'
 import { formatTelefonoCR } from '@/utils/telefono'
 import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
 import type { Id } from '@/types/api'
 
 export const WHATSAPP = '50686667888'
-export const SINPE_NUMERO = formatTelefonoCR('86667888')
-export const SINPE_TITULAR = 'Andrés Zúñiga (HotClick)'
 export const BODEGA_DEFAULT = 1
 
 /** Copia el número SINPE (solo dígitos) al portapapeles. */
@@ -18,8 +17,16 @@ export async function copiarTexto(texto: string): Promise<boolean> {
   }
 }
 
-export function copiarNumeroSinpe(): Promise<boolean> {
-  return copiarTexto(SINPE_NUMERO.replace(/\D/g, ''))
+/** Copia el destino SINPE de ONVO que publica el backend (nunca un número fijo en el front). */
+export function copiarNumeroSinpe(destino: string): Promise<boolean> {
+  const digitos = destino.replace(/\D/g, '')
+  return digitos ? copiarTexto(digitos) : Promise.resolve(false)
+}
+
+/** Destino SINPE formateado para mostrar; vacío si el backend no lo publicó. */
+export function destinoSinpeVisible(destino: string | null | undefined): string {
+  const d = (destino ?? '').trim()
+  return d ? formatTelefonoCR(d.replace(/^\+506/, '')) : ''
 }
 
 export const SHIPPING_COSTS: Record<string, number> = {
@@ -125,7 +132,7 @@ export function paquetesDesdeItems(items: ItemCheckout[]): PaqueteCheckout[] {
       grupos.set(key, grupo)
     }
     grupo.items.push(item)
-    grupo.subtotal += (item.precio ?? item.precioVenta ?? 0) * (item.cantidad ?? 0)
+    grupo.subtotal += precioUnitarioEfectivo(item) * (item.cantidad ?? 0)
   }
   return [...grupos.values()]
 }
