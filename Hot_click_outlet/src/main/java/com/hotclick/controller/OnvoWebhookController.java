@@ -109,9 +109,13 @@ public class OnvoWebhookController {
                         log.error("[onvo-webhook] payment-intent.succeeded sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
-                    // El POS ya no cobra por ONVO (Tilopay); aquí no se completa ninguna sesión POS.
-                    log.debug("[onvo-webhook] payment-intent.succeeded: {}", intentId);
+                    // SINPE del POS por ONVO: se relee el intent por GET (monto/moneda exactos) y recién ahí se cierra la venta.
+                    boolean pos = posQrVentaService != null && posQrVentaService.confirmarSinpeOnvoPorWebhook(intentId);
+                    log.info("[onvo-webhook] payment-intent.succeeded {} posCerrado={}", intentId, pos);
                 }
+                case "payment-intent.deferred" ->
+                    // Espera de aprobación (flujo SINPE): no es pago; se sigue esperando succeeded.
+                    log.info("[onvo-webhook] payment-intent.deferred {}: en espera", data.path("id").asText(""));
                 case "payment-intent.failed" -> {
                     String intentId = data.path("id").asText(null);
                     if (intentId == null) {

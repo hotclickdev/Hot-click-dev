@@ -8,11 +8,15 @@ import { BotonPago, MarcoPago } from '@/pages/pago/PiezasPago'
 import { formatPrice } from '@/utils/format'
 import { formatTelefonoCR } from '@/utils/telefono'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
-import { SINPE_NUMERO, SINPE_TITULAR, copiarNumeroSinpe } from './checkoutHelpers'
+import { copiarNumeroSinpe, destinoSinpeVisible } from './checkoutHelpers'
 
 type PagoDataSinpe = {
   numeroPedido?: string
   proveedor?: string
+  /** Monto exacto del cobro creado por el servidor. */
+  total?: number
+  /** Destino SINPE de ONVO desde la config del servidor. */
+  sinpeDestino?: string | null
 }
 
 type CheckoutSinpePendingProps = {
@@ -110,8 +114,22 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
     )
   }
 
+  // Monto y destino salen de la respuesta del servidor; sin ellos no se muestran datos de transferencia.
+  const destino = (pagoData?.sinpeDestino ?? '').trim()
+  const monto = typeof pagoData?.total === 'number' && pagoData.total > 0 ? pagoData.total : null
+  if (!destino || monto === null) {
+    return (
+      <MarcoPago>
+        <div className="flex flex-col gap-[14px] px-4 pb-6 pt-8 leading-[normal]">
+          <p role="alert" className="rounded-[10px] bg-hc-danger-bg p-3 text-[13px] leading-5 text-hc-danger">{t('payment.sinpe.noDisponible')}</p>
+          <BotonPago onClick={onSinpeWhatsApp} variante="secundario">{t('payment.sinpe.avisarWhatsapp')}</BotonPago>
+        </div>
+      </MarcoPago>
+    )
+  }
+
   async function copiar() {
-    if (await copiarNumeroSinpe()) {
+    if (await copiarNumeroSinpe(destino)) {
       setCopiado(true)
       setTimeout(() => setCopiado(false), 1_800)
     }
@@ -134,18 +152,17 @@ export default function CheckoutSinpePending(props: CheckoutSinpePendingProps) {
             <div className="flex items-center justify-between gap-2">
               <span className="text-[13px] text-hc-n-600">{t('payment.sinpe.numero')}</span>
               <span className="flex items-center gap-2">
-                <span className="font-display text-[15px] font-bold text-hc-n-900">{SINPE_NUMERO}</span>
+                <span className="font-display text-[15px] font-bold text-hc-n-900">{destinoSinpeVisible(destino)}</span>
                 <button type="button" onClick={copiar} aria-label={t('checkout.f.copiarSinpe')} className="relative flex size-4 items-center justify-center text-hc-blue-600 after:absolute after:-inset-2">
                   <IconoFigma src={ICONOS_CHECKOUT.copiar} size={16} />
                 </button>
                 {copiado && <span role="status" className="text-[12px] font-semibold text-hc-success-text">{t('checkout.f.copiado')}</span>}
               </span>
             </div>
-            <FilaDato etiqueta={t('payment.sinpe.titular')} valor={SINPE_TITULAR} />
-            {pagoData?.numeroPedido && <FilaDato etiqueta={t('payment.sinpe.referencia')} valor={pagoData.numeroPedido} mono />}
+            {pagoData?.numeroPedido && <FilaDato etiqueta={t('payment.exito.pedido')} valor={pagoData.numeroPedido} mono />}
             <div className="flex items-center justify-between border-t border-hc-n-200 pt-2">
               <span className="text-[13px] font-semibold text-hc-n-600">{t('payment.sinpe.montoExacto')}</span>
-              <span className="font-display text-[17px] font-bold text-hc-n-900">{formatPrice(totalFinal)}</span>
+              <span className="font-display text-[17px] font-bold text-hc-n-900">{formatPrice(monto)}</span>
             </div>
           </div>
 

@@ -91,6 +91,18 @@ public class OnvoCapturaService {
             .anyMatch(pedido -> Constants.PEDIDO_CANCELADO.equals(pedido.getEstadoPedido()));
     }
 
+    /** Guarda el SINPERefNumber una sola vez en el pago ya capturado. No toca estado ni montos. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void guardarSinpeRef(String checkoutSessionId, String sinpeRef) {
+        if (sinpeRef == null || sinpeRef.isBlank()) return;
+        pagoRepository.findByMerchantToken(checkoutSessionId)
+            .filter(p -> p.getSinpeRefNumber() == null)
+            .ifPresent(p -> {
+                p.setSinpeRefNumber(sinpeRef);
+                pagoRepository.save(p);
+            });
+    }
+
     WebhookEvent registrar(String token, String tipo, String resumen, String origen) {
         WebhookEvent evento = new WebhookEvent();
         evento.setMerchantToken(token);

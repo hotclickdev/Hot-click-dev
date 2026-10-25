@@ -5,7 +5,7 @@ import type { useComprobanteSinpe } from './useComprobanteSinpe'
 import { numeroCompraVisible, type DatosCompra } from './validacionCompra'
 
 type ResultadoSinpeProps = {
-  pagoData: { numeroPedido?: string; proveedor?: string; total?: number } | null
+  pagoData: { numeroPedido?: string; proveedor?: string; total?: number; sinpeDestino?: string | null } | null
   comprobante: ReturnType<typeof useComprobanteSinpe>
   datos: DatosCompra
   total: number

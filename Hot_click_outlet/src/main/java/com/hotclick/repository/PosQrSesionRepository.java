@@ -17,6 +17,8 @@ public interface PosQrSesionRepository extends JpaRepository<PosQrSesion, Long> 
 
     Optional<PosQrSesion> findByStripeSessionId(String stripeSessionId);
 
+    java.util.List<PosQrSesion> findByEstadoAndStripeSessionIdStartingWith(String estado, String prefijo);
+
     Optional<PosQrSesion> findByPedidoId(Long pedidoId);
 
     /**

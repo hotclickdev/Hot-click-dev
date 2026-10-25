@@ -24,6 +24,12 @@ public class PaymentCheckoutResponse {
     public java.util.List<Paquete> getPaquetes() { return paquetes; }
     public void setPaquetes(java.util.List<Paquete> paquetes) { this.paquetes = paquetes; }
 
+    /** SINPE manual: destino SINPE Móvil de ONVO desde la config del servidor (nunca fijo en el front). */
+    private String sinpeDestino;
+
+    public String getSinpeDestino() { return sinpeDestino; }
+    public void setSinpeDestino(String sinpeDestino) { this.sinpeDestino = sinpeDestino; }
+
     public PaymentCheckoutResponse() {}
 
     public PaymentCheckoutResponse(Long pedidoId, String numeroPedido,

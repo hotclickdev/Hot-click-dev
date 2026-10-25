@@ -34,19 +34,11 @@ class PosQrVentaServiceTest {
     @InjectMocks PosQrVentaService service;
 
     @Test
-    @DisplayName("SINPE inicia por Tilopay: fija el método y una orden POSQR-")
-    void sinpeIniciaPorTilopay() {
-        PosQrSesion sesion = sesionTarjeta();
-        sesion.setMetodosHabilitados("TARJETA,SINPE");
-        when(sessionService.findSesionActiva("tokentarjetaqr01")).thenReturn(sesion);
-        when(tilopayService.isPagosDisponibles()).thenReturn(true);
-        when(tilopayService.loginSdk()).thenReturn("sdk");
-
-        Map<String, Object> r = service.iniciarTilopay("tokentarjetaqr01", "SINPE");
-
-        assertThat(sesion.getMetodoPago()).isEqualTo("SINPE");
-        assertThat((String) r.get("orderNumber")).startsWith(PosQrVentaService.PREFIJO_TILOPAY);
-        assertThat(r).containsEntry("montoCrc", 5000).containsEntry("sdkToken", "sdk");
+    @DisplayName("SINPE ya no inicia por Tilopay: se rechaza (va por ONVO)")
+    void sinpeNoIniciaPorTilopay() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.iniciarTilopay("tokentarjetaqr01", "SINPE"))
+            .isInstanceOf(IllegalStateException.class);
+        org.mockito.Mockito.verifyNoInteractions(tilopayService);
     }
 
     @Test
