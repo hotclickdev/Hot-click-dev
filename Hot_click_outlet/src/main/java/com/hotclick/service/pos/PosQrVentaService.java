@@ -23,6 +23,8 @@ import java.util.Objects;
 @Service
 public class PosQrVentaService {
 
+    static final String MSG_SESION_INEXISTENTE = "Sesión QR inexistente";
+
     private static final Logger log = LoggerFactory.getLogger(PosQrVentaService.class);
 
     @Autowired private PosQrSesionRepository posQrRepo;
@@ -212,7 +214,10 @@ public class PosQrVentaService {
      * se espera al webhook y nunca se expira ni cancela. Vencido el timeout propio, la sesión pasa a EXPIRADO
      * solo cuando ONVO confirmó el intent cancelado.
      */
-    private String verificarSinpeOnvo(PosQrSesion sesion) {
+    String verificarSinpeOnvo(PosQrSesion sesion) {
+        if (sesion == null) {
+            throw new IllegalStateException(MSG_SESION_INEXISTENTE);
+        }
         PosSinpeOnvoService.EstadoIntent e = sinpeOnvo.estadoIntent(sesion);
         if (e == PosSinpeOnvoService.EstadoIntent.PAGADO) {
             log.info("[POS-SINPE-ONVO] Sesión {} cobrada en ONVO; se espera el webhook para cerrar",
