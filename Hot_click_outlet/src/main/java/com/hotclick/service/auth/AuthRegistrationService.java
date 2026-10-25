@@ -53,7 +53,7 @@ public class AuthRegistrationService {
             Usuario usuario = new Usuario();
             usuario.setNombre(req.getNombre().trim());
             usuario.setApellidoPaterno(""); // P1-04: la columna es NOT NULL; antes daba 500 con el SQL
-            usuario.setCorreo(req.getCorreo().trim().toLowerCase());
+            usuario.setCorreo(com.hotclick.utils.CorreoNormalizer.normalizar(req.getCorreo()));
             usuario.setContrasenaHash(passwordEncoder.encode(req.getContrasena()));
             if (req.getTelefono() != null) usuario.setTelefono(req.getTelefono().trim());
             Usuario nuevo = usuarioService.registrarSolicitud(usuario);

@@ -141,6 +141,23 @@ class AuthCredentialLoginHandlerTest {
         verify(otpService, never()).enviarOtp(any(), anyString());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"User@Example.com", "user@example.com ", "  USER@EXAMPLE.COM\t"})
+    @DisplayName("A1: login normaliza el correo (trim + minúsculas) igual que el registro → 200")
+    void loginNormalizaCorreo(String correoIngresado) {
+        Usuario u = usuarioActivo();
+        when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches(CLAVE, HASH_REAL)).thenReturn(true);
+        when(authSupport.buildAuthResponse(u)).thenReturn(null);
+        JwtRequest req = request();
+        req.setCorreo(correoIngresado);
+
+        ResponseEntity<?> resp = handler.login(req, httpRequest);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(200);
+        verify(usuarioService).buscarPorCorreo(CORREO);
+    }
+
     private static void assertCredencialesInvalidas(ResponseEntity<?> resp) {
         assertThat(resp.getStatusCode().value()).isEqualTo(401);
         assertThat(resp.getBody()).isInstanceOf(ResponseDTO.class);
