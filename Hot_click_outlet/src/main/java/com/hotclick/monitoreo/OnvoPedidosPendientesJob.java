@@ -2,6 +2,7 @@ package com.hotclick.monitoreo;
 
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.service.TelegramService;
+import com.hotclick.utils.Constants;
 import io.sentry.Sentry;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +24,7 @@ public class OnvoPedidosPendientesJob {
     @org.springframework.beans.factory.annotation.Autowired
     public OnvoPedidosPendientesJob(PagoRepository pagos, TelegramService telegram,
                                     @Value("${onvo.alertas.pendiente-minutos:30}") int minutos) {
-        this(pagos, telegram, minutos, Clock.systemDefaultZone());
+        this(pagos, telegram, minutos, Clock.system(Constants.ZONA_CR));
     }
 
     OnvoPedidosPendientesJob(PagoRepository pagos, TelegramService telegram, int minutos, Clock clock) {
