@@ -121,8 +121,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
         Map<?, ?> intent = onvoService.obtenerPaymentIntent(intentId);
         switch (OnvoCobroVerificador.decidir(pago, sesion, intent, onvoService.modoEsperado())) {
             case ACEPTAR -> {
-                OnvoCapturaService.Captura captura = onvoCapturaService.capturarVerificado(checkoutSessionId,
-                    "{\"verificado\":\"GET ONVO\",\"paymentIntentId\":\"" + intentId + "\"}", origen);
+                OnvoCapturaService.Captura captura = capturar(checkoutSessionId, intentId, origen);
                 if (captura == OnvoCapturaService.Captura.CAPTURADO) guardarSinpeRef(checkoutSessionId, intentId);
                 return switch (captura) {
                     case CAPTURADO -> Verificacion.OK;
@@ -148,6 +147,20 @@ public class OnvoPaymentProvider implements PaymentProvider {
                 log.info("[onvo] Sesión todavía sin cobro confirmado: sessionId={}", checkoutSessionId);
                 return Verificacion.NO_PAGADO;
             }
+        }
+    }
+
+    /**
+     * C6: si dos entregas chocan en el UNIQUE (sessionId, evento), la otra ya capturó: DUPLICADO, no 500
+     * (un 500 haría que ONVO reintente sin sentido).
+     */
+    OnvoCapturaService.Captura capturar(String checkoutSessionId, String intentId, String origen) {
+        try {
+            return onvoCapturaService.capturarVerificado(checkoutSessionId,
+                "{\"verificado\":\"GET ONVO\",\"paymentIntentId\":\"" + intentId + "\"}", origen);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.info("[onvo] Entrega concurrente ya registrada: sessionId={}", checkoutSessionId);
+            return OnvoCapturaService.Captura.DUPLICADO;
         }
     }
 

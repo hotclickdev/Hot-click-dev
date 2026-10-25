@@ -49,7 +49,13 @@ public class OnvoCapturaService {
                 checkoutSessionId, OnvoPaymentProvider.EVENTO_SESION)) {
             return Captura.DUPLICADO;
         }
-        Pago pago = pagoRepository.findByMerchantToken(checkoutSessionId).orElse(null);
+        // C6: el webhook y el retorno pueden llegar juntos. La fila del pago se bloquea y, ya con el lock,
+        // se vuelve a mirar si la otra entrega registró el evento (la segunda espera y sale DUPLICADO).
+        Pago pago = pagoRepository.findByMerchantTokenForUpdate(checkoutSessionId).orElse(null);
+        if (pago != null && webhookEventRepository.existsByMerchantTokenAndEventoTipo(
+                checkoutSessionId, OnvoPaymentProvider.EVENTO_SESION)) {
+            return Captura.DUPLICADO;
+        }
         if (pago == null || !Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())
                 || Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             return Captura.DUPLICADO;

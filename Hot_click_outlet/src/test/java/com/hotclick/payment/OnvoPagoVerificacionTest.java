@@ -77,6 +77,15 @@ class OnvoPagoVerificacionTest {
     }
 
     @Test
+    @DisplayName("C6: la otra entrega ganó el UNIQUE (DataIntegrityViolation) → DUPLICADO, no 500")
+    void uniqueConcurrenteEsDuplicado() {
+        onvoResponde("paid", "succeeded", 1_250_000);
+        when(onvoCapturaService.capturarVerificado(anyString(), anyString(), anyString()))
+            .thenThrow(new org.springframework.dao.DataIntegrityViolationException("uk_webhook_evento"));
+        assertThat(provider.procesarPagoVerificado("cs_1", "retorno")).isEqualTo(Verificacion.DUPLICADO);
+    }
+
+    @Test
     @DisplayName("Webhook con secret válido pero ONVO dice unpaid → no se captura")
     void sinCobroNoSeCaptura() {
         onvoResponde("unpaid", "requires_payment_method", 1_250_000);
