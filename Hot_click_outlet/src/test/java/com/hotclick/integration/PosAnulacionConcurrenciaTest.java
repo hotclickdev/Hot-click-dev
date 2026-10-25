@@ -42,6 +42,8 @@ class PosAnulacionConcurrenciaTest extends BaseIntegrationTest {
     @Autowired TurnoCajaRepository turnoCajaRepository;
     @Autowired PosVentaTurnoRepository ventaTurnoRepository;
     @Autowired PosAnulacionRepository anulacionRepository;
+    @Autowired com.hotclick.service.TurnoCajaService turnoCajaService;
+    @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
 
     Empresa empresa;
     Producto producto;
@@ -193,4 +195,43 @@ class PosAnulacionConcurrenciaTest extends BaseIntegrationTest {
         assertThat(t.getNumTransacciones()).isZero();
         assertThat(pedidoRepository.findById(venta.getId()).orElseThrow().getEstadoPedido()).isEqualTo("ANULADO");
     }
+
+    @Test
+    @DisplayName("Venta cobrada mientras se anula otra en el mismo turno: total = inicial + venta − anulada, una vez")
+    void ventaYAnulacionConcurrentes_totalesCorrectos() throws Exception {
+        var tx = new org.springframework.transaction.support.TransactionTemplate(txManager);
+        CountDownLatch ventaLeyoTurno = new CountDownLatch(1);
+        CountDownLatch anulacionTermino = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        // Hilo venta: igual que crearVenta, lee el turno activo (queda en su contexto) y luego suma la venta.
+        Future<?> venta = pool.submit(() -> tx.executeWithoutResult(s -> {
+            turnoCajaService.getTurnoActivo(adminUser.getId()).orElseThrow();
+            ventaLeyoTurno.countDown();
+            try {
+                assertThat(anulacionTermino.await(20, TimeUnit.SECONDS)).isTrue();
+            } catch (InterruptedException e) {
+                throw new IllegalStateException(e);
+            }
+            turnoCajaService.actualizarTotales(turno.getId(), "EFECTIVO", 1000);
+        }));
+        Future<Object> anulacion = pool.submit(() -> {
+            assertThat(ventaLeyoTurno.await(20, TimeUnit.SECONDS)).isTrue();
+            try {
+                return service.anular(venta().getId(), empresa.getId(), "error de cobro");
+            } finally {
+                anulacionTermino.countDown();
+            }
+        });
+        assertThat(anulacion.get(30, TimeUnit.SECONDS)).isInstanceOf(PosAnulacion.class);
+        venta.get(30, TimeUnit.SECONDS);
+        pool.shutdown();
+
+        TurnoCaja t = turnoCajaRepository.findById(turno.getId()).orElseThrow();
+        assertThat(t.getTotalEfectivo()).as("3000 inicial + 1000 venta − 3000 anulada").isEqualTo(1000);
+        assertThat(t.getNumTransacciones()).as("1 inicial + 1 venta − 1 anulada").isEqualTo(1);
+        assertThat(anulacionRepository.findAll()).hasSize(1);
+        assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockActual()).isEqualTo(7);
+    }
+
+    private Pedido venta() { return venta; }
 }
