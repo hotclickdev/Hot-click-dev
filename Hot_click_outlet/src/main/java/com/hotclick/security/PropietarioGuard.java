@@ -44,6 +44,16 @@ public class PropietarioGuard {
         return !companyScope.isImpersonating() && esPropietario(companyScope.getCurrentUser(), empresaId);
     }
 
+    /** Miembro activo con rol LECTOR en esa empresa (no aplica a ADMIN de plataforma). */
+    public boolean esLector(Long empresaId) {
+        if (empresaId == null || companyScope.isAdminIT()) return false;
+        Usuario u = companyScope.getCurrentUser();
+        if (u == null) return false;
+        return miembros.findByUsuarioIdAndEmpresaId(u.getId(), empresaId)
+            .map(f -> Integer.valueOf(1).equals(f.getEstado()) && "LECTOR".equals(f.getRolEnEmpresa()))
+            .orElse(false);
+    }
+
     /** Lanza 403 si el usuario actual no es propietario de la empresa del token. */
     public void exigirPropietario(Long empresaId) {
         if (companyScope.isImpersonating() || !esPropietario(companyScope.getCurrentUser(), empresaId)) {
