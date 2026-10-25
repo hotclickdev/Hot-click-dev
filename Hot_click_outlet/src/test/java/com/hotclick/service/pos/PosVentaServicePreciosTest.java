@@ -47,6 +47,7 @@ class PosVentaServicePreciosTest {
 
     @Mock private UsuarioRepository usuarioRepository;
     @Mock ClienteMostradorResolver clienteMostradorResolver;
+    @Mock com.hotclick.repository.PosVentaTurnoRepository ventaTurnoRepository;
 
     @org.junit.jupiter.api.BeforeEach
     void mostradorDelegaAlRepo() {
@@ -122,6 +123,9 @@ class PosVentaServicePreciosTest {
 
         assertThat(pedido.getItems().get(0).getPrecioUnitarioMomento()).isEqualTo(5000);
         assertThat(pedido.getTotalPedido()).isEqualTo(5000);
+        // A3: la venta queda ligada a su turno (para la regla de anulación del CAJERO).
+        org.mockito.Mockito.verify(ventaTurnoRepository).save(org.mockito.ArgumentMatchers.argThat(
+            vt -> Long.valueOf(99L).equals(vt.getPedidoId()) && Long.valueOf(77L).equals(vt.getTurnoId())));
     }
 
     @Test

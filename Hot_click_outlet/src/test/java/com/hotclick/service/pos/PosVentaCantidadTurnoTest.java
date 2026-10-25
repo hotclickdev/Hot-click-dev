@@ -48,6 +48,7 @@ class PosVentaCantidadTurnoTest {
 
     @Mock private UsuarioRepository usuarioRepository;
     @Mock ClienteMostradorResolver clienteMostradorResolver;
+    @Mock com.hotclick.repository.PosVentaTurnoRepository ventaTurnoRepository;
 
     @org.junit.jupiter.api.BeforeEach
     void mostradorDelegaAlRepo() {

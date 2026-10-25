@@ -96,6 +96,24 @@ public class TurnoCajaService {
         turnoCajaRepository.save(turno);
     }
 
+    /** A3: resta una venta anulada de un turno ABIERTO (nunca baja de 0; turnos cerrados no se tocan). */
+    @Transactional
+    public void revertirTotales(Long turnoId, String metodoPago, Integer monto) {
+        if (turnoId == null || metodoPago == null || metodoPago.isBlank() || monto == null || monto <= 0) return;
+        TurnoCaja turno = turnoCajaRepository.findById(turnoId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+        if (!"ABIERTO".equals(turno.getEstado())) return;
+        switch (metodoPago.toUpperCase()) {
+            case "EFECTIVO"      -> turno.setTotalEfectivo(Math.max(0, turno.getTotalEfectivo() - monto));
+            case "SINPE"         -> turno.setTotalSinpe(Math.max(0, turno.getTotalSinpe() - monto));
+            case "TARJETA"       -> turno.setTotalTarjeta(Math.max(0, turno.getTotalTarjeta() - monto));
+            case "TRANSFERENCIA" -> turno.setTotalTransferencia(Math.max(0, turno.getTotalTransferencia() - monto));
+            default -> { return; }
+        }
+        turno.setNumTransacciones(Math.max(0, turno.getNumTransacciones() - 1));
+        turnoCajaRepository.save(turno);
+    }
+
     /** Tenant + dueño del turno para el cierre (ADMIN_IT puede cerrar cualquiera de su scope). */
     private void assertPuedeOperarTurno(TurnoCaja turno) {
         Long empresaId = turno.getEmpresa() != null ? turno.getEmpresa().getId() : null;
