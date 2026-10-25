@@ -30,6 +30,7 @@ class OnvoCobroVerificadorTest {
         s.put("paymentStatus", paymentStatus);
         s.put("status", status);
         s.put("paymentIntentId", "pi_1");
+        s.put("mode", "live");
         return s;
     }
 
@@ -39,6 +40,7 @@ class OnvoCobroVerificadorTest {
         i.put("status", status);
         i.put("amount", amount);
         i.put("currency", currency);
+        i.put("mode", "live");
         return i;
     }
 
@@ -93,6 +95,58 @@ class OnvoCobroVerificadorTest {
             intent("canceled", 1_250_000, "CRC"), "live")).isEqualTo(Decision.NO_PAGADO);
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
             intent("failed", 1_250_000, "CRC"), "live")).isEqualTo(Decision.NO_PAGADO);
-        assertThat(OnvoCobroVerificador.decidir(pago(12_500), Map.of(), Map.of(), "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), Map.of(), Map.of(), "live")).isEqualTo(Decision.RECHAZAR_MODO);
+    }
+
+    @Test
+    @DisplayName("C9: con llave live, sin mode en sesión o intent → RECHAZAR_MODO")
+    void liveSinModoSeRechaza() {
+        Map<String, Object> s = sesion("paid", "complete");
+        s.remove("mode");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), s, intent("succeeded", 1_250_000, "CRC"), "live"))
+            .isEqualTo(Decision.RECHAZAR_MODO);
+        Map<String, Object> i = intent("succeeded", 1_250_000, "CRC");
+        i.remove("mode");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"), i, "live"))
+            .isEqualTo(Decision.RECHAZAR_MODO);
+    }
+
+    @Test
+    @DisplayName("C2: llave live y ONVO dice test → RECHAZAR_MODO; modo esperado desconocido → RECHAZAR_MODO")
+    void modoTestConLlaveLiveOModoDesconocido() {
+        Map<String, Object> s = sesion("paid", "complete");
+        s.put("mode", "test");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), s, intent("succeeded", 1_250_000, "CRC"), "live"))
+            .isEqualTo(Decision.RECHAZAR_MODO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"),
+            intent("succeeded", 1_250_000, "CRC"), null)).isEqualTo(Decision.RECHAZAR_MODO);
+    }
+
+    @Test
+    @DisplayName("C9: con llave live, intent sin id → se rechaza")
+    void liveSinIdSeRechaza() {
+        Map<String, Object> i = intent("succeeded", 1_250_000, "CRC");
+        i.remove("id");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "complete"), i, "live"))
+            .isEqualTo(Decision.RECHAZAR_MONTO);
+    }
+
+    @Test
+    @DisplayName("C9: payload incompleto también con llave test (sin mode o sin id) → nunca ACEPTAR")
+    void testIncompletoSeRechaza() {
+        Map<String, Object> s = sesion("paid", "complete");
+        s.put("mode", "test");
+        Map<String, Object> i = intent("succeeded", 1_250_000, "CRC");
+        i.put("mode", "test");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), s, i, "test")).isEqualTo(Decision.ACEPTAR);
+        Map<String, Object> sinModo = new java.util.HashMap<>(i);
+        sinModo.remove("mode");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), s, sinModo, "test")).isEqualTo(Decision.RECHAZAR_MODO);
+        Map<String, Object> sinId = new java.util.HashMap<>(i);
+        sinId.remove("id");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), s, sinId, "test")).isEqualTo(Decision.RECHAZAR_MONTO);
+        Map<String, Object> sesionSinIntent = new java.util.HashMap<>(s);
+        sesionSinIntent.remove("paymentIntentId");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesionSinIntent, i, "test")).isEqualTo(Decision.RECHAZAR_MONTO);
     }
 }

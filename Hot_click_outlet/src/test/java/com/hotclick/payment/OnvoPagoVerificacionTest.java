@@ -64,8 +64,8 @@ class OnvoPagoVerificacionTest {
     }
 
     private void onvoResponde(String paymentStatus, String intentStatus, Object centimos) {
-        doReturn(Map.of("paymentStatus", paymentStatus, "status", "complete", "paymentIntentId", "pi_1")).when(onvoService).obtenerCheckoutSession("cs_1");
-        doReturn(Map.of("id", "pi_1", "status", intentStatus, "amount", centimos, "currency", "CRC")).when(onvoService).obtenerPaymentIntent("pi_1");
+        doReturn(Map.of("paymentStatus", paymentStatus, "status", "complete", "paymentIntentId", "pi_1", "mode", "live")).when(onvoService).obtenerCheckoutSession("cs_1");
+        doReturn(Map.of("id", "pi_1", "status", intentStatus, "amount", centimos, "currency", "CRC", "mode", "live")).when(onvoService).obtenerPaymentIntent("pi_1");
     }
 
     @Test
