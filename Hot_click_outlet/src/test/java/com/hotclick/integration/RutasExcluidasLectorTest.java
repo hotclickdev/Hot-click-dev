@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RutasExcluidasLectorTest extends BaseIntegrationTest {
 
     private static final List<String> PREFIJOS = List.of(
-        "/api/payments/", "/api/sinpe/", "/api/public/", "/api/tienda/", "/api/webhooks/", "/api/auth/");
+        "/api/payments/", "/api/sinpe/", "/api/public/", "/api/tienda/", "/api/webhooks/", "/api/auth/", "/api/pos/qr/pago/");
     private static final Set<RequestMethod> LECTURAS = EnumSet.of(RequestMethod.GET, RequestMethod.HEAD, RequestMethod.OPTIONS);
 
     static final Set<String> PERMITIDAS = Set.of(
@@ -87,6 +87,9 @@ class RutasExcluidasLectorTest extends BaseIntegrationTest {
         "POST /api/webhooks/stripe",
         "POST /api/webhooks/telegram",
         "POST /api/webhooks/tilopay",
+        "POST /api/pos/qr/pago/{token}/sinpe-onvo",
+        "POST /api/pos/qr/pago/{token}/tilopay",
+        "POST /api/pos/qr/pago/{token}/tilopay/confirmar",
         "POST /api/webhooks/uptime"
     );
 

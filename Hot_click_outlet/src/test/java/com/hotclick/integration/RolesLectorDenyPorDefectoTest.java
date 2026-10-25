@@ -147,4 +147,23 @@ class RolesLectorDenyPorDefectoTest extends BaseIntegrationTest {
         assertThat(status(json(put("/api/empresa/perfil/visibilidad"), "{\"visibilidadPublica\":false}"), tokenLector)).as("LECTOR").isEqualTo(403);
         assertThat(status(json(put("/api/empresa/perfil/visibilidad"), "{\"visibilidadPublica\":true}"), tokenDueno)).as("dueño").isNotEqualTo(403);
     }
+
+    @Test
+    void lectorPagaQrPublicoPeroNoGestionaQr() throws Exception {
+        // Comprador logueado cuyo negocio actual es uno donde es LECTOR: pagar un QR ajeno no es escritura del negocio.
+        Map<String, MockHttpServletRequestBuilder> pago = new LinkedHashMap<>();
+        pago.put("POST /api/pos/qr/pago/{token}/tilopay", post("/api/pos/qr/pago/no-existe/tilopay"));
+        pago.put("POST /api/pos/qr/pago/{token}/sinpe-onvo", json(post("/api/pos/qr/pago/no-existe/sinpe-onvo"), "{}"));
+        pago.put("POST /api/pos/qr/pago/{token}/tilopay/confirmar", post("/api/pos/qr/pago/no-existe/tilopay/confirmar"));
+        List<String> bloqueados = new ArrayList<>();
+        for (var e : pago.entrySet()) {
+            int st = status(e.getValue(), tokenLector);
+            if (st == 403) bloqueados.add(e.getKey());
+        }
+        assertThat(bloqueados).as("pagos POS-QR que LECTOR no puede hacer").isEmpty();
+        // Gestión del QR sigue siendo escritura del negocio.
+        assertThat(status(json(post("/api/pos/qr"), "{}"), tokenLector)).as("POST /api/pos/qr").isEqualTo(403);
+        assertThat(status(json(put("/api/pos/qr/no-existe/confirmar-sinpe"), "{}"), tokenLector)).as("PUT confirmar-sinpe").isEqualTo(403);
+        assertThat(status(delete("/api/pos/qr/no-existe"), tokenLector)).as("DELETE /api/pos/qr/{token}").isEqualTo(403);
+    }
 }

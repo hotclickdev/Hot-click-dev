@@ -29,6 +29,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(lectorSoloLecturaInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/auth/**", "/api/public/**", "/api/tienda/**", "/api/webhooks/**",
-                                     "/api/payments/**", "/api/sinpe/**");
+                                     "/api/payments/**", "/api/sinpe/**",
+                                     // pago público POS-QR del comprador (no es escritura del negocio actual)
+                                     "/api/pos/qr/pago/**");
     }
 }
