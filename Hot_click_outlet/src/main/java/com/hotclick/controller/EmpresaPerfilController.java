@@ -26,6 +26,7 @@ public class EmpresaPerfilController {
 
     @Autowired private CompanyScope companyScope;
     @Autowired private EmpresaPerfilService empresaPerfilService;
+    @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> get() {
@@ -38,6 +39,7 @@ public class EmpresaPerfilController {
     public ResponseEntity<ResponseDTO> updateFiscal(@RequestBody Map<String, String> body) {
         Long empresaId = empresaIdO403();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-019
         return ResponseEntity.ok(ResponseDTO.success("Configuración fiscal guardada",
             empresaPerfilService.updateFiscal(empresaId, body, companyScope.isAdminIT())));
     }
@@ -46,6 +48,7 @@ public class EmpresaPerfilController {
     public ResponseEntity<ResponseDTO> subirCertP12(@RequestParam("file") MultipartFile file) {
         Long empresaId = empresaIdO403();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-019
         try {
             empresaPerfilService.subirCertP12(empresaId, file);
             return ResponseEntity.ok(ResponseDTO.success("Certificado subido", Map.of("certSubido", true)));
@@ -68,6 +71,7 @@ public class EmpresaPerfilController {
     public ResponseEntity<ResponseDTO> toggleVisibilidad(@RequestBody Map<String, Object> body) {
         Long empresaId = empresaIdO403();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-019
         Map<String, Object> data = empresaPerfilService.toggleVisibilidad(empresaId, body.get("visibilidadPublica"));
         String msg = Boolean.TRUE.equals(data.get("visibilidadPublica"))
             ? "Tu negocio ahora es visible al público" : "Tu negocio está en modo invisible";
@@ -106,5 +110,9 @@ public class EmpresaPerfilController {
 
     private Long empresaIdO403() {
         return companyScope.getCurrentEmpresaIdOrOwn();
+    }
+
+    private ResponseEntity<ResponseDTO> soloPropietario() {
+        return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.security.PropietarioGuard.MSG));
     }
 }
