@@ -84,4 +84,49 @@ class BodegaDefaultFallbackTest {
         assertThatThrownBy(() -> new CheckoutPaquetesPlanner(repo).planificar(req(3L), Map.of(3L, producto(3L, e)), null))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("Taza");
     }
+
+    /** Repro exacto de guest-checkout en prod: el front manda bodegaId=1 con envío y 2 productos HotClick. */
+    @Test
+    void guestCheckout_envio_bodegaId1Explicita_inexistente_usaFallback() {
+        Empresa hc = empresa(Constants.EMPRESA_PLATAFORMA_ID);
+        Bodega alt = bodega(9L, hc);
+        when(repo.findById(1L)).thenReturn(Optional.empty());
+        when(repo.findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(Constants.EMPRESA_PLATAFORMA_ID, Constants.ESTADO_ACTIVO))
+            .thenReturn(List.of(alt));
+        PaymentCheckoutRequest r = new PaymentCheckoutRequest();
+        PaymentCheckoutRequest.ItemDTO a = new PaymentCheckoutRequest.ItemDTO(); a.setProductoId(3L); a.setCantidad(1);
+        PaymentCheckoutRequest.ItemDTO b = new PaymentCheckoutRequest.ItemDTO(); b.setProductoId(4L); b.setCantidad(1);
+        r.setItems(List.of(a, b));
+        r.setBodegaId(Constants.BODEGA_DEFAULT_ID);
+        r.setMetodoEnvio("ENVIO_NORMAL_GAM");
+
+        Bodega def = validator().resolverBodegaDefault(r.getBodegaId());
+        assertThat(def).isSameAs(alt);
+        var paquetes = new CheckoutPaquetesPlanner(repo).planificar(r,
+            Map.of(3L, producto(3L, hc), 4L, producto(4L, hc)), def);
+        assertThat(paquetes).hasSize(1);
+        assertThat(paquetes.get(0).bodega()).isSameAs(alt);
+        assertThat(paquetes.get(0).items()).hasSize(2);
+        assertThat(paquetes.get(0).metodoEnvio()).isEqualTo("ENVIO_NORMAL_GAM");
+    }
+
+    @Test
+    void bodegaId1Explicita_existente_seUsa() {
+        Bodega b1 = bodega(1L, empresa(1L));
+        when(repo.findById(1L)).thenReturn(Optional.of(b1));
+        assertThat(validator().resolverBodegaDefault(1L)).isSameAs(b1);
+    }
+
+    /** bodegaId=1 con fallback a bodega de otro negocio no dispara CMP-4; un id explícito ajeno sí. */
+    @Test
+    void cmp4_bodegaDefault1_noExige_peroIdAjenoSi() {
+        Empresa tienda = empresa(7L);
+        Bodega ajena = bodega(9L, empresa(2L));
+        PaymentCheckoutRequest r = req(3L);
+        r.setBodegaId(Constants.BODEGA_DEFAULT_ID);
+        CheckoutGrupoFactory.exigirBodegaDeLaTienda(r, Map.of(3L, producto(3L, tienda)), ajena);
+        r.setBodegaId(9L);
+        assertThatThrownBy(() -> CheckoutGrupoFactory.exigirBodegaDeLaTienda(r, Map.of(3L, producto(3L, tienda)), ajena))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
 }
