@@ -53,6 +53,8 @@ export type ProductoBackend = {
   destacado?: boolean
   enOferta?: boolean
   precioOferta?: number | null
+  /** Precio que cobra el backend (Producto.getPrecioEfectivo). */
+  precioEfectivo?: number
   porcentajeDescuento?: number | null
   enCarrusel?: boolean
   ordenCarrusel?: number
@@ -112,6 +114,7 @@ export type Producto = ProductoBackend & {
   destacado: boolean
   enOferta: boolean
   precioOferta: number | null
+  precioEfectivo?: number
   porcentajeDescuento: number | null
   enCarrusel: boolean
   ordenCarrusel: number
