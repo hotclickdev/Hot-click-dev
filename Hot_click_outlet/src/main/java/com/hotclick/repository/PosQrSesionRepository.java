@@ -38,6 +38,11 @@ public interface PosQrSesionRepository extends JpaRepository<PosQrSesion, Long> 
     @Query("UPDATE PosQrSesion s SET s.onvoEventoId = :ev WHERE s.id = :id AND s.onvoEventoId IS NULL")
     int registrarEventoOnvo(@Param("id") Long id, @Param("ev") String eventId);
 
+    /** ALTO 2: cobrada sin stock para entregar: queda PAGADO, sin pedido y con reembolso pendiente. */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE PosQrSesion s SET s.estado = 'PAGADO', s.reembolsoPendiente = true, s.fechaPago = :fecha WHERE s.id = :id AND s.pedidoId IS NULL")
+    int marcarReembolsoPendiente(@Param("id") Long id, @Param("fecha") java.time.LocalDateTime fecha);
+
     /** ALTO 2: suelta la marca de reserva una sola vez; quien recibe 1 devuelve las unidades. */
     @Modifying(flushAutomatically = true)
     @Query("UPDATE PosQrSesion s SET s.stockReservado = false WHERE s.id = :id AND s.stockReservado = true")

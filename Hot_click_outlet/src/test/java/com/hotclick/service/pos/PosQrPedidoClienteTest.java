@@ -163,7 +163,7 @@ class PosQrPedidoClienteTest {
 
         verify(stockReserva).liberar(eq(sesion), any());
         verify(pedidoRepo, org.mockito.Mockito.never()).save(any(Pedido.class));
-        verify(posQrRepo).save(sesion);
+        verify(posQrRepo).marcarReembolsoPendiente(eq(5L), any());
         assertThat(sesion.getEstado()).isEqualTo("PAGADO");
         assertThat(sesion.isReembolsoPendiente()).isTrue();
         assertThat(sesion.getPedidoId()).isNull();

@@ -259,7 +259,7 @@ public class PosQrPedidoFactory {
         sesion.setEstado("PAGADO");
         sesion.setReembolsoPendiente(true);
         sesion.setFechaPago(LocalDateTime.now(Constants.ZONA_CR));
-        posQrRepo.save(sesion);
+        if (sesion.getId() != null) posQrRepo.marcarReembolsoPendiente(sesion.getId(), sesion.getFechaPago());
         log.error("[ALERTA-PAGO] POS QR {} cobrado sin stock para entregar: sin pedido, REEMBOLSO PENDIENTE",
             PosQrVentaService.mascararToken(sesion.getToken()));
     }
