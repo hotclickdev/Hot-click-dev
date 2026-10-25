@@ -65,13 +65,17 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("ONVO fuera del POS: /intent, /stripe y /sinpe-onvo ya no existen")
+    @DisplayName("POS: /intent y /stripe ya no existen; /sinpe-onvo (SINPE por ONVO) exige cuerpo y token válido")
     void posQrOnvo_eliminado() throws Exception {
-        for (String ruta : new String[]{"intent", "stripe", "sinpe-onvo"}) {
+        for (String ruta : new String[]{"intent", "stripe"}) {
             mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/" + ruta))
                 .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
                     .isIn(404, 405));
         }
+        // SINPE del POS volvió a ONVO a propósito: sin cuerpo nunca cobra ni crea intent.
+        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/sinpe-onvo"))
+            .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
+                .isIn(400, 404));
     }
 
     // ── Endpoints autenticados — requieren JWT válido ─────────────────────────
