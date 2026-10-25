@@ -330,7 +330,7 @@ public class OnvoService {
         return tipo != null && tipo >= 1 && tipo <= 4;
     }
 
-    private static final Pattern IDENTIFICACION_SINPE = Pattern.compile("[0-9A-Za-z]+(-[0-9A-Za-z]+)+");
+    private static final Pattern IDENTIFICACION_SINPE = Pattern.compile("[0-9A-Za-z]++(?:-[0-9A-Za-z]++)++");
 
     /** ONVO exige la identificación con guiones y al menos 12 caracteres (openapi mobileNumber.identification). */
     public static boolean identificacionSinpeValida(String identificacion) {

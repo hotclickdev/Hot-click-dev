@@ -374,13 +374,14 @@ public class PosQrVentaService {
     }
 
     static boolean estaVigente(PosQrSesion sesion, LocalDateTime ahora) {
+        if (sesion == null || ahora == null) return false;
         LocalDateTime expira = sesion.getFechaExpiracion();
         return expira != null && ahora.isBefore(expira);
     }
 
     /** Fail-closed: la caja solo confirma a mano sesiones cuyo método vigente es SINPE (null incluido se rechaza). */
     static void exigirMetodoSinpe(PosQrSesion sesion) {
-        if (!Constants.PROVEEDOR_SINPE.equals(sesion.getMetodoPago())) {
+        if (sesion == null || !Constants.PROVEEDOR_SINPE.equals(sesion.getMetodoPago())) {
             throw new IllegalStateException(MSG_SOLO_SINPE);
         }
     }
