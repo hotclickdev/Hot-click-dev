@@ -40,6 +40,8 @@ public class SinpeController {
             return ResponseEntity.ok(ResponseDTO.success("Checkout SINPE iniciado", res));
         } catch (com.hotclick.exception.AutocompraNegocioException e) {
             return autocompra(e);
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.StockInsuficienteException e) {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -68,6 +70,8 @@ public class SinpeController {
             return ResponseEntity.ok(ResponseDTO.success("Checkout SINPE iniciado", res));
         } catch (com.hotclick.exception.AutocompraNegocioException e) {
             return autocompra(e);
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.StockInsuficienteException e) {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
