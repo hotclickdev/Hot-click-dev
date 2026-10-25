@@ -145,6 +145,34 @@ public class SinpeController {
         )));
     }
 
+    // ── C1: URL firmada del comprobante (privado en S3) ─────────────────────────
+    /** Dueño del pedido (sesión autenticada). Invitados sin cuenta no pueden pedirla (fail-closed). */
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/comprobantes/{id}/url-firmada")
+    public ResponseEntity<ResponseDTO> urlFirmadaDueno(@PathVariable Long id) {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        return urlFirmada(id, correo, false);
+    }
+
+    @PreAuthorize(SOLO_PLATAFORMA)
+    @GetMapping("/admin/comprobantes/{id}/url-firmada")
+    public ResponseEntity<ResponseDTO> urlFirmadaAdmin(@PathVariable Long id) {
+        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+        return urlFirmada(id, correo, true);
+    }
+
+    private ResponseEntity<ResponseDTO> urlFirmada(Long id, String correo, boolean admin) {
+        try {
+            return ResponseEntity.ok(ResponseDTO.success("URL firmada",
+                Map.of("url", sinpeService.urlFirmadaComprobante(id, correo, admin))));
+        } catch (SecurityException | com.hotclick.exception.RecursoNoEncontradoException e) {
+            // Mismo 404 para «no existe» y «no es tuyo»: no se filtra la existencia del comprobante.
+            return ResponseEntity.status(404).body(ResponseDTO.error("Comprobante no encontrado"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(503).body(ResponseDTO.error("Comprobante no disponible por ahora"));
+        }
+    }
+
     // ── Admin: aprobar comprobante ─────────────────────────────────────────────
     @PreAuthorize(SOLO_PLATAFORMA)
     @PostMapping("/admin/comprobantes/{id}/aprobar")

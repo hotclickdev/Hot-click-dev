@@ -27,7 +27,8 @@ public class ComprobanteSinpeDTO {
         d.id                = c.getId();
         d.numeroPedido      = c.getPedido() != null ? c.getPedido().getNumeroPedido() : null;
         d.monto             = c.getPedido() != null ? c.getPedido().getTotalPedido()  : null;
-        d.urlComprobante    = c.getUrlComprobante();
+        // C1: nunca se expone la clave/URL guardada; se pide /comprobantes/{id}/url-firmada.
+        d.urlComprobante    = null;
         d.nombreRemitente   = c.getNombreRemitente();
         d.cedulaRemitente   = c.getCedulaRemitente();
         d.telefonoRemitente = c.getTelefonoRemitente();

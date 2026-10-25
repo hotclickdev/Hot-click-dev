@@ -61,10 +61,21 @@ public final class OnvoCobroVerificador {
         return status == null || "complete".equalsIgnoreCase(status);
     }
 
-    /** Si ONVO informa el modo, tiene que ser el de la llave; si no lo informa, no se rechaza por eso. */
+    static final String MODO_LIVE = "live";
+
+    /**
+     * C2 fail-closed: sin modo esperado no se acepta. Con llave live, ONVO tiene que informar
+     * mode=live (si falta, se rechaza). Con llave test se tolera la ausencia (el pedido ya es es_prueba).
+     */
     static boolean modoCoincide(Map<?, ?> objeto, String modoEsperado) {
+        if (modoEsperado == null || modoEsperado.isBlank()) {
+            return false;
+        }
         String modo = texto(objeto, "mode");
-        return modo == null || modoEsperado == null || modo.equalsIgnoreCase(modoEsperado);
+        if (modo == null) {
+            return !MODO_LIVE.equalsIgnoreCase(modoEsperado);
+        }
+        return modo.equalsIgnoreCase(modoEsperado);
     }
 
     public static String paymentIntentId(Map<?, ?> sesion) {

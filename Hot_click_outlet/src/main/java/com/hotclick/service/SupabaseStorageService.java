@@ -153,4 +153,36 @@ public class SupabaseStorageService {
         throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
             "Servicio de almacenamiento no disponible temporalmente");
     }
+
+    // ── C1: comprobantes SINPE privados ────────────────────────────────────────
+    public static final String CARPETA_COMPROBANTES_PRIVADOS = "privado/comprobantes-sinpe";
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private software.amazon.awssdk.services.s3.presigner.S3Presigner s3Presigner;
+
+    /** Sube el comprobante SIN ACL pública y devuelve la clave S3 (no una URL). */
+    public String subirComprobantePrivado(MultipartFile file) throws IOException {
+        String ext = com.hotclick.service.storage.StorageUrlHelper.obtenerExtension(file.getOriginalFilename());
+        return subirImagenPrivada(file, CARPETA_COMPROBANTES_PRIVADOS + "/" + java.util.UUID.randomUUID() + "." + ext);
+    }
+
+    /**
+     * Clave S3 de un comprobante guardado. Los viejos guardaban la URL pública completa:
+     * se le quita el prefijo público. Fail-closed: una URL de otro host da null.
+     */
+    public String claveDeComprobante(String guardado) {
+        if (guardado == null || guardado.isBlank()) return null;
+        if (!guardado.startsWith("http://") && !guardado.startsWith("https://")) return guardado;
+        String base = publicUrl == null ? "" : publicUrl.replaceAll("/+$", "") + "/";
+        return !base.equals("/") && guardado.startsWith(base) ? guardado.substring(base.length()) : null;
+    }
+
+    /** URL firmada GET de duración acotada. Fail-closed si no hay presigner o la clave es inválida. */
+    public String urlFirmada(String clave, java.time.Duration duracion) {
+        if (s3Presigner == null || clave == null || clave.isBlank() || clave.contains("..") || clave.startsWith("/")) {
+            throw new IllegalStateException("No se puede firmar el comprobante");
+        }
+        var get = software.amazon.awssdk.services.s3.model.GetObjectRequest.builder().bucket(bucket).key(clave).build();
+        return s3Presigner.presignGetObject(r -> r.signatureDuration(duracion).getObjectRequest(get)).url().toString();
+    }
 }
