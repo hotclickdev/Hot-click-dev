@@ -175,6 +175,30 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(paymentExpirationCleanupService, "pedidoGrupoService", pedidoGrupoService);
     }
 
+    // ── M-01: oferta cobrada en checkout con tarjeta ONVO (proveedor mock) ──
+
+    @Test
+    @DisplayName("M-01 | checkout ONVO con producto en oferta → total = precio de oferta × cantidad")
+    void checkout_onvo_cobraPrecioOferta() throws Exception {
+        setupCheckoutMocks();
+        ReflectionTestUtils.setField(checkoutValidator, "onvoEnabled", true);
+        when(providerFactory.soporta(Constants.PROVEEDOR_ONVO)).thenReturn(true);
+        when(providerFactory.get(Constants.PROVEEDOR_ONVO)).thenReturn(mockProvider);
+        testProducto.setEnOferta(true);
+        testProducto.setPrecioOferta(20000);
+
+        PaymentCheckoutRequest req = buildRequest(2);
+        req.setProvider(Constants.PROVEEDOR_ONVO);
+        PaymentCheckoutResponse resp = service.checkout(req, CORREO);
+
+        assertThat(resp.getTotal()).isEqualTo(40000);
+        ArgumentCaptor<Pedido> cobro = ArgumentCaptor.forClass(Pedido.class);
+        verify(mockProvider).crearSesion(cobro.capture(), any());
+        assertThat(cobro.getValue().getTotalPedido()).isEqualTo(40000);
+        assertThat(cobro.getValue().getItems())
+            .allMatch(i -> i.getPrecioUnitarioMomento() == 20000);
+    }
+
     // ── checkout — camino feliz ───────────────────────────────────────────────
 
     @Test

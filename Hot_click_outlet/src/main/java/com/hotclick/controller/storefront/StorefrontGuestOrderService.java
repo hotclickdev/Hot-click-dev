@@ -104,10 +104,9 @@ public class StorefrontGuestOrderService {
             String ref = "STOREFRONT-" + empresa.getSlug();
             stockService.reservar(producto, item.cantidad(), ref, dto.getCorreoCliente());
 
-            subtotal += producto.getPrecioVenta() * item.cantidad();
-            costoTotal += producto.getPrecioCompra() != null ? producto.getPrecioCompra() * item.cantidad() : 0;
-
             PedidoItem pedidoItem = crearPedidoItem(producto, item.cantidad(), pedido);
+            subtotal += pedidoItem.getSubtotalItem();
+            costoTotal += producto.getPrecioCompra() != null ? producto.getPrecioCompra() * item.cantidad() : 0;
             pedido.getItems().add(pedidoItem);
         }
 
@@ -135,9 +134,9 @@ public class StorefrontGuestOrderService {
         return pedido;
     }
 
-    private PedidoItem crearPedidoItem(Producto producto, int cantidad, Pedido pedido) {
+    static PedidoItem crearPedidoItem(Producto producto, int cantidad, Pedido pedido) {
         PedidoItem pedidoItem = new PedidoItem();
-        int precioUnitario = producto.getPrecioVenta();
+        int precioUnitario = com.hotclick.service.payment.OrderPricingService.precioEfectivo(producto);
         int costoUnitario = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
         pedidoItem.setProducto(producto);
         pedidoItem.setCantidad(cantidad);

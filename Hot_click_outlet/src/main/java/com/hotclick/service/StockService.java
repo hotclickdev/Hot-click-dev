@@ -47,6 +47,9 @@ public class StockService {
      */
     @Transactional
     public void reservar(Producto producto, int cantidad, String referencia, String operadorCorreo) {
+        if (cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad tiene que ser 1 o más.");
+        }
         int disponible = producto.getStockDisponible();
         if (disponible < cantidad) {
             throw new StockInsuficienteException(producto.getNombreProducto(), disponible, cantidad);
