@@ -34,7 +34,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PosVentaService {
@@ -60,6 +59,8 @@ public class PosVentaService {
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
         Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
+        TurnoCaja turno = exigirTurnoAbierto(usuarioId, empresaId);
+        exigirCantidadesValidas(dto);
 
         Pedido pedido = armarPedido(dto, cliente, bodega, empresa);
         TotalesPos totales = cargarItemsYStock(dto, pedido, correo);
@@ -68,7 +69,8 @@ public class PosVentaService {
         Pedido saved = pedidoRepository.save(pedido);
         Hibernate.initialize(saved.getItems());
         evictDashboard(empresaId);
-        actualizarTurno(usuarioId, saved, totales.totalPedido());
+        // C-05: dentro de la transacción; si falla, la venta no queda sin turno.
+        turnoCajaService.actualizarTotales(turno.getId(), saved.getMetodoPago(), totales.totalPedido());
         telegramNotificacionClienteService.notificarVenta(empresaId, saved.getNumeroPedido(),
             totales.totalPedido(), saved.getMetodoPago(), cliente.getNombre(), "POS");
         ventaAvisoService.avisarVentaConfirmada(saved);
@@ -184,7 +186,7 @@ public class PosVentaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
             PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), pedido.getEmpresa().getId());
             exigirVendiblePorPos(producto);
-            int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
+            int cantidad = cantidadValida(itemDto.getCantidad());
             // Precio siempre del catálogo — no confiar en el body del cliente.
             Integer precioObj = producto.getPrecioEfectivo();
             if (precioObj == null) {
@@ -242,14 +244,40 @@ public class PosVentaService {
         pedido.setMargenGananciaPedido(totales.margen());
     }
 
-    private void actualizarTurno(Long usuarioId, Pedido saved, int totalPedido) {
-        try {
-            Optional<TurnoCaja> turnoOpt = turnoCajaService.getTurnoActivo(usuarioId);
-            turnoOpt.ifPresent(t -> turnoCajaService.actualizarTotales(
-                t.getId(), saved.getMetodoPago(), totalPedido));
-        } catch (Exception e) {
-            log.warn("[POS] No se pudo actualizar turno para venta {}: {}", saved.getId(), e.getMessage());
+    static final int CANTIDAD_MAXIMA_POS = 999;
+
+    /** C-01: cantidad 1..999 (mismo rango que el QR). Null = 1 por compatibilidad. */
+    static int cantidadValida(Integer solicitada) {
+        int cantidad = solicitada != null ? solicitada : 1;
+        if (cantidad < 1 || cantidad > CANTIDAD_MAXIMA_POS) {
+            throw new IllegalArgumentException("La cantidad de cada producto tiene que estar entre 1 y "
+                + CANTIDAD_MAXIMA_POS + ". Revisá el carrito.");
         }
+        return cantidad;
+    }
+
+    /** Valida todo el carrito antes de tocar stock o totales. */
+    private static void exigirCantidadesValidas(PosVentaDTO dto) {
+        if (dto.getItems() == null || dto.getItems().isEmpty()) {
+            throw new IllegalArgumentException("La venta no tiene productos.");
+        }
+        for (PosVentaDTO.Item item : dto.getItems()) {
+            if (item == null) throw new IllegalArgumentException("La venta tiene un producto vacío.");
+            cantidadValida(item.getCantidad());
+        }
+    }
+
+    /** C-05 (fail-closed): sin turno ABIERTO del cajero en este negocio no se vende en caja. */
+    private TurnoCaja exigirTurnoAbierto(Long usuarioId, Long empresaId) {
+        TurnoCaja turno = usuarioId == null ? null : turnoCajaService.getTurnoActivo(usuarioId).orElse(null);
+        if (turno == null || turno.getId() == null) {
+            throw new IllegalStateException("Abrí caja antes de vender: no tenés un turno abierto.");
+        }
+        Long empresaTurno = turno.getEmpresa() != null ? turno.getEmpresa().getId() : null;
+        if (empresaTurno == null || !empresaTurno.equals(empresaId)) {
+            throw new IllegalStateException("Tu turno abierto es de otro negocio. Cerralo y abrí caja en este.");
+        }
+        return turno;
     }
 
     @SuppressWarnings("null")

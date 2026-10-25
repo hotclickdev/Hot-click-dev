@@ -100,7 +100,10 @@ class PosVentaServicePreciosTest {
             p.setId(99L);
             return p;
         });
-        when(turnoCajaService.getTurnoActivo(any())).thenReturn(Optional.empty());
+        com.hotclick.model.TurnoCaja turno = new com.hotclick.model.TurnoCaja();
+        turno.setId(77L);
+        turno.setEmpresa(empresa);
+        when(turnoCajaService.getTurnoActivo(5L)).thenReturn(Optional.of(turno));
         when(cacheManager.getCache(anyString())).thenReturn(null);
     }
 
