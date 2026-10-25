@@ -42,6 +42,8 @@ public class PaymentController {
             String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
             PaymentCheckoutResponse response = paymentService.checkout(request, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.StockInsuficienteException e) {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -100,6 +102,8 @@ public class PaymentController {
         try {
             PaymentCheckoutResponse response = paymentService.checkout(request, null);
             return ResponseEntity.ok(ResponseDTO.success("Sesión de pago creada", response));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.StockInsuficienteException e) {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {

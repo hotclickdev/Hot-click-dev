@@ -57,6 +57,10 @@ public class SinpeService {
     }
 
     @Transactional(readOnly = true)
+    public String urlFirmadaComprobante(Long comprobanteId, String correo, boolean adminPlataforma) {
+        return comprobanteService.urlFirmadaComprobante(comprobanteId, correo, adminPlataforma);
+    }
+
     public Page<ComprobanteSinpe> listar(String estado, Pageable pageable) {
         return comprobanteService.listar(estado, pageable);
     }

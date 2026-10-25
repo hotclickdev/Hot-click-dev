@@ -36,9 +36,22 @@ public class AuthVerificationHandler {
             emailVerificationService.iniciarRegistro(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código de verificación enviado a tu correo", null));
         } catch (Exception e) {
-            log.error("[send-verification] {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
+            if (e instanceof org.springframework.dao.DataAccessException) {
+                // QA4-004: el detalle de Postgres ("Failing row contains (...)") trae cédula, correo y hash:
+                // solo se loguea el tipo y el SQLState, sin mensaje ni stacktrace.
+                log.error("[send-verification] {} (SQLState {})", e.getClass().getSimpleName(), sqlState(e));
+            } else {
+                log.error("[send-verification] {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
+            }
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajePublico(e)));
         }
+    }
+
+    static String sqlState(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof java.sql.SQLException sql && sql.getSQLState() != null) return sql.getSQLState();
+        }
+        return "-";
     }
 
     static final String MSG_GENERICO = "No se pudo enviar el código. Revisá tus datos e intentá de nuevo.";
