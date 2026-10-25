@@ -1693,7 +1693,8 @@
       "efectivoTitulo": "Pedido registrado!",
       "efectivoSub": "Você paga em dinheiro ao receber o pedido, com o valor exato.",
       "efectivoMetodo": "Dinheiro na entrega",
-      "efectivoAviso": "Nosso entregador levará o pedido e cobrará o valor exato em dinheiro. Avisamos pelo WhatsApp antes de sair."
+      "efectivoAviso": "Nosso entregador levará o pedido e cobrará o valor exato em dinheiro. Avisamos pelo WhatsApp antes de sair.",
+      "noDisponible": "SINPE Móvil não está disponível no momento. Fale conosco para combinar o pagamento."
     },
     "carga": {
       "gracias": "Obrigado pela sua compra!",

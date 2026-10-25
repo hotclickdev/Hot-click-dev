@@ -34,6 +34,9 @@ public class CheckoutConfigPublicoController {
      */
     private final boolean tarjetaOnvo;
 
+    /** Destino SINPE Móvil de ONVO (onvo.sinpe-destino). Vacío = SINPE manual no se publica (fail-closed). */
+    private String sinpeDestino = "";
+
     public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
                                            com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard) {
         this(contraEntregaPolitica, guestCheckoutGuard, false, false, false);
@@ -61,6 +64,15 @@ public class CheckoutConfigPublicoController {
         this(contraEntregaPolitica, guestCheckoutGuard, pagoPorTienda, sinpeManual,
             onvoHabilitado && onvoService != null && onvoService.getIfAvailable() != null
                 && onvoService.getIfAvailable().isPagosDisponibles());
+        com.hotclick.service.OnvoService onvo = onvoService != null ? onvoService.getIfAvailable() : null;
+        String destino = onvo != null ? onvo.sinpeDestino() : null;
+        this.sinpeDestino = destino == null ? "" : destino.trim();
+    }
+
+    /** Para tests y wiring manual. */
+    public CheckoutConfigPublicoController conSinpeDestino(String destino) {
+        this.sinpeDestino = destino == null ? "" : destino.trim();
+        return this;
     }
 
     public CheckoutConfigPublicoController(ContraEntregaPolitica contraEntregaPolitica,
@@ -83,7 +95,8 @@ public class CheckoutConfigPublicoController {
             "contraEntregaNormal", contraEntregaPolitica.habilitada(),
             "maxUnidadesPorProducto", guestCheckoutGuard.getMaxPorProducto(),
             "pagoPorTienda", pagoPorTienda,
-            "sinpeManual", sinpeManual,
+            "sinpeManual", sinpeManual && !sinpeDestino.isEmpty(),
+            "sinpeDestino", sinpeDestino,
             "tarjetaOnvo", tarjetaOnvo));
     }
 }

@@ -18,7 +18,7 @@ import {
 } from './checkoutHelpers'
 import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
 import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
-import { metodoPagoPrincipal, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig } from './pagoPrincipal'
+import { metodoPagoPrincipal, sinpeDestinoDesdeConfig, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig } from './pagoPrincipal'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
 
 type UseCheckoutFormParams = {
@@ -49,6 +49,8 @@ export type CheckoutFormState = {
   metodoPago: string
   contraEntregaHabilitada: boolean
   sinpeManualHabilitado: boolean
+  /** Destino SINPE de ONVO publicado por /public/checkout-config ('' = no disponible). */
+  sinpeDestino: string
   tarjetaOnvoHabilitada: boolean
   setMetodoPago: Dispatch<SetStateAction<string>>
   notas: string
@@ -179,6 +181,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [contraEntregaHabilitada, setContraEntregaHabilitada] = useState(false)
   const [sinpeManualHabilitado, setSinpeManualHabilitado] = useState(false)
   const [tarjetaOnvoHabilitada, setTarjetaOnvoHabilitada] = useState(false)
+  const [sinpeDestino, setSinpeDestino] = useState('')
   useEffect(() => {
     let vivo = true
     paymentService.getCheckoutConfig()
@@ -187,6 +190,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
         setContraEntregaHabilitada(data?.contraEntregaNormal === true)
         setSinpeManualHabilitado(sinpeManualDesdeConfig(data))
         setTarjetaOnvoHabilitada(tarjetaOnvoDesdeConfig(data))
+        setSinpeDestino(sinpeDestinoDesdeConfig(data))
       })
       .catch(() => { /* sin config: sin contra entrega ni SINPE manual (fail-closed) */ })
     return () => { vivo = false }
@@ -336,6 +340,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setMetodoPago,
     contraEntregaHabilitada,
     sinpeManualHabilitado,
+    sinpeDestino,
     tarjetaOnvoHabilitada,
     notas,
     setNotas,

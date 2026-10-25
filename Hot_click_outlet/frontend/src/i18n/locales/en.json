@@ -1693,7 +1693,8 @@
       "efectivoTitulo": "Order registered!",
       "efectivoSub": "You pay in cash when you receive your order, with the exact amount.",
       "efectivoMetodo": "Cash on delivery",
-      "efectivoAviso": "Our courier will bring your order and collect the exact amount in cash. We notify you on WhatsApp before leaving."
+      "efectivoAviso": "Our courier will bring your order and collect the exact amount in cash. We notify you on WhatsApp before leaving.",
+      "noDisponible": "SINPE Móvil is not available right now. Message us to arrange payment."
     },
     "carga": {
       "gracias": "Thank you for your purchase!",

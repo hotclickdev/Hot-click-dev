@@ -1693,7 +1693,8 @@
       "efectivoTitulo": "¡Pedido registrado!",
       "efectivoSub": "Pagás en efectivo cuando recibas tu pedido, con el monto exacto.",
       "efectivoMetodo": "Efectivo contra entrega",
-      "efectivoAviso": "Nuestro repartidor llevará tu pedido y cobrará el monto exacto en efectivo. Te avisamos por WhatsApp antes de salir."
+      "efectivoAviso": "Nuestro repartidor llevará tu pedido y cobrará el monto exacto en efectivo. Te avisamos por WhatsApp antes de salir.",
+      "noDisponible": "SINPE Móvil no está disponible por ahora. Escribinos para coordinar el pago."
     },
     "carga": {
       "gracias": "¡Gracias por tu compra!",

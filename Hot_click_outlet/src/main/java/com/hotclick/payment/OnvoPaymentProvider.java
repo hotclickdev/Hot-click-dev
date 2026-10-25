@@ -123,6 +123,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
             case ACEPTAR -> {
                 OnvoCapturaService.Captura captura = onvoCapturaService.capturarVerificado(checkoutSessionId,
                     "{\"verificado\":\"GET ONVO\",\"paymentIntentId\":\"" + intentId + "\"}", origen);
+                if (captura == OnvoCapturaService.Captura.CAPTURADO) guardarSinpeRef(checkoutSessionId, intentId);
                 return switch (captura) {
                     case CAPTURADO -> Verificacion.OK;
                     case DUPLICADO -> Verificacion.DUPLICADO;
@@ -147,6 +148,16 @@ public class OnvoPaymentProvider implements PaymentProvider {
                 log.info("[onvo] Sesión todavía sin cobro confirmado: sessionId={}", checkoutSessionId);
                 return Verificacion.NO_PAGADO;
             }
+        }
+    }
+
+    /** Best-effort: el pago ya quedó confirmado; un fallo aquí nunca cambia la verificación. */
+    private void guardarSinpeRef(String checkoutSessionId, String intentId) {
+        try {
+            String ref = onvoService.sinpeRefNumberDe(intentId);
+            if (ref != null) onvoCapturaService.guardarSinpeRef(checkoutSessionId, ref);
+        } catch (RuntimeException e) {
+            log.warn("[onvo] No se guardó SINPERefNumber: sessionId={} ({})", checkoutSessionId, e.getClass().getSimpleName());
         }
     }
 

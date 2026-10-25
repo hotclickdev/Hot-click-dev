@@ -46,6 +46,12 @@ public class OnvoService {
     @Value("${onvo.publishable-key:}")
     private String publishableKey;
 
+    /** Número destino SINPE Móvil que asigna ONVO (ONVO_SINPE_DESTINO). Sin valor por defecto: vacío = SINPE manual no disponible. */
+    @Value("${onvo.sinpe-destino:}")
+    private String sinpeDestino;
+
+    private static final Pattern TELEFONO_SINPE = Pattern.compile("\\+?[0-9]{8,15}");
+
     private final RestTemplate restTemplate;
 
     @Autowired(required = false)
@@ -117,6 +123,48 @@ public class OnvoService {
     }
 
     public boolean isPagosDisponibles() { return pagosDisponibles; }
+
+    /**
+     * Destino SINPE Móvil de ONVO desde la configuración (la API de ONVO no lo devuelve). Fail-closed: vacío
+     * si falta o no tiene forma de teléfono; quien lo use debe tratar el vacío como «SINPE no disponible».
+     */
+    public String sinpeDestino() {
+        if (sinpeDestino == null) return "";
+        String limpio = sinpeDestino.replaceAll("[\\s-]", "");
+        return TELEFONO_SINPE.matcher(limpio).matches() ? limpio : "";
+    }
+
+    /** Solo para tests. */
+    void setSinpeDestinoParaTest(String valor) { this.sinpeDestino = valor; }
+
+    /**
+     * SINPERefNumber (25 caracteres) de la transferencia SINPE ligada al payment intent, leído de
+     * GET /v1/mobile-transfers/list (la API no filtra por intent: se filtra aquí). null si no hay, si no hay
+     * llave o si la cuenta no tiene habilitada la consulta (ONVO responde 400 sin número personalizado).
+     * Nunca lanza: es un dato informativo que no decide ningún cobro.
+     */
+    public String sinpeRefNumberDe(String intentId) {
+        if (!consultable(intentId)) return null;
+        try {
+            Map<?, ?> body = getOnvo("/mobile-transfers/list?status=received&limit=100");
+            return sinpeRefDeLista(body, intentId);
+        } catch (RuntimeException e) {
+            log.info("[onvo] SINPERefNumber no disponible para intent {}: {}", intentId, e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    static String sinpeRefDeLista(Map<?, ?> body, String intentId) {
+        if (body == null || !(body.get("data") instanceof java.util.List<?> lista)) return null;
+        for (Object o : lista) {
+            if (o instanceof Map<?, ?> t && intentId.equals(String.valueOf(t.get("paymentIntentId")))) {
+                Object ref = t.get("SINPERefNumber");
+                String r = ref == null ? "" : String.valueOf(ref).trim();
+                return r.isEmpty() || r.length() > 25 ? null : r;
+            }
+        }
+        return null;
+    }
 
     public String getWebhookSecret() { return webhookSecret; }
 

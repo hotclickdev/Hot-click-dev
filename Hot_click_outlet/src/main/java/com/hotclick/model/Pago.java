@@ -56,6 +56,13 @@ public class Pago extends BaseEntity {
     @JoinColumn(name = "fk_id_compra")
     private Compra compra;
 
+    /** SINPERefNumber de ONVO (25 caracteres), solo después del pago. V189. */
+    @Column(name = "sinpe_ref_number", length = 25)
+    private String sinpeRefNumber;
+
+    public String getSinpeRefNumber() { return sinpeRefNumber; }
+    public void setSinpeRefNumber(String sinpeRefNumber) { this.sinpeRefNumber = sinpeRefNumber; }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
