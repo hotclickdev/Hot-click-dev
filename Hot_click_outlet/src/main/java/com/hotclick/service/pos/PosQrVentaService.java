@@ -247,6 +247,7 @@ public class PosQrVentaService {
         body.put("estado", estado);
         posQrRepo.findByToken(token).ifPresent(s -> {
             if (s.getPedidoId() != null) body.put("pedidoId", s.getPedidoId());
+            if (s.isReembolsoPendiente()) body.put("reembolsoPendiente", true);
             // Método con el que pagó el cliente (puede elegir entre los habilitados).
             if (s.getMetodoPago() != null) body.put("metodoPago", s.getMetodoPago());
         });

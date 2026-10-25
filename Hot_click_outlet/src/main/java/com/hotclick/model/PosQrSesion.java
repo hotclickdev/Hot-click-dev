@@ -68,6 +68,24 @@ public class PosQrSesion {
     @Column(name = "fecha_pago")
     private LocalDateTime fechaPago;
 
+    /** ALTO 2: la sesión tiene unidades reservadas en {@code stock_reservado} del producto. */
+    @Column(name = "stock_reservado", nullable = false)
+    private boolean stockReservado = false;
+
+    @Column(name = "reserva_expira")
+    private LocalDateTime reservaExpira;
+
+    /** ALTO 2: se cobró pero no había stock al confirmar; no hay pedido y hay que reembolsar. */
+    @Column(name = "reembolso_pendiente", nullable = false)
+    private boolean reembolsoPendiente = false;
+
+    public boolean isStockReservado() { return stockReservado; }
+    public void setStockReservado(boolean stockReservado) { this.stockReservado = stockReservado; }
+    public LocalDateTime getReservaExpira() { return reservaExpira; }
+    public void setReservaExpira(LocalDateTime reservaExpira) { this.reservaExpira = reservaExpira; }
+    public boolean isReembolsoPendiente() { return reembolsoPendiente; }
+    public void setReembolsoPendiente(boolean reembolsoPendiente) { this.reembolsoPendiente = reembolsoPendiente; }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getToken() { return token; }

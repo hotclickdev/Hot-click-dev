@@ -43,6 +43,7 @@ public class PosQrSessionService {
     @Autowired private TurnoCajaRepository   turnoCajaRepo;
     @Autowired private BodegaRepository      bodegaRepo;
     @Autowired(required = false) private PosSinpeOnvoService sinpeOnvo;
+    @Autowired private PosQrStockReserva stockReserva;
 
     void setSinpeOnvoParaTest(PosSinpeOnvoService s) { this.sinpeOnvo = s; }
 
@@ -112,6 +113,9 @@ public class PosQrSessionService {
         if (turnoId != null) {
             turnoCajaRepo.findById(turnoId).ifPresent(sesion::setTurno);
         }
+
+        // ALTO 2: el stock queda reservado mientras el cliente paga; sin stock no se genera el QR.
+        stockReserva.reservar(sesion, items, LocalDateTime.now(Constants.ZONA_CR));
 
         try {
             sesion.setItemsJson(mapper.writeValueAsString(items));

@@ -53,6 +53,7 @@ class PosQrPedidoClienteTest {
     @Mock TurnoCajaService turnoCajaService;
     @Mock TelegramNotificacionClienteService telegramNotificacionClienteService;
     @Mock PosQrSessionService sessionService;
+    @Mock PosQrStockReserva stockReserva;
     @Mock VentaAvisoService ventaAvisoService;
     @InjectMocks PosQrPedidoFactory factory;
 
@@ -137,6 +138,33 @@ class PosQrPedidoClienteTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
             PosQrPedidoFactory.totalesCobrados(new PosQrPedidoFactory.TotalesQr(900, 100), null, "tokenx"))
             .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("ALTO 2: si al confirmar falta stock no se crea pedido y la sesión queda PAGADO con reembolso pendiente")
+    void sinStockMarcaReembolso() {
+        Empresa empresa = empresa(1L);
+        Producto mouse = producto(10L, "Mouse", 1, 1000);
+        PosQrSesion sesion = new PosQrSesion();
+        sesion.setId(5L);
+        sesion.setEmpresa(empresa);
+        sesion.setUsuario(usuario(7L, "Ana", "ana@tienda.cr"));
+        sesion.setBodegaId(3L);
+        sesion.setTotal(10_000);
+        sesion.setItemsJson("[{\"productoId\":10,\"cantidad\":2,\"precioUnitario\":5000}]");
+        when(sessionService.getMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
+        when(usuarioRepo.findById(Constants.ID_USUARIO_MOSTRADOR)).thenReturn(Optional.of(usuario(999L, "Mostrador", "m@x.test")));
+        when(bodegaRepo.findById(3L)).thenReturn(Optional.of(bodega(3L, empresa)));
+        when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
+
+        factory.crearPedidoPOS(sesion, "SINPE");
+
+        verify(stockReserva).liberar(eq(sesion), any());
+        verify(pedidoRepo, org.mockito.Mockito.never()).save(any(Pedido.class));
+        verify(posQrRepo).save(sesion);
+        assertThat(sesion.getEstado()).isEqualTo("PAGADO");
+        assertThat(sesion.isReembolsoPendiente()).isTrue();
+        assertThat(sesion.getPedidoId()).isNull();
     }
 
     @Test

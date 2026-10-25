@@ -49,6 +49,7 @@ public class PosQrPedidoFactory {
     @Autowired private TelegramNotificacionClienteService telegramNotificacionClienteService;
     @Autowired private PosQrSessionService                sessionService;
     @Autowired private VentaAvisoService                  ventaAvisoService;
+    @Autowired private PosQrStockReserva                  stockReserva;
 
     public void crearPedidoPOS(PosQrSesion sesion, String metodoPago) {
         try {
@@ -57,6 +58,14 @@ public class PosQrPedidoFactory {
             Usuario cajero  = sesion.getUsuario();
             Usuario cliente = resolverCliente(sesion.getClienteId());
             Bodega bodega   = resolverBodega(sesion.getBodegaId(), empresa.getId());
+
+            // ALTO 2: la reserva propia se devuelve y se vuelve a validar con bloqueo. Si no alcanza, se cobró
+            // sin poder entregar: no se crea pedido y la sesión queda marcada para reembolso.
+            stockReserva.liberar(sesion, items);
+            if (!hayStock(items)) {
+                marcarReembolsoPendiente(sesion);
+                return;
+            }
 
             Pedido pedido = armarPedido(sesion, metodoPago, empresa, cliente, bodega, cajero);
             TotalesQr totales = totalesCobrados(cargarItems(items, pedido, correoCajero(cajero)),
@@ -214,6 +223,27 @@ public class PosQrPedidoFactory {
             totales.costoTotal() > 0
                 ? BigDecimal.valueOf(utilidad * 100.0 / totales.costoTotal()).setScale(2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO);
+    }
+
+    private boolean hayStock(List<Map<String, Object>> items) {
+        Map<Long, Integer> pedidas = new java.util.LinkedHashMap<>();
+        for (Map<String, Object> item : items) {
+            pedidas.merge(PosQrSessionService.productoIdDe(item), PosQrSessionService.cantidadDe(item), Integer::sum);
+        }
+        for (Map.Entry<Long, Integer> e : pedidas.entrySet()) {
+            Producto p = productoRepo.findByIdForUpdate(e.getKey()).orElse(null);
+            if (p == null || p.getStockDisponible() < e.getValue()) return false;
+        }
+        return true;
+    }
+
+    private void marcarReembolsoPendiente(PosQrSesion sesion) {
+        sesion.setEstado("PAGADO");
+        sesion.setReembolsoPendiente(true);
+        sesion.setFechaPago(LocalDateTime.now(Constants.ZONA_CR));
+        posQrRepo.save(sesion);
+        log.error("[ALERTA-PAGO] POS QR {} cobrado sin stock para entregar: sin pedido, REEMBOLSO PENDIENTE",
+            PosQrVentaService.mascararToken(sesion.getToken()));
     }
 
     private void marcarPagado(PosQrSesion sesion, Pedido saved) {

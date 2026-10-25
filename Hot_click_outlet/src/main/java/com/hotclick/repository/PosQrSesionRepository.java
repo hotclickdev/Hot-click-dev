@@ -31,6 +31,18 @@ public interface PosQrSesionRepository extends JpaRepository<PosQrSesion, Long> 
     @Query("UPDATE PosQrSesion s SET s.estado = 'PAGADO' WHERE s.id = :id AND s.estado = 'PENDIENTE'")
     int reclamarParaCompletar(@Param("id") Long id);
 
+    /** ALTO 2: suelta la marca de reserva una sola vez; quien recibe 1 devuelve las unidades. */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE PosQrSesion s SET s.stockReservado = false WHERE s.id = :id AND s.stockReservado = true")
+    int soltarReserva(@Param("id") Long id);
+
+    /** ALTO 2: reservas a liberar — sesión cerrada sin venta o reserva vencida. */
+    @Query("""
+        SELECT s FROM PosQrSesion s WHERE s.stockReservado = true AND s.estado <> 'PAGADO'
+          AND (s.estado IN ('EXPIRADO','CANCELADO') OR s.reservaExpira < :ahora)
+        """)
+    java.util.List<PosQrSesion> reservasALiberar(@Param("ahora") LocalDateTime ahora);
+
     @Modifying
     @Query("""
         UPDATE PosQrSesion s SET s.estado = 'EXPIRADO'
