@@ -88,6 +88,7 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
         // Sin llave de ONVO: modo simulado (perfil test), que nunca da un cobro por pagado.
         when(onvoService.isMockMode()).thenReturn(true);
         when(onvoService.isPagosDisponibles()).thenReturn(true);
+        when(onvoService.modoEsperado()).thenReturn("live");
         doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(any());
         doReturn(Map.of()).when(onvoService).obtenerPaymentIntent(any());
 
@@ -372,9 +373,9 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
 
     private void onvoResponde(String sessionId, String paymentStatus, String intentStatus, long centimos) {
         doReturn(Map.of("id", sessionId, "paymentStatus", paymentStatus, "status", "complete",
-                "paymentIntentId", "pi_" + sessionId))
+                "paymentIntentId", "pi_" + sessionId, "mode", "live"))
             .when(onvoService).obtenerCheckoutSession(sessionId);
-        doReturn(Map.of("id", "pi_" + sessionId, "status", intentStatus, "amount", centimos, "currency", "CRC"))
+        doReturn(Map.of("id", "pi_" + sessionId, "status", intentStatus, "amount", centimos, "currency", "CRC", "mode", "live"))
             .when(onvoService).obtenerPaymentIntent("pi_" + sessionId);
     }
 

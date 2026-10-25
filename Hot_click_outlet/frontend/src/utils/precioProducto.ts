@@ -42,3 +42,22 @@ export function textoPrecioProducto(product: {
   }
   return formatPrice(product.precio)
 }
+
+/**
+ * M-01: precio unitario que cobra el backend (OrderPricingService.precioEfectivo).
+ * Usa `precioEfectivo` del JSON si viene; si no, la misma regla:
+ * oferta activa y 0 < precioOferta < precioVenta; si no, precio normal.
+ */
+export function precioUnitarioEfectivo(item: {
+  precio?: number | null
+  precioVenta?: number | null
+  enOferta?: boolean | null
+  precioOferta?: number | null
+  precioEfectivo?: number | null
+}): number {
+  const lista = item.precioVenta ?? item.precio ?? 0
+  if (typeof item.precioEfectivo === 'number' && item.precioEfectivo > 0) return item.precioEfectivo
+  const oferta = item.precioOferta
+  if (item.enOferta === true && oferta != null && oferta > 0 && oferta < lista) return oferta
+  return lista
+}

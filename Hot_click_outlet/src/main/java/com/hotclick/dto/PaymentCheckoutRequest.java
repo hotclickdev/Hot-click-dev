@@ -11,7 +11,7 @@ import java.util.List;
 
 public class PaymentCheckoutRequest {
 
-    @NotNull(message = "La bodega es requerida")
+    /** Opcional: sin bodega (o con la default id 1) el backend resuelve la del negocio del producto. */
     private Long bodegaId;
 
     @NotBlank(message = "El método de envío es requerido")

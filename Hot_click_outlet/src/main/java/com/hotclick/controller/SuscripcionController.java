@@ -31,13 +31,16 @@ public class SuscripcionController {
     private final AuthSupport authSupport;
     private final com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService;
     private final com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes;
+    private final com.hotclick.security.PropietarioGuard propietarioGuard;
 
     public SuscripcionController(SuscripcionService suscripcionService,
                                   PlanRepository planRepo,
                                   AuthSupport authSupport,
                                   com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService,
-                                  com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes) {
+                                  com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes,
+                                  com.hotclick.security.PropietarioGuard propietarioGuard) {
         this.preciosPlanes = preciosPlanes;
+        this.propietarioGuard = propietarioGuard;
         this.suscripcionTilopayService = suscripcionTilopayService;
         this.suscripcionService = suscripcionService;
         this.planRepo           = planRepo;
@@ -103,6 +106,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> iniciarTrial() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-012
         suscripcionService.iniciarTrial(empresaId);
         return ResponseEntity.ok(Map.of("status", "ok", "mensaje", "Trial iniciado por 14 días"));
     }
@@ -113,6 +117,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> crearCheckout(@PathVariable Long planId) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-012
         try {
             planRepo.findById(planId).ifPresent(pl -> preciosPlanes.requerir(pl.getNombre()));
             return ResponseEntity.ok(suscripcionTilopayService.iniciarCambioPlan(empresaId, planId));
@@ -135,6 +140,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> crearPortal() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-012
         try {
             String url = suscripcionService.crearPortalUrl(empresaId);
             return ResponseEntity.ok(Map.of("portalUrl", url));
@@ -153,6 +159,7 @@ public class SuscripcionController {
             @RequestParam(defaultValue = "false") boolean inmediata) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-012
         try {
             suscripcionService.cancelar(empresaId, inmediata);
             return ResponseEntity.ok(Map.of("status", "ok",
@@ -174,6 +181,9 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> cambiarPlan(@PathVariable Long planId, HttpServletRequest request) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        // QA3-012: solo el PROPIETARIO (o ADMIN de plataforma) cambia el plan; un EDITOR recibe 403
+        // antes de tocar precios, límites o cobro.
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-012
         try {
             Plan plan = planRepo.findById(planId).orElse(null);
             if (plan != null) preciosPlanes.requerir(plan.getNombre());
@@ -264,5 +274,9 @@ public class SuscripcionController {
         @SuppressWarnings("unchecked")
         T body = (T) Map.of("error", com.hotclick.exception.PlanSinPrecioException.MENSAJE, "codigo", com.hotclick.exception.PlanSinPrecioException.CODIGO, "plan", e.getPlan());
         return ResponseEntity.status(409).body(body);
+    }
+
+    private ResponseEntity<Map<String, Object>> soloPropietario() {
+        return ResponseEntity.status(403).body(Map.of("error", com.hotclick.security.PropietarioGuard.MSG));
     }
 }

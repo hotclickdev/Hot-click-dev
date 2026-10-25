@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { fotoProducto } from '@/components/comprador/productCardHelpers'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import { formatPrice } from '@/utils/format'
 import type { Producto } from '@/types/producto'
 
@@ -30,7 +31,7 @@ export default function SumaMismaTienda({ producto, negocio, escritorio, onAgreg
           <IconoFigma src={ICONOS_CHECKOUT.sumarDestello} size={13} />
           <span className="min-w-0 flex-1 wrap-anywhere">{t('cart.sumarOtro', { negocio })}</span>
         </p>
-        <p className="text-[12px] leading-[normal] text-hc-n-600 wrap-anywhere">{`${producto.nombre} · ${formatPrice(producto.precio)}`}</p>
+        <p className="text-[12px] leading-[normal] text-hc-n-600 wrap-anywhere">{`${producto.nombre} · ${formatPrice(precioUnitarioEfectivo(producto))}`}</p>
       </div>
       <button
         type="button"

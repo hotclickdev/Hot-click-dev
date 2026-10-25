@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import { formatPrice } from '@/utils/format'
 import { estaDisponible } from './useCarritoRecuperado'
 import type { ProductoRecuperado as LineaRecuperada } from './useCarritoRecuperado'
@@ -27,7 +28,7 @@ export default function ProductoRecuperado({ linea }: { linea: LineaRecuperada }
       </span>
       {disponible ? (
         <span className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">
-          {formatPrice(linea.producto.precio * Math.min(linea.cantidad, linea.producto.stock))}
+          {formatPrice(precioUnitarioEfectivo(linea.producto) * Math.min(linea.cantidad, linea.producto.stock))}
         </span>
       ) : null}
     </li>

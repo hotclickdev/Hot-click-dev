@@ -71,13 +71,39 @@ public class SinpeComprobanteService {
 
         String url;
         try {
-            url = storageService.subirImagen(archivo, "comprobantes-sinpe");
+            // C1: privado; en la columna queda la clave S3, nunca una URL pública.
+            url = storageService.subirComprobantePrivado(archivo);
         } catch (IOException e) {
             throw new IntegracionExternaException("storage", IntegracionExternaException.Tipo.IO_ERROR,
                 "Error al subir el comprobante: " + e.getMessage(), e);
         }
 
         persistenceService.guardar(numeroPedido, url, nombreRemitente, cedulaRemitente, telefonoRemitente, correoUsuario);
+    }
+
+    @org.springframework.beans.factory.annotation.Value("${sinpe.comprobante.url-firmada-segundos:300}")
+    private long segundosUrlFirmada = 300;
+
+    /**
+     * C1: URL firmada de corta duración. Solo el dueño del pedido (correo de la sesión) o un admin de
+     * plataforma (SOLO_PLATAFORMA, lo decide el controller). Cualquier otro caso: SecurityException.
+     */
+    @Transactional(readOnly = true)
+    public String urlFirmadaComprobante(Long comprobanteId, String correoSolicitante, boolean adminPlataforma) {
+        ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
+        if (!adminPlataforma) {
+            Pedido pedido = comprobante.getPedido();
+            String dueno = pedido == null || pedido.getUsuarioFinal() == null ? null : pedido.getUsuarioFinal().getCorreo();
+            if (dueno == null || correoSolicitante == null || !dueno.equalsIgnoreCase(correoSolicitante)) {
+                throw new SecurityException("No tenés permiso para ver este comprobante");
+            }
+        }
+        String clave = storageService.claveDeComprobante(comprobante.getUrlComprobante());
+        if (clave == null) {
+            throw new RecursoNoEncontradoException("Comprobante sin archivo");
+        }
+        return storageService.urlFirmada(clave, java.time.Duration.ofSeconds(Math.max(1, segundosUrlFirmada)));
     }
 
     @Transactional

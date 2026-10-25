@@ -98,7 +98,7 @@ public class CheckoutOrderFactory {
             Producto p = productosMap.get(item.getProductoId());
             int precioUnitario = item.getPrecioUnitarioOverride() != null
                 ? item.getPrecioUnitarioOverride()
-                : p.getPrecioVenta();
+                : OrderPricingService.precioEfectivo(p);
             PedidoItem pi = new PedidoItem();
             pi.setCantidad(item.getCantidad());
             pi.setPrecioUnitarioMomento(precioUnitario);

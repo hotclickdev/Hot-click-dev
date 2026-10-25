@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { fotoProducto } from '@/components/comprador/productCardHelpers'
 import { ICONOS_COMPRA } from '@/pages/checkout/iconosCompra'
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import { formatPrice } from '@/utils/format'
 import type { ItemCarrito } from '@/types/carrito'
 import CantidadPaquete from './CantidadPaquete'
@@ -19,7 +20,7 @@ type ItemPaqueteProps = {
 export default function ItemPaquete({ item, onCambiarCantidad, onEliminar, onMoverAFavoritos }: ItemPaqueteProps) {
   const { t } = useTranslation()
   const nombre = item.nombre ?? item.nombreProducto ?? ''
-  const precio = formatPrice((item.precio ?? item.precioVenta ?? 0) * item.cantidad)
+  const precio = formatPrice(precioUnitarioEfectivo(item) * item.cantidad)
   const foto = fotoProducto(item)
   const cantidad = (
     <CantidadPaquete

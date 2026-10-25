@@ -83,7 +83,7 @@ public class CheckoutValidator {
      * o de su tienda no la necesitan, y el planner falla con un mensaje claro si alguno sí la necesita.
      */
     public Bodega resolverBodegaDefault(Long bodegaIdSolicitada) {
-        boolean esDefault = bodegaIdSolicitada == null || bodegaIdSolicitada == Constants.BODEGA_DEFAULT_ID;
+        boolean esDefault = bodegaIdSolicitada == null || java.util.Objects.equals(bodegaIdSolicitada, Constants.BODEGA_DEFAULT_ID);
         // El front manda bodegaId=1 (BODEGA_DEFAULT) en todo envío: si ya no existe, se trata como ausente.
         if (!esDefault) return loadBodega(bodegaIdSolicitada);
         java.util.Optional<Bodega> fija = bodegaRepository.findById(Constants.BODEGA_DEFAULT_ID);
