@@ -24,4 +24,11 @@ class PosQrVentaServiceNullTest {
         s.setFechaExpiracion(LocalDateTime.now().plusMinutes(5));
         assertFalse(PosQrVentaService.estaVigente(s, null));
     }
+
+    @Test
+    void verificarSinpeOnvoConSesionNulaFallaCerrado() {
+        PosQrVentaService svc = new PosQrVentaService();
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> svc.verificarSinpeOnvo(null));
+        assertEquals(PosQrVentaService.MSG_SESION_INEXISTENTE, ex.getMessage());
+    }
 }
