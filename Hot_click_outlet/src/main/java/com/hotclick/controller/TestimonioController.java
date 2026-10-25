@@ -62,6 +62,7 @@ public class TestimonioController {
     }
 
     /** Sube foto — requiere auth, pasa por moderación */
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/imagen")
     public ResponseEntity<ResponseDTO> subirImagen(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty())
@@ -85,6 +86,7 @@ public class TestimonioController {
      * Crear testimonio general (comentario de la web).
      * Body: { comentario, imagenUrl? }
      */
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/testimonio")
     public ResponseEntity<ResponseDTO> crearTestimonio(
             @RequestBody Map<String, Object> body,
@@ -119,6 +121,7 @@ public class TestimonioController {
      * Body: { comentario, productoId, calificacion (1-5), imagenUrl? }
      * Valida compra previa y máximo 3 reseñas por usuario por producto.
      */
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/resena")
     public ResponseEntity<ResponseDTO> crearResena(
             @RequestBody Map<String, Object> body,

@@ -16,6 +16,7 @@ import java.util.Map;
  * El inbox de plataforma vive en {@link AdminTicketSoporteController}.
  */
 @RestController
+@com.hotclick.security.PermiteLector // acción personal / de comprador
 @RequestMapping("/api/soporte/tickets")
 public class TicketSoporteController {
 

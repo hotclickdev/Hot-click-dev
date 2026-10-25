@@ -28,6 +28,7 @@ public class TelegramConfigController {
     @Autowired private CompanyScope companyScope;
     @Autowired private TelegramConfigService telegramConfigService;
 
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/vincular")
     public ResponseEntity<?> generarCodigo() {
         Usuario usuario = companyScope.getCurrentUser();
@@ -46,6 +47,7 @@ public class TelegramConfigController {
         return ResponseEntity.ok(telegramConfigService.estado(usuario.getId()));
     }
 
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @DeleteMapping("/vincular")
     public ResponseEntity<?> desvincular() {
         Usuario usuario = companyScope.getCurrentUser();

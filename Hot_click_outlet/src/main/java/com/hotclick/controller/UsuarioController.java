@@ -50,6 +50,7 @@ public class UsuarioController {
         return ResponseEntity.ok(ResponseDTO.success("Usuario encontrado", usuario.get()));
     }
 
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO> actualizarUsuario(@PathVariable Long id, @RequestBody Map<String, String> datos) {
         assertSelfOrAdmin(id);

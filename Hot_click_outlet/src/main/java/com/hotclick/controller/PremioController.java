@@ -59,6 +59,7 @@ public class PremioController {
         return ResponseEntity.ok(ResponseDTO.success("Giros disponibles", giros));
     }
 
+    @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/girar/{giroId}/usuario/{usuarioId}")
     public ResponseEntity<ResponseDTO> girar(
             @PathVariable Long giroId,
