@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -52,7 +51,7 @@ class PosQrStockReservaTest {
     void reservaAlGenerar() {
         reserva.setReservaMinutosParaTest("15");
         Producto p = producto(5, 1);
-        when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(p));
+        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(p));
         PosQrSesion s = new PosQrSesion();
         reserva.reservar(s, items(2), AHORA);
         assertThat(p.getStockReservado()).isEqualTo(3);
@@ -64,7 +63,7 @@ class PosQrStockReservaTest {
     @DisplayName("Sin stock disponible (contando reservas ajenas) no se genera el QR")
     void sinStockNoReserva() {
         reserva.setReservaMinutosParaTest("15");
-        when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(producto(3, 2)));
+        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(producto(3, 2)));
         PosQrSesion s = new PosQrSesion();
         assertThatThrownBy(() -> reserva.reservar(s, items(2), AHORA)).isInstanceOf(StockInsuficienteException.class);
         assertThat(s.isStockReservado()).isFalse();
@@ -78,7 +77,7 @@ class PosQrStockReservaTest {
             assertThatThrownBy(() -> reserva.reservar(new PosQrSesion(), items(1), AHORA))
                 .isInstanceOf(IllegalStateException.class).hasMessage(PosQrStockReserva.MSG_NO_CONFIGURADA);
         }
-        verify(productoRepo, never()).findByIdForUpdate(any());
+        verify(productoRepo, never()).findAllByIdsForUpdate(any());
     }
 
     @Test
@@ -89,7 +88,7 @@ class PosQrStockReservaTest {
         s.setId(7L);
         s.setStockReservado(true);
         when(posQrRepo.soltarReserva(7L)).thenReturn(1, 0);
-        when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(p));
+        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(p));
         assertThat(reserva.liberar(s, items(2))).isTrue();
         assertThat(p.getStockReservado()).isZero();
         assertThat(s.isStockReservado()).isFalse();
@@ -107,7 +106,7 @@ class PosQrStockReservaTest {
         Producto p = producto(5, 2);
         when(posQrRepo.reservasALiberar(AHORA)).thenReturn(List.of(s));
         when(posQrRepo.soltarReserva(8L)).thenReturn(1);
-        when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(p));
+        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(p));
         assertThat(reserva.barrerVencidas(AHORA)).isEqualTo(1);
         assertThat(p.getStockReservado()).isZero();
     }

@@ -53,21 +53,23 @@ public class PosQrStockReserva {
         throw new IllegalStateException(MSG_NO_CONFIGURADA);
     }
 
-    /** Reserva todas las líneas con bloqueo pesimista; si falta stock, nada queda reservado (rollback). */
+    /**
+     * Reserva todas las líneas con un solo SELECT … FOR UPDATE (ids ordenados: sin deadlocks entre cajas).
+     * Si falta stock, nada queda reservado (rollback). Las entidades quedan gestionadas: el flush las persiste.
+     */
     @Transactional
     public void reservar(PosQrSesion sesion, List<Map<String, Object>> items, LocalDateTime ahora) {
         int m = minutos();
-        for (Map<String, Object> item : items) {
-            Long productoId = PosQrSessionService.productoIdDe(item);
-            int cantidad = PosQrSessionService.cantidadDe(item);
-            Producto p = productoRepo.findByIdForUpdate(productoId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+        Map<Long, Integer> pedidas = cantidadesPorProducto(items);
+        Map<Long, Producto> productos = bloquear(pedidas.keySet());
+        pedidas.forEach((productoId, cantidad) -> {
+            Producto p = productos.get(productoId);
+            if (p == null) throw new RecursoNoEncontradoException("Producto", productoId);
             if (p.getStockDisponible() < cantidad) {
                 throw new StockInsuficienteException(p.getNombreProducto(), p.getStockDisponible(), cantidad);
             }
             p.setStockReservado(p.getStockReservado() + cantidad);
-            productoRepo.save(p);
-        }
+        });
         sesion.setStockReservado(true);
         sesion.setReservaExpira(ahora.plusMinutes(m));
     }
@@ -80,15 +82,30 @@ public class PosQrStockReserva {
     public boolean liberar(PosQrSesion sesion, List<Map<String, Object>> items) {
         if (sesion.getId() == null || posQrRepo.soltarReserva(sesion.getId()) != 1) return false;
         sesion.setStockReservado(false);
-        for (Map<String, Object> item : items) {
-            Long productoId = PosQrSessionService.productoIdDe(item);
-            int cantidad = PosQrSessionService.cantidadDe(item);
-            productoRepo.findByIdForUpdate(productoId).ifPresent(p -> {
-                p.setStockReservado(Math.max(0, p.getStockReservado() - cantidad));
-                productoRepo.save(p);
-            });
-        }
+        Map<Long, Integer> pedidas = cantidadesPorProducto(items);
+        Map<Long, Producto> productos = bloquear(pedidas.keySet());
+        pedidas.forEach((productoId, cantidad) -> {
+            Producto p = productos.get(productoId);
+            if (p != null) p.setStockReservado(Math.max(0, p.getStockReservado() - cantidad));
+        });
         return true;
+    }
+
+    /** Suma cantidades por producto (líneas repetidas del mismo producto cuentan juntas). */
+    static Map<Long, Integer> cantidadesPorProducto(List<Map<String, Object>> items) {
+        Map<Long, Integer> pedidas = new java.util.TreeMap<>();
+        items.forEach(item -> pedidas.merge(PosQrSessionService.productoIdDe(item),
+            PosQrSessionService.cantidadDe(item), Integer::sum));
+        return pedidas;
+    }
+
+    /** Bloqueo en lote, en orden de id. */
+    public Map<Long, Producto> bloquear(java.util.Collection<Long> ids) {
+        Map<Long, Producto> porId = new java.util.HashMap<>();
+        if (ids.isEmpty()) return porId;
+        productoRepo.findAllByIdsForUpdate(new java.util.ArrayList<>(new java.util.TreeSet<>(ids)))
+            .forEach(p -> porId.put(p.getId(), p));
+        return porId;
     }
 
     @Scheduled(fixedDelayString = "${pos.qr.reserva-barrido-ms:60000}", initialDelayString = "${pos.qr.reserva-barrido-ms:60000}")

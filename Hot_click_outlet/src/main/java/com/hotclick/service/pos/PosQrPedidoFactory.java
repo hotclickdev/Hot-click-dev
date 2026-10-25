@@ -225,25 +225,14 @@ public class PosQrPedidoFactory {
                 : BigDecimal.ZERO);
     }
 
+    /** ALTO 2: revalida con bloqueo en lote (mismo orden de ids que la reserva) contra el stock disponible. */
     private boolean hayStock(List<Map<String, Object>> items) {
-        Map<Long, Integer> pedidas = new java.util.LinkedHashMap<>();
-        for (Map<String, Object> item : items) {
-            pedidas.merge(PosQrSessionService.productoIdDe(item), PosQrSessionService.cantidadDe(item), Integer::sum);
-        }
-        for (Map.Entry<Long, Integer> e : pedidas.entrySet()) {
-            Producto p = productoRepo.findByIdForUpdate(e.getKey()).orElse(null);
-            if (p == null || p.getStockDisponible() < e.getValue()) return false;
-        }
-        return true;
-    }
-
-    private void marcarReembolsoPendiente(PosQrSesion sesion) {
-        sesion.setEstado("PAGADO");
-        sesion.setReembolsoPendiente(true);
-        sesion.setFechaPago(LocalDateTime.now(Constants.ZONA_CR));
-        posQrRepo.save(sesion);
-        log.error("[ALERTA-PAGO] POS QR {} cobrado sin stock para entregar: sin pedido, REEMBOLSO PENDIENTE",
-            PosQrVentaService.mascararToken(sesion.getToken()));
+        Map<Long, Integer> pedidas = PosQrStockReserva.cantidadesPorProducto(items);
+        Map<Long, Producto> productos = stockReserva.bloquear(pedidas.keySet());
+        return pedidas.entrySet().stream().allMatch(e -> {
+            Producto p = productos.get(e.getKey());
+            return p != null && p.getStockDisponible() >= e.getValue();
+        });
     }
 
     private void marcarPagado(PosQrSesion sesion, Pedido saved) {
@@ -264,5 +253,14 @@ public class PosQrPedidoFactory {
 
     record TotalesQr(int subtotal, int costoTotal) {
         int totalPedido() { return subtotal; }
+    }
+
+    private void marcarReembolsoPendiente(PosQrSesion sesion) {
+        sesion.setEstado("PAGADO");
+        sesion.setReembolsoPendiente(true);
+        sesion.setFechaPago(LocalDateTime.now(Constants.ZONA_CR));
+        posQrRepo.save(sesion);
+        log.error("[ALERTA-PAGO] POS QR {} cobrado sin stock para entregar: sin pedido, REEMBOLSO PENDIENTE",
+            PosQrVentaService.mascararToken(sesion.getToken()));
     }
 }

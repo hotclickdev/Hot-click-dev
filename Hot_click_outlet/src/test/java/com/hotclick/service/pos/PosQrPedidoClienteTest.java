@@ -78,6 +78,7 @@ class PosQrPedidoClienteTest {
         when(usuarioRepo.findById(42L)).thenReturn(Optional.of(cliente));
         when(bodegaRepo.findById(3L)).thenReturn(Optional.of(bodega));
         when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
+        when(stockReserva.bloquear(any())).thenReturn(java.util.Map.of(10L, mouse));
         when(pedidoRepo.save(any(Pedido.class))).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             p.setId(88L);
@@ -118,6 +119,7 @@ class PosQrPedidoClienteTest {
         when(usuarioRepo.findById(Constants.ID_USUARIO_MOSTRADOR)).thenReturn(Optional.of(usuario(999L, "Mostrador", "m@x.test")));
         when(bodegaRepo.findById(3L)).thenReturn(Optional.of(bodega(3L, empresa)));
         when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
+        when(stockReserva.bloquear(any())).thenReturn(java.util.Map.of(10L, mouse));
         when(pedidoRepo.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
 
         factory.crearPedidoPOS(sesion, "SINPE");
@@ -155,7 +157,7 @@ class PosQrPedidoClienteTest {
         when(sessionService.getMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
         when(usuarioRepo.findById(Constants.ID_USUARIO_MOSTRADOR)).thenReturn(Optional.of(usuario(999L, "Mostrador", "m@x.test")));
         when(bodegaRepo.findById(3L)).thenReturn(Optional.of(bodega(3L, empresa)));
-        when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
+        when(stockReserva.bloquear(any())).thenReturn(java.util.Map.of(10L, mouse));
 
         factory.crearPedidoPOS(sesion, "SINPE");
 
