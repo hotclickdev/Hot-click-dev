@@ -6,6 +6,7 @@ import BarraEnvioGratis from './BarraEnvioGratis'
 import { ICONOS_COMPRADOR } from './iconosComprador'
 import { fotoProducto } from './productCardHelpers'
 import useCartStore from '@/store/cartStore'
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import { formatPrice } from '@/utils/format'
 import type { Producto } from '@/types/producto'
 
@@ -31,8 +32,8 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
     producto.empresaId != null ? i.empresaId === producto.empresaId : Boolean(negocio) && i.empresaNombre === negocio
   ))
   const comparteEnvio = Boolean(negocio) && mismoPaquete.length > 1
-  const subtotalPaquete = mismoPaquete.reduce((suma, i) => suma + (i.precio ?? i.precioVenta ?? 0) * i.cantidad, 0)
-  const totalPedido = items.reduce((suma, i) => suma + (i.precio ?? i.precioVenta ?? 0) * i.cantidad, 0)
+  const subtotalPaquete = mismoPaquete.reduce((suma, i) => suma + precioUnitarioEfectivo(i) * i.cantidad, 0)
+  const totalPedido = items.reduce((suma, i) => suma + precioUnitarioEfectivo(i) * i.cantidad, 0)
   const foto = fotoProducto(producto)
 
   return (
@@ -62,7 +63,7 @@ export default function HojaAgregadoAlPedido({ abierta, onCerrar, producto, cant
               : t('comprador.hoja.detalle', { count: cantidad })}
           </p>
         </div>
-        <p className="shrink-0 font-display text-[15px] font-bold leading-[19px] text-hc-n-900">{formatPrice((producto.precio ?? producto.precioVenta ?? 0) * cantidad)}</p>
+        <p className="shrink-0 font-display text-[15px] font-bold leading-[19px] text-hc-n-900">{formatPrice(precioUnitarioEfectivo(producto) * cantidad)}</p>
       </div>
 
       {comparteEnvio && (

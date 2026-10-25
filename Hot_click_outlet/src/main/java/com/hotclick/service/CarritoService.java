@@ -44,6 +44,9 @@ public class CarritoService {
 
     @Transactional
     public Carrito agregarItem(Long carritoId, Long productoId, Integer cantidad) {
+        if (cantidad == null || cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad tiene que ser 1 o más.");
+        }
         Long empresaId = TenantContext.get();
         if (empresaId == null) {
             throw new SecurityException("Contexto de empresa requerido para modificar el carrito");
@@ -74,7 +77,7 @@ public class CarritoService {
         item.setCarrito(carrito);
         item.setProducto(producto);
         item.setCantidad(cantidad);
-        item.setPrecioUnitarioMomento(producto.getPrecioVenta());
+        item.setPrecioUnitarioMomento(com.hotclick.service.payment.OrderPricingService.precioEfectivo(producto));
         item.setEstado(Constants.ESTADO_ACTIVO);
         carrito.getItems().add(item);
 

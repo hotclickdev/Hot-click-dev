@@ -1,3 +1,4 @@
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import type { ProductoRelacion } from '@/types/producto'
 import type { CuponCarrito } from '@/types/carrito'
 import { descuentoSinpe } from '@/utils/comisionPrecio'
@@ -81,7 +82,7 @@ function sinTildes(texto: string): string {
 }
 
 function precioItem(item: ItemPaquete): number {
-  return (item.precio ?? item.precioVenta ?? 0) * (item.cantidad ?? 0)
+  return precioUnitarioEfectivo(item) * (item.cantidad ?? 0)
 }
 
 function claveDe(item: ItemPaquete): string {

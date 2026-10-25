@@ -5,6 +5,7 @@ import IconoFigma from '@/components/comprador/IconoFigma'
 import useCartStore from '@/store/cartStore'
 import useHojaAgregadoStore from '@/store/hojaAgregadoStore'
 import type { ProductoAgregado } from '@/store/hojaAgregadoStore'
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import { formatPrice } from '@/utils/format'
 import { ICONOS_COMPRA } from '@/pages/checkout/iconosCompra'
 import { VELO_HOJA } from '@/components/ui/sistema/estilosHoja'
@@ -25,7 +26,7 @@ function Hoja({ agregado, onCerrar }: { agregado: ProductoAgregado; onCerrar: ()
   const { producto, cantidad, mismoPaquete } = agregado
   const tienda = producto.empresaNombre?.trim() || 'HotClick'
   const cantidadPedido = items.reduce((suma, i) => suma + (i.cantidad ?? 0), 0)
-  const totalPedido = items.reduce((suma, i) => suma + (i.precio ?? 0) * (i.cantidad ?? 0), 0)
+  const totalPedido = items.reduce((suma, i) => suma + precioUnitarioEfectivo(i) * (i.cantidad ?? 0), 0)
 
   useEffect(() => {
     seguirRef.current?.focus()
@@ -63,7 +64,7 @@ function Hoja({ agregado, onCerrar }: { agregado: ProductoAgregado; onCerrar: ()
             <span className="truncate text-[14px] font-medium text-hc-n-900">{producto.nombre}</span>
             <span className="truncate text-[12px] text-hc-n-600">{tienda} · {t('compra.unidades', { count: cantidad })}</span>
           </span>
-          <span className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">{formatPrice(producto.precio * cantidad)}</span>
+          <span className="shrink-0 font-display text-[15px] font-bold text-hc-n-900">{formatPrice(precioUnitarioEfectivo(producto) * cantidad)}</span>
         </div>
         {mismoPaquete ? (
           <p className="flex items-start gap-[8px] rounded-[10px] bg-hc-green-50 px-[12px] py-[10px] text-[12px] leading-[16px] text-hc-success-text">

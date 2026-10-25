@@ -176,4 +176,36 @@ class SinpeCheckoutServiceEmpresaTest {
             .isInstanceOf(com.hotclick.exception.AutocompraNegocioException.class);
         verify(pagoRepository, org.mockito.Mockito.never()).save(any(Pago.class));
     }
+
+    @Test
+    @DisplayName("M-01 | checkout SINPE con producto en oferta → total = precio de oferta × cantidad")
+    void checkout_sinpe_cobraPrecioOferta() {
+        when(usuarioRepository.findByCorreo("buyer@hotclick.cr")).thenReturn(Optional.of(usuario));
+        when(bodegaRepository.findById(1L)).thenReturn(Optional.of(bodega));
+        when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> {
+            Pedido p = inv.getArgument(0);
+            if (p.getId() == null) p.setId(100L);
+            return p;
+        });
+        when(pagoRepository.save(any(Pago.class))).thenAnswer(inv -> inv.getArgument(0));
+        producto.setEnOferta(true);
+        producto.setPrecioOferta(4000);
+
+        PaymentCheckoutRequest req = new PaymentCheckoutRequest();
+        req.setBodegaId(1L);
+        req.setMetodoEnvio("RETIRO_EN_TIENDA");
+        PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
+        item.setProductoId(10L);
+        item.setCantidad(2);
+        req.setItems(List.of(item));
+
+        PaymentCheckoutResponse resp = service.checkout(req, "buyer@hotclick.cr");
+
+        assertThat(resp.getTotal()).isEqualTo(8000);
+        ArgumentCaptor<Pago> pago = ArgumentCaptor.forClass(Pago.class);
+        verify(pagoRepository, org.mockito.Mockito.atLeastOnce()).save(pago.capture());
+        assertThat(pago.getValue().getMonto()).isEqualTo(8000);
+    }
 }

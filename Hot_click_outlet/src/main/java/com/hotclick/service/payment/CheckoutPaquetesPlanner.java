@@ -59,7 +59,7 @@ public class CheckoutPaquetesPlanner {
             int costoTotal = 0;
             for (PaymentCheckoutRequest.ItemDTO item : e.getValue()) {
                 Producto p = productos.get(item.getProductoId());
-                int precio = item.getPrecioUnitarioOverride() != null ? item.getPrecioUnitarioOverride() : p.getPrecioVenta();
+                int precio = item.getPrecioUnitarioOverride() != null ? item.getPrecioUnitarioOverride() : OrderPricingService.precioEfectivo(p);
                 int costo = p.getPrecioCompra() != null ? p.getPrecioCompra() : 0;
                 subtotal += precio * item.getCantidad();
                 costoTotal += costo * item.getCantidad();

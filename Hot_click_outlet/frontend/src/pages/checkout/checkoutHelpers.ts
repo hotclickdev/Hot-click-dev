@@ -1,3 +1,4 @@
+import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import { isValidEmail } from '@/utils/validators'
 import { formatTelefonoCR } from '@/utils/telefono'
 import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
@@ -131,7 +132,7 @@ export function paquetesDesdeItems(items: ItemCheckout[]): PaqueteCheckout[] {
       grupos.set(key, grupo)
     }
     grupo.items.push(item)
-    grupo.subtotal += (item.precio ?? item.precioVenta ?? 0) * (item.cantidad ?? 0)
+    grupo.subtotal += precioUnitarioEfectivo(item) * (item.cantidad ?? 0)
   }
   return [...grupos.values()]
 }
