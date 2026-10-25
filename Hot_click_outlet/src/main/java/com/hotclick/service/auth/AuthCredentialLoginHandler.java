@@ -59,6 +59,7 @@ public class AuthCredentialLoginHandler {
         if (!turnstileService.verify(request.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
             return ResponseEntity.status(400).body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
+        request.setCorreo(com.hotclick.utils.CorreoNormalizer.normalizar(request.getCorreo())); // A1: igual que el registro
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorCorreo(request.getCorreo());
         if (usuarioOpt.isEmpty()) {
             return rechazarUsuarioDesconocido(request, httpRequest);
