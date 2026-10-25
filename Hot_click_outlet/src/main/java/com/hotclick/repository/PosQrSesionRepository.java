@@ -31,6 +31,13 @@ public interface PosQrSesionRepository extends JpaRepository<PosQrSesion, Long> 
     @Query("UPDATE PosQrSesion s SET s.estado = 'PAGADO' WHERE s.id = :id AND s.estado = 'PENDIENTE'")
     int reclamarParaCompletar(@Param("id") Long id);
 
+    boolean existsByOnvoEventoId(String onvoEventoId);
+
+    /** Registra el eventId del webhook ONVO que cerró la sesión (una sola vez). */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE PosQrSesion s SET s.onvoEventoId = :ev WHERE s.id = :id AND s.onvoEventoId IS NULL")
+    int registrarEventoOnvo(@Param("id") Long id, @Param("ev") String eventId);
+
     /** ALTO 2: suelta la marca de reserva una sola vez; quien recibe 1 devuelve las unidades. */
     @Modifying(flushAutomatically = true)
     @Query("UPDATE PosQrSesion s SET s.stockReservado = false WHERE s.id = :id AND s.stockReservado = true")

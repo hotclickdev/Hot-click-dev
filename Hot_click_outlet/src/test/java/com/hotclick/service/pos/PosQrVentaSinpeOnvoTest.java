@@ -103,6 +103,23 @@ class PosQrVentaSinpeOnvoTest {
     }
 
     @Test
+    @DisplayName("Idempotencia: el webhook registra su eventId y un reenvío del mismo evento no reprocesa")
+    void webhookEventIdIdempotente() {
+        sesion.setId(31L);
+        when(posQrRepo.findByStripeSessionId("ONVOPI:pi_1")).thenReturn(Optional.of(sesion));
+        when(sinpeOnvo.estadoIntent(sesion)).thenReturn(PosSinpeOnvoService.EstadoIntent.PAGADO);
+        when(posQrRepo.reclamarParaCompletar(sesion.getId())).thenReturn(1);
+        assertThat(service.confirmarSinpeOnvoPorWebhook("pi_1", "evt_1")).isTrue();
+        verify(posQrRepo).registrarEventoOnvo(sesion.getId(), "evt_1");
+
+        org.mockito.Mockito.clearInvocations(posQrRepo, sinpeOnvo, completionService);
+        when(posQrRepo.existsByOnvoEventoId("evt_1")).thenReturn(true);
+        assertThat(service.confirmarSinpeOnvoPorWebhook("pi_1", "evt_1")).isTrue();
+        verify(sinpeOnvo, never()).estadoIntent(any());
+        verify(completionService, never()).completarVentaTarjeta(any());
+    }
+
+    @Test
     @DisplayName("Webhook de un intent que no es del POS: ignorado")
     void webhookAjeno() {
         when(posQrRepo.findByStripeSessionId("ONVOPI:pi_x")).thenReturn(Optional.empty());

@@ -4334,3 +4334,10 @@ ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS stock_reservado 
 ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS reserva_expira TIMESTAMP;
 ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS reembolso_pendiente BOOLEAN NOT NULL DEFAULT FALSE;
 CREATE INDEX IF NOT EXISTS ix_pos_qr_sesion_stock_reservado ON hot_click_pos_qr_sesion_tb (stock_reservado);
+
+-- ====================================================
+-- V191__pos_qr_webhook_evento.sql (copia de la migración Flyway)
+-- ====================================================
+-- Idempotencia del webhook ONVO del POS por eventId. Aditiva: columna nueva nullable + índice único.
+ALTER TABLE hot_click_pos_qr_sesion_tb ADD COLUMN IF NOT EXISTS onvo_evento_id VARCHAR(100);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pos_qr_sesion_onvo_evento ON hot_click_pos_qr_sesion_tb (onvo_evento_id);

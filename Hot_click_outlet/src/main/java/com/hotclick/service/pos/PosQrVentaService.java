@@ -231,13 +231,30 @@ public class PosQrVentaService {
     /** Webhook {@code payment-intent.succeeded}: relee el intent y cierra la venta POS si coincide. */
     @Transactional
     public boolean confirmarSinpeOnvoPorWebhook(String intentId) {
+        return confirmarSinpeOnvoPorWebhook(intentId, null);
+    }
+
+    /**
+     * Igual que {@link #confirmarSinpeOnvoPorWebhook(String)} pero idempotente por {@code eventId}: un evento
+     * ya aplicado se reconoce (2xx) sin volver a consultar ONVO ni a tocar la venta.
+     */
+    @Transactional
+    public boolean confirmarSinpeOnvoPorWebhook(String intentId, String eventId) {
         if (intentId == null || intentId.isBlank()) return false;
+        String ev = (eventId == null || eventId.isBlank()) ? null : eventId.trim();
+        if (ev != null && ev.length() > 100) ev = null;
+        if (ev != null && posQrRepo.existsByOnvoEventoId(ev)) {
+            log.info("[POS-SINPE-ONVO] Evento ONVO duplicado ignorado");
+            return true;
+        }
         String pasarelaId = PosSinpeOnvoService.PREFIJO_ONVO_PI + intentId;
         PosQrSesion sesion = posQrRepo.findByStripeSessionId(pasarelaId).orElse(null);
         if (sesion == null) return false;
         if ("PAGADO".equals(sesion.getEstado())) return true;
         if (sinpeOnvo.estadoIntent(sesion) != PosSinpeOnvoService.EstadoIntent.PAGADO) return false;
-        return completarSiPagoPasarela(pasarelaId);
+        boolean ok = completarSiPagoPasarela(pasarelaId);
+        if (ok && ev != null && sesion.getId() != null) posQrRepo.registrarEventoOnvo(sesion.getId(), ev);
+        return ok;
     }
 
     @Transactional

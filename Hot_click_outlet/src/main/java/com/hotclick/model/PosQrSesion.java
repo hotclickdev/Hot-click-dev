@@ -79,6 +79,10 @@ public class PosQrSesion {
     @Column(name = "reembolso_pendiente", nullable = false)
     private boolean reembolsoPendiente = false;
 
+    /** eventId del webhook ONVO que cerró la sesión: idempotencia ante reenvíos. */
+    @Column(name = "onvo_evento_id", length = 100, unique = true)
+    private String onvoEventoId;
+
     public boolean isStockReservado() { return stockReservado; }
     public void setStockReservado(boolean stockReservado) { this.stockReservado = stockReservado; }
     public LocalDateTime getReservaExpira() { return reservaExpira; }
@@ -122,4 +126,6 @@ public class PosQrSesion {
     public void setMetodosHabilitados(String metodosHabilitados) { this.metodosHabilitados = metodosHabilitados; }
     public LocalDateTime getFechaPago() { return fechaPago; }
     public void setFechaPago(LocalDateTime fechaPago) { this.fechaPago = fechaPago; }
+    public String getOnvoEventoId() { return onvoEventoId; }
+    public void setOnvoEventoId(String onvoEventoId) { this.onvoEventoId = onvoEventoId; }
 }

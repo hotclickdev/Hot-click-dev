@@ -53,6 +53,15 @@ class OnvoWebhookPosQrTest {
     }
 
     @Test
+    @DisplayName("El webhook pasa el eventId al POS para idempotencia")
+    void webhookPasaEventId() {
+        controller.recibirWebhookOnvo(
+            "{\"id\":\"evt_9\",\"type\":\"payment-intent.succeeded\",\"data\":{\"id\":\"pi_pos\"}}",
+            "secret-onvo");
+        verify(posQrVentaService).confirmarSinpeOnvoPorWebhook("pi_pos", "evt_9");
+    }
+
+    @Test
     @DisplayName("Pago de tienda sigue el flujo ONVO normal")
     void pagoTiendaSiNoEsPosQr() {
         when(onvoPaymentProvider.procesarPagoVerificado("sess_tienda", "webhook"))
