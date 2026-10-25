@@ -132,13 +132,49 @@ class RolesCajeroDenyPorDefectoTest extends BaseIntegrationTest {
         Map<String, MockHttpServletRequestBuilder> pos = new LinkedHashMap<>();
         pos.put("POST /api/pos/venta", json(post("/api/pos/venta"), "{}"));
         pos.put("POST /api/pos/qr", json(post("/api/pos/qr"), "{}"));
-        pos.put("PUT /api/pos/qr/{token}/confirmar-sinpe", json(put("/api/pos/qr/no-existe/confirmar-sinpe"), "{}"));
         pos.put("DELETE /api/pos/qr/{token}", delete("/api/pos/qr/no-existe"));
         for (var e : pos.entrySet()) {
             assertThat(bloqueadoPorRol(call(e.getValue(), tokenCajero), MSG_CAJERO)).as(e.getKey()).isFalse();
         }
         // Y lo que no está en la lista sigue cerrado.
         assertThat(bloqueadoPorRol(call(json(post("/api/productos"), "{}"), tokenCajero), MSG_CAJERO)).isTrue();
+    }
+
+    @Test
+    void cajeroNoPuedeConfirmarSinpeManual() throws Exception {
+        // Decisión de Andrés pendiente (tope de monto + alerta Telegram + conciliación).
+        var r = call(json(put("/api/pos/qr/no-existe/confirmar-sinpe"), "{}"), tokenCajero);
+        assertThat(bloqueadoPorRol(r, MSG_CAJERO)).as(r.getStatus() + " " + r.getContentAsString()).isTrue();
+    }
+
+    @Test
+    void cajeroRecibe403EnLecturasFueraDelPos() throws Exception {
+        List<String> abiertos = new ArrayList<>();
+        for (String url : List.of("/api/ventas/clientes", "/api/crm/clientes/buscar?q=a",
+                                  "/api/wallet/saldo", "/api/wallet/transacciones", "/api/wallet/payouts",
+                                  "/api/pos/historial", "/api/pos/caja/historial", // reportes de ventas/turnos del negocio
+                                  "/api/empresa/equipo", "/api/empresa/perfil")) {
+            var r = call(get(url), tokenCajero);
+            if (!bloqueadoPorRol(r, MSG_CAJERO)) abiertos.add("GET " + url + " -> " + r.getStatus());
+        }
+        assertThat(abiertos).as("lecturas fuera del POS que CAJERO todavía puede hacer").isEmpty();
+        // Reportes /api/admin/**: ya cortan antes del interceptor (cadena de seguridad), igual 403.
+        assertThat(call(get("/api/admin/inventario/dashboard"), tokenCajero).getStatus()).isEqualTo(403);
+        assertThat(call(get("/api/admin/forecast/dashboard"), tokenCajero).getStatus()).isEqualTo(403);
+    }
+
+    @Test
+    void cajeroLeeLoQueNecesitaElPos() throws Exception {
+        List<String> cortados = new ArrayList<>();
+        for (String url : List.of("/api/pos/caja/activo", "/api/bodegas", "/api/productos/pos/categorias",
+                                  "/api/productos/pos/categoria/1", "/api/productos/buscar?q=a",
+                                  "/api/usuarios/" + uCajero.getId())) {
+            var r = call(get(url), tokenCajero);
+            if (r.getStatus() == 403) cortados.add("GET " + url + " -> " + r.getContentAsString());
+        }
+        assertThat(cortados).as("lecturas del POS que CAJERO no puede hacer").isEmpty();
+        assertThat(call(get("/api/pos/caja/activo"), tokenCajero).getStatus()).isEqualTo(200);
+        assertThat(call(get("/api/bodegas"), tokenCajero).getStatus()).isEqualTo(200);
     }
 
     @Test
@@ -149,5 +185,10 @@ class RolesCajeroDenyPorDefectoTest extends BaseIntegrationTest {
             assertThat(bloqueadoPorRol(call(b, tokenLector), MSG_LECTOR)).isTrue();
         }
         assertThat(call(json(post("/api/contacto"), "{}"), tokenLector).getStatus()).isNotEqualTo(403);
+        // LECTOR sigue leyendo como antes (la lista de lecturas es solo de CAJERO).
+        for (String url : List.of("/api/ventas/clientes", "/api/wallet/saldo", "/api/pos/historial")) {
+            assertThat(bloqueadoPorRol(call(get(url), tokenLector), MSG_LECTOR)).as(url).isFalse();
+            assertThat(call(get(url), tokenLector).getStatus()).as(url).isNotEqualTo(403);
+        }
     }
 }

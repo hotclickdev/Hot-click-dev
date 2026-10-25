@@ -23,7 +23,9 @@ import java.util.Set;
  * <p>
  * CAJERO recibe el mismo deny por defecto (fail-closed). Además de {@link PermiteLector} (acciones personales),
  * solo abre las rutas de {@link CajeroPermisos#RUTAS} (venta POS, abrir/cerrar turno, gestión de QR POS),
- * comparando método + patrón exacto del handler resuelto.
+ * comparando método + patrón exacto del handler resuelto. Las lecturas (GET/HEAD) de CAJERO también son
+ * deny por defecto: solo {@link PermiteLector} y {@link CajeroPermisos#LECTURAS}. LECTOR sigue leyendo todo.
+ * OPTIONS (preflight CORS) pasa siempre.
  */
 @Component
 public class LectorSoloLecturaInterceptor implements HandlerInterceptor {
@@ -46,13 +48,17 @@ public class LectorSoloLecturaInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(@NonNull HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull Object handler)
             throws Exception {
-        if (LECTURAS.contains(req.getMethod())) return true;
+        String metodo = req.getMethod();
+        if ("OPTIONS".equals(metodo)) return true;
+        boolean lectura = LECTURAS.contains(metodo);
         if (permiteLector(handler)) return true;
         String rol = propietarioGuard.rolRestringido(companyScope.getCurrentEmpresaIdOrOwn());
         if (rol == null) return true;
         boolean cajero = "CAJERO".equals(rol);
+        if (lectura && !cajero) return true; // LECTOR: lecturas sin cambios
+        Object patron = req.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         if (cajero && handler instanceof HandlerMethod
-                && CajeroPermisos.permite(req.getMethod(), req.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE))) {
+                && (lectura ? CajeroPermisos.permiteLectura(metodo, patron) : CajeroPermisos.permite(metodo, patron))) {
             return true;
         }
         res.setStatus(HttpServletResponse.SC_FORBIDDEN);
