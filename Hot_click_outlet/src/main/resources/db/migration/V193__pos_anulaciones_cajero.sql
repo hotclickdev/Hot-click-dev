@@ -25,3 +25,5 @@ CREATE TABLE IF NOT EXISTS hot_click_pos_anulacion_tb (
 );
 CREATE INDEX IF NOT EXISTS ix_pos_anulacion_empresa ON hot_click_pos_anulacion_tb (fk_id_empresa, fecha);
 CREATE INDEX IF NOT EXISTS ix_pos_anulacion_pedido ON hot_click_pos_anulacion_tb (fk_id_pedido);
+-- Seguridad (NO APTO d66ab5cd): una venta se anula/devuelve una sola vez por tipo, aun con carreras.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pos_anulacion_pedido_tipo ON hot_click_pos_anulacion_tb (fk_id_pedido, tipo);

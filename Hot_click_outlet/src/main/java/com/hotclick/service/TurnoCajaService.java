@@ -48,7 +48,8 @@ public class TurnoCajaService {
 
     @Transactional
     public TurnoCaja cerrarTurno(Long turnoId, Integer montoDeclarado, String notas) {
-        TurnoCaja turno = turnoCajaRepository.findById(turnoId)
+        // A3: FOR UPDATE — una anulación en curso termina (o espera) antes de que se calcule el cierre.
+        TurnoCaja turno = turnoCajaRepository.findByIdForUpdate(turnoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
         assertPuedeOperarTurno(turno);
         if (!"ABIERTO".equals(turno.getEstado())) {

@@ -27,6 +27,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TurnoCajaService — tenant/dueño en cerrar")
@@ -58,7 +59,8 @@ class TurnoCajaServiceCerrarTenantTest {
         turno.setTotalSinpe(0);
         turno.setTotalTarjeta(0);
         turno.setTotalTransferencia(0);
-        when(turnoCajaRepository.findById(1L)).thenReturn(Optional.of(turno));
+        lenient().when(turnoCajaRepository.findById(1L)).thenReturn(Optional.of(turno));
+        lenient().when(turnoCajaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(turno));
     }
 
     @Test

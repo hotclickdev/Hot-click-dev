@@ -78,4 +78,24 @@ class PosAnulacionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"x\"}"))
             .andExpect(status().isNotFound());
     }
+
+    @Test
+    @DisplayName("Mensajes internos no llegan al cliente: 403/400/409 usan textos de lista blanca")
+    void mensajesInternosNoSeFiltran() throws Exception {
+        when(service.anular(eq(51L), anyLong(), any())).thenThrow(new SecurityException("SQL fk_id_empresa=99 detalle"));
+        mvc.perform(post("/api/pos/ventas/51/anular").header("Authorization", "Bearer tok")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"x\"}"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value(PosAnulacionController.MSG_403));
+        when(service.anular(eq(52L), anyLong(), any())).thenThrow(new IllegalArgumentException("Producto 10 inactivo"));
+        mvc.perform(post("/api/pos/ventas/52/anular").header("Authorization", "Bearer tok")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"x\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(PosAnulacionController.MSG_400));
+        when(service.anular(eq(53L), anyLong(), any())).thenThrow(new IllegalStateException(PosAnulacionService.MSG_YA_ANULADA));
+        mvc.perform(post("/api/pos/ventas/53/anular").header("Authorization", "Bearer tok")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"x\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value(PosAnulacionService.MSG_YA_ANULADA));
+    }
 }

@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 
 /** A3: bitácora de anulaciones y devoluciones POS (usuario, motivo y hora). */
 @Entity
-@Table(name = "hot_click_pos_anulacion_tb")
+@Table(name = "hot_click_pos_anulacion_tb", uniqueConstraints = @UniqueConstraint(
+    name = "uq_pos_anulacion_pedido_tipo", columnNames = {"fk_id_pedido", "tipo"}))
 public class PosAnulacion {
 
     public static final String ANULACION = "ANULACION";

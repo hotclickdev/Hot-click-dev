@@ -15,6 +15,12 @@ import java.util.Optional;
 @Repository
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
+    /** A3: bloquea la venta (SELECT ... FOR UPDATE) antes de anularla/devolverla: evita la doble anulación. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Pedido p WHERE p.id = :id")
+    Optional<Pedido> findByIdForUpdate(@Param("id") Long id);
+
+
     Optional<Pedido> findByNumeroPedido(String numeroPedido);
 
     /**

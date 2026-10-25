@@ -43,9 +43,25 @@ public class PosAnulacionService {
     private static final Logger log = LoggerFactory.getLogger(PosAnulacionService.class);
     static final int MOTIVO_MAX = 500;
     static final String ROL_CAJERO = "CAJERO";
-    static final String MSG_SOLO_DUENIO = "Solo el dueño del negocio o un ADMIN puede hacer esto.";
+    public static final String MSG_SOLO_DUENIO = "Solo el dueño del negocio o un ADMIN puede hacer esto.";
     static final String ESTADO_ANULADO = "ANULADO";
     static final String ESTADO_DEVUELTO = "DEVUELTO";
+    public static final String MSG_SESION = "Sesión no válida";
+    public static final String MSG_SIN_NEGOCIO = "No hay negocio en la sesión";
+    public static final String MSG_MOTIVO = "El motivo es obligatorio.";
+    public static final String MSG_MOTIVO_LARGO = "El motivo no puede pasar de " + MOTIVO_MAX + " caracteres.";
+    public static final String MSG_SOLO_POS = "Solo se anulan o devuelven ventas de caja (POS).";
+    public static final String MSG_YA_ANULADA = "Esta venta ya fue anulada o devuelta.";
+    public static final String MSG_CAJA_CERRADA = "La caja de esa venta ya se cerró: la anulación la aprueba el dueño o un ADMIN.";
+    public static final String MSG_OTRO_TURNO = "Solo podés anular ventas de tu propio turno abierto.";
+    public static final String MSG_PAGO_ELECTRONICO =
+        "Esta venta se cobró por un medio electrónico: no se anula ni devuelve aquí sin reembolso por la pasarela.";
+    public static final String MSG_STOCK =
+        "No se pudo reponer el inventario de la venta; no se aplicó nada. Revisá que los productos estén activos.";
+    /** Mensajes que el controller puede mostrar tal cual; cualquier otro se reemplaza por uno genérico. */
+    public static final Set<String> MENSAJES_PUBLICOS = Set.of(MSG_SOLO_DUENIO, MSG_SESION, MSG_SIN_NEGOCIO,
+        MSG_MOTIVO, MSG_MOTIVO_LARGO, MSG_SOLO_POS, MSG_YA_ANULADA, MSG_CAJA_CERRADA, MSG_OTRO_TURNO,
+        MSG_PAGO_ELECTRONICO, MSG_STOCK);
     private static final Set<String> ESTADOS_FINALES = Set.of(ESTADO_ANULADO, ESTADO_DEVUELTO, "CANCELADO");
 
     private final CompanyScope companyScope;
@@ -58,12 +74,14 @@ public class PosAnulacionService {
     private final TurnoCajaService turnoCajaService;
     private final StockService stockService;
     private final PosAnulacionRepository anulacionRepository;
+    private final com.hotclick.repository.PagoRepository pagoRepository;
 
     public PosAnulacionService(CompanyScope companyScope, PropietarioGuard propietarioGuard,
                                MiembroEmpresaRepository miembros, PedidoRepository pedidoRepository,
                                PosVentaTurnoRepository ventaTurnoRepository, PosQrSesionRepository qrSesionRepository,
                                TurnoCajaRepository turnoCajaRepository, TurnoCajaService turnoCajaService,
-                               StockService stockService, PosAnulacionRepository anulacionRepository) {
+                               StockService stockService, PosAnulacionRepository anulacionRepository,
+                               com.hotclick.repository.PagoRepository pagoRepository) {
         this.companyScope = companyScope;
         this.propietarioGuard = propietarioGuard;
         this.miembros = miembros;
@@ -74,6 +92,7 @@ public class PosAnulacionService {
         this.turnoCajaService = turnoCajaService;
         this.stockService = stockService;
         this.anulacionRepository = anulacionRepository;
+        this.pagoRepository = pagoRepository;
     }
 
     @Transactional
@@ -94,25 +113,38 @@ public class PosAnulacionService {
         return anulacionRepository.findByEmpresaIdOrderByFechaDesc(empresaId);
     }
 
+    /**
+     * Concurrencia: la venta se lee con FOR UPDATE (primera carga en la transacción) y luego el turno con FOR UPDATE,
+     * siempre en ese orden; cerrarTurno también bloquea el turno. La segunda anulación concurrente espera, ve el
+     * estado final y se rechaza; UNIQUE(fk_id_pedido, tipo) es la red de seguridad.
+     * Una DEVOLUCION solo cambia estado e inventario y deja bitácora: NO mueve dinero (el reintegro es manual,
+     * en efectivo, porque solo se aceptan ventas cobradas en efectivo y sin Pago de pasarela).
+     * Si reponer inventario falla (p. ej. producto inactivo) se revierte TODO: no hay anulación sin reposición.
+     */
     private PosAnulacion ejecutar(String tipo, Long pedidoId, Long empresaToken, String motivoCrudo) {
         String motivo = exigirMotivo(motivoCrudo);
         Usuario actor = exigirActor();
-        Pedido pedido = pedidoId == null ? null : pedidoRepository.findById(pedidoId).orElse(null);
+        Long empresaId = exigirEmpresa(empresaToken, actor);
+        Pedido pedido = pedidoId == null ? null : pedidoRepository.findByIdForUpdate(pedidoId).orElse(null);
         if (pedido == null) throw new RecursoNoEncontradoException("Venta", pedidoId);
         Long empresaPedido = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
-        Long empresaId = exigirEmpresa(empresaToken != null ? empresaToken : empresaPedido, actor);
         if (empresaPedido == null || !empresaPedido.equals(empresaId)) {
             // Otro negocio (o venta sin negocio): no se revela que existe.
             throw new RecursoNoEncontradoException("Venta", pedidoId);
         }
         if (!OrigenPedido.POS.codigo().equals(pedido.getOrigen())) {
-            throw new IllegalArgumentException("Solo se anulan o devuelven ventas de caja (POS).");
+            throw new IllegalArgumentException(MSG_SOLO_POS);
         }
         if (pedido.getEstadoPedido() != null && ESTADOS_FINALES.contains(pedido.getEstadoPedido())) {
-            throw new IllegalStateException("Esta venta ya fue anulada o devuelta.");
+            throw new IllegalStateException(MSG_YA_ANULADA);
+        }
+        // Fail-closed: solo efectivo sin Pago de pasarela (ONVO/SINPE/tarjeta exigen reembolso por la pasarela).
+        if (!com.hotclick.service.VentaService.esMetodoSinPasarela(pedido.getMetodoPago())
+            || pagoRepository.findTopByPedidoId(pedido.getId()).isPresent()) {
+            throw new IllegalStateException(MSG_PAGO_ELECTRONICO);
         }
 
-        TurnoCaja turno = resolverTurno(pedido);
+        TurnoCaja turno = resolverTurnoBloqueado(pedido);
         boolean privilegiado = esPrivilegiado(actor, empresaId);
         String rol = privilegiado ? rolPrivilegiado(actor) : rolDeEquipo(actor, empresaId);
         if (!privilegiado) {
@@ -138,28 +170,29 @@ public class PosAnulacionService {
         reg.setMotivo(motivo);
         reg.setMonto(pedido.getTotalPedido());
         reg.setFecha(LocalDateTime.now(Constants.ZONA_CR));
-        PosAnulacion saved = anulacionRepository.save(reg);
+        PosAnulacion saved = anulacionRepository.saveAndFlush(reg);
         log.info("[POS] {} de venta {} por usuario {} ({})", tipo, pedido.getId(), actor.getId(), rol);
         return saved;
     }
 
     static String exigirMotivo(String motivo) {
         String m = motivo == null ? "" : motivo.strip();
-        if (m.isEmpty()) throw new IllegalArgumentException("El motivo es obligatorio.");
+        if (m.isEmpty()) throw new IllegalArgumentException(MSG_MOTIVO);
         if (m.length() > MOTIVO_MAX) {
-            throw new IllegalArgumentException("El motivo no puede pasar de " + MOTIVO_MAX + " caracteres.");
+            throw new IllegalArgumentException(MSG_MOTIVO_LARGO);
         }
         return m;
     }
 
     private Usuario exigirActor() {
         Usuario u = companyScope.getCurrentUser();
-        if (u == null || u.getId() == null) throw new SecurityException("Sesión no válida");
+        if (u == null || u.getId() == null) throw new SecurityException(MSG_SESION);
         return u;
     }
 
+    /** Solo el empresaId del token: sin él se niega (nunca se toma el negocio de la venta). */
     private Long exigirEmpresa(Long empresaId, Usuario actor) {
-        if (empresaId == null) throw new SecurityException("No hay negocio en la sesión");
+        if (empresaId == null) throw new SecurityException(MSG_SIN_NEGOCIO);
         return empresaId;
     }
 
@@ -185,30 +218,38 @@ public class PosAnulacionService {
             throw new SecurityException(MSG_SOLO_DUENIO);
         }
         if (turno == null || !"ABIERTO".equals(turno.getEstado())) {
-            throw new SecurityException("La caja de esa venta ya se cerró: la anulación la aprueba el dueño o un ADMIN.");
+            throw new SecurityException(MSG_CAJA_CERRADA);
         }
         Long empresaTurno = turno.getEmpresa() != null ? turno.getEmpresa().getId() : null;
         Long cajeroTurno = turno.getUsuario() != null ? turno.getUsuario().getId() : null;
         if (!empresaId.equals(empresaTurno) || !actor.getId().equals(cajeroTurno)) {
-            throw new SecurityException("Solo podés anular ventas de tu propio turno abierto.");
+            throw new SecurityException(MSG_OTRO_TURNO);
         }
     }
 
-    /** Turno de la venta: caja directa (venta_turno) o QR (sesión). Sin dato → null (= cerrado). */
-    private TurnoCaja resolverTurno(Pedido pedido) {
+    /** Turno de la venta (caja directa o QR), bloqueado FOR UPDATE. Sin dato → null (= cerrado). */
+    private TurnoCaja resolverTurnoBloqueado(Pedido pedido) {
         Long turnoId = ventaTurnoRepository.findByPedidoId(pedido.getId())
             .map(vt -> vt.getTurnoId()).orElse(null);
-        if (turnoId != null) return turnoCajaRepository.findById(turnoId).orElse(null);
-        return qrSesionRepository.findByPedidoId(pedido.getId())
-            .map(s -> s.getTurno()).orElse(null);
+        if (turnoId == null) {
+            List<Long> qr = turnoCajaRepository.findTurnoIdDeSesionQr(pedido.getId());
+            turnoId = qr == null ? null : qr.stream().filter(java.util.Objects::nonNull).findFirst().orElse(null);
+        }
+        return turnoId == null ? null : turnoCajaRepository.findByIdForUpdate(turnoId).orElse(null);
     }
 
     private void reponerStock(Pedido pedido, String tipo, Usuario actor) {
         List<PedidoItem> items = pedido.getItems() != null ? pedido.getItems() : List.of();
         for (PedidoItem item : items) {
             if (item.getProducto() == null || item.getCantidad() == null || item.getCantidad() <= 0) continue;
-            stockService.ajustarEntrada(item.getProducto().getId(), item.getCantidad(),
-                tipo + " " + pedido.getNumeroPedido(), actor.getCorreo());
+            try {
+                stockService.ajustarEntrada(item.getProducto().getId(), item.getCantidad(),
+                    tipo + " " + pedido.getNumeroPedido(), actor.getCorreo());
+            } catch (RuntimeException e) {
+                log.warn("[POS] {} de venta {}: no se repuso stock del producto {} ({})", tipo, pedido.getId(),
+                    item.getProducto().getId(), e.getClass().getSimpleName());
+                throw new IllegalStateException(MSG_STOCK);
+            }
         }
     }
 }

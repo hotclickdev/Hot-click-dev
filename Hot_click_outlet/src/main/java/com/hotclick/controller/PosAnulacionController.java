@@ -57,15 +57,26 @@ public class PosAnulacionController {
         try {
             return ResponseEntity.ok(ResponseDTO.success(ok, aVista(accion.get())));
         } catch (TenantAccessDeniedException | SecurityException | AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(publico(e, MSG_403)));
         } catch (RecursoNoEncontradoException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseDTO.error("Venta no encontrada"));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(publico(e, MSG_400)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(publico(e, MSG_400)));
         } catch (Exception e) {
             log.error("[POS] Error en anulación/devolución ({})", e.getClass().getSimpleName());
             return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo registrar la operación"));
         }
+    }
+
+    static final String MSG_403 = "No tenés permiso para esta operación.";
+    static final String MSG_400 = "No se pudo procesar la solicitud.";
+
+    /** Solo mensajes de la lista blanca del servicio llegan al cliente; el resto se reemplaza. */
+    static String publico(Exception e, String porDefecto) {
+        String m = e.getMessage();
+        return m != null && PosAnulacionService.MENSAJES_PUBLICOS.contains(m) ? m : porDefecto;
     }
 
     private static Object aVista(Object o) {

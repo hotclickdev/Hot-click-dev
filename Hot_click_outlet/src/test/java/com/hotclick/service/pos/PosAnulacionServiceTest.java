@@ -42,6 +42,7 @@ class PosAnulacionServiceTest {
     @Mock TurnoCajaService turnoCajaService;
     @Mock StockService stockService;
     @Mock PosAnulacionRepository anulacionRepository;
+    @Mock com.hotclick.repository.PagoRepository pagoRepository;
 
     PosAnulacionService service;
     Empresa empresa;
@@ -56,7 +57,7 @@ class PosAnulacionServiceTest {
     void setUp() {
         service = new PosAnulacionService(companyScope, propietarioGuard, miembros, pedidoRepository,
             ventaTurnoRepository, qrSesionRepository, turnoCajaRepository, turnoCajaService, stockService,
-            anulacionRepository);
+            anulacionRepository, pagoRepository);
         empresa = new Empresa();
         empresa.setId(EMP);
         actor = new Usuario();
@@ -78,7 +79,7 @@ class PosAnulacionServiceTest {
         venta.setTotalPedido(3000);
         venta.setNumeroPedido("POS-1");
         venta.setItems(List.of(item));
-        when(pedidoRepository.findById(PEDIDO)).thenReturn(Optional.of(venta));
+        when(pedidoRepository.findByIdForUpdate(PEDIDO)).thenReturn(Optional.of(venta));
 
         turno = new TurnoCaja();
         turno.setId(77L);
@@ -86,8 +87,8 @@ class PosAnulacionServiceTest {
         turno.setUsuario(actor);
         turno.setEstado("ABIERTO");
         when(ventaTurnoRepository.findByPedidoId(PEDIDO)).thenReturn(Optional.of(new PosVentaTurno(PEDIDO, 77L)));
-        when(turnoCajaRepository.findById(77L)).thenReturn(Optional.of(turno));
-        when(anulacionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(turnoCajaRepository.findByIdForUpdate(77L)).thenReturn(Optional.of(turno));
+        when(anulacionRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
     }
 
     private void comoRolDeEquipo(String rol) {
@@ -117,7 +118,7 @@ class PosAnulacionServiceTest {
         LocalDateTime antes = LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).minusSeconds(1);
         service.anular(PEDIDO, EMP, "error de digitación");
         ArgumentCaptor<PosAnulacion> cap = ArgumentCaptor.forClass(PosAnulacion.class);
-        verify(anulacionRepository).save(cap.capture());
+        verify(anulacionRepository).saveAndFlush(cap.capture());
         PosAnulacion a = cap.getValue();
         assertThat(a.getUsuarioId()).isEqualTo(7L);
         assertThat(a.getMotivo()).isEqualTo("error de digitación");
@@ -155,7 +156,7 @@ class PosAnulacionServiceTest {
     void cajero_sinTurno_denegado() {
         comoRolDeEquipo("CAJERO");
         when(ventaTurnoRepository.findByPedidoId(PEDIDO)).thenReturn(Optional.empty());
-        when(qrSesionRepository.findByPedidoId(PEDIDO)).thenReturn(Optional.empty());
+        when(turnoCajaRepository.findTurnoIdDeSesionQr(PEDIDO)).thenReturn(List.of());
         assertThatThrownBy(() -> service.anular(PEDIDO, EMP, "x")).isInstanceOf(SecurityException.class);
         verifySinEfectos();
     }
@@ -279,7 +280,7 @@ class PosAnulacionServiceTest {
         comoPropietario();
         venta.setEstadoPedido("ANULADO");
         assertThatThrownBy(() -> service.devolver(PEDIDO, EMP, "x")).isInstanceOf(IllegalStateException.class);
-        verify(anulacionRepository, never()).save(any());
+        verify(anulacionRepository, never()).saveAndFlush(any());
         verify(stockService, never()).ajustarEntrada(any(), anyInt(), any(), any());
         assertThat(venta.getEstadoPedido()).isEqualTo("ANULADO");
     }
@@ -297,14 +298,63 @@ class PosAnulacionServiceTest {
     void ventaQr_turnoDeSesion() {
         comoRolDeEquipo("CAJERO");
         when(ventaTurnoRepository.findByPedidoId(PEDIDO)).thenReturn(Optional.empty());
-        PosQrSesion s = new PosQrSesion();
-        s.setTurno(turno);
-        when(qrSesionRepository.findByPedidoId(PEDIDO)).thenReturn(Optional.of(s));
+        when(turnoCajaRepository.findTurnoIdDeSesionQr(PEDIDO)).thenReturn(List.of(77L));
         assertThat(service.anular(PEDIDO, EMP, "x").getTurnoId()).isEqualTo(77L);
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"ONVO", "SINPE", "TARJETA", "STRIPE", "TRANSFERENCIA", "RARO"})
+    @DisplayName("Venta cobrada por medio electrónico/desconocido → rechazada aun al dueño (sin reembolso por pasarela)")
+    void pagoElectronico_rechazado(String metodo) {
+        comoPropietario();
+        venta.setMetodoPago(metodo);
+        assertThatThrownBy(() -> service.devolver(PEDIDO, EMP, "x"))
+            .isInstanceOf(IllegalStateException.class).hasMessage(PosAnulacionService.MSG_PAGO_ELECTRONICO);
+        assertThatThrownBy(() -> service.anular(PEDIDO, EMP, "x")).isInstanceOf(IllegalStateException.class);
+        verifySinEfectos();
+    }
+
+    @Test
+    @DisplayName("Efectivo pero con Pago de pasarela registrado → rechazada (fail-closed)")
+    void pagoPasarelaRegistrado_rechazado() {
+        comoPropietario();
+        when(pagoRepository.findTopByPedidoId(PEDIDO)).thenReturn(Optional.of(new com.hotclick.model.Pago()));
+        assertThatThrownBy(() -> service.anular(PEDIDO, EMP, "x")).hasMessage(PosAnulacionService.MSG_PAGO_ELECTRONICO);
+        verifySinEfectos();
+    }
+
+    @Test
+    @DisplayName("Token sin empresaId → 403 aunque la venta tenga negocio (no se usa el de la venta)")
+    void sinEmpresaToken_noUsaLaDeLaVenta() {
+        comoPropietario();
+        when(companyScope.isAdminIT()).thenReturn(true);
+        assertThatThrownBy(() -> service.anular(PEDIDO, null, "x")).isInstanceOf(SecurityException.class);
+        verify(pedidoRepository, never()).findByIdForUpdate(any());
+        verifySinEfectos();
+    }
+
+    @Test
+    @DisplayName("Falla al reponer stock (producto inactivo) → mensaje fijo y nada se registra")
+    void stockFalla_todoSeRevierte() {
+        comoPropietario();
+        doThrow(new IllegalArgumentException("Producto 10 inactivo (detalle interno)"))
+            .when(stockService).ajustarEntrada(any(), anyInt(), any(), any());
+        assertThatThrownBy(() -> service.anular(PEDIDO, EMP, "x"))
+            .isInstanceOf(IllegalStateException.class).hasMessage(PosAnulacionService.MSG_STOCK);
+        verify(anulacionRepository, never()).saveAndFlush(any());
+        verify(turnoCajaService, never()).revertirTotales(any(), any(), any());
+        assertThat(venta.getEstadoPedido()).isEqualTo("ENTREGADO");
+    }
+
+    @Test
+    @DisplayName("Todos los mensajes que lanza el servicio están en la lista blanca pública")
+    void mensajesEnListaBlanca() {
+        assertThat(PosAnulacionService.MENSAJES_PUBLICOS).contains(PosAnulacionService.MSG_YA_ANULADA,
+            PosAnulacionService.MSG_CAJA_CERRADA, PosAnulacionService.MSG_PAGO_ELECTRONICO, PosAnulacionService.MSG_STOCK);
+    }
+
     private void verifySinEfectos() {
-        verify(anulacionRepository, never()).save(any());
+        verify(anulacionRepository, never()).saveAndFlush(any());
         verify(stockService, never()).ajustarEntrada(any(), anyInt(), any(), any());
         verify(turnoCajaService, never()).revertirTotales(any(), any(), any());
         assertThat(venta.getEstadoPedido()).isNotIn("ANULADO", "DEVUELTO");
