@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.ResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.util.ClassUtils;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -49,10 +50,16 @@ public class LectorSoloLecturaInterceptor implements HandlerInterceptor {
         return false;
     }
 
-    /** Solo un HandlerMethod con la anotación (en método o clase) abre la escritura; lo demás se niega. */
-    private static boolean permiteLector(Object handler) {
+    /**
+     * Solo un HandlerMethod con la anotación declarada localmente (en el método o en la clase del usuario,
+     * resolviendo el proxy CGLIB con ClassUtils.getUserClass) abre la escritura; no se hereda de superclases
+     * ni interfaces. Todo lo demás se niega.
+     */
+    static boolean permiteLector(Object handler) {
         if (!(handler instanceof HandlerMethod hm)) return false;
-        return hm.hasMethodAnnotation(PermiteLector.class)
-            || AnnotatedElementUtils.hasAnnotation(hm.getBeanType(), PermiteLector.class);
+        Class<?> clase = ClassUtils.getUserClass(hm.getBeanType());
+        java.lang.reflect.Method metodo = ClassUtils.getMostSpecificMethod(hm.getMethod(), clase);
+        return metodo.getDeclaringClass() == clase && metodo.getDeclaredAnnotation(PermiteLector.class) != null
+            || AnnotationUtils.isAnnotationDeclaredLocally(PermiteLector.class, clase);
     }
 }

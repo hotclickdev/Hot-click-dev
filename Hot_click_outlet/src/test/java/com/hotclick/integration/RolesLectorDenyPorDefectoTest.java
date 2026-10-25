@@ -139,4 +139,12 @@ class RolesLectorDenyPorDefectoTest extends BaseIntegrationTest {
         assertThat(login).isNotEqualTo(403);
         assertThat(status(json(post("/api/auth/logout"), "{}"), tokenLector)).isNotEqualTo(403);
     }
+
+    @Test
+    void visibilidadEmpresaSoloDueno() throws Exception {
+        var b = json(put("/api/empresa/perfil/visibilidad"), "{\"visibilidadPublica\":false}");
+        assertThat(status(b, tokenEditor)).as("EDITOR").isEqualTo(403);
+        assertThat(status(json(put("/api/empresa/perfil/visibilidad"), "{\"visibilidadPublica\":false}"), tokenLector)).as("LECTOR").isEqualTo(403);
+        assertThat(status(json(put("/api/empresa/perfil/visibilidad"), "{\"visibilidadPublica\":true}"), tokenDueno)).as("dueño").isNotEqualTo(403);
+    }
 }
