@@ -61,4 +61,8 @@ public interface PosQrSesionRepository extends JpaRepository<PosQrSesion, Long> 
         WHERE s.estado = 'PENDIENTE' AND s.fechaExpiracion < :ahora
         """)
     int expirarSesionesVencidas(@Param("ahora") LocalDateTime ahora);
+
+    /** MEDIO 3: QR pendientes que hoy retienen stock de la empresa. */
+    @Query("SELECT COUNT(s) FROM PosQrSesion s WHERE s.empresa.id = :empresaId AND s.estado = 'PENDIENTE' AND s.stockReservado = true")
+    long contarPendientesConReserva(@org.springframework.data.repository.query.Param("empresaId") Long empresaId);
 }

@@ -32,6 +32,8 @@ public class PosQrStockReserva {
 
     private static final Logger log = LoggerFactory.getLogger(PosQrStockReserva.class);
     static final String MSG_NO_CONFIGURADA = "La reserva de stock del QR no está configurada.";
+    public static final String MSG_TOPE_PENDIENTES =
+        "Hay demasiados cobros QR pendientes. Cobrá o cancelá alguno antes de generar otro.";
 
     @Autowired private ProductoRepository productoRepo;
     @Autowired private PosQrSesionRepository posQrRepo;
@@ -40,7 +42,36 @@ public class PosQrStockReserva {
     @Value("${pos.qr.reserva-minutos:}")
     private String reservaMinutos;
 
+    /** Máximo de QR pendientes con stock reservado por empresa (MEDIO 3). */
+    @Value("${pos.qr.max-pendientes-empresa:}")
+    private String maxPendientesEmpresa;
+
     void setReservaMinutosParaTest(String v) { this.reservaMinutos = v; }
+    void setMaxPendientesParaTest(String v) { this.maxPendientesEmpresa = v; }
+
+    /** Tope de pendientes; vacío, no numérico o ≤ 0 = no configurado (fail-closed: no se genera el QR). */
+    int maxPendientes() {
+        try {
+            int m = Integer.parseInt(maxPendientesEmpresa == null ? "" : maxPendientesEmpresa.trim());
+            if (m > 0) return m;
+        } catch (NumberFormatException ignored) {
+            // cae al fail-closed
+        }
+        throw new IllegalStateException(MSG_NO_CONFIGURADA);
+    }
+
+    /** MEDIO 3: un QR nuevo no puede dejar más reservas pendientes que el tope de la empresa. */
+    private void verificarTope(PosQrSesion sesion) {
+        int tope = maxPendientes();
+        if (sesion.getEmpresa() == null || sesion.getEmpresa().getId() == null) {
+            throw new IllegalStateException(MSG_TOPE_PENDIENTES);
+        }
+        long pendientes = posQrRepo.contarPendientesConReserva(sesion.getEmpresa().getId());
+        if (pendientes >= tope) {
+            log.warn("[POS-QR] Tope de QR pendientes alcanzado para empresa {}", sesion.getEmpresa().getId());
+            throw new IllegalStateException(MSG_TOPE_PENDIENTES);
+        }
+    }
 
     /** Minutos de reserva; vacío, no numérico o ≤ 0 = no configurado (fail-closed: no se genera el QR). */
     int minutos() {
@@ -60,6 +91,7 @@ public class PosQrStockReserva {
     @Transactional
     public void reservar(PosQrSesion sesion, List<Map<String, Object>> items, LocalDateTime ahora) {
         int m = minutos();
+        verificarTope(sesion);
         Map<Long, Integer> pedidas = cantidadesPorProducto(items);
         Map<Long, Producto> productos = bloquear(pedidas.keySet());
         pedidas.forEach((productoId, cantidad) -> {

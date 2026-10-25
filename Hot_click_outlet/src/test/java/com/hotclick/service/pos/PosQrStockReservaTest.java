@@ -50,9 +50,10 @@ class PosQrStockReservaTest {
     @DisplayName("Generar el QR reserva las unidades y fija la expiración configurada")
     void reservaAlGenerar() {
         reserva.setReservaMinutosParaTest("15");
+        reserva.setMaxPendientesParaTest("3");
         Producto p = producto(5, 1);
         when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(p));
-        PosQrSesion s = new PosQrSesion();
+        PosQrSesion s = sesionEmpresa();
         reserva.reservar(s, items(2), AHORA);
         assertThat(p.getStockReservado()).isEqualTo(3);
         assertThat(s.isStockReservado()).isTrue();
@@ -63,8 +64,9 @@ class PosQrStockReservaTest {
     @DisplayName("Sin stock disponible (contando reservas ajenas) no se genera el QR")
     void sinStockNoReserva() {
         reserva.setReservaMinutosParaTest("15");
+        reserva.setMaxPendientesParaTest("3");
         when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(producto(3, 2)));
-        PosQrSesion s = new PosQrSesion();
+        PosQrSesion s = sesionEmpresa();
         assertThatThrownBy(() -> reserva.reservar(s, items(2), AHORA)).isInstanceOf(StockInsuficienteException.class);
         assertThat(s.isStockReservado()).isFalse();
     }
@@ -84,7 +86,7 @@ class PosQrStockReservaTest {
     @DisplayName("Liberar devuelve las unidades una sola vez y nunca deja el contador negativo")
     void liberaUnaVez() {
         Producto p = producto(5, 1);
-        PosQrSesion s = new PosQrSesion();
+        PosQrSesion s = sesionEmpresa();
         s.setId(7L);
         s.setStockReservado(true);
         when(posQrRepo.soltarReserva(7L)).thenReturn(1, 0);
@@ -99,7 +101,7 @@ class PosQrStockReservaTest {
     @Test
     @DisplayName("El barrido libera las reservas vencidas o de sesiones cerradas sin venta")
     void barridoLibera() {
-        PosQrSesion s = new PosQrSesion();
+        PosQrSesion s = sesionEmpresa();
         s.setId(8L);
         s.setStockReservado(true);
         s.setItemsJson("[{\"productoId\":10,\"cantidad\":2}]");
@@ -109,5 +111,41 @@ class PosQrStockReservaTest {
         when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(p));
         assertThat(reserva.barrerVencidas(AHORA)).isEqualTo(1);
         assertThat(p.getStockReservado()).isZero();
+    }
+
+    private static PosQrSesion sesionEmpresa() {
+        com.hotclick.model.Empresa e = new com.hotclick.model.Empresa();
+        e.setId(7L);
+        PosQrSesion s = new PosQrSesion();
+        s.setEmpresa(e);
+        return s;
+    }
+
+    @Test
+    @DisplayName("MEDIO 3: con el tope de QR pendientes alcanzado no se reserva ni se bloquea stock")
+    void topePendientes() {
+        reserva.setReservaMinutosParaTest("15");
+        reserva.setMaxPendientesParaTest("3");
+        when(posQrRepo.contarPendientesConReserva(7L)).thenReturn(3L);
+        PosQrSesion s = sesionEmpresa();
+        assertThatThrownBy(() -> reserva.reservar(s, items(1), AHORA))
+            .isInstanceOf(IllegalStateException.class).hasMessage(PosQrStockReserva.MSG_TOPE_PENDIENTES);
+        assertThat(s.isStockReservado()).isFalse();
+        verify(productoRepo, never()).findAllByIdsForUpdate(any());
+    }
+
+    @Test
+    @DisplayName("MEDIO 3: tope no configurado o sin empresa = fail-closed")
+    void topeFailClosed() {
+        reserva.setReservaMinutosParaTest("15");
+        for (String v : new String[]{null, "", "x", "0", "-1"}) {
+            reserva.setMaxPendientesParaTest(v);
+            assertThatThrownBy(() -> reserva.reservar(sesionEmpresa(), items(1), AHORA))
+                .isInstanceOf(IllegalStateException.class).hasMessage(PosQrStockReserva.MSG_NO_CONFIGURADA);
+        }
+        reserva.setMaxPendientesParaTest("3");
+        assertThatThrownBy(() -> reserva.reservar(new PosQrSesion(), items(1), AHORA))
+            .isInstanceOf(IllegalStateException.class).hasMessage(PosQrStockReserva.MSG_TOPE_PENDIENTES);
+        verify(productoRepo, never()).findAllByIdsForUpdate(any());
     }
 }
