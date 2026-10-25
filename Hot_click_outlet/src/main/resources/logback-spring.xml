@@ -48,5 +48,7 @@
   <logger name="org.springframework.web"       level="WARN" />
   <logger name="org.hibernate"                 level="WARN" />
   <logger name="com.zaxxer.hikari"             level="WARN" />
+  <!-- QA4-004: su WARN/ERROR incluye "Failing row contains (...)" con cédula, correo y hash de contraseña. -->
+  <logger name="org.hibernate.engine.jdbc.spi.SqlExceptionHelper" level="OFF" />
 
 </configuration>
