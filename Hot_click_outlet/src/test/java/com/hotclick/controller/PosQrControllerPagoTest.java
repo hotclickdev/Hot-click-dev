@@ -32,9 +32,9 @@ class PosQrControllerPagoTest {
     @Test
     @DisplayName("Pagos no disponibles → 400, no 500")
     void noDisponible400() {
-        when(posQrService.iniciarTilopay("tokentarjetaqr01", "SINPE"))
+        when(posQrService.iniciarTilopay("tokentarjetaqr01", "TARJETA"))
             .thenThrow(new IllegalStateException("Los pagos en línea no están disponibles."));
-        ResponseEntity<?> resp = controller.iniciarTilopay("tokentarjetaqr01", "SINPE");
+        ResponseEntity<?> resp = controller.iniciarTilopay("tokentarjetaqr01", "TARJETA");
         assertThat(resp.getStatusCode().value()).isEqualTo(400);
     }
 

@@ -34,6 +34,7 @@ public class PosQrVentaService {
     @Autowired private ConfirmadorDistintoGuard confirmadorDistintoGuard;
     @Autowired private com.hotclick.repository.PosSinpeConfirmacionRepository confirmacionRepo;
     @Autowired private com.hotclick.service.AuditoriaAdminRegistroService auditoria;
+    @Autowired private PosSinpeOnvoService sinpeOnvo;
 
     /** Reloj inyectable (tests); en producción, hora de Costa Rica. */
     private volatile Clock clock = Clock.system(Constants.ZONA_CR);
@@ -64,10 +65,15 @@ public class PosQrVentaService {
         return iniciarTilopay(token, PosQrMetodos.TARJETA);
     }
 
-    /** Tarjeta o SINPE Móvil por el SDK de Tilopay. SINPE ya no pasa por ONVO. */
+    static final String MSG_SINPE_SOLO_ONVO = "SINPE Móvil se cobra por ONVO, no por Tilopay.";
+
+    /** Tarjeta por el SDK de Tilopay. SINPE Móvil va solo por ONVO ({@link PosSinpeOnvoService}). */
     @Transactional
     public Map<String, Object> iniciarTilopay(String token, String metodo) {
-        String elegido = PosQrMetodos.SINPE.equals(metodo) ? PosQrMetodos.SINPE : PosQrMetodos.TARJETA;
+        if (PosQrMetodos.SINPE.equals(metodo)) {
+            throw new IllegalStateException(MSG_SINPE_SOLO_ONVO);
+        }
+        String elegido = PosQrMetodos.TARJETA;
         PosQrSesion sesion = sessionService.findSesionActiva(token);
         exigirMetodoPasarela(sesion);
         elegirMetodo(sesion, elegido);
@@ -224,6 +230,10 @@ public class PosQrVentaService {
             return sesion.getEstado();
         }
 
+        if (PosSinpeOnvoService.esIntentOnvo(sesion.getStripeSessionId())) {
+            return verificarSinpeOnvo(sesion);
+        }
+
         if (!estaVigente(sesion, LocalDateTime.now(clock))) {
             sesion.setEstado("EXPIRADO");
             posQrRepo.save(sesion);
@@ -236,6 +246,39 @@ public class PosQrVentaService {
         }
 
         return sesion.getEstado();
+    }
+
+    /**
+     * SINPE por ONVO: pagado solo con {@code succeeded} releído en ONVO; {@code deferred}/{@code processing} = esperar.
+     * Vencido el timeout propio, la sesión pasa a EXPIRADO solo cuando ONVO confirmó el intent cancelado: si no,
+     * la transferencia todavía podría entrar y la venta tiene que poder cerrarse.
+     */
+    private String verificarSinpeOnvo(PosQrSesion sesion) {
+        PosSinpeOnvoService.EstadoIntent e = sinpeOnvo.estadoIntent(sesion);
+        if (e == PosSinpeOnvoService.EstadoIntent.PAGADO) {
+            if (reclamar(sesion)) completionService.completarVentaTarjeta(sesion);
+            return "PAGADO";
+        }
+        if (!estaVigente(sesion, LocalDateTime.now(clock))
+                && (e == PosSinpeOnvoService.EstadoIntent.CANCELADO || sinpeOnvo.cancelarIntent(sesion))) {
+            sesion.setEstado("EXPIRADO");
+            posQrRepo.save(sesion);
+            log.info("[POS-SINPE-ONVO] Sesión {} vencida; intent cancelado en ONVO", mascararToken(sesion.getToken()));
+            return "EXPIRADO";
+        }
+        return sesion.getEstado();
+    }
+
+    /** Webhook {@code payment-intent.succeeded}: relee el intent y cierra la venta POS si coincide. */
+    @Transactional
+    public boolean confirmarSinpeOnvoPorWebhook(String intentId) {
+        if (intentId == null || intentId.isBlank()) return false;
+        String pasarelaId = PosSinpeOnvoService.PREFIJO_ONVO_PI + intentId;
+        PosQrSesion sesion = posQrRepo.findByStripeSessionId(pasarelaId).orElse(null);
+        if (sesion == null) return false;
+        if ("PAGADO".equals(sesion.getEstado())) return true;
+        if (sinpeOnvo.estadoIntent(sesion) != PosSinpeOnvoService.EstadoIntent.PAGADO) return false;
+        return completarSiPagoPasarela(pasarelaId);
     }
 
     @Transactional
@@ -256,7 +299,7 @@ public class PosQrVentaService {
         String pasarelaId = sesion.getStripeSessionId();
         if (pasarelaId == null) return false;
         try {
-            // Tarjeta y SINPE Móvil van por Tilopay: se confirma consultando la orden (monto, CRC y orden).
+            // Tarjeta va por Tilopay: se confirma consultando la orden (monto, CRC y orden). SINPE va por ONVO.
             if (!pasarelaId.startsWith(PREFIJO_TILOPAY) || sesion.getTotal() == null) return false;
             return coincideTilopay(pasarelaId, sesion.getTotal(), tilopayService.consultarTransaccion(pasarelaId),
                 tilopayService.isMockMode());
@@ -269,6 +312,7 @@ public class PosQrVentaService {
     /** Acción de auditoría (mecanismo existente {@code AuditoriaAdminRegistroService}). */
     public static final String AUDIT_SINPE_MANUAL = "POS_SINPE_CONFIRMACION_MANUAL";
     static final String MSG_SOLO_SINPE = "Esta sesión no es de pago SINPE";
+    static final String MSG_SINPE_ONVO_NO_MANUAL = "Este SINPE se cobra por ONVO: se confirma solo cuando ONVO acredita el pago.";
 
     /**
      * Confirmación manual de SINPE en caja (decisión de Andrés, 2026-10-22). Condiciones:
@@ -289,6 +333,10 @@ public class PosQrVentaService {
         }
         exigirVigente(sesion, LocalDateTime.now(clock));
         exigirMetodoSinpe(sesion);
+        if (PosSinpeOnvoService.esIntentOnvo(sesion.getStripeSessionId())) {
+            // Con intent ONVO el pago se confirma solo con payment-intent.succeeded, nunca a mano.
+            throw new IllegalStateException(MSG_SINPE_ONVO_NO_MANUAL);
+        }
         confirmadorDistintoGuard.exigirConfirmadorDistinto(sesion, usuarioId);
         String referencia = ReferenciaSinpe.validar(referenciaCruda);
         if (confirmacionRepo.existsByEmpresaIdAndReferencia(empresaId, referencia)) {

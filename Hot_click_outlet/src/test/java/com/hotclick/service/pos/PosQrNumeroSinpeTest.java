@@ -1,35 +1,50 @@
 package com.hotclick.service.pos;
 
-import com.hotclick.model.Empresa;
+import com.hotclick.model.PosQrSesion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
-@DisplayName("Número SINPE del negocio en POS")
+@DisplayName("Destino SINPE del POS: solo el de ONVO, nunca un teléfono del negocio")
 class PosQrNumeroSinpeTest {
 
-    @Test
-    @DisplayName("Usa WhatsApp del negocio, no el de HotClick")
-    void usaWhatsappDelNegocio() {
-        Empresa e = new Empresa();
-        e.setNumeroWhatsapp("50688881111");
-        e.setTelefonoEmpresa("2222-3333");
-        assertThat(PosQrSessionService.numeroSinpe(e)).isEqualTo("50688881111");
+    private static final String DESTINO = "DESTINO_ONVO_PRUEBA";
+
+    private PosQrSesion sesion(String metodos) {
+        PosQrSesion s = PosQrMetodosTest.sesion("TARJETA", metodos);
+        return s;
     }
 
     @Test
-    @DisplayName("Si no hay WhatsApp, usa el teléfono del negocio")
-    void usaTelefonoSiNoHayWhatsapp() {
-        Empresa e = new Empresa();
-        e.setTelefonoEmpresa("2222-3333");
-        assertThat(PosQrSessionService.numeroSinpe(e)).isEqualTo("2222-3333");
+    @DisplayName("SINPE habilitado: muestra el destino ONVO de config")
+    void destinoOnvo() {
+        PosSinpeOnvoService onvo = mock(PosSinpeOnvoService.class);
+        when(onvo.destinoDisponible()).thenReturn(DESTINO);
+        PosQrSessionService svc = new PosQrSessionService();
+        svc.setSinpeOnvoParaTest(onvo);
+        assertThat(svc.destinoSinpe(sesion("TARJETA,SINPE"))).isEqualTo(DESTINO);
     }
 
     @Test
-    @DisplayName("Sin contacto no inventa el número de HotClick")
-    void vacioSinFallbackHotclick() {
-        assertThat(PosQrSessionService.numeroSinpe(new Empresa())).isEmpty();
-        assertThat(PosQrSessionService.numeroSinpe(null)).isEmpty();
+    @DisplayName("SINPE no habilitado: vacío, sin consultar ONVO")
+    void sinSinpeVacio() {
+        PosSinpeOnvoService onvo = mock(PosSinpeOnvoService.class);
+        PosQrSessionService svc = new PosQrSessionService();
+        svc.setSinpeOnvoParaTest(onvo);
+        assertThat(svc.destinoSinpe(sesion("TARJETA"))).isEmpty();
+        verifyNoInteractions(onvo);
+    }
+
+    @Test
+    @DisplayName("Sin ONVO o sin destino: vacío (fail-closed)")
+    void failClosed() {
+        PosQrSessionService svc = new PosQrSessionService();
+        assertThat(svc.destinoSinpe(sesion("SINPE"))).isEmpty();
+        PosSinpeOnvoService onvo = mock(PosSinpeOnvoService.class);
+        when(onvo.destinoDisponible()).thenReturn("");
+        svc.setSinpeOnvoParaTest(onvo);
+        assertThat(svc.destinoSinpe(sesion("SINPE"))).isEmpty();
     }
 }

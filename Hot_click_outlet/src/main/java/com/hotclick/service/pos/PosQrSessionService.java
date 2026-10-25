@@ -42,6 +42,9 @@ public class PosQrSessionService {
     @Autowired private ProductoRepository    productoRepo;
     @Autowired private TurnoCajaRepository   turnoCajaRepo;
     @Autowired private BodegaRepository      bodegaRepo;
+    @Autowired(required = false) private PosSinpeOnvoService sinpeOnvo;
+
+    void setSinpeOnvoParaTest(PosSinpeOnvoService s) { this.sinpeOnvo = s; }
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -158,9 +161,8 @@ public class PosQrSessionService {
             ? empresa.getNombreComercial() : empresa.getNombreEmpresa());
         r.put("logoUrl",      empresa.getLogoUrl());
         r.put("colorPrimario", empresa.getColorPrimario());
-        // SINPE: número de teléfono y referencia (primeros 8 chars del token)
-        r.put("sinpeNumero",  destinoSinpe(sesion, empresa));
-        r.put("sinpeRef",     sesion.getToken().substring(0, 8).toUpperCase());
+        // SINPE por ONVO: destino de config y el monto exacto (total). Sin referencia inventada.
+        r.put("sinpeNumero",  destinoSinpe(sesion));
         return r;
     }
 
@@ -217,7 +219,8 @@ public class PosQrSessionService {
         r.put("metodoPago", sesion.getMetodoPago());
         r.put("metodosHabilitados", PosQrMetodos.deSesion(sesion));
         r.put("expiracion", sesion.getFechaExpiracion().toString());
-        r.put("sinpeNumero", destinoSinpe(sesion, exigirEmpresa(sesion)));
+        exigirEmpresa(sesion);
+        r.put("sinpeNumero", destinoSinpe(sesion));
         return r;
     }
 
@@ -229,19 +232,13 @@ public class PosQrSessionService {
         return empresa;
     }
 
-    String destinoSinpe(PosQrSesion sesion, Empresa empresa) {
-        if (PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
-            // SINPE por Tilopay: el número, el monto y el código los da el SDK al iniciar el pago.
-            return "";
-        }
-        return numeroSinpe(empresa);
-    }
-
-    static String numeroSinpe(Empresa empresa) {
-        if (empresa == null) return "";
-        if (tieneTexto(empresa.getNumeroWhatsapp())) return empresa.getNumeroWhatsapp().trim();
-        if (tieneTexto(empresa.getTelefonoEmpresa())) return empresa.getTelefonoEmpresa().trim();
-        return "";
+    /**
+     * Destino SINPE Móvil de ONVO (config {@code onvo.sinpe-destino}) si la sesión acepta SINPE y ONVO puede cobrar.
+     * Nunca el teléfono ni el WhatsApp del negocio. "" = SINPE no disponible (fail-closed).
+     */
+    String destinoSinpe(PosQrSesion sesion) {
+        if (!PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE) || sinpeOnvo == null) return "";
+        return sinpeOnvo.destinoDisponible();
     }
 
     private void exigirItemsDelNegocio(Long empresaId, List<Map<String, Object>> items) {
@@ -314,6 +311,11 @@ public class PosQrSessionService {
         if (!exigirEmpresa(sesion).getId().equals(empresaId)) {
             throw new SecurityException("No autorizado");
         }
+        if (PosSinpeOnvoService.esIntentOnvo(sesion.getStripeSessionId()) && "PENDIENTE".equals(sesion.getEstado())
+                && (sinpeOnvo == null || !sinpeOnvo.cancelarIntent(sesion))) {
+            // Sin cancelar el intent en ONVO la transferencia podría entrar igual: no se da por cancelado.
+            throw new IllegalStateException("No se pudo cancelar el cobro SINPE en ONVO; reintentá en unos segundos.");
+        }
         sesion.setEstado("CANCELADO");
         posQrRepo.save(sesion);
     }
@@ -325,6 +327,10 @@ public class PosQrSessionService {
             throw new NoSuchElementException("El QR ha expirado o fue cancelado");
         }
         if (LocalDateTime.now(Constants.ZONA_CR).isAfter(sesion.getFechaExpiracion()) && "PENDIENTE".equals(sesion.getEstado())) {
+            if (PosSinpeOnvoService.esIntentOnvo(sesion.getStripeSessionId())) {
+                // El intent ONVO sigue abierto hasta que se cancele: lo expira el barrido/estado tras cancelarlo.
+                throw new NoSuchElementException("El QR ha expirado");
+            }
             sesion.setEstado("EXPIRADO");
             posQrRepo.save(sesion);
             throw new NoSuchElementException("El QR ha expirado");

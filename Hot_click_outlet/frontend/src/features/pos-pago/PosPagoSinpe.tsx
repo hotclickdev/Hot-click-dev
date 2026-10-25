@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { posService } from '@/services/posService'
+import { posService, type SinpeOnvoQrDatos } from '@/services/posService'
 import { formatPrice } from '@/utils/format'
-import { useTilopaySdk, type TilopaySinpeDatos } from '@/hooks/useTilopaySdk'
-import { sinpeNumeroVisible } from './posPagoFormat'
+import { identificacionSinpeValida, sinpeNumeroVisible, TIPOS_IDENTIFICACION } from './posPagoFormat'
 import type { QrPagoInfo } from './posPagoTypes'
 import PosPagoReporteModal from './PosPagoReporteModal'
 import { ICONOS_QR } from '@/features/qr-negocio/iconosQr'
@@ -14,33 +13,17 @@ type Props = Readonly<{
   onPagado: () => void
 }>
 
-type DatosTilopay = { orderNumber: string; montoCrc: number; sdkToken: string }
-
-/** Cédula física en Tilopay (typeDni 1). */
-const TIPO_DNI_FISICA = 1
-
-/** Elige SINPE Móvil en el selector que llena el SDK de Tilopay. */
-function elegirMetodoSinpe(): boolean {
-  const select = document.getElementById('tlpy_payment_method') as HTMLSelectElement | null
-  if (!select) return false
-  const opcion = Array.from(select.options).find(o => /sinpe/i.test(`${o.text} ${o.value}`))
-  if (!opcion) return false
-  select.value = opcion.value
-  select.dispatchEvent(new Event('change', { bubbles: true }))
-  return true
-}
-
 /**
- * SINPE Móvil del QR de caja por Tilopay (Figma `29:1830`). El cliente da su cédula, Tilopay
- * devuelve número, monto exacto y código; el pago se confirma solo (polling al backend, que
- * consulta a Tilopay). Ya no pasa por ONVO.
+ * SINPE Móvil del QR de caja por ONVO (Figma `29:1830`). El cliente da su identificación y tipo; el
+ * backend crea y confirma el intent ANTES de que transfiera y devuelve el destino ONVO y el monto exacto.
+ * El pago se confirma solo (polling al backend, que relee el intent en ONVO).
  */
-export default function PosPagoSinpe({ info, token, onPagado }: Props) {
+export default function PosPagoSinpe({ token, onPagado }: Props) {
   const { t } = useTranslation()
-  const { init, iniciarSinpe } = useTilopaySdk()
   const [cedula, setCedula] = useState('')
+  const [tipo, setTipo] = useState<number>(1)
   const [enviando, setEnviando] = useState(false)
-  const [datos, setDatos] = useState<TilopaySinpeDatos | null>(null)
+  const [datos, setDatos] = useState<SinpeOnvoQrDatos | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reporteAbierto, setReporteAbierto] = useState(false)
 
@@ -62,18 +45,13 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
     setEnviando(true)
     setError(null)
     try {
-      const d = await posService.iniciarTilopayQr(token, 'SINPE') as DatosTilopay
-      if (!d?.sdkToken || !d?.orderNumber || !d?.montoCrc) throw new Error('sin_datos')
-      await init({
-        token: d.sdkToken,
-        amount: d.montoCrc,
-        orderNumber: d.orderNumber,
-        redirect: `${globalThis.location.origin}/pos/pago/${encodeURIComponent(token)}?tilopay=1`,
-      })
-      if (!elegirMetodoSinpe()) throw new Error('sin_sinpe')
-      setDatos(await iniciarSinpe(TIPO_DNI_FISICA, cedula.trim()))
-    } catch {
-      setError(t('pos.pago.errorSinpeDesc'))
+      const d = await posService.iniciarSinpeOnvoQr(token, cedula.trim(), tipo)
+      // Fail-closed: sin destino o sin monto no se muestran datos para transferir.
+      if (!d?.destino || !d?.monto) throw new Error('sin_datos')
+      setDatos(d)
+    } catch (e) {
+      const status = (e as { response?: { status?: number } })?.response?.status
+      setError(t(status === 503 ? 'pos.pago.sinpeNoDisponible' : 'pos.pago.errorSinpeDesc'))
     } finally {
       setEnviando(false)
     }
@@ -84,21 +62,18 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
       <h1 className="font-display text-[20px] font-bold leading-[25px] tracking-normal text-hc-n-900">
         {t('pos.pago.sinpeTitulo')}
       </h1>
-      {/* El SDK de Tilopay llena este selector con los métodos habilitados; queda oculto. */}
-      <select id="tlpy_payment_method" name="tlpy_payment_method" hidden aria-hidden="true" />
 
       {datos ? (
         <ol className="flex flex-col gap-[14px] rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4">
           <Paso numero={1}>
             <p className="text-[14px] leading-[16px] text-hc-n-600">
-              {t('pos.pago.sinpePaso1', { monto: formatPrice(datos.amount ?? info.total ?? 0) })}
+              {t('pos.pago.sinpePaso1', { monto: formatPrice(datos.monto) })}
             </p>
-            <ValorCopiable valor={sinpeNumeroVisible(datos.number ?? '')} />
+            <ValorCopiable valor={sinpeNumeroVisible(datos.destino)} />
             <p className="text-[12px] leading-[14px] text-hc-n-600">{t('pos.pago.sinpePaso1Nota')}</p>
           </Paso>
           <Paso numero={2}>
             <p className="text-[14px] leading-[16px] text-hc-n-600">{t('pos.pago.sinpePaso2')}</p>
-            <ValorCopiable valor={datos.code ?? ''} />
           </Paso>
           <Paso numero={3}>
             <p className="text-[14px] leading-[16px] text-hc-n-600">{t('pos.pago.sinpePaso3')}</p>
@@ -113,17 +88,32 @@ export default function PosPagoSinpe({ info, token, onPagado }: Props) {
           }}
         >
           <p className="text-[13px] leading-[18px] text-hc-n-600">{t('pos.pago.sinpeDniIntro')}</p>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="pos-sinpe-tipo" className="text-[12px] leading-[14px] text-hc-n-600">
+              {t('pos.pago.sinpeTipoId')}
+            </label>
+            <select
+              id="pos-sinpe-tipo"
+              value={tipo}
+              onChange={(e) => setTipo(Number(e.target.value))}
+              className="w-full rounded-[12px] border border-hc-n-200 bg-hc-n-50 px-3 py-[10px] text-[14px] text-hc-n-900"
+            >
+              {TIPOS_IDENTIFICACION.map((o) => (
+                <option key={o.valor} value={o.valor}>{t(o.clave)}</option>
+              ))}
+            </select>
+          </div>
           <Campo
             id="pos-sinpe-cedula"
             label={t('pos.pago.sinpeCedula')}
             value={cedula}
             onChange={setCedula}
-            inputMode="numeric"
           />
+          <p className="text-[12px] leading-[14px] text-hc-n-600">{t('pos.pago.sinpeCedulaAyuda')}</p>
           {error ? <p className="text-[13px] text-hc-red-600">{error}</p> : null}
           <button
             type="submit"
-            disabled={enviando || cedula.trim().length < 9}
+            disabled={enviando || !identificacionSinpeValida(cedula)}
             className="hc-btn-primary min-h-[46px] w-full rounded-[12px] px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-white disabled:opacity-40"
           >
             {enviando ? t('pos.cobro.procesando') : t('pos.pago.sinpeRegistrar')}
@@ -206,7 +196,7 @@ type CampoProps = Readonly<{
   label: string
   value: string
   onChange: (v: string) => void
-  inputMode?: 'numeric' | 'tel'
+  inputMode?: 'numeric' | 'tel' | 'text'
 }>
 
 function Campo({ id, label, value, onChange, inputMode }: CampoProps) {

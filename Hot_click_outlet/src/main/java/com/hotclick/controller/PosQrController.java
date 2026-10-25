@@ -135,6 +135,34 @@ public class PosQrController {
         }
     }
 
+    /** Datos del pagador para SINPE Móvil por ONVO (cédula con guiones y tipo 1–4). */
+    public record SinpeOnvoRequest(String identificacion, Integer tipoIdentificacion) {}
+
+    /**
+     * Cliente inicia SINPE Móvil por ONVO: crea y confirma el intent ANTES de transferir y devuelve
+     * el destino y el monto exacto. El pago se da por hecho solo con payment-intent.succeeded.
+     */
+    @PostMapping("/pago/{token}/sinpe-onvo")
+    public ResponseEntity<?> iniciarSinpeOnvo(@PathVariable String token, @RequestBody(required = false) SinpeOnvoRequest body) {
+        try {
+            SinpeOnvoRequest b = body == null ? new SinpeOnvoRequest(null, null) : body;
+            return ResponseEntity.ok(posQrService.iniciarSinpeOnvo(token, b.identificacion(), b.tipoIdentificacion()));
+        } catch (java.util.NoSuchElementException e) {
+            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado o expirado"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            log.warn("[POS-SINPE-ONVO] No iniciado token={}: {}",
+                com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());
+            boolean noDisponible = com.hotclick.service.pos.PosSinpeOnvoService.MSG_NO_DISPONIBLE.equals(e.getMessage());
+            return ResponseEntity.status(noDisponible ? 503 : 409).body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            log.error("[POS-SINPE-ONVO] ONVO falló token={}: {}",
+                com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());
+            return ResponseEntity.status(503).body(Map.of("error", "SINPE Móvil no disponible en este momento. Probá de nuevo o pagá con tarjeta."));
+        }
+    }
+
     /** Al volver del SDK: el backend consulta a Tilopay; el navegador no decide si se pagó. */
     @PostMapping("/pago/{token}/tilopay/confirmar")
     public ResponseEntity<?> confirmarTilopay(@PathVariable String token) {
