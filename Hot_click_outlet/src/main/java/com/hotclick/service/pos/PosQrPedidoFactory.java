@@ -256,7 +256,7 @@ public class PosQrPedidoFactory {
     }
 
     private void marcarReembolsoPendiente(PosQrSesion sesion) {
-        sesion.setEstado("PAGADO");
+        sesion.setEstado(PosQrSesion.ESTADO_REEMBOLSO_PENDIENTE);
         sesion.setReembolsoPendiente(true);
         sesion.setFechaPago(LocalDateTime.now(Constants.ZONA_CR));
         if (sesion.getId() != null) posQrRepo.marcarReembolsoPendiente(sesion.getId(), sesion.getFechaPago());

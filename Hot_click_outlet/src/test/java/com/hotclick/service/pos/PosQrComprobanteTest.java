@@ -62,6 +62,9 @@ class PosQrComprobanteTest {
         s.setId(12L);
         when(posQrRepo.findByToken("tok")).thenReturn(Optional.of(s));
         assertThatThrownBy(() -> service.getComprobante("tok")).isInstanceOf(IllegalStateException.class);
+        // Cobro sin stock para entregar: no es venta, no hay comprobante de venta.
+        s.setEstado(PosQrSesion.ESTADO_REEMBOLSO_PENDIENTE);
+        assertThatThrownBy(() -> service.getComprobante("tok")).isInstanceOf(IllegalStateException.class);
 
         s.setEstado("PAGADO");
         LocalDateTime pago = LocalDateTime.of(2026, 10, 2, 15, 30);

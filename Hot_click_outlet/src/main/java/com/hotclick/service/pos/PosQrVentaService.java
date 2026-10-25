@@ -187,7 +187,8 @@ public class PosQrVentaService {
         PosQrSesion sesion = posQrRepo.findByToken(token)
             .orElseThrow(() -> new NoSuchElementException("Sesión no encontrada"));
 
-        if ("PAGADO".equals(sesion.getEstado()) || "CANCELADO".equals(sesion.getEstado())) {
+        if ("PAGADO".equals(sesion.getEstado()) || "CANCELADO".equals(sesion.getEstado())
+                || PosQrSesion.ESTADO_REEMBOLSO_PENDIENTE.equals(sesion.getEstado())) {
             return sesion.getEstado();
         }
 
@@ -250,7 +251,8 @@ public class PosQrVentaService {
         String pasarelaId = PosSinpeOnvoService.PREFIJO_ONVO_PI + intentId;
         PosQrSesion sesion = posQrRepo.findByStripeSessionId(pasarelaId).orElse(null);
         if (sesion == null) return false;
-        if ("PAGADO".equals(sesion.getEstado())) return true;
+        if ("PAGADO".equals(sesion.getEstado())
+                || PosQrSesion.ESTADO_REEMBOLSO_PENDIENTE.equals(sesion.getEstado())) return true;
         if (sinpeOnvo.estadoIntent(sesion) != PosSinpeOnvoService.EstadoIntent.PAGADO) return false;
         boolean ok = completarSiPagoPasarela(pasarelaId);
         if (ok && ev != null && sesion.getId() != null) posQrRepo.registrarEventoOnvo(sesion.getId(), ev);

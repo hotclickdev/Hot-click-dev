@@ -164,7 +164,9 @@ class PosQrPedidoClienteTest {
         verify(stockReserva).liberar(eq(sesion), any());
         verify(pedidoRepo, org.mockito.Mockito.never()).save(any(Pedido.class));
         verify(posQrRepo).marcarReembolsoPendiente(eq(5L), any());
-        assertThat(sesion.getEstado()).isEqualTo("PAGADO");
+        assertThat(sesion.getEstado()).isEqualTo(PosQrSesion.ESTADO_REEMBOLSO_PENDIENTE);
+        verify(turnoCajaService, org.mockito.Mockito.never()).actualizarTotales(any(), any(), any());
+        verify(telegramNotificacionClienteService, org.mockito.Mockito.never()).notificarVenta(any(), any(), any(), any(), any(), any());
         assertThat(sesion.isReembolsoPendiente()).isTrue();
         assertThat(sesion.getPedidoId()).isNull();
     }

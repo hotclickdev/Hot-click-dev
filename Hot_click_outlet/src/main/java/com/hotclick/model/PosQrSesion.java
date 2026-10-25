@@ -7,6 +7,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "hot_click_pos_qr_sesion_tb")
 public class PosQrSesion {
+    /** Cobrada sin stock para entregar: sin pedido, no es venta, hay que reembolsar. */
+    public static final String ESTADO_REEMBOLSO_PENDIENTE = "REEMBOLSO_PENDIENTE";
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

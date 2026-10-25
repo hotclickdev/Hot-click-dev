@@ -120,6 +120,19 @@ class PosQrVentaSinpeOnvoTest {
     }
 
     @Test
+    @DisplayName("REEMBOLSO_PENDIENTE es terminal: no se expira, no se cierra como venta y el webhook repetido no la toca")
+    void reembolsoPendienteNoEsVenta() {
+        sesion.setEstado(com.hotclick.model.PosQrSesion.ESTADO_REEMBOLSO_PENDIENTE);
+        sesion.setFechaExpiracion(LocalDateTime.now(Constants.ZONA_CR).minusMinutes(1));
+        assertThat(service.verificarEstado("tokensinpeonvo01")).isEqualTo(com.hotclick.model.PosQrSesion.ESTADO_REEMBOLSO_PENDIENTE);
+        when(posQrRepo.findByStripeSessionId("ONVOPI:pi_1")).thenReturn(Optional.of(sesion));
+        assertThat(service.confirmarSinpeOnvoPorWebhook("pi_1")).isTrue();
+        verify(sinpeOnvo, never()).estadoIntent(any());
+        verify(posQrRepo, never()).reclamarParaCompletar(any());
+        verify(completionService, never()).completarVentaTarjeta(any());
+    }
+
+    @Test
     @DisplayName("Webhook de un intent que no es del POS: ignorado")
     void webhookAjeno() {
         when(posQrRepo.findByStripeSessionId("ONVOPI:pi_x")).thenReturn(Optional.empty());
