@@ -53,7 +53,7 @@ public class CheckoutGrupoFactory {
     static void exigirBodegaDeLaTienda(PaymentCheckoutRequest req, java.util.Map<Long, com.hotclick.model.Producto> productos,
                                        Bodega bodega) {
         // bodegaId=1 es la default HotClick que el front manda en todo envío: se trata como "no se mandó".
-        if (req.getBodegaId() == null || req.getBodegaId() == com.hotclick.utils.Constants.BODEGA_DEFAULT_ID
+        if (req.getBodegaId() == null || java.util.Objects.equals(req.getBodegaId(), com.hotclick.utils.Constants.BODEGA_DEFAULT_ID)
             || bodega == null || bodega.getEmpresa() == null || productos == null || productos.isEmpty()) return;
         Long empresaBodega = bodega.getEmpresa().getId();
         boolean coincide = productos.values().stream()
