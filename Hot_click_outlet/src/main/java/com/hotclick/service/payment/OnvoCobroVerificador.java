@@ -61,21 +61,16 @@ public final class OnvoCobroVerificador {
         return status == null || "complete".equalsIgnoreCase(status);
     }
 
-    static final String MODO_LIVE = "live";
-
     /**
-     * C2 fail-closed: sin modo esperado no se acepta. Con llave live, ONVO tiene que informar
-     * mode=live (si falta, se rechaza). Con llave test se tolera la ausencia (el pedido ya es es_prueba).
+     * C9 fail-closed: sin modo esperado no se acepta, y ONVO tiene que informar el modo (live/test)
+     * y que sea el de la llave. Un payload sin «mode» se rechaza siempre.
      */
     static boolean modoCoincide(Map<?, ?> objeto, String modoEsperado) {
         if (modoEsperado == null || modoEsperado.isBlank()) {
             return false;
         }
         String modo = texto(objeto, "mode");
-        if (modo == null) {
-            return !MODO_LIVE.equalsIgnoreCase(modoEsperado);
-        }
-        return modo.equalsIgnoreCase(modoEsperado);
+        return modo != null && modo.equalsIgnoreCase(modoEsperado);
     }
 
     public static String paymentIntentId(Map<?, ?> sesion) {
@@ -105,11 +100,11 @@ public final class OnvoCobroVerificador {
             + " esperado=" + esperado + " CRC(céntimos) cobrado=" + cobrado + " " + moneda;
     }
 
-    /** El intent leído tiene que ser el de la sesión (si ONVO devuelve su id). */
+    /** C9: el intent leído tiene que traer su id y ser el de la sesión; sin id (o sin id en la sesión) se rechaza. */
     private static boolean mismoIntent(Map<?, ?> sesion, Map<?, ?> intent) {
         String esperado = paymentIntentId(sesion);
         String leido = texto(intent, "id");
-        return leido == null || leido.equals(esperado);
+        return leido != null && esperado != null && leido.equals(esperado);
     }
 
     private static String monedaDelPago(Pago pago) {

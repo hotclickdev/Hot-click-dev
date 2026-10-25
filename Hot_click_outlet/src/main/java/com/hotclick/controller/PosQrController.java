@@ -27,6 +27,18 @@ public class PosQrController {
 
     private static final Logger log = LoggerFactory.getLogger(PosQrController.class);
 
+    // BAJO 4: respuestas con mensajes constantes; el detalle de la excepción solo va al log.
+    static final String MSG_ERROR_GENERAR_QR = "Error al generar QR";
+    static final String MSG_DATOS_QR_INVALIDOS = "Revisá los productos, las cantidades y el método de pago.";
+    static final String MSG_SIN_STOCK_QR = "No hay stock suficiente para generar el QR.";
+    static final String MSG_PAGO_TARJETA_NO_INICIADO = "No se pudo iniciar el pago con tarjeta";
+    static final String MSG_SINPE_NO_INICIADO = "No se pudo iniciar el SINPE Móvil. Generá un QR nuevo o cobrá con otro método.";
+
+    /** Mensajes de negocio ya constantes que sí se pueden mostrar tal cual. */
+    private static final java.util.Set<String> MSG_CREAR_PUBLICOS = java.util.Set.of(
+        com.hotclick.service.pos.PosQrStockReserva.MSG_TOPE_PENDIENTES,
+        com.hotclick.service.pos.PosQrSessionService.MSG_NO_APROBADO);
+
     @Autowired private PosQrService    posQrService;
     @Autowired private JwtUtil         jwtUtil;
     @Autowired private TurnoCajaService turnoCajaService;
@@ -55,8 +67,7 @@ public class PosQrController {
                 posQrService.crearSesion(usuarioId, empresaId, turnoId, metodo, metodos, items, notas, clienteId, bodegaId)));
         } catch (Exception e) {
             log.error("[POS-QR] Error creando sesión: {}", e.getMessage(), e);
-            String detalle = e.getMessage() != null ? e.getMessage() : "Error al generar QR";
-            return ResponseEntity.badRequest().body(ResponseDTO.error(detalle));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeCrear(e)));
         }
     }
 
@@ -77,7 +88,8 @@ public class PosQrController {
                 "pedidoId",  sesion.getPedidoId() != null ? sesion.getPedidoId() : 0
             )));
         } catch (com.hotclick.exception.AutoconfirmacionSinpeException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage(),
+            return ResponseEntity.status(403).body(ResponseDTO.error(
+                com.hotclick.exception.AutoconfirmacionSinpeException.MENSAJE,
                 Map.of("codigo", com.hotclick.exception.AutoconfirmacionSinpeException.CODIGO)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
@@ -120,7 +132,7 @@ public class PosQrController {
         }
     }
 
-    /** Cliente inicia cobro por Tilopay (SDK embebido): tarjeta o, con ?metodo=SINPE, SINPE Móvil. */
+    /** ALTO 3: Tilopay retirado del QR. Responde 503 (tarjeta no disponible) o 409 si piden SINPE por acá. */
     @PostMapping("/pago/{token}/tilopay")
     public ResponseEntity<?> iniciarTilopay(@PathVariable String token,
                                             @RequestParam(name = "metodo", required = false) String metodo) {
@@ -131,7 +143,8 @@ public class PosQrController {
         } catch (IllegalStateException e) {
             log.warn("[POS-QR] Tilopay no iniciado token={}: {}",
                 com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
+            boolean tarjeta = com.hotclick.service.pos.PosQrVentaService.MSG_TARJETA_NO_DISPONIBLE.equals(e.getMessage());
+            return ResponseEntity.status(tarjeta ? 503 : 409).body(Map.of("error", mensajePagoTarjeta(e)));
         }
     }
 
@@ -150,12 +163,14 @@ public class PosQrController {
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado o expirado"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            // Mensaje constante: nunca se devuelve el detalle de la excepción (podría venir de ONVO o de un parser).
+            return ResponseEntity.badRequest().body(Map.of("error", com.hotclick.service.pos.PosSinpeOnvoService.MSG_IDENTIFICACION));
         } catch (IllegalStateException e) {
             log.warn("[POS-SINPE-ONVO] No iniciado token={}: {}",
                 com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());
             boolean noDisponible = com.hotclick.service.pos.PosSinpeOnvoService.MSG_NO_DISPONIBLE.equals(e.getMessage());
-            return ResponseEntity.status(noDisponible ? 503 : 409).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(noDisponible ? 503 : 409).body(Map.of("error",
+                noDisponible ? com.hotclick.service.pos.PosSinpeOnvoService.MSG_NO_DISPONIBLE : MSG_SINPE_NO_INICIADO));
         } catch (RuntimeException e) {
             log.error("[POS-SINPE-ONVO] ONVO falló token={}: {}",
                 com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());
@@ -163,7 +178,7 @@ public class PosQrController {
         }
     }
 
-    /** Al volver del SDK: el backend consulta a Tilopay; el navegador no decide si se pagó. */
+    /** Compatibilidad: ya no consulta a Tilopay; solo informa si el webhook ONVO cerró la venta. */
     @PostMapping("/pago/{token}/tilopay/confirmar")
     public ResponseEntity<?> confirmarTilopay(@PathVariable String token) {
         try {
@@ -196,10 +211,26 @@ public class PosQrController {
         return id;
     }
 
+    /** Solo devuelve constantes conocidas; cualquier otro detalle queda en el log. */
     static String mensajePagoTarjeta(IllegalStateException e) {
         String detalle = e.getMessage();
-        return detalle != null && !detalle.isBlank()
-            ? detalle
-            : "No se pudo iniciar el pago con tarjeta";
+        if (com.hotclick.service.pos.PosQrVentaService.MSG_TARJETA_NO_DISPONIBLE.equals(detalle)) {
+            return com.hotclick.service.pos.PosQrVentaService.MSG_TARJETA_NO_DISPONIBLE;
+        }
+        if (com.hotclick.service.pos.PosQrVentaService.MSG_SINPE_SOLO_ONVO.equals(detalle)) {
+            return com.hotclick.service.pos.PosQrVentaService.MSG_SINPE_SOLO_ONVO;
+        }
+        return MSG_PAGO_TARJETA_NO_INICIADO;
+    }
+
+    /** Mensaje constante para el error al generar el QR (nunca el texto crudo de la excepción). */
+    static String mensajeCrear(Exception e) {
+        if (e instanceof com.hotclick.exception.StockInsuficienteException) return MSG_SIN_STOCK_QR;
+        if (e instanceof IllegalArgumentException) return MSG_DATOS_QR_INVALIDOS;
+        String detalle = e.getMessage();
+        for (String publico : MSG_CREAR_PUBLICOS) {
+            if (publico.equals(detalle)) return publico;
+        }
+        return MSG_ERROR_GENERAR_QR;
     }
 }

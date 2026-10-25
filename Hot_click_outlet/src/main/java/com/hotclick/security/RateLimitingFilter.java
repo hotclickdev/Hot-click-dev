@@ -143,6 +143,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new PrefixLimit("/api/admin/reset-", null, 10, 300, true),
         // QR de pago POS público: cada POST crea checkout o intento en ONVO/Stripe
         new PrefixLimit("/api/pos/qr/pago/", null, 10, 60, true),
+        // MEDIO 3: generar QR del POS reserva stock; frena ráfagas por IP (va después de /pago/: gana el primero)
+        new PrefixLimit("/api/pos/qr", null, 30, 60),
         // Autoservicio de mesa público: evita inundar pedidos PENDIENTE
         new PrefixLimit("/api/qr/", null, 10, 60),
         // "Avisame cuando vuelva" es publico y solo pide un email: sin limite se insertan filas sin fin.

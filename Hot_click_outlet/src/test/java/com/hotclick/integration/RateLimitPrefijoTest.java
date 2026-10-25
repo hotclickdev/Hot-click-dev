@@ -118,4 +118,10 @@ class RateLimitPrefijoTest extends BaseIntegrationTest {
     void qrPago_porSesion() throws Exception {
         cupoPorRecurso("203.0.113.24", 10, "/api/pos/qr/pago/tokA_abcdefghijkl/tilopay", "/api/pos/qr/pago/tokB_abcdefghijkl/tilopay");
     }
+
+    @Test
+    @DisplayName("MEDIO 3: POST /api/pos/qr (genera QR y reserva stock): 30 por minuto por IP, el 31 da 429")
+    void posQrCrear_tope() throws Exception {
+        topePorPrefijo("203.0.113.25", 30, i -> "/api/pos/qr");
+    }
 }

@@ -30,12 +30,14 @@ class PosQrControllerPagoTest {
     }
 
     @Test
-    @DisplayName("Pagos no disponibles → 400, no 500")
+    @DisplayName("ALTO 3: tarjeta por QR no disponible → 503; otro rechazo → 409, nunca 500")
     void noDisponible400() {
         when(posQrService.iniciarTilopay("tokentarjetaqr01", "TARJETA"))
-            .thenThrow(new IllegalStateException("Los pagos en línea no están disponibles."));
-        ResponseEntity<?> resp = controller.iniciarTilopay("tokentarjetaqr01", "TARJETA");
-        assertThat(resp.getStatusCode().value()).isEqualTo(400);
+            .thenThrow(new IllegalStateException(com.hotclick.service.pos.PosQrVentaService.MSG_TARJETA_NO_DISPONIBLE));
+        assertThat(controller.iniciarTilopay("tokentarjetaqr01", "TARJETA").getStatusCode().value()).isEqualTo(503);
+        when(posQrService.iniciarTilopay("tokentarjetaqr01", "SINPE"))
+            .thenThrow(new IllegalStateException("otro"));
+        assertThat(controller.iniciarTilopay("tokentarjetaqr01", "SINPE").getStatusCode().value()).isEqualTo(409);
     }
 
     @Test
@@ -71,5 +73,16 @@ class PosQrControllerPagoTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> cuerpo(ResponseEntity<?> resp) {
         return (Map<String, Object>) resp.getBody();
+    }
+
+    @Test
+    @DisplayName("SINPE ONVO: el 400 trae un mensaje constante, nunca el detalle de la excepción")
+    void sinpe400MensajeConstante() {
+        when(posQrService.iniciarSinpeOnvo("tokensinpeqr0001", "x", 1))
+            .thenThrow(new IllegalArgumentException("detalle interno que no debe filtrarse"));
+        ResponseEntity<?> resp = controller.iniciarSinpeOnvo("tokensinpeqr0001", new PosQrController.SinpeOnvoRequest("x", 1));
+        assertThat(resp.getStatusCode().value()).isEqualTo(400);
+        assertThat(resp.getBody().toString()).doesNotContain("detalle interno")
+            .contains(com.hotclick.service.pos.PosSinpeOnvoService.MSG_IDENTIFICACION);
     }
 }

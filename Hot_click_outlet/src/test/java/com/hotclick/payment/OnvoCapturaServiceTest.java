@@ -47,7 +47,7 @@ class OnvoCapturaServiceTest {
         pago.setMerchantToken("cs_1");
         pago.setProveedor(Constants.PROVEEDOR_ONVO);
         pago.setEstadoPago(Constants.PAGO_PENDIENTE);
-        when(pagoRepository.findByMerchantToken("cs_1")).thenReturn(Optional.of(pago));
+        when(pagoRepository.findByMerchantTokenForUpdate("cs_1")).thenReturn(Optional.of(pago));
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString())).thenReturn(false);
     }
 

@@ -5,6 +5,8 @@ import com.hotclick.repository.PosQrSesionRepository;
 import com.hotclick.service.TilopayService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -35,13 +37,14 @@ class PosQrMetodosPagoTest {
     }
 
     @Test
-    @DisplayName("Tarjeta en un cobro mixto: queda en tarjeta")
+    @DisplayName("ALTO 3: tarjeta por QR no disponible aunque Tilopay lo esté; no toca Tilopay")
     void tarjetaEnCobroMixto() {
         PosQrSesion s = PosQrMetodosTest.sesion("TARJETA", "TARJETA,SINPE");
         when(sessionService.findSesionActiva("tok")).thenReturn(s);
-        when(tilopayService.isPagosDisponibles()).thenReturn(true);
-        service.iniciarTilopay("tok", "TARJETA");
-        assertThat(s.getMetodoPago()).isEqualTo("TARJETA");
+        lenient().when(tilopayService.isPagosDisponibles()).thenReturn(true);
+        assertThatThrownBy(() -> service.iniciarTilopay("tok", "TARJETA"))
+            .hasMessage(PosQrVentaService.MSG_TARJETA_NO_DISPONIBLE);
+        verify(tilopayService, never()).loginSdk();
     }
 
     @Test

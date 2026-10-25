@@ -110,7 +110,7 @@ public class OnvoWebhookController {
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
                     // SINPE del POS por ONVO: se relee el intent por GET (monto/moneda exactos) y recién ahí se cierra la venta.
-                    boolean pos = posQrVentaService != null && posQrVentaService.confirmarSinpeOnvoPorWebhook(intentId);
+                    boolean pos = posQrVentaService != null && posQrVentaService.confirmarSinpeOnvoPorWebhook(intentId, eventId);
                     log.info("[onvo-webhook] payment-intent.succeeded {} posCerrado={}", intentId, pos);
                 }
                 case "payment-intent.deferred" ->

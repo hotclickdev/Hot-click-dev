@@ -31,10 +31,38 @@ public interface PosQrSesionRepository extends JpaRepository<PosQrSesion, Long> 
     @Query("UPDATE PosQrSesion s SET s.estado = 'PAGADO' WHERE s.id = :id AND s.estado = 'PENDIENTE'")
     int reclamarParaCompletar(@Param("id") Long id);
 
+    boolean existsByOnvoEventoId(String onvoEventoId);
+
+    /** Registra el eventId del webhook ONVO que cerró la sesión (una sola vez). */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE PosQrSesion s SET s.onvoEventoId = :ev WHERE s.id = :id AND s.onvoEventoId IS NULL")
+    int registrarEventoOnvo(@Param("id") Long id, @Param("ev") String eventId);
+
+    /** ALTO 2: cobrada sin stock para entregar: estado REEMBOLSO_PENDIENTE (no es venta), sin pedido. */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE PosQrSesion s SET s.estado = 'REEMBOLSO_PENDIENTE', s.reembolsoPendiente = true, s.fechaPago = :fecha WHERE s.id = :id AND s.pedidoId IS NULL")
+    int marcarReembolsoPendiente(@Param("id") Long id, @Param("fecha") java.time.LocalDateTime fecha);
+
+    /** ALTO 2: suelta la marca de reserva una sola vez; quien recibe 1 devuelve las unidades. */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE PosQrSesion s SET s.stockReservado = false WHERE s.id = :id AND s.stockReservado = true")
+    int soltarReserva(@Param("id") Long id);
+
+    /** ALTO 2: reservas a liberar — sesión cerrada sin venta o reserva vencida. */
+    @Query("""
+        SELECT s FROM PosQrSesion s WHERE s.stockReservado = true AND s.estado <> 'PAGADO'
+          AND (s.estado IN ('EXPIRADO','CANCELADO') OR s.reservaExpira < :ahora)
+        """)
+    java.util.List<PosQrSesion> reservasALiberar(@Param("ahora") LocalDateTime ahora);
+
     @Modifying
     @Query("""
         UPDATE PosQrSesion s SET s.estado = 'EXPIRADO'
         WHERE s.estado = 'PENDIENTE' AND s.fechaExpiracion < :ahora
         """)
     int expirarSesionesVencidas(@Param("ahora") LocalDateTime ahora);
+
+    /** MEDIO 3: QR pendientes que hoy retienen stock de la empresa. */
+    @Query("SELECT COUNT(s) FROM PosQrSesion s WHERE s.empresa.id = :empresaId AND s.estado = 'PENDIENTE' AND s.stockReservado = true")
+    long contarPendientesConReserva(@org.springframework.data.repository.query.Param("empresaId") Long empresaId);
 }
