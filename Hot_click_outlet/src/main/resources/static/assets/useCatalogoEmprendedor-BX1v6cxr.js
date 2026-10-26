@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-Z11etra8.js";function t(){return e()}export{t};

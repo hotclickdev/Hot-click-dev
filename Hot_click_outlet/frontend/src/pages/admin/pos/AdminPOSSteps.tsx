@@ -43,6 +43,8 @@ export default function AdminPOSSteps({ pos }: { pos: AdminPOSController }) {
       {pos.step === 'cobro' && (
         <StepCobro
           total={pos.total}
+          impuesto={pos.impuestoCobro}
+          cotizacionPendiente={pos.cotizacionPendiente}
           cartItems={pos.cartItems}
           descuento={pos.descuento}
           facturaElectronica={pos.facturaElectronica}

@@ -3482,6 +3482,8 @@
       "tarjeta": "Card",
       "descuento": "Discount",
       "totalACobrar": "Amount due",
+      "iva": "VAT",
+      "calculandoIva": "Calculating the invoice VAT… Wait a moment before charging.",
       "montoRecibido": "Amount received",
       "pagoExacto": "Exact",
       "faltante": "Short",

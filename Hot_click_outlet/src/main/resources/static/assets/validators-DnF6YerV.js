@@ -1,0 +1,1 @@
+function e(e){let t=e.trim(),n=t.indexOf(`@`);if(n<=0)return!1;let r=t.slice(n+1);return r.includes(`.`)&&!r.startsWith(`.`)&&!r.endsWith(`.`)}export{e as t};

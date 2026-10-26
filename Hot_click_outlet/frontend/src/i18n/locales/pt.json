@@ -3482,6 +3482,8 @@
       "tarjeta": "Cartão",
       "descuento": "Desconto",
       "totalACobrar": "Total a cobrar",
+      "iva": "IVA",
+      "calculandoIva": "Calculando o IVA da fatura… Aguarde antes de cobrar.",
       "montoRecibido": "Valor recebido",
       "pagoExacto": "Exato",
       "faltante": "Faltante",
