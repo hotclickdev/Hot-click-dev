@@ -58,7 +58,7 @@ export default function LoginFormStep({
 
   const continuar = (e: FormEvent) => {
     e.preventDefault()
-    const normalizado = correo.trim().toLowerCase()
+    const normalizado = correo.trim()
     if (!isValidEmail(normalizado)) { setErrorCorreo(t('login.correoInvalido')); return }
     setCorreo(normalizado)
     setErrorCorreo('')

@@ -16,9 +16,9 @@ public class JwtRequest {
     private String contrasena;
 
     public String getCorreo() { return correo; }
-    /** Normaliza antes de validar: espacios alrededor no deben dar 400 (mismo criterio que buscarPorCorreo). */
+    /** Solo trim antes de validar (sin minúsculas: hay cuentas guardadas con mayúsculas, p.ej. AdminAsignar/Clerk, y findByCorreo es exacto). */
     public void setCorreo(String correo) {
-        this.correo = correo == null ? null : correo.trim().toLowerCase(java.util.Locale.ROOT);
+        this.correo = correo == null ? null : correo.trim();
     }
 
     public String getContrasena() { return contrasena; }

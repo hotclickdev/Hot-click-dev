@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-DuqAlb_3.js";function t(){return e()}export{t};

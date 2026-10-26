@@ -87,7 +87,7 @@ export function useLoginFlow() {
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault(); setError(''); setLoading(true)
     try {
-      const { data } = await authService.login(correo.trim().toLowerCase(), contrasena, turnstileToken)
+      const { data } = await authService.login(correo.trim(), contrasena, turnstileToken)
       const loginData = data as LoginApiData
       if (loginData.requiresWebauthn) {
         setTempToken(loginData.tempToken ?? '')

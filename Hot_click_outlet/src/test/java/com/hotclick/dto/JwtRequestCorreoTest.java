@@ -11,10 +11,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JwtRequestCorreoTest {
 
     @Test
-    void correoConEspaciosYMayusculas_validaYSeNormaliza() throws Exception {
+    void correoConEspacios_validaYSoloSeRecorta() throws Exception {
         JwtRequest r = new ObjectMapper().readValue(
             "{\"correo\":\"  Persona@Example.com \",\"contrasena\":\"secreta123\"}", JwtRequest.class);
-        assertThat(r.getCorreo()).isEqualTo("persona@example.com");
+        assertThat(r.getCorreo()).isEqualTo("Persona@Example.com");
         Validator v = Validation.buildDefaultValidatorFactory().getValidator();
         assertThat(v.validate(r)).isEmpty();
     }
