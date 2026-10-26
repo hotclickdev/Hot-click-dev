@@ -297,3 +297,14 @@ test('tenant-global: chequeos que no son ternario no cuentan', () => {
   assert.equal(escanearFuente('if (empresaId == null) throw new X();').length, 0);
   assert.equal(escanearFuente('// empresaId != null ? a : b').length, 0);
 });
+
+test('gitleaks allowlist: X509Certificate (nombre de tipo) es falso positivo, anclado', async () => {
+  const { readFileSync } = await import('node:fs');
+  const toml = readFileSync(new URL('../../.gitleaks.toml', import.meta.url), 'utf8');
+  const m = toml.match(/'''(\^X509Certificate\$)'''/);
+  assert.ok(m, 'falta allowlist anclada para X509Certificate');
+  const re = new RegExp(m[1]);
+  assert.equal(re.test('X509Certificate'), true);
+  assert.equal(re.test('X509CertificateZx9Qw7Lm3Rt8Vb2Np6'), false);
+  assert.equal(re.test('Zx9Qw7Lm3Rt8Vb2Np6Hk4Jd1Yc5Fg'), false);
+});
