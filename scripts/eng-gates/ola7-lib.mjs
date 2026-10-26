@@ -36,7 +36,8 @@ export const SKIP_LABELS = {
   runtime: 'skip-runtime-endpoint',
 };
 
-export const DEFAULT_HEALTH_URL = 'https://hot-click-dev.onrender.com/api/health';
+// INF-05: sin fallback a un host fijo. Sin HEALTH_URL el pager se saltea (verde).
+export const DEFAULT_HEALTH_URL = '';
 export const HEALTH_CONTROLLER_REL =
   'Hot_click_outlet/src/main/java/com/hotclick/controller/HealthController.java';
 export const APP_PROPS_REL = 'Hot_click_outlet/src/main/resources/application.properties';
@@ -153,7 +154,7 @@ export function actuatorDocumentedAbsent(propsText) {
 }
 
 export function resolveHealthTargets(env = process.env, propsText = '') {
-  const primary = String(env.HEALTH_URL || '').trim() || DEFAULT_HEALTH_URL;
+  const primary = String(env.HEALTH_URL || '').trim() || DEFAULT_HEALTH_URL || null;
   const secondary = String(env.HEALTH_SECONDARY_URL || '').trim();
   return {
     primary,
