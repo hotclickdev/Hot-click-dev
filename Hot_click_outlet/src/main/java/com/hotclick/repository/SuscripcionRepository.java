@@ -87,6 +87,15 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     List<Suscripcion> findPastDueOnvoVencidos(@Param("limite") LocalDate limite,
                                              org.springframework.data.domain.Pageable lote);
 
+    /**
+     * PAST_DUE heredados (Tilopay/Stripe) sin onvoSubscriptionId: RenovacionesTilopayService y el webhook Stripe
+     * todavía los marcan. Se bajan por este camino, con la misma gracia escalonada.
+     */
+    @Query("SELECT s FROM Suscripcion s WHERE s.estado = 'PAST_DUE' AND s.fechaFin < :limite"
+        + " AND s.onvoSubscriptionId IS NULL ORDER BY s.fechaFin ASC, s.id ASC")
+    List<Suscripcion> findPastDueLegadoVencidos(@Param("limite") LocalDate limite,
+                                               org.springframework.data.domain.Pageable lote);
+
     /** P10-03: la empresa ya tuvo un trial alguna vez (el registro queda aunque expire o se cancele). */
     boolean existsByEmpresa_IdAndTrialEndIsNotNull(Long empresaId);
 }

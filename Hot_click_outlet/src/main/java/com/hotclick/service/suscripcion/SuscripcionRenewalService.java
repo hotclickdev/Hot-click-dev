@@ -79,8 +79,14 @@ public class SuscripcionRenewalService {
                 suscripcionRepo.countPastDueVencidos(limite));
             return 0;
         }
-        List<com.hotclick.model.Suscripcion> lote = suscripcionRepo.findPastDueOnvoVencidos(
-            limite, org.springframework.data.domain.PageRequest.of(0, Math.max(1, maxBajasPorCorrida)));
+        int max = Math.max(1, maxBajasPorCorrida);
+        List<com.hotclick.model.Suscripcion> lote = new java.util.ArrayList<>(suscripcionRepo.findPastDueOnvoVencidos(
+            limite, org.springframework.data.domain.PageRequest.of(0, max)));
+        // PAST_DUE heredados de Tilopay/Stripe (sin onvoSubscriptionId): completan el cupo del mismo lote.
+        if (lote.size() < max) {
+            lote.addAll(suscripcionRepo.findPastDueLegadoVencidos(
+                limite, org.springframework.data.domain.PageRequest.of(0, max - lote.size())));
+        }
         if (lote.isEmpty()) return 0;
         List<Long> empresaIds = new java.util.ArrayList<>();
         for (com.hotclick.model.Suscripcion s : lote) {

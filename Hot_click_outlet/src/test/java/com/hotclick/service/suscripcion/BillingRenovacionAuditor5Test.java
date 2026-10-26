@@ -89,6 +89,28 @@ class BillingRenovacionAuditor5Test {
             verify(suscripcionRepo, never()).expirarPastDueBatch(any());
         }
 
+        @Test @DisplayName("MEDIO: PAST_DUE heredados sin onvoSubscriptionId se bajan con cobro, dentro del cupo del lote")
+        void legadoSinOnvoSeBaja() {
+            ReflectionTestUtils.setField(service, "diasGracia", 7);
+            ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 3);
+            ArgumentCaptor<org.springframework.data.domain.Pageable> resto =
+                ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1)));
+            when(suscripcionRepo.findPastDueLegadoVencidos(any(), resto.capture()))
+                .thenReturn(List.of(pastDue(2), pastDue(3)));
+            assertThat(service.expirarPastDueVencidos()).isEqualTo(3);
+            assertThat(resto.getValue().getPageSize()).isEqualTo(2);
+            verify(planSupport).degradarPlanBatchConCache(eq(List.of(1L, 2L, 3L)), any());
+        }
+
+        @Test @DisplayName("MEDIO: sin cobro disponible tampoco se bajan los PAST_DUE heredados")
+        void legadoSinCobroNoSeBaja() {
+            ReflectionTestUtils.setField(service, "diasGracia", 7);
+            when(onvoBilling.sinLlave()).thenReturn(true);
+            assertThat(service.expirarPastDueVencidos()).isZero();
+            verify(suscripcionRepo, never()).findPastDueLegadoVencidos(any(), any());
+        }
+
         @Test @DisplayName("S-03: cancelarAlVencer con período terminado pasa a plan base")
         void cancelacionVencidaDegrada() {
             LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
