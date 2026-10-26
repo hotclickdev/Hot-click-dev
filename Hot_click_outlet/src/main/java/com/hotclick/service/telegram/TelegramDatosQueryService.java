@@ -33,11 +33,11 @@ public class TelegramDatosQueryService {
         try {
             bot.enviarMensaje(v.getChatId(), generador.apply(empresaId), TelegramTeclado.soloMenu());
         } catch (Exception e) {
-            log.error("[telegram-bot] error consultando datos empresa {} — {}", empresaId, e.getMessage());
+            log.error("[telegram-bot] error consultando datos empresa {} — {}", empresaId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
             bot.enviarMensaje(v.getChatId(),
                 "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.",
                 TelegramTeclado.soloMenu());
-            abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
+            abuso.avisarErrorDeUsuario(v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -48,11 +48,11 @@ public class TelegramDatosQueryService {
         try {
             bot.enviarMensaje(v.getChatId(), mensajeInventario(empresaId), tecladoInventario(v, empresaId));
         } catch (Exception e) {
-            log.error("[telegram-bot] error consultando inventario empresa {} — {}", empresaId, e.getMessage());
+            log.error("[telegram-bot] error consultando inventario empresa {} — {}", empresaId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
             bot.enviarMensaje(v.getChatId(),
                 "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.",
                 TelegramTeclado.soloMenu());
-            abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
+            abuso.avisarErrorDeUsuario(v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 

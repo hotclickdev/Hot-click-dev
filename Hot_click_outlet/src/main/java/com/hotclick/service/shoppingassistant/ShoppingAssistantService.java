@@ -1,5 +1,6 @@
 package com.hotclick.service.shoppingassistant;
 
+import org.springframework.dao.DataAccessException;
 import com.hotclick.legal.ChatLegalGuard;
 import com.hotclick.rag.classifier.AssistantMetricsService;
 import com.hotclick.rag.classifier.QueryClassification;
@@ -105,6 +106,29 @@ public class ShoppingAssistantService {
                 sesionIdStr, List.of(), List.of(), List.of());
         }
 
+        // ALTO-2: clasificación, sesión, historial, memoria y persistencia quedan fuera del
+        // circuit breaker de RagPipeline; cualquier fallo ahí responde contingencia con 200.
+        try {
+            return chatInterno(empresaId, empresaNombre, mensaje, sesionIdStr, contexto,
+                visitorId, marketplace, productoId);
+        } catch (RuntimeException e) {
+            String correlacion = UUID.randomUUID().toString().substring(0, 8);
+            if (esErrorDeDatos(e)) {
+                // B1: mensajes JDBC pueden traer el texto del visitante; sin mensaje ni stacktrace.
+                log.error("[rag] Fallo fuera del circuit breaker ref={} paso=chat empresa={}: {}",
+                    correlacion, empresaId, e.getClass().getName());
+            } else {
+                log.error("[rag] Fallo fuera del circuit breaker ref={} paso=chat empresa={}: {}",
+                    correlacion, empresaId, e.getClass().getSimpleName(), e);
+            }
+            return new ChatResponse(RagResult.fallback().respuesta(),
+                sesionIdStr, List.of(), List.of(), List.of());
+        }
+    }
+
+    private ChatResponse chatInterno(Long empresaId, String empresaNombre, String mensaje,
+                                     String sesionIdStr, String contexto, String visitorId,
+                                     boolean marketplace, Long productoId) {
         // 2. Clasificar la consulta — bloquear antes de cualquier I/O si no es del dominio
         QueryClassification classification = queryClassifier.classify(mensaje, productoId);
         metricsService.record(classification);
@@ -130,8 +154,15 @@ public class ShoppingAssistantService {
         RagResult resultado = ragPipeline.ejecutar(
             mensaje, empresaId, empresaNombre, historial, contextoSeguro, memoria.toXmlBlock(), marketplace, productoId);
 
-        // 7. Persistir pregunta + respuesta de forma atómica; actualizar sesión
-        persistence.persistirMensajes(sesionId, empresaId, mensaje, resultado);
+        // 7. Persistir pregunta + respuesta (best-effort: no tira la respuesta ya generada)
+        try {
+            persistence.persistirMensajes(sesionId, empresaId, mensaje, resultado);
+        } catch (DataAccessException e) {
+            // B2: solo fallos de datos son best-effort; B1: sin mensaje ni stacktrace.
+            String correlacion = UUID.randomUUID().toString().substring(0, 8);
+            log.error("[rag] No se pudo persistir el turno ref={} paso=persistencia empresa={} sesion={}: {}",
+                correlacion, empresaId, sesionId, e.getClass().getName());
+        }
 
         // 8. Registrar tokens para billing/analytics (best-effort)
         try {
@@ -144,7 +175,11 @@ public class ShoppingAssistantService {
         }
 
         // 9. Actualizar memoria del visitante de forma asíncrona (no bloquea el response)
-        customerMemoryService.updateMemoryAsync(visitorId, mensaje, resultado.respuesta());
+        try {
+            customerMemoryService.updateMemoryAsync(visitorId, mensaje, resultado.respuesta());
+        } catch (RuntimeException e) {
+            log.warn("[rag] No se pudo programar memoria visitante: {}", e.getClass().getSimpleName());
+        }
 
         return new ChatResponse(
             resultado.respuesta(),
@@ -195,5 +230,13 @@ public class ShoppingAssistantService {
      */
     public void expireSession(String sesionIdStr) {
         sessionHelper.expireSession(sesionIdStr);
+    }
+
+    /** true si la excepción o alguna de sus causas es DataAccessException (B1). */
+    static boolean esErrorDeDatos(Throwable t) {
+        for (int i = 0; t != null && i < 16; t = t.getCause(), i++) {
+            if (t instanceof DataAccessException) return true;
+        }
+        return false;
     }
 }
