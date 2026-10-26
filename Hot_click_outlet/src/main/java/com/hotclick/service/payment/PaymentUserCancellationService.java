@@ -45,7 +45,7 @@ public class PaymentUserCancellationService {
         }
 
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
-        log.info("Pedido {} cancelado por el usuario {}", numeroPedido, correoUsuario);
+        log.info("Pedido {} cancelado por el usuario", numeroPedido);
     }
 
     @Transactional
