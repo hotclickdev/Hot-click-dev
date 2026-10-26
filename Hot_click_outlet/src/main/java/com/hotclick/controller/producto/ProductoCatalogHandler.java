@@ -155,7 +155,8 @@ public class ProductoCatalogHandler {
             productoAccessGuard.assertCanAccessProductoDetalle(base);
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
-        } catch (RuntimeException e) {
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            // Solo «no encontrado» (buscarPorId o el guard) es 404; otro error sigue al handler global.
             return ResponseEntity.status(404).body(ResponseDTO.error("Producto no encontrado"));
         }
         if (base.getGrupoVarianteId() == null) {

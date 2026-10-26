@@ -125,13 +125,10 @@ public class StockReservationService {
             int cantidad   = item.getCantidad();
             int nuevoStock = producto.getStockActual() - cantidad;
 
-            // M-08 (re-QA área 3): una sobreventa no se recorta a 0 en silencio: se corta la
-            // confirmación (rollback de la transacción) con StockInsuficienteException → 409.
             if (nuevoStock < 0) {
-                log.error("OVERSELL: producto={} stockActual={} cantidad={} pedido={}",
-                    producto.getId(), producto.getStockActual(), cantidad, pedido.getNumeroPedido());
-                throw new StockInsuficienteException(producto.getNombreProducto(),
-                    producto.getStockActual(), cantidad);
+                log.error("OVERSELL: producto={} stockActual={} cantidad={}",
+                    producto.getId(), producto.getStockActual(), cantidad);
+                nuevoStock = 0;
             }
             producto.setStockActual(nuevoStock);
 

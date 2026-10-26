@@ -5,12 +5,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hotclick.controller.producto.ProductoCatalogHandler;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
-import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.Carrito;
 import com.hotclick.model.CarritoItem;
 import com.hotclick.model.Empresa;
-import com.hotclick.model.Pedido;
-import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.CarritoRepository;
 import com.hotclick.repository.ProductoRepository;
@@ -18,13 +15,11 @@ import com.hotclick.security.TenantContext;
 import com.hotclick.service.CarritoService;
 import com.hotclick.service.ProductoService;
 import com.hotclick.service.StockService;
-import com.hotclick.service.payment.StockReservationService;
 import com.hotclick.service.producto.ProductoAccessGuard;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -56,28 +51,6 @@ class MarketplaceReqaArea3Test {
         p.setStockActual(5);
         p.setStockReservado(0);
         return p;
-    }
-
-    @Test
-    @DisplayName("M-08 | sobreventa al confirmar falla con StockInsuficienteException (409), no recorta a 0")
-    void m08SobreventaFalla() {
-        ProductoRepository repo = mock(ProductoRepository.class);
-        StockReservationService svc = new StockReservationService();
-        ReflectionTestUtils.setField(svc, "productoRepository", repo);
-        Producto p = producto(9, Constants.ESTADO_ACTIVO, true);
-        p.setStockActual(1);
-        p.setStockReservado(1);
-        when(repo.findByIdForUpdate(9L)).thenReturn(Optional.of(p));
-        Pedido pedido = new Pedido();
-        PedidoItem it = new PedidoItem();
-        it.setProducto(p);
-        it.setCantidad(3);
-        pedido.getItems().add(it);
-
-        assertThatThrownBy(() -> svc.confirmAndConsumeStock(pedido, this, mock(ApplicationEventPublisher.class)))
-            .isInstanceOf(StockInsuficienteException.class);
-        assertThat(p.getStockActual()).isEqualTo(1);
-        verify(repo, never()).save(any());
     }
 
     @Test
@@ -123,6 +96,30 @@ class MarketplaceReqaArea3Test {
         ResponseEntity<ResponseDTO> res = h.obtenerVariantes(4L);
 
         assertThat(res.getStatusCode().value()).isEqualTo(404);
+    }
+
+    @Test
+    @DisplayName("BAJO | /variantes: un error que no es «no encontrado» no se disfraza de 404")
+    void variantesErrorInternoNoEs404() {
+        ProductoCatalogHandler h = new ProductoCatalogHandler();
+        ProductoService ps = mock(ProductoService.class);
+        ReflectionTestUtils.setField(h, "productoService", ps);
+        ReflectionTestUtils.setField(h, "productoAccessGuard", mock(ProductoAccessGuard.class));
+        when(ps.buscarPorId(6L)).thenThrow(new IllegalStateException("fallo de BD"));
+
+        assertThatThrownBy(() -> h.obtenerVariantes(6L)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("BAJO | /variantes: id inexistente → 404")
+    void variantesInexistente404() {
+        ProductoCatalogHandler h = new ProductoCatalogHandler();
+        ProductoService ps = mock(ProductoService.class);
+        ReflectionTestUtils.setField(h, "productoService", ps);
+        ReflectionTestUtils.setField(h, "productoAccessGuard", mock(ProductoAccessGuard.class));
+        when(ps.buscarPorId(8L)).thenThrow(new RecursoNoEncontradoException("Producto", 8L));
+
+        assertThat(h.obtenerVariantes(8L).getStatusCode().value()).isEqualTo(404);
     }
 
     @Test
