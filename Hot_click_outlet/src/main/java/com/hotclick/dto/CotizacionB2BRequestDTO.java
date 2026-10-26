@@ -1,6 +1,9 @@
 package com.hotclick.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,6 +19,8 @@ public class CotizacionB2BRequestDTO {
     private LocalDate fechaVencimiento;
     private String estadoCotizacion;
     private Boolean aplicaIva = false;
+    @Min(value = 0, message = "El IVA no puede ser negativo")
+    @Max(value = 100, message = "El IVA no puede superar 100%")
     private Integer porcentajeIva = 13;
     private String observaciones;
     private String terminos;
@@ -28,13 +33,17 @@ public class CotizacionB2BRequestDTO {
     // ── Item DTO ─────────────────────────────────────────────────────────────────
 
     public static class ItemDTO {
+        /** Topes para que precio × cantidad nunca desborde en el cálculo de línea. */
+        public static final long MAX_PRECIO_UNITARIO = 1_000_000_000L;
+        public static final long MAX_CANTIDAD = 1_000_000L;
+
         private String tipo = "CATALOGO"; // CATALOGO | TEMPORAL
         private Long productoId;
 
         @Size(max = 50)
         private String codigo;
 
-        @NotBlank
+        @NotBlank(message = "El nombre del ítem es obligatorio")
         @Size(max = 200)
         private String nombre;
 
@@ -42,18 +51,22 @@ public class CotizacionB2BRequestDTO {
         private String imagenUrl;
 
         @NotNull
+        @Min(value = 1, message = "La cantidad debe ser al menos 1")
+        @Max(value = MAX_CANTIDAD, message = "La cantidad es demasiado alta")
         private Integer cantidad = 1;
 
         private String unidadMedida = "UNIDAD";
 
         @NotNull
+        @Min(value = 0, message = "El precio no puede ser negativo")
+        @Max(value = MAX_PRECIO_UNITARIO, message = "El precio es demasiado alto")
         private Integer precioUnitario = 0;
 
+        @Min(value = 0, message = "El descuento no puede ser negativo")
+        @Max(value = 100, message = "El descuento no puede superar 100%")
         private Integer descuentoPorcentaje = 0;
         private Integer orden = 0;
 
-        // Anotación inline para @NotBlank dentro del static class
-        @interface NotBlank { String message() default "El nombre del ítem es obligatorio"; }
 
         public String getTipo() { return tipo; }
         public void setTipo(String tipo) { this.tipo = tipo; }

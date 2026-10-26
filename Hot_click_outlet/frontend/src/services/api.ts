@@ -4,6 +4,7 @@ import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import type { AuthPersistido } from '@/types/auth'
 import type { ResponseDTO } from '@/types/api'
 import { quitarContentTypeSiFormData } from './apiMultipart'
+import { esErrorSuscripcionImpaga, useSuspensionStore } from '@/features/suspension/suspensionImpaga'
 
 type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
@@ -74,6 +75,9 @@ api.interceptors.response.use(
         globalThis.location.href = rutaLoginConRetorno(dest)
       }
     }
+
+    // Suscripción impaga (día 9+): el panel solo muestra la pantalla de pago.
+    if (esErrorSuscripcionImpaga(error)) useSuspensionStore.getState().marcar(true)
 
     return Promise.reject(error)
   }

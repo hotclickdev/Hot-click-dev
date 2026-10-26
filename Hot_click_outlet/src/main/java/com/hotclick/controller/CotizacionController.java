@@ -37,7 +37,7 @@ public class CotizacionController {
             cotizacionService.kpis(TenantContext.get())));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> detalle(@PathVariable Long id) {
         return ResponseEntity.ok(ResponseDTO.success("ok",
@@ -51,16 +51,16 @@ public class CotizacionController {
         return ResponseEntity.ok(ResponseDTO.success("Cotización creada", c));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody CotizacionB2BRequestDTO dto) {
+            @Valid @RequestBody CotizacionB2BRequestDTO dto) {
         return ResponseEntity.ok(ResponseDTO.success("Actualizada",
             cotizacionService.actualizar(id, dto, TenantContext.get())));
     }
 
-    @PutMapping("/{id}/estado")
+    @PutMapping("/{id:\\d+}/estado")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> cambiarEstado(
             @PathVariable Long id,
@@ -69,14 +69,14 @@ public class CotizacionController {
             cotizacionService.cambiarEstado(id, estado, TenantContext.get())));
     }
 
-    @PostMapping("/{id}/duplicar")
+    @PostMapping("/{id:\\d+}/duplicar")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> duplicar(@PathVariable Long id) {
         return ResponseEntity.ok(ResponseDTO.success("Cotización duplicada",
             cotizacionService.duplicar(id, TenantContext.get())));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> eliminar(@PathVariable Long id) {
         cotizacionService.eliminar(id, TenantContext.get());

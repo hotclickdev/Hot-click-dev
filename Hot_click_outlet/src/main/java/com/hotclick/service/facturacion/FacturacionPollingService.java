@@ -6,7 +6,6 @@ import com.hotclick.repository.EmpresaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,7 +26,7 @@ public class FacturacionPollingService {
         this.envioProcessor  = envioProcessor;
     }
 
-    @Transactional
+    /** Sin transacción envolvente: el processor abre transacciones cortas y llama a Hacienda fuera de ellas. */
     public void consultarPendientesHacienda() {
         for (var empresa : empresaRepo.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
             try {
@@ -46,10 +45,11 @@ public class FacturacionPollingService {
 
         for (ComprobanteFiscal cf : pendientes) {
             try {
-                if (ComprobanteFiscal.ESTADO_PENDIENTE.equals(cf.getEstado())) {
+                if (ComprobanteFiscal.ESTADO_PENDIENTE.equals(cf.getEstado())
+                        || ComprobanteFiscal.ESTADO_PENDIENTE_CONFIG.equals(cf.getEstado())) {
                     envioProcessor.procesarComprobante(cf.getId());
                 } else if (ComprobanteFiscal.ESTADO_ENVIADO.equals(cf.getEstado())) {
-                    envioProcessor.actualizarEstadoDesdeHacienda(cf);
+                    envioProcessor.actualizarEstadoDesdeHacienda(cf.getId());
                 }
             } catch (Exception e) {
                 log.error("[facturacion] Error en polling comprobante={}: {}", cf.getId(), e.getMessage());

@@ -27,6 +27,8 @@ public class ComprobanteFiscal {
     public static final String ESTADO_ACEPTADO   = "ACEPTADO";
     public static final String ESTADO_RECHAZADO  = "RECHAZADO";
     public static final String ESTADO_ERROR      = "ERROR";
+    /** Faltan datos fiscales (ATV, certificado, ubicación). Nunca se envió a Hacienda. */
+    public static final String ESTADO_PENDIENTE_CONFIG = "PENDIENTE_CONFIG";
 
     public static final String AMBIENTE_STAG = "STAG";
     public static final String AMBIENTE_PROD = "PROD";

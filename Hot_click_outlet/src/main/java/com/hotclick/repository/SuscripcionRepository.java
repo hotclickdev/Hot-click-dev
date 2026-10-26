@@ -104,4 +104,16 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
 
     /** P10-03: la empresa ya tuvo un trial alguna vez (el registro queda aunque expire o se cancele). */
     boolean existsByEmpresa_IdAndTrialEndIsNotNull(Long empresaId);
+
+    /** Admin: tiendas en periodo de gracia (mensualidad PAST_DUE), con empresa para listar. */
+    @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.estado = 'PAST_DUE' ORDER BY s.fechaFin ASC")
+    List<Suscripcion> findPastDueConEmpresa();
+
+    /** Admin: gracia con tope (lista acotada; el admin nunca pide sin límite). */
+    @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.estado = 'PAST_DUE' ORDER BY s.fechaFin ASC")
+    List<Suscripcion> findPastDueConEmpresa(org.springframework.data.domain.Pageable page);
+
+    /** Admin (anti N+1): suscripciones de un estado para varias empresas, más recientes primero. */
+    @Query("SELECT s FROM Suscripcion s WHERE s.empresa.id IN :ids AND s.estado = :estado ORDER BY s.fechaCreacion DESC")
+    List<Suscripcion> findByEmpresaIdsAndEstado(@Param("ids") java.util.Collection<Long> ids, @Param("estado") String estado);
 }

@@ -128,7 +128,7 @@ class EmpresaPerfilServiceTest {
     void toggle_pendiente_aprobacion() {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("PENDIENTE_APROBACION");
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, true))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -141,7 +141,7 @@ class EmpresaPerfilServiceTest {
     void toggle_sin_valor() {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("ACTIVO");
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, null))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -154,7 +154,7 @@ class EmpresaPerfilServiceTest {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("ACTIVO");
         e.setVisibilidadPublica(false);
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Map<String, Object> out = service.toggleVisibilidad(3L, "true");
@@ -170,7 +170,7 @@ class EmpresaPerfilServiceTest {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("SUSPENDIDO");
         e.setVisibilidadPublica(false);
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, true))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -184,7 +184,7 @@ class EmpresaPerfilServiceTest {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("INACTIVO");
         e.setVisibilidadPublica(false);
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, true))
                 .isInstanceOf(IllegalArgumentException.class)

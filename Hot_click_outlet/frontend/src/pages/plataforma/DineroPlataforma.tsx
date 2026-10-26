@@ -5,13 +5,16 @@ import { paymentService } from '@/services/paymentService'
 import { walletService } from '@/services/walletService'
 import { consolaService, objetoDe } from './consola'
 import { campoLista, filasDe, idSeguro, texto, type Fila } from './normalizar'
+import ImpagoPlataforma from './ImpagoPlataforma'
 import { Aviso, Carga, Chip, Encabezado, FilaDecision, Marco, Metrica, Segmento, TARJETA } from './piezas'
+import { formatPrice } from '@/utils/format'
 
 const VISTAS = [
   { id: 'quincena', label: 'Quincena', to: '/plataforma/dinero' },
   { id: 'cobros', label: 'SINPE', to: '/plataforma/dinero/cobros' },
   { id: 'liquidaciones', label: 'Retiros', to: '/plataforma/dinero/liquidaciones' },
   { id: 'suscripciones', label: 'Suscripciones', to: '/plataforma/dinero/suscripciones' },
+  { id: 'impago', label: 'Impago', to: '/plataforma/dinero/impago' },
 ]
 
 export default function DineroPlataforma() {
@@ -33,6 +36,7 @@ export default function DineroPlataforma() {
       {vista === 'liquidaciones' && <Liquidaciones />}
       {vista === 'suscripciones' && <Suscripciones />}
       {vista === 'cobros' && <Cobros />}
+      {vista === 'impago' && <ImpagoPlataforma />}
     </div>
   )
 }
@@ -92,7 +96,7 @@ function LineaQuincena({ fila }: { fila: Fila }) {
 function colones(valor: unknown): string {
   const crudo = typeof valor === 'number' ? valor : Number(texto(valor, ''))
   if (!Number.isFinite(crudo)) return '—'
-  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(crudo)
+  return formatPrice(crudo)
 }
 
 function Cobros() {

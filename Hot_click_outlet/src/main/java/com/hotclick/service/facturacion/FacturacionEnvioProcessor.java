@@ -2,130 +2,189 @@ package com.hotclick.service.facturacion;
 
 import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.model.Empresa;
-import com.hotclick.model.Pedido;
 import com.hotclick.repository.ComprobanteFiscalRepository;
-import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.FacturacionContingenciaService;
-import com.hotclick.service.FirmaDigitalService;
 import com.hotclick.service.HaciendaApiClient;
-import com.hotclick.service.XmlFacturaBuilder;
+import com.hotclick.service.hacienda.ComprobanteInvalidoException;
+import com.hotclick.service.hacienda.HaciendaConfiguracionException;
+import com.hotclick.service.hacienda.ResultadoEnvioHacienda;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.function.Consumer;
 
+/**
+ * Envío y consulta de comprobantes. NO es @Transactional: cada paso de BD es una transacción corta
+ * (TransactionTemplate) y las llamadas HTTP a Hacienda quedan fuera de toda transacción.
+ *
+ * <p>El comprobante solo pasa a ENVIADO cuando Hacienda confirmó la recepción (2xx).
+ */
 @Service
 public class FacturacionEnvioProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(FacturacionEnvioProcessor.class);
-    private static final int MAX_INTENTOS = 5;
+    static final int MAX_INTENTOS = 5;
 
     private final ComprobanteFiscalRepository comprobanteRepo;
-    private final PedidoRepository pedidoRepository;
-    private final XmlFacturaBuilder xmlBuilder;
-    private final FirmaDigitalService firmaService;
+    private final ComprobanteXmlPreparer preparer;
     private final HaciendaApiClient haciendaClient;
     private final FacturacionContingenciaService contingenciaService;
+    private final TransactionTemplate tx;
 
     public FacturacionEnvioProcessor(ComprobanteFiscalRepository comprobanteRepo,
-                                     PedidoRepository pedidoRepository,
-                                     XmlFacturaBuilder xmlBuilder,
-                                     FirmaDigitalService firmaService,
+                                     ComprobanteXmlPreparer preparer,
                                      HaciendaApiClient haciendaClient,
-                                     FacturacionContingenciaService contingenciaService) {
+                                     FacturacionContingenciaService contingenciaService,
+                                     PlatformTransactionManager txManager) {
         this.comprobanteRepo     = comprobanteRepo;
-        this.pedidoRepository    = pedidoRepository;
-        this.xmlBuilder          = xmlBuilder;
-        this.firmaService        = firmaService;
+        this.preparer            = preparer;
         this.haciendaClient      = haciendaClient;
         this.contingenciaService = contingenciaService;
+        this.tx                  = new TransactionTemplate(txManager);
     }
 
-    @Transactional
     public void procesarComprobante(Long comprobanteId) {
-        ComprobanteFiscal cf = comprobanteRepo.findById(comprobanteId).orElse(null);
-        if (cf == null) return;
+        Boolean reclamado = tx.execute(s -> reclamar(comprobanteId));
+        if (!Boolean.TRUE.equals(reclamado)) return;
 
-        if (!ComprobanteFiscal.ESTADO_PENDIENTE.equals(cf.getEstado())) {
-            log.warn("[facturacion] Comprobante={} ya en estado {} — skip envío duplicado",
-                comprobanteId, cf.getEstado());
+        ComprobanteXmlPreparer.Preparado preparado;
+        try {
+            preparado = preparer.preparar(comprobanteId);
+        } catch (HaciendaConfiguracionException e) {
+            pendienteConfig(comprobanteId, e.getMessage());
+            return;
+        } catch (ComprobanteInvalidoException e) {
+            // Datos que no cumplen el XSD: reintentar no sirve, hay que corregirlos.
+            actualizar(comprobanteId, cf -> {
+                cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
+                cf.setMensajeHacienda(truncar(e.getMessage()));
+            });
+            log.error("[facturacion] comprobante={} no cumple el XSD oficial: {}", comprobanteId, e.getMessage());
+            return;
+        } catch (Exception e) {
+            errorYContingencia(comprobanteId, e.getMessage());
             return;
         }
-
-        Empresa empresa = cf.getEmpresa();
-
-        if (!empresa.isConfiguracionFiscalCompleta()) {
-            log.warn("[facturacion] empresa={} sin certificado o credenciales — comprobante={} queda PENDIENTE",
-                empresa.getId(), comprobanteId);
-            return;
-        }
-
-        cf.setIntentosEnvio(cf.getIntentosEnvio() + 1);
-        cf.setEstado(ComprobanteFiscal.ESTADO_ENVIADO);
-        comprobanteRepo.save(cf);
 
         try {
-            String xmlSinFirmar = xmlDe(cf, empresa);
-            String xmlFirmado   = firmaService.firmar(xmlSinFirmar, empresa);
-
-            boolean enviado = haciendaClient.enviar(xmlFirmado, cf.getClaveNumerica(), empresa);
-
-            if (!enviado) {
-                cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
-                comprobanteRepo.save(cf);
-                contingenciaService.encolar(comprobanteId);
+            ResultadoEnvioHacienda r = haciendaClient.enviar(preparado.xmlFirmado(), preparado.clave(), preparado.empresa());
+            if (r.recibido()) {
+                actualizar(comprobanteId, cf -> {
+                    cf.setEstado(ComprobanteFiscal.ESTADO_ENVIADO);
+                    cf.setMensajeHacienda(null);
+                });
+            } else {
+                actualizar(comprobanteId, cf -> {
+                    cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
+                    cf.setMensajeHacienda(truncar(r.motivo()));
+                });
             }
+        } catch (HaciendaConfiguracionException e) {
+            pendienteConfig(comprobanteId, e.getMessage());
         } catch (Exception e) {
-            cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
-            cf.setMensajeHacienda(e.getMessage());
-            comprobanteRepo.save(cf);
-            contingenciaService.encolar(comprobanteId);
             log.error("[facturacion] Error enviando comprobante={}: {}", comprobanteId, e.getMessage());
+            errorYContingencia(comprobanteId, e.getMessage());
         }
     }
 
-    @Transactional
-    public void actualizarEstadoDesdeHacienda(ComprobanteFiscal cf) {
-        String estadoHacienda = haciendaClient.consultarEstado(cf.getClaveNumerica(), cf.getEmpresa());
+    public void actualizarEstadoDesdeHacienda(Long comprobanteId) {
+        ComprobanteFiscal cf = tx.execute(s -> comprobanteRepo.findById(comprobanteId)
+            .map(c -> { c.getEmpresa().getAmbienteHacienda(); return c; })
+            .orElse(null));
+        if (cf == null || !ComprobanteFiscal.ESTADO_ENVIADO.equals(cf.getEstado())) return;
 
-        switch (estadoHacienda.toLowerCase()) {
-            case "aceptado" -> {
-                cf.setEstado(ComprobanteFiscal.ESTADO_ACEPTADO);
-                cf.setFechaRespuesta(LocalDateTime.now(Constants.ZONA_CR));
-                log.info("[facturacion] Comprobante ACEPTADO id={} clave={}", cf.getId(), cf.getClaveNumerica());
-            }
-            case "rechazado" -> {
-                cf.setEstado(ComprobanteFiscal.ESTADO_RECHAZADO);
-                cf.setFechaRespuesta(LocalDateTime.now(Constants.ZONA_CR));
-                log.warn("[facturacion] Comprobante RECHAZADO id={} clave={}", cf.getId(), cf.getClaveNumerica());
-            }
-            case "en_procesamiento" -> log.debug("[facturacion] Comprobante en procesamiento id={}", cf.getId());
-            default -> {
-                cf.setIntentosEnvio(cf.getIntentosEnvio() + 1);
-                if (cf.getIntentosEnvio() >= MAX_INTENTOS) {
-                    cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
-                    cf.setMensajeHacienda("Max intentos alcanzado. Último estado: " + estadoHacienda);
-                    comprobanteRepo.save(cf);
-                    contingenciaService.encolar(cf.getId());
-                    return;
+        String estadoHacienda;
+        try {
+            estadoHacienda = haciendaClient.consultarEstado(cf.getClaveNumerica(), cf.getEmpresa());
+        } catch (HaciendaConfiguracionException e) {
+            log.warn("[facturacion] comprobante={} sin credenciales para consultar: {}", comprobanteId, e.getMessage());
+            return;
+        } catch (Exception e) {
+            estadoHacienda = "error_consulta";
+        }
+
+        final String estado = estadoHacienda;
+        boolean[] encolar = {false};
+        actualizar(comprobanteId, c -> {
+            switch (estado.toLowerCase()) {
+                case "aceptado" -> {
+                    c.setEstado(ComprobanteFiscal.ESTADO_ACEPTADO);
+                    c.setFechaRespuesta(LocalDateTime.now(Constants.ZONA_CR));
+                }
+                case "rechazado" -> {
+                    c.setEstado(ComprobanteFiscal.ESTADO_RECHAZADO);
+                    c.setFechaRespuesta(LocalDateTime.now(Constants.ZONA_CR));
+                }
+                case "en_procesamiento", "procesando", "recibido" ->
+                    log.debug("[facturacion] Comprobante en procesamiento id={}", c.getId());
+                default -> {
+                    c.setIntentosEnvio(c.getIntentosEnvio() + 1);
+                    if (c.getIntentosEnvio() >= MAX_INTENTOS) {
+                        c.setEstado(ComprobanteFiscal.ESTADO_ERROR);
+                        c.setMensajeHacienda("Max intentos alcanzado. Último estado: " + estado);
+                        encolar[0] = true;
+                    }
                 }
             }
-        }
-        comprobanteRepo.save(cf);
+        });
+        if (encolar[0]) contingenciaService.encolar(comprobanteId);
     }
 
-    private String xmlDe(ComprobanteFiscal cf, Empresa empresa) {
-        if (cf.getCompra() != null && cf.getCompra().getId() != null) {
-            List<Pedido> paquetes = pedidoRepository.findByCompra_IdOrderByNumeroPaqueteAsc(cf.getCompra().getId());
-            return xmlBuilder.construir(cf, empresa, paquetes);
+    private boolean reclamar(Long comprobanteId) {
+        ComprobanteFiscal cf = comprobanteRepo.findById(comprobanteId).orElse(null);
+        if (cf == null) return false;
+        String estado = cf.getEstado();
+        if (!ComprobanteFiscal.ESTADO_PENDIENTE.equals(estado)
+                && !ComprobanteFiscal.ESTADO_PENDIENTE_CONFIG.equals(estado)) {
+            log.warn("[facturacion] Comprobante={} ya en estado {} — skip envío duplicado", comprobanteId, estado);
+            return false;
         }
-        if (cf.getPedido() == null) {
-            throw new IllegalStateException("El comprobante no tiene compra ni pedido");
+        Empresa empresa = cf.getEmpresa();
+        if (!empresa.isConfiguracionFiscalCompleta()) {
+            cf.setEstado(ComprobanteFiscal.ESTADO_PENDIENTE_CONFIG);
+            cf.setMensajeHacienda(MENSAJE_SIN_CONFIG);
+            comprobanteRepo.save(cf);
+            log.warn("[facturacion] empresa={} sin configuración fiscal completa — comprobante={} PENDIENTE_CONFIG",
+                empresa.getId(), comprobanteId);
+            return false;
         }
-        return xmlBuilder.construir(cf, empresa, cf.getPedido());
+        return comprobanteRepo.reclamarEnvio(comprobanteId, cf.getIntentosEnvio()) == 1;
+    }
+
+    static final String MENSAJE_SIN_CONFIG =
+        "Falta completar la configuración de Hacienda (usuario y clave de ATV, certificado y PIN). "
+            + "Completala y el comprobante se envía solo.";
+
+    private void pendienteConfig(Long id, String motivo) {
+        actualizar(id, cf -> {
+            cf.setEstado(ComprobanteFiscal.ESTADO_PENDIENTE_CONFIG);
+            cf.setMensajeHacienda(truncar(motivo));
+        });
+        log.warn("[facturacion] comprobante={} PENDIENTE_CONFIG: {}", id, motivo);
+    }
+
+    private void errorYContingencia(Long id, String motivo) {
+        actualizar(id, cf -> {
+            cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
+            cf.setMensajeHacienda(truncar(motivo));
+        });
+        contingenciaService.encolar(id);
+    }
+
+    private void actualizar(Long id, Consumer<ComprobanteFiscal> cambio) {
+        tx.executeWithoutResult(s -> comprobanteRepo.findById(id).ifPresent(cf -> {
+            cambio.accept(cf);
+            comprobanteRepo.save(cf);
+        }));
+    }
+
+    private static String truncar(String s) {
+        if (s == null) return null;
+        return s.length() > 1000 ? s.substring(0, 1000) : s;
     }
 }
