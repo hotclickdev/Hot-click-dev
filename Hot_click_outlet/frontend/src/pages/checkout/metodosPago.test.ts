@@ -15,3 +15,10 @@ describe('metodosDisponibles: SINPE sin número configurado', () => {
     expect(ids(!metodoProximamente(PAGO_SINPE, false, true))).toEqual([PAGO_SINPE, PAGO_TARJETA])
   })
 })
+
+describe('metodosDisponibles: parámetro obligatorio (fail-closed)', () => {
+  it('omitir sinpeHabilitado es error de tipo y en runtime no ofrece SINPE', () => {
+    // @ts-expect-error sinpeHabilitado es obligatorio, sin default
+    expect(metodosDisponibles().map((m) => m.id)).toEqual([PAGO_TARJETA])
+  })
+})
