@@ -92,7 +92,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
     }
 
-    /** Enlace de asignación de negocio usado (409), vencido o revocado (410). */
+    /** Reactivación, publicación o cambio de plan de una tienda en impago sin pago (409 REACTIVACION_REQUIERE_PAGO). */
     @ExceptionHandler(com.hotclick.exception.ReactivacionSinPagoException.class)
     public ResponseEntity<ResponseDTO> handleReactivacionSinPago(com.hotclick.exception.ReactivacionSinPagoException ex) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage(),
