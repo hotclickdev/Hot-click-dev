@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +31,11 @@ public class PosQrVentaService {
     @Autowired private PosQrSessionService   sessionService;
     @Autowired private PosQrVentaCompletionService completionService;
     @Autowired private TurnoCajaService       turnoCajaService;
+
+    /** Reloj inyectable (tests); en producción, hora de Costa Rica. */
+    private volatile Clock clock = Clock.system(Constants.ZONA_CR);
+
+    void setClock(Clock clock) { this.clock = Objects.requireNonNull(clock); }
 
 
 
@@ -88,7 +94,7 @@ public class PosQrVentaService {
         if (order == null || !order.startsWith(PREFIJO_TILOPAY) || sesion.getTotal() == null) return false;
         com.hotclick.service.TilopayService.ConsultaResultado c = tilopayService.consultarTransaccion(order);
         if (!coincideTilopay(order, sesion.getTotal(), c, tilopayService.isMockMode())) {
-            log.warn("[POS-QR] Tilopay no confirmó token={} order={}", token, order);
+            log.warn("[POS-QR] Tilopay no confirmó token={} order={}", mascararToken(token), order);
             return false;
         }
         return completarSiPagoPasarela(order);
@@ -135,19 +141,19 @@ public class PosQrVentaService {
         if (pedido == null) return;
         PosQrSesion sesion = posQrRepo.findByToken(posQrToken).orElse(null);
         if (sesion == null) {
-            log.warn("[POS-QR] Token {} no encontrado al vincular pedido {}", posQrToken, pedidoId);
+            log.warn("[POS-QR] Token {} no encontrado al vincular pedido {}", mascararToken(posQrToken), pedidoId);
             return;
         }
         String rechazo = esCompraDeVariosPaquetes(pedido)
             ? "la compra trae paquetes de varios negocios"
             : motivoRechazoVinculo(sesion, pedido);
         if (rechazo != null) {
-            log.warn("[POS-QR] Sesión {} no se vincula a pedido {}: {}", posQrToken, pedidoId, rechazo);
+            log.warn("[POS-QR] Sesión {} no se vincula a pedido {}: {}", mascararToken(posQrToken), pedidoId, rechazo);
             return;
         }
         sesion.setPedidoId(pedidoId);
         posQrRepo.save(sesion);
-        log.info("[POS-QR] Sesión {} vinculada a pedido tienda {}", posQrToken, pedidoId);
+        log.info("[POS-QR] Sesión {} vinculada a pedido tienda {}", mascararToken(posQrToken), pedidoId);
     }
 
     /** Un QR de mesa es de un solo negocio: una compra con varios paquetes (grupo_pago) no se vincula. */
@@ -187,7 +193,7 @@ public class PosQrVentaService {
     /** Solo la primera transacción que reclama la sesión cierra la venta; evita dos pedidos y dos sumas al turno. */
     private boolean reclamar(PosQrSesion sesion) {
         if (posQrRepo.reclamarParaCompletar(sesion.getId()) == 1) return true;
-        log.info("[POS-QR] Sesión {} ya la está cerrando otra transacción", sesion.getToken());
+        log.info("[POS-QR] Sesión {} ya la está cerrando otra transacción", mascararToken(sesion.getToken()));
         return false;
     }
 
@@ -203,7 +209,7 @@ public class PosQrVentaService {
                 log.warn("[POS-QR] No se pudo actualizar turno al marcar PAGADO: {}", e.getMessage());
             }
         }
-        log.info("[POS-QR] Sesión {} marcada PAGADO vía pedido tienda {}", sesion.getToken(), sesion.getPedidoId());
+        log.info("[POS-QR] Sesión {} marcada PAGADO vía pedido tienda {}", mascararToken(sesion.getToken()), sesion.getPedidoId());
     }
 
     @Transactional
@@ -215,7 +221,7 @@ public class PosQrVentaService {
             return sesion.getEstado();
         }
 
-        if (LocalDateTime.now(Constants.ZONA_CR).isAfter(sesion.getFechaExpiracion())) {
+        if (!estaVigente(sesion, LocalDateTime.now(clock))) {
             sesion.setEstado("EXPIRADO");
             posQrRepo.save(sesion);
             return "EXPIRADO";
@@ -268,6 +274,8 @@ public class PosQrVentaService {
         if (!empresaIdDe(sesion).equals(empresaId)) {
             throw new SecurityException("No autorizado");
         }
+        exigirVigente(sesion, LocalDateTime.now(clock));
+        exigirMetodoSinpe(sesion);
         if (!reclamar(sesion)) {
             throw new IllegalStateException("La sesión ya se está confirmando");
         }
@@ -284,6 +292,32 @@ public class PosQrVentaService {
     @Transactional
     protected void completarVentaSinpe(PosQrSesion sesion, Long usuarioId, String notas) {
         completionService.completarVentaSinpe(sesion, usuarioId, notas);
+    }
+
+    /** Fail-closed: sin fecha de expiración o ya vencida, la sesión QR no se puede confirmar (#220). */
+    static void exigirVigente(PosQrSesion sesion, LocalDateTime ahora) {
+        if (!estaVigente(sesion, ahora)) {
+            throw new IllegalStateException("La sesión QR está vencida; generá un QR nuevo");
+        }
+    }
+
+    static boolean estaVigente(PosQrSesion sesion, LocalDateTime ahora) {
+        LocalDateTime expira = sesion.getFechaExpiracion();
+        return expira != null && ahora.isBefore(expira);
+    }
+
+    /** Fail-closed: la caja solo confirma a mano sesiones cuyo método vigente es SINPE (null incluido se rechaza). */
+    static void exigirMetodoSinpe(PosQrSesion sesion) {
+        if (!Constants.PROVEEDOR_SINPE.equals(sesion.getMetodoPago())) {
+            throw new IllegalStateException("Solo se confirman a mano sesiones SINPE; esta es "
+                + sesion.getMetodoPago());
+        }
+    }
+
+    /** El token del QR es una credencial de cobro: en logs solo sus primeros 4 caracteres. */
+    static String mascararToken(String token) {
+        if (token == null) return "null";
+        return token.length() <= 4 ? "****" : token.substring(0, 4) + "****";
     }
 
     static boolean esMetodoPasarela(PosQrSesion sesion) {
