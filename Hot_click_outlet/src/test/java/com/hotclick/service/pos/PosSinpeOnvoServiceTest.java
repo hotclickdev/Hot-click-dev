@@ -179,4 +179,13 @@ class PosSinpeOnvoServiceTest {
         when(onvo.modoEsperado()).thenReturn("test");
         org.assertj.core.api.Assertions.assertThat(svc.esCobroDePrueba(ses)).isFalse();
     }
+
+    @Test
+    @DisplayName("26-oct: tienda SUSPENDIDO_IMPAGO (día 9+) no cobra por el QR público; fail-closed sin llamar a ONVO")
+    void tiendaSuspendidaNoCobra() {
+        sesion.getEmpresa().setEstadoEmpresa(Constants.ESTADO_EMPRESA_SUSPENDIDO_IMPAGO);
+        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 0, TEL))
+            .isInstanceOf(IllegalStateException.class).hasMessage(PosSinpeOnvoService.MSG_TIENDA_NO_VENDE);
+        verify(onvo, never()).crearPaymentIntent(anyInt(), anyString(), anyMap());
+    }
 }

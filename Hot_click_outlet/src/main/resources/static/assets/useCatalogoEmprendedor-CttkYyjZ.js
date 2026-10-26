@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-C368KniK.js";function t(){return e()}export{t};

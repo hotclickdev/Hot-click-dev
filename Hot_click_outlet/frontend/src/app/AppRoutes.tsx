@@ -6,12 +6,15 @@ import AdminRoleSwitch from '@/app/AdminRoleSwitch'
 import PrototipoRedirect from '@/app/PrototipoRedirect'
 import { CajaAcceso, hijosCaja } from '@/app/CajaShell'
 import PlataformaAcceso from '@/app/PlataformaAcceso'
+import SuspensionRedirect from '@/features/suspension/SuspensionRedirect'
+import { RUTA_CUENTA_SUSPENDIDA } from '@/features/suspension/suspensionImpaga'
 import { RequiereClerk } from '@/components/auth/ClerkDisponible'
 
 // La clave de Clerk se resuelve en runtime dentro de ClerkShell (static/ va sin VITE_*).
 const ClerkShell = lazy(() => import('@/components/auth/ClerkShell'))
 const SSOCallback = lazy(() => import('@/pages/SSOCallback'))
 const SSOComplete = lazy(() => import('@/pages/SSOComplete'))
+const CuentaSuspendidaPage = lazy(() => import('@/features/suspension/CuentaSuspendidaPage'))
 
 const InicioPlataforma = lazy(() => import('@/pages/plataforma/InicioPlataforma'))
 const NegociosPlataforma = lazy(() => import('@/pages/plataforma/NegociosPlataforma'))
@@ -105,7 +108,10 @@ const TiendaSuccessPage = lazy(() => import('@/pages/tienda/TiendaSuccessPage'))
  */
 export default function AppRoutes() {
   return (
+    <>
+    <SuspensionRedirect />
     <Routes>
+      <Route path={RUTA_CUENTA_SUSPENDIDA} element={<ProtectedRoute><CuentaSuspendidaPage /></ProtectedRoute>} />
       <Route path="/" element={<HomePage />} />
       <Route path="/visitante" element={<VisitanteDeprecatedRedirect />} />
       <Route path="/visitante/*" element={<VisitanteDeprecatedRedirect />} />
@@ -223,5 +229,6 @@ export default function AppRoutes() {
       <Route path="/sin-conexion" element={<SinConexionPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </>
   )
 }

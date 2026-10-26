@@ -14,7 +14,8 @@ export const MODEL_DIR = 'Hot_click_outlet/src/main/java/com/hotclick/model';
 export const ACTUALIZADO = 'Hot_click_outlet/Actualizado.sql';
 export const FRONTEND_SRC = 'Hot_click_outlet/frontend/src';
 export const STATIC_DIR = 'Hot_click_outlet/src/main/resources/static';
-export const DEFAULT_HEALTH_URL = 'https://hot-click-dev.onrender.com/api/health';
+// INF-05: sin fallback a un host fijo. Sin HEALTH_URL el pager se saltea (verde).
+export const DEFAULT_HEALTH_URL = '';
 
 export const SKIP_LABELS = {
   drift: 'skip-flyway-drift',

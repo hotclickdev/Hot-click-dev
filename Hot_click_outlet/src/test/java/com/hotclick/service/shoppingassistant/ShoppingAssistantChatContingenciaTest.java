@@ -51,6 +51,7 @@ class ShoppingAssistantChatContingenciaTest {
     private final ShoppingAssistantSessionHelper sesiones = mock(ShoppingAssistantSessionHelper.class);
     private final ShoppingAssistantPersistence persistencia = mock(ShoppingAssistantPersistence.class);
     private ShoppingAssistantService service;
+    private final ShoppingAssistantSesionFirma firma = ShoppingAssistantCuotaTest.firmaTest();
     private final UUID sesion = UUID.randomUUID();
     private final RagResult ok = new RagResult("respuesta ok", List.of(), List.of(), List.of(), 0, 0);
 
@@ -64,7 +65,7 @@ class ShoppingAssistantChatContingenciaTest {
         when(pipeline.ejecutar(anyString(), anyLong(), any(), any(), any(), any(), anyBoolean(), any())).thenReturn(ok);
         service = new ShoppingAssistantService(pipeline, mock(AiQuotaService.class), sanitizer, memoria,
             classifier, mock(AssistantMetricsService.class), sesiones, persistencia,
-            mock(ShoppingAssistantFeedbackHandler.class));
+            mock(ShoppingAssistantFeedbackHandler.class), ShoppingAssistantCuotaTest.cuotaLibre(), firma);
     }
 
     private ChatResponse chat() {
@@ -100,7 +101,7 @@ class ShoppingAssistantChatContingenciaTest {
             .persistirMensajes(any(), anyLong(), anyString(), any());
         ChatResponse r = chat();
         assertThat(r.getRespuesta()).isEqualTo("respuesta ok");
-        assertThat(r.getSesionId()).isEqualTo(sesion.toString());
+        assertThat(r.getSesionId()).isEqualTo(firma.firmar(1L, sesion));
     }
 
     @Test void slugDuplicado_failClosed404() {
