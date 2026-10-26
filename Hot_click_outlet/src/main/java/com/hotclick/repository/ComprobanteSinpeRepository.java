@@ -17,6 +17,11 @@ public interface ComprobanteSinpeRepository extends JpaRepository<ComprobanteSin
 
     Optional<ComprobanteSinpe> findByPedidoId(Long pedidoId);
 
+    /** P-02: SELECT ... FOR UPDATE; aprobar y rechazar se serializan sobre la fila del comprobante. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM ComprobanteSinpe c WHERE c.id = :id")
+    Optional<ComprobanteSinpe> findByIdForUpdate(@Param("id") Long id);
+
     @Query("SELECT c FROM ComprobanteSinpe c WHERE (:estado IS NULL OR c.estado = :estado) ORDER BY c.fechaSubida DESC")
     Page<ComprobanteSinpe> buscarPorEstado(@Param("estado") String estado, Pageable pageable);
 

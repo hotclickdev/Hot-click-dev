@@ -60,7 +60,7 @@ public class TelegramAbusoService {
 
     public void avisarErrorDeUsuario(long chatId, String resumen) {
         if (!rateLimiter.tryAcquire("tg:err:" + chatId, 1, 300)) return;
-        String corto = resumen == null ? "" : resumen;
+        String corto = resumen == null ? "" : TelegramTexto.sinToken(resumen);
         if (corto.length() > 300) corto = corto.substring(0, 300);
         telegramService.enviar("Error en el bot de clientes. Chat " + chatId + ". " + corto);
     }

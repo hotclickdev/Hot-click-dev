@@ -18,6 +18,16 @@ public class SuscripcionRenewalService {
 
     @Autowired private SuscripcionRepository suscripcionRepo;
     @Autowired private SuscripcionPlanSupport planSupport;
+    @Autowired private com.hotclick.service.onvo.OnvoBillingClient onvoBilling;
+
+    /**
+     * Auditor 5 S-01: solo se degrada por impago si existe una forma real de pagar la mensualidad
+     * (ONVO con llave, no mock ni deshabilitado). Fail-closed: ante la duda, no se quita el plan.
+     */
+    boolean hayCobroDisponible() {
+        return onvoBilling != null && !onvoBilling.sinLlave() && !onvoBilling.isMockMode()
+            && !onvoBilling.isBillingDeshabilitado();
+    }
 
     /** Expira trials vencidos → degrada a FREE. Llamado por BillingRenewalScheduler. */
     @Transactional
@@ -42,6 +52,10 @@ public class SuscripcionRenewalService {
     public int expirarPastDueVencidos() {
         // La consulta compara fecha_fin < límite: con gracia, el límite se corre N días hacia atrás.
         LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
+        if (!hayCobroDisponible()) {
+            log.warn("[billing] PAST_DUE no se degradan: no hay cobro de mensualidades disponible (ONVO sin configurar)");
+            return 0;
+        }
         LocalDate limite = hoy.minusDays(Math.max(0, diasGracia));
         List<Long> empresaIds = suscripcionRepo.findEmpresaIdsPastDueVencidos(limite);
         if (empresaIds.isEmpty()) return 0;

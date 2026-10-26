@@ -247,8 +247,9 @@ public class PedidoPagoManualService {
 
     /**
      * P-01: SINPE Móvil ya no es manual; se confirma solo por webhook ONVO (succeeded + GET), nunca con
-     * referencia del vendedor. Se capturan a mano solo MANUAL y el efectivo (que se guarda con proveedor
-     * SINPE por herencia), y nunca un pago que ya tiene intent ONVO.
+     * referencia del vendedor. Se capturan a mano solo MANUAL y los cobros en mano (efectivo y contra
+     * entrega, guardados con proveedor SINPE por herencia), y nunca un pago que ya tiene intent ONVO.
+     * Contra entrega debe llegar acá para que aplique la regla de Envío Normal (403, solo plataforma).
      */
     static boolean esPagoManual(Pago pago) {
         if (Constants.PROVEEDOR_MANUAL.equalsIgnoreCase(pago.getProveedor())) return true;
@@ -256,7 +257,7 @@ public class PedidoPagoManualService {
         String token = pago.getMerchantToken();
         if (token != null && token.startsWith("ONVOPI:")) return false;
         return pago.getPedido() != null
-            && METODOS_COBRO_AL_RETIRAR.contains(normalizarMetodo(pago.getPedido().getMetodoPago()));
+            && METODOS_MANUALES.contains(normalizarMetodo(pago.getPedido().getMetodoPago()));
     }
 
     static String normalizarMetodo(String metodo) {

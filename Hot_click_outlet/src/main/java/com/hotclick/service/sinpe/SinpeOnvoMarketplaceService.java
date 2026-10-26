@@ -96,7 +96,10 @@ public class SinpeOnvoMarketplaceService {
     /**
      * Crea y confirma el intent del grupo para el Pago ya guardado. El id del intent y el plazo interno se
      * guardan antes de confirmar. Devuelve el plazo interno.
+     * SCALE1: corre dentro de la transacción del checkout (MANDATORY) con el Pago gestionado; los cambios
+     * se escriben por dirty checking en un solo UPDATE al flush, sin save()/merge por pago.
      */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public LocalDateTime iniciar(Pago pago, String identificacion, Integer tipo) {
         exigirIdentificacion(identificacion, tipo);
         if (destinoDisponible().isEmpty() || pago.getMonto() == null || pago.getMonto() <= 0) {
@@ -111,7 +114,6 @@ public class SinpeOnvoMarketplaceService {
         pago.setMerchantToken(PREFIJO + intent.id());
         pago.setPlazoInternoSinpe(plazo);
         pago.setFechaActualizacion(LocalDateTime.now(clock));
-        pagoRepository.save(pago);
         OnvoService.OnvoPaymentMethod metodo = onvoService.crearMetodoPagoSinpePos(identificacion, tipo, null);
         onvoService.confirmarPaymentIntent(intent.id(), metodo.id());
         log.info("[SINPE-ONVO] Intent confirmado pedido={} plazoInterno={}", numero, plazo);
@@ -146,23 +148,20 @@ public class SinpeOnvoMarketplaceService {
         if (e == PosSinpeOnvoService.EstadoIntent.ESPERANDO) return Resultado.EN_ESPERA;
         if (e != PosSinpeOnvoService.EstadoIntent.PAGADO) return Resultado.NO_VERIFICADO;
 
-        WebhookEvent evento = registrar(token, tipo);
+        // SCALE1: el Pago viene gestionado (SELECT FOR UPDATE): sus cambios salen por dirty checking, sin save().
         LocalDateTime ahora = LocalDateTime.now(clock);
         if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago()) || algunoCancelado(pago)) {
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
             pago.setFechaActualizacion(ahora);
-            pagoRepository.save(pago);
-            evento.setErrorProcesamiento("Cobro SINPE de ONVO sobre pedido cancelado: reembolso pendiente");
-            cerrar(evento);
+            registrarProcesado(token, tipo, "Cobro SINPE de ONVO sobre pedido cancelado: reembolso pendiente");
             log.error("[ALERTA-PAGO] ONVO cobró SINPE de un pedido ya cancelado; reembolso pendiente: pago={}", pago.getId());
             return Resultado.COBRADO_SOBRE_CANCELADO;
         }
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setMetodoPagoTipo(Constants.PROVEEDOR_SINPE);
         pago.setFechaActualizacion(ahora);
-        pagoRepository.save(pago);
         paymentService.confirmarPedido(pago);
-        cerrar(evento);
+        registrarProcesado(token, tipo, null);
         log.info("[SINPE-ONVO] Pago {} confirmado por webhook + GET", pago.getId());
         return Resultado.CONFIRMADO;
     }
@@ -229,7 +228,8 @@ public class SinpeOnvoMarketplaceService {
         return false;
     }
 
-    private WebhookEvent registrar(String token, String tipo) {
+    /** SCALE1: el evento se inserta ya cerrado, en un solo INSERT (antes INSERT + UPDATE). */
+    private WebhookEvent registrarProcesado(String token, String tipo, String error) {
         WebhookEvent ev = new WebhookEvent();
         ev.setMerchantToken(token);
         ev.setEventoTipo(tipo);
@@ -237,12 +237,9 @@ public class SinpeOnvoMarketplaceService {
         ev.setIpOrigen("webhook");
         ev.setFechaRecepcion(LocalDateTime.now(clock));
         ev.setEstado(Constants.ESTADO_ACTIVO);
-        return webhookEventRepository.save(ev);
-    }
-
-    private void cerrar(WebhookEvent ev) {
+        ev.setErrorProcesamiento(error);
         ev.setProcesado(true);
         ev.setProcesadoEn(LocalDateTime.now(clock));
-        webhookEventRepository.save(ev);
+        return webhookEventRepository.save(ev);
     }
 }

@@ -181,9 +181,21 @@ class SinpeOnvoMarketplaceServiceTest {
         assertThat(pago.getMerchantToken()).isEqualTo("ONVOPI:pi_9");
         assertThat(pago.getPlazoInternoSinpe()).isEqualTo(plazo)
             .isEqualTo(LocalDateTime.of(2026, 10, 25, 12, 15));
-        InOrder o = inOrder(pagoRepo, onvo);
-        o.verify(pagoRepo).save(pago);
-        o.verify(onvo).confirmarPaymentIntent("pi_9", "pm_1");
+        // SCALE1: el Pago gestionado se escribe por dirty checking dentro del checkout, sin save().
+        verify(pagoRepo, never()).save(any());
+        verify(onvo).confirmarPaymentIntent("pi_9", "pm_1");
+    }
+
+    @Test
+    @DisplayName("SCALE1: webhook confirmado = 0 save() del Pago y 1 solo INSERT del evento ya cerrado")
+    void scale1_sinSavesRedundantes() throws Exception {
+        get("succeeded", 1_250_000L);
+        assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(CONFIRMADO);
+        verify(pagoRepo, never()).save(any());
+        verify(eventos, org.mockito.Mockito.times(1)).save(argThat((WebhookEvent e) -> Boolean.TRUE.equals(e.getProcesado())));
+        var tx = SinpeOnvoMarketplaceService.class.getMethod("iniciar", com.hotclick.model.Pago.class, String.class, Integer.class)
+            .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+        assertThat(tx.propagation()).isEqualTo(org.springframework.transaction.annotation.Propagation.MANDATORY);
     }
 
     @Test
