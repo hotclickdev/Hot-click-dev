@@ -3,7 +3,9 @@ package com.hotclick.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.service.suscripcion.AdminSuspensionService;
 import com.hotclick.service.suscripcion.SuspensionImpago;
+import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
@@ -35,12 +37,26 @@ public class SuspensionImpagoInterceptor implements HandlerInterceptor {
     private final CompanyScope companyScope;
     private final EmpresaRepository empresaRepository;
     private final ObjectMapper objectMapper;
+    /** Null = sin permisos de extensión (fail-closed). */
+    private final AdminSuspensionService extensiones;
 
     public SuspensionImpagoInterceptor(CompanyScope companyScope, EmpresaRepository empresaRepository,
                                        ObjectMapper objectMapper) {
+        this(companyScope, empresaRepository, objectMapper, null);
+    }
+
+    @Autowired
+    public SuspensionImpagoInterceptor(CompanyScope companyScope, EmpresaRepository empresaRepository,
+                                       ObjectMapper objectMapper, AdminSuspensionService extensiones) {
         this.companyScope = companyScope;
         this.empresaRepository = empresaRepository;
         this.objectMapper = objectMapper;
+        this.extensiones = extensiones;
+    }
+
+    private static String normalizar(String ruta) {
+        String r = ruta == null ? "" : ruta;
+        return r.length() > 1 && r.endsWith("/") ? r.substring(0, r.length() - 1) : r;
     }
 
     static boolean permitida(String metodo, String ruta) {
@@ -59,6 +75,11 @@ public class SuspensionImpagoInterceptor implements HandlerInterceptor {
         if (empresaId == null) return true;
         String estado = empresaRepository.findEstadoEmpresaById(empresaId).orElse(null);
         if (!SuspensionImpago.estaSuspendida(estado)) return true;
+        // Extensión de admin: además, pedidos creados en la gracia (ver/estado/entrega). Nada de ventas, POS ni productos.
+        if (SuspensionImpago.enExtension(estado) && extensiones != null
+                && extensiones.permitidaEnExtension(empresaId, req.getMethod() + " " + normalizar(ruta))) {
+            return true;
+        }
         res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         res.setCharacterEncoding("UTF-8");

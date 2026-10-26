@@ -119,6 +119,27 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
     @Query("UPDATE Empresa e SET e.estadoEmpresa = 'SUSPENDIDO_IMPAGO' WHERE e.id IN :ids AND e.estadoEmpresa = 'ACTIVO'")
     int suspenderPorImpagoBatch(@Param("ids") List<Long> ids);
 
+    /** Admin: suspensión manual por impago, solo desde ACTIVO. Devuelve 0 si la tienda ya no estaba ACTIVO. */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE Empresa e SET e.estadoEmpresa = 'SUSPENDIDO_IMPAGO' WHERE e.id = :id AND e.estadoEmpresa = 'ACTIVO'")
+    int suspenderPorImpagoManual(@Param("id") Long id);
+
+    /** Admin "Dar 3 días extra": solo desde SUSPENDIDO_IMPAGO. */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE Empresa e SET e.estadoEmpresa = 'EXTENSION_IMPAGO' WHERE e.id = :id AND e.estadoEmpresa = 'SUSPENDIDO_IMPAGO'")
+    int pasarAExtensionImpago(@Param("id") Long id);
+
+    /** Al vencer la extensión vuelve a la suspensión de #333 (no toca tiendas que ya pagaron). */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE Empresa e SET e.estadoEmpresa = 'SUSPENDIDO_IMPAGO' WHERE e.id IN :ids AND e.estadoEmpresa = 'EXTENSION_IMPAGO'")
+    int volverASuspensionImpago(@Param("ids") List<Long> ids);
+
+    @Query("SELECT e.id FROM Empresa e WHERE e.estadoEmpresa = :estado")
+    List<Long> findIdsByEstadoEmpresa(@Param("estado") String estado);
+
     @Query("SELECT e.estadoEmpresa FROM Empresa e WHERE e.id = :id")
     Optional<String> findEstadoEmpresaById(@Param("id") Long id);
 

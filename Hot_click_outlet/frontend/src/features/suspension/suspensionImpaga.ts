@@ -33,7 +33,22 @@ export type EstadoImpago = {
   planPendiente?: string | null
   montoPendiente?: number | null
   moneda?: string | null
+  /** Extensión de admin vigente: gestiona solo los pedidos creados en la gracia. */
+  enExtension?: boolean
+  extensionVenceEn?: string | null
 }
+
+export type PedidoDeGracia = {
+  id: number
+  numeroPedido?: string | null
+  estadoPedido?: string | null
+  totalPedido?: number | null
+  numeroGuia?: string | null
+  fechaPedido?: string | null
+}
+
+/** Estados a los que el dueño puede mover un pedido de la gracia durante la extensión. */
+export const ESTADOS_GESTION_GRACIA = ['EN_PREPARACION', 'ENVIADO', 'ENTREGADO'] as const
 
 type SuspensionState = { suspendida: boolean; marcar: (v: boolean) => void }
 
