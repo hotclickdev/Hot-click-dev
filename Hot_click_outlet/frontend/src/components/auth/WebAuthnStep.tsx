@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { webAuthnService } from '@/services/webAuthnService'
+import { esCancelacionWebAuthn, mensajeAmigable } from '@/utils/mensajeAmigable'
 import type { AuthResponse } from '@/types/auth'
 
 type WebAuthnStepProps = {
@@ -8,11 +9,6 @@ type WebAuthnStepProps = {
   onError: (text: string) => void
 }
 
-function textoErrorWebAuthn(err: unknown): string {
-  if (!err || typeof err !== 'object') return 'Autenticación fallida'
-  const e = err as { response?: { data?: { error?: string } }; message?: string }
-  return e.response?.data?.error || e.message || 'Autenticación fallida'
-}
 
 export default function WebAuthnStep({ correo, onSuccess, onError }: WebAuthnStepProps) {
   const [loading, setLoading] = useState(false)
@@ -25,11 +21,10 @@ export default function WebAuthnStep({ correo, onSuccess, onError }: WebAuthnSte
       const data = await webAuthnService.authenticate(correo)
       onSuccess(data as AuthResponse)
     } catch (err: unknown) {
-      const text = textoErrorWebAuthn(err)
-      if (text.includes('cancelled') || text.includes('NotAllowedError')) {
+      if (esCancelacionWebAuthn(err)) {
         setMsg('Operación cancelada. Intentá de nuevo.')
       } else {
-        onError(text)
+        onError(mensajeAmigable(err, 'No pudimos verificar tu llave de seguridad. Intentá de nuevo.'))
       }
     } finally {
       setLoading(false)

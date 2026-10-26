@@ -68,7 +68,7 @@ export default function CategoriaSelect({ categories = [], value, onChange, requ
         className={sel}
         required={required}
       >
-        <option value="">Selecciona categoría</option>
+        <option value="">Seleccioná una categoría</option>
         {roots.map((c) => (
           <option key={c.id} value={c.id}>{c.nombreCategoria}</option>
         ))}

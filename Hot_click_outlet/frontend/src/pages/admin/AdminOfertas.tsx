@@ -5,6 +5,7 @@ import { ofertaService } from '@/services/ofertaService'
 import { useToast } from '@/components/ui/Toast'
 import type { Id } from '@/types/api'
 import type { Producto } from '@/types/producto'
+import { formatMiles } from '@/utils/format'
 
 type ProductoOferta = Producto & { id: Id }
 
@@ -26,7 +27,7 @@ function productosDesdeAdmin(data: unknown): ProductoOferta[] {
   return []
 }
 
-const fmt = (n: number | null | undefined) => `₡${new Intl.NumberFormat('es-CR').format(n ?? 0)}`
+const fmt = (n: number | null | undefined) => `₡${formatMiles(n ?? 0)}`
 
 function PctBadge({ pct }: { pct: number | null | undefined }) {
   if (!pct) return null
