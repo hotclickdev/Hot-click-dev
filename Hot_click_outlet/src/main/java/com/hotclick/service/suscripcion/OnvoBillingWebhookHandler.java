@@ -143,7 +143,7 @@ public class OnvoBillingWebhookHandler {
 
     /** Todo en una sola transacción: atribución, chequeo de modo, INSERT+flush del evento, despacho y marca OK. */
     private Resultado procesarEnTx(String type, JsonNode data, String eventId) {
-        if ("payment-intent.succeeded".equals(type) && !intentAtribuibleASuscripcion(data)) {
+        if (esIntent(type) && !intentAtribuibleASuscripcion(data)) {
             // M1: no se puede atribuir con certeza a una suscripción → flujo normal de checkout/POS.
             return Resultado.NO_BILLING;
         }
@@ -161,17 +161,31 @@ public class OnvoBillingWebhookHandler {
         return Resultado.PROCESADO;
     }
 
-    /** Fail-closed: el evento tiene que traer mode y coincidir con el de la llave; si falta cualquiera, se rechaza. */
+    /**
+     * Ciclo 3 (docs.onvopay.com/webhooks): data.mode no está garantizado; renewal.failed y payment-intent.failed
+     * solo traen data.error.mode. Que falte no rechaza: la autoridad es el GET con la llave del ambiente, cuyo
+     * mode se exige siempre en el despacho. Si el payload trae mode (data.mode o data.error.mode) y no coincide
+     * con el ambiente → rechazo (2xx, registrado). Sin modo esperado configurado → rechazo (fail-closed).
+     */
     private void exigirModo(JsonNode data) {
-        String modo = textOrNull(data, "mode");
         String esperado = onvo.modoEsperado();
-        if (modo == null || esperado == null || esperado.isBlank()) {
+        if (esperado == null || esperado.isBlank()) {
             throw rechazo("modo_ausente", "?");
         }
-        if (!esperado.equalsIgnoreCase(modo)) {
+        String modo = modoDelPayload(data);
+        if (modo != null && !esperado.equalsIgnoreCase(modo)) {
             log.warn("[onvo-billing] Evento de modo {} con llave {} — rechazado", limpio(modo, 20), limpio(esperado, 20));
             throw rechazo("modo", "?");
         }
+    }
+
+    static String modoDelPayload(JsonNode data) {
+        String modo = textOrNull(data, "mode");
+        return modo != null ? modo : textOrNull(data.path("error"), "mode");
+    }
+
+    private static boolean esIntent(String type) {
+        return "payment-intent.succeeded".equals(type) || "payment-intent.failed".equals(type);
     }
 
     private static boolean resuelto(StripeEvento ev) {
@@ -225,8 +239,25 @@ public class OnvoBillingWebhookHandler {
                  "invoice.payment_succeeded" -> activarRenovacion(data);
             case "payment-intent.succeeded" -> activarAltaPorIntent(data);
             case "subscription.renewal.failed",
-                 "invoice.payment_failed" -> {
+                 "invoice.payment_failed" -> fallaDeSuscripcion(exigir(subIdDeEvento(data), "subscriptionId"));
+            case "payment-intent.failed" -> {
+                // Atribuido por intentAtribuibleASuscripcion; se relee el intent y se exige el mode del ambiente.
+                String intentId = exigir(textOrNull(data, "id"), "id");
                 String subId = exigir(subIdDeEvento(data), "subscriptionId");
+                if (!OnvoBillingVerificador.modoCoincide(onvo.obtenerPaymentIntent(intentId), onvo.modoEsperado())) {
+                    throw rechazo("modo", intentId);
+                }
+                fallaDeSuscripcion(subId);
+            }
+            // S-03: ONVO no manda eventos de cancelación; se detecta por GET (renewal.failed y job de
+            // renovación) o con la respuesta de la cancelación. Un evento así se ignora.
+            default -> log.debug("[onvo-billing] Evento billing ignorado: {}", limpio(type));
+        }
+    }
+
+    /** Falla de cobro: GET de la suscripción con la llave del ambiente; mode distinto → rechazo; GET caído → 5xx. */
+    private void fallaDeSuscripcion(String subId) {
+        {
                 Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
                 if (!OnvoBillingVerificador.modoCoincide(sub, onvo.modoEsperado())) {
                     throw rechazo("modo", subId);
@@ -241,10 +272,6 @@ public class OnvoBillingWebhookHandler {
                     log.warn("[onvo-billing] renewal.failed pero ONVO reporta sub={} status={}: sin cambios",
                         limpio(subId), limpio(String.valueOf(sub.get("status")), 40));
                 }
-            }
-            // S-03: ONVO no manda eventos de cancelación; se detecta por GET (renewal.failed y job de
-            // renovación) o con la respuesta de la cancelación. Un evento así se ignora.
-            default -> log.debug("[onvo-billing] Evento billing ignorado: {}", type);
         }
     }
 
@@ -315,7 +342,7 @@ public class OnvoBillingWebhookHandler {
             return true;
         }
         // Un intent es de billing si trae subscriptionId (no se usa metadata para decidir la empresa).
-        return "payment-intent.succeeded".equals(type) && subIdDeEvento(data) != null;
+        return esIntent(type) && subIdDeEvento(data) != null;
     }
 
     /** Solo campos explícitos de suscripción; nunca data.id (que es la renovación o el intent). */

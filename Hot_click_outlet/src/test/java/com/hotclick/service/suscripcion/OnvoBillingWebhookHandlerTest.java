@@ -303,8 +303,9 @@ class OnvoBillingWebhookHandlerTest {
 
     private static String fallo(String periodo, int intento, String pi) {
         return """
-            {"subscriptionId":"clsub0002","mode":"live","paymentIntentId":"%s","currency":"CRC","attemptCount":%d,
-             "invoiceStatus":"open","subscriptionStatus":"past_due","invoicePeriodStart":"%s"}"""
+            {"subscriptionId":"clsub0002","paymentIntentId":"%s","currency":"CRC","attemptCount":%d,
+             "invoiceStatus":"open","subscriptionStatus":"past_due","invoicePeriodStart":"%s",
+             "error":{"id":"clerr0002","mode":"live","type":"processing_error","code":"declined"}}"""
             .formatted(pi, intento, periodo);
     }
 
@@ -396,15 +397,85 @@ class OnvoBillingWebhookHandlerTest {
         assertThat(OnvoBillingWebhookHandler.esRechazoDeNegocio(new OnvoBillingWebhookHandler.EventoBillingRechazado("m", "monto"))).isTrue();
     }
 
+    /** payment-intent.failed como en docs.onvopay.com/webhooks: sin data.mode, con data.error.mode. */
+    private static String intentFallido(String modoError) {
+        return """
+            {"id":"clpiment0002","accountId":"clacct0001","currency":"CRC","status":"requires_payment_method",
+             "subscriptionId":"clsub0002","customerId":"clcus0002",
+             "error":{"id":"clerr0001","mode":"%s","paymentMethodType":"card","message":"declined"}}"""
+            .formatted(modoError);
+    }
+
     @Test
-    @DisplayName("C2-4: evento sin mode → RECHAZADO (fail-closed) sin GET ni despacho")
-    void sinModeEnEventoRechaza() throws Exception {
-        var body = json("{\"id\":\"clinv0001\",\"subscriptionId\":\"clsub0001\"}");
-        assertThat(handler.procesar("subscription.renewal.succeeded", body, null))
+    @DisplayName("C3: renewal.failed sin data.mode y con data.error.mode del ambiente se procesa (GET live)")
+    void renewalFailedSinDataModeSeProcesa() throws Exception {
+        when(onvo.obtenerSuscripcion("clsub0002")).thenReturn((Map) subOnvo("clsub0002", "past_due", "live", "price_pyme"));
+        assertThat(handler.procesar("subscription.renewal.failed", json(fallo("2026-04-01T00:00:00.000Z", 2, "pi_a")), null))
+            .isEqualTo(OnvoBillingWebhookHandler.Resultado.PROCESADO);
+        verify(suscripcionService).procesarRenovacionOnvoFallida("clsub0002");
+    }
+
+    @Test
+    @DisplayName("C3: payment-intent.failed sin data.mode y con data.error.mode se procesa tras GET del intent y de la sub")
+    void intentFallidoSinDataModeSeProcesa() throws Exception {
+        Map<String, Object> intent = new HashMap<>(Map.of("id", "clpiment0002", "mode", "live",
+            "status", "requires_payment_method", "subscriptionId", "clsub0002"));
+        when(onvo.obtenerPaymentIntent("clpiment0002")).thenReturn((Map) intent);
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0002")).thenReturn(Optional.of(local("clsub0002")));
+        when(onvo.obtenerSuscripcion("clsub0002")).thenReturn((Map) subOnvo("clsub0002", "past_due", "live", "price_pyme"));
+        assertThat(handler.procesar("payment-intent.failed", json(intentFallido("live")), null))
+            .isEqualTo(OnvoBillingWebhookHandler.Resultado.PROCESADO);
+        verify(suscripcionService).procesarRenovacionOnvoFallida("clsub0002");
+        assertThat(eventos.get("onvo_payment-intent.failed_clpiment0002").getProcesadoOk()).isTrue();
+    }
+
+    @Test
+    @DisplayName("C3: data.error.mode de otro ambiente → RECHAZADO registrado, sin GET de la sub ni efecto")
+    void errorModeDistintoRechaza() throws Exception {
+        var body = json(fallo("2026-04-01T00:00:00.000Z", 1, "pi_a").replace("\"mode\":\"live\"", "\"mode\":\"test\""));
+        assertThat(handler.procesar("subscription.renewal.failed", body, null))
             .isEqualTo(OnvoBillingWebhookHandler.Resultado.RECHAZADO);
-        verify(onvo, never()).obtenerRenovacion(any());
-        assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError())
-            .isEqualTo(OnvoBillingWebhookHandler.PREFIJO_RECHAZADO + "rechazo:modo_ausente");
+        verify(onvo, never()).obtenerSuscripcion(any());
+        verify(suscripcionService, never()).procesarRenovacionOnvoFallida(any());
+        assertThat(eventos.get("onvo_subscription.renewal.failed_clsub0002_2026-04-01T00:00:00.000Z").getError())
+            .isEqualTo(OnvoBillingWebhookHandler.PREFIJO_RECHAZADO + "rechazo:modo");
+    }
+
+    @Test
+    @DisplayName("C3: payload sin mode pero GET con otro mode → RECHAZADO registrado (2xx), no se procesa")
+    void getConOtroModoRechaza() throws Exception {
+        when(onvo.obtenerSuscripcion("clsub0002")).thenReturn((Map) subOnvo("clsub0002", "past_due", "test", "price_pyme"));
+        var body = json(fallo("2026-04-01T00:00:00.000Z", 1, "pi_a").replace(",\"mode\":\"live\"", ""));
+        assertThat(handler.procesar("subscription.renewal.failed", body, null))
+            .isEqualTo(OnvoBillingWebhookHandler.Resultado.RECHAZADO);
+        verify(suscripcionService, never()).procesarRenovacionOnvoFallida(any());
+        assertThat(eventos.get("onvo_subscription.renewal.failed_clsub0002_2026-04-01T00:00:00.000Z").getError())
+            .isEqualTo(OnvoBillingWebhookHandler.PREFIJO_RECHAZADO + "rechazo:modo");
+
+        Map<String, Object> intent = Map.of("id", "clpiment0002", "mode", "test", "subscriptionId", "clsub0002");
+        when(onvo.obtenerPaymentIntent("clpiment0002")).thenReturn((Map) intent);
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0002")).thenReturn(Optional.of(local("clsub0002")));
+        assertThat(handler.procesar("payment-intent.failed", json(intentFallido("live")), null))
+            .isEqualTo(OnvoBillingWebhookHandler.Resultado.RECHAZADO);
+        verify(suscripcionService, never()).procesarRenovacionOnvoFallida(any());
+    }
+
+    @Test
+    @DisplayName("C3: GET a ONVO caído → transitorio (5xx), el evento queda reprocesable")
+    void getCaidoEsTransitorio() throws Exception {
+        when(onvo.obtenerSuscripcion("clsub0002")).thenThrow(new org.springframework.web.client.ResourceAccessException("timeout"));
+        assertThatThrownBy(() -> handler.procesar("subscription.renewal.failed", json(fallo("2026-04-01T00:00:00.000Z", 1, "pi_a")), null))
+            .isInstanceOf(org.springframework.web.client.ResourceAccessException.class);
+        assertThat(eventos.get("onvo_subscription.renewal.failed_clsub0002_2026-04-01T00:00:00.000Z").getError())
+            .isEqualTo("ResourceAccessException");
+    }
+
+    @Test
+    @DisplayName("C3: payment-intent.failed de checkout (sin subscriptionId, como la doc) no es billing")
+    void intentFallidoDeCheckoutNoEsBilling() throws Exception {
+        var body = json("{\"id\":\"clpiment0002\",\"status\":\"requires_payment_method\",\"error\":{\"mode\":\"test\"}}");
+        assertThat(handler.procesar("payment-intent.failed", body, null)).isEqualTo(OnvoBillingWebhookHandler.Resultado.NO_BILLING);
+        assertThat(eventos).isEmpty();
     }
 
     @Test
