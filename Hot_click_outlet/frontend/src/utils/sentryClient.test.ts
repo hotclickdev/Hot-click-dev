@@ -76,3 +76,28 @@ describe('depurarPii', () => {
     expect(r.request?.url).toBe('https://h/api/x')
   })
 })
+
+describe('redactarTexto credenciales adicionales', () => {
+  it('tapa el token de bot dentro de la URL de Telegram', () => {
+    const token = '123456789:' + 'A'.repeat(35)
+    const url = 'https://api.telegram.org/' + 'bot' + token + '/sendMessage'
+    const out = redactarTexto('POST ' + url)
+    expect(out).toBe('POST https://api.telegram.org/bot[token]/sendMessage')
+    expect(out).not.toContain(token)
+  })
+  it('tapa Basic auth', () => {
+    expect(redactarTexto('Authorization: ' + 'Bas' + 'ic ' + 'dXN1YXJpbzpjbGF2ZQ' + '==')).toBe('Authorization: Basic [token]')
+  })
+  it('tapa claves sk_/pk_', () => {
+    const relleno = '0'.repeat(24)
+    expect(redactarTexto('k ' + 'sk' + '_live_' + relleno)).toBe('k [token]')
+    expect(redactarTexto('k ' + 'sk' + '_test_' + relleno)).toBe('k [token]')
+    expect(redactarTexto('k ' + 'pk' + '_live_' + relleno)).toBe('k [token]')
+  })
+  it('tapa tokens ghp_ de GitHub', () => {
+    expect(redactarTexto('gh ' + 'gh' + 'p_' + 'Z'.repeat(36))).toBe('gh [token]')
+  })
+  it('tapa AKIA de AWS', () => {
+    expect(redactarTexto('aws ' + 'AK' + 'IA' + 'X'.repeat(16) + ' fin')).toBe('aws [token] fin')
+  })
+})

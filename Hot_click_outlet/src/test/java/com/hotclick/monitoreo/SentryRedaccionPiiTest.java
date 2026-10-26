@@ -123,4 +123,38 @@ class SentryRedaccionPiiTest {
         assertThat(SentryRedaccionPii.redactar("jwt " + "eyJ" + "hbGc.eyJzdWIi.firma_falsa"))
                 .isEqualTo("jwt [token]");
     }
+
+    @Test
+    void redactaTokenDeBotEnUrlDeTelegram() {
+        String token = "123456789:" + "A".repeat(35);
+        String url = "https://api.telegram.org/" + "bot" + token + "/sendMessage";
+        String out = SentryRedaccionPii.redactar("POST " + url + " falló");
+        assertThat(out).isEqualTo("POST https://api.telegram.org/bot[token]/sendMessage falló");
+        assertThat(out).doesNotContain(token);
+    }
+
+    @Test
+    void redactaBasicAuth() {
+        assertThat(SentryRedaccionPii.redactar("Authorization: " + "Bas" + "ic " + "dXN1YXJpbzpjbGF2ZQ" + "=="))
+                .isEqualTo("Authorization: Basic [token]");
+    }
+
+    @Test
+    void redactaClavesSkPk() {
+        String relleno = "0".repeat(24);
+        assertThat(SentryRedaccionPii.redactar("k " + "sk" + "_live_" + relleno)).isEqualTo("k [token]");
+        assertThat(SentryRedaccionPii.redactar("k " + "sk" + "_test_" + relleno)).isEqualTo("k [token]");
+        assertThat(SentryRedaccionPii.redactar("k " + "pk" + "_live_" + relleno)).isEqualTo("k [token]");
+    }
+
+    @Test
+    void redactaTokenGithub() {
+        assertThat(SentryRedaccionPii.redactar("gh " + "gh" + "p_" + "Z".repeat(36))).isEqualTo("gh [token]");
+    }
+
+    @Test
+    void redactaAwsKeyId() {
+        assertThat(SentryRedaccionPii.redactar("aws " + "AK" + "IA" + "X".repeat(16) + " fin"))
+                .isEqualTo("aws [token] fin");
+    }
 }

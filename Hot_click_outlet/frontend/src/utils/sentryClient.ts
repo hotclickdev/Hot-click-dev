@@ -27,19 +27,27 @@ const DENY_URLS = [
 ]
 
 const BEARER = /\bBearer\s+[A-Za-z0-9._~+/=-]+/gi
-const TOKEN_BOT = /\b\d{6,12}:[A-Za-z0-9_-]{30,}/g
+const TOKEN_BOT = /(?<![0-9])\d{6,12}:[A-Za-z0-9_-]{30,}/g
+const BASIC = /\bBasic\s+[A-Za-z0-9+/]{8,}={0,2}/gi
+const CLAVE_SK_PK = /\b[sp]k_[A-Za-z0-9_]{10,}/g
+const TOKEN_GITHUB = /\bghp_[A-Za-z0-9]{20,}/g
+const AWS_KEY_ID = /\bAKIA[0-9A-Z]{16}\b/g
 const TOKEN_SLACK = /\bxox[abposr]-[A-Za-z0-9-]{10,}/g
 const JWT = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g
 const CORREO = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g
 const CEDULA = /\b\d{1,2}-\d{3,4}-\d{4,6}\b|\b\d{9,12}\b/g
 const TELEFONO = /(?:\+\d{1,3}[\s-]?)?\b\d{4}[\s-]?\d{4}\b/g
 
-/** Quita tokens (Bearer, bot, Slack, JWT), correos, cédulas y teléfonos de un texto antes de mandarlo a Sentry. */
+/** Quita tokens (Bearer, Basic, bot, sk_/pk_, ghp_, AKIA, Slack, JWT), correos, cédulas y teléfonos de un texto antes de mandarlo a Sentry. */
 export function redactarTexto(s: string | undefined | null): string | undefined {
   if (s == null) return undefined
   return String(s)
     .replace(BEARER, 'Bearer [token]')
+    .replace(BASIC, 'Basic [token]')
     .replace(TOKEN_BOT, '[token]')
+    .replace(CLAVE_SK_PK, '[token]')
+    .replace(TOKEN_GITHUB, '[token]')
+    .replace(AWS_KEY_ID, '[token]')
     .replace(TOKEN_SLACK, '[token]')
     .replace(JWT, '[token]')
     .replace(CORREO, '[correo]')
