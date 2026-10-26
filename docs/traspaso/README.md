@@ -6,6 +6,88 @@ Generado el lunes 26-oct-2026, 2:40 PM (hora de Costa Rica). Sirve para recrear 
 
 ---
 
+## Resumen rápido: quién es quién
+
+Una línea por bot. La nota de traspaso de cada uno está en la rama `docs/traspaso-cuenta-nueva`, en `docs/traspaso/<bot>.md`. Si una nota todavía no existe, aparece como *pendiente*. Estado al 26-oct-2026, 2:45 PM (hora de CR).
+
+
+### Coordinación
+
+| Bot | Rol en una frase | Área | En qué quedó / qué sigue | Nota de traspaso |
+|---|---|---|---|---|
+| Mentor para dejar app lista para mis primeros clientes | Orquestador; habla con Andrés en español y decide prioridades | Todas | Coordina el ciclo; 1 área ✅ (POS); esperando decisiones de Andrés (sección 2) | [mentor-para-dejar-app-lista-para-mis-primeros-clientes.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/mentor-para-dejar-app-lista-para-mis-primeros-clientes.md) (pendiente) |
+| Grok Bot | Enrutador: reparte el trabajo entre los bots y vigila los PRs | Todas | Llevando #343, #332, #334, #336, #338, #344 a merge y el QA de las áreas | [grok-bot.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/grok-bot.md) (pendiente) |
+| HotClick Lanzamiento ONVO | Sala de grupo: lanzamiento de pagos ONVO | 1, 5 | Sala; ver las notas de sus miembros | [hotclick-lanzamiento-onvo.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-lanzamiento-onvo.md) (pendiente) |
+| HotClick Auditoría A | Sala de grupo: auditores 1 a 5 | 1-5 | Auditorías hechas | [hotclick-auditoria-a.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-auditoria-a.md) (pendiente) |
+| HotClick Auditoría B | Sala de grupo: auditores 6 a 10 | 6-10 | Auditorías hechas | [hotclick-auditoria-b.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-auditoria-b.md) (pendiente) |
+| HotClick QA Cuentas | Sala de grupo: QA de cuentas por plan | 2 | Sala; ver las notas de sus miembros | [hotclick-qa-cuentas.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-cuentas.md) (pendiente) |
+| HotClick QA Flujos | Sala de grupo: QA de flujos de compra, POS y webhooks | 1, 4 | Sala; ver las notas de sus miembros | [hotclick-qa-flujos.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-flujos.md) (pendiente) |
+
+### Desarrollo
+
+| Bot | Rol en una frase | Área | En qué quedó / qué sigue | Nota de traspaso |
+|---|---|---|---|---|
+| HotClick Dev Pagos | Desarrollador de pagos, checkout, suscripciones y comisiones | 1, 5 | #332 comisiones 9/7,5/6 % y #344; gracia #333 mergeado | [hotclick-dev-pagos.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-dev-pagos.md) (pendiente) |
+| HotClick Dev Pagos 2 | Desarrollador de pagos y POS, IVA y Hacienda | 1, 4, 7 | #343 espera APTO + la decisión ENTREGADO de Andrés; #336 necesita APTO nuevo sobre f6e655e6a; la rama feat/iva-regimen sin PR (actualizar con master y renumerar Flyway) | [hotclick-dev-pagos-2.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-dev-pagos-2.md) |
+| HotClick Dev Marketplace | Desarrollador del marketplace, roles, front y chatbots | 2, 3, 6, 9 | #337 mergeado; #334 (6 MEDIO de Front) | [hotclick-dev-marketplace.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-dev-marketplace.md) (pendiente) |
+| HotClick Bugs | Corrige bugs puntuales con su test de regresión | Varias | Cola de bugs medio y bajo | [hotclick-bugs.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-bugs.md) (pendiente) |
+| HotClick ONVO | Especialista en la integración con ONVO | 1, 5 | Análisis y verificación de ONVO; marketplaces con cuentas conectadas | [hotclick-onvo.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-onvo.md) (pendiente) |
+| Soporte de mensajes por telegram | Bot de soporte por Telegram | 8 | Sin instrucciones guardadas | [soporte-de-mensajes-por-telegram.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/soporte-de-mensajes-por-telegram.md) (pendiente) |
+
+### QA
+
+| Bot | Rol en una frase | Área | En qué quedó / qué sigue | Nota de traspaso |
+|---|---|---|---|---|
+| HotClick QA | QA líder: plan funcional y re-QA por área | Todas | QA de las áreas 2, 3, 5-10 | [hotclick-qa.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa.md) (pendiente) |
+| HotClick QA 2 | QA funcional | Varias | pendiente (la nota todavía no se subió) | [hotclick-qa-2.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-2.md) (pendiente) |
+| HotClick QA Compra | QA 5: compra punta a punta (checkout, SINPE, tarjeta ONVO test, pedidos manuales) | 1 | Área 1 abierta: ALTO del cleanup y QA5-M-01 con Dev Pagos 2; re-probar cuando estén en master; compra en prod espera el fix de Clerk/CSP | [hotclick-qa-compra.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-compra.md) |
+| HotClick QA Cliente | QA 4: cliente consumidor | 2, 3, 9 | Bloqueado por QA4-004 (registro sin pantalla de código) y por el correo de staging (SendGrid 401, debería ir a Mailpit); rutas de invitado OK | [hotclick-qa-cliente.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-cliente.md) |
+| HotClick QA Emprendedor | QA 1: cuenta de plan Emprendedor | 2, 5 | Prod parte 1 hecha; parte 2 (cobros, pedidos, POS) pausada por presupuesto; faltan los casos HTTP del área 2 en staging local | [hotclick-qa-emprendedor.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-emprendedor.md) |
+| HotClick QA Negocio Plus | QA 3: cuenta de plan Negocio Plus | 2, 5 | Área 2 cerrada con 1 MEDIO (EDITOR/LECTOR leen el billing) y 1 BAJO (espacios en el correo); pendiente limpiar en prod los productos 668/669 y el miembro 138 | [hotclick-qa-negocio-plus.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-negocio-plus.md) |
+| HotClick QA POS | QA de caja, turnos e inventario | 4 | Área 4 ✅ | [hotclick-qa-pos.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-pos.md) (pendiente) |
+| HotClick QA Webhooks y UX | QA de webhooks y experiencia de usuario | 1, 9 | pendiente (la nota todavía no se subió) | [hotclick-qa-webhooks-y-ux.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-qa-webhooks-y-ux.md) (pendiente) |
+| TEST Usuario consumidor de tienda | Simula a un comprador | 3 | Sin instrucciones guardadas | [test-usuario-consumidor-de-tienda.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/test-usuario-consumidor-de-tienda.md) (pendiente) |
+
+### Auditoría
+
+| Bot | Rol en una frase | Área | En qué quedó / qué sigue | Nota de traspaso |
+|---|---|---|---|---|
+| Auditor 1 Pagos y Checkout | Audita el área 1 (Pagos y Checkout) | 1 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-1-pagos-y-checkout.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-1-pagos-y-checkout.md) (pendiente) |
+| Auditor 2 Cuentas y Roles | Audita el área 2 (Cuentas y Roles) | 2 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-2-cuentas-y-roles.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-2-cuentas-y-roles.md) (pendiente) |
+| Auditor 3 Marketplace | Audita el área 3 (Marketplace) | 3 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-3-marketplace.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-3-marketplace.md) (pendiente) |
+| Auditor 4 POS e Inventario | Audita el área 4 (POS e Inventario) | 4 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-4-pos-e-inventario.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-4-pos-e-inventario.md) (pendiente) |
+| Auditor 5 Suscripciones | Audita el área 5 (Suscripciones) | 5 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-5-suscripciones.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-5-suscripciones.md) (pendiente) |
+| Auditor 6 Chatbots y Copilot | Audita el área 6 (Chatbots y Copilot) | 6 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-6-chatbots-y-copilot.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-6-chatbots-y-copilot.md) (pendiente) |
+| Auditor 7 Facturación Hacienda | Audita el área 7 (Facturación Hacienda) | 7 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-7-facturacion-hacienda.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-7-facturacion-hacienda.md) (pendiente) |
+| Auditor 8 Bot Telegram | Audita el área 8 (Bot Telegram) | 8 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-8-bot-telegram.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-8-bot-telegram.md) (pendiente) |
+| Auditor 9 Front y UX | Audita el área 9 (Front y UX) | 9 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-9-front-y-ux.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-9-front-y-ux.md) (pendiente) |
+| Auditor 10 Infraestructura | Audita el área 10 (Infraestructura) | 10 | Auditoría entregada en hotclick-reportes/auditoria/ | [auditor-10-infraestructura.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/auditor-10-infraestructura.md) (pendiente) |
+
+### Seguridad/CI
+
+| Bot | Rol en una frase | Área | En qué quedó / qué sigue | Nota de traspaso |
+|---|---|---|---|---|
+| HotClick Seguridad | Revisa cada PR y da el APTO sobre el hash exacto | Todas | APTO de #343/#336 pendientes; M-08 sobreventa post-cobro (ALTO) asignado a Dev Pagos; logs de Hacienda sin enmascarar (MEDIO) | [hotclick-seguridad.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-seguridad.md) |
+| HotClick CI/CD | Pipelines, gitleaks, E2E Playwright, backup local, Sentry y staging solo en código | 10 | #329 Sentry, #345 mergeado; pasar el correo de staging a Mailpit | [hotclick-ci-cd.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/hotclick-ci-cd.md) (pendiente) |
+
+### Legal
+
+| Bot | Rol en una frase | Área | En qué quedó / qué sigue | Nota de traspaso |
+|---|---|---|---|---|
+| Legal Costa Rica Negocios | Derecho y tributación de Costa Rica para negocios, con fuentes oficiales | Legal | Hoja de ruta del emprendimiento; régimen general antes del primer cobro | [legal-costa-rica-negocios.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/legal-costa-rica-negocios.md) (pendiente) |
+| Legal Análisis de Empresas | Analiza términos y modelos legales de otras empresas | Legal | Insumos para los borradores de términos y privacidad | [legal-analisis-de-empresas.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/legal-analisis-de-empresas.md) (pendiente) |
+| Legal Global | Marco legal internacional (privacidad, comercio electrónico) | Legal | Apoyo a los borradores | [legal-global.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/legal-global.md) (pendiente) |
+
+### Apoyo
+
+| Bot | Rol en una frase | Área | En qué quedó / qué sigue | Nota de traspaso |
+|---|---|---|---|---|
+| Promociones | Contenido promocional | Marketing | Sin instrucciones guardadas | [promociones.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/promociones.md) (pendiente) |
+| Generador de imagenes | Genera imágenes | Marketing | Sin instrucciones guardadas | [generador-de-imagenes.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/generador-de-imagenes.md) (pendiente) |
+| Guion | Guiones (video o pitch) | Marketing | Sin instrucciones guardadas | [guion.md](https://github.com/hotclickdev/Hot-click-dev/blob/docs/traspaso-cuenta-nueva/docs/traspaso/guion.md) (pendiente) |
+
+---
+
 ## 1. La idea: qué es HotClick
 
 **HotClick** es un marketplace costarricense para emprendedores y pymes. Junta en una sola plataforma:

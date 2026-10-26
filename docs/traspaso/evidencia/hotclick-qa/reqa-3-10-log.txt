@@ -1,0 +1,308 @@
+f9f0e506a73a7a9ff95cc608d4721745d79369e1 Merge pull request #331 from hotclickdev/feat/staging-lightsail
+== M-01 precio efectivo
+src/main/java/com/hotclick/service/payment/StockReservationService.java:87:                : OrderPricingService.precioEfectivo(p);
+src/main/java/com/hotclick/service/payment/CheckoutOrderFactory.java:101:                : OrderPricingService.precioEfectivo(p);
+src/main/java/com/hotclick/controller/storefront/StorefrontGuestOrderService.java:139:        int precioUnitario = com.hotclick.service.payment.OrderPricingService.precioEfectivo(producto);
+9:import { precioUnitarioEfectivo } from '@/utils/precioProducto'
+11:/** M-01: la línea del carrito guarda el precio efectivo que cobra el backend. */
+12:function conPrecioEfectivo<T extends Parameters<typeof precioUnitarioEfectivo>[0]>(item: T): T {
+13:  return { ...item, precio: precioUnitarioEfectivo(item) }
+119:        get().items.reduce((sum, i) => sum + precioUnitarioEfectivo(i) * i.cantidad, 0),
+== M-03
+58:            @RequestParam(defaultValue = "1") Integer cantidad,
+67:            Carrito actualizado = carritoService.agregarItem(carritoId, productoId, cantidad);
+    @Transactional
+    public Carrito agregarItem(Long carritoId, Long productoId, Integer cantidad) {
+        if (cantidad == null || cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad tiene que ser 1 o más.");
+        }
+        Long empresaId = TenantContext.get();
+50:        if (cantidad <= 0) {
+== M-04
+
+        for (StorefrontPedidoDTO.ItemDTO item : dto.getItems()) {
+            Producto producto = productoRepository.findByIdForUpdate(item.productoId())
+                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado: " + item.productoId()));
+
+            if (!empresa.getId().equals(producto.getEmpresa().getId())) {
+                throw new IllegalArgumentException("Producto no disponible en esta tienda");
+            }
+            if (!Boolean.TRUE.equals(producto.getVisibleCatalogo()) || Boolean.TRUE.equals(producto.getVendido())) {
+                throw new IllegalStateException("Producto no disponible: " + producto.getNombreProducto());
+            }
+
+            if (producto.esACotizar()) {
+                throw new IllegalArgumentException("«" + producto.getNombreProducto() + "» es a cotizar: solicitá una cotización al vendedor");
+            }
+
+            String ref = "STOREFRONT-" + empresa.getSlug();
+            stockService.reservar(producto, item.cantidad(), ref, dto.getCorreoCliente());
+== M-05
+        // Reservar stock (valida stockDisponible = stockActual - stockReservado >= cantidad)
+        String referencia = "carrito-" + carritoId;
+        stockService.reservar(producto, cantidad, referencia, "carrito-usuario");
+
+        CarritoItem item = new CarritoItem();
+        item.setCarrito(carrito);
+        item.setProducto(producto);
+        item.setCantidad(cantidad);
+        item.setPrecioUnitarioMomento(com.hotclick.service.payment.OrderPricingService.precioEfectivo(producto));
+        item.setEstado(Constants.ESTADO_ACTIVO);
+        carrito.getItems().add(item);
+
+        int total = carrito.getItems().stream()
+            .mapToInt(i -> i.getPrecioUnitarioMomento() * i.getCantidad())
+== M-06
+
+    /** Otros colores/variantes de la misma pieza — para el selector de swatches en el detalle. */
+    public ResponseEntity<ResponseDTO> obtenerVariantes(Long id) {
+        Producto base = productoService.buscarPorId(id);
+        if (base.getGrupoVarianteId() == null) {
+            return ResponseEntity.ok(ResponseDTO.success("Sin variantes", java.util.List.of()));
+        }
+        var hermanos = productoRepository.findByGrupoVarianteIdAndEstadoAndVisibleCatalogo(
+                base.getGrupoVarianteId(), Constants.ESTADO_ACTIVO, true)
+            .stream()
+            .map(p -> java.util.Map.of(
+                "id", p.getId(),
+                // Plan sin contacto directo: sin teléfonos, correos ni enlaces externos (ContactoTextoPublico).
+                "nombreProducto", contactoTexto.texto(p.getEmpresaId(), p.getNombreProducto()),
+                "colorVariante", p.getColorVariante() != null ? contactoTexto.texto(p.getEmpresaId(), p.getColorVariante()) : "",
+                "talla", p.getTalla() != null ? contactoTexto.texto(p.getEmpresaId(), p.getTalla()) : "",
+                "imagenPrincipalUrl", p.getImagenPrincipalUrl() != null ? p.getImagenPrincipalUrl() : "",
+                "precioVenta", p.getPrecioVenta(),
+                "stock", p.getStock()
+            ))
+            .toList();
+        return ResponseEntity.ok(ResponseDTO.success("Variantes", hermanos));
+    }
+
+    /** Productos en oferta — público */
+== M-07
+114:     * Aplica o quita oferta a un producto. Si enOferta=true, calcula precioOferta
+115:     * a partir de porcentajeDescuento (o viceversa) según cuál venga informado.
+118:    public Producto aplicarOferta(Long id, boolean enOferta, Integer porcentajeDescuento, Integer precioOferta) {
+123:            if (porcentajeDescuento != null && porcentajeDescuento > 0) {
+124:                p.setPrecioOferta(OrderPricingService.calcularPrecioOferta(p.getPrecioVenta(), porcentajeDescuento));
+125:                p.setPorcentajeDescuento(porcentajeDescuento);
+126:            } else if (precioOferta != null) {
+127:                OrderPricingService.validarPrecioOferta(p.getPrecioVenta(), precioOferta);
+128:                p.setPrecioOferta(precioOferta);
+129:                int diff = p.getPrecioVenta() - precioOferta;
+563:    public Integer getPrecioEfectivo() {
+564-        return com.hotclick.service.payment.OrderPricingService.precioEfectivo(this);
+565-    }
+566-}
+== M-08
+127-
+128-            if (nuevoStock < 0) {
+129:                log.error("OVERSELL: producto={} stockActual={} cantidad={}",
+130-                    producto.getId(), producto.getStockActual(), cantidad);
+131-                nuevoStock = 0;
+132-            }
+133-            producto.setStockActual(nuevoStock);
+134-
+135-            // Liberar la reserva (puede quedar negativa si ya fue liberada antes → clamp a 0)
+136-            int nuevoReservado = Math.max(0, producto.getStockReservado() - cantidad);
+137-            producto.setStockReservado(nuevoReservado);
+== M-04 contexto
+        exigirEfectivoAceptado(dto.getMetodoPago(), bodega, dto.getMetodoEnvio(),
+            contraEntregaPolitica == null || contraEntregaPolitica.habilitada());
+        exigirRetiroDisponible(dto.getMetodoEnvio(),
+            bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO));
+
+        Usuario usuario = usuarioRepository.findByCorreo(dto.getCorreoCliente())
+            .orElseGet(() -> crearInvitado(dto.getCorreoCliente(), dto.getTelefonoCliente()));
+
+        Pedido pedido = construirPedido(empresa, dto, bodega, usuario);
+        Pedido guardado = pedidoRepository.save(pedido);
+        notificarPedidoNuevo(guardado);
+        return guardado;
+    }
+
+    private Pedido construirPedido(Empresa empresa, StorefrontPedidoDTO dto, Bodega bodega, Usuario usuario) {
+        int subtotal = 0;
+        int costoTotal = 0;
+        Pedido pedido = new Pedido();
+== M-07 OrderPricing
+26:    public static Integer precioEfectivo(com.hotclick.model.Producto p) {
+27-        Integer venta = p.getPrecioVenta();
+28-        Integer oferta = p.getPrecioOferta();
+29-        if (Boolean.TRUE.equals(p.getEnOferta()) && oferta != null && oferta > 0
+30-                && venta != null && oferta < venta) {
+31-            return oferta;
+32-        }
+--
+37:    public static int calcularPrecioOferta(int precioVenta, int porcentajeDescuento) {
+38-        if (porcentajeDescuento <= 0 || porcentajeDescuento >= 100) {
+39-            throw new IllegalArgumentException("El descuento tiene que estar entre 1 % y 99 %.");
+40-        }
+41-        int oferta = (int) Math.round(precioVenta * (1 - porcentajeDescuento / 100.0));
+42-        validarPrecioOferta(precioVenta, oferta);
+43-        return oferta;
+--
+47:    public static void validarPrecioOferta(int precioVenta, int precioOferta) {
+48-        if (precioOferta <= 0 || precioOferta >= precioVenta) {
+49-            throw new IllegalArgumentException(
+50-                "El precio de oferta tiene que ser mayor que cero y menor que el precio normal.");
+51-        }
+52-    }
+53-
+== M-02 filtro publico
+69:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+77:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
+113:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND e.tienda_pausada = FALSE")
+127:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+135:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE",
+140:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
+147:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE",
+152:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
+159:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE",
+164:        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE")
+== INF-06/07 flyway
+src/main/resources/application-dev.properties:23:spring.flyway.baseline-version=136
+src/main/resources/application-dev.properties:24:spring.flyway.baseline-description=Dev empty-DB bootstrap (V1-VN not replayable; overridden at runtime)
+src/main/resources/application.properties:56:# baseline-on-migrate: si no existe flyway_schema_history, marca V1 como ya aplicada
+src/main/resources/application.properties:58:spring.flyway.baseline-on-migrate=true
+src/main/resources/application.properties:59:spring.flyway.baseline-version=1
+src/main/resources/application.properties:60:spring.flyway.locations=classpath:db/migration
+src/main/resources/application.properties:61:spring.flyway.validate-on-migrate=true
+src/main/resources/application.properties:62:spring.flyway.out-of-order=true
+src/main/resources/application.properties:69:spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+== INF-08 healthcheck
+19:    healthcheck:
+24:    mem_limit: 768m
+44:      - -Xmx1536m
+49:    mem_limit: 2g
+== INF-05 fallback
+../.github/workflows/health-pager.yml:49:            export HEALTH_URL="https://hot-click-dev.onrender.com/api/health"
+../.github/workflows/keep-alive.yml:20:          URL="${HEALTH_URL:-https://hot-click-dev.onrender.com/api/health}"
+../.github/workflows/real-health.yml:51:            export HEALTH_URL="https://hot-click-dev.onrender.com/api/health"
+== INF-04 drill
+../.github/workflows/restore-drill.yml:28:      postgres:
+../.github/workflows/restore-drill.yml:29:        image: postgres:16-alpine
+== INF-03 sentry-logback
+252:            <groupId>io.sentry</groupId>
+253:            <artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+258:            <groupId>io.sentry</groupId>
+259:            <artifactId>sentry-logback</artifactId>
+4:  <!-- QA-CONC-6: el stack completo ya va a Sentry; en el log se recorta a 30 líneas por excepción. -->
+== actuator/cors
+src/main/resources/application-dev.properties:43:cors.allowed.origins=http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://localhost:5173
+src/main/resources/application.properties:139:cors.allowed.origins=${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://localhost:5173,https://hotclick.lat}
+src/main/resources/application.properties:191:# spring-boot-starter-actuator NO está instalado (intencionalmente).
+src/main/resources/application.properties:192:# Sin él no existen endpoints /actuator/** — más seguro que protegerlos.
+src/main/resources/application.properties:194:#   management.endpoints.web.exposure.include=health,info
+src/main/resources/application.properties:195:#   management.endpoint.health.show-details=never
+src/main/resources/application.properties:196:# SecurityConfig ya tiene: .requestMatchers("/actuator/**").hasRole("ADMIN_IT")
+src/main/resources/application.properties:423:# MeterRegistry estará disponible sin actuator (solo colección, sin endpoint)
+src/main/resources/application.properties:424:management.metrics.export.simple.enabled=true
+== curl health
+200
+/actuator -> 401
+/actuator/health -> 401
+/actuator/env -> 401
+/api/webhooks/stripe -> 405
+/api/carrito/1 -> 401
+== headers backend
+HTTP/1.1 401 
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(self)
+Content-Security-Policy: default-src 'self'; script-src 'self' https://js.stripe.com https://app.tilopay.com https://secure.tilopay.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms https://scripts.clarity.ms; script-src-elem 'self' https://js.stripe.com https://app.tilopay.com https://secure.tilopay.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com https://us-assets.i.posthog.com https://www.clarity.ms https://scripts.clarity.ms; worker-src blob: 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://hotclick-media.s3.us-east-2.amazonaws.com https://*.amazonaws.com https://images.unsplash.com https://loremflickr.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com https://cdnjs.cloudflare.com https://i.ytimg.com https://tile.openstreetmap.org; connect-src 'self' https://hotclick-media.s3.us-east-2.amazonaws.com https://*.amazonaws.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://api.clerk.com https://clerk-telemetry.com https://api.stripe.com https://hooks.stripe.com https://app.tilopay.com https://secure.tilopay.com https://www.google-analytics.com https://region1.google-analytics.com https://us.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.us.sentry.io https://*.clarity.ms https://c.bing.com https://nominatim.openstreetmap.org; frame-src https://js.stripe.com https://hooks.stripe.com https://app.tilopay.com https://secure.tilopay.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.facebook.com https://www.openstreetmap.org; frame-ancestors 'self'; object-src 'none'; base-uri 'self';
+== headers front
+HTTP/1.1 200 OK
+== CORS evil
+HTTP/1.1 403 
+== CORS ok
+HTTP/1.1 200 
+Access-Control-Allow-Origin: http://localhost:3000
+== catalogo
+{"success":true,"message":"Productos obtenidos","data":{"content":[{"estado":1,"id":16,"nombreProducto":"QA1-TEST Cojin sala","descripcionCorta":"Cojín cómodo para la sala, 45x45 cm, garantía 30 días","descripcionLarga":null,"precioVenta":5000,"costoEnvioEstimado":null,"stockActual":5,"stockReservado":0,"unidadMedida":"UNIDAD","pesoEnGramos":null,"barcode":null,"marcaTexto":null,"modelo":null,"rangoPrecio":null,"esUnico":false,"vendido":false,"destacado":false,"visibleCatalogo":true,"bodega":{"id":5,"nombreBodega":"QA1-TEST Bodega San Jose","provincia":"SAN JOSE","canton":"SAN JOSE","permi
+== tiendas publicas
+[{"slug": "qa-pyme-prueba", "nombre": "QA PYME Prueba", "tagline": "", "logoUrl": "", "provincia": "SAN JOSE"}, {"slug": "qa-plus-prueba-3", "nombre": "QA Plus Prueba", "tagline": "", "logoUrl": "", "provincia": "SAN JOSE"}, {"slug": "qa1-negocio-prueba", "nombre": "QA1 Negocio Prueba", "tagline": "", "logoUrl": "", "provincia": "SAN JOSE"}, {"slug": "qa5-tienda-bodega", "nombre": "QA5 Tienda Bodega", "tagline": "", "logoUrl": "", "provincia": "SAN JOSE"}]
+/api/tienda/qa-pyme-prueba -> 200 productos -> 200 n=2
+/api/tienda/qa-plus-prueba-3 -> 200 productos -> 200 n=10
+/api/tienda/qa1-negocio-prueba -> 200 productos -> 200 n=1
+/api/tienda/qa5-tienda-bodega -> 200 productos -> 200 n=2
+/api/tienda/no-existe-xyz -> 404 productos -> 404 n=?
+== empresas en catalogo global
+total 15
+Counter({'qa-plus-prueba-3': 10, 'qa-pyme-prueba': 2, 'qa5-tienda-bodega': 2, 'qa1-negocio-prueba': 1})
+campos sensibles en item: ['stockReservado', 'bodega']
+== variantes id inexistente
+404
+== POST stripe
+400
+== mvn -o test -Dtest=CatalogoMarketplaceTest,CatalogoPublicoVis3Test,ProductoCatalogQueriesTiendasTest,SeoSlugsTest,StorefrontPrecioOfertaTest,PrecioEfectivoOfertaTest,CarritoCantidadInvalidaTest,PaymentCheckoutTiendaPausadaTest,CheckoutBodegaAjenaTest,CheckoutBodegaMarketplaceTest,BodegaListadoScopeTest,FlywayRepairConfigTest,CspSinMetaPixelTest,CspMapaBodegaTest,SecurityAuthorizationRulesCatchAllTest,SecurityEndpointsTest,OnvoCuentaConectadaConfigTest,GatewayPctSoloConfigTest
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-resources-plugin:3.3.1:resources (default-resources) on project hot-click-outlet: copying /workspace/qa/verif/reqa-3-10/wt/Hot_click_outlet/src/main/resources/static/assets/usePulso-DgNSLE-t.js to /workspace/qa/verif/reqa-3-10/wt/Hot_click_outlet/target/classes/static/assets/usePulso-DgNSLE-t.js failed with FileSystemException: /workspace/qa/verif/reqa-3-10/wt/Hot_click_outlet/target/classes/static/assets/usePulso-DgNSLE-t.js: No space left on device -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+== reintento (1er intento: No space left on device)
+[INFO] BUILD FAILURE
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-resources-plugin:3.3.1:resources (default-resources) on project hot-click-outlet: copying /workspace/qa/verif/reqa-3-10/wt/Hot_click_outlet/src/main/resources/static/assets/usePulso-DgNSLE-t.js to /workspace/qa/verif/reqa-3-10/wt/Hot_click_outlet/target/classes/static/assets/usePulso-DgNSLE-t.js failed with FileSystemException: /workspace/qa/verif/reqa-3-10/wt/Hot_click_outlet/target/classes/static/assets/usePulso-DgNSLE-t.js: No space left on device -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+== BLOQUEO: df -i / -> 100% inodos (IFree 0); mvn no compila
+== gitleaks
+bin=/workspace/tools/gitleaks
+12:47PM FTL Unknown report format: 
+== .env en repo
+Hot_click_outlet/.env.example
+Hot_click_outlet/frontend/.env.example
+Hot_click_outlet/staging/.env.staging.example
+security-tools/deepteam/.env.example
+security-tools/guardrails/.env.example
+== fail-closed ONVO/JWT
+Hot_click_outlet/src/main/java/com/hotclick/config/OnvoArranqueProdGuard.java:48:        throw new IllegalStateException("[ALERTA-PAGO] Producción requiere ONVO_SECRET_KEY con prefijo " + PREFIJO_LIVE
+Hot_click_outlet/src/main/java/com/hotclick/config/ValidadorPerfilesProduccion.java:39:                throw new IllegalStateException(MENSAJE);
+hallazgos 0
+12:47PM INF scanned ~21636790 bytes (21.64 MB) in 1.39s
+12:47PM INF no leaks found
+== worktree removido
+== Mon Oct 26 12:49:53 CST 2026 df -i: /dev/vdb       2031616 1690975 340641   84% /
+== HEAD f9f0e506a73a7a9ff95cc608d4721745d79369e1
+== mvn -B -o test -Dtest=CatalogoMarketplaceTest,CatalogoPublicoVis3Test,ProductoCatalogQueriesTiendasTest,SeoSlugsTest,StorefrontPrecioOfertaTest,PrecioEfectivoOfertaTest,CarritoCantidadInvalidaTest,PaymentCheckoutTiendaPausadaTest,CheckoutBodegaAjenaTest,CheckoutBodegaMarketplaceTest,BodegaListadoScopeTest,FlywayRepairConfigTest,CspSinMetaPixelTest,CspMapaBodegaTest,SecurityAuthorizationRulesCatchAllTest,SecurityEndpointsTest,OnvoCuentaConectadaConfigTest,GatewayPctSoloConfigTest
+exit=124
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.168 s -- in com.hotclick.config.FlywayRepairConfigTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.033 s -- in com.hotclick.controller.PaymentCheckoutTiendaPausadaTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.hotclick.controller.storefront.StorefrontPrecioOfertaTest
+== empresa no aprobada (login admin QA OK, token no registrado)
+admin/empresas: id1 cafe-especialidad-local INACTIVO visibilidadPublica=false
+productos empresa1: 1 ids [1]
+seo/tiendas contiene slug? 0
+/api/tienda/cafe-especialidad-local -> 404 ; /productos -> 404
+catalogo items de empresa1: 0
+/api/productos/1 -> 404 ; /variantes -> 200
+{"success":true,"message":"Sin variantes","data":[],"timestamp":"2026-10-26T13:04:13.982800556"}== intento 1: timeout 760s (exit 124), load avg 192; pasaron FlywayRepairConfigTest 10/0/0/0, PaymentCheckoutTiendaPausadaTest 1/0/0/0, StorefrontPrecioOfertaTest 1/0/0/0; colgado en CspSinMetaPixelTest (Hikari thread starvation)
+== intento 2 (restantes, CSP al final): mvn -B -o test -Dtest=CatalogoMarketplaceTest,CatalogoPublicoVis3Test,ProductoCatalogQueriesTiendasTest,SeoSlugsTest,PrecioEfectivoOfertaTest,CarritoCantidadInvalidaTest,CheckoutBodegaAjenaTest,CheckoutBodegaMarketplaceTest,BodegaListadoScopeTest,CspMapaBodegaTest,SecurityAuthorizationRulesCatchAllTest,SecurityEndpointsTest,OnvoCuentaConectadaConfigTest,GatewayPctSoloConfigTest,CspSinMetaPixelTest
+exit=0
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 22.25 s -- in CSP sin hosts de Meta Pixel
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.183 s -- in [CRÍTICO] Visibilidad del catálogo marketplace (CatalogoMarketplace)
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.584 s -- in CSP y Permissions-Policy del mapa de bodega
+2026-10-26 13:05:21.685 INFO  [3e4ce0668d67] c.h.service.SecurityAuditService - [SEC] type=LOGIN_FAILED severity=MEDIUM userId=null email=x@x.com ip=127.0.0.1 endpoint=/api/auth/login meta={"reason":"user_not_found"}
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 16.87 s -- in Security — endpoint authorization tests
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.059 s -- in [OWASP A01/API1] GET /api/bodegas limitado a la empresa del usuario
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.372 s -- in SecurityAuthorizationRules — catch-all /api/admin/** (filtro real)
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.hotclick.seo.SeoSlugsTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in Comisión gateway | una sola fuente: application.properties
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.122 s -- in E2E-CMP-01 | bodega del vendedor en el marketplace
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in CMP-4 | bodega de otro negocio en el checkout
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.hotclick.service.payment.PrecioEfectivoOfertaTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.122 s -- in Mock de cuentas conectadas solo con perfil dev/test estricto
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.106 s -- in ProductoCatalogQueries - tiendas visibles por producto
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.hotclick.service.producto.CatalogoPublicoVis3Test
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.hotclick.service.CarritoCantidadInvalidaTest
+[INFO] Tests run: 97, Failures: 0, Errors: 0, Skipped: 0
+== total 18 clases: 97+12=109 tests, 0 fallos, 0 errores, 0 skip
+== worktree removido
