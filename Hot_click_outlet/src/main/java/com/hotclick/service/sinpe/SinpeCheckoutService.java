@@ -90,6 +90,7 @@ public class SinpeCheckoutService {
         if (sinpe) SinpeOnvoMarketplaceService.exigirIdentificacion(req.getSinpeIdentificacion(), req.getSinpeTipoIdentificacion(), req.getSinpeTelefono());
         String sinpeDestino = exigirDestinoSiSinpe(req.getProvider(), sinpeOnvo != null ? sinpeOnvo.destinoDisponible() : "");
         checkoutValidator.validateCartNotEmpty(req);
+        CheckoutValidator.exigirDireccionSiHayEnvio(req);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
 
