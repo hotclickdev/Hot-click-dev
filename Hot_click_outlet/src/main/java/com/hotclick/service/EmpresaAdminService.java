@@ -66,10 +66,6 @@ public class EmpresaAdminService {
         return data;
     }
 
-    public void cambiarEstado(Long id, String nuevoEstado) {
-        cambiarEstado(id, nuevoEstado, null);
-    }
-
     @Transactional
     public void cambiarEstado(Long id, String nuevoEstado, String motivo) {
         if (nuevoEstado == null || !ESTADOS_VALIDOS.contains(nuevoEstado)) {
@@ -105,6 +101,7 @@ public class EmpresaAdminService {
             "EMPRESA_CAMBIO_ESTADO", "EMPRESA", id, id, detalle);
     }
 
+    @Transactional
     @CacheEvict(value = "tenantInfo", key = "#id")
     public String cambiarPlan(Long id, String nombrePlan) {
         if (nombrePlan == null || !PLANES_VALIDOS.contains(nombrePlan)) {
@@ -112,7 +109,9 @@ public class EmpresaAdminService {
         }
         Plan plan = planRepository.findByNombre(nombrePlan)
             .orElseThrow(() -> new IllegalStateException("Plan " + nombrePlan + " no configurado en hot_click_plan_tb"));
-        Empresa empresa = empresa(id);
+        Empresa empresa = empresaBloqueada(id);
+        // Igual que #333: una tienda en impago no cambia de plan (ni por convenio); solo paga lo pendiente.
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) throw new com.hotclick.exception.ReactivacionSinPagoException();
         empresa.setPlan(plan);
         empresa.setPlanSaas(nombrePlan);
         empresaRepository.save(empresa);
