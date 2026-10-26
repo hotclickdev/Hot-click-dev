@@ -49,6 +49,12 @@ public class PublicChatController {
     @Value("${chat.publico.max-diario-empresa:3000}")
     private int maxDiarioEmpresa;
 
+    /** Tope global diario de llamadas al modelo (todas las tiendas). Fail-closed: si el contador falla, sin IA. */
+    @Value("${chat.publico.max-diario-global:5000}")
+    private int maxDiarioGlobal;
+
+    static final String GLOBAL_KEY = "public_chat:global:day";
+
     @Autowired private PublicChatService chatService;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private RateLimiter rateLimiter;
@@ -92,6 +98,9 @@ public class PublicChatController {
         boolean conModelo = rateLimiter.tryAcquire(empresaKey, maxDiarioEmpresa, DAILY_WINDOW);
         if (!conModelo) {
             log.warn("[Chat] Tope diario del modelo alcanzado empresa={}: respondiendo sin IA", empresaId);
+        } else if (!rateLimiter.tryAcquireEstricto(GLOBAL_KEY, maxDiarioGlobal, DAILY_WINDOW)) {
+            conModelo = false;
+            log.warn("[Chat] Tope GLOBAL diario del modelo alcanzado ({}) o contador caído: respondiendo sin IA", maxDiarioGlobal);
         }
 
         lanzarChat(emitter, empresaId, slug, message, body, conModelo);
