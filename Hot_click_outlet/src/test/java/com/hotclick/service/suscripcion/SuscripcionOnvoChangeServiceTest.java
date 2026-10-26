@@ -77,6 +77,37 @@ class SuscripcionOnvoChangeServiceTest {
         planPyme.setNombre("PYME");
 
         empresa.setPlan(planEmprendedor);
+        // QA8: el plan actual se resuelve por repo (el proxy LAZY no se inicializa fuera de sesión).
+        org.mockito.Mockito.lenient().when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+    }
+
+    @Test
+    @DisplayName("QA8: plan actual como proxy LAZY sin sesión no rompe el cambio de plan")
+    void planActualProxyLazySinSesion() {
+        Plan proxy = org.mockito.Mockito.mock(Plan.class);
+        when(proxy.getId()).thenReturn(1L);
+        org.mockito.Mockito.lenient().when(proxy.getNombre()).thenThrow(
+            new org.hibernate.LazyInitializationException("Could not initialize proxy [com.hotclick.model.Plan#1] - no session"));
+        empresa.setPlan(proxy);
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+
+        // Mismo plan: se detecta por el nombre leído del repo, sin tocar el proxy.
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Ya tenés el plan");
+        verify(proxy, never()).getNombre();
+    }
+
+    @Test
+    @DisplayName("QA8: negocio PENDIENTE_APROBACION no elige ni paga plan (sin llamar a ONVO)")
+    void empresaPendienteAprobacionNoPaga() {
+        empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
+            .isInstanceOf(com.hotclick.exception.EmpresaPendienteAprobacionException.class);
+        verify(onvoBilling, never()).crearCustomer(any(), any(), anyMap());
+        verify(suscripcionRepo, never()).findActivaByEmpresaId(any());
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.hotclick.service.suscripcion;
 
+import com.hotclick.exception.EmpresaPendienteAprobacionException;
+
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.BillingLedger;
 import com.hotclick.model.Empresa;
@@ -101,6 +103,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         // Decisión 26-oct: una tienda SUSPENDIDO_IMPAGO no cambia de plan (ni al gratis); solo paga lo pendiente.
         if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
             throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
+        }
+        // QA8: un negocio sin aprobar no elige ni paga plan (fail-closed, antes de tocar ONVO).
+        if (EmpresaPendienteAprobacionException.ESTADO.equals(empresa.getEstadoEmpresa())) {
+            throw new EmpresaPendienteAprobacionException();
         }
         return cambiarPlanInterno(empresa, planId);
     }
@@ -407,9 +413,16 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, "crc", detalle);
     }
 
-    private static String nombrePlanActual(Empresa empresa) {
-        if (empresa.getPlan() != null && empresa.getPlan().getNombre() != null) {
-            return empresa.getPlan().getNombre();
+    /**
+     * QA8: {@code empresa.plan} es LAZY y este servicio corre sin transacción (open-in-view=false):
+     * leer {@code getNombre()} del proxy lanzaba LazyInitializationException («no session») y el
+     * cambio de plan respondía 500. Se lee solo el id del proxy (no lo inicializa) y el plan por repo.
+     */
+    private String nombrePlanActual(Empresa empresa) {
+        Plan actual = empresa.getPlan();
+        if (actual != null && actual.getId() != null) {
+            String nombre = planRepo.findById(actual.getId()).map(Plan::getNombre).orElse(null);
+            if (nombre != null) return nombre;
         }
         return empresa.getPlanSaas() != null ? empresa.getPlanSaas() : PLAN_GRATIS;
     }

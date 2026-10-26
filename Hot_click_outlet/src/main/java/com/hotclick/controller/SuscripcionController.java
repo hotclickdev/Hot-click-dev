@@ -188,6 +188,10 @@ public class SuscripcionController {
             Map<String, Object> out = new java.util.LinkedHashMap<>(suscripcionService.cambiarPlanOnvo(empresaId, planId));
             out.putIfAbsent("proveedor", "ONVO");
             return ResponseEntity.ok(out);
+        } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
+                "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
         } catch (com.hotclick.exception.PlanSinPrecioException e) {
             return planSinPrecio(e);
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
