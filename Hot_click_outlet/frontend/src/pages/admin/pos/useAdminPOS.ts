@@ -73,7 +73,7 @@ export function useAdminPOS() {
   const [receipt, setReceipt]       = useState<PosVenta | null>(null)
   const [qrData, setQrData]         = useState<PosQrData | null>(null)
   const [loadingVenta, setLoadingVenta]     = useState(false)
-  const [loadingConfirm, setLoadingConfirm] = useState(false)
+  const [loadingConfirm] = useState(false)
   const [reportePendiente, setReportePendiente] = useState<ReportePendientePos | null>(null)
 
   const toastErrorConReporte = (mensaje: string) => {
@@ -242,23 +242,9 @@ export function useAdminPOS() {
       return
     }
 
-    // Confirmación manual: el backend exige la referencia del comprobante SINPE (6-30 letras/números, única).
-    const referencia = window.prompt('Referencia del comprobante SINPE (6 a 30 letras o números)')?.trim()
-    if (!referencia) return
-    setLoadingConfirm(true)
-    try {
-      await posService.confirmarSinpeQr(token as string, { referencia })
-      setReceipt(receiptBase)
-      setQrData(null)
-      setCartItems([])
-      setDescuento(0)
-      setStep('recibo')
-      showToast('SINPE confirmado', 'success')
-    } catch (err: unknown) {
-      toastErrorConReporte(mensajeErrorPos(err, 'Error al confirmar SINPE'))
-    } finally {
-      setLoadingConfirm(false)
-    }
+    // P-01: SINPE solo se confirma por el webhook ONVO (succeeded + GET). La caja no confirma a mano;
+    // el QR se actualiza solo cuando el backend marca la sesión como pagada.
+    if (token) showToast('El pago SINPE se confirma solo cuando ONVO lo acredita', 'info')
   }
 
   const handleQrCancelar = async () => {

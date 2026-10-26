@@ -75,7 +75,7 @@ public class NotificacionPedidoEmailSender {
                     pedidoEmailBuilder.asuntoConfirmacion(pedido),
                     pedidoEmailBuilder.buildConfirmacionPedido(pedido, cliente)
                 );
-                log.info("Email confirmación enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+                log.info("Email confirmación enviado para pedido {}", pedido.getNumeroPedido());
             } catch (Exception e) {
                 log.error("No se pudo enviar email de confirmación para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
             }
@@ -94,7 +94,7 @@ public class NotificacionPedidoEmailSender {
                     pedidoEmailBuilder.asuntoGuia(pedido),
                     pedidoEmailBuilder.buildNotificacionGuia(pedido, cliente)
                 );
-                log.info("Email guía enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+                log.info("Email guía enviado para pedido {}", pedido.getNumeroPedido());
             } catch (Exception e) {
                 log.error("No se pudo enviar email de guía para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
             }
@@ -118,7 +118,7 @@ public class NotificacionPedidoEmailSender {
             pedidoEmailBuilder.asuntoSeguimiento(pedido),
             pedidoEmailBuilder.buildSeguimientoEstado(pedido, cliente, nota)
         );
-        log.info("Email seguimiento enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+        log.info("Email seguimiento enviado para pedido {}", pedido.getNumeroPedido());
     }
 
     public void enviarRecuperacionCarrito(
@@ -131,7 +131,7 @@ public class NotificacionPedidoEmailSender {
                 pedidoEmailBuilder.asuntoRecuperacionCarrito(),
                 pedidoEmailBuilder.buildRecuperacionCarrito(tokenRecuperacion, items, appUrl)
             );
-            log.info("Email recuperación carrito enviado a {}", email);
+            log.info("Email recuperación carrito enviado");
         } catch (Exception e) {
             log.error("No se pudo enviar email de recuperación de carrito: {}", e.getMessage());
         }
@@ -146,7 +146,7 @@ public class NotificacionPedidoEmailSender {
                 pedidoEmailBuilder.asuntoPagoFallido(pedido),
                 pedidoEmailBuilder.buildPagoFallido(pedido, cliente, motivo)
             );
-            log.info("Email pago fallido enviado a {} para pedido {}", cliente.getCorreo(), pedido.getNumeroPedido());
+            log.info("Email pago fallido enviado para pedido {}", pedido.getNumeroPedido());
         } catch (Exception e) {
             log.error("No se pudo enviar email de pago fallido para pedido {}: {}", pedido.getNumeroPedido(), e.getMessage());
         }
@@ -162,8 +162,8 @@ public class NotificacionPedidoEmailSender {
                 "Nueva venta — " + pedido.getNumeroPedido(),
                 pedidoEmailBuilder.buildNuevoPedidoEmprendedor(pedido)
             );
-            log.info("Email nueva venta enviado a emprendedor {} para pedido {}",
-                correo, pedido.getNumeroPedido());
+            log.info("Email nueva venta enviado a emprendedor para pedido {}",
+                pedido.getNumeroPedido());
         } catch (Exception e) {
             log.error("No se pudo enviar email nueva venta a emprendedor para pedido {}: {}",
                 pedido.getNumeroPedido(), e.getMessage());

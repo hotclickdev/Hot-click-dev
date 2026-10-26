@@ -1,6 +1,9 @@
 package com.hotclick.controller;
 
+import com.hotclick.model.TurnoCaja;
 import com.hotclick.service.PosQrService;
+import com.hotclick.service.TurnoCajaService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,79 +13,74 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
+/** Regresión E2E-POS-01/02/03 (spec 07-pos-qr-sinpe). */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("POST /pos/qr/pago/{token}/tilopay")
+@DisplayName("POS QR: turno obligatorio, Tilopay y SINPE manual retirados")
 class PosQrControllerPagoTest {
 
     @Mock PosQrService posQrService;
+    @Mock TurnoCajaService turnoCajaService;
+    @Mock HttpServletRequest request;
+    @Mock com.hotclick.security.JwtUtil jwtUtil;
     PosQrController controller;
 
     @BeforeEach
     void armar() {
         controller = new PosQrController();
+        ReflectionTestUtils.setField(controller, "jwtUtil", jwtUtil);
         ReflectionTestUtils.setField(controller, "posQrService", posQrService);
+        ReflectionTestUtils.setField(controller, "turnoCajaService", turnoCajaService);
     }
 
     @Test
-    @DisplayName("ALTO 3: tarjeta por QR no disponible → 503; otro rechazo → 409, nunca 500")
-    void noDisponible400() {
-        when(posQrService.iniciarTilopay("tokentarjetaqr01", "TARJETA"))
-            .thenThrow(new IllegalStateException(com.hotclick.service.pos.PosQrVentaService.MSG_TARJETA_NO_DISPONIBLE));
-        assertThat(controller.iniciarTilopay("tokentarjetaqr01", "TARJETA").getStatusCode().value()).isEqualTo(503);
-        when(posQrService.iniciarTilopay("tokentarjetaqr01", "SINPE"))
-            .thenThrow(new IllegalStateException("otro"));
-        assertThat(controller.iniciarTilopay("tokentarjetaqr01", "SINPE").getStatusCode().value()).isEqualTo(409);
+    @DisplayName("E2E-POS-01: sin turno abierto, POST /api/pos/qr → 400 y no crea sesión")
+    void sinTurnoNoCreaQr() {
+        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-de-prueba");
+        when(jwtUtil.extractUserId("jwt-de-prueba")).thenReturn(7L);
+        when(jwtUtil.extractEmpresaId("jwt-de-prueba")).thenReturn(9L);
+        when(turnoCajaService.getTurnoActivo(7L)).thenReturn(Optional.empty());
+        ResponseEntity<?> r = controller.crearSesion(Map.of("metodoPago", "SINPE", "items", List.of()), request);
+        assertThat(r.getStatusCode().value()).isEqualTo(400);
+        assertThat(((com.hotclick.dto.ResponseDTO) r.getBody()).getMessage()).contains("turno abierto");
+        verifyNoInteractions(posQrService);
     }
 
     @Test
-    @DisplayName("QR inexistente → 404")
-    void qrInexistente404() {
-        when(posQrService.iniciarTilopay("tokendescconocido", null))
-            .thenThrow(new NoSuchElementException("QR no encontrado"));
-        assertThat(controller.iniciarTilopay("tokendescconocido", null).getStatusCode().value()).isEqualTo(404);
+    @DisplayName("E2E-POS-01: con turno abierto se crea con ese turnoId")
+    void conTurnoCrea() {
+        when(request.getHeader("Authorization")).thenReturn("Bearer jwt-de-prueba");
+        when(jwtUtil.extractUserId("jwt-de-prueba")).thenReturn(7L);
+        when(jwtUtil.extractEmpresaId("jwt-de-prueba")).thenReturn(9L);
+        TurnoCaja t = new TurnoCaja();
+        t.setId(55L);
+        when(turnoCajaService.getTurnoActivo(7L)).thenReturn(Optional.of(t));
+        controller.crearSesion(Map.of("metodoPago", "SINPE", "items", List.of()), request);
+        verify(posQrService).crearSesion(eq(7L), eq(9L), eq(55L), any(), any(), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("Tilopay no iniciado → el log enmascara el token del QR")
-    void logNoContieneToken() {
-        ch.qos.logback.classic.Logger logger =
-            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(PosQrController.class);
-        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> app =
-            new ch.qos.logback.core.read.ListAppender<>();
-        app.start();
-        logger.addAppender(app);
-        try {
-            when(posQrService.iniciarTilopay("tokensecretoqr99", null))
-                .thenThrow(new IllegalStateException("Los pagos en línea no están disponibles."));
-            controller.iniciarTilopay("tokensecretoqr99", null);
-        } finally {
-            logger.detachAppender(app);
-        }
-        assertThat(app.list).isNotEmpty();
-        assertThat(app.list).allSatisfy(ev -> assertThat(ev.getFormattedMessage())
-            .doesNotContain("tokensecretoqr99").doesNotContain("secretoqr99"));
-        assertThat(app.list.get(0).getFormattedMessage()).contains("toke****");
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> cuerpo(ResponseEntity<?> resp) {
-        return (Map<String, Object>) resp.getBody();
+    @DisplayName("E2E-POS-02: /tilopay y /tilopay/confirmar → 410 (404 si el QR no existe), nunca cobran")
+    void tilopayRetirado() {
+        when(posQrService.consultarEstado("tokcualquiera01")).thenReturn(Map.of("estado", "PENDIENTE"));
+        when(posQrService.consultarEstado("tokinexistente1")).thenThrow(new java.util.NoSuchElementException());
+        assertThat(controller.iniciarTilopay("tokinexistente1").getStatusCode().value()).isEqualTo(404);
+        assertThat(controller.iniciarTilopay("tokcualquiera01").getStatusCode().value()).isEqualTo(410);
+        assertThat(controller.confirmarTilopay("tokcualquiera01").getStatusCode().value()).isEqualTo(410);
+        verify(posQrService, never()).crearSesion(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("SINPE ONVO: el 400 trae un mensaje constante, nunca el detalle de la excepción")
-    void sinpe400MensajeConstante() {
-        when(posQrService.iniciarSinpeOnvo("tokensinpeqr0001", "x", 1))
-            .thenThrow(new IllegalArgumentException("detalle interno que no debe filtrarse"));
-        ResponseEntity<?> resp = controller.iniciarSinpeOnvo("tokensinpeqr0001", new PosQrController.SinpeOnvoRequest("x", 1));
-        assertThat(resp.getStatusCode().value()).isEqualTo(400);
-        assertThat(resp.getBody().toString()).doesNotContain("detalle interno")
-            .contains(com.hotclick.service.pos.PosSinpeOnvoService.MSG_IDENTIFICACION);
+    @DisplayName("E2E-POS-03: confirmar-sinpe manual → 410 y nunca confirma (solo webhook ONVO)")
+    void sinpeManualRetirado() {
+        assertThat(controller.confirmarSinpe("tokcualquiera01").getStatusCode().value()).isEqualTo(410);
+        verifyNoInteractions(posQrService);
     }
 }
