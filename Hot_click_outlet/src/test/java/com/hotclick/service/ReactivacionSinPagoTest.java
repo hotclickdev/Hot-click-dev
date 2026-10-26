@@ -50,7 +50,7 @@ class ReactivacionSinPagoTest {
         EmpresaRepository repo = mock(EmpresaRepository.class);
         EmpresaAprobacionService aprob = mock(EmpresaAprobacionService.class);
         Empresa e = empresa(desde);
-        when(repo.findById(9L)).thenReturn(Optional.of(e));
+        when(repo.findByIdForUpdate(9L)).thenReturn(Optional.of(e));
         EmpresaAdminService s = admin(repo, aprob);
         assertThrows(ReactivacionSinPagoException.class, () -> s.cambiarEstado(9L, hacia, "motivo de prueba"));
         assertEquals(desde, e.getEstadoEmpresa());
@@ -63,7 +63,7 @@ class ReactivacionSinPagoTest {
     void visibilidadNoSePrendeEnImpago(String estado) {
         EmpresaRepository repo = mock(EmpresaRepository.class);
         Empresa e = empresa(estado);
-        when(repo.findById(9L)).thenReturn(Optional.of(e));
+        when(repo.findByIdForUpdate(9L)).thenReturn(Optional.of(e));
         EmpresaAdminService s = admin(repo, mock(EmpresaAprobacionService.class));
         ReflectionTestUtils.setField(s, "sancionRepo", mock(SancionPlataformaRepository.class));
         assertThrows(ReactivacionSinPagoException.class, () -> s.cambiarVisibilidad(9L, true));
@@ -77,7 +77,7 @@ class ReactivacionSinPagoTest {
         EmpresaRepository repo = mock(EmpresaRepository.class);
         ProductoRepository prod = mock(ProductoRepository.class);
         Empresa e = empresa(estado);
-        when(repo.findById(9L)).thenReturn(Optional.of(e));
+        when(repo.findByIdForUpdate(9L)).thenReturn(Optional.of(e));
         EmpresaAprobacionService a = new EmpresaAprobacionService();
         ReflectionTestUtils.setField(a, "empresaRepository", repo);
         ReflectionTestUtils.setField(a, "productoRepository", prod);
@@ -135,5 +135,70 @@ class ReactivacionSinPagoTest {
         verify(er, never()).findById(anyLong());
         verify(sr, never()).findTopByEmpresaIdAndEstadoOrderByFechaCreacionDesc(anyLong(), any());
         verify(xr, never()).existsBySuscripcionId(anyLong());
+    }
+
+    /** Carrera: la lectura sin lock vería ACTIVO, pero el job ya pasó la tienda a SUSPENDIDO_IMPAGO. */
+    Empresa carrera(EmpresaRepository repo) {
+        Empresa vieja = empresa("ACTIVO");
+        Empresa fresca = empresa("SUSPENDIDO_IMPAGO");
+        when(repo.findById(9L)).thenReturn(Optional.of(vieja));
+        when(repo.findByIdForUpdate(9L)).thenReturn(Optional.of(fresca));
+        return fresca;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ACTIVO", "INACTIVO"})
+    void carreraConJobEnCambiarEstadoNoReactiva(String hacia) {
+        EmpresaRepository repo = mock(EmpresaRepository.class);
+        EmpresaAprobacionService aprob = mock(EmpresaAprobacionService.class);
+        Empresa fresca = carrera(repo);
+        EmpresaAdminService s = admin(repo, aprob);
+        assertThrows(ReactivacionSinPagoException.class, () -> s.cambiarEstado(9L, hacia, "motivo de prueba"));
+        assertEquals("SUSPENDIDO_IMPAGO", fresca.getEstadoEmpresa());
+        verify(repo, never()).save(any());
+        verify(repo, never()).findById(anyLong());
+        verifyNoInteractions(aprob);
+    }
+
+    @Test
+    void carreraConJobEnVisibilidadNoPublica() {
+        EmpresaRepository repo = mock(EmpresaRepository.class);
+        Empresa fresca = carrera(repo);
+        EmpresaAdminService s = admin(repo, mock(EmpresaAprobacionService.class));
+        ReflectionTestUtils.setField(s, "sancionRepo", mock(SancionPlataformaRepository.class));
+        assertThrows(ReactivacionSinPagoException.class, () -> s.cambiarVisibilidad(9L, true));
+        assertFalse(fresca.getVisibilidadPublica());
+        verify(repo, never()).save(any());
+        verify(repo, never()).findById(anyLong());
+    }
+
+    @Test
+    void carreraConJobEnAprobarYPublicarNoReactiva() {
+        EmpresaRepository repo = mock(EmpresaRepository.class);
+        ProductoRepository prod = mock(ProductoRepository.class);
+        Empresa fresca = carrera(repo);
+        EmpresaAprobacionService a = new EmpresaAprobacionService();
+        ReflectionTestUtils.setField(a, "empresaRepository", repo);
+        ReflectionTestUtils.setField(a, "productoRepository", prod);
+        assertThrows(ReactivacionSinPagoException.class, () -> a.aprobarYPublicar(9L));
+        assertEquals("SUSPENDIDO_IMPAGO", fresca.getEstadoEmpresa());
+        verify(repo, never()).save(any());
+        verify(repo, never()).findById(anyLong());
+        verifyNoInteractions(prod);
+    }
+
+    @Test
+    void lecturasConLockPesimista() throws Exception {
+        java.lang.reflect.Method m = EmpresaRepository.class.getMethod("findByIdForUpdate", Long.class);
+        assertEquals(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE,
+            m.getAnnotation(org.springframework.data.jpa.repository.Lock.class).value());
+        for (String n : new String[]{"cambiarEstado", "cambiarVisibilidad"}) {
+            boolean tx = java.util.Arrays.stream(EmpresaAdminService.class.getMethods())
+                .filter(x -> x.getName().equals(n) && x.getParameterCount() >= 2 && !(n.equals("cambiarEstado") && x.getParameterCount() == 2))
+                .allMatch(x -> x.isAnnotationPresent(org.springframework.transaction.annotation.Transactional.class));
+            assertTrue(tx, n + " debe ser @Transactional para que el lock dure hasta el commit");
+        }
+        assertTrue(EmpresaAprobacionService.class.getMethod("aprobarYPublicar", Long.class)
+            .isAnnotationPresent(org.springframework.transaction.annotation.Transactional.class));
     }
 }
