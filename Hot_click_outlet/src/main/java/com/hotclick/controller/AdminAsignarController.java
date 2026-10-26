@@ -164,7 +164,10 @@ public class AdminAsignarController {
 
             ManualPedidoDTO dto = new ManualPedidoDTO();
             dto.setUsuarioId(usuarioId);
-            dto.setBodegaId(1L);
+            // P-07: sin bodega fija; si no viene, PedidoManualFactory resuelve la del negocio.
+            Object bodegaRaw = body.get("bodegaId");
+            dto.setBodegaId(bodegaRaw != null && !bodegaRaw.toString().isBlank()
+                ? Long.parseLong(bodegaRaw.toString()) : null);
             dto.setMetodoEnvio(Constants.ENVIO_RETIRO);
             dto.setMetodoPago(metodoPago);
             dto.setEstadoPedido(Constants.PEDIDO_ENTREGADO);

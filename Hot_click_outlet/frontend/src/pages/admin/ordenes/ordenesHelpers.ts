@@ -143,7 +143,7 @@ export function agregarItemPedido(items: ItemFormPedido[], prod: ProductoCrearPe
 export function payloadPedidoManual(form: FormPedidoManual, costoEnvioNum: number) {
   return {
     usuarioId: Number(form.usuarioId),
-    bodegaId: 1,
+    // P-07: sin bodega fija; el backend usa la primera bodega activa del negocio.
     metodoEnvio: form.metodoEnvio,
     metodoPago: form.metodoPago,
     costoEnvio: costoEnvioNum,

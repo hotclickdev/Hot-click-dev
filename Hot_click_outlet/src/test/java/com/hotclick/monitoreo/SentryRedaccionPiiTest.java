@@ -110,4 +110,17 @@ class SentryRedaccionPiiTest {
         assertThat(SentryRedaccionPii.redactar(null)).isNull();
         assertThat(cb.execute(new SentryEvent(), new Hint())).isNotNull();
     }
+
+    @Test
+    void redactaTokensEnTextoLibre() {
+        String relleno = "A".repeat(35);
+        assertThat(SentryRedaccionPii.redactar("Authorization: Bearer abc.DEF-123_xyz"))
+                .isEqualTo("Authorization: Bearer [token]");
+        assertThat(SentryRedaccionPii.redactar("bot 123456789:" + relleno + " falló"))
+                .isEqualTo("bot [token] falló");
+        assertThat(SentryRedaccionPii.redactar("slack " + "xox" + "b-0000000000-ficticio"))
+                .isEqualTo("slack [token]");
+        assertThat(SentryRedaccionPii.redactar("jwt " + "eyJ" + "hbGc.eyJzdWIi.firma_falsa"))
+                .isEqualTo("jwt [token]");
+    }
 }

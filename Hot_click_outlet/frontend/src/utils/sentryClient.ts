@@ -26,14 +26,22 @@ const DENY_URLS = [
   /^safari-extension:\/\//i,
 ]
 
+const BEARER = /\bBearer\s+[A-Za-z0-9._~+/=-]+/gi
+const TOKEN_BOT = /\b\d{6,12}:[A-Za-z0-9_-]{30,}/g
+const TOKEN_SLACK = /\bxox[abposr]-[A-Za-z0-9-]{10,}/g
+const JWT = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g
 const CORREO = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g
 const CEDULA = /\b\d{1,2}-\d{3,4}-\d{4,6}\b|\b\d{9,12}\b/g
 const TELEFONO = /(?:\+\d{1,3}[\s-]?)?\b\d{4}[\s-]?\d{4}\b/g
 
-/** Quita correos, cédulas y teléfonos de un texto antes de mandarlo a Sentry. */
+/** Quita tokens (Bearer, bot, Slack, JWT), correos, cédulas y teléfonos de un texto antes de mandarlo a Sentry. */
 export function redactarTexto(s: string | undefined | null): string | undefined {
   if (s == null) return undefined
   return String(s)
+    .replace(BEARER, 'Bearer [token]')
+    .replace(TOKEN_BOT, '[token]')
+    .replace(TOKEN_SLACK, '[token]')
+    .replace(JWT, '[token]')
     .replace(CORREO, '[correo]')
     .replace(CEDULA, '[cedula]')
     .replace(TELEFONO, '[telefono]')

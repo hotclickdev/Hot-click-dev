@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-CLGirLYX.js";function t(){return e()}export{t};

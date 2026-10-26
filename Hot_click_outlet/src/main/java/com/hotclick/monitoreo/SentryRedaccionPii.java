@@ -20,6 +20,11 @@ import java.util.regex.Pattern;
 @Component
 public class SentryRedaccionPii implements SentryOptions.BeforeSendCallback {
 
+    /** Credenciales en texto libre: Bearer, token de bot (Telegram), Slack xox*, JWT. Van primero. */
+    private static final Pattern BEARER = Pattern.compile("(?i)\\bBearer\\s+[A-Za-z0-9._~+/=-]+");
+    private static final Pattern TOKEN_BOT = Pattern.compile("\\b\\d{6,12}:[A-Za-z0-9_-]{30,}");
+    private static final Pattern TOKEN_SLACK = Pattern.compile("\\bxox[abposr]-[A-Za-z0-9-]{10,}");
+    private static final Pattern JWT = Pattern.compile("\\beyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+");
     private static final Pattern CORREO = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
     /** IBAN CR: CR + 20 dígitos, con o sin espacios. Va antes que la cédula. */
     private static final Pattern IBAN_CR = Pattern.compile("(?i)\\bCR\\s?(?:\\d\\s?){19}\\d\\b");
@@ -30,7 +35,11 @@ public class SentryRedaccionPii implements SentryOptions.BeforeSendCallback {
 
     public static String redactar(String s) {
         if (s == null) return null;
-        String r = CORREO.matcher(s).replaceAll("[correo]");
+        String r = BEARER.matcher(s).replaceAll("Bearer [token]");
+        r = TOKEN_BOT.matcher(r).replaceAll("[token]");
+        r = TOKEN_SLACK.matcher(r).replaceAll("[token]");
+        r = JWT.matcher(r).replaceAll("[token]");
+        r = CORREO.matcher(r).replaceAll("[correo]");
         r = IBAN_CR.matcher(r).replaceAll("[iban]");
         r = CEDULA.matcher(r).replaceAll("[cedula]");
         return TELEFONO.matcher(r).replaceAll("[telefono]");
