@@ -41,6 +41,15 @@ public final class OnvoBillingVerificador {
         if (!igual(texto(invoice, "customerId"), texto(sub, "customerId"))) return Resultado.rechazo("customer");
         if (!"paid".equalsIgnoreCase(texto(invoice, "status"))) return Resultado.rechazo("no_pagado");
         if (!"active".equalsIgnoreCase(texto(sub, "status"))) return Resultado.rechazo("sub_no_activa");
+        // B1: una factura con saldo pendiente no activa el plan.
+        BigDecimal pendiente = numero(invoice.get("amountRemaining"));
+        if (pendiente == null) pendiente = numero(invoice.get("amountDue"));
+        BigDecimal pagado = numero(invoice.get("amountPaid"));
+        BigDecimal total = numero(invoice.get("total"));
+        if ((pendiente != null && pendiente.signum() > 0)
+                || (pagado != null && total != null && pagado.compareTo(total) < 0)) {
+            return Resultado.rechazo("pago_parcial");
+        }
         return planYMonto(invoice, "total", sub, planPorPrice, precios,
             fecha(texto(invoice, "periodEnd")) != null ? fecha(texto(invoice, "periodEnd"))
                 : fecha(texto(sub, "currentPeriodEnd")));
@@ -55,7 +64,13 @@ public final class OnvoBillingVerificador {
         if (!"succeeded".equalsIgnoreCase(texto(intent, "status"))) return Resultado.rechazo("no_pagado");
         if (!"active".equalsIgnoreCase(texto(sub, "status"))) return Resultado.rechazo("sub_no_activa");
         if (!igual(texto(intent, "customerId"), texto(sub, "customerId"))) return Resultado.rechazo("customer");
-        return planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
+        // B1: el alta por intent cobra el plan completo; lo prorrateado entra por la factura (renewal).
+        Resultado r = planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
+        if (r.aceptado() && numero(intent.get("amount"))
+                .compareTo(BigDecimal.valueOf(precios.precio(r.planNombre()).longValue() * CENTIMOS_POR_COLON)) != 0) {
+            return Resultado.rechazo("pago_parcial");
+        }
+        return r;
     }
 
     /** Falla/cancelación: solo se aplica si ONVO (por GET, mismo modo) reporta ese estado. */

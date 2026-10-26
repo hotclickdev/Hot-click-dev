@@ -36,8 +36,19 @@ public class OnvoBillingWebhookHandler {
 
     /** Evento de billing que no pasó la verificación contra ONVO. */
     public static class EventoBillingRechazado extends RuntimeException {
-        public EventoBillingRechazado(String m) { super(m); }
+        private final String motivo;
+        public EventoBillingRechazado(String m) { this(m, null); }
+        public EventoBillingRechazado(String m, String motivo) { super(m); this.motivo = motivo; }
+        public String getMotivo() { return motivo; }
+        /** M2: ONVO confirmó algo que no cuadra (modo, monto, price…): reintentar no lo arregla. */
+        public boolean esPermanente() { return motivo != null && PERMANENTES.contains(motivo); }
     }
+
+    /** M2: motivos permanentes → se registran en el ledger y se responde 200. El resto (GET caído,
+     *  estado aún no pagado/activo en ONVO) sigue lanzando para que el controlador responda 5xx y ONVO reintente. */
+    static final java.util.Set<String> PERMANENTES = java.util.Set.of(
+        "modo", "monto", "moneda", "price_desconocido", "plan_sin_precio", "customer", "id",
+        "pago_parcial", "falta_id", "falta_subscriptionId", "falta_periodo");
 
     private final StripeEventoRepository eventoRepo;
     private final SuscripcionService suscripcionService;
@@ -62,10 +73,24 @@ public class OnvoBillingWebhookHandler {
      */
     @Transactional(noRollbackFor = EventoBillingRechazado.class)
     public boolean manejarSiBilling(String type, JsonNode data, String eventIdRaw) {
-        if (!esEventoBilling(type, data) && !esIntentDeClienteBilling(type, data)) {
+        if (!esEventoBilling(type, data)) {
             return false;
         }
-        String eventId = eventIdParaIdempotencia(type, data, eventIdRaw);
+        if ("payment-intent.succeeded".equals(type) && !intentAtribuibleASuscripcion(data)) {
+            // M1: no se puede atribuir con certeza a una suscripción → flujo normal de checkout/POS.
+            return false;
+        }
+        String eventId;
+        try {
+            eventId = eventIdParaIdempotencia(type, data, eventIdRaw);
+        } catch (EventoBillingRechazado e) {
+            if (e.esPermanente()) {
+                log.error("[onvo-billing] Evento sin clave de idempotencia descartado (200): type={} motivo={}",
+                    type, e.getMotivo());
+                return true;
+            }
+            throw e;
+        }
         if (Boolean.TRUE.equals(
             eventoRepo.findByIdForUpdate(eventId).map(StripeEvento::getProcesadoOk).orElse(null))) {
             log.info("[onvo-billing] Evento ya procesado — ignorando: {}", eventId);
@@ -80,8 +105,13 @@ public class OnvoBillingWebhookHandler {
         try {
             despachar(type, data);
             marcar(eventId, true, null);
+        } catch (EventoBillingRechazado e) {
+            // B2: en el ledger va un código, nunca el mensaje de la excepción.
+            marcar(eventId, false, "rechazo:" + (e.getMotivo() == null ? "desconocido" : e.getMotivo()));
+            if (e.esPermanente()) return true; // M2: queda registrado y se responde 200
+            throw e;
         } catch (RuntimeException e) {
-            marcar(eventId, false, e.getMessage());
+            marcar(eventId, false, e.getClass().getSimpleName());
             throw e;
         }
         return true;
@@ -138,30 +168,35 @@ public class OnvoBillingWebhookHandler {
     }
 
     /**
-     * Alta: el intent se relee por GET. La empresa NO sale de metadata: se resuelve por subscriptionId
-     * contra onvo_subscription_id local (con lock) y, de respaldo, por el customerId que confirma ONVO.
+     * M1: un payment-intent.succeeded es de billing solo si trae subscriptionId, esa suscripción existe
+     * localmente (lock) y el GET del intent a ONVO confirma el mismo subscriptionId. No se usa customerId
+     * (billing y checkout/POS comparten cuenta y llave ONVO) ni metadata.
      */
+    private boolean intentAtribuibleASuscripcion(JsonNode data) {
+        String subId = subIdDeEvento(data);
+        String intentId = textOrNull(data, "id");
+        if (subId == null || intentId == null) return false;
+        if (suscripcionRepo.findByOnvoSubscriptionIdForUpdate(subId).isEmpty()) return false;
+        Map<?, ?> intent = onvo.obtenerPaymentIntent(intentId);
+        String subConfirmada = OnvoBillingVerificador.texto(intent, "subscriptionId");
+        if (!subId.equals(subConfirmada)) {
+            log.warn("[onvo-billing] Intent {} con subscriptionId={} que ONVO no confirma ({}): va a checkout",
+                intentId, subId, subConfirmada);
+            return false;
+        }
+        return true;
+    }
+
+    /** Alta: ya atribuida por {@link #intentAtribuibleASuscripcion}; se relee el intent por GET y se verifica. */
     private void activarAltaPorIntent(JsonNode data) {
         String intentId = exigir(textOrNull(data, "id"), "id");
+        String subId = exigir(subIdDeEvento(data), "subscriptionId");
         Map<?, ?> intent = onvo.obtenerPaymentIntent(intentId);
-        Suscripcion local = resolverLocal(subIdDeEvento(data), OnvoBillingVerificador.texto(intent, "customerId"));
-        if (local == null) throw rechazo("sin_suscripcion_local", intentId);
-        String subId = local.getOnvoSubscriptionId();
         Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.altaPorIntent(
             intent, sub, intentId, subId, onvo.modoEsperado(), onvo::planParaPriceId, this::precioPlan);
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin());
-    }
-
-    /** Por subscriptionId (lock); si no viene, por customerId, que tiene que ser de una sola suscripción. */
-    Suscripcion resolverLocal(String subId, String customerId) {
-        if (subId != null) {
-            return suscripcionRepo.findByOnvoSubscriptionIdForUpdate(subId).orElse(null);
-        }
-        if (customerId == null) return null;
-        java.util.List<Suscripcion> l = suscripcionRepo.findByOnvoCustomerIdForUpdate(customerId);
-        return l.size() == 1 ? l.get(0) : null;
     }
 
     private Integer precioPlan(String nombre) {
@@ -170,19 +205,12 @@ public class OnvoBillingWebhookHandler {
 
     private static EventoBillingRechazado rechazo(String motivo, String ref) {
         log.error("[ALERTA-PAGO] Evento billing ONVO rechazado motivo={} ref={}", motivo, ref);
-        return new EventoBillingRechazado("Evento billing ONVO no verificado: " + motivo);
+        return new EventoBillingRechazado("Evento billing ONVO no verificado: " + motivo, motivo);
     }
 
     private static String exigir(String valor, String campo) {
         if (valor == null) throw rechazo("falta_" + campo, "?");
         return valor;
-    }
-
-    /** Respaldo sin subscriptionId: el intent es de billing si su customerId es de una suscripción local. */
-    private boolean esIntentDeClienteBilling(String type, JsonNode data) {
-        if (!"payment-intent.succeeded".equals(type)) return false;
-        String cid = textOrNull(data, "customerId");
-        return cid != null && !suscripcionRepo.findByOnvoCustomerIdForUpdate(cid).isEmpty();
     }
 
     static boolean esEventoBilling(String type, JsonNode data) {

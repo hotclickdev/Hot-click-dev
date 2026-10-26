@@ -30,10 +30,6 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubscriptionId = :id")
     Optional<Suscripcion> findByOnvoSubscriptionIdForUpdate(@Param("id") String onvoSubscriptionId);
 
-    /** Respaldo para resolver la empresa de un evento ONVO por customerId (con lock). */
-    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT s FROM Suscripcion s WHERE s.onvoCustomerId = :cid AND s.onvoSubscriptionId IS NOT NULL")
-    java.util.List<Suscripcion> findByOnvoCustomerIdForUpdate(@Param("cid") String onvoCustomerId);
 
     /** Suscripciones vigentes (no canceladas/vencidas) con plan cargado — consola billing. */
     @Query("""
