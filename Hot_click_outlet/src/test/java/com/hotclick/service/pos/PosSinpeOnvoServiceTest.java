@@ -22,7 +22,8 @@ import static org.mockito.Mockito.*;
 class PosSinpeOnvoServiceTest {
 
     private static final String DESTINO = "DESTINO_ONVO_PRUEBA";
-    private static final String IDENT = "1-1111-1111-1";
+    private static final String IDENT = "01-0000-0000";
+    private static final String TEL = "8000 0000";
     private static final LocalDateTime AHORA = LocalDateTime.of(2026, 1, 1, 10, 0);
 
     private OnvoService onvo;
@@ -54,9 +55,9 @@ class PosSinpeOnvoServiceTest {
     @DisplayName("Crea y confirma el intent antes de transferir; devuelve destino de config y monto exacto")
     void iniciaCreaYConfirma() {
         when(onvo.crearPaymentIntent(eq(5000), anyString(), anyMap())).thenReturn(new OnvoService.OnvoPaymentIntent("pi_1"));
-        when(onvo.crearMetodoPagoSinpePos(IDENT, 1, null)).thenReturn(new OnvoService.OnvoPaymentMethod("pm_1"));
+        when(onvo.crearMetodoPagoSinpePos(IDENT, 0, TEL, null)).thenReturn(new OnvoService.OnvoPaymentMethod("pm_1"));
 
-        Map<String, Object> r = svc.iniciar("tok", IDENT, 1);
+        Map<String, Object> r = svc.iniciar("tok", IDENT, 0, TEL);
 
         assertThat(r).containsEntry("destino", DESTINO).containsEntry("monto", 5000).containsEntry("moneda", "CRC");
         assertThat(sesion.getStripeSessionId()).isEqualTo("ONVOPI:pi_1");
@@ -71,8 +72,10 @@ class PosSinpeOnvoServiceTest {
     @Test
     @DisplayName("Identificación inválida o tipo fuera de 1–4: no toca ONVO")
     void identificacionInvalida() {
-        assertThatThrownBy(() -> svc.iniciar("tok", "123", 1)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 9)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> svc.iniciar("tok", "123", 0, TEL)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 6, TEL)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 0, "123")).hasMessage(PosSinpeOnvoService.MSG_TELEFONO);
+        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 0, null)).hasMessage(PosSinpeOnvoService.MSG_TELEFONO);
         verify(onvo, never()).crearPaymentIntent(anyInt(), any(), any());
     }
 
@@ -80,7 +83,7 @@ class PosSinpeOnvoServiceTest {
     @DisplayName("Sin destino, en modo simulado o sin timeout: fail-closed")
     void failClosed() {
         when(onvo.sinpeDestino()).thenReturn("");
-        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 1)).hasMessage(PosSinpeOnvoService.MSG_NO_DISPONIBLE);
+        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 0, TEL)).hasMessage(PosSinpeOnvoService.MSG_NO_DISPONIBLE);
         when(onvo.sinpeDestino()).thenReturn(DESTINO);
         when(onvo.isMockMode()).thenReturn(true);
         assertThat(svc.destinoDisponible()).isEmpty();
@@ -96,7 +99,7 @@ class PosSinpeOnvoServiceTest {
     @DisplayName("Sesión sin SINPE habilitado: se rechaza")
     void sinSinpe() {
         sesion.setMetodosHabilitados("TARJETA");
-        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 1)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 0, TEL)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -104,7 +107,7 @@ class PosSinpeOnvoServiceTest {
     void previoSinCancelar() {
         sesion.setStripeSessionId("ONVOPI:pi_viejo");
         when(onvo.cancelarPaymentIntent("pi_viejo")).thenReturn("");
-        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 1)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> svc.iniciar("tok", IDENT, 0, TEL)).isInstanceOf(IllegalStateException.class);
         verify(onvo, never()).crearPaymentIntent(anyInt(), any(), any());
     }
 

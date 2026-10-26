@@ -37,6 +37,10 @@ export type CheckoutPayload = {
   /** Dirección de entrega (señas, cantón, provincia); el pedido la guarda para los correos. */
   direccionEntrega?: string | null
   provider?: string
+  /** SINPE por ONVO: identificación (formato según tipo), tipo ONVO 0-5/9 y SINPE del comprador (+506########). */
+  sinpeIdentificacion?: string
+  sinpeTipoIdentificacion?: number
+  sinpeTelefono?: string
   guestEmail?: string
   /** Token del QR del POS — al pagar, marca la sesión del cajero como PAGADO. */
   posQrToken?: string

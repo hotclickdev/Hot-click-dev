@@ -111,6 +111,11 @@ public class SuscripcionService {
         return renewalService.expirarPastDueVencidos();
     }
 
+    @Transactional
+    public int cerrarCancelacionesVencidas() {
+        return renewalService.cerrarCancelacionesVencidas();
+    }
+
     public Map<String, Object> cambiarPlanOnvo(Long empresaId, Long planId) {
         return onvoChangeService.cambiarPlan(empresaId, planId);
     }

@@ -134,8 +134,8 @@ public class PosQrController {
         return tilopayRetirado(token);
     }
 
-    /** Datos del pagador para SINPE Móvil por ONVO (cédula con guiones y tipo 1–4). */
-    public record SinpeOnvoRequest(String identificacion, Integer tipoIdentificacion) {}
+    /** Datos del pagador para SINPE Móvil por ONVO (identificación según tipo ONVO 0-5/9 y SINPE del pagador). */
+    public record SinpeOnvoRequest(String identificacion, Integer tipoIdentificacion, String telefono) {}
 
     /**
      * Cliente inicia SINPE Móvil por ONVO: crea y confirma el intent ANTES de transferir y devuelve
@@ -144,8 +144,8 @@ public class PosQrController {
     @PostMapping("/pago/{token}/sinpe-onvo")
     public ResponseEntity<?> iniciarSinpeOnvo(@PathVariable String token, @RequestBody(required = false) SinpeOnvoRequest body) {
         try {
-            SinpeOnvoRequest b = body == null ? new SinpeOnvoRequest(null, null) : body;
-            return ResponseEntity.ok(posQrService.iniciarSinpeOnvo(token, b.identificacion(), b.tipoIdentificacion()));
+            SinpeOnvoRequest b = body == null ? new SinpeOnvoRequest(null, null, null) : body;
+            return ResponseEntity.ok(posQrService.iniciarSinpeOnvo(token, b.identificacion(), b.tipoIdentificacion(), b.telefono()));
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado o expirado"));
         } catch (IllegalArgumentException e) {

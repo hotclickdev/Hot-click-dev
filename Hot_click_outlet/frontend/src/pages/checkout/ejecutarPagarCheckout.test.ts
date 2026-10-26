@@ -33,7 +33,7 @@ function deps(metodoPago: string, sinpeManualHabilitado?: boolean) {
 describe('ejecutarPagarCheckout sin Tilopay', () => {
   it('SINPE habilitado: /sinpe/checkout con provider SINPE (isSinpe=true)', () => {
     const { d, iniciarPago } = deps(PAGO_SINPE, true)
-    ejecutarPagarCheckout(d)
+    ejecutarPagarCheckout({ ...d, sinpeCedula: '01-0000-0000', sinpeTipoIdentificacion: 0, sinpeTelefono: '80000000' })
     expect(iniciarPago).toHaveBeenCalledTimes(1)
     expect(iniciarPago.mock.calls[0][0].provider).toBe('SINPE')
     expect(iniciarPago.mock.calls[0][2]).toBe(true)
@@ -84,5 +84,30 @@ describe('ejecutarPagarCheckout sin Tilopay', () => {
     const { d, avisarSinMetodo } = deps(PAGO_TARJETA, false)
     ejecutarPagarCheckout({ ...d, tarjetaOnvoHabilitada: true })
     expect(avisarSinMetodo).not.toHaveBeenCalled()
+  })
+})
+
+describe('ejecutarPagarCheckout SINPE ONVO: payload del comprador', () => {
+  it('manda identificación, tipo y teléfono normalizado', () => {
+    const { d, iniciarPago } = deps(PAGO_SINPE, true)
+    ejecutarPagarCheckout({ ...d, sinpeCedula: '3-000-000000', sinpeTipoIdentificacion: 3, sinpeTelefono: '8000 0000' })
+    const body = iniciarPago.mock.calls[0][0]
+    expect(body.sinpeIdentificacion).toBe('3-000-000000')
+    expect(body.sinpeTipoIdentificacion).toBe(3)
+    expect(body.sinpeTelefono).toBe('+50680000000')
+  })
+
+  it('identificación o teléfono inválidos: no inicia el pago y marca el error', () => {
+    for (const extra of [
+      { sinpeCedula: '3-000-000000', sinpeTipoIdentificacion: 0, sinpeTelefono: '80000000' },
+      { sinpeCedula: '01-0000-0000', sinpeTipoIdentificacion: 0, sinpeTelefono: '8000' },
+      { sinpeCedula: '01-0000-0000', sinpeTipoIdentificacion: undefined, sinpeTelefono: '80000000' },
+    ]) {
+      const { d, iniciarPago } = deps(PAGO_SINPE, true)
+      const setSinpeCedulaErr = vi.fn()
+      ejecutarPagarCheckout({ ...d, ...extra, setSinpeCedulaErr })
+      expect(iniciarPago).not.toHaveBeenCalled()
+      expect(setSinpeCedulaErr).toHaveBeenCalledWith('invalido')
+    }
   })
 })

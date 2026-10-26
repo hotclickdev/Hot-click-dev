@@ -1,8 +1,8 @@
 import TilopayCardForm from '@/pages/checkout/TilopayCardForm'
-import type { PagoPlanPendiente } from './useCambiarPlan'
+import type { PagoPlanTilopay } from './useCambiarPlan'
 
 type Props = {
-  pago: PagoPlanPendiente
+  pago: PagoPlanTilopay
   onVolver?: () => void
 }
 

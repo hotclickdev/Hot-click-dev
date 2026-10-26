@@ -12,8 +12,9 @@ import { destinoSinpeVisible } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
 import type { CheckoutFormState } from './useCheckoutForm'
 import type { CodigosPedido } from './useCodigosPedido'
-import { PAGO_EFECTIVO, metodoProximamente, metodoSeleccionable } from './pagoPrincipal'
+import { PAGO_EFECTIVO, PAGO_SINPE, metodoProximamente, metodoSeleccionable, proveedorDe } from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
+import { TIPOS_IDENTIFICACION_SINPE } from '@/utils/sinpeOnvo'
 
 type MetodosPagoProps = {
   form: CheckoutFormState
@@ -54,6 +55,7 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
         </div>
         {METODOS.length > 1 && bloqueadoAviso(rapido, t)}
         {form.metodoPago === PAGO_EFECTIVO && <NotaEfectivo />}
+        <DatosSinpeOnvo form={form} />
       </div>
     )
   }
@@ -89,6 +91,35 @@ export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
           </div>
         )
       })}
+      <DatosSinpeOnvo form={form} />
+    </div>
+  )
+}
+
+/** SINPE por ONVO: identificación (formato según tipo), tipo ONVO y SINPE del comprador. */
+function DatosSinpeOnvo({ form }: Readonly<{ form: CheckoutFormState }>) {
+  const { t } = useTranslation()
+  if (form.metodoPago !== PAGO_SINPE) return null
+  if (proveedorDe(form.metodoPago, form.sinpeManualHabilitado, form.tarjetaOnvoHabilitada) !== 'SINPE') return null
+  const limpiarError = () => { if (form.sinpeCedulaErr) form.setSinpeCedulaErr('') }
+  const clase = 'w-full rounded-[12px] border border-hc-n-200 bg-hc-n-50 px-3 py-[10px] text-[14px] text-hc-n-900'
+  return (
+    <div className="flex flex-col gap-2 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px]">
+      <label htmlFor="checkout-sinpe-tipo" className="text-[12px] text-hc-n-600">{t('pos.pago.sinpeTipoId')}</label>
+      <select
+        id="checkout-sinpe-tipo"
+        value={form.sinpeTipoIdentificacion}
+        onChange={(e) => { form.setSinpeTipoIdentificacion(Number(e.target.value)); limpiarError() }}
+        className={clase}
+      >
+        {TIPOS_IDENTIFICACION_SINPE.map((o) => <option key={o.valor} value={o.valor}>{t(o.clave)}</option>)}
+      </select>
+      <label htmlFor="checkout-sinpe-cedula" className="text-[12px] text-hc-n-600">{t('pos.pago.sinpeCedula')}</label>
+      <input id="checkout-sinpe-cedula" value={form.sinpeCedula} onChange={(e) => { form.setSinpeCedula(e.target.value); limpiarError() }} className={clase} />
+      <p className="text-[12px] leading-4 text-hc-n-600">{t('pos.pago.sinpeCedulaAyuda')}</p>
+      <label htmlFor="checkout-sinpe-telefono" className="text-[12px] text-hc-n-600">{t('pos.pago.sinpeTelefono')}</label>
+      <input id="checkout-sinpe-telefono" inputMode="tel" value={form.sinpeTelefono} onChange={(e) => { form.setSinpeTelefono(e.target.value); limpiarError() }} className={clase} />
+      {form.sinpeCedulaErr ? <p role="alert" className="text-[12px] leading-4 text-hc-red-600">{t('pos.pago.sinpeDatosInvalidos')}</p> : null}
     </div>
   )
 }
