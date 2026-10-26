@@ -113,6 +113,15 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
                                           @Param("cursor") Long cursor,
                                           Pageable pageable);
 
+    /** Suscripción impaga (día 9): suspende solo tiendas ACTIVO. No borra nada. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Empresa e SET e.estadoEmpresa = 'SUSPENDIDO_IMPAGO' WHERE e.id IN :ids AND e.estadoEmpresa = 'ACTIVO'")
+    int suspenderPorImpagoBatch(@Param("ids") List<Long> ids);
+
+    @Query("SELECT e.estadoEmpresa FROM Empresa e WHERE e.id = :id")
+    Optional<String> findEstadoEmpresaById(@Param("id") Long id);
+
     /** Batch UPDATE: degrada plan y estado de múltiples empresas en un solo statement. */
     @Modifying
     @Transactional

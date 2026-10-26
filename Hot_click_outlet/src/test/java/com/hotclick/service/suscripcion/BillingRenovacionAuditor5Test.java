@@ -39,6 +39,7 @@ class BillingRenovacionAuditor5Test {
         @Mock SuscripcionRepository suscripcionRepo;
         @Mock SuscripcionPlanSupport planSupport;
         @Mock OnvoBillingClient onvoBilling;
+        @Mock com.hotclick.repository.EmpresaRepository empresaRepo;
         @InjectMocks SuscripcionRenewalService service;
 
         @Test @DisplayName("S-01: sin cobro ONVO configurado, un PAST_DUE vencido NO se degrada")
@@ -75,7 +76,7 @@ class BillingRenovacionAuditor5Test {
             return s;
         }
 
-        @Test @DisplayName("Gracia escalonada: con cobro, baja solo un lote (máx por corrida), los más viejos primero")
+        @Test @DisplayName("26-oct: con cobro se bajan todos los vencidos en lotes del tamaño configurado, los más viejos primero")
         void bajaEscalonada() {
             ReflectionTestUtils.setField(service, "diasGracia", 7);
             ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 2);
@@ -83,7 +84,7 @@ class BillingRenovacionAuditor5Test {
                 ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
             lenient().when(suscripcionRepo.marcarVencidoSiPastDue(any())).thenReturn(1);
             when(suscripcionRepo.findPastDueOnvoVencidos(any(), lote.capture()))
-                .thenReturn(List.of(pastDue(1), pastDue(2)));
+                .thenReturn(List.of(pastDue(1), pastDue(2)), List.of());
             assertThat(service.expirarPastDueVencidos()).isEqualTo(2);
             assertThat(lote.getValue().getPageSize()).isEqualTo(2);
             assertThat(lote.getValue().getPageNumber()).isZero();
@@ -98,11 +99,11 @@ class BillingRenovacionAuditor5Test {
             ArgumentCaptor<org.springframework.data.domain.Pageable> resto =
                 ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
             lenient().when(suscripcionRepo.marcarVencidoSiPastDue(any())).thenReturn(1);
-            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1)));
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1)), List.of());
             when(suscripcionRepo.findPastDueLegadoVencidos(any(), resto.capture()))
-                .thenReturn(List.of(pastDue(2), pastDue(3)));
+                .thenReturn(List.of(pastDue(2), pastDue(3)), List.of());
             assertThat(service.expirarPastDueVencidos()).isEqualTo(3);
-            assertThat(resto.getValue().getPageSize()).isEqualTo(2);
+            assertThat(resto.getAllValues().get(0).getPageSize()).isEqualTo(2);
             verify(planSupport).degradarPlanBatchConCache(eq(List.of(1L, 2L, 3L)), any());
         }
 
@@ -110,7 +111,7 @@ class BillingRenovacionAuditor5Test {
         void carreraWebhookNoDegrada() {
             ReflectionTestUtils.setField(service, "diasGracia", 7);
             ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 3);
-            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1), pastDue(2)));
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1), pastDue(2)), List.of());
             when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of());
             when(suscripcionRepo.marcarVencidoSiPastDue(10L)).thenReturn(0); // ya ACTIVO
             when(suscripcionRepo.marcarVencidoSiPastDue(20L)).thenReturn(1);
@@ -122,7 +123,7 @@ class BillingRenovacionAuditor5Test {
         @Test @DisplayName("MEDIO carrera: si todas las filas cambiaron, no se degrada a nadie")
         void carreraTodasActivadas() {
             ReflectionTestUtils.setField(service, "diasGracia", 7);
-            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1)));
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1)), List.of());
             when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of());
             when(suscripcionRepo.marcarVencidoSiPastDue(10L)).thenReturn(0);
             assertThat(service.expirarPastDueVencidos()).isZero();

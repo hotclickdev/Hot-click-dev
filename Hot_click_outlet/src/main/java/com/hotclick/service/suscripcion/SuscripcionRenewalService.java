@@ -19,9 +19,10 @@ public class SuscripcionRenewalService {
     @Autowired private SuscripcionRepository suscripcionRepo;
     @Autowired private SuscripcionPlanSupport planSupport;
     @Autowired private com.hotclick.service.onvo.OnvoBillingClient onvoBilling;
+    @Autowired private com.hotclick.repository.EmpresaRepository empresaRepo;
 
-    /** Días de gracia tras una mensualidad impaga (12-oct-2026: 7). */
-    @org.springframework.beans.factory.annotation.Value("${hotclick.billing.dias-gracia:7}")
+    /** Días de gracia tras una mensualidad impaga (26-oct-2026: 8; el día 8 todavía vende). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.billing.dias-gracia:8}")
     private int diasGracia;
 
     /**
@@ -80,6 +81,19 @@ public class SuscripcionRenewalService {
             return 0;
         }
         int max = Math.max(1, maxBajasPorCorrida);
+        // 26-oct-2026: ya no se difiere a corridas siguientes; se procesan todos los vencidos en lotes
+        // de tamaño max para que el día 9 se cumpla para todas las tiendas. Tope duro anti-bucle.
+        int total = 0;
+        for (int vuelta = 0; vuelta < 10_000; vuelta++) {
+            int[] r = expirarLote(hoy, limite, max);
+            if (r[0] == 0) break;
+            total += r[1];
+        }
+        return total;
+    }
+
+    /** Un lote: marca VENCIDO, degrada el plan y suspende la tienda. Devuelve {candidatos, bajas}; candidatos 0 = no quedan. */
+    private int[] expirarLote(LocalDate hoy, LocalDate limite, int max) {
         List<com.hotclick.model.Suscripcion> lote = new java.util.ArrayList<>(suscripcionRepo.findPastDueOnvoVencidos(
             limite, org.springframework.data.domain.PageRequest.of(0, max)));
         // PAST_DUE heredados de Tilopay/Stripe (sin onvoSubscriptionId): completan el cupo del mismo lote.
@@ -87,7 +101,7 @@ public class SuscripcionRenewalService {
             lote.addAll(suscripcionRepo.findPastDueLegadoVencidos(
                 limite, org.springframework.data.domain.PageRequest.of(0, max - lote.size())));
         }
-        if (lote.isEmpty()) return 0;
+        if (lote.isEmpty()) return new int[] {0, 0};
         // Seguridad MEDIO (carrera con el webhook ONVO): UPDATE atómico condicional por fila
         // (estado='PAST_DUE'); solo se degradan las empresas cuya fila realmente pasó a VENCIDO.
         List<Long> empresaIds = new java.util.ArrayList<>();
@@ -96,9 +110,14 @@ public class SuscripcionRenewalService {
                 empresaIds.add(s.getEmpresa().getId());
             }
         }
-        if (!empresaIds.isEmpty()) planSupport.degradarPlanBatchConCache(empresaIds, hoy);
-        log.info("[billing] {} PAST_DUE expirado(s) de {} candidato(s) (lote máx {})",
-            empresaIds.size(), lote.size(), maxBajasPorCorrida);
-        return empresaIds.size();
+        if (!empresaIds.isEmpty()) {
+            planSupport.degradarPlanBatchConCache(empresaIds, hoy);
+            // Día 9: tienda oculta y sin ventas. Los datos no se tocan; al pagar vuelve a ACTIVO.
+            empresaRepo.suspenderPorImpagoBatch(empresaIds);
+        }
+        log.info("[billing] {} PAST_DUE expirado(s) y suspendido(s) de {} candidato(s) (lote {})",
+            empresaIds.size(), lote.size(), max);
+        // Las filas que ganó el webhook ya no son PAST_DUE y no vuelven a salir en el lote siguiente.
+        return new int[] {lote.size(), empresaIds.size()};
     }
 }

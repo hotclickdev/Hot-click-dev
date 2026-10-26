@@ -4729,5 +4729,20 @@
     "tilopayConfirmando": "Confirming your plan payment…",
     "tilopayNoConfirmado": "We couldn't confirm the payment. Please try again.",
     "volverPlanes": "Back to plans"
+  },
+  "suspension": {
+    "titulo": "Your store is suspended",
+    "explicacion": "Your monthly fee is unpaid after the grace period. Your products are hidden and you can't sell. Pay to reactivate everything; no data was deleted.",
+    "cuenta": "Your account",
+    "negocio": "Business",
+    "correo": "Email",
+    "plan": "Plan",
+    "vencio": "Expired",
+    "montoPendiente": "Amount due",
+    "sinMonto": "not available",
+    "pagar": "Pay and reactivate",
+    "iniciando": "Opening payment…",
+    "confirmando": "We're confirming your payment with ONVO. Your store reactivates as soon as it's confirmed.",
+    "error": "We couldn't load or start the payment. Please try again in a few minutes."
   }
 }
