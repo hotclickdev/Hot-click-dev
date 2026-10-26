@@ -43,3 +43,26 @@ Ninguno (QA 3 no tiene código).
 ## Evidencia
 - Resumida en `docs/traspaso/evidencia/hotclick-qa-negocio-plus/` (reportes .md y logs HTTP cortos redactados).
 - Original en el box anterior: `/workspace/qa-funcional/qa3/`. Las credenciales nunca se suben.
+
+## Correcciones al README
+**(a) Errores o datos viejos**
+- Fila de QA 3: falta el BAJO del trim de email (caso 5), la observación del LECTOR con `correoVerificado=true` sin verificar y los bugs de prod QA3-P01 (medio), QA3-P02 y QA3-P03 (bajos). QA3-017 está cerrado (403).
+- Comisión Negocio Plus: el README dice 6 %, pero prod (`GET /api/billing/planes`, 24/10) devolvía 7 % con mínimo ₡700. Hay que confirmar si #332 ya está desplegado.
+- "Clerk" aparece como autenticación, pero lo que QA usa es JWT propio en `POST /api/auth/login`. Verificar.
+- El plan `/workspace/hotclick-reportes/plan-qa-funcional-2026-10-23.md` (citado en el prompt) está en el box viejo, no en el repo. Hay que subirlo o resumirlo en `docs/`.
+
+**(b) Lo que le falta al reemplazo**
+- Variables, solo por nombre: llaves ONVO de test (prefijo `onvo_test_`, en `.env`), `EMPRENDEDOR_/PYME_/NEGOCIO_PLUS_PRECIO_MENSUAL_USD` y `HOTCLICK_NUMEROS_PROHIBIDOS`.
+- Staging local: front en `:3000`, backend en `:8081` (perfil dev) y Mailpit en `:8025` (UI/API para leer correos). Lo levanta CI/CD o un único bot; no levantar duplicados. No tocar los procesos `hotclick-staging-*` ni usar `pkill`.
+- Accesos: cuentas sintéticas `qa3+…@example.com` (staging) y `andres.prueba+…@example.com` (prod, solo PRUEBA). Las credenciales van solo por canal interno y nunca al repo.
+- Trampas:
+  - La invitación de equipo no llega a Mailpit; no reintentar en bucle.
+  - `SendToAgent` con `priority: false` queda retenido; lo urgente va con `priority: true`.
+  - No borrar `frontend/node_modules` del worktree de staging ni `/workspace/tools/node22`.
+  - El tope de usuarios del plan (2/2) bloquea invitaciones; liberar cupo quitando solo un miembro de QA, nunca al dueño.
+- Pendientes de Andrés: la limpieza de prod (productos 668/669 y miembro 138) y la rotación de las contraseñas de las cuentas de prueba de prod, que se expusieron en una salida interna.
+
+**(c) Mejoras**
+- Agregar al README una tabla de bugs abiertos por QA, con severidad y PR de fix.
+- Agregar un checklist de arranque de staging con un comando de salud (`/actuator/health` o equivalente) antes de probar.
+- Llevar un registro único de limpieza de prod (`docs/traspaso/pendientes/limpieza-prod.md`) que junte los ítems de todos los QA.

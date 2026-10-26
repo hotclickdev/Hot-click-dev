@@ -50,3 +50,37 @@ Los demás worktrees de `/workspace/qa2-wt/` (tgt-*, qa-fix*, wallet-fix-full, w
 
 ## Evidencia
 `docs/traspaso/evidencia/hotclick-qa-2/`: reportes `.md` y logs cortos (ONVO sandbox, tests dirigidos de XSS, cobertura, aviso de reposición y POS SINPE). Sin capturas, secretos, teléfonos, SINPE ni cédulas; solo nombres de variables.
+
+## Correcciones al README
+(Sobre `docs/traspaso/README.md` en b9f241d8: fila de QA 2, sección "HotClick QA 2" y lista "PARA EL BOT DE LA CUENTA NUEVA".)
+
+### a) Errores o datos viejos
+- La fila de QA 2 omite los hallazgos de roles PYME en f9f0e506: el EDITOR lee billing, métodos de cobro, payouts y `/api/admin/pagos` (MEDIO, posible ALTO), `/api/facturas` da 500 y el correo con espacios da 400. También omite los bugs ALTO QA2-007, QA2-014 y QA2-015.
+- La limpieza de producción de la fila está incompleta: además de los productos 666/667 y la bodega "PRUEBA Bodega 2", faltan el invitado `andres.prueba+qa3editor@example.com`, la posible cuenta huérfana `qa2+prod-equipo@example.com` y el 404 de `/prueba-andres-pyme`.
+- La fila no lista las ramas WIP de QA 2: `wip/qa2-xss-hardening`, `wip/qa2-xss-opcionales` y `wip/qa2-flaky-aviso-reposicion`. Están sobre la base vieja eb7564c24, sin PR.
+- El prompt de QA 2 en la sección 7 dice "nada de commit, push…", pero el traspaso del 26-oct sí autorizó push de ramas y docs. Para la cuenta nueva conviene aclarar que el push vuelve a requerir OK de Andrés vía Grok Bot.
+- En "Herramientas", Clerk figura como autenticación, pero las pruebas de QA 2 usaron el login propio `POST /api/auth/login {correo, contrasena}` con JWT. Hay que verificar si Clerk sigue en uso.
+
+### b) Lo que le falta a mi reemplazo
+- Variables, solo por nombre:
+  - ONVO test: `ONVO_SECRET_KEY`, `ONVO_PUBLISHABLE_KEY`, `ONVO_WEBHOOK_SECRET`, `ONVO_PRICE_ID_PYME`, `ONVO_PRICE_ID_NEGOCIO_PLUS`, `PAYMENTS_ONVO_ENABLED` y `PAYMENTS_ONVO_PERMITIR_LLAVE_TEST`. Las llaves de prueba empiezan con `onvo_test_`.
+  - Admin de staging: `HOTCLICK_ADMIN_INITIAL_PASSWORD`, `ADMIN_RESET_PASSWORD`, `ADMIN_DEFAULT_PASSWORD` y `ADMINIT_EMAIL`.
+- Comandos:
+  - Suite completa: `/workspace/mvn-suite.sh`.
+  - Test dirigido: `mvn -B -Dtest=<Clase> test` en `Hot_click_outlet/`, con el JDK 21 y el Maven de `/workspace/tools/`.
+  - Staging local: el front corre en `:3000` y el backend en `:8081` (no en :8080), con los procesos `hotclick-staging-backend` y `hotclick-staging-front`.
+  - Mailpit sirve para ver los correos de verificación.
+- Accesos: gh con `repo` y `workflow` sobre `hotclickdev/Hot-click-dev`, y las cuentas PYME de prueba (dueño y EDITOR), cuyas credenciales van en archivos `.cred` del box y nunca en el repo.
+- Trampas:
+  - El registro tiene un límite de 5 por hora; el segundo intento seguido da 429.
+  - El teléfono es obligatorio en el registro: sin él, el error es un 400 o 500 genérico.
+  - El login tiene un límite de intentos compartido entre bots y da 429. Hay que esperar unos 90 s.
+  - Las cuentas de equipo (EDITOR o LECTOR) llevan el rol de Spring EMPRENDEDOR, así que los permisos se prueban por endpoint y no por rol.
+  - No usar `pkill`. Lo propio se para por PID. No se tocan los procesos de staging ni `frontend/node_modules` del worktree de staging, ni `/workspace/tools/node22`.
+  - Con el disco y los inodos casi llenos, hay que borrar solo worktrees propios ya subidos.
+  - Los `.cred` se cargan en variables (`source` o `read`) sin imprimirlos, y los temporales con tokens se borran al terminar.
+
+### c) Mejoras
+- Crear una cuenta LECTOR de staging, con OK, para cerrar el caso pendiente.
+- Agregar al README una tabla de puertos y procesos de staging y una lista central de las cuentas de prueba (solo nombres y roles).
+- Agregar a CI un test que pruebe los GET de billing como EDITOR (debe dar 403).

@@ -73,10 +73,9 @@ El box compartido anda casi sin inodos (90-99 %). Los builds pueden fallar; limp
 ## Correcciones al README
 
 ### (a) Errores o datos viejos
-- **Fila de HotClick Dev Marketplace (línea ~108):** dice "#349 mergeado". Al 26-oct ~15:40 CR, #349 está **ABIERTO** (head `e05c0824`, CI verde y APTO de Seguridad, merge pedido a CI/CD). Mergeados hoy: #305, #307, #318, #321, #322, #326, #334, #337, #341.
-- **Áreas:** la fila dice "2, 3, 6, 9". Hoy también cerré el área 4 (POS, #341) y cotizaciones (#326, #337). Faltan 4 y cotizaciones.
+- **Fila de HotClick Dev Marketplace (línea ~108):** "#349 mergeado" es **correcto** (verificado con gh ~15:37 CR, head `e05c0824`). La tabla de PRs de arriba en esta nota (que dice OPEN) quedó vieja: #349 está MERGED.
+- **Áreas:** la fila dice "2, 3, 6, 9". Hoy también cerré el área 4 (POS, #341) y cotizaciones (#326, #337); faltan en la fila.
 - **Prompt de la sección 7 (línea ~308): está viejo.** Habla de `chore/quitar-tilopay-actualizar`, `feat/onvo-split-pay`, `fix/registro-planes` y #208 como trabajo activo, y dice "nunca commit/push/merge sin OK en cada caso". La regla vigente es: push y PR propios permitidos (tope de 3 PRs abiertos), y el merge lo hace CI/CD con **CI verde + APTO de Seguridad sobre el hash exacto**, sin deploy. Tilopay y split pay son backlog, no tarea activa, y quitar Tilopay es de Dev Pagos/deuda técnica (paso 6), no mío.
-- **Paso 4 del "PARA EL BOT…":** no lista #349 entre los PRs por cerrar.
 
 ### (b) Lo que le falta al reemplazo
 - **Ramas de respaldo:** `wip/cajero-asignable` (d5501c6b, EN PAUSA, no mergear ni abrir PR), `wip/billing-onvo-webhook-sonar` y `wip/billing-renovacion-v1` (solo referencia, supersedidas por #305).
