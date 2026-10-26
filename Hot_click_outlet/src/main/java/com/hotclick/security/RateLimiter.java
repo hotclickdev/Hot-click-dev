@@ -78,7 +78,9 @@ public class RateLimiter {
         } catch (Exception e) {
             log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getClass().getSimpleName());
             if (meterRegistry != null) {
-                try { meterRegistry.counter(METRICA_FAIL_OPEN).increment(); } catch (RuntimeException ignored) { }
+                try { meterRegistry.counter(METRICA_FAIL_OPEN).increment(); } catch (RuntimeException ignored) {
+                    // La métrica es best-effort: si falla no debe cambiar la decisión fail-open.
+                }
             }
             return true;
         }

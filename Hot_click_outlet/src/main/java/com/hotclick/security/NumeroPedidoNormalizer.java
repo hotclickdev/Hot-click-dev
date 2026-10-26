@@ -10,11 +10,12 @@ import java.util.regex.Pattern;
  * H-07 r2 (B-1): número de pedido decodificado y normalizado para claves de rate limit.
  * Formato real: Constants.generarNumeroPedido = prefijo ("ORD-", "POS-", "POS-QR-", "QR-") + 12 hex
  * en mayúsculas; se aceptan prefijos de letras con guiones y cuerpo alfanumérico (también ids
- * históricos/de prueba tipo HC-1001).
+ * históricos/de prueba tipo HC-1001). Repetición acotada ({0,4}) para evitar backtracking
+ * profundo con entradas grandes (Sonar java:S5998).
  */
 public final class NumeroPedidoNormalizer {
 
-    public static final Pattern FORMATO = Pattern.compile("^[A-Z]{1,10}(-[A-Z]{1,10})*-[0-9A-Z]{1,32}$");
+    public static final Pattern FORMATO = Pattern.compile("^[A-Z]{1,10}(?:-[A-Z]{1,10}){0,4}-[0-9A-Z]{1,32}$");
 
     private static final Pattern ASCII = Pattern.compile("^[\\x00-\\x7F]+$");
 

@@ -34,7 +34,7 @@ class RateLimitSinpeR2Test {
     static class C {
         final List<String> vistos = new ArrayList<>();
         @PostMapping("/api/sinpe/guest/{n}/comprobante") String g(@PathVariable String n) { vistos.add(n); return n; }
-        @PostMapping("/api/sinpe/{n}/comprobante") String a(@PathVariable String n) { vistos.add(n); return n; }
+        @PostMapping("/api/sinpe/{n}/comprobante") String a(@PathVariable String n) { return g(n); }
     }
 
     private final Map<String, Integer> c = new HashMap<>();

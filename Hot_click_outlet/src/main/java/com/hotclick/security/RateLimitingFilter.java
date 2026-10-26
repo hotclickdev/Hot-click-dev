@@ -96,6 +96,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private static final String SINPE_GUEST_CHECKOUT = "/api/sinpe/guest-checkout";
     private static final String SINPE_GUEST_PREFIX   = "/api/sinpe/guest/";
     private static final String SINPE_COMPROBANTE    = "/comprobante";
+    private static final String CHARSET_RESPUESTA    = "UTF-8";
+    private static final int RUTA_OTRA = 0;
+    private static final int RUTA_GUEST = 1;
+    private static final int RUTA_AUTH = 2;
 
     private record Limit(int maxRequests, int windowSeconds) {}
     /**
@@ -258,7 +262,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                         log.warn("[RATE-LIMIT] GET ip={} path={}", ip, RutaLogSegura.enmascarar(path));
                         try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
                         response.setStatus(429);
-                        response.setCharacterEncoding("UTF-8"); // ESC-8: sin mojibake en «Esperá»
+                        response.setCharacterEncoding(CHARSET_RESPUESTA); // ESC-8: sin mojibake en «Esperá»
                         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                         response.getWriter().write(
                             "{\"success\":false,\"message\":\"Demasiadas solicitudes. Esperá un momento antes de volver a intentar.\"}");
@@ -286,16 +290,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
         if (!path.startsWith(SINPE_PREFIX) || !path.endsWith(SINPE_COMPROBANTE)) return 0;
         String[] seg = path.substring(SINPE_PREFIX.length()).split("/", -1);
-        boolean guest;
-        String crudo;
-        if (seg.length == 3 && "guest".equals(seg[0]) && "comprobante".equals(seg[2])) {
-            guest = true; crudo = seg[1];
-        } else if (seg.length == 2 && "comprobante".equals(seg[1])) {
-            guest = false; crudo = seg[0];
-        } else {
-            return 0;
-        }
-        String numero = NumeroPedidoNormalizer.normalizarSegmento(crudo);
+        int tipo = tipoRutaComprobante(seg);
+        if (tipo == RUTA_OTRA) return 0;
+        boolean guest = tipo == RUTA_GUEST;
+        String numero = NumeroPedidoNormalizer.normalizarSegmento(guest ? seg[1] : seg[0]);
         if (numero == null) return 400;
         String ruta = guest ? "guest" : "auth";
         boolean ipOk = guest
@@ -307,9 +305,16 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         return ipOk && pedidoOk ? 0 : 429;
     }
 
+    /** RUTA_GUEST = /guest/{n}/comprobante, RUTA_AUTH = /{n}/comprobante, RUTA_OTRA = cualquier otra. */
+    private static int tipoRutaComprobante(String[] seg) {
+        if (seg.length == 3 && "guest".equals(seg[0]) && "comprobante".equals(seg[2])) return RUTA_GUEST;
+        if (seg.length == 2 && "comprobante".equals(seg[1])) return RUTA_AUTH;
+        return RUTA_OTRA;
+    }
+
     private void rechazarFormato(HttpServletResponse response) throws IOException {
         response.setStatus(400);
-        response.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding(CHARSET_RESPUESTA);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write("{\"success\":false,\"message\":\"Número de pedido inválido.\"}");
     }
@@ -318,7 +323,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         log.warn("[RATE-LIMIT] ip={} path={}", ip, RutaLogSegura.enmascarar(path));
         try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
         response.setStatus(429);
-        response.setCharacterEncoding("UTF-8"); // ESC-8: sin mojibake en «Esperá»
+        response.setCharacterEncoding(CHARSET_RESPUESTA); // ESC-8: sin mojibake en «Esperá»
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(
             "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
