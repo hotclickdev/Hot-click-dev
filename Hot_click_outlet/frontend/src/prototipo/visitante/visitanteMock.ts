@@ -1,11 +1,12 @@
 /** Datos locales tipados del prototipo Visitante (Figma 96:128). */
 
 import { VISITANTE_BASE } from '@/utils/planPaths'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 export { VISITANTE_BASE }
 
 export const COSTO_ENVIO_CRC = 2500
-export const WHATSAPP_HOTCLICK = '50686667888'
+export const WHATSAPP_HOTCLICK = SOPORTE_WA
 
 export type CategoriaShop = 'Todos' | 'Tecnología' | 'Ropa' | 'Hogar'
 

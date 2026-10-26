@@ -98,7 +98,7 @@ function colones(valor: unknown): string {
 function Cobros() {
   const [filas, setFilas] = useState<Fila[]>([])
   const [estado, setEstado] = useState<'carga' | 'listo' | 'error'>('carga')
-  const [marca, setMarca] = useState(0)
+  const [marca] = useState(0)
 
   useEffect(() => {
     paymentService.listarComprobantes('PENDIENTE')
@@ -118,13 +118,9 @@ function Cobros() {
         if (!id) return null
         return (
           <div key={id} className="flex flex-col gap-1">
-          <FilaDecision
-            icono="dinero"
-            titulo={texto(fila.pedidoNumero, texto(fila.id, 'Comprobante'))}
-            meta={metaMonto(fila, texto(fila.estado, 'PENDIENTE'))}
-            onAprobar={async () => { await paymentService.aprobarComprobante(id); setMarca((n) => n + 1) }}
-            onRechazar={async (motivo) => { await paymentService.rechazarComprobante(id, motivo); setMarca((n) => n + 1) }}
-          />
+          {/* P-01: los comprobantes son solo historial; SINPE se confirma por webhook ONVO, no se aprueba a mano. */}
+          <p className="text-sm font-semibold text-hc-n-900">{texto(fila.pedidoNumero, texto(fila.id, 'Comprobante'))}</p>
+          <p className="text-sm text-hc-n-600">{metaMonto(fila, texto(fila.estado, 'PENDIENTE'))}</p>
           {texto(fila.pedidoId, texto(fila.idPedido, '')) && (
             <Link className="text-sm font-semibold text-hc-blue-600" to={`/plataforma/pedidos/${texto(fila.pedidoId, texto(fila.idPedido))}`}>Abrir el pedido</Link>
           )}

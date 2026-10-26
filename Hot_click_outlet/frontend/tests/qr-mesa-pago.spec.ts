@@ -144,9 +144,8 @@ test.describe('QR de pago', () => {
     await expect(page.getByText('0000-0000')).toBeVisible()
     await expect(page.getByText('Esperando tu pago')).toBeVisible()
 
-    await page.getByRole('button', { name: 'Registrar mi pago' }).click()
-    await expect(page.getByLabel('Nombre completo')).toBeVisible()
-    await expect(page.getByLabel('Cédula')).toBeVisible()
+    // P-01: la confirmación la hace el webhook de ONVO; ya no hay registro manual del pago.
+    await expect(page.getByRole('button', { name: 'Registrar mi pago' })).toHaveCount(0)
   })
 
   test('vencido: los minutos salen de vigenciaMinutos del backend', async ({ page }) => {
@@ -184,17 +183,14 @@ test.describe('QR de pago', () => {
     await expect(comprobante.getByRole('button', { name: 'Imprimir o guardar en PDF' })).toBeVisible()
   })
 
-  test('B16: el cliente elige entre los métodos que habilitó la caja; número de cobro y caja', async ({ page }) => {
+  test('B16: aunque la caja habilite TARJETA, el QR solo ofrece SINPE (Tilopay retirado); número de cobro y caja', async ({ page }) => {
     await preparar(page, { metodo: 'TARJETA', metodos: ['TARJETA', 'SINPE'] })
     await page.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
 
     await expect(page.getByTestId('pos-pago-cobro')).toHaveText('Cobro #P-3391 · Caja principal')
     const grupo = page.getByRole('radiogroup', { name: 'Elegí cómo pagar' })
-    await expect(grupo.getByRole('radio')).toHaveCount(2)
-    await expect(grupo.getByRole('radio', { name: /Tarjeta/ })).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByRole('button', { name: /Pagar con SINPE Móvil/ })).toHaveCount(0)
-
-    await grupo.getByRole('radio', { name: /SINPE Móvil/ }).click()
+    await expect(grupo.getByRole('radio')).toHaveCount(1)
+    await expect(grupo.getByRole('radio', { name: /Tarjeta/ })).toHaveCount(0)
     await expect(grupo.getByRole('radio', { name: /SINPE Móvil/ })).toHaveAttribute('aria-checked', 'true')
     await page.getByRole('button', { name: /Pagar con SINPE Móvil/ }).click()
     await expect(page.getByRole('heading', { name: 'Pagá con SINPE Móvil' })).toBeVisible()

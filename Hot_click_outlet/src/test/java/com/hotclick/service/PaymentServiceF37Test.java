@@ -75,7 +75,6 @@ class PaymentServiceF37Test {
     @InjectMocks PaymentOrderConfirmationService orderConfirmationService;
     @InjectMocks PaymentFailureHandler            paymentFailureHandler;
     @InjectMocks PaymentUserCancellationService   userCancellationService;
-    @InjectMocks SinpePaymentAdminService         sinpePaymentAdminService;
 
     PaymentService service;
 
@@ -143,7 +142,6 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(service, "orderConfirmationService", orderConfirmationService);
         ReflectionTestUtils.setField(service, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
-        ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
         ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
         GuestCancelTokenService guestCancelTokenService = new GuestCancelTokenService();
@@ -167,10 +165,6 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(userCancellationService, "guestCancelTokenService", guestCancelTokenService);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "pagoRepository", pagoRepository);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "orderConfirmationService", orderConfirmationService);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentStatusAssembler", paymentStatusAssembler);
     }
 
     // ── F37-01: numeroPedido tiene formato UUID (no milisegundos) ────────────

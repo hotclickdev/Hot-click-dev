@@ -76,6 +76,16 @@ public class PosSinpeOnvoService {
         return pasarelaId != null && pasarelaId.startsWith(PREFIJO_ONVO_PI) && pasarelaId.length() > PREFIJO_ONVO_PI.length();
     }
 
+    /**
+     * P-04: la sesión se cobró por intent ONVO con llave de prueba (modo esperado distinto de live).
+     * Fail-closed: intent ONVO sin OnvoService se considera prueba.
+     */
+    public boolean esCobroDePrueba(PosQrSesion sesion) {
+        if (intentIdDe(sesion) == null) return false;
+        OnvoService onvo = onvoService;
+        return onvo == null || !"live".equals(onvo.modoEsperado());
+    }
+
     static String intentIdDe(PosQrSesion sesion) {
         String p = sesion == null ? null : sesion.getStripeSessionId();
         return esIntentOnvo(p) ? p.substring(PREFIJO_ONVO_PI.length()) : null;
@@ -166,7 +176,7 @@ public class PosSinpeOnvoService {
      * test solo llega acá si ONVO está disponible, es decir en dev/test o con el opt-in
      * {@code payments.onvo.permitir-llave-test}. Sin mode o con otro modo nunca es PAGADO.
      */
-    static EstadoIntent clasificar(Map<?, ?> pi, String intentId, long totalColones, String modoEsperado) {
+    public static EstadoIntent clasificar(Map<?, ?> pi, String intentId, long totalColones, String modoEsperado) {
         if (pi == null || pi.isEmpty() || !intentId.equals(String.valueOf(pi.get("id")))) return EstadoIntent.DESCONOCIDO;
         String status = String.valueOf(pi.get("status"));
         if ("canceled".equalsIgnoreCase(status) || "failed".equalsIgnoreCase(status)) return EstadoIntent.CANCELADO;

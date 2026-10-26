@@ -57,6 +57,10 @@ public interface WalletTransaccionRepository extends JpaRepository<WalletTransac
     @Query("SELECT p.id FROM Pedido p WHERE p.id IN :ids AND UPPER(p.origen) = 'POS' AND UPPER(p.metodoPago) = 'EFECTIVO'")
     List<Long> findPedidosPosEfectivo(@Param("ids") Collection<Long> ids);
 
+    /** P-04: pedidos cobrados con llave de prueba; su crédito nunca entra a una liquidación. */
+    @Query("SELECT p.id FROM Pedido p WHERE p.id IN :ids AND p.esPrueba = true")
+    List<Long> findPedidosPrueba(@Param("ids") Collection<Long> ids);
+
     /** Payout rechazado: sus movimientos vuelven a quedar sin liquidar para la próxima corrida. */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE WalletTransaccion t SET t.payoutLiquidacionId = NULL WHERE t.payoutLiquidacionId = :payoutId AND t.tipo <> 'RETENCION_PAYOUT'")

@@ -140,20 +140,6 @@ class PosQrPedidoTiendaTest {
         verify(completionService, never()).completarVentaTarjeta(any());
     }
 
-    @Test
-    @DisplayName("Doble confirmación SINPE: la segunda se rechaza sin crear venta")
-    void confirmarSinpeSinReclamoSeRechaza() {
-        PosQrSesion sesion = sesionPendiente();
-        // Vigente: el rechazo tiene que venir del reclamo, no de la expiración
-        sesion.setFechaExpiracion(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(10));
-        sesion.setMetodoPago("SINPE");
-        when(posQrRepo.findByToken("tokencarrito01")).thenReturn(Optional.of(sesion));
-        when(posQrRepo.reclamarParaCompletar(sesion.getId())).thenReturn(0);
-
-        assertThatThrownBy(() -> service.confirmarSinpe("tokencarrito01", 1L, EMPRESA_QR, "ABC12345", null))
-            .isInstanceOf(IllegalStateException.class).hasMessageContaining("confirmando");
-        verify(completionService, never()).completarVentaSinpe(any(), any(), any());
-    }
 
     @Test
     @DisplayName("Cantidades fuera de 1..999 se rechazan")

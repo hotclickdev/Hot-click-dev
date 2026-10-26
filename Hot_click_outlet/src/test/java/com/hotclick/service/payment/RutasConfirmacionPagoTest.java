@@ -48,8 +48,10 @@ class RutasConfirmacionPagoTest {
 
     @Test
     void cadaRuta_delegaEnConfirmarPedido() throws IOException {
-        assertThat(leer("service/payment/SinpePaymentAdminService.java")).contains("orderConfirmationService.confirmarPedido(");
-        assertThat(leer("service/sinpe/SinpeComprobanteService.java")).contains("paymentService.confirmarPedido(");
+        // P-01: la aprobación manual de SINPE (admin y comprobante) se retiró; SINPE confirma solo por intent ONVO.
+        assertThat(Files.exists(MAIN.resolve("service/payment/SinpePaymentAdminService.java"))).isFalse();
+        assertThat(leer("service/sinpe/SinpeComprobanteService.java")).doesNotContain("confirmarPedido(");
+        assertThat(leer("service/sinpe/SinpeOnvoMarketplaceService.java")).contains("confirmarPedido(");
         assertThat(leer("service/pedido/PedidoPagoManualService.java")).contains("paymentService.confirmarPedido(");
         assertThat(leer("payment/StripePaymentProvider.java")).contains("paymentService.confirmarPedido(");
         assertThat(leer("service/payment/TilopayConfirmacionService.java")).contains("paymentService.confirmarPedido(");

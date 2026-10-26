@@ -52,7 +52,7 @@ test.describe('Envío rápido — se compra en checkout, no por WhatsApp', () =>
 
     await expect(page.getByRole('link', { name: 'Rastrear mi pedido' })).toHaveAttribute('href', '/mis-pedidos')
     const whatsapp = page.getByRole('link', { name: 'Consultar por WhatsApp' })
-    await expect(whatsapp).toHaveAttribute('href', /wa\.me\/50686667888/)
+    await expect(whatsapp).toHaveAttribute('href', /wa\.me\/00000000000/)
     await expect(page.getByRole('link', { name: /Escribinos por WhatsApp/ })).toHaveCount(0)
   })
 })
