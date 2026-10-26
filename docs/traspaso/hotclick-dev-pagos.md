@@ -89,3 +89,57 @@ Ramas que Seguridad veía «sin pushear» y que ya estaban en origin:
 - `fix/validar-tilopay-webhook-secret` (3444899bf) ya está en origin.
 
 **No se pudo subir:** `fix/infra-reqa-workflows` (d4adc5cff30577037dfebfa48cf637cd6696c893, local). GitHub rechaza el push porque toca `.github/workflows/health-pager.yml` y el token de la caja no tiene el scope `workflow`. Hay que subirlo con un token que tenga ese scope, o pedírselo a CI/CD. La rama vive en `/workspace/hc-billing-webhook`, en el repo compartido de la caja vieja.
+
+## Correcciones al README
+
+Verificado con `gh` el 26-oct-2026 a las 3:40 PM CR, contra el README en b9f241d8.
+
+### (a) Errores o datos viejos sobre Dev Pagos en el README
+- **Tabla «Resumen rápido», fila HotClick Dev Pagos:** dice solo «#332 comisiones abierto».
+  - Real: **#332** sigue abierto con APTO sobre `3abfc68de5c1e866958b9b1ef78f77a7736afdc1`; falta CI verde y el merge.
+  - **#344** (visibilidad impago, APTO sobre `0372c25faf3635cedf1b7f3a79196195544a716d`) ya está **mergeado**.
+  - **#320, #333, #339, #342 y #346** (CSP ONVO) están **mergeados**.
+  - Falta mencionar el **#354** (`fix/plan-pago-pendiente-aprobacion`, QA 8 ALTO, commit `bb8e29403b3861d08ced18580a21effba653c8da`): está abierto y espera el APTO.
+- **Sección «Área 5 Suscripciones»:** dice «Abiertos #332 (comisiones) y #344».
+  - Real: solo #332 y #354 están abiertos; #344 está mergeado.
+  - #346 (CSP ONVO) también está mergeado y falta en la lista.
+- **Paso 4 de «PARA EL BOT DE LA CUENTA NUEVA»:** la lista de PRs abiertos no incluye el **#354**.
+- **Prompt de Dev Pagos:** dice «Migraciones Flyway solo aditivas (V183+)», pero master ya va por **V200**.
+  - Hay que usar el siguiente número libre de `origin/master` en el momento de crear la migración, no V183.
+  - Además hay que duplicarla en `Actualizado.sql`.
+- **Prompt de Dev Pagos:** nombra ramas viejas como trabajo activo: feat/onvo-suscripciones, fix/onvo-sesion-expiracion-y-timeout y feat/onvo-reembolsos-pendientes.
+  - El estado real de ramas y wip está en las secciones anteriores de esta nota.
+
+### (b) Lo que le va a faltar al reemplazo
+- **Variables** (solo nombres; los valores los carga Andrés):
+  - `ONVO_SECRET_KEY`, `ONVO_WEBHOOK_SECRET`, `ONVO_PUBLISHABLE_KEY`
+  - `ONVO_PRICE_ID_PYME`, `ONVO_PRICE_ID_NEGOCIO_PLUS`, `ONVO_SINPE_DESTINO`
+  - `PAYMENTS_ONVO_ENABLED`, `PAYMENTS_ONVO_PERMITIR_LLAVE_TEST`
+  - `EMPRENDEDOR_PRECIO_MENSUAL_USD`, `PYME_PRECIO_MENSUAL_USD`, `NEGOCIO_PLUS_PRECIO_MENSUAL_USD`
+  - En los tests locales, las llaves ONVO tienen que estar **ausentes** (fail-closed).
+- **Comandos:**
+  - Maven (sin llaves ONVO en el entorno):
+    `JAVA_HOME=<jdk21> env -u ONVO_SECRET_KEY -u ONVO_WEBHOOK_SECRET mvn -o -q -Dfrontend.skip=true -Dtest='Clase*' test`
+    Los resultados quedan en `target/surefire-reports/TEST-*.xml`.
+  - SCALE1, desde la raíz y con el commit hecho:
+    `BASE_SHA=$(git merge-base HEAD origin/master) HEAD_SHA=HEAD node scripts/eng-gates/gate-scale.mjs`
+  - Regenerar `static/`:
+    1. `export PATH=<node22>/bin:$PATH COREPACK_HOME=<dir> VITE_APP_RELEASE=ci-spa-gate`
+    2. En `frontend/`: `corepack pnpm@11.1.2 install --frozen-lockfile --offline && corepack pnpm@11.1.2 build`
+    3. Si `static/` choca en un merge: `git rm -rq --cached static; rm -rf static; git checkout origin/master -- static`, después el build y `git add -A static`.
+  - Vitest: `corepack pnpm@11.1.2 exec vitest run <ruta>`
+  - gitleaks: `gitleaks protect --staged` antes de cada commit.
+  - Merge en el box sin identidad de git:
+    `git -c user.name="HotClick Dev Pagos" -c user.email=hotclick-dev-pagos@noreply.local merge origin/master`
+- **Accesos:** hace falta un token de GitHub con scope **`workflow`** para pushear `fix/infra-reqa-workflows`, porque toca `.github/workflows/`. El token actual solo tiene `repo`. Lo autoriza Andrés en la ventana de login, nunca pegándolo en el chat.
+- **Trampas:**
+  - `-Dtest=Nombre` no corre las clases `@Nested`; usá `-Dtest='Nombre*'`.
+  - El node 20 del sistema rompe pnpm 11; usá Node 22 en el PATH.
+  - Cada merge de master (o cualquier commit nuevo) **anula el APTO**: Seguridad lo tiene que repetir sobre el hash nuevo.
+  - Los números de Flyway chocan entre ramas paralelas; antes de mergear hay que renumerar contra master (y en `Actualizado.sql`).
+  - Con `open-in-view=false`, las relaciones LAZY (`empresa.getPlan()`) fallan fuera de una transacción. Esa fue la causa del QA 8 (#354).
+
+### (c) Mejoras
+- Agregar al README una tabla de PRs generada con `gh pr list --json` en el momento del traspaso, para que no quede vieja en minutos.
+- Pasar el prompt de Dev Pagos a un estado neutro («ver la nota de traspaso») en vez de listar ramas y números de migración fijos.
+- Pedir a CI/CD un check que falle si una migración nueva no está en `Actualizado.sql` o si su número choca con master.
