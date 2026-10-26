@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { SOPORTE_TELEFONO_FAKE } from './tests/helpers/soporteFake'
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000'
 const isLocal = /127\.0\.0\.1|localhost/.test(BASE_URL)
@@ -42,6 +43,8 @@ export default defineConfig({
         command: `node node_modules/vite/bin/vite.js --port ${puertoLocal} --host 127.0.0.1`,
         url: BASE_URL,
         reuseExistingServer: !process.env.CI,
+        // Teléfono de soporte FICTICIO solo para e2e (dev server); el build de static/ no lo ve.
+        env: { VITE_SOPORTE_TELEFONO: SOPORTE_TELEFONO_FAKE },
         timeout: 120_000,
       }
     : undefined,

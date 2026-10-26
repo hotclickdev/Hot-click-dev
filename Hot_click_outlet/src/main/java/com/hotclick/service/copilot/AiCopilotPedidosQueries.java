@@ -23,6 +23,7 @@ class AiCopilotPedidosQueries {
             LEFT JOIN hot_click_usuario_tb u ON p.fk_id_usuario_final = u.id_usuario
             WHERE p.fk_id_empresa = ?
               AND p.estado_pedido IN ('PAGADO','PROCESANDO','PREPARANDO')
+              AND p.es_prueba = false
             ORDER BY p.fecha_pedido ASC LIMIT 15
             """;
         var pedidos = jdbc.queryForList(sql, empresaId);
@@ -41,6 +42,7 @@ class AiCopilotPedidosQueries {
         String sql = """
             SELECT COUNT(*) FROM hot_click_pedido_tb
             WHERE fk_id_empresa = ? AND estado_pedido IN ('PAGADO','PROCESANDO','PREPARANDO')
+              AND es_prueba = false
             """;
         Integer count = jdbc.queryForObject(sql, Integer.class, empresaId);
         return count != null ? count : 0;

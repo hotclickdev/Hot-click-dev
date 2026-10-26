@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  crearReferenciaError, enlaceWhatsappSoporte, esFalloServidor, esRutaPanel, referenciaDelError,
+  crearReferenciaError, enlaceWhatsappSoporte, esFalloServidor, esRutaPanel, referenciaDelError, WHATSAPP_SOPORTE,
 } from './falloServidorHelpers'
 
 describe('esFalloServidor', () => {
@@ -38,7 +38,7 @@ describe('crearReferenciaError', () => {
 
 describe('enlaceWhatsappSoporte', () => {
   it('arma el enlace con el mensaje codificado', () => {
-    expect(enlaceWhatsappSoporte('Ref: a b')).toBe('https://wa.me/50686667888?text=Ref%3A%20a%20b')
+    expect(enlaceWhatsappSoporte('Ref: a b')).toBe(`https://wa.me/${WHATSAPP_SOPORTE}?text=Ref%3A%20a%20b`)
   })
 })
 

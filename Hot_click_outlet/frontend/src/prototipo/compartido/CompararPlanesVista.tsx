@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
-import TilopaySuscripcionEmbed from '@/features/billing/TilopaySuscripcionEmbed'
+import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
 import {
@@ -53,7 +53,7 @@ export default function CompararPlanesVista({
     setError,
     pagoPendiente,
     seleccionarPlan,
-    cancelarPago,
+    cancelarPago, irAExito,
   } = useCambiarPlan({ rutaExito })
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function CompararPlanesVista({
             <p className="text-sm font-semibold">
               Pagar {pagoPendiente.planNombre ?? planElegido?.nombre}
             </p>
-            <TilopaySuscripcionEmbed pago={pagoPendiente} />
+            <PagoPlanEmbed pago={pagoPendiente} onPagado={irAExito} />
           </div>
           {emp ? (
             <button

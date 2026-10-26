@@ -131,7 +131,7 @@ export const sections = [
         <p>Si tenés dudas sobre tu devolución o necesitás que HotClick intervenga como mediador, contactanos:</p>
         <ul>
           <li><strong>Correo:</strong> <a href={`mailto:${IDENTIDAD_COMERCIANTE.correo}`} className="font-semibold text-hc-blue-600">{IDENTIDAD_COMERCIANTE.correo}</a></li>
-          <li><strong>WhatsApp:</strong> <a href={`https://wa.me/${IDENTIDAD_COMERCIANTE.telefonoWa}`} className="font-semibold text-hc-blue-600" target="_blank" rel="noopener noreferrer">{IDENTIDAD_COMERCIANTE.telefono}</a></li>
+          {IDENTIDAD_COMERCIANTE.telefonoWa && <li><strong>WhatsApp:</strong> <a href={`https://wa.me/${IDENTIDAD_COMERCIANTE.telefonoWa}`} className="font-semibold text-hc-blue-600" target="_blank" rel="noopener noreferrer">{IDENTIDAD_COMERCIANTE.telefono}</a></li>}
           <li><strong>Horario:</strong> Lun–Sáb 8:00–19:00</li>
         </ul>
         <BloqueIdentidad />

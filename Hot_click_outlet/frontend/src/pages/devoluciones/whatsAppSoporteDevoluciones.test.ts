@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('@/config/soporteTelefono', async (orig) => ({
+  ...(await orig<typeof import('@/config/soporteTelefono')>()),
+  SOPORTE_WA: '00000000000',
+  SOPORTE_TELEFONO: '+000 0000 0000',
+}))
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
@@ -12,11 +18,9 @@ const aqui = dirname(fileURLToPath(import.meta.url))
 const leer = (rel: string) => readFileSync(resolve(aqui, rel), 'utf8')
 
 describe('Devoluciones · WhatsApp de soporte (solo HotClick)', () => {
-  it('el número del frontend es el de ContactoPublicoPolicy.WHATSAPP_HOTCLICK', () => {
-    const politica = leer('../../../../src/main/java/com/hotclick/service/contacto/ContactoPublicoPolicy.java')
-    const m = /WHATSAPP_HOTCLICK\s*=\s*"(\d+)"/.exec(politica)
-    expect(m?.[1]).toBe(WHATSAPP_HOTCLICK)
+  it('el número del frontend sale de VITE_SOPORTE_TELEFONO (sin literales)', () => {
     expect(WHATSAPP).toBe(WHATSAPP_HOTCLICK)
+    expect(leer('../carrito/cartHelpers.ts')).not.toMatch(/WHATSAPP_HOTCLICK = '\d/)
   })
 
   it('enlaza a wa.me con el número de HotClick y lo muestra formateado', () => {
@@ -25,7 +29,7 @@ describe('Devoluciones · WhatsApp de soporte (solo HotClick)', () => {
     expect(hrefs).toHaveLength(1)
     expect(hrefs[0]).toMatch(new RegExp(`^https://wa\\.me/${WHATSAPP_HOTCLICK}\\?text=`))
     expect(html).toContain('Escribinos por WhatsApp')
-    expect(html).toContain('Soporte HotClick · +506 8666 7888')
+    expect(html).toContain(`Soporte HotClick · ${whatsAppVisible('00000000000')}`)
     expect(html).toContain('rel="noopener noreferrer"')
   })
 
@@ -42,7 +46,7 @@ describe('Devoluciones · WhatsApp de soporte (solo HotClick)', () => {
   })
 
   it('whatsAppVisible', () => {
-    expect(whatsAppVisible('50686667888')).toBe('+506 8666 7888')
-    expect(whatsAppVisible('15551234567')).toBe('+15551234567')
+    expect(whatsAppVisible('50600000000')).toBe('+506 0000 0000')
+    expect(whatsAppVisible('12300000000')).toBe('+12300000000')
   })
 })

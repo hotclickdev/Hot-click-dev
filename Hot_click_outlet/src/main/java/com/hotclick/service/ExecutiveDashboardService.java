@@ -94,6 +94,7 @@ public class ExecutiveDashboardService {
             FROM hot_click_pedido_tb
             WHERE fk_id_empresa = ?
               AND estado_pedido IN ('PAGADO','ENTREGADO')
+              AND es_prueba = false
               AND fecha_pedido BETWEEN ? AND ?
             """;
         return jdbc.queryForMap(sql, empresaId, desde.atStartOfDay(), hasta.atTime(23, 59, 59));
@@ -109,6 +110,7 @@ public class ExecutiveDashboardService {
             FROM hot_click_pedido_tb
             WHERE fk_id_empresa = ?
               AND estado_pedido IN ('PAGADO','ENTREGADO')
+              AND es_prueba = false
               AND fecha_pedido >= NOW() - INTERVAL '12 months'
             GROUP BY mes
             ORDER BY mes ASC
@@ -127,7 +129,7 @@ public class ExecutiveDashboardService {
             JOIN hot_click_producto_tb pr ON pr.id_producto = pi.fk_id_producto
             LEFT JOIN hot_click_categoria_tb c ON c.id_categoria = pr.fk_id_categoria
             WHERE pe.fk_id_empresa = ?
-              AND pe.estado_pedido IN ('PAGADO','ENTREGADO')
+              AND pe.estado_pedido IN ('PAGADO','ENTREGADO') AND pe.es_prueba = false
               AND pe.fecha_pedido BETWEEN ? AND ?
             GROUP BY categoria
             ORDER BY ingresos DESC

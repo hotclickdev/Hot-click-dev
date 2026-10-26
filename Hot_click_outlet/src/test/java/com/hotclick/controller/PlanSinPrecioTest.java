@@ -37,11 +37,12 @@ class PlanSinPrecioTest {
     }
 
     private final com.hotclick.service.SuscripcionService suscripcion = mock(com.hotclick.service.SuscripcionService.class);
+    private final com.hotclick.service.auth.AuthSupport auth = mock(com.hotclick.service.auth.AuthSupport.class);
     private final com.hotclick.security.PropietarioGuard guard = mock(com.hotclick.security.PropietarioGuard.class);
 
     private SuscripcionController controller(PreciosPlanesConfig precios) {
         when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
-        return new SuscripcionController(suscripcion, planRepo, null, tilopay, precios, guard);
+        return new SuscripcionController(suscripcion, planRepo, auth, tilopay, precios, guard);
     }
 
     @org.junit.jupiter.params.ParameterizedTest(name = "QA3-012: EDITOR recibe 403 en {0}")
@@ -95,10 +96,11 @@ class PlanSinPrecioTest {
     void faltaPrecioEnCheckout() {
         TenantContext.set(7L);
         when(planRepo.findById(3L)).thenReturn(Optional.of(plan(3, "NEGOCIO_PLUS")));
-        var r = controller(new PreciosPlanesConfig("9", "24", null)).crearCheckout(3L);
+        var r = controller(new PreciosPlanesConfig("9", "24", null)).crearCheckout(3L, null);
         assertThat(r.getStatusCode().value()).isEqualTo(409);
         assertThat(r.getBody()).containsEntry("codigo", "PLAN_SIN_PRECIO");
         verify(tilopay, never()).iniciarCambioPlan(any(), any());
+        verify(suscripcion, never()).cambiarPlanOnvo(any(), any());
     }
 
     @Test @DisplayName("Precio configurado en 0, negativo o mal escrito cuenta como sin precio (409)")
@@ -130,8 +132,11 @@ class PlanSinPrecioTest {
         Plan plus = plan(3, "NEGOCIO_PLUS");
         plus.setPrecioMensual(28_900);
         when(planRepo.findById(3L)).thenReturn(Optional.of(plus));
-        when(tilopay.iniciarCambioPlan(7L, 3L)).thenReturn(new java.util.LinkedHashMap<>(Map.of(
-            "estado", "PENDIENTE_PAGO", "montoCrc", 28_900L, "plan", "NEGOCIO_PLUS")));
+        com.hotclick.model.Usuario u = new com.hotclick.model.Usuario();
+        u.setCorreoVerificado(true);
+        when(auth.usuarioFromRequest(any())).thenReturn(u);
+        when(suscripcion.cambiarPlanOnvo(7L, 3L)).thenReturn(new java.util.LinkedHashMap<>(Map.of(
+            "status", "requiere_pago", "subscriptionId", "sub_1", "planNombre", "NEGOCIO_PLUS")));
         var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
             .standaloneSetup(controller(new PreciosPlanesConfig("9", "24", "49"))).build();
         String trampa = "{\"precio\":0,\"precioUsd\":0,\"montoCrc\":1,\"plan\":\"EMPRENDEDOR\",\"planId\":1,\"estado\":\"ACTIVO\"}";
@@ -139,20 +144,20 @@ class PlanSinPrecioTest {
                 .param("precio", "0").param("monto", "1").param("plan", "EMPRENDEDOR")
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(trampa))
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.estado").value("PENDIENTE_PAGO"))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.montoCrc").value(28_900))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.plan").value("NEGOCIO_PLUS"));
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.status").value("requiere_pago"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.proveedor").value("ONVO"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.planNombre").value("NEGOCIO_PLUS"));
         // El servicio solo recibe empresa (del token) y planId (de la ruta); nada del cuerpo ni de la query.
-        verify(tilopay).iniciarCambioPlan(7L, 3L);
-        verifyNoMoreInteractions(tilopay);
+        verify(suscripcion).cambiarPlanOnvo(7L, 3L);
+        verifyNoInteractions(tilopay);
     }
 
     @Test @DisplayName("Los 400 no exponen el mensaje interno de la excepción")
     void error400Generico() {
         TenantContext.set(7L);
         when(planRepo.findById(4L)).thenReturn(Optional.of(plan(4, "PYME")));
-        when(tilopay.iniciarCambioPlan(7L, 4L)).thenThrow(new IllegalArgumentException("SQL interno: tabla x columna y"));
-        var r = controller(new PreciosPlanesConfig("9", "24", "49")).crearCheckout(4L);
+        when(suscripcion.cambiarPlanOnvo(7L, 4L)).thenThrow(new IllegalArgumentException("SQL interno: tabla x columna y"));
+        var r = controller(new PreciosPlanesConfig("9", "24", "49")).crearCheckout(4L, null);
         assertThat(r.getStatusCode().value()).isEqualTo(400);
         assertThat(r.getBody().get("error").toString()).doesNotContain("SQL").startsWith("No pudimos procesar");
     }

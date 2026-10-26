@@ -60,7 +60,13 @@ public class Pago extends BaseEntity {
     @Column(name = "sinpe_ref_number", length = 25)
     private String sinpeRefNumber;
 
+    /** P-01 (V195): plazo interno de HotClick para el intent SINPE de ONVO (ONVO no define vencimiento). */
+    @Column(name = "plazo_interno_sinpe")
+    private LocalDateTime plazoInternoSinpe;
+
     public String getSinpeRefNumber() { return sinpeRefNumber; }
+    public LocalDateTime getPlazoInternoSinpe() { return plazoInternoSinpe; }
+    public void setPlazoInternoSinpe(LocalDateTime plazoInternoSinpe) { this.plazoInternoSinpe = plazoInternoSinpe; }
     public void setSinpeRefNumber(String sinpeRefNumber) { this.sinpeRefNumber = sinpeRefNumber; }
 
     public Long getId() { return id; }

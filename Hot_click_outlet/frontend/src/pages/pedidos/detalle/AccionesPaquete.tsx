@@ -33,11 +33,14 @@ function AccionAlEntregar({ habilitada, to, icono, texto }: { habilitada: boolea
 export default function AccionesPaquete({ compra, paquete }: { compra: CompraCliente; paquete: PedidoCliente }) {
   const { t } = useTranslation()
   const entregado = accionesHabilitadas(paquete)
+  const wa = urlWhatsApp(mensajeWhatsApp(t, compra, paquete))
   return (
     <div className="flex items-center gap-[8px]">
-      <a href={urlWhatsApp(mensajeWhatsApp(t, compra, paquete))} target="_blank" rel="noopener noreferrer" className={BOTON}>
-        <Contenido icono={ICONOS_PEDIDOS.whatsapp} texto={t('misPedidos.paquete.whatsapp')} />
-      </a>
+      {wa && (
+        <a href={wa} target="_blank" rel="noopener noreferrer" className={BOTON}>
+          <Contenido icono={ICONOS_PEDIDOS.whatsapp} texto={t('misPedidos.paquete.whatsapp')} />
+        </a>
+      )}
       <AccionAlEntregar habilitada={entregado} to={RUTA_GARANTIA} icono={ICONOS_PEDIDOS.garantia} texto={t('misPedidos.paquete.garantia')} />
       <AccionAlEntregar habilitada={entregado} to={RUTA_OPINAR} icono={ICONOS_PEDIDOS.opinar} texto={t('misPedidos.paquete.opinar')} />
     </div>

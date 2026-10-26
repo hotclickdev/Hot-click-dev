@@ -5,6 +5,7 @@ import PreguntaFrecuente from '@/components/comprador/PreguntaFrecuente'
 import { IcoSrv } from './servicios/IcoSrv'
 import { TARIFAS, type FilaTarifa } from './envios/enviosData'
 import { SITE_URL, faqItems, shippingJsonLd } from './envios/enviosHelpers'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 /** Recorrido del paquete (boceto demo-0410 · 03). Nombres de pasos provisorios. TODO copy Producto. */
 const RECORRIDO = [
@@ -14,7 +15,7 @@ const RECORRIDO = [
   { titulo: 'En tu casa', texto: 'O lo retirás, si la tienda lo permite.' },
 ]
 
-const HREF_WA = 'https://wa.me/50686667888'
+const HREF_WA = SOPORTE_WA ? `https://wa.me/${SOPORTE_WA}` : '/contacto'
 const CLASE_LINK = 'font-medium text-hc-blue-600 underline'
 
 /** Respuestas con enlace (rastrear y problemas); el resto es texto plano de `faqItems`. */

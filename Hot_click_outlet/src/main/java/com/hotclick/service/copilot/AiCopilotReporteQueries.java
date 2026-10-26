@@ -28,7 +28,7 @@ class AiCopilotReporteQueries {
         Map<String, Object> kpis = jdbc.queryForMap(
             "SELECT COUNT(*) as pedidos, COALESCE(SUM(total_pedido),0) as ingresos "
                 + "FROM hot_click_pedido_tb WHERE fk_id_empresa = ? AND " + intervalo
-                + " AND estado_pedido IN ('PAGADO','ENTREGADO')",
+                + " AND estado_pedido IN ('PAGADO','ENTREGADO') AND es_prueba = false",
             empresaId);
         StringBuilder sb = new StringBuilder();
         sb.append("Reporte ").append(periodo).append('\n');
@@ -46,7 +46,7 @@ class AiCopilotReporteQueries {
             JOIN hot_click_pedido_tb ped ON pi.fk_id_pedido = ped.id_pedido
             JOIN hot_click_producto_tb p ON pi.fk_id_producto = p.id_producto
             WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '30 days'
-              AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
+              AND ped.estado_pedido IN ('PAGADO','ENTREGADO') AND ped.es_prueba = false
             GROUP BY p.nombre_producto ORDER BY veces DESC LIMIT 5
             """, empresaId);
         if (top.isEmpty()) return "Sin ventas en 30 días.\n";

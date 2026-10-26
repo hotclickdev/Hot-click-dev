@@ -1,6 +1,8 @@
 package com.hotclick.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import com.hotclick.utils.SoporteTelefono;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -14,6 +16,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
  */
 @Controller
 public class CustomErrorController implements ErrorController {
+
+    /** Sin default: vacío ⇒ la página de error no muestra WhatsApp. */
+    @Value("${hotclick.soporte.telefono:}")
+    private String telefonoSoporte;
 
     /** Rutas que no son del visitante: conservan la página oscura sin cambios. */
     private static final String[] PREFIJOS_SIN_CAMBIO = {
@@ -38,7 +44,7 @@ public class CustomErrorController implements ErrorController {
         Object uri = request.getAttribute("jakarta.servlet.error.request_uri");
         if (uri == null) uri = request.getAttribute("javax.servlet.error.request_uri");
         if (esRutaVisitante(uri != null ? uri.toString() : null)) {
-            return paginaVisitante(status != null && status == 404);
+            return paginaVisitante(status != null && status == 404, telefonoSoporte);
         }
         String message = status != null && status == 404
             ? "Página no encontrada (404)"
@@ -113,7 +119,7 @@ public class CustomErrorController implements ErrorController {
     }
 
     /** Diseño claro del visitante (derivado de Figma `45:2198` / `45:2322`): círculo de estado, título Sora y botón rojo. */
-    static String paginaVisitante(boolean noEncontrada) {
+    static String paginaVisitante(boolean noEncontrada, String telefono) {
         String titulo = noEncontrada ? "Esta página no existe" : "Algo salió mal de nuestro lado";
         String texto = noEncontrada
             ? "El enlace está roto o la página se movió. Elegí por dónde seguir."
@@ -122,7 +128,10 @@ public class CustomErrorController implements ErrorController {
         String acciones = noEncontrada
             ? "<a class=\"primario\" href=\"/\">Ir al inicio</a><a class=\"secundario\" href=\"/categorias\">Ver categorías</a>"
             : "<a class=\"primario\" href=\"javascript:location.reload()\">Reintentar</a>"
-              + "<a class=\"secundario\" href=\"https://wa.me/50686667888\" rel=\"noopener\">Escribinos por WhatsApp · 8666-7888</a>";
+              + (SoporteTelefono.configurado(telefono)
+                  ? "<a class=\"secundario\" href=\"" + SoporteTelefono.waUrl(telefono)
+                    + "\" rel=\"noopener\">Escribinos por WhatsApp · " + SoporteTelefono.texto(telefono) + "</a>"
+                  : "");
         return """
             <!DOCTYPE html>
             <html lang="es">

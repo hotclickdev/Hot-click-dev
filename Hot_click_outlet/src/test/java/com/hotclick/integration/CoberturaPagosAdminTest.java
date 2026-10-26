@@ -326,159 +326,26 @@ class CoberturaPagosAdminTest extends BaseIntegrationTest {
         assertThat(estadoSesion(s)).isEqualTo("PENDIENTE");
     }
 
-    @Test
-    @DisplayName("confirmar-sinpe: vendedor de otro negocio → rechazado y sesión intacta")
-    void confirmarSinpeOtroNegocio() throws Exception {
-        PosQrSesion s = sesionSinpe("tokqrajeno000001", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
-        Empresa otra = new Empresa();
-        String slug = "otra-qa-" + System.nanoTime();
-        otra.setNombreEmpresa("Otra QA"); otra.setSlug(slug); otra.setCorreoEmpresa(slug + "@test.cr");
-        otra.setEstadoEmpresa("ACTIVO"); otra.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        otra = empresaRepository.saveAndFlush(otra);
-        Usuario ajeno = crearUsuario("ajeno-" + System.nanoTime() + "@test.cr", "Ajeno",
-            obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5));
-        ajeno.setEmpresa(otra);
-        ajeno = usuarioRepository.saveAndFlush(ajeno);
-        confirmar(s.getToken(), tokenConEmpresa(ajeno, otra))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.not("No hay empresa en el token")));
-        assertThat(estadoSesion(s)).isEqualTo("PENDIENTE");
-        verify(posQrVentaCompletionService, never()).completarVentaSinpe(any(), anyLong(), any());
-    }
 
-    @Test
-    @DisplayName("confirmar-sinpe: token inexistente → 400")
-    void confirmarSinpeTokenInexistente() throws Exception {
-        confirmar("tokqrnoexiste001", tokenConEmpresa(emprendedor, empresa)).andExpect(status().isBadRequest());
-        verify(posQrVentaCompletionService, never()).completarVentaSinpe(any(), anyLong(), any());
-    }
 
-    @Test
-    @DisplayName("confirmar-sinpe: otro usuario del negocio confirma una vez (200); la segunda → 400 y no completa de nuevo")
-    void confirmarSinpeDoble() throws Exception {
-        PosQrSesion s = sesionSinpe("tokqrdoble000001", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
-        Usuario cajero = cajero();
-        confirmar(s.getToken(), tokenConEmpresa(cajero, empresa), "REF000111").andExpect(status().isOk());
-        confirmar(s.getToken(), tokenConEmpresa(cajero, empresa), "REF000222").andExpect(status().isBadRequest());
-        verify(posQrVentaCompletionService, times(1)).completarVentaSinpe(any(), eq(cajero.getId()), any());
-    }
 
-    @Test
-    @DisplayName("(a) confirmar-sinpe sin referencia o con formato inválido → 400 con mensaje fijo, sin eco ni venta")
-    void confirmarSinpeReferenciaInvalida() throws Exception {
-        PosQrSesion s = sesionSinpe("tokqrrefinval001", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
-        String auth = tokenConEmpresa(cajero(), empresa);
-        long previas = confirmacionRepository.count();
-        mockMvc.perform(put("/api/pos/qr/" + s.getToken() + "/confirmar-sinpe").header("Authorization", auth)
-                .contentType(MediaType.APPLICATION_JSON).content("{\"notas\":\"qa\"}"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value(ReferenciaSinpe.MSG_INVALIDA));
-        for (String ref : new String[]{"12345", "pagó por sinpe", "REF<b>99999", "ZZ-123456", "A".repeat(31)}) {
-            confirmar(s.getToken(), auth, ref)
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(ReferenciaSinpe.MSG_INVALIDA));
-        }
-        assertThat(estadoSesion(s)).isEqualTo("PENDIENTE");
-        assertThat(confirmacionRepository.count()).isEqualTo(previas);
-        verify(posQrVentaCompletionService, never()).completarVentaSinpe(any(), anyLong(), any());
-    }
 
-    @Test
-    @DisplayName("(a) confirmar-sinpe con una referencia ya usada en el negocio → 400 y la segunda sesión sigue PENDIENTE")
-    void confirmarSinpeReferenciaRepetida() throws Exception {
-        PosQrSesion s1 = sesionSinpe("tokqrrefrep00001", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
-        PosQrSesion s2 = sesionSinpe("tokqrrefrep00002", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
-        String auth = tokenConEmpresa(cajero(), empresa);
-        long previas = confirmacionRepository.count();
-        confirmar(s1.getToken(), auth, "FT2610220001").andExpect(status().isOk());
-        confirmar(s2.getToken(), auth, " ft2610220001 ")
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value(ReferenciaSinpe.MSG_REPETIDA));
-        assertThat(estadoSesion(s2)).isEqualTo("PENDIENTE");
-        assertThat(confirmacionRepository.count()).isEqualTo(previas + 1);
-    }
 
-    @Test
-    @DisplayName("(b) confirmar-sinpe deja registro inmutable (quién generó, quién confirmó, cuándo, referencia) y auditoría")
-    void confirmarSinpeRegistraAuditoria() throws Exception {
-        PosQrSesion s = sesionSinpe("tokqrauditoria01", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
-        Usuario cajero = cajero();
-        LocalDateTime antes = LocalDateTime.now(Constants.ZONA_CR).minusSeconds(1);
-        confirmar(s.getToken(), tokenConEmpresa(cajero, empresa), "abc778899").andExpect(status().isOk());
 
-        var regs = confirmacionRepository.findByEmpresaIdOrderByFechaConfirmacionDesc(empresa.getId(),
-            org.springframework.data.domain.PageRequest.of(0, 100)).getContent().stream()
-            .filter(x -> s.getId().equals(x.getSesionId())).toList();
-        assertThat(regs).hasSize(1);
-        var r = regs.get(0);
-        assertThat(r.getReferencia()).isEqualTo("ABC778899");
-        assertThat(r.getSesionId()).isEqualTo(s.getId());
-        assertThat(r.getGeneradoPorId()).isEqualTo(emprendedor.getId());
-        assertThat(r.getConfirmadoPorId()).isEqualTo(cajero.getId());
-        assertThat(r.getTotal()).isEqualTo(10000);
-        assertThat(r.getFechaConfirmacion()).isAfter(antes);
 
-        var audits = auditoriaAdminRepository.findAllByOrderByFechaDesc(
-            org.springframework.data.domain.PageRequest.of(0, 100)).getContent().stream()
-            .filter(a -> PosQrVentaService.AUDIT_SINPE_MANUAL.equals(a.getAccion()))
-            .filter(a -> r.getId().equals(a.getEntidadId())).toList();
-        assertThat(audits).hasSize(1);
-        assertThat(audits.get(0).getAdminId()).isEqualTo(cajero.getId());
-        assertThat(audits.get(0).getEntidadId()).isEqualTo(r.getId());
-        assertThat(audits.get(0).getDetalle()).contains("ref=ABC778899").contains("confirmo=" + cajero.getId());
-    }
 
-    @Test
-    @DisplayName("(c) confirmar-sinpe por quien generó la venta → 403 AUTOCONFIRMACION_SINPE y sesión PENDIENTE")
-    void confirmarSinpeMismoUsuario403() throws Exception {
-        PosQrSesion s = sesionSinpe("tokqrmismo000001", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
-        long previas = confirmacionRepository.count();
-        confirmar(s.getToken(), tokenConEmpresa(emprendedor, empresa), "REF123456")
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.data.codigo").value(AutoconfirmacionSinpeException.CODIGO));
-        assertThat(estadoSesion(s)).isEqualTo("PENDIENTE");
-        assertThat(confirmacionRepository.count()).isEqualTo(previas);
-        verify(posQrVentaCompletionService, never()).completarVentaSinpe(any(), anyLong(), any());
-    }
-
-    @Test
-    @DisplayName("(d) lista de revisión: el negocio ve sus confirmaciones; comprador 403; otro negocio no las ve")
-    void listaRevisionSinpeManual() throws Exception {
-        PosQrSesion s = sesionSinpe("tokqrrevision001", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
-        confirmar(s.getToken(), tokenConEmpresa(cajero(), empresa), "REV556677").andExpect(status().isOk());
-
-        mockMvc.perform(get(AdminPosSinpeController.RUTA).header("Authorization", tokenConEmpresa(emprendedor, empresa)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.total").value(1))
-            .andExpect(jsonPath("$.data.items[0].referencia").value("REV556677"))
-            .andExpect(jsonPath("$.data.items[0].confirmadoPorId").isNumber());
-        mockMvc.perform(get(AdminPosSinpeController.RUTA).header("Authorization", userToken))
-            .andExpect(status().isForbidden());
-        mockMvc.perform(get(AdminPosSinpeController.RUTA)).andExpect(status().is4xxClientError());
-
-        Empresa otra = new Empresa();
-        String slug = "otra-rev-" + System.nanoTime();
-        otra.setNombreEmpresa("Otra Rev"); otra.setSlug(slug); otra.setCorreoEmpresa(slug + "@test.cr");
-        otra.setEstadoEmpresa("ACTIVO"); otra.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        otra = empresaRepository.saveAndFlush(otra);
-        Usuario ajeno = crearUsuario("rev-" + System.nanoTime() + "@test.cr", "Rev",
-            obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5));
-        ajeno.setEmpresa(otra);
-        ajeno = usuarioRepository.saveAndFlush(ajeno);
-        mockMvc.perform(get(AdminPosSinpeController.RUTA).header("Authorization", tokenConEmpresa(ajeno, otra)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.total").value(0));
-    }
-
-    @Test
-    @DisplayName("confirmar-sinpe con la sesión QR vencida → 400, no completa la venta (#220)")
-    void confirmarSinpeVencido() throws Exception {
-        PosQrSesion s = sesionSinpe("tokqrvencido0001", LocalDateTime.now(Constants.ZONA_CR).minusHours(2));
-        confirmar(s.getToken(), tokenConEmpresa(cajero(), empresa)).andExpect(status().isBadRequest());
-        verify(posQrVentaCompletionService, never()).completarVentaSinpe(any(), anyLong(), any());
-    }
 
     // ── helpers QA ────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("E2E-POS-03: confirmar-sinpe manual retirado → 410 aunque otro cajero traiga referencia; sesión PENDIENTE, sin venta")
+    void confirmarSinpeManualRetirado() throws Exception {
+        PosQrSesion s = sesionSinpe("tokqrmanual00001", LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
+        confirmar(s.getToken(), tokenConEmpresa(cajero(), empresa), "REF000111").andExpect(status().isGone());
+        confirmar(s.getToken(), tokenConEmpresa(emprendedor, empresa), "REF000222").andExpect(status().isGone());
+        assertThat(estadoSesion(s)).isEqualTo("PENDIENTE");
+        verify(posQrVentaCompletionService, never()).completarVentaSinpe(any(), anyLong(), any());
+    }
 
     private ResultActions venta(String json) throws Exception {
         return mockMvc.perform(post("/api/ventas").header("Authorization", tokenEmp)

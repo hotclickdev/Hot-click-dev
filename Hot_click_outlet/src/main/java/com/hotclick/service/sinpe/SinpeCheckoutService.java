@@ -25,7 +25,7 @@ import java.util.UUID;
 
 /**
  * Checkout SINPE: igual que el de tarjeta (un pago por grupo, un subpedido por bodega),
- * pero el Pago queda PENDIENTE hasta que el cliente sube el comprobante y un admin lo aprueba.
+ * SINPE (P-01): un intent ONVO por grupo; el Pago se confirma solo por webhook succeeded + GET. Sin comprobante.
  */
 @Service
 public class SinpeCheckoutService {
@@ -43,7 +43,7 @@ public class SinpeCheckoutService {
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
     @Autowired(required = false) private com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica;
-    @Autowired(required = false) private com.hotclick.service.OnvoService onvoService;
+    @Autowired(required = false) private SinpeOnvoMarketplaceService sinpeOnvo;
 
     public static final String MSG_SINPE_SIN_DESTINO =
         "SINPE Móvil no está disponible por ahora. Pagá con Tarjeta.";
@@ -71,17 +71,24 @@ public class SinpeCheckoutService {
         "Este checkout solo registra pagos en efectivo. Elegí SINPE Móvil o Tarjeta: te llevamos a la pasarela de pago.";
 
     static void exigirProveedorPermitido(String proveedor, boolean sinpeManualHabilitado) {
-        // G1: sin la bandera legacy esta ruta solo registra EFECTIVO. Cualquier otro valor (SINPE, null,
-        // TRANSFERENCIA, ONVO...) crearía un Pago SINPE pendiente confirmable a mano.
-        if (!sinpeManualHabilitado && (proveedor == null || !"EFECTIVO".equalsIgnoreCase(proveedor.trim()))) {
+        // P-01: SINPE va siempre por intent ONVO (sin comprobante). EFECTIVO sigue su bandera. Cualquier otro
+        // valor (null, TRANSFERENCIA, ONVO...) se rechaza: no hay pago manual confirmable a mano.
+        String p = proveedor == null ? "" : proveedor.trim();
+        if (!"EFECTIVO".equalsIgnoreCase(p) && !Constants.PROVEEDOR_SINPE.equalsIgnoreCase(p)) {
             throw new IllegalStateException(MSG_SINPE_MANUAL);
         }
+    }
+
+    static boolean esSinpe(String proveedor) {
+        return proveedor != null && Constants.PROVEEDOR_SINPE.equalsIgnoreCase(proveedor.trim());
     }
 
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
         exigirProveedorPermitido(req.getProvider(), sinpeManualHabilitado, efectivoWebHabilitado);
-        String sinpeDestino = exigirDestinoSiSinpe(req.getProvider(), onvoService != null ? onvoService.sinpeDestino() : "");
+        boolean sinpe = esSinpe(req.getProvider());
+        if (sinpe) SinpeOnvoMarketplaceService.exigirIdentificacion(req.getSinpeIdentificacion(), req.getSinpeTipoIdentificacion());
+        String sinpeDestino = exigirDestinoSiSinpe(req.getProvider(), sinpeOnvo != null ? sinpeOnvo.destinoDisponible() : "");
         checkoutValidator.validateCartNotEmpty(req);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
@@ -89,9 +96,10 @@ public class SinpeCheckoutService {
         Bodega bodegaDefault = checkoutValidator.resolverBodegaDefault(req.getBodegaId());
 
         StockReservationResult reservation = stockReservationService.reserveForCheckout(req.getItems());
-        String proveedorEfectivo = req.getProvider() != null ? req.getProvider().trim() : Constants.PROVEEDOR_SINPE;
+        String proveedorEfectivo = sinpe ? Constants.PROVEEDOR_SINPE : req.getProvider().trim();
         CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
-            req, reservation, bodegaDefault, proveedorEfectivo, usuario, Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+            req, reservation, bodegaDefault, proveedorEfectivo, usuario,
+            sinpe ? Constants.PEDIDO_PENDIENTE : Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         Pedido principal = grupo.principal();
         // G1b: el comprador (con sesion, o invitado identificado por su correo) no puede ser del negocio vendedor.
         autocompraGuard.exigirNoEsDelNegocio(usuario, grupo.pedidos());
@@ -100,7 +108,7 @@ public class SinpeCheckoutService {
             contraEntregaPolitica == null || contraEntregaPolitica.habilitada());
         atribucionPedidoService.guardarSiPresente(principal, req.getAtribucion());
 
-        // SINPE es manual: no fechaExpiracion; el cleanup TTL excluye este proveedor.
+        // SINPE: el cleanup TTL excluye este proveedor; el plazo interno (V195) lo maneja SinpeOnvoMarketplaceBarrido.
         Pago pago = new Pago();
         pago.setMerchantToken("SINPE-" + UUID.randomUUID());
         pago.setMonto(grupo.totalCobro());
@@ -115,6 +123,9 @@ public class SinpeCheckoutService {
         pago = pagoRepository.save(pago);
         boolean invitado = correoUsuario == null || "anonymousUser".equals(correoUsuario);
         reservaAntiBot.registrar(usuario, invitado, req, grupo.pedidos(), pago);
+        // Un intent ONVO por grupo; al final para no dejar intents abiertos si falla algo antes.
+        LocalDateTime plazo = sinpe
+            ? sinpeOnvo.iniciar(pago, req.getSinpeIdentificacion(), req.getSinpeTipoIdentificacion()) : null;
 
         log.info("Checkout {} iniciado: pedido={} paquetes={} total={}",
             proveedorEfectivo, principal.getNumeroPedido(), grupo.subpedidos().size(), grupo.totalCobro());
@@ -123,6 +134,7 @@ public class SinpeCheckoutService {
             principal.getId(), principal.getNumeroPedido(),
             null, Constants.PAGO_PENDIENTE, grupo.totalCobro(), proveedorEfectivo);
         response.setSinpeDestino(sinpeDestino);
+        if (plazo != null) response.setPlazoInterno(plazo.toString());
         response.setCancelToken(guestCancelTokenService.emitir(principal.getNumeroPedido()));
         response.setPaquetes(CheckoutGrupoFactory.resumen(grupo.pedidos()));
         return response;
