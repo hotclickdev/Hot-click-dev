@@ -102,6 +102,18 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
         assertThat(p.getEmpresa().getId()).isEqualTo(empA.getId());
     }
 
+    @Test
+    @DisplayName("QA5-M-01 | admin de plataforma (empresa=null) asigna compra → 200, 1 pedido, ENTREGADO")
+    void adminPlataformaAsignaCompraSinEmpresa() throws Exception {
+        String b = "{\"usuarioId\":" + cliA.getId() + ",\"bodegaId\":" + bodA.getId()
+            + ",\"items\":[{\"productoId\":" + prodA.getId() + ",\"cantidad\":1,\"precioUnitario\":1000}]}";
+        mockMvc.perform(post("/api/admin/asignar/compra").header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON).content(b))
+            .andExpect(status().isOk());
+        assertThat(pedidoRepository.count()).isEqualTo(1);
+        assertThat(pedidoRepository.findAll().get(0).getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENTREGADO);
+    }
+
     private Empresa empresa(String nombre, String slug) {
         Empresa e = new Empresa();
         e.setNombreEmpresa(nombre);

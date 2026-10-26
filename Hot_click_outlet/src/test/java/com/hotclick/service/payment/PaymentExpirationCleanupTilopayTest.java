@@ -73,8 +73,9 @@ class PaymentExpirationCleanupTilopayTest {
             .thenReturn(List.of(pagoTilopay));
 
         // Pedido sin grupoPago (checkout de un solo paquete): delGrupo() devuelve solo este pedido.
-        ReflectionTestUtils.setField(service, "pedidoGrupoService",
-            new PedidoGrupoService(pedidoRepository, pagoRepository));
+        ReflectionTestUtils.setField(service, "pagoExpiradoCancelador", new PagoExpiradoCancelador(pagoRepository,
+            pedidoRepository, stockReservationService, new PedidoGrupoService(pedidoRepository, pagoRepository)));
+        org.mockito.Mockito.lenient().when(pagoRepository.findByIdForUpdate(20L)).thenReturn(java.util.Optional.of(pagoTilopay));
     }
 
     @Test

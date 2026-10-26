@@ -38,6 +38,7 @@ public class PedidoManualFactory {
     /** P7-02: estados con los que un pedido manual de /api/pedidos/manual puede nacer (los de la UI). */
     public static final java.util.Set<String> ESTADOS_INICIALES = java.util.Set.of(
         Constants.PEDIDO_PENDIENTE, Constants.PEDIDO_PAGADO, "EN_PREPARACION");
+    static final String METODO_COMPRA_EXTERNA = "EXTERNO";
     static final String MSG_CLIENTE = "Cliente no encontrado. Búscalo en tus clientes o créalo primero.";
 
     public Pedido crearPedidoManual(ManualPedidoDTO dto, Empresa empresa) {
@@ -51,7 +52,7 @@ public class PedidoManualFactory {
 
         Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
         String metodoPago = dto.getMetodoPago() != null ? dto.getMetodoPago() : "SINPE";
-        String estadoInicial = estadoInicialPermitido(dto.getEstadoPedido(), metodoPago);
+        String estadoInicial = estadoInicialPermitido(dto.getEstadoPedido(), metodoPago, dto.getOrigen());
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
@@ -137,6 +138,20 @@ public class PedidoManualFactory {
      * confirma la pasarela o el flujo de comprobantes, nunca la creación manual.
      */
     static String estadoInicialPermitido(String estadoPedido, String metodoPago) {
+        return estadoInicialPermitido(estadoPedido, metodoPago, null);
+    }
+
+    /**
+     * QA5-M-01: «asignar compra» (origen MANUAL, método EXTERNO) registra una compra que ya se pagó y
+     * entregó fuera de HotClick; nace ENTREGADO como pidió el admin. No crea Pago (EXTERNO no es método
+     * manual cobrable) ni habilita despacho. /api/pedidos/manual no puede pedir ENTREGADO (P7-02).
+     */
+    static String estadoInicialPermitido(String estadoPedido, String metodoPago, String origen) {
+        if (Constants.PEDIDO_ENTREGADO.equals(estadoPedido)
+                && METODO_COMPRA_EXTERNA.equals(PedidoPagoManualService.normalizarMetodo(metodoPago))
+                && OrigenPedido.normalizar(origen) == OrigenPedido.MANUAL) {
+            return Constants.PEDIDO_ENTREGADO;
+        }
         String estado = estadoPedido != null ? estadoPedido : Constants.PEDIDO_PENDIENTE;
         String metodo = PedidoPagoManualService.normalizarMetodo(metodoPago);
         if (!PedidoPagoManualService.METODO_EFECTIVO.equals(metodo)) return Constants.PEDIDO_PENDIENTE;
