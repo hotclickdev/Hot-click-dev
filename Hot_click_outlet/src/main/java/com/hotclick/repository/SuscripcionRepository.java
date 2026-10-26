@@ -25,6 +25,12 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
 
+    /** S-02 (C6 heredado): lock de fila al aplicar un pago ONVO verificado. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubscriptionId = :id")
+    Optional<Suscripcion> findByOnvoSubscriptionIdForUpdate(@Param("id") String onvoSubscriptionId);
+
+
     /** Suscripciones vigentes (no canceladas/vencidas) con plan cargado — consola billing. */
     @Query("""
         SELECT s FROM Suscripcion s

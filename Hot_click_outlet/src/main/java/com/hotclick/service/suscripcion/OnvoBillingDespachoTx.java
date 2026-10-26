@@ -4,16 +4,23 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.function.Supplier;
+
 /**
- * Ejecuta el despacho de un evento de billing ONVO en su propia transacción: si el evento se rechaza,
- * solo se revierte el despacho y el registro de auditoría del evento sigue en la transacción externa
- * (sin esto, el rollback-only de la transacción interna convertía el rechazo en 500).
+ * Límites de transacción del webhook de billing ONVO.
+ * {@link #enTx}: registro del evento (INSERT+flush) y despacho en UNA transacción; cualquier excepción la revierte entera.
+ * {@link #aparte}: transacción nueva que solo marca el evento (rechazo o fallo), después del rollback del despacho.
  */
 @Component
 public class OnvoBillingDespachoTx {
 
+    @Transactional
+    public <T> T enTx(Supplier<T> trabajo) {
+        return trabajo.get();
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void ejecutar(Runnable despacho) {
-        despacho.run();
+    public <T> T aparte(Supplier<T> trabajo) {
+        return trabajo.get();
     }
 }

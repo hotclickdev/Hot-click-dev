@@ -150,8 +150,8 @@ public class OnvoBillingClient {
 
     public record OnvoSubscription(String id, String itemId) {}
 
+    /** S-05: sin @Retry. Un POST que crea recursos no se reintenta (ONVO no documenta idempotencia). */
     @CircuitBreaker(name = "onvo", fallbackMethod = "crearCustomerFallback")
-    @Retry(name = "onvo")
     public OnvoCustomer crearCustomer(String email, String nombre, Map<String, String> metadata) {
         if (sinLlave()) {
             exigirSimulacionPermitida("crearCustomer");
@@ -170,7 +170,6 @@ public class OnvoBillingClient {
      * Crea suscripción incompleta para cobrar con el Web SDK (paymentType=subscription).
      */
     @CircuitBreaker(name = "onvo", fallbackMethod = "crearSuscripcionFallback")
-    @Retry(name = "onvo")
     public OnvoSubscription crearSuscripcionIncompleta(String customerId, String priceId,
                                                        Map<String, String> metadata) {
         if (sinLlave()) {
@@ -233,6 +232,77 @@ public class OnvoBillingClient {
         }
         log.info("[onvo] Suscripción marcada cancelAtPeriodEnd: {}", subscriptionId);
         return ResultadoCancelacion.PROGRAMADA;
+    }
+
+    /** «live» o «test» según la llave de billing. Sin llave (o billing deshabilitado) no hay modo: null. */
+    public String modoEsperado() {
+        if (sinLlave() || isBillingDeshabilitado()) return null;
+        return esLlaveDePrueba(secretKey) ? "test" : "live";
+    }
+
+    /** Inverso de getPriceIdForPlan: el plan sale del priceId que confirma ONVO, nunca de metadata. */
+    public String planParaPriceId(String priceId) {
+        if (priceId == null || priceId.isBlank()) return null;
+        if (priceId.equals(blankToNull(priceIdPyme))) return "PYME";
+        if (priceId.equals(blankToNull(priceIdNegocioPlus))) return "NEGOCIO_PLUS";
+        return null;
+    }
+
+    /** GET /v1/subscriptions/{id}. Fail-closed: sin llave real no se inventa nada. */
+    public Map<?, ?> obtenerSuscripcion(String subscriptionId) {
+        return leerReal("/subscriptions/", subscriptionId);
+    }
+
+    /** GET /v1/invoices/{id} (renovación de ONVO). */
+    public Map<?, ?> obtenerRenovacion(String invoiceId) {
+        return leerReal("/invoices/", invoiceId);
+    }
+
+    /** GET /v1/payment-intents/{id}. */
+    public Map<?, ?> obtenerPaymentIntent(String intentId) {
+        return leerReal("/payment-intents/", intentId);
+    }
+
+    /**
+     * S-05: GET /v1/customers/{id}/subscriptions. Devuelve el id de una suscripción del customer con ese priceId
+     * que siga abierta (incomplete, active, trialing, past_due), para no crear un duplicado.
+     */
+    public String buscarSuscripcionAbierta(String customerId, String priceId) {
+        if (sinLlave() || customerId == null || priceId == null) return null;
+        Map<?, ?> resp = get("/customers/" + customerId + "/subscriptions");
+        Object data = resp.get("data");
+        if (!(data instanceof List<?> lista)) return null;
+        for (Object o : lista) {
+            if (!(o instanceof Map<?, ?> sub)) continue;
+            String status = String.valueOf(sub.get("status"));
+            if (!List.of("incomplete", "active", "trialing", "past_due").contains(status)) continue;
+            if (priceId.equals(primerPriceId(sub)) && sub.get("id") != null) {
+                return String.valueOf(sub.get("id"));
+            }
+        }
+        return null;
+    }
+
+    /** priceId del único item de la suscripción; null si no hay exactamente uno. */
+    public static String primerPriceId(Map<?, ?> sub) {
+        Object items = sub == null ? null : sub.get("items");
+        if (items instanceof List<?> list && list.size() == 1 && list.get(0) instanceof Map<?, ?> item) {
+            Object p = item.get("priceId");
+            if (p == null && item.get("price") instanceof Map<?, ?> price) p = price.get("id");
+            return p == null ? null : String.valueOf(p);
+        }
+        return null;
+    }
+
+    private Map<?, ?> leerReal(String base, String id) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalStateException("ONVO: id requerido para consultar " + base);
+        }
+        if (sinLlave() || isBillingDeshabilitado()) {
+            log.error("[ALERTA-PAGO] ONVO billing sin llave válida; no se puede verificar {}", base);
+            throw new IllegalStateException("ONVO no está configurado. No se verificó el evento.");
+        }
+        return get(base + id);
     }
 
     /** Resultado confirmado por ONVO al pedir la cancelación al vencer. */
