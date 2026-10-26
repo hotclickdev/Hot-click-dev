@@ -46,3 +46,30 @@ Retomar los pendientes en orden; cada fix necesita su test de reproducción ante
 
 ## Evidencia
 Resumida en `docs/traspaso/evidencia/hotclick-qa/`: `reqa-3-10-log.txt`, `l210/*.txt`, `config-tel/*.txt` (números solo ficticios). Originales en el box viejo bajo `/workspace/qa/verif/` (reqa-3-10, l210, config-tel).
+
+## Correcciones al README
+
+Revisado sobre `b9f241d82` (fila de HotClick QA, sección 7 "HotClick QA" y "PARA EL BOT DE LA CUENTA NUEVA").
+
+### (a) Errores o datos viejos
+- Fila HotClick QA: agregar que #350 ya tiene **APTO de Seguridad en `e68039dc433edb0eba9f28234112f119599fc623`**; falta CI verde sobre ese head exacto, el secret `HOTCLICK_NUMEROS_PROHIBIDOS` (solo Andrés) y la línea en `ci.yml` (job backend, paso Run tests; está en el cuerpo del PR).
+- El prompt de la sección 7 es el original (OnvoBillingClientTest, spike ONVO). Hoy el rol real es QA 7 (admin y seguridad de roles) + re-QA de áreas 3 y 10.
+- README línea 75 / tabla de herramientas: "el token ya tiene scope `workflow`". En esta cuenta los pushes que tocaban `.github/workflows` fueron rechazados por falta de ese scope; verificar con `gh auth status` antes de confiarlo.
+- Falta mencionar: `393b0816f` respaldado en `backup/sinpe-telefono-config-393b0816` y reemplazado por `20127bed2` (Bugs, diseño `soporteTelefono`); `cfd4919da` vive solo en la rama local `qa/sinpe-solo-onvo-350` y **no se sube**.
+
+### (b) Lo que le falta a mi reemplazo
+- Herramientas: JDK `/workspace/tools/jdk21`, Maven `/workspace/qa1-verif/maven/bin`, gitleaks `/workspace/tools/gitleaks` (correr antes de cada push).
+- Suite completa: `unset ONVO_*; MAVEN_OPTS=-Xmx2g flock /workspace/.mvn-suite.lock mvn -B test -DforkCount=1` (una por hash). `-Dtest=...` sin lock.
+- vitest: symlink a `node_modules` de `staging-43188186`; nunca borrar ese `node_modules` ni `/workspace/tools/node22`.
+- Staging local: front `:3000`, backend `:8081`; no tocar los procesos `hotclick-staging-*`, nada de `pkill` (parar solo PIDs propios).
+- Credencial del admin QA falso: `/workspace/qa/verif/staging-admin/.cred` (chmod 600; nunca imprimir el valor).
+- Variables solo por nombre: `HOTCLICK_NUMEROS_PROHIBIDOS`, llaves `ONVO_*` (solo `onvo_test_`, en `.env`).
+- Trampa: GitHub rechaza el push entero si **cualquier** commit toca `.github/workflows` sin scope `workflow`.
+- Trampa: inodos del box compartido se llenaron una vez y Maven falló; revisar `df -i`.
+- Reglas: todo fix trae test que reproduce el bug; push sin force, sin `--no-verify`, sin rebase (`pull --no-rebase`); merge solo con CI verde + APTO sobre el hash exacto.
+- Pendientes: los dos BAJO de #350 (renombrar `sinpeManual` → `sinpeOnvoIntent` y exigir `sinpeDestino` no vacío) quedan para después del lanzamiento; MEDIOS abiertos de áreas 3/10: M-04, M-08, INF-04/05/06; no probado: empresa ACTIVO con visibilidad false.
+
+### (c) Mejoras
+- Actualizar el prompt de HotClick QA en la sección 7 con el rol QA 7, la regla de test de regresión y las rutas de herramientas.
+- En el paso 4 de la lista, marcar #350 como "APTO, espera CI + secret".
+- Agregar al README una sección común "Entorno del box" (JDK, Maven, gitleaks, lock de suite, staging) para no repetirla por bot.
