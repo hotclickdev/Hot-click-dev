@@ -32,7 +32,7 @@ public final class OnvoCobroVerificador {
     private OnvoCobroVerificador() {}
 
     /**
-     * Sesión pagada y completa, intent en succeeded, mismo modo que la llave, y monto y moneda iguales
+     * Sesión pagada (open o complete, nunca expired), intent en succeeded, mismo modo que la llave, y monto y moneda iguales
      * al pago local. {@code modoEsperado} es «live» o «test» según la llave (ver OnvoService#modoEsperado).
      */
     public static Decision decidir(Pago pago, Map<?, ?> sesion, Map<?, ?> intent, String modoEsperado) {
@@ -52,14 +52,22 @@ public final class OnvoCobroVerificador {
         return coincide(pago, intent) ? Decision.ACEPTAR : Decision.RECHAZAR_MONTO;
     }
 
-    /** paymentStatus=paid; si ONVO manda status, tiene que ser complete (no open ni expired). */
+    /**
+     * Caso 3 QA: paymentStatus=paid y la sesión no vencida. ONVO documenta {@code status} como estado de la
+     * SESIÓN (open/complete/expired) y {@code paymentStatus} como el del PAGO; no garantiza que la sesión pase
+     * a complete al pagarse (QA vio paid+open con el intent succeeded). La prueba fuerte es el intent
+     * succeeded, que {@link #decidir} exige aparte. Fail-closed: status ausente o desconocido no vale.
+     */
     static boolean sesionPagada(Map<?, ?> sesion) {
         if (!"paid".equalsIgnoreCase(texto(sesion, "paymentStatus"))) {
             return false;
         }
         String status = texto(sesion, "status");
-        return status == null || "complete".equalsIgnoreCase(status);
+        return status != null && SESION_VIGENTE_O_COMPLETA.contains(status.toLowerCase(java.util.Locale.ROOT));
     }
+
+    /** Estados de sesión aceptables con paymentStatus=paid: todo menos expired (y menos valores desconocidos). */
+    static final Set<String> SESION_VIGENTE_O_COMPLETA = Set.of("open", "complete");
 
     /**
      * C9 fail-closed: sin modo esperado no se acepta, y ONVO tiene que informar el modo (live/test)
