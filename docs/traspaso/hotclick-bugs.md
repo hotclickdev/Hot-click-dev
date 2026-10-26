@@ -65,7 +65,7 @@ Triage de bugs y deuda técnica en `hotclickdev/Hot-click-dev`: reproducir, arre
 - La descripción del bot dice "nunca push sin OK en cada caso". Andrés dio un OK permanente: push sin force, sin --no-verify y sin rebase, más PR, una vez que Seguridad da APTO sobre el hash exacto. Como máximo 3 PRs abiertos y un test de regresión por fix. CI/CD mergea con --match-head-commit y CI verde. Sin deploy.
 
 **(b) Lo que le falta a mi reemplazo**
-- Locales sin push: fix/cliente-2fa-toggle (QA4-010) y fix/chatbot-devolver-pedido (QA4-008), en curso. Cada uno necesita APTO y PR.
+- QA4-010 (el interruptor de 2FA del cliente no se puede activar) y QA4-008 (el chatbot toma 'devolver pedido' como búsqueda): no iniciados, sin rama. Quedan para el bot de la cuenta nueva. Cada uno lleva su test de regresión; la evidencia está en qa4/evidencia/A2-03-*.
 - Herramientas en la box: Maven `/workspace/tools/apache-maven-3.9.9`, JDK `/workspace/tools/jdk21`, Node22 `/workspace/tools/node22` y `COREPACK_HOME=/workspace/tools/corepack`. gitleaks está en `/workspace/tools/gitleaks`, fuera del PATH. Los tests dirigidos se corren con `/workspace/mvn-suite.sh -o -Dtest=...`.
 - Gates locales: `BASE_SHA=$(git merge-base origin/master HEAD) HEAD_SHA=$(git rev-parse HEAD) node scripts/eng-gates/gate-scale.mjs`. Lo mismo para gate-tenant-global.mjs y seguridad-merge.mjs; este último exige una fila en docs/security/amenazas-activas.md si se toca auth.
 - Trampas:
