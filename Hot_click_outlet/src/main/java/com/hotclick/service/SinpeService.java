@@ -32,6 +32,14 @@ public class SinpeService {
     }
 
     @Transactional
+    public void subirComprobanteInvitado(String numeroPedido, String tokenInvitado, MultipartFile archivo,
+                                 String nombreRemitente, String cedulaRemitente,
+                                 String telefonoRemitente, String correoUsuario) {
+        comprobanteService.subirComprobanteInvitado(numeroPedido, tokenInvitado, archivo, nombreRemitente,
+            cedulaRemitente, telefonoRemitente, correoUsuario);
+    }
+
+    @Transactional
     public void subirComprobante(String numeroPedido, MultipartFile archivo,
                                  String nombreRemitente, String cedulaRemitente,
                                  String telefonoRemitente, String correoUsuario) {

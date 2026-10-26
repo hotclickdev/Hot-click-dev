@@ -60,7 +60,7 @@ class SinpePaymentAdminServiceTest {
     @Test
     void vendedorDeOtraEmpresa_noConfirmaNiRechaza() {
         Pago pago = pagoSinpe(5L, 9L, "comprador@test.com");
-        when(pagoRepository.findById(10L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(pago));
         actor("otra@test.com", 4L, 8L, false);
 
         assertThrows(SecurityException.class, () -> service.confirmarSinpe(10L, null, null));
@@ -74,7 +74,7 @@ class SinpePaymentAdminServiceTest {
     @Test
     void compradorQueTambienEsVendedor_noApruebaSuCompra() {
         Pago pago = pagoSinpe(5L, 3L, "tienda@test.com");
-        when(pagoRepository.findById(10L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(pago));
         SecurityContextHolder.getContext().setAuthentication(
             new UsernamePasswordAuthenticationToken("tienda@test.com", "n/a"));
         when(companyScope.getCurrentUserId()).thenReturn(3L);
@@ -88,7 +88,7 @@ class SinpePaymentAdminServiceTest {
 
     @Test
     void vendedor_pagoInexistente_noEs404() {
-        when(pagoRepository.findById(99L)).thenReturn(Optional.empty());
+        when(pagoRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
         when(companyScope.isAdminIT()).thenReturn(false);
 
         assertThrows(SecurityException.class, () -> service.confirmarSinpe(99L, null, null));
@@ -97,7 +97,7 @@ class SinpePaymentAdminServiceTest {
 
     @Test
     void admin_pagoInexistente_sigueSiendo404() {
-        when(pagoRepository.findById(99L)).thenReturn(Optional.empty());
+        when(pagoRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
         when(companyScope.isAdminIT()).thenReturn(true);
 
         assertThrows(RecursoNoEncontradoException.class, () -> service.rechazarSinpe(99L, "x"));
@@ -106,7 +106,7 @@ class SinpePaymentAdminServiceTest {
     @Test
     void duenoDeLaTienda_confirmaCompraAjena() {
         Pago pago = pagoSinpe(5L, 9L, "comprador@test.com");
-        when(pagoRepository.findById(10L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(pago));
         when(paymentStatusAssembler.build(pago)).thenReturn(new PaymentStatusResponse());
         actor("tienda@test.com", 3L, 5L, false);
 

@@ -114,10 +114,11 @@ public class SinpeController {
             @RequestParam("imagen")           MultipartFile imagen,
             @RequestParam("nombreRemitente")  String nombreRemitente,
             @RequestParam("correoUsuario")    String correoUsuario,
+            @RequestParam(value = "tokenInvitado",     required = false) String tokenInvitado,
             @RequestParam(value = "cedulaRemitente",   required = false) String cedulaRemitente,
             @RequestParam(value = "telefonoRemitente", required = false) String telefonoRemitente) {
         try {
-            sinpeService.subirComprobante(numeroPedido, imagen, nombreRemitente,
+            sinpeService.subirComprobanteInvitado(numeroPedido, tokenInvitado, imagen, nombreRemitente,
                                           cedulaRemitente, telefonoRemitente, correoUsuario);
             return ResponseEntity.ok(ResponseDTO.success("Comprobante recibido. En revisión.", null));
         } catch (SecurityException e) {

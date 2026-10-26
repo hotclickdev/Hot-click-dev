@@ -60,7 +60,8 @@ public class SinpePaymentAdminService {
     }
 
     private Pago pagoResoluble(Long pagoId) {
-        Pago pago = pagoRepository.findById(pagoId).orElse(null);
+        // P-02: FOR UPDATE; confirmar/rechazar (y el flujo por comprobante) se serializan sobre el pago
+        Pago pago = pagoId == null ? null : pagoRepository.findByIdForUpdate(pagoId).orElse(null);
         aprobacionGuard.assertPuedeResolverPago(pago);
         return pago;
     }
