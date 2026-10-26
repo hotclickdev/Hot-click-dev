@@ -87,6 +87,11 @@ public class AggregatorService {
             log.info("[aggregator] Pedido {} cobrado en efectivo/contra entrega: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
             return;
         }
+        if (pedido.isEsPrueba()) {
+            // P-04: cobrado con llave ONVO de prueba; no es plata real y no entra al wallet.
+            log.warn("[aggregator] Pedido {} es_prueba: no se acredita wallet", pedido.getId());
+            return;
+        }
         if (bruto <= 0) {
             log.warn("[aggregator] Pedido {} total ≤ 0 — no se acredita wallet", pedido.getId());
             return;
@@ -126,6 +131,11 @@ public class AggregatorService {
         }
         if (sinAcreditacionPorEfectivo(pedido)) {
             log.info("[aggregator] Pedido {} cobrado en efectivo/contra entrega: el negocio ya tiene el dinero, no entra al wallet", pedido.getId());
+            return;
+        }
+        if (pedido.isEsPrueba()) {
+            // P-04: cobrado con llave ONVO de prueba; no es plata real y no entra al wallet.
+            log.warn("[aggregator] Pedido {} es_prueba: no se acredita wallet", pedido.getId());
             return;
         }
         if (bruto <= 0) {

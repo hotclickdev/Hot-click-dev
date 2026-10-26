@@ -93,6 +93,7 @@ public class Pedido extends BaseEntity {
     private Boolean facturaGenerada = false;
 
     /** P-04: cobrado con llave ONVO de prueba (mode=test); no es plata real. */
+    @com.fasterxml.jackson.annotation.JsonProperty(value = "esPrueba", access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     @Column(name = "es_prueba", nullable = false)
     private boolean esPrueba = false;
 
