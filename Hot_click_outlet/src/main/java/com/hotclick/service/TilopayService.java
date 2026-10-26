@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -285,24 +284,7 @@ public class TilopayService {
     }
 
     private boolean perfilDeSimulacion() {
-        return environment != null
-            && environment.acceptsProfiles(Profiles.of("(dev | test) & !prod & !production"))
-            && !esProduccion();
-    }
-
-    /** Rechaza prod/production sin importar mayúsculas (p. ej. "dev,PROD"). */
-    private boolean esProduccion() {
-        String[] activos = environment.getActiveProfiles();
-        if (activos == null) {
-            return false;
-        }
-        for (String p : activos) {
-            String n = p == null ? "" : p.trim().toLowerCase(java.util.Locale.ROOT);
-            if (n.equals("prod") || n.equals("production")) {
-                return true;
-            }
-        }
-        return false;
+        return com.hotclick.config.PerfilSimulacion.permitido(environment);
     }
 
     private static boolean blank(String s) {
