@@ -121,6 +121,14 @@ public class StripePaymentProvider implements PaymentProvider {
             return;
         }
 
+        if (!Constants.PROVEEDOR_STRIPE.equalsIgnoreCase(pago.getProveedor())) {
+            // P-01: un evento Stripe nunca captura un pago de otro proveedor (p. ej. SINPE por ONVO).
+            log.error("[ALERTA-PAGO] Evento Stripe para pago de proveedor {}; ignorado", pago.getProveedor());
+            evento.setErrorProcesamiento("Proveedor distinto de STRIPE");
+            webhookEventRepository.save(evento);
+            return;
+        }
+
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             log.info("[stripe] Checkout ya confirmado: sessionId={}", sessionId);
             evento.setProcesado(true);

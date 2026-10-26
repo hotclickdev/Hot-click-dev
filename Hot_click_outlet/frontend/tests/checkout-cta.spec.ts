@@ -60,15 +60,15 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await expect(page.getByRole('alert').first()).toBeVisible()
   })
 
-  test('pago real primero: SINPE, tarjeta y efectivo; sin pago exprés falso', async ({ page }) => {
+  test('pago real primero: SINPE y tarjeta por la pasarela; sin pago exprés falso', async ({ page }) => {
     await mockApis(page)
     await seedPedido(page)
     await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
     await llegarAlPago(page)
 
     await expect(page.getByText('SINPE Móvil').first()).toBeVisible()
-    await expect(page.getByText('Tarjeta de crédito o débito')).toBeVisible()
-    await expect(page.getByText('Efectivo', { exact: true })).toBeVisible()
+    // P-01: SINPE y tarjeta van por la pasarela (ONVO); el efectivo depende de la config del negocio.
+    await expect(page.getByRole('radio', { name: /^Tarjeta/ })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Pago exprés' })).toHaveCount(0)
     await expect(page.getByText('Apple Pay')).toHaveCount(0)
     await expect(page.getByText('Google Pay')).toHaveCount(0)
@@ -110,6 +110,11 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
   test('si el pago falla, reintentar es el CTA; WhatsApp es atajo', async ({ page }) => {
     await page.route('**/api/**', async (route) => {
       const url = route.request().url()
+      if (url.includes('/public/checkout-config')) {
+        // Tarjeta por ONVO habilitada para que el reintento se pruebe sobre la pasarela.
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tarjetaOnvo: true }) })
+        return
+      }
       if (url.includes('/payments/guest-checkout')) {
         await route.fulfill({
           status: 400,
@@ -128,7 +133,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
     await llegarAlPago(page)
 
-    await page.getByText('Tarjeta de crédito o débito').click()
+    await page.getByRole('radio', { name: /^Tarjeta/ }).click()
     await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: /^Pagar ₡/ }).click()
 
@@ -155,18 +160,23 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await expect(page).toHaveURL(/\/productos/)
   })
 
-  test('SINPE: se registra el pedido y el comprobante elegido se envía solo', async ({ page }) => {
+  test('SINPE por ONVO: se registra el pedido sin subir comprobante (confirmación manual retirada)', async ({ page }) => {
     const llamadas: string[] = []
     const capturado: { cuerpo: Record<string, unknown> | null } = { cuerpo: null }
     await page.route('**/api/**', async (route) => {
       const url = route.request().url()
       llamadas.push(`${route.request().method()} ${new URL(url).pathname}`)
+      if (url.includes('/public/checkout-config')) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sinpeManual: true, sinpeDestino: '8888-0000' }) })
+        return
+      }
+      // P-01: /sinpe/guest-checkout crea el intent ONVO; el destino y el monto salen del servidor.
       if (url.includes('/sinpe/guest-checkout')) {
         capturado.cuerpo = route.request().postDataJSON() as Record<string, unknown>
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: { proveedor: 'SINPE', numeroPedido: 'ORD-TEST-1', total: 5000, redirectUrl: null } }),
+          body: JSON.stringify({ success: true, data: { proveedor: 'SINPE', numeroPedido: 'ORD-TEST-1', total: 5000, sinpeDestino: '8888-0000', redirectUrl: null } }),
         })
         return
       }
@@ -176,18 +186,13 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
     await llegarAlPago(page)
 
-    await page.locator('input[type=file]').first().setInputFiles({
-      name: 'comprobante.png',
-      mimeType: 'image/png',
-      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
-    })
-    await page.getByLabel('Número de cédula').fill('101110111')
+    await expect(page.locator('input[type=file]')).toHaveCount(0)
     await page.getByRole('checkbox').check()
     await page.getByRole('button', { name: /^Pagar ₡/ }).click()
 
-    await expect(page.getByRole('heading', { name: 'Tu pago está siendo revisado' })).toBeVisible()
-    await expect(page.getByText('ORD-TEST-1')).toBeVisible()
-    expect(llamadas.some((l) => l.includes('/sinpe/guest/ORD-TEST-1/comprobante'))).toBe(true)
+    await expect.poll(() => capturado.cuerpo).not.toBeNull()
+    expect(llamadas.some((l) => l.includes('/comprobante'))).toBe(false)
+    await expect(page.getByText('8888-0000').first()).toBeVisible()
     // B17: la dirección viaja aparte para que el pedido la guarde y el correo diga «Enviamos a …».
     expect(String(capturado.cuerpo?.direccionEntrega)).toContain('Barrio Escalante, casa 12')
     expect(String(capturado.cuerpo?.direccionEntrega)).toContain('Escazú')

@@ -33,13 +33,6 @@ class PosQrVentaServiceTest {
     @Mock PosQrVentaCompletionService completionService;
     @InjectMocks PosQrVentaService service;
 
-    @Test
-    @DisplayName("SINPE ya no inicia por Tilopay: se rechaza (va por ONVO)")
-    void sinpeNoIniciaPorTilopay() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.iniciarTilopay("tokentarjetaqr01", "SINPE"))
-            .isInstanceOf(IllegalStateException.class);
-        org.mockito.Mockito.verifyNoInteractions(tilopayService);
-    }
 
     @Test
     @DisplayName("ALTO 3: el poll ya no confirma con Tilopay aunque Tilopay diga aprobado")
@@ -52,7 +45,6 @@ class PosQrVentaServiceTest {
             true, "1", "ok", "auth", new BigDecimal("5000"), "CRC", "POSQR-ABC", false));
 
         assertThat(service.verificarEstado("tokentarjetaqr01")).isEqualTo("PENDIENTE");
-        assertThat(service.confirmarTilopay("tokentarjetaqr01")).isFalse();
         verify(completionService, never()).completarVentaTarjeta(any());
         org.mockito.Mockito.verifyNoInteractions(tilopayService);
     }

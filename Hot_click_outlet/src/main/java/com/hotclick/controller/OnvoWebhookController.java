@@ -42,6 +42,11 @@ public class OnvoWebhookController {
     private final OnvoBillingWebhookHandler billingWebhookHandler;
     private final ObjectMapper objectMapper;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.sinpe.SinpeOnvoMarketplaceService sinpeMarketplace;
+
+    void setSinpeMarketplaceParaTest(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService s) { this.sinpeMarketplace = s; }
+
     /** Tope de cuerpo y de intentos con secret inválido por minuto (un secret válido nunca se limita). */
     static final int MAX_BODY_BYTES = 64 * 1024;
     static final int MAX_SECRET_INVALIDO_POR_MINUTO = 30;
@@ -109,8 +114,16 @@ public class OnvoWebhookController {
                         log.error("[onvo-webhook] payment-intent.succeeded sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
+                    // P-01: SINPE del marketplace, resuelto por el ONVOPI:<id> guardado en el pago.
+                    if (sinpeMarketplace != null) {
+                        var r = sinpeMarketplace.confirmarPorWebhook(type, intentId);
+                        ResponseEntity<Map<String, String>> resp = respuestaSinpe(r, type);
+                        if (resp != null) return resp;
+                    }
                     // SINPE del POS por ONVO: se relee el intent por GET (monto/moneda exactos) y recién ahí se cierra la venta.
-                    boolean pos = posQrVentaService != null && posQrVentaService.confirmarSinpeOnvoPorWebhook(intentId, eventId);
+                    // ONVO no manda id de evento: dedupe por tipo + data.id.
+                    boolean pos = posQrVentaService != null
+                        && posQrVentaService.confirmarSinpeOnvoPorWebhook(intentId, claveEvento(type, intentId));
                     log.info("[onvo-webhook] payment-intent.succeeded {} posCerrado={}", intentId, pos);
                 }
                 case "payment-intent.deferred" ->
@@ -122,8 +135,14 @@ public class OnvoWebhookController {
                         log.error("[onvo-webhook] payment-intent.failed sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
                     }
-                    // Solo se registra: el comprador puede reintentar en la misma sesión de checkout.
-                    onvoPaymentProvider.registrarIntentFallido(intentId, "webhook");
+                    if (sinpeMarketplace != null && sinpeMarketplace.esDelMarketplace(intentId)) {
+                        // P-01: failed no revierte (puede llegar después de succeeded) ni libera stock: lo hace el
+                        // barrido del plazo interno solo con canceled confirmado por GET.
+                        log.info("[onvo-webhook] payment-intent.failed {} de SINPE marketplace: sin cambios", intentId);
+                    } else {
+                        // Solo se registra: el comprador puede reintentar en la misma sesión de checkout.
+                        onvoPaymentProvider.registrarIntentFallido(intentId, "webhook");
+                    }
                 }
                 default -> log.debug("[onvo-webhook] Evento ignorado: {}", type);
             }
@@ -133,6 +152,24 @@ public class OnvoWebhookController {
         }
 
         return ResponseEntity.ok(Map.of("status", "ok", "type", type));
+    }
+
+    /** Clave de dedupe (ONVO no manda id de evento): tipo + data.id. */
+    static String claveEvento(String type, String dataId) {
+        return type + ":" + dataId;
+    }
+
+    /** null = no es del marketplace (sigue el POS). */
+    static ResponseEntity<Map<String, String>> respuestaSinpe(
+            com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.Resultado r, String type) {
+        return switch (r) {
+            case NO_ENCONTRADO -> null;
+            case CONFIRMADO -> ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "sinpe"));
+            case DUPLICADO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
+            case COBRADO_SOBRE_CANCELADO -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
+            case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));
+            case EN_ESPERA, NO_VERIFICADO -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
+        };
     }
 
     /** null = seguir con la respuesta 200 normal. */

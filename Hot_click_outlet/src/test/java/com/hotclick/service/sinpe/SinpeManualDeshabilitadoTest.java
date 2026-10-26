@@ -8,9 +8,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class SinpeManualDeshabilitadoTest {
 
     @Test
-    void sinpeManualRechazadoPorDefecto() {
-        assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido("SINPE", false))
-            .isInstanceOf(IllegalStateException.class).hasMessage(SinpeCheckoutService.MSG_SINPE_MANUAL);
+    void sinpeVaPorOnvoSinBanderaManual() {
+        // P-01: SINPE ya no es manual; lo habilita ONVO (destino + plazo interno), no la bandera sinpe-manual.
+        assertThatCode(() -> SinpeCheckoutService.exigirProveedorPermitido("SINPE", false)).doesNotThrowAnyException();
         assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido(null, false))
             .isInstanceOf(IllegalStateException.class);
     }
