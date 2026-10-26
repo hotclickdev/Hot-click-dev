@@ -66,6 +66,12 @@ class SinpeCheckoutServiceEmpresaTest {
 
     @BeforeEach
     void setUp() {
+
+        // P-05: la reserva usa el batch lock ordenado; delega en los stubs por id de cada test.
+        org.mockito.Mockito.lenient().when(productoRepository.findAllByIdsForUpdate(org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
+                .map(id -> productoRepository.findByIdForUpdate(id))
+                .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
         org.mockito.Mockito.when(sinpeOnvo.destinoDisponible()).thenReturn("DESTINO_ONVO_PRUEBA");
         org.mockito.Mockito.lenient().when(sinpeOnvo.iniciar(any(), any(), any(), any())).thenReturn(java.time.LocalDateTime.now().plusMinutes(15));
         empresa = new Empresa();

@@ -60,6 +60,14 @@ class ShoppingAssistantSessionHelper {
         return nuevo;
     }
 
+    /** Empresa dueña de la sesión, o null si no existe. */
+    Long empresaDeSesion(UUID sesionId) {
+        List<Long> r = jdbc.queryForList(
+            "SELECT fk_id_empresa FROM hot_click_chat_sesion_tb WHERE id_sesion = ?::uuid",
+            Long.class, sesionId.toString());
+        return r.isEmpty() ? null : r.get(0);
+    }
+
     /**
      * Carga los últimos {@value #HISTORY_MESSAGES} mensajes de la sesión en orden
      * cronológico ascendente, en el formato que espera la API de Anthropic Claude
