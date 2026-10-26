@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Map;
 
 @RestController
@@ -16,6 +18,9 @@ import java.util.Map;
 public class WebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
+
+    /** H-02: el secret viaja en header (no en query string, que queda en logs de proxy/ALB). */
+    public static final String HEADER_SECRET = "X-Webhook-Secret";
 
     private final TelegramService telegramService;
     private final SentryWebhookService sentryWebhookService;
@@ -35,13 +40,13 @@ public class WebhookController {
 
     @PostMapping("/uptime")
     public ResponseEntity<Map<String, String>> recibirWebhookUptime(
-            @RequestParam(required = false) String secret,
+            @RequestHeader(value = HEADER_SECRET, required = false) String secret,
             @RequestParam(required = false) String monitorFriendlyName,
             @RequestParam(required = false) String monitorURL,
             @RequestParam(required = false) String alertType,
             @RequestParam(required = false) String alertDetails) {
 
-        if (uptimeWebhookSecret.isBlank() || !uptimeWebhookSecret.equals(secret)) {
+        if (!secretValido(uptimeWebhookSecret, secret)) {
             log.warn("Webhook UptimeRobot: secret invalido o no configurado");
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
         }
@@ -67,15 +72,23 @@ public class WebhookController {
 
     @PostMapping("/sentry")
     public ResponseEntity<Map<String, String>> recibirWebhookSentry(
-            @RequestParam(required = false) String secret,
+            @RequestHeader(value = HEADER_SECRET, required = false) String secret,
             @RequestBody(required = false) Map<String, Object> body) {
 
-        if (sentryWebhookSecret.isBlank() || !sentryWebhookSecret.equals(secret)) {
+        if (!secretValido(sentryWebhookSecret, secret)) {
             log.warn("Webhook Sentry: secret invalido o no configurado");
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
         }
 
         sentryWebhookService.procesar(body);
         return ResponseEntity.ok(Map.of("status", "ok"));
+    }
+
+    /** Comparación en tiempo constante; secret no configurado = siempre rechaza (fail-closed). */
+    static boolean secretValido(String esperado, String recibido) {
+        if (esperado == null || esperado.isBlank() || recibido == null) return false;
+        return MessageDigest.isEqual(
+                esperado.getBytes(StandardCharsets.UTF_8),
+                recibido.getBytes(StandardCharsets.UTF_8));
     }
 }
