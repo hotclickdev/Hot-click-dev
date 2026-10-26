@@ -1,1 +1,0 @@
-import{t as e}from"./api-Cs3yGwA5.js";var t={aplicar:(t,n,r)=>e.patch(`/productos/${t}/oferta`,{enOferta:n,porcentajeDescuento:r}),misPendientes:()=>e.get(`/mis-solicitudes/ofertas`)};export{t};

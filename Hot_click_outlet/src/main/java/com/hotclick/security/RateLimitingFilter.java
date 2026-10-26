@@ -37,6 +37,7 @@ import java.util.Map;
  *   /api/auth/registro-empresa   →  5 / 60s
  *   /api/auth/register           →  5 / 3600s
  *   /api/auth/send-verification  →  5 / 60s
+ *   /api/auth/reenviar-verificacion → 3 / 300s
  *   /api/auth/refresh            → 30 / 60s
  *   /api/auth/change-password    →  5 / 300s
  *
@@ -106,6 +107,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/register",           new Limit(5,  3600)),
         Map.entry("/api/auth/send-verification",  new Limit(5,    60)),
         Map.entry("/api/auth/reenviar-codigo-negocio", new Limit(3, 300)),
+        // QA4-004: reenvío público de verificación desde /login (además tope por correo en el servicio)
+        Map.entry("/api/auth/reenviar-verificacion", new Limit(3, 300)),
         Map.entry("/api/auth/refresh",            new Limit(30,   60)),
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
         // General
