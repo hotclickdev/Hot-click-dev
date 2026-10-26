@@ -56,3 +56,27 @@ Triage de bugs y deuda técnica en `hotclickdev/Hot-click-dev`: reproducir, arre
 
 ## Evidencia
 `docs/traspaso/evidencia/hotclick-bugs/`: cuerpos de PR (`*-pr-body.md`) y reportes QA de roles (`qa1-reporte-roles-2026-10-26.md`, `qa2-roles-pyme-master.md`). Solo correos de prueba `@example.com`, sin contraseñas ni teléfonos reales.
+
+## Correcciones al README
+
+**(a) Errores o datos viejos**
+- Paso 4 y fila de HotClick Bugs: #348 ya está MERGEADO (d8f239be). También #338 (c710d9b3) y #347 (3f7e8f05). Sacalos de "PRs abiertos"; hoy HotClick Bugs no tiene PRs abiertos.
+- Fila de HotClick Bugs: el bug de correoVerificado=true en EquipoService.crearNuevo (LECTOR 1067) no tiene severidad ALTA asignada; su PR va aparte. Lo mismo EDITOR en /api/admin/finanzas y el dashboard.
+- La descripción del bot dice "nunca push sin OK en cada caso". Andrés dio un OK permanente: push sin force, sin --no-verify y sin rebase, más PR, una vez que Seguridad da APTO sobre el hash exacto. Como máximo 3 PRs abiertos y un test de regresión por fix. CI/CD mergea con --match-head-commit y CI verde. Sin deploy.
+
+**(b) Lo que le falta a mi reemplazo**
+- Locales sin push: fix/cliente-2fa-toggle (QA4-010) y fix/chatbot-devolver-pedido (QA4-008), en curso. Cada uno necesita APTO y PR.
+- Herramientas en la box: Maven `/workspace/tools/apache-maven-3.9.9`, JDK `/workspace/tools/jdk21`, Node22 `/workspace/tools/node22` y `COREPACK_HOME=/workspace/tools/corepack`. gitleaks está en `/workspace/tools/gitleaks`, fuera del PATH. Los tests dirigidos se corren con `/workspace/mvn-suite.sh -o -Dtest=...`.
+- Gates locales: `BASE_SHA=$(git merge-base origin/master HEAD) HEAD_SHA=$(git rev-parse HEAD) node scripts/eng-gates/gate-scale.mjs`. Lo mismo para gate-tenant-global.mjs y seguridad-merge.mjs; este último exige una fila en docs/security/amenazas-activas.md si se toca auth.
+- Trampas:
+  - SCALE1 marca llamadas a BD dentro de un hunk con un loop (-U20). Se arregla reestructurando, no con la label.
+  - E4 marca constantes llamadas `secret` con un literal de 12 caracteres o más.
+  - Si hay conflictos en static/, se toma el de master y se regenera con `pnpm build` y `VITE_APP_RELEASE=ci-spa-gate`.
+  - Hay tests de roles viejos (RolesLector*) que esperan accesos que los fixes cierran.
+  - `gh pr create` puede colgarse; para revisar, usar `gh pr list --head`.
+  - Mi rango de Flyway: V199 la usé yo. V196 a V198 son de Dev Pagos 2.
+- Variables, solo por nombre: no usé ninguna propia. El token de gh es el del clon.
+
+**(c) Mejoras**
+- En el paso 0, agregar que el reemplazo lea los BAJO pendientes de hotclick-bugs.md antes de abrir PRs nuevos.
+- Pasar gitleaks al PATH de la box o documentar su ruta en la tabla de herramientas.
