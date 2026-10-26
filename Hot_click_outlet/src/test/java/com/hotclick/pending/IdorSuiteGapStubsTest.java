@@ -92,20 +92,4 @@ class IdorSuiteGapStubsTest {
         // Controller: Hot_click_outlet/src/main/java/com/hotclick/controller/CotizacionController.java
         org.junit.jupiter.api.Assumptions.assumeTrue(false, "S4 stub — no ejecutar");
     }
-
-    @Test
-    @DisplayName("PENDING PUT /api/cotizaciones/clientes/{id}")
-    void pending_10_PUT_api_cotizaciones_clientes_id() {
-        // Implementar: tenant A no lee/escribe recurso de tenant B → 403
-        // Controller: Hot_click_outlet/src/main/java/com/hotclick/controller/CotizacionClienteController.java
-        org.junit.jupiter.api.Assumptions.assumeTrue(false, "S4 stub — no ejecutar");
-    }
-
-    @Test
-    @DisplayName("PENDING DELETE /api/cotizaciones/clientes/{id}")
-    void pending_11_DELETE_api_cotizaciones_clientes_id() {
-        // Implementar: tenant A no lee/escribe recurso de tenant B → 403
-        // Controller: Hot_click_outlet/src/main/java/com/hotclick/controller/CotizacionClienteController.java
-        org.junit.jupiter.api.Assumptions.assumeTrue(false, "S4 stub — no ejecutar");
-    }
 }
