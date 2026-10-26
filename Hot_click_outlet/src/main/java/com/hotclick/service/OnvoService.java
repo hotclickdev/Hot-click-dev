@@ -80,6 +80,7 @@ public class OnvoService {
         }
         if (esLlaveDePrueba() && !simulacion && permitirLlaveTest) {
             log.warn("[ALERTA-PAGO] ONVO en MODO PRUEBA en perfil no-dev por opt-in (payments.onvo.permitir-llave-test). No se cobra plata real.");
+            avisarSiFaltaSinpeDestino();
             return;
         }
         if (esLlaveDePrueba() && !simulacion) {
@@ -88,7 +89,15 @@ public class OnvoService {
             log.error("[ALERTA-PAGO] ONVO con llave de prueba fuera de dev/test. Pagos con tarjeta deshabilitados.");
             return;
         }
+        avisarSiFaltaSinpeDestino();
         log.info("[onvo] Cliente inicializado (live={})", !esLlaveDePrueba());
+    }
+
+    /** P-04: sin ONVO_SINPE_DESTINO válido, SINPE queda desactivado (sinpeDestino()==""), nunca otro número. */
+    boolean avisarSiFaltaSinpeDestino() {
+        if (!sinpeDestino().isEmpty()) return false;
+        log.error("[ALERTA-PAGO] ONVO_SINPE_DESTINO falta o no es un teléfono válido: SINPE Móvil desactivado.");
+        return true;
     }
 
     private boolean esLlaveDePrueba() {
