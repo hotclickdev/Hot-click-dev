@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test, expect, type Page, type Route } from '@playwright/test'
 import { cuerpoMarca, validarMarca } from '../src/pages/admin/configuracion/sistemaMarcaHelpers.ts'
+import { VENDEDOR_WA_FAKE } from './helpers/soporteFake'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -87,14 +88,14 @@ test.describe('Sistema — marca de la tienda', () => {
     await expect(page.getByText('Tu tienda de electrónica y tecnología en Costa Rica')).toHaveCount(0)
 
     await nombre.fill('Café de Ana y Juan')
-    await page.getByLabel('WhatsApp').fill('50686667888')
+    await page.getByLabel('WhatsApp').fill(VENDEDOR_WA_FAKE)
     await page.getByLabel('Color de acento hex').fill('#0EA5E9')
     await page.getByRole('button', { name: 'Guardar marca' }).click()
 
     await expect(page.getByText('Así te ven en tu tienda')).toBeVisible()
     expect(puts).toHaveLength(1)
     expect(puts[0].nombreComercial).toBe('Café de Ana y Juan')
-    expect(puts[0].numeroWhatsapp).toBe('50686667888')
+    expect(puts[0].numeroWhatsapp).toBe(VENDEDOR_WA_FAKE)
     expect(puts[0].tagline).toBe('Tostado en Pérez Zeledón')
     expect(puts[0].colorAcento).toBe('#0EA5E9')
     expect(puts[0].descripcion).toBeUndefined()

@@ -19,10 +19,14 @@ public final class SoporteTelefono {
 
     /** URL wa.me con los dígitos del valor configurado; 8 dígitos (local CR) ⇒ antepone el código de país. */
     public static String waUrl(String telefono) {
+        String d = digitosWa(telefono);
+        return d.isEmpty() ? "" : "https://wa.me/" + d;
+    }
+
+    /** Dígitos para wa.me (8 dígitos locales ⇒ con código de país); "" si no está configurado. */
+    public static String digitosWa(String telefono) {
         String d = digitos(telefono);
-        if (d.isEmpty()) return "";
-        if (d.length() == 8) d = "506" + d;
-        return "https://wa.me/" + d;
+        return d.length() == 8 ? "506" + d : d;
     }
 
     /** Texto visible: el valor configurado, sin caracteres HTML peligrosos. */
