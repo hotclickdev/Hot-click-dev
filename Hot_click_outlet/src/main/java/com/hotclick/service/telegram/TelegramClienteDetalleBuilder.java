@@ -47,7 +47,7 @@ class TelegramClienteDetalleBuilder {
             SELECT COUNT(*) AS pedidos, COALESCE(SUM(total_pedido), 0) AS total
             FROM hot_click_pedido_tb
             WHERE fk_id_usuario_final = ? AND fk_id_empresa = ?
-              AND estado_pedido IN ('PAGADO','ENTREGADO','COMPLETADO')
+              AND estado_pedido IN ('PAGADO','ENTREGADO','COMPLETADO') AND es_prueba = false
             """, clienteId, empresaId);
     }
 
@@ -58,7 +58,7 @@ class TelegramClienteDetalleBuilder {
             JOIN hot_click_pedido_tb p   ON pi.fk_id_pedido = p.id_pedido
             JOIN hot_click_producto_tb pr ON pi.fk_id_producto = pr.id_producto
             WHERE p.fk_id_usuario_final = ? AND p.fk_id_empresa = ?
-              AND p.estado_pedido IN ('PAGADO','ENTREGADO','COMPLETADO')
+              AND p.estado_pedido IN ('PAGADO','ENTREGADO','COMPLETADO') AND p.es_prueba = false
             GROUP BY pr.nombre_producto
             ORDER BY ultima DESC
             LIMIT 10

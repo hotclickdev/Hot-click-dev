@@ -20,6 +20,8 @@ class PedidoPruebaMetricasTest extends BaseIntegrationTest {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private WalletTransaccionRepository txRepository;
+    @Autowired private CrmPedidoRepository crmPedidoRepository;
+    @Autowired private PagoRepository pagoRepository;
 
     private Empresa empresa;
     private Bodega bodega;
@@ -38,7 +40,7 @@ class PedidoPruebaMetricasTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega PMET");
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("77770001");
+        b.setTelefono("88880001");
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));
         b.setHorarioCierre(java.time.LocalTime.of(18, 0));
         b.setAdminCliente(adminUser);
@@ -51,6 +53,7 @@ class PedidoPruebaMetricasTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         bodegaRepository.deleteAll();
         empresaRepository.deleteAll();
@@ -72,6 +75,43 @@ class PedidoPruebaMetricasTest extends BaseIntegrationTest {
         assertThat(pedidoRepository.findConEmpresaEnPeriodo(desde, hasta, estados)).extracting(Pedido::getId).containsExactly(real.getId());
         assertThat(pedidoRepository.sumVentasPorEmpresa()).hasSize(1);
         assertThat(txRepository.findPedidosPrueba(List.of(real.getId(), prueba.getId()))).containsExactly(prueba.getId());
+    }
+
+    /** Ciclo 3: la consola CRM no lista ni suma pedidos de prueba. */
+    @Test
+    void crmExcluyePedidosDePrueba() {
+        Long id = empresa.getId();
+        List<String> pagados = List.of(Constants.PEDIDO_ENTREGADO);
+        assertThat(crmPedidoRepository.buscar(id, null, org.springframework.data.domain.PageRequest.of(0, 10)))
+            .extracting(Pedido::getId).containsExactly(real.getId());
+        Object[] neg = crmPedidoRepository.resumenNegocio(id, pagados).get(0);
+        assertThat(((Number) neg[0]).longValue()).isEqualTo(1);
+        assertThat(((Number) neg[1]).longValue()).isEqualTo(15000);
+        Object[] comp = crmPedidoRepository.resumenComprador(testUser.getId(), pagados).get(0);
+        assertThat(((Number) comp[0]).longValue()).isEqualTo(1);
+        assertThat(crmPedidoRepository.compradoresDistintosDeNegocio(id)).isEqualTo(1);
+    }
+
+    /** Ciclo 3 (BAJO): los conteos de pagos por empresa no incluyen cobros de prueba. */
+    @Test
+    void conteosDePagoPorEmpresaExcluyenPrueba() {
+        pago(real, "tok-pmet-real");
+        pago(prueba, "tok-pmet-prueba");
+        Long id = empresa.getId();
+        assertThat(pagoRepository.countByEstadoPagoAndEmpresa(Constants.PAGO_PENDIENTE, id)).isEqualTo(1);
+        assertThat(pagoRepository.countByProveedorAndEmpresa(Constants.PROVEEDOR_SINPE, id)).isEqualTo(1);
+    }
+
+    private void pago(Pedido pedido, String token) {
+        Pago p = new Pago();
+        p.setMerchantToken(token);
+        p.setMonto(15000);
+        p.setProveedor(Constants.PROVEEDOR_SINPE);
+        p.setEstadoPago(Constants.PAGO_PENDIENTE);
+        p.setPedido(pedido);
+        p.setUsuario(testUser);
+        p.setFechaCreacion(LocalDateTime.now());
+        pagoRepository.saveAndFlush(p);
     }
 
     /** Las consultas nativas (DATE() de Postgres) no corren en H2: se fija el filtro en la SQL. */
