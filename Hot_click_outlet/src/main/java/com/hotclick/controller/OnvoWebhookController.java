@@ -124,7 +124,7 @@ public class OnvoWebhookController {
                 default -> log.debug("[onvo-webhook] Evento ignorado: {}", type);
             }
         } catch (Exception e) {
-            log.error("[onvo-webhook] Error procesando {}: {}", type, e.getMessage(), e);
+            log.error("[onvo-webhook] Error procesando {} ({})", type, e.getClass().getSimpleName());
             return ResponseEntity.status(500).body(Map.of("error", "processing error"));
         }
 

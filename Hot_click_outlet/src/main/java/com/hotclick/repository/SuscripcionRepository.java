@@ -25,6 +25,11 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
 
+    /** SELECT ... FOR UPDATE de la suscripción ONVO local (webhook billing, fase 2). Solo dentro de una tx. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubscriptionId = :id")
+    Optional<Suscripcion> findByOnvoSubscriptionIdForUpdate(@Param("id") String onvoSubscriptionId);
+
     /** Suscripciones vigentes (no canceladas/vencidas) con plan cargado — consola billing. */
     @Query("""
         SELECT s FROM Suscripcion s

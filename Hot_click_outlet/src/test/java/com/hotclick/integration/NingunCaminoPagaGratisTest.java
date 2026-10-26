@@ -17,6 +17,11 @@ import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.AggregatorService;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.onvo.OnvoBillingClient;
+import com.hotclick.model.Plan;
+import com.hotclick.model.Suscripcion;
+import com.hotclick.repository.PlanRepository;
+import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,6 +72,9 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
 
     @MockitoBean private OnvoService onvoService;
     @MockitoBean private AggregatorService aggregatorService;
+    @MockitoBean private OnvoBillingClient onvoBilling;
+    @Autowired private SuscripcionRepository suscripcionRepository;
+    @Autowired private PlanRepository planRepository;
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private BodegaRepository bodegaRepository;
@@ -151,6 +159,9 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        jdbcTemplate.update("DELETE FROM hot_click_billing_ledger_tb");
+        suscripcionRepository.deleteAll();
+        jdbcTemplate.update("DELETE FROM hot_click_stripe_evento_tb WHERE stripe_event_id LIKE 'onvo_%'");
         webhookEventRepository.deleteAll();
         pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
@@ -313,6 +324,122 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
+
+    // ── Billing SaaS ONVO: el plan solo se activa con lo que ONVO devuelve por GET ──────────────
+
+    private Plan pyme;
+
+    private void suscripcionOnvoRegistrada() {
+        pyme = planRepository.findByNombre("PYME").orElseThrow();
+        Plan base = planRepository.findByNombre("EMPRENDEDOR").orElse(pyme);
+        Suscripcion s = new Suscripcion();
+        s.setEmpresa(empresa);
+        s.setPlan(base);
+        s.setEstado("TRIAL");
+        s.setFechaInicio(java.time.LocalDate.now(Constants.ZONA_CR));
+        s.setOnvoSubscriptionId("sub_sg");
+        s.setOnvoCustomerId("cus_sg");
+        suscripcionRepository.saveAndFlush(s);
+        when(onvoBilling.planParaPriceId("price_pyme_sg")).thenReturn("PYME");
+    }
+
+    /** Subscription/Invoice con los campos de https://docs.onvopay.com/openapi.yaml (l.3601 y l.3751). */
+    private void onvoSuscripcion(String status, String invStatus, String customer, long centimos) {
+        Map<String, Object> inv = Map.of("id", "inv_sg", "status", invStatus, "total", centimos, "currency", "CRC",
+            "subscriptionId", "sub_sg", "customerId", customer,
+            "periodStart", "2026-10-12T21:21:10.587Z", "periodEnd", "2026-11-12T21:21:10.587Z");
+        Map<String, Object> sub = Map.of("id", "sub_sg", "status", status, "customerId", customer,
+            "latestInvoice", inv, "items", java.util.List.of(Map.of("id", "it_sg", "priceId", "price_pyme_sg", "quantity", 1)),
+            "currentPeriodStart", "2026-10-12T21:21:10.587Z", "currentPeriodEnd", "2026-11-12T21:21:10.587Z");
+        when(onvoBilling.obtener(OnvoBillingClient.Recurso.SUSCRIPCION, "sub_sg")).thenReturn(java.util.Optional.of(sub));
+        // GET /v1/invoices/{id} (openapi l.7768)
+        when(onvoBilling.obtener(OnvoBillingClient.Recurso.FACTURA, "inv_sg")).thenReturn(java.util.Optional.of(inv));
+    }
+
+    private ResultActions webhookBilling(String evtId) throws Exception {
+        // Cuerpo falsificable (dice paid, trae metadata); solo aporta ids: data.id = renovación, subscriptionId.
+        String body = "{\"id\":\"" + evtId + "\",\"type\":\"subscription.renewal.succeeded\",\"data\":{\"id\":\"inv_sg\","
+            + "\"subscriptionId\":\"sub_sg\",\"status\":\"paid\",\"metadata\":{\"empresa_id\":\"" + empresa.getId()
+            + "\",\"plan_id\":\"" + pyme.getId() + "\"}}}";
+        return postOnvo(body);
+    }
+
+    private ResultActions postOnvo(String body) throws Exception {
+        return mockMvc.perform(post("/api/webhooks/onvo").header("X-Webhook-Secret", SECRET_WEBHOOK)
+            .contentType(MediaType.APPLICATION_JSON).content(body));
+    }
+
+    private String planEmpresa() {
+        Empresa e = empresaRepository.findById(empresa.getId()).orElseThrow();
+        return e.getPlanSaas();
+    }
+
+    @Test
+    @DisplayName("Billing ONVO: GET dice renovación open → 500 (ONVO reintenta) y no activa plan")
+    void billingNoPagado() throws Exception {
+        suscripcionOnvoRegistrada();
+        onvoSuscripcion("active", "open", "cus_sg", pyme.getPrecioMensual() * 100L);
+        webhookBilling("evt_sg_np").andExpect(status().isInternalServerError());
+        assertThat(planEmpresa()).isNotEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("Billing ONVO: GET falla (timeout) → 500 y no activa plan")
+    void billingGetFalla() throws Exception {
+        suscripcionOnvoRegistrada();
+        when(onvoBilling.obtener(any(), any())).thenThrow(new org.springframework.web.client.ResourceAccessException("timeout"));
+        webhookBilling("evt_sg_to").andExpect(status().isInternalServerError());
+        assertThat(planEmpresa()).isNotEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("Billing ONVO: customer ajeno o monto distinto → no activa plan")
+    void billingAjenoOMontoDistinto() throws Exception {
+        suscripcionOnvoRegistrada();
+        onvoSuscripcion("active", "paid", "cus_otro", pyme.getPrecioMensual() * 100L);
+        webhookBilling("evt_sg_cus").andExpect(status().isOk());
+        onvoSuscripcion("active", "paid", "cus_sg", 100L);
+        webhookBilling("evt_sg_monto").andExpect(status().isOk());
+        assertThat(planEmpresa()).isNotEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("Billing ONVO: cobro verificado activa PYME una sola vez (evento repetido = no-op)")
+    void billingVerificadoActivaUnaVez() throws Exception {
+        suscripcionOnvoRegistrada();
+        onvoSuscripcion("active", "paid", "cus_sg", pyme.getPrecioMensual() * 100L);
+        webhookBilling("evt_sg_ok").andExpect(status().isOk());
+        assertThat(planEmpresa()).isEqualTo("PYME");
+        webhookBilling("evt_sg_ok").andExpect(status().isOk());
+        webhookBilling("evt_sg_ok_otro").andExpect(status().isOk());
+        assertThat(jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_stripe_evento_tb WHERE stripe_event_id = 'onvo_cobro_sub_sg_inv_inv_sg' AND procesado_ok = TRUE",
+            Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Billing ONVO B1: renewal.failed/deleted falsificados no ponen en mora ni bajan el plan")
+    void billingFallidaFalsificada() throws Exception {
+        suscripcionOnvoRegistrada();
+        onvoSuscripcion("active", "paid", "cus_sg", pyme.getPrecioMensual() * 100L);
+        postOnvo("{\"id\":\"evt_sg_f\",\"type\":\"subscription.renewal.failed\",\"data\":{\"subscriptionId\":\"sub_sg\","
+            + "\"subscriptionStatus\":\"past_due\",\"invoiceStatus\":\"open\"}}").andExpect(status().isOk());
+        postOnvo("{\"id\":\"evt_sg_d\",\"type\":\"subscription.deleted\",\"data\":{\"id\":\"sub_sg\"}}")
+            .andExpect(status().isOk());
+        assertThat(jdbcTemplate.queryForObject(
+            "SELECT estado FROM hot_click_suscripcion_tb WHERE onvo_subscription_id = 'sub_sg'", String.class)).isEqualTo("TRIAL");
+    }
+
+    @Test
+    @DisplayName("Billing ONVO B1: renewal.failed con GET caído → 500 y sin cambio")
+    void billingFallidaGetFalla() throws Exception {
+        suscripcionOnvoRegistrada();
+        when(onvoBilling.obtener(any(), any())).thenThrow(new org.springframework.web.client.ResourceAccessException("timeout"));
+        postOnvo("{\"id\":\"evt_sg_f2\",\"type\":\"subscription.renewal.failed\",\"data\":{\"subscriptionId\":\"sub_sg\"}}")
+            .andExpect(status().isInternalServerError());
+        assertThat(jdbcTemplate.queryForObject(
+            "SELECT estado FROM hot_click_suscripcion_tb WHERE onvo_subscription_id = 'sub_sg'", String.class)).isEqualTo("TRIAL");
+    }
 
     private void sinCorreoDePagoConfirmado() {
         verify(notificacionEmailService, never()).enviarConfirmacionPedido(any());

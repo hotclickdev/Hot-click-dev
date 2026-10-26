@@ -115,8 +115,9 @@ public class SuscripcionService {
         return onvoChangeService.cambiarPlan(empresaId, planId);
     }
 
-    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
-        onvoChangeService.procesarPagoOnvoExitoso(empresaId, onvoSubId, planId);
+    /** R-1: activa hasta el fin del período cobrado en ONVO (Invoice.periodEnd). */
+    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId, java.time.LocalDate finPeriodo) {
+        onvoChangeService.procesarPagoOnvoExitoso(empresaId, onvoSubId, planId, finPeriodo);
     }
 
     public void procesarRenovacionOnvoFallida(String onvoSubId) {

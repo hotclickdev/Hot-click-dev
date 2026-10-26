@@ -22,7 +22,7 @@ export function tituloYCodigo(nombre: string): { titulo: string; codigo: string 
   return { titulo: match[1].trim(), codigo: match[2].trim() }
 }
 
-/** Número SINPE sin el prefijo del país (`+506 7019-6686` -> `7019-6686`), con el formato único `8888-1234`. */
+/** Número SINPE sin el prefijo del país (`+506 0000-0000` -> `0000-0000`), con el formato único `8888-1234`. */
 export function sinpeNumeroVisible(numero: string | undefined | null): string {
   return formatTelefonoCR(numero)
 }

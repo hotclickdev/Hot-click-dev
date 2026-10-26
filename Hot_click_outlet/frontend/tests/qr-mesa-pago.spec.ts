@@ -55,7 +55,7 @@ async function preparar(
         total: 10500,
         empresaNombre: 'Bruma Café',
         items: ITEMS_PAGO,
-        sinpeNumero: '+506 7019-6686',
+        sinpeNumero: '+506 0000-0000',
         sinpeRef: '3F9A2C1B',
       })
     }
@@ -136,7 +136,7 @@ test.describe('QR de pago', () => {
     await page.getByRole('button', { name: /Pagar con SINPE Móvil/ }).click()
     await expect(page.getByRole('heading', { name: 'Pagá con SINPE Móvil' })).toBeVisible()
     await expect(page.getByText('Enviá ₡10.500 a este número')).toBeVisible()
-    await expect(page.getByText('7019-6686')).toBeVisible()
+    await expect(page.getByText('0000-0000')).toBeVisible()
     await expect(page.getByText('3F9A2C1B')).toBeVisible()
     await expect(page.getByText('Esperando tu pago')).toBeVisible()
 

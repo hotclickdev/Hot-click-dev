@@ -102,4 +102,20 @@ class OnvoServiceModoTest {
         assertThat(s.obtenerCheckoutSession("../payment-intents/pi_1")).isEmpty();
         assertThat(s.obtenerPaymentIntent(null)).isEmpty();
     }
+
+    @Test
+    @DisplayName("C-1: dev/test junto a prod/production sin llave: no simula, falla cerrado")
+    void devTestConProdNoSimula() {
+        for (String[] perfiles : new String[][] { {"dev", "prod"}, {"test", "production"}, {"dev", "production"}, {"test", "prod"} }) {
+            OnvoService s = servicio("", perfiles);
+            assertThat(s.isMockMode()).as(String.join(",", perfiles)).isFalse();
+            assertThat(s.isPagosDisponibles()).isFalse();
+            assertThatThrownBy(() -> s.crearCheckoutSession(1000, "x", "ok", "ko", null, Map.of()))
+                .isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(() -> s.crearPaymentIntent(1000, "x", Map.of()))
+                .isInstanceOf(IllegalStateException.class);
+        }
+        assertThat(servicio("", "dev").isMockMode()).isTrue();
+        verifyNoInteractions(restTemplate);
+    }
 }

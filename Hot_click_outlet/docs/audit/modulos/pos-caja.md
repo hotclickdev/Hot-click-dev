@@ -150,7 +150,7 @@ Staff plataforma **no** opera POS: redirect a `/admin` (`AdminRoleSwitch.tsx:44-
 
 7. **Info pública del carrito** — `getInfoPublica` expone ítems, total, branding (`PosQrSessionService.java:99-124`).
 
-8. **SINPE destino plataforma** — default `+50670196686` / `onvo.sinpe-destino` (`PosQrSessionService.java:43-44`, `145-150`), no cuenta del comercio.
+8. **SINPE destino plataforma** — sin default (vacío) / `onvo.sinpe-destino` (`PosQrSessionService.java:43-44`, `145-150`), no cuenta del comercio.
 
 9. **Venta sin turno obligatorio** — cuadre incompleto vs ventas reales.
 

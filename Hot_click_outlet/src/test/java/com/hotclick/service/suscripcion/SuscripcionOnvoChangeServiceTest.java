@@ -134,7 +134,7 @@ class SuscripcionOnvoChangeServiceTest {
     @Test
     @DisplayName("PAG-6: perfil prod/default + secreto vacío → error 400 y plan sin cambio")
     void mockFueraDeDevTestFallaCerrado() throws Exception {
-        for (String[] perfiles : new String[][] { {}, {"prod"} }) {
+        for (String[] perfiles : new String[][] { {}, {"prod"}, {"dev", "prod"}, {"test", "production"}, {"dev", "production"}, {"test", "prod"} }) {
             var env = new org.springframework.mock.env.MockEnvironment();
             env.setActiveProfiles(perfiles);
             var envField = SuscripcionOnvoChangeService.class.getDeclaredField("environment");
@@ -176,5 +176,30 @@ class SuscripcionOnvoChangeServiceTest {
         assertThat(out.get("subscriptionId")).isEqualTo("sub_real");
         assertThat(out.get("publishableKey")).isEqualTo("pk_test");
         assertThat(empresa.getPlan().getNombre()).isEqualTo("EMPRENDEDOR");
+    }
+
+    @org.junit.jupiter.api.Test
+    void pagoOnvoSinFinPeriodoFallaCerradoSinTocarBd() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> service.procesarPagoOnvoExitoso(1L, "sub_x", 2L, null))
+            .isInstanceOf(IllegalStateException.class);
+        org.mockito.Mockito.verifyNoInteractions(suscripcionRepo, empresaRepo, planRepo);
+    }
+
+    @Test
+    @DisplayName("C-1: mockPermitido solo con dev/test estricto")
+    void mockPermitidoPerfilEstricto() throws Exception {
+        var envField = SuscripcionOnvoChangeService.class.getDeclaredField("environment");
+        envField.setAccessible(true);
+        for (String[][] caso : new String[][][] {
+                {{"dev"}, {"true"}}, {{"test"}, {"true"}},
+                {{"dev", "prod"}, {"false"}}, {{"test", "production"}, {"false"}}, {{"prod"}, {"false"}} }) {
+            var env = new org.springframework.mock.env.MockEnvironment();
+            env.setActiveProfiles(caso[0]);
+            envField.set(service, env);
+            assertThat(service.mockPermitido()).as(String.join(",", caso[0])).isEqualTo(Boolean.parseBoolean(caso[1][0]));
+        }
+        envField.set(service, null);
+        assertThat(service.mockPermitido()).isFalse();
     }
 }

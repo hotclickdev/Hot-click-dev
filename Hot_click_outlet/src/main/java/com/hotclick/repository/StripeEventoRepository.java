@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface StripeEventoRepository extends JpaRepository<StripeEvento, String> {
+public interface StripeEventoRepository extends JpaRepository<StripeEvento, String>, StripeEventoReserva {
 
     /**
      * SELECT ... FOR UPDATE — serializa reintentos concurrentes del mismo evento.
@@ -18,4 +18,5 @@ public interface StripeEventoRepository extends JpaRepository<StripeEvento, Stri
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM StripeEvento e WHERE e.stripeEventId = :id")
     Optional<StripeEvento> findByIdForUpdate(@Param("id") String id);
+
 }

@@ -48,13 +48,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @Autowired(required = false)
     private BillingLedgerWriter ledgerWriter;
 
-    /** PAG-6: el modo simulado de ONVO solo se permite con perfil dev o test. Sin entorno → cerrado. */
+    /** PAG-6: el modo simulado de ONVO solo con dev o test y NUNCA junto a prod/production. Sin entorno → cerrado. */
     @Autowired(required = false)
     private org.springframework.core.env.Environment environment;
 
     boolean mockPermitido() {
         return environment != null
-            && environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev", "test"));
+            && environment.acceptsProfiles(org.springframework.core.env.Profiles.of(com.hotclick.config.PerfilesSeguros.DEV_O_TEST_ESTRICTO));
     }
 
     public SuscripcionOnvoChangeService(SuscripcionRepository suscripcionRepo,
@@ -260,9 +260,16 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         log.info("[billing-onvo] Plan aplicado empresa={} plan={}", empresaId, planNombre);
     }
 
+    /**
+     * @param finPeriodo fin del período cobrado (Invoice.periodEnd en ONVO, fecha CR). Obligatorio: si es null
+     *                   se lanza IllegalStateException (fail-closed, no hay activación "hoy + 1 mes").
+     */
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
-    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
+    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId, LocalDate finPeriodo) {
+        if (finPeriodo == null) {
+            throw new IllegalStateException("Activación ONVO sin fin de período verificado");
+        }
         Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionId(onvoSubId)
             // tenant-global-ok: webhook de pago: null solo evita buscar por empresa (Optional.empty)
             .or(() -> empresaId != null
@@ -281,7 +288,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         sub.setPlan(plan);
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
-        LocalDate fin = LocalDate.now(Constants.ZONA_CR).plusMonths(1);
+        // R-1: el plan vence cuando termina el período que ONVO cobró, no "hoy + 1 mes".
+        LocalDate fin = finPeriodo;
         sub.setFechaFin(fin);
         suscripcionRepo.save(sub);
 

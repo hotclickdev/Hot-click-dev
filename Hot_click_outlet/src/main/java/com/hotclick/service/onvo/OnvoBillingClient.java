@@ -50,6 +50,83 @@ public class OnvoBillingClient {
         };
     }
 
+    /** Plan local para un price-id de ONVO, resuelto solo contra onvo.price-id.* del servidor. */
+    public String planParaPriceId(String priceId) {
+        if (priceId == null || priceId.isBlank()) return null;
+        if (priceId.equals(blankToNull(priceIdPyme))) return "PYME";
+        if (priceId.equals(blankToNull(priceIdNegocioPlus))) return "NEGOCIO_PLUS";
+        return null;
+    }
+
+    /**
+     * Recursos que ONVO permite leer por id (openapi https://docs.onvopay.com/openapi.yaml:
+     * GET /v1/subscriptions/{id}, GET /v1/payment-intents/{id} y GET /v1/invoices/{id} — l.7768,
+     * "Obtener una renovación", devuelve Invoice). Para el primer cobro, donde solo se conoce el payment
+     * intent, la renovación se busca con {@link #buscarFactura}.
+     */
+    public enum Recurso {
+        SUSCRIPCION("/subscriptions/"), PAYMENT_INTENT("/payment-intents/"), FACTURA("/invoices/");
+        final String ruta;
+        Recurso(String ruta) { this.ruta = ruta; }
+    }
+
+    private static final java.util.regex.Pattern ID_ONVO = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,100}");
+
+    /**
+     * Lee el objeto en ONVO. Vacío si ONVO responde 404 o el id no es válido.
+     * Sin llave (modo simulado) o ante error/timeout lanza: quien llama no debe activar nada (fail-closed).
+     */
+    public java.util.Optional<Map<?, ?>> obtener(Recurso recurso, String id) {
+        if (id == null || !ID_ONVO.matcher(id).matches()) {
+            return java.util.Optional.empty();
+        }
+        if (isMockMode()) {
+            throw new IllegalStateException("ONVO sin llave: no se puede verificar el cobro");
+        }
+        try {
+            Map<?, ?> body = get(recurso.ruta + id);
+            return body.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(body);
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+            return java.util.Optional.empty();
+        }
+    }
+
+    /** Filtros documentados de GET /v1/invoices que se usan para encontrar una renovación. */
+    public enum FiltroFactura {
+        SUSCRIPCION("subscriptionId"), PAYMENT_INTENT("paymentIntentId");
+        final String param;
+        FiltroFactura(String param) { this.param = param; }
+    }
+
+    static final int LIMITE_FACTURAS = 100;
+
+    /**
+     * Busca una renovación (invoice) en GET /v1/invoices?{filtro}={valor}&limit=100 (InvoiceList.data[]).
+     * Si {@code facturaId} no es null, devuelve solo la que tenga ese id; si es null, la primera.
+     * Vacío si no aparece. Sin llave o ante error/timeout lanza (fail-closed).
+     */
+    public java.util.Optional<Map<?, ?>> buscarFactura(FiltroFactura filtro, String valor, String facturaId) {
+        if (valor == null || !ID_ONVO.matcher(valor).matches()
+            || (facturaId != null && !ID_ONVO.matcher(facturaId).matches())) {
+            return java.util.Optional.empty();
+        }
+        if (isMockMode()) {
+            throw new IllegalStateException("ONVO sin llave: no se puede verificar el cobro");
+        }
+        Map<?, ?> body = get("/invoices?" + filtro.param + "=" + valor + "&limit=" + LIMITE_FACTURAS);
+        Object data = body == null ? null : body.get("data");
+        if (!(data instanceof List<?> lista)) {
+            return java.util.Optional.empty();
+        }
+        for (Object o : lista) {
+            if (o instanceof Map<?, ?> inv
+                && (facturaId == null || facturaId.equals(String.valueOf(inv.get("id"))))) {
+                return java.util.Optional.of(inv);
+            }
+        }
+        return java.util.Optional.empty();
+    }
+
     public record OnvoCustomer(String id) {}
 
     public record OnvoSubscription(String id, String itemId) {}

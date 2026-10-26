@@ -69,7 +69,7 @@ public class OnvoService {
     }
 
     private boolean perfilDeSimulacion() {
-        return environment != null && environment.acceptsProfiles(Profiles.of("dev", "test"));
+        return environment != null && environment.acceptsProfiles(Profiles.of(com.hotclick.config.PerfilesSeguros.DEV_O_TEST_ESTRICTO));
     }
 
     /** Sin llave fuera de dev/test: falla antes de tocar ONVO o de inventar un id. */
