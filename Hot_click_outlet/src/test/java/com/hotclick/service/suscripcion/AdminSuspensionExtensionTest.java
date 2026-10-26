@@ -281,7 +281,8 @@ class AdminSuspensionExtensionTest {
         void listaSoloPedidosDeLaVentana() {
             SuspensionExtension x = extVigente(7);
             svc.pedidosDeGracia(7L);
-            verify(pedidoRepo).findCreadosEnGracia(7L, x.getGraciaDesde(), x.getGraciaHasta());
+            verify(pedidoRepo).findCreadosEnGracia(7L, x.getGraciaDesde(), x.getGraciaHasta(),
+                    org.springframework.data.domain.PageRequest.of(0, AdminSuspensionService.LIMITE_PEDIDOS_GRACIA));
         }
     }
 

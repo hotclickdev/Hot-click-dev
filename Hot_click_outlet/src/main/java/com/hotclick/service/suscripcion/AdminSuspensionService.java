@@ -242,12 +242,21 @@ public class AdminSuspensionService {
         }
     }
 
-    @Transactional(readOnly = true)
+    /** Tope de filas por consulta: la gracia es corta, pero la lista nunca queda sin acotar. */
+    public static final int LIMITE_PEDIDOS_GRACIA = 200;
+
     public List<Map<String, Object>> pedidosDeGracia(Long empresaId) {
+        return pedidosDeGracia(empresaId, LIMITE_PEDIDOS_GRACIA);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> pedidosDeGracia(Long empresaId, int limit) {
+        int tope = Math.max(1, Math.min(limit, LIMITE_PEDIDOS_GRACIA));
         Optional<SuspensionExtension> ext = extensionVigente(empresaId);
         if (ext.isEmpty()) return List.of();
         List<Map<String, Object>> out = new ArrayList<>();
-        for (Pedido p : pedidoRepo.findCreadosEnGracia(empresaId, ext.get().getGraciaDesde(), ext.get().getGraciaHasta())) {
+        for (Pedido p : pedidoRepo.findCreadosEnGracia(empresaId, ext.get().getGraciaDesde(), ext.get().getGraciaHasta(),
+                org.springframework.data.domain.PageRequest.of(0, tope))) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", p.getId());
             m.put("numeroPedido", p.getNumeroPedido());

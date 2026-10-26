@@ -328,5 +328,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
          + "AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta ORDER BY p.fechaPedido DESC")
     List<Pedido> findCreadosEnGracia(@Param("empresaId") Long empresaId,
                                      @Param("desde") java.time.LocalDateTime desde,
-                                     @Param("hasta") java.time.LocalDateTime hasta);
+                                     @Param("hasta") java.time.LocalDateTime hasta,
+                                     org.springframework.data.domain.Pageable pageable);
 }

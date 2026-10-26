@@ -80,13 +80,17 @@ public class CuentaSuspendidaController {
         return ResponseEntity.ok(out);
     }
 
+    /** Tope duro de la lista de pedidos de gracia (el servicio vuelve a acotar con PageRequest). */
+    private static final int MAX_LIST_PEDIDOS_GRACIA = AdminSuspensionService.LIMITE_PEDIDOS_GRACIA;
+
     /** Extensión de admin: pedidos creados en la gracia que el dueño todavía puede gestionar. Vacío fuera de la extensión. */
     @GetMapping("/pedidos")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
-    public ResponseEntity<List<Map<String, Object>>> pedidosDeGracia() {
+    public ResponseEntity<List<Map<String, Object>>> pedidosDeGracia(
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "200") int limit) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
-        return ResponseEntity.ok(extensiones.pedidosDeGracia(empresaId));
+        return ResponseEntity.ok(extensiones.pedidosDeGracia(empresaId, Math.min(limit, MAX_LIST_PEDIDOS_GRACIA)));
     }
 
     /** Inicia el cobro ONVO del plan impago. La tienda vuelve a ACTIVO solo con el webhook ONVO verificado. */
