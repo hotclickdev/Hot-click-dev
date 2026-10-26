@@ -37,8 +37,13 @@ public class EmpresaAprobacionService {
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public Empresa aprobarYPublicar(Long empresaId) {
-        Empresa e = empresaRepository.findById(empresaId)
+        // Lock pesimista: el estado se lee fresco y el job de impago espera al commit (sin carrera).
+        Empresa e = empresaRepository.findByIdForUpdate(empresaId)
             .orElseThrow(() -> new IllegalStateException("Empresa no encontrada: " + empresaId));
+        // Aprobar/publicar nunca reactiva un impago: solo el pago ONVO confirmado (SuspensionImpago.reactivarSiSuspendida).
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(e.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.ReactivacionSinPagoException();
+        }
         ubicacionDespachoService.exigirParaPublicar(empresaId);
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         e.setEstadoEmpresa("ACTIVO");

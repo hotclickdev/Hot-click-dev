@@ -5,6 +5,7 @@ import { billingService } from '@/services/billingService'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { pagoPendienteDe, type PagoPlanPendiente } from '@/features/billing/useCambiarPlan'
 import { nombrePlanVisible } from '@/components/ui/planPendiente'
+import PedidosDeGracia from './PedidosDeGracia'
 import { useSuspensionStore, type EstadoImpago } from './suspensionImpaga'
 
 /**
@@ -83,6 +84,8 @@ export default function CuentaSuspendidaPage() {
           </p>
         </section>
       )}
+
+      {estado?.enExtension && <PedidosDeGracia venceEn={estado.extensionVenceEn} />}
 
       {error && <p role="alert" className="text-red-600">{t('suspension.error')}</p>}
       {confirmando && <p role="status">{t('suspension.confirmando')}</p>}

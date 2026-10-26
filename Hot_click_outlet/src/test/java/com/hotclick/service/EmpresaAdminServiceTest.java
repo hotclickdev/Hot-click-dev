@@ -34,7 +34,7 @@ class EmpresaAdminServiceTest {
     @DisplayName("ACTIVO delega en aprobarYPublicar, no solo pisa el string")
     void activoLlamaAprobarYPublicar() {
         Empresa e = empresa(8L, "INACTIVO");
-        when(empresaRepository.findById(8L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(8L)).thenReturn(Optional.of(e));
 
         service.cambiarEstado(8L, "ACTIVO");
 
@@ -47,7 +47,7 @@ class EmpresaAdminServiceTest {
     void inactivoSoloGuardaEstado() {
         Empresa e = empresa(3L, "ACTIVO");
         e.setVisibilidadPublica(true);
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         service.cambiarEstado(3L, "INACTIVO", "cierre pedido por el operador");
 
@@ -62,7 +62,7 @@ class EmpresaAdminServiceTest {
     void suspendidoApagaCatalogo() {
         Empresa e = empresa(4L, "ACTIVO");
         e.setVisibilidadPublica(true);
-        when(empresaRepository.findById(4L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(4L)).thenReturn(Optional.of(e));
 
         service.cambiarEstado(4L, "SUSPENDIDO", "incumple el catalogo");
 
@@ -80,7 +80,7 @@ class EmpresaAdminServiceTest {
         assertThatThrownBy(() -> service.cambiarEstado(4L, "SUSPENDIDO"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Motivo");
-        verify(empresaRepository, never()).findById(4L);
+        verify(empresaRepository, never()).findByIdForUpdate(4L);
     }
 
     @Test
@@ -89,13 +89,13 @@ class EmpresaAdminServiceTest {
         assertThatThrownBy(() -> service.cambiarEstado(1L, "PENDIENTE_APROBACION"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Estado inválido");
-        verify(empresaRepository, never()).findById(1L);
+        verify(empresaRepository, never()).findByIdForUpdate(1L);
     }
 
     @Test
     @DisplayName("empresa inexistente no llega a aprobar")
     void empresaAusente() {
-        when(empresaRepository.findById(99L)).thenReturn(Optional.empty());
+        when(empresaRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.cambiarEstado(99L, "SUSPENDIDO", "no existe"))
             .isInstanceOf(RecursoNoEncontradoException.class);
