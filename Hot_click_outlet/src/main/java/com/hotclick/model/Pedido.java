@@ -92,6 +92,10 @@ public class Pedido extends BaseEntity {
     @Column(name = "factura_generada")
     private Boolean facturaGenerada = false;
 
+    /** P-04: cobrado con llave ONVO de prueba (mode=test); no es plata real. */
+    @Column(name = "es_prueba", nullable = false)
+    private boolean esPrueba = false;
+
     @Column(name = "factura_enviada_whatsapp")
     private Boolean facturaEnviadaWhatsapp = false;
 
@@ -226,6 +230,8 @@ public class Pedido extends BaseEntity {
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
 
+    public boolean isEsPrueba() { return esPrueba; }
+    public void setEsPrueba(boolean esPrueba) { this.esPrueba = esPrueba; }
     public Boolean getFacturaGenerada() { return facturaGenerada; }
     public void setFacturaGenerada(Boolean facturaGenerada) { this.facturaGenerada = facturaGenerada; }
 
