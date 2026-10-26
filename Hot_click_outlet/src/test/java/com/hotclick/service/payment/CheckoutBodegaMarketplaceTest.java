@@ -122,4 +122,18 @@ class CheckoutBodegaMarketplaceTest {
         assertThatThrownBy(() -> checkout(null, bodega(Constants.BODEGA_DEFAULT_ID, Constants.EMPRESA_PLATAFORMA_ID), VENDEDOR, TERCERA))
             .isInstanceOf(PasoValidacion.class);
     }
+
+    // ---- NO APTO #321 (2) ----
+
+    @Test
+    void tenantAEnSuBodegaConCarritoAyBSeRechaza() {
+        assertThatThrownBy(() -> checkout(VENDEDOR, bodega(60L, VENDEDOR), VENDEDOR, TERCERA))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void tenantAEnSuBodegaConSoloProductosDeANoCambia() {
+        assertThatThrownBy(() -> checkout(VENDEDOR, bodega(60L, VENDEDOR), VENDEDOR, VENDEDOR))
+            .isInstanceOf(PasoValidacion.class);
+    }
 }
