@@ -26,6 +26,64 @@ const DENY_URLS = [
   /^safari-extension:\/\//i,
 ]
 
+const CORREO = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g
+const CEDULA = /\b\d{1,2}-\d{3,4}-\d{4,6}\b|\b\d{9,12}\b/g
+const TELEFONO = /(?:\+\d{1,3}[\s-]?)?\b\d{4}[\s-]?\d{4}\b/g
+
+/** Quita correos, cédulas y teléfonos de un texto antes de mandarlo a Sentry. */
+export function redactarTexto(s: string | undefined | null): string | undefined {
+  if (s == null) return undefined
+  return String(s)
+    .replace(CORREO, '[correo]')
+    .replace(CEDULA, '[cedula]')
+    .replace(TELEFONO, '[telefono]')
+}
+
+function redactarRegistro(obj: Record<string, unknown> | undefined) {
+  if (!obj) return obj
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = typeof v === 'string' ? redactarTexto(v) : v == null ? v : redactarTexto(JSON.stringify(v))
+  }
+  return out
+}
+
+/**
+ * Depura datos personales del evento: sin usuario (salvo id), sin headers,
+ * cookies, cuerpo ni query string; textos con correo/cédula/teléfono redactados.
+ * Si algo falla, el evento se descarta (falla cerrado).
+ */
+export function depurarPii(event: ErrorEvent): ErrorEvent | null {
+  try {
+    if (event.user) event.user = event.user.id != null ? { id: String(event.user.id) } : undefined
+    if (event.request) {
+      delete event.request.headers
+      delete event.request.cookies
+      delete event.request.data
+      delete event.request.query_string
+      if (event.request.url) event.request.url = redactarTexto(event.request.url.split('?')[0])
+    }
+    if (event.message) event.message = redactarTexto(event.message)
+    for (const ex of event.exception?.values ?? []) {
+      if (ex.value) ex.value = redactarTexto(ex.value)
+    }
+    for (const b of event.breadcrumbs ?? []) {
+      if (b.message) b.message = redactarTexto(b.message)
+      if (b.data) b.data = redactarRegistro(b.data as Record<string, unknown>)
+    }
+    if (event.extra) event.extra = redactarRegistro(event.extra as Record<string, unknown>)
+    if (event.tags) {
+      for (const k of Object.keys(event.tags)) {
+        const v = event.tags[k]
+        if (typeof v === 'string') event.tags[k] = redactarTexto(v) as string
+      }
+    }
+    return event
+  } catch {
+    return null
+  }
+}
+
 export function beforeSend(event: ErrorEvent): ErrorEvent | null {
   if (import.meta.env.MODE !== 'production') return null
   const frames = event.exception?.values?.[0]?.stacktrace?.frames
@@ -37,13 +95,15 @@ export function beforeSend(event: ErrorEvent): ErrorEvent | null {
     if (origin && file.startsWith(origin)) return true
     return file.includes('/assets/') || file.includes('/src/')
   })
-  return hasAppFrame ? event : null
+  return hasAppFrame ? depurarPii(event) : null
 }
 
-export function initSentry() {
-  if (!import.meta.env.VITE_SENTRY_DSN) return
+/** Devuelve true solo si inicializó Sentry (requiere VITE_SENTRY_DSN no vacío). */
+export function initSentry(dsn: string | undefined = import.meta.env.VITE_SENTRY_DSN): boolean {
+  if (!dsn || !String(dsn).trim()) return false
   Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN,
+    dsn,
+    sendDefaultPii: false,
     environment: import.meta.env.MODE,
     release: import.meta.env.VITE_APP_RELEASE || undefined,
     tracesSampleRate: 0.1,
@@ -52,6 +112,7 @@ export function initSentry() {
     denyUrls: DENY_URLS,
     beforeSend,
   })
+  return true
 }
 
 export function syncSentryUser(identity: {
