@@ -7,7 +7,7 @@ import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.service.hacienda.CodigoCabys;
 import com.hotclick.service.hacienda.ImpuestoLinea;
-import com.hotclick.service.hacienda.XmlFacturaSchemaValidator;
+import com.hotclick.service.hacienda.HaciendaConfiguracionException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,8 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * XML de comprobante electrónico Hacienda CR 4.4 (factura y tiquete).
- * El subset local no es el XSD oficial: hay que contrastarlo antes de producción.
+ * XML SIN FIRMAR del comprobante electrónico Hacienda CR 4.4 (factura y tiquete).
+ * La validación contra el XSD oficial se hace después de firmar, porque el esquema exige ds:Signature
+ * (ver FacturacionEnvioProcessor y XmlFacturaSchemaValidator).
  */
 @Service
 public class XmlFacturaBuilder {
@@ -30,10 +31,7 @@ public class XmlFacturaBuilder {
     private static final String NS_TIQUETE =
         "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/tiqueteElectronico";
 
-    private final XmlFacturaSchemaValidator schemaValidator;
-
-    public XmlFacturaBuilder(XmlFacturaSchemaValidator schemaValidator) {
-        this.schemaValidator = schemaValidator;
+    public XmlFacturaBuilder() {
     }
 
     public String construir(ComprobanteFiscal comprobante, Empresa empresa, Pedido pedido) {
@@ -53,13 +51,10 @@ public class XmlFacturaBuilder {
         xml.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         xml.append("<").append(rootTag).append(" xmlns=\"").append(ns).append("\">\n");
         appendEncabezado(xml, comprobante, empresa, esFactura);
-        ImpuestoLinea.Montos totales = appendDetalle(xml, lineasDe(pedidos));
+        Totales totales = appendDetalle(xml, lineasDe(pedidos));
         appendResumen(xml, totales);
         xml.append("</").append(rootTag).append(">\n");
-
-        String resultado = xml.toString();
-        schemaValidator.validar(resultado, esFactura);
-        return resultado;
+        return xml.toString();
     }
 
     private static void validarEmisor(Empresa empresa) {
@@ -68,6 +63,14 @@ public class XmlFacturaBuilder {
         }
         if (empresa.getActividadEconomica() == null || empresa.getActividadEconomica().isBlank()) {
             throw new IllegalStateException("El emisor no tiene código de actividad económica");
+        }
+        if (vacio(empresa.getUbicacionProvincia()) || vacio(empresa.getUbicacionCanton())
+                || vacio(empresa.getUbicacionDistrito()) || vacio(empresa.getUbicacionOtrasSenas())) {
+            throw new HaciendaConfiguracionException(
+                "Falta la ubicación fiscal de la empresa (provincia, cantón, distrito y otras señas).");
+        }
+        if (vacio(empresa.getCorreoEmpresa())) {
+            throw new HaciendaConfiguracionException("Falta el correo de la empresa para el comprobante.");
         }
     }
 
@@ -83,7 +86,6 @@ public class XmlFacturaBuilder {
             appendReceptor(xml, comprobante);
         }
         xml.append("  <CondicionVenta>01</CondicionVenta>\n");
-        xml.append("  <MedioPago>01</MedioPago>\n");
     }
 
     private void appendEmisor(StringBuilder xml, Empresa empresa) {
@@ -93,9 +95,13 @@ public class XmlFacturaBuilder {
         xml.append("      <Tipo>").append(esc(empresa.getTipoCedula())).append("</Tipo>\n");
         xml.append("      <Numero>").append(esc(empresa.getCedulaJuridica())).append("</Numero>\n");
         xml.append("    </Identificacion>\n");
-        if (empresa.getCorreoEmpresa() != null) {
-            xml.append("    <CorreoElectronico>").append(esc(empresa.getCorreoEmpresa())).append("</CorreoElectronico>\n");
-        }
+        xml.append("    <Ubicacion>\n");
+        xml.append("      <Provincia>").append(esc(empresa.getUbicacionProvincia())).append("</Provincia>\n");
+        xml.append("      <Canton>").append(esc(empresa.getUbicacionCanton())).append("</Canton>\n");
+        xml.append("      <Distrito>").append(esc(empresa.getUbicacionDistrito())).append("</Distrito>\n");
+        xml.append("      <OtrasSenas>").append(esc(empresa.getUbicacionOtrasSenas())).append("</OtrasSenas>\n");
+        xml.append("    </Ubicacion>\n");
+        xml.append("    <CorreoElectronico>").append(esc(empresa.getCorreoEmpresa())).append("</CorreoElectronico>\n");
         xml.append("  </Emisor>\n");
     }
 
@@ -112,21 +118,29 @@ public class XmlFacturaBuilder {
         xml.append("  </Receptor>\n");
     }
 
-    private ImpuestoLinea.Montos appendDetalle(StringBuilder xml, List<PedidoItem> items) {
-        xml.append("  <DetalleServicio>\n");
-        long base = 0;
-        long impuesto = 0;
-        int lineaNum = 1;
-        for (PedidoItem item : items) {
-            ImpuestoLinea.Montos montos = appendLinea(xml, item, lineaNum++);
-            base += montos.base();
-            impuesto += montos.impuesto();
-        }
-        xml.append("  </DetalleServicio>\n");
-        return new ImpuestoLinea.Montos(base, impuesto);
+    /** Acumula por tarifa para el desglose y separa gravado de exento. */
+    private static final class Totales {
+        long gravado;
+        long exento;
+        long impuesto;
+        final java.util.LinkedHashMap<String, Long> desglose = new java.util.LinkedHashMap<>();
+
+        long venta() { return gravado + exento; }
+        long total() { return venta() + impuesto; }
     }
 
-    private ImpuestoLinea.Montos appendLinea(StringBuilder xml, PedidoItem item, int lineaNum) {
+    private Totales appendDetalle(StringBuilder xml, List<PedidoItem> items) {
+        xml.append("  <DetalleServicio>\n");
+        Totales t = new Totales();
+        int lineaNum = 1;
+        for (PedidoItem item : items) {
+            appendLinea(xml, item, lineaNum++, t);
+        }
+        xml.append("  </DetalleServicio>\n");
+        return t;
+    }
+
+    private void appendLinea(StringBuilder xml, PedidoItem item, int lineaNum, Totales t) {
         Producto producto = item.getProducto();
         String cabys = producto != null ? producto.getCodigoCabys() : null;
         if (!CodigoCabys.valido(cabys)) {
@@ -136,10 +150,14 @@ public class XmlFacturaBuilder {
         long precioUnit = item.getPrecioUnitarioMomento() != null ? item.getPrecioUnitarioMomento() : 0L;
         int cantidad = item.getCantidad();
         BigDecimal pctIva = BigDecimal.ZERO;
-        String codTarifa = "01";
+        String codTarifa = null;
         if (producto != null) {
-            pctIva = producto.getPorcentajeIva();
+            pctIva = producto.getPorcentajeIva() != null ? producto.getPorcentajeIva() : BigDecimal.ZERO;
             codTarifa = producto.getCodigoTarifaIva();
+        }
+        boolean gravado = pctIva.signum() > 0;
+        if (codTarifa == null || codTarifa.isBlank()) {
+            codTarifa = gravado ? "08" : "10"; // 08 = tarifa general 13 %, 10 = tarifa exenta
         }
         ImpuestoLinea.Montos montos = ImpuestoLinea.de(precioUnit, cantidad, pctIva);
         String detalle = producto != null ? producto.getNombreProducto() : "Producto";
@@ -153,29 +171,49 @@ public class XmlFacturaBuilder {
         xml.append("      <PrecioUnitario>").append(precioUnit).append("</PrecioUnitario>\n");
         xml.append("      <MontoTotal>").append(montos.base()).append("</MontoTotal>\n");
         xml.append("      <SubTotal>").append(montos.base()).append("</SubTotal>\n");
-        if (montos.impuesto() > 0) {
-            xml.append("      <Impuesto>\n");
-            xml.append("        <Codigo>01</Codigo>\n");
-            xml.append("        <CodigoTarifaIVA>").append(esc(codTarifa)).append("</CodigoTarifaIVA>\n");
-            xml.append("        <Tarifa>").append(pctIva.toPlainString()).append("</Tarifa>\n");
-            xml.append("        <Monto>").append(montos.impuesto()).append("</Monto>\n");
-            xml.append("      </Impuesto>\n");
-        }
+        xml.append("      <BaseImponible>").append(montos.base()).append("</BaseImponible>\n");
+        xml.append("      <Impuesto>\n");
+        xml.append("        <Codigo>01</Codigo>\n");
+        xml.append("        <CodigoTarifaIVA>").append(esc(codTarifa)).append("</CodigoTarifaIVA>\n");
+        xml.append("        <Tarifa>").append(pctIva.stripTrailingZeros().toPlainString()).append("</Tarifa>\n");
+        xml.append("        <Monto>").append(montos.impuesto()).append("</Monto>\n");
+        xml.append("      </Impuesto>\n");
+        xml.append("      <ImpuestoAsumidoEmisorFabrica>0</ImpuestoAsumidoEmisorFabrica>\n");
         xml.append("      <ImpuestoNeto>").append(montos.impuesto()).append("</ImpuestoNeto>\n");
         xml.append("      <MontoTotalLinea>").append(montos.total()).append("</MontoTotalLinea>\n");
         xml.append("    </LineaDetalle>\n");
-        return montos;
+
+        if (gravado) t.gravado += montos.base(); else t.exento += montos.base();
+        t.impuesto += montos.impuesto();
+        t.desglose.merge(codTarifa, montos.impuesto(), Long::sum);
     }
 
-    private static void appendResumen(StringBuilder xml, ImpuestoLinea.Montos totales) {
+    private static void appendResumen(StringBuilder xml, Totales t) {
         xml.append("  <ResumenFactura>\n");
         xml.append("    <CodigoTipoMoneda>\n");
         xml.append("      <CodigoMoneda>CRC</CodigoMoneda>\n");
         xml.append("      <TipoCambio>1</TipoCambio>\n");
         xml.append("    </CodigoTipoMoneda>\n");
-        xml.append("    <TotalGravado>").append(totales.base()).append("</TotalGravado>\n");
-        xml.append("    <TotalImpuesto>").append(totales.impuesto()).append("</TotalImpuesto>\n");
-        xml.append("    <TotalComprobante>").append(totales.total()).append("</TotalComprobante>\n");
+        xml.append("    <TotalMercanciasGravadas>").append(t.gravado).append("</TotalMercanciasGravadas>\n");
+        xml.append("    <TotalMercanciasExentas>").append(t.exento).append("</TotalMercanciasExentas>\n");
+        xml.append("    <TotalGravado>").append(t.gravado).append("</TotalGravado>\n");
+        xml.append("    <TotalExento>").append(t.exento).append("</TotalExento>\n");
+        xml.append("    <TotalVenta>").append(t.venta()).append("</TotalVenta>\n");
+        xml.append("    <TotalDescuentos>0</TotalDescuentos>\n");
+        xml.append("    <TotalVentaNeta>").append(t.venta()).append("</TotalVentaNeta>\n");
+        t.desglose.forEach((tarifa, monto) -> {
+            xml.append("    <TotalDesgloseImpuesto>\n");
+            xml.append("      <Codigo>01</Codigo>\n");
+            xml.append("      <CodigoTarifaIVA>").append(esc(tarifa)).append("</CodigoTarifaIVA>\n");
+            xml.append("      <TotalMontoImpuesto>").append(monto).append("</TotalMontoImpuesto>\n");
+            xml.append("    </TotalDesgloseImpuesto>\n");
+        });
+        xml.append("    <TotalImpuesto>").append(t.impuesto).append("</TotalImpuesto>\n");
+        xml.append("    <MedioPago>\n");
+        xml.append("      <TipoMedioPago>01</TipoMedioPago>\n");
+        xml.append("      <TotalMedioPago>").append(t.total()).append("</TotalMedioPago>\n");
+        xml.append("    </MedioPago>\n");
+        xml.append("    <TotalComprobante>").append(t.total()).append("</TotalComprobante>\n");
         xml.append("  </ResumenFactura>\n");
     }
 
@@ -189,6 +227,10 @@ public class XmlFacturaBuilder {
             throw new IllegalStateException("La compra no tiene líneas para el tiquete");
         }
         return lineas;
+    }
+
+    private static boolean vacio(String s) {
+        return s == null || s.isBlank();
     }
 
     private static String digitos(String cedula) {

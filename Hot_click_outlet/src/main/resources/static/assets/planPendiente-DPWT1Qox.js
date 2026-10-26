@@ -1,0 +1,1 @@
+function e(e){if(!e||typeof e!=`object`)return null;let t=e.plan;return typeof t==`string`&&t.trim()?t.trim():null}function t(e){return e.toLowerCase().split(/[_\s]+/).filter(Boolean).map(e=>e[0].toUpperCase()+e.slice(1)).join(` `)}export{e as n,t};

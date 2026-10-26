@@ -154,7 +154,10 @@ export function runRealHealth(opts = {}) {
   const propsText = opts.propsText ?? readRepo(APP_PROPS_REL);
   const javaSrc = opts.javaSource ?? readRepo(HEALTH_CONTROLLER_REL);
   const targets = resolveHealthTargets(opts.env || process.env, propsText);
-  const url = opts.url || targets.primary || DEFAULT_HEALTH_URL;
+  const url = String(opts.url || targets.primary || DEFAULT_HEALTH_URL || '').trim();
+  if (!url) {
+    return { skipped: true, reason: 'sin-health-url' };
+  }
   const stateFile = opts.stateFile || process.env.HEALTH_STATE_FILE || '';
   const previous = opts.previous ?? readPrevious(stateFile);
   const ping = pingOrInject(url, opts);
@@ -179,7 +182,9 @@ export function runRealHealth(opts = {}) {
 function main() {
   const result = runRealHealth();
   if (result.skipped) {
-    console.log('D12 real health: skip label');
+    console.log(result.reason === 'sin-health-url'
+      ? '::notice::D12 real health: HEALTH_URL no configurado; se saltea sin pegarle a ningún host.'
+      : 'D12 real health: skip label');
     return;
   }
   const { ping, previous, verdict, secondary } = result;

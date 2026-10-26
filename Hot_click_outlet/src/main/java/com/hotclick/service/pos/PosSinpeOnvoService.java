@@ -98,6 +98,8 @@ public class PosSinpeOnvoService {
      * Sin @Transactional: el id del intent se guarda antes de confirmarlo y tiene que persistir aunque la
      * confirmación falle, para que el barrido lo encuentre y lo cancele.
      */
+    static final String MSG_TIENDA_NO_VENDE = "Esta tienda no puede recibir pagos por ahora.";
+
     public Map<String, Object> iniciar(String token, String identificacion, Integer tipoIdentificacion, String telefono) {
         if (!OnvoService.identificacionSinpeValida(identificacion, tipoIdentificacion)) {
             throw new IllegalArgumentException(MSG_IDENTIFICACION);
@@ -112,6 +114,10 @@ public class PosSinpeOnvoService {
         }
         if (!PosQrVentaService.estaVigente(sesion, LocalDateTime.now(clock))) {
             throw new java.util.NoSuchElementException("El QR ha expirado");
+        }
+        // Suscripción impaga (día 9+) o tienda no activa: fail-closed, no se cobra.
+        if (sesion.getEmpresa() == null || !"ACTIVO".equals(sesion.getEmpresa().getEstadoEmpresa())) {
+            throw new IllegalStateException(MSG_TIENDA_NO_VENDE);
         }
         if (!PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {
             throw new IllegalStateException("Este cobro no acepta SINPE Móvil");

@@ -91,6 +91,7 @@ public class SuscripcionWebhookService {
 
             Empresa empresa = sub.getEmpresa();
             empresa.setEstadoPlan("ACTIVO");
+            // Stripe legado no reactiva una tienda SUSPENDIDO_IMPAGO: solo un cobro ONVO confirmado.
             empresa.setFechaVencPlan(periodoFin);
             empresa.setPlan(sub.getPlan());
             empresaRepo.save(empresa);

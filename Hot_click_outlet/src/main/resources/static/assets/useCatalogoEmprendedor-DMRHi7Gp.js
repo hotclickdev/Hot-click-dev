@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-CDOf22C0.js";function t(){return e()}export{t};

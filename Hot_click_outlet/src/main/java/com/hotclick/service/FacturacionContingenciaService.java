@@ -2,10 +2,10 @@ package com.hotclick.service;
 
 import com.hotclick.model.ColaFacturacionOffline;
 import com.hotclick.model.ComprobanteFiscal;
-import com.hotclick.model.Empresa;
-import com.hotclick.model.Pedido;
 import com.hotclick.repository.ComprobanteFiscalRepository;
-import com.hotclick.repository.PedidoRepository;
+import com.hotclick.service.facturacion.ComprobanteXmlPreparer;
+import com.hotclick.service.hacienda.ComprobanteInvalidoException;
+import com.hotclick.service.hacienda.ResultadoEnvioHacienda;
 import com.hotclick.security.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,22 +33,16 @@ public class FacturacionContingenciaService {
 
     private final ColaFacturacionOfflineTxOps txOps;
     private final ComprobanteFiscalRepository comprobanteRepo;
-    private final PedidoRepository pedidoRepository;
-    private final XmlFacturaBuilder xmlBuilder;
-    private final FirmaDigitalService firmaService;
+    private final ComprobanteXmlPreparer preparer;
     private final HaciendaApiClient haciendaClient;
 
     public FacturacionContingenciaService(ColaFacturacionOfflineTxOps txOps,
                                            ComprobanteFiscalRepository comprobanteRepo,
-                                           PedidoRepository pedidoRepository,
-                                           XmlFacturaBuilder xmlBuilder,
-                                           FirmaDigitalService firmaService,
+                                           @org.springframework.context.annotation.Lazy ComprobanteXmlPreparer preparer,
                                            HaciendaApiClient haciendaClient) {
         this.txOps           = txOps;
         this.comprobanteRepo = comprobanteRepo;
-        this.pedidoRepository = pedidoRepository;
-        this.xmlBuilder       = xmlBuilder;
-        this.firmaService     = firmaService;
+        this.preparer         = preparer;
         this.haciendaClient   = haciendaClient;
     }
 
@@ -82,28 +76,27 @@ public class FacturacionContingenciaService {
             // multi-tenant correcta aunque el lote mezcle facturas de varias empresas.
             TenantContext.set(item.getEmpresaId());
 
-            ComprobanteFiscal cf = comprobanteRepo.findById(item.getComprobanteId()).orElse(null);
-            if (cf == null) {
+            if (comprobanteRepo.findById(item.getComprobanteId()).isEmpty()) {
                 txOps.marcarAgotado(item.getId(), "El comprobante ya no existe");
                 return;
             }
 
-            Empresa empresa = cf.getEmpresa();
-            Pedido pedido = cf.getPedido();
+            // Arma, firma y valida contra el XSD oficial en una transacción corta de solo lectura.
+            ComprobanteXmlPreparer.Preparado p = preparer.preparar(item.getComprobanteId());
 
-            String xmlSinFirmar = xmlDe(cf, empresa, pedido);
-            String xmlFirmado = firmaService.firmar(xmlSinFirmar, empresa);
+            // Fuera de transacción de BD a propósito: puede tardar varios segundos.
+            // Fallas transitorias salen como HaciendaTransitoriaException y caen al catch.
+            ResultadoEnvioHacienda r = haciendaClient.enviar(p.xmlFirmado(), p.clave(), p.empresa());
 
-            // Fuera de transacción de BD a propósito: puede tardar varios segundos
-            // y, si el circuito está abierto, el fallback de HaciendaApiClient
-            // responde rápido sin gastar el intento en una llamada real.
-            boolean enviado = haciendaClient.enviar(xmlFirmado, cf.getClaveNumerica(), empresa);
-
-            if (enviado) {
-                txOps.marcarCompletado(item.getId(), cf.getId());
+            if (r.recibido()) {
+                txOps.marcarCompletado(item.getId(), p.comprobanteId());
             } else {
-                txOps.marcarFallo(item.getId(), "Hacienda no aceptó la recepción (circuit breaker abierto o error HTTP)");
+                // 4xx: Hacienda rechazó la recepción; reenviar el mismo XML no lo arregla.
+                txOps.marcarAgotado(item.getId(), r.motivo());
             }
+        } catch (ComprobanteInvalidoException e) {
+            log.error("[contingencia] comprobante={} no cumple el XSD oficial: {}", item.getComprobanteId(), e.getMessage());
+            txOps.marcarAgotado(item.getId(), e.getMessage());
         } catch (Exception e) {
             log.error("[contingencia] error procesando cola_offline={} comprobante={}: {}",
                 item.getId(), item.getComprobanteId(), e.getMessage());
@@ -111,13 +104,5 @@ public class FacturacionContingenciaService {
         } finally {
             TenantContext.clear();
         }
-    }
-
-    private String xmlDe(ComprobanteFiscal cf, Empresa empresa, Pedido pedido) {
-        if (cf.getCompra() != null && cf.getCompra().getId() != null) {
-            List<Pedido> paquetes = pedidoRepository.findByCompra_IdOrderByNumeroPaqueteAsc(cf.getCompra().getId());
-            return xmlBuilder.construir(cf, empresa, paquetes);
-        }
-        return xmlBuilder.construir(cf, empresa, pedido);
     }
 }
