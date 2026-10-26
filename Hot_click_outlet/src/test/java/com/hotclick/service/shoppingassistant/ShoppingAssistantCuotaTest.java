@@ -6,7 +6,6 @@ import com.hotclick.rag.classifier.QueryClassifier;
 import com.hotclick.rag.dto.ChatResponse;
 import com.hotclick.rag.pipeline.RagPipeline;
 import com.hotclick.rag.pipeline.RagResult;
-import com.hotclick.service.AiQuotaService;
 import com.hotclick.service.customermemory.CustomerMemoryDto;
 import com.hotclick.service.customermemory.CustomerMemoryService;
 import com.hotclick.utils.InputSanitizer;
@@ -53,10 +52,9 @@ class ShoppingAssistantCuotaTest {
     }
 
     private final JdbcTemplate jdbc = h2Real();
-    private final AiQuotaService quota = mock(AiQuotaService.class);
 
     private ShoppingAssistantCuota cuota(int porTienda, int global) {
-        return new ShoppingAssistantCuota(jdbc, quota, porTienda, global);
+        return new ShoppingAssistantCuota(jdbc, porTienda, global);
     }
 
     private int contador(String clave) {
@@ -75,7 +73,6 @@ class ShoppingAssistantCuotaTest {
 
     @BeforeEach
     void setUp() {
-        when(quota.verificarYReservar(anyLong())).thenReturn(true);
         InputSanitizer san = mock(InputSanitizer.class);
         when(san.cleanWithLimit(anyString(), anyInt())).thenAnswer(i -> i.getArgument(0));
         QueryClassifier cls = mock(QueryClassifier.class);
@@ -86,7 +83,7 @@ class ShoppingAssistantCuotaTest {
         when(sesiones.loadHistory(any())).thenReturn(List.of());
         when(pipeline.ejecutar(anyString(), anyLong(), any(), any(), any(), any(), anyBoolean(), any()))
             .thenReturn(new RagResult("ok", List.of(), List.of(), List.of(), 10, 10));
-        service = new ShoppingAssistantService(pipeline, quota, san, mem, cls,
+        service = new ShoppingAssistantService(pipeline, mock(com.hotclick.service.AiQuotaService.class), san, mem, cls,
             mock(AssistantMetricsService.class), sesiones, mock(ShoppingAssistantPersistence.class),
             mock(ShoppingAssistantFeedbackHandler.class), cuotaMock, firma);
     }
@@ -160,13 +157,12 @@ class ShoppingAssistantCuotaTest {
     }
 
     // ── Cuota con JdbcTemplate REAL (H2) ─────────────────────────────────────
-    @Test void limitePorTienda_niega_y_noConsumeGlobalNiPlan() {
+    @Test void limitePorTienda_niega_y_noConsumeGlobal() {
         ShoppingAssistantCuota c = cuota(2, 100);
         assertThat(c.reservar(7L, false)).isTrue();
         assertThat(c.reservar(7L, false)).isTrue();
         assertThat(c.reservar(7L, false)).isFalse();
         assertThat(contador("asistente:global")).isEqualTo(2);
-        verify(quota, times(2)).verificarYReservar(7L);
         assertThat(c.reservar(8L, false)).isTrue();   // otra tienda no se ve afectada
     }
 
@@ -176,19 +172,19 @@ class ShoppingAssistantCuotaTest {
         assertThat(c.reservar(8L, false)).isFalse();
         assertThat(contador("asistente:empresa:8")).isZero();
         assertThat(contador("asistente:global")).isEqualTo(1);
-        verify(quota, never()).verificarYReservar(8L);
     }
 
-    @Test void planAgotado_niega_y_devuelveTiendaYGlobal_marketplaceNoUsaPlan() {
-        when(quota.verificarYReservar(7L)).thenReturn(false);
+    @Test void noConsumeCreditosDelPlan_tenantYMarketplacePasanConCupo() {
+        // Decisión de Andrés (opción B): el asistente no usa créditos IA del plan.
+        // Un tenant sin créditos igual pasa mientras haya cupo por tienda y global.
         ShoppingAssistantCuota c = cuota(100, 100);
-        assertThat(c.reservar(7L, false)).isFalse();
-        assertThat(contador("asistente:empresa:7")).isZero();
-        assertThat(contador("asistente:global")).isZero();
+        assertThat(c.reservar(7L, false)).isTrue();
+        assertThat(contador("asistente:empresa:7")).isEqualTo(1);
         assertThat(c.reservar(null, true)).isTrue();
         assertThat(contador("asistente:empresa:marketplace")).isEqualTo(1);
-        verify(quota, times(1)).verificarYReservar(anyLong());
+        assertThat(contador("asistente:global")).isEqualTo(2);
         assertThat(c.reservar(null, false)).isFalse();  // tenant sin empresa → niega
+        assertThat(contador("asistente:global")).isEqualTo(2);
     }
 
     @Test void ventanaVencida_seReiniciaAtomicamente() {
@@ -223,13 +219,12 @@ class ShoppingAssistantCuotaTest {
         jdbc.execute("DROP TABLE hot_click_rate_limit_tb");
         assertThat(cuota(300, 3000).reservar(7L, false)).isFalse();
         assertThat(cuota(300, 3000).reservar(null, true)).isFalse();
-        verify(quota, never()).verificarYReservar(anyLong());
     }
 
     @Test void errorDeBdReal_failClosed_conexionCaida() {
         JdbcTemplate caido = new JdbcTemplate(new DriverManagerDataSource(
             "jdbc:h2:tcp://127.0.0.1:1/noexiste", "sa", ""));
-        assertThat(new ShoppingAssistantCuota(caido, quota, 300, 3000).reservar(null, true)).isFalse();
+        assertThat(new ShoppingAssistantCuota(caido, 300, 3000).reservar(null, true)).isFalse();
     }
 
     // ── Firma ────────────────────────────────────────────────────────────────

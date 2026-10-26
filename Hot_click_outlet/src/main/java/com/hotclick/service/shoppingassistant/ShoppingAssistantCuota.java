@@ -1,6 +1,5 @@
 package com.hotclick.service.shoppingassistant;
 
-import com.hotclick.service.AiQuotaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,8 +17,7 @@ import java.util.List;
  * <ol>
  *   <li>Límite diario por tienda — un tenant no puede agotar el presupuesto global.</li>
  *   <li>Tope global diario (todas las tiendas). Si rechaza, se devuelve el cupo de la tienda.</li>
- *   <li>Cuota del plan ({@link AiQuotaService#verificarYReservar}) — sólo tiendas de tenant.
- *       Si rechaza, se devuelven los dos cupos anteriores.</li>
+ *   <li>No consume créditos IA del plan (decisión de producto): sólo estos dos topes.</li>
  * </ol>
  *
  * <p>Contador ESTRICTO propio sobre {@code hot_click_rate_limit_tb}: a diferencia de
@@ -52,15 +50,13 @@ public class ShoppingAssistantCuota {
         "UPDATE hot_click_rate_limit_tb SET count = count - 1 WHERE bucket_key = ? AND count > 0";
 
     private final JdbcTemplate jdbc;
-    private final AiQuotaService aiQuotaService;
     private final int maxPorTiendaDia;
     private final int maxGlobalDia;
 
-    public ShoppingAssistantCuota(JdbcTemplate jdbc, AiQuotaService aiQuotaService,
+    public ShoppingAssistantCuota(JdbcTemplate jdbc,
                                   @Value("${asistente.cuota.por-tienda-dia:300}") int maxPorTiendaDia,
                                   @Value("${asistente.cuota.global-dia:3000}") int maxGlobalDia) {
         this.jdbc = jdbc;
-        this.aiQuotaService = aiQuotaService;
         this.maxPorTiendaDia = Math.max(0, maxPorTiendaDia);
         this.maxGlobalDia = Math.max(0, maxGlobalDia);
     }
@@ -90,8 +86,8 @@ public class ShoppingAssistantCuota {
                 devolver(tienda);
                 return false;
             }
-            if (!marketplace && (empresaId == null || !aiQuotaService.verificarYReservar(empresaId))) {
-                log.info("[asistente-cuota] Cuota de plan agotada empresa={}", empresaId);
+            if (!marketplace && empresaId == null) {
+                log.info("[asistente-cuota] Tienda de tenant sin empresa: se niega");
                 devolver(CLAVE_GLOBAL);
                 devolver(tienda);
                 return false;
