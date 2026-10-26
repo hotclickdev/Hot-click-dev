@@ -1,0 +1,10 @@
+- INF-04 MEDIO: la prueba de restauración usa Postgres 16 y el dump de Supabase.
+- INF-05 MEDIO: con HEALTH_URL vacío, el aviso de caída vigila Render.
+- INF-06 MEDIO: Flyway sin soporte de PG18 y out-of-order=true en prod.
+- INF-07 BAJO: quitar hibernate.dialect.
+- POS MEDIO: el cajero ve hasta 500 clientes con PII (revisar junto con A2 y A3 de roles).
+- POS MEDIO: el ajuste de inventario por Telegram puede dejar stock negativo.
+- POS BAJO: una sobreventa en el marketplace no genera alerta. Se puede asociar una venta a un cliente de otro negocio.
+- MKT M-08 MEDIO: la sobreventa al confirmar el pago no registra el movimiento ni alerta (se puede sumar a INF-03).
+- MKT M-04 MEDIO: el pedido de invitado no revisa si el producto está archivado. M-05 MEDIO: el carrito no junta líneas repetidas. M-06 BAJO: las variantes muestran negocios ocultos.
+- MKT mejoras: paginar el catálogo (hoy se corta en 2000) y que la respuesta pública no exponga la dirección exacta de la bodega.
