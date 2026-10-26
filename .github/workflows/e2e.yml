@@ -86,7 +86,7 @@ jobs:
           echo "::error::el backend no arrancó"; tail -n 80 "$RUNNER_TEMP/backend.log"; exit 1
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 11.1.2
 
@@ -115,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: e2e-fullstack-report
-          retention-days: 14
+          retention-days: 3
           path: |
             Hot_click_outlet/frontend/playwright-report-fullstack
             Hot_click_outlet/frontend/test-results-fullstack

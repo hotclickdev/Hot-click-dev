@@ -74,8 +74,18 @@ export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' 
 
 /** SQL contra la BD efímera de E2E (solo si E2E_DATABASE_URL está; en CI apunta al service postgres). */
 export const conSql = !!process.env.E2E_DATABASE_URL
-export function sql(q: string): string {
-  return execFileSync('psql', [process.env.E2E_DATABASE_URL!, '-v', 'ON_ERROR_STOP=1', '-tAc', q], { encoding: 'utf8' }).trim()
+/**
+ * Ejecuta SQL contra la BD de E2E. Los valores van como variables de psql
+ * (`:'nombre'` en la consulta) y psql los cita como literales: nunca se
+ * interpolan en el string. La consulta va por stdin porque `-c` no expande variables.
+ */
+export function sql(q: string, vars: Record<string, string> = {}): string {
+  const args = [process.env.E2E_DATABASE_URL!, '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-tA']
+  for (const [k, v] of Object.entries(vars)) {
+    if (!/^[a-z_][a-z0-9_]*$/i.test(k)) throw new Error(`variable psql inválida: ${k}`)
+    args.push('-v', `${k}=${v}`)
+  }
+  return execFileSync('psql', [...args, '-f', '-'], { input: q, encoding: 'utf8' }).trim()
 }
 
 /** Login por la UI (dos pasos: correo → Continuar → contraseña). Devuelve la respuesta del POST. */

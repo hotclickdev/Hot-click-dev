@@ -77,7 +77,7 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
     const token = (await (await qr(request, dueno)).json()).data.token
     const ini = await request.post(`/api/pos/qr/pago/${token}/sinpe-onvo`, { data: { identificacion, tipoIdentificacion: 1 } })
     expect(ini.ok(), await ini.text()).toBeTruthy()
-    const intentId = sql(`SELECT substring(stripe_session_id from 8) FROM hot_click_pos_qr_sesion_tb WHERE token = '${token}' AND stripe_session_id LIKE 'ONVOPI:%'`)
+    const intentId = sql(`SELECT substring(stripe_session_id from 8) FROM hot_click_pos_qr_sesion_tb WHERE token = :'token' AND stripe_session_id LIKE 'ONVOPI:%'`, { token })
     expect(intentId).not.toBe('')
     const evento = { type: 'payment-intent.succeeded', data: { id: intentId } }
     expect((await request.post('/api/webhooks/onvo', { data: evento, headers: { 'X-Webhook-Secret': 'secreto-incorrecto' } })).status()).toBe(401)
@@ -124,7 +124,7 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
     const t = (await (await request.post('/api/pos/caja/abrir', { headers: auth(dueno), data: { montoInicial: 0 } })).json()).data
     const token = (await (await qr(request, dueno)).json()).data.token
     expect(token).toMatch(/^[a-f0-9]{32}$/)
-    sql(`UPDATE hot_click_pos_qr_sesion_tb SET fecha_expiracion = now() - interval '1 hour' WHERE token = '${token}'`)
+    sql(`UPDATE hot_click_pos_qr_sesion_tb SET fecha_expiracion = now() - interval '1 hour' WHERE token = :'token'`, { token })
     const info = await request.get(`/api/pos/qr/pago/${token}`)
     if (info.status() !== 404) expect(JSON.stringify(await info.json())).toMatch(/EXPIRADO|VENCID/i)
     const c = await request.put(`/api/pos/qr/${token}/confirmar-sinpe`, { headers: auth(editor), data: { referencia: ref() } })
