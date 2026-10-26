@@ -60,9 +60,9 @@ class OnvoPedidoPruebaTest {
         assertThat(captura.capturarVerificado("cs_1", "{}", "webhook")).isEqualTo(OnvoCapturaService.Captura.CAPTURADO);
         assertThat(p1.isEsPrueba()).isTrue();
         assertThat(p2.isEsPrueba()).isTrue();
-        // SCALE1: un solo saveAll con el grupo entero; ningún save por pedido.
-        verify(pedidoRepository, times(1)).saveAll(List.of(p1, p2));
+        // SCALE1 (regresión): ninguna llamada DB por pedido; persiste el dirty checking de la tx.
         verify(pedidoRepository, never()).save(any(Pedido.class));
+        verify(pedidoRepository, never()).saveAll(anyList());
     }
 
     @Test

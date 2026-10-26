@@ -102,10 +102,11 @@ public class OnvoCapturaService {
     void marcarSiEsPrueba(Pago pago, String sessionId) {
         boolean prueba = onvoService == null || !"live".equals(onvoService.modoEsperado());
         if (!prueba || pago.getPedido() == null) return;
-        // SCALE1: un solo saveAll del grupo (batch), no un save por pedido dentro del bucle.
-        java.util.List<com.hotclick.model.Pedido> grupo = pedidoGrupoService.delGrupo(pago.getPedido());
-        grupo.forEach(p -> p.setEsPrueba(true));
-        pedidoRepository.saveAll(grupo);
+        // SCALE1: sin save por pedido. Corre dentro de la tx REQUIRES_NEW de capturarVerificado:
+        // los pedidos del grupo están gestionados y el dirty checking los persiste en el flush del commit.
+        for (com.hotclick.model.Pedido p : pedidoGrupoService.delGrupo(pago.getPedido())) {
+            p.setEsPrueba(true);
+        }
         log.warn("[ALERTA-PAGO] Cobro ONVO en modo prueba: pedido marcado es_prueba. sessionId={}", sessionId);
     }
 
