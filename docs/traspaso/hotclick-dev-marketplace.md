@@ -39,7 +39,7 @@ Antes: #284, #285, #292 (mergeados).
 - `wip/billing-renovacion-v1` (b9ac1766): primera versión de la renovación ONVO. Supersedida por `fix/billing-renovacion-v2` (#305). Solo referencia.
 - Todas las demás ramas mías ya estaban en origin con el mismo hash, incluidas `fix/checkout-bodega-envio` (6027ad7f, PR #266 cerrado), `fix/validar-tilopay-webhook-secret` (3444899b, sin PR), `chore/dev-smtp-mailpit` (29411309, sin PR) y `fix/registro-cedula-otp` (f0e8e583, PR #260 cerrado).
 
-**No subida (decisión de Andrés):** `feat/cajero-asignable` (d5501c6b, local en `/workspace/hc-cajero-rol`). El rol CAJERO no se activa.
+- `wip/cajero-asignable` (d5501c6b): subida **solo como respaldo**. **EN PAUSA** por decisión de Andrés (CAJERO no activado): **no se mergea ni se abre PR**.
 
 ## Pendientes
 1. **M-08 sobreventa post-cobro**: espera decisión de Andrés. Spec en `evidencia/hotclick-dev-marketplace/spec-m08-sobreventa-post-cobro.md`. La implementa Dev Pagos (ONVO, Tilopay, SINPE, Stripe, manual) cuando Andrés decida; no pasarla antes.
@@ -58,7 +58,7 @@ Antes: #284, #285, #292 (mergeados).
 - ONVO split pay.
 
 ## Decisiones de Andrés que conozco
-- Rol CAJERO **no** se activa (`feat/cajero-asignable` no se sube).
+- Rol CAJERO **no** se activa (`wip/cajero-asignable` subida solo como respaldo; no se mergea).
 - Editor de cotizaciones eliminado (#326).
 - Endpoints de clientes de cotización retirados (#337); la tabla y los datos quedan.
 - Regla de merge: CI verde + APTO sobre hash exacto, sin deploy.
