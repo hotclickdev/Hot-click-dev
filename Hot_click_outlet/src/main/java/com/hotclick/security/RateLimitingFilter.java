@@ -114,6 +114,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/pedidos",                 new Limit(15,   60)),
         Map.entry("/api/payments/checkout",       new Limit(3,    60)),
         Map.entry("/api/payments/guest-checkout", new Limit(3,    60)),
+        // P-03: checkout SINPE invitado, mismo tope que el de tarjeta
+        Map.entry("/api/sinpe/guest-checkout",    new Limit(3,    60)),
         Map.entry("/api/public/embudo",           new Limit(60,   60)),
         Map.entry("/api/cart/abandoned",          new Limit(10,   60)),
         // Uploads públicos — limitar para evitar abuso de almacenamiento y costos S3
@@ -145,6 +147,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new PrefixLimit("/api/pos/qr/pago/", null, 10, 60, true),
         // MEDIO 3: generar QR del POS reserva stock; frena ráfagas por IP (va después de /pago/: gana el primero)
         new PrefixLimit("/api/pos/qr", null, 30, 60),
+        // P-03: comprobante SINPE invitado (sube a S3 y valida pedido): bucket por IP + prefijo,
+        // cambiar el número de pedido no abre otro cupo (frena enumeración)
+        new PrefixLimit("/api/sinpe/guest/", null, 5, 60),
         // Autoservicio de mesa público: evita inundar pedidos PENDIENTE
         new PrefixLimit("/api/qr/", null, 10, 60),
         // "Avisame cuando vuelva" es publico y solo pide un email: sin limite se insertan filas sin fin.

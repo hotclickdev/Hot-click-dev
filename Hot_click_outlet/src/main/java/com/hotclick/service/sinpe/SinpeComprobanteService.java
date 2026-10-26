@@ -32,6 +32,8 @@ public class SinpeComprobanteService {
 
     @Autowired private PedidoRepository              pedidoRepository;
     @Autowired private PagoRepository                pagoRepository;
+    /** BAJO P-02: relee el pago tras el lock (el contexto JPA puede tener una copia vieja). */
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
     @Autowired private ComprobanteSinpeRepository    comprobanteRepository;
     @Autowired private SupabaseStorageService         storageService;
     @Autowired private NotificacionEmailService       notificacionEmailService;
@@ -48,14 +50,29 @@ public class SinpeComprobanteService {
      * bajo carga (muchos comprobantes SINPE simultaneos). La persistencia corre aparte, en
      * {@link SinpeComprobantePersistenceService#guardar}, en su propia transaccion corta.
      */
+    /** P-03: mismo mensaje para "no existe" y "no es tuyo": no revela qué pedidos existen. */
+    public static final String PEDIDO_NO_VALIDO = "No se pudo validar el pedido";
+
+    @Autowired private com.hotclick.service.payment.GuestCancelTokenService guestTokenService;
+
+    /** P-03: invitado. Exige el token de invitado del checkout antes de buscar el pedido. */
+    public void subirComprobanteInvitado(String numeroPedido, String tokenInvitado, MultipartFile archivo,
+                          String nombreRemitente, String cedulaRemitente,
+                          String telefonoRemitente, String correoUsuario) {
+        if (!guestTokenService.esValido(numeroPedido, tokenInvitado)) {
+            throw new SecurityException(PEDIDO_NO_VALIDO);
+        }
+        subirComprobante(numeroPedido, archivo, nombreRemitente, cedulaRemitente, telefonoRemitente, correoUsuario);
+    }
+
     public void subirComprobante(String numeroPedido, MultipartFile archivo,
                           String nombreRemitente, String cedulaRemitente,
                           String telefonoRemitente, String correoUsuario) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> new SecurityException(PEDIDO_NO_VALIDO));
 
-        if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
-            throw new SecurityException("No tienes permiso para modificar este pedido");
+        if (!mismoCorreo(pedido, correoUsuario)) {
+            throw new SecurityException(PEDIDO_NO_VALIDO);
         }
 
         if (!Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(pedido.getEstadoPedido())) {
@@ -79,6 +96,12 @@ public class SinpeComprobanteService {
         }
 
         persistenceService.guardar(numeroPedido, url, nombreRemitente, cedulaRemitente, telefonoRemitente, correoUsuario);
+    }
+
+    /** P-03: correo sin distinguir mayúsculas ni espacios; nulos fallan cerrado. */
+    static boolean mismoCorreo(Pedido pedido, String correo) {
+        String dueno = pedido == null || pedido.getUsuarioFinal() == null ? null : pedido.getUsuarioFinal().getCorreo();
+        return dueno != null && correo != null && !correo.isBlank() && dueno.trim().equalsIgnoreCase(correo.trim());
     }
 
     @org.springframework.beans.factory.annotation.Value("${sinpe.comprobante.url-firmada-segundos:300}")
@@ -108,7 +131,7 @@ public class SinpeComprobanteService {
 
     @Transactional
     public void aprobar(Long comprobanteId, String adminEmail, Long adminId) {
-        ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
+        ComprobanteSinpe comprobante = comprobanteRepository.findByIdForUpdate(comprobanteId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
         aprobacionGuard.assertPuedeResolver(comprobante.getPedido());
 
@@ -123,6 +146,7 @@ public class SinpeComprobanteService {
 
         Pago pago = pagoDeLaCompra(pedido)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago SINPE no encontrado para pedido: " + pedido.getNumeroPedido()));
+        pago = bloquearPagoPendiente(pago);
 
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
@@ -145,7 +169,7 @@ public class SinpeComprobanteService {
 
     @Transactional
     public void rechazar(Long comprobanteId, String motivo, String adminEmail, Long adminId) {
-        ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
+        ComprobanteSinpe comprobante = comprobanteRepository.findByIdForUpdate(comprobanteId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
         aprobacionGuard.assertPuedeResolver(comprobante.getPedido());
 
@@ -162,7 +186,7 @@ public class SinpeComprobanteService {
         comprobante.setAdminEmail(adminEmail);
         comprobanteRepository.save(comprobante);
 
-        Pago pago = pagoDeLaCompra(pedido).orElse(null);
+        Pago pago = pagoDeLaCompra(pedido).map(this::bloquearPagoPendiente).orElse(null);
         if (pago != null) {
             pago.setEstadoPago(Constants.PAGO_CANCELADO);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
@@ -183,6 +207,19 @@ public class SinpeComprobanteService {
             "Pedido " + pedido.getNumeroPedido() + " rechazado. Motivo: " + motivo);
 
         log.info("Comprobante SINPE rechazado por {}: pedido={}", adminEmail, pedido.getNumeroPedido());
+    }
+
+    /** P-02: bloquea la fila del pago y exige PENDIENTE; cubre la carrera con la confirmación por pago. */
+    private Pago bloquearPagoPendiente(Pago pago) {
+        Pago bloqueado = pagoRepository.findByIdForUpdate(pago.getId())
+            .orElseThrow(() -> new IllegalStateException("Pago SINPE no disponible"));
+        // BAJO: si el pago ya estaba en el contexto, el SELECT FOR UPDATE bloquea pero devuelve la copia en
+        // memoria; se relee de la BD ya con el lock tomado antes de verificar PENDIENTE.
+        if (entityManager != null && entityManager.contains(bloqueado)) entityManager.refresh(bloqueado);
+        if (!Constants.PAGO_PENDIENTE.equals(bloqueado.getEstadoPago())) {
+            throw new IllegalStateException("El pago ya fue procesado: " + bloqueado.getEstadoPago());
+        }
+        return bloqueado;
     }
 
     /**

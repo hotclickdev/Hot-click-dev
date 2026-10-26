@@ -425,7 +425,7 @@ class PaymentServiceTest {
 
         assertThatThrownBy(() -> service.cancelarPorUsuario("ORD-CANCEL-002", "hacker@evil.com"))
             .isInstanceOf(SecurityException.class)
-            .hasMessageContaining("permiso");
+            .hasMessageContaining("validar el pedido");
     }
 
     @Test

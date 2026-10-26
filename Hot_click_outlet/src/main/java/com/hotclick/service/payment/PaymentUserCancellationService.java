@@ -25,10 +25,11 @@ public class PaymentUserCancellationService {
     @Transactional
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> new SecurityException("No se pudo validar el pedido"));
 
-        if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
-            throw new SecurityException("No tienes permiso para cancelar este pedido");
+        String dueno = pedido.getUsuarioFinal() == null ? null : pedido.getUsuarioFinal().getCorreo();
+        if (dueno == null || correoUsuario == null || !dueno.trim().equalsIgnoreCase(correoUsuario.trim())) {
+            throw new SecurityException("No se pudo validar el pedido");
         }
 
         if (!cancelablePorComprador(pedido.getEstadoPedido())) {

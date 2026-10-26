@@ -58,6 +58,9 @@ export async function ejecutarSubirComprobante({
     } else {
       const correo = sinpeEmail.trim() || guestEmail.trim()
       fd.append('correoUsuario', correo)
+      // P-03: token de invitado emitido en el checkout; sin él el backend rechaza
+      const tokenInvitado = sessionStorage.getItem(`hc-cancel-token:${numeroPedido}`)
+      if (tokenInvitado) fd.append('tokenInvitado', tokenInvitado)
       await paymentService.guestSubirComprobanteSinpe(numeroPedido, fd)
     }
     setSinpeUploadEstado('done')
