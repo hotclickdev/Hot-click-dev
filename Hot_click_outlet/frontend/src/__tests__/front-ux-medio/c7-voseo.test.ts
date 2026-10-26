@@ -8,9 +8,9 @@ describe('C7: voseo en textos de pantalla', () => {
     const malas = Object.entries(leer('i18n/locales/es.json').split('\n')).filter(([, l]) => TUTEO_USTED.test(l))
     expect(malas).toEqual([])
   })
-  it('componentes .tsx sin usted/tuteo de la lista (salvo Tilopay, checkout de Dev Pagos y editor de cotizaciones, fuera de alcance)', () => {
+  it('componentes .tsx sin usted/tuteo de la lista (salvo Tilopay y checkout de Dev Pagos, fuera de alcance)', () => {
     const malos = archivosFuente()
-      .filter((f) => f.endsWith('.tsx') && !/tilopay|nueva-cotizacion|TiendaCheckoutPage/i.test(f))
+      .filter((f) => f.endsWith('.tsx') && !/tilopay|TiendaCheckoutPage/i.test(f))
       .filter((f) => leer(f).split('\n').some((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*') && TUTEO_USTED.test(l)))
     expect(malos).toEqual([])
   })
