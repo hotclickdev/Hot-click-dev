@@ -6,9 +6,50 @@ Generado el lunes 26-oct-2026, 2:40 PM (hora de Costa Rica). Sirve para recrear 
 
 ---
 
+## Herramientas: cuáles se usan y cuáles evitar
+
+### 1) EN USO
+| Herramienta | Para qué | Nota |
+|---|---|---|
+| Java Spring Boot | Backend | |
+| React + Vite (pnpm) | Frontend | Visto en el repo |
+| PostgreSQL 18 + Flyway | Base de datos y migraciones | Validación estricta: si falta una versión intermedia, el backend no arranca |
+| Clerk | Autenticación | |
+| AWS Lightsail | Producción | **Solo Andrés despliega** |
+| **ONVO** | **ÚNICO procesador de pagos**: tarjeta, SINPE Móvil por ONVO y suscripciones | Producción en modo test por opt-in hasta que Andrés active la llave live |
+| Hacienda 4.4 | Factura electrónica (XAdES-EPES + XSD 4.4) | |
+| Bot de Telegram | Alertas internas y bot de clientes | |
+| GitHub, GitHub Actions y gh CLI | Repo, CI y PRs | El token ya tiene el scope `workflow` |
+| gitleaks | Busca secretos en CI y antes de cada push | |
+| SonarCloud | Calidad del código en CI | |
+| Playwright | E2E en CI (#351) | |
+| Sentry | Errores | Preparado en código pero **apagado** (#329) |
+| Respaldo local cifrado con GPG | pg_dump cifrado en la máquina de Andrés (#330) | Sin nube |
+| SendGrid | Correo transaccional (selector de proveedor de #345; SMTP solo si se configura explícitamente) | Visto en el repo |
+| Mailpit | Correo de prueba en el staging **local** | Visto en el repo |
+| Gates E4 Commit-gate y SCALE1 Diff review | Revisiones automáticas del CI | Visto en el repo |
+| IA del asistente y del chat (Anthropic/Gemini/NVIDIA + Voyage para RAG) | Chatbots | *Inferido* de las variables del repo; confirmar cuál está activo |
+| WhatsApp/Twilio, PostHog/GA4, Turnstile, n8n | Mensajería, analítica, antibots, automatizaciones | *Inferido* de las variables del repo; puede estar sin configurar |
+
+### 2) EVITAR (no preguntar ni usar)
+| Evitar | Motivo |
+|---|---|
+| **Tilopay** | Ya no se usa; solo ONVO |
+| **Stripe** y cualquier otro procesador de pagos | Solo ONVO |
+| SINPE manual por fuera de ONVO | El SINPE va solo por ONVO (P-01) |
+| Crear servidores (de staging o de respaldo) | Andrés lo prohibió; el staging de #331 se revirtió en #335 |
+| AWS S3 o cualquier respaldo en la nube | Los respaldos son solo locales y cifrados |
+| Gastar dinero o abrir cuentas nuevas | Solo con OK de Andrés |
+| Deploy hecho por un bot | Solo Andrés despliega |
+| La llave live de ONVO | Solo Andrés |
+
+**Deuda técnica (borrar en un PR aparte, con APTO; no hacerlo dentro de otros cambios):** el código todavía tiene restos de **Tilopay** (unos 120 archivos; por ejemplo `TilopayWebhookController`, `PaymentController`, `PosQrController`, `SuscripcionController`, las variables `TILOPAY_*` y la CSP) y de **Stripe** (unos 91 archivos; por ejemplo `AdminPagoController`, `PaymentCheckoutRequest`, `EncargoCheckoutRequest`, `BillingLedger`, las variables `STRIPE_*`, y `/api/webhooks/stripe`, que responde 400 en vez de 404). Los conteos salen de `git grep` sobre master `1f54e30f` (Java, TS y YML).
+
+---
+
 ## Resumen rápido: quién es quién
 
-Una línea por bot. Las notas están en la rama `docs/traspaso-cuenta-nueva`, carpeta `docs/traspaso/`. Los marcados ❌ **SIN NOTA** no dejaron nota de traspaso. **Actualizado: 26-oct-2026, 3:35 PM, hora de CR.**
+Una línea por bot. Las notas están en la rama `docs/traspaso-cuenta-nueva`, carpeta `docs/traspaso/`. Los marcados ❌ **SIN NOTA** no dejaron nota de traspaso. **Actualizado: 26-oct-2026, 3:30 PM, hora de CR.**
 
 **Master:** `1f54e30f` (merge de #349, 3:06 PM CR). Sin deploy.
 
@@ -647,6 +688,7 @@ Sos el reemplazo de "<NOMBRE DEL BOT>" del equipo HotClick (repo hotclickdev/Hot
 1. Hacé git fetch y leé, en la rama docs/traspaso-cuenta-nueva, docs/traspaso/README.md (reglas, decisiones de Andrés y forma de trabajar) y docs/traspaso/<bot>.md (lo que dejó tu antecesor: ramas, PRs, pendientes y próximos pasos).
 2. Revisá el estado real en GitHub de las ramas y los PRs que menciona la nota (CI, comentarios, conflictos con master).
 3. Seguí exactamente donde quedó. No rehagas trabajo que ya esté mergeado.
+Pagos: solo ONVO; no propongas ni uses Tilopay ni Stripe.
 Reglas: merge solo con CI verde + APTO de HotClick Seguridad. Nada de deploy, gastos, cuentas o servidores nuevos, borrar datos de producción ni llave live de ONVO sin el OK de Andrés. Cada fix lleva su test de regresión. Nunca muestres ni subas secretos. Reportá a Grok Bot/Mentor en español.
 Respondé primero con un resumen corto de lo que entendiste y tu siguiente paso.
 ```
