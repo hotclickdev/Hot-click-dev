@@ -156,4 +156,19 @@ class OnvoCapturaConcurrenteTest extends BaseIntegrationTest {
             .isEqualTo(Constants.PAGO_CAPTURADO);
         verify(paymentService, times(1)).confirmarPedido(any(Pago.class));
     }
+
+    @Test
+    @DisplayName("SCALE1 #301: llave de prueba → es_prueba persistido por dirty checking, sin save por pedido")
+    void llaveDePrueba_persisteEsPruebaSinSave() {
+        when(onvoService.modoEsperado()).thenReturn("test");
+        doReturn(Map.of("paymentStatus", "paid", "status", "complete", "paymentIntentId", INTENT, "mode", "test"))
+            .when(onvoService).obtenerCheckoutSession(SESION);
+        doReturn(Map.of("id", INTENT, "status", "succeeded", "amount", 1_000_000, "currency", "CRC", "mode", "test"))
+            .when(onvoService).obtenerPaymentIntent(INTENT);
+
+        assertThat(provider.procesarPagoVerificado(SESION, "webhook")).isEqualTo(Verificacion.OK);
+        Pedido recargado = pedidoRepository.findById(
+            pagoRepository.findByMerchantToken(SESION).orElseThrow().getPedido().getId()).orElseThrow();
+        assertThat(recargado.isEsPrueba()).isTrue();
+    }
 }

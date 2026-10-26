@@ -62,6 +62,7 @@ public class WalletLiquidacionService {
         }
         Set<Long> cod = pedidoIds.isEmpty() ? Set.of() : new HashSet<>(txRepo.findPedidosContraEntrega(pedidoIds));
         Set<Long> posEfectivo = pedidoIds.isEmpty() ? Set.of() : new HashSet<>(txRepo.findPedidosPosEfectivo(pedidoIds));
+        Set<Long> prueba = pedidoIds.isEmpty() ? Set.of() : new HashSet<>(txRepo.findPedidosPrueba(pedidoIds));
 
         List<WalletTransaccion> cubiertos = new ArrayList<>();
         long neto = 0;
@@ -69,6 +70,9 @@ public class WalletLiquidacionService {
             boolean esVenta = WalletTransaccion.CREDITO_VENTA.equals(t.getTipo());
             if (esVenta && t.getReferenciaId() != null && posEfectivo.contains(t.getReferenciaId())) {
                 continue; // efectivo POS: no va en ningún payout
+            }
+            if (esVenta && t.getReferenciaId() != null && prueba.contains(t.getReferenciaId())) {
+                continue; // P-04: cobro con llave de prueba, no es plata real
             }
             if (esVenta) {
                 boolean esCod = t.getReferenciaId() != null && cod.contains(t.getReferenciaId());

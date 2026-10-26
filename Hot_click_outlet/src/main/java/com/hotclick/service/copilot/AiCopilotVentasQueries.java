@@ -27,13 +27,13 @@ class AiCopilotVentasQueries {
             SELECT COUNT(*) as pedidos, COALESCE(SUM(total_pedido),0) as ingresos
             FROM hot_click_pedido_tb
             WHERE fk_id_empresa = ? AND DATE(fecha_pedido) = CURRENT_DATE
-              AND estado_pedido IN ('PAGADO','ENTREGADO')
+              AND estado_pedido IN ('PAGADO','ENTREGADO') AND es_prueba = false
             """;
         String sql30d = """
             SELECT COUNT(*) as pedidos, COALESCE(SUM(total_pedido),0) as ingresos
             FROM hot_click_pedido_tb
             WHERE fk_id_empresa = ? AND fecha_pedido >= NOW() - INTERVAL '30 days'
-              AND estado_pedido IN ('PAGADO','ENTREGADO')
+              AND estado_pedido IN ('PAGADO','ENTREGADO') AND es_prueba = false
             """;
         String sqlTopProds = """
             SELECT p.nombre_producto, SUM(pi.cantidad) as veces, SUM(pi.subtotal_item) as total
@@ -41,7 +41,7 @@ class AiCopilotVentasQueries {
             JOIN hot_click_pedido_tb ped ON pi.fk_id_pedido = ped.id_pedido
             JOIN hot_click_producto_tb p ON pi.fk_id_producto = p.id_producto
             WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '30 days'
-              AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
+              AND ped.estado_pedido IN ('PAGADO','ENTREGADO') AND ped.es_prueba = false
             GROUP BY p.nombre_producto ORDER BY veces DESC LIMIT 5
             """;
         var hoy  = jdbc.queryForMap(sqlHoy,  empresaId);
@@ -70,7 +70,7 @@ class AiCopilotVentasQueries {
                        COALESCE(SUM(total_pedido),0) as ingresos_7d
                 FROM hot_click_pedido_tb
                 WHERE fk_id_empresa = ? AND fecha_pedido >= NOW() - INTERVAL '7 days'
-                  AND estado_pedido IN ('PAGADO','ENTREGADO')
+                  AND estado_pedido IN ('PAGADO','ENTREGADO') AND es_prueba = false
                 """;
             Map<String, Object> kpis = jdbc.queryForMap(sqlKpis, empresaId);
             java.text.DecimalFormat fmt = new java.text.DecimalFormat("#,###");
