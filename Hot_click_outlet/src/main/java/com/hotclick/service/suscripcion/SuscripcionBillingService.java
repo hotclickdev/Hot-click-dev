@@ -33,6 +33,10 @@ public class SuscripcionBillingService {
     @Autowired private StripeService         stripeService;
     @Autowired private SuscripcionPlanSupport planSupport;
 
+    /** Auditor 5 S-07: plan que recibe el trial de 14 días. */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.billing.plan-trial:PYME}")
+    private String planTrial = "PYME";
+
     /** Self-ref para que los métodos @Transactional auxiliares pasen por el proxy AOP. */
     @Autowired @Lazy
     private SuscripcionBillingService self;
@@ -52,10 +56,9 @@ public class SuscripcionBillingService {
             throw new IllegalStateException("Este negocio ya usó su período de prueba.");
         }
 
-        Plan planPro = planRepo.findByNombre("PRO")
-            .orElseGet(() -> planRepo.findAll().stream()
-                .filter(p -> !"FREE".equals(p.getNombre())).findFirst()
-                .orElseThrow(() -> new RecursoNoEncontradoException("Plan no-FREE no configurado")));
+        // Auditor 5 S-07: el plan del trial sale de configuración; sin fallback a un plan arbitrario.
+        Plan planPro = planRepo.findByNombre(planTrial)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Plan de trial no configurado: " + planTrial));
 
         LocalDate trialEnd = LocalDate.now(Constants.ZONA_CR).plusDays(14);
 

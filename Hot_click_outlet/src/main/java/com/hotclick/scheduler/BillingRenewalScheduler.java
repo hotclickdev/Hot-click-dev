@@ -39,6 +39,8 @@ public class BillingRenewalScheduler {
         tilopayBilling.generarRenovaciones(java.time.LocalDate.now(com.hotclick.utils.Constants.ZONA_CR));
         int trialsExpirados = suscripcionService.expirarTrialsVencidos();
         int pastDueExpirados = suscripcionService.expirarPastDueVencidos();
+        int canceladas = suscripcionService.cerrarCancelacionesVencidas();
+        if (canceladas > 0) log.info("[billing-renewal] {} cancelación(es) al vencer cerradas", canceladas);
 
         int total = trialsExpirados + pastDueExpirados;
         if (total > 0) {
