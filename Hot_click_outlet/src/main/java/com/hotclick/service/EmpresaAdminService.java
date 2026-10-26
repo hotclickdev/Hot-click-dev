@@ -66,10 +66,7 @@ public class EmpresaAdminService {
         return data;
     }
 
-    public void cambiarEstado(Long id, String nuevoEstado) {
-        cambiarEstado(id, nuevoEstado, null);
-    }
-
+    @Transactional
     public void cambiarEstado(Long id, String nuevoEstado, String motivo) {
         if (nuevoEstado == null || !ESTADOS_VALIDOS.contains(nuevoEstado)) {
             throw new IllegalArgumentException("Estado inválido");
@@ -77,13 +74,17 @@ public class EmpresaAdminService {
         if (exigeMotivo(nuevoEstado) && (motivo == null || motivo.isBlank())) {
             throw new IllegalArgumentException("Motivo obligatorio para suspender o inactivar");
         }
-        empresa(id);
+        // Lock pesimista hasta el commit: el job de impago (UPDATE) espera y no se pisa con la entidad vieja.
+        Empresa empresa = empresaBloqueada(id);
+        // Fail-closed: desde impago no hay salida admin genérica (ni a ACTIVO ni a otro estado que luego se active).
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.ReactivacionSinPagoException();
+        }
         if ("ACTIVO".equals(nuevoEstado)) {
             empresaAprobacionService.aprobarYPublicar(id);
             auditarEstado(id, nuevoEstado, motivo);
             return;
         }
-        Empresa empresa = empresa(id);
         empresa.setEstadoEmpresa(nuevoEstado);
         empresa.setVisibilidadPublica(false);
         empresaRepository.save(empresa);
@@ -100,6 +101,7 @@ public class EmpresaAdminService {
             "EMPRESA_CAMBIO_ESTADO", "EMPRESA", id, id, detalle);
     }
 
+    @Transactional
     @CacheEvict(value = "tenantInfo", key = "#id")
     public String cambiarPlan(Long id, String nombrePlan) {
         if (nombrePlan == null || !PLANES_VALIDOS.contains(nombrePlan)) {
@@ -107,7 +109,9 @@ public class EmpresaAdminService {
         }
         Plan plan = planRepository.findByNombre(nombrePlan)
             .orElseThrow(() -> new IllegalStateException("Plan " + nombrePlan + " no configurado en hot_click_plan_tb"));
-        Empresa empresa = empresa(id);
+        Empresa empresa = empresaBloqueada(id);
+        // Igual que #333: una tienda en impago no cambia de plan (ni por convenio); solo paga lo pendiente.
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) throw new com.hotclick.exception.ReactivacionSinPagoException();
         empresa.setPlan(plan);
         empresa.setPlanSaas(nombrePlan);
         empresaRepository.save(empresa);
@@ -116,10 +120,14 @@ public class EmpresaAdminService {
         return nombrePlan;
     }
 
+    @Transactional
     public boolean cambiarVisibilidad(Long id, Object val) {
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
-        Empresa empresa = empresa(id);
+        Empresa empresa = empresaBloqueada(id);
         boolean visible = Boolean.parseBoolean(val.toString());
+        if (visible && com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.ReactivacionSinPagoException();
+        }
         if (visible && sancionRepo.existsByEmpresaIdAndActivaTrue(id)) {
             throw new IllegalArgumentException("Hay una sanción vigente. El catálogo sigue oculto.");
         }
@@ -208,6 +216,12 @@ public class EmpresaAdminService {
             sb.append(ALFABETO_PASSWORD_TEMPORAL.charAt(RNG.nextInt(ALFABETO_PASSWORD_TEMPORAL.length())));
         }
         return sb.toString();
+    }
+
+    /** Lectura con PESSIMISTIC_WRITE (requiere transacción): estado fresco y sin carrera con el job de impago. */
+    private Empresa empresaBloqueada(Long id) {
+        return empresaRepository.findByIdForUpdate(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
     }
 
     private Empresa empresa(Long id) {

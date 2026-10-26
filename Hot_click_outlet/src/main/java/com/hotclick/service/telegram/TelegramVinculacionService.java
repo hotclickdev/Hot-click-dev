@@ -34,7 +34,7 @@ public class TelegramVinculacionService {
     }
 
     public void vincular(long chatId, String username, String codigoCrudo) {
-        String codigo = codigoCrudo.replaceAll("[^A-Za-z0-9]", "");
+        String codigo = codigoCrudo.replaceAll("[^A-Za-z0-9]", "").toUpperCase(java.util.Locale.ROOT); // TG3: códigos se generan en mayúsculas
         if (codigo.isEmpty() || codigo.length() > 16) {
             bot.enviarMensaje(chatId, "Ese código no es válido. Generá uno nuevo desde Configuración → Telegram en el panel.");
             return;

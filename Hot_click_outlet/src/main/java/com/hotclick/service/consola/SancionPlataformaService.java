@@ -100,7 +100,10 @@ public class SancionPlataformaService {
         fila.setActiva(false);
         sancionRepo.save(fila);
         if (!fila.isRestituirVisibilidad() || sancionRepo.existsByEmpresaIdAndActivaTrue(fila.getEmpresaId())) return;
-        empresaRepo.findById(fila.getEmpresaId()).ifPresent(empresa -> {
+        // Lock pesimista (corre dentro de @Transactional): estado fresco frente al job de impago.
+        empresaRepo.findByIdForUpdate(fila.getEmpresaId()).ifPresent(empresa -> {
+            // Impago: la sanción se cierra pero la tienda sigue oculta; solo el pago ONVO la reactiva.
+            if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) return;
             empresa.setVisibilidadPublica(true);
             empresaRepo.save(empresa);
         });

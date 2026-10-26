@@ -30,10 +30,16 @@ public class FacturacionEmisionSupport {
 
     private static final Logger log = LoggerFactory.getLogger(FacturacionEmisionSupport.class);
 
-    private static final List<String> ESTADOS_ACTIVOS = List.of(
+    /**
+     * Estados que bloquean otra emisión para el mismo pedido o compra. ERROR cuenta: el comprobante
+     * ya tiene clave y consecutivo y la contingencia lo sigue reenviando; emitir otro duplicaría la venta.
+     */
+    static final List<String> ESTADOS_ACTIVOS = List.of(
         ComprobanteFiscal.ESTADO_PENDIENTE,
+        ComprobanteFiscal.ESTADO_PENDIENTE_CONFIG,
         ComprobanteFiscal.ESTADO_ENVIADO,
-        ComprobanteFiscal.ESTADO_ACEPTADO);
+        ComprobanteFiscal.ESTADO_ACEPTADO,
+        ComprobanteFiscal.ESTADO_ERROR);
 
     private final ComprobanteFiscalRepository comprobanteRepo;
     private final ConsecutivoFiscalService consecutivoService;

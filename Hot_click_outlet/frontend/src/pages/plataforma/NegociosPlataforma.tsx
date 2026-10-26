@@ -40,7 +40,7 @@ export default function NegociosPlataforma() {
               </article>
               <article className="rounded-[14px] border border-hc-n-200 bg-white p-4 sm:col-span-2">
                 <h2 className="font-display text-[17px] font-bold">Historial</h2>
-                <p className="mt-2 text-sm text-hc-n-600">El cambio de nombre, de precio y de stock queda con la hora, para saber si lo hizo el vendedor o usted.</p>
+                <p className="mt-2 text-sm text-hc-n-600">El cambio de nombre, de precio y de stock queda con la hora, para saber si lo hizo el vendedor o vos.</p>
               </article>
             </div>
           )}

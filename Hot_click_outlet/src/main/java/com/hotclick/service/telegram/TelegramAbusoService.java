@@ -5,7 +5,6 @@ import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.IpBloqueadaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
-import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.security.SecurityEventSeverity;
 import com.hotclick.service.TelegramClienteBotService;
@@ -30,7 +29,6 @@ public class TelegramAbusoService {
     @Autowired private TelegramService telegramService;
     @Autowired private SecurityAlertNotifier alertNotifier;
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
-    @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private IpBloqueadaRepository ipBloqueadaRepository;
 
     public boolean rechazarSiPausadoOBloqueado(TelegramVinculacion v) {
@@ -54,15 +52,22 @@ public class TelegramAbusoService {
         return true;
     }
 
+    /**
+     * TG3 (A8-C2): una ráfaga (&gt;3 msg/s) solo pausa el chat {@value #PAUSA_MINUTOS} min; nunca escala
+     * al bloqueo de {@value #BLOQUEO_DIAS} días (que además ya solo afecta a Telegram).
+     */
     public void registrarRafaga(long chatId) {
-        registrarExceso(chatId, "Ráfaga de mensajes en el bot de clientes");
+        if (!rateLimiter.tryAcquire("tg:" + chatId + ":abuso-aviso", 1, 30)) return;
+        pausar(chatId);
+        alertNotifier.generateAlert("TELEGRAM_ABUSO", SecurityEventSeverity.MEDIUM, null, usuarioId(chatId),
+            "Ráfaga de mensajes en el bot de clientes", "chat=" + chatEnmascarado(chatId));
     }
 
     public void avisarErrorDeUsuario(long chatId, String resumen) {
         if (!rateLimiter.tryAcquire("tg:err:" + chatId, 1, 300)) return;
         String corto = resumen == null ? "" : TelegramTexto.sinToken(resumen);
         if (corto.length() > 300) corto = corto.substring(0, 300);
-        telegramService.enviar("Error en el bot de clientes. Chat " + chatId + ". " + corto);
+        telegramService.enviar("Error en el bot de clientes. Chat " + chatEnmascarado(chatId) + ". " + corto);
     }
 
     public void secretoInvalido(String ip) {
@@ -79,7 +84,7 @@ public class TelegramAbusoService {
         if (primera) pausar(chatId);
         else bloquearCuenta(chatId);
         alertNotifier.generateAlert("TELEGRAM_ABUSO", SecurityEventSeverity.HIGH, null, usuarioId(chatId),
-            motivo, "chat=" + chatId);
+            motivo, "chat=" + chatEnmascarado(chatId));
     }
 
     private void pausar(long chatId) {
@@ -90,16 +95,25 @@ public class TelegramAbusoService {
         bot.enviarMensaje(chatId, "Pausé este chat 30 minutos por actividad sospechosa.");
     }
 
+    /** Seguridad INFO: el chat_id no va completo a avisos ni logs; solo los últimos 4 dígitos. */
+    static String chatEnmascarado(long chatId) {
+        String s = Long.toString(Math.abs(chatId));
+        return "***" + (s.length() > 4 ? s.substring(s.length() - 4) : s);
+    }
+
+    /**
+     * TG3: el bloqueo por abuso repetido corta SOLO Telegram: la vinculación queda en pausa
+     * {@value #BLOQUEO_DIAS} días. No toca Usuario.estado ni bloqueadoHasta (login web intacto).
+     */
     private void bloquearCuenta(long chatId) {
-        vinculacionRepository.findByChatIdAndEstado(chatId, TelegramVinculacion.ACTIVA).ifPresent(v -> {
-            Usuario usuario = v.getUsuario();
-            if (usuario == null || usuario.getId() == null) return;
-            usuario.setBloqueadoHasta(LocalDateTime.now(Constants.ZONA_CR).plusDays(BLOQUEO_DIAS));
-            usuario.setEstado(Constants.ESTADO_SUSPENDIDO);
-            usuarioRepository.save(usuario);
-        });
+        TelegramVinculacion v = vinculacionRepository
+            .findByChatIdAndEstado(chatId, TelegramVinculacion.ACTIVA).orElse(null);
+        if (v != null) {
+            v.setPausadoHasta(LocalDateTime.now(Constants.ZONA_CR).plusDays(BLOQUEO_DIAS));
+            vinculacionRepository.save(v);
+        }
         bot.enviarMensaje(chatId,
-            "Bloqueé la cuenta por actividad sospechosa repetida. Un administrador tiene que habilitarla.");
+            "Bloqueé el acceso por Telegram por actividad sospechosa repetida. Un administrador tiene que habilitarlo.");
     }
 
     private void bloquearIp(String ip) {

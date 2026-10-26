@@ -6,8 +6,9 @@ import ClienteDetailModal from '@/components/admin/ClienteDetailModal'
 import { esInactivo30d, mensajeErrorCliente, type ClienteCrm } from './clientes/clientesHelpers'
 import TextoMas from '@/components/ui/TextoMas'
 import type { Id } from '@/types/api'
+import { formatMiles } from '@/utils/format'
 
-const fmt = (n?: number | null) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+const fmt = (n?: number | null) => formatMiles(n ?? 0)
 
 const SEG_META: Record<string, { bg: string; text: string }> = {
   NUEVO:     { bg: 'rgba(96,165,250,0.12)',  text: '#6490EA' },

@@ -95,7 +95,7 @@ export default function ImpersonacionBanner() {
             </>
           ) : (
             <>
-              Usted es el administrador, no el usuario. Está en <strong>{empresaNombre || 'esta tienda'}</strong>.{' '}
+              Vos sos el administrador, no el usuario. Estás en <strong>{empresaNombre || 'esta tienda'}</strong>.{' '}
               {t('impersonacion.soloLectura')}
             </>
           )}
