@@ -193,6 +193,33 @@ public class PosVentaIvaRegimenTest {
             .isEqualTo(factura.getTotalPedido().longValue());
     }
 
+    @Test
+    @DisplayName("cotizar (lo que muestra StepCobro) da el mismo total e IVA que la venta real")
+    void cotizarIgualAVenta() {
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        java.util.Map<String, Object> cot = service.cotizarCobro(ventaConDescuento(true, 3, 1500), 1L);
+        Pedido pedido = service.crearVenta(ventaConDescuento(true, 3, 1500), 5L, 1L, "caja@test.cr");
+        assertThat(cot.get("impuesto")).isEqualTo(1755L);
+        assertThat(cot.get("total")).isEqualTo(pedido.getTotalPedido().longValue());
+
+        java.util.Map<String, Object> tiquete = service.cotizarCobro(venta(false, 3), 1L);
+        assertThat(tiquete.get("impuesto")).isEqualTo(0L);
+        assertThat(tiquete.get("total")).isEqualTo(15000L);
+
+        empresa.setRegimenIva("TRADICIONAL");
+        assertThat(service.cotizarCobro(venta(true, 3), 1L).get("total")).isEqualTo(15000L);
+    }
+
+    @Test
+    @DisplayName("cotizar no deja ver productos de otro negocio")
+    void cotizarOtroNegocio() {
+        Empresa otra = new Empresa();
+        otra.setId(9L);
+        producto.setEmpresa(otra);
+        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
+        assertThatThrownBy(() -> service.cotizarCobro(venta(true, 1), 1L)).isInstanceOf(RuntimeException.class);
+    }
+
     public static long totalXml(Pedido pedido, String tipo) {
         com.hotclick.model.ComprobanteFiscal cf = new com.hotclick.model.ComprobanteFiscal();
         cf.setTipo(tipo);

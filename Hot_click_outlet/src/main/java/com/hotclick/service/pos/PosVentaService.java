@@ -223,6 +223,42 @@ public class PosVentaService {
     }
 
     /** Descuento manual solo con permiso pos.descuento (o ADMIN_IT). */
+    /**
+     * M4: total que verá la caja antes de cobrar. Misma regla que {@link #crearVenta}
+     * (precio de catálogo, descuento topado, IVA de {@code CalculadoraIva} sobre el neto),
+     * sin bloquear stock ni guardar nada: lo que muestra StepCobro es lo que se va a cobrar.
+     */
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Object> cotizarCobro(PosVentaDTO dto, Long empresaId) {
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
+        exigirCantidadesValidas(dto);
+        long subtotal = 0;
+        List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
+        for (PosVentaDTO.Item itemDto : dto.getItems()) {
+            Producto producto = productoRepository.findById(itemDto.getProductoId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
+            PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), empresaId);
+            exigirVendiblePorPos(producto);
+            int cantidad = cantidadValida(itemDto.getCantidad());
+            Integer precio = producto.getPrecioEfectivo();
+            if (precio == null) {
+                throw new IllegalStateException("Producto sin precio de venta: " + itemDto.getProductoId());
+            }
+            subtotal += (long) precio * cantidad;
+            lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(precio, cantidad, producto.getPorcentajeIva()));
+        }
+        long descuento = Math.min(resolverDescuento(dto.getDescuentoGlobal()), subtotal);
+        long impuesto = com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            empresa, dto.isFacturaElectronica(), lineasIva, descuento);
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("subtotal", subtotal);
+        m.put("descuento", descuento);
+        m.put("impuesto", impuesto);
+        m.put("total", subtotal - descuento + impuesto);
+        return m;
+    }
+
     private int resolverDescuento(Integer solicitado) {
         if (solicitado == null || solicitado <= 0) {
             return 0;
