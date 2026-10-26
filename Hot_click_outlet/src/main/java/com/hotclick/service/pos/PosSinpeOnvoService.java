@@ -166,7 +166,7 @@ public class PosSinpeOnvoService {
      * test solo llega acá si ONVO está disponible, es decir en dev/test o con el opt-in
      * {@code payments.onvo.permitir-llave-test}. Sin mode o con otro modo nunca es PAGADO.
      */
-    static EstadoIntent clasificar(Map<?, ?> pi, String intentId, long totalColones, String modoEsperado) {
+    public static EstadoIntent clasificar(Map<?, ?> pi, String intentId, long totalColones, String modoEsperado) {
         if (pi == null || pi.isEmpty() || !intentId.equals(String.valueOf(pi.get("id")))) return EstadoIntent.DESCONOCIDO;
         String status = String.valueOf(pi.get("status"));
         if ("canceled".equalsIgnoreCase(status) || "failed".equalsIgnoreCase(status)) return EstadoIntent.CANCELADO;

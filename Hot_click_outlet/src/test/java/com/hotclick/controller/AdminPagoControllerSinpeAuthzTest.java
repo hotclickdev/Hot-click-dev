@@ -27,25 +27,21 @@ class AdminPagoControllerSinpeAuthzTest {
 
     @InjectMocks private AdminPagoController controller;
 
+    /** P-01: la confirmación manual de SINPE está retirada; nunca toca el pago. */
     @Test
-    void confirmarSinpe_otraTienda_devuelve403() {
-        when(paymentService.confirmarSinpe(9L))
-            .thenThrow(new SecurityException("No tienes permiso para aprobar comprobantes de otra tienda"));
-
+    void confirmarSinpe_retirado_devuelve410SinTocarPago() {
         ResponseEntity<ResponseDTO> resp = controller.confirmarSinpe(9L);
 
-        assertEquals(403, resp.getStatusCode().value());
+        assertEquals(410, resp.getStatusCode().value());
         assertFalse(resp.getBody().isSuccess());
+        org.mockito.Mockito.verifyNoInteractions(paymentService, pagoRepository);
     }
 
     @Test
-    void rechazarSinpe_propiaCompra_devuelve403() {
-        doThrow(new SecurityException("No tienes permiso para aprobar tu propia compra"))
-            .when(paymentService).rechazarSinpe(9L, null);
+    void rechazarSinpe_retirado_devuelve410SinTocarPago() {
+        ResponseEntity<ResponseDTO> resp = controller.rechazarSinpe(9L);
 
-        ResponseEntity<ResponseDTO> resp = controller.rechazarSinpe(9L, null, null);
-
-        assertEquals(403, resp.getStatusCode().value());
-        assertFalse(resp.getBody().isSuccess());
+        assertEquals(410, resp.getStatusCode().value());
+        org.mockito.Mockito.verifyNoInteractions(paymentService, pagoRepository);
     }
 }

@@ -4350,3 +4350,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_pos_qr_sesion_onvo_evento ON hot_click_pos_
 ALTER TABLE hot_click_pos_qr_sesion_tb DROP CONSTRAINT IF EXISTS chk_pos_qr_estado;
 ALTER TABLE hot_click_pos_qr_sesion_tb ADD CONSTRAINT chk_pos_qr_estado
     CHECK (estado IN ('PENDIENTE','PAGADO','EXPIRADO','CANCELADO','REEMBOLSO_PENDIENTE'));
+
+-- V195__pago_plazo_interno_sinpe.sql (copia de la migración Flyway)
+-- P-01: plazo interno de HotClick para el SINPE del marketplace por ONVO. ONVO no define vencimiento del
+-- payment intent; al cumplirse este plazo HotClick lo cancela (POST /cancel) y libera stock solo si un GET
+-- confirma canceled. Aditiva: columna nueva nullable, no toca filas existentes.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS plazo_interno_sinpe TIMESTAMP NULL;

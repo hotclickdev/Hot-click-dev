@@ -53,12 +53,12 @@ class OnvoWebhookPosQrTest {
     }
 
     @Test
-    @DisplayName("El webhook pasa el eventId al POS para idempotencia")
+    @DisplayName("P-01: ONVO no manda id de evento; el POS deduplica por tipo + data.id")
     void webhookPasaEventId() {
         controller.recibirWebhookOnvo(
             "{\"id\":\"evt_9\",\"type\":\"payment-intent.succeeded\",\"data\":{\"id\":\"pi_pos\"}}",
             "secret-onvo");
-        verify(posQrVentaService).confirmarSinpeOnvoPorWebhook("pi_pos", "evt_9");
+        verify(posQrVentaService).confirmarSinpeOnvoPorWebhook("pi_pos", "payment-intent.succeeded:pi_pos");
     }
 
     @Test
