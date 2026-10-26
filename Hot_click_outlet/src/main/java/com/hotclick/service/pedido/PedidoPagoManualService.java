@@ -14,6 +14,9 @@ import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.payment.PedidoGrupoService;
 import com.hotclick.utils.Constants;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -92,6 +95,7 @@ public class PedidoPagoManualService {
     @Autowired private AuditoriaAdminRegistroService auditoria;
     @Autowired private CompanyScope companyScope;
     @Autowired private AutocompraNegocioGuard autocompraGuard;
+    @PersistenceContext private EntityManager entityManager;
 
     /**
      * Confirma el pago de {@code pedido} (que está en un estado sin pago confirmado). Deja el pedido
@@ -177,6 +181,7 @@ public class PedidoPagoManualService {
     /** El Pago del grupo, si existe; 400 si es de pasarela (tarjeta). */
     private Optional<Pago> pagoSinPasarela(Pedido pedido) {
         Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(pedido);
+        pagoOpt.ifPresent(this::bloquearYReleer);
         if (pagoOpt.isPresent() && !esPagoManual(pagoOpt.get())) {
             throw new IllegalArgumentException(String.format(MENSAJE_PAGO_PASARELA,
                 normalizarMetodo(pagoOpt.get().getProveedor())));
@@ -279,7 +284,22 @@ public class PedidoPagoManualService {
     private Optional<ComprobanteSinpe> comprobantePendiente(Pedido pedido) {
         if (pedido.getId() == null) return Optional.empty();
         return comprobanteRepository.findByPedidoId(pedido.getId())
+            .map(c -> { bloquearYReleer(c); return c; })
             .filter(c -> Constants.COMPROBANTE_PENDIENTE.equals(c.getEstado()));
+    }
+
+    /**
+     * P-02: confirmar el pago manual corría sin lock. Dos confirmaciones a la vez, o una confirmación
+     * contra la limpieza TTL ({@code PagoExpiradoCancelador}, que sí toma FOR UPDATE y cancela), leían
+     * PENDIENTE de una copia vieja y la última escritura pisaba a la otra (pago CANCELADO → CAPTURADO
+     * con el stock ya liberado). {@code refresh} con PESSIMISTIC_WRITE hace SELECT ... FOR UPDATE y
+     * además relee el estado (un query con @Lock devolvería la copia del contexto sin releerla), así
+     * el chequeo de PENDIENTE que sigue se hace sobre el valor confirmado en la base.
+     */
+    private void bloquearYReleer(Object entidad) {
+        if (entityManager != null && entityManager.contains(entidad)) {
+            entityManager.refresh(entidad, LockModeType.PESSIMISTIC_WRITE);
+        }
     }
 
     /**
