@@ -94,7 +94,7 @@ public class ConsolaFichaService {
     private long pedidosPagados(Long empresaId) {
         Number n = (Number) em.createNativeQuery("""
             SELECT COUNT(*) FROM hot_click_pedido_tb
-            WHERE fk_id_empresa = :id AND estado_pedido = 'PAGADO'
+            WHERE fk_id_empresa = :id AND estado_pedido = 'PAGADO' AND es_prueba = false
             """).setParameter("id", empresaId).getSingleResult();
         return n.longValue();
     }
@@ -116,7 +116,7 @@ public class ConsolaFichaService {
             JOIN hot_click_pedido_tb p ON p.id_pedido = i.fk_id_pedido
             WHERE p.fk_id_empresa = :id
               AND p.fecha_pedido >= :desde
-              AND p.estado_pedido IN ('PAGADO','ENVIADO','ENTREGADO','LISTO')
+              AND p.estado_pedido IN ('PAGADO','ENVIADO','ENTREGADO','LISTO') AND p.es_prueba = false
             GROUP BY i.fk_id_producto
             """).setParameter("id", empresaId).setParameter("desde", desde).getResultList();
         Map<Long, Long> vendidos = new HashMap<>();

@@ -3,8 +3,9 @@ import { isValidEmail } from '@/utils/validators'
 import { formatTelefonoCR } from '@/utils/telefono'
 import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
 import type { Id } from '@/types/api'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
-export const WHATSAPP = '50686667888'
+export const WHATSAPP = SOPORTE_WA
 export const BODEGA_DEFAULT = 1
 
 /** Copia el número SINPE (solo dígitos) al portapapeles. */

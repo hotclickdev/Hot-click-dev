@@ -1,5 +1,4 @@
 import api from './api'
-import type { Id } from '@/types/api'
 import type { CheckoutPayload } from '@/types/pedido'
 
 export const paymentService = {
@@ -45,17 +44,7 @@ export const paymentService = {
     return api.post(`/payments/guest/cancel/${numeroPedido}`, { cancelToken: token })
   },
 
-  // ── Admin SINPE (legacy, por pagoId) ─────────────────────────────────────
-
-  /** Confirma un pago SINPE tras verificar el comprobante (solo admin). */
-  confirmarSinpe(pagoId: Id) {
-    return api.post(`/admin/pagos/${pagoId}/confirmar-sinpe`)
-  },
-
-  /** Rechaza un pago SINPE (solo admin). */
-  rechazarSinpe(pagoId: Id, motivo?: string) {
-    return api.post(`/admin/pagos/${pagoId}/rechazar-sinpe`, { motivo: motivo || null })
-  },
+  // P-01: confirmar/rechazar SINPE a mano quedó retirado (410); SINPE se confirma solo por webhook ONVO.
 
   // ── SINPE Móvil — flujo completo ─────────────────────────────────────────
 
@@ -98,15 +87,6 @@ export const paymentService = {
     return api.get(`/sinpe/admin/comprobantes?${params}`)
   },
 
-  /** Aprueba un comprobante SINPE (por id de comprobante). */
-  aprobarComprobante(comprobanteId: Id) {
-    return api.post(`/sinpe/admin/comprobantes/${comprobanteId}/aprobar`)
-  },
-
-  /** Rechaza un comprobante SINPE con motivo opcional. */
-  rechazarComprobante(comprobanteId: Id, motivo?: string) {
-    return api.post(`/sinpe/admin/comprobantes/${comprobanteId}/rechazar`, { motivo: motivo || null })
-  },
 
   kpisAdmin() {
     return api.get('/admin/pagos/kpis')

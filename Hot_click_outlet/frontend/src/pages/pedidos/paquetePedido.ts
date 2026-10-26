@@ -1,4 +1,5 @@
 import { WHATSAPP } from '@/pages/contacto/contactoHelpers'
+import { urlWa } from '@/config/soporteTelefono'
 import { estadoDePedido } from './pedidoHelpers'
 import type { PedidoCliente } from './pedidoHelpers'
 
@@ -47,8 +48,9 @@ export function urlSeguimiento(paquete: PedidoCliente): string | null {
   return paquete.urlTracking ?? `${URL_RASTREO_CORREOS}${encodeURIComponent(paquete.numeroGuia)}`
 }
 
-export function urlWhatsApp(mensaje: string): string {
-  return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(mensaje)}`
+/** null si no hay WhatsApp de soporte configurado (VITE_SOPORTE_TELEFONO vacío). */
+export function urlWhatsApp(mensaje: string, digitos: string = WHATSAPP): string | null {
+  return urlWa(digitos, mensaje)
 }
 
 export function nombreTienda(paquete: PedidoCliente): string {

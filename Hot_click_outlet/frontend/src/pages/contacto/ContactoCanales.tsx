@@ -41,14 +41,16 @@ export function ContactoCanales() {
   const { t } = useTranslation()
   return (
     <ul className="m-0 flex list-none flex-col rounded-[16px] border border-hc-n-200 bg-hc-n-0 py-1">
+      {WHATSAPP && (
       <li>
-        <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t('contacto.waDefault'))}`} target="_blank" rel="noopener noreferrer" className={FILA}>
-          <IcoSrv nombre="cotizacionWhatsapp" size={20} />
-          <Texto titulo="WhatsApp · contactanos por el chat de soporte" detalle={t('contacto.waHint')} />
-          <Flecha />
-        </a>
-      </li>
-      <li className={SEPARADOR}>
+          <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t('contacto.waDefault'))}`} target="_blank" rel="noopener noreferrer" className={FILA}>
+            <IcoSrv nombre="cotizacionWhatsapp" size={20} />
+            <Texto titulo="WhatsApp · contactanos por el chat de soporte" detalle={t('contacto.waHint')} />
+            <Flecha />
+          </a>
+        </li>
+      )}
+      <li className={WHATSAPP ? SEPARADOR : undefined}>
         <a href="mailto:hotclick.cr@gmail.com" className={FILA}>
           <IcoSrv nombre="enviarChat" size={20} />
           <Texto titulo="hotclick.cr@gmail.com" detalle={t('contacto.email')} />
