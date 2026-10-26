@@ -121,8 +121,9 @@ public class ShoppingAssistantController {
      * <p>El {@code sesionId} (UUID v4) es el único credential; endpoint público.
      */
     @GetMapping("/session/{sesionId}/history")
-    public ResponseEntity<Map<String, Object>> getHistory(@PathVariable String sesionId) {
-        Map<String, Object> result = assistantService.getSessionHistory(sesionId);
+    public ResponseEntity<Map<String, Object>> getHistory(@PathVariable String sesionId,
+            @RequestParam(required = false) String empresaSlug) {
+        Map<String, Object> result = assistantService.getSessionHistory(sesionId, empresaActual(empresaSlug));
         return ResponseEntity.ok(result);
     }
 
@@ -132,8 +133,9 @@ public class ShoppingAssistantController {
      * Idempotente: si la sesión no existe retorna 204 sin error.
      */
     @DeleteMapping("/session/{sesionId}")
-    public ResponseEntity<Void> expireSession(@PathVariable String sesionId) {
-        assistantService.expireSession(sesionId);
+    public ResponseEntity<Void> expireSession(@PathVariable String sesionId,
+            @RequestParam(required = false) String empresaSlug) {
+        assistantService.expireSession(sesionId, empresaActual(empresaSlug));
         return ResponseEntity.noContent().build();
     }
 
@@ -141,7 +143,8 @@ public class ShoppingAssistantController {
     @PostMapping("/feedback")
     public ResponseEntity<Void> feedback(@Valid @RequestBody FeedbackRequest request) {
         assistantService.submitFeedback(
-            request.getSesionId(), request.getMsgIndex(), request.getRating());
+            request.getSesionId(), request.getMsgIndex(), request.getRating(),
+            empresaActual(request.getEmpresaSlug()));
         return ResponseEntity.noContent().build();
     }
 
@@ -153,5 +156,11 @@ public class ShoppingAssistantController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Long>> metrics() {
         return ResponseEntity.ok(metricsService.getSummary());
+    }
+
+    /** ALTO-1: empresa del tenant de la request; null si el cliente (legado) no envía slug. */
+    private Long empresaActual(String empresaSlug) {
+        if (empresaSlug == null || empresaSlug.isBlank()) return null;
+        return tenantGuard.requireEmpresaActiva(empresaSlug).getId();
     }
 }
