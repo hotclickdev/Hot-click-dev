@@ -24,7 +24,7 @@ public class ShoppingAssistantTenantGuard {
     }
 
     public Empresa requireEmpresaActiva(String empresaSlug) {
-        return empresaRepository.findBySlug(empresaSlug)
+        return buscarPorSlug(empresaSlug)
             .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()))
             .orElseThrow(() -> {
                 log.warn("[rag-ctrl] Slug no encontrado o inactivo: '{}'", empresaSlug);
@@ -34,9 +34,24 @@ public class ShoppingAssistantTenantGuard {
     }
 
     public Empresa requireEmpresaActivaForImageSearch(String empresaSlug) {
-        return empresaRepository.findBySlug(empresaSlug)
+        return buscarPorSlug(empresaSlug)
             .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tienda no encontrada"));
+    }
+
+    /**
+     * El slug es UNIQUE (V8), pero si la BD devolviera más de una fila no elegimos una al azar:
+     * fail-closed con 404 limpio en lugar de 500.
+     */
+    private java.util.Optional<Empresa> buscarPorSlug(String empresaSlug) {
+        try {
+            return empresaRepository.findBySlug(empresaSlug);
+        } catch (org.springframework.dao.IncorrectResultSizeDataAccessException e) {
+            // B1: sin e.getMessage() ni stacktrace (DataAccessException).
+            log.error("[rag-ctrl] Slug duplicado ref={} paso=tenant '{}': {}",
+                java.util.UUID.randomUUID().toString().substring(0, 8), empresaSlug, e.getClass().getName());
+            return java.util.Optional.empty();
+        }
     }
 
     public static String nombreComercial(Empresa empresa) {
