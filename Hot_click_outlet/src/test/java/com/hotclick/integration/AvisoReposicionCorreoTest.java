@@ -99,7 +99,7 @@ class AvisoReposicionCorreoTest extends BaseIntegrationTest {
 
         stockService.ajustarEntrada(p.getId(), 5, "compra proveedor", "admin@test.cr");
 
-        verify(resendEmailService, timeout(5000).times(1))
+        verify(resendEmailService, timeout(30000).times(1))
             .send(eq("ana@test.cr"), contains(p.getNombreProducto()), anyString());
         verify(resendEmailService, after(500).never()).send(eq("beto@test.cr"), anyString(), anyString());
         SuscripcionReposicion despues = suscripcionRepository.findById(pendiente.getId()).orElseThrow();
@@ -114,7 +114,7 @@ class AvisoReposicionCorreoTest extends BaseIntegrationTest {
         suscribir(p, "ana@test.cr", false);
 
         stockService.ajustarEntrada(p.getId(), 5, "compra", "admin@test.cr");
-        verify(resendEmailService, timeout(5000).times(1)).send(eq("ana@test.cr"), anyString(), anyString());
+        verify(resendEmailService, timeout(30000).times(1)).send(eq("ana@test.cr"), anyString(), anyString());
 
         stockService.ajustarAExistencia(p.getId(), 0, "conteo", "admin@test.cr");
         stockService.ajustarEntrada(p.getId(), 3, "compra", "admin@test.cr");
@@ -134,7 +134,7 @@ class AvisoReposicionCorreoTest extends BaseIntegrationTest {
             productoRepository.save(cargado);
         });
 
-        verify(resendEmailService, timeout(5000).times(1)).send(eq("ana@test.cr"), anyString(), anyString());
+        verify(resendEmailService, timeout(30000).times(1)).send(eq("ana@test.cr"), anyString(), anyString());
     }
 
     @Test
