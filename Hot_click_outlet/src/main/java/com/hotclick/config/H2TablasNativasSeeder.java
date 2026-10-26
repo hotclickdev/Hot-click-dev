@@ -18,7 +18,7 @@ import java.sql.Connection;
  * Sin esto, POST /api/auth/login responde 500 (join de permisos).
  */
 @Component
-@Profile("test")
+@Profile(PerfilesSeguros.TEST_ESTRICTO)
 @Order(1)
 public class H2TablasNativasSeeder implements ApplicationRunner {
 

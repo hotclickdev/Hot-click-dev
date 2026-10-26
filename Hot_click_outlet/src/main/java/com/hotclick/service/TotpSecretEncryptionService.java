@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.config.PerfilesSeguros;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +28,10 @@ import java.util.HexFormat;
  * This allows transparent migration without downtime.
  *
  * Key: 64-char hex string (32 bytes) from ${TOTP_ENCRYPTION_KEY} env var.
- * If the key is not configured, secrets are stored unencrypted
- * and a WARN is logged — acceptable for local dev, NOT for production.
+ * Fail-closed: the key is REQUIRED (and must be valid) unless the active profiles match
+ * {@code (dev | test) & !prod & !production}. If prod/production is active, a missing or
+ * invalid key aborts startup even when dev/test are also active. A configured-but-invalid
+ * key aborts startup in every profile.
  */
 @Service
 public class TotpSecretEncryptionService {
@@ -53,12 +56,19 @@ public class TotpSecretEncryptionService {
 
     @PostConstruct
     void validate() {
-        boolean isDevOrTest = Arrays.stream(environment.getActiveProfiles())
-                .anyMatch(p -> p.equals("dev") || p.equals("test"));
-        if (!isDevOrTest && (encryptionKeyHex == null || encryptionKeyHex.isBlank())) {
-            throw new IllegalStateException(
-                "TOTP_ENCRYPTION_KEY debe configurarse en producción (totp.encryption.key)");
+        boolean sinClave = encryptionKeyHex == null || encryptionKeyHex.isBlank();
+        boolean permiteSinClave = PerfilesSeguros.esDevOTestEstricto(environment)
+                && !PerfilesSeguros.esProduccion(environment);
+        if (sinClave) {
+            if (!permiteSinClave) {
+                throw new IllegalStateException(
+                    "TOTP_ENCRYPTION_KEY debe configurarse fuera de dev/test (totp.encryption.key); perfiles activos="
+                        + (environment == null ? "[]" : Arrays.toString(environment.getActiveProfiles())));
+            }
+            log.warn("[2FA] TOTP_ENCRYPTION_KEY ausente — permitido solo en dev/test sin prod/production.");
+            return;
         }
+        resolveKey(); // lanza IllegalStateException si la clave es inválida (formato/longitud)
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -86,7 +96,7 @@ public class TotpSecretEncryptionService {
             System.arraycopy(ciphertext, 0, combined, IV_LEN, ciphertext.length);
             return PREFIX + Base64.getEncoder().encodeToString(combined);
         } catch (Exception e) {
-            log.error("[2FA] Encryption failed: {}", e.getMessage());
+            log.error("[2FA] Encryption failed: {}", e.getClass().getSimpleName());
             throw new IllegalStateException("Failed to encrypt TOTP secret", e);
         }
     }
@@ -117,7 +127,7 @@ public class TotpSecretEncryptionService {
             cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_BITS, iv));
             return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.error("[2FA] Decryption failed — key mismatch or corrupt ciphertext: {}", e.getMessage());
+            log.error("[2FA] Decryption failed — key mismatch or corrupt ciphertext: {}", e.getClass().getSimpleName());
             throw new IllegalStateException("Failed to decrypt TOTP secret", e);
         }
     }
@@ -137,8 +147,11 @@ public class TotpSecretEncryptionService {
                 throw new IllegalArgumentException("TOTP_ENCRYPTION_KEY must be 64 hex chars (32 bytes / 256 bits)");
             return new SecretKeySpec(keyBytes, "AES");
         } catch (IllegalArgumentException e) {
-            log.error("[2FA] Invalid TOTP_ENCRYPTION_KEY: {}", e.getMessage());
-            throw new IllegalStateException("Invalid TOTP encryption key configuration", e);
+            // No se registra e.getMessage() ni se encadena la causa: el mensaje de HexFormat puede citar
+            // caracteres de la clave. Solo la clase de la excepción y un texto genérico.
+            log.error("[2FA] Invalid TOTP_ENCRYPTION_KEY ({}): must be 64 hex chars (32 bytes)", e.getClass().getSimpleName());
+            throw new IllegalStateException("Invalid TOTP encryption key configuration ("
+                + e.getClass().getSimpleName() + ")");
         }
     }
 

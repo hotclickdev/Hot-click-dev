@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * NUNCA activar fuera de dev — vacía datos reales de tiendas/productos.
  */
 @Component
-@Profile("dev")
+@Profile(PerfilesSeguros.DEV_ESTRICTO)
 @Order(90)
 public class ResetPlataformaKeepQaRunner implements ApplicationRunner {
 

@@ -19,7 +19,13 @@ import java.util.Set;
  * Borra productos, tiendas y usuarios registrados.
  * Conserva admin, 3 cuentas QA y el usuario de mostrador del POS.
  */
+/**
+ * Vacía la plataforma (conserva admin, cuentas QA y mostrador POS). Destructivo: solo existe en dev
+ * estricto ({@link com.hotclick.config.PerfilesSeguros#DEV_ESTRICTO}); con prod/production activo el bean
+ * no se crea y AdminResetController responde 404.
+ */
 @Service
+@org.springframework.context.annotation.Profile(com.hotclick.config.PerfilesSeguros.DEV_ESTRICTO)
 public class ResetPlataformaKeepQaService {
 
     /** Clave nueva: la corrida anterior pudo marcarse hecha sin borrar tiendas/productos. */

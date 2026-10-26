@@ -33,7 +33,8 @@ public class AdminResetController {
     @Autowired private JdbcTemplate  jdbc;
     @Autowired private CompanyScope  companyScope;
     @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
-    @Autowired private ResetPlataformaKeepQaService resetPlataformaKeepQaService;
+    /** Solo existe en dev estricto (@Profile en el servicio); en prod el provider está vacío → 404. */
+    @Autowired private org.springframework.beans.factory.ObjectProvider<ResetPlataformaKeepQaService> resetPlataformaKeepQaProvider;
     @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Autowired private com.hotclick.service.ResetDatosCodigoService resetDatosCodigo;
@@ -99,6 +100,8 @@ public class AdminResetController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/reset-plataforma-qa")
     public ResponseEntity<ResponseDTO> resetearPlataformaQa(@RequestBody(required = false) Map<String, String> body) {
+        ResetPlataformaKeepQaService resetQa = resetPlataformaKeepQaProvider.getIfAvailable();
+        if (resetQa == null) return ResponseEntity.notFound().build(); // fuera de dev estricto no existe
         ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
         if (sinPassword != null) return sinPassword;
         String confirmacion = body == null ? null : body.get("confirmacion");
@@ -106,7 +109,7 @@ public class AdminResetController {
             return ResponseEntity.badRequest().body(ResponseDTO.error(
                 "Para vaciar la plataforma escribí: " + ResetPlataformaKeepQaService.CONFIRMACION));
         }
-        Map<String, Object> resumen = resetPlataformaKeepQaService.ejecutar();
+        Map<String, Object> resumen = resetQa.ejecutar();
         return ResponseEntity.ok(ResponseDTO.success(
             "Se borraron tiendas, usuarios y productos. Quedan admin, las 3 cuentas QA y el mostrador POS.",
             resumen));
@@ -119,9 +122,11 @@ public class AdminResetController {
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId == null) {
             if (companyScope.isAdminIT()) {
+                ResetPlataformaKeepQaService resetQa = resetPlataformaKeepQaProvider.getIfAvailable();
+                if (resetQa == null) return ResponseEntity.notFound().build(); // vaciado global solo en dev estricto
                 ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
                 if (sinPassword != null) return sinPassword;
-                Map<String, Object> resumen = resetPlataformaKeepQaService.ejecutar();
+                Map<String, Object> resumen = resetQa.ejecutar();
                 return ResponseEntity.ok(ResponseDTO.success(
                     "Se borraron tiendas, usuarios y productos. Quedan admin, las 3 cuentas QA y el mostrador POS.",
                     resumen));
