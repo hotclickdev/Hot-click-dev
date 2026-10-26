@@ -148,7 +148,16 @@ public class ProductoCatalogHandler {
 
     /** Otros colores/variantes de la misma pieza — para el selector de swatches en el detalle. */
     public ResponseEntity<ResponseDTO> obtenerVariantes(Long id) {
-        Producto base = productoService.buscarPorId(id);
+        Producto base;
+        try {
+            base = productoService.buscarPorId(id);
+            // Re-QA área 3: mismo guard que el detalle (borrado/oculto/negocio no público → 404).
+            productoAccessGuard.assertCanAccessProductoDetalle(base);
+        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
+            return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("Producto no encontrado"));
+        }
         if (base.getGrupoVarianteId() == null) {
             return ResponseEntity.ok(ResponseDTO.success("Sin variantes", java.util.List.of()));
         }

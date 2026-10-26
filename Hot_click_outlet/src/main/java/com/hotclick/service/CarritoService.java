@@ -73,13 +73,23 @@ public class CarritoService {
         String referencia = "carrito-" + carritoId;
         stockService.reservar(producto, cantidad, referencia, "carrito-usuario");
 
-        CarritoItem item = new CarritoItem();
-        item.setCarrito(carrito);
-        item.setProducto(producto);
-        item.setCantidad(cantidad);
-        item.setPrecioUnitarioMomento(com.hotclick.service.payment.OrderPricingService.precioEfectivo(producto));
-        item.setEstado(Constants.ESTADO_ACTIVO);
-        carrito.getItems().add(item);
+        int precio = com.hotclick.service.payment.OrderPricingService.precioEfectivo(producto);
+        // Re-QA área 3: el mismo producto suma cantidad en la línea que ya existe, no duplica la línea.
+        CarritoItem existente = carrito.getItems().stream()
+            .filter(i -> i.getProducto() != null && productoId.equals(i.getProducto().getId()))
+            .findFirst().orElse(null);
+        if (existente != null) {
+            existente.setCantidad(existente.getCantidad() + cantidad);
+            existente.setPrecioUnitarioMomento(precio);
+        } else {
+            CarritoItem item = new CarritoItem();
+            item.setCarrito(carrito);
+            item.setProducto(producto);
+            item.setCantidad(cantidad);
+            item.setPrecioUnitarioMomento(precio);
+            item.setEstado(Constants.ESTADO_ACTIVO);
+            carrito.getItems().add(item);
+        }
 
         int total = carrito.getItems().stream()
             .mapToInt(i -> i.getPrecioUnitarioMomento() * i.getCantidad())
