@@ -15,7 +15,7 @@ async function mockApis(page: Page) {
 async function assertAtajoInternacional(page: Page) {
   const link = page.getByRole('link', { name: 'Consultar envío internacional por WhatsApp' })
   await expect(link.first()).toBeVisible()
-  await expect(link.first()).toHaveAttribute('href', /wa\.me\/50686667888/)
+  await expect(link.first()).toHaveAttribute('href', /wa\.me\/00000000000/)
   await expect(page.getByRole('link', { name: /^WhatsApp →$/ })).toHaveCount(0)
 }
 

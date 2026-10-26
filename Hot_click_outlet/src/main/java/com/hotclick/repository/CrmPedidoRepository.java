@@ -20,12 +20,14 @@ public interface CrmPedidoRepository extends Repository<Pedido, Long> {
         LEFT JOIN FETCH p.empresa
         WHERE (:empresaId IS NULL OR p.empresa.id = :empresaId)
           AND (:compradorId IS NULL OR p.usuarioFinal.id = :compradorId)
+          AND p.esPrueba = false
         ORDER BY p.fechaPedido DESC, p.id DESC
         """,
         countQuery = """
         SELECT COUNT(p) FROM Pedido p
         WHERE (:empresaId IS NULL OR p.empresa.id = :empresaId)
           AND (:compradorId IS NULL OR p.usuarioFinal.id = :compradorId)
+          AND p.esPrueba = false
         """)
     Page<Pedido> buscar(@Param("empresaId") Long empresaId,
                         @Param("compradorId") Long compradorId,
@@ -40,7 +42,7 @@ public interface CrmPedidoRepository extends Repository<Pedido, Long> {
                COALESCE(SUM(CASE WHEN p.estadoPedido IN :pagados THEN p.totalPedido ELSE 0 END), 0),
                MIN(p.fechaPedido), MAX(p.fechaPedido),
                COALESCE(SUM(CASE WHEN p.estadoPedido IN :pagados THEN 1 ELSE 0 END), 0)
-        FROM Pedido p WHERE p.usuarioFinal.id = :id
+        FROM Pedido p WHERE p.usuarioFinal.id = :id AND p.esPrueba = false
         """)
     List<Object[]> resumenComprador(@Param("id") Long compradorId, @Param("pagados") Collection<String> pagados);
 
@@ -49,11 +51,11 @@ public interface CrmPedidoRepository extends Repository<Pedido, Long> {
                COALESCE(SUM(CASE WHEN p.estadoPedido IN :pagados THEN p.totalPedido ELSE 0 END), 0),
                MIN(p.fechaPedido), MAX(p.fechaPedido),
                COALESCE(SUM(CASE WHEN p.estadoPedido IN :pagados THEN 1 ELSE 0 END), 0)
-        FROM Pedido p WHERE p.empresa.id = :id
+        FROM Pedido p WHERE p.empresa.id = :id AND p.esPrueba = false
         """)
     List<Object[]> resumenNegocio(@Param("id") Long empresaId, @Param("pagados") Collection<String> pagados);
 
-    @Query("SELECT COUNT(DISTINCT p.usuarioFinal.id) FROM Pedido p WHERE p.empresa.id = :id")
+    @Query("SELECT COUNT(DISTINCT p.usuarioFinal.id) FROM Pedido p WHERE p.empresa.id = :id AND p.esPrueba = false")
     long compradoresDistintosDeNegocio(@Param("id") Long empresaId);
 
     /** QA-131-3: por negocio, [empresaId, total pagado, total pendiente de cobro] con los montos guardados en cada pedido. */
@@ -61,7 +63,7 @@ public interface CrmPedidoRepository extends Repository<Pedido, Long> {
         SELECT p.empresa.id,
                COALESCE(SUM(CASE WHEN p.estadoPedido IN :pagados THEN p.totalPedido ELSE 0 END), 0),
                COALESCE(SUM(CASE WHEN p.estadoPedido IN :pendientes THEN p.totalPedido ELSE 0 END), 0)
-        FROM Pedido p WHERE p.empresa IS NOT NULL GROUP BY p.empresa.id
+        FROM Pedido p WHERE p.empresa IS NOT NULL AND p.esPrueba = false GROUP BY p.empresa.id
         """)
     List<Object[]> pagadoYPendientePorEmpresa(@Param("pagados") Collection<String> pagados,
                                               @Param("pendientes") Collection<String> pendientes);

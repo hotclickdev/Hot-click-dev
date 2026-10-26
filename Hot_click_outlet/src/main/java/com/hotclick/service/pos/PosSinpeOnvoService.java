@@ -37,7 +37,8 @@ public class PosSinpeOnvoService {
     public static final String PREFIJO_ONVO_PI = "ONVOPI:";
 
     public static final String MSG_NO_DISPONIBLE = "SINPE Móvil no está disponible por ahora. Cobrá con otro método.";
-    public static final String MSG_IDENTIFICACION = "Ingresá la identificación con guiones (mínimo 12 caracteres) y su tipo.";
+    public static final String MSG_IDENTIFICACION = "Ingresá la identificación en el formato de su tipo (física 0#-####-####, jurídica 3-###-######, residente/diplomático/extranjero 12 dígitos sin guiones).";
+    public static final String MSG_TELEFONO = "Ingresá tu número SINPE Móvil (8 dígitos).";
 
     @Autowired private PosQrSesionRepository posQrRepo;
     @Autowired(required = false) private OnvoService onvoService;
@@ -76,6 +77,16 @@ public class PosSinpeOnvoService {
         return pasarelaId != null && pasarelaId.startsWith(PREFIJO_ONVO_PI) && pasarelaId.length() > PREFIJO_ONVO_PI.length();
     }
 
+    /**
+     * P-04: la sesión se cobró por intent ONVO con llave de prueba (modo esperado distinto de live).
+     * Fail-closed: intent ONVO sin OnvoService se considera prueba.
+     */
+    public boolean esCobroDePrueba(PosQrSesion sesion) {
+        if (intentIdDe(sesion) == null) return false;
+        OnvoService onvo = onvoService;
+        return onvo == null || !"live".equals(onvo.modoEsperado());
+    }
+
     static String intentIdDe(PosQrSesion sesion) {
         String p = sesion == null ? null : sesion.getStripeSessionId();
         return esIntentOnvo(p) ? p.substring(PREFIJO_ONVO_PI.length()) : null;
@@ -87,9 +98,12 @@ public class PosSinpeOnvoService {
      * Sin @Transactional: el id del intent se guarda antes de confirmarlo y tiene que persistir aunque la
      * confirmación falle, para que el barrido lo encuentre y lo cancele.
      */
-    public Map<String, Object> iniciar(String token, String identificacion, Integer tipoIdentificacion) {
-        if (!OnvoService.identificacionSinpeValida(identificacion) || !OnvoService.tipoIdentificacionValido(tipoIdentificacion)) {
+    public Map<String, Object> iniciar(String token, String identificacion, Integer tipoIdentificacion, String telefono) {
+        if (!OnvoService.identificacionSinpeValida(identificacion, tipoIdentificacion)) {
             throw new IllegalArgumentException(MSG_IDENTIFICACION);
+        }
+        if (OnvoService.normalizarNumeroSinpe(telefono) == null) {
+            throw new IllegalArgumentException(MSG_TELEFONO);
         }
         PosQrSesion sesion = posQrRepo.findByToken(token)
             .orElseThrow(() -> new java.util.NoSuchElementException("QR no encontrado"));
@@ -127,7 +141,7 @@ public class PosSinpeOnvoService {
         sesion.setStripeSessionId(PREFIJO_ONVO_PI + intent.id());
         posQrRepo.save(sesion);
 
-        OnvoService.OnvoPaymentMethod metodo = onvoService.crearMetodoPagoSinpePos(identificacion, tipoIdentificacion, null);
+        OnvoService.OnvoPaymentMethod metodo = onvoService.crearMetodoPagoSinpePos(identificacion, tipoIdentificacion, telefono, null);
         onvoService.confirmarPaymentIntent(intent.id(), metodo.id());
         log.info("[POS-SINPE-ONVO] Intent confirmado sesion={} vence={}", sesion.getId(), sesion.getFechaExpiracion());
 
@@ -166,7 +180,7 @@ public class PosSinpeOnvoService {
      * test solo llega acá si ONVO está disponible, es decir en dev/test o con el opt-in
      * {@code payments.onvo.permitir-llave-test}. Sin mode o con otro modo nunca es PAGADO.
      */
-    static EstadoIntent clasificar(Map<?, ?> pi, String intentId, long totalColones, String modoEsperado) {
+    public static EstadoIntent clasificar(Map<?, ?> pi, String intentId, long totalColones, String modoEsperado) {
         if (pi == null || pi.isEmpty() || !intentId.equals(String.valueOf(pi.get("id")))) return EstadoIntent.DESCONOCIDO;
         String status = String.valueOf(pi.get("status"));
         if ("canceled".equalsIgnoreCase(status) || "failed".equalsIgnoreCase(status)) return EstadoIntent.CANCELADO;

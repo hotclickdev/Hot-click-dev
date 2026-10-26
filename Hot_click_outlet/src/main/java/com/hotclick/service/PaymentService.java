@@ -49,7 +49,6 @@ public class PaymentService {
     @Autowired private PaymentOrderConfirmationService  orderConfirmationService;
     @Autowired private PaymentFailureHandler            paymentFailureHandler;
     @Autowired private PaymentUserCancellationService   userCancellationService;
-    @Autowired private SinpePaymentAdminService         sinpePaymentAdminService;
     @Autowired private PosQrVentaService                posQrVentaService;
     @Autowired private GuestCancelTokenService          guestCancelTokenService;
     @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
@@ -158,16 +157,6 @@ public class PaymentService {
     @Transactional
     public void marcarFallido(Pago pago, String motivo) {
         paymentFailureHandler.marcarFallido(pago, motivo);
-    }
-
-    @Transactional
-    public PaymentStatusResponse confirmarSinpe(Long pagoId) {
-        return sinpePaymentAdminService.confirmarSinpe(pagoId, this, eventPublisher);
-    }
-
-    @Transactional
-    public void rechazarSinpe(Long pagoId, String motivo) {
-        sinpePaymentAdminService.rechazarSinpe(pagoId, motivo);
     }
 
     @Transactional

@@ -27,4 +27,16 @@ class CedulaCrTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Cédula inválida");
     }
+
+    @Test
+    @DisplayName("#318: realONulo descarta identificaciones internas y conserva cédulas reales")
+    void realONulo() {
+        assertThat(CedulaCr.realONulo("REG-1234567890abcdef")).isNull();
+        assertThat(CedulaCr.realONulo("EMP-123456789012")).isNull();
+        assertThat(CedulaCr.realONulo("GUEST-1234567890123")).isNull();
+        assertThat(CedulaCr.realONulo("CL2abc123456789012")).isNull();
+        assertThat(CedulaCr.realONulo(null)).isNull();
+        assertThat(CedulaCr.realONulo("1-1234-0567")).isEqualTo("112340567");
+        assertThat(CedulaCr.realONulo(" 3101123456 ")).isEqualTo("3101123456");
+    }
 }

@@ -115,7 +115,7 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
         Pago pago = crearPago(p, Constants.PROVEEDOR_SINPE);
 
         cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\"}").andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("efectivo")));
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("pasarela"))); // P-01: SINPE solo lo captura el webhook ONVO
         cambiar(tokenEmp, p, "{\"estado\":\"PAGADO\",\"referencia\":\"   \"}").andExpect(status().isBadRequest());
 
         assertEstado(p, Constants.PEDIDO_PENDIENTE_COMPROBANTE);

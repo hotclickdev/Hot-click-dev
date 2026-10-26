@@ -58,22 +58,15 @@ public class PosQrService {
         return sessionService.getComprobante(token);
     }
 
-    @Transactional
-    public Map<String, Object> iniciarTilopay(String token, String metodo) {
-        return ventaService.iniciarTilopay(token, metodo);
-    }
 
     /**
      * SINPE Móvil por ONVO. Sin @Transactional a propósito: el id del intent se guarda antes de confirmarlo
      * y tiene que quedar aunque la confirmación falle, para que el barrido lo cancele.
      */
-    public Map<String, Object> iniciarSinpeOnvo(String token, String identificacion, Integer tipoIdentificacion) {
-        return sinpeOnvo.iniciar(token, identificacion, tipoIdentificacion);
+    public Map<String, Object> iniciarSinpeOnvo(String token, String identificacion, Integer tipoIdentificacion, String telefono) {
+        return sinpeOnvo.iniciar(token, identificacion, tipoIdentificacion, telefono);
     }
 
-    public boolean confirmarTilopay(String token) {
-        return ventaService.confirmarTilopay(token);
-    }
 
     @Transactional
     public String verificarEstado(String token) {
@@ -85,10 +78,6 @@ public class PosQrService {
         return ventaService.consultarEstado(token);
     }
 
-    @Transactional
-    public PosQrSesion confirmarSinpe(String token, Long usuarioId, Long empresaId, Object referencia, String notas) {
-        return ventaService.confirmarSinpe(token, usuarioId, empresaId, referencia, notas);
-    }
 
     @Transactional
     public void cancelar(String token, Long empresaId) {

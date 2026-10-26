@@ -30,7 +30,7 @@ class AiCopilotClientesQueries {
                 JOIN hot_click_producto_tb p ON pi.fk_id_producto = p.id_producto
                 LEFT JOIN hot_click_usuario_tb u ON ped.fk_id_usuario_final = u.id_usuario
                 WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '90 days'
-                  AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
+                  AND ped.estado_pedido IN ('PAGADO','ENTREGADO') AND ped.es_prueba = false
                 GROUP BY p.nombre_producto, u.nombre, u.id_usuario
             ),
             top_productos AS (

@@ -1,11 +1,13 @@
 import { formatMonto } from '@/services/cotizacionService'
+import { aValorInput, desdeValorInput, precioAutollenado } from './montoCotizacionUnidad'
 import { inputCls, inputStyle } from './nuevaCotizacionUi'
 import CloseIcon from '@/components/ui/CloseIcon'
 import type { Producto } from '@/types/producto'
 import type { ItemCotizacionForm } from './CotizacionForm'
 
-export default function ItemRow({ item, index, productos, onChange, onRemove }: {
+export default function ItemRow({ item, index, productos, onChange, onRemove, moneda = 'CRC' }: {
   item: ItemCotizacionForm
+  moneda?: string
   index: number
   productos: Producto[]
   onChange: (index: number, patch: Partial<ItemCotizacionForm>) => void
@@ -32,7 +34,7 @@ export default function ItemRow({ item, index, productos, onChange, onRemove }: 
                 codigo:        p.sku ?? '',
                 descripcion:   p.descripcionCorta ?? '',
                 imagenUrl:     p.imagenPrincipalUrl ?? '',
-                precioUnitario: p.precioVenta,
+                precioUnitario: precioAutollenado(p.precioVenta, moneda),
               })
             }}>
             <option value="">— Seleccionar producto —</option>
@@ -97,9 +99,10 @@ export default function ItemRow({ item, index, productos, onChange, onRemove }: 
       </td>
       {/* Precio unitario */}
       <td className="px-3 py-2 w-32">
-        <input type="number" min={0} className={inputCls} style={{ ...inputStyle, fontSize: '0.75rem' }}
-          value={item.precioUnitario || 0}
-          onChange={e => onChange(index, { precioUnitario: Number(e.target.value) })} />
+        <input type="number" min={0} step={moneda === 'USD' ? 0.01 : 1} className={inputCls} style={{ ...inputStyle, fontSize: '0.75rem' }}
+          aria-label={moneda === 'USD' ? 'Precio unitario en US$' : 'Precio unitario en ₡'}
+          value={aValorInput(item.precioUnitario, moneda)}
+          onChange={e => onChange(index, { precioUnitario: desdeValorInput(e.target.value, moneda) })} />
       </td>
       {/* Descuento */}
       <td className="px-3 py-2 w-20">
@@ -109,7 +112,7 @@ export default function ItemRow({ item, index, productos, onChange, onRemove }: 
       </td>
       {/* Subtotal */}
       <td className="px-3 py-2 w-32 text-right font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>
-        {formatMonto(subtotal)}
+        {formatMonto(subtotal, moneda)}
       </td>
       {/* Borrar */}
       <td className="px-2 py-2 w-8">

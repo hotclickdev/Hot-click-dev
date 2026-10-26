@@ -156,4 +156,45 @@ class OnvoCapturaConcurrenteTest extends BaseIntegrationTest {
             .isEqualTo(Constants.PAGO_CAPTURADO);
         verify(paymentService, times(1)).confirmarPedido(any(Pago.class));
     }
+
+    @Test
+    @DisplayName("SCALE1 #301: llave de prueba → es_prueba persistido por dirty checking, sin save por pedido")
+    void llaveDePrueba_persisteEsPruebaSinSave() {
+        when(onvoService.modoEsperado()).thenReturn("test");
+        doReturn(Map.of("paymentStatus", "paid", "status", "complete", "paymentIntentId", INTENT, "mode", "test"))
+            .when(onvoService).obtenerCheckoutSession(SESION);
+        doReturn(Map.of("id", INTENT, "status", "succeeded", "amount", 1_000_000, "currency", "CRC", "mode", "test"))
+            .when(onvoService).obtenerPaymentIntent(INTENT);
+
+        assertThat(provider.procesarPagoVerificado(SESION, "webhook")).isEqualTo(Verificacion.OK);
+        Pedido recargado = pedidoRepository.findById(
+            pagoRepository.findByMerchantToken(SESION).orElseThrow().getPedido().getId()).orElseThrow();
+        assertThat(recargado.isEsPrueba()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Caso 3 QA: sesión paid+open → confirma una vez; la segunda entrega del evento sale DUPLICADO")
+    void pagadaAbiertaConfirmaUnaSolaVez() {
+        doReturn(Map.of("paymentStatus", "paid", "status", "open", "paymentIntentId", INTENT, "mode", "live"))
+            .when(onvoService).obtenerCheckoutSession(SESION);
+
+        assertThat(provider.procesarPagoVerificado(SESION, "webhook")).isEqualTo(Verificacion.OK);
+        assertThat(provider.procesarPagoVerificado(SESION, "webhook")).isEqualTo(Verificacion.DUPLICADO);
+        assertThat(provider.procesarPagoVerificado(SESION, "retorno")).isEqualTo(Verificacion.DUPLICADO);
+
+        assertThat(webhookEventRepository.findAll()).hasSize(1);
+        assertThat(pagoRepository.findByMerchantToken(SESION).orElseThrow().getEstadoPago())
+            .isEqualTo(Constants.PAGO_CAPTURADO);
+        verify(paymentService, times(1)).confirmarPedido(any(Pago.class));
+    }
+
+    @Test
+    @DisplayName("Caso 3 QA: sesión paid+expired → no confirma ni registra evento")
+    void pagadaVencidaNoConfirma() {
+        doReturn(Map.of("paymentStatus", "paid", "status", "expired", "paymentIntentId", INTENT, "mode", "live"))
+            .when(onvoService).obtenerCheckoutSession(SESION);
+        assertThat(provider.procesarPagoVerificado(SESION, "webhook")).isEqualTo(Verificacion.NO_PAGADO);
+        assertThat(webhookEventRepository.findAll()).isEmpty();
+        verify(paymentService, times(0)).confirmarPedido(any(Pago.class));
+    }
 }

@@ -12,6 +12,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Prompt del chat público incluye ficha y muestra ambiente")
 class PublicChatPromptBuilderTest {
 
+    /** Dígitos de +000 0000 0000 (valor ficticio). */
+    private static final String WA_FAKE = "00000000000";
+
     @Test
     @DisplayName("Lista de productos lleva desc, tags y regla de mostrar ya")
     void fichaYReglaAmbiente() {
@@ -25,7 +28,7 @@ class PublicChatPromptBuilderTest {
             "nombre_categoria", "Iluminación"
         ));
         String prompt = builder.buildSalesSystemPrompt(
-            "50686667888", "HOTCLICK", true, "GENERAL", productos, false, false, null, Set.of(), false, true);
+            WA_FAKE, "HOTCLICK", true, "GENERAL", productos, false, false, null, Set.of(), false, true);
 
         assertThat(prompt).contains("Lámpara de pie");
         assertThat(prompt).contains("tags: sala,iluminación");
@@ -39,7 +42,7 @@ class PublicChatPromptBuilderTest {
     void sinFichas_sinEmpujarCatalogo() {
         PublicChatPromptBuilder builder = new PublicChatPromptBuilder();
         String prompt = builder.buildSalesSystemPrompt(
-            "50686667888", "Mi Tienda", false, "GENERAL", List.of(), false, false, null, Set.of(), false, false);
+            WA_FAKE, "Mi Tienda", false, "GENERAL", List.of(), false, false, null, Set.of(), false, false);
         assertThat(prompt).contains("No hay tarjetas en pantalla");
         assertThat(prompt).doesNotContain("conectalos en 1 frase");
         assertThat(prompt).contains("asesor de ventas de Mi Tienda");
@@ -50,7 +53,7 @@ class PublicChatPromptBuilderTest {
     @DisplayName("Tenant no inventa política global de 30 días")
     void tenant_sinGarantiaGlobal() {
         PublicChatPromptBuilder builder = new PublicChatPromptBuilder();
-        String info = builder.businessInfoText("50611112222", "Cafe Arte", false, false);
+        String info = builder.businessInfoText(WA_FAKE, "Cafe Arte", false, false);
         assertThat(info).contains("Cafe Arte");
         assertThat(info).doesNotContain("garantía de 30");
         assertThat(info).contains("WhatsApp");
@@ -72,7 +75,7 @@ class PublicChatPromptBuilderTest {
             "nombre_categoria", "Arte"
         ));
         String prompt = builder.buildSalesSystemPrompt(
-            "50686667888", "Arte CR", false, "GENERAL", productos, false, false, null, Set.of(), false, true);
+            WA_FAKE, "Arte CR", false, "GENERAL", productos, false, false, null, Set.of(), false, true);
         assertThat(prompt).contains("A cotizar");
         assertThat(prompt).contains("personalizado=sí");
         assertThat(prompt).contains("por encargo");
@@ -98,7 +101,7 @@ class PublicChatPromptBuilderTest {
             "nombre_categoria", "Tecnología"
         ));
         String prompt = builder.buildSalesSystemPrompt(
-            "50686667888", "HOTCLICK", true, "GENERAL", productos, false, false, null, Set.of(), false, true);
+            WA_FAKE, "HOTCLICK", true, "GENERAL", productos, false, false, null, Set.of(), false, true);
         assertThat(prompt).contains("stock: 12 disponible");
         assertThat(prompt).contains("specs: IPX5");
         assertThat(prompt).doesNotContain("disponibilidad: agotado");
@@ -117,7 +120,7 @@ class PublicChatPromptBuilderTest {
         ficha.put("garantia_dias", 0);
 
         String prompt = builder.buildAdvisorSystemPrompt(
-            "50686667888", "HOTCLICK", true, ficha, false, false);
+            WA_FAKE, "HOTCLICK", true, ficha, false, false);
 
         assertThat(prompt).contains("Taladro percutor");
         assertThat(prompt).contains("Uso: madera y metal");
@@ -131,8 +134,8 @@ class PublicChatPromptBuilderTest {
     @DisplayName("Plazos de envío del asistente salen de la fuente única (tiempos-envio.json)")
     void plazosDesdeLaFuenteUnica() {
         PublicChatPromptBuilder builder = new PublicChatPromptBuilder();
-        String es = builder.businessInfoText("50686667888", "HOTCLICK", true, false);
-        String en = builder.businessInfoText("50686667888", "HOTCLICK", true, true);
+        String es = builder.businessInfoText(WA_FAKE, "HOTCLICK", true, false);
+        String en = builder.businessInfoText(WA_FAKE, "HOTCLICK", true, true);
         assertThat(es).contains(com.hotclick.config.TiemposEnvio.resumen())
             .contains("en el GAM de 2 a 4 días hábiles, fuera del GAM de 3 a 4 días hábiles y envío rápido en el GAM de 30 min a 2 horas")
             .doesNotContain("2-5").doesNotContain("1-2 días");
@@ -141,8 +144,39 @@ class PublicChatPromptBuilderTest {
             .doesNotContain("2-5").doesNotContain("1-2 days");
 
         String prompt = builder.buildSalesSystemPrompt(
-            "50686667888", "HOTCLICK", true, "GENERAL", List.of(), false, false, null, Set.of(), false, false);
+            WA_FAKE, "HOTCLICK", true, "GENERAL", List.of(), false, false, null, Set.of(), false, false);
         assertThat(prompt).contains("- Envíos (marketplace): Correos de Costa Rica + entrega directa en el GAM; "
             + com.hotclick.config.TiemposEnvio.resumen()).doesNotContain("2-5 días");
+    }
+
+    @Test
+    @DisplayName("Con WhatsApp configurado (fake) lo usa en prompt y textos")
+    void conWhatsappFake() {
+        PublicChatPromptBuilder builder = new PublicChatPromptBuilder();
+        assertThat(builder.whatsappContactText(WA_FAKE, false)).contains("https://wa.me/" + WA_FAKE);
+        assertThat(builder.businessInfoText(WA_FAKE, "Cafe Arte", false, false)).contains("https://wa.me/" + WA_FAKE);
+        String prompt = builder.buildSalesSystemPrompt(
+            WA_FAKE, "HOTCLICK", true, "PAGO_FALLO", List.of(), false, false, null, Set.of(), false, false);
+        assertThat(prompt).contains("wa.me/" + WA_FAKE).contains("SINPE Móvil al " + WA_FAKE);
+    }
+
+    @Test
+    @DisplayName("Sin WhatsApp configurado: ni wa.me ni número, y no rompe")
+    void sinWhatsapp_omite() {
+        PublicChatPromptBuilder builder = new PublicChatPromptBuilder();
+        for (String vacio : new String[] {"", null}) {
+            assertThat(builder.whatsappContactText(vacio, false)).doesNotContain("wa.me").contains("Contacto");
+            assertThat(builder.whatsappContactText(vacio, true)).doesNotContain("wa.me");
+            assertThat(builder.businessInfoText(vacio, "Cafe Arte", false, false)).doesNotContain("wa.me").contains("Cafe Arte");
+            assertThat(builder.businessInfoText(vacio, "Cafe Arte", false, true)).doesNotContain("wa.me");
+            String prompt = builder.buildSalesSystemPrompt(
+                vacio, "HOTCLICK", true, "CARRITO:x:1000", List.of(), false, false, null, Set.of(), false, false);
+            assertThat(prompt).doesNotContain("wa.me").doesNotContain("null").contains("pagar con SINPE o tarjeta");
+            String fallo = builder.buildSalesSystemPrompt(
+                vacio, "HOTCLICK", true, "PAGO_FALLO", List.of(), false, false, null, Set.of(), false, false);
+            assertThat(fallo).doesNotContain("wa.me").contains("SINPE Móvil como alternativa");
+            assertThat(builder.buildAdvisorSystemPrompt(vacio, "HOTCLICK", true, Map.of("nombre_producto", "X"), false, false))
+                .doesNotContain("wa.me");
+        }
     }
 }

@@ -82,56 +82,6 @@ public class SinpeController {
         }
     }
 
-    // ── Subir comprobante (autenticado) ────────────────────────────────────────
-    @PostMapping("/{numeroPedido}/comprobante")
-    public ResponseEntity<ResponseDTO> subirComprobante(
-            @PathVariable String numeroPedido,
-            @RequestParam("imagen")          MultipartFile imagen,
-            @RequestParam("nombreRemitente") String nombreRemitente,
-            @RequestParam(value = "cedulaRemitente",   required = false) String cedulaRemitente,
-            @RequestParam(value = "telefonoRemitente", required = false) String telefonoRemitente) {
-        try {
-            String correo = SecurityContextHolder.getContext().getAuthentication().getName();
-            sinpeService.subirComprobante(numeroPedido, imagen, nombreRemitente,
-                                          cedulaRemitente, telefonoRemitente, correo);
-            return ResponseEntity.ok(ResponseDTO.success("Comprobante recibido. En revisión.", null));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
-        } catch (com.hotclick.exception.StockInsuficienteException e) {
-            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
-        }
-    }
-
-    // ── Subir comprobante (invitado) ───────────────────────────────────────────
-    @PostMapping("/guest/{numeroPedido}/comprobante")
-    public ResponseEntity<ResponseDTO> guestSubirComprobante(
-            @PathVariable String numeroPedido,
-            @RequestParam("imagen")           MultipartFile imagen,
-            @RequestParam("nombreRemitente")  String nombreRemitente,
-            @RequestParam("correoUsuario")    String correoUsuario,
-            @RequestParam(value = "cedulaRemitente",   required = false) String cedulaRemitente,
-            @RequestParam(value = "telefonoRemitente", required = false) String telefonoRemitente) {
-        try {
-            sinpeService.subirComprobante(numeroPedido, imagen, nombreRemitente,
-                                          cedulaRemitente, telefonoRemitente, correoUsuario);
-            return ResponseEntity.ok(ResponseDTO.success("Comprobante recibido. En revisión.", null));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
-        } catch (com.hotclick.exception.StockInsuficienteException e) {
-            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
-        }
-    }
-
     // ── Admin: listar comprobantes ─────────────────────────────────────────────
     @PreAuthorize(SOLO_PLATAFORMA)
     @GetMapping("/admin/comprobantes")
@@ -177,40 +127,4 @@ public class SinpeController {
         }
     }
 
-    // ── Admin: aprobar comprobante ─────────────────────────────────────────────
-    @PreAuthorize(SOLO_PLATAFORMA)
-    @PostMapping("/admin/comprobantes/{id}/aprobar")
-    public ResponseEntity<ResponseDTO> aprobar(@PathVariable Long id) {
-        try {
-            String adminEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-            sinpeService.aprobar(id, adminEmail, null);
-            return ResponseEntity.ok(ResponseDTO.success("Comprobante aprobado", null));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
-        }
-    }
-
-    // ── Admin: rechazar comprobante ────────────────────────────────────────────
-    @PreAuthorize(SOLO_PLATAFORMA)
-    @PostMapping("/admin/comprobantes/{id}/rechazar")
-    public ResponseEntity<ResponseDTO> rechazar(
-            @PathVariable Long id,
-            @RequestParam(required = false) String motivo,
-            @RequestBody(required = false) Map<String, String> body) {
-        try {
-            String adminEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-            sinpeService.rechazar(id, AdminPagoController.motivoEscrito(motivo, body), adminEmail, null);
-            return ResponseEntity.ok(ResponseDTO.success("Comprobante rechazado", null));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
-        }
-    }
 }

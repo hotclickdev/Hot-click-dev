@@ -32,7 +32,7 @@ public class ConsolaMovimientoService {
                    COALESCE(SUM(subtotal), 0)
             FROM hot_click_pedido_tb
             WHERE fecha_pedido >= :desde
-              AND estado_pedido IN ('PAGADO','ENVIADO','ENTREGADO','LISTO')
+              AND estado_pedido IN ('PAGADO','ENVIADO','ENTREGADO','LISTO') AND es_prueba = false
             GROUP BY 1, 2
             """).setParameter("desde", desde).getResultList();
         Map<String, Object> salida = new LinkedHashMap<>();
@@ -44,7 +44,7 @@ public class ConsolaMovimientoService {
             JOIN hot_click_pedido_tb p ON p.id_pedido = i.fk_id_pedido
             JOIN hot_click_producto_tb pr ON pr.id_producto = i.fk_id_producto
             WHERE p.fecha_pedido >= :desde
-              AND p.estado_pedido IN ('PAGADO','ENVIADO','ENTREGADO','LISTO')
+              AND p.estado_pedido IN ('PAGADO','ENVIADO','ENTREGADO','LISTO') AND p.es_prueba = false
             GROUP BY pr.nombre_producto
             ORDER BY SUM(i.cantidad) DESC
             LIMIT 8
@@ -56,7 +56,7 @@ public class ConsolaMovimientoService {
             JOIN hot_click_producto_tb pr ON pr.id_producto = i.fk_id_producto
             LEFT JOIN hot_click_categoria_tb c ON c.id_categoria = pr.fk_id_categoria
             WHERE p.fecha_pedido >= :desde
-              AND p.estado_pedido IN ('PAGADO','ENVIADO','ENTREGADO','LISTO')
+              AND p.estado_pedido IN ('PAGADO','ENVIADO','ENTREGADO','LISTO') AND p.es_prueba = false
             GROUP BY c.nombre_categoria
             ORDER BY SUM(i.subtotal_item) DESC
             LIMIT 8

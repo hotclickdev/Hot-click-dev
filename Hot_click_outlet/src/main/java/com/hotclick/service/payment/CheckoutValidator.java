@@ -99,18 +99,32 @@ public class CheckoutValidator {
     }
 
     public void assertBodegaTenant(Bodega bodega, Long bodegaId) {
-        // Tenant assertion: la bodega del checkout debe pertenecer al negocio activo
-        // (slug de la tienda pública). Evita que un pedido de la Empresa A se asiente
-        // contra el inventario/empresa de la Bodega de la Empresa B.
+        assertBodegaTenant(bodega, bodegaId, java.util.Set.of());
+    }
+
+    /**
+     * Tenant assertion (E2E-CMP-01 + NO APTO #321 x2). La bodega de un paquete se acepta solo si TODOS sus
+     * ítems son de un único vendedor y la bodega es de ese vendedor
+     * ({@code empresasVendedoras == Set.of(bodega.empresa)}), sea cual sea el tenant: también en la tienda
+     * propia (tenant A + carrito A+B en la bodega de A da 400). Un ítem sin empresa llega como null y se rechaza.
+     * <p>
+     * Única excepción (BAJO aceptado por Seguridad, decisión 1): invitado/comprador sin negocio
+     * (TenantContext null) y bodega HotClick (empresa plataforma o sin empresa): HotClick coordina el despacho
+     * de productos de terceros sin bodega propia (fallback a bodegaDefault). Sin cambio respecto a master.
+     * <p>
+     * Fail-closed: cualquier otro caso, o paquete sin bodega, da 400 (IllegalArgumentException).
+     */
+    public void assertBodegaTenant(Bodega bodega, Long bodegaId, java.util.Collection<Long> empresasVendedoras) {
+        if (bodega == null) throw new IllegalArgumentException("El paquete no tiene bodega de despacho");
         Long tenantId = com.hotclick.security.TenantContext.get();
-        if (tenantId != null) {
-            Long bodegaEmpresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
-            if (!tenantId.equals(bodegaEmpresaId)) {
-                log.warn("[checkout] Intento cross-tenant bloqueado: tenant={}, bodegaId={}, bodega.empresaId={}",
-                    tenantId, bodegaId, bodegaEmpresaId);
-                throw new SecurityException("La bodega seleccionada no pertenece a este negocio");
-            }
-        }
+        Long bodegaEmpresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
+        // BAJO aceptado (decisión 1): invitado + bodega HotClick.
+        if (tenantId == null && (bodegaEmpresaId == null || Constants.esEmpresaPlataforma(bodegaEmpresaId))) return;
+        if (bodegaEmpresaId != null && empresasVendedoras != null
+                && new java.util.HashSet<>(empresasVendedoras).equals(java.util.Collections.singleton(bodegaEmpresaId))) return;
+        log.warn("[checkout] Bodega ajena bloqueada: tenant={}, bodegaId={}, bodega.empresaId={}, vendedores={}",
+            tenantId, bodegaId, bodegaEmpresaId, empresasVendedoras);
+        throw new IllegalArgumentException("La bodega seleccionada no pertenece a esta tienda");
     }
 
     public static void assertMetodoEnvioValido(String metodoEnvio) {

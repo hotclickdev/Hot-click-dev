@@ -106,7 +106,7 @@ public class ConsolaPedidoService {
         mapa.put("resolucionNota", pedido.getResolucionNota());
         mapa.put("clienteNombre", cliente != null ? cliente.getNombre() : pedido.getClienteNombre());
         mapa.put("clienteTel", cliente != null && cliente.getTelefono() != null ? cliente.getTelefono() : pedido.getClienteTel());
-        mapa.put("cedula", cliente != null ? cliente.getIdentificacion() : null);
+        mapa.put("cedula", cliente != null ? com.hotclick.utils.CedulaCr.realONulo(cliente.getIdentificacion()) : null);
         mapa.put("usuarioId", cliente != null ? cliente.getId() : null);
         mapa.put("empresaId", pedido.getEmpresaId());
         mapa.put("empresaNombre", pedido.getNombreNegocio());

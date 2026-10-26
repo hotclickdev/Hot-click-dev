@@ -55,6 +55,7 @@ class PosQrPedidoClienteTest {
     @Mock PosQrSessionService sessionService;
     @Mock PosQrStockReserva stockReserva;
     @Mock VentaAvisoService ventaAvisoService;
+    @Mock PosSinpeOnvoService sinpeOnvo;
     @InjectMocks PosQrPedidoFactory factory;
 
     @Test
@@ -128,6 +129,34 @@ class PosQrPedidoClienteTest {
         verify(pedidoRepo).save(cap.capture());
         assertThat(cap.getValue().getItems().get(0).getPrecioUnitarioMomento()).isEqualTo(5_000);
         assertThat(cap.getValue().getTotalPedido()).isEqualTo(10_000);
+    }
+
+    @Test
+    @DisplayName("P-04: venta POS SINPE ONVO con llave de prueba crea el pedido con es_prueba=true")
+    void sinpeOnvoLlavePruebaMarcaPedido() {
+        Usuario cajero = usuario(7L, "Ana", "ana@tienda.cr");
+        Empresa empresa = empresa(1L);
+        Producto mouse = producto(10L, "Mouse", 5, 1000);
+        PosQrSesion sesion = new PosQrSesion();
+        sesion.setEmpresa(empresa);
+        sesion.setUsuario(cajero);
+        sesion.setBodegaId(3L);
+        sesion.setTotal(10_000);
+        sesion.setStripeSessionId("ONVOPI:pi_9");
+        sesion.setItemsJson("[{\"productoId\":10,\"cantidad\":2,\"precioUnitario\":5000}]");
+        when(sessionService.getMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
+        when(usuarioRepo.findById(Constants.ID_USUARIO_MOSTRADOR)).thenReturn(Optional.of(usuario(999L, "Mostrador", "m@x.test")));
+        when(bodegaRepo.findById(3L)).thenReturn(Optional.of(bodega(3L, empresa)));
+        when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
+        when(stockReserva.bloquear(any())).thenReturn(java.util.Map.of(10L, mouse));
+        when(pedidoRepo.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(sinpeOnvo.esCobroDePrueba(sesion)).thenReturn(true);
+
+        factory.crearPedidoPOS(sesion, "SINPE");
+
+        ArgumentCaptor<Pedido> cap = ArgumentCaptor.forClass(Pedido.class);
+        verify(pedidoRepo).save(cap.capture());
+        assertThat(cap.getValue().isEsPrueba()).isTrue();
     }
 
     @Test

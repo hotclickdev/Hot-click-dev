@@ -131,7 +131,7 @@ class AiCopilotStockQueries {
             JOIN hot_click_pedido_tb ped ON pi.fk_id_pedido = ped.id_pedido
             JOIN hot_click_producto_tb p ON pi.fk_id_producto = p.id_producto
             WHERE ped.fk_id_empresa = ? AND ped.fecha_pedido >= NOW() - INTERVAL '30 days'
-              AND ped.estado_pedido IN ('PAGADO','ENTREGADO')
+              AND ped.estado_pedido IN ('PAGADO','ENTREGADO') AND ped.es_prueba = false
               AND p.fk_id_estado = 1 AND p.visible_catalogo = TRUE AND p.vendido = FALSE
               AND p.stock_actual <= COALESCE(p.stock_minimo, 5)
             GROUP BY p.id_producto, p.nombre_producto, p.stock_actual, p.stock_minimo
