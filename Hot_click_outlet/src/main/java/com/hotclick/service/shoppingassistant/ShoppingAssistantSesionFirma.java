@@ -19,13 +19,14 @@ import java.util.UUID;
  * La firma cubre {@code empresaId|uuid}: un token emitido para una tienda no vale en otra.
  * El cliente lo trata como opaco (mismo campo {@code sesionId}), así que el frontend no cambia.
  *
- * <p>Clave derivada: {@code HMAC-SHA256(secreto, "hotclick-asistente-sesion-v1")}, con
+ * <p>Clave derivada: {@code HMAC-SHA256(secreto, }{@link #DOMINIO}{@code )}, con
  * secreto = {@code asistente.sesion.secret} o, en su defecto, {@code jwt.secret}. Sin secreto:
  * fail-closed al arrancar, salvo perfiles dev/test donde se genera una clave efímera.
  */
 @Component
 public class ShoppingAssistantSesionFirma {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
     private static final String ALG = "HmacSHA256";
     static final String DOMINIO = "hotclick-asistente-sesion-v1";
 
@@ -53,7 +54,7 @@ public class ShoppingAssistantSesionFirma {
                 "asistente: falta secreto de sesión (asistente.sesion.secret o jwt.secret ≥32 chars)");
         }
         clave = new byte[32];
-        new SecureRandom().nextBytes(clave);
+        RANDOM.nextBytes(clave);
     }
 
     public String firmar(Long empresaId, UUID sesionId) {

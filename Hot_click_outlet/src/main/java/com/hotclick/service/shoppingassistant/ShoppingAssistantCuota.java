@@ -62,6 +62,7 @@ public class ShoppingAssistantCuota {
     }
 
     static String claveTienda(Long empresaId) {
+        // tenant-global-ok: null = marketplace; solo nombra la clave del contador, no lee datos de tenant
         return "asistente:empresa:" + (empresaId == null ? "marketplace" : empresaId);
     }
 
