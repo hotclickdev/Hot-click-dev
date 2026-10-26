@@ -8,7 +8,7 @@ Sigue estos pasos en orden y por tu cuenta:
 1. **Recrea los bots** según la tabla "Resumen rápido" y sus prompts (sección 7). Empieza por **Mentor** y **Grok Bot**, y pega en cada uno el prompt de arranque.
 2. **Conecta GitHub** a `hotclickdev/Hot-click-dev` con los permisos `repo` y `workflow`.
 3. **Recrea la rutina de seguimiento** a las 8:00 AM y a las 6:00 PM, hora de CR.
-4. **Cierra los PRs abiertos**: #329 (tiene conflicto), #332, #336, #343 (CI en rojo), #348, #350, #351, #352 y #353. La regla es merge solo con CI verde y APTO de Seguridad, **sin deploy**.
+4. **Cierra los PRs abiertos** (estado de las 3:44 PM en "Correcciones de los bots"): #329, #332, #336, #350, #351 y #354. La regla es merge solo con CI verde y APTO de Seguridad, **sin deploy**.
 5. **Sigue el ciclo por área**: fix → QA → ✅. El área 4 ya está ✅. Cuando las 10 áreas tengan ✅, avísale a Andrés para empezar la simulación.
 6. **Deuda técnica**: en un PR aparte y con tests, quita **Tilopay** (unos 120 archivos) y **Stripe** (unos 91 archivos, incluido `/api/webhooks/stripe`), y deja ONVO como el único procesador.
 7. **Solo Andrés** (pregúntale, no lo hagas tú): M-08, el secret `HOTCLICK_NUMEROS_PROHIBIDOS`, la limpieza de prod, la rotación de contraseñas, `flyway_schema_history`, la llave live de ONVO, el deploy y el cambio de régimen antes de cobrar.
@@ -20,6 +20,54 @@ Los 14 bots sin nota (Mentor, Grok Bot, las 5 salas, los 3 bots legales y los de
 Generado el lunes 26-oct-2026, 2:40 PM (hora de Costa Rica). Sirve para recrear en otra cuenta de Grok Bot todo el equipo de bots y seguir con el trabajo donde quedó.
 
 > **Seguridad:** este documento no contiene ningún valor secreto. Solo aparecen **nombres** de variables. Los valores se cargan a mano en GitHub Secrets o en el servidor y nunca se pegan en un chat.
+
+---
+
+## Correcciones de los bots (26-oct, 3:44 PM CR): **estos datos valen más que los de abajo**
+
+22 bots respondieron. **No respondieron:** Auditor 7 Facturación/Hacienda, Auditor 8 Bot Telegram y Auditor 10 Infraestructura, además de los 14 bots ❌ SIN NOTA.
+
+**Master actual: `c48cb9ea`** (el `1f54e30f` que aparece abajo quedó viejo).
+
+**PRs (corrige el paso 4):**
+- Mergeados después de las 3:20 PM: #353 (`a96c77f7`), #352 (`d985cba7`), #348 (`d8f239be`) y #343 (`7c9ea22c`), así que ya no están abiertos. #343 ya no está en rojo. #344 y #346 también están mergeados.
+- Siguen abiertos con APTO, a la espera de CI verde: #329 (`3e1c837d`, ya sin conflicto), #332 (`3abfc68d`), #336 (`fb1818da`), #350 (`e68039dc`; su test necesita el secret `HOTCLICK_NUMEROS_PROHIBIDOS`) y #351 (`788e02e9`, E2E).
+- **#354** (`fix/plan-pago-pendiente-aprobacion`, un ALTO de QA 8) está abierto y espera APTO.
+- Un APTO solo vale para el head exacto; si hay un push nuevo, se pide otro APTO.
+
+**Correcciones a la tabla y a los prompts:**
+- **Reglas vigentes:** los prompts viejos de la sección 7 dicen "nunca push o merge sin OK". La regla actual es otra: cada bot hace push y abre sus PRs (máximo 3 abiertos, siempre sin force, sin `--no-verify` y sin rebase). CI/CD mergea con `--match-head-commit` cuando hay CI verde y APTO de Seguridad sobre el hash exacto. Nunca hay deploy. Un PR que crea servidores es NO APTO. Las ramas y los hashes de los prompts de Dev Pagos, Dev Marketplace y QA están viejos, así que hay que guiarse por la nota de cada bot.
+- **Fuera de la cuenta vieja:** "informe en hotclick-reportes/auditoria/" es una ruta del box viejo y la cuenta nueva no la va a ver. Los informes están en `docs/traspaso/evidencia/<bot>/`. El id fijo de Grok Bot en los prompts es de la cuenta vieja y hay que cambiarlo por el del Grok Bot nuevo.
+- **HotClick ONVO** solo investiga la documentación de ONVO: no programa ni hace push. Stripe y Tilopay **no** son procesadores secundarios, son solo deuda técnica.
+- **Antes de quitar Tilopay (paso 6):** hay que confirmar que el QR del POS ya confirma por ONVO (`PosQrVentaService`, ALTO 3 del Auditor 4). También siguen abiertos dos BAJO: QA6-R4-03 y QA6-R4-04 (`/api/webhooks/tilopay` sin secret en el perfil de simulación).
+- **Auth:** QA prueba con el JWT propio de `POST /api/auth/login`, así que hay que verificar si Clerk se sigue usando.
+- **Scope `workflow`:** se reportaron rechazos de push que tocaban `.github/workflows`. Antes de contar con ese scope, revisar `gh auth status`.
+- **Comisión de Negocio Plus:** prod devolvía 7 % con mínimo de ₡700 (24/10). La vigente es 6 % sin mínimo, lo que depende del deploy de #332. Falta el price ID del plan Emprendedor (US$9, después de los 70 negocios gratis).
+- **Pendientes por área:** ALTO del área 1 (P-01 SINPE manual en el marketplace, P-02 la carrera entre aprobar y rechazar, P-03 `/api/sinpe/guest*` sin rate limit, y el candado de `PaymentExpirationCleanupService`). Área 2: A1 a A3. Área 3: M-01 a M-08 (M-01: las ofertas se muestran pero no se cobran). Área 5: S-01 a S-04. Área 6: ALTO-1 y ALTO-2, sobre fb9ef78e, falta re-auditar después de #327 y #328. Área 9: 2 ALTO, 5 MEDIO y 3 BAJO, sobre fb9ef78e. QA4-010 (2FA) y QA4-008 (chatbot) siguen sin rama. #343 se queda con la excepción ENTREGADO, que Andrés ya decidió. Las migraciones V197 y V198 de `feat/iva-regimen` hay que renumerarlas después de V200.
+- **Nuevos pendientes de Andrés:** la limpieza de prod (productos 663 a 669, la bodega "PRUEBA Bodega 2", el miembro 138 y los invitados de prueba), rotar las contraseñas de las cuentas de prueba de prod que quedaron expuestas en una salida de shell, decidir si el POS o el QR usan el número SINPE de ONVO, y las reglas del cupo de 70 negocios gratis.
+
+**Variables que faltaban (solo nombres):** `ONVO_SECRET_KEY`, `ONVO_PUBLISHABLE_KEY`, `ONVO_WEBHOOK_SECRET` (va en la cabecera `X-Webhook-Secret`), `ONVO_PRICE_ID_PYME`, `ONVO_PRICE_ID_NEGOCIO_PLUS`, `ONVO_SINPE_DESTINO` (verificar si se usa), `PAYMENTS_ONVO_ENABLED`, `PAYMENTS_ONVO_PERMITIR_LLAVE_TEST` (apagada en live), `HOTCLICK_NUMEROS_PROHIBIDOS`, `MAIL_PROVIDER`, `EMPRENDEDOR_/PYME_/NEGOCIO_PLUS_PRECIO_MENSUAL_USD`, `HOTCLICK_ADMIN_INITIAL_PASSWORD`, `ADMIN_RESET_PASSWORD`, `ADMIN_DEFAULT_PASSWORD` y `ADMINIT_EMAIL`.
+
+**Entorno del box (hay que reinstalarlo en la cuenta nueva):**
+- Herramientas: JDK 21 en `/workspace/tools/jdk21` y Maven en `/workspace/tools/apache-maven-3.9.9` (o `/workspace/qa1-verif/maven/bin`). Node 22 con pnpm 11.1.2 (corepack está roto). gitleaks 8.30.1 está en `/workspace/tools/gitleaks`, fuera del PATH; conviene limitarlo con `--log-opts`.
+- Suites: la suite completa va con `unset ONVO_*; flock /workspace/.mvn-suite.lock` y se corre una vez por hash, porque la suite completa puede quedarse sin memoria.
+- Staging **local** (no es un servidor): front en `:3000`, backend en `:8081` y Mailpit en `:8025` (SMTP en `:1025`). Está en `/workspace/staging-43188186`. No toques sus procesos ni sus `node_modules`, ni `/workspace/tools/node22`, y no uses `pkill`: solo matás por PID.
+- Conflictos en `static/`: tomá la versión de master y recompilá con la configuración de `gate-spa.yml`.
+- El box se queda sin inodos (90-99 %): revisá con `df -i`.
+- No uses `git stash`, porque es compartido entre bots. Trabajá siempre en un worktree propio.
+- El registro tiene un límite de 5 por hora, compartido entre todos los bots.
+
+## Mejoras sugeridas por los bots
+- En cada fila poner el head de master auditado o probado, con fecha y hora, y el estado (APTO, en cola o mergeado).
+- Agregar una tabla de hallazgos por área (ALTO, MEDIO y BAJO) con su PR y su estado.
+- Separar los PRs que solo esperan CI verde de los que todavía necesitan trabajo.
+- Reemplazar los prompts de la sección 7 por el rol y las reglas vigentes de cada nota.
+- Juntar en un solo lugar "Entorno del box", "Cómo buildear como CI" y "Staging local".
+- Llevar un registro único de recursos creados en prod y de su limpieza.
+- Agregar un comando de re-QA reproducible por área y marcar qué se puede probar en prod y qué solo en local.
+- Subir a `docs/` el plan de QA y `plan-lanzamiento.md` (las garantías C1 a C6), que hoy están solo en el box.
+- Fijar por SHA las actions de los workflows y hacer obligatorio el check E2E cuando entre #351. Esto le toca a Andrés.
+- Crear un helper único de montos (₡ y US$) y un chequeo de voseo en CI.
 
 ---
 
