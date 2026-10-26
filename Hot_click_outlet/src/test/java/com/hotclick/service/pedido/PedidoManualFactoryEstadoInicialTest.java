@@ -41,13 +41,15 @@ class PedidoManualFactoryEstadoInicialTest {
     @Test
     @DisplayName("QA5-M-01: ENTREGADO solo para compra EXTERNO de origen MANUAL")
     void compraExternaManual_naceEntregada() {
-        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_ENTREGADO, "EXTERNO", "MANUAL"))
+        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_ENTREGADO, "EXTERNO", "MANUAL", true))
             .isEqualTo(Constants.PEDIDO_ENTREGADO);
-        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_ENTREGADO, "EXTERNO", "ONLINE"))
+        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_ENTREGADO, "EXTERNO", "MANUAL", false))
             .isEqualTo(Constants.PEDIDO_PENDIENTE);
-        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_PAGADO, "EXTERNO", "MANUAL"))
+        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_ENTREGADO, "EXTERNO", "ONLINE", true))
             .isEqualTo(Constants.PEDIDO_PENDIENTE);
-        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_ENTREGADO, "SINPE", "MANUAL"))
+        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_PAGADO, "EXTERNO", "MANUAL", true))
+            .isEqualTo(Constants.PEDIDO_PENDIENTE);
+        assertThat(PedidoManualFactory.estadoInicialPermitido(Constants.PEDIDO_ENTREGADO, "SINPE", "MANUAL", true))
             .isEqualTo(Constants.PEDIDO_PENDIENTE);
     }
 }

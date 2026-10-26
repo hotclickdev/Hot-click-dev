@@ -23,6 +23,7 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private ProductoRepository productoRepository;
     @Autowired private CategoriaRepository categoriaRepository;
+    @Autowired private TestimonioRepository testimonioRepository;
 
     private Empresa empA, empB;
     private Bodega bodA;
@@ -112,6 +113,38 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
             .andExpect(status().isOk());
         assertThat(pedidoRepository.count()).isEqualTo(1);
         assertThat(pedidoRepository.findAll().get(0).getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENTREGADO);
+    }
+
+    private String compraBody() {
+        return "{\"usuarioId\":" + cliA.getId() + ",\"bodegaId\":" + bodA.getId()
+            + ",\"items\":[{\"productoId\":" + prodA.getId() + ",\"cantidad\":1,\"precioUnitario\":1000}]}";
+    }
+
+    @Test
+    @DisplayName("Seguridad #343 | EMPRENDEDOR asigna compra EXTERNO → nace PENDIENTE (sin excepción ENTREGADO)")
+    void emprendedorAsignaCompraNacePendiente() throws Exception {
+        mockMvc.perform(post("/api/admin/asignar/compra").header("Authorization", tokenA)
+                .contentType(MediaType.APPLICATION_JSON).content(compraBody()))
+            .andExpect(status().isOk());
+        assertThat(pedidoRepository.count()).isEqualTo(1);
+        assertThat(pedidoRepository.findAll().get(0).getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+    }
+
+    @Test
+    @DisplayName("Seguridad #343 | compra MANUAL+EXTERNO entregada no habilita reseñas; la misma ONLINE sí")
+    void compraExternaNoHabilitaResena() throws Exception {
+        mockMvc.perform(post("/api/admin/asignar/compra").header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON).content(compraBody()))
+            .andExpect(status().isOk());
+        Pedido p = pedidoRepository.findAll().get(0);
+        assertThat(p.getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENTREGADO);
+        assertThat(testimonioRepository.countCompra(prodA.getId(), cliA.getId())).isZero();
+        assertThat(pedidoRepository.findEntregadosConItemsByUsuarioId(cliA.getId())).isEmpty();
+        // Control: el mismo pedido con origen ONLINE sí cuenta como compra.
+        p.setOrigen(OrigenPedido.ONLINE.codigo());
+        pedidoRepository.saveAndFlush(p);
+        assertThat(testimonioRepository.countCompra(prodA.getId(), cliA.getId())).isEqualTo(1);
+        assertThat(pedidoRepository.findEntregadosConItemsByUsuarioId(cliA.getId())).hasSize(1);
     }
 
     private Empresa empresa(String nombre, String slug) {

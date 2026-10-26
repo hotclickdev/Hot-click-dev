@@ -34,6 +34,7 @@ public class PedidoManualFactory {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private N8nWebhookService n8nWebhookService;
     @Autowired private PedidoPagoManualService pedidoPagoManualService;
+    @Autowired private com.hotclick.security.CompanyScope companyScope;
 
     /** P7-02: estados con los que un pedido manual de /api/pedidos/manual puede nacer (los de la UI). */
     public static final java.util.Set<String> ESTADOS_INICIALES = java.util.Set.of(
@@ -52,7 +53,10 @@ public class PedidoManualFactory {
 
         Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
         String metodoPago = dto.getMetodoPago() != null ? dto.getMetodoPago() : "SINPE";
-        String estadoInicial = estadoInicialPermitido(dto.getEstadoPedido(), metodoPago, dto.getOrigen());
+        // QA5-M-01 / Seguridad #343: la excepción ENTREGADO solo para ADMIN de plataforma (sin empresa, sin
+        // impersonar), leído del principal autenticado; nunca del request.
+        boolean adminPlataforma = empresaId == null && companyScope.isAdminIT();
+        String estadoInicial = estadoInicialPermitido(dto.getEstadoPedido(), metodoPago, dto.getOrigen(), adminPlataforma);
 
         Pedido pedido = new Pedido();
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
@@ -138,16 +142,19 @@ public class PedidoManualFactory {
      * confirma la pasarela o el flujo de comprobantes, nunca la creación manual.
      */
     static String estadoInicialPermitido(String estadoPedido, String metodoPago) {
-        return estadoInicialPermitido(estadoPedido, metodoPago, null);
+        return estadoInicialPermitido(estadoPedido, metodoPago, null, false);
     }
 
     /**
      * QA5-M-01: «asignar compra» (origen MANUAL, método EXTERNO) registra una compra que ya se pagó y
-     * entregó fuera de HotClick; nace ENTREGADO como pidió el admin. No crea Pago (EXTERNO no es método
+     * entregó fuera de HotClick; nace ENTREGADO solo si lo registra el ADMIN de plataforma
+     * (empresa null, verificado en el servidor); un EMPRENDEDOR nace PENDIENTE. No crea Pago (EXTERNO no es método
      * manual cobrable) ni habilita despacho. /api/pedidos/manual no puede pedir ENTREGADO (P7-02).
      */
-    static String estadoInicialPermitido(String estadoPedido, String metodoPago, String origen) {
-        if (Constants.PEDIDO_ENTREGADO.equals(estadoPedido)
+    static String estadoInicialPermitido(String estadoPedido, String metodoPago, String origen,
+                                         boolean adminPlataforma) {
+        if (adminPlataforma
+                && Constants.PEDIDO_ENTREGADO.equals(estadoPedido)
                 && METODO_COMPRA_EXTERNA.equals(PedidoPagoManualService.normalizarMetodo(metodoPago))
                 && OrigenPedido.normalizar(origen) == OrigenPedido.MANUAL) {
             return Constants.PEDIDO_ENTREGADO;
