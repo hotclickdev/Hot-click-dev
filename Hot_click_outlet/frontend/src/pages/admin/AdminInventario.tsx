@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { inventarioService } from '@/services/inventarioService'
+import { formatMiles } from '@/utils/format'
 
 type FilaInventario = {
   nombre_producto?: string
@@ -31,7 +32,7 @@ type DashboardInventario = {
 
 type TabInventario = 'riesgo' | 'lentos' | 'abc'
 
-const fmt = (n: unknown) => new Intl.NumberFormat('es-CR').format(Number(n ?? 0))
+const fmt = (n: unknown) => formatMiles(Number(n ?? 0))
 const fmtDate = (ts: unknown) => ts ? String(ts).slice(0, 10) : '—'
 
 const ABC_STYLE: Record<string, string> = {

@@ -13,7 +13,7 @@ export default function CuentaPlataforma() {
         <h1 className="mt-1 font-display text-[28px] font-extrabold leading-8">Cuenta</h1>
         <p className="mt-2 text-sm font-semibold">{visible}</p>
         <p className="mt-2 text-sm text-hc-n-600">{correo}</p>
-        <p className="mt-4 rounded-xl bg-hc-blue-50 px-3 py-3 text-sm font-semibold text-hc-blue-600">Usted es el administrador de HotClick, no el usuario de una tienda.</p>
+        <p className="mt-4 rounded-xl bg-hc-blue-50 px-3 py-3 text-sm font-semibold text-hc-blue-600">Vos sos el administrador de HotClick, no el usuario de una tienda.</p>
       </section>
       <section className="rounded-[14px] border border-hc-n-200 bg-white p-5">
         <h2 className="font-display text-[17px] font-bold">Sesión</h2>

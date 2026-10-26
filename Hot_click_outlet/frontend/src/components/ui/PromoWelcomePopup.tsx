@@ -41,7 +41,7 @@ function mensajeCupon(err: unknown): string {
     ? (data as { message?: unknown }).message
     : undefined
   const msg = desdeObjeto || data || 'No se pudo generar el cupón'
-  return typeof msg === 'string' ? msg : 'Ocurrió un error. Intenta de nuevo.'
+  return typeof msg === 'string' ? msg : 'Ocurrió un error. Intentá de nuevo.'
 }
 
 export default function PromoWelcomePopup() {
