@@ -115,4 +115,58 @@ class TelegramTg3Test {
         assertThat(svc.revocarMiembro(5L, 1L)).isFalse();
         verify(m, never()).setEstado(anyInt());
     }
+
+    // (1) A8-C2: ráfaga de >3 msg/s
+    @Test
+    void rafaga_soloPausa30Min_nuncaBloqueaUnAnioNiSuspendeLaCuenta() {
+        TelegramAbusoService abuso = new TelegramAbusoService();
+        RateLimiter rl = mock(RateLimiter.class);
+        TelegramVinculacionRepository repo = mock(TelegramVinculacionRepository.class);
+        when(rl.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(true);
+        when(rl.tryAcquire(eq("tg:78:abuso"), anyInt(), anyInt())).thenReturn(false); // reincidente
+        Usuario u = new Usuario();
+        u.setEstado(1);
+        TelegramVinculacion v = new TelegramVinculacion();
+        v.setUsuario(u);
+        v.setChatId(78L);
+        when(repo.findByChatIdAndEstado(78L, TelegramVinculacion.ACTIVA)).thenReturn(Optional.of(v));
+        ReflectionTestUtils.setField(abuso, "rateLimiter", rl);
+        ReflectionTestUtils.setField(abuso, "vinculacionRepository", repo);
+        ReflectionTestUtils.setField(abuso, "bot", mock(TelegramClienteBotService.class));
+        ReflectionTestUtils.setField(abuso, "alertNotifier", mock(SecurityAlertNotifier.class));
+
+        TelegramRateLimitService rate = new TelegramRateLimitService();
+        RateLimiter rl2 = mock(RateLimiter.class);
+        when(rl2.tryAcquire(eq("tg:78:seg"), anyInt(), anyInt())).thenReturn(false); // 4.º msg en 1 s
+        ReflectionTestUtils.setField(rate, "rateLimiter", rl2);
+        ReflectionTestUtils.setField(rate, "abuso", abuso);
+
+        assertThat(rate.permitidoPorRateLimit(78L)).isFalse();
+
+        assertThat(u.getEstado()).isNotEqualTo(Constants.ESTADO_SUSPENDIDO);
+        assertThat(u.getBloqueadoHasta()).isNull();
+        assertThat(v.getPausadoHasta()).isBefore(LocalDateTime.now(Constants.ZONA_CR).plusHours(1));
+    }
+
+    // (4) candados acotados
+    @Test
+    void candados_acotados_mismoChatMismoCandado() {
+        TelegramUpdateRouter r = new TelegramUpdateRouter();
+        assertThat(r.candado(123L)).isSameAs(r.candado(123L));
+        java.util.Set<Object> distintos = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (long id = 1; id <= 100_000; id++) distintos.add(r.candado(id * 7919L));
+        assertThat(distintos).hasSizeLessThanOrEqualTo(TelegramUpdateRouter.FRANJAS);
+    }
+
+    // (5) /start sin distinguir mayúsculas
+    @Test
+    void start_codigoEnMinusculas_seNormaliza() {
+        TelegramVinculacionService svc = new TelegramVinculacionService();
+        TelegramVinculacionRepository repo = mock(TelegramVinculacionRepository.class);
+        when(repo.findByCodigo(anyString())).thenReturn(Optional.empty());
+        ReflectionTestUtils.setField(svc, "vinculacionRepository", repo);
+        ReflectionTestUtils.setField(svc, "bot", mock(TelegramClienteBotService.class));
+        svc.vincular(90L, "u", "ab3k-9xyz");
+        verify(repo).findByCodigo("AB3K9XYZ");
+    }
 }
