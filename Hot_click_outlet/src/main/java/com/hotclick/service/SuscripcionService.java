@@ -115,8 +115,10 @@ public class SuscripcionService {
         return onvoChangeService.cambiarPlan(empresaId, planId);
     }
 
-    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
-        onvoChangeService.procesarPagoOnvoExitoso(empresaId, onvoSubId, planId);
+
+    /** S-02: activa/renueva con lo que ONVO confirmó por GET (plan del priceId, fin del período). */
+    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin) {
+        onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin);
     }
 
     public void procesarRenovacionOnvoFallida(String onvoSubId) {
