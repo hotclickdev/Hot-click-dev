@@ -70,6 +70,7 @@ public class EmpresaAdminService {
         cambiarEstado(id, nuevoEstado, null);
     }
 
+    @Transactional
     public void cambiarEstado(Long id, String nuevoEstado, String motivo) {
         if (nuevoEstado == null || !ESTADOS_VALIDOS.contains(nuevoEstado)) {
             throw new IllegalArgumentException("Estado inválido");
@@ -77,13 +78,17 @@ public class EmpresaAdminService {
         if (exigeMotivo(nuevoEstado) && (motivo == null || motivo.isBlank())) {
             throw new IllegalArgumentException("Motivo obligatorio para suspender o inactivar");
         }
-        empresa(id);
+        // Lock pesimista hasta el commit: el job de impago (UPDATE) espera y no se pisa con la entidad vieja.
+        Empresa empresa = empresaBloqueada(id);
+        // Fail-closed: desde impago no hay salida admin genérica (ni a ACTIVO ni a otro estado que luego se active).
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.ReactivacionSinPagoException();
+        }
         if ("ACTIVO".equals(nuevoEstado)) {
             empresaAprobacionService.aprobarYPublicar(id);
             auditarEstado(id, nuevoEstado, motivo);
             return;
         }
-        Empresa empresa = empresa(id);
         empresa.setEstadoEmpresa(nuevoEstado);
         empresa.setVisibilidadPublica(false);
         empresaRepository.save(empresa);
@@ -116,10 +121,14 @@ public class EmpresaAdminService {
         return nombrePlan;
     }
 
+    @Transactional
     public boolean cambiarVisibilidad(Long id, Object val) {
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
-        Empresa empresa = empresa(id);
+        Empresa empresa = empresaBloqueada(id);
         boolean visible = Boolean.parseBoolean(val.toString());
+        if (visible && com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.ReactivacionSinPagoException();
+        }
         if (visible && sancionRepo.existsByEmpresaIdAndActivaTrue(id)) {
             throw new IllegalArgumentException("Hay una sanción vigente. El catálogo sigue oculto.");
         }
@@ -208,6 +217,12 @@ public class EmpresaAdminService {
             sb.append(ALFABETO_PASSWORD_TEMPORAL.charAt(RNG.nextInt(ALFABETO_PASSWORD_TEMPORAL.length())));
         }
         return sb.toString();
+    }
+
+    /** Lectura con PESSIMISTIC_WRITE (requiere transacción): estado fresco y sin carrera con el job de impago. */
+    private Empresa empresaBloqueada(Long id) {
+        return empresaRepository.findByIdForUpdate(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
     }
 
     private Empresa empresa(Long id) {

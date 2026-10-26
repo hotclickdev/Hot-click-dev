@@ -24,6 +24,9 @@ public class MovimientoStock {
     @Column(name = "id_movimiento")
     private Long id;
 
+    // QA6-R4-01: el kardex devuelve la entidad; con open-in-view=false el proxy LAZY
+    // reventaba al serializar (500). El producto ya es el del path: no se expone.
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_producto", nullable = false)
     private Producto producto;

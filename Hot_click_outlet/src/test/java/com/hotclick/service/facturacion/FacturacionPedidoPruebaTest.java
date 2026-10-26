@@ -21,7 +21,8 @@ class FacturacionPedidoPruebaTest {
     void emitirRechazaPedidoDePruebaSinTocarHacienda() {
         PedidoRepository repo = mock(PedidoRepository.class);
         FacturacionEmisionSupport soporte = mock(FacturacionEmisionSupport.class);
-        FacturacionEnvioProcessor envio = mock(FacturacionEnvioProcessor.class);
+        // El envío a Hacienda sale por evento (AFTER_COMMIT) desde fix/hacienda-alto.
+        org.springframework.context.ApplicationEventPublisher envio = mock(org.springframework.context.ApplicationEventPublisher.class);
         FacturacionPollingService polling = mock(FacturacionPollingService.class);
         Pedido p = new Pedido();
         p.setId(7L);
