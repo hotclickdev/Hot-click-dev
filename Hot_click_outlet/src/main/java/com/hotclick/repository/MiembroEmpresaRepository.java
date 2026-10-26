@@ -24,6 +24,8 @@ public interface MiembroEmpresaRepository extends JpaRepository<MiembroEmpresa, 
 
     Optional<MiembroEmpresa> findByUsuarioIdAndEmpresaIdAndEstado(Long usuarioId, Long empresaId, Integer estado);
 
+    boolean existsByUsuarioIdAndEstado(Long usuarioId, Integer estado);
+
     boolean existsByUsuarioIdAndEmpresaIdAndEstado(Long usuarioId, Long empresaId, Integer estado);
 
     @Query("SELECT COUNT(m) FROM MiembroEmpresa m WHERE m.usuario.id = :usuarioId AND m.estado = 1")

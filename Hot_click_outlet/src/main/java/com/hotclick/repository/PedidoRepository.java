@@ -151,7 +151,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT DISTINCT p FROM Pedido p " +
            "LEFT JOIN FETCH p.items i " +
            "LEFT JOIN FETCH i.producto pr " +
-           "WHERE p.usuarioFinal.id = :usuarioId AND p.estadoPedido = 'ENTREGADO'")
+           "WHERE p.usuarioFinal.id = :usuarioId AND p.estadoPedido = 'ENTREGADO' " +
+           // Seguridad #343: compras externas registradas a mano no habilitan reseñas.
+           "AND NOT (UPPER(COALESCE(p.origen, '')) = 'MANUAL' AND UPPER(TRIM(COALESCE(p.metodoPago, ''))) = 'EXTERNO')")
     List<Pedido> findEntregadosConItemsByUsuarioId(@Param("usuarioId") Long usuarioId);
 
     @Query("SELECT DISTINCT p FROM Pedido p " +

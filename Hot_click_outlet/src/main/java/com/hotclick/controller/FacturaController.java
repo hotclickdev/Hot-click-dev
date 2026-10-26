@@ -19,11 +19,23 @@ public class FacturaController {
 
     private final FacturacionService facturacionService;
     private final FacturaConsultaService consultaService;
+    private final com.hotclick.security.PropietarioGuard propietarioGuard;
+    private final com.hotclick.security.CompanyScope companyScope;
 
     public FacturaController(FacturacionService facturacionService,
-                              FacturaConsultaService consultaService) {
+                              FacturaConsultaService consultaService,
+                              com.hotclick.security.PropietarioGuard propietarioGuard,
+                              com.hotclick.security.CompanyScope companyScope) {
         this.facturacionService = facturacionService;
         this.consultaService = consultaService;
+        this.propietarioGuard = propietarioGuard;
+        this.companyScope = companyScope;
+    }
+
+    /** QA2-área2: los comprobantes fiscales solo los lee el PROPIETARIO o el ADMIN (403, nunca 500). */
+    private void exigirLectura() {
+        if (companyScope.isAdminIT()) return;
+        propietarioGuard.exigirGestionEmpresa(companyScope.getCurrentEmpresaIdOrOwn());
     }
 
     /**
@@ -57,18 +69,21 @@ public class FacturaController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {
+        exigirLectura();
         return ResponseEntity.ok(consultaService.listar(page, size, estado, fechaDesde, fechaHasta));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ComprobanteEmitido> detalle(@PathVariable Long id) {
+        exigirLectura();
         return ResponseEntity.ok(consultaService.detalle(id));
     }
 
     @GetMapping("/{id}/estado")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ComprobanteEmitido> estado(@PathVariable Long id) {
+        exigirLectura();
         return ResponseEntity.ok(consultaService.detalle(id));
     }
 }
