@@ -23,6 +23,7 @@ public class AuthController {
 
     @Autowired private AuthRegistrationService authRegistrationService;
     @Autowired private AuthLoginService        authLoginService;
+    @Autowired private com.hotclick.service.auth.ReenvioVerificacionService reenvioVerificacionService;
 
     // ── Registro ──────────────────────────────────────────────────────────────
 
@@ -50,6 +51,12 @@ public class AuthController {
     @PostMapping("/reenviar-codigo-negocio")
     public ResponseEntity<ResponseDTO> reenviarCodigoNegocio(HttpServletRequest request) {
         return authRegistrationService.reenviarCodigoNegocio(request);
+    }
+
+    /** QA4-004: reenvío público desde /login; respuesta genérica (no enumera cuentas). */
+    @PostMapping("/reenviar-verificacion")
+    public ResponseEntity<ResponseDTO> reenviarVerificacion(@RequestBody(required = false) Map<String, String> body) {
+        return reenvioVerificacionService.reenviar(body == null ? null : body.get("correo"));
     }
 
     @PostMapping("/verificar-correo-negocio")
