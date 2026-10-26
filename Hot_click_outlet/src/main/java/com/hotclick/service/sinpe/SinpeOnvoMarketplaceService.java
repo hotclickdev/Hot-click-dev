@@ -150,13 +150,16 @@ public class SinpeOnvoMarketplaceService {
 
         // SCALE1: el Pago viene gestionado (SELECT FOR UPDATE): sus cambios salen por dirty checking, sin save().
         LocalDateTime ahora = LocalDateTime.now(clock);
-        if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago()) || algunoCancelado(pago)) {
+        // Una sola consulta del grupo (delGrupo); cancelados y marca de prueba se resuelven en memoria.
+        List<Pedido> pedidosGrupo = pago.getPedido() == null ? List.of() : pedidoGrupoService.delGrupo(pago.getPedido());
+        if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago()) || algunoCancelado(pedidosGrupo)) {
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
             pago.setFechaActualizacion(ahora);
             registrarProcesado(token, tipo, "Cobro SINPE de ONVO sobre pedido cancelado: reembolso pendiente");
             log.error("[ALERTA-PAGO] ONVO cobró SINPE de un pedido ya cancelado; reembolso pendiente: pago={}", pago.getId());
             return Resultado.COBRADO_SOBRE_CANCELADO;
         }
+        marcarSiEsPrueba(onvo, pedidosGrupo, pago);
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setMetodoPagoTipo(Constants.PROVEEDOR_SINPE);
         pago.setFechaActualizacion(ahora);
@@ -220,11 +223,19 @@ public class SinpeOnvoMarketplaceService {
         }
     }
 
-    private boolean algunoCancelado(Pago pago) {
-        if (pago.getPedido() == null) return false;
-        // Una sola consulta (delGrupo); el recorrido es en memoria.
-        return pedidoGrupoService.delGrupo(pago.getPedido()).stream()
-                .anyMatch(p -> Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido()));
+    private static boolean algunoCancelado(List<Pedido> pedidosGrupo) {
+        return pedidosGrupo.stream().anyMatch(p -> Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido()));
+    }
+
+    /**
+     * P-04: misma regla que {@code OnvoCapturaService.marcarSiEsPrueba}. Con llave de prueba (modo esperado
+     * distinto de live) todos los pedidos del grupo quedan es_prueba, en esta misma transacción. SCALE1: los
+     * pedidos están gestionados; el dirty checking los persiste en el commit, sin save por pedido.
+     */
+    private static void marcarSiEsPrueba(OnvoService onvo, List<Pedido> pedidosGrupo, Pago pago) {
+        if ("live".equals(onvo.modoEsperado())) return;
+        pedidosGrupo.forEach(p -> p.setEsPrueba(true));
+        log.warn("[ALERTA-PAGO] SINPE ONVO cobrado con llave de prueba: pedidos marcados es_prueba. pago={}", pago.getId());
     }
 
     /** SCALE1: el evento se inserta ya cerrado, en un solo INSERT (antes INSERT + UPDATE). */

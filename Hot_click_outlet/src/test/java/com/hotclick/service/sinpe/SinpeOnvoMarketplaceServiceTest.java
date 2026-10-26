@@ -90,6 +90,32 @@ class SinpeOnvoMarketplaceServiceTest {
     }
 
     @Test
+    @DisplayName("P-04: llave de prueba (mode=test) marca es_prueba en todos los pedidos del grupo antes de confirmar")
+    void llaveDePruebaMarcaGrupo() {
+        Pedido otro = new Pedido();
+        otro.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        when(grupo.delGrupo(pedido)).thenReturn(List.of(pedido, otro));
+        when(onvo.modoEsperado()).thenReturn("test");
+        doReturn(Map.<String, Object>of("id", "pi_1", "status", "succeeded", "amount", 1_250_000L, "currency", "CRC", "mode", "test")).when(onvo).obtenerPaymentIntent("pi_1");
+        org.mockito.Mockito.doAnswer(i -> {
+            assertThat(pedido.isEsPrueba()).isTrue();
+            return null;
+        }).when(paymentService).confirmarPedido(pago);
+        assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(CONFIRMADO);
+        assertThat(pedido.isEsPrueba()).isTrue();
+        assertThat(otro.isEsPrueba()).isTrue();
+        verify(grupo, org.mockito.Mockito.times(1)).delGrupo(pedido);
+    }
+
+    @Test
+    @DisplayName("P-04: llave live no marca es_prueba")
+    void llaveLiveNoMarca() {
+        get("succeeded", 1_250_000L);
+        assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(CONFIRMADO);
+        assertThat(pedido.isEsPrueba()).isFalse();
+    }
+
+    @Test
     @DisplayName("Duplicado (tipo + data.id ya registrado): 2xx sin GET ni confirmar")
     void duplicado() {
         when(eventos.existsByMerchantTokenAndEventoTipo("ONVOPI:pi_1", TIPO)).thenReturn(true);
