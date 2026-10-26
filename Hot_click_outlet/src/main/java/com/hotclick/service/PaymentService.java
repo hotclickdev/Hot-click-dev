@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.service.payment.CheckoutValidator;
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.dto.PaymentStatusResponse;
@@ -58,6 +59,7 @@ public class PaymentService {
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
         checkoutValidator.validateCartNotEmpty(req);
+        CheckoutValidator.exigirDireccionSiHayEnvio(req);
 
         String provider = checkoutValidator.resolveProvider(req, providerFactory);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);

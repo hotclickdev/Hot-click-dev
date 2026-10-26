@@ -227,6 +227,7 @@ class PaymentServiceTest {
 
         PaymentCheckoutRequest req = buildRequest(1);
         req.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        req.setDireccionEntrega("Barrio Escalante, casa 12");
 
         PaymentCheckoutResponse resp = service.checkout(req, CORREO);
 
