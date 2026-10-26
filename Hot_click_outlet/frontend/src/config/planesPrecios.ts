@@ -1,3 +1,4 @@
+import { formatUSD } from '@/utils/format'
 /**
  * Textos de precio de los planes (22-oct-2026, V185). Mensualidad en dólares (USD), cobrada por ONVO.
  * Los montos NO viven en el frontend: salen de config del backend (`GET /api/billing/planes` → precioUsd,
@@ -20,8 +21,7 @@ const miles = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\
 
 export const colones = (n: number) => `₡${miles(n)}`
 
-export const dolares = (n: number) =>
-  `US$${Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', ',')}`
+export const dolares = (n: number) => formatUSD(n)
 
 /**
  * «US$9/mes» si el backend mandó monto; «Sin mensualidad» solo si `cupoGratis` (dato del backend);

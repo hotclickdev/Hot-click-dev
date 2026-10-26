@@ -1,3 +1,4 @@
+import { formatPrice, formatUSD } from '@/utils/format'
 import type { Id } from '@/types/api'
 import type { ReactNode } from 'react'
 
@@ -40,7 +41,10 @@ export function fmtFechaSuscripcion(dateStr: string | null | undefined): string 
 }
 
 export function fmtMontoFactura(centavos: number | undefined, moneda: string | undefined): string {
-  return `${moneda?.toUpperCase() === 'USD' ? 'US$' : moneda} ${(Number(centavos) / 100).toFixed(2)}`
+  const unidades = (Number(centavos) || 0) / 100
+  if (!moneda || moneda.toUpperCase() === 'USD') return formatUSD(unidades)
+  if (moneda.toUpperCase() === 'CRC') return formatPrice(unidades)
+  return `${moneda} ${unidades.toFixed(2)}`
 }
 
 export function estiloEstadoFactura(estado: string | undefined): { backgroundColor: string; color: string } {
