@@ -1,5 +1,22 @@
 # Réplica completa del sistema de bots de HotClick
 
+## PARA EL BOT DE LA CUENTA NUEVA: qué hacer para continuar
+
+Sigue estos pasos en orden y por tu cuenta:
+
+0. **Lee** este documento completo, luego `docs/traspaso/*.md` (rama `docs/traspaso-cuenta-nueva`) y después los PRs abiertos (`gh pr list -R hotclickdev/Hot-click-dev`).
+1. **Recrea los bots** según la tabla "Resumen rápido" y sus prompts (sección 7). Empieza por **Mentor** y **Grok Bot**, y pega en cada uno el prompt de arranque.
+2. **Conecta GitHub** a `hotclickdev/Hot-click-dev` con los permisos `repo` y `workflow`.
+3. **Recrea la rutina de seguimiento** a las 8:00 AM y a las 6:00 PM, hora de CR.
+4. **Cierra los PRs abiertos**: #329 (tiene conflicto), #332, #336, #343 (CI en rojo), #348, #350, #351, #352 y #353. La regla es merge solo con CI verde y APTO de Seguridad, **sin deploy**.
+5. **Sigue el ciclo por área**: fix → QA → ✅. El área 4 ya está ✅. Cuando las 10 áreas tengan ✅, avísale a Andrés para empezar la simulación.
+6. **Deuda técnica**: en un PR aparte y con tests, quita **Tilopay** (unos 120 archivos) y **Stripe** (unos 91 archivos, incluido `/api/webhooks/stripe`), y deja ONVO como el único procesador.
+7. **Solo Andrés** (pregúntale, no lo hagas tú): M-08, el secret `HOTCLICK_NUMEROS_PROHIBIDOS`, la limpieza de prod, la rotación de contraseñas, `flyway_schema_history`, la llave live de ONVO, el deploy y el cambio de régimen antes de cobrar.
+8. **Reglas**: con Andrés se habla en español. Nada de deploy, gastos, servidores ni cuentas nuevas. Los secretos nunca van en un chat ni en el repo.
+
+Los 14 bots sin nota (Mentor, Grok Bot, las 5 salas, los 3 bots legales y los de soporte y marketing) tienen su rol y su estado actual en la tabla "Resumen rápido" (marcados ❌ SIN NOTA).
+
+
 Generado el lunes 26-oct-2026, 2:40 PM (hora de Costa Rica). Sirve para recrear en otra cuenta de Grok Bot todo el equipo de bots y seguir con el trabajo donde quedó.
 
 > **Seguridad:** este documento no contiene ningún valor secreto. Solo aparecen **nombres** de variables. Los valores se cargan a mano en GitHub Secrets o en el servidor y nunca se pegan en un chat.
