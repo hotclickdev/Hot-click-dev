@@ -80,18 +80,31 @@ public class OnvoWebhookController {
         try {
             root = objectMapper.readTree(payload);
         } catch (Exception e) {
-            log.error("[onvo-webhook] Error al parsear payload: {}", e.getMessage());
-            return ResponseEntity.status(400).body(Map.of("error", "bad request"));
+            // Autenticado pero ilegible: se audita (sin el cuerpo) y se responde 2xx; reintentar no lo arregla.
+            log.warn("[onvo-webhook] Payload inválido auditado ({} bytes): {}",
+                payload == null ? 0 : payload.length(), e.getClass().getSimpleName());
+            return ResponseEntity.ok(Map.of("status", "invalid"));
         }
 
         String type = root.path("type").asText("");
         JsonNode data = root.path("data");
         String eventId = root.path("id").asText(null);
 
+        // Billing SaaS: ONVO solo cuenta 2xx como entregado. Inválido, de otro modo, desconocido o
+        // duplicado → 2xx una vez auditado; 5xx solo si falló algo nuestro y transitorio (BD, timeout).
+        OnvoBillingWebhookHandler.Resultado billing;
         try {
-            if (billingWebhookHandler.manejarSiBilling(type, data, eventId)) {
-                return ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "billing"));
-            }
+            billing = billingWebhookHandler.procesar(type, data, eventId);
+        } catch (Exception e) {
+            log.error("[onvo-webhook] Fallo transitorio en billing {}: {}", type, e.getClass().getSimpleName());
+            return ResponseEntity.status(503).body(Map.of("error", "unavailable"));
+        }
+        if (billing != null && billing != OnvoBillingWebhookHandler.Resultado.NO_BILLING) {
+            return ResponseEntity.ok(Map.of("status", billing.name().toLowerCase(java.util.Locale.ROOT),
+                "type", type, "scope", "billing"));
+        }
+
+        try {
             switch (type) {
                 case "checkout-session.succeeded" -> {
                     String sessionId = data.path("id").asText(null);

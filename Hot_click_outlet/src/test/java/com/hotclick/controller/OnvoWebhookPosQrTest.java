@@ -38,7 +38,7 @@ class OnvoWebhookPosQrTest {
         controller = new OnvoWebhookController(
             onvoService, onvoPaymentProvider, posQrVentaService, billingWebhookHandler, new ObjectMapper());
         when(onvoService.getWebhookSecret()).thenReturn("secret-onvo");
-        when(billingWebhookHandler.manejarSiBilling(any(), any(), any())).thenReturn(false);
+        when(billingWebhookHandler.procesar(any(), any(), any())).thenReturn(com.hotclick.service.suscripcion.OnvoBillingWebhookHandler.Resultado.NO_BILLING);
     }
 
     @Test
@@ -77,7 +77,7 @@ class OnvoWebhookPosQrTest {
     @Test
     @DisplayName("Evento de billing SaaS no pasa por POS ni tienda")
     void billingNoPasaPorPosNiTienda() {
-        when(billingWebhookHandler.manejarSiBilling(any(), any(), any())).thenReturn(true);
+        when(billingWebhookHandler.procesar(any(), any(), any())).thenReturn(com.hotclick.service.suscripcion.OnvoBillingWebhookHandler.Resultado.PROCESADO);
 
         ResponseEntity<Map<String, String>> res = controller.recibirWebhookOnvo(
             "{\"id\":\"evt_1\",\"type\":\"subscription.renewal.succeeded\",\"data\":{\"id\":\"sub_1\"}}",

@@ -27,7 +27,86 @@ class OnvoBillingWebhookHandlerTest {
 
     @Mock StripeEventoRepository eventoRepo;
     @Mock SuscripcionService suscripcionService;
+    @Mock com.hotclick.service.OnvoService onvoService;
+    @Mock OnvoBillingDespachoTx despachoTx;
     @InjectMocks OnvoBillingWebhookHandler handler;
+
+    @org.junit.jupiter.api.BeforeEach
+    void txDirecta() {
+        org.mockito.Mockito.lenient().doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; })
+            .when(despachoTx).ejecutar(any());
+        org.mockito.Mockito.lenient().when(onvoService.modoEsperado()).thenReturn("live");
+    }
+
+    private void eventoNuevo(String id) {
+        when(eventoRepo.findByIdForUpdate(id)).thenReturn(Optional.empty());
+        when(eventoRepo.findById(id)).thenReturn(Optional.empty()).thenReturn(Optional.of(evento(id)));
+        when(eventoRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    }
+
+    private StripeEvento ultimoGuardado() {
+        var cap = org.mockito.ArgumentCaptor.forClass(StripeEvento.class);
+        verify(eventoRepo, org.mockito.Mockito.atLeastOnce()).save(cap.capture());
+        return cap.getValue();
+    }
+
+    @Test
+    @DisplayName("Rechazo de negocio (suscripción inexistente): RECHAZADO y auditado, sin excepción")
+    void rechazoDeNegocioQuedaAuditado() throws Exception {
+        eventoNuevo("onvo_evt_rech");
+        org.mockito.Mockito.doThrow(new com.hotclick.exception.RecursoNoEncontradoException("Suscripción ONVO", "sub_x"))
+            .when(suscripcionService).procesarPagoOnvoExitoso(any(), any(), any());
+        var data = mapper.readTree("{\"id\":\"sub_x\",\"metadata\":{\"empresa_id\":\"10\",\"plan_id\":\"2\"}}");
+        assertThat(handler.procesar("subscription.renewal.succeeded", data, "evt_rech"))
+            .isEqualTo(OnvoBillingWebhookHandler.Resultado.RECHAZADO);
+        assertThat(ultimoGuardado().getError()).startsWith(OnvoBillingWebhookHandler.PREFIJO_RECHAZADO);
+    }
+
+    @Test
+    @DisplayName("Evento de otro modo (test con llave live): RECHAZADO sin despachar")
+    void eventoDeOtroModo() throws Exception {
+        eventoNuevo("onvo_evt_modo");
+        var data = mapper.readTree("{\"id\":\"sub_m\",\"mode\":\"test\",\"metadata\":{\"empresa_id\":\"10\",\"plan_id\":\"2\"}}");
+        assertThat(handler.procesar("subscription.renewal.succeeded", data, "evt_modo"))
+            .isEqualTo(OnvoBillingWebhookHandler.Resultado.RECHAZADO);
+        verify(suscripcionService, never()).procesarPagoOnvoExitoso(any(), any(), any());
+        assertThat(ultimoGuardado().getError()).startsWith(OnvoBillingWebhookHandler.PREFIJO_RECHAZADO);
+    }
+
+    @Test
+    @DisplayName("Reentrega de un evento ya rechazado: DUPLICADO, no se reprocesa")
+    void reentregaDeRechazadoEsDuplicado() throws Exception {
+        StripeEvento rech = evento("onvo_evt_r2");
+        rech.setError(OnvoBillingWebhookHandler.PREFIJO_RECHAZADO + "x");
+        when(eventoRepo.findByIdForUpdate("onvo_evt_r2")).thenReturn(Optional.of(rech));
+        var data = mapper.readTree("{\"id\":\"sub_r\"}");
+        assertThat(handler.procesar("subscription.renewal.failed", data, "evt_r2"))
+            .isEqualTo(OnvoBillingWebhookHandler.Resultado.DUPLICADO);
+        verify(suscripcionService, never()).procesarRenovacionOnvoFallida(any());
+    }
+
+    @Test
+    @DisplayName("Tipo de billing desconocido: se registra como procesado sin efectos")
+    void tipoDesconocido() throws Exception {
+        eventoNuevo("onvo_evt_unk");
+        var data = mapper.readTree("{\"id\":\"sub_u\"}");
+        assertThat(handler.procesar("subscription.trial_will_end", data, "evt_unk"))
+            .isEqualTo(OnvoBillingWebhookHandler.Resultado.PROCESADO);
+        assertThat(ultimoGuardado().getProcesadoOk()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Fallo de BD es transitorio: se relanza (5xx) y no queda marcado como rechazado")
+    void falloBdSeRelanza() throws Exception {
+        eventoNuevo("onvo_evt_bd");
+        org.mockito.Mockito.doThrow(new org.springframework.dao.QueryTimeoutException("timeout"))
+            .when(suscripcionService).procesarRenovacionOnvoFallida(any());
+        var data = mapper.readTree("{\"id\":\"sub_bd\"}");
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+            () -> handler.procesar("subscription.renewal.failed", data, "evt_bd"))
+            .isInstanceOf(org.springframework.dao.DataAccessException.class);
+        assertThat(ultimoGuardado().getError()).doesNotStartWith(OnvoBillingWebhookHandler.PREFIJO_RECHAZADO);
+    }
 
     private final ObjectMapper mapper = new ObjectMapper();
 

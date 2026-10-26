@@ -3,14 +3,17 @@ package com.hotclick.service.suscripcion;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotclick.model.StripeEvento;
 import com.hotclick.repository.StripeEventoRepository;
+import com.hotclick.service.OnvoService;
 import com.hotclick.service.SuscripcionService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 
 /**
  * Despacha eventos ONVO de billing SaaS.
@@ -21,29 +24,51 @@ public class OnvoBillingWebhookHandler {
 
     private static final Logger log = LoggerFactory.getLogger(OnvoBillingWebhookHandler.class);
     private static final String PREFIX = "onvo_";
+    /** Prefijo de error para eventos rechazados: quedan auditados y una reentrega se trata como duplicado. */
+    static final String PREFIJO_RECHAZADO = "RECHAZADO: ";
+
+    /** Resultado del webhook de billing; solo un fallo transitorio propio sale como excepción. */
+    public enum Resultado { NO_BILLING, PROCESADO, DUPLICADO, RECHAZADO }
 
     private final StripeEventoRepository eventoRepo;
     private final SuscripcionService suscripcionService;
+    private final OnvoService onvoService;
+    private final OnvoBillingDespachoTx despachoTx;
 
     public OnvoBillingWebhookHandler(StripeEventoRepository eventoRepo,
-                                     SuscripcionService suscripcionService) {
+                                     SuscripcionService suscripcionService,
+                                     OnvoService onvoService,
+                                     OnvoBillingDespachoTx despachoTx) {
         this.eventoRepo = eventoRepo;
         this.suscripcionService = suscripcionService;
+        this.onvoService = onvoService;
+        this.despachoTx = despachoTx;
     }
 
     /**
-     * @return true si el evento era de billing SaaS (aunque ya estuviera procesado).
+     * @return true si el evento era de billing SaaS (aunque ya estuviera procesado o se rechazara).
      */
     @Transactional
     public boolean manejarSiBilling(String type, JsonNode data, String eventIdRaw) {
+        return procesar(type, data, eventIdRaw) != Resultado.NO_BILLING;
+    }
+
+    /**
+     * Registra y despacha un evento de billing. Inválido, de otro modo (test/live) o rechazado por
+     * el negocio: queda auditado y devuelve RECHAZADO (2xx). Duplicado: DUPLICADO (2xx). Fallo
+     * transitorio propio (BD, timeout): se relanza para que el webhook responda 5xx y ONVO reintente.
+     */
+    @Transactional
+    public Resultado procesar(String type, JsonNode data, String eventIdRaw) {
         if (!esEventoBilling(type, data)) {
-            return false;
+            return Resultado.NO_BILLING;
         }
         String eventId = eventIdParaIdempotencia(type, data, eventIdRaw);
-        if (Boolean.TRUE.equals(
-            eventoRepo.findByIdForUpdate(eventId).map(StripeEvento::getProcesadoOk).orElse(null))) {
-            log.info("[onvo-billing] Evento ya procesado — ignorando: {}", eventId);
-            return true;
+        StripeEvento previo = eventoRepo.findByIdForUpdate(eventId).orElse(null);
+        if (previo != null && (Boolean.TRUE.equals(previo.getProcesadoOk())
+                || (previo.getError() != null && previo.getError().startsWith(PREFIJO_RECHAZADO)))) {
+            log.info("[onvo-billing] Evento ya procesado o rechazado — ignorando: {}", eventId);
+            return Resultado.DUPLICADO;
         }
         if (eventoRepo.findById(eventId).isEmpty()) {
             StripeEvento ev = new StripeEvento();
@@ -51,14 +76,34 @@ public class OnvoBillingWebhookHandler {
             ev.setTipo(type);
             eventoRepo.save(ev);
         }
+        String modo = textOrNull(data, "mode");
+        String esperado = onvoService != null ? onvoService.modoEsperado() : null;
+        if (modo != null && esperado != null && !esperado.equalsIgnoreCase(modo)) {
+            log.warn("[onvo-billing] Evento {} de modo {} con llave {} — rechazado", eventId, modo, esperado);
+            marcar(eventId, false, PREFIJO_RECHAZADO + "modo " + modo + " distinto de " + esperado);
+            return Resultado.RECHAZADO;
+        }
         try {
-            despachar(type, data);
+            despachoTx.ejecutar(() -> despachar(type, data));
             marcar(eventId, true, null);
+            return Resultado.PROCESADO;
         } catch (RuntimeException e) {
+            if (esRechazoDeNegocio(e)) {
+                log.warn("[onvo-billing] Evento {} rechazado: {}", eventId, e.getMessage());
+                marcar(eventId, false, PREFIJO_RECHAZADO + e.getMessage());
+                return Resultado.RECHAZADO;
+            }
             marcar(eventId, false, e.getMessage());
             throw e;
         }
-        return true;
+    }
+
+    /** Rechazo determinista (reintentar no cambia nada). BD y demás errores se tratan como transitorios. */
+    static boolean esRechazoDeNegocio(RuntimeException e) {
+        if (e instanceof DataAccessException) return false;
+        return e instanceof NoSuchElementException
+            || e instanceof IllegalArgumentException
+            || e instanceof IllegalStateException;
     }
 
     private void marcar(String eventId, boolean ok, String error) {

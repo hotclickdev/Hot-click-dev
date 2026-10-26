@@ -41,7 +41,7 @@ class OnvoWebhookVerificadoTest {
         controller = new OnvoWebhookController(
             onvoService, onvoPaymentProvider, posQrVentaService, billingWebhookHandler, new ObjectMapper());
         when(onvoService.getWebhookSecret()).thenReturn("webhook_secret_prueba");
-        when(billingWebhookHandler.manejarSiBilling(any(), any(), any())).thenReturn(false);
+        when(billingWebhookHandler.procesar(any(), any(), any())).thenReturn(com.hotclick.service.suscripcion.OnvoBillingWebhookHandler.Resultado.NO_BILLING);
     }
 
     private int estado(String body, String secret) {
