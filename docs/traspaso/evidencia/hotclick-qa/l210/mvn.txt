@@ -1,0 +1,124 @@
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+21:56:59.573 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.hotclick.integration.NingunCaminoPagaGratisTest]: NingunCaminoPagaGratisTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+21:56:59.806 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.hotclick.HotclickApplication for test class com.hotclick.integration.NingunCaminoPagaGratisTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.16)
+
+2026-10-23 21:57:00.407 INFO  [-] c.h.i.NingunCaminoPagaGratisTest - Starting NingunCaminoPagaGratisTest using Java 21.0.13 with PID 416102 (started by box in /tmp/l210/Hot_click_outlet)
+2026-10-23 21:57:00.408 INFO  [-] c.h.i.NingunCaminoPagaGratisTest - The following 1 profile is active: "test"
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/home/box/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.8/byte-buddy-agent-1.17.8.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-10-23 21:57:05.163 WARN  [-] org.hibernate.orm.deprecation - HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-23 21:57:10.714 WARN  [-] com.hotclick.service.StripeService - [stripe] STRIPE_SECRET_KEY no configurado — modo MOCK activo. Suscripciones usan datos ficticios; pagos de productos lanzarán error.
+2026-10-23 21:57:10.988 WARN  [-] com.hotclick.service.TilopayService - [tilopay] Sin credenciales en perfil dev/test — modo simulado. No cobra tarjetas reales.
+2026-10-23 21:57:11.498 INFO  [-] c.hotclick.security.ClientIpResolver - [CLIENT-IP] Rangos de proxy de confianza activos: 8
+2026-10-23 21:57:12.988 INFO  [-] c.hotclick.service.ClerkTokenService - [Clerk] JWKS decoder configured: https://hot-spider-31.clerk.accounts.dev/.well-known/jwks.json
+2026-10-23 21:57:18.439 INFO  [-] c.h.i.NingunCaminoPagaGratisTest - Started NingunCaminoPagaGratisTest in 18.498 seconds (process running for 19.978)
+2026-10-23 21:57:18.440 WARN  [-] c.h.config.ProductionConfigValidator - [SECURITY CONFIG] WARNING: JWT_SECRET is only 43 chars — minimum 64 chars (512 bits) recommended for HS256
+2026-10-23 21:57:18.440 WARN  [-] c.h.config.ProductionConfigValidator - [SECURITY CONFIG] WARNING: TOTP_ENCRYPTION_KEY is not set — TOTP secrets are stored in plaintext. Generate with: openssl rand -hex 32
+2026-10-23 21:57:18.450 INFO  [-] c.h.config.H2TablasNativasSeeder - H2: tablas nativas listas (db/h2/tablas-nativas-test.sql)
+2026-10-23 21:57:18.703 WARN  [-] com.hotclick.config.DataSeeder - [seed] admin@hotclick.com sin HOTCLICK_ADMIN_INITIAL_PASSWORD: se crea con una contraseña aleatoria que nadie conoce. Para entrar, configurá HOTCLICK_ADMIN_INITIAL_PASSWORD y ADMIN_RESET_PASSWORD=true y reiniciá.
+2026-10-23 21:57:19.040 WARN  [-] c.h.s.w.WhatsAppSimuladoStartupAlert - [WA] modo SIMULADO — WHATSAPP_PHONE_ID o WHATSAPP_TOKEN vacios; los clientes no reciben mensajes
+2026-10-23 21:57:19.042 WARN  [-] o.s.c.events.SpringDocAppInitializer - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-23 21:57:19.042 WARN  [-] o.s.c.events.SpringDocAppInitializer - SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2026-10-23 21:57:20.264 WARN  [ee9594180bbb] c.h.controller.OnvoWebhookController - [onvo-webhook] Secret inválido o no configurado
+2026-10-23 21:57:21.362 INFO  [43c2ee8a033d] c.h.payment.OnvoCapturaService - [onvo] Checkout confirmado: sessionId=cs_ok
+2026-10-23 21:57:21.374 WARN  [-] c.hotclick.service.TelegramService - [telegram] no configurado — TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID vacios
+2026-10-23 21:57:21.374 INFO  [43c2ee8a033d] c.h.s.p.PaymentNotificationsFacade - Pedido ORD-SG-1 confirmado PAGADO via ONVO
+2026-10-23 21:57:21.388 INFO  [888826a33d02] c.h.payment.OnvoPaymentProvider - [onvo] Sesión ya procesada: sessionId=cs_ok
+2026-10-23 21:57:23.595 INFO  [72ef912711d4] c.h.payment.OnvoPaymentProvider - [onvo] Sesión todavía sin cobro confirmado: sessionId=cs_unpaid
+2026-10-23 21:57:24.615 ERROR [2f15318179a6] c.h.payment.OnvoCapturaService - [ALERTA-PAGO] ONVO cobró un pedido ya cancelado; queda para reembolso del admin: sessionId=cs_tarde
+2026-10-23 21:57:24.622 INFO  [d58c72e968b9] c.h.payment.OnvoPaymentProvider - [onvo] Sesión ya procesada: sessionId=cs_tarde
+2026-10-23 21:57:26.948 INFO  [5a71dbabea8a] com.hotclick.service.StockService - Reserva — producto id=7 'Producto Sin Gratis': reservado 0 → 1
+2026-10-23 21:57:27.888 ERROR [6ef9731c16ed] c.h.payment.OnvoPaymentProvider - [ALERTA-PAGO] ONVO no coincide con el pago sessionId=cs_monto esperado=1000000 CRC(céntimos) cobrado=10000 CRC
+2026-10-23 21:57:28.916 INFO  [cfa45e051b28] c.h.s.p.StockReservationService - Reservas liberadas para pedido ORD-5BE56F790A57
+2026-10-23 21:57:40.396 INFO  [1f68925f6214] c.h.s.p.StockReservationService - Reservas liberadas para pedido ORD-7C6C06E15DBF
+2026-10-23 21:57:41.593 INFO  [9bbf52b3b594] c.h.s.sinpe.SinpeCheckoutService - Checkout EFECTIVO iniciado: pedido=ORD-51DBA332D184 paquetes=1 total=10000
+2026-10-23 21:57:41.675 INFO  [-] c.h.service.onvo.OnvoBillingClient - [onvo-mock] cambiarPrecio sub=sub_1 item=item_1 price=price_x
+2026-10-23 21:57:41.675 INFO  [-] c.h.service.onvo.OnvoBillingClient - [onvo-mock] cancelarAlVencer(sub_1)
+2026-10-23 21:57:41.678 ERROR [-] c.h.service.onvo.OnvoBillingClient - [onvo-circuit] OPEN crearSuscripcion: ResourceAccessException status=n/a
+2026-10-23 21:57:41.678 ERROR [-] c.h.service.onvo.OnvoBillingClient - [onvo-circuit] OPEN cancelar: ResourceAccessException status=n/a
+2026-10-23 21:57:41.706 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.706 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.774 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; arranque abortado hasta configurar la llave live
+2026-10-23 21:57:41.775 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; arranque abortado hasta configurar la llave live
+2026-10-23 21:57:41.786 INFO  [-] c.h.service.onvo.OnvoBillingClient - [onvo] Suscripción marcada cancelAtPeriodEnd: sub_real
+2026-10-23 21:57:41.786 INFO  [-] c.h.service.onvo.OnvoBillingClient - [onvo-mock] cancelarAlVencer(sub_mock_1)
+2026-10-23 21:57:41.788 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; arranque abortado hasta configurar la llave live
+2026-10-23 21:57:41.791 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cambiarPrecio rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación obtenerPrimerItemId rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cambiarPrecio rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación obtenerPrimerItemId rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cambiarPrecio rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.792 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación obtenerPrimerItemId rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cambiarPrecio rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación obtenerPrimerItemId rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cambiarPrecio rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación obtenerPrimerItemId rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cambiarPrecio rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.793 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación obtenerPrimerItemId rechazada
+2026-10-23 21:57:41.797 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.798 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] Llamada a ONVO billing rechazada: llave de prueba fuera de dev/test
+2026-10-23 21:57:41.801 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO reportó la suscripción como canceled al pedir cancelAtPeriodEnd: sub=sub_real
+2026-10-23 21:57:41.811 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.824 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; arranque abortado hasta configurar la llave live
+2026-10-23 21:57:41.825 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; arranque abortado hasta configurar la llave live
+2026-10-23 21:57:41.825 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; arranque abortado hasta configurar la llave live
+2026-10-23 21:57:41.825 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; arranque abortado hasta configurar la llave live
+2026-10-23 21:57:41.825 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing configurado con una llave de prueba fuera de dev/test; arranque abortado hasta configurar la llave live
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.830 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.831 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.831 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.831 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearCustomer rechazada
+2026-10-23 21:57:41.831 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación crearSuscripcion rechazada
+2026-10-23 21:57:41.831 ERROR [-] c.h.service.onvo.OnvoBillingClient - [ALERTA-PAGO] ONVO billing sin llave fuera de dev/test; operación cancelarAlVencer rechazada
+2026-10-23 21:57:41.960 INFO  [-] c.h.s.s.SuscripcionOnvoChangeService - [billing-onvo] Plan aplicado empresa=10 plan=PYME
+2026-10-23 21:57:41.972 ERROR [-] c.h.s.s.SuscripcionOnvoChangeService - [ALERTA-PAGO] Suscripción ONVO cancelada de inmediato; se baja a EMPRENDEDOR empresa=10
+2026-10-23 21:57:41.975 INFO  [-] c.h.s.s.SuscripcionOnvoChangeService - [billing-onvo] Suscripción eliminada empresa=10
