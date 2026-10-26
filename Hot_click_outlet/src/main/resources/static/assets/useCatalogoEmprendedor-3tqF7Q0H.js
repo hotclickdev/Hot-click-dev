@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-yg264a2E.js";function t(){return e()}export{t};

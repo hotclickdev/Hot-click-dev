@@ -1,6 +1,7 @@
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 export { RUTA_EMPRENDEDOR } from '@/utils/planPaths'
 
-export const WHATSAPP_SOPORTE = '50686667888'
+export const WHATSAPP_SOPORTE = SOPORTE_WA
 
 export const COSTO_ENVIO_DEMO = 2000
 

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Seo from '@/components/seo/Seo'
 import { generateWebsiteJsonLd, generateOrganizationJsonLd, generateFAQJsonLd, generateItemListJsonLd } from '@/utils/jsonLd'
 import type { Producto } from '@/types/producto'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 /**
  * SEO y JSON-LD de la home. Recibe destacados para el ItemList.
@@ -24,7 +25,7 @@ export default function HomeSeo({ destacados = [] }: { destacados?: Producto[] }
           {JSON.stringify(generateOrganizationJsonLd(globalThis.location.origin, [
             'https://www.facebook.com/hotclickcr',
             'https://www.instagram.com/hotclickcr',
-            'https://wa.me/50686667888',
+            ...(SOPORTE_WA ? [`https://wa.me/${SOPORTE_WA}`] : []),
             'https://www.tiktok.com/@hotclickcr',
           ]))}
         </script>

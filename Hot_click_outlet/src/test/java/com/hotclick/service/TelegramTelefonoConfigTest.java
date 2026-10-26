@@ -27,8 +27,20 @@ class TelegramTelefonoConfigTest {
     }
 
     @Test void fuenteSinTelefonoHardcodeado() throws Exception {
-        String src = Files.readString(Path.of(
-            "src/main/java/com/hotclick/service/TelegramNotificacionClienteService.java"));
-        assertThat(Pattern.compile("\"[^\"\\n]*\\b\\d{4}-\\d{4}\\b[^\"\\n]*\"").matcher(src).find()).isFalse();
+        Pattern literal = Pattern.compile("\"[^\"\\n]*(\\b\\d{4}-\\d{4}\\b|wa\\.me/\\d)[^\"\\n]*\"");
+        for (String f : new String[] {
+                "src/main/java/com/hotclick/service/TelegramNotificacionClienteService.java",
+                "src/main/java/com/hotclick/controller/CustomErrorController.java",
+                "src/main/java/com/hotclick/service/email/EmailLayoutHelper.java"}) {
+            assertThat(literal.matcher(Files.readString(Path.of(f))).find()).as(f).isFalse();
+        }
+        // Seeders: solo teléfonos obviamente ficticios (un único dígito repetido).
+        Pattern tel = Pattern.compile("setTelefono\\w*\\(\"(\\d+)\"\\)");
+        for (String f : new String[] {
+                "src/main/java/com/hotclick/config/CatalogoLocalSeeder.java",
+                "src/main/java/com/hotclick/config/QaCuentasSeeder.java"}) {
+            var m = tel.matcher(Files.readString(Path.of(f)));
+            while (m.find()) assertThat(m.group(1).chars().distinct().count()).as(f).isEqualTo(1);
+        }
     }
 }

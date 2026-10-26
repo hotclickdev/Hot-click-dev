@@ -2,6 +2,7 @@ import { useState, useRef, type FormEvent } from 'react'
 import { soporteService } from '@/services/soporteService'
 import { useToast } from '@/components/ui/Toast'
 import CloseIcon from '@/components/ui/CloseIcon'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 const inputStyle = { backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }
 
@@ -158,7 +159,7 @@ export default function AdminAyuda() {
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
         ¿Preferís hablar directo? Escribinos por{' '}
-        <a href="https://wa.me/50686667888" target="_blank" rel="noopener noreferrer" className="font-semibold" style={{ color: 'var(--hc-accent)' }}>
+        <a href={SOPORTE_WA ? `https://wa.me/${SOPORTE_WA}` : '/contacto'} target="_blank" rel="noopener noreferrer" className="font-semibold" style={{ color: 'var(--hc-accent)' }}>
           WhatsApp
         </a>.
       </p>

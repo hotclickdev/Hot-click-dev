@@ -17,8 +17,9 @@ public class EmailLayoutHelper {
     public static final String F_DISPLAY = "'Sora',Arial,Helvetica,sans-serif";
     public static final String F_MONO    = "'IBM Plex Mono','Courier New',monospace";
 
-    public static final String WHATSAPP_URL   = "https://wa.me/50686667888";
-    public static final String WHATSAPP_TEXTO = "8666-7888";
+    /** WhatsApp de soporte: hotclick.soporte.telefono, sin default. Vacío ⇒ el pie no lo muestra. */
+    @Value("${hotclick.soporte.telefono:}")
+    private String telefonoSoporte;
 
     /** Fondos del círculo de ícono del encabezado (Figma: success-bg, blue/50, warning-bg, red/50). */
     public static final String FONDO_EXITO  = "#E9F7F0";
@@ -152,8 +153,11 @@ public class EmailLayoutHelper {
         return "</td></tr>"
              + "<tr><td style=\"padding:20px 32px;background:#F8F9FB;border-top:1px solid " + BORDE + ";border-radius:0 0 14px 14px\">"
              + "<p style=\"margin:0 0 6px;color:#4D5560;font-size:13px;line-height:19px\">" + pregunta
-             + " Escribinos por WhatsApp al <a href=\"" + WHATSAPP_URL + "\" style=\"color:#4D5560;text-decoration:none\">"
-             + WHATSAPP_TEXTO + "</a> o respondé este correo.</p>"
+             + (com.hotclick.utils.SoporteTelefono.configurado(telefonoSoporte)
+                 ? " Escribinos por WhatsApp al <a href=\"" + com.hotclick.utils.SoporteTelefono.waUrl(telefonoSoporte)
+                   + "\" style=\"color:#4D5560;text-decoration:none\">"
+                   + com.hotclick.utils.SoporteTelefono.texto(telefonoSoporte) + "</a> o respondé este correo.</p>"
+                 : " Respondé este correo y te ayudamos.</p>")
              + "<p style=\"margin:0;color:#6E7682;font-size:12px;line-height:17px\">HotClick · Marketplace de emprendedores de Costa Rica · "
              + "<a href=\"https://hotclick.lat\" style=\"color:#6E7682;text-decoration:none\">hotclick.lat</a></p>"
              + "</td></tr></table></td></tr></table></body></html>";

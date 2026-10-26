@@ -1,3 +1,4 @@
+import { SOPORTE_TELEFONO } from '@/config/soporteTelefono'
 const SITE_NAME = 'HOTCLICK'
 const SITE_URL = 'https://hotclick.lat'
 
@@ -186,7 +187,7 @@ export function generateOrganizationJsonLd(urlBase: string, socialUrls: string[]
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer service',
-      telephone: '+506-8666-7888',
+      ...(SOPORTE_TELEFONO ? { telephone: SOPORTE_TELEFONO } : {}),
       contactOption: 'TollFree',
       availableLanguage: ['Spanish'],
       hoursAvailable: {
@@ -290,7 +291,7 @@ export function generateFAQJsonLd() {
         name: '¿Puedo devolver un producto?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Sí. El retracto es de 8 días hábiles desde la confirmación del pago, por el mismo medio de la compra, y el reembolso vuelve por el mismo medio de pago. Si el producto llegó dañado, también aplica la garantía de hasta 40 días desde la recepción. Escribinos desde Mis pedidos o al +506 8666-7888.',
+          text: 'Sí. El retracto es de 8 días hábiles desde la confirmación del pago, por el mismo medio de la compra, y el reembolso vuelve por el mismo medio de pago. Si el producto llegó dañado, también aplica la garantía de hasta 40 días desde la recepción. Escribinos desde Mis pedidos o desde la página de Contacto.',
         },
       },
       {
