@@ -19,12 +19,12 @@ QA 7: admin y seguridad de roles (incluye LECTOR), más re-QA de las áreas 3 (M
 ## Ramas y PRs
 | Rama | Hash | Estado |
 |---|---|---|
-| `chore/sinpe-telefono-config` | `393b0816f` | **Sin subir**: GitHub rechaza el push (el token OAuth no tiene scope `workflow` y el commit toca `.github/workflows/ci.yml`). Vive solo en el box viejo (`/workspace/hc-qa-config`). |
+| `chore/sinpe-telefono-config` | `7f97826ba` | **PR #350** (https://github.com/hotclickdev/Hot-click-dev/pull/350), rama nueva desde master. `20127bed2` (HotClick Bugs, 25-oct) reemplazó la parte de config de `393b0816f`; el PR solo trae `SinNumerosRealesEnCodigoTest` y ocultar SINPE en checkout sin número configurado. El commit original queda en la rama local `backup/sinpe-telefono-config-393b0816` (box viejo, sin subir). |
 | `docs/sin-telefono-sinpe` | `39e372f9d` | Ya en origin, sin commits por delante de master. |
 | `docs/traspaso-cuenta-nueva` | esta nota | Rama compartida de traspaso. |
 
 ## Pendientes
-1. Subir `chore/sinpe-telefono-config`: (a) dar scope `workflow` al token y pushear tal cual, o (b) quitar el cambio de `ci.yml` del commit y que Andrés agregue esa línea a mano.
+1. PR #350: falta APTO de Seguridad sobre `7f97826ba`, CI verde, y que Andrés cree el secret `HOTCLICK_NUMEROS_PROHIBIDOS` y agregue en `ci.yml` (job backend, paso Run tests) la línea que está en el cuerpo del PR.
 2. Andrés debe crear el secret de GitHub `HOTCLICK_NUMEROS_PROHIBIDOS` (solo el nombre aquí).
 3. Probar el caso empresa ACTIVO + visibilidad false (no se probó para no alterar una tienda de prueba compartida).
 4. Re-QA de áreas 3 y 10 cuando entren los fixes de los MEDIOS.
