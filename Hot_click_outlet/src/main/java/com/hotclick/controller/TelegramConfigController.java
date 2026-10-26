@@ -88,12 +88,16 @@ public class TelegramConfigController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(Map.of("error", "TELEGRAM_CLIENT_BOT_TOKEN no está configurado."));
         }
+        if (!bot.isWebhookSecretValido()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", "TELEGRAM_CLIENT_WEBHOOK_SECRET vacío o inválido (A-Za-z0-9_-, 1-256)."));
+        }
         try {
             String respuesta = telegramConfigService.registrarWebhook();
             return ResponseEntity.ok(Map.of("telegram", respuesta != null ? respuesta : ""));
         } catch (Exception e) {
-            log.error("[telegram] setWebhook falló — {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", e.getMessage()));
+            log.error("[telegram] setWebhook falló — {}: {}", e.getClass().getSimpleName(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", "setWebhook falló, ver logs"));
         }
     }
 }

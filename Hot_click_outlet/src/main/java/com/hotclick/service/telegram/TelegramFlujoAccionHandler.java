@@ -94,8 +94,8 @@ public class TelegramFlujoAccionHandler {
             // el usuario solo tiene que volver a tocar Confirmar para reintentar.
             bot.enviarMensaje(v.getChatId(), "El registro cambió justo ahora. Tocá *Confirmar* de nuevo para reintentar, o *Cancelar*.");
         } catch (Exception ex) {
-            log.error("[telegram-flujo] fallo confirmando acción en chat {} — {}", v.getChatId(), ex.getMessage());
-            bot.enviarMensaje(v.getChatId(), "No pude aplicar el cambio: " + esc(ex.getMessage()) + "\nReintentá o tocá *Cancelar*.");
+            log.error("[telegram-flujo] fallo confirmando acción en chat {} — {}", v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
+            bot.enviarMensaje(v.getChatId(), "No pude aplicar el cambio: " + esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage())) + "\nReintentá o tocá *Cancelar*.");
         }
     }
 

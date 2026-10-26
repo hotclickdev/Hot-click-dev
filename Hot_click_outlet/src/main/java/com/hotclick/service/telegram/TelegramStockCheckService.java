@@ -144,7 +144,7 @@ public class TelegramStockCheckService {
                     + "* ahora tiene *" + cantidad + "* unidades registradas.",
                 tecladoTrasAjuste());
         } catch (Exception e) {
-            log.error("[telegram-bot] fallo ajuste producto {} — {}", productoId, e.getMessage());
+            log.error("[telegram-bot] fallo ajuste producto {} — {}", productoId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
             bot.enviarMensaje(v.getChatId(), "No pude aplicar el ajuste. Intentá de nuevo en unos minutos.",
                 TelegramTeclado.soloMenu());
         }
