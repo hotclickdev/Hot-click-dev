@@ -99,18 +99,24 @@ public class CheckoutValidator {
     }
 
     public void assertBodegaTenant(Bodega bodega, Long bodegaId) {
-        // Tenant assertion: la bodega del checkout debe pertenecer al negocio activo
-        // (slug de la tienda pública). Evita que un pedido de la Empresa A se asiente
-        // contra el inventario/empresa de la Bodega de la Empresa B.
+        assertBodegaTenant(bodega, bodegaId, java.util.Set.of());
+    }
+
+    /**
+     * Tenant assertion: la bodega del checkout debe pertenecer al negocio activo (TenantContext) o, en el
+     * marketplace (E2E-CMP-01), a la empresa vendedora de los productos de ese paquete. En /api/payments el
+     * TenantContext sale del JWT del comprador: una cuenta de negocio que compra en otra tienda no es el vendedor.
+     * Fail-closed: una bodega que no es del negocio activo ni del vendedor se rechaza con 400 (IllegalArgumentException).
+     */
+    public void assertBodegaTenant(Bodega bodega, Long bodegaId, java.util.Collection<Long> empresasVendedoras) {
         Long tenantId = com.hotclick.security.TenantContext.get();
-        if (tenantId != null) {
-            Long bodegaEmpresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
-            if (!tenantId.equals(bodegaEmpresaId)) {
-                log.warn("[checkout] Intento cross-tenant bloqueado: tenant={}, bodegaId={}, bodega.empresaId={}",
-                    tenantId, bodegaId, bodegaEmpresaId);
-                throw new SecurityException("La bodega seleccionada no pertenece a este negocio");
-            }
-        }
+        if (tenantId == null) return;
+        Long bodegaEmpresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
+        if (tenantId.equals(bodegaEmpresaId)) return;
+        if (bodegaEmpresaId != null && empresasVendedoras != null && empresasVendedoras.contains(bodegaEmpresaId)) return;
+        log.warn("[checkout] Bodega ajena bloqueada: tenant={}, bodegaId={}, bodega.empresaId={}, vendedores={}",
+            tenantId, bodegaId, bodegaEmpresaId, empresasVendedoras);
+        throw new IllegalArgumentException("La bodega seleccionada no pertenece a esta tienda");
     }
 
     public static void assertMetodoEnvioValido(String metodoEnvio) {

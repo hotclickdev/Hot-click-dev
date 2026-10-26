@@ -61,6 +61,19 @@ public class CheckoutGrupoFactory {
         if (!coincide) throw new IllegalArgumentException("La bodega elegida no es de la tienda de estos productos.");
     }
 
+    /** E2E-CMP-01: empresas que venden los productos de un paquete (el vendedor en el marketplace). */
+    static java.util.Set<Long> empresasVendedoras(CheckoutPaquetesPlanner.Paquete paquete,
+                                                  java.util.Map<Long, com.hotclick.model.Producto> productos) {
+        java.util.Set<Long> ids = new java.util.HashSet<>();
+        if (productos == null) return ids;
+        for (PaymentCheckoutRequest.ItemDTO item : paquete.items()) {
+            com.hotclick.model.Producto p = productos.get(item.getProductoId());
+            Long id = p != null ? empresaDe(p) : null;
+            if (id != null) ids.add(id);
+        }
+        return ids;
+    }
+
     private static Long empresaDe(com.hotclick.model.Producto p) {
         if (p.getEmpresa() != null) return p.getEmpresa().getId();
         return p.getBodega() != null && p.getBodega().getEmpresa() != null ? p.getBodega().getEmpresa().getId() : null;
@@ -72,7 +85,8 @@ public class CheckoutGrupoFactory {
         List<CheckoutPaquetesPlanner.Paquete> paquetes =
             planner.planificar(req, reservation.productosMap(), bodegaDefault);
         for (CheckoutPaquetesPlanner.Paquete paquete : paquetes) {
-            checkoutValidator.assertBodegaTenant(paquete.bodega(), paquete.bodega().getId());
+            checkoutValidator.assertBodegaTenant(paquete.bodega(), paquete.bodega().getId(),
+                empresasVendedoras(paquete, reservation.productosMap()));
             checkoutValidator.validarRetiroPaquete(paquete.metodoEnvio(), paquete.bodega());
         }
         orderPricingService.exigirCuponValido(req.getCodigoCupon(), paquetes.stream()
