@@ -7,15 +7,15 @@ Triage de bugs y deuda técnica en `hotclickdev/Hot-click-dev`: reproducir, arre
 
 ## Estado (al traspaso)
 - 3 PRs abiertos (tope 3). Ninguno se mergea sin CI verde + APTO sobre el head exacto.
-- #348 tiene Tests Java en rojo; se estaba arreglando en `fix/roles-admin-billing-wallet` (worktree local con merge de master `d8f239be`, sin pushear) cuando se pidió el traspaso.
+- #348 ya tiene el arreglo de Tests Java (los tests viejos de LECTOR ahora esperan 403), con APTO sobre d8f239be y enviado a CI/CD.
 
 ## Ramas y PRs
 | PR / rama | Head | Estado |
 |---|---|---|
 | #304, #306, #327, #328 | — | Mergeados |
-| #338 `fix/telegram-antiabuso-dedup` | `c710d9b3` | Abierto. APTO sobre c710d9b3. CI pendiente/en curso tras arreglar E4 (falso positivo SECRET). |
-| #347 `fix/login-reenviar-verificacion` | `3f7e8f05` | Abierto. APTO sobre 3f7e8f05. CI pendiente tras agregar el endpoint a la allowlist del test de rutas. |
-| #348 `fix/roles-admin-billing-wallet` | `45534a84` (origin) | Abierto. APTO sobre 45534a84 pero Tests Java en rojo (run 40393939381). Arreglo en curso por otro proceso; requiere APTO nuevo. |
+| #338 `fix/telegram-antiabuso-dedup` | `c710d9b3` | Abierto. APTO sobre c710d9b3. Falso positivo E4 (constante SECRET) arreglado. Enviado a CI/CD para merge. |
+| #347 `fix/login-reenviar-verificacion` | `3f7e8f05` | Abierto. APTO sobre 3f7e8f05. Enviado a CI/CD para merge. |
+| #348 `fix/roles-admin-billing-wallet` | `d8f239be030ab98b2be540c25535fbab1eca75e3` | Abierto. APTO sobre d8f239be (tests viejos de LECTOR actualizados a 403). Enviado a CI/CD para merge. |
 | `wip/onvo-billing-webhook-verificado` | `3c23c240` | WIP (cambios sin commitear subidos para no perderlos). No listo, sin PR. |
 | `wip/perfil-estricto-totp-config` | `0e08718b` | WIP idem. Relacionado con `fix/perfil-case-insensible` (ya en origin). No listo. |
 | Resto de ramas fix/* locales | — | Ya en origin o mergeadas en master. |
@@ -32,13 +32,13 @@ Triage de bugs y deuda técnica en `hotclickdev/Hot-click-dev`: reproducir, arre
 - Encoding `%253A` y tokens cortos (saneo de token Telegram).
 - Valores con forma de número en `n8n-workflows/04`, `Untitled-2.html` y `SeccionBodega.tsx:178`.
 - `numero_whatsapp` del tenant en el prompt sin `digitos()`.
+- BAJO: volver a cubrir la aserción del teléfono enmascarado en metodos-cobro (en otro PR).
 - `/api/facturas` da 500 al dueño (sin investigar).
 
 ## Próximos pasos
-1. Terminar el rojo de Tests Java de #348, APTO sobre el hash nuevo, push, CI/CD.
-2. Seguir #338 y #347 hasta merge por CI/CD.
-3. Al liberar cupo de PR: bug de `correoVerificado` en EquipoService (ALTO), luego EDITOR en finanzas.
-4. Revisar los wip/ antes de retomarlos (base vieja, `eb7564c2`).
+1. Seguir #338, #347 y #348 hasta merge por CI/CD.
+2. Al liberar cupo de PR: bug de `correoVerificado` en EquipoService (ALTO), luego EDITOR en finanzas.
+3. Revisar los wip/ antes de retomarlos (base vieja, `eb7564c2`).
 
 ## Decisiones de Andrés
 - Cuota opción B: asistente 300 por tienda y 3000 total por día; chat público 5000 global y 3000 por tienda; sin gastar créditos del plan.
