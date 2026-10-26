@@ -128,6 +128,8 @@ public class PaymentService {
 
     private PaymentCheckoutResponse conCancelToken(PaymentCheckoutResponse response, CheckoutGrupoFactory.Grupo grupo) {
         response.setCancelToken(guestCancelTokenService.emitir(response.getNumeroPedido()));
+        response.setReintentoToken(guestCancelTokenService.emitir(
+            response.getNumeroPedido(), GuestCancelTokenService.Proposito.REINTENTAR));
         response.setPaquetes(CheckoutGrupoFactory.resumen(grupo.pedidos()));
         return response;
     }

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Navigate, useSearchParams, useLocation } from 'react-router-dom'
 import { usePayment } from '@/hooks/usePayment'
+import { limpiarTokensInvitado } from '@/services/paymentService'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import PagoLoading from './pago/PagoLoading'
@@ -49,8 +50,11 @@ export default function PaymentStatusPage() {
 
   useEffect(() => {
     if (destinoVisitante) return
-    if (estado === 'success') clearCart()
-  }, [estado, clearCart, destinoVisitante])
+    if (estado !== 'success') return
+    clearCart()
+    // Pago confirmado por el backend: los tokens de cancelar/reintentar ya no deben quedar en el navegador.
+    if (numeroPedido) limpiarTokensInvitado(numeroPedido)
+  }, [estado, clearCart, destinoVisitante, numeroPedido])
 
   useEffect(() => {
     if (destinoVisitante || !numeroPedido || ran.current) return

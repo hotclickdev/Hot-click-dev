@@ -28,6 +28,7 @@ type PagoData = {
   monto?: number
   moneda?: string
   cancelToken?: string
+  reintentoToken?: string
 }
 
 export type TilopayCardPayload = {
@@ -105,6 +106,9 @@ export function usePayment() {
       if (data.cancelToken && data.numeroPedido) {
         sessionStorage.setItem(`hc-cancel-token:${data.numeroPedido}`, data.cancelToken)
       }
+      if (data.reintentoToken && data.numeroPedido) {
+        sessionStorage.setItem(`hc-reintento-token:${data.numeroPedido}`, data.reintentoToken)
+      }
       if (sessionStorage.getItem(POS_QR_TOKEN_KEY)) {
         sessionStorage.removeItem(POS_QR_TOKEN_KEY)
       }
@@ -139,6 +143,7 @@ export function usePayment() {
       const cancelToken = sessionStorage.getItem(`hc-cancel-token:${numeroPedido}`)
       await paymentService.guestCancelarPedido(numeroPedido, cancelToken)
       sessionStorage.removeItem(`hc-cancel-token:${numeroPedido}`)
+      sessionStorage.removeItem(`hc-reintento-token:${numeroPedido}`)
     } catch {
       try {
         await paymentService.cancelarPedido(numeroPedido)

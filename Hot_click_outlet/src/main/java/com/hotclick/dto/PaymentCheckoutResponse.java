@@ -15,6 +15,7 @@ public class PaymentCheckoutResponse {
     private String moneda = "CRC";
     /** HMAC para POST /payments/guest/cancel — solo en checkout de invitado/sesión. */
     private String cancelToken;
+    private String reintentoToken;
     /** Un paquete por vendedor. {@code numeroPedido} es el del paquete principal, al que va asociado el pago. */
     private java.util.List<Paquete> paquetes = java.util.List.of();
 
@@ -83,4 +84,7 @@ public class PaymentCheckoutResponse {
 
     public String getCancelToken() { return cancelToken; }
     public void setCancelToken(String cancelToken) { this.cancelToken = cancelToken; }
+
+    public String getReintentoToken() { return reintentoToken; }
+    public void setReintentoToken(String reintentoToken) { this.reintentoToken = reintentoToken; }
 }

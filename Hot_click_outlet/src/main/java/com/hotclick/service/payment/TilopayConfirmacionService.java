@@ -8,6 +8,7 @@ import com.hotclick.model.WebhookEvent;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.TilopayService;
@@ -37,6 +38,8 @@ public class TilopayConfirmacionService {
     @Autowired private WebhookEventRepository webhookEventRepository;
     @Autowired private TilopayService tilopayService;
     @Autowired private TilopayPaymentProviderAccess providerAccess;
+    @Autowired private GuestCancelTokenService guestCancelTokenService;
+    @Autowired private UsuarioRepository usuarioRepository;
 
     @Lazy
     @Autowired private PaymentService paymentService;
@@ -138,9 +141,14 @@ public class TilopayConfirmacionService {
      * Nuevo intento: orderNumber-R2, R3… y nuevo sdkToken.
      */
     @Transactional
-    public PaymentSession reintentar(String numeroPedido) {
+    public PaymentSession reintentar(String numeroPedido, String correoUsuario, String cancelToken) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(TilopayConfirmacionService::pedidoNoEncontrado);
+        // Endpoint permitAll: antes de tocar el Pago se exige dueño autenticado o invitado con cancelToken.
+        // Mismo 404 si no existe o no es suyo, para no revelar qué pedidos existen.
+        if (!esDuenio(pedido, correoUsuario) && !guestCancelTokenService.esValido(numeroPedido, cancelToken, GuestCancelTokenService.Proposito.REINTENTAR)) {
+            throw pedidoNoEncontrado();
+        }
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
 
@@ -260,5 +268,24 @@ public class TilopayConfirmacionService {
 
     private static boolean blank(String s) {
         return s == null || s.isBlank();
+    }
+
+    /**
+     * Dueño por id, no por correo: equalsIgnoreCase empareja variantes Unicode (ſ/s, K Kelvin/k, İ/i).
+     * El usuario autenticado se resuelve con búsqueda exacta por correo (principal de Spring).
+     */
+    private boolean esDuenio(Pedido pedido, String correoUsuario) {
+        if (correoUsuario == null || correoUsuario.isBlank()
+                || pedido.getUsuarioFinal() == null || pedido.getUsuarioFinal().getId() == null) {
+            return false;
+        }
+        Long duenioId = pedido.getUsuarioFinal().getId();
+        return usuarioRepository.findByCorreo(correoUsuario)
+            .map(u -> duenioId.equals(u.getId()))
+            .orElse(false);
+    }
+
+    private static RecursoNoEncontradoException pedidoNoEncontrado() {
+        return new RecursoNoEncontradoException("Pedido no encontrado");
     }
 }

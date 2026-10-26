@@ -143,19 +143,36 @@ public class PaymentController {
     }
 
     @PostMapping("/tilopay/reintentar/{numeroPedido}")
-    public ResponseEntity<ResponseDTO> reintentarTilopay(@PathVariable String numeroPedido) {
+    public ResponseEntity<ResponseDTO> reintentarTilopay(
+            @PathVariable String numeroPedido,
+            @RequestBody(required = false) Map<String, String> body) {
         try {
-            var session = tilopayConfirmacionService.reintentar(numeroPedido);
+            // v2: reintentoToken (propósito REINTENTAR). cancelToken solo sirve si es v1 dentro de la ventana de compatibilidad.
+            String cancelToken = body == null ? null
+                : body.getOrDefault("reintentoToken", body.get("cancelToken"));
+            var session = tilopayConfirmacionService.reintentar(numeroPedido, correoAutenticado(), cancelToken);
+            // H-07: endpoint permitAll; el sdkToken no se expone (cualquiera con el numero de pedido lo obtendria).
             return ResponseEntity.ok(ResponseDTO.success("Reintento Tilopay", Map.of(
                 "orderNumber", session.externalId(),
-                "sdkToken", session.sdkToken() != null ? session.sdkToken() : "",
                 "redirectUrl", session.redirectUrl() != null ? session.redirectUrl() : "",
                 "modoEmbebido", session.modoEmbebido()
             )));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("Pedido no encontrado"));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
+    }
+
+    /** Correo del usuario autenticado, o null si es anónimo. */
+    private static String correoAutenticado() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()
+                || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
+            return null;
+        }
+        return auth.getName();
     }
 }

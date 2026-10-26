@@ -2,6 +2,37 @@ import api from './api'
 import type { Id } from '@/types/api'
 import type { CheckoutPayload } from '@/types/pedido'
 
+function leerGuardado(clave: string): string | null {
+  try {
+    return typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(clave) : null
+  } catch {
+    return null
+  }
+}
+
+/** Borra los tokens de invitado del pedido (pago confirmado): no deben sobrevivir al cobro. */
+export function limpiarTokensInvitado(numeroPedido: string): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return
+    sessionStorage.removeItem(`hc-reintento-token:${numeroPedido}`)
+    sessionStorage.removeItem(`hc-cancel-token:${numeroPedido}`)
+  } catch {
+    // sessionStorage bloqueado: no hay nada que limpiar
+  }
+}
+
+/**
+ * Token de reintento del invitado que guardó el checkout (usePayment). Si no hay (sesión de
+ * checkout anterior al token v2), cae al cancelToken, que el backend solo acepta si es v1 y
+ * está dentro de la ventana de compatibilidad. null si no hay nada o falla sessionStorage.
+ */
+export function reintentoTokenGuardado(numeroPedido: string): string | null {
+  return (
+    leerGuardado(`hc-reintento-token:${numeroPedido}`) ??
+    leerGuardado(`hc-cancel-token:${numeroPedido}`)
+  )
+}
+
 export const paymentService = {
   /**
    * Crea un pedido PENDIENTE y una sesión de pago.
@@ -131,9 +162,13 @@ export const paymentService = {
     return api.post(`/payments/tilopay/confirmar/${encodeURIComponent(numeroPedido)}`, queryParams)
   },
 
-  /** Solicita un nuevo sdkToken para reintentar un pago Tilopay. */
-  reintentarTilopay(numeroPedido: string) {
-    return api.post(`/payments/tilopay/reintentar/${encodeURIComponent(numeroPedido)}`)
+  /**
+   * Reintenta un pago Tilopay. El backend exige dueño autenticado o, para invitados,
+   * el reintentoToken del checkout; solo se manda en el body cuando existe.
+   */
+  reintentarTilopay(numeroPedido: string, reintentoToken?: string | null) {
+    const url = `/payments/tilopay/reintentar/${encodeURIComponent(numeroPedido)}`
+    return reintentoToken ? api.post(url, { reintentoToken }) : api.post(url)
   },
 
   /** Público: `{ "7": 5 }` = el negocio 7 descuenta 5% al pagar con SINPE o efectivo. */

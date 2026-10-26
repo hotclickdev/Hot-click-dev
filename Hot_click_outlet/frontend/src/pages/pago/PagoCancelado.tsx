@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { paymentService } from '@/services/paymentService'
+import { paymentService, reintentoTokenGuardado } from '@/services/paymentService'
 import { useToast } from '@/components/ui/Toast'
 import CheckoutTilopayCard from '@/pages/checkout/CheckoutTilopayCard'
 import FalloPago from './FalloPago'
@@ -25,7 +25,7 @@ export default function PagoCancelado() {
     }
     setReintentando(true)
     try {
-      const { data } = await paymentService.reintentarTilopay(numeroPedido)
+      const { data } = await paymentService.reintentarTilopay(numeroPedido, reintentoTokenGuardado(numeroPedido))
       const payload = payloadDesdeReintento(data, numeroPedido)
       if (payload) {
         setTilopayRetry(payload)
