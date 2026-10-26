@@ -59,3 +59,25 @@ Ojo: no encadenar con `pgrep -f` (se matchea a sí mismo); esperar por un PID co
 
 ## Evidencia
 `docs/traspaso/evidencia/hotclick-ci-cd/`: scripts saneados, `e2e-workflow.md` y `cola-merges-logs.md`. Los logs completos quedan en `/workspace/automerge*.log` del box.
+
+## Correcciones al README
+(a) Errores o datos viejos (estado verificado con `gh pr view` y `git ls-remote` el 26-oct 15:38 CR):
+- master ya no está en 1f54e30f: va en c48cb9ea o más nuevo.
+- Hoy se mergearon #333, #341, #339, #340, #342, #325, #337, #346, #334, #345, #344, #338, #347, #349 y además #353 (15:26 CR, a96c77f7), #352 (15:29 CR, d985cba7), #348 (15:30 CR, d8f239be) y #343 (15:36 CR, 7c9ea22c). El paso 4 de "PARA EL BOT" los lista como abiertos: sacarlos; #343 ya no está en rojo.
+- Siguen abiertos con APTO, en cola: #329 (3e1c837d), #332 (3abfc68d), #336 (fb1818da), #351 (E2E Playwright, 788e02e9) y #350 (e68039dc).
+- Mi fila: la columna de estado dice que #351/#352 "ya pueden ir"; #352 ya entró y #351 está pusheado con APTO en cola. En "Mis ramas", `feat/e2e-playwright-ci` ya está en origin (head 788e02e9), no solo local. Inodos: ahora ~92 %, no ~89 %.
+- Mis instrucciones dicen que nunca ejecuto merge/push: en la práctica corro la cola automerge y los push con OK de Andrés vía Grok Bot por cada PR (CI verde + APTO sobre el head exacto, sin deploy).
+
+(b) Lo que le falta al reemplazo:
+- Flyway en master quedó con `baseline-on-migrate` y `out-of-order` en false: confirmar `flyway_schema_history` en prod antes de cualquier deploy (lo hace Andrés).
+- `HOTCLICK_NUMEROS_PROHIBIDOS` ya se pasa en ci.yml (#353), pero el test se omite hasta que el dueño cree el secret.
+- La etiqueta `skip-scale-gate` solo aplica con un push nuevo al PR.
+- El merge script usa `gh pr merge --match-head-commit <sha>`; al encadenar corridas, esperar por PID (`wait`/`kill -0`), no con `pgrep -f`, que se matchea a sí mismo.
+- Conflictos en `static/`: tomar la versión de master y recompilar.
+- pnpm 11 necesita Node 22 (`/workspace/tools/node22`); corepack está roto.
+- Box con load alto: no lanzar builds pesados en paralelo. Puerto 8080 de otro bot.
+- GitHub a veces da timeout de TLS: reintentar el merge (con el mismo `--match-head-commit`).
+
+(c) Mejoras (le tocan a Andrés):
+- Fijar por SHA las actions de los demás workflows (en #351 ya está pnpm/action-setup).
+- Hacer obligatorio el check E2E en la protección de master cuando entre #351.
