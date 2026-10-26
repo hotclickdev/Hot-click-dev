@@ -24,7 +24,7 @@ export const posService = {
   infoQrSesion:   (token: string)          => publicApi.get(`/pos/qr/pago/${token}`).then(r => r.data),
   estadoQrSesion: (token: string)          => publicApi.get(`/pos/qr/pago/${token}/estado`).then(r => r.data),
   comprobanteQrSesion: (token: string)     => publicApi.get(`/pos/qr/pago/${token}/comprobante`).then(r => r.data),
-  /** SINPE Móvil por ONVO: crea y confirma el intent con la identificación del pagador. */
-  iniciarSinpeOnvoQr: (token: string, identificacion: string, tipoIdentificacion: number) =>
-    publicApi.post<SinpeOnvoQrDatos>(`/pos/qr/pago/${token}/sinpe-onvo`, { identificacion, tipoIdentificacion }).then(r => r.data),
+  /** SINPE Móvil por ONVO: crea y confirma el intent con identificación, tipo y SINPE (+506########) del pagador. */
+  iniciarSinpeOnvoQr: (token: string, identificacion: string, tipoIdentificacion: number, telefono: string) =>
+    publicApi.post<SinpeOnvoQrDatos>(`/pos/qr/pago/${token}/sinpe-onvo`, { identificacion, tipoIdentificacion, telefono }).then(r => r.data),
 }

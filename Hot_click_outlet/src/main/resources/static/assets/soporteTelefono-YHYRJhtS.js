@@ -1,1 +1,0 @@
-function e(e){let t=(e??``).replace(/\D/g,``);return t?t.length===8?`506${t}`:t:``}function t(e){return(e??``).trim()}var n=t(``),r=e(``);function i(e,t){return e?`https://wa.me/${e}${t?`?text=${encodeURIComponent(t)}`:``}`:null}export{r as n,i as r,n as t};

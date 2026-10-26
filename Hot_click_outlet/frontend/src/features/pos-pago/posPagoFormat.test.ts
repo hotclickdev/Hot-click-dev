@@ -5,6 +5,7 @@ import pt from '@/i18n/locales/pt.json'
 import { describe, expect, it } from 'vitest'
 import {
   identificacionSinpeValida,
+  normalizarNumeroSinpe,
   TIPOS_IDENTIFICACION,
   fechaComprobante,
   formatColones,
@@ -45,15 +46,44 @@ describe('tituloYCodigo', () => {
   })
 })
 
-describe('identificacionSinpeValida', () => {
-  it('exige 12+ caracteres en grupos con guiones', () => {
-    expect(identificacionSinpeValida('01-1111-1111')).toBe(true)
-    expect(identificacionSinpeValida('1-1111-1111')).toBe(false)
-    expect(identificacionSinpeValida('01--1111-1111')).toBe(false)
-    expect(identificacionSinpeValida('')).toBe(false)
+describe('identificacionSinpeValida (enum ONVO 0-5/9)', () => {
+  it('acepta el formato exacto de cada tipo', () => {
+    expect(identificacionSinpeValida('01-0000-0000', 0)).toBe(true)
+    expect(identificacionSinpeValida('100000000000', 1)).toBe(true)
+    expect(identificacionSinpeValida('2-000-000000', 2)).toBe(true)
+    expect(identificacionSinpeValida('3-000-000000', 3)).toBe(true)
+    expect(identificacionSinpeValida('4-000-000000', 4)).toBe(true)
+    expect(identificacionSinpeValida('500000000000', 5)).toBe(true)
+    expect(identificacionSinpeValida('900000000000', 9)).toBe(true)
   })
-  it('ofrece los 4 tipos de ONVO', () => {
-    expect(TIPOS_IDENTIFICACION.map(t => t.valor)).toEqual([1, 2, 3, 4])
+  it('rechaza formatos inválidos y tipos fuera del enum', () => {
+    expect(identificacionSinpeValida('1-0000-0000', 0)).toBe(false)
+    expect(identificacionSinpeValida('01--0000-0000', 0)).toBe(false)
+    expect(identificacionSinpeValida('1-0000-00000', 1)).toBe(false)
+    expect(identificacionSinpeValida('1000000000000', 1)).toBe(false)
+    expect(identificacionSinpeValida('3-000-000000', 2)).toBe(false)
+    expect(identificacionSinpeValida('3000000000', 3)).toBe(false)
+    expect(identificacionSinpeValida('4-123-000000', 4)).toBe(false)
+    expect(identificacionSinpeValida('90000000000', 9)).toBe(false)
+    expect(identificacionSinpeValida('01-0000-0000', 6)).toBe(false)
+    expect(identificacionSinpeValida('', 0)).toBe(false)
+  })
+  it('ofrece el enum ONVO 0, 1, 2, 3, 4, 5 y 9', () => {
+    expect(TIPOS_IDENTIFICACION.map(t => t.valor)).toEqual([0, 1, 2, 3, 4, 5, 9])
+  })
+})
+
+describe('normalizarNumeroSinpe', () => {
+  it('normaliza a +506 y 8 dígitos', () => {
+    expect(normalizarNumeroSinpe('8000 0000')).toBe('+50680000000')
+    expect(normalizarNumeroSinpe('8000-0000')).toBe('+50680000000')
+    expect(normalizarNumeroSinpe('+506 8000-0000')).toBe('+50680000000')
+    expect(normalizarNumeroSinpe('50680000000')).toBe('+50680000000')
+  })
+  it('rechaza lo que no queda en 8 dígitos', () => {
+    for (const v of ['8000000', '800000000', '+1 8000 0000', '8000abcd', '', null]) {
+      expect(normalizarNumeroSinpe(v)).toBeNull()
+    }
   })
 })
 

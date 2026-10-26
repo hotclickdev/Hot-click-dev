@@ -171,7 +171,8 @@ public class ShoppingAssistantService {
                     empresaId, resultado.tokensEntrada(), resultado.tokensSalida());
             }
         } catch (Exception e) {
-            log.warn("[rag] No se pudo actualizar cuota de tokens empresa={}: {}", empresaId, e.getMessage());
+            // C2: sin mensaje (puede traer SQL/datos del visitante), solo la clase.
+            log.warn("[rag] No se pudo actualizar cuota de tokens empresa={}: {}", empresaId, e.getClass().getName());
         }
 
         // 9. Actualizar memoria del visitante de forma asíncrona (no bloquea el response)
@@ -232,11 +233,15 @@ public class ShoppingAssistantService {
         sessionHelper.expireSession(sesionIdStr);
     }
 
-    /** true si la excepción o alguna de sus causas es DataAccessException (B1). */
+    /**
+     * true si la excepción o alguna de sus causas es DataAccessException o SQLException cruda (B1).
+     * C2: una cadena de más de 16 causas falla cerrado (se trata como sensible).
+     */
     static boolean esErrorDeDatos(Throwable t) {
-        for (int i = 0; t != null && i < 16; t = t.getCause(), i++) {
-            if (t instanceof DataAccessException) return true;
+        int i = 0;
+        for (; t != null && i < 16; t = t.getCause(), i++) {
+            if (t instanceof DataAccessException || t instanceof java.sql.SQLException) return true;
         }
-        return false;
+        return t != null;
     }
 }

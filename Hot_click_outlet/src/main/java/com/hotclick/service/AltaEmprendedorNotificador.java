@@ -27,7 +27,7 @@ public class AltaEmprendedorNotificador {
         try {
             telegramService.enviar(texto);
         } catch (Exception ex) {
-            log.error("[alta-emprendedor] fallo Telegram — {}", ex.getMessage());
+            log.error("[alta-emprendedor] fallo Telegram — {}", com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
         }
         try {
             notificacionEmailService.enviarAltaEmprendedorAAdminIT(

@@ -73,7 +73,7 @@ class SinpeCheckoutServiceEmpresaTest {
                 .map(id -> productoRepository.findByIdForUpdate(id))
                 .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
         org.mockito.Mockito.when(sinpeOnvo.destinoDisponible()).thenReturn("DESTINO_ONVO_PRUEBA");
-        org.mockito.Mockito.lenient().when(sinpeOnvo.iniciar(any(), any(), any())).thenReturn(java.time.LocalDateTime.now().plusMinutes(15));
+        org.mockito.Mockito.lenient().when(sinpeOnvo.iniciar(any(), any(), any(), any())).thenReturn(java.time.LocalDateTime.now().plusMinutes(15));
         empresa = new Empresa();
         empresa.setId(7L);
 
@@ -145,7 +145,8 @@ class SinpeCheckoutServiceEmpresaTest {
         req.setMetodoEnvio("RETIRO_EN_TIENDA");
         req.setProvider("SINPE");
         req.setSinpeIdentificacion("01-1234-5678");
-        req.setSinpeTipoIdentificacion(1);
+        req.setSinpeTipoIdentificacion(0);
+        req.setSinpeTelefono("80000000");
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
         item.setCantidad(1);
@@ -208,7 +209,8 @@ class SinpeCheckoutServiceEmpresaTest {
         req.setMetodoEnvio("RETIRO_EN_TIENDA");
         req.setProvider("SINPE");
         req.setSinpeIdentificacion("01-1234-5678");
-        req.setSinpeTipoIdentificacion(1);
+        req.setSinpeTipoIdentificacion(0);
+        req.setSinpeTelefono("80000000");
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
         item.setCantidad(2);
