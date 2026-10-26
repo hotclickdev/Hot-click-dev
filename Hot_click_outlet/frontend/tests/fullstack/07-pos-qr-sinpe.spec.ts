@@ -34,7 +34,6 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
   })
 
   test('E2E-POS-01: sin turno abierto tampoco se puede cobrar por QR/SINPE', async ({ request }) => {
-    test.fail(true, 'E2E-POS-01: POST /api/pos/qr acepta turnoId=null y confirmar-sinpe cierra la venta (PAGADO) fuera de toda caja')
     await cerrarTurno(request, dueno)
     const r = await qr(request, dueno)
     if (r.ok()) {
@@ -45,21 +44,18 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
     expect(r.ok(), 'creó cobro QR sin turno').toBeFalsy()
   })
 
-  test('confirmar-sinpe: 401 sin sesión, 403 autoconfirmación, 400 sin referencia; otro usuario confirma', async ({ request }) => {
+  test('confirmar-sinpe retirado: 401 sin sesión y 410 para cualquier usuario; la sesión sigue PENDIENTE', async ({ request }) => {
     expect((await request.post('/api/pos/caja/abrir', { headers: auth(dueno), data: { montoInicial: 1000 } })).ok()).toBeTruthy()
     const token = (await (await qr(request, dueno)).json()).data.token
     const url = `/api/pos/qr/${token}/confirmar-sinpe`
     expect((await request.put(url, { data: { referencia: ref() } })).status()).toBe(401)
-    const propia = await request.put(url, { headers: auth(dueno), data: { referencia: ref() } })
-    expect(propia.status()).toBe(403)
-    expect((await propia.json()).data?.codigo).toBe('AUTOCONFIRMACION_SINPE')
-    expect((await request.put(url, { headers: auth(editor), data: {} })).status()).toBe(400)
+    expect((await request.put(url, { headers: auth(dueno), data: { referencia: ref() } })).status()).toBe(410)
+    expect((await request.put(url, { headers: auth(editor), data: { referencia: ref() } })).status()).toBe(410)
     const est = await (await request.get(`/api/pos/qr/pago/${token}/estado`)).json()
     expect(est.estado).toBe('PENDIENTE')
   })
 
   test('E2E-POS-03: SINPE solo se confirma por webhook ONVO (no a mano)', async ({ request }) => {
-    test.fail(true, 'E2E-POS-03: sin intent ONVO, PUT confirmar-sinpe de otro usuario con referencia deja la venta PAGADO (confirmación manual aceptada por decisión 2026-10-22; choca con la regla pedida)')
     const token = (await (await qr(request, dueno)).json()).data.token
     const r = await request.put(`/api/pos/qr/${token}/confirmar-sinpe`, { headers: auth(editor), data: { referencia: ref() } })
     const est = await (await request.get(`/api/pos/qr/pago/${token}/estado`)).json()
@@ -67,6 +63,11 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
   })
 
   test('cada venta POS (efectivo y QR SINPE) suma al turno y aparece en historial de caja', async ({ request }) => {
+    // SINPE se cierra solo con el webhook ONVO payment-intent.succeeded (el backend lo verifica con GET a ONVO).
+    // Requiere ONVO en modo test con un intent acreditado: el workflow define E2E_ONVO_WEBHOOK_SECRET y E2E_ONVO_SINPE_ID.
+    const secreto = process.env.E2E_ONVO_WEBHOOK_SECRET
+    const identificacion = process.env.E2E_ONVO_SINPE_ID
+    test.skip(!secreto || !identificacion || !conSql, 'Requiere ONVO test (E2E_ONVO_WEBHOOK_SECRET, E2E_ONVO_SINPE_ID) y E2E_DATABASE_URL')
     let t = (await (await request.get('/api/pos/caja/activo', { headers: auth(dueno) })).json()).data
     if (!t) t = (await (await request.post('/api/pos/caja/abrir', { headers: auth(dueno), data: { montoInicial: 1000 } })).json()).data
     const venta = await request.post('/api/pos/venta', { headers: auth(dueno), data: {
@@ -74,9 +75,20 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
     expect(venta.ok(), await venta.text()).toBeTruthy()
     const numEfectivo = (await venta.json()).data.numeroPedido
     const token = (await (await qr(request, dueno)).json()).data.token
-    const c = await request.put(`/api/pos/qr/${token}/confirmar-sinpe`, { headers: auth(editor), data: { referencia: ref() } })
-    expect(c.ok(), await c.text()).toBeTruthy()
-    const pedidoQr = (await c.json()).data.pedidoId
+    const ini = await request.post(`/api/pos/qr/pago/${token}/sinpe-onvo`, { data: { identificacion, tipoIdentificacion: 1 } })
+    expect(ini.ok(), await ini.text()).toBeTruthy()
+    const intentId = sql(`SELECT substring(stripe_session_id from 8) FROM hot_click_pos_qr_sesion_tb WHERE token = '${token}' AND stripe_session_id LIKE 'ONVOPI:%'`)
+    expect(intentId).not.toBe('')
+    const evento = { type: 'payment-intent.succeeded', data: { id: intentId } }
+    expect((await request.post('/api/webhooks/onvo', { data: evento, headers: { 'X-Webhook-Secret': 'secreto-incorrecto' } })).status()).toBe(401)
+    // ONVO reintenta mientras el GET no diga succeeded (409/503); se espera a que el pago acredite.
+    await expect.poll(async () => (await request.post('/api/webhooks/onvo', { data: evento, headers: { 'X-Webhook-Secret': secreto! } })).status(),
+      { timeout: 120_000, intervals: [5_000] }).toBe(200)
+    const est = await (await request.get(`/api/pos/qr/pago/${token}/estado`)).json()
+    expect(est.estado).toBe('PAGADO')
+    // Reenvío del mismo evento: idempotente (200) y no duplica la venta en el turno.
+    expect((await request.post('/api/webhooks/onvo', { data: evento, headers: { 'X-Webhook-Secret': secreto! } })).status()).toBe(200)
+    const pedidoQr = est.pedidoId ?? est.numeroPedido
 
     const activo = (await (await request.get('/api/pos/caja/activo', { headers: auth(dueno) })).json()).data
     expect(activo.id).toBe(t.id)
@@ -95,14 +107,14 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
     expect(nums).toContain(pedidoQr)
   })
 
-  test('Tilopay retirado: /tilopay y /tilopay/confirmar dan 404 o 410', async ({ request }) => {
-    expect((await request.post('/api/pos/qr/pago/tokenInexistenteE2E00000000000000000/tilopay')).status()).toBe(404)
-    test.fail(true, 'E2E-POS-02: con token válido /tilopay responde 503 (tarjeta) o 409 (?metodo=SINPE) y /tilopay/confirmar 200 {pagado:false}; los endpoints siguen vivos')
+  test('Tilopay retirado: /tilopay y /tilopay/confirmar ya no son públicos (401) y con sesión dan 404 o 410', async ({ request }) => {
+    expect((await request.post('/api/pos/qr/pago/tokenInexistenteE2E00000000000000000/tilopay')).status()).toBe(401)
     const t = (await (await request.post('/api/pos/caja/abrir', { headers: auth(dueno), data: { montoInicial: 0 } })).json()).data
     const token = (await (await qr(request, dueno)).json()).data.token
     await request.put(`/api/pos/caja/${t?.id}/cerrar`, { headers: auth(dueno), data: { montoDeclarado: 0, notas: 'e2e' } })
     for (const u of [`/tilopay`, `/tilopay?metodo=SINPE`, `/tilopay/confirmar`]) {
-      const r = await request.post(`/api/pos/qr/pago/${token}${u}`)
+      expect((await request.post(`/api/pos/qr/pago/${token}${u}`)).status(), `${u} sin sesión`).toBe(401)
+      const r = await request.post(`/api/pos/qr/pago/${token}${u}`, { headers: auth(dueno) })
       expect([404, 410], `${u} → ${r.status()}`).toContain(r.status())
     }
   })
