@@ -36,7 +36,7 @@ class EmpresaAdminServiceTest {
         Empresa e = empresa(8L, "INACTIVO");
         when(empresaRepository.findByIdForUpdate(8L)).thenReturn(Optional.of(e));
 
-        service.cambiarEstado(8L, "ACTIVO");
+        service.cambiarEstado(8L, "ACTIVO", null);
 
         verify(empresaAprobacionService).aprobarYPublicar(8L);
         verify(empresaRepository, never()).save(e);
@@ -77,7 +77,7 @@ class EmpresaAdminServiceTest {
     @Test
     @DisplayName("suspender sin motivo no toca la empresa")
     void suspenderSinMotivoRechaza() {
-        assertThatThrownBy(() -> service.cambiarEstado(4L, "SUSPENDIDO"))
+        assertThatThrownBy(() -> service.cambiarEstado(4L, "SUSPENDIDO", null))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Motivo");
         verify(empresaRepository, never()).findByIdForUpdate(4L);
@@ -86,7 +86,7 @@ class EmpresaAdminServiceTest {
     @Test
     @DisplayName("estado desconocido no toca la empresa")
     void estadoInvalidoRechaza() {
-        assertThatThrownBy(() -> service.cambiarEstado(1L, "PENDIENTE_APROBACION"))
+        assertThatThrownBy(() -> service.cambiarEstado(1L, "PENDIENTE_APROBACION", null))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Estado inválido");
         verify(empresaRepository, never()).findByIdForUpdate(1L);

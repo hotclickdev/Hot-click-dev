@@ -182,7 +182,11 @@ public class TilopayConfirmacionService {
      * Usado por cleanup: si Tilopay ya aprobó, confirma en vez de cancelar.
      */
     @Transactional
-    public boolean intentarConfirmarSiAprobado(Pago pago) {
+    public boolean intentarConfirmarSiAprobado(Pago entrada) {
+        // QA5 ALTO: el cleanup ya no tiene transacción; el pago llega desprendido. Se recarga acá
+        // para que pedido/ítems sean perezosos dentro de esta transacción.
+        Pago pago = entrada.getId() == null ? entrada
+            : pagoRepository.findById(entrada.getId()).orElse(entrada);
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
             return false;
         }

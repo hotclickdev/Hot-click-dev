@@ -44,6 +44,7 @@ class RutasExcluidasLectorTest extends BaseIntegrationTest {
         "POST /api/auth/logout",
         "POST /api/auth/nuevo-negocio",
         "POST /api/auth/reenviar-codigo-negocio",
+        "POST /api/auth/reenviar-verificacion",
         "POST /api/auth/refresh",
         "POST /api/auth/register",
         "POST /api/auth/registro-empresa",

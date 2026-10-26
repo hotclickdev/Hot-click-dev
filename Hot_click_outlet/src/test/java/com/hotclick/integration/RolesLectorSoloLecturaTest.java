@@ -108,10 +108,9 @@ class RolesLectorSoloLecturaTest extends BaseIntegrationTest {
             .header("Authorization", tokenDueno)).andReturn().getResponse().getContentAsString();
         assertThat(r).contains("\"id\"");
         assertThat(mockMvc.perform(get("/api/pedidos").header("Authorization", tokenLector)).andReturn().getResponse().getStatus()).isEqualTo(200);
-        assertThat(mockMvc.perform(get("/api/wallet/saldo").header("Authorization", tokenLector)).andReturn().getResponse().getStatus()).isNotEqualTo(403);
-        var resp = mockMvc.perform(get("/api/metodos-cobro").header("Authorization", tokenLector)).andReturn().getResponse();
-        assertThat(resp.getStatus()).isEqualTo(200);
-        String body = resp.getContentAsString();
-        assertThat(body).doesNotContain("88887777").contains("7777");
+        // QA3 área 2 (#348): wallet y métodos de cobro son solo del dueño; LECTOR → 403.
+        assertThat(mockMvc.perform(get("/api/wallet/saldo").header("Authorization", tokenLector)).andReturn().getResponse().getStatus()).isEqualTo(403);
+        assertThat(mockMvc.perform(get("/api/metodos-cobro").header("Authorization", tokenLector)).andReturn().getResponse().getStatus()).isEqualTo(403);
+        assertThat(mockMvc.perform(get("/api/metodos-cobro").header("Authorization", tokenDueno)).andReturn().getResponse().getStatus()).isEqualTo(200);
     }
 }
