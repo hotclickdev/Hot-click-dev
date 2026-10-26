@@ -6,7 +6,6 @@ import com.hotclick.repository.TelegramVinculacionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class TelegramUpdateRouter {
@@ -16,7 +15,17 @@ public class TelegramUpdateRouter {
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private TelegramUpdateDedup dedup;
 
-    private final ConcurrentHashMap<Long, Object> candados = new ConcurrentHashMap<>();
+    /** TG3: candados por franjas (memoria acotada, sin purga): mismo chat → mismo candado. */
+    static final int FRANJAS = 256;
+    private final Object[] candados = new Object[FRANJAS];
+
+    {
+        for (int i = 0; i < FRANJAS; i++) candados[i] = new Object();
+    }
+
+    Object candado(long chatId) {
+        return candados[Math.floorMod(Long.hashCode(chatId), FRANJAS)];
+    }
 
     public void procesarUpdate(JsonNode update) {
         if (update == null) return;
@@ -26,7 +35,7 @@ public class TelegramUpdateRouter {
             despachar(update);
             return;
         }
-        synchronized (candados.computeIfAbsent(chatId, id -> new Object())) {
+        synchronized (candado(chatId)) {
             despachar(update);
         }
     }

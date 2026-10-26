@@ -85,14 +85,31 @@ public class TelegramConfigService {
         return out;
     }
 
+    /**
+     * TG3: desactiva SOLO la membresía del usuario en la empresa del gestor. El acceso por Telegram
+     * a esa empresa muere porque {@code empresaValidada} revalida la membresía; las demás empresas
+     * del usuario siguen. El propietario no se puede revocar.
+     */
+    @org.springframework.transaction.annotation.Transactional
     public boolean revocarMiembro(Long usuarioId, Long empresaId) {
-        if (!miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1)) {
-            return false;
-        }
+        MiembroEmpresa m = miembroEmpresaRepository
+            .findByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1).orElse(null);
+        if (m == null || "PROPIETARIO".equals(m.getRolEnEmpresa())) return false;
+        m.setEstado(0);
+        miembroEmpresaRepository.save(m);
         vinculacionRepository.findByUsuarioId(usuarioId).ifPresent(v -> {
-            revocar(v);
-            log.info("[telegram] vinculación de usuario {} revocada por gestor de empresa {}", usuarioId, empresaId);
+            // empresaValidada también acepta usuario.empresa: si es esta, fail-closed y se revoca el vínculo.
+            // Sin otras membresías activas el vínculo ya no sirve: se revoca entero (comportamiento previo).
+            boolean empresaPropia = v.getUsuario() != null && empresaId.equals(v.getUsuario().getEmpresaId());
+            if (empresaPropia || miembroEmpresaRepository.findByUsuarioIdAndEstado(usuarioId, 1).isEmpty()) {
+                revocar(v);
+            } else if (empresaId.equals(v.getEmpresaActivaId())) {
+                v.setEmpresaActivaId(null);
+                v.setContexto(null);
+                vinculacionRepository.save(v);
+            }
         });
+        log.info("[telegram] membresía de usuario {} en empresa {} desactivada por gestor", usuarioId, empresaId);
         return true;
     }
 
