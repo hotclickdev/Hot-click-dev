@@ -41,7 +41,7 @@ public class CuentaTitularService {
         datos.put("apellidoMaterno", usuario.getApellidoMaterno());
         datos.put("correo", usuario.getCorreo());
         datos.put("telefono", usuario.getTelefono());
-        datos.put("identificacion", usuario.getIdentificacion());
+        datos.put("identificacion", com.hotclick.utils.CedulaCr.realONulo(usuario.getIdentificacion()));
         datos.put("fechaRegistro", usuario.getFechaRegistro());
         datos.put("pedidos", resumenPedidos(usuario.getId()));
         return datos;

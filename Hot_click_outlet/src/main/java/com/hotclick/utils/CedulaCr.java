@@ -17,6 +17,17 @@ public final class CedulaCr {
         return digits;
     }
 
+    /**
+     * #318: cédula real o nulo. Solo acepta dígitos con espacios/guiones de formato (1-1234-0567);
+     * cualquier letra o prefijo interno (REG-, EMP-, GUEST-, CL…, SISTEMA-…) cuenta como "sin cédula".
+     */
+    public static String realONulo(String identificacion) {
+        if (identificacion == null) return null;
+        String t = identificacion.trim();
+        if (!t.matches("[0-9][0-9 \\-]*")) return null;
+        return normalizarONulo(t);
+    }
+
     public static String requireValida(String cedula) {
         String digits = normalizarONulo(cedula);
         if (digits == null) {
