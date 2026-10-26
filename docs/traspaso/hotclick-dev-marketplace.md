@@ -37,7 +37,7 @@ Antes: #284, #285, #292 (mergeados).
 ## Ramas subidas en el traspaso
 - `wip/billing-onvo-webhook-sonar` (ec58f50c): commit Sonar S2259 sobre la rama del PR #300 (cerrado). Supersedido por #305; solo para referencia.
 - `wip/billing-renovacion-v1` (b9ac1766): primera versión de la renovación ONVO. Supersedida por `fix/billing-renovacion-v2` (#305). Solo referencia.
-- Todas las demás ramas mías ya estaban en origin con el mismo hash.
+- Todas las demás ramas mías ya estaban en origin con el mismo hash, incluidas `fix/checkout-bodega-envio` (6027ad7f, PR #266 cerrado), `fix/validar-tilopay-webhook-secret` (3444899b, sin PR), `chore/dev-smtp-mailpit` (29411309, sin PR) y `fix/registro-cedula-otp` (f0e8e583, PR #260 cerrado).
 
 **No subida (decisión de Andrés):** `feat/cajero-asignable` (d5501c6b, local en `/workspace/hc-cajero-rol`). El rol CAJERO no se activa.
 
