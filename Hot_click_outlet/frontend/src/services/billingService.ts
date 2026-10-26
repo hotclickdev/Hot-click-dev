@@ -10,7 +10,7 @@ export type CambiarPlanResultado = {
   mensaje?: string
   mock?: boolean
   /** Tilopay (reemplaza ONVO): datos para abrir el SDK embebido. */
-  proveedor?: 'TILOPAY'
+  proveedor?: 'TILOPAY' | 'ONVO'
   orderNumber?: string
   montoCrc?: number
   sdkToken?: string

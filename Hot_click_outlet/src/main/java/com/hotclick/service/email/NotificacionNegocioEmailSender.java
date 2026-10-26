@@ -23,9 +23,9 @@ public class NotificacionNegocioEmailSender {
     public void enviarCuponBienvenida(String email, String codigo) {
         try {
             resendEmailService.send(email, negocioEmailBuilder.asuntoCuponBienvenida(), negocioEmailBuilder.buildCuponBienvenida(codigo));
-            log.info("Email cupón bienvenida enviado a {}", email);
+            log.info("Email cupón bienvenida enviado");
         } catch (Exception e) {
-            log.error("No se pudo enviar email de cupón a {}: {}", email, e.getMessage());
+            log.error("No se pudo enviar email de cupón: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -33,9 +33,9 @@ public class NotificacionNegocioEmailSender {
         try {
             resendEmailService.send(correo, "Tu tienda está lista en HotClick — " + emailLayoutHelper.esc(nombreEmpresa),
                 negocioEmailBuilder.buildBienvenidaEmprendedor(nombre, nombreEmpresa));
-            log.info("Email bienvenida emprendedor enviado a {}", correo);
+            log.info("Email bienvenida emprendedor enviado");
         } catch (Exception e) {
-            log.error("No se pudo enviar email de bienvenida a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de bienvenida: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -43,9 +43,9 @@ public class NotificacionNegocioEmailSender {
         try {
             resendEmailService.send(correo, "Tu negocio " + emailLayoutHelper.esc(nombreEmpresa) + " fue aprobado — HotClick",
                 negocioEmailBuilder.buildAprobacionNegocio(nombre, nombreEmpresa));
-            log.info("Email aprobación enviado a {}", correo);
+            log.info("Email aprobación enviado");
         } catch (Exception e) {
-            log.error("No se pudo enviar email de aprobación a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de aprobación: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -57,9 +57,9 @@ public class NotificacionNegocioEmailSender {
         try {
             resendEmailService.send(correo, "Actualización sobre tu solicitud — " + emailLayoutHelper.esc(nombreEmpresa),
                 negocioEmailBuilder.buildRechazoNegocio(nombre, nombreEmpresa, motivo));
-            log.info("Email rechazo enviado a {}", correo);
+            log.info("Email rechazo enviado");
         } catch (Exception e) {
-            log.error("No se pudo enviar email de rechazo a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de rechazo: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -74,9 +74,9 @@ public class NotificacionNegocioEmailSender {
             resendEmailService.send(correo,
                 "Te invitaron al equipo de " + emailLayoutHelper.esc(nombreEmpresa) + " en HotClick",
                 negocioEmailBuilder.buildInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, passwordPlano));
-            log.info("Email invitación miembro enviado a {}", correo);
+            log.info("Email invitación miembro enviado");
         } catch (Exception e) {
-            log.error("No se pudo enviar email de invitación a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de invitación: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -86,9 +86,9 @@ public class NotificacionNegocioEmailSender {
             resendEmailService.send(correoAdmin,
                 "Nueva alta de emprendimiento — " + emailLayoutHelper.esc(nombreEmpresa),
                 negocioEmailBuilder.buildAltaEmprendedorAdmin(nombreEmpresa, correo, cupoGratis, estado));
-            log.info("Email alta emprendedor enviado a admin {}", correoAdmin);
+            log.info("Email alta emprendedor enviado");
         } catch (Exception e) {
-            log.error("No se pudo enviar email de alta emprendedor a {}: {}", correoAdmin, e.getMessage());
+            log.error("No se pudo enviar email de alta emprendedor: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -98,7 +98,7 @@ public class NotificacionNegocioEmailSender {
                 tipoLabel + " aprobado — HotClick",
                 negocioEmailBuilder.buildModeracionAprobada(nombre, tipoLabel, nombreItem));
         } catch (Exception e) {
-            log.error("No se pudo enviar email de moderación aprobada a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de moderación aprobada: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -109,7 +109,7 @@ public class NotificacionNegocioEmailSender {
                 "Actualización sobre " + tipoLabel.toLowerCase() + " — HotClick",
                 negocioEmailBuilder.buildModeracionRechazada(nombre, tipoLabel, nombreItem, motivo));
         } catch (Exception e) {
-            log.error("No se pudo enviar email de moderación rechazada a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de moderación rechazada: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -121,7 +121,7 @@ public class NotificacionNegocioEmailSender {
             resendEmailService.send(correo, asunto,
                 negocioEmailBuilder.buildResenaResultado(nombre, aprobada, productoNombre));
         } catch (Exception e) {
-            log.error("No se pudo enviar email de reseña a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de reseña: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -134,7 +134,7 @@ public class NotificacionNegocioEmailSender {
             resendEmailService.send(correo, asunto,
                 negocioEmailBuilder.buildProductoModerado(nombre, productoNombre, pausado, notas));
         } catch (Exception e) {
-            log.error("No se pudo enviar email de producto moderado a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de producto moderado: {}", e.getClass().getSimpleName());
         }
     }
 
@@ -143,7 +143,7 @@ public class NotificacionNegocioEmailSender {
             resendEmailService.send(correo, "Cambio de cuenta de cobro en revisión — HotClick",
                 negocioEmailBuilder.buildCambioCobroPendiente(nombre, tipoCuenta, mascaraNueva));
         } catch (Exception e) {
-            log.error("No se pudo enviar email de cambio de cobro a {}: {}", correo, e.getMessage());
+            log.error("No se pudo enviar email de cambio de cobro: {}", e.getClass().getSimpleName());
         }
     }
 }
