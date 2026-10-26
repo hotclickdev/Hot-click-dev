@@ -447,7 +447,7 @@ public class EncargoService {
                 telegramNotif.notificarSolicitudEnviada(
                     empresa.getId(), "Encargo personalizado", encargo.getProductoNombre());
             } catch (Exception ex) {
-                log.warn("Telegram encargo falló: {}", ex.getMessage());
+                log.warn("Telegram encargo falló: {}", com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
             }
         }
     }
