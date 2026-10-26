@@ -102,7 +102,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             .orElseThrow(() -> new NoSuchElementException("Plan no encontrado: " + planId));
 
         String planActual = nombrePlanActual(empresa);
-        if (planDestino.getNombre().equalsIgnoreCase(planActual)) {
+        // Auditor 5 S-01: con PAST_DUE/VENCIDO/TRIAL el mismo plan se puede pagar (reactivar).
+        if (planDestino.getNombre().equalsIgnoreCase(planActual) && !puedeRepagarMismoPlan(empresa)) {
             throw new IllegalArgumentException("Ya tenés el plan " + planDestino.getNombre());
         }
 
@@ -369,6 +370,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             return empresa.getPlan().getNombre();
         }
         return empresa.getPlanSaas() != null ? empresa.getPlanSaas() : PLAN_GRATIS;
+    }
+
+    static boolean puedeRepagarMismoPlan(Empresa empresa) {
+        String e = empresa.getEstadoPlan();
+        return e != null && java.util.Set.of("PAST_DUE", "VENCIDO", "TRIAL").contains(e.toUpperCase(java.util.Locale.ROOT));
     }
 
     private static boolean tieneStripeActivo(Suscripcion sub) {

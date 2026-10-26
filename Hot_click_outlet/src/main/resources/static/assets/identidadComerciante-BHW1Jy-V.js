@@ -1,1 +1,0 @@
-import{n as e,t}from"./soporteTelefono-YHYRJhtS.js";var n={nombreComercial:`HotClick`,razonSocial:null,cedula:null,domicilio:null,canton:null,telefono:t,telefonoWa:e,correo:`hotclick.cr@gmail.com`,dominio:`hotclick.lat`,sitio:`https://hotclick.lat`},r=`4 de octubre de 2026`,i=`2026-10-04`;export{r as n,i as r,n as t};
