@@ -79,7 +79,7 @@ export function buildOutageBody({ ping, previousStatus, verdict, ranAt = new Dat
           ? 'Health 200. Sin outage.'
           : 'Primer fallo (se espera una segunda corrida antes de paginar).',
     '',
-    'Este agente **no** hace `git push` ni redeploy para despertar Render. `keep-alive.yml` ya pinea el endpoint.',
+    'Este agente **no** hace `git push` ni redeploy para despertar Render. Sin `HEALTH_URL` configurado, el pager se saltea.',
     'Telegram solo si existen `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` (no se inventan).',
   ].join('\n');
 }
@@ -88,7 +88,10 @@ export function runHealthPager(opts = {}) {
   if (hasLabel(process.env.PR_LABELS, SKIP_LABELS.health)) {
     return { skipped: true };
   }
-  const url = opts.url || process.env.HEALTH_URL || DEFAULT_HEALTH_URL;
+  const url = String(opts.url || process.env.HEALTH_URL || DEFAULT_HEALTH_URL || '').trim();
+  if (!url) {
+    return { skipped: true, reason: 'sin-health-url' };
+  }
   const stateFile = opts.stateFile || process.env.HEALTH_STATE_FILE || '';
   const previousStatus = opts.previousStatus ?? readPreviousStatus(stateFile);
   const injected = process.env.HEALTH_STATUS;
@@ -104,7 +107,9 @@ export function runHealthPager(opts = {}) {
 function main() {
   const result = runHealthPager();
   if (result.skipped) {
-    console.log('E9 health pager: skip label');
+    console.log(result.reason === 'sin-health-url'
+      ? '::notice::E9 health pager: HEALTH_URL no configurado; se saltea sin pegarle a ningún host.'
+      : 'E9 health pager: skip label');
     return;
   }
   const { ping, previousStatus, verdict } = result;
