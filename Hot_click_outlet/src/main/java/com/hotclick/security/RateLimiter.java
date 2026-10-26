@@ -68,6 +68,22 @@ public class RateLimiter {
         }
     }
 
+    /**
+     * Igual que {@link #tryAcquire} pero FAIL-CLOSED: ante cualquier error de BD devuelve
+     * false. Para topes de costo, donde negar (y degradar) es preferible a dejar pasar.
+     */
+    public boolean tryAcquireEstricto(String key, int maxRequests, int windowSeconds) {
+        long now     = Instant.now().getEpochSecond();
+        long expires = now + windowSeconds;
+        try {
+            int count = incrementarYContar(key, now, expires, windowSeconds);
+            return count <= maxRequests;
+        } catch (Exception e) {
+            log.warn("[RATE-LIMIT] DB unavailable, fail-closed key={}: {}", key, e.getClass().getName());
+            return false;
+        }
+    }
+
     private int incrementarYContar(String key, long now, long expires, int windowSeconds) {
         java.util.List<Long> existing = jdbc.queryForList(SELECT_WINDOW_SQL, Long.class, key);
         if (existing.isEmpty()) {
