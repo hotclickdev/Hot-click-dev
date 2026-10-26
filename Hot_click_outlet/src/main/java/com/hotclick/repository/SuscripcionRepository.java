@@ -96,6 +96,12 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     List<Suscripcion> findPastDueLegadoVencidos(@Param("limite") LocalDate limite,
                                                org.springframework.data.domain.Pageable lote);
 
+    /** Seguridad MEDIO: baja atómica condicional; devuelve 0 si la fila ya no está PAST_DUE (p. ej. el webhook la activó). */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE Suscripcion s SET s.estado = 'VENCIDO' WHERE s.id = :id AND s.estado = 'PAST_DUE'")
+    int marcarVencidoSiPastDue(@Param("id") Long id);
+
     /** P10-03: la empresa ya tuvo un trial alguna vez (el registro queda aunque expire o se cancele). */
     boolean existsByEmpresa_IdAndTrialEndIsNotNull(Long empresaId);
 }

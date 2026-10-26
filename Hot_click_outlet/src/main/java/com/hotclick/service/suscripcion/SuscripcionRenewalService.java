@@ -88,15 +88,17 @@ public class SuscripcionRenewalService {
                 limite, org.springframework.data.domain.PageRequest.of(0, max - lote.size())));
         }
         if (lote.isEmpty()) return 0;
+        // Seguridad MEDIO (carrera con el webhook ONVO): UPDATE atómico condicional por fila
+        // (estado='PAST_DUE'); solo se degradan las empresas cuya fila realmente pasó a VENCIDO.
         List<Long> empresaIds = new java.util.ArrayList<>();
         for (com.hotclick.model.Suscripcion s : lote) {
-            s.setEstado("VENCIDO");
-            empresaIds.add(s.getEmpresa().getId());
+            if (suscripcionRepo.marcarVencidoSiPastDue(s.getId()) == 1) {
+                empresaIds.add(s.getEmpresa().getId());
+            }
         }
-        suscripcionRepo.saveAll(lote);
-        planSupport.degradarPlanBatchConCache(empresaIds, hoy);
-        log.info("[billing] {} PAST_DUE expirado(s) (lote máx {}) — {} empresa(s) degradadas",
-            lote.size(), maxBajasPorCorrida, empresaIds.size());
-        return lote.size();
+        if (!empresaIds.isEmpty()) planSupport.degradarPlanBatchConCache(empresaIds, hoy);
+        log.info("[billing] {} PAST_DUE expirado(s) de {} candidato(s) (lote máx {})",
+            empresaIds.size(), lote.size(), maxBajasPorCorrida);
+        return empresaIds.size();
     }
 }

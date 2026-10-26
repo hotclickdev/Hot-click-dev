@@ -68,6 +68,7 @@ class BillingRenovacionAuditor5Test {
             Empresa e = new Empresa();
             e.setId(empresaId);
             Suscripcion s = new Suscripcion();
+            ReflectionTestUtils.setField(s, "id", empresaId * 10);
             s.setEmpresa(e);
             s.setEstado("PAST_DUE");
             s.setOnvoSubscriptionId("sub_" + empresaId);
@@ -80,6 +81,7 @@ class BillingRenovacionAuditor5Test {
             ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 2);
             ArgumentCaptor<org.springframework.data.domain.Pageable> lote =
                 ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+            lenient().when(suscripcionRepo.marcarVencidoSiPastDue(any())).thenReturn(1);
             when(suscripcionRepo.findPastDueOnvoVencidos(any(), lote.capture()))
                 .thenReturn(List.of(pastDue(1), pastDue(2)));
             assertThat(service.expirarPastDueVencidos()).isEqualTo(2);
@@ -95,12 +97,36 @@ class BillingRenovacionAuditor5Test {
             ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 3);
             ArgumentCaptor<org.springframework.data.domain.Pageable> resto =
                 ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+            lenient().when(suscripcionRepo.marcarVencidoSiPastDue(any())).thenReturn(1);
             when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1)));
             when(suscripcionRepo.findPastDueLegadoVencidos(any(), resto.capture()))
                 .thenReturn(List.of(pastDue(2), pastDue(3)));
             assertThat(service.expirarPastDueVencidos()).isEqualTo(3);
             assertThat(resto.getValue().getPageSize()).isEqualTo(2);
             verify(planSupport).degradarPlanBatchConCache(eq(List.of(1L, 2L, 3L)), any());
+        }
+
+        @Test @DisplayName("MEDIO carrera: el webhook activa la suscripción entre el SELECT y el UPDATE → no VENCIDO ni FREE")
+        void carreraWebhookNoDegrada() {
+            ReflectionTestUtils.setField(service, "diasGracia", 7);
+            ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 3);
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1), pastDue(2)));
+            when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of());
+            when(suscripcionRepo.marcarVencidoSiPastDue(10L)).thenReturn(0); // ya ACTIVO
+            when(suscripcionRepo.marcarVencidoSiPastDue(20L)).thenReturn(1);
+            assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
+            verify(planSupport).degradarPlanBatchConCache(eq(List.of(2L)), any());
+            verify(suscripcionRepo, never()).saveAll(any());
+        }
+
+        @Test @DisplayName("MEDIO carrera: si todas las filas cambiaron, no se degrada a nadie")
+        void carreraTodasActivadas() {
+            ReflectionTestUtils.setField(service, "diasGracia", 7);
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pastDue(1)));
+            when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of());
+            when(suscripcionRepo.marcarVencidoSiPastDue(10L)).thenReturn(0);
+            assertThat(service.expirarPastDueVencidos()).isZero();
+            verifyNoInteractions(planSupport);
         }
 
         @Test @DisplayName("MEDIO: sin cobro disponible tampoco se bajan los PAST_DUE heredados")
