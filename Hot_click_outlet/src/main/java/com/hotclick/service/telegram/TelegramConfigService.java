@@ -32,6 +32,7 @@ public class TelegramConfigService {
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private TelegramClienteBotService bot;
+    @Autowired private TelegramRevocacionMiembro revocacionMiembro;
 
     public Map<String, Object> generarCodigo(Usuario usuario) {
         TelegramVinculacion v = vinculacionRepository.findByUsuarioId(usuario.getId())
@@ -85,32 +86,9 @@ public class TelegramConfigService {
         return out;
     }
 
-    /**
-     * TG3: desactiva SOLO la membresía del usuario en la empresa del gestor. El acceso por Telegram
-     * a esa empresa muere porque {@code empresaValidada} revalida la membresía; las demás empresas
-     * del usuario siguen. El propietario no se puede revocar.
-     */
-    @org.springframework.transaction.annotation.Transactional
+    /** TG3: ver {@link TelegramRevocacionMiembro} (consultas puntuales fuera de bucles, SCALE1). */
     public boolean revocarMiembro(Long usuarioId, Long empresaId) {
-        MiembroEmpresa m = miembroEmpresaRepository
-            .findByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1).orElse(null);
-        if (m == null || "PROPIETARIO".equals(m.getRolEnEmpresa())) return false;
-        m.setEstado(0);
-        miembroEmpresaRepository.save(m);
-        vinculacionRepository.findByUsuarioId(usuarioId).ifPresent(v -> {
-            // empresaValidada también acepta usuario.empresa: si es esta, fail-closed y se revoca el vínculo.
-            // Sin otras membresías activas el vínculo ya no sirve: se revoca entero (comportamiento previo).
-            boolean empresaPropia = v.getUsuario() != null && empresaId.equals(v.getUsuario().getEmpresaId());
-            if (empresaPropia || miembroEmpresaRepository.findByUsuarioIdAndEstado(usuarioId, 1).isEmpty()) {
-                revocar(v);
-            } else if (empresaId.equals(v.getEmpresaActivaId())) {
-                v.setEmpresaActivaId(null);
-                v.setContexto(null);
-                vinculacionRepository.save(v);
-            }
-        });
-        log.info("[telegram] membresía de usuario {} en empresa {} desactivada por gestor", usuarioId, empresaId);
-        return true;
+        return revocacionMiembro.revocar(usuarioId, empresaId);
     }
 
     public String registrarWebhook() {

@@ -78,7 +78,7 @@ class TelegramTg3Test {
     // (c)
     @Test
     void revocarMiembro_desactivaSoloLaMembresiaDeEsaEmpresa() {
-        TelegramConfigService svc = new TelegramConfigService();
+        TelegramRevocacionMiembro svc = new TelegramRevocacionMiembro();
         MiembroEmpresaRepository mr = mock(MiembroEmpresaRepository.class);
         TelegramVinculacionRepository vr = mock(TelegramVinculacionRepository.class);
         ReflectionTestUtils.setField(svc, "miembroEmpresaRepository", mr);
@@ -92,9 +92,9 @@ class TelegramTg3Test {
         v.setEstado(TelegramVinculacion.ACTIVA);
         v.setEmpresaActivaId(1L);
         when(vr.findByUsuarioId(5L)).thenReturn(Optional.of(v));
-        when(mr.findByUsuarioIdAndEstado(5L, 1)).thenReturn(java.util.List.of(mock(MiembroEmpresa.class))); // otra empresa
+        when(mr.existsByUsuarioIdAndEstado(5L, 1)).thenReturn(true); // otra empresa
 
-        assertThat(svc.revocarMiembro(5L, 1L)).isTrue();
+        assertThat(svc.revocar(5L, 1L)).isTrue();
 
         verify(m).setEstado(0);
         verify(mr).save(m);
@@ -106,13 +106,13 @@ class TelegramTg3Test {
 
     @Test
     void revocarMiembro_noRevocaAlPropietario() {
-        TelegramConfigService svc = new TelegramConfigService();
+        TelegramRevocacionMiembro svc = new TelegramRevocacionMiembro();
         MiembroEmpresaRepository mr = mock(MiembroEmpresaRepository.class);
         ReflectionTestUtils.setField(svc, "miembroEmpresaRepository", mr);
         MiembroEmpresa m = mock(MiembroEmpresa.class);
         when(m.getRolEnEmpresa()).thenReturn("PROPIETARIO");
         when(mr.findByUsuarioIdAndEmpresaIdAndEstado(5L, 1L, 1)).thenReturn(Optional.of(m));
-        assertThat(svc.revocarMiembro(5L, 1L)).isFalse();
+        assertThat(svc.revocar(5L, 1L)).isFalse();
         verify(m, never()).setEstado(anyInt());
     }
 
@@ -168,5 +168,12 @@ class TelegramTg3Test {
         ReflectionTestUtils.setField(svc, "bot", mock(TelegramClienteBotService.class));
         svc.vincular(90L, "u", "ab3k-9xyz");
         verify(repo).findByCodigo("AB3K9XYZ");
+    }
+
+    // Seguridad INFO: chat_id enmascarado en avisos/logs
+    @Test
+    void chatIdEnmascarado() {
+        assertThat(TelegramAbusoService.chatEnmascarado(123456789L)).isEqualTo("***6789").doesNotContain("12345");
+        assertThat(TelegramAbusoService.chatEnmascarado(-1001234567890L)).isEqualTo("***7890");
     }
 }
