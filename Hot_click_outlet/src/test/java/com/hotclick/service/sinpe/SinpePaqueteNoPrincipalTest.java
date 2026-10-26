@@ -67,12 +67,13 @@ class SinpePaqueteNoPrincipalTest {
         pago.setEstadoPago(Constants.PAGO_PENDIENTE);
         when(pagoRepository.findTopByPedidoId(1L)).thenReturn(Optional.of(pago));
         when(pagoRepository.findTopByPedidoId(2L)).thenReturn(Optional.empty());
+        when(pagoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(pago));
 
         comprobante = new ComprobanteSinpe();
         comprobante.setId(50L);
         comprobante.setPedido(segundo);
         comprobante.setEstado(Constants.COMPROBANTE_PENDIENTE);
-        when(comprobanteRepository.findById(50L)).thenReturn(Optional.of(comprobante));
+        when(comprobanteRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(comprobante));
     }
 
     @Test

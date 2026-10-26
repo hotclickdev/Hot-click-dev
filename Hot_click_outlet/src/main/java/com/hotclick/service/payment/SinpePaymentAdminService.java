@@ -20,6 +20,7 @@ public class SinpePaymentAdminService {
     private static final Logger log = LoggerFactory.getLogger(SinpePaymentAdminService.class);
 
     @Autowired private PagoRepository                  pagoRepository;
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
     @Autowired private PaymentOrderConfirmationService orderConfirmationService;
     @Autowired private PaymentFailureHandler         paymentFailureHandler;
     @Autowired private PaymentStatusAssembler          paymentStatusAssembler;
@@ -60,7 +61,10 @@ public class SinpePaymentAdminService {
     }
 
     private Pago pagoResoluble(Long pagoId) {
-        Pago pago = pagoRepository.findById(pagoId).orElse(null);
+        // P-02: FOR UPDATE; confirmar/rechazar (y el flujo por comprobante) se serializan sobre el pago
+        Pago pago = pagoId == null ? null : pagoRepository.findByIdForUpdate(pagoId).orElse(null);
+        // BAJO: releer tras el lock; el contexto JPA puede devolver una copia previa al bloqueo.
+        if (pago != null && entityManager != null && entityManager.contains(pago)) entityManager.refresh(pago);
         aprobacionGuard.assertPuedeResolverPago(pago);
         return pago;
     }
