@@ -58,6 +58,7 @@ public class FacturacionEmisionSupport {
 
     @Transactional
     public ComprobanteFiscal emitir(Pedido pedido, String tipo) {
+        com.hotclick.service.FacturacionService.exigirNoPrueba(pedido);
         Empresa empresa = pedido.getEmpresa();
         if (empresa == null) {
             throw new IllegalStateException("El pedido no tiene empresa asociada");

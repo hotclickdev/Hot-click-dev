@@ -75,7 +75,7 @@ class AiCopilotProyeccionQueries {
             FROM hot_click_pedido_item_tb pi
             JOIN hot_click_pedido_tb pe ON pe.id_pedido = pi.fk_id_pedido
             WHERE pe.fk_id_empresa = ?
-              AND pe.estado_pedido IN ('PAGADO','ENTREGADO')
+              AND pe.estado_pedido IN ('PAGADO','ENTREGADO') AND pe.es_prueba = false
               AND pe.fecha_pedido >= NOW() - INTERVAL '30 days'
             """, Number.class, empresaId);
         return n != null ? n.longValue() : 0;

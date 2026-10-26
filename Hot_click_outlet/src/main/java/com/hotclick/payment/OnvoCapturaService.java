@@ -31,6 +31,8 @@ public class OnvoCapturaService {
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
     @Autowired private PedidoGrupoService     pedidoGrupoService;
+    @Autowired(required = false) private com.hotclick.service.OnvoService onvoService;
+    @Autowired private com.hotclick.repository.PedidoRepository pedidoRepository;
 
     /** Resultado de escribir un cobro que ONVO ya confirmó. */
     public enum Captura { CAPTURADO, DUPLICADO, COBRADO_SOBRE_CANCELADO }
@@ -81,6 +83,7 @@ public class OnvoCapturaService {
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
 
+        marcarSiEsPrueba(pago, checkoutSessionId);
         paymentService.confirmarPedido(pago);
 
         evento.setProcesado(true);
@@ -89,6 +92,22 @@ public class OnvoCapturaService {
 
         log.info("[onvo] Checkout confirmado: sessionId={}", checkoutSessionId);
         return Captura.CAPTURADO;
+    }
+
+    /**
+     * P-04 (C3): el verificador ya exigió que el cobro traiga el mismo mode que la llave. Con llave de prueba
+     * (opt-in o dev/test) el pedido se marca como prueba. Fail-closed: sin OnvoService se marca igual.
+     * No toca el opt-in.
+     */
+    void marcarSiEsPrueba(Pago pago, String sessionId) {
+        boolean prueba = onvoService == null || !"live".equals(onvoService.modoEsperado());
+        if (!prueba || pago.getPedido() == null) return;
+        // SCALE1: sin save por pedido. Corre dentro de la tx REQUIRES_NEW de capturarVerificado:
+        // los pedidos del grupo están gestionados y el dirty checking los persiste en el flush del commit.
+        for (com.hotclick.model.Pedido p : pedidoGrupoService.delGrupo(pago.getPedido())) {
+            p.setEsPrueba(true);
+        }
+        log.warn("[ALERTA-PAGO] Cobro ONVO en modo prueba: pedido marcado es_prueba. sessionId={}", sessionId);
     }
 
     private boolean algunoCancelado(Pago pago) {

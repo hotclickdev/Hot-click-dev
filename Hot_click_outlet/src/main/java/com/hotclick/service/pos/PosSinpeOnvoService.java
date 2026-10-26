@@ -76,6 +76,16 @@ public class PosSinpeOnvoService {
         return pasarelaId != null && pasarelaId.startsWith(PREFIJO_ONVO_PI) && pasarelaId.length() > PREFIJO_ONVO_PI.length();
     }
 
+    /**
+     * P-04: la sesión se cobró por intent ONVO con llave de prueba (modo esperado distinto de live).
+     * Fail-closed: intent ONVO sin OnvoService se considera prueba.
+     */
+    public boolean esCobroDePrueba(PosQrSesion sesion) {
+        if (intentIdDe(sesion) == null) return false;
+        OnvoService onvo = onvoService;
+        return onvo == null || !"live".equals(onvo.modoEsperado());
+    }
+
     static String intentIdDe(PosQrSesion sesion) {
         String p = sesion == null ? null : sesion.getStripeSessionId();
         return esIntentOnvo(p) ? p.substring(PREFIJO_ONVO_PI.length()) : null;

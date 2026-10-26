@@ -48,11 +48,20 @@ public class FacturacionService {
         this.companyScope     = companyScope;
     }
 
+    public static final String MSG_PEDIDO_PRUEBA =
+        "Este pedido se cobró en modo prueba y no se puede facturar ante Hacienda.";
+
+    /** P-04: un pedido cobrado con llave ONVO de prueba nunca se factura ante Hacienda. */
+    public static void exigirNoPrueba(Pedido pedido) {
+        if (pedido != null && pedido.isEsPrueba()) throw new IllegalStateException(MSG_PEDIDO_PRUEBA);
+    }
+
     @Transactional
     public ComprobanteFiscal emitir(Long pedidoId, String tipo) {
         Pedido pedido = pedidoRepo.findById(pedidoId)
             .orElseThrow(() -> new NoSuchElementException("Pedido no encontrado: " + pedidoId));
         companyScope.assertCanAccessNullable(pedido.getEmpresaId());
+        exigirNoPrueba(pedido);
 
         ComprobanteFiscal cf = emisionSupport.emitir(pedido, tipo);
 

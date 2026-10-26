@@ -71,13 +71,13 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     @Query("SELECT COUNT(p) FROM Pago p WHERE p.estadoPago = :estadoPago")
     long countByEstadoPago(@Param("estadoPago") String estadoPago);
 
-    @Query("SELECT COUNT(p) FROM Pago p WHERE p.estadoPago = :estadoPago AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId)")
+    @Query("SELECT COUNT(p) FROM Pago p WHERE p.estadoPago = :estadoPago AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId) AND p.pedido.esPrueba = false")
     long countByEstadoPagoAndEmpresa(@Param("estadoPago") String estadoPago, @Param("empresaId") Long empresaId);
 
     @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor")
     long countByProveedor(@Param("proveedor") String proveedor);
 
-    @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId)")
+    @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId) AND p.pedido.esPrueba = false")
     long countByProveedorAndEmpresa(@Param("proveedor") String proveedor, @Param("empresaId") Long empresaId);
 
     // ── Regla anti-bot de reservas (QA-CONC-4) ───────────────────────────────
