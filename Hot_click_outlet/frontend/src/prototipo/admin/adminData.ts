@@ -1,8 +1,8 @@
-const miles = new Intl.NumberFormat('es-CR')
+import { formatMiles } from '@/utils/format'
 
 /** Formatea un entero con miles es-CR (KPIs, no montos). */
 export function formatoEntero(n: number): string {
-  return miles.format(Math.round(n))
+  return formatMiles(Math.round(n))
 }
 
 export type TonoBadge = 'ok' | 'warn' | 'danger' | 'muted' | 'rol'

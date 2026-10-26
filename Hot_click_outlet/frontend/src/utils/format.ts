@@ -55,3 +55,16 @@ const CONDITION_VARIANT: Record<string, string> = {
 
 export const conditionVariant = (cond: string) =>
   CONDITION_VARIANT[cond] ?? 'default'
+
+/**
+ * Único formato de dólares del front: `US$9`, `US$9,50`, `US$1.234,50` (coma decimal, punto de miles).
+ * Recibe dólares (no centavos).
+ */
+export function formatUSD(dolares: number | string | null | undefined): string {
+  const n = Number(dolares) || 0
+  const centavos = Math.round(Math.abs(n) * 100)
+  const signo = n < 0 && centavos > 0 ? '-' : ''
+  const enteros = formatMiles(Math.floor(centavos / 100))
+  const resto = centavos % 100
+  return `${signo}US$${enteros}${resto === 0 ? '' : ',' + String(resto).padStart(2, '0')}`
+}

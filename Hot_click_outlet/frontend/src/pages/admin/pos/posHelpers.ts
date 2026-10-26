@@ -1,4 +1,5 @@
 import type { Id } from '@/types/api'
+import { formatMiles } from '@/utils/format'
 
 export type DenominacionPos = {
   v: number
@@ -162,7 +163,7 @@ type AxiosErrorBody = {
  * Formatea un monto POS sin prefijo ₡ (para inputs y plantillas que ya ponen ₡).
  */
 export function formatMontoPos(n: number | null | undefined) {
-  return new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
+  return formatMiles(Math.round(n ?? 0))
 }
 
 /** Exacto primero, luego billetes redondeados hacia arriba (máx. 4 extra). */

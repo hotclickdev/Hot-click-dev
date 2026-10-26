@@ -15,11 +15,12 @@ import { ETIQUETA_DESTACADO, ETIQUETA_SIN_DESTACAR, PRECIO_DESTACADO, confirmaci
 import { aprobacionService } from '@/services/aprobacionService'
 import { cuentaAprobadaDe, esPendienteAprobacion, mensajeConfirmarAprobacion } from './fichaAprobacion'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, Metrica, Segmento, TARJETA } from './piezas'
+import { formatPrice } from '@/utils/format'
 
 function colones(valor: unknown): string {
   const crudo = typeof valor === 'number' ? valor : Number(texto(valor, ''))
   if (!texto(valor, '') || !Number.isFinite(crudo)) return '—'
-  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(crudo)
+  return formatPrice(crudo)
 }
 const BLOQUES = [
   { id: 'productos', label: 'Inventario' },

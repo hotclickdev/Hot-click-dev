@@ -20,7 +20,7 @@ describe('montos', () => {
   })
 
   it('el dólar conserva el formato del servicio (centavos)', () => {
-    expect(montoCotizacion(12550, 'USD')).toBe('$125.50')
+    expect(montoCotizacion(12550, 'USD')).toBe('US$125,50')
   })
 })
 

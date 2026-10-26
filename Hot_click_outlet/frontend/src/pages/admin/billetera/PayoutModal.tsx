@@ -22,7 +22,7 @@ export default function PayoutModal({ onClose, onSaved }: { onClose: () => void;
 
   const handleSave = async () => {
     if (!form.monto || Number(form.monto) <= 0) {
-      showToast('Ingresa un monto válido', 'error'); return
+      showToast('Ingresá un monto válido', 'error'); return
     }
     if (form.metodo === 'SINPE' && !/^\d{8}$/.test(form.destinoSinpe)) {
       showToast('El número SINPE debe tener 8 dígitos', 'error'); return
