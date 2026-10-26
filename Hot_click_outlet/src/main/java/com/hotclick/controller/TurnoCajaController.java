@@ -1,6 +1,7 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.TurnoCaja;
 import com.hotclick.security.JwtUtil;
@@ -53,6 +54,9 @@ public class TurnoCajaController {
             return ResponseEntity.ok(ResponseDTO.success("Turno cerrado correctamente", turno));
         } catch (TenantAccessDeniedException | SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
+        } catch (RecursoNoEncontradoException e) {
+            // QA6-R4-02: turno inexistente → 404, no 500.
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseDTO.error("Turno no encontrado"));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

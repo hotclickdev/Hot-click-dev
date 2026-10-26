@@ -58,6 +58,8 @@ class PublicChatControllerLimitesTest {
         ReflectionTestUtils.setField(controller, "objectMapper", new ObjectMapper());
         ReflectionTestUtils.setField(controller, "maxDiarioVisitante", 60);
         ReflectionTestUtils.setField(controller, "maxDiarioEmpresa", 3000);
+        ReflectionTestUtils.setField(controller, "maxDiarioGlobal", 5000);
+        when(rateLimiter.tryAcquireEstricto(anyString(), anyInt(), anyInt())).thenReturn(true);
         request = new MockHttpServletRequest();
     }
 
@@ -93,6 +95,29 @@ class PublicChatControllerLimitesTest {
 
         verifyNoInteractions(chatService);
         verify(rateLimiter, never()).tryAcquire(startsWith("empresa:"), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Tope GLOBAL superado: responde sin modelo (no llama a Claude)")
+    void topeGlobal_degradaSinModelo() {
+        when(rateLimiter.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(true);
+        when(rateLimiter.tryAcquireEstricto(eq(PublicChatController.GLOBAL_KEY), eq(5000), anyInt())).thenReturn(false);
+
+        controller.chat("tienda", mensaje("una lampara"), request);
+
+        verify(chatService).chat(eq(EMPRESA_ID), anyBoolean(), eq("una lampara"), anyInt(), any(), any(), any(), any(),
+            eq(false), any());
+    }
+
+    @Test
+    @DisplayName("Tope de empresa superado: no consume el cupo global")
+    void topeEmpresa_noConsumeGlobal() {
+        when(rateLimiter.tryAcquire(startsWith("public_chat:ip:"), anyInt(), anyInt())).thenReturn(true);
+        when(rateLimiter.tryAcquire(startsWith("empresa:"), anyInt(), anyInt())).thenReturn(false);
+
+        controller.chat("tienda", mensaje("una lampara"), request);
+
+        verify(rateLimiter, never()).tryAcquireEstricto(anyString(), anyInt(), anyInt());
     }
 
     private static PublicChatRequest mensaje(String texto) {

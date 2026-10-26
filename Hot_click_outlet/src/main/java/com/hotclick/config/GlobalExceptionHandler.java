@@ -93,6 +93,12 @@ public class GlobalExceptionHandler {
     }
 
     /** Enlace de asignación de negocio usado (409), vencido o revocado (410). */
+    @ExceptionHandler(com.hotclick.exception.ReactivacionSinPagoException.class)
+    public ResponseEntity<ResponseDTO> handleReactivacionSinPago(com.hotclick.exception.ReactivacionSinPagoException ex) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage(),
+            java.util.Map.of("codigo", com.hotclick.exception.ReactivacionSinPagoException.CODIGO)));
+    }
+
     @ExceptionHandler(com.hotclick.exception.EnlaceNoVigenteException.class)
     public ResponseEntity<ResponseDTO> handleEnlaceNoVigente(com.hotclick.exception.EnlaceNoVigenteException ex) {
         return ResponseEntity.status(ex.getStatus()).body(ResponseDTO.error(ex.getMessage()));
