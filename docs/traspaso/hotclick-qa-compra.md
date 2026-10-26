@@ -36,3 +36,24 @@ QA5-B456-01, QA5-B456-02, QA5-62B7-01, QA5-62B7-02, QA5-M-01, QA5-001, QA5-003 (
 - Resumida en el repo: `docs/traspaso/evidencia/hotclick-qa-compra/` (solo .md, redactados: teléfonos, identificaciones, correos, sesiones y tokens reemplazados por marcadores).
 - Completa (logs de backend, threaddumps, capturas) en el box: `/workspace/hotclick-reportes/qa5/` (area1-b4560f3c, area1-b7b61632, area1-caso3-fix, area1-master, QA5-003.md, prod-creados.md). No se subió por tamaño y por contener datos sin redactar.
 - Variables relevantes (solo nombres): `ONVO_SECRET_KEY` (onvo_test_), `ONVO_WEBHOOK_SECRET`, `EMPRESA_PLATAFORMA_ID`.
+
+## Correcciones al README
+
+**(a) Errores o datos viejos**
+- Fila de QA Compra: la compra en prod solo va después del fix de Clerk/CSP. Es una sola compra del producto 666 con la cuenta Emprendedor, Retiro en tienda y SINPE PRUEBA. Nunca Tarjeta ni Efectivo, porque ONVO en prod está en LIVE. La venta con envío espera el deploy de #266.
+- Área 1: además del fix #343, el re-QA tiene que confirmar los dos bugs por separado. El ALTO es el congelamiento por candado: `PaymentExpirationCleanupService` es @Transactional y retiene el FOR UPDATE del producto, mientras la captura en REQUIRES_NEW espera en `StockReservationService.bloquearActual`. El MEDIO es QA5-M-01/P-07: el @CacheEvict con empresa null devuelve 400 aunque el pedido se guarda, y además el pedido queda PENDIENTE aunque se pida ENTREGADO. P-05, P-06 y P-08 ya pasaron en master d552ab88.
+
+**(b) Lo que necesita mi reemplazo**
+- Logins de hotclick.lat en el Vault de Grok Bot, solo por nombre: Cliente, Emprendedor, PYME, Plus y Admin. Nunca se escriben en chat ni en reportes.
+- Re-QA local: hacer un worktree del hash de master con los fixes y levantar el backend con un perfil local, en un puerto que no sea 8081. Usar una base de datos local propia y ONVO en modo test con la tarjeta 4242. Los webhooks se simulan con el secreto de test, por nombre de variable y nunca en el `.env` de staging.
+- Trampas:
+  - No tocar staging (:3000 y :8081), no usar pkill y detener procesos solo por PID.
+  - No borrar los node_modules de staging ni node22.
+  - Si el checkout se congela, sacar un thread dump; es el bug ALTO.
+  - Para probar la expiración hay que ajustar `fecha_creacion` de los pagos locales.
+  - No tocar las 7 empresas demo.
+  - Borrar lo que está en `qa5/prod-creados.md` solo cuando se pida.
+
+**(c) Mejoras**
+- Agregar al README un comando de re-QA reproducible por área: el hash más la lista de casos.
+- Marcar en la tabla qué pruebas se pueden hacer en prod y cuáles solo en local.
