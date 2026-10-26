@@ -18,7 +18,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 class OnvoSinpePosHttpTest {
 
     private static final String API = "https://api.onvopay.com/v1";
-    private static final String IDENT = "1-1111-1111-1"; // placeholder evidente
+    private static final String IDENT = "01-0000-0000"; // placeholder evidente
     private OnvoService onvo;
     private MockRestServiceServer server;
 
@@ -32,29 +32,48 @@ class OnvoSinpePosHttpTest {
     }
 
     @Test
-    @DisplayName("Método SINPE POS: identificación y tipo del pagador, sin número de teléfono")
-    void metodoPosConIdentificacionYTipo() {
+    @DisplayName("QA ALTO 1: el método SINPE manda number del comprador normalizado a +506########")
+    void metodoConNumeroNormalizado() {
         server.expect(requestTo(API + "/payment-methods"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(jsonPath("$.type").value("mobile_number"))
             .andExpect(jsonPath("$.mobileNumber.identification").value(IDENT))
-            .andExpect(jsonPath("$.mobileNumber.identificationType").value(1))
-            .andExpect(jsonPath("$.mobileNumber.number").doesNotExist())
+            .andExpect(jsonPath("$.mobileNumber.identificationType").value(0))
+            .andExpect(jsonPath("$.mobileNumber.number").value("+50680000000"))
             .andExpect(jsonPath("$.billing.name").value("Cliente"))
             .andRespond(withSuccess("{\"id\":\"pm_1\"}", MediaType.APPLICATION_JSON));
 
-        assertThat(onvo.crearMetodoPagoSinpePos(IDENT, 1, null).id()).isEqualTo("pm_1");
+        assertThat(onvo.crearMetodoPagoSinpePos(IDENT, 0, " 8000-0000 ", null).id()).isEqualTo("pm_1");
         server.verify();
     }
 
     @Test
-    @DisplayName("Identificación corta o tipo fuera de 1–4: no llama a ONVO")
+    @DisplayName("Identificación, tipo o número inválidos: no llama a ONVO (fail-closed)")
     void validaAntesDeLlamar() {
-        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos("1-111-111", 1, null))
+        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos("1-111-111", 0, "80000000", null))
             .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos(IDENT, 5, null))
+        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos(IDENT, 6, "80000000", null))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos(IDENT, 0, null, null))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos(IDENT, 0, "8000000", null))
             .isInstanceOf(IllegalArgumentException.class);
         server.verify();
+    }
+
+    @Test
+    @DisplayName("Normalización del número SINPE")
+    void normalizaNumero() {
+        assertThat(OnvoService.normalizarNumeroSinpe("80000000")).isEqualTo("+50680000000");
+        assertThat(OnvoService.normalizarNumeroSinpe("+506 8000 0000")).isEqualTo("+50680000000");
+        assertThat(OnvoService.normalizarNumeroSinpe("506-8000-0000")).isEqualTo("+50680000000");
+        assertThat(OnvoService.normalizarNumeroSinpe("+50680000000")).hasSize(12);
+        assertThat(OnvoService.normalizarNumeroSinpe("8000000")).isNull();
+        assertThat(OnvoService.normalizarNumeroSinpe("800000000")).isNull();
+        assertThat(OnvoService.normalizarNumeroSinpe("+1 8000 0000")).isNull();
+        assertThat(OnvoService.normalizarNumeroSinpe("8000abcd")).isNull();
+        assertThat(OnvoService.normalizarNumeroSinpe("")).isNull();
+        assertThat(OnvoService.normalizarNumeroSinpe(null)).isNull();
     }
 
     @Test
@@ -76,12 +95,30 @@ class OnvoSinpePosHttpTest {
     }
 
     @Test
-    @DisplayName("Tipos de identificación válidos: 1 física, 2 jurídica, 3 DIMEX, 4 NITE")
-    void tiposValidos() {
-        assertThat(OnvoService.tipoIdentificacionValido(1)).isTrue();
-        assertThat(OnvoService.tipoIdentificacionValido(4)).isTrue();
-        assertThat(OnvoService.tipoIdentificacionValido(0)).isFalse();
+    @DisplayName("QA ALTO 2: enum ONVO 0,1,2,3,4,5,9 con el formato de cada tipo")
+    void tiposYFormatos() {
+        assertThat(OnvoService.identificacionSinpeValida("01-0000-0000", 0)).isTrue();
+        assertThat(OnvoService.identificacionSinpeValida("100000000000", 1)).isTrue();
+        assertThat(OnvoService.identificacionSinpeValida("2-000-000000", 2)).isTrue();
+        assertThat(OnvoService.identificacionSinpeValida("3-000-000000", 3)).isTrue();
+        assertThat(OnvoService.identificacionSinpeValida("4-000-000000", 4)).isTrue();
+        assertThat(OnvoService.identificacionSinpeValida("500000000000", 5)).isTrue();
+        assertThat(OnvoService.identificacionSinpeValida("900000000000", 9)).isTrue();
+        // formatos inválidos
+        assertThat(OnvoService.identificacionSinpeValida("010000000", 0)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("1-0000-0000", 0)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("1-0000-00000", 1)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("1000000000000", 1)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("3-000-000000", 2)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("3000000000", 3)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("4-123-000000", 4)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("5-0000-000000", 5)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("90000000000", 9)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("01-0000-0000", 6)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida("01-0000-0000", null)).isFalse();
+        assertThat(OnvoService.identificacionSinpeValida(null, 0)).isFalse();
+        for (int t : new int[]{0, 1, 2, 3, 4, 5, 9}) assertThat(OnvoService.tipoIdentificacionValido(t)).isTrue();
+        assertThat(OnvoService.tipoIdentificacionValido(6)).isFalse();
         assertThat(OnvoService.tipoIdentificacionValido(null)).isFalse();
-        assertThat(OnvoService.identificacionSinpeValida(IDENT)).isTrue();
     }
 }

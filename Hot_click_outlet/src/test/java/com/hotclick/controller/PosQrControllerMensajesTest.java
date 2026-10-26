@@ -55,13 +55,13 @@ class PosQrControllerMensajesTest {
     @DisplayName("SINPE ONVO 409 y 503: constantes, sin el texto de la excepción")
     void sinpeOnvo() {
         PosQrService svc = mock(PosQrService.class);
-        when(svc.iniciarSinpeOnvo(any(), any(), any())).thenThrow(new IllegalStateException(INTERNO));
+        when(svc.iniciarSinpeOnvo(any(), any(), any(), any())).thenThrow(new IllegalStateException(INTERNO));
         ResponseEntity<?> r = controller(svc).iniciarSinpeOnvo("tok", null);
         assertThat(r.getStatusCode().value()).isEqualTo(409);
         assertThat(r.getBody()).isEqualTo(Map.of("error", PosQrController.MSG_SINPE_NO_INICIADO));
 
         PosQrService svc2 = mock(PosQrService.class);
-        when(svc2.iniciarSinpeOnvo(any(), any(), any())).thenThrow(new IllegalStateException(PosSinpeOnvoService.MSG_NO_DISPONIBLE));
+        when(svc2.iniciarSinpeOnvo(any(), any(), any(), any())).thenThrow(new IllegalStateException(PosSinpeOnvoService.MSG_NO_DISPONIBLE));
         ResponseEntity<?> r2 = controller(svc2).iniciarSinpeOnvo("tok", null);
         assertThat(r2.getStatusCode().value()).isEqualTo(503);
         assertThat(r2.getBody()).isEqualTo(Map.of("error", PosSinpeOnvoService.MSG_NO_DISPONIBLE));

@@ -200,10 +200,11 @@ class SinpeOnvoMarketplaceServiceTest {
     @Test
     @DisplayName("iniciar: identificación con guiones mín. 12; monto exacto; ONVOPI y plazo interno guardados antes de confirmar")
     void iniciar() {
-        assertThatThrownBy(() -> s.iniciar(pago, "112345678", 0)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> s.iniciar(pago, "112345678", 0, "80000000")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> s.iniciar(pago, "01-1234-5678", 0, "abc")).isInstanceOf(IllegalArgumentException.class);
         when(onvo.crearPaymentIntent(eq(12500), any(), any())).thenReturn(new OnvoService.OnvoPaymentIntent("pi_9"));
-        when(onvo.crearMetodoPagoSinpePos("01-1234-5678", 1, null)).thenReturn(new OnvoService.OnvoPaymentMethod("pm_1"));
-        LocalDateTime plazo = s.iniciar(pago, "01-1234-5678", 1);
+        when(onvo.crearMetodoPagoSinpePos("01-1234-5678", 0, "80000000", null)).thenReturn(new OnvoService.OnvoPaymentMethod("pm_1"));
+        LocalDateTime plazo = s.iniciar(pago, "01-1234-5678", 0, "80000000");
         assertThat(pago.getMerchantToken()).isEqualTo("ONVOPI:pi_9");
         assertThat(pago.getPlazoInternoSinpe()).isEqualTo(plazo)
             .isEqualTo(LocalDateTime.of(2026, 10, 25, 12, 15));
@@ -219,7 +220,7 @@ class SinpeOnvoMarketplaceServiceTest {
         assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(CONFIRMADO);
         verify(pagoRepo, never()).save(any());
         verify(eventos, org.mockito.Mockito.times(1)).save(argThat((WebhookEvent e) -> Boolean.TRUE.equals(e.getProcesado())));
-        var tx = SinpeOnvoMarketplaceService.class.getMethod("iniciar", com.hotclick.model.Pago.class, String.class, Integer.class)
+        var tx = SinpeOnvoMarketplaceService.class.getMethod("iniciar", com.hotclick.model.Pago.class, String.class, Integer.class, String.class)
             .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
         assertThat(tx.propagation()).isEqualTo(org.springframework.transaction.annotation.Propagation.MANDATORY);
     }
@@ -229,7 +230,7 @@ class SinpeOnvoMarketplaceServiceTest {
     void sinPlazo() {
         s.setTimeoutMinutosParaTest("");
         assertThat(s.destinoDisponible()).isEmpty();
-        assertThatThrownBy(() -> s.iniciar(pago, "01-1234-5678", 1)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> s.iniciar(pago, "01-1234-5678", 0, "80000000")).isInstanceOf(IllegalStateException.class);
         verify(onvo, never()).crearPaymentIntent(anyInt(), any(), any());
     }
 }

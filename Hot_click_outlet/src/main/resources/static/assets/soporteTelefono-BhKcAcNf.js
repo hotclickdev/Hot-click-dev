@@ -1,0 +1,1 @@
+function e(e){let t=(e??``).replace(/\D/g,``);return t?t.length===8?`506${t}`:t:``}function t(e){return(e??``).trim()}var n=t(void 0),r=e(void 0);function i(e,t){return e?`https://wa.me/${e}${t?`?text=${encodeURIComponent(t)}`:``}`:null}export{r as n,i as r,n as t};

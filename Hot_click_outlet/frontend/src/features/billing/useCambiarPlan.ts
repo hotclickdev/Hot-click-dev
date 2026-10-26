@@ -10,11 +10,48 @@ function mensajeErrorPlan(err: unknown, fallback: string): string {
   return typeof error === 'string' && error ? error : fallback
 }
 
-export type PagoPlanPendiente = {
+/** Cobro Tilopay (legado; ya no lo devuelve /cambiar-plan desde Auditor 5 S-01). */
+export type PagoPlanTilopay = {
+  proveedor?: 'TILOPAY'
   orderNumber: string
   montoCrc: number
   sdkToken: string
   planNombre?: string
+}
+
+/** Auditor 5 S-01: cobro de mensualidad por ONVO (suscripción incompleta creada en el servidor). */
+export type PagoPlanOnvo = {
+  proveedor: 'ONVO'
+  subscriptionId: string
+  customerId?: string
+  publishableKey?: string
+  planNombre?: string
+}
+
+export type PagoPlanPendiente = PagoPlanTilopay | PagoPlanOnvo
+
+/** Traduce la respuesta de /cambiar-plan a un cobro pendiente, o null si no requiere pago o faltan datos. */
+export function pagoPendienteDe(result: CambiarPlanResultado): PagoPlanPendiente | null {
+  if (result.status !== 'requiere_pago') return null
+  if (result.subscriptionId && result.proveedor !== 'TILOPAY') {
+    return {
+      proveedor: 'ONVO',
+      subscriptionId: result.subscriptionId,
+      customerId: result.customerId,
+      publishableKey: result.publishableKey,
+      planNombre: result.planNombre,
+    }
+  }
+  if (result.orderNumber && result.sdkToken && result.montoCrc) {
+    return {
+      proveedor: 'TILOPAY',
+      orderNumber: result.orderNumber,
+      montoCrc: result.montoCrc,
+      sdkToken: result.sdkToken,
+      planNombre: result.planNombre,
+    }
+  }
+  return null
 }
 
 /** Dónde volver tras confirmar el cobro en /billing/tilopay/respuesta. */
@@ -67,14 +104,10 @@ export function useCambiarPlan({ rutaExito }: Options) {
       const { data } = await billingService.cambiarPlan(planId)
       const result = data as CambiarPlanResultado
 
-      if (result.status === 'requiere_pago' && result.orderNumber && result.sdkToken && result.montoCrc) {
+      const pago = pagoPendienteDe(result)
+      if (pago) {
         sessionStorage.setItem(CLAVE_RUTA_EXITO_PLAN, rutaExito)
-        setPagoPendiente({
-          orderNumber: result.orderNumber,
-          montoCrc: result.montoCrc,
-          sdkToken: result.sdkToken,
-          planNombre: result.planNombre,
-        })
+        setPagoPendiente(pago)
         setLoadingPlan(null)
         return
       }

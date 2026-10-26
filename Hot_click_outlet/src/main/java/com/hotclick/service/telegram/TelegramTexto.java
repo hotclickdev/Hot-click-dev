@@ -16,7 +16,11 @@ import java.util.regex.Pattern;
 public final class TelegramTexto {
 
     /** {@code bot123456:AA...} en la URL de la API o de descarga de archivos. */
-    private static final Pattern TOKEN_EN_URL = Pattern.compile("bot\\d+:[A-Za-z0-9_-]+");
+    private static final Pattern TOKEN_EN_URL =
+        Pattern.compile("(?i)bot\\d+(?::|%3A)[A-Za-z0-9_-]+");
+    /** C2: token sin prefijo {@code bot} (p. ej. en mensajes de configuración). */
+    private static final Pattern TOKEN_SUELTO =
+        Pattern.compile("(?i)\\d{6,}(?::|%3A)[A-Za-z0-9_-]{30,}");
     /** Caracteres con significado en Markdown legacy de Telegram. */
     private static final Pattern MARKDOWN = Pattern.compile("([_*`\\[])");
 
@@ -30,7 +34,8 @@ public final class TelegramTexto {
 
     public static String sinToken(String texto) {
         if (texto == null) return null;
-        return TOKEN_EN_URL.matcher(texto).replaceAll("bot***");
+        String sinUrl = TOKEN_EN_URL.matcher(texto).replaceAll("bot***");
+        return TOKEN_SUELTO.matcher(sinUrl).replaceAll("***");
     }
 
     /** Telegram rechazó el formato (no el chat ni el token): se puede reenviar como texto plano. */

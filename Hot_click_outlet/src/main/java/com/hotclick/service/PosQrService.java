@@ -63,8 +63,8 @@ public class PosQrService {
      * SINPE Móvil por ONVO. Sin @Transactional a propósito: el id del intent se guarda antes de confirmarlo
      * y tiene que quedar aunque la confirmación falle, para que el barrido lo cancele.
      */
-    public Map<String, Object> iniciarSinpeOnvo(String token, String identificacion, Integer tipoIdentificacion) {
-        return sinpeOnvo.iniciar(token, identificacion, tipoIdentificacion);
+    public Map<String, Object> iniciarSinpeOnvo(String token, String identificacion, Integer tipoIdentificacion, String telefono) {
+        return sinpeOnvo.iniciar(token, identificacion, tipoIdentificacion, telefono);
     }
 
 
