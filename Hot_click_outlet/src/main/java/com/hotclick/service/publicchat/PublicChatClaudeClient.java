@@ -20,6 +20,10 @@ public class PublicChatClaudeClient {
     @Value("${anthropic.api-key:}")
     private String apiKey;
 
+    /** WhatsApp de soporte (fallback de plataforma). Sin default: vacío ⇒ el chat no da número. */
+    @Value("${hotclick.soporte.telefono:}")
+    private String telefonoSoporte = "";
+
     private final JdbcTemplate jdbc;
     private final PublicChatPromptBuilder promptBuilder;
     private final PublicChatClaudeStreamer streamer;
@@ -46,17 +50,17 @@ public class PublicChatClaudeClient {
     public EmpresaChatInfo getEmpresaChatInfo(Long empresaId) {
         try {
             Map<String, Object> row = jdbc.queryForMap(
-                "SELECT COALESCE(e.numero_whatsapp, e.telefono_empresa, '50686667888') AS wa, "
+                "SELECT COALESCE(e.numero_whatsapp, e.telefono_empresa) AS wa, "
                     + "COALESCE(NULLIF(TRIM(e.nombre_comercial), ''), 'la tienda') AS nombre, "
                     + "COALESCE(p.nombre, e.plan_saas) AS plan "
                     + "FROM hot_click_empresa_tb e LEFT JOIN hot_click_plan_tb p ON p.id_plan = e.fk_id_plan "
                     + "WHERE e.id_empresa = ?", empresaId);
             return new EmpresaChatInfo(
-                whatsappVisible(row.get("wa"), row.get("plan")),
+                whatsappVisible(row.get("wa"), row.get("plan"), hotclickWa()),
                 String.valueOf(row.get("nombre")));
         } catch (Exception e) {
             log.debug("[Chat] Empresa info fallback: {}", e.getMessage());
-            return new EmpresaChatInfo(ContactoPublicoPolicy.WHATSAPP_HOTCLICK, "la tienda");
+            return new EmpresaChatInfo(hotclickWa(), "la tienda");
         }
     }
 
@@ -123,12 +127,16 @@ public class PublicChatClaudeClient {
      * El chat público solo da el WhatsApp o teléfono del vendedor si el plan es PYME o NEGOCIO_PLUS.
      * En EMPRENDEDOR (o sin plan) responde con el de HotClick: la venta tiene que quedar en la plataforma.
      */
-    static String whatsappVisible(Object wa, Object plan) {
+    static String whatsappVisible(Object wa, Object plan, String hotclickWa) {
         String numero = wa != null ? String.valueOf(wa).trim() : "";
         if (numero.isEmpty() || !ContactoPublicoPolicy.permiteContacto(plan != null ? String.valueOf(plan) : null)) {
-            return ContactoPublicoPolicy.WHATSAPP_HOTCLICK;
+            return hotclickWa == null ? "" : hotclickWa;
         }
         return numero;
+    }
+
+    private String hotclickWa() {
+        return ContactoPublicoPolicy.whatsappHotclick(telefonoSoporte);
     }
 
     /** Datos mínimos de tienda para el prompt público. */

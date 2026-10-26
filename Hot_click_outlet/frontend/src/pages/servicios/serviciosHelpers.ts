@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { SOPORTE_TELEFONO } from '@/config/soporteTelefono'
 
 /** URL canónica del sitio (JSON-LD y Helmet). */
 export const SITE_URL = 'https://hotclick.lat'
@@ -24,7 +25,7 @@ export const serviciosJsonLd = {
         availableChannel: {
           '@type': 'ServiceChannel',
           serviceUrl: `${SITE_URL}/servicios/buscar-producto`,
-          servicePhone: '+506-8666-7888',
+          ...(SOPORTE_TELEFONO ? { servicePhone: SOPORTE_TELEFONO } : {}),
         },
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'CRC', availability: 'https://schema.org/InStock' },
       },
@@ -57,7 +58,7 @@ export const serviciosJsonLd = {
         availableChannel: {
           '@type': 'ServiceChannel',
           serviceUrl: `${SITE_URL}/servicios/digitalizar-inventario`,
-          servicePhone: '+506-8666-7888',
+          ...(SOPORTE_TELEFONO ? { servicePhone: SOPORTE_TELEFONO } : {}),
         },
       },
     },

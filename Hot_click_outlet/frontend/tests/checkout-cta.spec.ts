@@ -88,7 +88,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
 
     const internacional = page.getByRole('link', { name: 'Consultar envío internacional por WhatsApp' })
     await expect(internacional).toBeVisible()
-    await expect(internacional).toHaveAttribute('href', /wa\.me\/50686667888/)
+    await expect(internacional).toHaveAttribute('href', /wa\.me\/00000000000/)
     await expect(page.getByText('Encomienda', { exact: true })).toBeVisible()
     await expect(page.getByText('✈️')).toHaveCount(0)
   })

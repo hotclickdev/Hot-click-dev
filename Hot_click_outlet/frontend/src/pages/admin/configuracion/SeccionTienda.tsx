@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import {
   F, STORE_KEY, Block, FormGroup, StyledInput, SaveButton, SectionHeader, MailIcon, PinIcon, ClockIcon, PhoneIcon,
 } from './configUi'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 type ToastFn = (opts: { message: string; type?: 'success' | 'error' | 'warning' | 'info' }) => void
 type TiendaForm = {
@@ -23,13 +24,13 @@ export default function SeccionTienda({ toast }: { toast: ToastFn }) {
       return {
         nombreTienda: 'HotClick',
         descripcion: 'Tu tienda de electrónica y tecnología en Costa Rica',
-        whatsapp: '50686667888',
+        whatsapp: SOPORTE_WA,
         emailContacto: '',
         direccion: '',
         horario: 'Lun-Vie 8am-6pm, Sáb 9am-1pm',
         ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') as Partial<TiendaForm>,
       }
-    } catch { return { nombreTienda: 'HotClick', descripcion: '', whatsapp: '50686667888', emailContacto: '', direccion: '', horario: '' } }
+    } catch { return { nombreTienda: 'HotClick', descripcion: '', whatsapp: SOPORTE_WA, emailContacto: '', direccion: '', horario: '' } }
   })
   const [saved, setSaved] = useState(false)
   const set = (k: CampoTienda) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(p => ({ ...p, [k]: e.target.value }))
