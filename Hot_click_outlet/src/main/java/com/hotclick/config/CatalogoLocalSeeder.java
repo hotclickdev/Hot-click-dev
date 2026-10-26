@@ -113,7 +113,7 @@ public class CatalogoLocalSeeder implements ApplicationRunner {
         Bodega bodega = new Bodega();
         bodega.setNombreBodega("Bodega Café Local");
         bodega.setDireccionExacta("San José, Costa Rica");
-        bodega.setTelefono("22220000");
+        bodega.setTelefono("88888888");
         bodega.setEstado(Constants.ESTADO_ACTIVO);
         bodega.setAdminCliente(admin);
         bodega.setEmpresa(empresa);

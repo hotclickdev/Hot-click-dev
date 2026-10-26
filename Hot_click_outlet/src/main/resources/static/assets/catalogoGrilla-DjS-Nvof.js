@@ -1,1 +1,0 @@
-var e=`grid grid-cols-[repeat(2,minmax(0,167px))] justify-between gap-y-3 sm:grid-cols-[repeat(auto-fill,167px)] sm:justify-start sm:gap-x-4 sm:gap-y-5`;export{e as t};

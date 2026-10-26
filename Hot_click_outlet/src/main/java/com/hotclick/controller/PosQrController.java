@@ -35,6 +35,11 @@ public class PosQrController {
     static final String MSG_SINPE_NO_INICIADO = "No se pudo iniciar el SINPE Móvil. Generá un QR nuevo o cobrá con otro método.";
 
     /** Mensajes de negocio ya constantes que sí se pueden mostrar tal cual. */
+    static final String MSG_SIN_TURNO_QR = "Abrí caja antes de vender: no tenés un turno abierto.";
+    static final String MSG_SINPE_SOLO_WEBHOOK =
+        "SINPE Móvil se confirma solo cuando ONVO acredita el pago; la confirmación manual está retirada.";
+    static final String MSG_TILOPAY_RETIRADO = "Pago con Tilopay retirado. Pagá por SINPE Móvil o en caja.";
+
     private static final java.util.Set<String> MSG_CREAR_PUBLICOS = java.util.Set.of(
         com.hotclick.service.pos.PosQrStockReserva.MSG_TOPE_PENDIENTES,
         com.hotclick.service.pos.PosQrSessionService.MSG_NO_APROBADO);
@@ -60,8 +65,12 @@ public class PosQrController {
             Long clienteId  = PosQrSessionService.longOpcional(body.get("clienteId"));
             Long bodegaId   = PosQrSessionService.longOpcional(body.get("bodegaId"));
 
+            // E2E-POS-01: igual que la venta en efectivo, no hay cobro QR fuera de un turno de caja abierto.
             Long turnoId = turnoCajaService.getTurnoActivo(usuarioId)
                 .map(t -> t.getId()).orElse(null);
+            if (turnoId == null) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error(MSG_SIN_TURNO_QR));
+            }
 
             return ResponseEntity.ok(ResponseDTO.success("QR generado",
                 posQrService.crearSesion(usuarioId, empresaId, turnoId, metodo, metodos, items, notas, clienteId, bodegaId,
@@ -72,29 +81,15 @@ public class PosQrController {
         }
     }
 
+    /**
+     * E2E-POS-03 (decisión vigente 2026-10-25, reemplaza la del 2026-10-22): SINPE Móvil del POS se confirma
+     * SOLO con el webhook ONVO {@code payment-intent.succeeded}. La confirmación manual con referencia quedó
+     * retirada: la ruta responde 410 y nunca cambia el estado de la sesión.
+     */
     @PutMapping("/{token}/confirmar-sinpe")
     @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
-    public ResponseEntity<?> confirmarSinpe(@PathVariable String token,
-                                             @RequestBody(required = false) Map<String, Object> body,
-                                             HttpServletRequest request) {
-        try {
-            Long usuarioId = extractUserId(request);
-            Long empresaId = extractEmpresaId(request);
-            Object notasCrudas = body != null ? body.get("notas") : null;
-            String notas   = notasCrudas instanceof String n ? n : null;
-            Object referencia = body != null ? body.get("referencia") : null;
-            PosQrSesion sesion = posQrService.confirmarSinpe(token, usuarioId, empresaId, referencia, notas);
-            return ResponseEntity.ok(ResponseDTO.success("SINPE confirmado", Map.of(
-                "estado",    sesion.getEstado(),
-                "pedidoId",  sesion.getPedidoId() != null ? sesion.getPedidoId() : 0
-            )));
-        } catch (com.hotclick.exception.AutoconfirmacionSinpeException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(
-                com.hotclick.exception.AutoconfirmacionSinpeException.MENSAJE,
-                Map.of("codigo", com.hotclick.exception.AutoconfirmacionSinpeException.CODIGO)));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
-        }
+    public ResponseEntity<?> confirmarSinpe(@PathVariable String token) {
+        return ResponseEntity.status(410).body(ResponseDTO.error(MSG_SINPE_SOLO_WEBHOOK));
     }
 
     @DeleteMapping("/{token}")
@@ -133,20 +128,10 @@ public class PosQrController {
         }
     }
 
-    /** ALTO 3: Tilopay retirado del QR. Responde 503 (tarjeta no disponible) o 409 si piden SINPE por acá. */
+    /** E2E-POS-02: Tilopay retirado del QR. La ruta queda solo para responder 410 a clientes viejos. */
     @PostMapping("/pago/{token}/tilopay")
-    public ResponseEntity<?> iniciarTilopay(@PathVariable String token,
-                                            @RequestParam(name = "metodo", required = false) String metodo) {
-        try {
-            return ResponseEntity.ok(posQrService.iniciarTilopay(token, metodo));
-        } catch (java.util.NoSuchElementException e) {
-            return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
-        } catch (IllegalStateException e) {
-            log.warn("[POS-QR] Tilopay no iniciado token={}: {}",
-                com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());
-            boolean tarjeta = com.hotclick.service.pos.PosQrVentaService.MSG_TARJETA_NO_DISPONIBLE.equals(e.getMessage());
-            return ResponseEntity.status(tarjeta ? 503 : 409).body(Map.of("error", mensajePagoTarjeta(e)));
-        }
+    public ResponseEntity<?> iniciarTilopay(@PathVariable String token) {
+        return tilopayRetirado(token);
     }
 
     /** Datos del pagador para SINPE Móvil por ONVO (cédula con guiones y tipo 1–4). */
@@ -179,15 +164,20 @@ public class PosQrController {
         }
     }
 
-    /** Compatibilidad: ya no consulta a Tilopay; solo informa si el webhook ONVO cerró la venta. */
+    /** E2E-POS-02: retirado; el estado del cobro se consulta en /pago/{token}/estado. */
     @PostMapping("/pago/{token}/tilopay/confirmar")
     public ResponseEntity<?> confirmarTilopay(@PathVariable String token) {
+        return tilopayRetirado(token);
+    }
+
+    /** QR inexistente → 404 (no revela nada nuevo); existente → 410 Gone. Nunca inicia ni confirma un cobro. */
+    private ResponseEntity<?> tilopayRetirado(String token) {
         try {
-            boolean pagado = posQrService.confirmarTilopay(token);
-            return ResponseEntity.ok(Map.of("pagado", pagado));
+            posQrService.consultarEstado(token);
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
         }
+        return ResponseEntity.status(410).body(Map.of("error", MSG_TILOPAY_RETIRADO));
     }
 
     /** Polling de estado — cajero y cliente consultan si el pago está confirmado. */

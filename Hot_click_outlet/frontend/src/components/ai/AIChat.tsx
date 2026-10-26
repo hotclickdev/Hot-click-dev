@@ -8,6 +8,7 @@ import { BarraEscribirHoja, ChipsHoja, MensajesHoja } from './aiChat/AIChatHoja'
 import { useTranslation } from 'react-i18next'
 import type { Ref } from 'react'
 import type { Producto } from '@/types/producto'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 export type AIChatProps = {
   empresaSlug?: string
@@ -42,7 +43,7 @@ export default function AIChat({
   maxHistoryHeight = 320,
   inputRef: externalInputRef = null,
   onProductAdd = null,
-  whatsappNumber = '50686667888',
+  whatsappNumber = SOPORTE_WA,
   showHumanButton = true,
   proactiveTrigger = false,
   exitIntentEnabled = false,
@@ -147,7 +148,7 @@ export default function AIChat({
       cargando={chat.cargando}
       placeholder={placeholder}
       accent={chat.accent}
-      showHumanButton={showHumanButton}
+      showHumanButton={showHumanButton && !!whatsappNumber}
       whatsappNumber={whatsappNumber}
     />
   )
@@ -177,7 +178,7 @@ export default function AIChat({
             enviar={chat.enviar}
             cargando={chat.cargando}
             placeholder={chat.mensajes.length > 0 ? t('chat.placeholderOtra') : placeholder}
-            showHumanButton={showHumanButton}
+            showHumanButton={showHumanButton && !!whatsappNumber}
             whatsappNumber={whatsappNumber}
           />
         </div>

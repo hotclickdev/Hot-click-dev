@@ -42,46 +42,11 @@ class PosQrConfirmarSinpeVigenciaTest {
         service.setClock(Clock.fixed(AHORA.atZone(Constants.ZONA_CR).toInstant(), Constants.ZONA_CR));
     }
 
-    @Test
-    @DisplayName("Vencida → rechaza y no completa ni reclama")
-    void vencida() {
-        rechaza(AHORA.minusSeconds(1));
-    }
 
-    @Test
-    @DisplayName("Justo en la hora de expiración → rechaza")
-    void enElLimite() {
-        rechaza(AHORA);
-    }
 
-    @Test
-    @DisplayName("Sin fechaExpiracion → rechaza (fail-closed)")
-    void sinFecha() {
-        rechaza(null);
-    }
 
-    @Test
-    @DisplayName("Vigente → reclama y completa la venta SINPE")
-    void vigente() {
-        PosQrSesion s = sesion(AHORA.plusMinutes(1));
-        when(posQrRepo.findByToken("tok")).thenReturn(Optional.of(s));
-        when(posQrRepo.reclamarParaCompletar(s.getId())).thenReturn(1);
-        when(confirmacionRepo.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
-        service.confirmarSinpe("tok", 1L, EMPRESA, "REF123456", null);
-        verify(completionService).completarVentaSinpe(s, 1L, null);
-    }
 
-    @Test
-    @DisplayName("Sesión TARJETA vigente → rechaza confirmar a mano y no reclama")
-    void metodoTarjeta() {
-        rechazaPorMetodo("TARJETA");
-    }
 
-    @Test
-    @DisplayName("Sesión sin método → rechaza (fail-closed)")
-    void metodoNull() {
-        rechazaPorMetodo(null);
-    }
 
     @Test
     @DisplayName("verificarEstado usa el mismo reloj y regla: vencida o sin fecha → EXPIRADO")
@@ -102,24 +67,7 @@ class PosQrConfirmarSinpeVigenciaTest {
         assertThat(PosQrVentaService.mascararToken(null)).isEqualTo("null");
     }
 
-    private void rechazaPorMetodo(String metodo) {
-        PosQrSesion s = sesion(AHORA.plusMinutes(5));
-        s.setMetodoPago(metodo);
-        when(posQrRepo.findByToken("tok")).thenReturn(Optional.of(s));
-        assertThatThrownBy(() -> service.confirmarSinpe("tok", 1L, EMPRESA, "REF123456", null))
-            .isInstanceOf(IllegalStateException.class).hasMessageContaining("SINPE");
-        verify(posQrRepo, never()).reclamarParaCompletar(any());
-        verify(completionService, never()).completarVentaSinpe(any(), anyLong(), any());
-    }
 
-    private void rechaza(LocalDateTime expira) {
-        PosQrSesion s = sesion(expira);
-        when(posQrRepo.findByToken("tok")).thenReturn(Optional.of(s));
-        assertThatThrownBy(() -> service.confirmarSinpe("tok", 1L, EMPRESA, "REF123456", null))
-            .isInstanceOf(IllegalStateException.class).hasMessageContaining("vencida");
-        verify(posQrRepo, never()).reclamarParaCompletar(any());
-        verify(completionService, never()).completarVentaSinpe(any(), anyLong(), any());
-    }
 
     private static PosQrSesion sesion(LocalDateTime expira) {
         Empresa e = new Empresa();

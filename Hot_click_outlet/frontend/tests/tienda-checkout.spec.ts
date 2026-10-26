@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { VENDEDOR_WA_FAKE } from './helpers/soporteFake'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -11,7 +12,7 @@ const EMPRESA = {
   colorPrimario: '#E73B33',
   colorSecundario: '#152B5E',
   colorAcento: '#1747A8',
-  whatsapp: '50686667888',
+  whatsapp: VENDEDOR_WA_FAKE,
 }
 
 async function mockTiendaDemo(page: Page) {

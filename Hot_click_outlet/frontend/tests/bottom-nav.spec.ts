@@ -100,7 +100,7 @@ test.describe('WhatsApp FAB — desktop', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     const fab = page.getByRole('link', { name: 'Consultar un producto por WhatsApp', exact: true })
     await expect(fab).toBeVisible()
-    await expect(fab).toHaveAttribute('href', /wa\.me\/50686667888/)
+    await expect(fab).toHaveAttribute('href', /wa\.me\/00000000000/)
     await expect(fab).toHaveAttribute('href', /consulto%20un%20producto/)
   })
 })

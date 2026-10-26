@@ -1,3 +1,5 @@
+import { SOPORTE_TELEFONO, SOPORTE_WA } from '@/config/soporteTelefono'
+
 /**
  * Identidad del comerciante (art. 247 del Reglamento a la Ley N.° 7472).
  * Razón social, cédula, domicilio y cantón se completan cuando Andres los confirme.
@@ -9,6 +11,7 @@ type IdentidadComerciante = {
   cedula: string | null
   domicilio: string | null
   canton: string | null
+  /** Vacío si VITE_SOPORTE_TELEFONO no está configurado: la UI oculta la fila. */
   telefono: string
   telefonoWa: string
   correo: string
@@ -22,8 +25,8 @@ export const IDENTIDAD_COMERCIANTE: IdentidadComerciante = {
   cedula: null,
   domicilio: null,
   canton: null,
-  telefono: '+506 8666-7888',
-  telefonoWa: '50686667888',
+  telefono: SOPORTE_TELEFONO,
+  telefonoWa: SOPORTE_WA,
   correo: 'hotclick.cr@gmail.com',
   dominio: 'hotclick.lat',
   sitio: 'https://hotclick.lat',

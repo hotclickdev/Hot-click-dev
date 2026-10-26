@@ -21,6 +21,7 @@ class DiasGraciaTest {
 
     @Mock SuscripcionRepository suscripcionRepo;
     @Mock SuscripcionPlanSupport planSupport;
+    @Mock com.hotclick.service.onvo.OnvoBillingClient onvoBilling; // sin llave=false → hay cobro
     @InjectMocks SuscripcionRenewalService service;
 
     @Test

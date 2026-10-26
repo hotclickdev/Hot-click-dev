@@ -1,6 +1,7 @@
 import { formatPrice } from '@/utils/format'
 import type { Id } from '@/types/api'
 import type { Producto } from '@/types/producto'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 export type TabVentaId = 'cliente' | 'rapida' | 'cotizar'
 export type WaTabKey = 'formal' | 'breve' | 'urgencia' | 'personalizada'
@@ -55,7 +56,7 @@ export const ETAPAS_ENVIO: EtapaVenta[] = [
 ]
 
 /** Número de WhatsApp/SINPE Móvil de HOTCLICK (sin +). */
-export const WHATSAPP = '50686667888'
+export const WHATSAPP = SOPORTE_WA
 
 /** Pestañas de nueva venta (id + etiqueta). Los íconos viven en nuevaVentaIcons.tsx. */
 export const TABS: { id: TabVentaId; label: string }[] = [

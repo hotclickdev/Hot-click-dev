@@ -125,7 +125,7 @@ public class QaCuentasSeeder implements ApplicationRunner {
         empresa.setNombreComercial("QA " + apellido);
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correo);
-        empresa.setTelefonoEmpresa("88880000");
+        empresa.setTelefonoEmpresa("88888888");
         empresa.setPlan(plan);
         empresa.setPlanSaas(plan.getNombre());
         empresa.setEstadoEmpresa("ACTIVO");
@@ -142,7 +142,7 @@ public class QaCuentasSeeder implements ApplicationRunner {
         usuario.setNombre("QA");
         usuario.setApellidoPaterno(apellido);
         usuario.setCorreo(correo);
-        usuario.setTelefono("88880000");
+        usuario.setTelefono("88888888");
         usuario.setContrasenaHash(passwordEncoder.encode(clave));
         usuario.setEstado(Constants.ESTADO_ACTIVO);
         usuario.setIntentosFallidos(0);

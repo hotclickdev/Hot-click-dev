@@ -8,6 +8,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CustomErrorControllerTest {
 
     private final CustomErrorController controller = new CustomErrorController();
+    {
+        org.springframework.test.util.ReflectionTestUtils.setField(controller, "telefonoSoporte", "+000 0000 0000");
+    }
 
     private static MockHttpServletRequest error(int status, String uri) {
         MockHttpServletRequest req = new MockHttpServletRequest("GET", "/error");
@@ -26,7 +29,13 @@ class CustomErrorControllerTest {
     @Test
     void visitante500OfreceReintentarYWhatsapp() {
         String html = controller.handleError(error(500, "/productos/12"));
-        assertThat(html).contains("Algo salió mal de nuestro lado", "Reintentar", "wa.me/50686667888");
+        assertThat(html).contains("Algo salió mal de nuestro lado", "Reintentar", "wa.me/00000000000", "+000 0000 0000");
+    }
+
+    @Test
+    void visitante500SinTelefonoConfigurado_ocultaWhatsapp() {
+        String html = new CustomErrorController().handleError(error(500, "/productos/12"));
+        assertThat(html).contains("Reintentar").doesNotContain("wa.me", "WhatsApp");
     }
 
     @Test

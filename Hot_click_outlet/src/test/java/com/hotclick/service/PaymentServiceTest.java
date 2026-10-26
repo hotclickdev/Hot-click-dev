@@ -76,7 +76,6 @@ class PaymentServiceTest {
     @InjectMocks private PaymentOrderConfirmationService orderConfirmationService;
     @InjectMocks private PaymentFailureHandler            paymentFailureHandler;
     @InjectMocks private PaymentUserCancellationService   userCancellationService;
-    @InjectMocks private SinpePaymentAdminService         sinpePaymentAdminService;
 
     private PaymentService service;
 
@@ -143,7 +142,6 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(service, "orderConfirmationService", orderConfirmationService);
         ReflectionTestUtils.setField(service, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
-        ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
         ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
         GuestCancelTokenService guestCancelTokenService = new GuestCancelTokenService();
@@ -167,10 +165,6 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(userCancellationService, "guestCancelTokenService", guestCancelTokenService);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "pagoRepository", pagoRepository);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "orderConfirmationService", orderConfirmationService);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentStatusAssembler", paymentStatusAssembler);
         ReflectionTestUtils.setField(paymentExpirationCleanupService, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(paymentExpirationCleanupService, "pedidoGrupoService", pedidoGrupoService);
     }
@@ -425,7 +419,7 @@ class PaymentServiceTest {
 
         assertThatThrownBy(() -> service.cancelarPorUsuario("ORD-CANCEL-002", "hacker@evil.com"))
             .isInstanceOf(SecurityException.class)
-            .hasMessageContaining("permiso");
+            .hasMessageContaining("validar el pedido");
     }
 
     @Test

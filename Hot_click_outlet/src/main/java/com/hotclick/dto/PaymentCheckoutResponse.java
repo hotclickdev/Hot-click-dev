@@ -30,6 +30,12 @@ public class PaymentCheckoutResponse {
     public String getSinpeDestino() { return sinpeDestino; }
     public void setSinpeDestino(String sinpeDestino) { this.sinpeDestino = sinpeDestino; }
 
+    /** P-01: plazo interno de HotClick para transferir (ONVO no define vencimiento del intent). */
+    private String plazoInterno;
+
+    public String getPlazoInterno() { return plazoInterno; }
+    public void setPlazoInterno(String plazoInterno) { this.plazoInterno = plazoInterno; }
+
     public PaymentCheckoutResponse() {}
 
     public PaymentCheckoutResponse(Long pedidoId, String numeroPedido,

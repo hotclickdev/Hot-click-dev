@@ -65,20 +65,7 @@ public class PosQrVentaService {
 
     public static final String MSG_SINPE_SOLO_ONVO = "SINPE Móvil se cobra por ONVO, no por Tilopay.";
 
-    /** Tilopay retirado del QR: nunca inicia un cobro (no habría forma válida de confirmarlo). */
-    public Map<String, Object> iniciarTilopay(String token, String metodo) {
-        if (PosQrMetodos.SINPE.equals(metodo)) {
-            throw new IllegalStateException(MSG_SINPE_SOLO_ONVO);
-        }
-        sessionService.findSesionActiva(token);
-        throw new IllegalStateException(MSG_TARJETA_NO_DISPONIBLE);
-    }
 
-    /** Tilopay retirado del QR: el navegador nunca confirma un cobro; solo el webhook de ONVO. */
-    public boolean confirmarTilopay(String token) {
-        PosQrSesion sesion = posQrRepo.findByToken(token).orElseThrow(java.util.NoSuchElementException::new);
-        return "PAGADO".equals(sesion.getEstado());
-    }
 
     @Transactional
     public boolean completarSiPagoPasarela(String pasarelaSessionId) {
@@ -282,48 +269,6 @@ public class PosQrVentaService {
     public static final String AUDIT_SINPE_MANUAL = "POS_SINPE_CONFIRMACION_MANUAL";
     static final String MSG_SOLO_SINPE = "Esta sesión no es de pago SINPE";
     static final String MSG_SINPE_ONVO_NO_MANUAL = "Este SINPE se cobra por ONVO: se confirma solo cuando ONVO acredita el pago.";
-
-    /**
-     * Confirmación manual de SINPE en caja (decisión de Andrés, 2026-10-22). Condiciones:
-     * (a) referencia obligatoria con formato y única por empresa; (b) registro inmutable
-     * {@link com.hotclick.model.PosSinpeConfirmacion} + auditoría; (c) quien confirma no es quien generó la
-     * venta ({@link ConfirmadorDistintoGuard}); (d) el admin la revisa en /api/admin/pos/sinpe-confirmaciones.
-     */
-    @Transactional
-    public PosQrSesion confirmarSinpe(String token, Long usuarioId, Long empresaId, Object referenciaCruda, String notas) {
-        PosQrSesion sesion = posQrRepo.findByToken(token)
-            .orElseThrow(() -> new NoSuchElementException("Sesión no encontrada"));
-
-        if (!"PENDIENTE".equals(sesion.getEstado())) {
-            throw new IllegalStateException("La sesión no está pendiente (estado: " + sesion.getEstado() + ")");
-        }
-        if (!empresaIdDe(sesion).equals(empresaId)) {
-            throw new SecurityException("No autorizado");
-        }
-        exigirVigente(sesion, LocalDateTime.now(clock));
-        exigirMetodoSinpe(sesion);
-        if (PosSinpeOnvoService.esIntentOnvo(sesion.getStripeSessionId())) {
-            // Con intent ONVO el pago se confirma solo con payment-intent.succeeded, nunca a mano.
-            throw new IllegalStateException(MSG_SINPE_ONVO_NO_MANUAL);
-        }
-        confirmadorDistintoGuard.exigirConfirmadorDistinto(sesion, usuarioId);
-        String referencia = ReferenciaSinpe.validar(referenciaCruda);
-        if (confirmacionRepo.existsByEmpresaIdAndReferencia(empresaId, referencia)) {
-            throw new IllegalArgumentException(ReferenciaSinpe.MSG_REPETIDA);
-        }
-        if (!reclamar(sesion)) {
-            throw new IllegalStateException("La sesión ya se está confirmando");
-        }
-
-        completionService.completarVentaSinpe(sesion, usuarioId, notas);
-        Long generoId = sesion.getUsuario() != null ? sesion.getUsuario().getId() : null;
-        var registro = confirmacionRepo.saveAndFlush(new com.hotclick.model.PosSinpeConfirmacion(
-            empresaId, sesion.getId(), sesion.getPedidoId(), referencia, sesion.getTotal(), generoId, usuarioId));
-        auditoria.registrar(AUDIT_SINPE_MANUAL, "PosSinpeConfirmacion", registro.getId(), empresaId,
-            "sesion=" + sesion.getId() + " pedido=" + sesion.getPedidoId() + " ref=" + referencia
-                + " genero=" + generoId + " confirmo=" + usuarioId);
-        return sesion;
-    }
 
     @Transactional
     protected void completarVentaTarjeta(PosQrSesion sesion) {

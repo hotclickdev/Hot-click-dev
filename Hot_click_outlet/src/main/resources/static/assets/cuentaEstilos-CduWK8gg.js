@@ -1,1 +1,0 @@
-var e=`bg-hc-n-0 max-lg:min-h-[calc(100dvh-123px)] lg:bg-transparent`;export{e as t};
