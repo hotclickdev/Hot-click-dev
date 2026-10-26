@@ -29,7 +29,7 @@ public class FacturacionAsyncRunner {
         try {
             envioProcessor.procesarComprobante(event.comprobanteId());
         } catch (Exception e) {
-            log.error("[facturacion] Error procesando async comprobante={}: {}", event.comprobanteId(), e.getMessage());
+            log.error("[facturacion] Error procesando async comprobante={}: {}", event.comprobanteId(), com.hotclick.service.hacienda.HaciendaLogSanitizer.error(e));
         }
     }
 }

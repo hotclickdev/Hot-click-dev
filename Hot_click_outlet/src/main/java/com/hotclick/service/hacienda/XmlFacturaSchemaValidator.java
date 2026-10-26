@@ -48,9 +48,9 @@ public class XmlFacturaSchemaValidator {
             validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             validator.validate(new StreamSource(new StringReader(xmlFirmado)));
         } catch (SAXException | IOException e) {
-            log.error("[hacienda-xsd] XML no cumple el XSD oficial 4.4: {}", e.getMessage());
+            log.error("[hacienda-xsd] XML no cumple el XSD oficial 4.4: {}", HaciendaLogSanitizer.error(e));
             throw new ComprobanteInvalidoException(
-                "El comprobante no cumple el formato oficial 4.4 de Hacienda: " + e.getMessage(), e);
+                "El comprobante no cumple el formato oficial 4.4 de Hacienda: " + HaciendaLogSanitizer.mensaje(e.getMessage()), e);
         }
     }
 
