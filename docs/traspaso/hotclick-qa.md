@@ -19,15 +19,19 @@ QA 7: admin y seguridad de roles (incluye LECTOR), más re-QA de las áreas 3 (M
 ## Ramas y PRs
 | Rama | Hash | Estado |
 |---|---|---|
-| `chore/sinpe-telefono-config` | `e68039dc4` | **PR #350** (https://github.com/hotclickdev/Hot-click-dev/pull/350), rama nueva desde master. `20127bed2` (HotClick Bugs, 25-oct) reemplazó la parte de config de `393b0816f`; el PR solo trae `SinNumerosRealesEnCodigoTest` y ocultar SINPE en checkout sin número configurado. El commit original queda en la rama local `backup/sinpe-telefono-config-393b0816` (box viejo, sin subir). Seguridad: NO APTO sobre `7f97826ba`; el ALTO (SINPE manual sin ONVO) fue retirado (el flujo `sinpeManual` siempre crea intent ONVO). `e68039dc4` corrige el MEDIO: `metodosDisponibles(sinpeHabilitado: boolean)` obligatorio, sin default. `cfd4919da` (rama local `qa/sinpe-solo-onvo-350`) NO se sube. BAJOs pendientes: renombrar `sinpeManual` y exigir `sinpeDestino` no vacío con ONVO. |
+| `chore/sinpe-telefono-config` | `e68039dc4` | **PR #350** (https://github.com/hotclickdev/Hot-click-dev/pull/350), rama nueva desde master. `20127bed2` (HotClick Bugs, 25-oct) reemplazó la parte de config de `393b0816f`; el PR solo trae `SinNumerosRealesEnCodigoTest` y ocultar SINPE en checkout sin número configurado. El commit original queda en la rama local `backup/sinpe-telefono-config-393b0816` (box viejo, sin subir). Seguridad: NO APTO sobre `7f97826ba`; el ALTO (SINPE manual sin ONVO) fue retirado (el flujo `sinpeManual` siempre crea intent ONVO). `e68039dc4` corrige el MEDIO: `metodosDisponibles(sinpeHabilitado: boolean)` obligatorio, sin default. `cfd4919da` (rama local `qa/sinpe-solo-onvo-350`) NO se sube. **APTO de Seguridad sobre `e68039dc433edb0eba9f28234112f119599fc623`**; se mergea con CI verde sobre ese head exacto. |
 | `docs/sin-telefono-sinpe` | `39e372f9d` | Ya en origin, sin commits por delante de master. |
 | `docs/traspaso-cuenta-nueva` | esta nota | Rama compartida de traspaso. |
 
 ## Pendientes
-1. PR #350: falta APTO de Seguridad sobre `e68039dc4`, CI verde, y que Andrés cree el secret `HOTCLICK_NUMEROS_PROHIBIDOS` y agregue en `ci.yml` (job backend, paso Run tests) la línea que está en el cuerpo del PR.
+1. PR #350: APTO de Seguridad sobre `e68039dc433edb0eba9f28234112f119599fc623`; merge solo con CI verde sobre ese head exacto. Falta CI verde, y que Andrés cree el secret `HOTCLICK_NUMEROS_PROHIBIDOS` y agregue en `ci.yml` (job backend, paso Run tests) la línea que está en el cuerpo del PR.
 2. Andrés debe crear el secret de GitHub `HOTCLICK_NUMEROS_PROHIBIDOS` (solo el nombre aquí).
 3. Probar el caso empresa ACTIVO + visibilidad false (no se probó para no alterar una tienda de prueba compartida).
 4. Re-QA de áreas 3 y 10 cuando entren los fixes de los MEDIOS.
+
+5. BAJOs de #350, para después del lanzamiento, sin PR por ahora:
+   1) renombrar `sinpeManual` a `sinpeOnvoIntent` en el front y en la propiedad `hotclick.checkout.sinpe-manual.habilitado`;
+   2) exigir que `sinpeDestino` no venga vacío para ofrecer SINPE (fail-closed).
 
 ## Próximos pasos
 Retomar los pendientes en orden; cada fix necesita su test de reproducción antes de dar el área por buena.
