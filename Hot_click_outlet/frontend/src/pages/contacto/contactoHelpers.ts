@@ -1,4 +1,7 @@
-export const WHATSAPP = '50686667888'
+import { SOPORTE_TELEFONO, SOPORTE_WA } from '@/config/soporteTelefono'
+
+/** Dígitos para wa.me; vacío si VITE_SOPORTE_TELEFONO no está configurado. */
+export const WHATSAPP = SOPORTE_WA
 export const SITE_URL = 'https://hotclick.lat'
 export type FormContacto = {
   nombre: string
@@ -8,7 +11,8 @@ export type FormContacto = {
 
 export const FORM_VACIO: FormContacto = { nombre: '', correo: '', mensaje: '' }
 
-export const contactPageJsonLd = {
+export function construirContactPageJsonLd(telefono: string, wa: string) {
+  return {
   '@context': 'https://schema.org',
   '@type': 'ContactPage',
   name: 'Contacto HotClick — Soporte al cliente en Costa Rica',
@@ -19,11 +23,11 @@ export const contactPageJsonLd = {
     '@type': 'Organization',
     name: 'HotClick',
     url: SITE_URL,
-    telephone: '+506-8666-7888',
+    ...(telefono ? { telephone: telefono } : {}),
     contactPoint: [
       {
         '@type': 'ContactPoint',
-        telephone: '+506-8666-7888',
+        ...(telefono ? { telephone: telefono } : {}),
         contactType: 'customer service',
         contactOption: 'TollFree',
         availableLanguage: 'Spanish',
@@ -34,12 +38,17 @@ export const contactPageJsonLd = {
           closes: '19:00',
         },
       },
-      {
-        '@type': 'ContactPoint',
-        url: `https://wa.me/${WHATSAPP}`,
-        contactType: 'customer support',
-        availableLanguage: 'Spanish',
-      },
+      ...(wa
+        ? [{
+          '@type': 'ContactPoint',
+          url: `https://wa.me/${wa}`,
+          contactType: 'customer support',
+          availableLanguage: 'Spanish',
+        }]
+        : []),
     ],
   },
+  }
 }
+
+export const contactPageJsonLd = construirContactPageJsonLd(SOPORTE_TELEFONO, WHATSAPP)

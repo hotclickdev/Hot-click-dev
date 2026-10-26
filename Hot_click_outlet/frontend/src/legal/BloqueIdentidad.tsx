@@ -10,12 +10,14 @@ export default function BloqueIdentidad() {
         <a href={id.sitio} style={{ color: 'var(--hc-accent)' }}>{id.dominio}</a>.
       </p>
       <ul>
-        <li>
-          Teléfono y WhatsApp:{' '}
-          <a href={`https://wa.me/${id.telefonoWa}`} style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">
-            {id.telefono}
-          </a>
-        </li>
+        {id.telefono && id.telefonoWa && (
+          <li>
+            Teléfono y WhatsApp:{' '}
+            <a href={`https://wa.me/${id.telefonoWa}`} style={{ color: 'var(--hc-accent)' }} target="_blank" rel="noopener noreferrer">
+              {id.telefono}
+            </a>
+          </li>
+        )}
         <li>
           Correo:{' '}
           <a href={`mailto:${id.correo}`} style={{ color: 'var(--hc-accent)' }}>{id.correo}</a>

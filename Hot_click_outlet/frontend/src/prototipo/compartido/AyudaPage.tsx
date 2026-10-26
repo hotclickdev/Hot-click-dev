@@ -3,6 +3,7 @@ import { Boton, EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
 import EntradaPagina from './motion/EntradaPagina'
 import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 const FAQS = [
   { q: '¿Cómo publico un producto nuevo?', a: 'Entrá a Productos, tocá Agregar producto, completá nombre, precios, stock y categoría, y publicá.' },
@@ -39,7 +40,7 @@ export default function AyudaPage() {
           ))}
         </ListaStagger>
         <div className="mt-6">
-          <Boton to="https://wa.me/50686667888">Escribinos por WhatsApp</Boton>
+          <Boton to={SOPORTE_WA ? `https://wa.me/${SOPORTE_WA}` : '/contacto'}>Escribinos por WhatsApp</Boton>
         </div>
       </main>
     </EntradaPagina>

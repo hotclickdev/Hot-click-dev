@@ -4,8 +4,9 @@ import Seo from '@/components/seo/Seo'
 import PaginaInformativa, { BloqueInformativo } from '@/components/comprador/PaginaInformativa'
 import PreguntaFrecuente from '@/components/comprador/PreguntaFrecuente'
 import { Etiqueta, NotaInfo, PasosNumerados, Puntos, Tarjeta } from './informacion/PiezasInformacion'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
-const HREF_WA_CONSULTA = 'https://wa.me/50686667888'
+const HREF_WA_CONSULTA = SOPORTE_WA ? `https://wa.me/${SOPORTE_WA}` : '/contacto'
 const PREGUNTAS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const
 
 /**

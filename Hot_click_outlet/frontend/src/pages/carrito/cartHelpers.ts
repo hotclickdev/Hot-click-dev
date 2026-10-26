@@ -3,8 +3,9 @@ import { nombreVendedor } from '@/components/comprador/productCardHelpers'
 import type { ItemCarrito } from '@/types/carrito'
 import { SHIPPING_COSTS, paquetesDesdeItems } from '@/pages/checkout/checkoutHelpers'
 import type { ItemCheckout, PaqueteCheckout } from '@/pages/checkout/checkoutHelpers'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
-export const WHATSAPP_HOTCLICK = '50686667888'
+export const WHATSAPP_HOTCLICK = SOPORTE_WA
 export const FALLBACK_CATALOGO_SIZE = 12
 export const EMAIL_GUARDADO_OCULTAR_MS = 1_800
 export const STOCK_MAX_VISIBLE = 99
