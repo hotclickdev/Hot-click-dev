@@ -1,6 +1,7 @@
+import { formatMiles } from '@/utils/format'
 export function cifra(valor: number | null | undefined): string {
   if (valor == null) return '—'
-  return new Intl.NumberFormat('es-CR').format(valor)
+  return formatMiles(valor)
 }
 
 export function GraficaBarras({

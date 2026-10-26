@@ -2,6 +2,7 @@ import type { InputHTMLAttributes, ReactNode, SVGProps } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import Spinner from '@/components/ui/Spinner'
+import { mensajeAmigable } from '@/utils/mensajeAmigable'
 
 /* eslint-disable react-refresh/only-export-components -- helpers + iconos compartidos */
 
@@ -31,10 +32,7 @@ export function mensajeErrorConfig(err: unknown, fallback: string): string {
 
 export function mensajeErrorConfigOLocal(err: unknown, fallback: string): string {
   if (typeof err !== 'object' || err === null) return fallback
-  const e = err as AxiosMsg
-  const message = e.response?.data?.message
-  if (typeof message === 'string') return message
-  return typeof e.message === 'string' ? e.message : fallback
+  return mensajeAmigable(err, fallback)
 }
 
 export function mensajeErrorTelegram(err: unknown, fallback: string): string {

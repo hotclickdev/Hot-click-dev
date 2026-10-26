@@ -37,36 +37,6 @@ function CirculoPlay() {
   )
 }
 
-const SEGMENTOS: SegmentoVideo[] = ['youtube', 'instagram', 'tiktok', 'otra']
-
-/**
- * Control segmentado de 4 plataformas (`.pl` / `.pchip`): indica de qué red es el video. El visitante no elige,
- * así que es una lista con el segmento activo marcado, no botones.
- */
-function ControlPlataforma({ activo }: { activo: SegmentoVideo }) {
-  const { t } = useTranslation()
-  const nombre: Record<SegmentoVideo, string> = { youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok', otra: t('product.otraRed') }
-  return (
-    <ul aria-label={t('product.plataformaVideo')} className="m-0 grid list-none grid-cols-4 gap-1 rounded-[12px] bg-hc-n-100 p-1">
-      {SEGMENTOS.map((s) => {
-        const on = s === activo
-        return (
-          <li
-            key={s}
-            aria-current={on ? 'true' : undefined}
-            className={`flex flex-col items-center gap-1 whitespace-nowrap rounded-[9px] pb-[7px] pt-2 text-[12px] leading-[15px] ${
-              on ? 'bg-hc-n-0 font-semibold text-hc-blue-600 shadow-[0_1px_3px_rgba(20,23,28,0.12),0_0_0_1px_var(--hc-blue-100)]' : 'font-medium text-hc-n-600'
-            }`}
-          >
-            <IconoRed red={s} className="size-[18px] shrink-0" />
-            {nombre[s]}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
 /** Insignia oscura sobre el reproductor (`.badge`): ícono de la red + nombre. */
 function InsigniaRed({ video }: { video: VideoDetectado }) {
   return (
@@ -136,8 +106,8 @@ type ProductVideoProps = {
 
 /**
  * "Video del producto" tal como la imagen aprobada `docs/figma-migration/MANUAL_MARCA_FIGMA/ficha-video.png`
- * (2-oct-2026): separador, título Sora 17 con "Publicado por", control segmentado de plataforma, tarjeta 16:9 con
- * play e insignia, y enlace "Ver en …". Va entre Opiniones y "También te puede gustar"; sin video no se dibuja.
+ * (2-oct-2026): separador, título Sora 17 con "Publicado por", tarjeta 16:9 con play e insignia de la red
+ * del video (QA8-003: sin el control fijo de 4 redes, que listaba redes que el producto no tiene), y enlace "Ver en …". Va entre Opiniones y "También te puede gustar"; sin video no se dibuja.
  */
 export default function ProductVideo({ videoUrl, titulo, tienda, portada }: ProductVideoProps) {
   const { t } = useTranslation()
@@ -152,7 +122,6 @@ export default function ProductVideo({ videoUrl, titulo, tienda, portada }: Prod
         </h2>
         {tienda && <p className="text-[12px] text-hc-n-600">{t('product.publicadoPor', { tienda })}</p>}
       </div>
-      <ControlPlataforma activo={segmentoVideo(video.type)} />
       <Reproductor video={video} titulo={titulo} portada={portada} />
       <div className="flex items-center justify-between gap-3">
         <a href={video.url} target="_blank" rel="noopener noreferrer nofollow" className="flex min-w-0 items-center gap-1 text-[13px] font-semibold text-hc-blue-600">
