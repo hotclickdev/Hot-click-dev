@@ -39,6 +39,7 @@ public class WalletController {
     @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<Wallet> saldo() {
         Long empresaId = companyScope.getCurrentEmpresaId();
+        propietarioGuard.exigirGestionEmpresa(empresaId); // QA2-área2
         return ResponseEntity.ok(walletService.obtenerWallet(empresaId));
     }
 
@@ -48,6 +49,7 @@ public class WalletController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
         Long empresaId = companyScope.getCurrentEmpresaId();
+        propietarioGuard.exigirGestionEmpresa(empresaId); // QA2-área2
         PageRequest pr = PageRequest.of(page, size, Sort.by("fechaCreacion").descending());
         return ResponseEntity.ok(walletService.historial(empresaId, pr));
     }
@@ -58,6 +60,7 @@ public class WalletController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
         Long empresaId = companyScope.getCurrentEmpresaId();
+        propietarioGuard.exigirGestionEmpresa(empresaId); // QA2-área2
         PageRequest pr = PageRequest.of(page, size);
         return ResponseEntity.ok(walletService.payoutsByEmpresa(empresaId, pr));
     }

@@ -43,6 +43,9 @@ public class BillingPreferenciasController {
     @GetMapping
     @Transactional(readOnly = true)
     public ResponseEntity<ResponseDTO> ver() {
+        if (!propietarioGuard.puedeGestionarEmpresa(companyScope.requireEmpresaId())) { // QA2-área2
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.security.PropietarioGuard.MSG));
+        }
         return ResponseEntity.ok(ResponseDTO.success("Preferencias de cobro", mapa(empresaPropia())));
     }
 
