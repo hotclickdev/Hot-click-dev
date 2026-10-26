@@ -32,6 +32,8 @@ public class SinpeComprobanteService {
 
     @Autowired private PedidoRepository              pedidoRepository;
     @Autowired private PagoRepository                pagoRepository;
+    /** BAJO P-02: relee el pago tras el lock (el contexto JPA puede tener una copia vieja). */
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
     @Autowired private ComprobanteSinpeRepository    comprobanteRepository;
     @Autowired private SupabaseStorageService         storageService;
     @Autowired private NotificacionEmailService       notificacionEmailService;
@@ -211,6 +213,9 @@ public class SinpeComprobanteService {
     private Pago bloquearPagoPendiente(Pago pago) {
         Pago bloqueado = pagoRepository.findByIdForUpdate(pago.getId())
             .orElseThrow(() -> new IllegalStateException("Pago SINPE no disponible"));
+        // BAJO: si el pago ya estaba en el contexto, el SELECT FOR UPDATE bloquea pero devuelve la copia en
+        // memoria; se relee de la BD ya con el lock tomado antes de verificar PENDIENTE.
+        if (entityManager != null && entityManager.contains(bloqueado)) entityManager.refresh(bloqueado);
         if (!Constants.PAGO_PENDIENTE.equals(bloqueado.getEstadoPago())) {
             throw new IllegalStateException("El pago ya fue procesado: " + bloqueado.getEstadoPago());
         }

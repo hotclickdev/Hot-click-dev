@@ -116,6 +116,30 @@ class SinpePaymentAdminServiceTest {
         verify(orderConfirmationService).confirmarPedido(pago, service, null);
     }
 
+    @Test
+    @org.junit.jupiter.api.DisplayName("BAJO P-02: tras el lock relee el pago; si otro lo capturó/rechazó no se vuelve a resolver")
+    void releeElPagoDespuesDelLock() {
+        Pago pago = pagoSinpe(5L, 9L, "comprador@test.com");
+        when(pagoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(pago));
+        jakarta.persistence.EntityManager em = org.mockito.Mockito.mock(jakarta.persistence.EntityManager.class);
+        when(em.contains(pago)).thenReturn(true);
+        // La BD dice FALLIDO (rechazado por la otra transacción); la copia en memoria aún dice PENDIENTE.
+        org.mockito.Mockito.doAnswer(inv -> { ((Pago) inv.getArgument(0)).setEstadoPago(Constants.PAGO_FALLIDO); return null; })
+            .when(em).refresh(pago);
+        ReflectionTestUtils.setField(service, "entityManager", em);
+        actor("admin@test.com", 1L, null, true);
+
+        assertThrows(IllegalStateException.class, () -> service.confirmarSinpe(10L, null, null));
+        assertThrows(IllegalStateException.class, () -> service.rechazarSinpe(10L, "no"));
+
+        org.mockito.InOrder orden = org.mockito.Mockito.inOrder(pagoRepository, em);
+        orden.verify(pagoRepository).findByIdForUpdate(10L);
+        orden.verify(em).refresh(pago);
+        verify(orderConfirmationService, never()).confirmarPedido(any(), any(), any());
+        verify(paymentFailureHandler, never()).marcarFallido(any(), any());
+        verify(pagoRepository, never()).save(any());
+    }
+
     private void actor(String correo, Long userId, Long empresaId, boolean admin) {
         SecurityContextHolder.getContext().setAuthentication(
             new UsernamePasswordAuthenticationToken(correo, "n/a"));
