@@ -301,4 +301,28 @@ class EmpresaPerfilServiceTest {
         e.setNombreComercial("Comercial " + id);
         return e;
     }
+
+    @Test
+    @DisplayName("updateFiscal rechaza un régimen de IVA inválido y no lo guarda")
+    void update_fiscal_regimen_iva_invalido() {
+        var e = empresaBase(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+
+        assertThatThrownBy(() -> service.updateFiscal(1L, Map.of("regimenIva", "MIXTO"), false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Régimen de IVA inválido");
+        assertThat(e.getRegimenIva()).isNotEqualTo("MIXTO");
+    }
+
+    @Test
+    @DisplayName("updateFiscal guarda el régimen de IVA tradicional")
+    void update_fiscal_regimen_iva_valido() {
+        var e = empresaBase(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(empresaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        service.updateFiscal(1L, Map.of("regimenIva", "TRADICIONAL"), false);
+
+        assertThat(e.getRegimenIva()).isEqualTo("TRADICIONAL");
+    }
 }

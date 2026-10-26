@@ -9,7 +9,7 @@ import { formatPrice } from '@/utils/format'
 import CheckoutPayError from './CheckoutPayError'
 import PasoDatos from './PasoDatos'
 import PasoEntrega from './PasoEntrega'
-import { CodigosCheckout, ConsentimientoDatos, MetodosPago, ResumenPagoMovil } from './PasoPago'
+import { CodigosCheckout, ConsentimientoDatos, FacturaElectronicaCheckout, MetodosPago, ResumenPagoMovil } from './PasoPago'
 import { CabeceraCompraSegura, IndicadorPasos, PieCheckoutMovil } from './PiezasCheckout'
 import { pasoMaximoCheckout, useVolver } from './pasosCheckoutHelpers'
 import { useCodigosPedido } from './useCodigosPedido'
@@ -167,7 +167,12 @@ export default function CheckoutLayout({
       rutaCarrito={RUTA_CARRITO}
     />
   )
-  const consentimiento = <ConsentimientoDatos marcado={form.aceptaDatos} onCambiar={(v) => { form.setAceptaDatos(v); if (v) setConsentimientoPendiente(false) }} error={consentimientoPendiente} />
+  const consentimiento = (
+    <div className="flex flex-col gap-2">
+      <FacturaElectronicaCheckout />
+      <ConsentimientoDatos marcado={form.aceptaDatos} onCambiar={(v) => { form.setAceptaDatos(v); if (v) setConsentimientoPendiente(false) }} error={consentimientoPendiente} />
+    </div>
+  )
   const textoPagar = t('checkout.f.pagar', { precio: formatPrice(form.totalFinal) })
   const hayEnvioQueVaria = form.envioVaria
 

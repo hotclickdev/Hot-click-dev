@@ -5,12 +5,12 @@ import com.hotclick.model.Pedido;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.facturacion.FacturacionEmisionSupport;
-import com.hotclick.service.facturacion.FacturacionEnvioProcessor;
+import com.hotclick.service.facturacion.ComprobanteEmitidoEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.hotclick.service.facturacion.FacturacionPollingService;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +22,8 @@ import java.util.NoSuchElementException;
  *
  * Flujo asíncrono:
  *   1. emitir(pedidoId, tipo) → crea ComprobanteFiscal en PENDIENTE, retorna inmediatamente
- *   2. @Async procesarAsync(id) → genera XML, firma, envía a Hacienda
+ *   2. Publica ComprobanteEmitidoEvent; FacturacionAsyncRunner (@Async, AFTER_COMMIT) firma y envía
+ *      fuera de la transacción
  *   3. @Scheduled consultarPendientes() → hace polling a Hacienda para actualizar estado
  */
 @Service
@@ -32,18 +33,18 @@ public class FacturacionService {
 
     private final PedidoRepository pedidoRepo;
     private final FacturacionEmisionSupport emisionSupport;
-    private final FacturacionEnvioProcessor envioProcessor;
+    private final ApplicationEventPublisher eventos;
     private final FacturacionPollingService pollingService;
     private final CompanyScope companyScope;
 
     public FacturacionService(PedidoRepository pedidoRepo,
                                FacturacionEmisionSupport emisionSupport,
-                               FacturacionEnvioProcessor envioProcessor,
+                               ApplicationEventPublisher eventos,
                                FacturacionPollingService pollingService,
                                CompanyScope companyScope) {
         this.pedidoRepo       = pedidoRepo;
         this.emisionSupport   = emisionSupport;
-        this.envioProcessor   = envioProcessor;
+        this.eventos          = eventos;
         this.pollingService   = pollingService;
         this.companyScope     = companyScope;
     }
@@ -56,38 +57,30 @@ public class FacturacionService {
 
         ComprobanteFiscal cf = emisionSupport.emitir(pedido, tipo);
 
-        Long comprobanteId = cf.getId();
-        procesarAsync(comprobanteId);
+        eventos.publishEvent(new ComprobanteEmitidoEvent(cf.getId()));
 
         return cf;
     }
 
-    /** Tiquete de la compra marketplace. Sin certificado queda PENDIENTE y no se llama a Hacienda. */
-    @Transactional
+    /**
+     * Tiquete de la compra marketplace. Sin certificado queda PENDIENTE y no se llama a Hacienda.
+     * REQUIRES_NEW: lo llama un listener AFTER_COMMIT, donde la transacción original ya cerró;
+     * así el evento de envío se dispara al commit de esta transacción nueva.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public ComprobanteFiscal emitirTiqueteDeCompra(Long compraId) {
         ComprobanteFiscal cf = emisionSupport.emitirTiqueteDeCompra(compraId);
         if (cf == null || !ComprobanteFiscal.ESTADO_PENDIENTE.equals(cf.getEstado())) {
             return cf;
         }
         if (cf.getEmpresa() != null && cf.getEmpresa().isConfiguracionFiscalCompleta()) {
-            procesarAsync(cf.getId());
+            eventos.publishEvent(new ComprobanteEmitidoEvent(cf.getId()));
         }
         return cf;
     }
 
-    @Async("taskExecutor")
-    @Transactional
-    public void procesarAsync(Long comprobanteId) {
-        try {
-            envioProcessor.procesarComprobante(comprobanteId);
-        } catch (Exception e) {
-            log.error("[facturacion] Error procesando async comprobante={}: {}", comprobanteId, e.getMessage());
-        }
-    }
-
     @Scheduled(cron = "0 */5 * * * *")
     @SchedulerLock(name = "facturacion_polling", lockAtMostFor = "PT4M", lockAtLeastFor = "PT1M")
-    @Transactional
     public void consultarPendientesHacienda() {
         pollingService.consultarPendientesHacienda();
     }

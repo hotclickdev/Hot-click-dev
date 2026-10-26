@@ -4724,5 +4724,11 @@
     "tilopayConfirmando": "Confirmando o pagamento do seu plano…",
     "tilopayNoConfirmado": "Não conseguimos confirmar o pagamento. Tente novamente.",
     "volverPlanes": "Voltar aos planos"
+  },
+  "facturaElectronica": {
+    "checkout": "Quero nota fiscal eletrônica",
+    "checkoutAyuda": "A nota sai com seus dados fiscais. Se o negócio estiver no regime simplificado, o IVA (13 %) é somado ao total.",
+    "pos": "Nota fiscal eletrônica para o cliente",
+    "posAyuda": "Se o negócio estiver no regime simplificado, o IVA (13 %) é somado ao total."
   }
 }

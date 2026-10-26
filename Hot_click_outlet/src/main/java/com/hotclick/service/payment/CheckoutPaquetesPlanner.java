@@ -36,10 +36,11 @@ public class CheckoutPaquetesPlanner {
     }
 
     public record Paquete(Bodega bodega, List<PaymentCheckoutRequest.ItemDTO> items,
-                          int subtotal, int costoTotal, String metodoEnvio, String notas, int impuesto) {
+                          int subtotal, int costoTotal, String metodoEnvio, String notas,
+                          List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva) {
         public Paquete(Bodega bodega, List<PaymentCheckoutRequest.ItemDTO> items,
                        int subtotal, int costoTotal, String metodoEnvio, String notas) {
-            this(bodega, items, subtotal, costoTotal, metodoEnvio, notas, 0);
+            this(bodega, items, subtotal, costoTotal, metodoEnvio, notas, List.of());
         }
     }
 
@@ -73,14 +74,12 @@ public class CheckoutPaquetesPlanner {
                     precio, item.getCantidad(), p.getPorcentajeIva()));
             }
             Bodega bodegaPaquete = bodegas.get(e.getKey());
-            int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
-                bodegaPaquete.getEmpresa(), req.isFacturaElectronica(), lineasIva);
             PaymentCheckoutRequest.EnvioPaqueteDTO envio = envioDe(req, e.getKey());
             String metodo = envio != null ? envio.getMetodoEnvio()
                 : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO;
             String notas = envio != null && envio.getNotas() != null && !envio.getNotas().isBlank()
                 ? envio.getNotas() : req.getNotas();
-            paquetes.add(new Paquete(bodegaPaquete, e.getValue(), subtotal, costoTotal, metodo, notas, impuesto));
+            paquetes.add(new Paquete(bodegaPaquete, e.getValue(), subtotal, costoTotal, metodo, notas, List.copyOf(lineasIva)));
         }
         return paquetes;
     }

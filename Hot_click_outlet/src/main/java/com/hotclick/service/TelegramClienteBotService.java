@@ -75,6 +75,13 @@ public class TelegramClienteBotService {
         return botToken != null && !botToken.isBlank();
     }
 
+    private static final java.util.regex.Pattern SECRET_VALIDO = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,256}");
+
+    /** Telegram exige secret_token con charset A-Za-z0-9_- y 1-256 chars; vacío = webhook inutilizable. */
+    public boolean isWebhookSecretValido() {
+        return webhookSecret != null && SECRET_VALIDO.matcher(webhookSecret).matches();
+    }
+
     public String getBotUsername() {
         return botUsername;
     }
@@ -201,6 +208,9 @@ public class TelegramClienteBotService {
      * Se invoca una sola vez desde el panel ADMIN (POST /api/telegram/admin/webhook).
      */
     public String configurarWebhook() {
+        if (!isWebhookSecretValido()) {
+            throw new IllegalStateException("webhook-secret vacío o inválido");
+        }
         Map<String, Object> body = Map.of(
                 "url", appUrl + "/api/webhooks/telegram",
                 "secret_token", webhookSecret,

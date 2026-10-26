@@ -71,12 +71,16 @@ public class OrderPricingService {
 
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
                                               String metodoEnvio, int gcSaldoRestante) {
-        return calcularPaquete(req, bodega, subtotal, metodoEnvio, gcSaldoRestante, 0);
+        return calcularPaquete(req, bodega, subtotal, metodoEnvio, gcSaldoRestante, java.util.List.of());
     }
 
-    /** @param impuesto IVA a sumar al cobro (M4: solo factura en régimen simplificado; ver CalculadoraIva). */
+    /**
+     * @param lineasIva líneas del paquete; el IVA (M4: solo factura en régimen simplificado) se calcula
+     *                  con CalculadoraIva sobre el neto después de descuentos, igual que el XML.
+     */
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
-                                              String metodoEnvio, int gcSaldoRestante, int impuesto) {
+                                              String metodoEnvio, int gcSaldoRestante,
+                                              java.util.List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva) {
         int costoEnvio = calcularCostoEnvio(metodoEnvio);
         Long empresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
 
@@ -93,7 +97,9 @@ public class OrderPricingService {
 
         int base = subtotal - descuento + costoEnvio;
         descuento += descuentoSinpeSiAplica(req.getProvider(), bodega, base);
-        int total = Math.max(0, subtotal - descuento + costoEnvio) + Math.max(0, impuesto);
+        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            bodega.getEmpresa(), req.isFacturaElectronica(), lineasIva, descuento);
+        int total = Math.max(0, subtotal - descuento + costoEnvio) + impuesto;
 
         int    gcMonto  = 0;
         String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase() : null;

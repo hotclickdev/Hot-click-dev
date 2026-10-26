@@ -212,12 +212,13 @@ public class PosVentaService {
         }
         pedido.setItems(items);
         // M4: en régimen simplificado la factura suma el IVA; el tiquete cobra el precio tal cual.
-        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
-            pedido.getEmpresa(), dto.isFacturaElectronica(), lineasIva);
-        pedido.setMontoImpuesto(impuesto);
-        pedido.setAplicaImpuesto(impuesto > 0);
         int descuento = Math.min(Math.max(0, pedido.getDescuentoTotal()), subtotal);
         pedido.setDescuentoTotal(descuento);
+        // IVA sobre el neto después del descuento de caja, igual que el XML.
+        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            pedido.getEmpresa(), dto.isFacturaElectronica(), lineasIva, descuento);
+        pedido.setMontoImpuesto(impuesto);
+        pedido.setAplicaImpuesto(impuesto > 0);
         return new TotalesPos(subtotal, costoTotal, descuento, impuesto);
     }
 

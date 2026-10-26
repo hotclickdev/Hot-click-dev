@@ -208,6 +208,18 @@ public class Empresa {
     /** M4: SIMPLIFICADO (precio sin IVA; la factura suma el 13 %) o TRADICIONAL (precio con IVA incluido). */
     @Column(name = "regimen_iva", length = 20, nullable = false)
     private String regimenIva = "SIMPLIFICADO";
+    /** Ubicación del emisor para el XML 4.4 (códigos de Hacienda). Obligatoria para emitir. */
+    @Column(name = "ubicacion_provincia", length = 1)
+    private String ubicacionProvincia;
+
+    @Column(name = "ubicacion_canton", length = 2)
+    private String ubicacionCanton;
+
+    @Column(name = "ubicacion_distrito", length = 2)
+    private String ubicacionDistrito;
+
+    @Column(name = "ubicacion_otras_senas", length = 250)
+    private String ubicacionOtrasSenas;
 
     @Column(name = "nombre_hacienda", length = 200)
     private String nombreHacienda;
@@ -403,6 +415,14 @@ public class Empresa {
 
     public String getRegimenIva() { return regimenIva != null ? regimenIva : "SIMPLIFICADO"; }
     public void setRegimenIva(String v) { this.regimenIva = v; }
+    public String getUbicacionProvincia() { return ubicacionProvincia; }
+    public void setUbicacionProvincia(String v) { this.ubicacionProvincia = v; }
+    public String getUbicacionCanton() { return ubicacionCanton; }
+    public void setUbicacionCanton(String v) { this.ubicacionCanton = v; }
+    public String getUbicacionDistrito() { return ubicacionDistrito; }
+    public void setUbicacionDistrito(String v) { this.ubicacionDistrito = v; }
+    public String getUbicacionOtrasSenas() { return ubicacionOtrasSenas; }
+    public void setUbicacionOtrasSenas(String v) { this.ubicacionOtrasSenas = v; }
 
     public String getNombreHacienda() { return nombreHacienda; }
     public void setNombreHacienda(String v) { this.nombreHacienda = v; }

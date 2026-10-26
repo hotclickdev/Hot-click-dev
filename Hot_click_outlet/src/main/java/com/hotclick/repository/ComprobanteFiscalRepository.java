@@ -34,13 +34,23 @@ public interface ComprobanteFiscalRepository extends JpaRepository<ComprobanteFi
 
     /** Comprobantes pendientes de consulta a Hacienda (retry job). */
     @Query("SELECT c FROM ComprobanteFiscal c WHERE c.empresa.id = :empresaId " +
-           "AND c.estado IN ('ENVIADO', 'ERROR') AND c.intentosEnvio < 5")
+           "AND c.estado IN ('PENDIENTE', 'PENDIENTE_CONFIG', 'ENVIADO', 'ERROR') AND c.intentosEnvio < 5")
     List<ComprobanteFiscal> findPendientesDeConsulta(@Param("empresaId") Long empresaId);
 
     /** Todos los pendientes de envío/consulta del sistema (para el cron global). */
     @Query("SELECT c FROM ComprobanteFiscal c WHERE c.estado IN ('PENDIENTE', 'ENVIADO') " +
            "AND c.intentosEnvio < 5 ORDER BY c.fechaEmision ASC")
     List<ComprobanteFiscal> findTodosPendientes();
+
+    /**
+     * Reclama el envío: solo una ejecución (async, polling o contingencia) gana, porque el UPDATE es
+     * condicional al número de intentos que leyó. Devuelve 1 si lo reclamó.
+     */
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE ComprobanteFiscal c SET c.intentosEnvio = :intentos + 1 " +
+           "WHERE c.id = :id AND c.estado IN ('PENDIENTE', 'PENDIENTE_CONFIG') " +
+           "AND COALESCE(c.intentosEnvio, 0) = :intentos")
+    int reclamarEnvio(@Param("id") Long id, @Param("intentos") int intentos);
 
     boolean existsByPedidoIdAndEstadoIn(Long pedidoId, List<String> estados);
 

@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("PosVentaService — M4: IVA según régimen y tipo de comprobante")
-class PosVentaIvaRegimenTest {
+public class PosVentaIvaRegimenTest {
 
     @Mock private UsuarioRepository usuarioRepository;
     @Mock ClienteMostradorResolver clienteMostradorResolver;
@@ -161,7 +161,39 @@ class PosVentaIvaRegimenTest {
         assertThat(totalXml(pedido, com.hotclick.model.ComprobanteFiscal.TIPO_FACTURA)).isEqualTo(5000L);
     }
 
-    static long totalXml(Pedido pedido, String tipo) {
+    private PosVentaDTO ventaConDescuento(boolean factura, int cantidad, int descuento) {
+        PosVentaDTO dto = venta(factura, cantidad);
+        dto.setDescuentoGlobal(descuento);
+        when(companyScope.hasAuthority("pos.descuento")).thenReturn(true);
+        return dto;
+    }
+
+    @Test
+    @DisplayName("simplificado + factura con descuento de caja: IVA sobre el neto y cobro = TotalComprobante")
+    void facturaConDescuentoCuadraConXml() {
+        Pedido pedido = service.crearVenta(ventaConDescuento(true, 3, 1500), 5L, 1L, "caja@test.cr");
+        assertThat(pedido.getDescuentoTotal()).isEqualTo(1500);
+        assertThat(pedido.getMontoImpuesto()).isEqualTo(1755);      // 13 % de 13 500
+        assertThat(pedido.getTotalPedido()).isEqualTo(15255);
+        assertThat(totalXml(pedido, com.hotclick.model.ComprobanteFiscal.TIPO_FACTURA))
+            .isEqualTo(pedido.getTotalPedido().longValue());
+    }
+
+    @Test
+    @DisplayName("tiquete y tradicional con descuento: el XML cuadra con lo cobrado")
+    void descuentoSinIvaSumadoCuadraConXml() {
+        Pedido tiquete = service.crearVenta(ventaConDescuento(false, 2, 999), 5L, 1L, "caja@test.cr");
+        assertThat(tiquete.getTotalPedido()).isEqualTo(9001);
+        assertThat(totalXml(tiquete, com.hotclick.model.ComprobanteFiscal.TIPO_TIQUETE)).isEqualTo(9001L);
+
+        empresa.setRegimenIva("TRADICIONAL");
+        Pedido factura = service.crearVenta(ventaConDescuento(true, 3, 1001), 5L, 1L, "caja@test.cr");
+        assertThat(factura.getMontoImpuesto()).isZero();
+        assertThat(totalXml(factura, com.hotclick.model.ComprobanteFiscal.TIPO_FACTURA))
+            .isEqualTo(factura.getTotalPedido().longValue());
+    }
+
+    public static long totalXml(Pedido pedido, String tipo) {
         com.hotclick.model.ComprobanteFiscal cf = new com.hotclick.model.ComprobanteFiscal();
         cf.setTipo(tipo);
         cf.setClaveNumerica("50627082600310100000000100001010000000001199999999");
@@ -177,8 +209,13 @@ class PosVentaIvaRegimenTest {
         e.setTipoCedula("02");
         e.setCedulaJuridica("3101000000");
         e.setCorreoEmpresa("facturas@example.com");
-        String xml = new com.hotclick.service.XmlFacturaBuilder(
-            new com.hotclick.service.hacienda.XmlFacturaSchemaValidator()).construir(cf, e, pedido);
+        e.setUbicacionProvincia("1");
+        e.setUbicacionCanton("01");
+        e.setUbicacionDistrito("01");
+        e.setUbicacionOtrasSenas("Dirección de prueba");
+        String xml = new com.hotclick.service.XmlFacturaBuilder().construir(cf, e, pedido);
+        new com.hotclick.service.hacienda.XmlFacturaSchemaValidator()
+            .validar(com.hotclick.service.hacienda.CertificadoDePrueba.firmar(xml), com.hotclick.model.ComprobanteFiscal.TIPO_FACTURA.equals(tipo));
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("<TotalComprobante>(\\d+)</TotalComprobante>").matcher(xml);
         assertThat(m.find()).isTrue();
         return Long.parseLong(m.group(1));

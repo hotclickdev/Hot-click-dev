@@ -31,10 +31,16 @@ public class FacturacionEmisionSupport {
 
     private static final Logger log = LoggerFactory.getLogger(FacturacionEmisionSupport.class);
 
-    private static final List<String> ESTADOS_ACTIVOS = List.of(
+    /**
+     * Estados que bloquean otra emisión para el mismo pedido o compra. ERROR cuenta: el comprobante
+     * ya tiene clave y consecutivo y la contingencia lo sigue reenviando; emitir otro duplicaría la venta.
+     */
+    static final List<String> ESTADOS_ACTIVOS = List.of(
         ComprobanteFiscal.ESTADO_PENDIENTE,
+        ComprobanteFiscal.ESTADO_PENDIENTE_CONFIG,
         ComprobanteFiscal.ESTADO_ENVIADO,
-        ComprobanteFiscal.ESTADO_ACEPTADO);
+        ComprobanteFiscal.ESTADO_ACEPTADO,
+        ComprobanteFiscal.ESTADO_ERROR);
 
     private final ComprobanteFiscalRepository comprobanteRepo;
     private final ConsecutivoFiscalService consecutivoService;
@@ -165,13 +171,15 @@ public class FacturacionEmisionSupport {
      */
     static void exigirTipoCoherenteConCobro(Pedido pedido, Empresa empresa, String tipo) {
         if (!CalculadoraIva.SIMPLIFICADO.equals(CalculadoraIva.regimen(empresa))) return;
-        boolean ivaCobrado = pedido.getMontoImpuesto() != null && pedido.getMontoImpuesto() > 0;
+        long ivaCobrado = pedido.getMontoImpuesto() != null ? pedido.getMontoImpuesto() : 0;
         boolean esFactura = ComprobanteFiscal.TIPO_FACTURA.equals(tipo);
-        if (esFactura && !ivaCobrado) {
+        long ivaFactura = CalculadoraIva.ivaACobrar(empresa, true,
+            CalculadoraIva.lineasDe(pedido), CalculadoraIva.descuentoDe(pedido));
+        if (esFactura && ivaCobrado != ivaFactura) {
             throw new IllegalStateException(
-                "Esta venta se cobró sin IVA. En régimen simplificado solo podés emitirle tiquete electrónico.");
+                "Esta venta se cobró sin el IVA de la factura. En régimen simplificado solo podés emitirle tiquete electrónico.");
         }
-        if (!esFactura && ivaCobrado) {
+        if (!esFactura && ivaCobrado > 0) {
             throw new IllegalStateException(
                 "Esta venta se cobró con IVA para factura electrónica. Emití la factura (tipo 01), no un tiquete.");
         }
@@ -182,21 +190,10 @@ public class FacturacionEmisionSupport {
     }
 
     private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos, Empresa empresa, boolean esFactura) {
-        long base = 0;
-        long impuesto = 0;
-        for (Pedido pedido : pedidos) {
-            for (PedidoItem item : pedido.getItems()) {
-                long precio = item.getPrecioUnitarioMomento() != null ? item.getPrecioUnitarioMomento() : 0L;
-                java.math.BigDecimal pct = item.getProducto() != null ? item.getProducto().getPorcentajeIva() : null;
-                ImpuestoLinea.Montos montos = CalculadoraIva.linea(empresa, esFactura,
-                    new CalculadoraIva.Linea(precio, item.getCantidad(), pct));
-                base += montos.base();
-                impuesto += montos.impuesto();
-            }
-        }
-        cf.setTotalNeto(Math.toIntExact(base));
-        cf.setTotalImpuesto(Math.toIntExact(impuesto));
-        cf.setTotalFactura(Math.toIntExact(base + impuesto));
+        CalculadoraIva.Resumen r = CalculadoraIva.resumen(empresa, esFactura, pedidos);
+        cf.setTotalNeto(Math.toIntExact(r.ventaNeta()));
+        cf.setTotalImpuesto(Math.toIntExact(r.impuesto()));
+        cf.setTotalFactura(Math.toIntExact(r.totalComprobante()));
     }
 
     private static void copiarReceptor(ComprobanteFiscal cf, Usuario usuario) {

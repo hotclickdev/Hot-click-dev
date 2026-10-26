@@ -47,7 +47,9 @@ public class ShoppingAssistantTenantGuard {
         try {
             return empresaRepository.findBySlug(empresaSlug);
         } catch (org.springframework.dao.IncorrectResultSizeDataAccessException e) {
-            log.error("[rag-ctrl] Slug duplicado '{}': {}", empresaSlug, e.getMessage());
+            // B1: sin e.getMessage() ni stacktrace (DataAccessException).
+            log.error("[rag-ctrl] Slug duplicado ref={} paso=tenant '{}': {}",
+                java.util.UUID.randomUUID().toString().substring(0, 8), empresaSlug, e.getClass().getName());
             return java.util.Optional.empty();
         }
     }

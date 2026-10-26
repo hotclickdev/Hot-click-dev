@@ -5,30 +5,37 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
+import com.hotclick.service.hacienda.CertificadoDePrueba;
+import com.hotclick.service.hacienda.ComprobanteInvalidoException;
+import com.hotclick.service.hacienda.HaciendaConfiguracionException;
 import com.hotclick.service.hacienda.XmlFacturaSchemaValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("XmlFacturaBuilder — subset 4.4 y zona -06:00")
+@DisplayName("XmlFacturaBuilder — XSD oficial 4.4 (firmado) y zona -06:00")
 class XmlFacturaBuilderTest {
 
     private static final String CABYS = "4321150100101";
 
+    private static final XmlFacturaSchemaValidator VALIDADOR = new XmlFacturaSchemaValidator();
     private XmlFacturaBuilder builder;
 
     @BeforeEach
     void setUp() {
-        builder = new XmlFacturaBuilder(new XmlFacturaSchemaValidator());
+        builder = new XmlFacturaBuilder();
+    }
+
+    /** Firma con el certificado de prueba y valida contra el XSD oficial. */
+    private static void validarOficial(String xml, boolean esFactura) {
+        VALIDADOR.validar(CertificadoDePrueba.firmar(xml), esFactura);
     }
 
     @Test
@@ -41,6 +48,7 @@ class XmlFacturaBuilderTest {
         assertThat(xml).contains("<ProveedorSistemas>3101123456</ProveedorSistemas>");
         assertThat(xml).contains("<CodigoCABYS>" + CABYS + "</CodigoCABYS>");
         assertThat(xml).contains("<Receptor>");
+        validarOficial(xml, true);
     }
 
     @Test
@@ -53,6 +61,9 @@ class XmlFacturaBuilderTest {
         assertThat(xml).contains("<TiqueteElectronico");
         assertThat(xml).contains("-06:00");
         assertThat(xml).doesNotContain("<Receptor>");
+        // Impuesto es obligatorio aunque sea 0 % (antes se omitía y el XSD oficial lo rechaza).
+        assertThat(xml).contains("<Monto>0</Monto>");
+        validarOficial(xml, false);
     }
 
     @Test
@@ -65,6 +76,43 @@ class XmlFacturaBuilderTest {
         assertThat(xml).contains("<TotalImpuesto>130</TotalImpuesto>");
         assertThat(xml).contains("<TotalComprobante>1130</TotalComprobante>");
         assertThat(xml).contains("<CodigoTarifaIVA>08</CodigoTarifaIVA>");
+        assertThat(xml).contains("<BaseImponible>1000</BaseImponible>");
+        assertThat(xml).contains("<TotalVentaNeta>1000</TotalVentaNeta>");
+        assertThat(xml).contains("<TotalMedioPago>1130</TotalMedioPago>");
+        validarOficial(xml, true);
+    }
+
+    @Test
+    @DisplayName("factura mixta (gravado + exento) cumple el XSD oficial y separa totales")
+    void facturaMixtaCumpleXsdOficial() {
+        PedidoItem gravado = item(producto("Cable", new BigDecimal("13"), "08"), 1000, 1);
+        PedidoItem exento = item(producto("Libro", BigDecimal.ZERO, "10"), 500, 2);
+        Pedido pedido = new Pedido();
+        pedido.setItems(List.of(gravado, exento));
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedido);
+        assertThat(xml).contains("<TotalGravado>1000</TotalGravado>");
+        assertThat(xml).contains("<TotalExento>1000</TotalExento>");
+        assertThat(xml).contains("<TotalComprobante>2130</TotalComprobante>");
+        validarOficial(xml, true);
+    }
+
+    @Test
+    @DisplayName("sin ubicación fiscal del emisor no se arma el XML")
+    void sinUbicacionFalla() {
+        Empresa e = empresa();
+        e.setUbicacionDistrito(null);
+        assertThatThrownBy(() -> builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedidoConIva()))
+            .isInstanceOf(HaciendaConfiguracionException.class)
+            .hasMessageContaining("ubicación");
+    }
+
+    @Test
+    @DisplayName("XML sin firmar no pasa el XSD oficial (exige ds:Signature)")
+    void sinFirmaNoPasa() {
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedidoConIva());
+        assertThatThrownBy(() -> VALIDADOR.validar(xml, true))
+            .isInstanceOf(ComprobanteInvalidoException.class)
+            .hasMessageContaining("Signature");
     }
 
     @Test
@@ -101,19 +149,11 @@ class XmlFacturaBuilderTest {
     }
 
     @Test
-    @DisplayName("XML invalido no pasa el subset")
+    @DisplayName("XML invalido no pasa el XSD oficial")
     void xmlInvalidoFalla() {
-        XmlFacturaSchemaValidator validator = new XmlFacturaSchemaValidator();
-        assertThatThrownBy(() -> validator.validar("<FacturaElectronica/>", true))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("v4.4");
-    }
-
-    @Test
-    @DisplayName("muestra estatica de factura pasa el subset")
-    void muestraEstaticaPasaSubset() throws Exception {
-        String xml = Files.readString(Path.of("src/test/resources/hacienda/factura-muestra.xml"));
-        new XmlFacturaSchemaValidator().validar(xml, true);
+        assertThatThrownBy(() -> VALIDADOR.validar("<FacturaElectronica/>", true))
+            .isInstanceOf(ComprobanteInvalidoException.class)
+            .hasMessageContaining("4.4");
     }
 
     private static ComprobanteFiscal comprobante(String tipo) {
@@ -135,7 +175,11 @@ class XmlFacturaBuilderTest {
         e.setActividadEconomica("722003");
         e.setTipoCedula("02");
         e.setCedulaJuridica("3101123456");
-        e.setCorreoEmpresa("facturas@hotclick.lat");
+        e.setCorreoEmpresa("facturas@example.com");
+        e.setUbicacionProvincia("1");
+        e.setUbicacionCanton("01");
+        e.setUbicacionDistrito("01");
+        e.setUbicacionOtrasSenas("Dirección de prueba");
         return e;
     }
 
@@ -156,13 +200,17 @@ class XmlFacturaBuilderTest {
         return producto;
     }
 
-    private static Pedido pedidoCon(Producto producto, int precio, int cantidad) {
+    private static PedidoItem item(Producto producto, int precio, int cantidad) {
         PedidoItem item = new PedidoItem();
         item.setCantidad(cantidad);
         item.setPrecioUnitarioMomento(precio);
         item.setProducto(producto);
+        return item;
+    }
+
+    private static Pedido pedidoCon(Producto producto, int precio, int cantidad) {
         Pedido pedido = new Pedido();
-        pedido.setItems(List.of(item));
+        pedido.setItems(List.of(item(producto, precio, cantidad)));
         return pedido;
     }
 }

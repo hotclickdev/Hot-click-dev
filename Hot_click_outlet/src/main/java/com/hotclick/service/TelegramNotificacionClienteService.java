@@ -65,7 +65,7 @@ public class TelegramNotificacionClienteService {
                 .append("Pago: ").append(esc(metodoPago != null ? metodoPago : "—"));
             enviarATodos(empresaId, texto.toString());
         } catch (Exception e) {
-            log.error("[telegram-notif] fallo notificando venta {} — {}", numeroPedido, e.getMessage());
+            log.error("[telegram-notif] fallo notificando venta {} — {}", numeroPedido, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -86,7 +86,7 @@ public class TelegramNotificacionClienteService {
                 + "Te avisamos apenas el equipo de HOTCLICK lo revise.";
             enviarATodos(empresaId, texto);
         } catch (Exception e) {
-            log.error("[telegram-notif] fallo notificando solicitud enviada {} — {}", nombreItem, e.getMessage());
+            log.error("[telegram-notif] fallo notificando solicitud enviada {} — {}", nombreItem, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -98,7 +98,7 @@ public class TelegramNotificacionClienteService {
                 + "*" + esc(nombreItem) + "* ya está publicado.";
             enviarATodos(empresaId, texto);
         } catch (Exception e) {
-            log.error("[telegram-notif] fallo notificando aprobación {} — {}", nombreItem, e.getMessage());
+            log.error("[telegram-notif] fallo notificando aprobación {} — {}", nombreItem, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -112,7 +112,7 @@ public class TelegramNotificacionClienteService {
                 + "Si tenés dudas, escribinos al *8666-7888*.";
             enviarATodos(empresaId, texto);
         } catch (Exception e) {
-            log.error("[telegram-notif] fallo notificando revisión {} — {}", nombreItem, e.getMessage());
+            log.error("[telegram-notif] fallo notificando revisión {} — {}", nombreItem, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -134,7 +134,7 @@ public class TelegramNotificacionClienteService {
             texto.append("\n\nPausado no es rechazo del negocio. Revisá el producto en tu panel.");
             enviarATodos(empresaId, texto.toString());
         } catch (Exception e) {
-            log.error("[telegram-notif] fallo notificando producto moderado {} — {}", nombreProducto, e.getMessage());
+            log.error("[telegram-notif] fallo notificando producto moderado {} — {}", nombreProducto, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -166,7 +166,7 @@ public class TelegramNotificacionClienteService {
             enviarATodos(evento.getEmpresaId(),
                 "⚠️ *Stock bajo*\n\nDe *" + esc(nombre) + "* quedan *" + stock + "* unidades (mínimo: " + minimo + ").");
         } catch (Exception e) {
-            log.error("[telegram-notif] fallo notificando stock producto {} — {}", evento.getProductoId(), e.getMessage());
+            log.error("[telegram-notif] fallo notificando stock producto {} — {}", evento.getProductoId(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 

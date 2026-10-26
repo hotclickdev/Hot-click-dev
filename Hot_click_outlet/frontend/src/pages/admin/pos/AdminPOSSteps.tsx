@@ -45,6 +45,8 @@ export default function AdminPOSSteps({ pos }: { pos: AdminPOSController }) {
           total={pos.total}
           cartItems={pos.cartItems}
           descuento={pos.descuento}
+          facturaElectronica={pos.facturaElectronica}
+          onFacturaElectronica={pos.setFacturaElectronica}
           onBack={() => pos.setStep('venta')}
           onConfirmar={pos.handleConfirmarPago}
           loading={pos.loadingVenta}

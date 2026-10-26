@@ -5,11 +5,14 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import { METODOS, formatMontoPos, sugerirMontos, descomponer, type ItemCarritoPos, type PayloadCobroPos } from './posHelpers'
 import { MetodoPagoIcon } from './posIcons'
+import FacturaElectronicaCheck from '@/components/facturacion/FacturaElectronicaCheck'
 
-export default function StepCobro({ total, cartItems, descuento, onBack, onConfirmar, loading }: {
+export default function StepCobro({ total, cartItems, descuento, facturaElectronica = false, onFacturaElectronica, onBack, onConfirmar, loading }: {
   total: number
   cartItems: ItemCarritoPos[]
   descuento: number
+  facturaElectronica?: boolean
+  onFacturaElectronica?: (valor: boolean) => void
   onBack: () => void
   onConfirmar: (payload: PayloadCobroPos) => void
   loading: boolean
@@ -31,6 +34,9 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
       <div className="mx-auto max-w-lg space-y-5 px-5 py-6">
         <CabeceraCobro onBack={onBack} />
         <LineasTicket items={cartItems} descuento={descuento} total={total} />
+        {onFacturaElectronica && (
+          <FacturaElectronicaCheck marcado={facturaElectronica} onCambiar={onFacturaElectronica} contexto="pos" />
+        )}
         <p className="text-xs font-medium text-hc-muted">{t('pos.cobro.metodoPago')}</p>
         <ChipsMetodo metodo={metodo} onChange={setMetodo} />
         {metodo === 'EFECTIVO' && (
