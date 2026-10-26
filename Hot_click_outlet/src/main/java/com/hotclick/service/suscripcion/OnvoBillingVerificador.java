@@ -36,8 +36,9 @@ public final class OnvoBillingVerificador {
                                        PrecioPlan precios) {
         if (!modoCoincide(invoice, modo) || !modoCoincide(sub, modo)) return Resultado.rechazo("modo");
         if (!igual(texto(invoice, "id"), invoiceId) || !igual(texto(sub, "id"), subId)) return Resultado.rechazo("id");
-        String subDeInvoice = texto(invoice, "subscriptionId");
-        if (subDeInvoice != null && !subDeInvoice.equals(subId)) return Resultado.rechazo("id");
+        // ONVO: la renovación tiene que traer subscriptionId y customerId y coincidir con la suscripción.
+        if (!igual(texto(invoice, "subscriptionId"), subId)) return Resultado.rechazo("id");
+        if (!igual(texto(invoice, "customerId"), texto(sub, "customerId"))) return Resultado.rechazo("customer");
         if (!"paid".equalsIgnoreCase(texto(invoice, "status"))) return Resultado.rechazo("no_pagado");
         if (!"active".equalsIgnoreCase(texto(sub, "status"))) return Resultado.rechazo("sub_no_activa");
         return planYMonto(invoice, "total", sub, planPorPrice, precios,
@@ -80,7 +81,9 @@ public final class OnvoBillingVerificador {
         Integer precio = precios.precio(plan);
         if (precio == null || precio <= 0) return Resultado.rechazo("plan_sin_precio");
         BigDecimal cobrado = numero(cobro.get(campoMonto));
-        if (cobrado == null || cobrado.compareTo(BigDecimal.valueOf(precio.longValue() * CENTIMOS_POR_COLON)) != 0) {
+        // La primera factura puede venir prorrateada (ONVO): 0 < total <= precio del plan.
+        if (cobrado == null || cobrado.signum() <= 0
+                || cobrado.compareTo(BigDecimal.valueOf(precio.longValue() * CENTIMOS_POR_COLON)) > 0) {
             return Resultado.rechazo("monto");
         }
         if (fin == null) return Resultado.rechazo("sin_periodo");
