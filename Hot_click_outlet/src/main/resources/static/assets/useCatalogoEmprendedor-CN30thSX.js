@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-Css_6NEZ.js";function t(){return e()}export{t};

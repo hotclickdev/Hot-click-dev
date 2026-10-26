@@ -15,7 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 
@@ -48,10 +52,18 @@ public class StockReservationService {
         int costoTotal = 0;
         // Cache de productos cargados con SELECT FOR UPDATE — evita N+1 en el snapshot posterior
         Map<Long, Producto> productosMap = new HashMap<>();
-        for (PaymentCheckoutRequest.ItemDTO item : items) {
-            // SELECT FOR UPDATE — previene race conditions al reservar
-            Producto p = productoRepository.findByIdForUpdate(item.getProductoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProductoId()));
+        // P-05: un solo SELECT FOR UPDATE con ids únicos y ordenados → mismo orden de locks en todos los checkouts.
+        List<Long> ids = idsOrdenados(items.stream().map(PaymentCheckoutRequest.ItemDTO::getProductoId).toList());
+        Map<Long, Producto> bloqueados = new HashMap<>();
+        if (!ids.isEmpty()) {
+            for (Producto p : productoRepository.findAllByIdsForUpdate(ids)) bloqueados.put(p.getId(), p);
+        }
+        List<PaymentCheckoutRequest.ItemDTO> enOrden = new ArrayList<>(items);
+        enOrden.sort(Comparator.comparing(PaymentCheckoutRequest.ItemDTO::getProductoId,
+            Comparator.nullsLast(Comparator.naturalOrder())));
+        for (PaymentCheckoutRequest.ItemDTO item : enOrden) {
+            Producto p = item.getProductoId() == null ? null : bloqueados.get(item.getProductoId());
+            if (p == null) throw new RecursoNoEncontradoException("Producto", item.getProductoId());
 
             // ESC-1: mismo criterio que el catálogo público (activo, visible, negocio ACTIVO y público).
             if (!esPublicableEnMemoria(p) || Boolean.TRUE.equals(p.getVendido())) {
@@ -79,8 +91,20 @@ public class StockReservationService {
         return new StockReservationResult(subtotal, costoTotal, productosMap);
     }
 
+    /** P-05: ids únicos, sin nulos, ascendentes. */
+    static List<Long> idsOrdenados(Collection<Long> ids) {
+        return ids.stream().filter(Objects::nonNull).distinct().sorted().toList();
+    }
+
+    /** P-05: ítems ordenados por productoId para bloquear siempre en el mismo orden. */
+    static List<PedidoItem> itemsOrdenados(List<PedidoItem> items) {
+        List<PedidoItem> copia = new ArrayList<>(items);
+        copia.sort(Comparator.comparing((PedidoItem i) -> i.getProducto() == null ? null : i.getProducto().getId(), Comparator.nullsLast(Comparator.naturalOrder())));
+        return copia;
+    }
+
     public void consumeForGiftCard(Pedido pedido) {
-        for (PedidoItem item : pedido.getItems()) {
+        for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
             Producto p = productoRepository.findByIdForUpdate(item.getProducto().getId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProducto().getId()));
             p.setStockActual(Math.max(0, p.getStockActual() - item.getCantidad()));
@@ -94,7 +118,7 @@ public class StockReservationService {
      * Descuenta stockActual, libera stockReservado y publica eventos de cambio de stock.
      */
     public void confirmAndConsumeStock(Pedido pedido, Object eventSource, ApplicationEventPublisher eventPublisher) {
-        for (PedidoItem item : pedido.getItems()) {
+        for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
             Producto producto = bloquearActual(item.getProducto().getId(),
                 () -> new RecursoNoEncontradoException("Producto no encontrado al confirmar pago"));
 
@@ -131,7 +155,7 @@ public class StockReservationService {
         if (pedido == null) return;
         Hibernate.initialize(pedido.getItems());
 
-        for (PedidoItem item : pedido.getItems()) {
+        for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
             try {
                 Producto producto;
                 try {
