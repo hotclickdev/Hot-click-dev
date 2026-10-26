@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /** QA8: tests que reproducen A8-C2, A8-C4 y A8-C7. Deben FALLAR mientras el bug exista. */
 class TelegramReproA8IntegrationTest extends BaseIntegrationTest {
 
-    private static final String SECRET = "test-webhook-secret";
+    private static final String VALOR_CABECERA_WEBHOOK = "test-webhook-secret";
     private static final String WEBHOOK = "/api/webhooks/telegram";
     private static final long CHAT_ID = 555_801L;
 
@@ -44,7 +44,7 @@ class TelegramReproA8IntegrationTest extends BaseIntegrationTest {
     void setUp() {
         when(bot.isConfigured()).thenReturn(true);
         when(bot.getBotUsername()).thenReturn("HotClickTestBot");
-        when(bot.validarSecret(SECRET)).thenReturn(true);
+        when(bot.validarSecret(VALOR_CABECERA_WEBHOOK)).thenReturn(true);
         jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
 
         Rol rolEmp = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5);
@@ -120,7 +120,7 @@ class TelegramReproA8IntegrationTest extends BaseIntegrationTest {
 
     private void postUpdate(String body) throws Exception {
         mockMvc.perform(post(WEBHOOK)
-                .header("X-Telegram-Bot-Api-Secret-Token", SECRET)
+                .header("X-Telegram-Bot-Api-Secret-Token", VALOR_CABECERA_WEBHOOK)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk());
