@@ -106,14 +106,14 @@ class TelegramFlujoVentaConfirmHelper {
                 + "Ya aparece en 💰 Ventas de hoy y en Finanzas.",
                 List.of(List.of(TelegramClienteBotService.boton("📋 Menú", "menu"))));
         } catch (StockInsuficienteException ex) {
-            bot.enviarMensaje(v.getChatId(), "⚠️ " + esc(ex.getMessage())
+            bot.enviarMensaje(v.getChatId(), "⚠️ " + esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()))
                 + "\n\nEl stock cambió desde que armaste la venta. Ajustá las cantidades:", List.of(
                 List.of(TelegramClienteBotService.boton("➕ Elegir productos", "vta:add"),
                         TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
         } catch (Exception ex) {
-            log.error("[telegram-flujo] fallo confirmando venta en chat {} — {}", v.getChatId(), ex.getMessage());
-            abuso.avisarErrorDeUsuario(v.getChatId(), ex.getMessage());
-            bot.enviarMensaje(v.getChatId(), "No pude registrar la venta: " + esc(ex.getMessage())
+            log.error("[telegram-flujo] fallo confirmando venta en chat {} — {}", v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
+            abuso.avisarErrorDeUsuario(v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
+            bot.enviarMensaje(v.getChatId(), "No pude registrar la venta: " + esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()))
                 + "\nProbá de nuevo en unos minutos o registrala desde el panel.");
         }
     }

@@ -16,7 +16,12 @@ import com.hotclick.service.AiQuotaService;
 import com.hotclick.service.customermemory.CustomerMemoryDto;
 import com.hotclick.service.customermemory.CustomerMemoryService;
 import com.hotclick.utils.InputSanitizer;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
@@ -25,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -122,5 +128,93 @@ class ShoppingAssistantChatContingenciaTest {
                 .content("{\"mensaje\":\"Algo cómodo para la sala\",\"empresaSlug\":\"hotclick\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.respuesta").value(RagResult.fallback().respuesta()));
+    }
+
+    // ---- B1 / B2 (hallazgos bajos de Seguridad) ----
+
+    private static final String SENTINEL = "SENTINEL-VISITANTE-7f3a";
+    private ListAppender<ILoggingEvent> appender;
+    private Logger logger;
+
+    private ListAppender<ILoggingEvent> capturar(Class<?> clazz) {
+        logger = (Logger) LoggerFactory.getLogger(clazz);
+        appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        return appender;
+    }
+
+    @AfterEach
+    void soltarAppender() {
+        if (logger != null && appender != null) logger.detachAppender(appender);
+    }
+
+    private static String volcado(ListAppender<ILoggingEvent> a) {
+        StringBuilder sb = new StringBuilder();
+        for (ILoggingEvent ev : a.list) {
+            sb.append(ev.getFormattedMessage()).append('\n');
+            for (var tp = ev.getThrowableProxy(); tp != null; tp = tp.getCause()) {
+                sb.append(tp.getClassName()).append(':').append(tp.getMessage()).append('\n');
+            }
+        }
+        return sb.toString();
+    }
+
+    private static DataAccessResourceFailureException errorJdbcConTextoVisitante() {
+        return new DataAccessResourceFailureException("could not execute statement: " + SENTINEL,
+            new SQLException("ERROR: value too long, Detail: (" + SENTINEL + ")"));
+    }
+
+    @Test void b1_dataAccessFueraDelBreaker_logSinMensajeNiStacktrace() {
+        var a = capturar(ShoppingAssistantService.class);
+        when(sesiones.loadHistory(any())).thenThrow(errorJdbcConTextoVisitante());
+        assertContingencia(chat());
+        String log = volcado(a);
+        assertThat(log).doesNotContain(SENTINEL).contains("ref=").contains("paso=chat")
+            .contains(DataAccessResourceFailureException.class.getName());
+        assertThat(a.list).allMatch(ev -> ev.getThrowableProxy() == null);
+    }
+
+    @Test void b1_causaDataAccessEnvuelta_tambienSeOmite() {
+        var a = capturar(ShoppingAssistantService.class);
+        when(sesiones.loadHistory(any())).thenThrow(new IllegalStateException(SENTINEL, errorJdbcConTextoVisitante()));
+        assertContingencia(chat());
+        assertThat(volcado(a)).doesNotContain(SENTINEL);
+        assertThat(a.list).allMatch(ev -> ev.getThrowableProxy() == null);
+    }
+
+    @Test void b1_runtimeNoDeDatos_conservaStacktrace() {
+        var a = capturar(ShoppingAssistantService.class);
+        when(classifier.classify(anyString(), any())).thenThrow(new IllegalStateException("bug"));
+        assertContingencia(chat());
+        assertThat(a.list).anyMatch(ev -> ev.getThrowableProxy() != null);
+    }
+
+    @Test void b1_persistenciaDataAccess_logSinTextoVisitante() {
+        var a = capturar(ShoppingAssistantService.class);
+        doThrow(errorJdbcConTextoVisitante()).when(persistencia)
+            .persistirMensajes(any(), anyLong(), anyString(), any());
+        assertThat(chat().getRespuesta()).isEqualTo("respuesta ok");
+        String log = volcado(a);
+        assertThat(log).doesNotContain(SENTINEL).contains("ref=").contains("paso=persistencia");
+        assertThat(a.list).allMatch(ev -> ev.getThrowableProxy() == null);
+    }
+
+    @Test void b2_persistenciaRuntimeNoDeDatos_noEsBestEffort() {
+        doThrow(new IllegalStateException("bug")).when(persistencia)
+            .persistirMensajes(any(), anyLong(), anyString(), any());
+        // ya no se traga como best-effort: sube al catch externo y da contingencia
+        assertContingencia(chat());
+    }
+
+    @Test void b1_tenantGuardSlugDuplicado_logSinMensaje() {
+        var a = capturar(ShoppingAssistantTenantGuard.class);
+        EmpresaRepository repo = mock(EmpresaRepository.class);
+        when(repo.findBySlug("hotclick")).thenThrow(
+            new IncorrectResultSizeDataAccessException(SENTINEL, 1, 2));
+        assertThatThrownBy(() -> new ShoppingAssistantTenantGuard(repo).requireEmpresaActiva("hotclick"))
+            .isInstanceOf(ResponseStatusException.class);
+        assertThat(volcado(a)).doesNotContain(SENTINEL).contains("ref=");
+        assertThat(a.list).allMatch(ev -> ev.getThrowableProxy() == null);
     }
 }
