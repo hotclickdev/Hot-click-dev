@@ -66,7 +66,7 @@ public class ModeracionAdminAvisoService {
         try {
             telegramService.enviar(mensaje);
         } catch (Exception e) {
-            log.error("[moderacion-admin] fallo aviso Telegram — {}", e.getMessage());
+            log.error("[moderacion-admin] fallo aviso Telegram — {}", com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
