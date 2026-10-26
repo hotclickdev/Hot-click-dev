@@ -151,4 +151,9 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
                           @Param("planBase") Plan planBase,
                           @Param("nombrePlan") String nombrePlan,
                           @Param("hoy") LocalDate hoy);
+
+    /** Admin impago (anti N+1): id, nombre y estado en una sola consulta, con tope. */
+    @Query("SELECT e.id, e.nombreEmpresa, e.estadoEmpresa FROM Empresa e WHERE e.estadoEmpresa IN :estados ORDER BY e.id")
+    List<Object[]> findResumenByEstados(@Param("estados") java.util.Collection<String> estados,
+                                        org.springframework.data.domain.Pageable page);
 }

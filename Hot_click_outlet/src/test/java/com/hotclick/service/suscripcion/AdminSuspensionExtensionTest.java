@@ -161,7 +161,7 @@ class AdminSuspensionExtensionTest {
             Empresa e = empresa(7, "ACTIVO");
             Suscripcion s = sub(50, "PAST_DUE", LocalDate.of(2026, 10, 20)); // hoy 26 = día 6 → quedan 3 (6, 7, 8)
             s.setEmpresa(e);
-            when(subRepo.findPastDueConEmpresa()).thenReturn(List.of(s));
+            when(subRepo.findPastDueConEmpresa(any())).thenReturn(List.of(s));
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> g = (List<Map<String, Object>>) svc.listar().get("enGracia");
             assertEquals(1, g.size());
@@ -324,7 +324,7 @@ class AdminSuspensionExtensionTest {
         void noAdminRecibeAccessDenied(String rol) {
             como(rol);
             AdminSuspensionController c = proxy();
-            assertThrows(AccessDeniedException.class, c::listar);
+            assertThrows(AccessDeniedException.class, () -> c.listar(200));
             assertThrows(AccessDeniedException.class, () -> c.suspender(7L, Map.of("motivo", "x x x")));
             assertThrows(AccessDeniedException.class, () -> c.extension(7L, Map.of("motivo", "x x x")));
             verifyNoInteractions(empresaRepo, auditoria);
@@ -333,7 +333,7 @@ class AdminSuspensionExtensionTest {
         @Test
         void adminPasa() {
             como("ROLE_ADMIN");
-            assertNotNull(proxy().listar());
+            assertNotNull(proxy().listar(200));
         }
     }
 
