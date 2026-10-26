@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-DMNa-Jfc.js";function t(){return e()}export{t};

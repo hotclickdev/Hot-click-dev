@@ -104,4 +104,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     /** INF-03: pagos de un proveedor que siguen en un estado desde antes de un corte. */
     long countByProveedorIgnoreCaseAndEstadoPagoAndFechaCreacionBefore(
         String proveedor, String estadoPago, java.time.LocalDateTime corte);
+
+    /** P-01: pagos SINPE marketplace por ONVO pendientes con el plazo interno cumplido. */
+    List<Pago> findByProveedorAndEstadoPagoAndMerchantTokenStartingWithAndPlazoInternoSinpeBefore(
+        String proveedor, String estadoPago, String prefijo, LocalDateTime corte);
 }
