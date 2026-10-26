@@ -22,6 +22,7 @@ public class EmpresaPerfilService {
     private static final List<String> AMBIENTES_VALIDOS = List.of("STAG", "PROD");
     private static final List<String> TIPOS_CEDULA_VALIDOS = List.of("01", "02", "03", "04");
 
+    private static final com.hotclick.utils.InputSanitizer SANITIZER = new com.hotclick.utils.InputSanitizer();
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private SupabaseStorageService supabaseStorageService;
     @Autowired private TotpSecretEncryptionService encryptionService;
@@ -77,7 +78,7 @@ public class EmpresaPerfilService {
     public Map<String, Object> update(Long empresaId, Map<String, String> body) {
         Empresa e = empresa(empresaId);
         String nombreAntes = e.getNombreComercial();
-        if (body.containsKey("nombreComercial")) e.setNombreComercial(body.get("nombreComercial"));
+        if (body.containsKey("nombreComercial")) e.setNombreComercial(SANITIZER.cleanWithLimit(body.get("nombreComercial"), 150));
         if (body.containsKey("descripcion")) e.setDescripcion(body.get("descripcion"));
         if (body.containsKey("telefonoEmpresa")) e.setTelefonoEmpresa(body.get("telefonoEmpresa"));
         if (body.containsKey("correoEmpresa")) {

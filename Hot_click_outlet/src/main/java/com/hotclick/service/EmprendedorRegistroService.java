@@ -74,11 +74,12 @@ public class EmprendedorRegistroService {
 
         // 1. Crear empresa
         Empresa empresa = new Empresa();
-        empresa.setNombreEmpresa(dto.getNombreEmpresa().trim());
+        // X-01: clean() también en el writer (defensa en profundidad, idempotente).
+        empresa.setNombreEmpresa(sanitizer.cleanWithLimit(dto.getNombreEmpresa(), 150));
         empresa.setNombreComercial(
             dto.getNombreComercial() != null && !dto.getNombreComercial().isBlank()
-                ? dto.getNombreComercial().trim()
-                : dto.getNombreEmpresa().trim()
+                ? sanitizer.cleanWithLimit(dto.getNombreComercial(), 150)
+                : sanitizer.cleanWithLimit(dto.getNombreEmpresa(), 150)
         );
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmpresa);

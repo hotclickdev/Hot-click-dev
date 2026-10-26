@@ -218,8 +218,15 @@ public class SpaSeoSupport {
 
     public static String escJson(String s) {
         if (s == null) return "";
+        // X-01: además de JSON, el valor vive dentro de <script>: escapar <, >, & y
+        // U+2028/U+2029 para que "</script>" o "<!--" no cierren el bloque.
         return s.replace("\\", "\\\\").replace("\"", "\\\"")
-            .replace("\r", " ").replace("\n", " ");
+            .replace("\r", " ").replace("\n", " ")
+            .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+            .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+            .chars().collect(StringBuilder::new,
+                (sb, c) -> { if (c < 0x20) sb.append(String.format("\\u%04x", c)); else sb.append((char) c); },
+                StringBuilder::append).toString();
     }
 
     public static String xe(String s) {

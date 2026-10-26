@@ -76,19 +76,20 @@ public class BrandingController {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    private static final com.hotclick.utils.InputSanitizer SANITIZER = new com.hotclick.utils.InputSanitizer();
     private void apply(Empresa e, Map<String, Object> b) {
         if (b.containsKey("colorPrimario"))   e.setColorPrimario(str(b, "colorPrimario"));
         if (b.containsKey("colorSecundario")) e.setColorSecundario(str(b, "colorSecundario"));
         if (b.containsKey("colorAcento"))     e.setColorAcento(str(b, "colorAcento"));
-        if (b.containsKey("tagline"))         e.setTagline(str(b, "tagline"));
-        if (b.containsKey("footerTexto"))     e.setFooterTexto(str(b, "footerTexto"));
+        if (b.containsKey("tagline"))         e.setTagline(SANITIZER.cleanWithLimit(str(b, "tagline"), 200));
+        if (b.containsKey("footerTexto"))     e.setFooterTexto(SANITIZER.cleanWithLimit(str(b, "footerTexto"), 500));
         if (b.containsKey("fontFamilia"))     e.setFontFamilia(str(b, "fontFamilia"));
         if (b.containsKey("faviconUrl"))      e.setFaviconUrl(str(b, "faviconUrl"));
         if (b.containsKey("ogImagenUrl"))     e.setOgImagenUrl(str(b, "ogImagenUrl"));
         if (b.containsKey("dominioCustom"))   e.setDominioCustom(str(b, "dominioCustom"));
         if (b.containsKey("logoUrl"))         e.setLogoUrl(str(b, "logoUrl"));
-        if (b.containsKey("nombreComercial")) e.setNombreComercial(str(b, "nombreComercial"));
-        if (b.containsKey("descripcion"))     e.setDescripcion(str(b, "descripcion"));
+        if (b.containsKey("nombreComercial")) e.setNombreComercial(SANITIZER.cleanWithLimit(str(b, "nombreComercial"), 150));
+        if (b.containsKey("descripcion"))     e.setDescripcion(SANITIZER.clean(str(b, "descripcion")));
     }
 
     private String str(Map<String, Object> m, String key) {

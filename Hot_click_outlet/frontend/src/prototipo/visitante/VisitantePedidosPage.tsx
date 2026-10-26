@@ -20,6 +20,7 @@ import VisitanteMain, {
   VisitanteEmptyState,
 } from './VisitantePiezas'
 import { visitanteRuta } from './visitanteMock'
+import { urlSegura } from '@/pages/seguimiento/seguimientoHelpers'
 
 /**
  * Pedidos del visitante: API real dentro del chrome Visitante (sin mock).
@@ -189,7 +190,11 @@ function PedidoDetalle({
       )}
       {order.numeroGuia ? (
         <a
-          href={order.urlTracking ?? `https://rastreo.correos.go.cr/?codigo=${order.numeroGuia}`}
+          href={
+            order.urlTracking
+              ? urlSegura(order.urlTracking) ?? undefined
+              : `https://rastreo.correos.go.cr/?codigo=${encodeURIComponent(order.numeroGuia)}`
+          }
           target="_blank"
           rel="noopener noreferrer"
           className="mt-1 inline-flex min-h-11 items-center text-xs font-semibold text-hc-accent"

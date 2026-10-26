@@ -29,7 +29,8 @@ final class SecurityHeadersWriter {
                 "frame-src https://js.stripe.com https://hooks.stripe.com https://app.tilopay.com https://secure.tilopay.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.facebook.com https://www.openstreetmap.org; " +
                 "frame-ancestors 'self'; " +
                 "object-src 'none'; " +
-                "base-uri 'self';"
+                "base-uri 'self'; " +
+                "form-action 'self';"
             );
         };
     }

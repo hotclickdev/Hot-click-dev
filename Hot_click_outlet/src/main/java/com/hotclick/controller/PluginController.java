@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @PreAuthorize("hasRole('ADMIN')")
 public class PluginController {
 
+    private static final com.hotclick.utils.InputSanitizer SANITIZER = new com.hotclick.utils.InputSanitizer();
     @Autowired private PluginRepository       pluginRepository;
     @Autowired private PluginEventoRepository pluginEventoRepository;
     @Autowired private EmpresaRepository      empresaRepository;
@@ -121,7 +122,7 @@ public class PluginController {
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private void apply(Plugin p, Map<String, Object> b) {
-        if (b.containsKey("nombre"))           p.setNombre(str(b, "nombre"));
+        if (b.containsKey("nombre"))           p.setNombre(SANITIZER.cleanWithLimit(str(b, "nombre"), 100));
         if (b.containsKey("descripcion"))      p.setDescripcion(str(b, "descripcion"));
         if (b.containsKey("tipo"))             p.setTipo(str(b, "tipo"));
         if (b.containsKey("url")) {

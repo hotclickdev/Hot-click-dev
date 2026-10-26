@@ -3,6 +3,7 @@ import { paymentService } from '../services/paymentService'
 import type { CheckoutPayload } from '@/types/pedido'
 import { sincronizarRetornoPagoAlIniciar } from '@/prototipo/visitante/pagoRetornoVisitante'
 import { POS_QR_TOKEN_KEY } from '@/pages/pos/POSPagoPage'
+import { esRedirectPagoPermitido } from '@/utils/redirectPago'
 
 const MAX_INTENTOS = 3
 const POLL_INTERVAL_MS = 3000
@@ -125,6 +126,13 @@ export function usePayment() {
           )
           setEstado('failed')
         }, 12000)
+        if (!esRedirectPagoPermitido(data.redirectUrl)) {
+          if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current)
+          redirectTimeoutRef.current = null
+          setError('No se pudo iniciar el pago. Intenta de nuevo.')
+          setEstado('failed')
+          return
+        }
         globalThis.location.href = data.redirectUrl
       }
     } catch (err: unknown) {

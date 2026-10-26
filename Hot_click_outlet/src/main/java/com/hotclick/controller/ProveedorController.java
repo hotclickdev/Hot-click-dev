@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/proveedores")
 public class ProveedorController {
 
+    private static final com.hotclick.utils.InputSanitizer SANITIZER = new com.hotclick.utils.InputSanitizer();
     @Autowired private ProveedorRepository   proveedorRepository;
     @Autowired private EmpresaRepository     empresaRepository;
     @Autowired private OrdenCompraRepository ordenCompraRepository;
@@ -50,7 +51,7 @@ public class ProveedorController {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es requerido"));
 
             Proveedor p = new Proveedor();
-            p.setNombre(nombre.trim());
+            p.setNombre(SANITIZER.cleanWithLimit(nombre, 200));
             p.setContacto((String) body.get("contacto"));
             p.setTelefono((String) body.get("telefono"));
             p.setCorreo((String) body.get("correo"));
@@ -76,7 +77,7 @@ public class ProveedorController {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Proveedor no encontrado"));
             companyScope.assertCanAccessNullable(p.getEmpresa() != null ? p.getEmpresa().getId() : null);
 
-            if (body.containsKey("nombre"))   p.setNombre(body.get("nombre").toString().trim());
+            if (body.containsKey("nombre"))   p.setNombre(SANITIZER.cleanWithLimit(body.get("nombre").toString(), 200));
             if (body.containsKey("contacto")) p.setContacto((String) body.get("contacto"));
             if (body.containsKey("telefono")) p.setTelefono((String) body.get("telefono"));
             if (body.containsKey("correo"))   p.setCorreo((String) body.get("correo"));
