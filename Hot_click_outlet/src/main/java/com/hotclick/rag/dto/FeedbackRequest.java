@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 public class FeedbackRequest {
 
     @NotBlank
-    @Size(max = 36)
+    @Size(max = 80)
     private String sesionId;
 
     @Min(0)

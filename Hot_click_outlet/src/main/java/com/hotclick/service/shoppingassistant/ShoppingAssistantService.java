@@ -54,6 +54,8 @@ public class ShoppingAssistantService {
     private final ShoppingAssistantSessionHelper sessionHelper;
     private final ShoppingAssistantPersistence   persistence;
     private final ShoppingAssistantFeedbackHandler feedbackHandler;
+    private final ShoppingAssistantCuota         cuota;
+    private final ShoppingAssistantSesionFirma   firma;
 
     public ShoppingAssistantService(RagPipeline ragPipeline,
                                     AiQuotaService aiQuotaService,
@@ -63,7 +65,9 @@ public class ShoppingAssistantService {
                                     AssistantMetricsService metricsService,
                                     ShoppingAssistantSessionHelper sessionHelper,
                                     ShoppingAssistantPersistence persistence,
-                                    ShoppingAssistantFeedbackHandler feedbackHandler) {
+                                    ShoppingAssistantFeedbackHandler feedbackHandler,
+                                    ShoppingAssistantCuota cuota,
+                                    ShoppingAssistantSesionFirma firma) {
         this.ragPipeline           = ragPipeline;
         this.aiQuotaService        = aiQuotaService;
         this.sanitizer             = sanitizer;
@@ -73,6 +77,8 @@ public class ShoppingAssistantService {
         this.sessionHelper         = sessionHelper;
         this.persistence           = persistence;
         this.feedbackHandler       = feedbackHandler;
+        this.cuota                 = cuota;
+        this.firma                 = firma;
     }
 
     // ── Punto de entrada público ──────────────────────────────────────────────
@@ -134,7 +140,17 @@ public class ShoppingAssistantService {
         }
 
         // 3. Resolver o crear sesión
-        UUID sesionId = sessionHelper.resolveSession(sesionIdStr, empresaId);
+        // ALTO-1: sólo se reutiliza una sesión con token firmado por el servidor.
+        UUID sesionPrevia = firma.verificar(sesionIdStr);
+        UUID sesionId = sessionHelper.resolveSession(
+            sesionPrevia == null ? null : sesionPrevia.toString(), empresaId);
+        String sesionToken = firma.firmar(sesionId);
+
+        // ALTO-1: tope de costo ANTES de cualquier llamada al LLM → 200 degradado.
+        if (!cuota.reservar(empresaId, marketplace)) {
+            return new ChatResponse(ShoppingAssistantCuota.RESPUESTA_AGOTADA,
+                sesionToken, List.of(), List.of(), List.of());
+        }
 
         // 4. Cargar historial (antes de persistir el mensaje actual)
         List<Map<String, Object>> historial = sessionHelper.loadHistory(sesionId);
@@ -174,7 +190,7 @@ public class ShoppingAssistantService {
 
         return new ChatResponse(
             resultado.respuesta(),
-            sesionId.toString(),
+            sesionToken,
             resultado.productosReferenciados(),
             resultado.categorias(),
             resultado.opts()
@@ -193,7 +209,9 @@ public class ShoppingAssistantService {
      * @param rating      1 = positivo, -1 = negativo.
      */
     public void submitFeedback(String sesionIdStr, int msgIndex, int rating) {
-        feedbackHandler.submitFeedback(sesionIdStr, msgIndex, rating);
+        UUID sesion = firma.verificar(sesionIdStr);
+        if (sesion == null) return;
+        feedbackHandler.submitFeedback(sesion.toString(), msgIndex, rating);
     }
 
     // ── Historial público ─────────────────────────────────────────────────────
@@ -207,7 +225,11 @@ public class ShoppingAssistantService {
      * como token opaco. Si el UUID no existe en BD se retorna lista vacía.
      */
     public Map<String, Object> getSessionHistory(String sesionIdStr) {
-        return sessionHelper.getSessionHistory(sesionIdStr);
+        UUID sesion = firma.verificar(sesionIdStr);
+        if (sesion == null) return Map.of("sesionId", "", "mensajes", List.of());
+        Map<String, Object> h = new java.util.HashMap<>(sessionHelper.getSessionHistory(sesion.toString()));
+        if (h.containsKey("sesionId") && !"".equals(h.get("sesionId"))) h.put("sesionId", sesionIdStr.trim());
+        return h;
     }
 
     // ── Expiración manual de sesión ───────────────────────────────────────────
@@ -220,6 +242,8 @@ public class ShoppingAssistantService {
      * Operación idempotente: si la sesión no existe o el UUID es inválido, retorna sin error.
      */
     public void expireSession(String sesionIdStr) {
-        sessionHelper.expireSession(sesionIdStr);
+        UUID sesion = firma.verificar(sesionIdStr);
+        if (sesion == null) return;
+        sessionHelper.expireSession(sesion.toString());
     }
 }
