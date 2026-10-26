@@ -164,7 +164,7 @@ public class SinpeComprobanteService {
             Constants.AUDITORIA_APROBAR_SINPE, "COMPROBANTE_SINPE", comprobanteId,
             "Pedido " + pedido.getNumeroPedido() + " aprobado");
 
-        log.info("Comprobante SINPE aprobado por {}: pedido={}", adminEmail, pedido.getNumeroPedido());
+        log.info("Comprobante SINPE aprobado: adminId={} pedidoId={}", adminId, pedido.getId());
     }
 
     @Transactional
@@ -206,7 +206,7 @@ public class SinpeComprobanteService {
             Constants.AUDITORIA_RECHAZAR_SINPE, "COMPROBANTE_SINPE", comprobanteId,
             "Pedido " + pedido.getNumeroPedido() + " rechazado. Motivo: " + motivo);
 
-        log.info("Comprobante SINPE rechazado por {}: pedido={}", adminEmail, pedido.getNumeroPedido());
+        log.info("Comprobante SINPE rechazado: adminId={} pedidoId={}", adminId, pedido.getId());
     }
 
     /** P-02: bloquea la fila del pago y exige PENDIENTE; cubre la carrera con la confirmación por pago. */
