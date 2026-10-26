@@ -1,8 +1,9 @@
 import { esRutaClaudeclick } from '@/utils/rutaPrototipo'
 import { formatTelefonoCR } from '@/utils/telefono'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 /** WhatsApp de soporte de HotClick (mismo número que el FAB del sitio). */
-export const WHATSAPP_SOPORTE = '50686667888'
+export const WHATSAPP_SOPORTE = SOPORTE_WA
 export const WHATSAPP_SOPORTE_VISIBLE = formatTelefonoCR(WHATSAPP_SOPORTE)
 
 const HTTP_ERROR_SERVIDOR = 500

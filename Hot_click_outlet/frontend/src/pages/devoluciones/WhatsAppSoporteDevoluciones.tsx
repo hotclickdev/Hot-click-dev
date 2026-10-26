@@ -6,10 +6,11 @@ const TEXTO = 'Hola HotClick, tengo una consulta sobre una devolución.'
 
 /**
  * WhatsApp de soporte en la tarjeta "¿Tenés un problema con tu pedido?" de Devoluciones.
- * Siempre el número de HotClick (`ContactoPublicoPolicy.WHATSAPP_HOTCLICK`), nunca el del vendedor:
+ * Siempre el número de HotClick (variable de build de soporte; vacía ⇒ no se muestra), nunca el del vendedor:
  * esta página es de la plataforma y no sabe de qué tienda es el pedido.
  */
 export default function WhatsAppSoporteDevoluciones() {
+  if (!WHATSAPP_HOTCLICK) return null
   return (
     <div className="flex flex-col gap-[6px]">
       <a

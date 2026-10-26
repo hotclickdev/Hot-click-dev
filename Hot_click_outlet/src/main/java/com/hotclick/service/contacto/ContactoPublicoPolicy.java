@@ -2,6 +2,7 @@ package com.hotclick.service.contacto;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
+import com.hotclick.utils.SoporteTelefono;
 
 import java.util.Locale;
 import java.util.Set;
@@ -16,8 +17,13 @@ public final class ContactoPublicoPolicy {
 
     public static final Set<String> PLANES_CON_CONTACTO = Set.of("PYME", "NEGOCIO_PLUS");
 
-    /** WhatsApp de HotClick: reemplaza al del vendedor donde la plataforma necesita un número. */
-    public static final String WHATSAPP_HOTCLICK = "50686667888";
+    /**
+     * WhatsApp de HotClick que reemplaza al del vendedor donde la plataforma necesita un número.
+     * Sale de {@code hotclick.soporte.telefono}; vacío ⇒ "" y los llamadores omiten el WhatsApp.
+     */
+    public static String whatsappHotclick(String telefonoSoporte) {
+        return SoporteTelefono.digitosWa(telefonoSoporte);
+    }
 
     private ContactoPublicoPolicy() {}
 

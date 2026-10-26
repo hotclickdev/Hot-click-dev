@@ -42,45 +42,6 @@ public class SinpeComprobanteService {
     @Autowired private com.hotclick.service.payment.PedidoGrupoService pedidoGrupoService;
     @Autowired private SinpeComprobantePersistenceService persistenceService;
 
-    /**
-     * Sin @Transactional a proposito: el upload a S3 es I/O externo lento (con reintentos de
-     * SupabaseStorageService) y retenerlo dentro de una transaccion agota el pool de PgBouncer
-     * bajo carga (muchos comprobantes SINPE simultaneos). La persistencia corre aparte, en
-     * {@link SinpeComprobantePersistenceService#guardar}, en su propia transaccion corta.
-     */
-    public void subirComprobante(String numeroPedido, MultipartFile archivo,
-                          String nombreRemitente, String cedulaRemitente,
-                          String telefonoRemitente, String correoUsuario) {
-        Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
-
-        if (!pedido.getUsuarioFinal().getCorreo().equals(correoUsuario)) {
-            throw new SecurityException("No tienes permiso para modificar este pedido");
-        }
-
-        if (!Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(pedido.getEstadoPedido())) {
-            throw new IllegalStateException("El pedido no está esperando un comprobante (estado: " + pedido.getEstadoPedido() + ")");
-        }
-
-        if (archivo == null || archivo.isEmpty()) {
-            throw new IllegalArgumentException("Debes adjuntar el comprobante de pago");
-        }
-        if (nombreRemitente == null || nombreRemitente.isBlank()) {
-            throw new IllegalArgumentException("El nombre del remitente es requerido");
-        }
-
-        String url;
-        try {
-            // C1: privado; en la columna queda la clave S3, nunca una URL pública.
-            url = storageService.subirComprobantePrivado(archivo);
-        } catch (IOException e) {
-            throw new IntegracionExternaException("storage", IntegracionExternaException.Tipo.IO_ERROR,
-                "Error al subir el comprobante: " + e.getMessage(), e);
-        }
-
-        persistenceService.guardar(numeroPedido, url, nombreRemitente, cedulaRemitente, telefonoRemitente, correoUsuario);
-    }
-
     @org.springframework.beans.factory.annotation.Value("${sinpe.comprobante.url-firmada-segundos:300}")
     private long segundosUrlFirmada = 300;
 
@@ -104,85 +65,6 @@ public class SinpeComprobanteService {
             throw new RecursoNoEncontradoException("Comprobante sin archivo");
         }
         return storageService.urlFirmada(clave, java.time.Duration.ofSeconds(Math.max(1, segundosUrlFirmada)));
-    }
-
-    @Transactional
-    public void aprobar(Long comprobanteId, String adminEmail, Long adminId) {
-        ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
-        aprobacionGuard.assertPuedeResolver(comprobante.getPedido());
-
-        if (!Constants.COMPROBANTE_PENDIENTE.equals(comprobante.getEstado())) {
-            throw new IllegalStateException("El comprobante ya fue procesado: " + comprobante.getEstado());
-        }
-
-        Pedido pedido = comprobante.getPedido();
-        if (!Constants.PEDIDO_PENDIENTE_APROBACION.equals(pedido.getEstadoPedido())) {
-            throw new IllegalStateException("El pedido no está en estado PENDIENTE_APROBACION");
-        }
-
-        Pago pago = pagoDeLaCompra(pedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago SINPE no encontrado para pedido: " + pedido.getNumeroPedido()));
-
-        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
-        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-        pagoRepository.save(pago);
-
-        comprobante.setEstado(Constants.COMPROBANTE_APROBADO);
-        comprobante.setFechaResolucion(LocalDateTime.now(Constants.ZONA_CR));
-        comprobante.setAdminId(adminId);
-        comprobante.setAdminEmail(adminEmail);
-        comprobanteRepository.save(comprobante);
-
-        paymentService.confirmarPedido(pago);
-
-        auditSupport.registrarAuditoria(adminId, adminEmail,
-            Constants.AUDITORIA_APROBAR_SINPE, "COMPROBANTE_SINPE", comprobanteId,
-            "Pedido " + pedido.getNumeroPedido() + " aprobado");
-
-        log.info("Comprobante SINPE aprobado por {}: pedido={}", adminEmail, pedido.getNumeroPedido());
-    }
-
-    @Transactional
-    public void rechazar(Long comprobanteId, String motivo, String adminEmail, Long adminId) {
-        ComprobanteSinpe comprobante = comprobanteRepository.findById(comprobanteId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Comprobante", comprobanteId));
-        aprobacionGuard.assertPuedeResolver(comprobante.getPedido());
-
-        if (!Constants.COMPROBANTE_PENDIENTE.equals(comprobante.getEstado())) {
-            throw new IllegalStateException("El comprobante ya fue procesado: " + comprobante.getEstado());
-        }
-
-        Pedido pedido = comprobante.getPedido();
-
-        comprobante.setEstado(Constants.COMPROBANTE_RECHAZADO);
-        comprobante.setFechaResolucion(LocalDateTime.now(Constants.ZONA_CR));
-        comprobante.setNotasAdmin(motivo);
-        comprobante.setAdminId(adminId);
-        comprobante.setAdminEmail(adminEmail);
-        comprobanteRepository.save(comprobante);
-
-        Pago pago = pagoDeLaCompra(pedido).orElse(null);
-        if (pago != null) {
-            pago.setEstadoPago(Constants.PAGO_CANCELADO);
-            pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-            pagoRepository.save(pago);
-        }
-
-        for (Pedido p : pedidoGrupoService.delGrupo(pedido)) {
-            p.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-            pedidoRepository.save(p);
-            paymentService.liberarReservas(p);
-            if (p.getUsuarioFinal() != null) { p.getUsuarioFinal().getCorreo(); }
-            notificacionEmailService.enviarPagoFallido(p,
-                "Comprobante SINPE rechazado" + (motivo != null ? ": " + motivo : ""));
-        }
-
-        auditSupport.registrarAuditoria(adminId, adminEmail,
-            Constants.AUDITORIA_RECHAZAR_SINPE, "COMPROBANTE_SINPE", comprobanteId,
-            "Pedido " + pedido.getNumeroPedido() + " rechazado. Motivo: " + motivo);
-
-        log.info("Comprobante SINPE rechazado por {}: pedido={}", adminEmail, pedido.getNumeroPedido());
     }
 
     /**

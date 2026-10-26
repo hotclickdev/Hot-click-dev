@@ -7,8 +7,9 @@ import type { Producto } from '@/types/producto'
 import { mensajeServiciosHot } from './buscarExplorar'
 import { ICONOS_CATALOGO } from './iconosCatalogo'
 import { CLASE_GRILLA_TARJETAS } from './catalogoGrilla'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
-const WHATSAPP_HOTCLICK = '50686667888'
+const WHATSAPP_HOTCLICK = SOPORTE_WA
 const SUGERIDOS_MAX = 4
 
 /** Búsqueda sin resultados (Figma `27:804`): asistente, "Te lo conseguimos" por WhatsApp y productos para seguir. */

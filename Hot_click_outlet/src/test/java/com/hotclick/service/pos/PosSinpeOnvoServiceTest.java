@@ -162,4 +162,18 @@ class PosSinpeOnvoServiceTest {
         assertThat(svc.cancelarIntent(sesion)).isTrue();
         assertThat(svc.cancelarIntent(sesion)).isFalse();
     }
+
+    @Test
+    @DisplayName("P-04: esCobroDePrueba solo con intent ONVO y llave no live")
+    void esCobroDePrueba() {
+        PosQrSesion ses = new PosQrSesion();
+        ses.setStripeSessionId("ONVOPI:pi_1");
+        when(onvo.modoEsperado()).thenReturn("test");
+        org.assertj.core.api.Assertions.assertThat(svc.esCobroDePrueba(ses)).isTrue();
+        when(onvo.modoEsperado()).thenReturn("live");
+        org.assertj.core.api.Assertions.assertThat(svc.esCobroDePrueba(ses)).isFalse();
+        ses.setStripeSessionId("cs_tarjeta");
+        when(onvo.modoEsperado()).thenReturn("test");
+        org.assertj.core.api.Assertions.assertThat(svc.esCobroDePrueba(ses)).isFalse();
+    }
 }

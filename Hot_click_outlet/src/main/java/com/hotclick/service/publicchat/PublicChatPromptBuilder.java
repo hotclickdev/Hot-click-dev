@@ -22,6 +22,9 @@ class PublicChatPromptBuilder {
                     + "Móvil, debit/credit card, or bank transfer. For warranty or returns on a specific product, "
                     + "check its product page or WhatsApp. Anything I can help you find?";
             }
+            if (sinWa(wa)) {
+                return nombre + " is an online store. Ask me about a specific product and I'll help you. What are you looking for?";
+            }
             return nombre + " is an online store. For shipping, warranty and payments of this shop, write on WhatsApp: "
                 + "https://wa.me/" + wa + " — or ask about a specific product. What are you looking for?";
         }
@@ -31,11 +34,19 @@ class PublicChatPromptBuilder {
                 + "tarjeta o transferencia. Garantía y devoluciones dependen de cada producto: mirá la ficha o "
                 + "escribinos al WhatsApp. ¿Qué estás buscando?";
         }
+        if (sinWa(wa)) {
+            return nombre + " es una tienda online. Preguntame por un producto concreto y te ayudo. ¿Qué estás buscando?";
+        }
         return nombre + " es una tienda online. Para envíos, garantía y formas de pago de este negocio, escribinos al "
             + "WhatsApp https://wa.me/" + wa + " o preguntá por un producto concreto. ¿Qué estás buscando?";
     }
 
     public String whatsappContactText(String wa, boolean isEnglish) {
+        if (sinWa(wa)) {
+            return isEnglish
+                ? "You can reach our team from the Contact page."
+                : "Podés escribirnos desde la página de Contacto.";
+        }
         return isEnglish
             ? "You can reach our team directly on WhatsApp: https://wa.me/" + wa
             : "Podés escribirnos directo por WhatsApp: https://wa.me/" + wa;
@@ -179,8 +190,8 @@ class PublicChatPromptBuilder {
                 El cliente tiene items en el carrito (total: %s).
                 OBJETIVO: Cerrar la venta. Felicitalo por su selección, sugiere 1 accesorio pequeño si aplica,
                 y cierra con "¿Lo finalizamos?" o "¿Procedemos con el pago?"
-                Menciona que puede pagar con SINPE al %s o tarjeta en línea.
-                """, total, wa);
+                Menciona que puede pagar con SINPE%s o tarjeta en línea.
+                """, total, alNumero(wa));
         }
         if (context != null && context.startsWith("PRODUCTO:")) {
             String[] parts = context.split(":", 4);
@@ -203,9 +214,9 @@ class PublicChatPromptBuilder {
         if (context != null && context.startsWith("PAGO_FALLO")) {
             return String.format("""
                 El pago del cliente falló.
-                OBJETIVO: Tranquilizalo con empatía y ofrecé SINPE Móvil al %s como alternativa simple.
+                OBJETIVO: Tranquilizalo con empatía y ofrecé SINPE Móvil%s como alternativa simple.
                 Sé muy empático, esto genera frustración.
-                """, wa);
+                """, alNumero(wa));
         }
         StringBuilder goal = new StringBuilder("""
             El cliente está explorando la tienda.
@@ -217,10 +228,21 @@ class PublicChatPromptBuilder {
         return goal.toString();
     }
 
+    /** Sin número configurado el prompt no menciona WhatsApp (nada de "wa.me/" vacío). */
+    static boolean sinWa(String wa) {
+        return wa == null || wa.isBlank();
+    }
+
+    private static String alNumero(String wa) {
+        return sinWa(wa) ? "" : " al " + wa;
+    }
+
     private static String datosTienda(String wa, String nombre, boolean marketplace) {
         StringBuilder sb = new StringBuilder();
         sb.append("- Nombre: ").append(nombre).append('\n');
-        sb.append("- WhatsApp / contacto: wa.me/").append(wa).append(" (número ").append(wa).append(")\n");
+        if (!sinWa(wa)) {
+            sb.append("- WhatsApp / contacto: wa.me/").append(wa).append(" (número ").append(wa).append(")\n");
+        }
         if (marketplace) {
             // Plazos desde la fuente única (config/tiempos-envio.json), los mismos del checkout.
             sb.append("- Envíos (marketplace): Correos de Costa Rica + entrega directa en el GAM; ")

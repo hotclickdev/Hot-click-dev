@@ -116,7 +116,7 @@ class RateLimitPrefijoTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Pago QR POS: cupo por sesion de pago + IP (10)")
     void qrPago_porSesion() throws Exception {
-        cupoPorRecurso("203.0.113.24", 10, "/api/pos/qr/pago/tokA_abcdefghijkl/tilopay", "/api/pos/qr/pago/tokB_abcdefghijkl/tilopay");
+        cupoPorRecurso("203.0.113.24", 10, "/api/pos/qr/pago/tokA_abcdefghijkl/sinpe-onvo", "/api/pos/qr/pago/tokB_abcdefghijkl/sinpe-onvo");
     }
 
     @Test

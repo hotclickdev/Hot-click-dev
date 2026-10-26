@@ -151,7 +151,7 @@ test.describe('Mis pedidos', () => {
     await expect(paquetes.nth(2).locator('[aria-disabled="true"]')).toHaveCount(0)
     await expect(paquetes.nth(2).getByRole('link', { name: 'Garantía' })).toHaveAttribute('href', '/servicios?vista=garantia')
     await expect(paquetes.nth(2).getByRole('link', { name: 'Opinar' })).toHaveAttribute('href', '/perfil?vista=opiniones')
-    await expect(paquetes.nth(1).getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', /wa\.me\/50686667888/)
+    await expect(paquetes.nth(1).getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', /wa\.me\/00000000000/)
   })
 
   test('el enlace de rastreo http o con javascript: se reemplaza por el de Correos', async ({ page }) => {
@@ -216,7 +216,7 @@ test.describe('Mis solicitudes', () => {
     await expect(page.getByText('Tu búsqueda')).toBeVisible()
     await expect(page.getByText('Te la conseguimos')).toBeVisible()
     await expect(page.getByText('Lámpara de pie nórdica, 1,6 m · ₡24.500')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Hacer una pregunta por WhatsApp' })).toHaveAttribute('href', /wa\.me\/50686667888\?text=/)
+    await expect(page.getByRole('link', { name: 'Hacer una pregunta por WhatsApp' })).toHaveAttribute('href', /wa\.me\/00000000000\?text=/)
     await expect(page.getByText('Solicitud recibida')).toBeVisible()
   })
 

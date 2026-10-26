@@ -44,6 +44,10 @@ public class TelegramNotificacionClienteService {
     @Autowired private RateLimiter                   rateLimiter;
     @Autowired private JdbcTemplate                  jdbc;
 
+    /** Teléfono de soporte para los avisos. Sin default: vacío ⇒ se omite la línea. */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.soporte.telefono:}")
+    private String telefonoSoporte;
+
     // ── Venta ─────────────────────────────────────────────────────────────────
 
     @Async
@@ -106,14 +110,21 @@ public class TelegramNotificacionClienteService {
     public void notificarSolicitudRevision(Long empresaId, String tipoLabel, String nombreItem, String comentario) {
         if (!bot.isConfigured() || empresaId == null) return;
         try {
-            String texto = "🔧 *Se necesitan ajustes*\n\n"
-                + tipoLabel + " *" + esc(nombreItem) + "* necesita algunos cambios antes de publicarse.\n\n"
-                + (comentario != null && !comentario.isBlank() ? esc(comentario) + "\n\n" : "")
-                + "Si tenés dudas, escribinos al *8666-7888*.";
+            String texto = textoRevision(tipoLabel, nombreItem, comentario, telefonoSoporte);
             enviarATodos(empresaId, texto);
         } catch (Exception e) {
             log.error("[telegram-notif] fallo notificando revisión {} — {}", nombreItem, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
+    }
+
+    static String textoRevision(String tipoLabel, String nombreItem, String comentario, String telefono) {
+        String texto = "🔧 *Se necesitan ajustes*\n\n"
+            + tipoLabel + " *" + esc(nombreItem) + "* necesita algunos cambios antes de publicarse."
+            + (comentario != null && !comentario.isBlank() ? "\n\n" + esc(comentario) : "");
+        if (telefono != null && !telefono.isBlank()) {
+            texto += "\n\nSi tenés dudas, escribinos al *" + esc(telefono.trim()) + "*.";
+        }
+        return texto;
     }
 
     @Async
@@ -193,7 +204,7 @@ public class TelegramNotificacionClienteService {
         return filas.isEmpty() ? null : ((Number) filas.get(0).get("minimo")).intValue();
     }
 
-    private String esc(String s) {
+    private static String esc(String s) {
         return s == null ? "" : s.replaceAll("[*_`\\[\\]]", "");
     }
 }
