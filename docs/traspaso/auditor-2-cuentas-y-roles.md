@@ -32,3 +32,23 @@ Ninguno (este bot no crea ramas).
 
 ## Evidencia
 - `docs/traspaso/evidencia/auditor-2-cuentas-y-roles/fase1-cuentas-roles.md` (copia del informe).
+
+## Correcciones al README
+
+Revisado sobre la rama docs/traspaso-cuenta-nueva en el commit c69dcc3 (la punta actual; el pedido citaba b9f241d8). Solo lectura.
+
+### (a) Errores o datos viejos
+- Fila del Auditor 2 (línea 132): el enlace a la nota funciona; el archivo y la carpeta de evidencia ya están en la rama.
+- La fila dice "informe en hotclick-reportes/auditoria/": esa ruta es del box viejo, no del repo. Indicar que la evidencia va en `docs/traspaso/evidencia/auditor-2-cuentas-y-roles/fase1-cuentas-roles.md`.
+- Estado del área 2 (línea 207): "Correcciones mergeadas, falta el QA". No lo verifiqué: no se indica qué PRs ni cuáles de A1, A2 y A3 cubren. Sumar los números de PR y el hash de master auditado (aa907776).
+
+### (b) Lo que le falta al reemplazo
+- Los 3 ALTO a re-verificar en el QA: A1 (el login no normaliza el correo: `AuthCredentialLoginHandler.java:62` frente a `AuthRegistrationService.java:56`), A2 (todo miembro de equipo recibe EMPRENDEDOR, `RolMembresia.java:20-21`), A3 (no existe el rol cajero, `EquipoController.java:25`; falta la matriz de pruebas rol × endpoint para C5).
+- Pendiente abierto: confirmar en el registro de auditoría de login de prod si el 401 de la cuenta de prueba cliente es `user_not_found` o `wrong_password`. Requiere acceso de lectura a esos logs o a la base, que el auditor no tenía.
+- Trampa: el clon compartido del box puede tener cambios locales de otros bots; auditar siempre en un clon limpio aparte.
+- Trampa: `/workspace/hotclick-reportes/prod-cuentas-prueba/03-cuentas-prueba.sql` no debe entrar al repo ni al traspaso.
+- Variables: el auditor no usa secretos propios; solo necesita acceso de lectura al repo (gh o el conector de GitHub).
+
+### (c) Mejoras
+- En la fila de cada auditor, poner el commit auditado y el conteo por severidad, no solo "Auditoría entregada".
+- Enlazar cada estado de área a sus PRs concretos.

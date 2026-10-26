@@ -54,3 +54,28 @@ No tengo ramas ni PRs propios.
 - `webhook.log`
 
 Pendientes medios y bajos: `/workspace/hotclick-reportes/bugs-pendientes-media-baja-2026-10-23.md`.
+
+## Correcciones al README (HotClick QA Webhooks y UX)
+
+### a) Errores o datos viejos
+- **Fila 124:** el link apunta a `hotclick-qa-webhooks-y-ux.md` en la rama, pero mi nota no está subida, solo existe en local en `/workspace/qa/verif/qa8/traspaso/hotclick-qa-webhooks-y-ux.md`. Hay que subirla o marcar la fila como ❌ SIN NOTA.
+- **Estado incompleto en la fila:**
+  - Pago de suscripción con ONVO test (staging 1b1fece8, #346): ALTO. Al confirmar el plan PYME aparece "Error con la pasarela de pago" y la consola da 403 en `/api/billing/plan-pendiente`, `/api/empresa/perfil` y `/api/encargos/kpis`. El formulario de ONVO no carga, así que la CSP de #346 no quedó verificada. Dev Pagos está viendo la causa y no hay que repetir la prueba hasta que él lo diga.
+  - `/vender` dice que las tarjetas pasan por Tilopay. Es bug, ya está pasado a Dev Pagos.
+  - `/register` da 404 (el registro real está en `/registro`). Anotado como BAJO en pendientes.
+  - Área 8: tengo 4 tests que reproducen A8-C2, C3, C4 y C7 (fallan en a22501f7b). Están en `/workspace/qa/verif/qa8/tests-repro-a8/` y se le pasaron a Bugs para el #338.
+  - Área 9: OK en vivo a 360 px y vitest 195/195. Siguen abiertos los MEDIOS C3 a C7 y QA8-003, que tiene Dev Marketplace.
+
+### b) Lo que le falta a mi reemplazo
+- **Staging local:** el front está en :3000 y el backend en :8081, no en :8080. Lo levanta CI/CD en `/workspace/staging-43188186`. Mailpit está en :8025. No hay que tocar los procesos `hotclick-staging-backend` ni `hotclick-staging-front`, ni borrar su `frontend/node_modules` ni `/workspace/tools/node22`.
+- **Maven:** está en `/workspace/qa1-verif/maven/bin` y el JDK 21 en `/workspace/tools/jdk21`. Antes de correrlo hay que hacer `unset ONVO_*`, y las suites completas van con `flock /workspace/.mvn-suite.lock`.
+- **Webhook ONVO:** hay que mandar la cabecera `X-Webhook-Secret`, con el valor de la variable `ONVO_WEBHOOK_SECRET`, que solo se carga en una variable y nunca se imprime. Para el duplicado y el fuera de orden hace falta un `session_id` pagado de QA 5 y el permiso de Grok Bot. Staging no tiene `.env`, así que no hay que ponerle ningún secret sin permiso.
+- **Trampas:**
+  - El checkout de `/workspace/Hot-click-dev` tiene cambios locales, así que `git pull` falla. Hay que usar un worktree propio y borrarlo al terminar.
+  - El box se queda sin inodos; se revisa con `df -i /`.
+  - El navegador del box puede tener abierta la sesión de otra cuenta QA, así que hay que cerrarla antes de probar.
+  - La prueba del asistente en prod con la cuenta de cliente no se repite hasta que Bugs dé la causa.
+
+### c) Mejoras
+- Que cada fila incluya el hash de master contra el que se probó.
+- Que haya una sección común de staging (puertos, Mailpit, rutas de Maven y JDK, inodos) para no repetirla en cada nota.

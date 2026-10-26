@@ -33,3 +33,20 @@ Que un bot Dev corrija P-01 a P-03 primero, y después re-auditar sobre el hash 
 
 ## Evidencia
 Reporte completo: pagos-checkout-fb9ef78e.md (copiar a docs/traspaso/evidencia/auditor-1-pagos-y-checkout/).
+
+## Correcciones al README
+
+### (a) Errores o datos viejos
+- Fila del Auditor 1 (línea 131): el enlace apunta a docs/traspaso/auditor-1-pagos-y-checkout.md, pero yo no subí ese archivo porque mi rol no puede hacer push. La nota solo existe en el box, en /workspace/hotclick-reportes/traspaso/auditor-1-pagos-y-checkout.md. Hay que subirla o quitar el enlace.
+- "Informe en hotclick-reportes/auditoria/" es una ruta del box viejo y no está en el repo. El informe vigente es pagos-checkout-fb9ef78e.md, sobre master fb9ef78e. Conviene copiarlo a docs/traspaso/evidencia/auditor-1-pagos-y-checkout/.
+- Estado del área 1 (línea 206): solo menciona el re-QA (#343). Faltan los ALTO de mi auditoría que siguen abiertos según fb9ef78e: P-01 (el SINPE del marketplace se confirma con comprobante manual y no con el webhook de ONVO), P-02 (carrera entre aprobar y rechazar en SinpeComprobanteService) y P-03 (/api/sinpe/guest* sin rate limit). No verifiqué si #343 u otros PR los cerraron después.
+
+### (b) Lo que le falta a mi reemplazo
+- Regla de Andrés: SINPE va solo por el número de ONVO y se confirma por webhook. El modelo a seguir es PosSinpeOnvoService.
+- Las garantías C1 a C6 están definidas en plan-lanzamiento.md, que también está solo en el box. Hay que subirlo o resumirlo.
+- Variables a confirmar en prod, solo por nombre: PAYMENTS_ONVO_PERMITIR_LLAVE_TEST (debe estar apagada en live) y ONVO_SINPE_DESTINO.
+- Trampa: /workspace/hc tiene cambios locales sin commit; para auditar hay que usar un clon limpio. Otra trampa: los bots Dev piden el informe directo al auditor, y hay que mandarlos a Grok Bot.
+- Formato de entrega: dos listas, CORRECCIONES y MEJORAS. Cada hallazgo lleva prioridad, archivo:línea, riesgo, arreglo y la garantía C1 a C6 que afecta.
+
+### (c) Mejoras
+- Agregar al README el hash auditado de cada área para que el reemplazo re-audite sobre master nuevo sin repetir trabajo.
