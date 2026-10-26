@@ -101,7 +101,7 @@ class ShoppingAssistantChatContingenciaTest {
             .persistirMensajes(any(), anyLong(), anyString(), any());
         ChatResponse r = chat();
         assertThat(r.getRespuesta()).isEqualTo("respuesta ok");
-        assertThat(r.getSesionId()).isEqualTo(firma.firmar(sesion));
+        assertThat(r.getSesionId()).isEqualTo(firma.firmar(1L, sesion));
     }
 
     @Test void slugDuplicado_failClosed404() {
