@@ -18,7 +18,7 @@ public record RagResult(
     int                   tokensSalida
 ) {
     /** Respuesta de contingencia cuando Claude o Gemini no están disponibles. */
-    static RagResult fallback() {
+    public static RagResult fallback() {
         return new RagResult(
             "Lo siento, estoy experimentando problemas para conectarme con el catálogo en este momento. " +
             "Por favor intentá de nuevo en unos minutos o contactanos directamente.",
