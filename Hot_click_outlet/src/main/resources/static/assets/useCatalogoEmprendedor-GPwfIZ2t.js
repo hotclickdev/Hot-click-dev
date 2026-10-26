@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-Dxf9VCx5.js";function t(){return e()}export{t};
