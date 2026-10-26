@@ -4743,6 +4743,35 @@
     "pagar": "Pagar y reactivar",
     "iniciando": "Abriendo el pago…",
     "confirmando": "Estamos confirmando tu pago con ONVO. La tienda se reactiva en cuanto se confirme.",
-    "error": "No pudimos cargar o iniciar el pago. Probá de nuevo en unos minutos."
+    "error": "No pudimos cargar o iniciar el pago. Probá de nuevo en unos minutos.",
+    "extensionTitulo": "Pedidos de los días de gracia",
+    "extensionTexto": "Tenés una extensión hasta {{fecha}}. La tienda sigue oculta y no recibe ventas nuevas; solo podés completar los pedidos creados en la gracia.",
+    "sinPedidosGracia": "No hay pedidos de la gracia pendientes.",
+    "cambiarEstado": "Cambiar estado",
+    "guia": "Número de guía",
+    "guardarGuia": "Guardar guía"
+  },
+  "impagoAdmin": {
+    "enGracia": "Tiendas en periodo de gracia",
+    "sinGracia": "Ninguna tienda está en gracia.",
+    "diasRestantes_one": "Queda {{count}} día",
+    "diasRestantes_other": "Quedan {{count}} días",
+    "suspender": "Suspender",
+    "suspendidas": "Suspendidas por impago",
+    "sinSuspendidas": "Ninguna tienda suspendida por impago.",
+    "suspendida": "Suspendida",
+    "enExtension": "Extensión hasta {{fecha}}",
+    "darExtension_one": "Dar {{count}} día extra",
+    "darExtension_other": "Dar {{count}} días extra",
+    "extensionUsada": "Extensión ya usada en este ciclo",
+    "confirmarSuspender": "¿Suspender {{nombre}}?",
+    "textoSuspender": "La tienda queda oculta y sin ventas hasta que pague. No se borra ningún dato. Queda en la bitácora con tu usuario, el motivo y la hora.",
+    "confirmarExtension_one": "¿Dar {{count}} día extra a {{nombre}}?",
+    "confirmarExtension_other": "¿Dar {{count}} días extra a {{nombre}}?",
+    "textoExtension_one": "Solo una vez por ciclo. Durante {{count}} día la tienda sigue oculta y sin ventas nuevas; solo gestiona los pedidos de la gracia. Al vencer vuelve a la suspensión.",
+    "textoExtension_other": "Solo una vez por ciclo. Durante {{count}} días la tienda sigue oculta y sin ventas nuevas; solo gestiona los pedidos de la gracia. Al vencer vuelve a la suspensión.",
+    "motivo": "Motivo (obligatorio)",
+    "cancelar": "Cancelar",
+    "error": "No se pudo completar. Probá de nuevo."
   }
 }

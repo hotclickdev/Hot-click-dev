@@ -25,6 +25,7 @@ export const billingService = {
   iniciarTrial: () => api.post('/billing/trial'),
   crearCheckout: (planId: Id) => api.post(`/billing/checkout/${planId}`),
   getImpago: () => api.get<import('@/features/suspension/suspensionImpaga').EstadoImpago>('/billing/impago'),
+  pedidosImpago: () => api.get<import('@/features/suspension/suspensionImpaga').PedidoDeGracia[]>('/billing/impago/pedidos'),
   pagarImpago: () => api.post<CambiarPlanResultado>('/billing/impago/pagar'),
   cambiarPlan: (planId: Id) => api.post<CambiarPlanResultado>(`/billing/cambiar-plan/${planId}`),
   crearPortal: () => api.post('/billing/portal'),

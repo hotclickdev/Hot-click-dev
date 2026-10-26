@@ -149,6 +149,8 @@ public class Constants {
 
     /** Suscripción impaga tras los días de gracia: tienda oculta y sin ventas; el dueño solo paga. */
     public static final String ESTADO_EMPRESA_SUSPENDIDO_IMPAGO = "SUSPENDIDO_IMPAGO";
+    /** Extensión de admin ("Dar 3 días extra"): sigue oculta y sin ventas nuevas; solo gestiona pedidos de la gracia. */
+    public static final String ESTADO_EMPRESA_EXTENSION_IMPAGO = "EXTENSION_IMPAGO";
     public static final String ESTADO_PLAN_REQUIERE_MEMBRESIA = "REQUIERE_MEMBRESIA";
 
     /** Prueba QA abierta. Cabe en estado_plan (varchar 20). */

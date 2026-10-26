@@ -4743,6 +4743,35 @@
     "pagar": "Pay and reactivate",
     "iniciando": "Opening payment…",
     "confirmando": "We're confirming your payment with ONVO. Your store reactivates as soon as it's confirmed.",
-    "error": "We couldn't load or start the payment. Please try again in a few minutes."
+    "error": "We couldn't load or start the payment. Please try again in a few minutes.",
+    "extensionTitulo": "Orders from the grace period",
+    "extensionTexto": "You have an extension until {{fecha}}. Your store stays hidden and cannot take new sales; you can only complete orders created during the grace period.",
+    "sinPedidosGracia": "There are no pending grace-period orders.",
+    "cambiarEstado": "Change status",
+    "guia": "Tracking number",
+    "guardarGuia": "Save tracking"
+  },
+  "impagoAdmin": {
+    "enGracia": "Stores in grace period",
+    "sinGracia": "No store is in its grace period.",
+    "diasRestantes_one": "{{count}} day left",
+    "diasRestantes_other": "{{count}} days left",
+    "suspender": "Suspend",
+    "suspendidas": "Suspended for non-payment",
+    "sinSuspendidas": "No store is suspended for non-payment.",
+    "suspendida": "Suspended",
+    "enExtension": "Extension until {{fecha}}",
+    "darExtension_one": "Give {{count}} extra day",
+    "darExtension_other": "Give {{count}} extra days",
+    "extensionUsada": "Extension already used this cycle",
+    "confirmarSuspender": "Suspend {{nombre}}?",
+    "textoSuspender": "The store will be hidden and unable to sell until it pays. No data is deleted. This is logged with your user, the reason and the time.",
+    "confirmarExtension_one": "Give {{nombre}} {{count}} extra day?",
+    "confirmarExtension_other": "Give {{nombre}} {{count}} extra days?",
+    "textoExtension_one": "Only once per cycle. For {{count}} day the store stays hidden with no new sales; it can only manage grace-period orders. Afterwards it returns to suspension.",
+    "textoExtension_other": "Only once per cycle. For {{count}} days the store stays hidden with no new sales; it can only manage grace-period orders. Afterwards it returns to suspension.",
+    "motivo": "Reason (required)",
+    "cancelar": "Cancel",
+    "error": "Could not complete. Please try again."
   }
 }

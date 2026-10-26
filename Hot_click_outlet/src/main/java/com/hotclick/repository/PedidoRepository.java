@@ -316,4 +316,17 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
                                               @Param("corte") java.time.LocalDateTime corte,
                                               Pageable pageable);
 
+
+    /** Extensión de impago: ¿el pedido es de la empresa y se creó en la ventana de gracia [desde, hasta)? */
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.id = :id AND p.empresa.id = :empresaId "
+         + "AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta")
+    long countGestionableEnGracia(@Param("id") Long id, @Param("empresaId") Long empresaId,
+                                  @Param("desde") java.time.LocalDateTime desde,
+                                  @Param("hasta") java.time.LocalDateTime hasta);
+
+    @Query("SELECT p FROM Pedido p WHERE p.empresa.id = :empresaId "
+         + "AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta ORDER BY p.fechaPedido DESC")
+    List<Pedido> findCreadosEnGracia(@Param("empresaId") Long empresaId,
+                                     @Param("desde") java.time.LocalDateTime desde,
+                                     @Param("hasta") java.time.LocalDateTime hasta);
 }

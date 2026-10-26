@@ -7,6 +7,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.PropietarioGuard;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.auth.AuthSupport;
+import com.hotclick.service.suscripcion.AdminSuspensionService;
 import com.hotclick.service.suscripcion.SuscripcionOnvoChangeService;
 import com.hotclick.service.suscripcion.SuspensionImpago;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,9 +39,12 @@ public class CuentaSuspendidaController {
     private final SuscripcionOnvoChangeService onvoChange;
     private final PropietarioGuard propietarioGuard;
     private final AuthSupport authSupport;
+    private final AdminSuspensionService extensiones;
 
     public CuentaSuspendidaController(EmpresaRepository empresaRepo, SuscripcionOnvoChangeService onvoChange,
-                                      PropietarioGuard propietarioGuard, AuthSupport authSupport) {
+                                      PropietarioGuard propietarioGuard, AuthSupport authSupport,
+                                      AdminSuspensionService extensiones) {
+        this.extensiones = extensiones;
         this.empresaRepo = empresaRepo;
         this.onvoChange = onvoChange;
         this.propietarioGuard = propietarioGuard;
@@ -60,6 +65,11 @@ public class CuentaSuspendidaController {
         out.put("nombreEmpresa", e.getNombreEmpresa());
         out.put("correoEmpresa", e.getCorreoEmpresa());
         out.put("fechaVencPlan", e.getFechaVencPlan());
+        boolean enExtension = SuspensionImpago.enExtension(e.getEstadoEmpresa());
+        out.put("enExtension", enExtension);
+        if (enExtension) {
+            extensiones.extensionVigente(empresaId).ifPresent(x -> out.put("extensionVenceEn", x.getVenceEn()));
+        }
         if (suspendida) {
             onvoChange.planPendienteDeSuspension(empresaId).ifPresent((Plan p) -> {
                 out.put("planPendiente", p.getNombre());
@@ -68,6 +78,15 @@ public class CuentaSuspendidaController {
             });
         }
         return ResponseEntity.ok(out);
+    }
+
+    /** Extensión de admin: pedidos creados en la gracia que el dueño todavía puede gestionar. Vacío fuera de la extensión. */
+    @GetMapping("/pedidos")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
+    public ResponseEntity<List<Map<String, Object>>> pedidosDeGracia() {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(extensiones.pedidosDeGracia(empresaId));
     }
 
     /** Inicia el cobro ONVO del plan impago. La tienda vuelve a ACTIVO solo con el webhook ONVO verificado. */
