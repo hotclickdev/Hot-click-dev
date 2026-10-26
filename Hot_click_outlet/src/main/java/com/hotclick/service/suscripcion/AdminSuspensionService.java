@@ -97,11 +97,25 @@ public class AdminSuspensionService {
         return Math.max(0, d);
     }
 
-    @Transactional(readOnly = true)
     public Map<String, Object> listar() {
+        return listar(LIMITE_LISTA);
+    }
+
+    /** Tope de filas por sección de la lista de admin. */
+    public static final int LIMITE_LISTA = 200;
+
+    /** limit fuera de 1..LIMITE_LISTA (0, negativo, enorme) se acota: nunca lista sin tope ni con PageRequest inválido. */
+    public static int acotar(int limit) {
+        return Math.max(1, Math.min(limit, LIMITE_LISTA));
+    }
+
+    /** Consultas fijas (sin N+1): gracia, suspendidas, ciclos vencidos, extensiones usadas y última extensión. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> listar(int limit) {
+        org.springframework.data.domain.Pageable page = org.springframework.data.domain.PageRequest.of(0, acotar(limit));
         LocalDate hoy = ahora().toLocalDate();
         List<Map<String, Object>> enGracia = new ArrayList<>();
-        for (Suscripcion s : suscripcionRepo.findPastDueConEmpresa()) {
+        for (Suscripcion s : suscripcionRepo.findPastDueConEmpresa(page)) {
             Empresa e = s.getEmpresa();
             if (e == null || !"ACTIVO".equals(e.getEstadoEmpresa())) continue;
             Map<String, Object> m = new LinkedHashMap<>();
@@ -112,22 +126,40 @@ public class AdminSuspensionService {
             m.put("diasRestantes", diasRestantes(s.getFechaFin(), hoy));
             enGracia.add(m);
         }
-        List<Map<String, Object>> suspendidas = new ArrayList<>();
-        for (String estado : List.of(Constants.ESTADO_EMPRESA_SUSPENDIDO_IMPAGO, Constants.ESTADO_EMPRESA_EXTENSION_IMPAGO)) {
-            for (Long id : empresaRepo.findIdsByEstadoEmpresa(estado)) {
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("empresaId", id);
-                m.put("nombreEmpresa", empresaRepo.findById(id).map(Empresa::getNombreEmpresa).orElse(null));
-                m.put("estado", estado);
-                Optional<Suscripcion> ciclo = suscripcionRepo.findTopByEmpresaIdAndEstadoOrderByFechaCreacionDesc(id, VENCIDO);
-                boolean usada = ciclo.map(c -> extensionRepo.existsBySuscripcionId(c.getId())).orElse(true);
-                m.put("extensionDisponible", Constants.ESTADO_EMPRESA_SUSPENDIDO_IMPAGO.equals(estado) && !usada);
-                extensionRepo.findTopByEmpresaIdOrderByOtorgadaEnDesc(id).ifPresent(x -> {
-                    m.put("extensionVenceEn", x.getVenceEn());
-                    m.put("extensionMotivo", x.getMotivo());
-                });
-                suspendidas.add(m);
+        List<Object[]> filas = empresaRepo.findResumenByEstados(
+            List.of(Constants.ESTADO_EMPRESA_SUSPENDIDO_IMPAGO, Constants.ESTADO_EMPRESA_EXTENSION_IMPAGO), page);
+        List<Long> ids = filas.stream().map(f -> (Long) f[0]).toList();
+        Map<Long, Suscripcion> cicloPorEmpresa = new java.util.HashMap<>();
+        Map<Long, SuspensionExtension> extPorEmpresa = new java.util.HashMap<>();
+        java.util.Set<Long> usadas = new java.util.HashSet<>();
+        if (!ids.isEmpty()) {
+            for (Suscripcion c : suscripcionRepo.findByEmpresaIdsAndEstado(ids, VENCIDO)) {
+                if (c.getEmpresa() != null) cicloPorEmpresa.putIfAbsent(c.getEmpresa().getId(), c);
             }
+            List<Long> ciclos = cicloPorEmpresa.values().stream().map(Suscripcion::getId).toList();
+            if (!ciclos.isEmpty()) usadas.addAll(extensionRepo.findSuscripcionIdsUsadas(ciclos));
+            for (SuspensionExtension x : extensionRepo.findByEmpresaIdsRecientes(ids)) {
+                extPorEmpresa.putIfAbsent(x.getEmpresaId(), x);
+            }
+        }
+        List<Map<String, Object>> suspendidas = new ArrayList<>();
+        for (Object[] f : filas) {
+            Long id = (Long) f[0];
+            String estado = (String) f[2];
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("empresaId", id);
+            m.put("nombreEmpresa", f[1]);
+            m.put("estado", estado);
+            Suscripcion ciclo = cicloPorEmpresa.get(id);
+            // Fail-closed: sin ciclo VENCIDO no hay extensión disponible.
+            boolean usada = ciclo == null || usadas.contains(ciclo.getId());
+            m.put("extensionDisponible", Constants.ESTADO_EMPRESA_SUSPENDIDO_IMPAGO.equals(estado) && !usada);
+            SuspensionExtension x = extPorEmpresa.get(id);
+            if (x != null) {
+                m.put("extensionVenceEn", x.getVenceEn());
+                m.put("extensionMotivo", x.getMotivo());
+            }
+            suspendidas.add(m);
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("diasGracia", diasGracia);

@@ -39,6 +39,10 @@ public class EmpresaAprobacionService {
     public Empresa aprobarYPublicar(Long empresaId) {
         Empresa e = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new IllegalStateException("Empresa no encontrada: " + empresaId));
+        // Aprobar/publicar nunca reactiva un impago: solo el pago ONVO confirmado (SuspensionImpago.reactivarSiSuspendida).
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(e.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.ReactivacionSinPagoException();
+        }
         ubicacionDespachoService.exigirParaPublicar(empresaId);
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         e.setEstadoEmpresa("ACTIVO");

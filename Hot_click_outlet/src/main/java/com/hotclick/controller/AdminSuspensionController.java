@@ -20,8 +20,8 @@ public class AdminSuspensionController {
     }
 
     @GetMapping
-    public ResponseDTO listar() {
-        return ResponseDTO.success("Tiendas en gracia y suspendidas", service.listar());
+    public ResponseDTO listar(@RequestParam(defaultValue = "200") int limit) {
+        return ResponseDTO.success("Tiendas en gracia y suspendidas", service.listar(limit));
     }
 
     @PostMapping("/{empresaId}/suspender")

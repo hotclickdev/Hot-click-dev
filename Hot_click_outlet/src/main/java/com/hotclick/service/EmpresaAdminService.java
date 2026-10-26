@@ -77,7 +77,10 @@ public class EmpresaAdminService {
         if (exigeMotivo(nuevoEstado) && (motivo == null || motivo.isBlank())) {
             throw new IllegalArgumentException("Motivo obligatorio para suspender o inactivar");
         }
-        empresa(id);
+        // Fail-closed: desde impago no hay salida admin genérica (ni a ACTIVO ni a otro estado que luego se active).
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa(id).getEstadoEmpresa())) {
+            throw new com.hotclick.exception.ReactivacionSinPagoException();
+        }
         if ("ACTIVO".equals(nuevoEstado)) {
             empresaAprobacionService.aprobarYPublicar(id);
             auditarEstado(id, nuevoEstado, motivo);
@@ -120,6 +123,9 @@ public class EmpresaAdminService {
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
         Empresa empresa = empresa(id);
         boolean visible = Boolean.parseBoolean(val.toString());
+        if (visible && com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.ReactivacionSinPagoException();
+        }
         if (visible && sancionRepo.existsByEmpresaIdAndActivaTrue(id)) {
             throw new IllegalArgumentException("Hay una sanción vigente. El catálogo sigue oculto.");
         }

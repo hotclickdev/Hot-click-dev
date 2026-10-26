@@ -90,7 +90,7 @@ public class CuentaSuspendidaController {
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "200") int limit) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
-        return ResponseEntity.ok(extensiones.pedidosDeGracia(empresaId, Math.min(limit, MAX_LIST_PEDIDOS_GRACIA)));
+        return ResponseEntity.ok(extensiones.pedidosDeGracia(empresaId, Math.max(1, Math.min(limit, MAX_LIST_PEDIDOS_GRACIA))));
     }
 
     /** Inicia el cobro ONVO del plan impago. La tienda vuelve a ACTIVO solo con el webhook ONVO verificado. */
