@@ -174,10 +174,10 @@ public class FacturacionEmisionSupport {
         cf.setTotalFactura(Math.toIntExact(base + impuesto));
     }
 
-    private static void copiarReceptor(ComprobanteFiscal cf, Usuario usuario) {
-        if (usuario == null || usuario.getIdentificacion() == null) return;
-        String cedula = usuario.getIdentificacion().replaceAll("[^0-9]", "");
-        if (!cedula.matches("\\d{9,12}")) return;
+    static void copiarReceptor(ComprobanteFiscal cf, Usuario usuario) {
+        if (usuario == null) return;
+        String cedula = com.hotclick.utils.CedulaCr.realONulo(usuario.getIdentificacion());
+        if (cedula == null) return; // #318: identificación interna (REG-/EMP-/…) ≠ receptor
         cf.setReceptorCedula(cedula);
         cf.setReceptorTipo(tipoIdentificacion(cedula));
         cf.setReceptorNombre(nombreReceptor(usuario));
