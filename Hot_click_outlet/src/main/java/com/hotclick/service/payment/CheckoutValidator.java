@@ -39,6 +39,21 @@ public class CheckoutValidator {
         }
     }
 
+    /** P-06 (C1): si algún paquete se envía (no es retiro), la dirección de entrega es obligatoria. */
+    public static void exigirDireccionSiHayEnvio(PaymentCheckoutRequest req) {
+        java.util.List<String> metodos = new java.util.ArrayList<>();
+        metodos.add(req.getMetodoEnvio());
+        if (req.getEnvios() != null) {
+            req.getEnvios().stream().filter(java.util.Objects::nonNull)
+                .forEach(e -> metodos.add(e.getMetodoEnvio()));
+        }
+        metodos.forEach(CheckoutValidator::assertMetodoEnvioValido);
+        boolean hayEnvio = metodos.stream().anyMatch(m -> !CheckoutOrderFactory.esRetiro(m));
+        if (hayEnvio && CheckoutOrderFactory.direccionDeEntrega(req.getDireccionEntrega(), Constants.ENVIO_ENCOMIENDA) == null) {
+            throw new IllegalArgumentException("Ingresá la dirección de entrega para el envío.");
+        }
+    }
+
     /**
      * Allowlist del checkout público. STRIPE queda fuera; ONVO solo con hotclick.onvo flag. SINPE queda fuera
      * (G1): solo existe dentro de la pasarela ONVO; un Pago SINPE propio sería confirmable a mano.
@@ -77,24 +92,19 @@ public class CheckoutValidator {
     }
 
     /**
-     * Bodega por defecto del checkout. Si el body trae {@code bodegaId}, es estricta (404 si no existe).
-     * Si no, intenta la bodega HotClick (id 1) y, si ya no existe (reset de datos), la primera bodega
-     * activa del negocio activo o de la plataforma. Puede devolver null: los productos con bodega propia
-     * o de su tienda no la necesitan, y el planner falla con un mensaje claro si alguno sí la necesita.
+     * Bodega por defecto del checkout. Si el body trae {@code bodegaId} (cualquiera, incluida la 1), es
+     * estricta: 404 si no existe (P-08). Si no, la primera bodega activa del negocio activo o, sin tenant,
+     * de la plataforma. Puede devolver null: los productos con bodega propia o de su tienda no la necesitan,
+     * y el planner falla con un mensaje claro si alguno sí la necesita.
      */
     public Bodega resolverBodegaDefault(Long bodegaIdSolicitada) {
-        boolean esDefault = bodegaIdSolicitada == null || java.util.Objects.equals(bodegaIdSolicitada, Constants.BODEGA_DEFAULT_ID);
-        // El front manda bodegaId=1 (BODEGA_DEFAULT) en todo envío: si ya no existe, se trata como ausente.
-        if (!esDefault) return loadBodega(bodegaIdSolicitada);
-        java.util.Optional<Bodega> fija = bodegaRepository.findById(Constants.BODEGA_DEFAULT_ID);
-        if (fija.isPresent()) return fija.get();
+        if (bodegaIdSolicitada != null) return loadBodega(bodegaIdSolicitada);
         Long tenantId = com.hotclick.security.TenantContext.get();
         Long empresaId = tenantId != null ? tenantId : Constants.EMPRESA_PLATAFORMA_ID;
         java.util.List<Bodega> activas =
             bodegaRepository.findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresaId, Constants.ESTADO_ACTIVO);
         if (activas != null && !activas.isEmpty()) return activas.get(0);
-        log.warn("[checkout] Sin bodega default: id {} no existe y la empresa {} no tiene bodegas activas",
-            Constants.BODEGA_DEFAULT_ID, empresaId);
+        log.warn("[checkout] Sin bodega default: la empresa {} no tiene bodegas activas", empresaId);
         return null;
     }
 

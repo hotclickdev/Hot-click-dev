@@ -13,7 +13,7 @@ public class ManualPedidoDTO {
     @NotNull(message = "El usuario es requerido")
     private Long usuarioId;
 
-    @NotNull(message = "La bodega es requerida")
+    /** P-07: opcional; si no viene, se usa la primera bodega activa del negocio (o de la plataforma). */
     private Long bodegaId;
 
     @NotBlank(message = "El método de envío es requerido")

@@ -143,11 +143,21 @@ public class PedidoManualFactory {
         return estado;
     }
 
-    /** P7-02: la bodega debe ser del negocio; si la pedida no lo es (la UI manda 1), se usa la primera del negocio. */
-    private Bodega resolverBodega(Long bodegaId, Long empresaId) {
+    /**
+     * P7-02: la bodega debe ser del negocio; si la pedida no lo es o no viene, se usa la primera del negocio.
+     * P-07: sin negocio (admin de plataforma) se usa la pedida o la primera bodega activa de la plataforma;
+     * nunca una id fija.
+     */
+    Bodega resolverBodega(Long bodegaId, Long empresaId) {
         if (empresaId == null) {
-            return bodegaRepository.findById(bodegaId != null ? bodegaId : 1L)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada"));
+            if (bodegaId != null) {
+                return bodegaRepository.findById(bodegaId)
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada"));
+            }
+            return bodegaRepository.findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(
+                    Constants.EMPRESA_PLATAFORMA_ID, Constants.ESTADO_ACTIVO)
+                .stream().findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Elegí una bodega para el pedido."));
         }
         if (bodegaId != null) {
             Bodega b = bodegaRepository.findById(bodegaId).orElse(null);
