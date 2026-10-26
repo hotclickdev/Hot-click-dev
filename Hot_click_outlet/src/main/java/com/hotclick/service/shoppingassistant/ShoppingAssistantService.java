@@ -1,5 +1,6 @@
 package com.hotclick.service.shoppingassistant;
 
+import org.springframework.dao.DataAccessException;
 import com.hotclick.legal.ChatLegalGuard;
 import com.hotclick.rag.classifier.AssistantMetricsService;
 import com.hotclick.rag.classifier.QueryClassification;
@@ -112,8 +113,14 @@ public class ShoppingAssistantService {
                 visitorId, marketplace, productoId);
         } catch (RuntimeException e) {
             String correlacion = UUID.randomUUID().toString().substring(0, 8);
-            log.error("[rag] Fallo fuera del circuit breaker ref={} empresa={}: {}",
-                correlacion, empresaId, e.getClass().getSimpleName(), e);
+            if (esErrorDeDatos(e)) {
+                // B1: mensajes JDBC pueden traer el texto del visitante; sin mensaje ni stacktrace.
+                log.error("[rag] Fallo fuera del circuit breaker ref={} paso=chat empresa={}: {}",
+                    correlacion, empresaId, e.getClass().getName());
+            } else {
+                log.error("[rag] Fallo fuera del circuit breaker ref={} paso=chat empresa={}: {}",
+                    correlacion, empresaId, e.getClass().getSimpleName(), e);
+            }
             return new ChatResponse(RagResult.fallback().respuesta(),
                 sesionIdStr, List.of(), List.of(), List.of());
         }
@@ -150,9 +157,11 @@ public class ShoppingAssistantService {
         // 7. Persistir pregunta + respuesta (best-effort: no tira la respuesta ya generada)
         try {
             persistence.persistirMensajes(sesionId, empresaId, mensaje, resultado);
-        } catch (RuntimeException e) {
-            log.error("[rag] No se pudo persistir el turno empresa={} sesion={}: {}",
-                empresaId, sesionId, e.getClass().getSimpleName(), e);
+        } catch (DataAccessException e) {
+            // B2: solo fallos de datos son best-effort; B1: sin mensaje ni stacktrace.
+            String correlacion = UUID.randomUUID().toString().substring(0, 8);
+            log.error("[rag] No se pudo persistir el turno ref={} paso=persistencia empresa={} sesion={}: {}",
+                correlacion, empresaId, sesionId, e.getClass().getName());
         }
 
         // 8. Registrar tokens para billing/analytics (best-effort)
@@ -221,5 +230,13 @@ public class ShoppingAssistantService {
      */
     public void expireSession(String sesionIdStr) {
         sessionHelper.expireSession(sesionIdStr);
+    }
+
+    /** true si la excepción o alguna de sus causas es DataAccessException (B1). */
+    static boolean esErrorDeDatos(Throwable t) {
+        for (int i = 0; t != null && i < 16; t = t.getCause(), i++) {
+            if (t instanceof DataAccessException) return true;
+        }
+        return false;
     }
 }
