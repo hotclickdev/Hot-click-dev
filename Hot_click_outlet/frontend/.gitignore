@@ -29,3 +29,5 @@ tests/.auth/
 *.njsproj
 *.sln
 *.sw?
+test-results-fullstack/
+playwright-report-fullstack/
