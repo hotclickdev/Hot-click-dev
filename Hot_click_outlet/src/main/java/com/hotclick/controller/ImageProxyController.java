@@ -48,7 +48,21 @@ public class ImageProxyController {
             @RequestParam(value = "w", required = false) Integer w,
             @RequestParam(value = "h", required = false) Integer h,
             @RequestParam(value = "q", defaultValue = "82") int q) {
+        return conCabecerasSeguras(proxyInterno(p, w, h, q));
+    }
 
+    static final String CSP_IMG = "default-src 'none'; sandbox";
+
+    /** X-02: nosniff + CSP sandbox en TODAS las respuestas (200 y errores). */
+    static ResponseEntity<byte[]> conCabecerasSeguras(ResponseEntity<byte[]> r) {
+        org.springframework.http.HttpHeaders hs = new org.springframework.http.HttpHeaders();
+        hs.putAll(r.getHeaders());
+        hs.set("X-Content-Type-Options", "nosniff");
+        hs.set("Content-Security-Policy", CSP_IMG);
+        return new ResponseEntity<>(r.getBody(), hs, r.getStatusCode());
+    }
+
+    private ResponseEntity<byte[]> proxyInterno(String p, Integer w, Integer h, int q) {
         if (!ImageProxyPaths.esSeguro(p)) {
             return ResponseEntity.badRequest().build();
         }
@@ -82,15 +96,23 @@ public class ImageProxyController {
             byte[] imageBytes = response.body();
             String contentType = response.headers().firstValue("content-type").orElse("image/jpeg");
 
-            if ((width > 0 || height > 0) && isResizable(contentType)) {
+            if ((width > 0 || height > 0) && isResizable(tipoImagenPermitido(contentType))) {
                 imageBytes = resize(imageBytes, width, height, quality);
                 contentType = "image/jpeg";
             }
 
-            return ResponseEntity.ok()
-                .header("Content-Type", contentType)
-                .header("Cache-Control", "public, max-age=31536000, immutable")
-                .body(imageBytes);
+            // X-02: solo tipos de imagen raster se sirven inline; el resto (SVG, HTML, etc.)
+            // va como descarga opaca. nosniff siempre.
+            String permitido = tipoImagenPermitido(contentType);
+            ResponseEntity.BodyBuilder ok = ResponseEntity.ok()
+                .header("Cache-Control", "public, max-age=31536000, immutable");
+            if (permitido != null) {
+                ok.header("Content-Type", permitido);
+            } else {
+                ok.header("Content-Type", "application/octet-stream")
+                  .header("Content-Disposition", "attachment");
+            }
+            return ok.body(imageBytes);
 
         } catch (IllegalArgumentException e) {
             log.warn("[img-proxy] Imagen rechazada {}: {}", cleanPath, e.getMessage());
@@ -107,6 +129,17 @@ public class ImageProxyController {
             log.warn("[img-proxy] Error fetching {}: {}", cleanPath, e.getMessage());
             return ResponseEntity.status(502).build();
         }
+    }
+
+    static final java.util.Set<String> TIPOS_IMAGEN_PERMITIDOS =
+        java.util.Set.of("image/png", "image/jpeg", "image/gif", "image/webp");
+
+    /** Devuelve el media type normalizado si está en la allowlist (sin SVG), o null. */
+    static String tipoImagenPermitido(String contentType) {
+        if (contentType == null) return null;
+        String base = contentType.split(";", 2)[0].trim().toLowerCase(java.util.Locale.ROOT);
+        if ("image/jpg".equals(base)) base = "image/jpeg";
+        return TIPOS_IMAGEN_PERMITIDOS.contains(base) ? base : null;
     }
 
     private boolean isResizable(String contentType) {

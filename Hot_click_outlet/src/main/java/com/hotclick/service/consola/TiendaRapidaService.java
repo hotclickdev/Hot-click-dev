@@ -235,8 +235,9 @@ public class TiendaRapidaService {
 
     private Empresa guardarEmpresa(String nombre, String cel, String token) {
         Empresa empresa = new Empresa();
-        empresa.setNombreEmpresa(nombre);
-        empresa.setNombreComercial(nombre);
+        String limpio = new com.hotclick.utils.InputSanitizer().cleanWithLimit(nombre, 150);
+        empresa.setNombreEmpresa(limpio);
+        empresa.setNombreComercial(limpio);
         empresa.setSlug(slugDe(nombre));
         empresa.setCorreoEmpresa(correoInterno(token));
         empresa.setTelefonoEmpresa(cel);

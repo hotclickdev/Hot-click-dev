@@ -2,6 +2,7 @@ import { CONDICIONES, fmtColones, parseColones } from './importarHelpers'
 import type { CategoriaImportar, MarcaImportar, ProductoImportado } from './importarHelpers'
 import { IconEye, IconImg, IconWarn } from './importarIcons'
 import ImgPreview from './ImgPreview'
+import { urlSegura } from '@/pages/seguimiento/seguimientoHelpers'
 
 // Fila de detalle de un producto individual (una variante/color específico).
 // Se usa tanto para productos sin variantes de color como para el detalle expandido de un grupo.
@@ -72,8 +73,8 @@ export default function FilaProducto({ p, isLast, categorias, marcas, updateRow 
               placeholder="https://... (URL imagen)"
               className="flex-1 text-[11px] px-2 py-0.5 rounded-lg outline-none"
               style={{ backgroundColor: 'var(--hc-surface-2)', color: 'var(--hc-muted)', border: '1px solid transparent' }} />
-            {p.imagenPrincipalUrl && (
-              <a href={p.imagenPrincipalUrl} target="_blank" rel="noopener noreferrer"
+            {urlSegura(p.imagenPrincipalUrl) && (
+              <a href={urlSegura(p.imagenPrincipalUrl) ?? undefined} target="_blank" rel="noopener noreferrer"
                 className="shrink-0 hover:opacity-70 transition-opacity"
                 style={{ color: 'var(--hc-muted)' }} title="Ver imagen">
                 <IconEye />

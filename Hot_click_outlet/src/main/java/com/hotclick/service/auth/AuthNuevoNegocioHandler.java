@@ -35,6 +35,7 @@ import java.util.Optional;
 public class AuthNuevoNegocioHandler {
 
     private static final Logger log = LoggerFactory.getLogger(AuthNuevoNegocioHandler.class);
+    private static final com.hotclick.utils.InputSanitizer SANITIZER = new com.hotclick.utils.InputSanitizer();
 
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private EmpresaRepository        empresaRepository;
@@ -106,9 +107,11 @@ public class AuthNuevoNegocioHandler {
 
         String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase();
         Empresa empresa = new Empresa();
-        empresa.setNombreEmpresa(dto.getNombreEmpresa().trim());
+        // X-01: clean() (Jsoup Safelist.none) en los writers de nombre.
+        String nombreEmpresa = SANITIZER.cleanWithLimit(dto.getNombreEmpresa(), 150);
+        empresa.setNombreEmpresa(nombreEmpresa);
         empresa.setNombreComercial(dto.getNombreComercial() != null && !dto.getNombreComercial().isBlank()
-            ? dto.getNombreComercial().trim() : dto.getNombreEmpresa().trim());
+            ? SANITIZER.cleanWithLimit(dto.getNombreComercial(), 150) : nombreEmpresa);
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmpresa);
         empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());

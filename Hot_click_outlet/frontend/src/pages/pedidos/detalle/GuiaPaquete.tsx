@@ -2,13 +2,15 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_PEDIDOS } from '../iconosPedidos'
 import { esGuiaDeCorreos, urlSeguimiento } from '../paquetePedido'
+import { urlSegura } from '../../seguimiento/seguimientoHelpers'
 import { lineaGuia, textoSinGuia } from '../textosPedido'
 import type { PedidoCliente } from '../pedidoHelpers'
 
 /** Caja de guía del paquete: con número y «Seguir» (Figma `37:1395`) o pendiente (`37:1438`). */
 export default function GuiaPaquete({ paquete }: { paquete: PedidoCliente }) {
   const { t, i18n } = useTranslation()
-  const url = urlSeguimiento(paquete)
+  // X-03: urlTracking viene de vendedor/admin; solo https.
+  const url = urlSegura(urlSeguimiento(paquete))
 
   if (!paquete.numeroGuia || !url) {
     return (

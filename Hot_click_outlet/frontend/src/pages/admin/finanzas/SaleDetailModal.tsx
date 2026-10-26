@@ -8,6 +8,7 @@ import TextoFlecha from '@/components/ui/TextoFlecha'
 import type { Id } from '@/types/api'
 import type { ItemPedido } from '@/types/pedido'
 import type { PedidoFinanzas } from './finanzasHelpers'
+import { urlSegura } from '@/pages/seguimiento/seguimientoHelpers'
 
 type DetallePedidoProps = {
   loading: boolean
@@ -105,8 +106,8 @@ function DetallePedido({ loading, error, data }: DetallePedidoProps) {
           style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
           <p className="text-xs font-semibold text-hc-link mb-0.5">Guía de envío</p>
           <p className="text-sm text-hc-text">{data.numeroGuia}</p>
-          {data.urlTracking && (
-            <a href={data.urlTracking} target="_blank" rel="noopener noreferrer"
+          {urlSegura(data.urlTracking) && (
+            <a href={urlSegura(data.urlTracking) ?? undefined} target="_blank" rel="noopener noreferrer"
               className="text-xs text-hc-link underline mt-1 block">
               <TextoFlecha>Rastrear</TextoFlecha>
             </a>

@@ -15,6 +15,7 @@ import { urlWhatsApp } from './carrito/cartHelpers'
 import { IcoBuscarCaja } from './perfil/cuenta/iconosCuenta'
 import { IcoSrv } from './servicios/IcoSrv'
 import { pasosDelEncargo, referenciasDelEncargo, type PasoEncargo } from './encargo/encargoHelpers'
+import { esRedirectPagoPermitido } from '@/utils/redirectPago'
 
 const TARJETA = 'rounded-[16px] border border-hc-n-200 bg-hc-n-0 p-4'
 
@@ -79,6 +80,10 @@ export default function EncargoPublicPage() {
       const body = data as { data?: { redirectUrl?: string }; redirectUrl?: string }
       const url = body.data?.redirectUrl || body.redirectUrl
       if (url) {
+        if (!esRedirectPagoPermitido(url)) {
+          toast({ message: t('encargoPublico.pagoError'), type: 'error' })
+          return
+        }
         window.location.href = url
         return
       }
