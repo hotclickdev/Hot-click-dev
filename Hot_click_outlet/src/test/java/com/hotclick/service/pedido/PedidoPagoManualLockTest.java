@@ -124,4 +124,38 @@ class PedidoPagoManualLockTest {
         assertThat(comprobante.getEstado()).isEqualTo(Constants.COMPROBANTE_RECHAZADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
     }
+
+    @Test
+    @DisplayName("pago fuera del contexto → se relee con FOR UPDATE por id, no se salta el lock")
+    void pagoNoGestionado_seBloqueaPorId() {
+        when(pedidoGrupoService.pagoDelGrupo(pedido)).thenReturn(Optional.of(pago));
+        when(entityManager.contains(pago)).thenReturn(false);
+        Pago enBase = new Pago();
+        enBase.setId(10L);
+        enBase.setProveedor(Constants.PROVEEDOR_MANUAL);
+        enBase.setEstadoPago(Constants.PAGO_CANCELADO);
+        enBase.setPedido(pedido);
+        when(pagoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(enBase));
+
+        assertThatThrownBy(() -> service.confirmar(pedido, Constants.PEDIDO_PENDIENTE, "REF-1"))
+            .isInstanceOf(IllegalStateException.class);
+
+        verify(pagoRepository).findByIdForUpdate(10L);
+        verify(entityManager, never()).refresh(any(), any(LockModeType.class));
+        verify(pagoRepository, never()).save(any());
+        verify(paymentService, never()).confirmarPedido(any());
+    }
+
+    @Test
+    @DisplayName("pago fuera del contexto y sin id → error explícito, nunca sin lock")
+    void pagoNoGestionadoSinId_fallaExplicito() {
+        pago.setId(null);
+        when(pedidoGrupoService.pagoDelGrupo(pedido)).thenReturn(Optional.of(pago));
+        when(entityManager.contains(pago)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.confirmar(pedido, Constants.PEDIDO_PENDIENTE, "REF-1"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("lock");
+        verify(paymentService, never()).confirmarPedido(any());
+    }
 }
