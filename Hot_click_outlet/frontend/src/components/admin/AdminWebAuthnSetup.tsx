@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react'
 import { webAuthnService } from '@/services/webAuthnService'
+import { esCancelacionWebAuthn, mensajeAmigable } from '@/utils/mensajeAmigable'
 
 type WebAuthnMsg = { text: string; type: 'success' | 'error' }
 
-function textoErrorRegistroLlave(err: unknown): string {
-  if (!err || typeof err !== 'object') return 'Error al registrar la llave'
-  const e = err as { response?: { data?: { error?: string } }; message?: string }
-  return e.response?.data?.error || e.message || 'Error al registrar la llave'
-}
 
 export default function AdminWebAuthnSetup() {
   const [hasKey, setHasKey]     = useState(false)
@@ -31,11 +27,10 @@ export default function AdminWebAuthnSetup() {
       setHasKey(true)
       setMsg({ text: 'Llave registrada correctamente.', type: 'success' })
     } catch (err: unknown) {
-      const text = textoErrorRegistroLlave(err)
-      if (text.includes('cancelled') || text.includes('NotAllowedError')) {
+      if (esCancelacionWebAuthn(err)) {
         setMsg({ text: 'Registro cancelado.', type: 'error' })
       } else {
-        setMsg({ text, type: 'error' })
+        setMsg({ text: mensajeAmigable(err, 'No pudimos registrar la llave. Intentá de nuevo.'), type: 'error' })
       }
     } finally {
       setWorking(false)
@@ -57,7 +52,7 @@ export default function AdminWebAuthnSetup() {
           <h3 className="font-semibold text-neutral-900">Llave de seguridad (WebAuthn)</h3>
           <p className="text-sm text-neutral-500">
             {hasKey
-              ? 'Tienes una llave de seguridad registrada. Al iniciar sesión se te pedirá usarla.'
+              ? 'Tenés una llave de seguridad registrada. Al iniciar sesión se te pedirá usarla.'
               : 'Registrá una llave USB, NFC o Bluetooth para requerir autenticación física al ingresar.'}
           </p>
         </div>

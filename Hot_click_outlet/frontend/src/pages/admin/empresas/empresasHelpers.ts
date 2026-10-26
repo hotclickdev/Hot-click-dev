@@ -1,4 +1,5 @@
 import type { Id } from '@/types/api'
+import { formatMiles } from '@/utils/format'
 
 export type EmpresaLista = {
   id: Id
@@ -152,7 +153,7 @@ export function listaTabDesdeRespuesta(data: unknown): unknown[] {
 
 export function formatNumero(n?: number | null): string {
   if (n == null) return '—'
-  return new Intl.NumberFormat('es-CR').format(n)
+  return formatMiles(n)
 }
 
 export function nombreVisibleEmpresa(emp: Pick<EmpresaLista, 'nombreComercial' | 'nombreEmpresa'>): string | undefined {

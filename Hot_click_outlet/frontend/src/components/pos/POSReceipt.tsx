@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import useAuthStore from '@/store/authStore'
+import { formatMiles } from '@/utils/format'
 
-const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 
 type ReciboVenta = {
   numeroPedido?: string

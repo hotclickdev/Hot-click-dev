@@ -8,8 +8,9 @@ import ThemeToggle from '@/components/ui/ThemeToggle'
 import type { Id } from '@/types/api'
 import type { PosVenta } from './posHelpers'
 import PosReporteModal from './PosReporteModal'
+import { formatMiles } from '@/utils/format'
 
-const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 
 function dentroDelFiltro(fechaStr: string | number | Date | undefined, filtro: string) {
   if (filtro === 'todo') return true

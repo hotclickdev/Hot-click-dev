@@ -1,5 +1,6 @@
+import { formatMiles } from '@/utils/format'
 /** Formatea un monto en colones costarricenses. */
-export const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+export const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 
 export const METODOS = [
   { id: 'EFECTIVO', label: 'Efectivo', desc: 'Calcula vuelto' },
