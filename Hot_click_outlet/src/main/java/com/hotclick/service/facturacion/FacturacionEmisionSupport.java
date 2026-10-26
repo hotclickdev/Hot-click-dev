@@ -13,6 +13,7 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.ClaveNumericaService;
 import com.hotclick.service.ConsecutivoFiscalService;
 import com.hotclick.service.hacienda.CodigoCabys;
+import com.hotclick.service.hacienda.CalculadoraIva;
 import com.hotclick.service.hacienda.ImpuestoLinea;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
@@ -70,6 +71,7 @@ public class FacturacionEmisionSupport {
         }
 
         String tipoFinal = (tipo != null && !tipo.isBlank()) ? tipo : ComprobanteFiscal.TIPO_TIQUETE;
+        exigirTipoCoherenteConCobro(pedido, empresa, tipoFinal);
 
         long numSeq = consecutivoService.siguienteNumero(empresa.getId(), tipoFinal);
         String numConsecutivo = ClaveNumericaService.buildNumeroConsecutivo(tipoFinal, numSeq);
@@ -86,7 +88,8 @@ public class FacturacionEmisionSupport {
         cf.setNumeroConsecutivo(numConsecutivo);
         cf.setEstado(ComprobanteFiscal.ESTADO_PENDIENTE);
         cf.setAmbiente(empresa.getAmbienteHacienda());
-        cf.setTotalFactura(pedido.getTotalPedido());
+        // M4: el total sale de la misma regla que arma el XML (CalculadoraIva), no de totalPedido.
+        aplicarTotales(cf, List.of(pedido), empresa, ComprobanteFiscal.TIPO_FACTURA.equals(tipoFinal));
         cf = comprobanteRepo.save(cf);
 
         log.info("[facturacion] Comprobante creado id={} clave={} tipo={} empresa={} ambiente={}",
@@ -156,14 +159,37 @@ public class FacturacionEmisionSupport {
         return alguna;
     }
 
+    /**
+     * M4: en régimen simplificado la factura cobra precio + IVA y el tiquete cobra el precio tal cual.
+     * Si el tipo pedido no coincide con lo que se le cobró al cliente, el XML no cuadraría con el cobro.
+     */
+    static void exigirTipoCoherenteConCobro(Pedido pedido, Empresa empresa, String tipo) {
+        if (!CalculadoraIva.SIMPLIFICADO.equals(CalculadoraIva.regimen(empresa))) return;
+        boolean ivaCobrado = pedido.getMontoImpuesto() != null && pedido.getMontoImpuesto() > 0;
+        boolean esFactura = ComprobanteFiscal.TIPO_FACTURA.equals(tipo);
+        if (esFactura && !ivaCobrado) {
+            throw new IllegalStateException(
+                "Esta venta se cobró sin IVA. En régimen simplificado solo podés emitirle tiquete electrónico.");
+        }
+        if (!esFactura && ivaCobrado) {
+            throw new IllegalStateException(
+                "Esta venta se cobró con IVA para factura electrónica. Emití la factura (tipo 01), no un tiquete.");
+        }
+    }
+
     private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos) {
+        aplicarTotales(cf, pedidos, cf.getEmpresa(), ComprobanteFiscal.TIPO_FACTURA.equals(cf.getTipo()));
+    }
+
+    private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos, Empresa empresa, boolean esFactura) {
         long base = 0;
         long impuesto = 0;
         for (Pedido pedido : pedidos) {
             for (PedidoItem item : pedido.getItems()) {
                 long precio = item.getPrecioUnitarioMomento() != null ? item.getPrecioUnitarioMomento() : 0L;
-                ImpuestoLinea.Montos montos = ImpuestoLinea.de(
-                    precio, item.getCantidad(), item.getProducto().getPorcentajeIva());
+                java.math.BigDecimal pct = item.getProducto() != null ? item.getProducto().getPorcentajeIva() : null;
+                ImpuestoLinea.Montos montos = CalculadoraIva.linea(empresa, esFactura,
+                    new CalculadoraIva.Linea(precio, item.getCantidad(), pct));
                 base += montos.base();
                 impuesto += montos.impuesto();
             }

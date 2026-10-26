@@ -190,6 +190,13 @@ public class EmpresaPerfilService {
             }
             e.setAmbienteHacienda(a);
         }
+        if (body.containsKey("regimenIva")) {
+            String r = body.get("regimenIva");
+            if (!com.hotclick.service.hacienda.CalculadoraIva.REGIMENES.contains(r)) {
+                throw new IllegalArgumentException("Régimen de IVA inválido: elegí SIMPLIFICADO o TRADICIONAL.");
+            }
+            e.setRegimenIva(r);
+        }
     }
 
     private void copiarSiCabe(Map<String, String> body, String key, int max, String error,
@@ -239,6 +246,7 @@ public class EmpresaPerfilService {
         m.put("inscritoHacienda", Boolean.TRUE.equals(e.getInscritoHacienda()));
         m.put("nombreHacienda", e.getNombreHacienda());
         m.put("regimenTributario", e.getRegimenTributario());
+        m.put("regimenIva", e.getRegimenIva());
         return m;
     }
 }

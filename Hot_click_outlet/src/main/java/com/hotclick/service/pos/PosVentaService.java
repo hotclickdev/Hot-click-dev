@@ -184,6 +184,7 @@ public class PosVentaService {
         int subtotal = 0;
         int costoTotal = 0;
         List<PedidoItem> items = new ArrayList<>();
+        List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
         for (PosVentaDTO.Item itemDto : dto.getItems()) {
             Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
@@ -207,11 +208,17 @@ public class PosVentaService {
             items.add(itemDeVenta(pedido, producto, cantidad, precio, costo));
             subtotal += precio * cantidad;
             costoTotal += costo * cantidad;
+            lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(precio, cantidad, producto.getPorcentajeIva()));
         }
         pedido.setItems(items);
+        // M4: en régimen simplificado la factura suma el IVA; el tiquete cobra el precio tal cual.
+        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            pedido.getEmpresa(), dto.isFacturaElectronica(), lineasIva);
+        pedido.setMontoImpuesto(impuesto);
+        pedido.setAplicaImpuesto(impuesto > 0);
         int descuento = Math.min(Math.max(0, pedido.getDescuentoTotal()), subtotal);
         pedido.setDescuentoTotal(descuento);
-        return new TotalesPos(subtotal, costoTotal, descuento);
+        return new TotalesPos(subtotal, costoTotal, descuento, impuesto);
     }
 
     /** Descuento manual solo con permiso pos.descuento (o ADMIN_IT). */
@@ -294,9 +301,10 @@ public class PosVentaService {
         }
     }
 
-    private record TotalesPos(int subtotal, int costoTotal, int descuento) {
-        int totalPedido() { return subtotal - descuento; }
-        int utilidadBruta() { return totalPedido() - costoTotal; }
+    private record TotalesPos(int subtotal, int costoTotal, int descuento, int impuesto) {
+        int totalPedido() { return subtotal - descuento + impuesto; }
+        /** El IVA cobrado es de Hacienda, no utilidad. */
+        int utilidadBruta() { return subtotal - descuento - costoTotal; }
         BigDecimal margen() {
             if (costoTotal <= 0) return BigDecimal.ZERO;
             return BigDecimal.valueOf(utilidadBruta() * 100.0 / costoTotal)

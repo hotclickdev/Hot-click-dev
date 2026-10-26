@@ -205,6 +205,10 @@ public class Empresa {
     @Column(name = "regimen_tributario", length = 60)
     private String regimenTributario;
 
+    /** M4: SIMPLIFICADO (precio sin IVA; la factura suma el 13 %) o TRADICIONAL (precio con IVA incluido). */
+    @Column(name = "regimen_iva", length = 20, nullable = false)
+    private String regimenIva = "SIMPLIFICADO";
+
     @Column(name = "nombre_hacienda", length = 200)
     private String nombreHacienda;
 
@@ -396,6 +400,9 @@ public class Empresa {
 
     public String getRegimenTributario() { return regimenTributario; }
     public void setRegimenTributario(String v) { this.regimenTributario = v; }
+
+    public String getRegimenIva() { return regimenIva != null ? regimenIva : "SIMPLIFICADO"; }
+    public void setRegimenIva(String v) { this.regimenIva = v; }
 
     public String getNombreHacienda() { return nombreHacienda; }
     public void setNombreHacienda(String v) { this.nombreHacienda = v; }

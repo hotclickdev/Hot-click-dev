@@ -36,7 +36,12 @@ public class CheckoutPaquetesPlanner {
     }
 
     public record Paquete(Bodega bodega, List<PaymentCheckoutRequest.ItemDTO> items,
-                          int subtotal, int costoTotal, String metodoEnvio, String notas) {}
+                          int subtotal, int costoTotal, String metodoEnvio, String notas, int impuesto) {
+        public Paquete(Bodega bodega, List<PaymentCheckoutRequest.ItemDTO> items,
+                       int subtotal, int costoTotal, String metodoEnvio, String notas) {
+            this(bodega, items, subtotal, costoTotal, metodoEnvio, notas, 0);
+        }
+    }
 
     public List<Paquete> planificar(PaymentCheckoutRequest req, Map<Long, Producto> productos, Bodega bodegaDefault) {
         Map<Long, Bodega> bodegas = new LinkedHashMap<>();
@@ -57,19 +62,25 @@ public class CheckoutPaquetesPlanner {
         for (Map.Entry<Long, List<PaymentCheckoutRequest.ItemDTO>> e : itemsPorBodega.entrySet()) {
             int subtotal = 0;
             int costoTotal = 0;
+            List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
             for (PaymentCheckoutRequest.ItemDTO item : e.getValue()) {
                 Producto p = productos.get(item.getProductoId());
                 int precio = item.getPrecioUnitarioOverride() != null ? item.getPrecioUnitarioOverride() : OrderPricingService.precioEfectivo(p);
                 int costo = p.getPrecioCompra() != null ? p.getPrecioCompra() : 0;
                 subtotal += precio * item.getCantidad();
                 costoTotal += costo * item.getCantidad();
+                lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(
+                    precio, item.getCantidad(), p.getPorcentajeIva()));
             }
+            Bodega bodegaPaquete = bodegas.get(e.getKey());
+            int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+                bodegaPaquete.getEmpresa(), req.isFacturaElectronica(), lineasIva);
             PaymentCheckoutRequest.EnvioPaqueteDTO envio = envioDe(req, e.getKey());
             String metodo = envio != null ? envio.getMetodoEnvio()
                 : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO;
             String notas = envio != null && envio.getNotas() != null && !envio.getNotas().isBlank()
                 ? envio.getNotas() : req.getNotas();
-            paquetes.add(new Paquete(bodegas.get(e.getKey()), e.getValue(), subtotal, costoTotal, metodo, notas));
+            paquetes.add(new Paquete(bodegaPaquete, e.getValue(), subtotal, costoTotal, metodo, notas, impuesto));
         }
         return paquetes;
     }

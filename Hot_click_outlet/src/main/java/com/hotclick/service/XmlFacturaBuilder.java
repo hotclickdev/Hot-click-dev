@@ -6,6 +6,7 @@ import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.service.hacienda.CodigoCabys;
+import com.hotclick.service.hacienda.CalculadoraIva;
 import com.hotclick.service.hacienda.ImpuestoLinea;
 import com.hotclick.service.hacienda.XmlFacturaSchemaValidator;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,7 @@ public class XmlFacturaBuilder {
         xml.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         xml.append("<").append(rootTag).append(" xmlns=\"").append(ns).append("\">\n");
         appendEncabezado(xml, comprobante, empresa, esFactura);
-        ImpuestoLinea.Montos totales = appendDetalle(xml, lineasDe(pedidos));
+        ImpuestoLinea.Montos totales = appendDetalle(xml, lineasDe(pedidos), empresa, esFactura);
         appendResumen(xml, totales);
         xml.append("</").append(rootTag).append(">\n");
 
@@ -112,13 +113,14 @@ public class XmlFacturaBuilder {
         xml.append("  </Receptor>\n");
     }
 
-    private ImpuestoLinea.Montos appendDetalle(StringBuilder xml, List<PedidoItem> items) {
+    private ImpuestoLinea.Montos appendDetalle(StringBuilder xml, List<PedidoItem> items,
+                                              Empresa empresa, boolean esFactura) {
         xml.append("  <DetalleServicio>\n");
         long base = 0;
         long impuesto = 0;
         int lineaNum = 1;
         for (PedidoItem item : items) {
-            ImpuestoLinea.Montos montos = appendLinea(xml, item, lineaNum++);
+            ImpuestoLinea.Montos montos = appendLinea(xml, item, lineaNum++, empresa, esFactura);
             base += montos.base();
             impuesto += montos.impuesto();
         }
@@ -126,7 +128,8 @@ public class XmlFacturaBuilder {
         return new ImpuestoLinea.Montos(base, impuesto);
     }
 
-    private ImpuestoLinea.Montos appendLinea(StringBuilder xml, PedidoItem item, int lineaNum) {
+    private ImpuestoLinea.Montos appendLinea(StringBuilder xml, PedidoItem item, int lineaNum,
+                                             Empresa empresa, boolean esFactura) {
         Producto producto = item.getProducto();
         String cabys = producto != null ? producto.getCodigoCabys() : null;
         if (!CodigoCabys.valido(cabys)) {
@@ -141,7 +144,12 @@ public class XmlFacturaBuilder {
             pctIva = producto.getPorcentajeIva();
             codTarifa = producto.getCodigoTarifaIva();
         }
-        ImpuestoLinea.Montos montos = ImpuestoLinea.de(precioUnit, cantidad, pctIva);
+        // M4: misma regla que el cobro (checkout/POS) según el régimen de IVA de la tienda.
+        ImpuestoLinea.Montos montos = CalculadoraIva.linea(empresa, esFactura,
+            new CalculadoraIva.Linea(precioUnit, cantidad, pctIva));
+        String precioUnitXml = montos.base() == precioUnit * cantidad
+            ? String.valueOf(precioUnit)
+            : BigDecimal.valueOf(montos.base()).divide(BigDecimal.valueOf(cantidad), 5, java.math.RoundingMode.HALF_UP).toPlainString();
         String detalle = producto != null ? producto.getNombreProducto() : "Producto";
 
         xml.append("    <LineaDetalle>\n");
@@ -150,7 +158,7 @@ public class XmlFacturaBuilder {
         xml.append("      <Cantidad>").append(cantidad).append("</Cantidad>\n");
         xml.append("      <UnidadMedida>Unid</UnidadMedida>\n");
         xml.append("      <Detalle>").append(esc(detalle)).append("</Detalle>\n");
-        xml.append("      <PrecioUnitario>").append(precioUnit).append("</PrecioUnitario>\n");
+        xml.append("      <PrecioUnitario>").append(precioUnitXml).append("</PrecioUnitario>\n");
         xml.append("      <MontoTotal>").append(montos.base()).append("</MontoTotal>\n");
         xml.append("      <SubTotal>").append(montos.base()).append("</SubTotal>\n");
         if (montos.impuesto() > 0) {

@@ -71,6 +71,12 @@ public class OrderPricingService {
 
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
                                               String metodoEnvio, int gcSaldoRestante) {
+        return calcularPaquete(req, bodega, subtotal, metodoEnvio, gcSaldoRestante, 0);
+    }
+
+    /** @param impuesto IVA a sumar al cobro (M4: solo factura en régimen simplificado; ver CalculadoraIva). */
+    public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
+                                              String metodoEnvio, int gcSaldoRestante, int impuesto) {
         int costoEnvio = calcularCostoEnvio(metodoEnvio);
         Long empresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
 
@@ -87,7 +93,7 @@ public class OrderPricingService {
 
         int base = subtotal - descuento + costoEnvio;
         descuento += descuentoSinpeSiAplica(req.getProvider(), bodega, base);
-        int total = Math.max(0, subtotal - descuento + costoEnvio);
+        int total = Math.max(0, subtotal - descuento + costoEnvio) + Math.max(0, impuesto);
 
         int    gcMonto  = 0;
         String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase() : null;
@@ -101,7 +107,7 @@ public class OrderPricingService {
         boolean pagoGC  = gcMonto > 0 && totalConGC == 0;
 
         return new OrderPricingResult(
-            costoEnvio, descuento, codigoCuponAplicado, gcMonto, gcCodigo, total, totalConGC, pagoGC);
+            costoEnvio, descuento, codigoCuponAplicado, gcMonto, gcCodigo, total, totalConGC, pagoGC, Math.max(0, impuesto));
     }
 
     private int descuentoSinpeSiAplica(String provider, Bodega bodega, int base) {

@@ -56,15 +56,37 @@ class XmlFacturaBuilderTest {
     }
 
     @Test
-    @DisplayName("línea de 1000 colones al 13% suma 130 de IVA")
+    @DisplayName("M4 simplificado: factura de una línea de 1000 al 13% suma 130 de IVA")
     void ivaTrecePorCientoPorLinea() {
         Producto producto = producto("Cable", new BigDecimal("13"), "08");
         Pedido pedido = pedidoCon(producto, 1000, 1);
-        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_TIQUETE), empresa(), pedido);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedido);
         assertThat(xml).contains("<Monto>130</Monto>");
         assertThat(xml).contains("<TotalImpuesto>130</TotalImpuesto>");
         assertThat(xml).contains("<TotalComprobante>1130</TotalComprobante>");
         assertThat(xml).contains("<CodigoTarifaIVA>08</CodigoTarifaIVA>");
+    }
+
+    @Test
+    @DisplayName("M4 simplificado: el tiquete declara el precio cobrado tal cual (IVA desglosado dentro)")
+    void tiqueteSimplificadoTotalIgualPrecio() {
+        Pedido pedido = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1130, 1);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_TIQUETE), empresa(), pedido);
+        assertThat(xml).contains("<TotalComprobante>1130</TotalComprobante>");
+        assertThat(xml).contains("<TotalGravado>1000</TotalGravado>");
+        assertThat(xml).contains("<TotalImpuesto>130</TotalImpuesto>");
+    }
+
+    @Test
+    @DisplayName("M4 tradicional: la factura no suma IVA al precio (ya lo incluye)")
+    void facturaTradicionalPrecioIncluyeIva() {
+        Empresa e = empresa();
+        e.setRegimenIva("TRADICIONAL");
+        Pedido pedido = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1130, 2);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedido);
+        assertThat(xml).contains("<TotalComprobante>2260</TotalComprobante>");
+        assertThat(xml).contains("<TotalImpuesto>260</TotalImpuesto>");
+        assertThat(xml).contains("<PrecioUnitario>1000.00000</PrecioUnitario>");
     }
 
     @Test
