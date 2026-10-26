@@ -180,8 +180,7 @@ public class PedidoPagoManualService {
 
     /** El Pago del grupo, si existe; 400 si es de pasarela (tarjeta). */
     private Optional<Pago> pagoSinPasarela(Pedido pedido) {
-        Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(pedido);
-        pagoOpt.ifPresent(this::bloquearYReleer);
+        Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(pedido).map(this::bloquearPago);
         if (pagoOpt.isPresent() && !esPagoManual(pagoOpt.get())) {
             throw new IllegalArgumentException(String.format(MENSAJE_PAGO_PASARELA,
                 normalizarMetodo(pagoOpt.get().getProveedor())));
@@ -284,7 +283,7 @@ public class PedidoPagoManualService {
     private Optional<ComprobanteSinpe> comprobantePendiente(Pedido pedido) {
         if (pedido.getId() == null) return Optional.empty();
         return comprobanteRepository.findByPedidoId(pedido.getId())
-            .map(c -> { bloquearYReleer(c); return c; })
+            .map(this::bloquearComprobante)
             .filter(c -> Constants.COMPROBANTE_PENDIENTE.equals(c.getEstado()));
     }
 
@@ -296,10 +295,28 @@ public class PedidoPagoManualService {
      * además relee el estado (un query con @Lock devolvería la copia del contexto sin releerla), así
      * el chequeo de PENDIENTE que sigue se hace sobre el valor confirmado en la base.
      */
-    private void bloquearYReleer(Object entidad) {
-        if (entityManager != null && entityManager.contains(entidad)) {
-            entityManager.refresh(entidad, LockModeType.PESSIMISTIC_WRITE);
+    private Pago bloquearPago(Pago pago) {
+        if (entityManager.contains(pago)) {
+            entityManager.refresh(pago, LockModeType.PESSIMISTIC_WRITE);
+            return pago;
         }
+        // Entidad suelta (fuera del contexto): no se salta el lock; se relee bloqueada desde la base.
+        return pagoRepository.findByIdForUpdate(requerirId(pago.getId(), "Pago"))
+            .orElseThrow(() -> new IllegalStateException("El pago " + pago.getId() + " ya no existe."));
+    }
+
+    private ComprobanteSinpe bloquearComprobante(ComprobanteSinpe comprobante) {
+        if (entityManager.contains(comprobante)) {
+            entityManager.refresh(comprobante, LockModeType.PESSIMISTIC_WRITE);
+            return comprobante;
+        }
+        return comprobanteRepository.findByIdForUpdate(requerirId(comprobante.getId(), "Comprobante"))
+            .orElseThrow(() -> new IllegalStateException("El comprobante " + comprobante.getId() + " ya no existe."));
+    }
+
+    private static Long requerirId(Long id, String entidad) {
+        if (id == null) throw new IllegalStateException(entidad + " sin id: no se puede tomar el lock.");
+        return id;
     }
 
     /**
