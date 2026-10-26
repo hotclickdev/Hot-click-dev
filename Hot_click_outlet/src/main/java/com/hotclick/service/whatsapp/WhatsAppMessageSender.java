@@ -66,7 +66,7 @@ public class WhatsAppMessageSender {
         if (!metaApiClient.credencialesConfiguradas()) {
             entry.setEstado("SIMULADO");
             logRepo.save(entry);
-            log.warn("[WA-SIMULADO] {} → {}: {}", escenario, telefono, texto);
+            log.warn("[WA-SIMULADO] {} usuarioId={} empresaId={}", escenario, entry.getUsuarioId(), entry.getEmpresaId());
             return texto;
         }
         enviarAMeta(entry, escenario, telefono, texto);
@@ -79,12 +79,12 @@ public class WhatsAppMessageSender {
             String metaId = metaApiClient.llamarMetaApi(telefono, texto);
             entry.setEstado("ENVIADO");
             entry.setMetaMessageId(metaId);
-            log.info("[WA-ENVIADO] {} → {} (msgId={})", escenario, telefono, metaId);
+            log.info("[WA-ENVIADO] {} usuarioId={} empresaId={} (msgId={})", escenario, entry.getUsuarioId(), entry.getEmpresaId(), metaId);
         } catch (Exception e) {
             String msg = e.getMessage() != null ? e.getMessage() : "unknown";
             entry.setEstado("ERROR");
             entry.setErrorDetalle(msg.substring(0, Math.min(MAX_ERROR, msg.length())));
-            log.error("[WA-ERROR] {} → {}: {}", escenario, telefono, e.getMessage());
+            log.error("[WA-ERROR] {} usuarioId={} empresaId={}: {}", escenario, entry.getUsuarioId(), entry.getEmpresaId(), e.getClass().getSimpleName());
         }
     }
 }

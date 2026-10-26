@@ -87,7 +87,7 @@ public class SinpeCheckoutService {
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
         exigirProveedorPermitido(req.getProvider(), sinpeManualHabilitado, efectivoWebHabilitado);
         boolean sinpe = esSinpe(req.getProvider());
-        if (sinpe) SinpeOnvoMarketplaceService.exigirIdentificacion(req.getSinpeIdentificacion(), req.getSinpeTipoIdentificacion());
+        if (sinpe) SinpeOnvoMarketplaceService.exigirIdentificacion(req.getSinpeIdentificacion(), req.getSinpeTipoIdentificacion(), req.getSinpeTelefono());
         String sinpeDestino = exigirDestinoSiSinpe(req.getProvider(), sinpeOnvo != null ? sinpeOnvo.destinoDisponible() : "");
         checkoutValidator.validateCartNotEmpty(req);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
@@ -125,7 +125,7 @@ public class SinpeCheckoutService {
         reservaAntiBot.registrar(usuario, invitado, req, grupo.pedidos(), pago);
         // Un intent ONVO por grupo; al final para no dejar intents abiertos si falla algo antes.
         LocalDateTime plazo = sinpe
-            ? sinpeOnvo.iniciar(pago, req.getSinpeIdentificacion(), req.getSinpeTipoIdentificacion()) : null;
+            ? sinpeOnvo.iniciar(pago, req.getSinpeIdentificacion(), req.getSinpeTipoIdentificacion(), req.getSinpeTelefono()) : null;
 
         log.info("Checkout {} iniciado: pedido={} paquetes={} total={}",
             proveedorEfectivo, principal.getNumeroPedido(), grupo.subpedidos().size(), grupo.totalCobro());

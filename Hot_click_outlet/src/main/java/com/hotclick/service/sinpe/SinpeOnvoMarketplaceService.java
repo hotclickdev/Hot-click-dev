@@ -47,6 +47,7 @@ public class SinpeOnvoMarketplaceService {
     public static final String PREFIJO = PosSinpeOnvoService.PREFIJO_ONVO_PI;
     public static final String MSG_NO_DISPONIBLE = SinpeCheckoutService.MSG_SINPE_SIN_DESTINO;
     public static final String MSG_IDENTIFICACION = PosSinpeOnvoService.MSG_IDENTIFICACION;
+    public static final String MSG_TELEFONO = PosSinpeOnvoService.MSG_TELEFONO;
     /** Tope del plazo interno (un día); fuera de 1..MAX el SINPE no se ofrece. */
     static final int MAX_MINUTOS = 24 * 60;
 
@@ -86,10 +87,13 @@ public class SinpeOnvoMarketplaceService {
         return d == null ? "" : d.trim();
     }
 
-    /** Valida identificación (con guiones, mín. 12) y tipo antes de reservar stock. */
-    public static void exigirIdentificacion(String identificacion, Integer tipo) {
-        if (!OnvoService.identificacionSinpeValida(identificacion) || !OnvoService.tipoIdentificacionValido(tipo)) {
+    /** Valida identificación (formato según tipo ONVO 0-5/9), tipo y SINPE del comprador antes de reservar stock. */
+    public static void exigirIdentificacion(String identificacion, Integer tipo, String telefono) {
+        if (!OnvoService.identificacionSinpeValida(identificacion, tipo)) {
             throw new IllegalArgumentException(MSG_IDENTIFICACION);
+        }
+        if (OnvoService.normalizarNumeroSinpe(telefono) == null) {
+            throw new IllegalArgumentException(MSG_TELEFONO);
         }
     }
 
@@ -100,8 +104,8 @@ public class SinpeOnvoMarketplaceService {
      * se escriben por dirty checking en un solo UPDATE al flush, sin save()/merge por pago.
      */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
-    public LocalDateTime iniciar(Pago pago, String identificacion, Integer tipo) {
-        exigirIdentificacion(identificacion, tipo);
+    public LocalDateTime iniciar(Pago pago, String identificacion, Integer tipo, String telefono) {
+        exigirIdentificacion(identificacion, tipo, telefono);
         if (destinoDisponible().isEmpty() || pago.getMonto() == null || pago.getMonto() <= 0) {
             throw new IllegalStateException(MSG_NO_DISPONIBLE);
         }
@@ -114,7 +118,7 @@ public class SinpeOnvoMarketplaceService {
         pago.setMerchantToken(PREFIJO + intent.id());
         pago.setPlazoInternoSinpe(plazo);
         pago.setFechaActualizacion(LocalDateTime.now(clock));
-        OnvoService.OnvoPaymentMethod metodo = onvoService.crearMetodoPagoSinpePos(identificacion, tipo, null);
+        OnvoService.OnvoPaymentMethod metodo = onvoService.crearMetodoPagoSinpePos(identificacion, tipo, telefono, null);
         onvoService.confirmarPaymentIntent(intent.id(), metodo.id());
         log.info("[SINPE-ONVO] Intent confirmado pedido={} plazoInterno={}", numero, plazo);
         return plazo;
