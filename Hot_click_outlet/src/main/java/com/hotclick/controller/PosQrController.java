@@ -124,7 +124,8 @@ public class PosQrController {
         } catch (java.util.NoSuchElementException e) {
             return ResponseEntity.status(404).body(Map.of("error", "QR no encontrado"));
         } catch (IllegalStateException e) {
-            log.warn("[POS-QR] Tilopay no iniciado token={}: {}", token, e.getMessage());
+            log.warn("[POS-QR] Tilopay no iniciado token={}: {}",
+                com.hotclick.service.pos.PosQrVentaService.mascararToken(token), e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", mensajePagoTarjeta(e)));
         }
     }
