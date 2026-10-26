@@ -52,7 +52,6 @@ class AdminRutasRolTest extends BaseIntegrationTest {
         "POST /api/admin/ai/chat", "GET /api/admin/ai/uso", "GET /api/admin/ai/historial",
         "GET /api/admin/ai/sugerencias", "GET /api/admin/ai/productos-sin-venta", "GET /api/admin/ai/insights",
         "DELETE /api/admin/ai/historial",
-        "GET /api/admin/pagos", "GET /api/admin/pagos/kpis",
         // Datos de referencia de solo lectura (países y tasas)
         "GET /api/admin/multipais/paises", "GET /api/admin/multipais/tasas", "GET /api/admin/multipais/config"
     );

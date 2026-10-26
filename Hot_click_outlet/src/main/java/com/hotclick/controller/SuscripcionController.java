@@ -87,6 +87,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> getSuscripcion() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return ResponseEntity.ok(suscripcionService.getSuscripcionInfo(empresaId));
     }
 
@@ -97,6 +98,7 @@ public class SuscripcionController {
             @RequestParam(defaultValue = "0") int pagina) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return ResponseEntity.ok(suscripcionService.getFacturas(empresaId, pagina));
     }
 
@@ -208,6 +210,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> confirmarTilopay(@PathVariable String orderNumber) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         try {
             return ResponseEntity.ok(suscripcionTilopayService.confirmar(empresaId, orderNumber));
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
@@ -225,6 +228,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> cobroPendiente() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         try {
             return suscripcionTilopayService.pendiente(empresaId)
                 .map(ResponseEntity::ok)
@@ -240,6 +244,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> planPendiente() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return suscripcionTilopayService.planNuevoPendiente(empresaId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
@@ -263,7 +268,9 @@ public class SuscripcionController {
         return ResponseEntity.status(409).body(body);
     }
 
-    private ResponseEntity<Map<String, Object>> soloPropietario() {
-        return ResponseEntity.status(403).body(Map.of("error", com.hotclick.security.PropietarioGuard.MSG));
+    private static <T> ResponseEntity<T> soloPropietario() {
+        @SuppressWarnings("unchecked")
+        T body = (T) Map.of("error", com.hotclick.security.PropietarioGuard.MSG);
+        return ResponseEntity.status(403).body(body);
     }
 }
