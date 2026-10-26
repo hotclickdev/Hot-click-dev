@@ -9,19 +9,24 @@ Tester funcional QA 4, cliente consumidor. Plan: `/workspace/hotclick-reportes/p
 Ninguno. QA 4 no tiene ramas ni commits de código.
 
 ## En qué quedé y pendientes
-- Persona 1 sin confirmar y Persona 2 sin verificar, por **QA4-004 (ALTO)**: /registro se resetea sin mostrar la pantalla del código, y /login no ofrece reenviar el código ("Verificá tu correo para activar la cuenta." sin opción).
-- Staging local (master `f9f0e506`, front :3000, backend :8081): el correo sale por SendGrid y falla con 401 en vez de ir a Mailpit (:8025). Se le pidió a CI/CD pasarlo a Mailpit.
-- Normalización del email en el login: **sin concluir** por el rate limit de login.
-- Rutas de invitado **OK**: /admin y /emprendedor redirigen a /login; /cobros, /billing, /suscripcion y /plan dan 404; /planes y /vender son páginas públicas.
-- Bugs bajos: **QA4-005** (redirect anidado en /pyme) y **QA4-006** (error crudo de SendGrid mostrado al usuario).
-- Bugs previos fase 1: QA4-001 (registro 400, causa: falta tipo de código REGISTRO en base nueva), QA4-002 (cookies de análisis activadas por defecto, Alta), QA4-003 (textos, Baja).
-- Falta: menú del cliente logueado (sin enlaces de cobro), /pyme, /admin, /emprendedor logueado, chatbot con 3 preguntas (y chequeo de productos QA-TEST visibles), C2–C6, K3–K5 y K7 autenticado, y traspaso de cuentas a QA Compra por canal interno.
+Actualizado 26/10/2026, staging local en master `1b1fece8` (front :3000, backend :8081, correo por Mailpit :8025).
+- **Persona 2: verificada** el 26-oct en staging `1b1fece8` (código leído en Mailpit, reenviando /registro con el mismo correo).
+- **Persona 1: sigue sin confirmar.**
+- Login: **OK**. Normalización del correo (mayúsculas y espacios alrededor): **OK**.
+- Menú del cliente logueado sin enlaces de cobro: **OK**.
+- /pyme, /admin y /emprendedor con cliente logueado: **terminan en la home** (sin acceso).
+- Rutas de invitado **OK**: /admin y /emprendedor redirigen a /login; /cobros, /billing, /suscripcion y /plan dan 404; /planes y /vender son públicas.
+- **C2, C4 y C5: OK.** La contraseña de Persona 2 (estaba expuesta) **ya se rotó en C5**; la nueva está solo en el canal interno.
+- **C6: bloqueado por QA4-010** (interruptor de la 2FA deshabilitado).
+- **C3: pendiente de #347** (reenviar código desde /login, cubre QA4-004); reprobar cuando entre a master.
+- Bugs nuevos: QA4-007, QA4-008, QA4-009, QA4-010, QA4-011 (ver evidencia).
+- Falta: K3–K5 y K7 autenticado, y traspaso de cuentas a QA Compra por canal interno.
 
 ## Próximos pasos
-1. Cuando el correo de staging vaya a Mailpit: verificar Persona 2 por el flujo de la app leyendo el código en Mailpit. Sin tocar la base y sin crear cuentas.
-2. Con el rate limit libre: repetir login con el email en mayúsculas y con espacios alrededor.
-3. Cambiar la contraseña de Persona 2 después de verificarla (quedó expuesta en una salida interna de herramienta).
-4. Seguir con los pendientes de arriba.
+1. Cuando #347 entre a master: probar C3 y reprobar QA4-004.
+2. Cuando se arregle QA4-010: probar C6 (activar 2FA por correo, login pide código, desactivar).
+3. Confirmar Persona 1 por el flujo de la app (sin tocar la base, sin crear cuentas).
+4. K3–K5 y K7 autenticado; traspaso de cuentas a QA Compra.
 
 ## Decisiones de Andrés que conozco
 - Solo staging local y ONVO en modo test.
