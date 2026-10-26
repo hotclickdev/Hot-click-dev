@@ -4366,7 +4366,7 @@ ALTER TABLE hot_click_pedido_tb ADD COLUMN IF NOT EXISTS es_prueba BOOLEAN NOT N
 ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS plazo_interno_sinpe TIMESTAMP NULL;
 
 -- ====================================================
--- Admin: suspensión manual por impago y "Dar 3 días extra" (26-oct-2026). Aditiva: tabla nueva, no toca filas
+-- V200 Admin: suspensión manual por impago y "Dar 3 días extra" (26-oct-2026). Aditiva: tabla nueva, no toca filas
 -- existentes ni borra datos. Una extensión por ciclo de impago (UNIQUE suscripcion_id = la mensualidad VENCIDA).
 -- Durante la extensión la empresa queda en estado_empresa='EXTENSION_IMPAGO' (oculta, sin ventas nuevas);
 -- al vencer vuelve a 'SUSPENDIDO_IMPAGO'. La bitácora (admin, motivo, hora) va en hot_click_auditoria_admin_tb.

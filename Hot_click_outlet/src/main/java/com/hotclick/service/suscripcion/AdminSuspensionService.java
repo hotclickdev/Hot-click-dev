@@ -154,8 +154,10 @@ public class AdminSuspensionService {
         }
         Optional<Suscripcion> pastDue = suscripcionRepo.findTopByEmpresaIdAndEstadoOrderByFechaCreacionDesc(empresaId, PAST_DUE);
         if (pastDue.isPresent()) {
+            // Solo cierra el ciclo impago (VENCIDO) para el monto pendiente y la extensión.
+            // La suspensión manual NO baja el plan: solo oculta y bloquea (SUSPENDIDO_IMPAGO).
+            // La baja de plan queda exclusiva del job automático de #333.
             suscripcionRepo.marcarVencidoSiPastDue(pastDue.get().getId());
-            planSupport.degradarPlanBatchConCache(List.of(empresaId), ahora().toLocalDate());
         } else if (suscripcionRepo.findTopByEmpresaIdAndEstadoOrderByFechaCreacionDesc(empresaId, VENCIDO).isEmpty()) {
             throw new IllegalStateException("La tienda no tiene una mensualidad impaga.");
         }

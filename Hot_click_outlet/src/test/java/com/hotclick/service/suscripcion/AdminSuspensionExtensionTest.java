@@ -120,10 +120,29 @@ class AdminSuspensionExtensionTest {
 
             assertEquals("SUSPENDIDO_IMPAGO", r.get("estado"));
             verify(subRepo).marcarVencidoSiPastDue(50L);
-            verify(planSupport).degradarPlanBatchConCache(List.of(7L), AHORA.toLocalDate());
+            verifyNoInteractions(planSupport);
             ArgumentCaptor<String> detalle = ArgumentCaptor.forClass(String.class);
             verify(auditoria).registrar(eq("ADMIN_SUSPENDER_IMPAGO"), eq("EMPRESA"), eq(7L), eq(7L), detalle.capture());
             assertEquals("Motivo: No pagó tras 3 avisos", detalle.getValue());
+        }
+
+        @Test
+        void suspensionManualNoBajaElPlan() {
+            Empresa e = empresa(7, "ACTIVO");
+            com.hotclick.model.Plan pro = new com.hotclick.model.Plan();
+            pro.setNombre("PRO");
+            e.setPlan(pro);
+            Object planAntes = e.getPlan();
+            when(subRepo.findTopByEmpresaIdAndEstadoOrderByFechaCreacionDesc(7L, "PAST_DUE"))
+                .thenReturn(Optional.of(sub(50, "PAST_DUE", LocalDate.of(2026, 10, 20))));
+            when(empresaRepo.suspenderPorImpagoManual(7L)).thenReturn(1);
+
+            svc.suspender(7L, "Impago");
+
+            assertSame(planAntes, e.getPlan());
+            assertEquals("PRO", e.getPlan().getNombre());
+            verifyNoInteractions(planSupport);
+            verify(empresaRepo, never()).save(any());
         }
 
         @Test
