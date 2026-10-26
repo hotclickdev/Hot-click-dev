@@ -6,6 +6,7 @@ import { walletService } from '@/services/walletService'
 import { consolaService, objetoDe } from './consola'
 import { campoLista, filasDe, idSeguro, texto, type Fila } from './normalizar'
 import { Aviso, Carga, Chip, Encabezado, FilaDecision, Marco, Metrica, Segmento, TARJETA } from './piezas'
+import { formatPrice } from '@/utils/format'
 
 const VISTAS = [
   { id: 'quincena', label: 'Quincena', to: '/plataforma/dinero' },
@@ -92,7 +93,7 @@ function LineaQuincena({ fila }: { fila: Fila }) {
 function colones(valor: unknown): string {
   const crudo = typeof valor === 'number' ? valor : Number(texto(valor, ''))
   if (!Number.isFinite(crudo)) return '—'
-  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(crudo)
+  return formatPrice(crudo)
 }
 
 function Cobros() {

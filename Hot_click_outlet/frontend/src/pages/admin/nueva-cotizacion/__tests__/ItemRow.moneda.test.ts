@@ -13,7 +13,7 @@ const fila = (moneda?: string) => renderToStaticMarkup(
 describe('ItemRow — C1 moneda del subtotal', () => {
   it('en USD el subtotal de la línea sale en US$, no en ₡', () => {
     const html = fila('USD')
-    expect(html).toContain('$50.00')
+    expect(html).toContain('US$50')
     expect(html).not.toContain('₡')
   })
   it('sin moneda sigue en colones', () => {

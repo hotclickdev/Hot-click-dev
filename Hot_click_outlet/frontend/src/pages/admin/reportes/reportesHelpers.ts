@@ -2,10 +2,11 @@ import type { CSSProperties } from 'react'
 import type { Id } from '@/types/api'
 import type { ItemPedido, Pedido } from '@/types/pedido'
 import type { Producto } from '@/types/producto'
+import { formatMiles } from '@/utils/format'
 
 export const ESTADOS_COMPLETADOS = new Set(['COMPLETADO', 'ENTREGADO'])
 
-export const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+export const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 export const TABLE_SIZE = 25
 
 export const SUCCESS = '#1E7F4F'

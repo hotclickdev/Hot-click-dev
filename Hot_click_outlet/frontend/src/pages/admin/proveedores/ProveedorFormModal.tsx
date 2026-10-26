@@ -21,12 +21,13 @@ export default function ProveedorFormModal({
   const set = (field: keyof ProveedorForm) => (val: string) => onSetField(field, val)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-md rounded-2xl p-6 space-y-4"
+      <div role="dialog" aria-modal="true" aria-labelledby="proveedor-modal-titulo"
+        className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl p-4 sm:p-6 space-y-4"
         style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center justify-between">
-          <h2 className="font-bold" style={{ color: 'var(--hc-text)' }}>
+          <h2 id="proveedor-modal-titulo" className="font-bold" style={{ color: 'var(--hc-text)' }}>
             {editing ? 'Editar proveedor' : 'Nuevo proveedor'}
           </h2>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"

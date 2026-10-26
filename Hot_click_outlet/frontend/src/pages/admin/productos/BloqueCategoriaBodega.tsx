@@ -23,7 +23,7 @@ export default function BloqueCategoriaBodega({ form, setForm, categories, bodeg
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" style={{ color: 'var(--hc-text)' }}>Bodega *</label>
         <select value={form.bodegaId} onChange={setCampo(setForm, 'bodegaId')} className="h-11 px-3 rounded-xl text-sm focus:outline-none" style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }} required={bodegas.length > 0}>
-          <option value="">{bodegas.length === 0 ? '— Sin bodegas —' : 'Selecciona bodega'}</option>
+          <option value="">{bodegas.length === 0 ? '— Sin bodegas —' : 'Seleccioná una bodega'}</option>
           {bodegas.map((b) => <option key={b.id} value={b.id}>{b.nombreBodega ?? b.nombre}</option>)}
         </select>
       </div>

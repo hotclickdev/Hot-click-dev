@@ -36,7 +36,7 @@ export default function SuscripcionAcciones({
         <div className="flex items-center justify-between py-3 border-b" style={{ borderColor: 'var(--hc-border)' }}>
           <div>
             <p className="text-sm" style={{ color: 'var(--hc-text)' }}>Activar suscripción</p>
-            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Elige un plan y paga con tarjeta</p>
+            <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>Elegí un plan y pagá con tarjeta</p>
           </div>
           <button type="button"
             onClick={onVerPlanes}

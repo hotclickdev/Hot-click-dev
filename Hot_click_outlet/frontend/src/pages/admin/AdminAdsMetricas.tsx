@@ -7,8 +7,8 @@ import {
   type AdsMetricasResumen,
 } from '@/services/adsMetricasService'
 import { useToast } from '@/components/ui/Toast'
+import { formatPrice } from '@/utils/format'
 
-const CRC = new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 })
 
 function hoyIso() {
   return new Date().toISOString().slice(0, 10)
@@ -27,7 +27,7 @@ function fmtRoas(pct: number | null | undefined) {
 
 function fmtCrc(n: number | null | undefined) {
   if (n == null) return '—'
-  return CRC.format(n)
+  return formatPrice(n)
 }
 
 /**
