@@ -12,7 +12,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,21 +37,33 @@ class CheckoutBodegaMarketplaceTest {
     }
 
     private static void checkout(Long tenant, long empresaProducto, Bodega bodegaPaquete) {
+        checkout(tenant, bodegaPaquete, empresaProducto);
+    }
+
+    /** Un solo paquete con un ítem por empresa (null = producto sin empresa). */
+    private static void checkout(Long tenant, Bodega bodegaPaquete, Long... empresasItems) {
         if (tenant != null) TenantContext.set(tenant);
-        Producto p = new Producto(); p.setId(578L); p.setEmpresa(empresa(empresaProducto));
-        PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
-        item.setProductoId(578L); item.setCantidad(1);
+        java.util.Map<Long, Producto> productos = new java.util.HashMap<>();
+        java.util.List<PaymentCheckoutRequest.ItemDTO> items = new java.util.ArrayList<>();
+        long id = 578L;
+        for (Long emp : empresasItems) {
+            Producto p = new Producto(); p.setId(id); if (emp != null) p.setEmpresa(empresa(emp));
+            productos.put(id, p);
+            PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
+            item.setProductoId(id++); item.setCantidad(1);
+            items.add(item);
+        }
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
-        req.setItems(List.of(item)); req.setMetodoEnvio(Constants.ENVIO_RETIRO);
+        req.setItems(items); req.setMetodoEnvio(Constants.ENVIO_RETIRO);
 
         CheckoutPaquetesPlanner planner = mock(CheckoutPaquetesPlanner.class);
         when(planner.planificar(any(), any(), any())).thenReturn(List.of(new CheckoutPaquetesPlanner.Paquete(
-            bodegaPaquete, List.of(item), 1000, 500, Constants.ENVIO_RETIRO, null)));
+            bodegaPaquete, items, 1000, 500, Constants.ENVIO_RETIRO, null)));
         OrderPricingService pricing = mock(OrderPricingService.class);
         doThrow(new PasoValidacion()).when(pricing).exigirCuponValido(any(), any());
         CheckoutGrupoFactory f = new CheckoutGrupoFactory(new CheckoutValidator(), planner, pricing,
             mock(CheckoutOrderFactory.class), mock(GiftCardService.class));
-        f.crear(req, new StockReservationResult(1000, 500, Map.of(578L, p)), null, "ONVO", null, "PENDIENTE");
+        f.crear(req, new StockReservationResult(1000, 500, productos), null, "ONVO", null, "PENDIENTE");
     }
 
     @Test
@@ -76,5 +87,39 @@ class CheckoutBodegaMarketplaceTest {
     @Test
     void compradorSinNegocioNoCambia() {
         assertThatThrownBy(() -> checkout(null, VENDEDOR, bodega(60L, VENDEDOR))).isInstanceOf(PasoValidacion.class);
+    }
+
+    // ---- NO APTO #321 ----
+
+    @Test
+    void carritoAyBEnBodegaDeASeRechaza() {
+        assertThatThrownBy(() -> checkout(COMPRADOR, bodega(60L, VENDEDOR), VENDEDOR, TERCERA))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> checkout(null, bodega(60L, VENDEDOR), VENDEDOR, TERCERA))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void invitadoConBodegaDeTerceraTiendaSeRechaza() {
+        assertThatThrownBy(() -> checkout(null, VENDEDOR, bodega(61L, TERCERA)))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void itemSinEmpresaEnBodegaDeVendedorSeRechaza() {
+        assertThatThrownBy(() -> checkout(COMPRADOR, bodega(60L, VENDEDOR), VENDEDOR, null))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void paqueteSinBodegaDa400() {
+        assertThatThrownBy(() -> checkout(COMPRADOR, (Bodega) null, VENDEDOR))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void bodegaHotClickParaInvitadoNoCambia() {
+        assertThatThrownBy(() -> checkout(null, bodega(Constants.BODEGA_DEFAULT_ID, Constants.EMPRESA_PLATAFORMA_ID), VENDEDOR, TERCERA))
+            .isInstanceOf(PasoValidacion.class);
     }
 }

@@ -103,17 +103,23 @@ public class CheckoutValidator {
     }
 
     /**
-     * Tenant assertion: la bodega del checkout debe pertenecer al negocio activo (TenantContext) o, en el
-     * marketplace (E2E-CMP-01), a la empresa vendedora de los productos de ese paquete. En /api/payments el
-     * TenantContext sale del JWT del comprador: una cuenta de negocio que compra en otra tienda no es el vendedor.
-     * Fail-closed: una bodega que no es del negocio activo ni del vendedor se rechaza con 400 (IllegalArgumentException).
+     * Tenant assertion (E2E-CMP-01 + NO APTO #321). La bodega de un paquete se acepta si:
+     * <ul>
+     *   <li>es del negocio activo (TenantContext del JWT; flujo en tienda propia, sin cambio), o</li>
+     *   <li>todos los ítems del paquete son de UN solo vendedor y la bodega es de ese vendedor
+     *       ({@code empresasVendedoras == Set.of(bodega.empresa)}; un ítem sin empresa llega como null y se rechaza), o</li>
+     *   <li>invitado/comprador sin negocio y bodega HotClick (plataforma o sin empresa): HotClick coordina (sin cambio).</li>
+     * </ul>
+     * Fail-closed: cualquier otro caso, o paquete sin bodega, da 400 (IllegalArgumentException).
      */
     public void assertBodegaTenant(Bodega bodega, Long bodegaId, java.util.Collection<Long> empresasVendedoras) {
+        if (bodega == null) throw new IllegalArgumentException("El paquete no tiene bodega de despacho");
         Long tenantId = com.hotclick.security.TenantContext.get();
-        if (tenantId == null) return;
         Long bodegaEmpresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
-        if (tenantId.equals(bodegaEmpresaId)) return;
-        if (bodegaEmpresaId != null && empresasVendedoras != null && empresasVendedoras.contains(bodegaEmpresaId)) return;
+        if (tenantId != null && tenantId.equals(bodegaEmpresaId)) return;
+        if (tenantId == null && (bodegaEmpresaId == null || Constants.esEmpresaPlataforma(bodegaEmpresaId))) return;
+        if (bodegaEmpresaId != null && empresasVendedoras != null
+                && new java.util.HashSet<>(empresasVendedoras).equals(java.util.Collections.singleton(bodegaEmpresaId))) return;
         log.warn("[checkout] Bodega ajena bloqueada: tenant={}, bodegaId={}, bodega.empresaId={}, vendedores={}",
             tenantId, bodegaId, bodegaEmpresaId, empresasVendedoras);
         throw new IllegalArgumentException("La bodega seleccionada no pertenece a esta tienda");
