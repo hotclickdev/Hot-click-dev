@@ -91,6 +91,7 @@ export default function CotizacionForm({
           <SeccionItems
             items={items}
             productos={productos}
+            moneda={form.moneda}
             onChange={actualizarItem}
             onRemove={eliminarItem}
             onAgregar={agregarItem}
