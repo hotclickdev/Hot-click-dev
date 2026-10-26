@@ -334,28 +334,59 @@ public class OnvoService {
         }
     }
 
-    /** Tipos de identificación que acepta ONVO para mobile_number: 1 física, 2 jurídica, 3 DIMEX, 4 NITE. */
+    /**
+     * Enum identificationType de ONVO para mobile_number: 0 física nacional, 1 residente, 2 estatal,
+     * 3 jurídica, 4 autónoma, 5 diplomático, 9 extranjero. Distinto del enum 1-4 de bankDeposit.
+     */
+    private static final Map<Integer, Pattern> IDENTIFICACION_POR_TIPO = Map.of(
+        0, Pattern.compile("0\\d-\\d{4}-\\d{4}"),
+        1, Pattern.compile("1\\d{11}"),
+        2, Pattern.compile("2-\\d{3}-\\d{6}"),
+        3, Pattern.compile("3-\\d{3}-\\d{6}"),
+        4, Pattern.compile("4-000-\\d{6}"),
+        5, Pattern.compile("5\\d{11}"),
+        9, Pattern.compile("9\\d{11}"));
+
     public static boolean tipoIdentificacionValido(Integer tipo) {
-        return tipo != null && tipo >= 1 && tipo <= 4;
+        return tipo != null && IDENTIFICACION_POR_TIPO.containsKey(tipo);
     }
 
-    private static final Pattern IDENTIFICACION_SINPE = Pattern.compile("[0-9A-Za-z]++(?:-[0-9A-Za-z]++)++");
-
-    /** ONVO exige la identificación con guiones y al menos 12 caracteres (openapi mobileNumber.identification). */
-    public static boolean identificacionSinpeValida(String identificacion) {
-        if (identificacion == null) return false;
+    /** Formato exacto de mobileNumber.identification según el tipo (guía SINPE Móvil de ONVO). */
+    public static boolean identificacionSinpeValida(String identificacion, Integer tipo) {
+        if (identificacion == null || !tipoIdentificacionValido(tipo)) return false;
         String v = identificacion.trim();
-        return v.length() >= 12 && v.length() <= 30 && IDENTIFICACION_SINPE.matcher(v).matches();
+        return v.length() <= 20 && IDENTIFICACION_POR_TIPO.get(tipo).matcher(v).matches();
+    }
+
+    private static final String PREFIJO_CR = "+506";
+    private static final Pattern OCHO_DIGITOS = Pattern.compile("\\d{8}");
+
+    /**
+     * Normaliza el SINPE del comprador a E.164 (+506 y 8 dígitos, 12 caracteres): quita espacios y guiones
+     * y antepone +506 si falta. Devuelve null si no queda en 8 dígitos (fail-closed).
+     */
+    public static String normalizarNumeroSinpe(String telefono) {
+        if (telefono == null) return null;
+        String v = telefono.replaceAll("[\\s-]", "");
+        if (v.length() > 20) return null;
+        if (v.startsWith(PREFIJO_CR)) v = v.substring(PREFIJO_CR.length());
+        else if (v.length() == 11 && v.startsWith("506")) v = v.substring(3);
+        return OCHO_DIGITOS.matcher(v).matches() ? PREFIJO_CR + v : null;
     }
 
     /**
-     * Método mobile_number para un cobro presencial (POS): identificación y tipo del pagador, que ONVO
-     * compara con la transferencia entrante junto con el monto. Sin número del pagador ni correo.
+     * Método mobile_number para SINPE por ONVO (POS y marketplace): identificación, tipo y número SINPE del
+     * COMPRADOR (no el destino). Valida todo antes de llamar a ONVO.
      */
     @CircuitBreaker(name = "onvo", fallbackMethod = "crearMetodoPagoSinpePosFallback")
-    public OnvoPaymentMethod crearMetodoPagoSinpePos(String identificacion, int tipoIdentificacion, String nombre) {
-        if (!identificacionSinpeValida(identificacion) || !tipoIdentificacionValido(tipoIdentificacion)) {
+    public OnvoPaymentMethod crearMetodoPagoSinpePos(String identificacion, int tipoIdentificacion,
+                                                     String telefonoComprador, String nombre) {
+        if (!identificacionSinpeValida(identificacion, tipoIdentificacion)) {
             throw new IllegalArgumentException("Identificación inválida para SINPE Móvil");
+        }
+        String numero = normalizarNumeroSinpe(telefonoComprador);
+        if (numero == null) {
+            throw new IllegalArgumentException("Número SINPE Móvil del comprador inválido");
         }
         if (mockMode) {
             return new OnvoPaymentMethod("onvo_pm_mock_" + System.currentTimeMillis());
@@ -364,6 +395,7 @@ public class OnvoService {
         Map<String, Object> mobile = new HashMap<>();
         mobile.put("identification", identificacion.trim());
         mobile.put("identificationType", tipoIdentificacion);
+        mobile.put("number", numero);
         Map<String, Object> billing = new HashMap<>();
         billing.put("name", nombre == null || nombre.isBlank() ? "Cliente" : nombre.trim());
         Map<String, Object> body = new HashMap<>();
@@ -528,7 +560,7 @@ public class OnvoService {
         return new OnvoPaymentMethod(String.valueOf(respBody.get("id")));
     }
 
-    private OnvoPaymentMethod crearMetodoPagoSinpePosFallback(String identificacion, int tipo, String nombre, Throwable t) {
+    private OnvoPaymentMethod crearMetodoPagoSinpePosFallback(String identificacion, int tipo, String telefono, String nombre, Throwable t) {
         throw relanzarFalloOnvo("crearMetodoPagoSinpePos", t);
     }
 

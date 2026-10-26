@@ -37,7 +37,8 @@ public class PosSinpeOnvoService {
     public static final String PREFIJO_ONVO_PI = "ONVOPI:";
 
     public static final String MSG_NO_DISPONIBLE = "SINPE Móvil no está disponible por ahora. Cobrá con otro método.";
-    public static final String MSG_IDENTIFICACION = "Ingresá la identificación con guiones (mínimo 12 caracteres) y su tipo.";
+    public static final String MSG_IDENTIFICACION = "Ingresá la identificación en el formato de su tipo (física 0#-####-####, jurídica 3-###-######, residente/diplomático/extranjero 12 dígitos sin guiones).";
+    public static final String MSG_TELEFONO = "Ingresá tu número SINPE Móvil (8 dígitos).";
 
     @Autowired private PosQrSesionRepository posQrRepo;
     @Autowired(required = false) private OnvoService onvoService;
@@ -97,9 +98,12 @@ public class PosSinpeOnvoService {
      * Sin @Transactional: el id del intent se guarda antes de confirmarlo y tiene que persistir aunque la
      * confirmación falle, para que el barrido lo encuentre y lo cancele.
      */
-    public Map<String, Object> iniciar(String token, String identificacion, Integer tipoIdentificacion) {
-        if (!OnvoService.identificacionSinpeValida(identificacion) || !OnvoService.tipoIdentificacionValido(tipoIdentificacion)) {
+    public Map<String, Object> iniciar(String token, String identificacion, Integer tipoIdentificacion, String telefono) {
+        if (!OnvoService.identificacionSinpeValida(identificacion, tipoIdentificacion)) {
             throw new IllegalArgumentException(MSG_IDENTIFICACION);
+        }
+        if (OnvoService.normalizarNumeroSinpe(telefono) == null) {
+            throw new IllegalArgumentException(MSG_TELEFONO);
         }
         PosQrSesion sesion = posQrRepo.findByToken(token)
             .orElseThrow(() -> new java.util.NoSuchElementException("QR no encontrado"));
@@ -137,7 +141,7 @@ public class PosSinpeOnvoService {
         sesion.setStripeSessionId(PREFIJO_ONVO_PI + intent.id());
         posQrRepo.save(sesion);
 
-        OnvoService.OnvoPaymentMethod metodo = onvoService.crearMetodoPagoSinpePos(identificacion, tipoIdentificacion, null);
+        OnvoService.OnvoPaymentMethod metodo = onvoService.crearMetodoPagoSinpePos(identificacion, tipoIdentificacion, telefono, null);
         onvoService.confirmarPaymentIntent(intent.id(), metodo.id());
         log.info("[POS-SINPE-ONVO] Intent confirmado sesion={} vence={}", sesion.getId(), sesion.getFechaExpiracion());
 
