@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 /** P-04 (C3): cobro ONVO con llave de prueba deja todos los pedidos del grupo marcados es_prueba. */
@@ -59,8 +60,9 @@ class OnvoPedidoPruebaTest {
         assertThat(captura.capturarVerificado("cs_1", "{}", "webhook")).isEqualTo(OnvoCapturaService.Captura.CAPTURADO);
         assertThat(p1.isEsPrueba()).isTrue();
         assertThat(p2.isEsPrueba()).isTrue();
-        verify(pedidoRepository).save(p1);
-        verify(pedidoRepository).save(p2);
+        // SCALE1: un solo saveAll con el grupo entero; ningún save por pedido.
+        verify(pedidoRepository, times(1)).saveAll(List.of(p1, p2));
+        verify(pedidoRepository, never()).save(any(Pedido.class));
     }
 
     @Test
@@ -69,6 +71,7 @@ class OnvoPedidoPruebaTest {
         captura.capturarVerificado("cs_1", "{}", "webhook");
         assertThat(p1.isEsPrueba()).isFalse();
         verify(pedidoRepository, never()).save(any());
+        verify(pedidoRepository, never()).saveAll(anyList());
     }
 
     @Test

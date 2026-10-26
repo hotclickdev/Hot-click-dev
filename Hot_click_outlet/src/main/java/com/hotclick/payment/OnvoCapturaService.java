@@ -102,10 +102,10 @@ public class OnvoCapturaService {
     void marcarSiEsPrueba(Pago pago, String sessionId) {
         boolean prueba = onvoService == null || !"live".equals(onvoService.modoEsperado());
         if (!prueba || pago.getPedido() == null) return;
-        for (com.hotclick.model.Pedido p : pedidoGrupoService.delGrupo(pago.getPedido())) {
-            p.setEsPrueba(true);
-            pedidoRepository.save(p);
-        }
+        // SCALE1: un solo saveAll del grupo (batch), no un save por pedido dentro del bucle.
+        java.util.List<com.hotclick.model.Pedido> grupo = pedidoGrupoService.delGrupo(pago.getPedido());
+        grupo.forEach(p -> p.setEsPrueba(true));
+        pedidoRepository.saveAll(grupo);
         log.warn("[ALERTA-PAGO] Cobro ONVO en modo prueba: pedido marcado es_prueba. sessionId={}", sessionId);
     }
 
