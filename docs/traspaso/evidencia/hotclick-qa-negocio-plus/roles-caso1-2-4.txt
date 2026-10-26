@@ -1,0 +1,16 @@
+GET equipo (dueno) 200
+   {"rolEnEmpresa": "PROPIETARIO", "apellidoPaterno": "Tres Plus", "fechaIngreso": "2026-10-24T00:29:20.59387", "estado": 1, "correo": "<u>@example.com", "id": 1018, "nombre": "QA"}
+   {"rolEnEmpresa": "EDITOR", "apellidoPaterno": "Editor", "fechaIngreso": "2026-10-24T00:31:43.694417", "estado": 1, "correo": "<u>@example.com", "id": 1023, "nombre": "QA"}
+EDITOR GET /api/billing/suscripcion 200 {"estado":"SIN_SUSCRIPCION","planNombre":"FREE"}
+EDITOR GET /api/billing/facturas 200 []
+EDITOR POST /api/billing/checkout/999999 403 {"error":"Solo el propietario del negocio puede hacer esto."}
+EDITOR POST /api/billing/portal 403 {"error":"Solo el propietario del negocio puede hacer esto."}
+EDITOR POST /api/billing/cambiar-plan/999999 403 {"error":"Solo el propietario del negocio puede hacer esto."}
+EDITOR GET /api/billing/preferencias 200 {"success":true,"message":"Preferencias de cobro","data":{"diaCobro":28,"frecuenciaPayout":"QUINCENAL","contra
+EDITOR PUT /api/billing/preferencias 403 {"success":false,"message":"Solo el propietario del negocio puede hacer esto.","data":null,"timestamp":"2026-1
+EDITOR GET /api/wallet/saldo 200 {"empresaId":4,"saldoDisponible":0,"saldoRetenido":0,"totalAcreditado":0,"totalRetirado":0,"ultimaActualizacio
+EDITOR GET /api/wallet/payouts 200 {"content":[],"pageable":{"pageNumber":0,"pageSize":20,"sort":{"sorted":false,"empty":true,"unsorted":true},"o
+EDITOR POST /api/wallet/payout 403 {"success":false,"message":"Acceso denegado","data":null,"timestamp":"2026-10-26T12:49:16.485207372"}
+EDITOR GET /api/metodos-cobro 200 {"success":true,"message":"Métodos de cobro","data":[],"timestamp":"2026-10-26T12:49:16.508591043"}
+EDITOR POST /api/metodos-cobro 400 {"success":false,"message":"tipo: El tipo es requerido; dato: El dato de la cuenta es requerido","data":null,"
+EDITOR GET /api/empresa/equipo 200 {"success":true,"message":"Equipo","data":[{"rolEnEmpresa":"PROPIETARIO","apellidoPaterno":"Tres Plus","fechaI
