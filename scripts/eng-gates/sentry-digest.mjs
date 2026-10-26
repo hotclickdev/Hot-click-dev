@@ -142,7 +142,7 @@ export async function runSentryDigest(opts = {}) {
   }
   const sentry = opts.sentry || await fetchSentryIssues(opts);
   const healthRuns = opts.healthRuns || listWorkflowRuns({
-    workflow: 'Keep Render Alive',
+    workflow: 'E9 — Health down pager',
     limit: 8,
   });
   const health = collectHealthFallback(healthRuns);
