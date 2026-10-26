@@ -284,7 +284,7 @@ class SuscripcionOnvoChangeServiceTest {
         java.time.LocalDate venc = java.time.LocalDate.of(2026, 10, 1);
         empresa.setFechaVencPlan(venc);
         when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
-        when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+        org.mockito.Mockito.lenient().when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
 
         assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
             .isInstanceOf(IllegalStateException.class);
@@ -321,5 +321,60 @@ class SuscripcionOnvoChangeServiceTest {
             envField.set(service, env);
             assertThat(service.mockPermitido()).as(String.join(",", perfiles)).isFalse();
         }
+    }
+
+    @Test
+    @DisplayName("Suspendida no cambia a un plan de pago por /cambiar-plan")
+    void suspendidaNoCambiaDePlan() {
+        empresa.setEstadoEmpresa("SUSPENDIDO_IMPAGO");
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 2L)).isInstanceOf(IllegalStateException.class);
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        assertThat(empresa.getEstadoEmpresa()).isEqualTo("SUSPENDIDO_IMPAGO");
+    }
+
+    @Test
+    @DisplayName("Pago confirmado por otro proveedor (Tilopay) no reactiva")
+    void tilopayNoReactiva() {
+        empresa.setEstadoEmpresa("SUSPENDIDO_IMPAGO");
+        when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(planPyme));
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+        service.planPagoConfirmado(10L, "PYME", "TILOPAY", "ord-1");
+        assertThat(empresa.getEstadoEmpresa()).isEqualTo("SUSPENDIDO_IMPAGO");
+    }
+
+    @Test
+    @DisplayName("(d) webhook ONVO de pago confirmado reactiva la tienda suspendida")
+    void webhookOnvoReactiva() {
+        empresa.setEstadoEmpresa("SUSPENDIDO_IMPAGO");
+        Suscripcion sub = new Suscripcion();
+        sub.setEmpresa(empresa);
+        sub.setPlan(planPyme);
+        when(suscripcionRepo.findByOnvoSubscriptionId("sub_1")).thenReturn(Optional.of(sub));
+        when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
+        service.procesarPagoOnvoExitoso(10L, "sub_1", 2L);
+        assertThat(empresa.getEstadoEmpresa()).isEqualTo("ACTIVO");
+        assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("Monto pendiente sale del plan impago (tabla plan), no de un valor fijo")
+    void montoPendienteDelPlanVencido() {
+        planPyme.setPrecioMensual(12345);
+        Suscripcion vencida = new Suscripcion();
+        vencida.setPlan(planPyme);
+        when(suscripcionRepo.findTopByEmpresaIdAndEstadoOrderByFechaCreacionDesc(10L, "VENCIDO"))
+            .thenReturn(Optional.of(vencida));
+        assertThat(service.planPendienteDeSuspension(10L)).get()
+            .extracting(Plan::getPrecioMensual).isEqualTo(12345);
+    }
+
+    @Test
+    @DisplayName("pagarSuspension solo aplica a tiendas suspendidas")
+    void pagarSoloSuspendida() {
+        empresa.setEstadoEmpresa("ACTIVO");
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        assertThatThrownBy(() -> service.pagarSuspension(10L)).isInstanceOf(IllegalStateException.class);
     }
 }

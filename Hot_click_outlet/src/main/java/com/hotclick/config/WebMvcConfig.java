@@ -36,15 +36,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
                                      "/api/payments/**", "/api/sinpe/**",
                                      // pago público POS-QR del comprador (no es escritura del negocio actual)
                                      "/api/pos/qr/pago/**");
-        // Suscripción impaga (día 9+): el negocio solo puede pagar. Billing y auth quedan abiertos;
+        // Suscripción impaga (día 9+): el negocio solo ve cuenta/monto y paga (allowlist exacta en el interceptor);
         // las rutas de comprador ya rechazan tiendas no ACTIVO por su cuenta.
         registry.addInterceptor(suspensionImpagoInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/**", "/api/billing/**", "/api/public/**",
+                .excludePathPatterns("/api/public/**",
                                      // comprador: rutas exactas (ya rechazan tiendas no ACTIVO por su cuenta)
                                      "/api/tienda/*/pedidos",
                                      "/api/payments/guest-checkout", "/api/payments/guest/cancel/*",
                                      "/api/payments/tilopay/confirmar/*", "/api/payments/tilopay/reintentar/*",
-                                     "/api/webhooks/**", "/api/sinpe/**", "/api/pos/qr/pago/**");
+                                     "/api/sinpe/checkout", "/api/sinpe/guest-checkout",
+                                     "/api/sinpe/comprobantes/*/url-firmada",
+                                     "/api/webhooks/**", "/api/pos/qr/pago/**");
     }
 }

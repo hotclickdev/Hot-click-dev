@@ -98,6 +98,36 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     public Map<String, Object> cambiarPlan(Long empresaId, Long planId) {
         Empresa empresa = empresaRepo.findById(empresaId)
             .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+        // Decisión 26-oct: una tienda SUSPENDIDO_IMPAGO no cambia de plan (ni al gratis); solo paga lo pendiente.
+        if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
+        }
+        return cambiarPlanInterno(empresa, planId);
+    }
+
+    /** Plan cuya mensualidad quedó impaga: el de la última suscripción VENCIDO, si es de pago. */
+    @Transactional(readOnly = true)
+    public Optional<Plan> planPendienteDeSuspension(Long empresaId) {
+        return suscripcionRepo.findTopByEmpresaIdAndEstadoOrderByFechaCreacionDesc(empresaId, "VENCIDO")
+            .map(Suscripcion::getPlan)
+            .filter(p -> p.getPrecioMensual() != null && p.getPrecioMensual() > 0);
+    }
+
+    /** Inicia por ONVO el pago del plan impago de una tienda suspendida. Reactiva solo el webhook ONVO. */
+    @CacheEvict(value = "tenantInfo", key = "#empresaId")
+    public Map<String, Object> pagarSuspension(Long empresaId) {
+        Empresa empresa = empresaRepo.findById(empresaId)
+            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+        if (!SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new IllegalStateException("La tienda no está suspendida.");
+        }
+        Plan plan = planPendienteDeSuspension(empresaId)
+            .orElseThrow(() -> new IllegalStateException("Sin mensualidad pendiente."));
+        return cambiarPlanInterno(empresa, plan.getId());
+    }
+
+    private Map<String, Object> cambiarPlanInterno(Empresa empresa, Long planId) {
+        Long empresaId = empresa.getId();
         Plan planDestino = planRepo.findById(planId)
             .orElseThrow(() -> new NoSuchElementException("Plan no encontrado: " + planId));
 
@@ -114,7 +144,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
 
         if (PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())) {
-            // Seguridad #333: bajar a gratis no es pagar; una tienda suspendida solo se reactiva con cobro confirmado.
+            // Seguridad #333: bajar a gratis no es pagar; una tienda suspendida nunca llega acá.
             if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
                 throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
             }
@@ -265,7 +295,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public void planPagoConfirmado(Long empresaId, String planNombre, String proveedor, String referencia) {
         log.info("[plan-pago] Plan {} confirmado empresa={} proveedor={} ref={}", planNombre, empresaId, proveedor, referencia);
-        aplicarPlanInterno(empresaId, planNombre, null, true);
+        // Solo un cobro ONVO confirmado reactiva una tienda suspendida (decisión 26-oct).
+        aplicarPlanInterno(empresaId, planNombre, null, Constants.PROVEEDOR_ONVO.equalsIgnoreCase(proveedor));
     }
 
     @Transactional

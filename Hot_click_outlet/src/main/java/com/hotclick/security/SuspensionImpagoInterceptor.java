@@ -15,16 +15,22 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Suscripción impaga (día 9+): el negocio SUSPENDIDO_IMPAGO solo puede entrar a pagar. Toda escritura bajo
- * /api/** del negocio resuelto (JWT o empresa propia) recibe 402, salvo billing y auth (ver WebMvcConfig).
- * Las rutas de comprador quedan excluidas aquí porque ya rechazan tiendas no ACTIVO (esPublicable).
+ * Suscripción impaga (día 9+, decisión 26-oct): el negocio SUSPENDIDO_IMPAGO solo ve su cuenta, el monto
+ * pendiente y paga. Todo lo demás bajo /api/** (también GET) responde 403 SUSCRIPCION_IMPAGA.
+ * Allowlist por método + ruta exacta. Las rutas de comprador/webhooks se excluyen en WebMvcConfig; el comprador
+ * que no es dueño no resuelve empresa propia y nunca se ve afectado.
  */
 @Component
 public class SuspensionImpagoInterceptor implements HandlerInterceptor {
 
     static final String CODIGO = "SUSCRIPCION_IMPAGA";
     static final String MSG = "Tu suscripción está impaga. Pagá la mensualidad para reactivar la tienda.";
-    private static final Set<String> LECTURAS = Set.of("GET", "HEAD", "OPTIONS");
+
+    /** Método + ruta exacta permitidos a un negocio suspendido. */
+    static final Set<String> PERMITIDAS = Set.of(
+        "POST /api/auth/login", "POST /api/auth/refresh", "POST /api/auth/logout",
+        "POST /api/auth/2fa/verify", "POST /api/auth/2fa/email/send",
+        "GET /api/billing/impago", "POST /api/billing/impago/pagar");
 
     private final CompanyScope companyScope;
     private final EmpresaRepository empresaRepository;
@@ -37,15 +43,23 @@ public class SuspensionImpagoInterceptor implements HandlerInterceptor {
         this.objectMapper = objectMapper;
     }
 
+    static boolean permitida(String metodo, String ruta) {
+        if ("OPTIONS".equals(metodo)) return true;
+        String r = ruta == null ? "" : ruta;
+        if (r.length() > 1 && r.endsWith("/")) r = r.substring(0, r.length() - 1);
+        return PERMITIDAS.contains(metodo + " " + r);
+    }
+
     @Override
     public boolean preHandle(@NonNull HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull Object handler)
             throws Exception {
-        if (LECTURAS.contains(req.getMethod())) return true;
+        String ruta = req.getRequestURI().substring(req.getContextPath().length());
+        if (permitida(req.getMethod(), ruta)) return true;
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
         if (empresaId == null) return true;
         String estado = empresaRepository.findEstadoEmpresaById(empresaId).orElse(null);
         if (!SuspensionImpago.estaSuspendida(estado)) return true;
-        res.setStatus(HttpServletResponse.SC_PAYMENT_REQUIRED);
+        res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         res.setCharacterEncoding("UTF-8");
         objectMapper.writeValue(res.getWriter(), ResponseDTO.error(MSG, Map.of("codigo", CODIGO)));
