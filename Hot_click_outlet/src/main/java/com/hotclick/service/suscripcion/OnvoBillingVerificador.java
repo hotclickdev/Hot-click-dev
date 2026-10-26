@@ -66,9 +66,13 @@ public final class OnvoBillingVerificador {
         if (!igual(texto(intent, "customerId"), texto(sub, "customerId"))) return Resultado.rechazo("customer");
         // B1: el alta por intent cobra el plan completo; lo prorrateado entra por la factura (renewal).
         Resultado r = planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
-        if (r.aceptado() && numero(intent.get("amount"))
-                .compareTo(BigDecimal.valueOf(precios.precio(r.planNombre()).longValue() * CENTIMOS_POR_COLON)) != 0) {
-            return Resultado.rechazo("pago_parcial");
+        if (r.aceptado()) {
+            BigDecimal monto = numero(intent.get("amount"));
+            Integer precioPlan = precios.precio(r.planNombre());
+            if (monto == null || precioPlan == null
+                    || monto.compareTo(BigDecimal.valueOf(precioPlan.longValue() * CENTIMOS_POR_COLON)) != 0) {
+                return Resultado.rechazo("pago_parcial");
+            }
         }
         return r;
     }
@@ -90,6 +94,7 @@ public final class OnvoBillingVerificador {
     private static Resultado planYMonto(Map<?, ?> cobro, String campoMonto, Map<?, ?> sub,
                                         java.util.function.Function<String, String> planPorPrice,
                                         PrecioPlan precios, LocalDate fin) {
+        if (cobro == null || sub == null) return Resultado.rechazo("sin_datos");
         if (!"CRC".equalsIgnoreCase(texto(cobro, "currency"))) return Resultado.rechazo("moneda");
         String plan = planPorPrice.apply(OnvoBillingClient.primerPriceId(sub));
         if (plan == null) return Resultado.rechazo("price_desconocido");
