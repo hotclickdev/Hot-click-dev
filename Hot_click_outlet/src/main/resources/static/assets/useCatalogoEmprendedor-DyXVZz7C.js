@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-Dwx_TR5W.js";function t(){return e()}export{t};

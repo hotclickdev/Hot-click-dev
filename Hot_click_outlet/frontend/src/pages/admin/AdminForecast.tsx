@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { forecastService } from '@/services/forecastService'
 import TrustGlyph from '@/components/ui/TrustGlyph'
+import { formatMiles } from '@/utils/format'
 
 type PuntoHistorial = {
   periodo?: string
@@ -34,7 +35,7 @@ type DashboardForecast = {
 
 type TabForecast = 'ingresos' | 'unidades'
 
-const fmt = (n: number | string | null | undefined) => new Intl.NumberFormat('es-CR').format(Math.round(Number(n ?? 0)))
+const fmt = (n: number | string | null | undefined) => formatMiles(Math.round(Number(n ?? 0)))
 
 function BarChart({ data, valueKey, label, color = 'var(--hc-accent)', maxVal }: {
   data: PuntoChart[]
@@ -163,7 +164,7 @@ export default function AdminForecast() {
             <TrustGlyph tipo="tendencia" className="w-10 h-10" />
           </div>
           <p className="font-medium">Sin datos suficientes para el pronóstico</p>
-          <p className="text-sm">Necesitas al menos 4 semanas de historial de ventas para generar el pronóstico.</p>
+          <p className="text-sm">Necesitás al menos 4 semanas de historial de ventas para generar el pronóstico.</p>
           <button type="button" onClick={generar}
             className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
             style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}>

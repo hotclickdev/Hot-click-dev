@@ -3,6 +3,7 @@ import { giftCardService } from '@/services/giftCardService'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import TextoMas from '@/components/ui/TextoMas'
 import type { Id } from '@/types/api'
+import { formatMiles } from '@/utils/format'
 
 type GiftCardAdmin = {
   id: Id
@@ -22,7 +23,7 @@ function mensajeErrorGiftCard(err: unknown, fallback: string): string {
   return typeof error === 'string' && error ? error : fallback
 }
 
-const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 
 const ESTADO_STYLE: Record<string, string> = {
   ACTIVA:    'text-green-400 bg-green-400/10',

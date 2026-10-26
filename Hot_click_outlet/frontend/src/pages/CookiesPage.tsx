@@ -39,7 +39,7 @@ const clausulas = [
         <ul>
           <li><strong>a) Técnicas u Obligatorias:</strong> Esenciales para el correcto funcionamiento del sitio, la autenticación de usuarios y la seguridad de las transacciones. No pueden ser desactivadas.</li>
           <li><strong>b) De Rendimiento y Analítica:</strong> Administradas por terceros (Google Analytics 4, PostHog y Microsoft Clarity) para evaluar el rendimiento de la Plataforma. Se activan únicamente con consentimiento expreso.</li>
-          <li><strong>c) De Publicidad:</strong> Meta, para medir anuncios. Se autoriza por separado en el panel de configuración. No se activa si usted las rechaza.</li>
+          <li><strong>c) De Publicidad:</strong> Meta, para medir anuncios. Se autoriza por separado en el panel de configuración. No se activa si las rechazás.</li>
         </ul>
       </>
     ),
@@ -49,7 +49,7 @@ const clausulas = [
     num: 'CLÁUSULA TERCERA',
     title: 'Mecanismo de Desactivación',
     content: (
-      <p>Usted puede aceptar todas las cookies, rechazar las opcionales o configurarlas por categoría en el aviso que aparece al entrar y, después, en el enlace «Configurar cookies» del pie de página. También puede bloquearlas en el navegador. Desactivar las cookies técnicas puede impedir la compra. La elección se guarda durante un año o hasta que usted la cambie.</p>
+      <p>Podés aceptar todas las cookies, rechazar las opcionales o configurarlas por categoría en el aviso que aparece al entrar y, después, en el enlace «Configurar cookies» del pie de página. También podés bloquearlas en el navegador. Desactivar las cookies técnicas puede impedir la compra. La elección se guarda durante un año o hasta que la cambiés.</p>
     ),
   },
   {

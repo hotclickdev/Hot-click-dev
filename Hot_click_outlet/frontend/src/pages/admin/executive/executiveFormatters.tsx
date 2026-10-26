@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
+import { formatMiles } from '@/utils/format'
 
-export const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(Math.round(n ?? 0))
+export const fmt = (n: number | null | undefined) => formatMiles(Math.round(n ?? 0))
 
 export function fmtPct(n: number | null | undefined): ReactNode {
   const v = Number(n ?? 0)

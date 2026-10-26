@@ -1,6 +1,7 @@
 import type { Id } from '@/types/api'
+import { formatMiles } from '@/utils/format'
 
-export const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+export const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 export const fmtDate = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString('es-CR') : '—')
 
 export const ESTADO_META: Record<string, { label: string; bg: string; text: string }> = {
