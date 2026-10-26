@@ -2,15 +2,6 @@ import api from './api'
 import type { Id, JsonBody } from '@/types/api'
 import { formatPrice } from '@/utils/format'
 
-// ── Clientes B2B ─────────────────────────────────────────────────────────────
-
-export const cotizacionClienteService = {
-  listar: () => api.get('/cotizaciones/clientes').then(r => r.data),
-  crear:  (dto: JsonBody) => api.post('/cotizaciones/clientes', dto).then(r => r.data),
-  actualizar: (id: Id, dto: JsonBody) => api.put(`/cotizaciones/clientes/${id}`, dto).then(r => r.data),
-  eliminar:   (id: Id) => api.delete(`/cotizaciones/clientes/${id}`).then(r => r.data),
-}
-
 // ── Cotizaciones B2B ─────────────────────────────────────────────────────────
 
 export const cotizacionService = {
