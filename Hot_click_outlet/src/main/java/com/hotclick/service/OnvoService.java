@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -86,7 +87,18 @@ public class OnvoService {
     }
 
     private boolean perfilDeSimulacion() {
-        return environment != null && environment.acceptsProfiles(Profiles.of("dev", "test"));
+        return environment != null
+            && !perfilProduccionActivo()
+            && environment.acceptsProfiles(Profiles.of("(dev | test) & !prod & !production"));
+    }
+
+    /** prod/production activos en cualquier capitalización (PROD, Production…): nunca se simula. */
+    private boolean perfilProduccionActivo() {
+        for (String p : environment.getActiveProfiles()) {
+            String n = p == null ? "" : p.trim().toLowerCase(Locale.ROOT);
+            if (n.equals("prod") || n.equals("production")) return true;
+        }
+        return false;
     }
 
     /** Sin llave fuera de dev/test: falla antes de tocar ONVO o de inventar un id. */
