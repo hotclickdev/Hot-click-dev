@@ -222,10 +222,9 @@ public class SinpeOnvoMarketplaceService {
 
     private boolean algunoCancelado(Pago pago) {
         if (pago.getPedido() == null) return false;
-        for (Pedido p : pedidoGrupoService.delGrupo(pago.getPedido())) {
-            if (Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido())) return true;
-        }
-        return false;
+        // Una sola consulta (delGrupo); el recorrido es en memoria.
+        return pedidoGrupoService.delGrupo(pago.getPedido()).stream()
+                .anyMatch(p -> Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido()));
     }
 
     /** SCALE1: el evento se inserta ya cerrado, en un solo INSERT (antes INSERT + UPDATE). */
