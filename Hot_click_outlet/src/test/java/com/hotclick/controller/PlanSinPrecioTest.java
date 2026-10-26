@@ -152,6 +152,25 @@ class PlanSinPrecioTest {
         verifyNoInteractions(tilopay);
     }
 
+    @Test @DisplayName("QA8: negocio pendiente de aprobación → 409 EMPRESA_PENDIENTE_APROBACION con mensaje claro")
+    void empresaPendienteAprobacion409() throws Exception {
+        TenantContext.set(7L);
+        Plan pyme = plan(2, "PYME");
+        pyme.setPrecioMensual(28_900);
+        when(planRepo.findById(2L)).thenReturn(Optional.of(pyme));
+        com.hotclick.model.Usuario u = new com.hotclick.model.Usuario();
+        u.setCorreoVerificado(true);
+        when(auth.usuarioFromRequest(any())).thenReturn(u);
+        when(suscripcion.cambiarPlanOnvo(7L, 2L)).thenThrow(new com.hotclick.exception.EmpresaPendienteAprobacionException());
+        var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+            .standaloneSetup(controller(new PreciosPlanesConfig("9", "24", "49"))).build();
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/billing/cambiar-plan/2"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isConflict())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.codigo").value("EMPRESA_PENDIENTE_APROBACION"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.error").value(
+                "Tu negocio está en revisión; podrás elegir plan cuando lo aprobemos."));
+    }
+
     @Test @DisplayName("Los 400 no exponen el mensaje interno de la excepción")
     void error400Generico() {
         TenantContext.set(7L);

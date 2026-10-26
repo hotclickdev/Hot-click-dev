@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-qj3-HdiM.js";function t(){return e()}export{t};
