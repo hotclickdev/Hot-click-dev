@@ -102,4 +102,24 @@ class OnvoServiceModoTest {
         assertThat(s.obtenerCheckoutSession("../payment-intents/pi_1")).isEmpty();
         assertThat(s.obtenerPaymentIntent(null)).isEmpty();
     }
+
+    @Test
+    @DisplayName("dev+prod o dev+production sin llave: falla cerrado, no simula")
+    void devMasProdFallaCerrado() {
+        for (String[] perfiles : new String[][] {{"dev", "prod"}, {"dev", "production"}, {"test", "prod"}}) {
+            OnvoService s = servicio("", perfiles);
+            assertThat(s.isMockMode()).as(String.join("+", perfiles)).isFalse();
+            assertThat(s.isPagosDisponibles()).as(String.join("+", perfiles)).isFalse();
+            assertThatThrownBy(() -> s.crearCheckoutSession(1000, "x", "ok", "ko", null, Map.of()))
+                .isInstanceOf(IllegalStateException.class);
+        }
+        verifyNoInteractions(restTemplate);
+    }
+
+    @Test
+    @DisplayName("dev+prod con llave de prueba: pagos deshabilitados")
+    void devMasProdConLlavePruebaDeshabilita() {
+        OnvoService s = servicio("onvo_test_secret_key_ficticia", "dev", "prod");
+        assertThat(s.isPagosDisponibles()).isFalse();
+    }
 }
