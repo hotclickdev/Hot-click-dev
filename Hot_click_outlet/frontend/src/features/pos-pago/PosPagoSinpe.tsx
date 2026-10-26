@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { posService, type SinpeOnvoQrDatos } from '@/services/posService'
 import { formatPrice } from '@/utils/format'
-import { identificacionSinpeValida, sinpeNumeroVisible, TIPOS_IDENTIFICACION } from './posPagoFormat'
+import { sinpeNumeroVisible, TIPOS_IDENTIFICACION } from './posPagoFormat'
+import { datosSinpeOnvo, tipoSinpeInicial } from '@/utils/sinpeOnvo'
 import type { QrPagoInfo } from './posPagoTypes'
 import PosPagoReporteModal from './PosPagoReporteModal'
 import { ICONOS_QR } from '@/features/qr-negocio/iconosQr'
@@ -21,7 +22,8 @@ type Props = Readonly<{
 export default function PosPagoSinpe({ token, onPagado }: Props) {
   const { t } = useTranslation()
   const [cedula, setCedula] = useState('')
-  const [tipo, setTipo] = useState<number>(1)
+  const [tipo, setTipo] = useState<number>(() => tipoSinpeInicial(false))
+  const [telefono, setTelefono] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [datos, setDatos] = useState<SinpeOnvoQrDatos | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -41,11 +43,12 @@ export default function PosPagoSinpe({ token, onPagado }: Props) {
   }, [datos, token, onPagado])
 
   const obtenerDatos = async () => {
-    if (!token) return
+    const pagador = datosSinpeOnvo(cedula, tipo, telefono)
+    if (!token || !pagador) return
     setEnviando(true)
     setError(null)
     try {
-      const d = await posService.iniciarSinpeOnvoQr(token, cedula.trim(), tipo)
+      const d = await posService.iniciarSinpeOnvoQr(token, pagador.identificacion, pagador.tipoIdentificacion, pagador.telefono)
       // Fail-closed: sin destino o sin monto no se muestran datos para transferir.
       if (!d?.destino || !d?.monto) throw new Error('sin_datos')
       setDatos(d)
@@ -110,10 +113,17 @@ export default function PosPagoSinpe({ token, onPagado }: Props) {
             onChange={setCedula}
           />
           <p className="text-[12px] leading-[14px] text-hc-n-600">{t('pos.pago.sinpeCedulaAyuda')}</p>
+          <Campo
+            id="pos-sinpe-telefono"
+            label={t('pos.pago.sinpeTelefono')}
+            value={telefono}
+            onChange={setTelefono}
+            inputMode="tel"
+          />
           {error ? <p className="text-[13px] text-hc-red-600">{error}</p> : null}
           <button
             type="submit"
-            disabled={enviando || !identificacionSinpeValida(cedula)}
+            disabled={enviando || !datosSinpeOnvo(cedula, tipo, telefono)}
             className="hc-btn-primary min-h-[46px] w-full rounded-[12px] px-4 py-[14px] text-[15px] font-semibold leading-[18px] text-white disabled:opacity-40"
           >
             {enviando ? t('pos.cobro.procesando') : t('pos.pago.sinpeRegistrar')}

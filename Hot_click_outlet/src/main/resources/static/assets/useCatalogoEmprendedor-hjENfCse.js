@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-Bni6vp_J.js";function t(){return e()}export{t};
