@@ -4,8 +4,9 @@ import CloseIcon from '@/components/ui/CloseIcon'
 import type { Producto } from '@/types/producto'
 import type { ItemCotizacionForm } from './CotizacionForm'
 
-export default function ItemRow({ item, index, productos, onChange, onRemove }: {
+export default function ItemRow({ item, index, productos, onChange, onRemove, moneda = 'CRC' }: {
   item: ItemCotizacionForm
+  moneda?: string
   index: number
   productos: Producto[]
   onChange: (index: number, patch: Partial<ItemCotizacionForm>) => void
@@ -109,7 +110,7 @@ export default function ItemRow({ item, index, productos, onChange, onRemove }: 
       </td>
       {/* Subtotal */}
       <td className="px-3 py-2 w-32 text-right font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>
-        {formatMonto(subtotal)}
+        {formatMonto(subtotal, moneda)}
       </td>
       {/* Borrar */}
       <td className="px-2 py-2 w-8">

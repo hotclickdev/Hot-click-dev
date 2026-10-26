@@ -6,8 +6,9 @@ import type { ItemCotizacionForm } from './CotizacionForm'
 /**
  * Tabla de ítems de la cotización.
  */
-export default function SeccionItems({ items, productos, onChange, onRemove, onAgregar }: {
+export default function SeccionItems({ items, productos, onChange, onRemove, onAgregar, moneda = 'CRC' }: {
   items: ItemCotizacionForm[]
+  moneda?: string
   productos: Producto[]
   onChange: (index: number, patch: Partial<ItemCotizacionForm>) => void
   onRemove: (index: number) => void
@@ -29,6 +30,7 @@ export default function SeccionItems({ items, productos, onChange, onRemove, onA
             {items.map((item, i) => (
               <ItemRow key={i} item={item} index={i}
                 productos={productos}
+                moneda={moneda}
                 onChange={onChange}
                 onRemove={onRemove} />
             ))}
