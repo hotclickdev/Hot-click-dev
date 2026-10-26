@@ -2,7 +2,7 @@ import { authService } from '@/services/authService'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
-import { bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
+import { bodegaIdReal, bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import { guardarUltimoPedido } from '@/utils/ultimoPedido'
 import type { CheckoutPayload } from '@/types/pedido'
@@ -207,10 +207,10 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
   const metaCookies = readMetaCookies()
   iniciarPago(
     {
-      bodegaId: metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? bodegaRetiro.id as number : undefined,
+      bodegaId: metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? bodegaIdReal(bodegaRetiro.id) : undefined,
       metodoEnvio,
       envios: paquetes.map((p) => ({
-        bodegaId: Number(p.bodegaId),
+        bodegaId: bodegaIdReal(p.bodegaId),
         metodoEnvio: metodoEnvioPorPaquete[p.bodegaId],
       })),
       notas: notasFull || null,

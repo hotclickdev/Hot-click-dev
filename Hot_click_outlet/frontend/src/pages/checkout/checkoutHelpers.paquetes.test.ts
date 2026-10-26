@@ -4,6 +4,8 @@ import {
   cantidadEmprendimientos,
   opcionesEnvio,
   paquetesDesdeItems,
+  PAQUETE_SIN_BODEGA,
+  bodegaIdReal,
 } from './checkoutHelpers'
 import type { ItemCheckout } from './checkoutHelpers'
 
@@ -43,11 +45,20 @@ describe('paquetesDesdeItems', () => {
     expect(paquetes[1].subtotal).toBe(5000)
   })
 
-  it('items sin bodegaId caen al paquete por defecto de HotClick (BODEGA_DEFAULT)', () => {
+  it('items sin bodegaId van a un paquete local sin bodega (no a la bodega 1)', () => {
     const itemSinBodega: ItemCheckout = { id: 3, cantidad: 1, precio: 100 }
     const paquetes = paquetesDesdeItems([itemSinBodega])
     expect(paquetes).toHaveLength(1)
-    expect(paquetes[0].bodegaId).toBe('1')
+    expect(paquetes[0].bodegaId).toBe(PAQUETE_SIN_BODEGA)
+    expect(bodegaIdReal(paquetes[0].bodegaId)).toBeUndefined()
+  })
+
+  it('bodegaIdReal solo acepta enteros positivos', () => {
+    expect(bodegaIdReal('7')).toBe(7)
+    expect(bodegaIdReal(7)).toBe(7)
+    for (const malo of [undefined, null, '', '0', '-1', '1.5', 'abc', PAQUETE_SIN_BODEGA]) {
+      expect(bodegaIdReal(malo)).toBeUndefined()
+    }
   })
 })
 
