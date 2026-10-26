@@ -11,6 +11,8 @@ public final class SuspensionImpago {
 
     private SuspensionImpago() {}
 
+    public static final String MSG_SOLO_PAGO = "Tu suscripción está vencida. Pagá un plan para reactivar la tienda.";
+
     public static boolean estaSuspendida(String estadoEmpresa) {
         return Constants.ESTADO_EMPRESA_SUSPENDIDO_IMPAGO.equals(estadoEmpresa);
     }

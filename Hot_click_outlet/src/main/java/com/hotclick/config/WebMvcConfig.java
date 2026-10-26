@@ -40,7 +40,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // las rutas de comprador ya rechazan tiendas no ACTIVO por su cuenta.
         registry.addInterceptor(suspensionImpagoInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/**", "/api/billing/**", "/api/public/**", "/api/tienda/**",
-                                     "/api/webhooks/**", "/api/payments/**", "/api/sinpe/**", "/api/pos/qr/pago/**");
+                .excludePathPatterns("/api/auth/**", "/api/billing/**", "/api/public/**",
+                                     // comprador: rutas exactas (ya rechazan tiendas no ACTIVO por su cuenta)
+                                     "/api/tienda/*/pedidos",
+                                     "/api/payments/guest-checkout", "/api/payments/guest/cancel/*",
+                                     "/api/payments/tilopay/confirmar/*", "/api/payments/tilopay/reintentar/*",
+                                     "/api/webhooks/**", "/api/sinpe/**", "/api/pos/qr/pago/**");
     }
 }

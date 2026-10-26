@@ -275,4 +275,51 @@ class SuscripcionOnvoChangeServiceTest {
         assertThat(sub.getCancelarAlVencer()).isNotEqualTo(Boolean.TRUE);
         verify(suscripcionRepo, never()).save(any());
     }
+
+    @Test
+    @DisplayName("Seguridad #333: suspendida que elige plan gratis sigue SUSPENDIDO_IMPAGO y sin mes nuevo")
+    void suspendidaNoSaleBajandoAGratis() {
+        empresa.setEstadoPlan("VENCIDO");
+        empresa.setEstadoEmpresa(com.hotclick.utils.Constants.ESTADO_EMPRESA_SUSPENDIDO_IMPAGO);
+        java.time.LocalDate venc = java.time.LocalDate.of(2026, 10, 1);
+        empresa.setFechaVencPlan(venc);
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+            .isInstanceOf(IllegalStateException.class);
+
+        assertThat(empresa.getEstadoEmpresa()).isEqualTo("SUSPENDIDO_IMPAGO");
+        assertThat(empresa.getFechaVencPlan()).isEqualTo(venc);
+        verify(suscripcionRepo, never()).save(any());
+        verify(empresaRepo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("aplicarPlanLocal (sin pago) no reactiva; planPagoConfirmado sí")
+    void soloPagoConfirmadoReactiva() {
+        empresa.setEstadoEmpresa("SUSPENDIDO_IMPAGO");
+        when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(planPyme));
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+
+        service.aplicarPlanLocal(10L, "PYME", null);
+        assertThat(empresa.getEstadoEmpresa()).isEqualTo("SUSPENDIDO_IMPAGO");
+
+        service.planPagoConfirmado(10L, "PYME", "ONVO", "ref");
+        assertThat(empresa.getEstadoEmpresa()).isEqualTo("ACTIVO");
+    }
+
+    @Test
+    @DisplayName("Mock de pago apagado fuera de dev/test (prod o sin perfil)")
+    void mockApagadoFueraDeDevTest() throws Exception {
+        var envField = SuscripcionOnvoChangeService.class.getDeclaredField("environment");
+        envField.setAccessible(true);
+        for (String[] perfiles : new String[][]{{}, {"prod"}, {"dev", "PROD"}, {"test", "production"}}) {
+            var env = new org.springframework.mock.env.MockEnvironment();
+            env.setActiveProfiles(perfiles);
+            envField.set(service, env);
+            assertThat(service.mockPermitido()).as(String.join(",", perfiles)).isFalse();
+        }
+    }
 }

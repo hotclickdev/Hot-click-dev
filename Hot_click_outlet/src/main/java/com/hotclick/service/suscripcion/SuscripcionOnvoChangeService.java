@@ -114,6 +114,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
 
         if (PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())) {
+            // Seguridad #333: bajar a gratis no es pagar; una tienda suspendida solo se reactiva con cobro confirmado.
+            if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+                throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
+            }
             return bajarAGratis(empresaId, sub);
         }
 
@@ -261,12 +265,17 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public void planPagoConfirmado(Long empresaId, String planNombre, String proveedor, String referencia) {
         log.info("[plan-pago] Plan {} confirmado empresa={} proveedor={} ref={}", planNombre, empresaId, proveedor, referencia);
-        aplicarPlanLocal(empresaId, planNombre, null);
+        aplicarPlanInterno(empresaId, planNombre, null, true);
     }
 
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public void aplicarPlanLocal(Long empresaId, String planNombre, String onvoPriceId) {
+        // Sin reactivar: este camino no implica pago confirmado (bajar a gratis, mock dev/test).
+        aplicarPlanInterno(empresaId, planNombre, onvoPriceId, false);
+    }
+
+    private void aplicarPlanInterno(Long empresaId, String planNombre, String onvoPriceId, boolean pagoConfirmado) {
         Plan plan = planRepo.findByNombre(planNombre)
             .orElseThrow(() -> new IllegalStateException("Plan " + planNombre + " no configurado"));
         Empresa empresa = empresaRepo.findById(empresaId)
@@ -288,7 +297,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresa.setPlan(plan);
         empresa.setPlanSaas(planNombre);
         empresa.setEstadoPlan("ACTIVO");
-        SuspensionImpago.reactivarSiSuspendida(empresa);
+        if (pagoConfirmado) SuspensionImpago.reactivarSiSuspendida(empresa);
         empresa.setFechaVencPlan(fin);
         empresaRepo.save(empresa);
         log.info("[billing-onvo] Plan aplicado empresa={} plan={}", empresaId, planNombre);
