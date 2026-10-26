@@ -288,6 +288,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresa.setPlan(plan);
         empresa.setPlanSaas(planNombre);
         empresa.setEstadoPlan("ACTIVO");
+        SuspensionImpago.reactivarSiSuspendida(empresa);
         empresa.setFechaVencPlan(fin);
         empresaRepo.save(empresa);
         log.info("[billing-onvo] Plan aplicado empresa={} plan={}", empresaId, planNombre);
@@ -322,6 +323,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresa.setPlan(plan);
         empresa.setPlanSaas(plan.getNombre());
         empresa.setEstadoPlan("ACTIVO");
+        SuspensionImpago.reactivarSiSuspendida(empresa);
         empresa.setFechaVencPlan(fin);
         empresaRepo.save(empresa);
         anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO confirmado");

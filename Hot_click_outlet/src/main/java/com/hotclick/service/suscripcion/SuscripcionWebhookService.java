@@ -91,6 +91,7 @@ public class SuscripcionWebhookService {
 
             Empresa empresa = sub.getEmpresa();
             empresa.setEstadoPlan("ACTIVO");
+            SuspensionImpago.reactivarSiSuspendida(empresa);
             empresa.setFechaVencPlan(periodoFin);
             empresa.setPlan(sub.getPlan());
             empresaRepo.save(empresa);
