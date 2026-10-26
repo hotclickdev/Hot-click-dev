@@ -4729,5 +4729,20 @@
     "tilopayConfirmando": "Confirmando el pago de tu plan…",
     "tilopayNoConfirmado": "No pudimos confirmar el pago. No se te cobró de más; intentá de nuevo.",
     "volverPlanes": "Volver a planes"
+  },
+  "suspension": {
+    "titulo": "Tu tienda está suspendida",
+    "explicacion": "La mensualidad quedó impaga después de los días de gracia. Tus productos no se muestran y no podés vender. Pagá para reactivar todo; no se borró ningún dato.",
+    "cuenta": "Tu cuenta",
+    "negocio": "Negocio",
+    "correo": "Correo",
+    "plan": "Plan",
+    "vencio": "Venció",
+    "montoPendiente": "Monto pendiente",
+    "sinMonto": "no disponible",
+    "pagar": "Pagar y reactivar",
+    "iniciando": "Abriendo el pago…",
+    "confirmando": "Estamos confirmando tu pago con ONVO. La tienda se reactiva en cuanto se confirme.",
+    "error": "No pudimos cargar o iniciar el pago. Probá de nuevo en unos minutos."
   }
 }

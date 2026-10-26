@@ -4729,5 +4729,20 @@
     "tilopayConfirmando": "Confirmando o pagamento do seu plano…",
     "tilopayNoConfirmado": "Não conseguimos confirmar o pagamento. Tente novamente.",
     "volverPlanes": "Voltar aos planos"
+  },
+  "suspension": {
+    "titulo": "Sua loja está suspensa",
+    "explicacion": "A mensalidade ficou sem pagamento após o período de carência. Seus produtos estão ocultos e você não pode vender. Pague para reativar tudo; nenhum dado foi apagado.",
+    "cuenta": "Sua conta",
+    "negocio": "Negócio",
+    "correo": "E-mail",
+    "plan": "Plano",
+    "vencio": "Venceu",
+    "montoPendiente": "Valor pendente",
+    "sinMonto": "indisponível",
+    "pagar": "Pagar e reativar",
+    "iniciando": "Abrindo o pagamento…",
+    "confirmando": "Estamos confirmando seu pagamento com a ONVO. A loja é reativada assim que for confirmado.",
+    "error": "Não conseguimos carregar ou iniciar o pagamento. Tente novamente em alguns minutos."
   }
 }

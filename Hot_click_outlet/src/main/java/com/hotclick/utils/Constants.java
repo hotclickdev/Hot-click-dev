@@ -147,6 +147,8 @@ public class Constants {
     /** Primeros cupos de plan Emprendedor sin membresía de pago. */
     public static final int CUPO_EMPRENDEDORES_GRATIS = 70;
 
+    /** Suscripción impaga tras los días de gracia: tienda oculta y sin ventas; el dueño solo paga. */
+    public static final String ESTADO_EMPRESA_SUSPENDIDO_IMPAGO = "SUSPENDIDO_IMPAGO";
     public static final String ESTADO_PLAN_REQUIERE_MEMBRESIA = "REQUIERE_MEMBRESIA";
 
     /** Prueba QA abierta. Cabe en estado_plan (varchar 20). */
