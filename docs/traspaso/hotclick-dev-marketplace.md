@@ -69,3 +69,30 @@ El box compartido anda casi sin inodos (90-99 %). Los builds pueden fallar; limp
 
 ## Evidencia
 `docs/traspaso/evidencia/hotclick-dev-marketplace/`: spec M-08, patches cortos de REG-01/CMP-01 y `resumen-build-tests.md`.
+
+## Correcciones al README
+
+### (a) Errores o datos viejos
+- **Fila de HotClick Dev Marketplace (línea ~108):** dice "#349 mergeado". Al 26-oct ~15:40 CR, #349 está **ABIERTO** (head `e05c0824`, CI verde y APTO de Seguridad, merge pedido a CI/CD). Mergeados hoy: #305, #307, #318, #321, #322, #326, #334, #337, #341.
+- **Áreas:** la fila dice "2, 3, 6, 9". Hoy también cerré el área 4 (POS, #341) y cotizaciones (#326, #337). Faltan 4 y cotizaciones.
+- **Prompt de la sección 7 (línea ~308): está viejo.** Habla de `chore/quitar-tilopay-actualizar`, `feat/onvo-split-pay`, `fix/registro-planes` y #208 como trabajo activo, y dice "nunca commit/push/merge sin OK en cada caso". La regla vigente es: push y PR propios permitidos (tope de 3 PRs abiertos), y el merge lo hace CI/CD con **CI verde + APTO de Seguridad sobre el hash exacto**, sin deploy. Tilopay y split pay son backlog, no tarea activa, y quitar Tilopay es de Dev Pagos/deuda técnica (paso 6), no mío.
+- **Paso 4 del "PARA EL BOT…":** no lista #349 entre los PRs por cerrar.
+
+### (b) Lo que le falta al reemplazo
+- **Ramas de respaldo:** `wip/cajero-asignable` (d5501c6b, EN PAUSA, no mergear ni abrir PR), `wip/billing-onvo-webhook-sonar` y `wip/billing-renovacion-v1` (solo referencia, supersedidas por #305).
+- **Build del front igual que CI:** Node 22.20.0; `corepack enable && corepack prepare pnpm@11.1.2 --activate`; en `Hot_click_outlet/frontend`: `pnpm install --frozen-lockfile && pnpm build`; después `node gate-spa.mjs`. Exportar las `VITE_*` que define el workflow de CI con **placeholders** (solo nombres; nunca valores reales). `static/` en commit aparte.
+- **Backend:** Maven offline con JDK 21. En el box viejo: `/workspace/tools/jdk21` y `/workspace/tools/apache-maven-3.9.9` (`JAVA_HOME=…/jdk21`, `mvn -o -q test -Dtest=…`). En la cuenta nueva hay que instalarlos de nuevo.
+- **gitleaks:** binario 8.30.1 (release de GitHub). `gitleaks git --log-opts='origin/master..HEAD' .` antes de cada push.
+- **Accesos:** `gh` autenticado contra `hotclickdev/Hot-click-dev` con `repo` y `workflow`.
+- **Trampas:**
+  - Box con inodos escasos (90-99 %): borrá `target/` y `node_modules/` de worktrees mergeados antes de buildear; Seguridad no pudo correr tests por esto.
+  - `git stash` es compartido entre bots: no usarlo.
+  - Cada push nuevo exige APTO nuevo sobre ese hash; los PRs quedan DIRTY seguido tras otros merges → merge puro de master (nunca rebase/force).
+  - No tocar archivos de Dev Pagos (ONVO, SINPE, Stripe, checkout de pagos) ni Tilopay.
+  - Los `origin/*` locales se desactualizan: usá `git ls-remote` o `git fetch` antes de decidir si una rama está subida.
+- **Pendientes míos:** M-08 (spec en `evidencia/hotclick-dev-marketplace/`, espera a Andrés, después Dev Pagos); DTO público sin bodega en el catálogo; BAJOs de Seguridad (lista arriba).
+
+### (c) Mejoras
+- Que la tabla del resumen diga el estado con fecha y hora y el head de cada PR, para no confundir "APTO" con "mergeado".
+- Reemplazar los prompts viejos de la sección 7 por el rol y las reglas vigentes de cada nota en `docs/traspaso/*.md`.
+- Agregar al README una sección común de "cómo buildear como CI" (front y backend) en vez de repetirla en cada nota.
