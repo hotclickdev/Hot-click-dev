@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { debeRespetarRedirect, destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
 import { correoDesdeEstado } from './recuperar/recuperarHelpers'
+import { esCuentaSinVerificar, COOLDOWN_REENVIO_SEG } from './reenvioVerificacion'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
@@ -86,7 +87,7 @@ export function useLoginFlow() {
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault(); setError(''); setLoading(true)
     try {
-      const { data } = await authService.login(correo, contrasena, turnstileToken)
+      const { data } = await authService.login(correo.trim().toLowerCase(), contrasena, turnstileToken)
       const loginData = data as LoginApiData
       if (loginData.requiresWebauthn) {
         setTempToken(loginData.tempToken ?? '')
@@ -121,7 +122,10 @@ export function useLoginFlow() {
       const msg = mensajeErrorAuth(err, t('login.badCredentials'))
       const status = statusErrorAuth(err)
       // Solo lockout sigue en 403; verificación de correo se avisa por email.
-      if (status === 403 && msg.toLowerCase().includes('bloqueada')) {
+      if (esCuentaSinVerificar(status, msg)) {
+        setNeedsVerification(true); setNeedsPasswordReset(false)
+        setError(msg)
+      } else if (status === 403 && msg.toLowerCase().includes('bloqueada')) {
         setNeedsVerification(false); setNeedsPasswordReset(true)
         setError(msg)
       } else {
@@ -136,12 +140,22 @@ export function useLoginFlow() {
   const handleResendVerification = async () => {
     setResendLoading(true)
     try {
-      await authService.sendVerification({ correo })
-      toast({ message: t('login.codeResent'), type: 'success' })
-      setNeedsVerification(false); setError('')
+      await authService.reenviarVerificacion(correo.trim().toLowerCase())
+      toast({ message: t('login.reenvioGenerico'), type: 'success' })
     } catch (err: unknown) {
       toast({ message: mensajeErrorAuth(err, t('login.resendError')), type: 'error' })
-    } finally { setResendLoading(false) }
+    } finally {
+      setResendLoading(false)
+      startVerifCooldown()
+    }
+  }
+
+  const [verifCooldown, setVerifCooldown] = useState(0)
+  const startVerifCooldown = () => {
+    setVerifCooldown(COOLDOWN_REENVIO_SEG)
+    const id = setInterval(() => {
+      setVerifCooldown((s) => { if (s <= 1) { clearInterval(id); return 0 } return s - 1 })
+    }, 1000)
   }
 
   const sendEmailOtp = async (token?: string) => {
@@ -278,6 +292,7 @@ export function useLoginFlow() {
     needsVerification,
     needsPasswordReset,
     resendLoading,
+    verifCooldown,
     refs2FA,
     turnstileRef,
     turnstileToken, setTurnstileToken,

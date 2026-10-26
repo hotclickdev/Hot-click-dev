@@ -19,6 +19,8 @@ type LoginFormStepProps = {
   needsVerification: boolean
   needsPasswordReset: boolean
   resendLoading: boolean
+  /** Segundos restantes antes de poder reenviar el correo de verificación. */
+  verifCooldown?: number
   loading: boolean
   turnstileToken: string
   turnstileRef: RefObject<TurnstileInstance | null>
@@ -45,7 +47,7 @@ const BENEFICIOS: { icono: ReactNode; clave: string }[] = [
 export default function LoginFormStep({
   correo, setCorreo, contrasena, setContrasena,
   error, needsVerification, needsPasswordReset,
-  resendLoading, loading, turnstileToken,
+  resendLoading, verifCooldown = 0, loading, turnstileToken,
   turnstileRef, turnstileSiteKey, clerkEnabled,
   setTurnstileToken, onSubmit, onResendVerification, onForgot,
 }: LoginFormStepProps) {
@@ -56,7 +58,9 @@ export default function LoginFormStep({
 
   const continuar = (e: FormEvent) => {
     e.preventDefault()
-    if (!isValidEmail(correo.trim())) { setErrorCorreo(t('login.correoInvalido')); return }
+    const normalizado = correo.trim().toLowerCase()
+    if (!isValidEmail(normalizado)) { setErrorCorreo(t('login.correoInvalido')); return }
+    setCorreo(normalizado)
     setErrorCorreo('')
     setPaso('contrasena')
     setTimeout(() => claveRef.current?.focus(), 0)
@@ -134,8 +138,8 @@ export default function LoginFormStep({
           <div role="alert" className="flex flex-col gap-2 rounded-[10px] bg-[color-mix(in_srgb,var(--hc-danger)_7%,transparent)] px-3 py-[10px] text-[13px] leading-[18px] text-hc-danger">
             {mensaje}
             {paso === 'contrasena' && needsVerification && (
-              <button type="button" onClick={onResendVerification} disabled={resendLoading} className="self-start text-[12px] font-semibold text-hc-blue-600 disabled:opacity-60">
-                {resendLoading ? t('login.sending') : t('login.resendVerification')}
+              <button type="button" onClick={onResendVerification} disabled={resendLoading || verifCooldown > 0} className="self-start text-[12px] font-semibold text-hc-blue-600 disabled:opacity-60">
+                {resendLoading ? t('login.sending') : verifCooldown > 0 ? t('login.reenviarEn', { s: verifCooldown }) : t('login.resendVerification')}
               </button>
             )}
             {paso === 'contrasena' && needsPasswordReset && (

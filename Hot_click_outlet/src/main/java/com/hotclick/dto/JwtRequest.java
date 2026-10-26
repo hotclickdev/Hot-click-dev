@@ -16,7 +16,10 @@ public class JwtRequest {
     private String contrasena;
 
     public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
+    /** Normaliza antes de validar: espacios alrededor no deben dar 400 (mismo criterio que buscarPorCorreo). */
+    public void setCorreo(String correo) {
+        this.correo = correo == null ? null : correo.trim().toLowerCase(java.util.Locale.ROOT);
+    }
 
     public String getContrasena() { return contrasena; }
     public void setContrasena(String contrasena) { this.contrasena = contrasena; }
