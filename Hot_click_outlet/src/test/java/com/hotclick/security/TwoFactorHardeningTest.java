@@ -73,23 +73,31 @@ class TwoFactorHardeningTest extends BaseIntegrationTest {
     }
 
     @Test
-    void setup_conDosFaActivo_conContrasenaVigente_200_yRotaSecreto() throws Exception {
+    void setup_conDosFaActivo_conContrasenaVigente_200_peroNoPisaElSecretoVigente() throws Exception {
         activar2faTotp();
         llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk());
-        assertThat(recargar().getTwoFactorSecret()).isNotEqualTo(semilla);
+        Usuario u = recargar();
+        assertThat(u.getTwoFactorSecret()).isEqualTo(semilla);   // el vigente sigue igual hasta activar
+        assertThat(u.getTwoFactorPendingSecret()).isNotNull();
+        assertThat(u.hasTotpEnabled()).isTrue();
     }
 
     @Test
-    void setup_conDosFaActivo_conCodigoTotpVigente_200() throws Exception {
+    void setup_conDosFaActivo_soloConCodigoTotp_401_laContrasenaEsSiempreObligatoria() throws Exception {
         activar2faTotp();
-        llamar("setup", Map.of("code", codigoValido())).andExpect(status().isOk());
-        assertThat(recargar().getTwoFactorSecret()).isNotEqualTo(semilla);
+        llamar("setup", Map.of("code", codigoValido())).andExpect(status().isUnauthorized());
+        Usuario u = recargar();
+        assertThat(u.getTwoFactorSecret()).isEqualTo(semilla);
+        assertThat(u.getTwoFactorPendingSecret()).isNull();
     }
 
     @Test
-    void setup_sinDosFaActivo_sigueFuncionandoSinCredencial() throws Exception {
-        llamar("setup", null).andExpect(status().isOk());
-        assertThat(recargar().getTwoFactorSecret()).isNotNull();
+    void setup_sinDosFaActivo_conContrasena_200_dejaSecretoPendiente() throws Exception {
+        llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk());
+        Usuario u = recargar();
+        assertThat(u.getTwoFactorPendingSecret()).isNotNull();
+        assertThat(u.getTwoFactorSecret()).isNull();
+        assertThat(u.getTwoFactorEnabled()).isFalse();
     }
 
     // ── disable ─────────────────────────────────────────────────────────────
@@ -117,19 +125,23 @@ class TwoFactorHardeningTest extends BaseIntegrationTest {
 
     @Test
     void setup_y_activate_caminoFeliz() throws Exception {
-        String resp = llamar("setup", null).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String resp = llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode n = mapper.readTree(resp);
         String secreto = n.findValue("secret").asText();
         String code = new DefaultCodeGenerator().generate(secreto, Math.floorDiv(System.currentTimeMillis() / 1000, 30));
-        llamar("activate", Map.of("code", code)).andExpect(status().isOk());
+        llamar("activate", Map.of("code", code, "contrasena", PASS)).andExpect(status().isOk());
+        Usuario u = recargar();
+        assertThat(u.getTwoFactorPendingSecret()).isNull();
+        assertThat(u.getTwoFactorSecret()).isNotNull();
+        assertThat(u.hasTotpEnabled()).isTrue();
     }
 
     // ── rate limit (429) con el limiter real ────────────────────────────────
 
     @Test
     void setup_superadoElTope_429() throws Exception {
-        for (int i = 0; i < 5; i++) llamar("setup", null).andExpect(status().isOk());
-        llamar("setup", null).andExpect(status().isTooManyRequests());
+        for (int i = 0; i < 5; i++) llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk());
+        llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isTooManyRequests());
     }
 
     @Test

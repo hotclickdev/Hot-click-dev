@@ -5,13 +5,17 @@ import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.security.JwtUtil;
+import com.hotclick.dto.ResponseDTO;
 import com.hotclick.security.PlatformStaff;
+import com.hotclick.security.RateLimiter;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +31,32 @@ public class AuthSupport {
     @Autowired private JwtUtil             jwtUtil;
     @Autowired private RefreshTokenService refreshTokenService;
     @Autowired private PermisoRepository   permisoRepository;
+    @Autowired private RateLimiter         rateLimiter;
+
+    // Tope por usuario (no por IP) en /2fa/*: un atacante con varias IP no multiplica los intentos.
+    // Gestión (sesión): setup, activate, disable, recovery-codes/regenerate, email/enable|activate|disable.
+    @Value("${hotclick.ratelimit.2fa-usuario.max:15}")         private int tfaUsuarioMax = 15;
+    @Value("${hotclick.ratelimit.2fa-usuario.window:300}")     private int tfaUsuarioWindow = 300;
+    // Login (tempToken): /2fa/verify y /2fa/email/send. Va aparte para que gestionar el 2FA no consuma intentos de login.
+    @Value("${hotclick.ratelimit.2fa-login-usuario.max:10}")   private int tfaLoginMax = 10;
+    @Value("${hotclick.ratelimit.2fa-login-usuario.window:300}") private int tfaLoginWindow = 300;
+
+    private static final String MSG_LIMITE_2FA = "Demasiados intentos. Esperá un momento antes de volver a intentar.";
+
+    /** null si pasa; 429 si el usuario superó el tope de gestión 2FA. Falla cerrado si la BD no responde. */
+    public ResponseEntity<ResponseDTO> limite2faUsuario(Long usuarioId) {
+        return limite("2fa:usuario:" + usuarioId, tfaUsuarioMax, tfaUsuarioWindow);
+    }
+
+    /** Igual, para /2fa/verify y /2fa/email/send (el usuario sale del tempToken). */
+    public ResponseEntity<ResponseDTO> limite2faLoginUsuario(Long usuarioId) {
+        return limite("2fa:login:usuario:" + usuarioId, tfaLoginMax, tfaLoginWindow);
+    }
+
+    private ResponseEntity<ResponseDTO> limite(String bucket, int max, int window) {
+        if (rateLimiter.tryAcquireEstricto(bucket, max, window)) return null;
+        return ResponseEntity.status(429).body(ResponseDTO.error(MSG_LIMITE_2FA));
+    }
 
     public AuthResponse buildAuthResponse(Usuario usuario) {
         String rol = PlatformStaff.rolPrincipal(
