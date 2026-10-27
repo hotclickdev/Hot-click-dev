@@ -25,6 +25,7 @@ import static com.hotclick.service.suscripcion.OnvoRenovacionReconsulta.Estado.N
 import static com.hotclick.service.suscripcion.OnvoRenovacionReconsulta.Estado.PAGADA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -43,12 +44,14 @@ class OnvoRenovacionReconsultaTest {
     @Mock OnvoBillingClient onvo;
     @Mock PlanRepository planRepo;
     @Mock SuscripcionOnvoChangeService cambio;
+    @Mock LockTimeoutPorFila lockTimeout;
     OnvoRenovacionReconsulta reconsulta;
     Suscripcion local;
     TxManagerGrabador tx;
 
     private static final int DIAS_GRACIA = 8;
     private static final int DIAS_MAX_INCIERTA = 5;
+    private static final int MAX_INCIERTAS_SEGUIDAS = 3;
 
     /** PlatformTransactionManager de prueba: anota la definición pedida y qué transacciones se confirmaron o revirtieron. */
     static class TxManagerGrabador implements org.springframework.transaction.PlatformTransactionManager {
@@ -67,7 +70,8 @@ class OnvoRenovacionReconsultaTest {
     @BeforeEach
     void setUp() {
         tx = new TxManagerGrabador();
-        reconsulta = new OnvoRenovacionReconsulta(onvo, planRepo, cambio, tx, DIAS_GRACIA, DIAS_MAX_INCIERTA);
+        reconsulta = new OnvoRenovacionReconsulta(onvo, planRepo, cambio, tx, lockTimeout,
+            new OnvoReconsultaConfig(DIAS_GRACIA, DIAS_MAX_INCIERTA, MAX_INCIERTAS_SEGUIDAS, 5000));
         when(onvo.modoEsperado()).thenReturn("live");
         when(onvo.planParaPriceId("price_pyme")).thenReturn("PYME");
         Plan pyme = new Plan();
@@ -119,7 +123,7 @@ class OnvoRenovacionReconsultaTest {
     void activaYPagadaReactiva() {
         onvoResponde(sub("active"), factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(PAGADA);
-        verify(cambio).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 1));
+        verify(cambio).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 1), FACTURA);
     }
 
     @Test
@@ -127,7 +131,7 @@ class OnvoRenovacionReconsultaTest {
     void getFallaEsIncierta() {
         when(onvo.obtenerSuscripcion(SUB)).thenThrow(new IllegalStateException("timeout"));
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA);
-        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -149,7 +153,7 @@ class OnvoRenovacionReconsultaTest {
     void noActivaEsNoPagada() {
         onvoResponde(sub("past_due"), factura("open", 1_200_000, "2026-12-01T06:00:00.000Z"));
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(NO_PAGADA);
-        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -164,7 +168,7 @@ class OnvoRenovacionReconsultaTest {
     void facturaVencidaNoReactiva() {
         onvoResponde(sub("active"), factura("paid", 1_200_000, "2026-10-28T06:00:00.000Z"));
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(NO_PAGADA);
-        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -172,7 +176,7 @@ class OnvoRenovacionReconsultaTest {
     void montoMenorEsIncierta() {
         onvoResponde(sub("active"), factura("paid", 830_000, "2026-12-01T06:00:00.000Z"));
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA);
-        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -193,7 +197,7 @@ class OnvoRenovacionReconsultaTest {
         onvoResponde(otroId, factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA);
 
-        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -233,7 +237,7 @@ class OnvoRenovacionReconsultaTest {
         when(onvo.obtenerSuscripcion(SUB)).thenThrow(new IllegalStateException("404"));
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(NO_PAGADA);
 
-        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -260,7 +264,7 @@ class OnvoRenovacionReconsultaTest {
     void filaQueFallaNoRevierteLasDemas() {
         onvoResponde(sub("active"), factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
         doThrow(new IllegalStateException("fallo al guardar")).when(cambio)
-            .procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 1));
+            .procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 1), FACTURA);
 
         Suscripcion otra = new Suscripcion();
         otra.setEmpresa(local.getEmpresa());
@@ -282,6 +286,89 @@ class OnvoRenovacionReconsultaTest {
         assertThat(tx.commits).isEqualTo(1);
         assertThat(tx.propagaciones).hasSize(2)
             .containsOnly(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        verify(cambio).procesarPagoOnvoVerificado("clsub0002", "PYME", LocalDate.of(2026, 12, 1));
+        verify(cambio).procesarPagoOnvoVerificado("clsub0002", "PYME", LocalDate.of(2026, 12, 1), "clinv0002");
+    }
+
+    // ---------------------------------------------------------------- B1: corte de GET tras N INCIERTA seguidas
+
+    @Test
+    @DisplayName("B1: tras N INCIERTA seguidas en la corrida ya no se hacen GET a ONVO")
+    void tras3InciertasSeguidasSeCortanLosGet() {
+        when(onvo.obtenerSuscripcion(SUB)).thenThrow(new IllegalStateException("ONVO caído"));
+
+        for (int i = 0; i < MAX_INCIERTAS_SEGUIDAS + 2; i++) {
+            assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA);
+        }
+
+        verify(onvo, org.mockito.Mockito.times(MAX_INCIERTAS_SEGUIDAS)).obtenerSuscripcion(SUB);
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("B1: iniciarCorrida() reabre el circuito (el conteo es por corrida nocturna)")
+    void iniciarCorridaReabreElCircuito() {
+        when(onvo.obtenerSuscripcion(SUB)).thenThrow(new IllegalStateException("ONVO caído"));
+        for (int i = 0; i < MAX_INCIERTAS_SEGUIDAS; i++) reconsulta.reconsultar(local, HOY);
+        reconsulta.reconsultar(local, HOY); // cortada: sin GET
+
+        reconsulta.iniciarCorrida();
+        reconsulta.reconsultar(local, HOY);
+
+        verify(onvo, org.mockito.Mockito.times(MAX_INCIERTAS_SEGUIDAS + 1)).obtenerSuscripcion(SUB);
+    }
+
+    @Test
+    @DisplayName("B1: una respuesta de ONVO (NO_PAGADA) reinicia el conteo de seguidas")
+    void unaRespuestaDeOnvoReiniciaElConteo() {
+        when(onvo.obtenerSuscripcion(SUB)).thenThrow(new IllegalStateException("ONVO caído"));
+        reconsulta.reconsultar(local, HOY);
+        reconsulta.reconsultar(local, HOY);
+        doReturn(sub("canceled")).when(onvo).obtenerSuscripcion(SUB);
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(NO_PAGADA);
+        doThrow(new IllegalStateException("ONVO caído")).when(onvo).obtenerSuscripcion(SUB);
+
+        reconsulta.reconsultar(local, HOY);
+        reconsulta.reconsultar(local, HOY);
+        reconsulta.reconsultar(local, HOY);
+
+        // 2 + 1 + 3: si el conteo no se hubiera reiniciado, el circuito se habría abierto antes.
+        verify(onvo, org.mockito.Mockito.times(MAX_INCIERTAS_SEGUIDAS + 3)).obtenerSuscripcion(SUB);
+    }
+
+    @Test
+    @DisplayName("B1: con el circuito abierto, pasado el plazo máximo igual sigue el flujo normal (NO_PAGADA)")
+    void circuitoAbiertoPeroPlazoAgotadoSigueElFlujoNormal() {
+        when(onvo.obtenerSuscripcion(SUB)).thenThrow(new IllegalStateException("ONVO caído"));
+        for (int i = 0; i < MAX_INCIERTAS_SEGUIDAS; i++) reconsulta.reconsultar(local, HOY);
+        local.setFechaFin(HOY.minusDays((long) DIAS_GRACIA + DIAS_MAX_INCIERTA + 1));
+
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(NO_PAGADA);
+        verify(onvo, org.mockito.Mockito.times(MAX_INCIERTAS_SEGUIDAS)).obtenerSuscripcion(SUB);
+    }
+
+    // ---------------------------------------------------------------- lock_timeout y referencia B2
+
+    @Test
+    @DisplayName("lock_timeout se aplica dentro de la transacción por fila, antes de tomar el lock de la fila")
+    void lockTimeoutSeAplicaAntesDeProcesarElPago() {
+        onvoResponde(sub("active"), factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
+        var orden = org.mockito.Mockito.inOrder(lockTimeout, cambio);
+
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(PAGADA);
+
+        orden.verify(lockTimeout).aplicar();
+        orden.verify(cambio).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 1), FACTURA);
+    }
+
+    @Test
+    @DisplayName("lock_timeout vencido (otro proceso tiene la fila): la fila queda INCIERTA y no se revierte la corrida")
+    void lockTimeoutVencidoDejaLaFilaIncierta() {
+        onvoResponde(sub("active"), factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
+        doThrow(new IllegalStateException("lock timeout")).when(lockTimeout).aplicar();
+
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA);
+
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        assertThat(tx.rollbacks).isEqualTo(1);
     }
 }

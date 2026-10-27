@@ -126,6 +126,11 @@ public class SuscripcionService {
         onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin);
     }
 
+    /** B2: igual que el anterior, con el id de la factura de ONVO como referencia del ledger. */
+    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin, String facturaId) {
+        onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin, facturaId);
+    }
+
     public void procesarRenovacionOnvoFallida(String onvoSubId) {
         onvoChangeService.procesarRenovacionFallida(onvoSubId);
     }

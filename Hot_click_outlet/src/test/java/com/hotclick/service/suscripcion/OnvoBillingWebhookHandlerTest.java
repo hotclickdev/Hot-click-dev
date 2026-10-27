@@ -120,7 +120,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
 
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
-        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1));
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv0001");
     }
 
     @Test
@@ -133,12 +133,12 @@ class OnvoBillingWebhookHandlerTest {
         when(suscripcionRepo.findByOnvoSubscriptionId("clsub0001")).thenReturn(Optional.of(local));
 
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // permanente → 200
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
 
         local.setOnvoCustomerId("cus_1");
         eventos.clear();
         handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null);
-        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1));
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv0001");
     }
 
     @Test
@@ -149,7 +149,7 @@ class OnvoBillingWebhookHandlerTest {
         var body = json("""
             {"id":"clinv0001","mode":"test","subscriptionId":"clsub0001","total":1}""");
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", body, null)).isTrue(); // M2: permanente → 200
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getProcesadoOk()).isFalse();
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:modo");
     }
@@ -160,7 +160,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", null, 1_200_000));
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // M2: permanente → 200
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -174,7 +174,7 @@ class OnvoBillingWebhookHandlerTest {
             when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", total));
             assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // M2: permanente → 200
         }
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -183,7 +183,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_plus"));
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 2_500_000));
         handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null);
-        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1));
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0001");
     }
 
     @Test
@@ -192,7 +192,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_plus"));
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 830_000));
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:pago_parcial");
     }
 
@@ -202,7 +202,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 1_200_001));
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:monto");
     }
 
@@ -217,7 +217,7 @@ class OnvoBillingWebhookHandlerTest {
         Map<String, Object> inv2 = invoice("clinv0001", null, "paid", "live", 1_200_000);
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) inv2);
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // M2: permanente → 200
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -245,7 +245,7 @@ class OnvoBillingWebhookHandlerTest {
         var body = json("{\"id\":\"pi_1\",\"subscriptionId\":\"clsub_x\",\"metadata\":{\"empresa_id\":\"10\",\"plan_id\":\"3\"}}");
         assertThat(handler.manejarSiBilling("payment-intent.succeeded", body, null)).isFalse();
         verify(suscripcionRepo, never()).findActivaByEmpresaId(any());
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos).isEmpty();
     }
 
@@ -258,7 +258,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
         var body = json("{\"id\":\"pi_1\",\"subscriptionId\":\"clsub0001\",\"metadata\":{\"plan_id\":\"999\"}}");
         assertThat(handler.manejarSiBilling("payment-intent.succeeded", body, null)).isTrue();
-        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1));
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv_alta");
     }
 
     @Test
@@ -267,7 +267,7 @@ class OnvoBillingWebhookHandlerTest {
         assertThat(handler.manejarSiBilling("payment-intent.succeeded",
             json("{\"id\":\"pi_venta\",\"customerId\":\"cus_1\",\"metadata\":{\"empresa_id\":\"5\"}}"), null)).isFalse();
         verify(onvo, never()).obtenerPaymentIntent(any());
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos).isEmpty();
     }
 
@@ -279,7 +279,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) facturaAlta("pi_de_otro_cobro"));
         assertThat(handler.manejarSiBilling("payment-intent.succeeded",
             json("{\"id\":\"pi_1\",\"subscriptionId\":\"clsub0001\"}"), null)).isFalse();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos).isEmpty();
     }
 
@@ -294,7 +294,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
         assertThat(handler.manejarSiBilling("payment-intent.succeeded",
             json("{\"id\":\"pi_1\",\"subscriptionId\":\"clsub0001\"}"), null)).isTrue();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_payment-intent.succeeded_pi_1").getError()).isEqualTo("rechazo:pago_parcial");
     }
 
@@ -306,7 +306,7 @@ class OnvoBillingWebhookHandlerTest {
         inv.put("amountPaid", 600_000);
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) inv);
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:pago_parcial");
     }
 
@@ -328,7 +328,7 @@ class OnvoBillingWebhookHandlerTest {
         eventos.put(yaOk.getStripeEventId(), yaOk);
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
         verify(onvo, never()).obtenerRenovacion(any());
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
     @Test
@@ -413,7 +413,7 @@ class OnvoBillingWebhookHandlerTest {
         when(suscripcionRepo.findByOnvoSubscriptionId("clsub0001")).thenReturn(Optional.of(localConEmpresa("clsub0001", null, 10L)));
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
         handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null);
-        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1));
+        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv0001");
         // empresa distinta → rechazo
         eventos.clear();
         when(suscripcionRepo.findByOnvoSubscriptionId("clsub0001")).thenReturn(Optional.of(localConEmpresa("clsub0001", null, 77L)));
@@ -425,7 +425,7 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) sinMeta);
         when(suscripcionRepo.findByOnvoSubscriptionId("clsub0001")).thenReturn(Optional.of(localConEmpresa("clsub0001", null, 10L)));
         handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null);
-        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado(any(), any(), any()); // solo la primera
+        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado(any(), any(), any(), any()); // solo la primera
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:customer");
     }
 
@@ -440,7 +440,7 @@ class OnvoBillingWebhookHandlerTest {
             json("{\"subscriptionId\":\"x\\u0020y\"}"), null)).isTrue();
         verify(onvo, never()).obtenerRenovacion(any());
         verify(onvo, never()).obtenerSuscripcion(any());
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         verify(suscripcionService, never()).procesarRenovacionOnvoFallida(any());
     }
 
@@ -452,13 +452,13 @@ class OnvoBillingWebhookHandlerTest {
         inv.put("paymentIntent", Map.of("status", "succeeded", "amount", 1_200_000, "receivedAmount", 600_000));
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) inv);
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:pago_parcial");
         // pago completo con la misma forma real → activa
         eventos.clear();
         inv.put("paymentIntent", Map.of("status", "succeeded", "amount", 1_200_000, "receivedAmount", 1_200_000));
         handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null);
-        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1));
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv0001");
     }
 
     @Test

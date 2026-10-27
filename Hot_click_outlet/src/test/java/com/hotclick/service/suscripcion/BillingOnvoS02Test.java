@@ -7,6 +7,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.billing.BillingLedgerWriter;
 import com.hotclick.service.onvo.OnvoBillingClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,5 +57,47 @@ class BillingOnvoS02Test {
         assertThat(sub.getFechaFin()).isEqualTo(fin);
         assertThat(e.getPlanSaas()).isEqualTo("NEGOCIO_PLUS");
         assertThat(e.getFechaVencPlan()).isEqualTo(fin);
+    }
+
+    private SuscripcionOnvoChangeService servicioConLedger(SuscripcionRepository subs, PlanRepository planes,
+                                                           BillingLedgerWriter ledger) {
+        SuscripcionOnvoChangeService svc = servicio(subs, mock(EmpresaRepository.class), planes, mock(OnvoBillingClient.class));
+        org.springframework.test.util.ReflectionTestUtils.setField(svc, "ledgerWriter", ledger);
+        return svc;
+    }
+
+    private Suscripcion prepararPago(SuscripcionRepository subs, PlanRepository planes) {
+        Plan plus = new Plan(); plus.setNombre("NEGOCIO_PLUS");
+        when(planes.findByNombre("NEGOCIO_PLUS")).thenReturn(Optional.of(plus));
+        Empresa e = new Empresa(); e.setId(10L);
+        Suscripcion sub = new Suscripcion();
+        sub.setEmpresa(e);
+        sub.setEstado("PAST_DUE");
+        when(subs.findByOnvoSubscriptionIdForUpdate("clsub")).thenReturn(Optional.of(sub));
+        return sub;
+    }
+
+    @Test
+    @DisplayName("B2: el ledger referencia el id de la factura (una por cobro), no el de la suscripción")
+    void ledgerReferenciaLaFactura() {
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        PlanRepository planes = mock(PlanRepository.class);
+        Suscripcion sub = prepararPago(subs, planes);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        servicioConLedger(subs, planes, ledger)
+            .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0007");
+        verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clinv0007"), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("B2: sin id de factura el ledger conserva el id de la suscripción como referencia")
+    void ledgerSinFacturaUsaLaSuscripcion() {
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        PlanRepository planes = mock(PlanRepository.class);
+        Suscripcion sub = prepararPago(subs, planes);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        servicioConLedger(subs, planes, ledger)
+            .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1));
+        verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clsub"), any(), any(), any());
     }
 }

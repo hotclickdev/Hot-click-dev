@@ -52,6 +52,7 @@ public class RenovacionesTilopayService {
             if (vence(sub, hoy)) vencidas.add(sub);
         }
         if (vencidas.isEmpty()) return 0;
+        reconsulta.iniciarCorrida();
         Set<Long> empresas = new HashSet<>();
         for (Suscripcion sub : vencidas) empresas.add(sub.getEmpresa().getId());
         Set<Long> conPendiente = new HashSet<>(cobroRepo.empresasConCobro(
