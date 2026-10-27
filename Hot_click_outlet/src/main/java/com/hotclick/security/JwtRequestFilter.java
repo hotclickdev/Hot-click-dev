@@ -15,6 +15,7 @@ import org.springframework.lang.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -95,6 +96,16 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
                 UserDetails userDetails = userDetailsCache.get(username,
                         k -> userDetailsService.loadUserByUsername(k));
+                if (!userDetails.isEnabled()) {
+                    // Cuenta no activa (estado distinto de 1): no se autentica aunque el JWT sea válido.
+                    log.debug("[JWT] Usuario no activo from ip={}", request.getRemoteAddr());
+                    try {
+                        auditService.logTokenRejected(request.getRemoteAddr(),
+                            request.getHeader("User-Agent"), request.getServletPath(), "UsuarioNoActivo");
+                    } catch (Exception ae) { log.warn("audit error: {}", ae.getMessage()); }
+                    chain.doFilter(request, response);
+                    return;
+                }
                 if (jwtUtil.validateToken(jwt, username) && tokenRevocadoService.estaRevocado(jwtUtil.extractJti(jwt))) {
                     log.debug("[JWT] Token revocado (jti) from ip={}", request.getRemoteAddr());
                     try {
@@ -124,6 +135,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
+            } catch (DisabledException e) {
+                // CustomUserDetailsService rechaza las cuentas con estado distinto de 1.
+                log.debug("[JWT] Usuario no activo from ip={}", request.getRemoteAddr());
+                SecurityContextHolder.clearContext();
             } catch (Exception e) {
                 log.error("[JWT] Auth failed for user {}: {}", username, e.toString());
                 SecurityContextHolder.clearContext();

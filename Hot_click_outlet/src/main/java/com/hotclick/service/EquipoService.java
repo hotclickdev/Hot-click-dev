@@ -35,6 +35,7 @@ public class EquipoService {
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private TenantService tenantService;
     @Autowired private EmpresaRepository empresaRepository;
+    @Autowired private SesionesUsuarioService sesionesUsuarioService;
 
     public List<Map<String, Object>> listar(Long empresaId) {
         return miembroEmpresaRepository.findByEmpresaIdAndEstado(empresaId, 1).stream()
@@ -93,18 +94,16 @@ public class EquipoService {
             usuarioRepository.findById(usuarioId).ifPresent(u -> {
                 u.setEstado(Constants.ESTADO_ELIMINADO);
                 usuarioRepository.save(u);
+                sesionesUsuarioService.cortarSesiones(u);
             });
         }
     }
 
     private void agregarExistente(Usuario u, Empresa empresa, com.hotclick.model.Rol rolMiembro, String rolEnEmpresa) {
-        // Solo cuentas activas. Excepción: ELIMINADO con una membresía previa en ESTE equipo es el reingreso de
-        // quien se quitó del equipo (eliminar() marca eliminado al usuario sin otros negocios): se mantiene ese flujo.
-        // Suspendido, inactivo, pendiente o eliminado sin vínculo con este equipo no entran.
-        boolean activo = Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado());
-        boolean reingreso = Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(u.getEstado())
-            && miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(u.getId(), empresa.getId()).isPresent();
-        if (!activo && !reingreso) {
+        // Solo cuentas activas (estado 1). Eliminado (3), suspendido (4), inactivo (2) y pendiente (5) no entran, ni
+        // siquiera quien ya fue miembro de este equipo: reingresar a un ELIMINADO lo dejaba sin poder iniciar sesión
+        // (el login rechaza el estado 3) y además se le añadían rol y empresa. La reactivación queda para post-lanzamiento.
+        if (!Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado())) {
             throw new IllegalArgumentException("Este usuario no está activo y no se puede agregar al equipo");
         }
         if (miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), empresa.getId(), 1)) {
