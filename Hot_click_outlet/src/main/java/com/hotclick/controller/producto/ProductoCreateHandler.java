@@ -8,7 +8,6 @@ import com.hotclick.model.Empresa;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.TenantService;
 import com.hotclick.service.producto.EmpresaDestinoAlta;
-import com.hotclick.service.producto.ProductoApprovalService;
 import com.hotclick.service.producto.ProductoIdempotencyService;
 import com.hotclick.service.producto.ProductoAltaService;
 import com.hotclick.service.producto.ProductoRequestSanitizer;
@@ -29,7 +28,6 @@ public class ProductoCreateHandler {
     @Autowired private ProductoAltaService productoAltaService;
     @Autowired private TenantService      tenantService;
     @Autowired private ProductoRequestSanitizer productoRequestSanitizer;
-    @Autowired private ProductoApprovalService productoApprovalService;
     @Autowired private ProductoIdempotencyService productoIdempotencyService;
     @Autowired private EmpresaDestinoAlta empresaDestinoAlta;
     @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
@@ -55,9 +53,9 @@ public class ProductoCreateHandler {
     private ResponseEntity<ResponseDTO> persistirAlta(
             ProductoRequestDTO dto, String idempotencyKey, Empresa empresa) {
         try {
-            var producto = productoAltaService.crearSaneado(dto, currentUserName(), empresa);
+            var creationResult = productoAltaService.crearYPublicar(dto, currentUserName(), empresa);
+            var producto = creationResult.producto();
             productoIdempotencyService.remember(idempotencyKey);
-            var creationResult = productoApprovalService.aplicarReglasPublicacion(producto, empresa);
             auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
                 producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
             return ResponseEntity.ok(ResponseDTO.success(creationResult.mensaje(), creationResult.producto()));

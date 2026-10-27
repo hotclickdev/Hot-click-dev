@@ -21,7 +21,7 @@ import com.hotclick.repository.PaqueteInventarioRepository;
 import com.hotclick.repository.PaqueteLineaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
-import com.hotclick.service.ProductoService;
+import com.hotclick.service.producto.ProductoAltaService;
 import com.hotclick.service.StockService;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.utils.BarcodeNormalizer;
@@ -56,7 +56,7 @@ public class InventarioPaqueteService {
     private final ProductoRepository productoRepo;
     private final CatalogoMaestroRepository catalogoRepo;
     private final CategoriaRepository categoriaRepo;
-    private final ProductoService productoService;
+    private final ProductoAltaService productoAltaService;
     private final StockService stockService;
     private final SupabaseStorageService storageService;
     private final InputSanitizer sanitizer;
@@ -69,7 +69,7 @@ public class InventarioPaqueteService {
             ProductoRepository productoRepo,
             CatalogoMaestroRepository catalogoRepo,
             CategoriaRepository categoriaRepo,
-            ProductoService productoService,
+            ProductoAltaService productoAltaService,
             StockService stockService,
             SupabaseStorageService storageService,
             InputSanitizer sanitizer) {
@@ -80,7 +80,7 @@ public class InventarioPaqueteService {
         this.productoRepo = productoRepo;
         this.catalogoRepo = catalogoRepo;
         this.categoriaRepo = categoriaRepo;
-        this.productoService = productoService;
+        this.productoAltaService = productoAltaService;
         this.stockService = stockService;
         this.storageService = storageService;
         this.sanitizer = sanitizer;
@@ -392,7 +392,13 @@ public class InventarioPaqueteService {
         dto.setImagenPrincipalUrl(linea.getImagenUrl());
         dto.setVisibleCatalogo(false);
         dto.setCategoriaId(resolverCategoriaId(linea.getCategoriaTexto(), empresa.getId()));
-        Producto creado = productoService.crearProducto(dto, correoAdmin, empresa);
+        // Misma moderación y campos solo-admin que el alta individual (el producto queda invisible igual).
+        Producto creado;
+        try {
+            creado = productoAltaService.crearSaneado(dto, correoAdmin, empresa);
+        } catch (ProductoAltaService.ContenidoNoPermitidoException e) {
+            throw new IllegalArgumentException(linea.getNombre() + ": " + e.getMessage());
+        }
         if (qty > 0) {
             stockService.ajustarEntrada(creado.getId(), qty,
                     "Entrada paquete inventario " + codigoPkg, correoAdmin);

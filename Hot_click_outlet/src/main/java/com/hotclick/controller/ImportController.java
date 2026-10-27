@@ -7,9 +7,11 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
 import com.hotclick.service.CatalogoImportService;
-import com.hotclick.service.ProductoService;
+import com.hotclick.model.Producto;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.TenantService;
 import com.hotclick.service.producto.EmpresaDestinoAlta;
+import com.hotclick.service.producto.ProductoAltaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
 import java.util.Map;
 
 @RestController
@@ -31,7 +35,8 @@ public class ImportController {
     private static final Logger log = LoggerFactory.getLogger(ImportController.class);
 
     @Autowired private CatalogoImportService importService;
-    @Autowired private ProductoService       productoService;
+    @Autowired private ProductoAltaService   productoAltaService;
+    @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
     @Autowired private EmpresaDestinoAlta    empresaDestinoAlta;
     @Autowired private TenantService         tenantService;
 
@@ -104,6 +109,8 @@ public class ImportController {
             String adminCorreo = currentUserName();
             int ok = 0;
             List<String> errores = new ArrayList<>();
+            // Cola acotada por el tope de 100 productos de arriba (no es una lista de endpoint sin límite).
+            Queue<String> advertencias = new ArrayDeque<>();
 
             for (ProductoExtraidoDto ext : productos) {
                 try {
@@ -132,8 +139,21 @@ public class ImportController {
                     dto.setGrupoVarianteId(ext.getGrupoVarianteId());
                     dto.setColorVariante(ext.getColorVariante());
 
-                    productoService.crearProducto(dto, adminCorreo, empresa);
+                    // Mismo pipeline que el alta individual y el bulk: campos solo-admin, moderación de texto y
+                    // reglas de publicación (un negocio sin aprobar no publica); la bodega se valida contra la empresa.
+                    // Alta + reglas de publicación en una sola transacción: si algo falla, no queda producto.
+                    Producto creado = productoAltaService.crearYPublicar(dto, adminCorreo, empresa).producto();
+                    // Desde acá el producto ya está confirmado en la BD: un fallo de la auditoría NO es un error
+                    // de la fila (si no, el cliente reintenta y duplica el producto).
                     ok++;
+                    try {
+                        auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
+                            creado.getId(), empresa.getId(), "Producto creado: " + creado.getNombreProducto());
+                    } catch (Exception posterior) {
+                        log.error("[import-confirmar] producto {} creado pero falló la auditoría: {}",
+                            creado.getId(), posterior.getMessage(), posterior);
+                        advertencias.add(ext.getNombreProducto() + ": creado, pero falló el registro de auditoría; no lo vuelvas a importar");
+                    }
                 } catch (Exception e) {
                     log.warn("[import-confirmar] producto '{}' falló: {}", ext.getNombreProducto(), e.getMessage());
                     errores.add(ext.getNombreProducto() + ": " + e.getMessage());
@@ -142,8 +162,10 @@ public class ImportController {
 
             String mensaje = ok + " producto(s) importado(s) correctamente.";
             if (!errores.isEmpty()) mensaje += " " + errores.size() + " con errores.";
+            if (!advertencias.isEmpty()) mensaje += " " + advertencias.size() + " con advertencias.";
 
-            return ResponseEntity.ok(ResponseDTO.success(mensaje, Map.of("ok", ok, "errores", errores)));
+            return ResponseEntity.ok(ResponseDTO.success(mensaje,
+                Map.of("ok", ok, "errores", errores, "advertencias", advertencias)));
 
         } catch (com.hotclick.exception.PlanLimitException e) {
             return ResponseEntity.status(402).body(ResponseDTO.error(e.getMessage()));

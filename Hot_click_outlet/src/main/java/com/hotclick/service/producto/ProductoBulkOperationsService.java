@@ -17,26 +17,26 @@ public class ProductoBulkOperationsService {
 
     private final ProductoRepository productoRepository;
     private final ProductoAltaService productoAltaService;
-    private final ProductoApprovalService productoApprovalService;
     private final AuditoriaAdminRegistroService auditoriaAdminRegistroService;
     private final TenantService tenantService;
     private final EmpresaRepository empresaRepository;
     private final ProductoAccessGuard productoAccessGuard;
+    private final BodegaTenantGuard bodegaTenantGuard;
 
     public ProductoBulkOperationsService(ProductoRepository productoRepository,
                                          ProductoAltaService productoAltaService,
-                                         ProductoApprovalService productoApprovalService,
                                          AuditoriaAdminRegistroService auditoriaAdminRegistroService,
                                          TenantService tenantService,
                                          EmpresaRepository empresaRepository,
-                                         ProductoAccessGuard productoAccessGuard) {
+                                         ProductoAccessGuard productoAccessGuard,
+                                         BodegaTenantGuard bodegaTenantGuard) {
         this.productoRepository = productoRepository;
         this.productoAltaService = productoAltaService;
-        this.productoApprovalService = productoApprovalService;
         this.auditoriaAdminRegistroService = auditoriaAdminRegistroService;
         this.tenantService = tenantService;
         this.empresaRepository = empresaRepository;
         this.productoAccessGuard = productoAccessGuard;
+        this.bodegaTenantGuard = bodegaTenantGuard;
     }
 
     public int archivarSinStock() {
@@ -74,18 +74,28 @@ public class ProductoBulkOperationsService {
         tenantService.verificarLimiteProductosBulk(empresaId, dtos.size());
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new com.hotclick.exception.EmpresaRequeridaException());
+        // Todo el lote se rechaza (sin crear nada) si alguna fila apunta a una bodega que no es del negocio.
+        // Misma respuesta que una bodega inexistente: no revela si existe ni de quién es.
+        dtos.stream().map(ProductoRequestDTO::getBodegaId).filter(java.util.Objects::nonNull).distinct()
+            .forEach(id -> bodegaTenantGuard.exigirDeLaEmpresa(id, empresaId));
         int ok = 0;
         int errors = 0;
+        int avisos = 0;
         StringBuilder errMsg = new StringBuilder();
         for (int i = 0; i < dtos.size(); i++) {
             try {
                 // Mismo pipeline que el alta individual (A-1): campos solo-admin, moderación,
                 // reglas de publicación del negocio y auditoría de admin.
-                Producto producto = productoAltaService.crearSaneado(dtos.get(i), adminCorreo, empresa);
-                productoApprovalService.aplicarReglasPublicacion(producto, empresa);
-                auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
-                    producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
+                // Alta + reglas de publicación atómicas (una transacción): si fallan, no queda producto.
+                Producto producto = productoAltaService.crearYPublicar(dtos.get(i), adminCorreo, empresa).producto();
+                // El producto ya está confirmado: un fallo de auditoría no es un error de la fila (un reintento duplicaría).
                 ok++;
+                try {
+                    auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
+                        producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
+                } catch (Exception posterior) {
+                    avisos++;
+                }
             } catch (Exception e) {
                 errors++;
                 if (errors <= 5) {
@@ -94,7 +104,8 @@ public class ProductoBulkOperationsService {
             }
         }
         String mensaje = "Importados: " + ok + " productos"
-            + (errors > 0 ? ", errores: " + errors + ". " + errMsg : "");
+            + (errors > 0 ? ", errores: " + errors + ". " + errMsg : "")
+            + (avisos > 0 ? " (" + avisos + " creados con la auditoría fallida: no los reimportes)" : "");
         return new BulkImportResult(mensaje, Map.of("ok", ok, "errors", errors));
     }
 
