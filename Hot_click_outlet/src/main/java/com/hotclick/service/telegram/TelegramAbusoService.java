@@ -111,8 +111,7 @@ public class TelegramAbusoService {
 
     /** Seguridad INFO: el chat_id no va completo a avisos ni logs; solo los últimos 4 dígitos. */
     static String chatEnmascarado(long chatId) {
-        String s = Long.toString(Math.abs(chatId));
-        return "***" + (s.length() > 4 ? s.substring(s.length() - 4) : s);
+        return TelegramTexto.chatEnmascarado(chatId);
     }
 
     /**

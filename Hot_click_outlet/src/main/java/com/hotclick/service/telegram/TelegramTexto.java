@@ -38,6 +38,26 @@ public final class TelegramTexto {
         return TOKEN_SUELTO.matcher(sinUrl).replaceAll("***");
     }
 
+    /** Largo máximo de un mensaje de excepción ajeno dentro de una línea de log. */
+    public static final int MAX_MENSAJE_LOG = 120;
+
+    /**
+     * Un mensaje de excepción ajeno que va a una línea de log: sin token, sin saltos de línea
+     * (no se puede inyectar líneas falsas) y truncado a {@value #MAX_MENSAJE_LOG} caracteres.
+     */
+    public static String paraLog(String texto) {
+        if (texto == null) return null;
+        String limpio = sinToken(texto).replaceAll("[\\r\\n\\t]+", " ");
+        return limpio.length() <= MAX_MENSAJE_LOG ? limpio : limpio.substring(0, MAX_MENSAJE_LOG) + "…";
+    }
+
+    /** El chat_id no va completo a logs ni avisos: {@code ***NNNN} con los últimos 4 dígitos. */
+    public static String chatEnmascarado(Long chatId) {
+        if (chatId == null) return "***";
+        String s = Long.toString(Math.abs(chatId));
+        return "***" + (s.length() > 4 ? s.substring(s.length() - 4) : s);
+    }
+
     /** Telegram rechazó el formato (no el chat ni el token): se puede reenviar como texto plano. */
     public static boolean esErrorDeFormato(String cuerpoRespuesta) {
         return cuerpoRespuesta != null && cuerpoRespuesta.contains("can't parse entities");
