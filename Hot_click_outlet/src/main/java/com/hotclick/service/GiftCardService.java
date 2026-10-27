@@ -86,7 +86,7 @@ public class GiftCardService {
         try {
             return giftCardRepository.saveAndFlush(gc);
         } catch (DataIntegrityViolationException carrera) {
-            // Dos altas simultáneas con el mismo código: gana la primera, la otra recibe 409 y no 500.
+            // Dos altas simultáneas con el mismo código: gana la primera, la otra recibe el mismo 400 genérico y no 500.
             throw new CodigoGiftCardDuplicadoException();
         }
     }
@@ -105,7 +105,7 @@ public class GiftCardService {
         }
     }
 
-    /** El código de la gift card ya lo usa otra (de cualquier negocio): el controlador responde 409. */
+    /** El código de la gift card ya lo usa otra (de cualquier negocio): el controlador responde un 400 genérico (no un 409, que delataría la existencia). */
     public static class CodigoGiftCardDuplicadoException extends RuntimeException {
         public CodigoGiftCardDuplicadoException() {
             super("Ese código no está disponible. Elegí otro o dejá el campo vacío para generar uno.");

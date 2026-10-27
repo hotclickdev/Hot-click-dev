@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 /**
  * Seguridad #385 (BAJOS 1-3): gift cards con tope de intentos en validar, código manual de mínimo 8 caracteres,
- * monto validado (400, no 500) y código duplicado entre negocios con 409.
+ * monto validado (400, no 500) y código duplicado entre negocios con un 400 genérico (no 409) y presupuesto de colisiones.
  */
 @DisplayName("Gift cards: rate limit de validar, código mínimo, monto válido y duplicados")
 class GiftCardsValidacionTest extends BaseIntegrationTest {
@@ -96,7 +96,7 @@ class GiftCardsValidacionTest extends BaseIntegrationTest {
         assertThat(llamar(HttpMethod.GET, VALIDAR, tokenB, "").getStatus()).as("otro usuario").isEqualTo(200);
     }
 
-    // ── (1b) rate limit por usuario en crear (el 409 no puede ser un oráculo de existencia) ──────
+    // ── (1b) rate limit por usuario en crear (el rechazo por duplicado no puede ser un oráculo de existencia) ──────
 
     @Test
     @DisplayName("POST /admin/gift-cards: el intento 11 del mismo usuario en 60 s → 429 (también con códigos que ya existen); otro usuario no se ve afectado")
@@ -113,7 +113,7 @@ class GiftCardsValidacionTest extends BaseIntegrationTest {
         assertThat(llamar(HttpMethod.POST, GC, tokenA, "{}").getStatus()).as("cuerpo inválido también cuenta").isEqualTo(429);
         assertThat(totalGiftCards()).isEqualTo(antes);
         assertThat(llamar(HttpMethod.POST, GC, tokenB, "{\"monto\":5000,\"codigo\":\"SONDEO-10000\"}").getStatus())
-            .as("otro usuario: su propio cupo (409 por duplicado global)").isEqualTo(409);
+            .as("otro usuario: su propio cupo (400 genérico por duplicado global)").isEqualTo(400);
     }
 
     @Test
@@ -224,16 +224,35 @@ class GiftCardsValidacionTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Mismo código en otro negocio → 409 (no 500) sin revelar de quién es; el original no cambia")
-    void codigoDuplicadoEntreNegocios409() throws Exception {
+    @DisplayName("Mismo código en otro negocio → 400 genérico (ni 409 ni 500) sin revelar de quién es; el original no cambia")
+    void codigoDuplicadoEntreNegocios400() throws Exception {
         var primera = llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"DUPLICADO1\"}");
         assertThat(primera.getStatus()).isEqualTo(200);
         var otra = llamar(HttpMethod.POST, GC, tokenB, "{\"monto\":9000,\"codigo\":\"duplicado1\"}");
-        assertThat(otra.getStatus()).as(otra.getContentAsString()).isEqualTo(409);
+        assertThat(otra.getStatus()).as(otra.getContentAsString()).isEqualTo(400);
         JsonNode n = om.readTree(otra.getContentAsString());
         assertThat(n.get("error").asText()).doesNotContain("DUPLICADO1").doesNotContainIgnoringCase(empA.getSlug());
         var mismo = llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"DUPLICADO1\"}");
-        assertThat(mismo.getStatus()).isEqualTo(409);
+        assertThat(mismo.getStatus()).isEqualTo(400);
         assertThat(totalGiftCards()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Presupuesto de colisiones: tras 5 duplicados el usuario recibe 429 con CUALQUIER código manual (exista o no); sin código sigue creando")
+    void presupuestoDeColisionesCierraElSondeo() throws Exception {
+        assertThat(llamar(HttpMethod.POST, GC, tokenB, "{\"monto\":5000,\"codigo\":\"OTRONEGOCIO-1\"}").getStatus()).isEqualTo(200);
+        for (int i = 1; i <= 5; i++) {
+            var r = llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"OTRONEGOCIO-1\"}");
+            assertThat(r.getStatus()).as("colisión " + i).isEqualTo(400);
+            assertThat(r.getContentAsString()).doesNotContain("OTRONEGOCIO-1");
+        }
+        assertThat(llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"OTRONEGOCIO-1\"}").getStatus())
+            .as("existente: 429").isEqualTo(429);
+        long antes = totalGiftCards();
+        assertThat(llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"CODIGO-LIBRE-77\"}").getStatus())
+            .as("libre: también 429, igual que el existente").isEqualTo(429);
+        assertThat(totalGiftCards()).isEqualTo(antes);
+        assertThat(llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000}").getStatus())
+            .as("sin código manual no hay sondeo posible: sigue creando").isEqualTo(200);
     }
 }

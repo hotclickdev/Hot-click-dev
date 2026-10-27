@@ -1,7 +1,9 @@
 package com.hotclick.service;
 
+import com.hotclick.model.Usuario;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.RateLimiter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,107 +14,113 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * F35-02 — UsuarioService.incrementarIntentosFallidos(): atómico, sin race condition.
- *
- * Verifica:
- * - Con exactamente 5 intentos → publica CuentaBloqueadaEvent (una sola vez)
- * - Con 6+ intentos → NO publica evento (exactamente == 5, no >= 5)
- * - Con < 5 intentos → NO publica evento
+ * UsuarioService.registrarFalloAutenticacion(): tope por usuario+IP y bloqueo global TEMPORAL.
+ * El evento de aviso al dueño se publica solo al llegar exactamente al umbral global (no en cada fallo posterior).
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("F35-02 — UsuarioService: lockout atómico sin race condition email")
+@DisplayName("UsuarioService: bloqueo por fallos (usuario+IP, global temporal)")
 class UsuarioServiceLockoutTest {
 
     @Mock UsuarioRepository         usuarioRepository;
     @Mock RolRepository             rolRepository;
     @Mock PasswordResetService      passwordResetService;
     @Mock ApplicationEventPublisher eventPublisher;
+    @Mock RateLimiter               rateLimiter;
 
     @InjectMocks UsuarioService service;
 
-    // ── Exactamente 5 → evento publicado ──────────────────────────────────
-
-    @Test
-    @DisplayName("intentosFallidos = 5 → publica CuentaBloqueadaEvent (exactamente una vez)")
-    void incrementar_at5Intentos_publicaEvento() {
-        when(usuarioRepository.findIntentosFallidos(1L)).thenReturn(Optional.of(5));
-
-        com.hotclick.model.Usuario usuario = new com.hotclick.model.Usuario();
+    private Usuario victima() {
+        Usuario usuario = new Usuario();
         usuario.setId(1L);
         usuario.setCorreo("victim@test.cr");
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        return usuario;
+    }
 
-        service.incrementarIntentosFallidos(1L);
+    @Test
+    @DisplayName("fallo bajo el umbral global: cuenta por IP y global, no bloquea ni avisa")
+    void bajoElUmbral_noBloquea() {
+        when(rateLimiter.registrar(eq("auth:fallos:usuario:1:global"), anyInt())).thenReturn(19);
 
-        verify(usuarioRepository).incrementarYBloquear(1L);
+        service.registrarFalloAutenticacion(1L, "203.0.113.5");
+
+        verify(rateLimiter).registrar(eq("auth:fallos:usuario:1:ip:203.0.113.5"), eq(1800));
+        verify(usuarioRepository).incrementarIntentosFallidos(1L);
+        verify(usuarioRepository, never()).bloquearUsuario(anyLong(), any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("5 fallos desde UNA IP no bloquean la cuenta (la IP queda afuera, el dueño no)")
+    void cincoFallosDeUnaIp_noBloqueanLaCuenta() {
+        when(rateLimiter.registrar(eq("auth:fallos:usuario:1:global"), anyInt())).thenReturn(5);
+
+        service.registrarFalloAutenticacion(1L, "203.0.113.5");
+
+        verify(usuarioRepository, never()).bloquearUsuario(anyLong(), any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("global = 20 → bloqueo TEMPORAL (~30 min) y un solo aviso al dueño")
+    void alUmbralGlobal_bloqueaTemporalYAvisa() {
+        victima();
+        when(rateLimiter.registrar(eq("auth:fallos:usuario:1:global"), anyInt())).thenReturn(20);
+
+        service.registrarFalloAutenticacion(1L, "203.0.113.5");
+
+        verify(usuarioRepository).bloquearUsuario(eq(1L),
+            argThat(h -> h.isAfter(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(25)) && h.isBefore(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(35))));
         verify(eventPublisher, times(1)).publishEvent(
-            argThat(e -> e instanceof CuentaBloqueadaEvent
-                && "victim@test.cr".equals(((CuentaBloqueadaEvent) e).getCorreo())));
+            argThat(e -> e instanceof CuentaBloqueadaEvent && "victim@test.cr".equals(((CuentaBloqueadaEvent) e).getCorreo())));
     }
 
-    // ── 6 intentos (ya bloqueado) → sin evento ────────────────────────────
-
     @Test
-    @DisplayName("intentosFallidos = 6 → NO publica evento (solo al exacto 5, no >=5)")
-    void incrementar_at6Intentos_sinEvento() {
-        when(usuarioRepository.findIntentosFallidos(1L)).thenReturn(Optional.of(6));
+    @DisplayName("global = 21 → mantiene el bloqueo pero NO repite el aviso")
+    void porEncimaDelUmbral_sinSegundoAviso() {
+        victima();
+        when(rateLimiter.registrar(eq("auth:fallos:usuario:1:global"), anyInt())).thenReturn(21);
 
-        service.incrementarIntentosFallidos(1L);
+        service.registrarFalloAutenticacion(1L, "203.0.113.5");
 
-        verify(eventPublisher, never()).publishEvent(any());
-        verify(usuarioRepository, never()).findById(anyLong());
-    }
-
-    // ── 4 intentos → sin evento, sin bloqueo ──────────────────────────────
-
-    @Test
-    @DisplayName("intentosFallidos = 4 → NO publica evento, advertencia silenciosa")
-    void incrementar_at4Intentos_sinEvento() {
-        when(usuarioRepository.findIntentosFallidos(1L)).thenReturn(Optional.of(4));
-
-        service.incrementarIntentosFallidos(1L);
-
+        verify(usuarioRepository).bloquearUsuario(eq(1L), any());
         verify(eventPublisher, never()).publishEvent(any());
     }
 
-    // ── Usuario no existe → sin error ──────────────────────────────────────
-
     @Test
-    @DisplayName("findIntentosFallidos vacío (usuario no encontrado) → retorna silenciosamente")
-    void incrementar_sinResultado_noCrash() {
-        when(usuarioRepository.findIntentosFallidos(99L)).thenReturn(Optional.empty());
+    @DisplayName("limitador caído (registrar devuelve 0): no bloquea a nadie (fail-open)")
+    void limitadorCaido_noBloquea() {
+        when(rateLimiter.registrar(anyString(), anyInt())).thenReturn(0);
 
-        // No debe lanzar excepción
-        service.incrementarIntentosFallidos(99L);
+        service.registrarFalloAutenticacion(1L, "203.0.113.5");
 
-        verify(eventPublisher, never()).publishEvent(any());
+        verify(usuarioRepository, never()).bloquearUsuario(anyLong(), any());
     }
 
-    // ── CRÍTICO: exactamente 5 (no >= 5) elimina race condition ───────────
+    @Test
+    @DisplayName("ipBloqueadaParaUsuario consulta la llave usuario+IP con 5 en 1800 s")
+    void ipBloqueada_consultaLaLlavePorIp() {
+        when(rateLimiter.alcanzoLimite("auth:fallos:usuario:1:ip:203.0.113.5", 5, 1800)).thenReturn(true);
+
+        org.assertj.core.api.Assertions.assertThat(service.ipBloqueadaParaUsuario(1L, "203.0.113.5")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(service.ipBloqueadaParaUsuario(1L, "198.51.100.7")).isFalse();
+    }
 
     @Test
-    @DisplayName("Thread A lee 5, Thread B lee 6 → solo A publica el evento (anti-TOCTOU)")
-    void incrementar_concurrentThreads_soloExact5PublicaEvento() {
-        when(usuarioRepository.findIntentosFallidos(1L))
-            .thenReturn(Optional.of(5))   // primera llamada (Thread A)
-            .thenReturn(Optional.of(6));  // segunda llamada (Thread B)
+    @DisplayName("autenticación completa: pone el contador en 0 y borra el bucket global y el de esa IP")
+    void resetearLiberaLosBuckets() {
+        service.resetearIntentosFallidos(1L, "198.51.100.7");
 
-        com.hotclick.model.Usuario usuario = new com.hotclick.model.Usuario();
-        usuario.setCorreo("victim@test.cr");
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-
-        // Simular dos llamadas concurrentes
-        service.incrementarIntentosFallidos(1L); // Thread A → evento
-        service.incrementarIntentosFallidos(1L); // Thread B → sin evento
-
-        // Solo 1 evento publicado (Thread A), no 2
-        verify(eventPublisher, times(1)).publishEvent(any(CuentaBloqueadaEvent.class));
+        verify(usuarioRepository).resetearIntentosFallidos(1L);
+        verify(rateLimiter).liberar("auth:fallos:usuario:1:global");
+        verify(rateLimiter).liberar("auth:fallos:usuario:1:ip:198.51.100.7");
     }
 }

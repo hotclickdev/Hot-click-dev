@@ -50,22 +50,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("UPDATE Usuario u SET u.intentosFallidos = u.intentosFallidos + 1 WHERE u.id = :id")
     void incrementarIntentosFallidos(@Param("id") Long id);
 
-    // Incrementa intentos + bloquea condicionalmente en una sola operación atómica.
-    // No usa RETURNING (no portable a H2 en tests) — el llamador debe leer
-    // intentosFallidos con findIntentosFallidos() dentro de la MISMA transacción
-    // para que el lock de fila evite que dos hilos concurrentes vean intentos==5.
-    @Modifying
-    @Transactional
-    @Query(value = """
-        UPDATE hot_click_usuario_tb
-        SET intentos_fallidos = intentos_fallidos + 1,
-            bloqueado_hasta   = CASE
-                WHEN intentos_fallidos + 1 >= 5 THEN NOW() + INTERVAL '30' MINUTE
-                ELSE bloqueado_hasta END
-        WHERE id_usuario = :id
-        """, nativeQuery = true)
-    void incrementarYBloquear(@Param("id") Long id);
-
     @Query("SELECT u.intentosFallidos FROM Usuario u WHERE u.id = :id")
     Optional<Integer> findIntentosFallidos(@Param("id") Long id);
 
