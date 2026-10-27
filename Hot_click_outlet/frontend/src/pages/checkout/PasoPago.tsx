@@ -25,7 +25,7 @@ type MetodosPagoProps = {
 export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
   const { t } = useTranslation()
   const rapido = Object.values(form.metodoEnvioPorPaquete).includes('ENVIO_RAPIDO')
-  const METODOS = metodosDisponibles()
+  const METODOS = metodosDisponibles(!metodoProximamente(PAGO_SINPE, form.sinpeManualHabilitado, form.tarjetaOnvoHabilitada))
   const disponibles = METODOS.filter((m) => !(m.id === PAGO_EFECTIVO && rapido)).map((m) => m.id as string)
   const seleccionable = metodoSeleccionable(form.metodoPago, disponibles, form.sinpeManualHabilitado, form.tarjetaOnvoHabilitada)
   const { setMetodoPago } = form
