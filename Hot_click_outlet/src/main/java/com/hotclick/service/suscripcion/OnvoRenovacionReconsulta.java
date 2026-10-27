@@ -6,7 +6,11 @@ import com.hotclick.repository.PlanRepository;
 import com.hotclick.service.onvo.OnvoBillingClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -16,6 +20,11 @@ import java.util.Map;
  * Si ONVO confirma que está active y con la factura más reciente pagada y completa, se reactiva con el mismo camino
  * verificado del webhook ({@code procesarPagoOnvoVerificado}). Si el GET falla o ONVO no se puede verificar,
  * el resultado es INCIERTA y quien llama NO da de baja (fail-closed hacia el cliente que pudo haber pagado).
+ * <p>La incertidumbre tiene tope (propiedad {@code hotclick.billing.dias-max-incierta}, contada desde fecha_fin más
+ * la gracia): un error permanente de ONVO no puede dejar la suscripción gratis para siempre. Pasado el plazo se
+ * devuelve NO_PAGADA con alerta y sigue el flujo normal hacia PAST_DUE y VENCIDO.
+ * <p>La reactivación corre en su propia transacción (REQUIRES_NEW): si una fila falla, solo se revierte esa fila y
+ * no la corrida completa de las 03:00.
  */
 @Service
 public class OnvoRenovacionReconsulta {
@@ -30,15 +39,42 @@ public class OnvoRenovacionReconsulta {
     private final OnvoBillingClient onvo;
     private final PlanRepository planRepo;
     private final SuscripcionOnvoChangeService cambio;
+    private final TransactionTemplate txPorFila;
+    private final int diasGracia;
+    private final int diasMaxIncierta;
 
-    public OnvoRenovacionReconsulta(OnvoBillingClient onvo, PlanRepository planRepo, SuscripcionOnvoChangeService cambio) {
+    public OnvoRenovacionReconsulta(OnvoBillingClient onvo, PlanRepository planRepo, SuscripcionOnvoChangeService cambio,
+                                    PlatformTransactionManager txManager,
+                                    @Value("${hotclick.billing.dias-gracia}") int diasGracia,
+                                    @Value("${hotclick.billing.dias-max-incierta}") int diasMaxIncierta) {
         this.onvo = onvo;
         this.planRepo = planRepo;
         this.cambio = cambio;
+        this.txPorFila = new TransactionTemplate(txManager);
+        this.txPorFila.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.diasGracia = Math.max(0, diasGracia);
+        this.diasMaxIncierta = Math.max(0, diasMaxIncierta);
     }
 
     /** Solo para suscripciones con onvoSubscriptionId; el id sale de nuestra base, no del cuerpo de un webhook. */
     public Estado reconsultar(Suscripcion local, LocalDate hoy) {
+        Estado estado = consultar(local, hoy);
+        if (estado == Estado.INCIERTA && plazoAgotado(local, hoy)) {
+            log.error("[ALERTA-PAGO] Reconsulta ONVO sigue incierta pasado el plazo máximo ({} día(s) tras la gracia): "
+                + "sigue el flujo normal de impago empresa={} sub={}", diasMaxIncierta,
+                local.getEmpresa() == null ? null : local.getEmpresa().getId(), local.getOnvoSubscriptionId());
+            return Estado.NO_PAGADA;
+        }
+        return estado;
+    }
+
+    /** Plazo máximo en INCIERTA: fecha_fin + gracia + días máximos de la configuración. */
+    private boolean plazoAgotado(Suscripcion local, LocalDate hoy) {
+        return local.getFechaFin() != null
+            && hoy.isAfter(local.getFechaFin().plusDays((long) diasGracia + diasMaxIncierta));
+    }
+
+    private Estado consultar(Suscripcion local, LocalDate hoy) {
         String subId = local.getOnvoSubscriptionId();
         try {
             Estado previo = prechequeo(subId);
@@ -82,7 +118,8 @@ public class OnvoRenovacionReconsulta {
         // Factura pagada de un período que ya terminó = ONVO todavía no renovó: sigue el flujo normal de gracia.
         if (!r.fechaFin().isAfter(hoy)) return Estado.NO_PAGADA;
         if (planRepo.findByNombre(r.planNombre()).isEmpty()) return incierta(subId, "plan no configurado");
-        cambio.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin());
+        // M2: transacción propia; una falla revierte solo esta fila (la excepción la atrapa reconsultar → INCIERTA).
+        txPorFila.executeWithoutResult(st -> cambio.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin()));
         log.info("[billing-onvo] Reconsulta reactivó empresa={} hasta={} (ONVO active y factura pagada)",
             local.getEmpresa() == null ? null : local.getEmpresa().getId(), r.fechaFin());
         return Estado.PAGADA;

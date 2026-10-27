@@ -25,6 +25,7 @@ import static com.hotclick.service.suscripcion.OnvoRenovacionReconsulta.Estado.N
 import static com.hotclick.service.suscripcion.OnvoRenovacionReconsulta.Estado.PAGADA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,10 +45,29 @@ class OnvoRenovacionReconsultaTest {
     @Mock SuscripcionOnvoChangeService cambio;
     OnvoRenovacionReconsulta reconsulta;
     Suscripcion local;
+    TxManagerGrabador tx;
+
+    private static final int DIAS_GRACIA = 8;
+    private static final int DIAS_MAX_INCIERTA = 5;
+
+    /** PlatformTransactionManager de prueba: anota la definición pedida y qué transacciones se confirmaron o revirtieron. */
+    static class TxManagerGrabador implements org.springframework.transaction.PlatformTransactionManager {
+        final List<Integer> propagaciones = new java.util.ArrayList<>();
+        int commits;
+        int rollbacks;
+        @Override public org.springframework.transaction.TransactionStatus getTransaction(
+                org.springframework.transaction.TransactionDefinition d) {
+            propagaciones.add(d.getPropagationBehavior());
+            return new org.springframework.transaction.support.SimpleTransactionStatus(true);
+        }
+        @Override public void commit(org.springframework.transaction.TransactionStatus st) { commits++; }
+        @Override public void rollback(org.springframework.transaction.TransactionStatus st) { rollbacks++; }
+    }
 
     @BeforeEach
     void setUp() {
-        reconsulta = new OnvoRenovacionReconsulta(onvo, planRepo, cambio);
+        tx = new TxManagerGrabador();
+        reconsulta = new OnvoRenovacionReconsulta(onvo, planRepo, cambio, tx, DIAS_GRACIA, DIAS_MAX_INCIERTA);
         when(onvo.modoEsperado()).thenReturn("live");
         when(onvo.planParaPriceId("price_pyme")).thenReturn("PYME");
         Plan pyme = new Plan();
@@ -185,5 +205,83 @@ class OnvoRenovacionReconsultaTest {
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA);
         local.setOnvoSubscriptionId("../admin");
         assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA);
+    }
+
+    @Test
+    @DisplayName("M1: INCIERTA dentro del plazo (fecha_fin + gracia + máximo) sigue sin dar de baja")
+    void inciertaDentroDelPlazo() {
+        local.setFechaFin(HOY.minusDays(DIAS_GRACIA + DIAS_MAX_INCIERTA)); // último día del plazo
+        when(onvo.obtenerSuscripcion(SUB)).thenThrow(new IllegalStateException("timeout"));
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA);
+    }
+
+    @Test
+    @DisplayName("M1: error permanente de ONVO (404, modo ajeno, sin factura) pasado el plazo → NO_PAGADA: sigue hacia PAST_DUE/VENCIDO")
+    void incertidumbrePermanentePasadoElPlazoSigueElFlujoNormal() {
+        local.setFechaFin(HOY.minusDays(DIAS_GRACIA + DIAS_MAX_INCIERTA + 1)); // primer día fuera del plazo
+
+        Map<String, Object> otroModo = sub("active");
+        otroModo.put("mode", "test");
+        onvoResponde(otroModo, factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(NO_PAGADA);
+
+        Map<String, Object> sinFactura = sub("active");
+        sinFactura.remove("latestInvoiceId");
+        onvoResponde(sinFactura, factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(NO_PAGADA);
+
+        when(onvo.obtenerSuscripcion(SUB)).thenThrow(new IllegalStateException("404"));
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(NO_PAGADA);
+
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("M1: pasado el plazo, si ONVO sí confirma el pago se reactiva igual (el tope solo aplica a la incertidumbre)")
+    void pasadoElPlazoPeroPagadaSigueReactivando() {
+        local.setFechaFin(HOY.minusDays(DIAS_GRACIA + DIAS_MAX_INCIERTA + 30));
+        onvoResponde(sub("active"), factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(PAGADA);
+    }
+
+    @Test
+    @DisplayName("M2: la reactivación corre en su propia transacción (REQUIRES_NEW), no en la de la corrida de las 03:00")
+    void reactivacionEnTransaccionNueva() {
+        onvoResponde(sub("active"), factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(PAGADA);
+        assertThat(tx.propagaciones).containsExactly(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        assertThat(tx.commits).isEqualTo(1);
+        assertThat(tx.rollbacks).isZero();
+    }
+
+    @Test
+    @DisplayName("M2: una fila que falla al reactivar revierte solo su transacción, queda INCIERTA y la siguiente se reactiva")
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void filaQueFallaNoRevierteLasDemas() {
+        onvoResponde(sub("active"), factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z"));
+        doThrow(new IllegalStateException("fallo al guardar")).when(cambio)
+            .procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 1));
+
+        Suscripcion otra = new Suscripcion();
+        otra.setEmpresa(local.getEmpresa());
+        otra.setOnvoSubscriptionId("clsub0002");
+        otra.setOnvoCustomerId("cus_1");
+        Map<String, Object> sub2 = sub("active");
+        sub2.put("id", "clsub0002");
+        sub2.put("latestInvoiceId", "clinv0002");
+        Map<String, Object> f2 = factura("paid", 1_200_000, "2026-12-01T06:00:00.000Z");
+        f2.put("id", "clinv0002");
+        f2.put("subscriptionId", "clsub0002");
+        when(onvo.obtenerSuscripcion("clsub0002")).thenReturn((Map) sub2);
+        when(onvo.obtenerRenovacion("clinv0002")).thenReturn((Map) f2);
+
+        assertThat(reconsulta.reconsultar(local, HOY)).isEqualTo(INCIERTA); // no propaga la excepción
+        assertThat(reconsulta.reconsultar(otra, HOY)).isEqualTo(PAGADA);
+
+        assertThat(tx.rollbacks).isEqualTo(1);
+        assertThat(tx.commits).isEqualTo(1);
+        assertThat(tx.propagaciones).hasSize(2)
+            .containsOnly(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        verify(cambio).procesarPagoOnvoVerificado("clsub0002", "PYME", LocalDate.of(2026, 12, 1));
     }
 }
