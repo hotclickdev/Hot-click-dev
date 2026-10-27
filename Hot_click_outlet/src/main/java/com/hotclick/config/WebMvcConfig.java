@@ -46,7 +46,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/admin/finanzas/**", "/api/admin/dashboard", "/api/admin/ads/**",
                                  "/api/admin/asignar/**", "/api/admin/mesas", "/api/admin/mesas/**",
                                  "/api/admin/importar/**", "/api/admin/reset-datos",
-                                 "/api/admin/reset-confirmacion", "/api/admin/reset-codigo");
+                                 "/api/admin/reset-confirmacion", "/api/admin/reset-codigo",
+                                 // gift cards (crear/cancelar/listar códigos con saldo) y ficha con IA (costo)
+                                 "/api/admin/gift-cards", "/api/admin/gift-cards/**",
+                                 "/api/admin/productos/generar-ia");
         // Suscripción impaga (día 9+): el negocio solo ve cuenta/monto y paga (allowlist exacta en el interceptor);
         // las rutas de comprador ya rechazan tiendas no ACTIVO por su cuenta.
         registry.addInterceptor(suspensionImpagoInterceptor)

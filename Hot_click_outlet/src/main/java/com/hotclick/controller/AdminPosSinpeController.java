@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.dto.PosSinpeConfirmacionDTO;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.PosSinpeConfirmacion;
 import com.hotclick.repository.PosSinpeConfirmacionRepository;
@@ -47,6 +48,6 @@ public class AdminPosSinpeController {
             ? repo.findAllByOrderByFechaConfirmacionDesc(pr)
             : repo.findByEmpresaIdOrderByFechaConfirmacionDesc(scope, pr);
         return ResponseEntity.ok(ResponseDTO.success("Confirmaciones manuales de SINPE", java.util.Map.of(
-            "items", page.getContent(), "total", page.getTotalElements(), "pagina", page.getNumber())));
+            "items", page.getContent().stream().map(PosSinpeConfirmacionDTO::de).toList(), "total", page.getTotalElements(), "pagina", page.getNumber())));
     }
 }

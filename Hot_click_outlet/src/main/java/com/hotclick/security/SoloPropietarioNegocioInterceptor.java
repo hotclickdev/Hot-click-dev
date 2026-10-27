@@ -15,8 +15,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * los dejaban pasar. Estas pantallas son del PROPIETARIO del negocio (o del ADMIN de plataforma):
  * {@link PropietarioGuard#puedeGestionarEmpresa}. Se registra solo en las rutas de {@code WebMvcConfig}.
  *
- * Un usuario sin negocio resuelto no se toca acá: los controladores ya lo rechazan por su cuenta
- * ({@code requireEmpresaId}); este interceptor solo niega a quien SÍ tiene negocio y no es su propietario.
+ * Falla cerrado: si no se puede resolver el negocio ({@code empresaId} nulo), el interceptor responde 403 y no
+ * deja la decisión al controlador. Solo el ADMIN de plataforma pasa sin negocio.
  */
 @Component
 public class SoloPropietarioNegocioInterceptor implements HandlerInterceptor {
@@ -38,8 +38,7 @@ public class SoloPropietarioNegocioInterceptor implements HandlerInterceptor {
         if ("OPTIONS".equals(req.getMethod())) return true;
         if (companyScope.isAdminIT()) return true;
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
-        if (empresaId == null) return true; // sin negocio: lo rechaza el controlador
-        if (propietarioGuard.puedeGestionarEmpresa(empresaId)) return true;
+        if (empresaId != null && propietarioGuard.puedeGestionarEmpresa(empresaId)) return true; // sin negocio: 403
         res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         res.setCharacterEncoding("UTF-8");
