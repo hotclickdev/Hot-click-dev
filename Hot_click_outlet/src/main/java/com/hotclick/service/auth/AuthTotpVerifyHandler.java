@@ -61,6 +61,8 @@ public class AuthTotpVerifyHandler {
 
             var limitado = authSupport.limite2faLoginUsuario(usuario.getId(), httpRequest);
             if (limitado != null) return limitado;
+            var porFallos = authSupport.bloqueoPorFallos(usuario.getId(), httpRequest);
+            if (porFallos != null) return porFallos;
 
             if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
                 return ResponseEntity.status(403).body(ResponseDTO.error(
@@ -82,7 +84,7 @@ public class AuthTotpVerifyHandler {
                     if (passwordEncoder.matches(normalized, stored.get(i))) { matchIdx = i; break; }
                 }
                 if (matchIdx < 0) {
-                    usuarioService.incrementarIntentosFallidos(usuario.getId());
+                    authSupport.registrarFalloCredencial(usuario.getId(), httpRequest);
                     log.warn("[2FA] Código de recuperación inválido para userId={}", usuario.getId());
                     AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"));
                     return ResponseEntity.status(401).body(ResponseDTO.error("Código de recuperación inválido"));
@@ -90,7 +92,7 @@ public class AuthTotpVerifyHandler {
                 stored.remove(matchIdx);
                 usuario.setRecoveryCodes(twoFactorService.codesToJson(stored));
                 usuarioService.guardar(usuario);
-                usuarioService.resetearIntentosFallidos(usuario.getId());
+                usuarioService.resetearIntentosFallidos(usuario.getId(), authSupport.ipCliente(httpRequest));
                 log.info("[2FA] Login por recovery code userId={}. Restantes: {}", usuario.getId(), stored.size());
                 AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"));
                 return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
@@ -107,12 +109,12 @@ public class AuthTotpVerifyHandler {
                     CodigoOtp otp = otpService.verificarOtp(
                         usuario, Constants.OTP_TIPO_2FA_LOGIN, code);
                     otpService.marcarUsado(otp);
-                    usuarioService.resetearIntentosFallidos(usuario.getId());
+                    usuarioService.resetearIntentosFallidos(usuario.getId(), authSupport.ipCliente(httpRequest));
                     log.info("[2FA] Login por EMAIL_OTP exitoso userId={}", usuario.getId());
                     AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"));
                     return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
                 } catch (RuntimeException e) {
-                    usuarioService.incrementarIntentosFallidos(usuario.getId());
+                    authSupport.registrarFalloCredencial(usuario.getId(), httpRequest);
                     AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"));
                     return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
                 }
@@ -120,13 +122,13 @@ public class AuthTotpVerifyHandler {
 
             // Default: TOTP with replay protection
             if (!twoFactorService.verifyCodeWithReplayProtection(usuario, code)) {
-                usuarioService.incrementarIntentosFallidos(usuario.getId());
+                authSupport.registrarFalloCredencial(usuario.getId(), httpRequest);
                 log.warn("[2FA] TOTP incorrecto o replay para userId={}", usuario.getId());
                 AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"));
                 return ResponseEntity.status(401).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
 
-            usuarioService.resetearIntentosFallidos(usuario.getId());
+            usuarioService.resetearIntentosFallidos(usuario.getId(), authSupport.ipCliente(httpRequest));
             log.info("[2FA] TOTP login exitoso userId={}", usuario.getId());
             AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"));
             return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));

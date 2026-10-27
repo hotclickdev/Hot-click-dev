@@ -13,6 +13,7 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.ClaveNumericaService;
 import com.hotclick.service.ConsecutivoFiscalService;
 import com.hotclick.service.hacienda.CodigoCabys;
+import com.hotclick.service.hacienda.CalculadoraIva;
 import com.hotclick.service.hacienda.ImpuestoLinea;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
@@ -77,6 +78,7 @@ public class FacturacionEmisionSupport {
         }
 
         String tipoFinal = (tipo != null && !tipo.isBlank()) ? tipo : ComprobanteFiscal.TIPO_TIQUETE;
+        exigirTipoCoherenteConCobro(pedido, empresa, tipoFinal);
 
         long numSeq = consecutivoService.siguienteNumero(empresa.getId(), tipoFinal);
         String numConsecutivo = ClaveNumericaService.buildNumeroConsecutivo(tipoFinal, numSeq);
@@ -93,7 +95,8 @@ public class FacturacionEmisionSupport {
         cf.setNumeroConsecutivo(numConsecutivo);
         cf.setEstado(ComprobanteFiscal.ESTADO_PENDIENTE);
         cf.setAmbiente(empresa.getAmbienteHacienda());
-        cf.setTotalFactura(pedido.getTotalPedido());
+        // M4: el total sale de la misma regla que arma el XML (CalculadoraIva), no de totalPedido.
+        aplicarTotales(cf, List.of(pedido), empresa, ComprobanteFiscal.TIPO_FACTURA.equals(tipoFinal));
         cf = comprobanteRepo.save(cf);
 
         log.info("[facturacion] Comprobante creado id={} clave={} tipo={} empresa={} ambiente={}",
@@ -163,21 +166,35 @@ public class FacturacionEmisionSupport {
         return alguna;
     }
 
-    private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos) {
-        long base = 0;
-        long impuesto = 0;
-        for (Pedido pedido : pedidos) {
-            for (PedidoItem item : pedido.getItems()) {
-                long precio = item.getPrecioUnitarioMomento() != null ? item.getPrecioUnitarioMomento() : 0L;
-                ImpuestoLinea.Montos montos = ImpuestoLinea.de(
-                    precio, item.getCantidad(), item.getProducto().getPorcentajeIva());
-                base += montos.base();
-                impuesto += montos.impuesto();
-            }
+    /**
+     * M4: en régimen simplificado la factura cobra precio + IVA y el tiquete cobra el precio tal cual.
+     * Si el tipo pedido no coincide con lo que se le cobró al cliente, el XML no cuadraría con el cobro.
+     */
+    static void exigirTipoCoherenteConCobro(Pedido pedido, Empresa empresa, String tipo) {
+        if (!CalculadoraIva.SIMPLIFICADO.equals(CalculadoraIva.regimen(empresa))) return;
+        long ivaCobrado = pedido.getMontoImpuesto() != null ? pedido.getMontoImpuesto() : 0;
+        boolean esFactura = ComprobanteFiscal.TIPO_FACTURA.equals(tipo);
+        long ivaFactura = CalculadoraIva.ivaACobrar(empresa, true,
+            CalculadoraIva.lineasDe(pedido), CalculadoraIva.descuentoDe(pedido));
+        if (esFactura && ivaCobrado != ivaFactura) {
+            throw new IllegalStateException(
+                "Esta venta se cobró sin el IVA de la factura. En régimen simplificado solo podés emitirle tiquete electrónico.");
         }
-        cf.setTotalNeto(Math.toIntExact(base));
-        cf.setTotalImpuesto(Math.toIntExact(impuesto));
-        cf.setTotalFactura(Math.toIntExact(base + impuesto));
+        if (!esFactura && ivaCobrado > 0) {
+            throw new IllegalStateException(
+                "Esta venta se cobró con IVA para factura electrónica. Emití la factura (tipo 01), no un tiquete.");
+        }
+    }
+
+    private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos) {
+        aplicarTotales(cf, pedidos, cf.getEmpresa(), ComprobanteFiscal.TIPO_FACTURA.equals(cf.getTipo()));
+    }
+
+    private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos, Empresa empresa, boolean esFactura) {
+        CalculadoraIva.Resumen r = CalculadoraIva.resumen(empresa, esFactura, pedidos);
+        cf.setTotalNeto(Math.toIntExact(r.ventaNeta()));
+        cf.setTotalImpuesto(Math.toIntExact(r.impuesto()));
+        cf.setTotalFactura(Math.toIntExact(r.totalComprobante()));
     }
 
     static void copiarReceptor(ComprobanteFiscal cf, Usuario usuario) {

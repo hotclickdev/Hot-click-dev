@@ -34,10 +34,17 @@ public class GiftCardController {
     @Value("${hotclick.ratelimit.giftcard-validar.max:10}")    private int validarMax = 10;
     @Value("${hotclick.ratelimit.giftcard-validar.window:60}") private int validarWindow = 60;
 
-    // Tope por usuario de POST /admin/gift-cards: el 409 de «código ya usado» es global (UNIQUE entre negocios),
+    // Tope por usuario de POST /admin/gift-cards: el rechazo por «código ya usado» es global (UNIQUE entre negocios),
     // así que sin tope serviría para probar si un código existe en otro negocio.
     @Value("${hotclick.ratelimit.giftcard-crear.max:10}")    private int crearMax = 10;
     @Value("${hotclick.ratelimit.giftcard-crear.window:60}") private int crearWindow = 60;
+
+    // Presupuesto de COLISIONES por usuario: aunque el 409 ya no se distingue (se responde el 400 genérico), crear
+    // con un código que existe sigue fallando y uno libre sigue creando; esa diferencia solo se puede acotar, no
+    // borrar, mientras el código sea único en toda la plataforma (el comprador del marketplace lo canjea sin
+    // negocio). Con {max} colisiones por ventana, el usuario queda en 429 para TODO código manual, exista o no.
+    @Value("${hotclick.ratelimit.giftcard-colision.max:5}")      private int colisionMax = 5;
+    @Value("${hotclick.ratelimit.giftcard-colision.window:3600}") private int colisionWindow = 3600;
 
     // ── Admin: listar gift cards de la empresa ────────────────────────────────
     @GetMapping("/admin/gift-cards")
@@ -77,10 +84,22 @@ public class GiftCardController {
             String codigoManual   = textoOpcional(body.get("codigo"), "codigo");
             LocalDate vencimiento = (vencimientoStr != null && !vencimientoStr.isBlank())
                 ? LocalDate.parse(vencimientoStr) : null;
-            GiftCard gc = giftCardService.crear(empresaId, monto, vencimiento, codigoManual);
+            String claveColision = "user:" + usuarioId + ":gift-cards:colision";
+            boolean manual = codigoManual != null && !codigoManual.isBlank();
+            if (manual && rateLimiter.alcanzoLimite(claveColision, colisionMax, colisionWindow)) {
+                // Sin mirar si el código existe: agotado el presupuesto, existir o no da la misma respuesta.
+                return ResponseEntity.status(429).body(Map.of("error",
+                    "Demasiados intentos. Esperá un momento antes de volver a intentar."));
+            }
+            GiftCard gc;
+            try {
+                gc = giftCardService.crear(empresaId, monto, vencimiento, codigoManual);
+            } catch (GiftCardService.CodigoGiftCardDuplicadoException e) {
+                rateLimiter.registrar(claveColision, colisionWindow);
+                // 400 genérico, igual que cualquier otra validación: no es un 409 que delate que el código existe.
+                return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            }
             return ResponseEntity.ok(giftCardService.toMap(gc));
-        } catch (GiftCardService.CodigoGiftCardDuplicadoException e) {
-            return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
         } catch (DateTimeParseException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "La fechaVencimiento debe tener formato AAAA-MM-DD."));
         } catch (IllegalArgumentException e) {

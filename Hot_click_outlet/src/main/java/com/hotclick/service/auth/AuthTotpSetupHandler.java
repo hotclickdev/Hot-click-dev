@@ -39,6 +39,8 @@ public class AuthTotpSetupHandler {
             Usuario usuario = authSupport.usuarioFromRequest(request);
             var limitado = authSupport.limite2faUsuario(usuario.getId());
             if (limitado != null) return limitado;
+            var porFallos = authSupport.bloqueoPorFallos(usuario.getId(), request);
+            if (porFallos != null) return porFallos;
             boolean contrasenaOk = contrasenaVigente(usuario, body);
             if (usuario.hasTotpEnabled()) {
                 // Rotar un secreto TOTP vigente exige además el código actual: la contraseña sola (o una sesión robada
@@ -46,9 +48,11 @@ public class AuthTotpSetupHandler {
                 // responde el mismo 401 que disable, sin revelar cuál de los dos falló.
                 boolean codigoOk = codigoVigente(usuario, body);
                 if (!contrasenaOk || !codigoOk) {
+                    authSupport.registrarFalloCredencial(usuario.getId(), request);
                     return ResponseEntity.status(401).body(ResponseDTO.error(MSG_DISABLE_CREDENCIALES));
                 }
             } else if (!contrasenaOk) {
+                authSupport.registrarFalloCredencial(usuario.getId(), request);
                 return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CONTRASENA_REQUERIDA));
             }
             String plainSecret  = twoFactorService.generateSecret();
@@ -96,7 +100,10 @@ public class AuthTotpSetupHandler {
             Usuario usuario = authSupport.usuarioFromRequest(request);
             var limitado = authSupport.limite2faUsuario(usuario.getId());
             if (limitado != null) return limitado;
+            var porFallos = authSupport.bloqueoPorFallos(usuario.getId(), request);
+            if (porFallos != null) return porFallos;
             if (!contrasenaVigente(usuario, body)) {
+                authSupport.registrarFalloCredencial(usuario.getId(), request);
                 return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CONTRASENA_REQUERIDA));
             }
             String porActivar = secretoPorActivar(usuario);
@@ -150,6 +157,8 @@ public class AuthTotpSetupHandler {
             Usuario usuario = authSupport.usuarioFromRequest(request);
             var limitado = authSupport.limite2faUsuario(usuario.getId());
             if (limitado != null) return limitado;
+            var porFallos = authSupport.bloqueoPorFallos(usuario.getId(), request);
+            if (porFallos != null) return porFallos;
             if (usuario.getTwoFactorSecret() == null) {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("La app de autenticación no está activa"));
             }
@@ -158,6 +167,7 @@ public class AuthTotpSetupHandler {
                     && passwordEncoder.matches(contrasena, usuario.getContrasenaHash());
             boolean codigoOk = twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code);
             if (!contrasenaOk || !codigoOk) {
+                authSupport.registrarFalloCredencial(usuario.getId(), request);
                 return ResponseEntity.status(401).body(ResponseDTO.error(MSG_DISABLE_CREDENCIALES));
             }
             // Remove TOTP from methods; leave EMAIL_OTP if it exists

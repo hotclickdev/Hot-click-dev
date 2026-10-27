@@ -102,8 +102,12 @@ public class AuthEmailOtpHandler {
             Usuario usuario = authSupport.usuarioFromRequest(request);
             var limitado = authSupport.limite2faUsuario(usuario.getId());
             if (limitado != null) return limitado;
-            if (!passwordEncoder.matches(contrasena, usuario.getContrasenaHash()))
+            var porFallos = authSupport.bloqueoPorFallos(usuario.getId(), request);
+            if (porFallos != null) return porFallos;
+            if (!passwordEncoder.matches(contrasena, usuario.getContrasenaHash())) {
+                authSupport.registrarFalloCredencial(usuario.getId(), request);
                 return ResponseEntity.status(401).body(ResponseDTO.error("Contraseña incorrecta"));
+            }
             usuario.removeMethod(Constants.METODO_2FA_EMAIL_OTP);
             usuarioService.guardar(usuario);
             log.info("[2FA] EMAIL_OTP desactivado para userId={}", usuario.getId());

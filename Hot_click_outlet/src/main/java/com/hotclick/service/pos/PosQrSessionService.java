@@ -66,6 +66,15 @@ public class PosQrSessionService {
     public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
                             String metodoPago, Object metodosPago, List<Map<String, Object>> items,
                             String notas, Long clienteId, Long bodegaId) {
+        return crearSesion(usuarioId, empresaId, turnoId, metodoPago, metodosPago, items, notas, clienteId, bodegaId, false);
+    }
+
+    /** @param facturaElectronica M4: en régimen simplificado el QR cobra precio + IVA. */
+    @Transactional
+    @SuppressWarnings("java:S107")
+    public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
+                            String metodoPago, Object metodosPago, List<Map<String, Object>> items,
+                            String notas, Long clienteId, Long bodegaId, boolean facturaElectronica) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío");
         }
@@ -82,6 +91,7 @@ public class PosQrSessionService {
         exigirNegocioAprobado(empresa);
 
         int total = 0;
+        List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new java.util.ArrayList<>();
         for (Map<String, Object> item : items) {
             Long productoId = productoIdDe(item);
             int cantidad = cantidadDe(item);
@@ -95,7 +105,10 @@ public class PosQrSessionService {
             int precio = precioObj;
             item.put("precioUnitario", precio);
             total = Math.addExact(total, Math.multiplyExact(precio, cantidad));
+            lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(precio, cantidad, producto.getPorcentajeIva()));
         }
+        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(empresa, facturaElectronica, lineasIva, 0);
+        total = Math.addExact(total, impuesto);
 
         PosQrSesion sesion = new PosQrSesion();
         sesion.setToken(UUID.randomUUID().toString().replace("-", ""));
@@ -104,6 +117,8 @@ public class PosQrSessionService {
         sesion.setClienteId(clienteId);
         sesion.setBodegaId(bodegaId);
         sesion.setTotal(total);
+        sesion.setFacturaElectronica(facturaElectronica);
+        sesion.setMontoImpuesto(impuesto);
         sesion.setMetodoPago(metodoPago);
         sesion.setMetodosHabilitados(PosQrMetodos.aCsv(habilitados));
         sesion.setEstado("PENDIENTE");
