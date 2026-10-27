@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.EmpresaRepository;
@@ -14,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 @Service
 public class TenantService {
@@ -50,7 +50,7 @@ public class TenantService {
         Long id = TenantContext.get();
         if (id == null) return null;
         return empresaRepo.findById(id)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + id));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + id));
     }
 
     // ── Info del tenant (cacheada) ────────────────────────────────────────────

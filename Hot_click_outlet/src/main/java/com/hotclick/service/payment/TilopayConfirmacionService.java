@@ -47,9 +47,9 @@ public class TilopayConfirmacionService {
     @Transactional
     public PaymentStatusResponse confirmar(String numeroPedido, Map<String, String> queryParams) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
         Pago pago = pagoRepository.findTopByPedidoIdForUpdate(pedido.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
             throw new IllegalStateException("El pedido no es Tilopay: " + pago.getProveedor());
@@ -140,9 +140,9 @@ public class TilopayConfirmacionService {
     @Transactional
     public PaymentSession reintentar(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
             throw new IllegalStateException("Solo se puede reintentar pagos Tilopay");
