@@ -67,11 +67,7 @@ public class ColaFacturacionOfflineTxOps {
     public List<ColaFacturacionOffline> reclamarLote(int limite) {
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         List<ColaFacturacionOffline> lote = colaRepo.bloquearPendientesListas(ahora, PageRequest.of(0, limite));
-        for (ColaFacturacionOffline c : lote) {
-            c.setEstado(ColaFacturacionOffline.ESTADO_PROCESANDO);
-            c.setFechaInicioProceso(ahora);
-        }
-        return colaRepo.saveAll(lote);
+        return colaRepo.saveAll(marcarProcesando(lote, ahora));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -122,5 +118,14 @@ public class ColaFacturacionOfflineTxOps {
     private String truncar(String texto) {
         if (texto == null) return null;
         return texto.length() > 2000 ? texto.substring(0, 2000) : texto;
+    }
+
+    /** Solo cambia el estado en memoria (sin tocar la DB); el guardado lo hace el llamador. */
+    private static List<ColaFacturacionOffline> marcarProcesando(List<ColaFacturacionOffline> lote, LocalDateTime ahora) {
+        for (ColaFacturacionOffline c : lote) {
+            c.setEstado(ColaFacturacionOffline.ESTADO_PROCESANDO);
+            c.setFechaInicioProceso(ahora);
+        }
+        return lote;
     }
 }
