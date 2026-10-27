@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -73,6 +74,24 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     @Autowired private SecurityAuditService auditService;
     @Autowired private RateLimiter          rateLimiter;
     @Autowired private ClientIpResolver     clientIpResolver;
+
+    // Topes de /2fa/setup|activate|disable por IP. Configurables en application.properties
+    // (hotclick.ratelimit.2fa-*); el valor del inicializador aplica si el filtro se crea sin Spring.
+    @Value("${hotclick.ratelimit.2fa-setup.max:5}")        private int tfaSetupMax = 5;
+    @Value("${hotclick.ratelimit.2fa-setup.window:300}")   private int tfaSetupWindow = 300;
+    @Value("${hotclick.ratelimit.2fa-activate.max:10}")    private int tfaActivateMax = 10;
+    @Value("${hotclick.ratelimit.2fa-activate.window:300}") private int tfaActivateWindow = 300;
+    @Value("${hotclick.ratelimit.2fa-disable.max:5}")      private int tfaDisableMax = 5;
+    @Value("${hotclick.ratelimit.2fa-disable.window:300}") private int tfaDisableWindow = 300;
+
+    private Limit limite2fa(String path) {
+        return switch (path) {
+            case "/api/auth/2fa/setup"    -> new Limit(tfaSetupMax, tfaSetupWindow);
+            case "/api/auth/2fa/activate" -> new Limit(tfaActivateMax, tfaActivateWindow);
+            case "/api/auth/2fa/disable"  -> new Limit(tfaDisableMax, tfaDisableWindow);
+            default -> null;
+        };
+    }
 
     private record Limit(int maxRequests, int windowSeconds) {}
     /**
@@ -203,6 +222,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if ("POST".equalsIgnoreCase(method)) {
             String ip    = clientIpResolver.resolve(request);
             Limit  limit = LIMITS.get(path);
+            if (limit == null) limit = limite2fa(path);
             String bucket = path;
 
             // Exact-path check
