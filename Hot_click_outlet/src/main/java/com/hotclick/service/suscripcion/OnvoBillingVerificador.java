@@ -41,7 +41,18 @@ public final class OnvoBillingVerificador {
         if (!igual(texto(invoice, "customerId"), texto(sub, "customerId"))) return Resultado.rechazo("customer");
         if (!"paid".equalsIgnoreCase(texto(invoice, "status"))) return Resultado.rechazo("no_pagado");
         if (!"active".equalsIgnoreCase(texto(sub, "status"))) return Resultado.rechazo("sub_no_activa");
-        // B1: una factura con saldo pendiente no activa el plan.
+        // B1: una factura con saldo pendiente no activa el plan. Sandbox ONVO: la factura no trae
+        // amountRemaining/amountDue/amountPaid (se conservan por si aparecen); el pago real está en el
+        // paymentIntent embebido de GET /invoices/{id}: status succeeded y receivedAmount >= total.
+        if (invoice.get("paymentIntent") instanceof Map<?, ?> pi) {
+            String st = texto(pi, "status");
+            if (st != null && !"succeeded".equalsIgnoreCase(st)) return Resultado.rechazo("no_pagado");
+            BigDecimal recibido = numero(pi.get("receivedAmount"));
+            BigDecimal totalFactura = numero(invoice.get("total"));
+            if (recibido != null && totalFactura != null && recibido.compareTo(totalFactura) < 0) {
+                return Resultado.rechazo("pago_parcial");
+            }
+        }
         BigDecimal pendiente = numero(invoice.get("amountRemaining"));
         if (pendiente == null) pendiente = numero(invoice.get("amountDue"));
         BigDecimal pagado = numero(invoice.get("amountPaid"));
@@ -55,15 +66,30 @@ public final class OnvoBillingVerificador {
                 : fecha(texto(sub, "currentPeriodEnd")));
     }
 
-    /** payment-intent.succeeded del alta: intent succeeded del mismo customer que la suscripción activa. */
-    public static Resultado altaPorIntent(Map<?, ?> intent, Map<?, ?> sub, String intentId, String subId,
+    /**
+     * payment-intent.succeeded del alta. Sandbox ONVO: el intent no trae subscriptionId ni customerId plano
+     * (trae customer.id); el vínculo con la suscripción es la factura (paymentIntentId + subscriptionId).
+     */
+    public static Resultado altaPorIntent(Map<?, ?> intent, Map<?, ?> factura, Map<?, ?> sub,
+                                          String intentId, String subId,
                                           String modo, java.util.function.Function<String, String> planPorPrice,
                                           PrecioPlan precios) {
-        if (!modoCoincide(intent, modo) || !modoCoincide(sub, modo)) return Resultado.rechazo("modo");
+        if (!modoCoincide(intent, modo) || !modoCoincide(sub, modo) || !modoCoincide(factura, modo)) {
+            return Resultado.rechazo("modo");
+        }
         if (!igual(texto(intent, "id"), intentId) || !igual(texto(sub, "id"), subId)) return Resultado.rechazo("id");
+        if (!igual(texto(factura, "paymentIntentId"), intentId) || !igual(texto(factura, "subscriptionId"), subId)) {
+            return Resultado.rechazo("id");
+        }
         if (!"succeeded".equalsIgnoreCase(texto(intent, "status"))) return Resultado.rechazo("no_pagado");
         if (!"active".equalsIgnoreCase(texto(sub, "status"))) return Resultado.rechazo("sub_no_activa");
-        if (!igual(texto(intent, "customerId"), texto(sub, "customerId"))) return Resultado.rechazo("customer");
+        String clienteSub = texto(sub, "customerId");
+        if (!igual(texto(factura, "customerId"), clienteSub)) return Resultado.rechazo("customer");
+        String clienteIntent = texto(intent, "customerId");
+        if (clienteIntent == null && intent != null && intent.get("customer") instanceof Map<?, ?> c) {
+            clienteIntent = texto(c, "id");
+        }
+        if (clienteIntent != null && !clienteIntent.equals(clienteSub)) return Resultado.rechazo("customer");
         // B1: el alta por intent cobra el plan completo; lo prorrateado entra por la factura (renewal).
         Resultado r = planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
         if (r.aceptado()) {
