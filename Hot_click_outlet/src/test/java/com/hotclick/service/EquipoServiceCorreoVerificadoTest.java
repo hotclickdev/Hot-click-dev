@@ -54,6 +54,8 @@ class EquipoServiceCorreoVerificadoTest {
     void setUp() {
         empresa = new Empresa();
         empresa.setNombreEmpresa("Tienda QA3");
+        empresa.setId(5L);
+        when(empresaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(empresa));
         Rol rol = new Rol();
         rol.setNombreRol(Constants.ROL_EMPRENDEDOR);
         when(rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)).thenReturn(Optional.of(rol));
@@ -63,7 +65,7 @@ class EquipoServiceCorreoVerificadoTest {
 
     private Usuario invitarYCapturar(String correo, String rolEnEmpresa) {
         when(usuarioRepository.findByCorreo(correo)).thenReturn(Optional.empty());
-        equipoService.invitar(empresa, null, "Ana Perez", correo, "Temporal1!", "88887777", rolEnEmpresa);
+        equipoService.invitar(5L, "Ana Perez", correo, "Temporal1!", "88887777", rolEnEmpresa);
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
         return captor.getValue();
@@ -91,15 +93,13 @@ class EquipoServiceCorreoVerificadoTest {
         existente.setCorreo("ya@test.cr");
         existente.setCorreoVerificado(true);
         when(usuarioRepository.findByCorreo("ya@test.cr")).thenReturn(Optional.of(existente));
-        empresa.setId(5L);
-        // invitar() toma el lock pesimista de la empresa antes de verificar el limite del plan
-        when(empresaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(empresa));
+        // invitar() toma el lock pesimista de la empresa antes de verificar el limite del plan (stub en setUp)
         when(miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(77L, 5L, 1)).thenReturn(false);
         when(miembroEmpresaRepository.countEmpresasByUsuarioId(77L)).thenReturn(1L);
         when(miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(77L, 5L)).thenReturn(Optional.empty());
         when(miembroEmpresaRepository.save(any(MiembroEmpresa.class))).thenAnswer(i -> i.getArgument(0));
 
-        equipoService.invitar(empresa, 5L, "Ya Existe", "ya@test.cr", "x", "00000000", "LECTOR");
+        equipoService.invitar(5L, "Ya Existe", "ya@test.cr", "x", "00000000", "LECTOR");
 
         assertThat(existente.getCorreoVerificado()).isTrue();
     }

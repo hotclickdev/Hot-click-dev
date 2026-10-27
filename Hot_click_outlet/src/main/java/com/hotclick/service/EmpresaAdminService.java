@@ -59,7 +59,7 @@ public class EmpresaAdminService {
     public Map<String, Object> detalle(Long id) {
         Empresa e = empresa(id);
         Map<String, Object> data = toMap(e);
-        data.put("totalUsuarios", usuarioRepository.countActivosByEmpresaId(id));
+        data.put("totalUsuarios", usuarioRepository.countMiembrosActivosByEmpresaId(id));
         data.put("totalProductos", productoRepository.countProductosActivosByEmpresaId(id));
         data.put("totalPedidos", pedidoRepository.countTotalPedidosByEmpresaId(id));
         data.put("totalVentas", pedidoRepository.sumTotalVentasByEmpresaId(id));
@@ -185,10 +185,10 @@ public class EmpresaAdminService {
         if (rolEnEmpresa == null || !ROLES_EQUIPO_VALIDOS.contains(rolEnEmpresa)) {
             throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR");
         }
-        Empresa empresa = empresa(id);
+        empresa(id);   // 404 si no existe
         String correoNorm = correo.trim().toLowerCase();
         String telefonoNorm = (telefono != null && !telefono.isBlank()) ? telefono : "00000000";
-        equipoService.invitar(empresa, id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
+        equipoService.invitar(id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
         auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_INVITAR", "MIEMBRO_EMPRESA", null, id,
             "Invitación a " + correoNorm + " como " + rolEnEmpresa);
     }

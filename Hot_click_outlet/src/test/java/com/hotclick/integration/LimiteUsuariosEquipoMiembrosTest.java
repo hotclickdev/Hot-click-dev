@@ -124,7 +124,7 @@ class LimiteUsuariosEquipoMiembrosTest extends BaseIntegrationTest {
         miembroEmpresaRepository.saveAndFlush(new MiembroEmpresa(existente, equipo, "EDITOR"));
 
         assertThatThrownBy(() -> equipoService.invitar(
-            equipo, equipo.getId(), "Nuevo Tercero", "limusr-tercero@test.cr", "Temporal123", "88888888", "LECTOR"))
+            equipo.getId(), "Nuevo Tercero", "limusr-tercero@test.cr", "Temporal123", "88888888", "LECTOR"))
             .isInstanceOf(PlanLimitException.class);
         verify(empresaRepository).findByIdForUpdate(equipo.getId());
     }

@@ -42,15 +42,19 @@ public class EquipoService {
             .toList();
     }
 
+    /**
+     * Invita al equipo de {@code empresaId}. La empresa destino se resuelve UNA vez, con lock pesimista hasta el
+     * commit, y esa misma instancia se usa para el cupo del plan y para el alta del miembro: dos invitaciones
+     * simultáneas no pueden pasar el mismo conteo (TOCTOU) y el miembro nunca cae en un negocio distinto al
+     * del límite evaluado. El llamador debe haber verificado que el usuario puede gestionar {@code empresaId}.
+     */
     @Transactional
-    public void invitar(Empresa empresa, Long empresaId, String nombre, String correoNorm,
+    public void invitar(Long empresaId, String nombre, String correoNorm,
                         String password, String telefono, String rolEnEmpresa) {
-        if (empresaId != null) {
-            // Lock de la fila de la empresa hasta el commit: dos invitaciones simultáneas no pueden leer el mismo
-            // conteo y pasar las dos el límite del plan (TOCTOU).
-            empresaRepository.findByIdForUpdate(empresaId);
-            tenantService.verificarLimiteUsuariosEquipo(empresaId);
-        }
+        if (empresaId == null) throw new com.hotclick.exception.EmpresaRequeridaException();
+        Empresa empresa = empresaRepository.findByIdForUpdate(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
+        tenantService.verificarLimiteUsuariosEquipo(empresa.getId());
         var rolMiembro = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
             .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado"));
         Optional<Usuario> existente = usuarioRepository.findByCorreo(correoNorm);
@@ -94,6 +98,15 @@ public class EquipoService {
     }
 
     private void agregarExistente(Usuario u, Empresa empresa, com.hotclick.model.Rol rolMiembro, String rolEnEmpresa) {
+        // Solo cuentas activas. Excepción: ELIMINADO con una membresía previa en ESTE equipo es el reingreso de
+        // quien se quitó del equipo (eliminar() marca eliminado al usuario sin otros negocios): se mantiene ese flujo.
+        // Suspendido, inactivo, pendiente o eliminado sin vínculo con este equipo no entran.
+        boolean activo = Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado());
+        boolean reingreso = Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(u.getEstado())
+            && miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(u.getId(), empresa.getId()).isPresent();
+        if (!activo && !reingreso) {
+            throw new IllegalArgumentException("Este usuario no está activo y no se puede agregar al equipo");
+        }
         if (miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), empresa.getId(), 1)) {
             throw new IllegalArgumentException("Este usuario ya es miembro activo de tu equipo");
         }
