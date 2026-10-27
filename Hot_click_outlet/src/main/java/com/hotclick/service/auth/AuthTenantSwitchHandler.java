@@ -107,6 +107,8 @@ public class AuthTenantSwitchHandler {
             Long empresaId = Long.parseLong(empresaIdRaw.toString());
             Usuario usuario = usuarioService.buscarPorId(userId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+            // Cuenta que dejó de estar activa entre la contraseña y la selección: sin tokens y sin revelar el estado.
+            authSupport.exigirCuentaActiva(usuario);
             MiembroEmpresa membresia = miembroEmpresaRepository
                 .findByUsuarioIdAndEmpresaIdAndEstado(userId, empresaId, 1)
                 .orElse(null);
@@ -125,6 +127,8 @@ public class AuthTenantSwitchHandler {
             resp.setEmpresaSlug(empresa.getSlug());
             resp.setEmpresaNombre(empresa.getNombreEmpresa());
             return ResponseEntity.ok(resp);
+        } catch (CuentaNoActivaException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         } catch (Exception e) {
             log.error("[seleccionar-empresa] {}", e.getMessage(), e);
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
