@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -92,6 +93,15 @@ class MensajesPublicosAltaTest extends BaseIntegrationTest {
             .andReturn().getResponse().getContentAsString();
     }
 
+    /**
+     * Lanza la excepción ya construida: conserva su traza (el sitio del throw es este test, código com.hotclick).
+     * Con doThrow(new ...) Mockito la regenera y el primer frame queda en Spring AOP, algo que no pasa con
+     * un throw real de producción.
+     */
+    private static org.mockito.stubbing.Answer<Object> lanzar(RuntimeException e) {
+        return inv -> { throw e; };
+    }
+
     @Test
     @DisplayName("Alta individual: una excepción interna (SQL) responde 400 genérico, sin el texto interno")
     void alta_errorInterno_noFiltra() throws Exception {
@@ -107,7 +117,7 @@ class MensajesPublicosAltaTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Alta individual: una validación propia sí se muestra")
     void alta_validacionPropia_seMuestra() throws Exception {
-        doThrow(new IllegalArgumentException("El precio de venta es inválido"))
+        doAnswer(lanzar(new IllegalArgumentException("El precio de venta es inválido")))
             .when(productoAltaService).crearYPublicar(any(), any(), any());
 
         assertTrue(crear("Mp Alta Validacion").contains("El precio de venta es inválido"));
@@ -138,7 +148,7 @@ class MensajesPublicosAltaTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Import por fila: una validación propia se muestra con el nombre del producto")
     void import_filaConValidacionPropia_seMuestra() throws Exception {
-        doThrow(new IllegalArgumentException("El precio de venta es inválido"))
+        doAnswer(lanzar(new IllegalArgumentException("El precio de venta es inválido")))
             .when(productoAltaService).crearYPublicar(any(), any(), any());
 
         assertTrue(importar("Mp Import Validacion").contains("Mp Import Validacion: El precio de venta es inválido"));

@@ -96,6 +96,15 @@ class MensajesPublicosAllowlistTest extends BaseIntegrationTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
     }
 
+    /**
+     * Lanza la excepción ya construida: conserva su traza (el sitio del throw es este test, código com.hotclick).
+     * Con doThrow(new ...) Mockito la regenera y el primer frame queda en Spring AOP, algo que no pasa con
+     * un throw real de producción.
+     */
+    private static org.mockito.stubbing.Answer<Object> lanzar(RuntimeException e) {
+        return inv -> { throw e; };
+    }
+
     @Test
     @DisplayName("Bulk por fila: RuntimeException con SQL no llega en 'Fila N:'")
     void bulk_filaSql_noFiltra() throws Exception {
@@ -118,7 +127,7 @@ class MensajesPublicosAllowlistTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Bulk por fila: una validación propia sí se muestra")
     void bulk_filaValidacionPropia_seMuestra() throws Exception {
-        doThrow(new IllegalArgumentException("El precio de venta es inválido"))
+        doAnswer(lanzar(new IllegalArgumentException("El precio de venta es inválido")))
             .when(productoAltaService).crearYPublicar(any(), any(), any());
 
         assertTrue(bulkUno("Al Bulk Val").contains("Fila 1: El precio de venta es inválido"));
