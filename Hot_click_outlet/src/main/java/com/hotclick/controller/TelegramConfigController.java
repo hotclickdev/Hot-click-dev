@@ -3,6 +3,7 @@ package com.hotclick.controller;
 import com.hotclick.model.Usuario;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.TelegramClienteBotService;
+import com.hotclick.service.telegram.TelegramAbusoService;
 import com.hotclick.service.telegram.TelegramConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
