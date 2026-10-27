@@ -97,15 +97,33 @@ public class FacturacionContingenciaService {
      */
     private boolean haciendaYaTieneElComprobante(ColaFacturacionOffline item, String clave,
                                                  com.hotclick.model.Empresa empresa) {
+        String estado;
         try {
-            haciendaClient.consultarEstado(clave, empresa);
-            return true;
+            estado = haciendaClient.consultarEstado(clave, empresa);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             int status = e.getStatusCode().value();
             if (status == 408 || status == 429) throw e;
             log.info("[contingencia] cola_offline={}: Hacienda no conoce la clave (consulta status={})", item.getId(), status);
             return false;
         }
+        // BAJO-B (#429): un 2xx sin cuerpo o sin ind-estado (el cliente lo devuelve como "en_procesamiento") NO
+        // prueba que Hacienda tenga el documento. Solo cuenta un ind-estado explícito de recibido o aceptado; lo
+        // demás es un fallo (la fila vuelve a PENDIENTE con backoff, no se cierra ni se agota).
+        if (estado == null || !ESTADOS_QUE_PRUEBAN_RECEPCION.contains(estado.trim().toLowerCase(java.util.Locale.ROOT))) {
+            throw new IllegalStateException("Consulta de estado sin ind-estado de recibido/aceptado");
+        }
+        return true;
+    }
+
+    /** ind-estado de Hacienda que prueban que el documento fue recibido (procesando = recibido, en cola). */
+    static final java.util.Set<String> ESTADOS_QUE_PRUEBAN_RECEPCION = java.util.Set.of("recibido", "procesando", "aceptado");
+
+    /** BAJO-C (#429): nunca el mensaje crudo (puede traer cuerpo de Hacienda, XML o datos del receptor). */
+    static String resumenSeguro(Exception e) {
+        if (e instanceof org.springframework.web.client.HttpStatusCodeException h) {
+            return e.getClass().getSimpleName() + " status=" + h.getStatusCode().value();
+        }
+        return e.getClass().getSimpleName();
     }
 
     private void procesarItem(ColaFacturacionOffline item) {
@@ -150,9 +168,10 @@ public class FacturacionContingenciaService {
             log.error("[contingencia] comprobante={} no cumple el XSD oficial: {}", item.getComprobanteId(), e.getMessage());
             txOps.marcarAgotado(item.getId(), e.getMessage());
         } catch (Exception e) {
+            String resumen = resumenSeguro(e);
             log.error("[contingencia] error procesando cola_offline={} comprobante={}: {}",
-                item.getId(), item.getComprobanteId(), e.getMessage());
-            txOps.marcarFallo(item.getId(), e.getMessage());
+                item.getId(), item.getComprobanteId(), resumen);
+            txOps.marcarFallo(item.getId(), resumen);
         } finally {
             TenantContext.clear();
         }

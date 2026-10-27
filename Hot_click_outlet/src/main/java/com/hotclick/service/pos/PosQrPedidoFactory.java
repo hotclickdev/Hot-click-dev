@@ -62,7 +62,7 @@ public class PosQrPedidoFactory {
             // ALTO 2: la reserva propia se devuelve y se vuelve a validar con bloqueo. Si no alcanza, se cobró
             // sin poder entregar: no se crea pedido y la sesión queda marcada para reembolso.
             stockReserva.liberar(sesion, items);
-            if (!hayStock(items)) {
+            if (!hayStock(empresa == null ? null : empresa.getId(), items)) {
                 marcarReembolsoPendiente(sesion);
                 return;
             }
@@ -236,9 +236,9 @@ public class PosQrPedidoFactory {
     }
 
     /** ALTO 2: revalida con bloqueo en lote (mismo orden de ids que la reserva) contra el stock disponible. */
-    private boolean hayStock(List<Map<String, Object>> items) {
+    private boolean hayStock(Long empresaId, List<Map<String, Object>> items) {
         Map<Long, Integer> pedidas = PosQrStockReserva.cantidadesPorProducto(items);
-        Map<Long, Producto> productos = stockReserva.bloquear(pedidas.keySet());
+        Map<Long, Producto> productos = stockReserva.bloquear(empresaId, pedidas.keySet());
         return pedidas.entrySet().stream().allMatch(e -> {
             Producto p = productos.get(e.getKey());
             return p != null && p.getStockDisponible() >= e.getValue();

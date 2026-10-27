@@ -92,7 +92,7 @@ public class PosQrStockReserva {
         int m = minutos();
         verificarTope(sesion);
         Map<Long, Integer> pedidas = cantidadesPorProducto(items);
-        Map<Long, Producto> productos = bloquear(pedidas.keySet());
+        Map<Long, Producto> productos = bloquear(empresaDe(sesion), pedidas.keySet());
         pedidas.forEach((productoId, cantidad) -> {
             Producto p = productos.get(productoId);
             // MEDIO-2 (#428): 404 de texto fijo, sin id, igual para inexistente y de otro negocio.
@@ -115,7 +115,7 @@ public class PosQrStockReserva {
         if (sesion.getId() == null || posQrRepo.soltarReserva(sesion.getId()) != 1) return false;
         sesion.setStockReservado(false);
         Map<Long, Integer> pedidas = cantidadesPorProducto(items);
-        Map<Long, Producto> productos = bloquear(pedidas.keySet());
+        Map<Long, Producto> productos = bloquear(empresaDe(sesion), pedidas.keySet());
         pedidas.forEach((productoId, cantidad) -> {
             Producto p = productos.get(productoId);
             if (p != null) p.setStockReservado(Math.max(0, p.getStockReservado() - cantidad));
@@ -131,11 +131,18 @@ public class PosQrStockReserva {
         return pedidas;
     }
 
-    /** Bloqueo en lote, en orden de id. */
-    public Map<Long, Producto> bloquear(java.util.Collection<Long> ids) {
+    private static Long empresaDe(PosQrSesion sesion) {
+        return sesion.getEmpresa() == null ? null : sesion.getEmpresa().getId();
+    }
+
+    /**
+     * Bloqueo en lote, en orden de id, SOLO de productos del negocio (BAJO-A #429: el filtro va en la consulta
+     * con lock, así un id ajeno nunca queda bloqueado). Sin negocio no se bloquea nada (fail-closed).
+     */
+    public Map<Long, Producto> bloquear(Long empresaId, java.util.Collection<Long> ids) {
         Map<Long, Producto> porId = new java.util.HashMap<>();
-        if (ids.isEmpty()) return porId;
-        productoRepo.findAllByIdsForUpdate(new java.util.ArrayList<>(new java.util.TreeSet<>(ids)))
+        if (ids.isEmpty() || empresaId == null) return porId;
+        productoRepo.findAllByIdsAndEmpresaForUpdate(new java.util.ArrayList<>(new java.util.TreeSet<>(ids)), empresaId)
             .forEach(p -> porId.put(p.getId(), p));
         return porId;
     }

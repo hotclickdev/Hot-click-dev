@@ -98,4 +98,46 @@ class FacturacionContingenciaReintento428Test {
         verifyNoMoreInteractions(preparer);
         verify(txOps, never()).marcarFallo(anyLong(), any());
     }
+
+    @Test
+    @DisplayName("BAJO-B (#429): 2xx sin cuerpo / sin ind-estado NO prueba recepción → fallo (reintento), no COMPLETADA")
+    void consultaSinIndEstadoEsFallo() {
+        when(hacienda.consultarEstado(CLAVE, empresa)).thenReturn("en_procesamiento"); // lo que el cliente da sin cuerpo
+        procesar(1);
+        verify(txOps).marcarFallo(77L, "IllegalStateException");
+        verify(txOps, never()).marcarCompletado(anyLong(), any());
+        verify(txOps, never()).marcarAgotado(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("BAJO-B (#429): solo recibido/procesando/aceptado prueban recepción")
+    void estadosQueProbanRecepcion() {
+        for (String e : new String[]{"recibido", "PROCESANDO", "aceptado"}) {
+            reset(txOps);
+            when(txOps.renovarInicioProceso(anyLong())).thenReturn(true);
+            when(hacienda.consultarEstado(CLAVE, empresa)).thenReturn(e);
+            procesar(1);
+            verify(txOps).marcarCompletado(77L, 5L);
+        }
+        for (String e : new String[]{"rechazado", "error", ""}) {
+            reset(txOps);
+            when(txOps.renovarInicioProceso(anyLong())).thenReturn(true);
+            when(hacienda.consultarEstado(CLAVE, empresa)).thenReturn(e);
+            procesar(1);
+            verify(txOps, never()).marcarCompletado(anyLong(), any());
+            verify(txOps).marcarFallo(eq(77L), any());
+        }
+    }
+
+    @Test
+    @DisplayName("BAJO-C (#429): el catch general no registra e.getMessage() crudo, solo simpleName y status")
+    void catchGeneralNoFiltraMensaje() {
+        when(hacienda.enviar(any(), eq(CLAVE), eq(empresa)))
+            .thenThrow(new IllegalStateException("cedula 1-1111-1111 <xml>secreto</xml>"));
+        procesar(0);
+        verify(txOps).marcarFallo(77L, "IllegalStateException");
+        org.assertj.core.api.Assertions.assertThat(FacturacionContingenciaService.resumenSeguro(
+                HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "cuerpo sensible", null, null, null)))
+            .endsWith("status=429").doesNotContain("sensible");
+    }
 }

@@ -81,7 +81,7 @@ class PosQrPedidoClienteTest {
         mouse.setEmpresa(empresa);
         when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
         when(productoRepo.findEmpresaIdById(10L)).thenReturn(Optional.of(empresa.getId())); // BAJO-1 (#428): dueño sin lock
-        when(stockReserva.bloquear(any())).thenReturn(java.util.Map.of(10L, mouse));
+        when(stockReserva.bloquear(any(), any())).thenReturn(java.util.Map.of(10L, mouse));
         when(pedidoRepo.save(any(Pedido.class))).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             p.setId(88L);
@@ -124,7 +124,7 @@ class PosQrPedidoClienteTest {
         mouse.setEmpresa(empresa);
         when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
         when(productoRepo.findEmpresaIdById(10L)).thenReturn(Optional.of(empresa.getId())); // BAJO-1 (#428): dueño sin lock
-        when(stockReserva.bloquear(any())).thenReturn(java.util.Map.of(10L, mouse));
+        when(stockReserva.bloquear(any(), any())).thenReturn(java.util.Map.of(10L, mouse));
         when(pedidoRepo.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
 
         factory.crearPedidoPOS(sesion, "SINPE");
@@ -154,7 +154,7 @@ class PosQrPedidoClienteTest {
         mouse.setEmpresa(empresa);
         when(productoRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(mouse));
         when(productoRepo.findEmpresaIdById(10L)).thenReturn(Optional.of(empresa.getId())); // BAJO-1 (#428): dueño sin lock
-        when(stockReserva.bloquear(any())).thenReturn(java.util.Map.of(10L, mouse));
+        when(stockReserva.bloquear(any(), any())).thenReturn(java.util.Map.of(10L, mouse));
         when(pedidoRepo.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
         when(sinpeOnvo.esCobroDePrueba(sesion)).thenReturn(true);
 
@@ -192,7 +192,7 @@ class PosQrPedidoClienteTest {
         when(sessionService.getMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
         when(usuarioRepo.findById(Constants.ID_USUARIO_MOSTRADOR)).thenReturn(Optional.of(usuario(999L, "Mostrador", "m@x.test")));
         when(bodegaRepo.findById(3L)).thenReturn(Optional.of(bodega(3L, empresa)));
-        when(stockReserva.bloquear(any())).thenReturn(java.util.Map.of(10L, mouse));
+        when(stockReserva.bloquear(any(), any())).thenReturn(java.util.Map.of(10L, mouse));
 
         factory.crearPedidoPOS(sesion, "SINPE");
 
