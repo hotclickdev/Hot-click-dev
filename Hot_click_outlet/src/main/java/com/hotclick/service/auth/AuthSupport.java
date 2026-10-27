@@ -67,7 +67,7 @@ public class AuthSupport {
 
     /** IP del cliente tal como la ve el limitador (misma fuente que el resto de llaves por IP). */
     public String ipCliente(HttpServletRequest request) {
-        return request == null ? "desconocida" : prefijoIp(clientIpResolver.resolve(request));
+        return request == null ? com.hotclick.security.IpParaLlave.DESCONOCIDA : com.hotclick.security.IpParaLlave.clave(clientIpResolver.resolve(request));
     }
 
     /**

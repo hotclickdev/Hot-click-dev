@@ -617,7 +617,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         Plan plan = planRepo.findByNombre(planNombre)
             .orElseThrow(() -> new IllegalStateException("Plan " + planNombre + " no configurado"));
         if (fin == null) {
-            throw new IllegalStateException("Sin fin de período ONVO para " + onvoSubId);
+            log.warn("[onvo] Sin fin de período ONVO para sub={}", onvoSubId);
+            throw new IllegalStateException("Sin fin de período ONVO para la suscripción");
         }
         sub.setPlan(plan);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));

@@ -218,4 +218,117 @@ class NoEncontradoSinDatosTest {
         }
         assertThat(hallazgos).as("404 con datos concatenados en el mensaje").isEmpty();
     }
+
+    // ── Guarda ampliada (LOWs): mensajes armados en variables e IAE/ISE que el handler devuelve al cliente ──────
+
+    /** Texto del argumento (entre paréntesis balanceados) de la llamada que abre en {@code abre}, o null. */
+    static String argumentos(String src, int abre) {
+        int d = 0;
+        boolean enTexto = false;
+        char q = 0;
+        for (int j = abre; j < src.length(); j++) {
+            char c = src.charAt(j);
+            if (enTexto) {
+                if (c == '\\') j++;
+                else if (c == q) enTexto = false;
+            } else if (c == '"' || c == '\'') {
+                enTexto = true;
+                q = c;
+            } else if (c == '(') {
+                d++;
+            } else if (c == ')' && --d == 0) {
+                return src.substring(abre + 1, j);
+            }
+        }
+        return null;
+    }
+
+    private static final Pattern NUEVO_404 = Pattern.compile(
+        "new\\s+(?:java\\.util\\.)?(?:RecursoNoEncontradoException|NoSuchElementException)\\(");
+    /** Primer argumento aceptado: un texto literal o una constante (MAYUSCULAS). Una variable puede traer datos. */
+    private static final Pattern PRIMER_ARG_FIJO = Pattern.compile("^\\s*(?:\"(?:[^\"\\\\]|\\\\.)*\"|[A-Z][A-Z0-9_]*)\\s*(?:,|$)");
+
+    /** 404 cuyo mensaje no es un literal ni una constante (p. ej. {@code String msg = "..." + x; new ...(msg)}). */
+    static List<String> mensajeEnVariable(String src) {
+        List<String> r = new ArrayList<>();
+        var m = NUEVO_404.matcher(src);
+        while (m.find()) {
+            String a = argumentos(src, m.end() - 1);
+            if (a == null || a.isBlank()) continue;
+            if (!PRIMER_ARG_FIJO.matcher(a).find()) r.add(src.substring(0, m.start()).split("\n", -1).length + ": " + a.strip());
+        }
+        return r;
+    }
+
+    private static final Pattern NUEVO_IAE_ISE = Pattern.compile("new\\s+(?:IllegalArgumentException|IllegalStateException)\\(");
+    private static final Pattern INTERPOLA = Pattern.compile("\\+|String\\.format|\\.formatted\\(");
+    /** Datos de personas o de terceros que no deben salir en un texto al cliente. */
+    private static final Pattern DATO_SENSIBLE = Pattern.compile(
+        "(?i)correo|email|mail|telefono|celular|cedula|token|iban|sinpe|password|passwd|secret|numeroPedido|subscription|onvo\\w*id|customer|getMessage\\(\\)");
+    /** Último argumento = la causa ({@code ..., e}): con causa el handler responde genérico y el texto va solo al log. */
+    private static final Pattern TERMINA_EN_CAUSA = Pattern.compile(",\\s*[a-z]\\w*\\s*$");
+
+    /** IAE/ISE que interpolan datos sensibles y que, sin causa, el handler devolvería tal cual al cliente. */
+    static List<String> iaeIseConDatos(String src) {
+        List<String> r = new ArrayList<>();
+        var m = NUEVO_IAE_ISE.matcher(src);
+        while (m.find()) {
+            String a = argumentos(src, m.end() - 1);
+            if (a == null || !INTERPOLA.matcher(a).find() || TERMINA_EN_CAUSA.matcher(a).find()) continue;
+            String sinLiterales = a.replaceAll("\"(?:[^\"\\\\]|\\\\.)*\"", "\"\"");
+            if (DATO_SENSIBLE.matcher(sinLiterales).find()) {
+                r.add(src.substring(0, m.start()).split("\n", -1).length + ": " + a.strip().replaceAll("\\s+", " "));
+            }
+        }
+        return r;
+    }
+
+    /**
+     * Excepciones revisadas a mano: el texto viene de nuestra {@code ContenidoNoPermitidoException} (mensaje de
+     * moderación pensado para mostrarse) más el nombre de la fila del CSV que cargó el propio vendedor.
+     */
+    private static final java.util.Set<String> IAE_ISE_REVISADAS = java.util.Set.of("InventarioPaqueteService.java");
+
+    @Test
+    @DisplayName("Guarda ampliada: detecta el mensaje armado en una variable (y acepta literales y constantes)")
+    void detectaMensajeEnVariable() {
+        assertThat(mensajeEnVariable("String m = \"Pedido \" + n;\nthrow new RecursoNoEncontradoException(m);")).hasSize(1);
+        assertThat(mensajeEnVariable("x.orElseThrow(() -> new NoSuchElementException(mensaje))")).hasSize(1);
+        assertThat(mensajeEnVariable("throw new RecursoNoEncontradoException(\"Producto no encontrado\");")).isEmpty();
+        assertThat(mensajeEnVariable("throw new RecursoNoEncontradoException(MSG_CLIENTE);")).isEmpty();
+        assertThat(mensajeEnVariable("throw new RecursoNoEncontradoException(\"Bodega\", id);")).isEmpty();
+        assertThat(mensajeEnVariable("throw new NoSuchElementException();")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Guarda ampliada: detecta IAE/ISE sin causa que interpolan correo, token, id de ONVO o getMessage()")
+    void detectaIaeIseConDatos() {
+        assertThat(iaeIseConDatos("throw new IllegalStateException(\"Sin registro para: \" + email);")).hasSize(1);
+        assertThat(iaeIseConDatos("throw new IllegalArgumentException(\"URL inválida: \" + e.getMessage());")).hasSize(1);
+        assertThat(iaeIseConDatos("throw new IllegalStateException(\"Sin fin para \" + onvoSubId);")).hasSize(1);
+        assertThat(iaeIseConDatos("throw new IllegalStateException(String.format(PLANTILLA,\n  correoCliente));")).hasSize(1);
+        // con causa → genérico para el cliente; sin datos sensibles → fuera de alcance
+        assertThat(iaeIseConDatos("throw new IllegalStateException(\"Falló: \" + e.getMessage(), e);")).isEmpty();
+        assertThat(iaeIseConDatos("throw new IllegalArgumentException(\"Máximo \" + MAX + \" imágenes\");")).isEmpty();
+        assertThat(iaeIseConDatos("throw new IllegalArgumentException(\"No usa token en el texto\");")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Guarda ampliada: en src/main/java ningún 404 arma el mensaje en una variable ni IAE/ISE devuelve datos sensibles")
+    void guardaAmpliadaSobreElCodigo() throws IOException {
+        List<String> variables = new ArrayList<>();
+        List<String> iaeIse = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(Path.of("src/main/java"))) {
+            for (Path p : (Iterable<Path>) files.filter(f -> f.toString().endsWith(".java"))::iterator) {
+                String src = Files.readString(p);
+                boolean esLaClase = p.getFileName().toString().equals("RecursoNoEncontradoException.java");
+                if (!esLaClase) mensajeEnVariable(src).forEach(h -> variables.add(p + ":" + h));
+                if (!IAE_ISE_REVISADAS.contains(p.getFileName().toString())) {
+                    iaeIseConDatos(src).forEach(h -> iaeIse.add(p + ":" + h));
+                }
+            }
+        }
+        assertThat(variables).as("404 con el mensaje en una variable (usar un literal o conDetalle)").isEmpty();
+        assertThat(iaeIse).as("IAE/ISE sin causa con datos sensibles en el texto (el handler los devuelve al cliente)").isEmpty();
+    }
 }
