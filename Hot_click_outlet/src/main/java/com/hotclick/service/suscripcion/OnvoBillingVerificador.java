@@ -18,6 +18,15 @@ public final class OnvoBillingVerificador {
 
     static final long CENTIMOS_POR_COLON = 100L;
 
+    private static final String M_CUSTOMER = "customer";
+    private static final String M_NO_PAGADO = "no_pagado";
+    private static final String M_SUB_NO_ACTIVA = "sub_no_activa";
+    private static final String M_PAGO_PARCIAL = "pago_parcial";
+    private static final String F_STATUS = "status";
+    private static final String F_TOTAL = "total";
+    private static final String F_CUSTOMER_ID = "customerId";
+    private static final String F_SUBSCRIPTION_ID = "subscriptionId";
+
     private OnvoBillingVerificador() {}
 
     /** Resultado: {@code motivo == null} = aceptar. */
@@ -37,59 +46,69 @@ public final class OnvoBillingVerificador {
         if (!modoCoincide(invoice, modo) || !modoCoincide(sub, modo)) return Resultado.rechazo("modo");
         if (!igual(texto(invoice, "id"), invoiceId) || !igual(texto(sub, "id"), subId)) return Resultado.rechazo("id");
         // ONVO: la renovación tiene que traer subscriptionId y customerId y coincidir con la suscripción.
-        if (!igual(texto(invoice, "subscriptionId"), subId)) return Resultado.rechazo("id");
-        if (!igual(texto(invoice, "customerId"), texto(sub, "customerId"))) return Resultado.rechazo("customer");
-        if (!"paid".equalsIgnoreCase(texto(invoice, "status"))) return Resultado.rechazo("no_pagado");
-        if (!"active".equalsIgnoreCase(texto(sub, "status"))) return Resultado.rechazo("sub_no_activa");
-        // B1: una factura con saldo pendiente no activa el plan. Sandbox ONVO: la factura no trae
-        // amountRemaining/amountDue/amountPaid (se conservan por si aparecen); el pago real está en el
-        // paymentIntent embebido de GET /invoices/{id}: status succeeded y receivedAmount >= total.
+        if (!igual(texto(invoice, F_SUBSCRIPTION_ID), subId)) return Resultado.rechazo("id");
+        if (!igual(texto(invoice, F_CUSTOMER_ID), texto(sub, F_CUSTOMER_ID))) return Resultado.rechazo(M_CUSTOMER);
+        if (!"paid".equalsIgnoreCase(texto(invoice, F_STATUS))) return Resultado.rechazo(M_NO_PAGADO);
+        if (!"active".equalsIgnoreCase(texto(sub, F_STATUS))) return Resultado.rechazo(M_SUB_NO_ACTIVA);
+        String parcial = motivoPagoIncompleto(invoice);
+        if (parcial != null) return Resultado.rechazo(parcial);
+        LocalDate fin = fecha(texto(invoice, "periodEnd"));
+        if (fin == null) fin = fecha(texto(sub, "currentPeriodEnd"));
+        return planYMonto(invoice, F_TOTAL, sub, planPorPrice, precios, fin);
+    }
+
+    /**
+     * B1: una factura con saldo pendiente no activa el plan. Sandbox ONVO: la factura no trae
+     * amountRemaining/amountDue/amountPaid (se conservan por si aparecen); el pago real está en el
+     * paymentIntent embebido de GET /invoices/{id}: status succeeded y receivedAmount >= total.
+     */
+    private static String motivoPagoIncompleto(Map<?, ?> invoice) {
+        BigDecimal total = numero(invoice.get(F_TOTAL));
         if (invoice.get("paymentIntent") instanceof Map<?, ?> pi) {
-            String st = texto(pi, "status");
-            if (st != null && !"succeeded".equalsIgnoreCase(st)) return Resultado.rechazo("no_pagado");
+            String st = texto(pi, F_STATUS);
+            if (st != null && !"succeeded".equalsIgnoreCase(st)) return M_NO_PAGADO;
             BigDecimal recibido = numero(pi.get("receivedAmount"));
-            BigDecimal totalFactura = numero(invoice.get("total"));
-            if (recibido != null && totalFactura != null && recibido.compareTo(totalFactura) < 0) {
-                return Resultado.rechazo("pago_parcial");
-            }
+            if (menor(recibido, total)) return M_PAGO_PARCIAL;
         }
         BigDecimal pendiente = numero(invoice.get("amountRemaining"));
         if (pendiente == null) pendiente = numero(invoice.get("amountDue"));
-        BigDecimal pagado = numero(invoice.get("amountPaid"));
-        BigDecimal total = numero(invoice.get("total"));
-        if ((pendiente != null && pendiente.signum() > 0)
-                || (pagado != null && total != null && pagado.compareTo(total) < 0)) {
-            return Resultado.rechazo("pago_parcial");
-        }
-        return planYMonto(invoice, "total", sub, planPorPrice, precios,
-            fecha(texto(invoice, "periodEnd")) != null ? fecha(texto(invoice, "periodEnd"))
-                : fecha(texto(sub, "currentPeriodEnd")));
+        if (pendiente != null && pendiente.signum() > 0) return M_PAGO_PARCIAL;
+        return menor(numero(invoice.get("amountPaid")), total) ? M_PAGO_PARCIAL : null;
     }
+
+    private static boolean menor(BigDecimal a, BigDecimal b) {
+        return a != null && b != null && a.compareTo(b) < 0;
+    }
+
+    /** Objetos de ONVO (por GET) que intervienen en el alta por payment intent. */
+    public record AltaObjetos(Map<?, ?> intent, Map<?, ?> factura, Map<?, ?> sub) {}
 
     /**
      * payment-intent.succeeded del alta. Sandbox ONVO: el intent no trae subscriptionId ni customerId plano
      * (trae customer.id); el vínculo con la suscripción es la factura (paymentIntentId + subscriptionId).
      */
-    public static Resultado altaPorIntent(Map<?, ?> intent, Map<?, ?> factura, Map<?, ?> sub,
-                                          String intentId, String subId,
+    public static Resultado altaPorIntent(AltaObjetos o, String intentId, String subId,
                                           String modo, java.util.function.Function<String, String> planPorPrice,
                                           PrecioPlan precios) {
+        Map<?, ?> intent = o.intent();
+        Map<?, ?> factura = o.factura();
+        Map<?, ?> sub = o.sub();
         if (!modoCoincide(intent, modo) || !modoCoincide(sub, modo) || !modoCoincide(factura, modo)) {
             return Resultado.rechazo("modo");
         }
-        if (!igual(texto(intent, "id"), intentId) || !igual(texto(sub, "id"), subId)) return Resultado.rechazo("id");
-        if (!igual(texto(factura, "paymentIntentId"), intentId) || !igual(texto(factura, "subscriptionId"), subId)) {
+        if (!igual(texto(intent, "id"), intentId) || !igual(texto(sub, "id"), subId)
+                || !igual(texto(factura, "paymentIntentId"), intentId)
+                || !igual(texto(factura, F_SUBSCRIPTION_ID), subId)) {
             return Resultado.rechazo("id");
         }
-        if (!"succeeded".equalsIgnoreCase(texto(intent, "status"))) return Resultado.rechazo("no_pagado");
-        if (!"active".equalsIgnoreCase(texto(sub, "status"))) return Resultado.rechazo("sub_no_activa");
-        String clienteSub = texto(sub, "customerId");
-        if (!igual(texto(factura, "customerId"), clienteSub)) return Resultado.rechazo("customer");
-        String clienteIntent = texto(intent, "customerId");
-        if (clienteIntent == null && intent != null && intent.get("customer") instanceof Map<?, ?> c) {
-            clienteIntent = texto(c, "id");
+        if (!"succeeded".equalsIgnoreCase(texto(intent, F_STATUS))) return Resultado.rechazo(M_NO_PAGADO);
+        if (!"active".equalsIgnoreCase(texto(sub, F_STATUS))) return Resultado.rechazo(M_SUB_NO_ACTIVA);
+        String clienteSub = texto(sub, F_CUSTOMER_ID);
+        String clienteIntent = clienteDelIntent(intent);
+        if (!igual(texto(factura, F_CUSTOMER_ID), clienteSub)
+                || (clienteIntent != null && !clienteIntent.equals(clienteSub))) {
+            return Resultado.rechazo(M_CUSTOMER);
         }
-        if (clienteIntent != null && !clienteIntent.equals(clienteSub)) return Resultado.rechazo("customer");
         // B1: el alta por intent cobra el plan completo; lo prorrateado entra por la factura (renewal).
         Resultado r = planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
         if (r.aceptado()) {
@@ -97,16 +116,23 @@ public final class OnvoBillingVerificador {
             Integer precioPlan = precios.precio(r.planNombre());
             if (monto == null || precioPlan == null
                     || monto.compareTo(BigDecimal.valueOf(precioPlan.longValue() * CENTIMOS_POR_COLON)) != 0) {
-                return Resultado.rechazo("pago_parcial");
+                return Resultado.rechazo(M_PAGO_PARCIAL);
             }
         }
         return r;
     }
 
+    /** customerId plano si existe; si no, customer.id (forma real del payment intent en ONVO). */
+    private static String clienteDelIntent(Map<?, ?> intent) {
+        String plano = texto(intent, F_CUSTOMER_ID);
+        if (plano != null) return plano;
+        return intent.get("customer") instanceof Map<?, ?> c ? texto(c, "id") : null;
+    }
+
     /** Falla/cancelación: solo se aplica si ONVO (por GET, mismo modo) reporta ese estado. */
     public static boolean estadoConfirmado(Map<?, ?> sub, String subId, String modo, String... estados) {
         if (!modoCoincide(sub, modo) || !igual(texto(sub, "id"), subId)) return false;
-        String st = texto(sub, "status");
+        String st = texto(sub, F_STATUS);
         for (String e : estados) if (e.equalsIgnoreCase(st)) return true;
         return false;
     }

@@ -15,7 +15,7 @@ class OnvoBillingVerificadorNullTest {
     @Test
     @DisplayName("alta por intent con mapas nulos: rechazo, sin NPE")
     void altaConNulos() {
-        var r = OnvoBillingVerificador.altaPorIntent(null, null, null, "pi_1", "sub_1", "test", p -> "PYME", PRECIOS);
+        var r = OnvoBillingVerificador.altaPorIntent(new OnvoBillingVerificador.AltaObjetos(null, null, null), "pi_1", "sub_1", "test", p -> "PYME", PRECIOS);
         assertThat(r.aceptado()).isFalse();
     }
 
@@ -35,7 +35,7 @@ class OnvoBillingVerificadorNullTest {
             "customerId", "cus_1", "currentPeriodEnd", "2026-11-26T00:00:00Z");
         Map<String, Object> factura = Map.of("mode", "test", "paymentIntentId", "pi_1",
             "subscriptionId", "sub_1", "customerId", "cus_1");
-        var r = OnvoBillingVerificador.altaPorIntent(intent, factura, sub, "pi_1", "sub_1", "test", p -> "PYME", PRECIOS);
+        var r = OnvoBillingVerificador.altaPorIntent(new OnvoBillingVerificador.AltaObjetos(intent, factura, sub), "pi_1", "sub_1", "test", p -> "PYME", PRECIOS);
         assertThat(r.aceptado()).isFalse();
     }
 }
