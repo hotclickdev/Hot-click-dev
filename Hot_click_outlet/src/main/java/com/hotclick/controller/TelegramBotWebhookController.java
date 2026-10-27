@@ -86,7 +86,7 @@ public class TelegramBotWebhookController {
         try {
             updateService.procesarUpdate(update);
         } catch (Exception e) {
-            log.error("[telegram-webhook] error procesando update — {}: {}", e.getClass().getSimpleName(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram-webhook] error procesando update — {}: {}", e.getClass().getSimpleName(), com.hotclick.service.telegram.TelegramTexto.paraLog(e.getMessage()));
         }
         return ResponseEntity.ok().build();
     }
