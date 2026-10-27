@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.LiberadorFallos;
 import com.hotclick.security.RateLimiter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ class UsuarioServiceLockoutTest {
     @Mock PasswordResetService      passwordResetService;
     @Mock ApplicationEventPublisher eventPublisher;
     @Mock RateLimiter               rateLimiter;
+    @Mock LiberadorFallos           liberadorFallos;
 
     @InjectMocks UsuarioService service;
 
@@ -115,13 +117,13 @@ class UsuarioServiceLockoutTest {
     }
 
     @Test
-    @DisplayName("autenticación completa: pone el contador en 0 y borra el bucket global y el de esa IP")
+    @DisplayName("autenticación completa: pone el contador en 0 y limpia global + esa IP por LiberadorFallos (no directo)")
     void resetearLiberaLosBuckets() {
         service.resetearIntentosFallidos(1L, "198.51.100.7");
 
         verify(usuarioRepository).resetearIntentosFallidos(1L);
-        verify(rateLimiter).liberar("auth:fallos:usuario:1:global");
-        verify(rateLimiter).liberar("auth:fallos:usuario:1:ip:198.51.100.7");
+        verify(liberadorFallos).liberarGlobalEIp(1L, "198.51.100.7");
+        verify(rateLimiter, never()).liberar(anyString());
     }
 
     private Usuario nuevoQueRecibeId(long id) {

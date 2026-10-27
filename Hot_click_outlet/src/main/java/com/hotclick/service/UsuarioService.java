@@ -3,6 +3,7 @@ package com.hotclick.service;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.model.Rol;
+import com.hotclick.security.LiberadorFallos;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.utils.Constants;
 import com.hotclick.repository.UsuarioRepository;
@@ -39,6 +40,9 @@ public class UsuarioService {
 
     @Autowired
     private RateLimiter rateLimiter;
+
+    @Autowired
+    private LiberadorFallos liberadorFallos;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -163,21 +167,21 @@ public class UsuarioService {
         }
     }
 
-    /** Autenticación completa: el usuario llegó bien desde {@code ip}; los tropiezos previos de esa IP ya no cuentan. */
+    /**
+     * Autenticación completa: el usuario llegó bien desde {@code ip}; los tropiezos previos de esa IP ya no cuentan.
+     * Los buckets se limpian por {@link LiberadorFallos}: tras el commit y en transacción aparte, así un SQL fallido
+     * del limitador no aborta (en PostgreSQL) la transacción del login.
+     */
     @Transactional
     public void resetearIntentosFallidos(Long id, String ip) {
-        resetearIntentosFallidos(id);
-        liberarFallosIp(id, ip);
-    }
-
-    public void liberarFallosIp(Long id, String ip) {
-        rateLimiter.liberar(claveFallosIp(id, ip));
+        usuarioRepository.resetearIntentosFallidos(id);
+        liberadorFallos.liberarGlobalEIp(id, ip);
     }
 
     @Transactional
     public void resetearIntentosFallidos(Long id) {
         usuarioRepository.resetearIntentosFallidos(id);
-        rateLimiter.liberar(claveFallosGlobal(id));
+        liberadorFallos.liberarGlobal(id);
     }
 
     @Transactional
