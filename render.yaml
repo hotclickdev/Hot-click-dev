@@ -25,3 +25,6 @@ services:
         sync: false
       - key: NEGOCIO_PLUS_PRECIO_MENSUAL_USD
         sync: false
+      # Perfil fijo de producción (no es secreto). Debe escribirse exactamente "prod".
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
