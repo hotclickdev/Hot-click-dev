@@ -99,9 +99,8 @@ public class AdminAsignarController {
                 : com.hotclick.utils.CorreoNormalizer.normalizar(correo); // MED-5: igual que el registro y el login
 
             // P9-02: no se crea ni se reclama una cuenta existente; el vendedor usa la búsqueda de clientes.
-            // También se revisa el correo tal como lo escribió el vendedor (cuentas antiguas con mayúsculas).
-            if (usuarioRepository.existsByCorreo(correoFinal)
-                    || (!correo.isBlank() && usuarioRepository.existsByCorreo(correo))) {
+            // Sin distinguir mayúsculas: cubre también las cuentas antiguas guardadas con mayúsculas.
+            if (!usuarioRepository.findAllByCorreoIgnoreCase(correoFinal).isEmpty()) {
                 return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(
                     "No se pudo crear el cliente con ese correo. Búscalo en tus clientes existentes."));
             }

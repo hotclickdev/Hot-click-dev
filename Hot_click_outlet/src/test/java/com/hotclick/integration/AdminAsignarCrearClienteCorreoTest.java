@@ -43,6 +43,7 @@ class AdminAsignarCrearClienteCorreoTest extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         usuarioRepository.deleteAll(usuarioRepository.findAllByCorreoIgnoreCase("ac-cliente.mixto@test.cr"));
+        usuarioRepository.deleteAll(usuarioRepository.findAllByCorreoIgnoreCase("ac-legacy@test.cr"));
         miembroEmpresaRepository.deleteAll();
         usuarioRepository.findAll().forEach(u -> { u.setEmpresa(null); usuarioRepository.save(u); });
         empresaRepository.deleteAll();
@@ -63,5 +64,14 @@ class AdminAsignarCrearClienteCorreoTest extends BaseIntegrationTest {
         assertThat(crear("ac-cliente.mixto@test.cr")).as("mismo correo en minúsculas").isEqualTo(409);
         assertThat(crear("AC-CLIENTE.MIXTO@TEST.CR")).as("mismo correo en mayúsculas").isEqualTo(409);
         assertThat(usuarioRepository.findAllByCorreoIgnoreCase("ac-cliente.mixto@test.cr")).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Cuenta antigua guardada con mayúsculas: crear el mismo correo en otra capitalización → 409, sin duplicar")
+    void cuentaAntiguaConMayusculasDa409() throws Exception {
+        crearUsuario("AC-Legacy@Test.CR", "Legacy", obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1));
+        assertThat(crear("ac-legacy@test.cr")).as("minúsculas contra cuenta antigua con mayúsculas").isEqualTo(409);
+        assertThat(crear("AC-LEGACY@TEST.CR")).as("otra capitalización").isEqualTo(409);
+        assertThat(usuarioRepository.findAllByCorreoIgnoreCase("ac-legacy@test.cr")).hasSize(1);
     }
 }

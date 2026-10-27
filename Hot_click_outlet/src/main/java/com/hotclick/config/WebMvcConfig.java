@@ -56,7 +56,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
                                  "/api/admin/ai", "/api/admin/ai/**",
                                  "/api/admin/forecast", "/api/admin/forecast/**",
                                  "/api/admin/inventario", "/api/admin/inventario/**",
-                                 "/api/sucursales", "/api/sucursales/**");
+                                 "/api/sucursales", "/api/sucursales/**",
+                                 // revisión de confirmaciones SINPE manuales del POS (lista del dueño; el POS no la usa)
+                                 "/api/admin/pos/sinpe-confirmaciones", "/api/admin/pos/sinpe-confirmaciones/**");
         // Suscripción impaga (día 9+): el negocio solo ve cuenta/monto y paga (allowlist exacta en el interceptor);
         // las rutas de comprador ya rechazan tiendas no ACTIVO por su cuenta.
         registry.addInterceptor(suspensionImpagoInterceptor)

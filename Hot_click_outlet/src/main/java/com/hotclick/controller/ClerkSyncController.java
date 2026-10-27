@@ -88,7 +88,7 @@ public class ClerkSyncController {
     static String emailVerificado(Jwt jwt) {
         String email = Optional.ofNullable(jwt.getClaimAsString("email"))
             .or(() -> Optional.ofNullable(jwt.getClaimAsString("email_address")))
-            .orElse("").toLowerCase().trim();
+            .orElse("").toLowerCase(java.util.Locale.ROOT).trim();
         Object verificado = jwt.getClaims().get("email_verified");
         boolean ok = Boolean.TRUE.equals(verificado) || "true".equalsIgnoreCase(String.valueOf(verificado));
         return (!email.isBlank() && email.contains("@") && ok) ? email : null;

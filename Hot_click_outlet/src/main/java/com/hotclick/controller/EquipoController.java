@@ -52,7 +52,7 @@ public class EquipoController {
         equipoService.invitar(
             empresaId,
             body.get("nombre"),
-            body.get("correo").trim().toLowerCase(),
+            body.get("correo").trim().toLowerCase(java.util.Locale.ROOT),
             body.get("password"),
             body.getOrDefault("telefono", "00000000"),
             rolEnEmpresa);

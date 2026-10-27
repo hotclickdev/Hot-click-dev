@@ -37,7 +37,8 @@ class RolesExecutiveIaForecastInventarioSucursalesTest extends BaseIntegrationTe
         "DELETE /api/admin/ai/historial",
         "GET /api/admin/forecast/dashboard", "POST /api/admin/forecast/generar",
         "GET /api/admin/inventario/dashboard", "POST /api/admin/inventario/analizar",
-        "GET /api/sucursales", "POST /api/sucursales", "PUT /api/sucursales/1", "DELETE /api/sucursales/1"
+        "GET /api/sucursales", "POST /api/sucursales", "PUT /api/sucursales/1", "DELETE /api/sucursales/1",
+        "GET /api/admin/pos/sinpe-confirmaciones"
     };
 
     @Autowired private EmpresaRepository empresaRepository;
@@ -121,6 +122,7 @@ class RolesExecutiveIaForecastInventarioSucursalesTest extends BaseIntegrationTe
         for (String ruta : List.of("GET /api/admin/executive/dashboard", "GET /api/admin/ai/uso",
                 "GET /api/admin/ai/historial", "GET /api/admin/ai/sugerencias", "GET /api/admin/ai/insights",
                 "GET /api/admin/forecast/dashboard", "GET /api/admin/inventario/dashboard", "GET /api/sucursales",
+                "GET /api/admin/pos/sinpe-confirmaciones",
                 "PUT /api/sucursales/999999", "DELETE /api/sucursales/999999")) {
             var res = llamar(ruta, tokenDueno).getResponse();
             assertThat(res.getStatus()).as("PROPIETARIO " + ruta).isNotEqualTo(401);
@@ -134,7 +136,7 @@ class RolesExecutiveIaForecastInventarioSucursalesTest extends BaseIntegrationTe
     @DisplayName("ADMIN de plataforma → pasa la guarda en lecturas de esas rutas")
     void adminPasa() throws Exception {
         for (String ruta : List.of("GET /api/admin/executive/dashboard", "GET /api/admin/forecast/dashboard",
-                "GET /api/admin/inventario/dashboard")) {
+                "GET /api/admin/inventario/dashboard", "GET /api/admin/pos/sinpe-confirmaciones")) {
             var res = llamar(ruta, adminToken).getResponse();
             assertThat(res.getContentAsString()).as("ADMIN " + ruta).doesNotContain(PropietarioGuard.MSG);
             assertThat(res.getStatus()).as("ADMIN " + ruta).isNotIn(401, 403);

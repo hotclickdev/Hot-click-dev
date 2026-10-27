@@ -186,7 +186,7 @@ public class EmpresaAdminService {
             throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR");
         }
         empresa(id);   // 404 si no existe
-        String correoNorm = correo.trim().toLowerCase();
+        String correoNorm = correo.trim().toLowerCase(java.util.Locale.ROOT);
         String telefonoNorm = (telefono != null && !telefono.isBlank()) ? telefono : "00000000";
         equipoService.invitar(id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
         auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_INVITAR", "MIEMBRO_EMPRESA", null, id,

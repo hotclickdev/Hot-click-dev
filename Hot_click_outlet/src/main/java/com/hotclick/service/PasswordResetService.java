@@ -94,6 +94,6 @@ public class PasswordResetService {
     }
 
     private static String normalizar(String correo) {
-        return correo.trim().toLowerCase();
+        return correo.trim().toLowerCase(java.util.Locale.ROOT);
     }
 }
