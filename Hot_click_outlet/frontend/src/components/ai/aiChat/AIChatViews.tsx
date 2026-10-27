@@ -3,6 +3,7 @@ import AIProductCard from '../AIProductCard'
 import AICategoryChip from '../AICategoryChip'
 import { TypingDots, AIAvatar } from '../AITypingBubble'
 import { MarkdownSpan } from './MarkdownSpan'
+import { accionesSeguras } from './aiChatHelpers'
 import type { AiChatMensaje } from './aiChatHelpers'
 import type { Producto } from '@/types/producto'
 
@@ -33,6 +34,7 @@ export function AIChatMessageList({
 }: AIChatMessageListProps) {
   return mensajes.map((m, i) => {
     const esUltimo = i === mensajes.length - 1
+    const acciones = !m.typing && m.rol === 'assistant' ? accionesSeguras(m.acciones) : []
     const optsVisibles = esUltimo && !m.typing && m.opts && m.opts.length > 0 ? m.opts.slice(0, 2) : []
     return (
     <div
@@ -113,6 +115,24 @@ export function AIChatMessageList({
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             {m.categorias.map(cat => (
               <AICategoryChip key={cat} nombre={cat} accentColor={accent} onSelect={undefined} />
+            ))}
+          </div>
+        )}
+
+        {acciones.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-0.5" data-testid="ai-chat-acciones">
+            {acciones.map(a => (
+              <a
+                key={a.url}
+                href={a.url}
+                {...(a.tipo === 'whatsapp' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                className="text-xs px-3.5 py-2 rounded-full font-semibold transition-all hover:opacity-90 active:scale-95"
+                style={a.tipo === 'buscar'
+                  ? { background: accent, color: '#ffffff' }
+                  : { background: 'var(--hc-n-0)', color: 'var(--hc-n-900)', border: '1px solid var(--hc-n-200)' }}
+              >
+                {a.label}
+              </a>
             ))}
           </div>
         )}

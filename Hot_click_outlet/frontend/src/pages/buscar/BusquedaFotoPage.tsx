@@ -1,3 +1,4 @@
+import { getOrCreateVisitorId } from '@/utils/visitorId'
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -54,7 +55,7 @@ export default function BusquedaFotoPage() {
     setPaso('cerrada')
     setEstado('buscando')
     try {
-      const data = await shoppingAssistantService.searchByImage({ empresaSlug: SLUG_MARKETPLACE, imageFile: archivo })
+      const data = await shoppingAssistantService.searchByImage({ empresaSlug: SLUG_MARKETPLACE, imageFile: archivo, visitorId: getOrCreateVisitorId() ?? undefined })
       const leida = leerRespuestaFoto(data)
       setRespuesta(leida)
       setPaso(leida.productos.length > 0 ? 'producto' : 'solicitud')
