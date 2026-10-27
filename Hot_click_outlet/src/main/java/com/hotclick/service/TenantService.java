@@ -65,7 +65,7 @@ public class TenantService {
     @Transactional(readOnly = true)
     public Map<String, Object> getTenantUso(Long empresaId) {
         long productos = productoRepo.countProductosActivosByEmpresaId(empresaId);
-        long usuarios  = usuarioRepo.countActivosByEmpresaId(empresaId);
+        long usuarios  = usuarioRepo.countMiembrosActivosByEmpresaId(empresaId);
         long bodegas   = bodegaRepo.countByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO);
 
         Map<String, Object> uso = new HashMap<>();
@@ -119,7 +119,7 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public void verificarLimiteUsuariosEquipo(Long empresaId) {
-        long uso = usuarioRepo.countActivosByEmpresaId(empresaId);
+        long uso = usuarioRepo.countMiembrosActivosByEmpresaId(empresaId);
         limitChecker.verificarLimiteUsuariosEquipo(empresaId, uso);
     }
 
