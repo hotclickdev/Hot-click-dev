@@ -34,3 +34,12 @@ describe('legales: ONVO único procesador', () => {
     for (const t of textos) expect(t).not.toMatch(/tilopay|stripe/i)
   })
 })
+
+describe('Privacidad: SINPE Móvil se confirma solo por webhook de ONVO', () => {
+  it('la línea de SINPE no menciona comprobantes y exige el webhook de ONVO', () => {
+    const linea = leer('../PrivacidadPage.tsx').split('\n').find((l) => /SINPE Móvil:/.test(l))
+    expect(linea).toBeDefined()
+    expect(linea).not.toMatch(/comprobante/i)
+    expect(linea).toMatch(/webhook de ONVO/)
+  })
+})
