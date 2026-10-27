@@ -1,5 +1,6 @@
 package com.hotclick.service.tenant;
 
+import com.hotclick.service.ai.ClaudePrecios;
 import com.hotclick.utils.Constants;
 
 import java.time.LocalDate;
@@ -13,10 +14,6 @@ import java.util.Map;
  * Sin I/O — testeable sin Spring.
  */
 public final class TenantUsoAgregacion {
-
-    /** Claude Haiku 3.5: $0.80/M input · $4.00/M output (mismo criterio que observabilidad). */
-    public static final double PRECIO_INPUT_POR_M = 0.80;
-    public static final double PRECIO_OUTPUT_POR_M = 4.00;
 
     /** Empresa seed interna de plataforma — no es tenant del marketplace. Fuente unica: {@link Constants#EMPRESA_PLATAFORMA_ID}. */
     public static final long EMPRESA_PLATAFORMA_ID = Constants.EMPRESA_PLATAFORMA_ID;
@@ -94,8 +91,7 @@ public final class TenantUsoAgregacion {
 
     /** Costo estimado USD a partir de tokens de entrada/salida. */
     public static double costoUsd(long tokensEntrada, long tokensSalida) {
-        return (tokensEntrada / 1_000_000.0 * PRECIO_INPUT_POR_M)
-             + (tokensSalida  / 1_000_000.0 * PRECIO_OUTPUT_POR_M);
+        return ClaudePrecios.actual().costoUsd(tokensEntrada, tokensSalida);
     }
 
     /** Redondea a 4 decimales (mismo criterio que AiControlController). */

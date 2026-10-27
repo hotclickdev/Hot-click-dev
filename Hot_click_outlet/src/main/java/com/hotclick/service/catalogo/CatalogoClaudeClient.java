@@ -1,5 +1,6 @@
 package com.hotclick.service.catalogo;
 
+import com.hotclick.service.ai.ClaudeUsoRegistrador;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.ProductoExtraidoDto;
@@ -64,13 +65,15 @@ public class CatalogoClaudeClient {
     private final RestTemplate rest;
     private final ObjectMapper mapper = new ObjectMapper();
     private final CatalogoClaudeResponseParser responseParser;
+    private final ClaudeUsoRegistrador usoRegistrador;
 
-    public CatalogoClaudeClient(CatalogoClaudeResponseParser responseParser) {
+    public CatalogoClaudeClient(CatalogoClaudeResponseParser responseParser, ClaudeUsoRegistrador usoRegistrador) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(10_000);
         factory.setReadTimeout(60_000);
         this.rest = new RestTemplate(factory);
         this.responseParser = responseParser;
+        this.usoRegistrador = usoRegistrador;
     }
 
     public List<ProductoExtraidoDto> extraerConClaude(String texto, String fuente) throws Exception {
@@ -106,6 +109,8 @@ public class CatalogoClaudeClient {
             ANTHROPIC_URL, new HttpEntity<>(json, headers), String.class);
 
         JsonNode root = mapper.readTree(response.getBody());
+        // La extracción de catálogo no tiene tenant en este flujo: el costo se atribuye a la plataforma.
+        usoRegistrador.registrar(null, root.path("usage"));
         String rawText = root.path("content").get(0).path("text").asText("");
         return responseParser.parsearRespuesta(rawText);
     }
