@@ -101,12 +101,29 @@ public class EquipoService {
             u.getCorreo(), u.getNombre(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null), null);
     }
 
+    /**
+     * QA3-P02: parte el nombre completo del formulario (un solo campo) en {nombre, apellidoPaterno, apellidoMaterno}.
+     * El apellido va al final: "Ana María Pérez" -> nombre "Ana María", apellido "Pérez". Con 4 o más palabras
+     * las dos últimas son los apellidos (formato de Costa Rica): "Juan Carlos Pérez Mora". Antes la primera palabra
+     * era el nombre y todo el resto el apellido ("PRUEBA QA3 Editor" -> nombre "PRUEBA", apellido "QA3 Editor").
+     * Una sola palabra se guarda como nombre y el apellido queda en "Miembro" (columna NOT NULL).
+     */
+    static String[] partirNombreCompleto(String nombreCompleto) {
+        String[] p = nombreCompleto.trim().split("\\s+");
+        if (p.length == 1) return new String[] {p[0], "Miembro", null};
+        if (p.length == 2) return new String[] {p[0], p[1], null};
+        if (p.length == 3) return new String[] {p[0] + " " + p[1], p[2], null};
+        String nombre = String.join(" ", java.util.Arrays.copyOfRange(p, 0, p.length - 2));
+        return new String[] {nombre, p[p.length - 2], p[p.length - 1]};
+    }
+
     private void crearNuevo(Empresa empresa, com.hotclick.model.Rol rolMiembro, String nombre,
                             String correoNorm, String password, String telefono, String rolEnEmpresa) {
-        String[] partes = nombre.trim().split("\\s+", 2);
+        String[] partes = partirNombreCompleto(nombre);
         Usuario nuevo = new Usuario();
         nuevo.setNombre(partes[0]);
-        nuevo.setApellidoPaterno(partes.length > 1 ? partes[1] : "Miembro");
+        nuevo.setApellidoPaterno(partes[1]);
+        nuevo.setApellidoMaterno(partes[2]);
         nuevo.setIdentificacion("ADM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
         nuevo.setCorreo(correoNorm);
         nuevo.setContrasenaHash(passwordEncoder.encode(password));

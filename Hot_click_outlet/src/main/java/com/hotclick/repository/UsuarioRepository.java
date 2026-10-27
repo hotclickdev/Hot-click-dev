@@ -104,6 +104,20 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT COUNT(u) FROM Usuario u WHERE u.empresa.id = :empresaId AND u.estado = 1")
     long countActivosByEmpresaId(@Param("empresaId") Long empresaId);
 
+    /**
+     * QA3-P03: miembros activos del equipo, igual que la lista de /api/equipo. Cuenta por membresía
+     * (miembro_empresa.estado = 1), no solo por usuario.empresa_id: un usuario que ya existía y se agregó al
+     * equipo conserva su propia empresa y no se contaba. Un usuario con empresa_id = :empresaId y sin ninguna
+     * fila de membresía (cuentas anteriores a la tabla) sigue contando; un miembro dado de baja no.
+     */
+    @Query("""
+        SELECT COUNT(u) FROM Usuario u WHERE u.estado = 1 AND (
+          EXISTS (SELECT 1 FROM MiembroEmpresa m WHERE m.usuario = u AND m.empresa.id = :empresaId AND m.estado = 1)
+          OR (u.empresa.id = :empresaId AND NOT EXISTS
+              (SELECT 1 FROM MiembroEmpresa m2 WHERE m2.usuario = u AND m2.empresa.id = :empresaId)))
+        """)
+    long countMiembrosActivosByEmpresaId(@Param("empresaId") Long empresaId);
+
     @Query("SELECT u FROM Usuario u WHERE u.empresa.id = :empresaId ORDER BY u.id DESC")
     List<Usuario> findByEmpresaIdOrderByIdDesc(@Param("empresaId") Long empresaId);
 
