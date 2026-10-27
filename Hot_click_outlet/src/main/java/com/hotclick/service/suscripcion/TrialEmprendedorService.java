@@ -91,9 +91,7 @@ public class TrialEmprendedorService {
             || e.getTrialEmprendedorHasta() == null || !e.getTrialEmprendedorHasta().isBefore(hoy)) {
             return false;
         }
-        boolean conCobroOnvo = suscripcionRepo.findActivaByEmpresaId(id)
-            .map(s -> s.getOnvoSubscriptionId() != null && !s.getOnvoSubscriptionId().isBlank())
-            .orElse(false);
+        boolean conCobroOnvo = tieneSuscripcionOnvo(id);
         if (conCobroOnvo && !e.getTrialEmprendedorHasta().plusDays(diasGracia).isBefore(hoy)) {
             return false; // dentro de la gracia: esperando el webhook del primer cobro
         }
@@ -103,6 +101,11 @@ public class TrialEmprendedorService {
         evictTenant(id);
         log.info("[trial-emprendedor] trial vencido empresa={} conCobroOnvo={}", id, conCobroOnvo);
         return true;
+    }
+
+    private boolean tieneSuscripcionOnvo(Long empresaId) {
+        var sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
+        return sub != null && sub.getOnvoSubscriptionId() != null && !sub.getOnvoSubscriptionId().isBlank();
     }
 
     private void evictTenant(Long empresaId) {
