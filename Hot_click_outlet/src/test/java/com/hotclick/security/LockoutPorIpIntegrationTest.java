@@ -84,10 +84,10 @@ class LockoutPorIpIntegrationTest extends BaseIntegrationTest {
         login("192.0.2.20", "mala");
         LocalDateTime hasta = recargar().getBloqueadoHasta();
         assertThat(hasta).as("20 fallos: bloqueo temporal").isNotNull();
-        assertThat(hasta).isBefore(LocalDateTime.now().plusMinutes(40)).isAfter(LocalDateTime.now().plusMinutes(10));
+        assertThat(hasta).isBefore(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(40)).isAfter(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(10));
         assertThat(login(IP_DUENO, PASS).getStatus()).as("bloqueada").isEqualTo(403);
 
-        usuarioRepository.bloquearUsuario(testUser.getId(), LocalDateTime.now().minusMinutes(1)); // vence
+        usuarioRepository.bloquearUsuario(testUser.getId(), LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).minusMinutes(1)); // vence
         jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
         assertThat(login(IP_DUENO, PASS).getStatus()).as("al vencer, el dueño entra").isEqualTo(200);
     }

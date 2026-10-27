@@ -78,7 +78,7 @@ class UsuarioServiceLockoutTest {
         service.registrarFalloAutenticacion(1L, "203.0.113.5");
 
         verify(usuarioRepository).bloquearUsuario(eq(1L),
-            argThat(h -> h.isAfter(LocalDateTime.now().plusMinutes(25)) && h.isBefore(LocalDateTime.now().plusMinutes(35))));
+            argThat(h -> h.isAfter(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(25)) && h.isBefore(LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(35))));
         verify(eventPublisher, times(1)).publishEvent(
             argThat(e -> e instanceof CuentaBloqueadaEvent && "victim@test.cr".equals(((CuentaBloqueadaEvent) e).getCorreo())));
     }

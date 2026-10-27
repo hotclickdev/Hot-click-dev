@@ -82,6 +82,8 @@ class CuentaNoActivaNoRecibeTokensTest {
         ReflectionTestUtils.setField(authSupport, "permisoRepository", permisoRepository);
         ReflectionTestUtils.setField(authSupport, "rateLimiter", rateLimiter);
         ReflectionTestUtils.setField(authSupport, "clientIpResolver", mock(com.hotclick.security.ClientIpResolver.class));
+        // el bloqueo por fallos (usuario+IP) consulta a UsuarioService antes de mirar la clave o el código
+        ReflectionTestUtils.setField(authSupport, "usuarioService", mock(com.hotclick.service.UsuarioService.class));
     }
 
     private static Usuario usuario(Integer estado) {
