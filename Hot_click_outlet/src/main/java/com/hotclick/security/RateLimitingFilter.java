@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Distributed IP-level rate limiter (fixed-window, per POST).
+ * Distributed IP-level rate limiter (fixed-window, per POST / GET / HEAD).
  * Clave: IP del cliente (ClientIpResolver, solo cree X-Forwarded-For de proxies de confianza)
  * + path exacto, o + prefijo/sufijo para PREFIX_LIMITS (todas las rutas con id comparten bucket).
  * State is stored in hot_click_rate_limit_tb — safe for multi-pod.
@@ -55,7 +55,8 @@ import java.util.Map;
  *   /api/public/shopping-assistant/chat   → 10 / 60s
  *   /api/admin/ai/chat                    → 20 / 60s
  *
- * Limits (GET, per IP — endpoints públicos sin auth):
+ * Limits (GET y HEAD, per IP — endpoints públicos sin auth; HEAD comparte el bucket de GET porque
+ * Spring MVC lo enruta al handler de GET. OPTIONS no ejecuta handler y PUT/PATCH/DELETE no están limitados aquí):
  *   /api/hacienda/contribuyente/** →  10 / 60s  (proxy a API externa de CR)
  *   /api/convenios/publicos        →  60 / 60s
  *   /api/marcas/publicas           →  60 / 60s
@@ -113,6 +114,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
     }
     private record GetLimit(String prefix, int maxRequests, int windowSeconds) {}
+
+    // B1: tope de rutas inválidas (400) por IP y ventana; el log de ese rechazo se muestrea con la misma ventana.
+    private static final int RUTA_INVALIDA_MAX = 20;
+    private static final int RUTA_INVALIDA_VENTANA = 60;
 
     // Exact-path limits (POST only)
     private static final Map<String, Limit> LIMITS = Map.ofEntries(
@@ -219,11 +224,21 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String path = RutaCanonica.de(request.getRequestURI(), request.getContextPath());
         if (path == null) {
             // Ruta inválida (porcentaje roto, UTF-8 inválido, control o encoding de más de 3 niveles): fail-closed.
-            log.warn("[RATE-LIMIT] ruta no canónica rechazada ip={}", clientIpResolver.resolve(request));
-            response.setStatus(400);
+            // B1: el rechazo cuenta contra un cupo por IP (así no es una vía gratis para inundar) y el log se
+            // muestrea, uno por IP y ventana, para que repetirla no llene el log.
+            String ipInvalida = clientIpResolver.resolve(request);
+            boolean dentroDelCupo = rateLimiter.tryAcquire(
+                "ip:" + ipInvalida + ":ruta-invalida", RUTA_INVALIDA_MAX, RUTA_INVALIDA_VENTANA);
+            if (rateLimiter.tryAcquire("ip:" + ipInvalida + ":ruta-invalida-log", 1, RUTA_INVALIDA_VENTANA)) {
+                log.warn("[RATE-LIMIT] ruta no canónica rechazada ip={} (se muestrea: un log por IP cada {}s)",
+                    ipInvalida, RUTA_INVALIDA_VENTANA);
+            }
+            response.setStatus(dentroDelCupo ? 400 : 429);
             response.setCharacterEncoding("UTF-8");
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write("{\"success\":false,\"message\":\"Ruta no válida.\"}");
+            response.getWriter().write(dentroDelCupo
+                ? "{\"success\":false,\"message\":\"Ruta no válida.\"}"
+                : "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
             return;
         }
         String method = request.getMethod();
@@ -261,7 +276,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                     return;
                 }
             }
-        } else if ("GET".equalsIgnoreCase(method)) {
+        } else if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) {
+            // HEAD: Spring MVC lo enruta al handler de GET y ejecuta el mismo código, así que comparte el
+            // bucket de GET ("ip:<ip>:GET:<prefijo>"). Sin esto, repetir HEAD evadía todos los GetLimit.
             String ip = clientIpResolver.resolve(request);
             for (GetLimit gl : GET_LIMITS) {
                 if (path.startsWith(gl.prefix())) {
