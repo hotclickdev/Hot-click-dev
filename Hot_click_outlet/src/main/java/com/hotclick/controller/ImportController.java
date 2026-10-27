@@ -23,7 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Queue;
 import java.util.Map;
 
 @RestController
@@ -107,7 +109,8 @@ public class ImportController {
             String adminCorreo = currentUserName();
             int ok = 0;
             List<String> errores = new ArrayList<>();
-            List<String> advertencias = new ArrayList<>();
+            // Cola acotada por el tope de 100 productos de arriba (no es una lista de endpoint sin límite).
+            Queue<String> advertencias = new ArrayDeque<>();
 
             for (ProductoExtraidoDto ext : productos) {
                 try {
