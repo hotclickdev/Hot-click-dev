@@ -118,6 +118,14 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     // B1: tope de rutas inválidas (400) por IP y ventana; el log de ese rechazo se muestrea con la misma ventana.
     private static final int RUTA_INVALIDA_MAX = 20;
     private static final int RUTA_INVALIDA_VENTANA = 60;
+    private static final int RUTA_INVALIDA_LOG_MAX_IPS = 10_000;
+
+    /** IPs ya logueadas por ruta inválida en la ventana actual; vence sola y tiene tope de entradas. */
+    private final com.github.benmanes.caffeine.cache.Cache<String, Boolean> logRutaInvalida =
+        com.github.benmanes.caffeine.cache.Caffeine.newBuilder()
+            .expireAfterWrite(java.time.Duration.ofSeconds(RUTA_INVALIDA_VENTANA))
+            .maximumSize(RUTA_INVALIDA_LOG_MAX_IPS)
+            .build();
 
     // Exact-path limits (POST only)
     private static final Map<String, Limit> LIMITS = Map.ofEntries(
@@ -229,7 +237,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             String ipInvalida = clientIpResolver.resolve(request);
             boolean dentroDelCupo = rateLimiter.tryAcquire(
                 "ip:" + ipInvalida + ":ruta-invalida", RUTA_INVALIDA_MAX, RUTA_INVALIDA_VENTANA);
-            if (rateLimiter.tryAcquire("ip:" + ipInvalida + ":ruta-invalida-log", 1, RUTA_INVALIDA_VENTANA)) {
+            // El muestreo del log es local (memoria): no abre una segunda fila por IP en la BD y sigue
+            // funcionando si la BD está caída (con tryAcquire fail-open cada request lograba "turno" y logueaba).
+            if (logRutaInvalida.asMap().putIfAbsent(ipInvalida, Boolean.TRUE) == null) {
                 log.warn("[RATE-LIMIT] ruta no canónica rechazada ip={} (se muestrea: un log por IP cada {}s)",
                     ipInvalida, RUTA_INVALIDA_VENTANA);
             }

@@ -1,5 +1,6 @@
 package com.hotclick.controller.storefront;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.StorefrontPedidoDTO;
 import com.hotclick.model.Bodega;
@@ -163,13 +164,16 @@ public class StorefrontGuestOrderService {
         try {
             n8nWebhookService.notificarPedidoNuevo(guardado);
         } catch (Exception ex) {
-            log.warn("Webhook admin falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
+            // Sin getMessage(): el proveedor puede devolver el correo del cliente en el texto del error.
+            log.warn("Webhook admin falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getClass().getSimpleName(),
+                TelegramTexto.paraLog(ex));
         }
         try {
             // Nace PENDIENTE y se paga al recibir: nunca el correo de pago confirmado («Total pagado»).
             notificacionEmailService.enviarPedidoRecibido(guardado);
         } catch (Exception ex) {
-            log.warn("Email pedido recibido falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
+            log.warn("Email pedido recibido falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getClass().getSimpleName(),
+                TelegramTexto.paraLog(ex));
         }
     }
 

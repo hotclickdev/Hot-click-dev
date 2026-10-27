@@ -95,6 +95,24 @@ class LogsSinMensajeDeExcepcionTest {
         }
     }
 
+
+    /**
+     * BAJO #413 (3): los errores inesperados de auth conservan el stack para diagnosticar, pero saneado: la excepción
+     * que llega al log es {@code TelegramTexto.ExcepcionSaneada} (sin mensaje original, sin causa) con el stack original.
+     */
+    private void assertLogLimpioConStackSaneado(int esperadosMin) {
+        assertThat(appender.list).as("se escribió al menos un log").hasSizeGreaterThanOrEqualTo(esperadosMin);
+        for (ILoggingEvent ev : appender.list) {
+            var t = ev.getThrowableProxy();
+            assertThat(t).as("stack saneado en: " + ev.getFormattedMessage()).isNotNull();
+            assertThat(t.getClassName()).endsWith("ExcepcionSaneada");
+            assertThat(t.getCause()).as("sin causa original").isNull();
+            assertThat(t.getMessage()).contains("RuntimeException").doesNotContain(PII).doesNotContain("pii.fict");
+            assertThat(t.getStackTraceElementProxyArray()).as("stack original conservado").isNotEmpty();
+            assertThat(ev.getFormattedMessage()).doesNotContain(PII).doesNotContain("pii.fict");
+        }
+    }
+
     @Test
     @DisplayName("AuthTenantSwitchHandler.cambiarNegocio (:67) no loguea getMessage ni stack")
     void cambiarNegocio() {
@@ -107,7 +125,7 @@ class LogsSinMensajeDeExcepcionTest {
         var res = h.cambiarNegocio(Map.of("empresaId", 1), new MockHttpServletRequest(), new MockHttpServletResponse());
 
         assertThat(res.getStatusCode().value()).isEqualTo(500);
-        assertLogLimpio(1);
+        assertLogLimpioConStackSaneado(1);
         assertThat(appender.list.get(0).getFormattedMessage()).contains("RuntimeException");
     }
 
@@ -123,7 +141,7 @@ class LogsSinMensajeDeExcepcionTest {
         var res = h.seleccionarEmpresa(Map.of("tempToken", "t", "empresaId", 1), new MockHttpServletResponse());
 
         assertThat(res.getStatusCode().value()).isEqualTo(401);
-        assertLogLimpio(1);
+        assertLogLimpioConStackSaneado(1);
         assertThat(appender.list.get(0).getFormattedMessage()).contains("RuntimeException");
     }
 
@@ -138,7 +156,7 @@ class LogsSinMensajeDeExcepcionTest {
 
         h.sendLoginEmailOtp(Map.of("tempToken", "t"), new MockHttpServletRequest());
 
-        assertLogLimpio(1);
+        assertLogLimpioConStackSaneado(1);
         assertThat(appender.list.get(0).getFormattedMessage()).contains("RuntimeException");
     }
 
@@ -153,7 +171,7 @@ class LogsSinMensajeDeExcepcionTest {
 
         h.enableEmailOtp(new MockHttpServletRequest());
 
-        assertLogLimpio(1);
+        assertLogLimpioConStackSaneado(1);
         assertThat(appender.list.get(0).getFormattedMessage()).contains("RuntimeException");
     }
 
@@ -169,7 +187,7 @@ class LogsSinMensajeDeExcepcionTest {
         var res = h.verify2FA(Map.of("tempToken", "t", "code", "123456"), new MockHttpServletRequest());
 
         assertThat(res.getStatusCode().value()).isEqualTo(401);
-        assertLogLimpio(1);
+        assertLogLimpioConStackSaneado(1);
         assertThat(appender.list.get(0).getFormattedMessage()).contains("RuntimeException");
     }
 
