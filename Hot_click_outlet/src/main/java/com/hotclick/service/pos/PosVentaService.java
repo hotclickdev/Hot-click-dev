@@ -187,9 +187,9 @@ public class PosVentaService {
         List<PedidoItem> items = new ArrayList<>();
         List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
         for (PosVentaDTO.Item itemDto : dto.getItems()) {
-            Producto producto = PosProductoDeEmpresa.ocultandoExistencia(
-                productoRepository.findByIdForUpdate(itemDto.getProductoId()).orElse(null),
-                itemDto.getProductoId(), pedido.getEmpresa().getId());
+            // BAJO-1 (#428): dueño validado sin lock; recién después SELECT … FOR UPDATE.
+            Producto producto = PosProductoDeEmpresa.bloqueandoSoloSiEsDelNegocio(
+                productoRepository, itemDto.getProductoId(), pedido.getEmpresa().getId());
             exigirVendiblePorPos(producto);
             int cantidad = cantidadValida(itemDto.getCantidad());
             // Precio siempre del catálogo — no confiar en el body del cliente.

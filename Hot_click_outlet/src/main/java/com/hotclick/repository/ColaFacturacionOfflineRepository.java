@@ -6,6 +6,7 @@ import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -50,4 +51,14 @@ public interface ColaFacturacionOfflineRepository extends JpaRepository<ColaFact
            "WHERE c.estado = 'PROCESANDO' AND (c.fechaInicioProceso IS NULL OR c.fechaInicioProceso < :limite) " +
            "ORDER BY c.fechaCreacion ASC")
     List<ColaFacturacionOffline> bloquearProcesandoTrabadas(@Param("limite") LocalDateTime limite, Pageable lote);
+
+    /**
+     * BAJO-2 (#428): renueva el reloj de una fila mientras se procesa, para que un lote largo (hasta 20 filas, cada
+     * envío con reintentos) no la deje pasar por "trabada" aunque el proceso siga vivo. Solo toca filas todavía
+     * PROCESANDO; devuelve 0 si otra corrida ya la recuperó (así no se envía dos veces desde dos procesos).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE ColaFacturacionOffline c SET c.fechaInicioProceso = :ahora " +
+           "WHERE c.id = :id AND c.estado = 'PROCESANDO'")
+    int renovarInicioProceso(@Param("id") Long id, @Param("ahora") LocalDateTime ahora);
 }

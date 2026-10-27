@@ -84,11 +84,60 @@ public class FacturacionContingenciaService {
         }
     }
 
+    /** Fila que ya se envió (o se intentó) antes: recuperada de PROCESANDO o reintentada tras un fallo. */
+    private static boolean esReintento(ColaFacturacionOffline item) {
+        return item.getIntentos() != null && item.getIntentos() > 0;
+    }
+
+    /**
+     * Pregunta a Hacienda por la clave tras un 4xx en un reintento. true = Hacienda responde la consulta (el
+     * documento existe, en cualquier estado). false = no lo conoce (404 u otro 4xx de la consulta): el 4xx original
+     * es un rechazo real. Si la consulta falla por algo transitorio (5xx, timeout, 408/429) la excepción sale y la
+     * fila vuelve a PENDIENTE con backoff (marcarFallo) en vez de darse por perdida.
+     */
+    private boolean haciendaYaTieneElComprobante(ColaFacturacionOffline item, String clave,
+                                                 com.hotclick.model.Empresa empresa) {
+        String estado;
+        try {
+            estado = haciendaClient.consultarEstado(clave, empresa);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            int status = e.getStatusCode().value();
+            if (status == 408 || status == 429) throw e;
+            log.info("[contingencia] cola_offline={}: Hacienda no conoce la clave (consulta status={})", item.getId(), status);
+            return false;
+        }
+        // BAJO-B (#429): un 2xx sin cuerpo o sin ind-estado (el cliente lo devuelve como "en_procesamiento") NO
+        // prueba que Hacienda tenga el documento. Solo cuenta un ind-estado explícito de recibido o aceptado; lo
+        // demás es un fallo (la fila vuelve a PENDIENTE con backoff, no se cierra ni se agota).
+        if (estado == null || !ESTADOS_QUE_PRUEBAN_RECEPCION.contains(estado.trim().toLowerCase(java.util.Locale.ROOT))) {
+            throw new IllegalStateException("Consulta de estado sin ind-estado de recibido/aceptado");
+        }
+        return true;
+    }
+
+    /** ind-estado de Hacienda que prueban que el documento fue recibido (procesando = recibido, en cola). */
+    static final java.util.Set<String> ESTADOS_QUE_PRUEBAN_RECEPCION = java.util.Set.of("recibido", "procesando", "aceptado");
+
+    /** BAJO-C (#429): nunca el mensaje crudo (puede traer cuerpo de Hacienda, XML o datos del receptor). */
+    static String resumenSeguro(Exception e) {
+        if (e instanceof org.springframework.web.client.HttpStatusCodeException h) {
+            return e.getClass().getSimpleName() + " status=" + h.getStatusCode().value();
+        }
+        return e.getClass().getSimpleName();
+    }
+
     private void procesarItem(ColaFacturacionOffline item) {
         try {
             // Empresa propietaria de ESTE comprobante específico — trazabilidad
             // multi-tenant correcta aunque el lote mezcle facturas de varias empresas.
             TenantContext.set(item.getEmpresaId());
+
+            // BAJO-2 (#428): el timeout de 30 min se mantiene, pero corre por fila desde que empieza SU proceso,
+            // no desde que se reclamó el lote. Si ya no está PROCESANDO, otra corrida la recuperó: no se envía.
+            if (!txOps.renovarInicioProceso(item.getId())) {
+                log.warn("[contingencia] cola_offline={} ya no está PROCESANDO (recuperada por otra corrida) — se omite", item.getId());
+                return;
+            }
 
             if (comprobanteRepo.findById(item.getComprobanteId()).isEmpty()) {
                 txOps.marcarAgotado(item.getId(), "El comprobante ya no existe");
@@ -104,17 +153,27 @@ public class FacturacionContingenciaService {
 
             if (r.recibido()) {
                 txOps.marcarCompletado(item.getId(), p.comprobanteId());
+            } else if (esReintento(item) && haciendaYaTieneElComprobante(item, p.clave(), p.empresa())) {
+                // MEDIO-1 (#428): el POST anterior sí llegó (el pod murió antes de cerrar la fila) y este reenvío
+                // rebotó por clave duplicada. Hacienda ya tiene el documento: se cierra como enviado y el polling
+                // normal confirma ACEPTADO/RECHAZADO.
+                log.warn("[contingencia] cola_offline={} comprobante={}: Hacienda ya tenía el documento (4xx al reenviar, status={}) — se marca completada",
+                    item.getId(), p.comprobanteId(), r.status());
+                txOps.marcarCompletado(item.getId(), p.comprobanteId());
             } else {
                 // 4xx: Hacienda rechazó la recepción; reenviar el mismo XML no lo arregla.
                 txOps.marcarAgotado(item.getId(), r.motivo());
             }
         } catch (ComprobanteInvalidoException e) {
-            log.error("[contingencia] comprobante={} no cumple el XSD oficial: {}", item.getComprobanteId(), e.getMessage());
-            txOps.marcarAgotado(item.getId(), e.getMessage());
+            // BAJO (#429): el mensaje del validador XSD puede citar el XML (datos del receptor): nunca crudo.
+            String resumen = resumenSeguro(e);
+            log.error("[contingencia] comprobante={} no cumple el XSD oficial: {}", item.getComprobanteId(), resumen);
+            txOps.marcarAgotado(item.getId(), resumen);
         } catch (Exception e) {
+            String resumen = resumenSeguro(e);
             log.error("[contingencia] error procesando cola_offline={} comprobante={}: {}",
-                item.getId(), item.getComprobanteId(), e.getMessage());
-            txOps.marcarFallo(item.getId(), e.getMessage());
+                item.getId(), item.getComprobanteId(), resumen);
+            txOps.marcarFallo(item.getId(), resumen);
         } finally {
             TenantContext.clear();
         }
