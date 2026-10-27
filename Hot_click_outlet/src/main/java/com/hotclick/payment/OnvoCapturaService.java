@@ -90,15 +90,16 @@ public class OnvoCapturaService {
 
         evento.setProcesado(true);
         evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
+        // M-08: con sobreventa el cobro queda registrado y el evento procesado: reintentar no cambia nada.
         if (sobreventa) {
-            // M-08: el cobro queda registrado y el evento procesado: reintentar no cambia nada.
             evento.setErrorProcesamiento("Cobro de ONVO sin stock: pedido en revisión, reembolso pendiente");
-            webhookEventRepository.save(evento);
+        }
+        webhookEventRepository.save(evento);
+        if (sobreventa) {
             log.error("[ALERTA-PAGO] ONVO cobró un pedido sin stock; en revisión, reembolso pendiente: sessionId={}",
                 checkoutSessionId);
             return Captura.COBRADO_SOBREVENTA;
         }
-        webhookEventRepository.save(evento);
 
         log.info("[onvo] Checkout confirmado: sessionId={}", checkoutSessionId);
         return Captura.CAPTURADO;
