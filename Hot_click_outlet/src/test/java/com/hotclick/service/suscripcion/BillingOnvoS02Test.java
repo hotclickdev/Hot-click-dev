@@ -52,7 +52,7 @@ class BillingOnvoS02Test {
         sub.setEstado("PAST_DUE");
         when(subs.findByOnvoSubscriptionIdForUpdate("clsub")).thenReturn(Optional.of(sub));
         LocalDate fin = LocalDate.of(2026, 12, 1);
-        servicio(subs, emps, planes, mock(OnvoBillingClient.class)).procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", fin);
+        servicio(subs, emps, planes, mock(OnvoBillingClient.class)).procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", fin, "clinv0001");
         assertThat(sub.getEstado()).isEqualTo("ACTIVO");
         assertThat(sub.getFechaFin()).isEqualTo(fin);
         assertThat(e.getPlanSaas()).isEqualTo("NEGOCIO_PLUS");
@@ -92,15 +92,16 @@ class BillingOnvoS02Test {
     }
 
     @Test
-    @DisplayName("B2: sin id de factura el ledger conserva el id de la suscripción como referencia")
-    void ledgerSinFacturaUsaLaSuscripcion() {
-        SuscripcionRepository subs = mock(SuscripcionRepository.class);
-        PlanRepository planes = mock(PlanRepository.class);
-        Suscripcion sub = prepararPago(subs, planes);
-        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
-        servicioConLedger(subs, planes, ledger)
-            .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1));
-        verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clsub"), any(), any(), any());
+    @DisplayName("B2: no existe la sobrecarga de 3 argumentos (sin factura no hay idempotencia por suscripción)")
+    void noExisteLaSobrecargaSinFactura() {
+        for (Class<?> c : new Class<?>[]{SuscripcionOnvoChangeService.class, com.hotclick.service.SuscripcionService.class}) {
+            long sobrecargas = java.util.Arrays.stream(c.getDeclaredMethods())
+                .filter(m -> m.getName().equals("procesarPagoOnvoVerificado")).count();
+            assertThat(sobrecargas).as(c.getSimpleName()).isEqualTo(1);
+            assertThat(java.util.Arrays.stream(c.getDeclaredMethods())
+                .filter(m -> m.getName().equals("procesarPagoOnvoVerificado"))
+                .allMatch(m -> m.getParameterCount() == 4)).as(c.getSimpleName()).isTrue();
+        }
     }
 
     @Test
@@ -118,16 +119,20 @@ class BillingOnvoS02Test {
     }
 
     @Test
-    @DisplayName("Ledger: una referencia de más de 120 caracteres o con forma inválida cae al id de la suscripción")
-    void ledgerReferenciaInvalidaUsaLaSuscripcion() {
-        for (String mala : new String[]{"x".repeat(121), "inv/../x"}) {
+    @DisplayName("B2: sin referencia de factura, o inválida (>120 caracteres, forma rara), falla cerrado: no activa ni escribe el ledger")
+    void ledgerReferenciaInvalidaFallaCerrado() {
+        for (String mala : new String[]{null, "", "x".repeat(121), "inv/../x"}) {
             SuscripcionRepository subs = mock(SuscripcionRepository.class);
             PlanRepository planes = mock(PlanRepository.class);
             Suscripcion sub = prepararPago(subs, planes);
             BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
-            servicioConLedger(subs, planes, ledger)
-                .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), mala);
-            verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clsub"), any(), any(), any());
+            var svc = servicioConLedger(subs, planes, ledger);
+            org.assertj.core.api.Assertions.assertThatThrownBy(
+                    () -> svc.procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), mala))
+                .isInstanceOf(IllegalArgumentException.class);
+            assertThat(sub.getEstado()).isEqualTo("PAST_DUE");
+            verify(subs, org.mockito.Mockito.never()).save(any());
+            verify(ledger, org.mockito.Mockito.never()).registrar(any(), any(), any(), any(), any(), any(), any(), any());
         }
     }
 

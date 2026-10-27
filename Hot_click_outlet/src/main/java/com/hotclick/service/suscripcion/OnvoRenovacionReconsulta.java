@@ -62,6 +62,11 @@ public class OnvoRenovacionReconsulta {
         static final Consulta PAGADA = new Consulta(Estado.PAGADA, false);
     }
 
+    /** Moneda real configurada de los cobros ONVO (para el ledger); vacía si falta {@code PLANES_MONEDA}. */
+    public java.util.Optional<String> monedaConfigurada() {
+        return precioPlan.moneda();
+    }
+
     public OnvoRenovacionReconsulta(OnvoBillingClient onvo, PlanRepository planRepo, SuscripcionOnvoChangeService cambio,
                                     PlatformTransactionManager txManager, LockTimeoutPorFila lockTimeout,
                                     OnvoReconsultaConfig config, PrecioPlanOnvo precioPlan) {

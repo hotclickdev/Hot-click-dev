@@ -24,7 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
     "onvo.secret-key=onvo_test_ficticia_no_es_real",
     "payments.onvo.permitir-llave-test=true",
     // En prod la URL pública no puede ser localhost (UrlPublicaArranqueGuard); application-test.properties usa localhost.
-    "app.url=https://hotclick.lat"
+    "app.url=https://hotclick.lat",
+    // El guard de prod exige la config de billing (valores ficticios).
+    "hotclick.planes.moneda=usd",
+    "hotclick.planes.emprendedor.precio-mensual-usd=9",
+    "hotclick.planes.pyme.precio-mensual-usd=24",
+    "hotclick.planes.negocio-plus.precio-mensual-usd=49",
+    "onvo.price-id.pyme=price_pyme_ficticio",
+    "onvo.price-id.negocio-plus=price_plus_ficticio"
 })
 @ActiveProfiles({"test", "prod"})
 @DisplayName("[ONVO] Arranque con perfil prod + llave onvo_test_ + opt-in")
