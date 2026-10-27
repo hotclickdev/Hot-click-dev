@@ -91,7 +91,7 @@ public class PublicChatController {
             return errorEmitter(emitter, "Tienda no encontrada");
         }
 
-        String visitanteKey = "public_chat:ip:" + clientIpResolver.resolve(request) + ":day";
+        String visitanteKey = "public_chat:ip:" + com.hotclick.security.IpParaLlave.clave(clientIpResolver.resolve(request)) + ":day";
         if (!rateLimiter.tryAcquire(visitanteKey, maxDiarioVisitante, DAILY_WINDOW)) {
             return errorEmitter(emitter, "Llegaste al límite de mensajes de hoy. Podés seguir buscando en el catálogo.");
         }
