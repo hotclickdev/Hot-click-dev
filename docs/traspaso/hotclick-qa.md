@@ -52,10 +52,13 @@ Resumida en `docs/traspaso/evidencia/hotclick-qa/`: `reqa-3-10-log.txt`, `l210/*
 Revisado sobre `b9f241d82` (fila de HotClick QA, sección 7 "HotClick QA" y "PARA EL BOT DE LA CUENTA NUEVA").
 
 ### (a) Errores o datos viejos
-- Fila HotClick QA: agregar que #350 ya tiene **APTO de Seguridad en `e68039dc433edb0eba9f28234112f119599fc623`**; falta CI verde sobre ese head exacto, el secret `HOTCLICK_NUMEROS_PROHIBIDOS` (solo Andrés) y la línea en `ci.yml` (job backend, paso Run tests; está en el cuerpo del PR).
-- El prompt de la sección 7 es el original (OnvoBillingClientTest, spike ONVO). Hoy el rol real es QA 7 (admin y seguridad de roles) + re-QA de áreas 3 y 10.
-- README línea 75 / tabla de herramientas: "el token ya tiene scope `workflow`". En esta cuenta los pushes que tocaban `.github/workflows` fueron rechazados por falta de ese scope; verificar con `gh auth status` antes de confiarlo.
-- Falta mencionar: `393b0816f` respaldado en `backup/sinpe-telefono-config-393b0816` y reemplazado por `20127bed2` (Bugs, diseño `soporteTelefono`); `cfd4919da` vive solo en la rama local `qa/sinpe-solo-onvo-350` y **no se sube**.
+Verificado el 26-oct, 6:10 PM CR, contra `origin/master` `3323bd1a8` y README `a96d96039`.
+- #350 **no está mergeado**: `SinNumerosRealesEnCodigoTest` no existe en master. El APTO de Seguridad era sobre `e68039dc4`, pero CI/CD mergeó master en la rama (`b1b88fba9`, 6:05 PM CR) y después hubo otro push (GitHub reporta el head `f4860693a`). **Ese APTO ya no vale: hay que pedir otro sobre el head nuevo.** El README todavía dice "#350 (`e68039dc`) con APTO".
+- **Dato viejo:** la línea de `ci.yml` ya está en master por #353 (`a96c77f7f`). Lo único que falta es crear el secret `HOTCLICK_NUMEROS_PROHIBIDOS` (solo Andrés). Hay que corregir la fila de HotClick QA y la del PR en el cuerpo de #350.
+- "Master actual: `c48cb9ea`" quedó viejo; hoy es `3323bd1a8` (#329 a #357 mergeados).
+- El prompt de la sección 7 es el original (OnvoBillingClientTest, spike ONVO). El rol real es QA 7 (admin y roles) más el re-QA de áreas 3, 6, 7 y 10.
+- Scope `workflow`: en esta cuenta los pushes que tocaban `.github/workflows` fueron rechazados. Hay que verificar con `gh auth status` (el paso 2 de la lista ya lo pide).
+- Falta en el README: `393b0816f` está respaldado en `backup/sinpe-telefono-config-393b0816` y lo reemplazó `20127bed2` (Bugs, `soporteTelefono`). `cfd4919da` está solo en la rama local `qa/sinpe-solo-onvo-350` y **no se sube**.
 
 ### (b) Lo que le falta a mi reemplazo
 - Herramientas: JDK `/workspace/tools/jdk21`, Maven `/workspace/qa1-verif/maven/bin`, gitleaks `/workspace/tools/gitleaks` (correr antes de cada push).
@@ -71,5 +74,5 @@ Revisado sobre `b9f241d82` (fila de HotClick QA, sección 7 "HotClick QA" y "PAR
 
 ### (c) Mejoras
 - Actualizar el prompt de HotClick QA en la sección 7 con el rol QA 7, la regla de test de regresión y las rutas de herramientas.
-- En el paso 4 de la lista, marcar #350 como "APTO, espera CI + secret".
+- En el paso 4 de la lista, marcar #350 como "necesita APTO nuevo sobre el head actual + CI verde; el secret lo crea Andrés". En el paso 7, aclarar que la línea de `ci.yml` ya está (#353).
 - Agregar al README una sección común "Entorno del box" (JDK, Maven, gitleaks, lock de suite, staging) para no repetirla por bot.
