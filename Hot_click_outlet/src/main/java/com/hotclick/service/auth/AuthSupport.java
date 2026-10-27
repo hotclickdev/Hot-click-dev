@@ -75,25 +75,7 @@ public class AuthSupport {
      * esquivaría el tope por IP). IPv4 e IPv4-mapeada quedan completas; NAT64 (64:ff9b::/96) usa su IPv4 embebida. Lo que no sea una IP literal pasa igual.
      */
     static String prefijoIp(String ip) {
-        if (ip == null || ip.indexOf(':') < 0 || !ip.matches("[0-9a-fA-F:.]+")) return ip; // sin DNS: solo literales
-        try {
-            java.net.InetAddress a = java.net.InetAddress.getByName(ip);
-            if (!(a instanceof java.net.Inet6Address)) return a.getHostAddress();
-            byte[] b = a.getAddress();
-            if (esNat64(b)) { // 64:ff9b::/96: la IPv4 embebida es el cliente real; un /64 mezclaría a todos
-                return (b[12] & 0xff) + "." + (b[13] & 0xff) + "." + (b[14] & 0xff) + "." + (b[15] & 0xff);
-            }
-            return String.format("%02x%02x:%02x%02x:%02x%02x:%02x%02x::/64",
-                b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
-        } catch (java.net.UnknownHostException e) {
-            return ip;
-        }
-    }
-
-    private static boolean esNat64(byte[] b) {
-        if (b[0] != 0x00 || b[1] != 0x64 || (b[2] & 0xff) != 0xff || (b[3] & 0xff) != 0x9b) return false;
-        for (int i = 4; i < 12; i++) if (b[i] != 0) return false;
-        return true;
+        return com.hotclick.security.IpParaLlave.reducir(ip);
     }
 
     /**

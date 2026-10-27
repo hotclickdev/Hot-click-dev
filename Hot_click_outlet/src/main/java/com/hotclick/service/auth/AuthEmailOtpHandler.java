@@ -53,7 +53,10 @@ public class AuthEmailOtpHandler {
             otpService.enviarOtp2Fa(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código enviado a " + usuario.getCorreo(), null));
         } catch (RuntimeException e) {
-            log.warn("[2FA/email/send] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
+            // Sin stack en warn (B3): solo la clase y la de la causa raíz, sin mensajes. El stack saneado va a debug.
+            Throwable saneada = TelegramTexto.paraLog(e);
+            log.warn("[2FA/email/send] {}", saneada.getMessage());
+            log.debug("[2FA/email/send] stack saneado", saneada);
             return ResponseEntity.badRequest().body(ResponseDTO.error(MENSAJE_ENVIO_FALLIDO));
         }
     }

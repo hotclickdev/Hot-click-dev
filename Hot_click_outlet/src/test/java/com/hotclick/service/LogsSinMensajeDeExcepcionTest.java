@@ -156,8 +156,15 @@ class LogsSinMensajeDeExcepcionTest {
 
         h.sendLoginEmailOtp(Map.of("tempToken", "t"), new MockHttpServletRequest());
 
-        assertLogLimpioConStackSaneado(1);
-        assertThat(appender.list.get(0).getFormattedMessage()).contains("RuntimeException");
+        // B3 (#416): el warn no lleva stack (solo clase y causa raíz); el stack saneado queda a nivel debug.
+        var warn = appender.list.stream().filter(ev -> ev.getLevel() == Level.WARN).toList();
+        assertThat(warn).hasSize(1);
+        assertThat(warn.get(0).getThrowableProxy()).as("sin stack en el warn").isNull();
+        assertThat(warn.get(0).getFormattedMessage()).contains("RuntimeException").doesNotContain(PII).doesNotContain("pii.fict");
+        var debug = appender.list.stream().filter(ev -> ev.getLevel() == Level.DEBUG).toList();
+        assertThat(debug).hasSize(1);
+        assertThat(debug.get(0).getThrowableProxy().getClassName()).endsWith("ExcepcionSaneada");
+        assertThat(debug.get(0).getThrowableProxy().getMessage()).doesNotContain(PII).doesNotContain("pii.fict");
     }
 
     @Test
