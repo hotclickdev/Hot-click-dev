@@ -81,15 +81,28 @@ class EquipoServiceUsuarioSuspendidoTest {
     }
 
     @Test
-    @DisplayName("eliminado (3) que ya fue miembro de ESTE equipo (se quitó): el reingreso sigue permitido (T-EQ-025)")
-    void eliminadoConMembresiaPreviaReingresa() {
+    @DisplayName("eliminado (3) con membresía previa en ESTE equipo: ya NO reingresa; no se le añade rol ni empresa")
+    void eliminadoConMembresiaPreviaYaNoReingresa() {
         MiembroEmpresa previo = new MiembroEmpresa(new Usuario(), new Empresa(), "EDITOR");
         previo.setEstado(0);
         when(miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(77L, 5L)).thenReturn(Optional.of(previo));
         when(miembroEmpresaRepository.save(any(MiembroEmpresa.class))).thenAnswer(i -> i.getArgument(0));
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
-        invitarConEstado(Constants.ESTADO_ELIMINADO);
-        verify(miembroEmpresaRepository).save(previo);
+        Usuario existente = new Usuario();
+        existente.setId(77L);
+        existente.setCorreo("susp@test.cr");
+        existente.setEstado(Constants.ESTADO_ELIMINADO);
+        when(usuarioRepository.findByCorreo("susp@test.cr")).thenReturn(Optional.of(existente));
+
+        assertThatThrownBy(() -> equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "x", "00000000", "LECTOR"))
+            .isInstanceOf(IllegalArgumentException.class);
+
+        verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), any());
+        org.assertj.core.api.Assertions.assertThat(existente.getRoles()).isNullOrEmpty();
+        org.assertj.core.api.Assertions.assertThat(existente.getEmpresa()).isNull();
+        org.assertj.core.api.Assertions.assertThat(existente.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
     }
 
     @Test
