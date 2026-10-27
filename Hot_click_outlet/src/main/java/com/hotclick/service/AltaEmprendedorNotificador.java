@@ -49,16 +49,16 @@ public class AltaEmprendedorNotificador {
         } else if (resultado.cupoGratis()) {
             sb.append(textoCruce(estado));
         } else {
-            sb.append("Sin cupo gratis. Requiere membresía PYME o Negocio Plus.");
+            sb.append("Sin cupo de ").append(estado.textoGratis()).append(". Requiere membresía PYME o Negocio Plus.");
         }
         return sb.toString();
     }
 
     private static String textoCruce(CupoEmprendedorEstado estado) {
         if (estado.usados() >= estado.limite()) {
-            return "Se ocupó el último cupo gratis. A partir de ahora la membresía tiene costo.";
+            return "Se ocupó el último cupo de " + estado.textoGratis() + ". A partir de ahora la membresía tiene costo.";
         }
-        return "Entró con cupo gratis. Quedan " + estado.cuposGratisDisponibles() + ".";
+        return "Entró con " + estado.textoGratis() + ". Quedan " + estado.cuposGratisDisponibles() + ".";
     }
 
     private static String sanitizar(String valor) {

@@ -311,6 +311,12 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         sub.setOnvoCustomerId(customerId);
         sub.setOnvoSubscriptionId(subscriptionId);
         sub.setOnvoPriceId(priceId);
+        // H1 (fail-closed): durante el trial Emprendedor la fila lleva fecha_fin = último día del trial. Sin ella, si
+        // el cobro falla la fila pasaría a PAST_DUE sin fecha y el job de impago (filtra por fecha_fin) nunca la cerraría.
+        if (sub.getFechaFin() == null && TrialEmprendedorService.tuvoTrial(empresa)
+            && empresa.getTrialEmprendedorHasta() != null) {
+            sub.setFechaFin(empresa.getTrialEmprendedorHasta());
+        }
         suscripcionRepo.save(sub);
     }
 
@@ -419,8 +425,15 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     public void procesarRenovacionFallida(String onvoSubId) {
         suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).ifPresent(sub -> {
             sub.setEstado("PAST_DUE");
-            suscripcionRepo.save(sub);
             Empresa empresa = sub.getEmpresa();
+            // H1 (fail-closed): un PAST_DUE sin fecha_fin nunca lo elige el job de impago y el negocio conservaría el
+            // plan para siempre. Sin fecha (suscripción de trial) se usa el fin del trial, o hoy si no hay trial.
+            if (sub.getFechaFin() == null) {
+                LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
+                LocalDate finTrial = empresa.getTrialEmprendedorHasta();
+                sub.setFechaFin(finTrial != null && finTrial.isBefore(hoy) ? finTrial : hoy);
+            }
+            suscripcionRepo.save(sub);
             empresa.setEstadoPlan("PAST_DUE");
             empresaRepo.save(empresa);
             anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_FALLIDO, onvoSubId, "Renovación ONVO fallida");

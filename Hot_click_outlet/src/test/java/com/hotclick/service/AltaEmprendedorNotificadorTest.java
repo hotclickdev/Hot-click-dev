@@ -1,6 +1,7 @@
 package com.hotclick.service;
 
 import com.hotclick.dto.CupoEmprendedorEstado;
+import com.hotclick.service.suscripcion.TrialEmprendedorConfig;
 import com.hotclick.dto.ResultadoAltaCupo;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,5 +56,32 @@ class AltaEmprendedorNotificadorTest {
         verify(telegramService).enviar(contains("Local Norte"));
         verify(notificacionEmailService).enviarAltaEmprendedorAAdminIT(
             eq("Local Norte"), eq("norte@correo.com"), eq(true), any());
+    }
+
+    @Test
+    @DisplayName("El aviso dice «3 meses gratis» (derivado de TRIAL_EMPRENDEDOR_DIAS=90) y ya no «cupo gratis»")
+    void textoDiceTresMesesGratisDerivadoDeLaConfig() {
+        String periodo = new TrialEmprendedorConfig(70, 90).periodoGratis();
+        ResultadoAltaCupo gratis = ResultadoAltaCupo.gratis(CupoEmprendedorEstado.of(3, 70, periodo));
+        ResultadoAltaCupo ultimo = ResultadoAltaCupo.gratis(CupoEmprendedorEstado.of(70, 70, periodo));
+        ResultadoAltaCupo pago = ResultadoAltaCupo.pago(CupoEmprendedorEstado.of(70, 70, periodo));
+
+        String a = AltaEmprendedorNotificador.armarTexto("Café Luz", "luz@correo.com", gratis);
+        String b = AltaEmprendedorNotificador.armarTexto("Café Luz", "luz@correo.com", ultimo);
+        String c = AltaEmprendedorNotificador.armarTexto("Café Luz", "luz@correo.com", pago);
+
+        assertThat(a).contains("Entró con 3 meses gratis. Quedan 67.");
+        assertThat(b).contains("último cupo de 3 meses gratis");
+        assertThat(c).contains("Sin cupo de 3 meses gratis");
+        assertThat(a + b + c).doesNotContain("cupo gratis");
+    }
+
+    @Test
+    @DisplayName("Si cambia TRIAL_EMPRENDEDOR_DIAS el texto cambia solo (45 días → «45 días gratis»)")
+    void textoSigueLaConfig() {
+        String periodo = new TrialEmprendedorConfig(70, 45).periodoGratis();
+        ResultadoAltaCupo alta = ResultadoAltaCupo.gratis(CupoEmprendedorEstado.of(1, 70, periodo));
+        assertThat(AltaEmprendedorNotificador.armarTexto("X", "x@y.cr", alta))
+            .contains("Entró con 45 días gratis").doesNotContain("3 meses");
     }
 }

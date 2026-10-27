@@ -1,7 +1,9 @@
 package com.hotclick.service.suscripcion;
 
 import com.hotclick.model.Empresa;
+import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
+import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.repository.TrialEmprendedorRepository;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.CacheManager;
@@ -34,13 +37,14 @@ class TrialEmprendedorServiceTest {
     @Mock TrialEmprendedorRepository trialRepo;
     @Mock EmpresaRepository empresaRepo;
     @Mock SuscripcionRepository suscripcionRepo;
+    @Mock PlanRepository planRepo;
     @Mock CacheManager cacheManager;
 
     TrialEmprendedorService service;
 
     @BeforeEach
     void setUp() {
-        service = new TrialEmprendedorService(trialRepo, empresaRepo, suscripcionRepo, cacheManager, 8);
+        service = new TrialEmprendedorService(trialRepo, empresaRepo, suscripcionRepo, planRepo, cacheManager, 8);
         lenient().when(empresaRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -59,6 +63,12 @@ class TrialEmprendedorServiceTest {
         Suscripcion s = new Suscripcion();
         s.setOnvoSubscriptionId(id);
         return s;
+    }
+
+    private Plan planEmprendedor() {
+        Plan p = new Plan();
+        p.setNombre("EMPRENDEDOR");
+        return p;
     }
 
     @Test
@@ -85,23 +95,79 @@ class TrialEmprendedorServiceTest {
     }
 
     @Test
-    @DisplayName("Trial vencido sin cobro ONVO → VENCIDO (fail-closed: sin pago no hay plan)")
-    void vencidoSinCobro() {
+    @DisplayName("Sin tarjeta ni suscripción ONVO: trial vencido → PAST_DUE + fila local con fechaFin (área 5 lo cierra)")
+    void sinTarjetaEntraAlFlujoDeImpago() {
         Empresa e = empresaEnTrial(7, HOY.minusDays(1));
         when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
         when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.empty());
+        when(planRepo.findByNombre("EMPRENDEDOR")).thenReturn(Optional.of(planEmprendedor()));
 
         assertThat(service.cerrarTrial(7L, HOY)).isTrue();
-        assertThat(e.getEstadoPlan()).isEqualTo("VENCIDO");
-        assertThat(e.getFechaVencPlan()).isEqualTo(HOY);
+
+        assertThat(e.getEstadoPlan()).isEqualTo("PAST_DUE");
+        assertThat(e.getFechaVencPlan()).isEqualTo(HOY.minusDays(1));
+        ArgumentCaptor<Suscripcion> cap = ArgumentCaptor.forClass(Suscripcion.class);
+        verify(suscripcionRepo).save(cap.capture());
+        assertThat(cap.getValue().getEstado()).isEqualTo("PAST_DUE");
+        assertThat(cap.getValue().getFechaFin()).isEqualTo(HOY.minusDays(1));
+        assertThat(cap.getValue().getEmpresa()).isSameAs(e);
+        assertThat(cap.getValue().getTrialEnd()).as("trialEnd vacío: el job legacy no lo cierra sin gracia").isNull();
     }
 
     @Test
-    @DisplayName("Trial vencido con suscripción ONVO dentro de la gracia: se espera el webhook del cobro")
-    void conCobroOnvoEsperaWebhook() {
+    @DisplayName("Con suscripción ONVO sin fechaFin (cobro del fin de trial no confirmado): PAST_DUE con fechaFin = fin del trial")
+    void conSuscripcionOnvoSinCobro() {
         Empresa e = empresaEnTrial(7, HOY.minusDays(3));
+        Suscripcion sub = subOnvo("sub_1");
+        sub.setEstado("TRIAL");
         when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
-        when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(subOnvo("sub_1")));
+        when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(sub));
+
+        assertThat(service.cerrarTrial(7L, HOY)).isTrue();
+
+        assertThat(e.getEstadoPlan()).isEqualTo("PAST_DUE");
+        assertThat(sub.getEstado()).isEqualTo("PAST_DUE");
+        assertThat(sub.getFechaFin()).isEqualTo(HOY.minusDays(3));
+        verify(suscripcionRepo).save(sub);
+    }
+
+    @Test
+    @DisplayName("Repara el PAST_DUE del webhook sin fechaFin (el job de impago nunca lo elegiría)")
+    void reparaPastDueSinFechaFin() {
+        Empresa e = empresaEnTrial(7, HOY.minusDays(2));
+        e.setEstadoPlan("PAST_DUE");
+        Suscripcion sub = subOnvo("sub_1");
+        sub.setEstado("PAST_DUE");
+        when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
+        when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(sub));
+
+        assertThat(service.cerrarTrial(7L, HOY)).isTrue();
+        assertThat(sub.getFechaFin()).isEqualTo(HOY.minusDays(2));
+    }
+
+    @Test
+    @DisplayName("PAST_DUE que ya tiene fechaFin: el cierre no lo toca otra vez (idempotente)")
+    void pastDueConFechaNoSeToca() {
+        Empresa e = empresaEnTrial(7, HOY.minusDays(2));
+        e.setEstadoPlan("PAST_DUE");
+        Suscripcion sub = subOnvo("sub_1");
+        sub.setEstado("PAST_DUE");
+        sub.setFechaFin(HOY.minusDays(2));
+        when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
+        when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(sub));
+
+        assertThat(service.cerrarTrial(7L, HOY)).isFalse();
+        verify(suscripcionRepo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Suscripción ya ACTIVO (cobro confirmado): no se toca")
+    void suscripcionActivaNoSeToca() {
+        Empresa e = empresaEnTrial(7, HOY.minusDays(1));
+        Suscripcion sub = subOnvo("sub_1");
+        sub.setEstado("ACTIVO");
+        when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
+        when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(sub));
 
         assertThat(service.cerrarTrial(7L, HOY)).isFalse();
         assertThat(e.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
@@ -109,14 +175,25 @@ class TrialEmprendedorServiceTest {
     }
 
     @Test
-    @DisplayName("Con suscripción ONVO pero sin cobro tras la gracia (8 días): VENCIDO")
-    void conCobroOnvoPasadaLaGracia() {
-        Empresa e = empresaEnTrial(7, HOY.minusDays(9));
+    @DisplayName("Fail-closed: sin plan base para abrir el flujo de impago → VENCIDO directo, nunca gratis")
+    void sinPlanBaseQuedaVencido() {
+        Empresa e = empresaEnTrial(7, HOY.minusDays(1));
         when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
-        when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(subOnvo("sub_1")));
+        when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.empty());
+        when(planRepo.findByNombre("EMPRENDEDOR")).thenReturn(Optional.empty());
 
         assertThat(service.cerrarTrial(7L, HOY)).isTrue();
         assertThat(e.getEstadoPlan()).isEqualTo("VENCIDO");
+    }
+
+    @Test
+    @DisplayName("Trial que no terminó todavía: no se cierra")
+    void trialVigenteNoSeCierra() {
+        Empresa e = empresaEnTrial(7, HOY);
+        when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
+
+        assertThat(service.cerrarTrial(7L, HOY)).isFalse();
+        verify(empresaRepo, never()).save(any());
     }
 
     @Test

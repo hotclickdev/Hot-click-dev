@@ -126,10 +126,10 @@ public class NegocioEmailBuilder {
     public String buildAltaEmprendedorAdmin(String nombreEmpresa, String correo,
                                            boolean cupoGratis, CupoEmprendedorEstado estado) {
         String estadoCupo = cupoGratis
-            ? "Entró con cupo gratis."
-            : "Sin cupo gratis. Requiere membresía PYME o Negocio Plus.";
+            ? "Entró con " + estado.textoGratis() + "."
+            : "Sin cupo de " + estado.textoGratis() + ". Requiere membresía PYME o Negocio Plus.";
         if (cupoGratis && estado.usados() >= estado.limite()) {
-            estadoCupo = "Se ocupó el último cupo gratis. A partir de ahora la membresía tiene costo.";
+            estadoCupo = "Se ocupó el último cupo de " + estado.textoGratis() + ". A partir de ahora la membresía tiene costo.";
         }
         return layout.abrirHtml()
             + layout.header("Nueva alta de emprendimiento", estadoCupo)

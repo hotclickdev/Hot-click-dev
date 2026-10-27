@@ -38,4 +38,18 @@ public class TrialEmprendedorConfig {
     public int dias() {
         return dias;
     }
+
+    /** Período gratis en palabras, derivado de los días configurados (90 → «3 meses»; 30 → «1 mes»; 45 → «45 días»). */
+    public String periodoGratis() {
+        return textoPeriodo(dias);
+    }
+
+    /** Múltiplos exactos de 30 días se dicen en meses; el resto en días. Nunca va fijo «3 meses» en el texto. */
+    public static String textoPeriodo(int dias) {
+        if (dias > 0 && dias % 30 == 0) {
+            int meses = dias / 30;
+            return meses == 1 ? "1 mes" : meses + " meses";
+        }
+        return dias == 1 ? "1 día" : dias + " días";
+    }
 }

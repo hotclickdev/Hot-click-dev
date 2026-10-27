@@ -48,7 +48,7 @@ public class CupoEmprendedorService {
     public CupoEmprendedorEstado estadoPublico() {
         try {
             CupoEmprendedorEstado leido = jdbcTemplate.queryForObject(SQL_ESTADO, (rs, rowNum) ->
-                CupoEmprendedorEstado.of(rs.getInt("usados"), trialConfig.cupo()));
+                CupoEmprendedorEstado.of(rs.getInt("usados"), trialConfig.cupo(), trialConfig.periodoGratis()));
             return leido != null ? leido : cupoCerrado();
         } catch (DataAccessException ex) {
             log.warn("[cupo-emprendedor] no se pudo leer el cupo — {}", ex.getMessage());
@@ -57,7 +57,7 @@ public class CupoEmprendedorService {
     }
 
     private CupoEmprendedorEstado cupoCerrado() {
-        return CupoEmprendedorEstado.of(trialConfig.cupo(), trialConfig.cupo());
+        return CupoEmprendedorEstado.of(trialConfig.cupo(), trialConfig.cupo(), trialConfig.periodoGratis());
     }
 
     /**

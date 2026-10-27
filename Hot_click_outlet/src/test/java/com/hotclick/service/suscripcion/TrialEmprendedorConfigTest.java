@@ -31,4 +31,14 @@ class TrialEmprendedorConfigTest {
         assertThatThrownBy(() -> new TrialEmprendedorConfig(70, 366)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> new TrialEmprendedorConfig(-1, 90)).isInstanceOf(IllegalStateException.class);
     }
+
+    @Test
+    @DisplayName("El período gratis sale de los días configurados: 90 → «3 meses», 30 → «1 mes», 45 → «45 días»")
+    void periodoGratisDerivadoDeLosDias() {
+        assertThat(new TrialEmprendedorConfig(70, 90).periodoGratis()).isEqualTo("3 meses");
+        assertThat(new TrialEmprendedorConfig(70, 60).periodoGratis()).isEqualTo("2 meses");
+        assertThat(new TrialEmprendedorConfig(70, 30).periodoGratis()).isEqualTo("1 mes");
+        assertThat(new TrialEmprendedorConfig(70, 45).periodoGratis()).isEqualTo("45 días");
+        assertThat(new TrialEmprendedorConfig(70, 1).periodoGratis()).isEqualTo("1 día");
+    }
 }

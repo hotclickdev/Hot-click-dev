@@ -71,7 +71,7 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         empresa.setTrialEmprendedorPos(4);
 
         lenient().when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
-        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        lenient().when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
         lenient().when(suscripcionRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(onvoBilling.getPriceIdForPlan("EMPRENDEDOR")).thenReturn("price_emprendedor");
@@ -189,5 +189,64 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
             .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Ya tenés el plan");
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+    }
+
+    @Test
+    @DisplayName("H1: la suscripción creada durante el trial lleva fechaFin = último día del trial (sin trialEnd)")
+    void altaDuranteElTrialGuardaFechaFin() {
+        estadoTrial(40);
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_emprendedor"), anyMap(), eq(40)))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_trial", "item_1"));
+
+        service.cambiarPlan(10L, 1L);
+
+        org.mockito.ArgumentCaptor<Suscripcion> cap = org.mockito.ArgumentCaptor.forClass(Suscripcion.class);
+        verify(suscripcionRepo, org.mockito.Mockito.atLeastOnce()).save(cap.capture());
+        Suscripcion guardada = cap.getAllValues().get(cap.getAllValues().size() - 1);
+        assertThat(guardada.getOnvoSubscriptionId()).isEqualTo("sub_trial");
+        assertThat(guardada.getFechaFin()).isEqualTo(empresa.getTrialEmprendedorHasta());
+        assertThat(guardada.getTrialEnd()).isNull();
+    }
+
+    @Test
+    @DisplayName("H1: renewal.failed de una suscripción de trial sin fechaFin la rellena (el job de impago la ve)")
+    void renovacionFallidaRellenaFechaFinConElFinDelTrial() {
+        LocalDate finTrial = LocalDate.now(Constants.ZONA_CR).minusDays(2);
+        empresa.setEstadoPlan(Constants.ESTADO_PLAN_TRIAL);
+        empresa.setTrialEmprendedorHasta(finTrial);
+        Suscripcion sub = new Suscripcion();
+        sub.setEmpresa(empresa);
+        sub.setPlan(planEmprendedor);
+        sub.setOnvoSubscriptionId("sub_trial");
+        when(suscripcionRepo.findByOnvoSubscriptionId("sub_trial")).thenReturn(Optional.of(sub));
+
+        service.procesarRenovacionFallida("sub_trial");
+
+        assertThat(sub.getEstado()).isEqualTo("PAST_DUE");
+        assertThat(sub.getFechaFin()).isEqualTo(finTrial);
+        assertThat(empresa.getEstadoPlan()).isEqualTo("PAST_DUE");
+    }
+
+    @Test
+    @DisplayName("H1: renewal.failed sin fechaFin y sin trial usa hoy; con fechaFin ya puesta no la cambia")
+    void renovacionFallidaSinTrialUsaHoyYRespetaFechaExistente() {
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
+        empresa.setTrialEmprendedorPos(null);
+        empresa.setTrialEmprendedorHasta(null);
+        Suscripcion sinFecha = new Suscripcion();
+        sinFecha.setEmpresa(empresa);
+        sinFecha.setOnvoSubscriptionId("sub_a");
+        Suscripcion conFecha = new Suscripcion();
+        conFecha.setEmpresa(empresa);
+        conFecha.setOnvoSubscriptionId("sub_b");
+        conFecha.setFechaFin(hoy.plusDays(5));
+        when(suscripcionRepo.findByOnvoSubscriptionId("sub_a")).thenReturn(Optional.of(sinFecha));
+        when(suscripcionRepo.findByOnvoSubscriptionId("sub_b")).thenReturn(Optional.of(conFecha));
+
+        service.procesarRenovacionFallida("sub_a");
+        service.procesarRenovacionFallida("sub_b");
+
+        assertThat(sinFecha.getFechaFin()).isEqualTo(hoy);
+        assertThat(conFecha.getFechaFin()).isEqualTo(hoy.plusDays(5));
     }
 }
