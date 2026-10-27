@@ -6,6 +6,7 @@ import com.hotclick.integration.BaseIntegrationTest;
 import com.hotclick.model.Usuario;
 import com.hotclick.utils.Constants;
 import dev.samstevens.totp.code.DefaultCodeGenerator;
+import dev.samstevens.totp.secret.DefaultSecretGenerator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,18 +27,19 @@ class TwoFactorHardeningTest extends BaseIntegrationTest {
 
     @Autowired private ObjectMapper mapper;
 
-    private static final String SECRET = "JBSWY3DPEHPK3PXP";
+    // Semilla generada en cada corrida (no hay valor fijo en el repo).
+    private final String semilla = new DefaultSecretGenerator().generate();
     private static final String PASS   = "Test1234!";
 
     private void activar2faTotp() {
         testUser.setTwoFactorEnabled(true);
         testUser.addMethod(Constants.METODO_2FA_TOTP);
-        testUser.setTwoFactorSecret(SECRET);
+        testUser.setTwoFactorSecret(semilla);
         usuarioRepository.saveAndFlush(testUser);
     }
 
     private String codigoValido() throws Exception {
-        return new DefaultCodeGenerator().generate(SECRET, Math.floorDiv(System.currentTimeMillis() / 1000, 30));
+        return new DefaultCodeGenerator().generate(semilla, Math.floorDiv(System.currentTimeMillis() / 1000, 30));
     }
 
     private Usuario recargar() {
@@ -58,7 +60,7 @@ class TwoFactorHardeningTest extends BaseIntegrationTest {
         llamar("setup", null).andExpect(status().isUnauthorized());
         llamar("setup", Map.of()).andExpect(status().isUnauthorized());
         Usuario u = recargar();
-        assertThat(u.getTwoFactorSecret()).isEqualTo(SECRET);
+        assertThat(u.getTwoFactorSecret()).isEqualTo(semilla);
         assertThat(u.getTwoFactorEnabled()).isTrue();
     }
 
@@ -67,21 +69,21 @@ class TwoFactorHardeningTest extends BaseIntegrationTest {
         activar2faTotp();
         llamar("setup", Map.of("contrasena", "Otra1234!")).andExpect(status().isUnauthorized());
         llamar("setup", Map.of("code", "000000")).andExpect(status().isUnauthorized());
-        assertThat(recargar().getTwoFactorSecret()).isEqualTo(SECRET);
+        assertThat(recargar().getTwoFactorSecret()).isEqualTo(semilla);
     }
 
     @Test
     void setup_conDosFaActivo_conContrasenaVigente_200_yRotaSecreto() throws Exception {
         activar2faTotp();
         llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk());
-        assertThat(recargar().getTwoFactorSecret()).isNotEqualTo(SECRET);
+        assertThat(recargar().getTwoFactorSecret()).isNotEqualTo(semilla);
     }
 
     @Test
     void setup_conDosFaActivo_conCodigoTotpVigente_200() throws Exception {
         activar2faTotp();
         llamar("setup", Map.of("code", codigoValido())).andExpect(status().isOk());
-        assertThat(recargar().getTwoFactorSecret()).isNotEqualTo(SECRET);
+        assertThat(recargar().getTwoFactorSecret()).isNotEqualTo(semilla);
     }
 
     @Test
@@ -100,7 +102,7 @@ class TwoFactorHardeningTest extends BaseIntegrationTest {
         llamar("disable", Map.of("contrasena", PASS)).andExpect(status().isUnauthorized());
         llamar("disable", Map.of("code", codigoValido())).andExpect(status().isUnauthorized());
         Usuario u = recargar();
-        assertThat(u.getTwoFactorSecret()).isEqualTo(SECRET);
+        assertThat(u.getTwoFactorSecret()).isEqualTo(semilla);
         assertThat(u.hasTotpEnabled()).isTrue();
     }
 
@@ -141,6 +143,6 @@ class TwoFactorHardeningTest extends BaseIntegrationTest {
         activar2faTotp();
         for (int i = 0; i < 5; i++) llamar("disable", Map.of("contrasena", "mala", "code", "000000")).andExpect(status().isUnauthorized());
         llamar("disable", Map.of("contrasena", PASS, "code", codigoValido())).andExpect(status().isTooManyRequests());
-        assertThat(recargar().getTwoFactorSecret()).isEqualTo(SECRET);
+        assertThat(recargar().getTwoFactorSecret()).isEqualTo(semilla);
     }
 }
