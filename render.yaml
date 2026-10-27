@@ -13,3 +13,15 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+      - key: PLANES_MONEDA
+        sync: false
+      - key: ONVO_PRICE_ID_PYME
+        sync: false
+      - key: ONVO_PRICE_ID_NEGOCIO_PLUS
+        sync: false
+      - key: EMPRENDEDOR_PRECIO_MENSUAL_USD
+        sync: false
+      - key: PYME_PRECIO_MENSUAL_USD
+        sync: false
+      - key: NEGOCIO_PLUS_PRECIO_MENSUAL_USD
+        sync: false

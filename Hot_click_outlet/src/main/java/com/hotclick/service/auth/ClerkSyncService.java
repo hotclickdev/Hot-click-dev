@@ -38,6 +38,7 @@ public class ClerkSyncService {
     public AuthResponse sync(String clerkUserId, String email,
                              String nombre, String apellido, String fotoUrl, boolean declaraMayoriaEdad) {
         Usuario usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl, declaraMayoriaEdad);
+        authSupport.exigirCuentaActiva(usuario); // antes de tocar ultimoAcceso: una cuenta no activa no entra
         usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now(Constants.ZONA_CR));
         usuario = usuarioRepository.findByCorreo(usuario.getCorreo())
             .orElseThrow(() -> new IllegalStateException("Error al cargar usuario tras sync"));

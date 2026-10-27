@@ -126,7 +126,8 @@ public class AuthCredentialLoginHandler {
                 || estado == Constants.ESTADO_ELIMINADO) {
             return respuestaCuentaBloqueada(MSG_CREDENCIALES);
         }
-        return null;
+        // Cualquier otro valor (p. ej. sin estado) tampoco entra: solo el estado 1 recibe tokens.
+        return estado == Constants.ESTADO_ACTIVO ? null : respuestaCuentaBloqueada(MSG_CREDENCIALES);
     }
 
     private void avisarVerificacionPorEmail(Usuario usuario) {
