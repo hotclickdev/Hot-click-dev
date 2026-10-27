@@ -80,3 +80,33 @@ Triage de bugs y deuda técnica en `hotclickdev/Hot-click-dev`: reproducir, arre
 **(c) Mejoras**
 - En el paso 0, agregar que el reemplazo lea los BAJO pendientes de hotclick-bugs.md antes de abrir PRs nuevos.
 - Pasar gitleaks al PATH de la box o documentar su ruta en la tabla de herramientas.
+
+## Registro de riesgos y deuda (actualizado 2026-10-27, hora de Costa Rica)
+
+Origen: revisiones de Seguridad sobre #398, #399, #403 y #413. Sin datos sensibles: solo rutas, clases y números de PR. «Sin PR» quiere decir que nadie lo tiene en curso.
+
+| # | Tema | Qué pasa | Dónde mirar | Estado |
+|---|---|---|---|---|
+| 1 | Idempotencia del pedido | Falta cerrar la idempotencia del alta de pedido ante reintentos (doble clic, red lenta): la protección actual usa el caché `idempotency-keys`, que vive en memoria de cada instancia (ver fila 7), así que con más de un pod o tras un reinicio un reintento puede crear un segundo pedido. A verificar con un test antes de arreglar. | `CacheConfig` (`idempotency-keys`), `StorefrontGuestOrderService` y el checkout autenticado | Riesgo abierto, sin PR |
+| 2 | `RateLimiter.incrementarYContar` no atómico | Cuenta con lectura y escritura separadas; con varias instancias o peticiones paralelas el contador puede quedar corto y dejar pasar más de lo permitido. Ya estaba en «Pendientes». | `security/RateLimiter.java` | Deuda, sin PR |
+| 3 | Tope por IP en PUT/PATCH/DELETE autenticados | `RateLimitingFilter` limita por IP los POST y los GET listados, pero un PUT/PATCH/DELETE con sesión (por ejemplo `confirmar-sinpe`) no tiene tope por IP propio. | `security/RateLimitingFilter.java` | Riesgo abierto, sin PR |
+| 4 | GET de comisión abierto a EDITOR | El `PUT` de comisión es solo ADMIN, pero el `GET` lo puede leer un EDITOR. Decidir si es lo que se quiere o se cierra a propietario. | `/api/admin/configuracion/comision` (fila `comision-vendedor` de `amenazas-activas.md`) | Por decidir, sin PR |
+| 5 | Invitado con el correo de otra persona | El checkout de invitado asocia el pedido a la cuenta existente de ese correo sin probar que es suya. Preexistente a #413, no se tocó. Descrito en `docs/security/amenazas-activas.md` (PR de BAJOS #413/#398). | `GuestUserResolver`, `StorefrontGuestOrderService` | Riesgo abierto; hueco en la tabla de amenazas |
+| 6 | Pre-deploy de `lower(correo)` | Antes de un índice único sobre `lower(correo)`: (a) respaldo y normalización de los correos existentes, (b) buscar duplicados sin distinguir mayúsculas (`SELECT lower(correo), count(*) FROM hot_click_usuario_tb GROUP BY 1 HAVING count(*) > 1`) y resolverlos a mano, (c) recién entonces crear el índice, en una migración Flyway aparte V204 o posterior (numerar contra master el día de hacerla). No hay migración en #399. | MED-5 de #399 | Pendiente, paso aparte |
+| 7 | Caché local por instancia | Cachés en memoria de cada instancia: `idempotency-keys`, `userDetailsCache` y, desde los BAJOS #413/#398, el muestreo local del log de ruta inválida. Con más de un pod una invalidación, una llave de idempotencia o un contador no se comparten. Tenerlo presente al escalar. | `CacheConfig`, `JwtRequestFilter`, `RateLimitingFilter` | Deuda conocida |
+
+### PRs mergeados hoy (2026-10-27)
+
+| PR | Resumen |
+|---|---|
+| #384 | Equipo: empresa destino única al invitar, `totalUsuarios` por miembros, rechazo de usuarios no activos |
+| #386 | Telegram: logs sin datos personales |
+| #389 | Auth: solo cuentas activas mantienen sesión; el eliminado no reingresa al equipo |
+| #393 | Seguridad: cuentas no activas sin tokens, cerrar cuenta invalida la caché, logs de Telegram sin mensaje de excepción |
+| #395 | `RateLimitingFilter` compara sobre ruta canónica |
+| #398 | HEAD comparte el cupo de GET; la ruta inválida cuenta contra un cupo por IP |
+| #399 | Roles solo propietario (executive, IA, forecast, inventario, sucursales) y correo normalizado (MED-1..5) |
+| #403 | BAJOS de #393: cuenta no activa en `seleccionar-empresa`, OTP y Clerk; logs sin `getMessage` |
+| #413 | M2b pedido de tienda con cuenta antigua, `Locale.ROOT` en todo main, logs sin `getMessage` |
+
+Los BAJOS de #413 y #398 (mensaje de excepción en logs y respuestas, teléfono sin dígitos, filas y log de la ruta inválida) van en un PR aparte; ver el estado en GitHub.
