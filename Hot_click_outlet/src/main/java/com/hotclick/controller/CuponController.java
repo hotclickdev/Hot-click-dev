@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -47,7 +48,7 @@ public class CuponController {
     @GetMapping("/validar")
     public ResponseEntity<ResponseDTO> validar(@RequestParam String codigo) {
         // Primero verificamos si el cupón existe en absoluto
-        Optional<Cupon> encontrado = cuponRepository.findByCodigo(codigo.trim().toUpperCase());
+        Optional<Cupon> encontrado = cuponRepository.findByCodigo(codigo.trim().toUpperCase(Locale.ROOT));
         if (encontrado.isEmpty()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Código inválido. Verificá que lo ingresaste correctamente."));
         }

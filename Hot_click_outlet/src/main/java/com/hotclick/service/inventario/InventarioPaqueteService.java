@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -495,7 +496,7 @@ public class InventarioPaqueteService {
     }
 
     private String nuevoCodigo() {
-        return "PKG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        return "PKG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase(Locale.ROOT);
     }
 
     private PaqueteInventario cargar(Long id) {

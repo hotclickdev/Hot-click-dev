@@ -1,5 +1,6 @@
 package com.hotclick.service.storage;
 
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -21,7 +22,7 @@ public final class StorageUrlHelper {
 
     public static String extensionDesdeContentType(String contentType) {
         if (contentType == null) return null;
-        String base = contentType.toLowerCase().split(";")[0].trim();
+        String base = contentType.toLowerCase(Locale.ROOT).split(";")[0].trim();
         return switch (base) {
             case "image/jpeg" -> "jpg";
             case "image/png"  -> "png";
@@ -34,7 +35,7 @@ public final class StorageUrlHelper {
 
     public static String obtenerExtension(String filename) {
         if (filename == null || !filename.contains(".")) return "";
-        String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase().trim();
+        String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT).trim();
         return ext.isEmpty() ? "" : ext;
     }
 

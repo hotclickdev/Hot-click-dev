@@ -3,6 +3,7 @@ package com.hotclick.payment;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -19,7 +20,7 @@ public class PaymentProviderFactory {
     public PaymentProviderFactory(List<PaymentProvider> providers) {
         this.registry = providers.stream()
             .filter(p -> p.getNombre() != null)
-            .collect(Collectors.toMap(p -> p.getNombre().toUpperCase(), p -> p));
+            .collect(Collectors.toMap(p -> p.getNombre().toUpperCase(Locale.ROOT), p -> p));
     }
 
     public PaymentProvider get(String nombre) {
@@ -27,7 +28,7 @@ public class PaymentProviderFactory {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("Elegí un método de pago");
         }
-        PaymentProvider provider = registry.get(nombre.trim().toUpperCase());
+        PaymentProvider provider = registry.get(nombre.trim().toUpperCase(Locale.ROOT));
         if (provider == null) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + nombre
                 + ". Disponibles: " + registry.keySet());
@@ -36,6 +37,6 @@ public class PaymentProviderFactory {
     }
 
     public boolean soporta(String nombre) {
-        return nombre != null && registry.containsKey(nombre.toUpperCase());
+        return nombre != null && registry.containsKey(nombre.toUpperCase(Locale.ROOT));
     }
 }

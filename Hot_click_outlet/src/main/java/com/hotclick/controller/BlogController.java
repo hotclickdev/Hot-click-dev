@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/blog")
@@ -108,7 +109,7 @@ public class BlogController {
 
     private String slugify(String text) {
         if (text == null) return "";
-        return text.toLowerCase()
+        return text.toLowerCase(Locale.ROOT)
             .replaceAll("[áàäâ]", "a").replaceAll("[éèëê]", "e")
             .replaceAll("[íìïî]", "i").replaceAll("[óòöô]", "o")
             .replaceAll("[úùüû]", "u").replaceAll("[ñ]", "n")

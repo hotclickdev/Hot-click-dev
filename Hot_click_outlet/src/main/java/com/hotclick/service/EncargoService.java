@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -67,7 +68,7 @@ public class EncargoService {
         encargo.setProducto(producto);
         encargo.setEmpresa(producto.getEmpresa());
         encargo.setNombreCliente(sanitizer.cleanWithLimit(req.getNombreCliente(), 120));
-        encargo.setEmail(sanitizer.cleanWithLimit(req.getEmail().trim().toLowerCase(), 200));
+        encargo.setEmail(sanitizer.cleanWithLimit(req.getEmail().trim().toLowerCase(Locale.ROOT), 200));
         if (req.getTelefono() != null) {
             encargo.setTelefono(sanitizer.cleanWithLimit(req.getTelefono(), 30));
         }
@@ -109,7 +110,7 @@ public class EncargoService {
         }
         List<EncargoPersonalizado> lista = (estado == null || estado.isBlank())
             ? encargoRepo.findByEmpresaIdConProducto(empresaId)
-            : encargoRepo.findByEmpresaIdAndEstadoConProducto(empresaId, estado.toUpperCase());
+            : encargoRepo.findByEmpresaIdAndEstadoConProducto(empresaId, estado.toUpperCase(Locale.ROOT));
         lista.forEach(this::enriquecer);
         return lista;
     }

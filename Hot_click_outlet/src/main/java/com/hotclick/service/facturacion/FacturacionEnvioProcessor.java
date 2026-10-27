@@ -16,6 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 /**
@@ -111,7 +112,7 @@ public class FacturacionEnvioProcessor {
         final String estado = estadoHacienda;
         boolean[] encolar = {false};
         actualizar(comprobanteId, c -> {
-            switch (estado.toLowerCase()) {
+            switch (estado.toLowerCase(Locale.ROOT)) {
                 case "aceptado" -> {
                     c.setEstado(ComprobanteFiscal.ESTADO_ACEPTADO);
                     c.setFechaRespuesta(LocalDateTime.now(Constants.ZONA_CR));

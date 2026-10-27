@@ -31,7 +31,7 @@ public class VentaAvisoService {
         try {
             notificacionEmailService.enviarConfirmacionPedido(pedido);
         } catch (Exception e) {
-            log.error("[venta-aviso] email falló para {}: {}", pedido.getNumeroPedido(), e.getMessage());
+            log.error("[venta-aviso] email falló para {}: {}", pedido.getNumeroPedido(), e.getClass().getSimpleName());
         }
         try {
             moderacionAdminAvisoService.avisarNuevaVenta(pedido);

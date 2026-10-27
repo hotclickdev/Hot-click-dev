@@ -132,7 +132,7 @@ public class AuthTotpVerifyHandler {
             return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
 
         } catch (Exception e) {
-            log.error("[2FA] verify error: {}", e.getMessage());
+            log.error("[2FA] verify error: {}", e.getClass().getSimpleName());
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         }
     }

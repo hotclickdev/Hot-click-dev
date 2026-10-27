@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class AuthSupport {
@@ -160,7 +161,7 @@ public class AuthSupport {
     }
 
     public String slugify(String text) {
-        String normalized = Normalizer.normalize(text.toLowerCase().trim(), Normalizer.Form.NFD);
+        String normalized = Normalizer.normalize(text.toLowerCase(Locale.ROOT).trim(), Normalizer.Form.NFD);
         return normalized.replaceAll("[^\\p{ASCII}]", "")
                          .replaceAll("[^a-z0-9\\s-]", "")
                          .replaceAll("\\s+", "-")

@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,26 +41,26 @@ public class ResetPlataformaKeepQaService {
 
     public static List<String> correosConservados() {
         return List.of(
-            Constants.CORREO_ADMIN.toLowerCase(),
-            Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(),
-            Constants.CORREO_QA_PYME.toLowerCase(),
-            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase(),
-            Constants.CORREO_PRUEBA_EMPRENDEDOR.toLowerCase(),
-            Constants.CORREO_PRUEBA_PYME.toLowerCase(),
-            Constants.CORREO_PRUEBA_NEGOCIO_PLUS.toLowerCase(),
-            CORREO_MOSTRADOR.toLowerCase()
+            Constants.CORREO_ADMIN.toLowerCase(Locale.ROOT),
+            Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(Locale.ROOT),
+            Constants.CORREO_QA_PYME.toLowerCase(Locale.ROOT),
+            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase(Locale.ROOT),
+            Constants.CORREO_PRUEBA_EMPRENDEDOR.toLowerCase(Locale.ROOT),
+            Constants.CORREO_PRUEBA_PYME.toLowerCase(Locale.ROOT),
+            Constants.CORREO_PRUEBA_NEGOCIO_PLUS.toLowerCase(Locale.ROOT),
+            CORREO_MOSTRADOR.toLowerCase(Locale.ROOT)
         );
     }
 
     public static List<String> correosVisiblesAdmin() {
         return List.of(
-            Constants.CORREO_ADMIN.toLowerCase(),
-            Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(),
-            Constants.CORREO_QA_PYME.toLowerCase(),
-            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase(),
-            Constants.CORREO_PRUEBA_EMPRENDEDOR.toLowerCase(),
-            Constants.CORREO_PRUEBA_PYME.toLowerCase(),
-            Constants.CORREO_PRUEBA_NEGOCIO_PLUS.toLowerCase()
+            Constants.CORREO_ADMIN.toLowerCase(Locale.ROOT),
+            Constants.CORREO_QA_EMPRENDEDOR.toLowerCase(Locale.ROOT),
+            Constants.CORREO_QA_PYME.toLowerCase(Locale.ROOT),
+            Constants.CORREO_QA_NEGOCIO_PLUS.toLowerCase(Locale.ROOT),
+            Constants.CORREO_PRUEBA_EMPRENDEDOR.toLowerCase(Locale.ROOT),
+            Constants.CORREO_PRUEBA_PYME.toLowerCase(Locale.ROOT),
+            Constants.CORREO_PRUEBA_NEGOCIO_PLUS.toLowerCase(Locale.ROOT)
         );
     }
 
@@ -136,7 +137,7 @@ public class ResetPlataformaKeepQaService {
         if (adminExtra != null && !adminExtra.isBlank()) {
             jdbc.update(
                 "INSERT INTO " + KEEP_CORREO + " (correo) VALUES (?) ON CONFLICT DO NOTHING",
-                adminExtra.trim().toLowerCase());
+                adminExtra.trim().toLowerCase(Locale.ROOT));
         }
         jdbc.execute("""
             INSERT INTO hot_click_wipe_keep_usuario (id_usuario)
@@ -212,13 +213,13 @@ public class ResetPlataformaKeepQaService {
     }
 
     private boolean esTablaUsuarioOEmpresa(String tabla) {
-        String n = tabla.toLowerCase();
+        String n = tabla.toLowerCase(Locale.ROOT);
         return n.endsWith(".hot_click_usuario_tb") || n.endsWith("hot_click_usuario_tb")
             || n.endsWith(".hot_click_empresa_tb") || n.endsWith("hot_click_empresa_tb");
     }
 
     private boolean esTablaKeep(String tabla) {
-        return tabla.toLowerCase().contains("hot_click_wipe_keep");
+        return tabla.toLowerCase(Locale.ROOT).contains("hot_click_wipe_keep");
     }
 
     private void borrarUsuariosAjenos() {

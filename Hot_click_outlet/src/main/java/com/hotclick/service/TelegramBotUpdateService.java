@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import java.util.Locale;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotclick.service.telegram.TelegramDatosQueryService;
 import com.hotclick.service.telegram.TelegramMenuBuilder;
@@ -71,7 +72,7 @@ public class TelegramBotUpdateService {
                 return;
             }
 
-            String lower = texto.toLowerCase();
+            String lower = texto.toLowerCase(Locale.ROOT);
             String datos = null;
             if (contieneAlguna(lower, "vend", "venta", "ingres", "cobr", "pedido")) {
                 datos = datosQueryService.mensajeVentasHoy(empresaId);

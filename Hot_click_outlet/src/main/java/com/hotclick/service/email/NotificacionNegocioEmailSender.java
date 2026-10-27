@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import java.util.Locale;
 import com.hotclick.dto.CupoEmprendedorEstado;
 import com.hotclick.service.ResendEmailService;
 import org.slf4j.Logger;
@@ -106,7 +107,7 @@ public class NotificacionNegocioEmailSender {
                                           String nombreItem, String motivo) {
         try {
             resendEmailService.send(correo,
-                "Actualización sobre " + tipoLabel.toLowerCase() + " — HotClick",
+                "Actualización sobre " + tipoLabel.toLowerCase(Locale.ROOT) + " — HotClick",
                 negocioEmailBuilder.buildModeracionRechazada(nombre, tipoLabel, nombreItem, motivo));
         } catch (Exception e) {
             log.error("No se pudo enviar email de moderación rechazada: {}", e.getClass().getSimpleName());

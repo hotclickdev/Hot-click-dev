@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 public class ProductoFeedController {
@@ -191,7 +192,7 @@ public class ProductoFeedController {
 
     private static String condicionGMC(String condicion) {
         if (condicion == null) return "new";
-        return switch (condicion.toUpperCase()) {
+        return switch (condicion.toUpperCase(Locale.ROOT)) {
             case "USADO"     -> "used";
             case "COMO_NUEVO" -> "refurbished";
             default           -> "new";

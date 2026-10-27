@@ -32,6 +32,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -244,7 +245,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(org.springframework.web.multipart.MultipartException.class)
     public ResponseEntity<ResponseDTO> handleMultipart(org.springframework.web.multipart.MultipartException ex) {
-        String msg = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("size") ?
+        String msg = ex.getMessage() != null && ex.getMessage().toLowerCase(Locale.ROOT).contains("size") ?
                 "La imagen no puede superar 10 MB" : "Error procesando el archivo";
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(ResponseDTO.error(msg));
     }

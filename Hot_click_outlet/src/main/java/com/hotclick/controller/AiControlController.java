@@ -84,7 +84,7 @@ public class AiControlController {
             } else if (maxCreditosAi != null) {
                 limite = maxCreditosAi.intValue();
             } else {
-                limite = limitesLegacy.getOrDefault(plan != null ? plan.toUpperCase() : "", 0);
+                limite = limitesLegacy.getOrDefault(plan != null ? plan.toUpperCase(Locale.ROOT) : "", 0);
             }
 
             // Precio único del modelo (Haiku 4.5 por defecto, configurable con ia.precio.*).

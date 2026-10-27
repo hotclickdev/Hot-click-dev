@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -193,7 +194,7 @@ public class PosQrSessionService {
         r.put("items",         itemsDe(sesion));
         LocalDateTime fecha = sesion.getFechaPago() != null ? sesion.getFechaPago() : sesion.getFechaCreacion();
         r.put("fechaPago",     fecha != null ? fecha.toString() : null);
-        r.put("referencia",    sesion.getToken().substring(0, 8).toUpperCase());
+        r.put("referencia",    sesion.getToken().substring(0, 8).toUpperCase(Locale.ROOT));
         return r;
     }
 

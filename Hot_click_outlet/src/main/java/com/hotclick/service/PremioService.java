@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -66,7 +67,7 @@ public class PremioService {
         resultado.setUsuarioFinal(usuario);
         resultado.setPremio(premioGanado);
         resultado.setFechaGiro(LocalDateTime.now(Constants.ZONA_CR));
-        resultado.setCodigoCanje(UUID.randomUUID().toString().substring(0, 10).toUpperCase());
+        resultado.setCodigoCanje(UUID.randomUUID().toString().substring(0, 10).toUpperCase(Locale.ROOT));
         resultado.setCanjeado(false);
         resultado.setExpiraEn(LocalDateTime.now(Constants.ZONA_CR).plusDays(30));
         resultado.setEstado(Constants.ESTADO_ACTIVO);

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -52,7 +53,7 @@ public class ConsolaPedidoService {
         if (nota == null || nota.trim().length() < 3) {
             throw new IllegalArgumentException("Escribí qué se acordó. La plata no sale sola.");
         }
-        String normal = tipo == null ? "" : tipo.trim().toUpperCase();
+        String normal = tipo == null ? "" : tipo.trim().toUpperCase(Locale.ROOT);
         if (!"REEMBOLSO".equals(normal) && !"CAMBIO".equals(normal)) {
             throw new IllegalArgumentException("La resolución es reembolso o cambio.");
         }
