@@ -54,6 +54,15 @@ class AuthRegistroIdentificacionTest {
         String ident = cap.getValue().getIdentificacion();
         assertThat(res.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(ident).isNotBlank().startsWith("REG-").hasSizeLessThanOrEqualTo(20);
+        // E2E-REG-01 (2ª causa, CI run 40426785960): toda columna String NOT NULL de Usuario debe ir no nula
+        for (java.lang.reflect.Field f : Usuario.class.getDeclaredFields()) {
+            jakarta.persistence.Column col = f.getAnnotation(jakarta.persistence.Column.class);
+            if (col == null || col.nullable() || f.getType() != String.class) continue;
+            f.setAccessible(true);
+            try {
+                assertThat(f.get(cap.getValue())).as("columna NOT NULL " + col.name()).isNotNull();
+            } catch (IllegalAccessException e) { throw new AssertionError(e); }
+        }
         assertThat(AuthRegistrationService.identificacionInterna()).isNotEqualTo(AuthRegistrationService.identificacionInterna());
     }
 }
