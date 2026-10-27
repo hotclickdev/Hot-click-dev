@@ -74,7 +74,15 @@ public class StockReservationService {
                 throw new IllegalArgumentException("«" + p.getNombreProducto() + "» es a cotizar: solicitá una cotización al vendedor");
             }
             // M-08: personalizado o bajo pedido se vende sin stock: no se exige ni se reserva (nada que liberar después).
-            if (!Boolean.TRUE.equals(p.getEsPersonalizado())) reservarUnidades(p, item.getCantidad());
+            if (!Boolean.TRUE.equals(p.getEsPersonalizado())) {
+                // Validar contra stockDisponible (stockActual - stockReservado)
+                if (p.getStockDisponible() < item.getCantidad()) {
+                    throw new StockInsuficienteException(p.getNombreProducto(), p.getStockDisponible(), item.getCantidad());
+                }
+                // Reservar unidades — se libera en cancelación/fallo, se consume en confirmación
+                p.setStockReservado(p.getStockReservado() + item.getCantidad());
+                productoRepository.save(p);
+            }
             productosMap.put(p.getId(), p);
 
             int precioUnitario = item.getPrecioUnitarioOverride() != null
@@ -107,15 +115,6 @@ public class StockReservationService {
             if (Boolean.TRUE.equals(p.getEsUnico())) { p.setVendido(true); p.setVisibleCatalogo(false); }
             productoRepository.save(p);
         }
-    }
-
-    /** Valida contra stockDisponible (stockActual - stockReservado) y reserva; se libera en cancelación/fallo y se consume al confirmar. */
-    private void reservarUnidades(Producto p, int cantidad) {
-        if (p.getStockDisponible() < cantidad) {
-            throw new StockInsuficienteException(p.getNombreProducto(), p.getStockDisponible(), cantidad);
-        }
-        p.setStockReservado(p.getStockReservado() + cantidad);
-        productoRepository.save(p);
     }
 
     /**
