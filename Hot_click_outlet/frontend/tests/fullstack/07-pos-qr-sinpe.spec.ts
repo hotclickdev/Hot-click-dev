@@ -124,7 +124,8 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
     const t = (await (await request.post('/api/pos/caja/abrir', { headers: auth(dueno), data: { montoInicial: 0 } })).json()).data
     const token = (await (await qr(request, dueno)).json()).data.token
     expect(token).toMatch(/^[a-f0-9]{32}$/)
-    sql(`UPDATE hot_click_pos_qr_sesion_tb SET fecha_expiracion = now() - interval '1 hour' WHERE token = :'token'`, { token })
+    // La columna guarda hora de CR (LocalDateTime) y now() de Postgres en CI es UTC: 1 h no alcanza a vencerla.
+    sql(`UPDATE hot_click_pos_qr_sesion_tb SET fecha_expiracion = now() - interval '1 day' WHERE token = :'token'`, { token })
     const info = await request.get(`/api/pos/qr/pago/${token}`)
     if (info.status() !== 404) expect(JSON.stringify(await info.json())).toMatch(/EXPIRADO|VENCID/i)
     const c = await request.put(`/api/pos/qr/${token}/confirmar-sinpe`, { headers: auth(editor), data: { referencia: ref() } })

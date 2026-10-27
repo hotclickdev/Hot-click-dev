@@ -35,11 +35,7 @@ test.describe('Flujo 1 — auth', () => {
   })
 
   test('registro local y login con la cuenta nueva', async ({ request }) => {
-    // BUG conocido (E2E-REG-01): en BD creada por el perfil dev (baseline 136 + ddl-auto) la columna
-    // hot_click_usuario_tb.identificacion queda NOT NULL (Usuario.identificacion nullable=false) y
-    // /api/auth/register no la manda → "No se pudo completar el registro". Cuando se arregle, este
-    // test pasa y Playwright lo marca como fallo: quitar test.fail() en el mismo PR del fix.
-    test.fail(true, 'E2E-REG-01: registro local falla con identificacion NOT NULL en BD nueva')
+    // E2E-REG-01 (identificacion NOT NULL en BD nueva) ya está arreglado en master: test normal.
     const correo = `e2e.${sufijo()}@example.test`
     const contrasena = `E2e-${sufijo()}-Aa1!`
     const reg = await request.post('/api/auth/register', {
