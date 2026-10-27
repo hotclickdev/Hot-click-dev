@@ -25,12 +25,25 @@ public class SesionesUsuarioService {
 
     @Transactional
     public void cortarSesiones(Usuario usuario) {
+        cortarSesiones(usuario, null);
+    }
+
+    /**
+     * Igual, pero además saca de la caché el UserDetails guardado bajo {@code correoPrevio}: sirve cuando el correo
+     * del usuario cambió antes de cortar las sesiones (cierre de cuenta), porque la caché se indexa por el correo
+     * con el que se emitió el JWT.
+     */
+    @Transactional
+    public void cortarSesiones(Usuario usuario, String correoPrevio) {
         if (usuario == null) return;
         usuario.setSesionesInvalidadasEn(LocalDateTime.now(Constants.ZONA_CR));
         usuarioRepository.save(usuario);
         refreshTokenService.revocarTodosDeUsuario(usuario);
         if (usuario.getCorreo() != null) {
             userDetailsCache.invalidate(usuario.getCorreo());
+        }
+        if (correoPrevio != null) {
+            userDetailsCache.invalidate(correoPrevio);
         }
     }
 }

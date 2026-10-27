@@ -155,7 +155,7 @@ public class TelegramClienteBotService {
         try {
             post("deleteMessage", Map.of("chat_id", chatId, "message_id", borrar));
         } catch (Exception e) {
-            log.debug("[telegram-cliente] no se pudo borrar el mensaje {} — {}", borrar, TelegramTexto.sinToken(e.getMessage()));
+            log.debug("[telegram-cliente] no se pudo borrar el mensaje {} — {}", borrar, e.getClass().getSimpleName());
         }
     }
 
@@ -189,7 +189,7 @@ public class TelegramClienteBotService {
         try {
             post("sendChatAction", Map.of("chat_id", chatId, "action", "typing"));
         } catch (Exception e) {
-            log.debug("[telegram-cliente] sendChatAction falló — {}", TelegramTexto.sinToken(e.getMessage()));
+            log.debug("[telegram-cliente] sendChatAction falló — {}", e.getClass().getSimpleName());
         }
     }
 
@@ -199,7 +199,7 @@ public class TelegramClienteBotService {
         try {
             post("answerCallbackQuery", Map.of("callback_query_id", callbackQueryId));
         } catch (Exception e) {
-            log.warn("[telegram-cliente] answerCallbackQuery falló — {}", TelegramTexto.sinToken(e.getMessage()));
+            log.warn("[telegram-cliente] answerCallbackQuery falló — {}", e.getClass().getSimpleName());
         }
     }
 

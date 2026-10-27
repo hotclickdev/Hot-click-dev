@@ -67,6 +67,12 @@ public class AuthTotpVerifyHandler {
                     "Cuenta temporalmente bloqueada. Intentá más tarde."));
             }
 
+            // Cuenta que dejó de estar activa entre la contraseña y el 2FA: respuesta genérica, sin gastar el
+            // código de recuperación ni contar un intento fallido.
+            if (!AuthSupport.estaActiva(usuario)) {
+                return ResponseEntity.status(401).body(ResponseDTO.error(CuentaNoActivaException.MENSAJE));
+            }
+
             // ── Códigos de recuperación (method-agnostic) ─────────────────────
             if (recoveryCode != null && !recoveryCode.isBlank()) {
                 String normalized = twoFactorService.normalizeRecoveryCode(recoveryCode);

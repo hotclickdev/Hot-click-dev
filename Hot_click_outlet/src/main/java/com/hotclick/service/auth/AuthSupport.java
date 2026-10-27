@@ -11,6 +11,7 @@ import com.hotclick.security.PlatformStaff;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.UsuarioService;
+import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,24 @@ public class AuthSupport {
         return ResponseEntity.status(429).body(ResponseDTO.error(MSG_LIMITE_2FA));
     }
 
+    /** Solo estado 1 (activo) recibe tokens: eliminado, suspendido, inactivo, pendiente o sin estado, no. */
+    public static boolean estaActiva(Usuario usuario) {
+        return usuario != null && Integer.valueOf(Constants.ESTADO_ACTIVO).equals(usuario.getEstado());
+    }
+
+    /** Falla cerrado con una respuesta genérica si la cuenta no está activa (sin revelar el estado). */
+    public void exigirCuentaActiva(Usuario usuario) {
+        if (!estaActiva(usuario)) {
+            throw new CuentaNoActivaException();
+        }
+    }
+
+    /**
+     * Único punto por el que se emiten access y refresh token al iniciar sesión (contraseña, 2FA, Clerk, registro):
+     * una cuenta con estado distinto de 1 no recibe tokens, sin importar por qué camino llegó acá.
+     */
     public AuthResponse buildAuthResponse(Usuario usuario) {
+        exigirCuentaActiva(usuario);
         String rol = PlatformStaff.rolPrincipal(
             usuario.getRoles().stream().map(r -> r.getNombreRol()).toList());
         // ADMIN y staff de plataforma: JWT y response sin tenant (V119 + V126).

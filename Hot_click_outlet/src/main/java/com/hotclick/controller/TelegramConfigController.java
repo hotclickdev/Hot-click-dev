@@ -115,7 +115,7 @@ public class TelegramConfigController {
             String respuesta = telegramConfigService.registrarWebhook();
             return ResponseEntity.ok(Map.of("telegram", respuesta != null ? respuesta : ""));
         } catch (Exception e) {
-            log.error("[telegram] setWebhook falló — {}: {}", e.getClass().getSimpleName(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram] setWebhook falló — {}", e.getClass().getSimpleName());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", "setWebhook falló, ver logs"));
         }
     }
