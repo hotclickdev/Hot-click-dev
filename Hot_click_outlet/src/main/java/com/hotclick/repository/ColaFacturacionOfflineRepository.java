@@ -38,4 +38,16 @@ public interface ColaFacturacionOfflineRepository extends JpaRepository<ColaFact
            "WHERE c.estado = 'PENDIENTE' AND c.fechaProximoIntento <= :ahora " +
            "ORDER BY c.fechaCreacion ASC")
     List<ColaFacturacionOffline> bloquearPendientesListas(@Param("ahora") LocalDateTime ahora, Pageable limite);
+
+    /**
+     * L4 (#406): filas PROCESANDO cuyo reclamo es anterior a {@code limite} (o sin fecha de inicio): el proceso que
+     * las reclamó murió o se reinició antes de marcarlas COMPLETADO/fallo y nadie más las toma. Bloqueadas con
+     * PESSIMISTIC_WRITE + SKIP LOCKED (portable H2/PostgreSQL) para que dos pods no las recuperen a la vez.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("SELECT c FROM ColaFacturacionOffline c " +
+           "WHERE c.estado = 'PROCESANDO' AND (c.fechaInicioProceso IS NULL OR c.fechaInicioProceso < :limite) " +
+           "ORDER BY c.fechaCreacion ASC")
+    List<ColaFacturacionOffline> bloquearProcesandoTrabadas(@Param("limite") LocalDateTime limite, Pageable lote);
 }

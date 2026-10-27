@@ -200,7 +200,8 @@ public class EmpresaPerfilService {
         }
         if (body.containsKey("regimenIva")) {
             String r = body.get("regimenIva");
-            if (!com.hotclick.service.hacienda.CalculadoraIva.REGIMENES.contains(r)) {
+            // L1 (#406): Set.of(...).contains(null) lanza NPE → 500. Nulo o desconocido es un 400 con texto fijo.
+            if (r == null || !com.hotclick.service.hacienda.CalculadoraIva.REGIMENES.contains(r)) {
                 throw new IllegalArgumentException("Régimen de IVA inválido: elegí SIMPLIFICADO o TRADICIONAL.");
             }
             // Cambiar de régimen altera lo que se cobra y lo que se declara a Hacienda: apagado por defecto

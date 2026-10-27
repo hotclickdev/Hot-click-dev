@@ -31,6 +31,10 @@ public class FacturacionContingenciaService {
 
     private static final int TAMANO_LOTE = 20;
 
+    /** L4 (#406): minutos en PROCESANDO tras los cuales se considera trabada (el proceso que la reclamó cayó). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.facturacion.contingencia.procesando-timeout-minutos:30}")
+    private long procesandoTimeoutMinutos = 30;
+
     private final ColaFacturacionOfflineTxOps txOps;
     private final ComprobanteFiscalRepository comprobanteRepo;
     private final ComprobanteXmlPreparer preparer;
@@ -60,6 +64,7 @@ public class FacturacionContingenciaService {
      * ver ColaFacturacionOfflineRepository) y lo procesa uno a uno.
      */
     public void procesarPendientes() {
+        recuperarTrabadas();
         List<ColaFacturacionOffline> lote = txOps.reclamarLote(TAMANO_LOTE);
         if (lote.isEmpty()) {
             return;
@@ -67,6 +72,15 @@ public class FacturacionContingenciaService {
         log.info("[contingencia] {} comprobante(s) reclamado(s) para reintento", lote.size());
         for (ColaFacturacionOffline item : lote) {
             procesarItem(item);
+        }
+    }
+
+    /** Antes de reclamar: las filas PROCESANDO huérfanas vuelven a PENDIENTE y entran en este mismo ciclo. */
+    void recuperarTrabadas() {
+        try {
+            txOps.recuperarTrabadas(java.time.Duration.ofMinutes(Math.max(1, procesandoTimeoutMinutos)), TAMANO_LOTE * 5);
+        } catch (Exception e) {
+            log.error("[contingencia] no se pudieron recuperar filas trabadas: {}", e.getClass().getSimpleName());
         }
     }
 

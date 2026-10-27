@@ -70,6 +70,40 @@ public class ColaFacturacionOfflineTxOps {
         return colaRepo.saveAll(marcarProcesando(lote, ahora));
     }
 
+    /**
+     * L4 (#406): devuelve a PENDIENTE las filas que llevan más de {@code timeout} en PROCESANDO (el proceso que las
+     * reclamó cayó antes de cerrarlas). Cuenta como un intento (si ya agotó {@code maxIntentos} pasa a AGOTADO, para
+     * que un comprobante que tumba el proceso no cicle para siempre). Idempotente: una fila recuperada deja de estar
+     * PROCESANDO, así que una segunda corrida no la toca; las que están siendo procesadas con un lock vivo se saltan.
+     *
+     * @return cuántas filas se recuperaron
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int recuperarTrabadas(java.time.Duration timeout, int limite) {
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        List<ColaFacturacionOffline> trabadas =
+            colaRepo.bloquearProcesandoTrabadas(ahora.minus(timeout), PageRequest.of(0, limite));
+        for (ColaFacturacionOffline c : trabadas) {
+            int intentos = c.getIntentos() + 1;
+            c.setIntentos(intentos);
+            c.setUltimoError("Recuperada de PROCESANDO tras superar el tiempo máximo de proceso");
+            c.setFechaInicioProceso(null);
+            if (intentos >= c.getMaxIntentos()) {
+                c.setEstado(ColaFacturacionOffline.ESTADO_AGOTADO);
+                log.warn("[contingencia] cola_offline={} agotó {} intentos al recuperarla de PROCESANDO — revisión manual",
+                    c.getId(), intentos);
+            } else {
+                c.setEstado(ColaFacturacionOffline.ESTADO_PENDIENTE);
+                c.setFechaProximoIntento(ahora);
+            }
+        }
+        colaRepo.saveAll(trabadas);
+        if (!trabadas.isEmpty()) {
+            log.warn("[contingencia] {} fila(s) trabada(s) en PROCESANDO recuperada(s)", trabadas.size());
+        }
+        return trabadas.size();
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void marcarCompletado(Long colaId, Long comprobanteId) {
         colaRepo.findById(colaId).ifPresent(item -> {

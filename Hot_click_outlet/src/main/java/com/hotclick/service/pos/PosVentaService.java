@@ -187,9 +187,9 @@ public class PosVentaService {
         List<PedidoItem> items = new ArrayList<>();
         List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
         for (PosVentaDTO.Item itemDto : dto.getItems()) {
-            Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
-            PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), pedido.getEmpresa().getId());
+            Producto producto = PosProductoDeEmpresa.ocultandoExistencia(
+                productoRepository.findByIdForUpdate(itemDto.getProductoId()).orElse(null),
+                itemDto.getProductoId(), pedido.getEmpresa().getId());
             exigirVendiblePorPos(producto);
             int cantidad = cantidadValida(itemDto.getCantidad());
             // Precio siempre del catálogo — no confiar en el body del cliente.
@@ -216,8 +216,8 @@ public class PosVentaService {
         int descuento = Math.min(Math.max(0, pedido.getDescuentoTotal()), subtotal);
         pedido.setDescuentoTotal(descuento);
         // IVA sobre el neto después del descuento de caja, igual que el XML.
-        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
-            pedido.getEmpresa(), dto.isFacturaElectronica(), lineasIva, descuento);
+        int impuesto = com.hotclick.service.hacienda.MontoExacto.aInt(com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            pedido.getEmpresa(), dto.isFacturaElectronica(), lineasIva, descuento));
         pedido.setMontoImpuesto(impuesto);
         pedido.setAplicaImpuesto(impuesto > 0);
         return new TotalesPos(subtotal, costoTotal, descuento, impuesto);
@@ -237,9 +237,9 @@ public class PosVentaService {
         long subtotal = 0;
         List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
         for (PosVentaDTO.Item itemDto : dto.getItems()) {
-            Producto producto = productoRepository.findById(itemDto.getProductoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
-            PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), empresaId);
+            // L2 (#406): inexistente y de otro negocio dan exactamente la misma respuesta (404, texto fijo).
+            Producto producto = PosProductoDeEmpresa.ocultandoExistencia(
+                productoRepository.findById(itemDto.getProductoId()).orElse(null), itemDto.getProductoId(), empresaId);
             exigirVendiblePorPos(producto);
             int cantidad = cantidadValida(itemDto.getCantidad());
             Integer precio = producto.getPrecioEfectivo();
