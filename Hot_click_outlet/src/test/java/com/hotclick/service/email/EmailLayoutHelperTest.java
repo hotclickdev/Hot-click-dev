@@ -41,7 +41,7 @@ class EmailLayoutHelperTest {
             .startsWith("<!DOCTYPE html>")
             .contains("<table")
             .contains("HotClick")
-            .contains("8666-7888")
+            .contains("Respondé este correo")
             .endsWith("</html>");
         assertThat(html).doesNotContain("display:flex");
     }

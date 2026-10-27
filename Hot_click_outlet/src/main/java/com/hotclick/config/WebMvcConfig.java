@@ -2,6 +2,7 @@ package com.hotclick.config;
 
 import com.hotclick.security.LectorSoloLecturaInterceptor;
 import com.hotclick.security.SlugTenantInterceptor;
+import com.hotclick.security.SuspensionImpagoInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -13,11 +14,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     private final @NonNull HandlerInterceptor slugTenantInterceptor;
     private final @NonNull HandlerInterceptor lectorSoloLecturaInterceptor;
+    private final @NonNull HandlerInterceptor suspensionImpagoInterceptor;
 
     public WebMvcConfig(@NonNull SlugTenantInterceptor slugTenantInterceptor,
-                        @NonNull LectorSoloLecturaInterceptor lectorSoloLecturaInterceptor) {
+                        @NonNull LectorSoloLecturaInterceptor lectorSoloLecturaInterceptor,
+                        @NonNull SuspensionImpagoInterceptor suspensionImpagoInterceptor) {
         this.slugTenantInterceptor = slugTenantInterceptor;
         this.lectorSoloLecturaInterceptor = lectorSoloLecturaInterceptor;
+        this.suspensionImpagoInterceptor = suspensionImpagoInterceptor;
     }
 
     @Override
@@ -32,5 +36,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
                                      "/api/payments/**", "/api/sinpe/**",
                                      // pago público POS-QR del comprador (no es escritura del negocio actual)
                                      "/api/pos/qr/pago/**");
+        // Suscripción impaga (día 9+): el negocio solo ve cuenta/monto y paga (allowlist exacta en el interceptor);
+        // las rutas de comprador ya rechazan tiendas no ACTIVO por su cuenta.
+        registry.addInterceptor(suspensionImpagoInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/public/**",
+                                     // comprador: rutas exactas (ya rechazan tiendas no ACTIVO por su cuenta)
+                                     "/api/tienda/*/pedidos",
+                                     "/api/payments/guest-checkout", "/api/payments/guest/cancel/*",
+                                     "/api/payments/tilopay/confirmar/*", "/api/payments/tilopay/reintentar/*",
+                                     "/api/sinpe/checkout", "/api/sinpe/guest-checkout",
+                                     "/api/sinpe/comprobantes/*/url-firmada",
+                                     "/api/webhooks/**", "/api/pos/qr/pago/**");
     }
 }

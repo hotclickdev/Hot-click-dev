@@ -87,6 +87,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> getSuscripcion() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return ResponseEntity.ok(suscripcionService.getSuscripcionInfo(empresaId));
     }
 
@@ -97,6 +98,7 @@ public class SuscripcionController {
             @RequestParam(defaultValue = "0") int pagina) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return ResponseEntity.ok(suscripcionService.getFacturas(empresaId, pagina));
     }
 
@@ -111,27 +113,14 @@ public class SuscripcionController {
         return ResponseEntity.ok(Map.of("status", "ok", "mensaje", "Trial iniciado por 14 días"));
     }
 
-    /** Checkout de plan: con precios reales (V168) cobra con Tilopay; Stripe ya no se usa (ESC-5). */
+    /**
+     * Checkout de plan. Auditor 5 S-01: el cobro de mensualidades va por ONVO (mismo flujo que
+     * /cambiar-plan); Tilopay quedó sin cobro recurrente, así que ya no se ofrece por aquí.
+     */
     @PostMapping("/checkout/{planId}")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
-    public ResponseEntity<Map<String, Object>> crearCheckout(@PathVariable Long planId) {
-        Long empresaId = TenantContext.get();
-        if (empresaId == null) return ResponseEntity.status(401).build();
-        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-012
-        try {
-            planRepo.findById(planId).ifPresent(pl -> preciosPlanes.requerir(pl.getNombre()));
-            return ResponseEntity.ok(suscripcionTilopayService.iniciarCambioPlan(empresaId, planId));
-        } catch (com.hotclick.exception.PlanSinPrecioException e) {
-            return planSinPrecio(e);
-        } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
-            return cobroNoDisponible();
-        } catch (com.hotclick.exception.PlanNoDisponibleException e) {
-            return ResponseEntity.status(409).body(Map.of("error", com.hotclick.exception.PlanNoDisponibleException.MENSAJE, "codigo", "PLAN_SIN_PRECIO"));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(404).body(Map.of("error", "Plan no encontrado"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
-        }
+    public ResponseEntity<Map<String, Object>> crearCheckout(@PathVariable Long planId, HttpServletRequest request) {
+        return cambiarPlan(planId, request);
     }
 
     /** Genera URL del Customer Portal de Stripe (auto-gestión de pago/facturación). */
@@ -194,11 +183,15 @@ public class SuscripcionController {
                     return ResponseEntity.badRequest().body(Map.of("error", "Verificá tu correo antes de activar un plan de pago"));
                 }
             }
-            Map<String, Object> r = suscripcionTilopayService.iniciarCambioPlan(empresaId, planId);
-            Map<String, Object> out = new java.util.LinkedHashMap<>(r);
-            out.put("status", "ACTIVO".equals(r.get("estado")) ? "activado" : "requiere_pago");
-            out.put("planNombre", r.get("plan"));
+            // Auditor 5 S-01: alta/cambio por ONVO (fail-closed sin llave). El plan local solo cambia
+            // cuando el webhook de billing verifica el cobro contra ONVO (S-02/S-06).
+            Map<String, Object> out = new java.util.LinkedHashMap<>(suscripcionService.cambiarPlanOnvo(empresaId, planId));
+            out.putIfAbsent("proveedor", "ONVO");
             return ResponseEntity.ok(out);
+        } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
+                "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
         } catch (com.hotclick.exception.PlanSinPrecioException e) {
             return planSinPrecio(e);
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
@@ -221,6 +214,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> confirmarTilopay(@PathVariable String orderNumber) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         try {
             return ResponseEntity.ok(suscripcionTilopayService.confirmar(empresaId, orderNumber));
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
@@ -238,6 +232,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> cobroPendiente() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         try {
             return suscripcionTilopayService.pendiente(empresaId)
                 .map(ResponseEntity::ok)
@@ -253,6 +248,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> planPendiente() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return suscripcionTilopayService.planNuevoPendiente(empresaId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
@@ -276,7 +272,9 @@ public class SuscripcionController {
         return ResponseEntity.status(409).body(body);
     }
 
-    private ResponseEntity<Map<String, Object>> soloPropietario() {
-        return ResponseEntity.status(403).body(Map.of("error", com.hotclick.security.PropietarioGuard.MSG));
+    private static <T> ResponseEntity<T> soloPropietario() {
+        @SuppressWarnings("unchecked")
+        T body = (T) Map.of("error", com.hotclick.security.PropietarioGuard.MSG);
+        return ResponseEntity.status(403).body(body);
     }
 }

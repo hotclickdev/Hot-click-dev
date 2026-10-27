@@ -45,7 +45,7 @@ class SinpeCheckoutServiceEmpresaTest {
     @Mock private CuponService cuponService;
     @Mock private GiftCardService giftCardService;
     @Mock private PasswordEncoder passwordEncoder;
-    @Mock private com.hotclick.service.OnvoService onvoService;
+    @Mock private SinpeOnvoMarketplaceService sinpeOnvo;
     @Mock private GuestCancelTokenService guestCancelTokenService;
     @Mock private AtribucionPedidoService atribucionPedidoService;
     @Mock private EncargoService encargoService;
@@ -66,7 +66,14 @@ class SinpeCheckoutServiceEmpresaTest {
 
     @BeforeEach
     void setUp() {
-        org.mockito.Mockito.when(onvoService.sinpeDestino()).thenReturn("DESTINO_ONVO_PRUEBA");
+
+        // P-05: la reserva usa el batch lock ordenado; delega en los stubs por id de cada test.
+        org.mockito.Mockito.lenient().when(productoRepository.findAllByIdsForUpdate(org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
+                .map(id -> productoRepository.findByIdForUpdate(id))
+                .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
+        org.mockito.Mockito.when(sinpeOnvo.destinoDisponible()).thenReturn("DESTINO_ONVO_PRUEBA");
+        org.mockito.Mockito.lenient().when(sinpeOnvo.iniciar(any(), any(), any(), any())).thenReturn(java.time.LocalDateTime.now().plusMinutes(15));
         empresa = new Empresa();
         empresa.setId(7L);
 
@@ -98,7 +105,7 @@ class SinpeCheckoutServiceEmpresaTest {
             checkoutValidator, planner, orderPricingService, checkoutOrderFactory, giftCardService);
 
         service = new SinpeCheckoutService();
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "onvoService", onvoService);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "sinpeOnvo", sinpeOnvo);
         ReflectionTestUtils.setField(service, "reservaAntiBot", reservaAntiBot);
         ReflectionTestUtils.setField(service, "autocompraGuard", guardAutocompra());
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
@@ -136,6 +143,10 @@ class SinpeCheckoutServiceEmpresaTest {
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
         req.setBodegaId(1L);
         req.setMetodoEnvio("RETIRO_EN_TIENDA");
+        req.setProvider("SINPE");
+        req.setSinpeIdentificacion("01-1234-5678");
+        req.setSinpeTipoIdentificacion(0);
+        req.setSinpeTelefono("80000000");
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
         item.setCantidad(1);
@@ -146,7 +157,7 @@ class SinpeCheckoutServiceEmpresaTest {
         ArgumentCaptor<Pedido> captor = ArgumentCaptor.forClass(Pedido.class);
         verify(pedidoRepository, org.mockito.Mockito.atLeastOnce()).save(captor.capture());
         assertThat(captor.getAllValues()).allMatch(p -> p.getEmpresa() == empresa);
-        assertThat(captor.getValue().getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        assertThat(captor.getValue().getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE); // P-01: SINPE ONVO, sin comprobante
         assertThat(resp.getCancelToken()).isEqualTo("tok-test");
         assertThat(resp.getProveedor()).isEqualTo(Constants.PROVEEDOR_SINPE);
     }
@@ -196,6 +207,10 @@ class SinpeCheckoutServiceEmpresaTest {
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
         req.setBodegaId(1L);
         req.setMetodoEnvio("RETIRO_EN_TIENDA");
+        req.setProvider("SINPE");
+        req.setSinpeIdentificacion("01-1234-5678");
+        req.setSinpeTipoIdentificacion(0);
+        req.setSinpeTelefono("80000000");
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
         item.setCantidad(2);

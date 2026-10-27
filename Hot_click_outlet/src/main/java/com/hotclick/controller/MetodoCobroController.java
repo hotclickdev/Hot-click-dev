@@ -33,6 +33,7 @@ public class MetodoCobroController {
 
     @GetMapping
     public ResponseEntity<ResponseDTO> listar() {
+        if (!puedeGestionar()) return soloPropietario(); // QA2-área2: datos bancarios
         return ResponseEntity.ok(ResponseDTO.success("Métodos de cobro", metodoCobroService.listar()));
     }
 

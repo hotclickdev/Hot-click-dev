@@ -26,6 +26,19 @@ public class PaymentCheckoutRequest {
     /** Proveedor de pago: "STRIPE" (default) o "SINPE". */
     private String provider;
 
+    /** P-01 SINPE por ONVO: identificación del pagador (formato según tipo ONVO) y su tipo. */
+    private String sinpeIdentificacion;
+    private Integer sinpeTipoIdentificacion;
+
+    public String getSinpeIdentificacion() { return sinpeIdentificacion; }
+    public void setSinpeIdentificacion(String v) { this.sinpeIdentificacion = v; }
+    /** SINPE Móvil del comprador (no el destino); se normaliza a +506########. */
+    private String sinpeTelefono;
+    public String getSinpeTelefono() { return sinpeTelefono; }
+    public void setSinpeTelefono(String v) { this.sinpeTelefono = v; }
+    public Integer getSinpeTipoIdentificacion() { return sinpeTipoIdentificacion; }
+    public void setSinpeTipoIdentificacion(Integer v) { this.sinpeTipoIdentificacion = v; }
+
     /** Correo del comprador invitado (no autenticado). */
     private String guestEmail;
 

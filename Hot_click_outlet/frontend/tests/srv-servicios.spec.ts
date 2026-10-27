@@ -148,7 +148,7 @@ test.describe('Encargo y cotización públicos', () => {
     await expect(page.getByText('22 sep · 10:14')).toBeVisible()
     await expect(page.getByRole('listitem').filter({ hasText: 'Esperando tu pago' })).toHaveAttribute('aria-current', 'step')
     await expect(page.getByRole('button', { name: 'Pagar ₡11.000' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Escribirle a la tienda' })).toHaveAttribute('href', /wa\.me\/50686667888/)
+    await expect(page.getByRole('link', { name: 'Escribirle a la tienda' })).toHaveAttribute('href', /wa\.me\/00000000000/)
   })
 
   test('encargo rechazado muestra el motivo y no ofrece pagar', async ({ page }) => {
@@ -188,7 +188,7 @@ test.describe('Encargo y cotización públicos', () => {
     await expect(page.getByText('Emitida 25 sep 2026 · válida hasta 10 oct 2026')).toBeVisible()
     await expect(page.getByText('20 unidades × ₡11.000 · 10% desc.')).toBeVisible()
     await expect(page.getByText('₡223.740')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Consultar por WhatsApp' })).toHaveAttribute('href', /wa\.me\/50686667888\?text=/)
+    await expect(page.getByRole('link', { name: 'Consultar por WhatsApp' })).toHaveAttribute('href', /wa\.me\/00000000000\?text=/)
     // "Aceptar cotización" es una función por programar: no se dibuja ni se anota en la interfaz.
     await expect(page.getByText('Aceptar cotización')).toHaveCount(0)
     await expect(page.getByText('NUEVO · por programar')).toHaveCount(0)

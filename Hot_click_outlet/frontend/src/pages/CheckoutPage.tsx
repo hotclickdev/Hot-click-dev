@@ -62,6 +62,7 @@ export default function CheckoutPage() {
     sinpeNombre: form.sinpeNombre,
     sinpeCedula: form.sinpeCedula,
     sinpeTelefono: form.sinpeTelefono,
+    sinpeTipoIdentificacion: form.sinpeTipoIdentificacion,
     sinpeEmail: form.sinpeEmail,
     sinpeImagen: form.sinpeImagen,
     pagoData,

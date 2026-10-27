@@ -50,7 +50,7 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
      * no debe cancelarse por TTL aunque el pedido ya tenga empresa).
      */
     @Query("SELECT p FROM Pago p WHERE p.estadoPago = 'PENDIENTE' AND p.fechaCreacion < :corte "
-        + "AND p.pedido.empresa.id = :empresaId AND (p.proveedor IS NULL OR p.proveedor <> 'SINPE')")
+        + "AND p.pedido.empresa.id = :empresaId AND (p.proveedor IS NULL OR p.proveedor <> 'SINPE') ORDER BY p.id")
     List<Pago> findExpiradosPendientesByEmpresa(@Param("corte") LocalDateTime corte, @Param("empresaId") Long empresaId);
 
     @Query("SELECT p FROM Pago p WHERE (:proveedor IS NULL OR p.proveedor = :proveedor) AND (:estadoPago IS NULL OR p.estadoPago = :estadoPago) ORDER BY p.fechaCreacion DESC")
@@ -71,13 +71,13 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     @Query("SELECT COUNT(p) FROM Pago p WHERE p.estadoPago = :estadoPago")
     long countByEstadoPago(@Param("estadoPago") String estadoPago);
 
-    @Query("SELECT COUNT(p) FROM Pago p WHERE p.estadoPago = :estadoPago AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId)")
+    @Query("SELECT COUNT(p) FROM Pago p WHERE p.estadoPago = :estadoPago AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId) AND p.pedido.esPrueba = false")
     long countByEstadoPagoAndEmpresa(@Param("estadoPago") String estadoPago, @Param("empresaId") Long empresaId);
 
     @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor")
     long countByProveedor(@Param("proveedor") String proveedor);
 
-    @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId)")
+    @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor AND (:empresaId IS NULL OR p.pedido.empresa.id = :empresaId) AND p.pedido.esPrueba = false")
     long countByProveedorAndEmpresa(@Param("proveedor") String proveedor, @Param("empresaId") Long empresaId);
 
     // ── Regla anti-bot de reservas (QA-CONC-4) ───────────────────────────────
@@ -104,4 +104,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     /** INF-03: pagos de un proveedor que siguen en un estado desde antes de un corte. */
     long countByProveedorIgnoreCaseAndEstadoPagoAndFechaCreacionBefore(
         String proveedor, String estadoPago, java.time.LocalDateTime corte);
+
+    /** P-01: pagos SINPE marketplace por ONVO pendientes con el plazo interno cumplido. */
+    List<Pago> findByProveedorAndEstadoPagoAndMerchantTokenStartingWithAndPlazoInternoSinpeBefore(
+        String proveedor, String estadoPago, String prefijo, LocalDateTime corte);
 }

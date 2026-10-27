@@ -109,8 +109,12 @@ public class EmpresaPerfilService {
     }
 
     @CacheEvict(value = {"marcas-publicas", "categorias", "categorias-publicas"}, allEntries = true)
+    @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> toggleVisibilidad(Long empresaId, Object val) {
-        Empresa e = empresa(empresaId);
+        Empresa e = empresaRepository.findByIdForUpdate(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
+        // Impago: 409 sin tocar la visibilidad; solo el pago ONVO confirmado reactiva.
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(e.getEstadoEmpresa())) throw new com.hotclick.exception.ReactivacionSinPagoException();
         asegurarCuentaActivaParaCatalogo(e);
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
         boolean visible = Boolean.parseBoolean(val.toString());

@@ -18,19 +18,13 @@ export const posService = {
 
   // QR payment sessions
   crearQrSesion:    (dto: JsonBody)          => api.post('/pos/qr', dto).then(r => r.data),
-  confirmarSinpeQr: (token: string, dto: JsonBody)   => api.put(`/pos/qr/${token}/confirmar-sinpe`, dto).then(r => r.data),
   cancelarQrSesion: (token: string)        => api.delete(`/pos/qr/${token}`).then(r => r.data),
 
   // Public endpoints (no auth)
   infoQrSesion:   (token: string)          => publicApi.get(`/pos/qr/pago/${token}`).then(r => r.data),
   estadoQrSesion: (token: string)          => publicApi.get(`/pos/qr/pago/${token}/estado`).then(r => r.data),
   comprobanteQrSesion: (token: string)     => publicApi.get(`/pos/qr/pago/${token}/comprobante`).then(r => r.data),
-  // Tarjeta y SINPE Móvil por Tilopay (ONVO ya no se usa en el POS)
-  /** SINPE Móvil por ONVO: crea y confirma el intent con la identificación del pagador. */
-  iniciarSinpeOnvoQr: (token: string, identificacion: string, tipoIdentificacion: number) =>
-    publicApi.post<SinpeOnvoQrDatos>(`/pos/qr/pago/${token}/sinpe-onvo`, { identificacion, tipoIdentificacion }).then(r => r.data),
-  iniciarTilopayQr: (token: string, metodo?: 'TARJETA') =>
-    publicApi.post(`/pos/qr/pago/${token}/tilopay`, null, { params: metodo ? { metodo } : undefined }).then(r => r.data),
-  confirmarTilopayQr: (token: string)      =>
-    publicApi.post<{ pagado: boolean }>(`/pos/qr/pago/${token}/tilopay/confirmar`).then(r => r.data),
+  /** SINPE Móvil por ONVO: crea y confirma el intent con identificación, tipo y SINPE (+506########) del pagador. */
+  iniciarSinpeOnvoQr: (token: string, identificacion: string, tipoIdentificacion: number, telefono: string) =>
+    publicApi.post<SinpeOnvoQrDatos>(`/pos/qr/pago/${token}/sinpe-onvo`, { identificacion, tipoIdentificacion, telefono }).then(r => r.data),
 }

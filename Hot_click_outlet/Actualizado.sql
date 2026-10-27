@@ -4350,3 +4350,37 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_pos_qr_sesion_onvo_evento ON hot_click_pos_
 ALTER TABLE hot_click_pos_qr_sesion_tb DROP CONSTRAINT IF EXISTS chk_pos_qr_estado;
 ALTER TABLE hot_click_pos_qr_sesion_tb ADD CONSTRAINT chk_pos_qr_estado
     CHECK (estado IN ('PENDIENTE','PAGADO','EXPIRADO','CANCELADO','REEMBOLSO_PENDIENTE'));
+
+-- ====================================================
+-- V194__pedido_es_prueba.sql (copia de la migración Flyway)
+-- ====================================================
+-- P-04 (C3): pedido cobrado con llave ONVO de prueba (mode=test) queda marcado. Aditiva: columna nueva con default.
+ALTER TABLE hot_click_pedido_tb ADD COLUMN IF NOT EXISTS es_prueba BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- ====================================================
+-- V195__pago_plazo_interno_sinpe.sql (copia de la migración Flyway)
+-- ====================================================
+-- P-01: plazo interno de HotClick para el SINPE del marketplace por ONVO. ONVO no define vencimiento del
+-- payment intent; al cumplirse este plazo HotClick lo cancela (POST /cancel) y libera stock solo si un GET
+-- confirma canceled. Aditiva: columna nueva nullable, no toca filas existentes.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS plazo_interno_sinpe TIMESTAMP NULL;
+
+-- ====================================================
+-- V200 Admin: suspensión manual por impago y "Dar 3 días extra" (26-oct-2026). Aditiva: tabla nueva, no toca filas
+-- existentes ni borra datos. Una extensión por ciclo de impago (UNIQUE suscripcion_id = la mensualidad VENCIDA).
+-- Durante la extensión la empresa queda en estado_empresa='EXTENSION_IMPAGO' (oculta, sin ventas nuevas);
+-- al vencer vuelve a 'SUSPENDIDO_IMPAGO'. La bitácora (admin, motivo, hora) va en hot_click_auditoria_admin_tb.
+CREATE TABLE IF NOT EXISTS hot_click_suspension_extension_tb (
+    id_extension      BIGSERIAL    PRIMARY KEY,
+    fk_id_empresa     BIGINT       NOT NULL REFERENCES hot_click_empresa_tb (id_empresa),
+    suscripcion_id    BIGINT       NOT NULL,
+    gracia_desde      TIMESTAMP    NOT NULL,
+    gracia_hasta      TIMESTAMP    NOT NULL,
+    otorgada_en       TIMESTAMP    NOT NULL,
+    vence_en          TIMESTAMP    NOT NULL,
+    admin_id          BIGINT       NULL,
+    admin_email       VARCHAR(150) NULL,
+    motivo            VARCHAR(500) NOT NULL,
+    CONSTRAINT uq_suspension_extension_ciclo UNIQUE (suscripcion_id)
+);
+CREATE INDEX IF NOT EXISTS idx_suspension_extension_empresa ON hot_click_suspension_extension_tb (fk_id_empresa, vence_en);

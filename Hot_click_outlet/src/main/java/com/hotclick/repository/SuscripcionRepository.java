@@ -64,6 +64,56 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     @Query("UPDATE Suscripcion s SET s.estado = 'VENCIDO' WHERE s.estado = 'PAST_DUE' AND s.fechaFin < :hoy")
     int expirarPastDueBatch(@Param("hoy") LocalDate hoy);
 
+    /** Auditor 5 S-03: suscripciones pagas con cancelación al vencer cuyo período ya terminó. */
+    @Query("SELECT s.empresa.id FROM Suscripcion s WHERE s.cancelarAlVencer = true AND s.estado IN ('ACTIVO','PAST_DUE') AND s.fechaFin < :hoy")
+    List<Long> findEmpresaIdsCanceladasVencidas(@Param("hoy") LocalDate hoy);
+
+    /** Auditor 5 S-03: cierra en un UPDATE las cancelaciones al vencer cuyo período terminó. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Suscripcion s SET s.estado = 'CANCELADO', s.cancelarAlVencer = false WHERE s.cancelarAlVencer = true AND s.estado IN ('ACTIVO','PAST_DUE') AND s.fechaFin < :hoy")
+    int cerrarCanceladasVencidasBatch(@Param("hoy") LocalDate hoy);
+
+    /** Seguridad B2: cuántos PAST_DUE vencidos quedan sin bajar mientras dura la pausa. */
+    @Query("SELECT COUNT(s) FROM Suscripcion s WHERE s.estado = 'PAST_DUE' AND s.fechaFin < :limite")
+    long countPastDueVencidos(@Param("limite") LocalDate limite);
+
+    /**
+     * Seguridad B1 + gracia escalonada: solo PAST_DUE con suscripción ONVO (onvoSubscriptionId no nulo),
+     * los más viejos primero y de a un lote por corrida.
+     */
+    @Query("SELECT s FROM Suscripcion s WHERE s.estado = 'PAST_DUE' AND s.fechaFin < :limite"
+        + " AND s.onvoSubscriptionId IS NOT NULL ORDER BY s.fechaFin ASC, s.id ASC")
+    List<Suscripcion> findPastDueOnvoVencidos(@Param("limite") LocalDate limite,
+                                             org.springframework.data.domain.Pageable lote);
+
+    /**
+     * PAST_DUE heredados (Tilopay/Stripe) sin onvoSubscriptionId: RenovacionesTilopayService y el webhook Stripe
+     * todavía los marcan. Se bajan por este camino, con la misma gracia escalonada.
+     */
+    @Query("SELECT s FROM Suscripcion s WHERE s.estado = 'PAST_DUE' AND s.fechaFin < :limite"
+        + " AND s.onvoSubscriptionId IS NULL ORDER BY s.fechaFin ASC, s.id ASC")
+    List<Suscripcion> findPastDueLegadoVencidos(@Param("limite") LocalDate limite,
+                                               org.springframework.data.domain.Pageable lote);
+
+    /** Seguridad MEDIO: baja atómica condicional; devuelve 0 si la fila ya no está PAST_DUE (p. ej. el webhook la activó). */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE Suscripcion s SET s.estado = 'VENCIDO' WHERE s.id = :id AND s.estado = 'PAST_DUE'")
+    int marcarVencidoSiPastDue(@Param("id") Long id);
+
     /** P10-03: la empresa ya tuvo un trial alguna vez (el registro queda aunque expire o se cancele). */
     boolean existsByEmpresa_IdAndTrialEndIsNotNull(Long empresaId);
+
+    /** Admin: tiendas en periodo de gracia (mensualidad PAST_DUE), con empresa para listar. */
+    @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.estado = 'PAST_DUE' ORDER BY s.fechaFin ASC")
+    List<Suscripcion> findPastDueConEmpresa();
+
+    /** Admin: gracia con tope (lista acotada; el admin nunca pide sin límite). */
+    @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.estado = 'PAST_DUE' ORDER BY s.fechaFin ASC")
+    List<Suscripcion> findPastDueConEmpresa(org.springframework.data.domain.Pageable page);
+
+    /** Admin (anti N+1): suscripciones de un estado para varias empresas, más recientes primero. */
+    @Query("SELECT s FROM Suscripcion s WHERE s.empresa.id IN :ids AND s.estado = :estado ORDER BY s.fechaCreacion DESC")
+    List<Suscripcion> findByEmpresaIdsAndEstado(@Param("ids") java.util.Collection<Long> ids, @Param("estado") String estado);
 }

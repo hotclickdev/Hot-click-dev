@@ -55,8 +55,11 @@ describe('guía', () => {
 })
 
 describe('urlWhatsApp', () => {
-  it('abre el WhatsApp de HotClick con el mensaje codificado', () => {
-    expect(urlWhatsApp('Hola & chao')).toBe('https://wa.me/50686667888?text=Hola%20%26%20chao')
+  it('abre el WhatsApp configurado con el mensaje codificado', () => {
+    expect(urlWhatsApp('Hola & chao', '00000000000')).toBe('https://wa.me/00000000000?text=Hola%20%26%20chao')
+  })
+  it('sin teléfono configurado no hay enlace', () => {
+    expect(urlWhatsApp('Hola', '')).toBeNull()
   })
 })
 

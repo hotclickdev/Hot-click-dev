@@ -1,4 +1,5 @@
 import type { SolicitudRecoleccion } from './recoleccionTipos'
+import { formatPrice } from '@/utils/format'
 
 export function listaRecolecciones(data: unknown): SolicitudRecoleccion[] {
   if (Array.isArray(data)) return data as SolicitudRecoleccion[]
@@ -11,5 +12,5 @@ export function listaRecolecciones(data: unknown): SolicitudRecoleccion[] {
 
 export function formatoTarifa(colones: number | null | undefined): string {
   if (colones == null) return 'Pendiente'
-  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(colones)
+  return formatPrice(colones)
 }

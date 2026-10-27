@@ -93,9 +93,7 @@ public class StorefrontGuestOrderService {
             if (!empresa.getId().equals(producto.getEmpresa().getId())) {
                 throw new IllegalArgumentException("Producto no disponible en esta tienda");
             }
-            if (!Boolean.TRUE.equals(producto.getVisibleCatalogo()) || Boolean.TRUE.equals(producto.getVendido())) {
-                throw new IllegalStateException("Producto no disponible: " + producto.getNombreProducto());
-            }
+            validarComprable(producto);
 
             if (producto.esACotizar()) {
                 throw new IllegalArgumentException("«" + producto.getNombreProducto() + "» es a cotizar: solicitá una cotización al vendedor");
@@ -132,6 +130,18 @@ public class StorefrontGuestOrderService {
         pedido.setNotas(construirNotas(dto));
         pedido.setDireccionEntrega(dto.getDireccionEntrega()); // NP-18: el vendedor ve a dónde enviar
         return pedido;
+    }
+
+    /**
+     * M-04 (re-QA área 3): mismo criterio que el checkout y el carrito: activo, visible, de un negocio
+     * ACTIVO y público ({@code esPublicableEnMemoria}) y no vendido. Un producto borrado o inactivo ya no
+     * se puede pedir como invitado aunque siga con visibleCatalogo=true.
+     */
+    static void validarComprable(Producto producto) {
+        if (!com.hotclick.service.payment.StockReservationService.esPublicableEnMemoria(producto)
+                || Boolean.TRUE.equals(producto.getVendido())) {
+            throw new IllegalStateException("Producto no disponible: " + producto.getNombreProducto());
+        }
     }
 
     static PedidoItem crearPedidoItem(Producto producto, int cantidad, Pedido pedido) {

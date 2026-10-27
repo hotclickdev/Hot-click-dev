@@ -33,11 +33,11 @@ public class TelegramDatosQueryService {
         try {
             bot.enviarMensaje(v.getChatId(), generador.apply(empresaId), TelegramTeclado.soloMenu());
         } catch (Exception e) {
-            log.error("[telegram-bot] error consultando datos empresa {} — {}", empresaId, e.getMessage());
+            log.error("[telegram-bot] error consultando datos empresa {} — {}", empresaId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
             bot.enviarMensaje(v.getChatId(),
                 "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.",
                 TelegramTeclado.soloMenu());
-            abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
+            abuso.avisarErrorDeUsuario(v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -48,11 +48,11 @@ public class TelegramDatosQueryService {
         try {
             bot.enviarMensaje(v.getChatId(), mensajeInventario(empresaId), tecladoInventario(v, empresaId));
         } catch (Exception e) {
-            log.error("[telegram-bot] error consultando inventario empresa {} — {}", empresaId, e.getMessage());
+            log.error("[telegram-bot] error consultando inventario empresa {} — {}", empresaId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
             bot.enviarMensaje(v.getChatId(),
                 "No pude consultar los datos en este momento. Intentá de nuevo en unos minutos.",
                 TelegramTeclado.soloMenu());
-            abuso.avisarErrorDeUsuario(v.getChatId(), e.getMessage());
+            abuso.avisarErrorDeUsuario(v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 
@@ -103,11 +103,11 @@ public class TelegramDatosQueryService {
         Map<String, Object> conf = jdbc.queryForMap("""
             SELECT COUNT(*) AS pedidos, COALESCE(SUM(total_pedido),0) AS ingresos
             FROM hot_click_pedido_tb
-            WHERE fk_id_empresa = ? AND fecha_pedido >= ? AND estado_pedido IN ('PAGADO','ENTREGADO')
+            WHERE fk_id_empresa = ? AND fecha_pedido >= ? AND estado_pedido IN ('PAGADO','ENTREGADO') AND es_prueba = false
             """, empresaId, inicioDia);
         Integer pendientes = jdbc.queryForObject("""
             SELECT COUNT(*) FROM hot_click_pedido_tb
-            WHERE fk_id_empresa = ? AND fecha_pedido >= ? AND estado_pedido = 'PENDIENTE'
+            WHERE fk_id_empresa = ? AND fecha_pedido >= ? AND estado_pedido = 'PENDIENTE' AND es_prueba = false
             """, Integer.class, empresaId, inicioDia);
 
         return "💰 *Ventas de hoy*\n\n"
@@ -123,11 +123,11 @@ public class TelegramDatosQueryService {
                    COALESCE(SUM(total_pedido),0)              AS ingresos,
                    COALESCE(SUM(COALESCE(utilidad_bruta,0)),0) AS utilidad
             FROM hot_click_pedido_tb
-            WHERE fk_id_empresa = ? AND fecha_pedido >= ? AND estado_pedido IN ('PAGADO','ENTREGADO')
+            WHERE fk_id_empresa = ? AND fecha_pedido >= ? AND estado_pedido IN ('PAGADO','ENTREGADO') AND es_prueba = false
             """, empresaId, inicioMes);
         Integer entregados = jdbc.queryForObject("""
             SELECT COUNT(*) FROM hot_click_pedido_tb
-            WHERE fk_id_empresa = ? AND fecha_pedido >= ? AND estado_pedido = 'ENTREGADO'
+            WHERE fk_id_empresa = ? AND fecha_pedido >= ? AND estado_pedido = 'ENTREGADO' AND es_prueba = false
             """, Integer.class, empresaId, inicioMes);
 
         long pedidos  = ((Number) mes.get("pedidos")).longValue();

@@ -93,12 +93,14 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.items LEFT JOIN FETCH p.usuarioFinal LEFT JOIN FETCH p.bodega WHERE p.estadoPedido = :estadoPedido AND p.estado = :estado")
     List<Pedido> findByEstadoPedidoAndEstado(@Param("estadoPedido") String estadoPedido, @Param("estado") Integer estado);
 
-    Long countByEstadoPedidoAndEstado(String estadoPedido, Integer estado);
+    // P-04: las métricas excluyen pedidos cobrados con llave de prueba (es_prueba).
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.estadoPedido = :estadoPedido AND p.estado = :estado AND p.esPrueba = false")
+    Long countByEstadoPedidoAndEstado(@Param("estadoPedido") String estadoPedido, @Param("estado") Integer estado);
 
-    @Query("SELECT COUNT(p) FROM Pedido p")
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.esPrueba = false")
     long countTotalPedidos();
 
-    @Query("SELECT COALESCE(SUM(p.totalPedido), 0) FROM Pedido p")
+    @Query("SELECT COALESCE(SUM(p.totalPedido), 0) FROM Pedido p WHERE p.esPrueba = false")
     long sumTotalVentas();
 
     @Query("SELECT DISTINCT p FROM Pedido p " +
@@ -129,13 +131,13 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findByEmpresaIdAndEstadoPedidoAndEstado(@Param("empresaId") Long empresaId, @Param("estadoPedido") String estadoPedido, @Param("estado") Integer estado);
 
     /** F30 — COUNT sin cargar entidades (reemplaza .size() en DashboardService). */
-    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.empresa.id = :empresaId AND p.estadoPedido = :estadoPedido AND p.estado = :estado")
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.empresa.id = :empresaId AND p.estadoPedido = :estadoPedido AND p.estado = :estado AND p.esPrueba = false")
     long countByEmpresaIdAndEstadoPedidoAndEstado(@Param("empresaId") Long empresaId, @Param("estadoPedido") String estadoPedido, @Param("estado") Integer estado);
 
-    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.empresa.id = :empresaId")
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.empresa.id = :empresaId AND p.esPrueba = false")
     long countTotalPedidosByEmpresaId(@Param("empresaId") Long empresaId);
 
-    @Query("SELECT COALESCE(SUM(p.totalPedido), 0) FROM Pedido p WHERE p.empresa.id = :empresaId")
+    @Query("SELECT COALESCE(SUM(p.totalPedido), 0) FROM Pedido p WHERE p.empresa.id = :empresaId AND p.esPrueba = false")
     long sumTotalVentasByEmpresaId(@Param("empresaId") Long empresaId);
 
     @Query("SELECT DISTINCT p FROM Pedido p " +
@@ -149,7 +151,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT DISTINCT p FROM Pedido p " +
            "LEFT JOIN FETCH p.items i " +
            "LEFT JOIN FETCH i.producto pr " +
-           "WHERE p.usuarioFinal.id = :usuarioId AND p.estadoPedido = 'ENTREGADO'")
+           "WHERE p.usuarioFinal.id = :usuarioId AND p.estadoPedido = 'ENTREGADO' " +
+           // Seguridad #343: compras externas registradas a mano no habilitan reseñas.
+           "AND NOT (UPPER(COALESCE(p.origen, '')) = 'MANUAL' AND UPPER(TRIM(COALESCE(p.metodoPago, ''))) = 'EXTERNO')")
     List<Pedido> findEntregadosConItemsByUsuarioId(@Param("usuarioId") Long usuarioId);
 
     @Query("SELECT DISTINCT p FROM Pedido p " +
@@ -168,7 +172,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query(value = "SELECT COUNT(p.id_pedido), COALESCE(SUM(p.total_pedido), 0) " +
                    "FROM hot_click_pedido_tb p " +
                    "WHERE p.fk_id_usuario_final = :userId " +
-                   "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO')",
+                   "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') AND p.es_prueba = false",
            nativeQuery = true)
     List<Object[]> statsPorUsuario(@Param("userId") Long userId);
 
@@ -176,7 +180,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query(value = "SELECT COUNT(p.id_pedido), COALESCE(SUM(p.total_pedido), 0) " +
                    "FROM hot_click_pedido_tb p " +
                    "WHERE p.fk_id_usuario_final = :userId AND p.fk_id_empresa = :empresaId " +
-                   "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO')",
+                   "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') AND p.es_prueba = false",
            nativeQuery = true)
     List<Object[]> statsPorUsuarioYEmpresa(@Param("userId") Long userId, @Param("empresaId") Long empresaId);
 
@@ -201,7 +205,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         "COALESCE(SUM(ROUND(p.subtotal * 13.0 / 113.0)), 0) " +
         "FROM hot_click_pedido_tb p " +
         "WHERE p.fk_id_empresa = :empresaId " +
-        "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') " +
+        "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') AND p.es_prueba = false " +
         "AND (:desde IS NULL OR DATE(p.fecha_pedido) >= CAST(:desde AS date)) " +
         "AND (:hasta IS NULL OR DATE(p.fecha_pedido) <= CAST(:hasta AS date))",
         nativeQuery = true)
@@ -225,7 +229,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         "FROM hot_click_pedido_tb p " +
         "LEFT JOIN hot_click_usuario_tb u ON u.id_usuario = p.fk_id_usuario_final " +
         "WHERE p.fk_id_empresa = :empresaId " +
-        "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') " +
+        "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') AND p.es_prueba = false " +
         "AND (:desde IS NULL OR DATE(p.fecha_pedido) >= CAST(:desde AS date)) " +
         "AND (:hasta IS NULL OR DATE(p.fecha_pedido) <= CAST(:hasta AS date)) " +
         "ORDER BY p.fecha_pedido DESC",
@@ -237,6 +241,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         SELECT COUNT(p) FROM Pedido p
         WHERE p.fechaPedido >= :desde AND p.fechaPedido < :hasta
           AND p.estadoPedido IN :estados
+          AND p.esPrueba = false
         """)
     long countPorEstadosEnPeriodo(
         @Param("desde") java.time.LocalDateTime desde,
@@ -248,6 +253,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         WHERE p.fechaPedido >= :desde AND p.fechaPedido < :hasta
           AND p.estadoPedido IN :estados
           AND (:empresaId IS NULL OR p.empresa.id = :empresaId)
+          AND p.esPrueba = false
         """)
     long sumTotalEnPeriodo(
         @Param("empresaId") Long empresaId,
@@ -260,6 +266,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         JOIN FETCH p.empresa
         WHERE p.fechaPedido >= :desde AND p.fechaPedido < :hasta
           AND p.estadoPedido IN :estados
+          AND p.esPrueba = false
         """)
     List<Pedido> findConEmpresaEnPeriodo(
         @Param("desde") java.time.LocalDateTime desde,
@@ -293,7 +300,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     long countByEstadoPedido(String estadoPedido);
 
-    @Query("SELECT p.empresa.id, COALESCE(SUM(p.totalPedido), 0) FROM Pedido p WHERE p.empresa IS NOT NULL GROUP BY p.empresa.id")
+    @Query("SELECT p.empresa.id, COALESCE(SUM(p.totalPedido), 0) FROM Pedido p WHERE p.empresa IS NOT NULL AND p.esPrueba = false GROUP BY p.empresa.id")
     List<Object[]> sumVentasPorEmpresa();
 
     /** NP-22: pedidos de tienda propia pendientes, sin pago en pasarela, con reserva vencida. */
@@ -311,4 +318,18 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
                                               @Param("corte") java.time.LocalDateTime corte,
                                               Pageable pageable);
 
+
+    /** Extensión de impago: ¿el pedido es de la empresa y se creó en la ventana de gracia [desde, hasta)? */
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.id = :id AND p.empresa.id = :empresaId "
+         + "AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta")
+    long countGestionableEnGracia(@Param("id") Long id, @Param("empresaId") Long empresaId,
+                                  @Param("desde") java.time.LocalDateTime desde,
+                                  @Param("hasta") java.time.LocalDateTime hasta);
+
+    @Query("SELECT p FROM Pedido p WHERE p.empresa.id = :empresaId "
+         + "AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta ORDER BY p.fechaPedido DESC")
+    List<Pedido> findCreadosEnGracia(@Param("empresaId") Long empresaId,
+                                     @Param("desde") java.time.LocalDateTime desde,
+                                     @Param("hasta") java.time.LocalDateTime hasta,
+                                     org.springframework.data.domain.Pageable pageable);
 }

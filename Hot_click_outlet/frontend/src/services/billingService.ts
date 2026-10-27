@@ -10,7 +10,7 @@ export type CambiarPlanResultado = {
   mensaje?: string
   mock?: boolean
   /** Tilopay (reemplaza ONVO): datos para abrir el SDK embebido. */
-  proveedor?: 'TILOPAY'
+  proveedor?: 'TILOPAY' | 'ONVO'
   orderNumber?: string
   montoCrc?: number
   sdkToken?: string
@@ -24,6 +24,9 @@ export const billingService = {
   getFacturas: (pagina = 0) => api.get(`/billing/facturas?pagina=${pagina}`),
   iniciarTrial: () => api.post('/billing/trial'),
   crearCheckout: (planId: Id) => api.post(`/billing/checkout/${planId}`),
+  getImpago: () => api.get<import('@/features/suspension/suspensionImpaga').EstadoImpago>('/billing/impago'),
+  pedidosImpago: () => api.get<import('@/features/suspension/suspensionImpaga').PedidoDeGracia[]>('/billing/impago/pedidos'),
+  pagarImpago: () => api.post<CambiarPlanResultado>('/billing/impago/pagar'),
   cambiarPlan: (planId: Id) => api.post<CambiarPlanResultado>(`/billing/cambiar-plan/${planId}`),
   crearPortal: () => api.post('/billing/portal'),
   cancelar: (inmediata = false) => api.post(`/billing/cancelar?inmediata=${inmediata}`),

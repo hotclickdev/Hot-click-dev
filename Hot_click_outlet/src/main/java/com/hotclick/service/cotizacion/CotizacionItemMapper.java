@@ -54,10 +54,22 @@ public class CotizacionItemMapper {
                 poblarItemTemporal(item, dto);
             }
 
-            int base     = item.getPrecioUnitario() * item.getCantidad();
-            int descuento = base * item.getDescuentoPorcentaje() / 100;
-            item.setSubtotalLinea(base - descuento);
+            item.setSubtotalLinea(subtotalLinea(item.getPrecioUnitario(), item.getCantidad(), item.getDescuentoPorcentaje()));
             cotizacion.getItems().add(item);
+        }
+    }
+
+    /** Subtotal con aritmética exacta: si no cabe en int, rechaza en vez de desbordar. */
+    static int subtotalLinea(int precio, int cantidad, int descuentoPorcentaje) {
+        if (precio < 0 || cantidad < 0 || descuentoPorcentaje < 0 || descuentoPorcentaje > 100) {
+            throw new IllegalArgumentException("Monto de cotización inválido");
+        }
+        try {
+            long base = Math.multiplyExact((long) precio, (long) cantidad);
+            long descuento = Math.multiplyExact(base, (long) descuentoPorcentaje) / 100;
+            return Math.toIntExact(base - descuento);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("El subtotal de la línea excede el máximo permitido");
         }
     }
 

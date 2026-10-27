@@ -5,13 +5,16 @@ import { paymentService } from '@/services/paymentService'
 import { walletService } from '@/services/walletService'
 import { consolaService, objetoDe } from './consola'
 import { campoLista, filasDe, idSeguro, texto, type Fila } from './normalizar'
+import ImpagoPlataforma from './ImpagoPlataforma'
 import { Aviso, Carga, Chip, Encabezado, FilaDecision, Marco, Metrica, Segmento, TARJETA } from './piezas'
+import { formatPrice } from '@/utils/format'
 
 const VISTAS = [
   { id: 'quincena', label: 'Quincena', to: '/plataforma/dinero' },
   { id: 'cobros', label: 'SINPE', to: '/plataforma/dinero/cobros' },
   { id: 'liquidaciones', label: 'Retiros', to: '/plataforma/dinero/liquidaciones' },
   { id: 'suscripciones', label: 'Suscripciones', to: '/plataforma/dinero/suscripciones' },
+  { id: 'impago', label: 'Impago', to: '/plataforma/dinero/impago' },
 ]
 
 export default function DineroPlataforma() {
@@ -33,6 +36,7 @@ export default function DineroPlataforma() {
       {vista === 'liquidaciones' && <Liquidaciones />}
       {vista === 'suscripciones' && <Suscripciones />}
       {vista === 'cobros' && <Cobros />}
+      {vista === 'impago' && <ImpagoPlataforma />}
     </div>
   )
 }
@@ -92,13 +96,13 @@ function LineaQuincena({ fila }: { fila: Fila }) {
 function colones(valor: unknown): string {
   const crudo = typeof valor === 'number' ? valor : Number(texto(valor, ''))
   if (!Number.isFinite(crudo)) return '—'
-  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(crudo)
+  return formatPrice(crudo)
 }
 
 function Cobros() {
   const [filas, setFilas] = useState<Fila[]>([])
   const [estado, setEstado] = useState<'carga' | 'listo' | 'error'>('carga')
-  const [marca, setMarca] = useState(0)
+  const [marca] = useState(0)
 
   useEffect(() => {
     paymentService.listarComprobantes('PENDIENTE')
@@ -118,13 +122,9 @@ function Cobros() {
         if (!id) return null
         return (
           <div key={id} className="flex flex-col gap-1">
-          <FilaDecision
-            icono="dinero"
-            titulo={texto(fila.pedidoNumero, texto(fila.id, 'Comprobante'))}
-            meta={metaMonto(fila, texto(fila.estado, 'PENDIENTE'))}
-            onAprobar={async () => { await paymentService.aprobarComprobante(id); setMarca((n) => n + 1) }}
-            onRechazar={async (motivo) => { await paymentService.rechazarComprobante(id, motivo); setMarca((n) => n + 1) }}
-          />
+          {/* P-01: los comprobantes son solo historial; SINPE se confirma por webhook ONVO, no se aprueba a mano. */}
+          <p className="text-sm font-semibold text-hc-n-900">{texto(fila.pedidoNumero, texto(fila.id, 'Comprobante'))}</p>
+          <p className="text-sm text-hc-n-600">{metaMonto(fila, texto(fila.estado, 'PENDIENTE'))}</p>
           {texto(fila.pedidoId, texto(fila.idPedido, '')) && (
             <Link className="text-sm font-semibold text-hc-blue-600" to={`/plataforma/pedidos/${texto(fila.pedidoId, texto(fila.idPedido))}`}>Abrir el pedido</Link>
           )}

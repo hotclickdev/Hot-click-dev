@@ -22,7 +22,8 @@ export type PedidoTiendaInvitado = {
 
 /** Forma de entrega de un paquete puntual dentro de un checkout multivendedor. */
 export type EnvioPaqueteDTO = {
-  bodegaId: number
+  /** Solo si el paquete tiene bodega real; sin bodega el backend resuelve la de origen. */
+  bodegaId?: number
   metodoEnvio: string
   notas?: string | null
 }
@@ -37,6 +38,10 @@ export type CheckoutPayload = {
   /** Dirección de entrega (señas, cantón, provincia); el pedido la guarda para los correos. */
   direccionEntrega?: string | null
   provider?: string
+  /** SINPE por ONVO: identificación (formato según tipo), tipo ONVO 0-5/9 y SINPE del comprador (+506########). */
+  sinpeIdentificacion?: string
+  sinpeTipoIdentificacion?: number
+  sinpeTelefono?: string
   guestEmail?: string
   /** Token del QR del POS — al pagar, marca la sesión del cajero como PAGADO. */
   posQrToken?: string

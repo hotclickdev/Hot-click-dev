@@ -1,3 +1,4 @@
+import { formatMiles } from '@/utils/format'
 export type ModoPrecioPersonalizado = 'FIJO' | 'RANGO' | 'COTIZACION'
 
 /** Default al crear: cotización hasta que el vendedor elija otra forma de cobro. */
@@ -112,7 +113,7 @@ export function etiquetaPrecioProducto(
   if (!esPersonalizado) return null
   if (modo === 'FIJO' && precio != null) return null
   if (modo === 'RANGO' && min != null && max != null) {
-    const fmt = (n: number) => new Intl.NumberFormat('es-CR').format(n)
+    const fmt = (n: number) => formatMiles(n)
     return `₡${fmt(min)} – ₡${fmt(max)}`
   }
   return 'A cotizar'

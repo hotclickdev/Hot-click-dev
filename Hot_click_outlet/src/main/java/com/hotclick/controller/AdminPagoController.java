@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 
-@PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR') or hasAuthority('global.metrics')")
+@PreAuthorize("hasRole('ADMIN') or hasAuthority('global.metrics')") // QA2-área2: solo plataforma
 @RestController
 @RequestMapping("/api/admin")
 public class AdminPagoController {
@@ -116,38 +116,23 @@ public class AdminPagoController {
         )));
     }
 
+    public static final String MSG_SINPE_SOLO_ONVO =
+        "SINPE se confirma solo cuando ONVO acredita el pago (webhook + verificación). La confirmación y el rechazo manual están retirados.";
+
     /**
-     * Confirma un pago SINPE pendiente (admin revisó el comprobante).
-     * POST /api/admin/pagos/{pagoId}/confirmar-sinpe
-     * Solo plataforma: el SINPE entra a la cuenta de HotClick y la compra puede traer paquetes de varios negocios.
+     * P-01 (decisión 25-oct-2026): retirado. Confirmaba un SINPE sin ONVO. Siempre 410, no toca el pago.
      */
     @PreAuthorize(SOLO_PLATAFORMA)
     @PostMapping("/pagos/{pagoId}/confirmar-sinpe")
     public ResponseEntity<ResponseDTO> confirmarSinpe(@PathVariable Long pagoId) {
-        try {
-            var resultado = paymentService.confirmarSinpe(pagoId);
-            return ResponseEntity.ok(ResponseDTO.success("Pago SINPE confirmado", resultado));
-        } catch (SecurityException e) {
-            return prohibido(e);
-        }
+        return ResponseEntity.status(HttpStatus.GONE).body(ResponseDTO.error(MSG_SINPE_SOLO_ONVO));
     }
 
-    /**
-     * Rechaza un pago SINPE pendiente (comprobante inválido o monto incorrecto).
-     * POST /api/admin/pagos/{pagoId}/rechazar-sinpe?motivo=...
-     */
+    /** P-01: retirado junto con la confirmación manual; un intent vencido se libera por el barrido. Siempre 410. */
     @PreAuthorize(SOLO_PLATAFORMA)
     @PostMapping("/pagos/{pagoId}/rechazar-sinpe")
-    public ResponseEntity<ResponseDTO> rechazarSinpe(
-            @PathVariable Long pagoId,
-            @RequestParam(required = false) String motivo,
-            @RequestBody(required = false) Map<String, String> body) {
-        try {
-            paymentService.rechazarSinpe(pagoId, motivoEscrito(motivo, body));
-            return ResponseEntity.ok(ResponseDTO.success("Pago SINPE rechazado", null));
-        } catch (SecurityException e) {
-            return prohibido(e);
-        }
+    public ResponseEntity<ResponseDTO> rechazarSinpe(@PathVariable Long pagoId) {
+        return ResponseEntity.status(HttpStatus.GONE).body(ResponseDTO.error(MSG_SINPE_SOLO_ONVO));
     }
 
     private static ResponseEntity<ResponseDTO> prohibido(SecurityException e) {

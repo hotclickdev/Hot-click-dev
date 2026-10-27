@@ -24,7 +24,7 @@ import java.util.*;
  * Mensualidades de plan con Tilopay (reemplaza ONVO, decisión HOT_CLICK).
  * Tilopay no maneja la recurrencia: HotClick genera un cobro por periodo (día 28 o 13 de cada negocio),
  * el negocio paga con el SDK embebido y el backend confirma consultando a Tilopay (monto, CRC y orden).
- * Impago → PAST_DUE; tras los días de gracia el job existente degrada a EMPRENDEDOR.
+ * Impago → PAST_DUE; tras los días de gracia el job existente degrada el plan y suspende la tienda (SUSPENDIDO_IMPAGO).
  */
 @Service
 public class SuscripcionTilopayService {

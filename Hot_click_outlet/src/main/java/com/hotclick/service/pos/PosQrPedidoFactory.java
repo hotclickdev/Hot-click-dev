@@ -50,6 +50,7 @@ public class PosQrPedidoFactory {
     @Autowired private PosQrSessionService                sessionService;
     @Autowired private VentaAvisoService                  ventaAvisoService;
     @Autowired private PosQrStockReserva                  stockReserva;
+    @Autowired(required = false) private PosSinpeOnvoService sinpeOnvo;
 
     public void crearPedidoPOS(PosQrSesion sesion, String metodoPago) {
         try {
@@ -129,6 +130,8 @@ public class PosQrPedidoFactory {
         pedido.setMontoImpuesto(0);
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedido.setNotas(notaConCajero(sesion.getNotas(), cajero));
+        // P-04: SINPE POS cobrado por ONVO con llave de prueba queda fuera de facturación, métricas y wallet.
+        if (sinpeOnvo != null && sinpeOnvo.esCobroDePrueba(sesion)) pedido.setEsPrueba(true);
         return pedido;
     }
 

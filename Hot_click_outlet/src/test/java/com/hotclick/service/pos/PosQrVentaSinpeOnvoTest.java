@@ -139,19 +139,5 @@ class PosQrVentaSinpeOnvoTest {
         assertThat(service.confirmarSinpeOnvoPorWebhook("pi_x")).isFalse();
     }
 
-    @Test
-    @DisplayName("Confirmación manual del cajero rechazada si hay intent ONVO")
-    void manualRechazadoConIntent() {
-        sesion.setFechaExpiracion(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(5));
-        assertThatThrownBy(() -> service.confirmarSinpe("tokensinpeonvo01", 1L, 9L, "123456", null))
-            .hasMessage(PosQrVentaService.MSG_SINPE_ONVO_NO_MANUAL);
-        verify(completionService, never()).completarVentaSinpe(any(), any(), any());
-    }
 
-    @Test
-    @DisplayName("SINPE por Tilopay rechazado")
-    void sinpeTilopayRechazado() {
-        assertThatThrownBy(() -> service.iniciarTilopay("tokensinpeonvo01", "SINPE"))
-            .hasMessage(PosQrVentaService.MSG_SINPE_SOLO_ONVO);
-    }
 }

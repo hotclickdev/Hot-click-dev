@@ -52,7 +52,7 @@ class TelegramFlujoProductoCallbackHelper {
         try {
             tenantService.verificarLimiteProductos(empresaId);
         } catch (RuntimeException ex) {
-            bot.enviarMensaje(v.getChatId(), esc(ex.getMessage()), TelegramTeclado.soloMenu());
+            bot.enviarMensaje(v.getChatId(), esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage())), TelegramTeclado.soloMenu());
             return true;
         }
         support.guardar(v, TelegramFlujoEstado.nuevoProducto(support.ahora(), personalizado));

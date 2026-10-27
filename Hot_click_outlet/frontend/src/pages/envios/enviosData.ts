@@ -1,4 +1,5 @@
 import { TEXTO_TIEMPO_ENVIO } from '@/config/tiemposEnvio'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 export type FilaTarifa = {
   id: string
@@ -50,7 +51,7 @@ export const TARIFAS: FilaTarifa[] = [
     tiempo: 'A coordinar',
     precio: 'Consultar',
     href: {
-      url: 'https://wa.me/50686667888?text=Hola%20HotClick%2C%20consulto%20un%20env%C3%ADo%20internacional.',
+      url: SOPORTE_WA ? `https://wa.me/${SOPORTE_WA}?text=Hola%20HotClick%2C%20consulto%20un%20env%C3%ADo%20internacional.` : '/contacto',
       ariaLabel: 'Consultar envío internacional por WhatsApp',
     },
   },

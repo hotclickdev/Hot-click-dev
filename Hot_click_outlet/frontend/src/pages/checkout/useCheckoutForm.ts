@@ -2,11 +2,12 @@ import { useState, useRef, useMemo, useEffect, useCallback, type Dispatch, type 
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useAuthStore from '@/store/authStore'
+import { tipoSinpeInicial } from '@/utils/sinpeOnvo'
 import usePedidoExtrasStore from '@/store/pedidoExtrasStore'
 import { adminService } from '@/services/orderService'
 import { paymentService } from '@/services/paymentService'
 import {
-  BODEGA_DEFAULT,
+  PAQUETE_SIN_BODEGA,
   SHIPPING_COSTS,
   bodegaRetiroDePaquete,
   bodegaRetiroDesdeItems,
@@ -61,6 +62,8 @@ export type CheckoutFormState = {
   setSinpeCedula: Dispatch<SetStateAction<string>>
   sinpeTelefono: string
   setSinpeTelefono: Dispatch<SetStateAction<string>>
+  sinpeTipoIdentificacion: number
+  setSinpeTipoIdentificacion: Dispatch<SetStateAction<number>>
   sinpeEmail: string
   setSinpeEmail: Dispatch<SetStateAction<string>>
   sinpeNombreErr: string
@@ -232,7 +235,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setMetodoEnvioPorPaqueteState((prev) => ({ ...prev, [bodegaId]: value }))
   }
 
-  const bodegaPrincipalId = paquetes[0]?.bodegaId ?? String(BODEGA_DEFAULT)
+  const bodegaPrincipalId = paquetes[0]?.bodegaId ?? PAQUETE_SIN_BODEGA
   const metodoEnvio = metodoEnvioPorPaquete[bodegaPrincipalId] ?? 'ENVIO_NORMAL_GAM'
   function setMetodoEnvio(value: string) {
     setMetodoEnvioPaquete(bodegaPrincipalId, value)
@@ -273,6 +276,9 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [sinpeNombre, setSinpeNombre] = useState(() => nombreCuenta ?? '')
   const [sinpeCedula, setSinpeCedula] = useState('')
   const [sinpeTelefono, setSinpeTelefono] = useState('')
+  // Cuenta empresa arranca con tipo 3 (cédula jurídica); el resto con 0 (física nacional).
+  const empresaCuenta = useAuthStore((s) => s.empresaId)
+  const [sinpeTipoIdentificacion, setSinpeTipoIdentificacion] = useState<number>(() => tipoSinpeInicial(empresaCuenta != null))
   const [sinpeEmail, setSinpeEmail] = useState('')
   const [sinpeNombreErr, setSinpeNombreErr] = useState('')
   const [sinpeCedulaErr, setSinpeCedulaErr] = useState('')
@@ -350,6 +356,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setSinpeCedula,
     sinpeTelefono,
     setSinpeTelefono,
+    sinpeTipoIdentificacion,
+    setSinpeTipoIdentificacion,
     sinpeEmail,
     setSinpeEmail,
     sinpeNombreErr,

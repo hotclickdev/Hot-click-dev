@@ -5,6 +5,7 @@ import { consolaService, objetoDe } from './consola'
 import { campoLista, texto, type Fila } from './normalizar'
 import { enlaceWhatsapp } from './whatsapp'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, Marco, TARJETA } from './piezas'
+import { formatPrice } from '@/utils/format'
 
 export default function PedidoDetalle() {
   const { id = '' } = useParams()
@@ -243,5 +244,5 @@ function Enlace({ href, etiqueta }: { href: string | null; etiqueta: string }) {
 function colones(valor: unknown): string {
   const crudo = typeof valor === 'number' ? valor : Number(texto(valor, ''))
   if (!texto(valor, '') || !Number.isFinite(crudo)) return '—'
-  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(crudo)
+  return formatPrice(crudo)
 }

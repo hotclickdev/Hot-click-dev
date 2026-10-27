@@ -58,6 +58,6 @@ public class SinpeComprobantePersistenceService {
             pedidoRepository.actualizarEstadoPorGrupoPago(grupoPago, Constants.PEDIDO_PENDIENTE_APROBACION);
         }
 
-        log.info("Comprobante SINPE subido: pedido={} remitente={} cedula={}", numeroPedido, nombreRemitente, cedulaRemitente);
+        log.info("Comprobante SINPE subido: pedidoId={}", pedido.getId());
     }
 }

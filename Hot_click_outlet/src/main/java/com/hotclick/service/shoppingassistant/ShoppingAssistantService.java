@@ -1,5 +1,6 @@
 package com.hotclick.service.shoppingassistant;
 
+import org.springframework.dao.DataAccessException;
 import com.hotclick.legal.ChatLegalGuard;
 import com.hotclick.rag.classifier.AssistantMetricsService;
 import com.hotclick.rag.classifier.QueryClassification;
@@ -34,9 +35,8 @@ import java.util.UUID;
  * La sesión y los mensajes se manejan con JdbcTemplate para evitar mapear
  * el tipo JSONB y UUID de las tablas RAG con JPA/Hibernate.
  *
- * No se verifica cuota antes de llamar a Claude (endpoint público, la degradación
- * graceful del Circuit Breaker es suficiente protección). Sí se registran los tokens
- * consumidos vía {@link AiQuotaService#actualizarTokens} para billing y analytics.
+ * ALTO-1: la cuota ({@link ShoppingAssistantCuota}) se reserva ANTES de crear la sesión y de
+ * llamar al LLM. Se registran los tokens vía {@link AiQuotaService#actualizarTokens}.
  */
 @Service
 public class ShoppingAssistantService {
@@ -54,6 +54,8 @@ public class ShoppingAssistantService {
     private final ShoppingAssistantSessionHelper sessionHelper;
     private final ShoppingAssistantPersistence   persistence;
     private final ShoppingAssistantFeedbackHandler feedbackHandler;
+    private final ShoppingAssistantCuota         cuota;
+    private final ShoppingAssistantSesionFirma   firma;
 
     public ShoppingAssistantService(RagPipeline ragPipeline,
                                     AiQuotaService aiQuotaService,
@@ -63,7 +65,9 @@ public class ShoppingAssistantService {
                                     AssistantMetricsService metricsService,
                                     ShoppingAssistantSessionHelper sessionHelper,
                                     ShoppingAssistantPersistence persistence,
-                                    ShoppingAssistantFeedbackHandler feedbackHandler) {
+                                    ShoppingAssistantFeedbackHandler feedbackHandler,
+                                    ShoppingAssistantCuota cuota,
+                                    ShoppingAssistantSesionFirma firma) {
         this.ragPipeline           = ragPipeline;
         this.aiQuotaService        = aiQuotaService;
         this.sanitizer             = sanitizer;
@@ -73,6 +77,8 @@ public class ShoppingAssistantService {
         this.sessionHelper         = sessionHelper;
         this.persistence           = persistence;
         this.feedbackHandler       = feedbackHandler;
+        this.cuota                 = cuota;
+        this.firma                 = firma;
     }
 
     // ── Punto de entrada público ──────────────────────────────────────────────
@@ -112,8 +118,14 @@ public class ShoppingAssistantService {
                 visitorId, marketplace, productoId);
         } catch (RuntimeException e) {
             String correlacion = UUID.randomUUID().toString().substring(0, 8);
-            log.error("[rag] Fallo fuera del circuit breaker ref={} empresa={}: {}",
-                correlacion, empresaId, e.getClass().getSimpleName(), e);
+            if (esErrorDeDatos(e)) {
+                // B1: mensajes JDBC pueden traer el texto del visitante; sin mensaje ni stacktrace.
+                log.error("[rag] Fallo fuera del circuit breaker ref={} paso=chat empresa={}: {}",
+                    correlacion, empresaId, e.getClass().getName());
+            } else {
+                log.error("[rag] Fallo fuera del circuit breaker ref={} paso=chat empresa={}: {}",
+                    correlacion, empresaId, e.getClass().getSimpleName(), e);
+            }
             return new ChatResponse(RagResult.fallback().respuesta(),
                 sesionIdStr, List.of(), List.of(), List.of());
         }
@@ -133,8 +145,19 @@ public class ShoppingAssistantService {
             return new ChatResponse(respuesta, sesionIdStr, List.of(), List.of(), List.of());
         }
 
+        // ALTO-1: sólo se reutiliza una sesión con token firmado por el servidor PARA ESTA tienda.
+        UUID sesionPrevia = firma.verificar(sesionIdStr, empresaId);
+
+        // ALTO-1: tope de costo ANTES de crear sesión y de cualquier llamada al LLM → 200 degradado.
+        if (!cuota.reservar(empresaId, marketplace)) {
+            return new ChatResponse(ShoppingAssistantCuota.RESPUESTA_AGOTADA,
+                sesionPrevia == null ? null : sesionIdStr.trim(), List.of(), List.of(), List.of());
+        }
+
         // 3. Resolver o crear sesión
-        UUID sesionId = sessionHelper.resolveSession(sesionIdStr, empresaId);
+        UUID sesionId = sessionHelper.resolveSession(
+            sesionPrevia == null ? null : sesionPrevia.toString(), empresaId);
+        String sesionToken = firma.firmar(empresaId, sesionId);
 
         // 4. Cargar historial (antes de persistir el mensaje actual)
         List<Map<String, Object>> historial = sessionHelper.loadHistory(sesionId);
@@ -150,9 +173,11 @@ public class ShoppingAssistantService {
         // 7. Persistir pregunta + respuesta (best-effort: no tira la respuesta ya generada)
         try {
             persistence.persistirMensajes(sesionId, empresaId, mensaje, resultado);
-        } catch (RuntimeException e) {
-            log.error("[rag] No se pudo persistir el turno empresa={} sesion={}: {}",
-                empresaId, sesionId, e.getClass().getSimpleName(), e);
+        } catch (DataAccessException e) {
+            // B2: solo fallos de datos son best-effort; B1: sin mensaje ni stacktrace.
+            String correlacion = UUID.randomUUID().toString().substring(0, 8);
+            log.error("[rag] No se pudo persistir el turno ref={} paso=persistencia empresa={} sesion={}: {}",
+                correlacion, empresaId, sesionId, e.getClass().getName());
         }
 
         // 8. Registrar tokens para billing/analytics (best-effort)
@@ -162,7 +187,8 @@ public class ShoppingAssistantService {
                     empresaId, resultado.tokensEntrada(), resultado.tokensSalida());
             }
         } catch (Exception e) {
-            log.warn("[rag] No se pudo actualizar cuota de tokens empresa={}: {}", empresaId, e.getMessage());
+            // C2: sin mensaje (puede traer SQL/datos del visitante), solo la clase.
+            log.warn("[rag] No se pudo actualizar cuota de tokens empresa={}: {}", empresaId, e.getClass().getName());
         }
 
         // 9. Actualizar memoria del visitante de forma asíncrona (no bloquea el response)
@@ -174,7 +200,7 @@ public class ShoppingAssistantService {
 
         return new ChatResponse(
             resultado.respuesta(),
-            sesionId.toString(),
+            sesionToken,
             resultado.productosReferenciados(),
             resultado.categorias(),
             resultado.opts()
@@ -193,7 +219,14 @@ public class ShoppingAssistantService {
      * @param rating      1 = positivo, -1 = negativo.
      */
     public void submitFeedback(String sesionIdStr, int msgIndex, int rating) {
-        feedbackHandler.submitFeedback(sesionIdStr, msgIndex, rating);
+        submitFeedback(sesionIdStr, msgIndex, rating, null);
+    }
+
+    /** @param empresaIdActual empresa del tenant de la request (null si el cliente no envió slug). */
+    public void submitFeedback(String sesionIdStr, int msgIndex, int rating, Long empresaIdActual) {
+        UUID sesion = verificarParaTienda(sesionIdStr, empresaIdActual);
+        if (sesion == null) return;
+        feedbackHandler.submitFeedback(sesion.toString(), msgIndex, rating);
     }
 
     // ── Historial público ─────────────────────────────────────────────────────
@@ -207,7 +240,15 @@ public class ShoppingAssistantService {
      * como token opaco. Si el UUID no existe en BD se retorna lista vacía.
      */
     public Map<String, Object> getSessionHistory(String sesionIdStr) {
-        return sessionHelper.getSessionHistory(sesionIdStr);
+        return getSessionHistory(sesionIdStr, null);
+    }
+
+    public Map<String, Object> getSessionHistory(String sesionIdStr, Long empresaIdActual) {
+        UUID sesion = verificarParaTienda(sesionIdStr, empresaIdActual);
+        if (sesion == null) return Map.of("sesionId", "", "mensajes", List.of());
+        Map<String, Object> h = new java.util.HashMap<>(sessionHelper.getSessionHistory(sesion.toString()));
+        if (h.containsKey("sesionId") && !"".equals(h.get("sesionId"))) h.put("sesionId", sesionIdStr.trim());
+        return h;
     }
 
     // ── Expiración manual de sesión ───────────────────────────────────────────
@@ -220,6 +261,42 @@ public class ShoppingAssistantService {
      * Operación idempotente: si la sesión no existe o el UUID es inválido, retorna sin error.
      */
     public void expireSession(String sesionIdStr) {
-        sessionHelper.expireSession(sesionIdStr);
+        expireSession(sesionIdStr, null);
+    }
+
+    public void expireSession(String sesionIdStr, Long empresaIdActual) {
+        UUID sesion = verificarParaTienda(sesionIdStr, empresaIdActual);
+        if (sesion == null) return;
+        sessionHelper.expireSession(sesion.toString());
+    }
+
+    /**
+     * Verifica el token contra la empresa dueña de la sesión en BD y, si la request trae tenant,
+     * exige que sea esa misma empresa. Un token de la tienda A nunca opera sobre la tienda B.
+     */
+    private UUID verificarParaTienda(String token, Long empresaIdActual) {
+        UUID uuid = ShoppingAssistantSesionFirma.uuidDe(token);
+        if (uuid == null) return null;
+        Long duena;
+        try {
+            duena = sessionHelper.empresaDeSesion(uuid);
+        } catch (DataAccessException e) {
+            return null;
+        }
+        if (duena == null) return null;
+        if (empresaIdActual != null && !empresaIdActual.equals(duena)) return null;
+        return firma.verificar(token, duena);
+    }
+
+    /**
+     * true si la excepción o alguna de sus causas es DataAccessException o SQLException cruda (B1).
+     * C2: una cadena de más de 16 causas falla cerrado (se trata como sensible).
+     */
+    static boolean esErrorDeDatos(Throwable t) {
+        int i = 0;
+        for (; t != null && i < 16; t = t.getCause(), i++) {
+            if (t instanceof DataAccessException || t instanceof java.sql.SQLException) return true;
+        }
+        return t != null;
     }
 }

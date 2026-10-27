@@ -30,10 +30,16 @@ public class FacturacionEmisionSupport {
 
     private static final Logger log = LoggerFactory.getLogger(FacturacionEmisionSupport.class);
 
-    private static final List<String> ESTADOS_ACTIVOS = List.of(
+    /**
+     * Estados que bloquean otra emisión para el mismo pedido o compra. ERROR cuenta: el comprobante
+     * ya tiene clave y consecutivo y la contingencia lo sigue reenviando; emitir otro duplicaría la venta.
+     */
+    static final List<String> ESTADOS_ACTIVOS = List.of(
         ComprobanteFiscal.ESTADO_PENDIENTE,
+        ComprobanteFiscal.ESTADO_PENDIENTE_CONFIG,
         ComprobanteFiscal.ESTADO_ENVIADO,
-        ComprobanteFiscal.ESTADO_ACEPTADO);
+        ComprobanteFiscal.ESTADO_ACEPTADO,
+        ComprobanteFiscal.ESTADO_ERROR);
 
     private final ComprobanteFiscalRepository comprobanteRepo;
     private final ConsecutivoFiscalService consecutivoService;
@@ -58,6 +64,7 @@ public class FacturacionEmisionSupport {
 
     @Transactional
     public ComprobanteFiscal emitir(Pedido pedido, String tipo) {
+        com.hotclick.service.FacturacionService.exigirNoPrueba(pedido);
         Empresa empresa = pedido.getEmpresa();
         if (empresa == null) {
             throw new IllegalStateException("El pedido no tiene empresa asociada");
@@ -173,10 +180,10 @@ public class FacturacionEmisionSupport {
         cf.setTotalFactura(Math.toIntExact(base + impuesto));
     }
 
-    private static void copiarReceptor(ComprobanteFiscal cf, Usuario usuario) {
-        if (usuario == null || usuario.getIdentificacion() == null) return;
-        String cedula = usuario.getIdentificacion().replaceAll("[^0-9]", "");
-        if (!cedula.matches("\\d{9,12}")) return;
+    static void copiarReceptor(ComprobanteFiscal cf, Usuario usuario) {
+        if (usuario == null) return;
+        String cedula = com.hotclick.utils.CedulaCr.realONulo(usuario.getIdentificacion());
+        if (cedula == null) return; // #318: identificación interna (REG-/EMP-/…) ≠ receptor
         cf.setReceptorCedula(cedula);
         cf.setReceptorTipo(tipoIdentificacion(cedula));
         cf.setReceptorNombre(nombreReceptor(usuario));

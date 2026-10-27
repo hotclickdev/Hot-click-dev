@@ -2,11 +2,12 @@ import { authService } from '@/services/authService'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
 import { readMetaCookies } from '@/utils/metaPixel'
-import { bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
+import { bodegaIdReal, bodegaRetiroDePaquete, opcionesEnvio } from './checkoutHelpers'
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
 import { guardarUltimoPedido } from '@/utils/ultimoPedido'
 import type { CheckoutPayload } from '@/types/pedido'
 import { proveedorDe } from './pagoPrincipal'
+import { datosSinpeOnvo } from '@/utils/sinpeOnvo'
 
 /** Etiqueta legible del método de envío elegido para un paquete, para el resumen en notas. */
 function opcionesParaLabel(p: PaqueteCheckout, metodo: string): string {
@@ -83,6 +84,8 @@ type PagarCheckoutDeps = {
   cuponCodigo: string | null
   gcCodigo: string | null
   sinpeTelefono: string
+  /** Tipo ONVO (0-5/9) de la identificación SINPE del comprador. */
+  sinpeTipoIdentificacion?: number
   iniciarPago: (payload: CheckoutPayload, isGuest?: boolean, isSinpe?: boolean) => void
   /** Publicado por /public/checkout-config; sin él SINPE queda «Próximamente». */
   sinpeManualHabilitado?: boolean
@@ -125,6 +128,9 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     cuponCodigo,
     gcCodigo,
     sinpeTelefono,
+    sinpeTipoIdentificacion,
+    setSinpeCedulaErr,
+    sinpeCedula,
     iniciarPago,
     sinpeManualHabilitado = false,
     tarjetaOnvoHabilitada = false,
@@ -138,6 +144,15 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     return
   }
   if (!aceptaDatos) return
+  // SINPE por ONVO (/sinpe/checkout): identificación, tipo y SINPE del comprador válidos o no se inicia (fail-closed).
+  const sinpeOnvo = provider === 'SINPE'
+    ? datosSinpeOnvo(sinpeCedula ?? '', sinpeTipoIdentificacion ?? -1, sinpeTelefono ?? '')
+    : null
+  if (provider === 'SINPE' && !sinpeOnvo) {
+    setSinpeCedulaErr?.('invalido')
+    return
+  }
+  if (provider === 'SINPE') setSinpeCedulaErr?.('')
   if (!validateDomicilio()) return
 
   // Requiere teléfono de contacto si al menos un paquete se entrega (no todos van a retiro en tienda).
@@ -192,16 +207,23 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
   const metaCookies = readMetaCookies()
   iniciarPago(
     {
-      bodegaId: metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? bodegaRetiro.id as number : undefined,
+      bodegaId: metodoEnvio === 'RETIRO_EN_TIENDA' && bodegaRetiro ? bodegaIdReal(bodegaRetiro.id) : undefined,
       metodoEnvio,
       envios: paquetes.map((p) => ({
-        bodegaId: Number(p.bodegaId),
+        bodegaId: bodegaIdReal(p.bodegaId),
         metodoEnvio: metodoEnvioPorPaquete[p.bodegaId],
       })),
       notas: notasFull || null,
       // B17: la dirección también viaja aparte para que el pedido la guarde y los correos digan «Enviamos a …».
       direccionEntrega: necesitaDireccion && direccion ? (direccionPedido || direccion).slice(0, 500) : null,
       provider,
+      ...(sinpeOnvo
+        ? {
+            sinpeIdentificacion: sinpeOnvo.identificacion,
+            sinpeTipoIdentificacion: sinpeOnvo.tipoIdentificacion,
+            sinpeTelefono: sinpeOnvo.telefono,
+          }
+        : {}),
       items: items.map((i) => ({
         productoId: i.id,
         cantidad: i.cantidad,

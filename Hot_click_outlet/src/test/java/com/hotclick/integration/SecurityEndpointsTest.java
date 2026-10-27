@@ -57,11 +57,12 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/pos/qr/pago/{token}/tilopay → público, sin token (no 401)")
-    void posQrTilopay_public_noAuth() throws Exception {
-        // Token inexistente: negocio responde 404; Spring Security no debe bloquear con 401
+    @DisplayName("P-01 Seguridad: /pos/qr/pago/{token}/tilopay(/confirmar) ya no son públicas → 401 sin token")
+    void posQrTilopay_yaNoPublico() throws Exception {
         mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/tilopay"))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/tilopay/confirmar"))
+            .andExpect(status().isUnauthorized());
     }
 
     @Test

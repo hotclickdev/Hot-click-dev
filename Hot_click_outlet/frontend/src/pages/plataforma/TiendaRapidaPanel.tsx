@@ -114,7 +114,7 @@ function PasoNombre({ negocio, setNegocio, onSigue, aviso, setAviso }: {
   return (
     <section className={TARJETA}>
       <h2 className="font-display text-[17px] font-bold">¿Cómo se llama la tienda?</h2>
-      <p className="mt-1 text-sm text-hc-n-600">Usted carga los productos. La persona solo completa sus datos.</p>
+      <p className="mt-1 text-sm text-hc-n-600">Vos cargás los productos. La persona solo completa sus datos.</p>
       <Campo etiqueta="Nombre del negocio" valor={negocio} onChange={setNegocio} />
       {aviso && <p className="mt-2 text-sm text-hc-primary-text">{aviso}</p>}
       <button type="button" className={`${BOTON_PRIMARIO} mt-4`} onClick={sigue}>Siguiente</button>
@@ -209,7 +209,7 @@ function PasoListo({ creada }: { creada: Creada }) {
     <section className={TARJETA}>
       <p className="font-display text-[40px] font-extrabold leading-none text-hc-success-text">Lista</p>
       <h2 className="mt-2 font-display text-[17px] font-bold">{creada.negocio} quedó por {creada.dias} días</h2>
-      <p className="mt-1 text-sm text-hc-n-600">El enlace abre los datos de {creada.persona}. Usted puede cargar los productos desde la ficha.</p>
+      <p className="mt-1 text-sm text-hc-n-600">El enlace abre los datos de {creada.persona}. Podés cargar los productos desde la ficha.</p>
       <p className="mt-1 text-xs text-hc-n-600">{t('negocioRapido.admin.unSoloUso')}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {enlace && (

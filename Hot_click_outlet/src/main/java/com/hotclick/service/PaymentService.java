@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.service.payment.CheckoutValidator;
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.dto.PaymentStatusResponse;
@@ -49,7 +50,6 @@ public class PaymentService {
     @Autowired private PaymentOrderConfirmationService  orderConfirmationService;
     @Autowired private PaymentFailureHandler            paymentFailureHandler;
     @Autowired private PaymentUserCancellationService   userCancellationService;
-    @Autowired private SinpePaymentAdminService         sinpePaymentAdminService;
     @Autowired private PosQrVentaService                posQrVentaService;
     @Autowired private GuestCancelTokenService          guestCancelTokenService;
     @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
@@ -58,6 +58,7 @@ public class PaymentService {
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
         checkoutValidator.validateCartNotEmpty(req);
+        CheckoutValidator.exigirDireccionSiHayEnvio(req);
 
         String provider = checkoutValidator.resolveProvider(req, providerFactory);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
@@ -158,16 +159,6 @@ public class PaymentService {
     @Transactional
     public void marcarFallido(Pago pago, String motivo) {
         paymentFailureHandler.marcarFallido(pago, motivo);
-    }
-
-    @Transactional
-    public PaymentStatusResponse confirmarSinpe(Long pagoId) {
-        return sinpePaymentAdminService.confirmarSinpe(pagoId, this, eventPublisher);
-    }
-
-    @Transactional
-    public void rechazarSinpe(Long pagoId, String motivo) {
-        sinpePaymentAdminService.rechazarSinpe(pagoId, motivo);
     }
 
     @Transactional

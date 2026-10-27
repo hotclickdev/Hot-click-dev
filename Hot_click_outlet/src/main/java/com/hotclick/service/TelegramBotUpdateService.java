@@ -88,9 +88,9 @@ public class TelegramBotUpdateService {
                 vinculacionService.vinculacionActiva(chatId).ifPresent(menuBuilder::mostrarMenu);
             }
         } catch (Exception e) {
-            log.error("[telegram-bot] fallo respondiendo texto libre en chat {} — {}", chatId, e.getMessage());
+            log.error("[telegram-bot] fallo respondiendo texto libre en chat {} — {}", chatId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
             bot.enviarMensaje(chatId, "No pude procesar tu mensaje. Intentá de nuevo en unos minutos o escribí /menu.");
-            abuso.avisarErrorDeUsuario(chatId, e.getMessage());
+            abuso.avisarErrorDeUsuario(chatId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
         }
     }
 

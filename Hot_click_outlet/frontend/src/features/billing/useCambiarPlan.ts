@@ -4,17 +4,59 @@ import { billingService, type CambiarPlanResultado } from '@/services/billingSer
 import useTenantStore from '@/store/tenantStore'
 import type { Id } from '@/types/api'
 
-function mensajeErrorPlan(err: unknown, fallback: string): string {
+/** QA8: el negocio aún no está aprobado; no puede elegir ni pagar plan (409 del backend). */
+export const MSG_EMPRESA_PENDIENTE_APROBACION = 'Tu negocio está en revisión; podrás elegir plan cuando lo aprobemos.'
+
+export function mensajeErrorPlan(err: unknown, fallback: string): string {
   if (typeof err !== 'object' || err === null || !('response' in err)) return fallback
-  const error = (err as { response?: { data?: { error?: unknown } } }).response?.data?.error
+  const data = (err as { response?: { data?: { error?: unknown; codigo?: unknown } } }).response?.data
+  if (data?.codigo === 'EMPRESA_PENDIENTE_APROBACION') return MSG_EMPRESA_PENDIENTE_APROBACION
+  const error = data?.error
   return typeof error === 'string' && error ? error : fallback
 }
 
-export type PagoPlanPendiente = {
+/** Cobro Tilopay (legado; ya no lo devuelve /cambiar-plan desde Auditor 5 S-01). */
+export type PagoPlanTilopay = {
+  proveedor?: 'TILOPAY'
   orderNumber: string
   montoCrc: number
   sdkToken: string
   planNombre?: string
+}
+
+/** Auditor 5 S-01: cobro de mensualidad por ONVO (suscripción incompleta creada en el servidor). */
+export type PagoPlanOnvo = {
+  proveedor: 'ONVO'
+  subscriptionId: string
+  customerId?: string
+  publishableKey?: string
+  planNombre?: string
+}
+
+export type PagoPlanPendiente = PagoPlanTilopay | PagoPlanOnvo
+
+/** Traduce la respuesta de /cambiar-plan a un cobro pendiente, o null si no requiere pago o faltan datos. */
+export function pagoPendienteDe(result: CambiarPlanResultado): PagoPlanPendiente | null {
+  if (result.status !== 'requiere_pago') return null
+  if (result.subscriptionId && result.proveedor !== 'TILOPAY') {
+    return {
+      proveedor: 'ONVO',
+      subscriptionId: result.subscriptionId,
+      customerId: result.customerId,
+      publishableKey: result.publishableKey,
+      planNombre: result.planNombre,
+    }
+  }
+  if (result.orderNumber && result.sdkToken && result.montoCrc) {
+    return {
+      proveedor: 'TILOPAY',
+      orderNumber: result.orderNumber,
+      montoCrc: result.montoCrc,
+      sdkToken: result.sdkToken,
+      planNombre: result.planNombre,
+    }
+  }
+  return null
 }
 
 /** Dónde volver tras confirmar el cobro en /billing/tilopay/respuesta. */
@@ -67,14 +109,10 @@ export function useCambiarPlan({ rutaExito }: Options) {
       const { data } = await billingService.cambiarPlan(planId)
       const result = data as CambiarPlanResultado
 
-      if (result.status === 'requiere_pago' && result.orderNumber && result.sdkToken && result.montoCrc) {
+      const pago = pagoPendienteDe(result)
+      if (pago) {
         sessionStorage.setItem(CLAVE_RUTA_EXITO_PLAN, rutaExito)
-        setPagoPendiente({
-          orderNumber: result.orderNumber,
-          montoCrc: result.montoCrc,
-          sdkToken: result.sdkToken,
-          planNombre: result.planNombre,
-        })
+        setPagoPendiente(pago)
         setLoadingPlan(null)
         return
       }

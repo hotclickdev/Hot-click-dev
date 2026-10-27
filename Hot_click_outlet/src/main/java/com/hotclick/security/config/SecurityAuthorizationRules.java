@@ -42,8 +42,6 @@ final class SecurityAuthorizationRules {
             // POS QR pago — rutas públicas (cliente escanea QR)
             .requestMatchers(GET,  "/api/pos/qr/pago/**").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/stripe").permitAll()
-            .requestMatchers(POST, "/api/pos/qr/pago/*/tilopay").permitAll()
-            .requestMatchers(POST, "/api/pos/qr/pago/*/tilopay/confirmar").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/intent").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/sinpe-onvo").permitAll()
             // Compra sin registro (invitados)
@@ -231,9 +229,9 @@ final class SecurityAuthorizationRules {
                 "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_APPROVALS)
             .requestMatchers("/api/admin/payouts/**").hasAnyAuthority(
                 "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_METRICS)
-            .requestMatchers("/api/admin/pagos/**").hasAnyAuthority(
-                "ROLE_" + Constants.ROL_ADMIN, "ROLE_" + Constants.ROL_EMPRENDEDOR,
-                Constants.PERM_GLOBAL_METRICS)
+            // QA2-área2: pagos de plataforma, ADMIN o staff global.metrics; EMPRENDEDOR y su equipo, 403.
+            .requestMatchers("/api/admin/pagos", "/api/admin/pagos/**").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_METRICS)
             .requestMatchers(GET, "/api/admin/embudo").hasAnyAuthority(
                 "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_METRICS)
             .requestMatchers("/api/admin/d105/**").hasAnyAuthority(

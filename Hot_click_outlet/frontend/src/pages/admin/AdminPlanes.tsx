@@ -7,7 +7,7 @@ import { esUsuarioSistema } from '@/utils/sistemaUser'
 import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
-import TilopaySuscripcionEmbed from '@/features/billing/TilopaySuscripcionEmbed'
+import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import type { Id } from '@/types/api'
 import { useCerrarSesion } from '@/hooks/useCerrarSesion'
@@ -145,7 +145,7 @@ export default function AdminPlanes() {
     setError,
     pagoPendiente,
     seleccionarPlan,
-    cancelarPago,
+    cancelarPago, irAExito,
   } = useCambiarPlan({ rutaExito: '/admin/billing/suscripcion' })
 
   function handleLogout() {
@@ -196,7 +196,7 @@ export default function AdminPlanes() {
               Cancelar
             </button>
           </div>
-          <TilopaySuscripcionEmbed pago={pagoPendiente} />
+          <PagoPlanEmbed pago={pagoPendiente} onPagado={irAExito} />
         </div>
       )}
 
@@ -219,7 +219,7 @@ export default function AdminPlanes() {
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        Los precios están en colones (CRC). El cobro mensual se procesa con Tilopay.
+        Los precios están en colones (CRC). El cobro mensual se procesa con ONVO.
         Podés cancelar en cualquier momento desde la sección de suscripción.
       </p>
 

@@ -117,6 +117,7 @@ public class TenantUsoService {
                   THEN total_pedido ELSE 0 END), 0)::bigint AS gmv_mes
               FROM hot_click_pedido_tb ped
               CROSS JOIN (SELECT ?::timestamp AS inicio, ?::timestamp AS fin) b
+              WHERE ped.es_prueba = false
               GROUP BY ped.fk_id_empresa, b.inicio, b.fin
             ) ped ON ped.fk_id_empresa = e.id_empresa
             LEFT JOIN hot_click_ai_uso_tb ai

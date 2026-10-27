@@ -71,10 +71,11 @@ class SinpeRevisionAuthorizationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Vendedor no aprueba ni rechaza comprobantes → 403")
     void emprendedor_noResuelveComprobantes() throws Exception {
-        mockMvc.perform(post("/api/sinpe/admin/comprobantes/" + ID_INEXISTENTE + "/aprobar").header("Authorization", tokenEmp))
-            .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/sinpe/admin/comprobantes/" + ID_INEXISTENTE + "/rechazar").header("Authorization", tokenEmp))
-            .andExpect(status().isForbidden());
+        // P-01: aprobar/rechazar comprobantes se retiró; la ruta no existe (403 por regla de admin o 404).
+        for (String accion : new String[]{"aprobar", "rechazar"}) {
+            mockMvc.perform(post("/api/sinpe/admin/comprobantes/" + ID_INEXISTENTE + "/" + accion).header("Authorization", tokenEmp))
+                .andExpect(r -> org.assertj.core.api.Assertions.assertThat(r.getResponse().getStatus()).isIn(403, 404));
+        }
     }
 
     @Test
@@ -85,10 +86,10 @@ class SinpeRevisionAuthorizationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Vendedor sigue viendo la lista de pagos de su negocio")
-    void emprendedor_sigueListandoSusPagos() throws Exception {
+    @DisplayName("QA2-área2: /api/admin/pagos es de plataforma; un vendedor recibe 403")
+    void emprendedor_noListaPagosDePlataforma() throws Exception {
         mockMvc.perform(get("/api/admin/pagos").header("Authorization", tokenEmp))
-            .andExpect(status().isOk());
+            .andExpect(status().isForbidden());
     }
 
     @Test

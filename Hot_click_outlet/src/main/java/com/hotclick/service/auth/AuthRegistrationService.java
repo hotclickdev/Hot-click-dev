@@ -26,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class AuthRegistrationService {
@@ -54,6 +55,7 @@ public class AuthRegistrationService {
             usuario.setNombre(req.getNombre().trim());
             usuario.setApellidoPaterno(""); // P1-04: la columna es NOT NULL; antes daba 500 con el SQL
             usuario.setCorreo(com.hotclick.utils.CorreoNormalizer.normalizar(req.getCorreo()));
+            usuario.setIdentificacion(identificacionInterna()); // E2E-REG-01: columna NOT NULL, el registro no la pide
             usuario.setContrasenaHash(passwordEncoder.encode(req.getContrasena()));
             if (req.getTelefono() != null) usuario.setTelefono(req.getTelefono().trim());
             Usuario nuevo = usuarioService.registrarSolicitud(usuario);
@@ -153,5 +155,10 @@ public class AuthRegistrationService {
             return generico;
         }
         return msg;
+    }
+
+    /** E2E-REG-01: identificación interna única (≤20) para registro local; mismo patrón que Clerk/EMP-. */
+    static String identificacionInterna() {
+        return "REG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 }

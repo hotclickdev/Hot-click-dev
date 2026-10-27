@@ -7,8 +7,13 @@ import org.springframework.security.web.header.HeaderWriter;
  * Extraído bit-idéntico de SecurityConfig — no cambia comportamiento.
  * Sin Meta Pixel (sin publicidad): no se permiten connect.facebook.net ni el píxel /tr. Solo queda
  * frame-src www.facebook.com para los videos de Facebook embebidos en la ficha.
+ * ONVO: el SDK de suscripción (zoid) carga el script https://sdk.onvopay.com/sdk.js y renderiza
+ * el iframe https://sdk.onvopay.com/sdk; las llamadas a la API ocurren dentro del iframe.
  */
 final class SecurityHeadersWriter {
+
+    /** Único origen que necesita el SDK embebido de ONVO (script + iframe). */
+    static final String ONVO_SDK_ORIGIN = "https://sdk.onvopay.com";
 
     private SecurityHeadersWriter() {}
 
@@ -19,14 +24,14 @@ final class SecurityHeadersWriter {
             res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
             res.setHeader("Content-Security-Policy",
                 "default-src 'self'; " +
-                "script-src 'self' https://js.stripe.com https://app.tilopay.com https://secure.tilopay.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms https://scripts.clarity.ms; " +
-                "script-src-elem 'self' https://js.stripe.com https://app.tilopay.com https://secure.tilopay.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com https://us-assets.i.posthog.com https://www.clarity.ms https://scripts.clarity.ms; " +
+                "script-src 'self' " + ONVO_SDK_ORIGIN + " https://app.tilopay.com https://secure.tilopay.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms https://scripts.clarity.ms; " +
+                "script-src-elem 'self' " + ONVO_SDK_ORIGIN + " https://app.tilopay.com https://secure.tilopay.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.googletagmanager.com https://www.google-analytics.com https://us-assets.i.posthog.com https://www.clarity.ms https://scripts.clarity.ms; " +
                 "worker-src blob: 'self'; " +
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                 "font-src 'self' https://fonts.gstatic.com; " +
                 "img-src 'self' data: blob: " + s3PublicUrl + " https://*.amazonaws.com https://images.unsplash.com https://loremflickr.com https://*.googleusercontent.com https://img.clerk.com https://avatars.githubusercontent.com https://cdnjs.cloudflare.com https://i.ytimg.com https://tile.openstreetmap.org; " +
-                "connect-src 'self' " + s3PublicUrl + " https://*.amazonaws.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://api.clerk.com https://clerk-telemetry.com https://api.stripe.com https://hooks.stripe.com https://app.tilopay.com https://secure.tilopay.com https://www.google-analytics.com https://region1.google-analytics.com https://us.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.us.sentry.io https://*.clarity.ms https://c.bing.com https://nominatim.openstreetmap.org; " +
-                "frame-src https://js.stripe.com https://hooks.stripe.com https://app.tilopay.com https://secure.tilopay.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.facebook.com https://www.openstreetmap.org; " +
+                "connect-src 'self' " + s3PublicUrl + " https://*.amazonaws.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://api.clerk.com https://clerk-telemetry.com https://app.tilopay.com https://secure.tilopay.com https://www.google-analytics.com https://region1.google-analytics.com https://us.i.posthog.com https://us-assets.i.posthog.com https://*.ingest.us.sentry.io https://*.clarity.ms https://c.bing.com https://nominatim.openstreetmap.org; " +
+                "frame-src " + ONVO_SDK_ORIGIN + " https://app.tilopay.com https://secure.tilopay.com https://www.youtube.com https://www.youtube-nocookie.com https://www.tiktok.com https://www.instagram.com https://*.clerk.accounts.dev https://clerk.hotclick.lat https://www.facebook.com https://www.openstreetmap.org; " +
                 "frame-ancestors 'self'; " +
                 "object-src 'none'; " +
                 "base-uri 'self';"

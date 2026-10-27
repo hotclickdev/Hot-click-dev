@@ -75,7 +75,6 @@ class PaymentServiceF37Test {
     @InjectMocks PaymentOrderConfirmationService orderConfirmationService;
     @InjectMocks PaymentFailureHandler            paymentFailureHandler;
     @InjectMocks PaymentUserCancellationService   userCancellationService;
-    @InjectMocks SinpePaymentAdminService         sinpePaymentAdminService;
 
     PaymentService service;
 
@@ -85,6 +84,12 @@ class PaymentServiceF37Test {
 
     @BeforeEach
     void setUp() throws Exception {
+
+        // P-05: la reserva usa el batch lock ordenado; delega en los stubs por id de cada test.
+        org.mockito.Mockito.lenient().when(productoRepository.findAllByIdsForUpdate(org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
+                .map(id -> productoRepository.findByIdForUpdate(id))
+                .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
         // Por defecto cada confirmación/fallo gana su UPDATE condicional (la carrera se prueba en TilopayDobleConfirmacionTest).
         lenient().when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
         lenient().when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
@@ -137,7 +142,6 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(service, "orderConfirmationService", orderConfirmationService);
         ReflectionTestUtils.setField(service, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(service, "userCancellationService", userCancellationService);
-        ReflectionTestUtils.setField(service, "sinpePaymentAdminService", sinpePaymentAdminService);
         ReflectionTestUtils.setField(service, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(service, "atribucionPedidoService", atribucionPedidoService);
         GuestCancelTokenService guestCancelTokenService = new GuestCancelTokenService();
@@ -161,10 +165,6 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(userCancellationService, "guestCancelTokenService", guestCancelTokenService);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "pagoRepository", pagoRepository);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "orderConfirmationService", orderConfirmationService);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentFailureHandler", paymentFailureHandler);
-        ReflectionTestUtils.setField(sinpePaymentAdminService, "paymentStatusAssembler", paymentStatusAssembler);
     }
 
     // ── F37-01: numeroPedido tiene formato UUID (no milisegundos) ────────────

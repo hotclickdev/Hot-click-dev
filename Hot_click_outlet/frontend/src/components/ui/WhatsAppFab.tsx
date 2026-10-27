@@ -5,8 +5,9 @@ import useChatStore from '@/store/chatStore'
 import { ICONOS_ESTADOS } from '@/components/comprador/estados/iconosEstados'
 import { esFichaProducto } from './flotantes/flotantesHelpers'
 import { useHayBarraInferior } from './flotantes/barraInferiorStore'
+import { SOPORTE_WA } from '@/config/soporteTelefono'
 
-const WHATSAPP = '50686667888'
+const WHATSAPP = SOPORTE_WA
 
 /**
  * Botón flotante de WhatsApp (Figma `52:2418`, nota F: "sobre la barra inferior (móvil) y abajo a la
@@ -32,6 +33,7 @@ export default function WhatsAppFab() {
   if (!visible) return null
 
   const label = t('common.whatsappConsult')
+  if (!WHATSAPP) return null
   const waUrl = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(t('common.whatsappGreeting'))}`
   const bottomMovil = hayBarra
     ? 'bottom-[calc(83px+env(safe-area-inset-bottom,0px))]'
