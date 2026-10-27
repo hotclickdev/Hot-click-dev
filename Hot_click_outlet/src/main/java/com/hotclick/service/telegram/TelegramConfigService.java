@@ -5,12 +5,14 @@ import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -33,6 +35,10 @@ public class TelegramConfigService {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private TelegramClienteBotService bot;
     @Autowired private TelegramRevocacionMiembro revocacionMiembro;
+    @Autowired private AuditoriaAdminRegistroService auditoria;
+
+    /** Resultado de {@link #desbloquear(Long)}. */
+    public enum Desbloqueo { NO_ENCONTRADA, SIN_BLOQUEO, DESBLOQUEADA }
 
     public Map<String, Object> generarCodigo(Usuario usuario) {
         TelegramVinculacion v = vinculacionRepository.findByUsuarioId(usuario.getId())
@@ -89,6 +95,27 @@ public class TelegramConfigService {
     /** TG3: ver {@link TelegramRevocacionMiembro} (consultas puntuales fuera de bucles, SCALE1). */
     public boolean revocarMiembro(Long usuarioId, Long empresaId) {
         return revocacionMiembro.revocar(usuarioId, empresaId);
+    }
+
+    /**
+     * Auditor 8 M-A: salida administrativa del bloqueo por abuso (pausa de hasta 365 días, ver
+     * {@code TelegramAbusoService.bloquearCuenta}). Solo limpia {@code pausadoHasta} de la vinculación
+     * del usuario; no la reactiva si estaba revocada ni toca la cuenta web. La autorización (admin de
+     * plataforma) la exige el controlador. Cada desbloqueo real queda en hot_click_auditoria_admin_tb.
+     */
+    @Transactional
+    public Desbloqueo desbloquear(Long usuarioId) {
+        TelegramVinculacion v = vinculacionRepository.findByUsuarioId(usuarioId).orElse(null);
+        if (v == null) return Desbloqueo.NO_ENCONTRADA;
+        LocalDateTime hasta = v.getPausadoHasta();
+        if (hasta == null || !LocalDateTime.now(Constants.ZONA_CR).isBefore(hasta)) return Desbloqueo.SIN_BLOQUEO;
+        v.setPausadoHasta(null);
+        vinculacionRepository.save(v);
+        Long empresaId = v.getUsuario() != null ? v.getUsuario().getEmpresaId() : null;
+        auditoria.registrar("TELEGRAM_DESBLOQUEO", "TELEGRAM_VINCULACION", v.getId(), empresaId,
+            "Desbloqueo del bot de Telegram del usuario " + usuarioId + " (pausa vigente hasta " + hasta + ")");
+        log.info("[telegram] admin desbloqueó la vinculación del usuario {}", usuarioId);
+        return Desbloqueo.DESBLOQUEADA;
     }
 
     public String registrarWebhook() {

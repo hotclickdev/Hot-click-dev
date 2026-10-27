@@ -79,6 +79,23 @@ public class TelegramConfigController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
+    /**
+     * Auditor 8 M-A: único camino para salir del bloqueo de 365 días del bot. Solo admin de
+     * plataforma (además de la regla de URL /api/telegram/admin/** con ROLE_ADMIN; impersonando no
+     * cuenta como admin). Auditado en hot_click_auditoria_admin_tb.
+     */
+    @PostMapping("/admin/desbloquear/{usuarioId}")
+    public ResponseEntity<?> desbloquear(@PathVariable Long usuarioId) {
+        if (!companyScope.isAdminIT()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return switch (telegramConfigService.desbloquear(usuarioId)) {
+            case NO_ENCONTRADA -> ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            case SIN_BLOQUEO -> ResponseEntity.ok(Map.of("ok", true, "desbloqueado", false));
+            case DESBLOQUEADA -> ResponseEntity.ok(Map.of("ok", true, "desbloqueado", true));
+        };
+    }
+
     @PostMapping("/admin/webhook")
     public ResponseEntity<?> registrarWebhook() {
         if (!companyScope.isAdminIT()) {

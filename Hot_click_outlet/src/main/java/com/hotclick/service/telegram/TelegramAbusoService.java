@@ -63,11 +63,15 @@ public class TelegramAbusoService {
             "Ráfaga de mensajes en el bot de clientes", "chat=" + chatEnmascarado(chatId));
     }
 
-    public void avisarErrorDeUsuario(long chatId, String resumen) {
+    /**
+     * Alerta interna de un fallo del bot. Auditor 8 M-C: solo el TIPO de la excepción; el mensaje
+     * puede traer datos del negocio (SQL, nombres, ids), tokens o URLs, y el chat de alertas no es
+     * un lugar para eso. El detalle completo queda en el stacktrace del log del servidor.
+     */
+    public void avisarErrorDeUsuario(long chatId, Throwable error) {
         if (!rateLimiter.tryAcquire("tg:err:" + chatId, 1, 300)) return;
-        String corto = resumen == null ? "" : TelegramTexto.sinToken(resumen);
-        if (corto.length() > 300) corto = corto.substring(0, 300);
-        telegramService.enviar("Error en el bot de clientes. Chat " + chatEnmascarado(chatId) + ". " + corto);
+        String tipo = error == null ? "desconocido" : error.getClass().getSimpleName();
+        telegramService.enviar("Error en el bot de clientes. Chat " + chatEnmascarado(chatId) + ". Tipo: " + tipo);
     }
 
     public void secretoInvalido(String ip) {
