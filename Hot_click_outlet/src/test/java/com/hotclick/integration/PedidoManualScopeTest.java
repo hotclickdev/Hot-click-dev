@@ -52,6 +52,8 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
         cliB.setEmpresaRegistro(empB);
         cliB = usuarioRepository.saveAndFlush(cliB);
         Usuario vend = crearUsuario("p702-vend@test.cr", "Vend", obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5));
+        vend.setEmpresa(empA); // dueño del negocio A (asignar/** exige PROPIETARIO)
+        vend = usuarioRepository.saveAndFlush(vend);
         tokenA = "Bearer " + jwtUtil.generateToken(vend.getCorreo(), vend.getId(), Constants.ROL_EMPRENDEDOR, empA.getId(), empA.getSlug());
     }
 
@@ -61,7 +63,7 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
         productoRepository.deleteAll();
         bodegaRepository.deleteAll();
         categoriaRepository.delete(categoria);
-        usuarioRepository.findAll().forEach(u -> { u.setEmpresaRegistro(null); usuarioRepository.save(u); });
+        usuarioRepository.findAll().forEach(u -> { u.setEmpresaRegistro(null); u.setEmpresa(null); usuarioRepository.save(u); });
         empresaRepository.deleteAll();
     }
 
