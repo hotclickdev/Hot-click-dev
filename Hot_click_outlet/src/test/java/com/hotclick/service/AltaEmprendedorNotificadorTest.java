@@ -84,4 +84,27 @@ class AltaEmprendedorNotificadorTest {
         assertThat(AltaEmprendedorNotificador.armarTexto("X", "x@y.cr", alta))
             .contains("Entró con 45 días gratis").doesNotContain("3 meses");
     }
+
+    @Test
+    @DisplayName("Alta pendiente: el aviso dice que el puesto se asigna al aprobar, sin «Entró con» ni «Requiere membresía»")
+    void textoAltaPendiente() {
+        String periodo = new TrialEmprendedorConfig(70, 90).periodoGratis();
+        ResultadoAltaCupo alta = ResultadoAltaCupo.pendiente(CupoEmprendedorEstado.of(3, 70, periodo));
+        String texto = AltaEmprendedorNotificador.armarTexto("Café Luz", "luz@correo.com", alta);
+        assertThat(texto).contains("Pendiente de aprobación").contains("se asigna al aprobar")
+            .contains("correo verificado").contains("un puesto por persona");
+        assertThat(texto).doesNotContain("Entró con").doesNotContain("Requiere membresía");
+    }
+
+    @Test
+    @DisplayName("Alta pendiente: usa el correo de alta pendiente, no el de «sin cupo / requiere membresía»")
+    void notificaAltaPendiente() {
+        ResultadoAltaCupo alta = ResultadoAltaCupo.pendiente(CupoEmprendedorEstado.of(3, 70));
+        notificador.notificar("Local Norte", "norte@correo.com", alta);
+
+        verify(notificacionEmailService).enviarAltaEmprendedorPendienteAAdminIT(
+            eq("Local Norte"), eq("norte@correo.com"), any());
+        org.mockito.Mockito.verify(notificacionEmailService, org.mockito.Mockito.never())
+            .enviarAltaEmprendedorAAdminIT(anyString(), anyString(), org.mockito.ArgumentMatchers.anyBoolean(), any());
+    }
 }
