@@ -126,7 +126,8 @@ public final class OnvoBillingVerificador {
     private static String clienteDelIntent(Map<?, ?> intent) {
         String plano = texto(intent, F_CUSTOMER_ID);
         if (plano != null) return plano;
-        return intent.get("customer") instanceof Map<?, ?> c ? texto(c, "id") : null;
+        Object cliente = intent == null ? null : intent.get(M_CUSTOMER);
+        return cliente instanceof Map<?, ?> c ? texto(c, "id") : null;
     }
 
     /** Falla/cancelación: solo se aplica si ONVO (por GET, mismo modo) reporta ese estado. */

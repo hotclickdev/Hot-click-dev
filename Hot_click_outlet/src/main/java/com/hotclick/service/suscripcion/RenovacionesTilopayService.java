@@ -71,11 +71,17 @@ public class RenovacionesTilopayService {
         suscripciones.guardarRenovaciones(cobros, pastDue);
         for (Suscripcion sub : pastDue) {
             ledgerWriter.registrar(sub.getEmpresa(), sub, BillingLedger.TIPO_COBRO_FALLIDO,
-                BillingLedger.PROVEEDOR_TILOPAY, "renov-" + sub.getId() + "-" + hoy, null, "crc",
+                proveedorDeCobro(sub), "renov-" + sub.getId() + "-" + hoy, null, "crc",
                 "Mensualidad pendiente de pago");
         }
         if (!cobros.isEmpty()) log.info("[billing-tilopay] {} cobro(s) de renovación generados", cobros.size());
         return cobros.size();
+    }
+
+    /** El ledger registra el proveedor que cobra la suscripción: ONVO si tiene id de ONVO, Tilopay si es heredada. */
+    static String proveedorDeCobro(Suscripcion sub) {
+        String onvoId = sub.getOnvoSubscriptionId();
+        return onvoId != null && !onvoId.isBlank() ? BillingLedger.PROVEEDOR_ONVO : BillingLedger.PROVEEDOR_TILOPAY;
     }
 
     static boolean vence(Suscripcion sub, LocalDate hoy) {
