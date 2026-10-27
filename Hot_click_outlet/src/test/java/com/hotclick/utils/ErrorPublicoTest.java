@@ -66,4 +66,78 @@ class ErrorPublicoTest {
             .isEqualTo(ErrorPublico.GENERICO);
         assertThat(ErrorPublico.mensaje(new IllegalArgumentException("a".repeat(301)))).isEqualTo(ErrorPublico.GENERICO);
     }
+
+    // ── M1/L1/L2: causa, primer frame estricto y texto con pinta de interno ───
+
+    @Test
+    void conCausaEsGenericaAunqueSeaPropia() {
+        RuntimeException libreria = new RuntimeException("connect to 10.0.0.5:5432 refused");
+        assertThat(ErrorPublico.mensaje(new IllegalArgumentException("Error al firmar", libreria))).isEqualTo(ErrorPublico.GENERICO);
+        assertThat(ErrorPublico.mensaje(new IllegalStateException("No se pudo procesar el pedido", libreria))).isEqualTo(ErrorPublico.GENERICO);
+        assertThat(ErrorPublico.mensaje(new RecursoNoEncontradoException("Pedido no encontrado", libreria))).isEqualTo(ErrorPublico.GENERICO);
+        // sin causa sigue viéndose
+        assertThat(ErrorPublico.mensaje(new IllegalStateException("No se pudo procesar el pedido"))).isEqualTo("No se pudo procesar el pedido");
+    }
+
+    @Test
+    void primerFrameDebeSerNuestroSinSaltarProxies() {
+        for (String clase : new String[]{"org.springframework.aop.framework.CglibAopProxy",
+                "org.springframework.transaction.interceptor.TransactionAspectSupport",
+                "org.springframework.cglib.proxy.MethodProxy", "net.bytebuddy.Algo", "org.mockito.Algo",
+                "jdk.internal.reflect.DirectMethodHandleAccessor", "java.lang.reflect.Method"}) {
+            IllegalArgumentException e = new IllegalArgumentException("Texto que parece válido");
+            e.setStackTrace(new StackTraceElement[]{
+                new StackTraceElement(clase, "m", "A.java", 1),
+                new StackTraceElement("com.hotclick.service.Algo", "m", "Algo.java", 1)});
+            assertThat(ErrorPublico.mensaje(e)).as(clase).isEqualTo(ErrorPublico.GENERICO);
+        }
+        IllegalArgumentException propia = new IllegalArgumentException("Texto que parece válido");
+        propia.setStackTrace(new StackTraceElement[]{new StackTraceElement("com.hotclick.service.Algo", "m", "Algo.java", 1)});
+        assertThat(ErrorPublico.mensaje(propia)).isEqualTo("Texto que parece válido");
+    }
+
+    @Test
+    void errorYOutOfMemoryNuncaSeMuestran() {
+        assertThat(ErrorPublico.mensaje(new OutOfMemoryError("Java heap space"))).isEqualTo(ErrorPublico.GENERICO);
+        assertThat(ErrorPublico.mensaje(new StackOverflowError())).isEqualTo(ErrorPublico.GENERICO);
+        assertThat(ErrorPublico.mensaje(new AssertionError("Texto que parece válido"))).isEqualTo(ErrorPublico.GENERICO);
+        assertThat(ErrorPublico.mensaje(new IllegalStateException("Java heap space"))).isEqualTo(ErrorPublico.GENERICO);
+        assertThat(ErrorPublico.mensaje(new IllegalStateException("GC overhead limit exceeded"))).isEqualTo(ErrorPublico.GENERICO);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+        "No se pudo llamar a https://api.onvo.test/v1/pay",
+        "Falló http://interno/health",
+        "jdbc-less: ftp://host/x",
+        "Conexión rechazada: db-prod:5432",
+        "No conecta a redis.interno:6379",
+        "Error con api.openai.com",
+        "Falló hotclick.lat",
+        "Host 10.0.3.12 no responde",
+        "Host 2001:db8:0:0:0:0:0:1 no responde",
+        "No existe /etc/hotclick/secret.pem",
+        "No se pudo leer /var/log/app.log",
+        "/tmp/upload123.pdf inválido",
+        "No se pudo abrir C:\\Users\\admin\\x.p12",
+        "Falló \\\\servidor\\share",
+        "No se encontró file:/opt/x"})
+    void textoConUrlHostIpORutaEsGenerico(String texto) {
+        assertThat(ErrorPublico.mensaje(new IllegalArgumentException(texto))).isEqualTo(ErrorPublico.GENERICO);
+        assertThat(ErrorPublico.mensaje(new RecursoNoEncontradoException(texto))).isEqualTo(ErrorPublico.GENERICO);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+        "El precio de venta es inválido",
+        "Ingresá un valor entre 1 y 100 km/h",
+        "Cantidad y/o precio inválidos",
+        "Relación 1/2 no permitida",
+        "El horario va de 8:00 a 18:00",
+        "Versión 1.5 no soportada",
+        "Precio/Costo requerido",
+        "Tu plan permite hasta 50 productos. Mejorá tu plan."})
+    void validacionesPropiasNormalesSiguenViendose(String texto) {
+        assertThat(ErrorPublico.mensaje(new IllegalArgumentException(texto))).isEqualTo(texto);
+    }
 }

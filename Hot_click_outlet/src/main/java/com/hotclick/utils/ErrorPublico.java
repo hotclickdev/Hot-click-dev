@@ -10,12 +10,13 @@ import org.slf4j.LoggerFactory;
  * <ul>
  *   <li>las de {@code com.hotclick.exception.*} y las marcadas con {@link MensajePublicoSeguro};</li>
  *   <li>{@link IllegalArgumentException}, {@link IllegalStateException} y {@link SecurityException} lanzadas
- *       desde código de {@code com.hotclick.*} (el primer frame de la traza, saltando proxies/transacciones/reflexión,
- *       es nuestro). Las que lanzan
+ *       desde código de {@code com.hotclick.*} (el primer frame de la traza es nuestro, sin saltar proxies). Las que lanzan
  *       Spring, Hibernate, Jackson o el JDK (p. ej. {@code NumberFormatException}) llevan texto interno y
  *       salen genéricas; sin traza disponible también (falla cerrado).</li>
  * </ul>
- * Aun siendo propia, un texto largo o con pinta de interno (SQL, tablas, JDBC) se reemplaza. Todo lo demás
+ * Una excepción con {@code getCause() != null} es siempre genérica (suele copiar el texto de una librería) y
+ * un {@link Error} (OutOfMemoryError…) también. Aun siendo propia, un texto largo o con pinta de interno
+ * (SQL, tablas, JDBC, URLs, host:puerto, dominios, IPs, rutas de archivo) se reemplaza. Todo lo demás
  * responde {@link #GENERICO} y el detalle queda solo en el log.
  */
 public final class ErrorPublico {
@@ -36,7 +37,10 @@ public final class ErrorPublico {
 
     /** True si el mensaje lo escribimos nosotros (lista blanca); ver la documentación de la clase. */
     static boolean esPropia(Throwable e) {
-        if (e == null) return false;
+        if (e == null || e instanceof Error) return false; // OutOfMemoryError, StackOverflowError…: nunca
+        // Con causa, el texto suele copiar el de una librería ("Error: " + ex.getMessage()): genérico, como en
+        // GlobalExceptionHandler (IllegalStateException con causa = 500).
+        if (e.getCause() != null) return false;
         if (e instanceof MensajePublicoSeguro || e.getClass().getName().startsWith("com.hotclick.exception.")) {
             return true;
         }
@@ -44,25 +48,26 @@ public final class ErrorPublico {
             || e instanceof SecurityException;
         if (!validacion) return false;
         if (e.getClass().getName().startsWith("com.hotclick.")) return true; // subclase nuestra
-        for (StackTraceElement frame : e.getStackTrace()) {
-            String clase = frame.getClassName();
-            if (esInfraestructuraDeProxy(clase)) continue; // proxies/reflexión: no son el sitio del throw
-            return clase.startsWith("com.hotclick.");
-        }
-        return false; // sin traza: falla cerrado
+        // Sitio del throw: el primer frame debe ser nuestro (sin saltar proxies). Sin traza = falla cerrado.
+        StackTraceElement[] traza = e.getStackTrace();
+        return traza.length > 0 && traza[0].getClassName().startsWith("com.hotclick.");
     }
 
-    /** Frames de proxies, transacciones y reflexión que pueden quedar arriba de la traza sin ser el origen. */
-    private static boolean esInfraestructuraDeProxy(String clase) {
-        return clase.startsWith("org.springframework.aop.") || clase.startsWith("org.springframework.cglib.")
-            || clase.startsWith("org.springframework.transaction.interceptor.")
-            || clase.startsWith("org.mockito.") || clase.startsWith("net.bytebuddy.")
-            || clase.startsWith("jdk.internal.reflect.") || clase.startsWith("java.lang.reflect.");
-    }
+    private static final java.util.regex.Pattern URL = java.util.regex.Pattern.compile("(?i)\\b[a-z][a-z0-9+.-]*://|\\bwww\\.");
+    private static final java.util.regex.Pattern HOST_PUERTO = java.util.regex.Pattern.compile("(?i)\\b[a-z][a-z0-9_.-]*:\\d{2,5}\\b");
+    private static final java.util.regex.Pattern DOMINIO = java.util.regex.Pattern.compile(
+        "(?i)\\b[a-z0-9-]+(\\.[a-z0-9-]+)*\\.(com|lat|net|org|io|dev|app|cloud|internal|local|info|biz|co|cr)\\b");
+    private static final java.util.regex.Pattern IP = java.util.regex.Pattern.compile("\\b\\d{1,3}(\\.\\d{1,3}){3}\\b|\\[?[0-9a-fA-F]{0,4}(:[0-9a-fA-F]{0,4}){3,7}\\]?");
+    private static final java.util.regex.Pattern RUTA = java.util.regex.Pattern.compile(
+        "(?:^|[\\s(\\[\"'=:])/[A-Za-z0-9_.~-]+|\\b[A-Za-z]:\\\\|\\\\\\\\[A-Za-z0-9_.$-]+|(?i)\\bfile:");
 
-    private static boolean pareceInterno(String msg) {
+    static boolean pareceInterno(String msg) {
         String m = msg.toLowerCase(java.util.Locale.ROOT);
         return m.contains("sql") || m.contains("hot_click_") || m.contains("exception") || m.contains("jdbc")
-            || m.contains("constraint") || m.contains("could not execute");
+            || m.contains("constraint") || m.contains("could not execute")
+            || m.contains("outofmemory") || m.contains("java heap") || m.contains("gc overhead")
+            || m.contains("stackoverflow") || m.contains("java.lang.") || m.contains("org.springframework")
+            || URL.matcher(msg).find() || HOST_PUERTO.matcher(msg).find() || DOMINIO.matcher(msg).find()
+            || IP.matcher(msg).find() || RUTA.matcher(msg).find();
     }
 }
