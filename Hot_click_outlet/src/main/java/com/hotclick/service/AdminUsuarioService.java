@@ -22,6 +22,7 @@ public class AdminUsuarioService {
 
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private RolRepository rolRepository;
+    @Autowired private com.hotclick.security.RateLimiter rateLimiter;
     @Autowired private SesionesUsuarioService sesionesUsuarioService;
 
     @Transactional(readOnly = true)
@@ -111,6 +112,9 @@ public class AdminUsuarioService {
         usuario.setEstado(Constants.ESTADO_ACTIVO);
         usuario.setBloqueadoHasta(null);
         usuarioRepository.save(usuario);
+        // Los contadores de fallos (global y por IP) se limpian junto con bloqueadoHasta: si no, el primer error
+        // después del desbloqueo volvía a bloquear la cuenta.
+        com.hotclick.security.ClavesFallos.liberarTodo(rateLimiter, usuario.getId());
     }
 
     private Usuario usuario(Long id) {
