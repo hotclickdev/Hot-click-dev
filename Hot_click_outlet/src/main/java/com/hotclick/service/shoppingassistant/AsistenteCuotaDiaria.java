@@ -130,6 +130,7 @@ public class AsistenteCuotaDiaria {
     public Reserva reservar(Long empresaId, boolean esMarketplace, String visitorId) {
         LocalDate dia = LocalDate.now(reloj);
         String cliente = "c:" + claveCliente(visitorId);
+        // tenant-global-ok: empresaId es el negocio del chat (resuelto en el servidor); nulo = asistente del marketplace, con su propio contador
         String negocio = esMarketplace || empresaId == null ? "n:marketplace" : "n:" + empresaId;
         int topeNegocio = esMarketplace || empresaId == null ? marketplace : topePlan(empresaId);
         boolean clienteTomado = false;

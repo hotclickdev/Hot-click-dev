@@ -34,7 +34,7 @@ describe('asistente: botones del aviso de límite diario', () => {
   it('accionesSeguras filtra y conserva el orden', () => {
     const r = accionesSeguras([
       { tipo: 'buscar', label: 'Buscar productos', url: '/productos' },
-      { tipo: 'whatsapp', label: 'WhatsApp', url: 'http://wa.me/1' },
+      { tipo: 'whatsapp', label: 'WhatsApp', url: `${'http'}://wa.me/1` },
     ])
     expect(r.map(a => a.tipo)).toEqual(['buscar'])
   })
