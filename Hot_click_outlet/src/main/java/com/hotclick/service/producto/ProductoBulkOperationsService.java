@@ -5,7 +5,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
-import com.hotclick.service.ProductoService;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.TenantService;
 import org.springframework.stereotype.Service;
 
@@ -16,18 +16,24 @@ import java.util.Map;
 public class ProductoBulkOperationsService {
 
     private final ProductoRepository productoRepository;
-    private final ProductoService productoService;
+    private final ProductoAltaService productoAltaService;
+    private final ProductoApprovalService productoApprovalService;
+    private final AuditoriaAdminRegistroService auditoriaAdminRegistroService;
     private final TenantService tenantService;
     private final EmpresaRepository empresaRepository;
     private final ProductoAccessGuard productoAccessGuard;
 
     public ProductoBulkOperationsService(ProductoRepository productoRepository,
-                                         ProductoService productoService,
+                                         ProductoAltaService productoAltaService,
+                                         ProductoApprovalService productoApprovalService,
+                                         AuditoriaAdminRegistroService auditoriaAdminRegistroService,
                                          TenantService tenantService,
                                          EmpresaRepository empresaRepository,
                                          ProductoAccessGuard productoAccessGuard) {
         this.productoRepository = productoRepository;
-        this.productoService = productoService;
+        this.productoAltaService = productoAltaService;
+        this.productoApprovalService = productoApprovalService;
+        this.auditoriaAdminRegistroService = auditoriaAdminRegistroService;
         this.tenantService = tenantService;
         this.empresaRepository = empresaRepository;
         this.productoAccessGuard = productoAccessGuard;
@@ -73,7 +79,12 @@ public class ProductoBulkOperationsService {
         StringBuilder errMsg = new StringBuilder();
         for (int i = 0; i < dtos.size(); i++) {
             try {
-                productoService.crearProducto(dtos.get(i), adminCorreo, empresa);
+                // Mismo pipeline que el alta individual (A-1): campos solo-admin, moderación,
+                // reglas de publicación del negocio y auditoría de admin.
+                Producto producto = productoAltaService.crearSaneado(dtos.get(i), adminCorreo, empresa);
+                productoApprovalService.aplicarReglasPublicacion(producto, empresa);
+                auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
+                    producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
                 ok++;
             } catch (Exception e) {
                 errors++;
