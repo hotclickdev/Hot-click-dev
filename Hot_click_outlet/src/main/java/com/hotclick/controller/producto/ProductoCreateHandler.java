@@ -6,13 +6,11 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
 import com.hotclick.service.AuditoriaAdminRegistroService;
-import com.hotclick.service.ProductoService;
 import com.hotclick.service.TenantService;
 import com.hotclick.service.producto.EmpresaDestinoAlta;
-import com.hotclick.service.producto.ProductoAccessGuard;
 import com.hotclick.service.producto.ProductoApprovalService;
 import com.hotclick.service.producto.ProductoIdempotencyService;
-import com.hotclick.service.producto.ProductoModerationFacade;
+import com.hotclick.service.producto.ProductoAltaService;
 import com.hotclick.service.producto.ProductoRequestSanitizer;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,10 +26,8 @@ import static com.hotclick.controller.producto.ProductoControllerSupport.current
 @Component
 public class ProductoCreateHandler {
 
-    @Autowired private ProductoService    productoService;
+    @Autowired private ProductoAltaService productoAltaService;
     @Autowired private TenantService      tenantService;
-    @Autowired private ProductoAccessGuard productoAccessGuard;
-    @Autowired private ProductoModerationFacade productoModerationFacade;
     @Autowired private ProductoRequestSanitizer productoRequestSanitizer;
     @Autowired private ProductoApprovalService productoApprovalService;
     @Autowired private ProductoIdempotencyService productoIdempotencyService;
@@ -58,18 +54,15 @@ public class ProductoCreateHandler {
 
     private ResponseEntity<ResponseDTO> persistirAlta(
             ProductoRequestDTO dto, String idempotencyKey, Empresa empresa) {
-        productoRequestSanitizer.restringirCamposSoloAdmin(dto, productoAccessGuard.hasRole("ADMIN"));
         try {
-            if (!productoModerationFacade.isTextoPermitido(dto)) {
-                return ResponseEntity.badRequest()
-                    .body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
-            }
-            var producto = productoService.crearProducto(dto, currentUserName(), empresa);
+            var producto = productoAltaService.crearSaneado(dto, currentUserName(), empresa);
             productoIdempotencyService.remember(idempotencyKey);
             var creationResult = productoApprovalService.aplicarReglasPublicacion(producto, empresa);
             auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
                 producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
             return ResponseEntity.ok(ResponseDTO.success(creationResult.mensaje(), creationResult.producto()));
+        } catch (ProductoAltaService.ContenidoNoPermitidoException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(productoRequestSanitizer.mensajeAmigable(e)));
         }
