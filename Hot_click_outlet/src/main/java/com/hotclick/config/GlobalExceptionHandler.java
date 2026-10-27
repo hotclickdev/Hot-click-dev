@@ -107,6 +107,13 @@ public class GlobalExceptionHandler {
             java.util.Map.of("codigo", com.hotclick.exception.CupoEmprendedorCorreoNoVerificadoException.CODIGO)));
     }
 
+    /** Falló la BD al reservar el puesto Emprendedor: 409 con código, aprobación revertida, sin detalles de la causa. */
+    @ExceptionHandler(com.hotclick.exception.CupoEmprendedorNoDisponibleException.class)
+    public ResponseEntity<ResponseDTO> handleCupoNoDisponible(com.hotclick.exception.CupoEmprendedorNoDisponibleException ex) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage(),
+            java.util.Map.of("codigo", com.hotclick.exception.CupoEmprendedorNoDisponibleException.CODIGO)));
+    }
+
     @ExceptionHandler(com.hotclick.exception.EnlaceNoVigenteException.class)
     public ResponseEntity<ResponseDTO> handleEnlaceNoVigente(com.hotclick.exception.EnlaceNoVigenteException ex) {
         return ResponseEntity.status(ex.getStatus()).body(ResponseDTO.error(ex.getMessage()));
