@@ -88,6 +88,20 @@ class OnvoArranqueProdGuardTest {
     }
 
     @Test
+    @DisplayName("prod: si falta solo uno de los dos ONVO_PRICE_ID, el arranque falla nombrando solo ese")
+    void faltaSoloUnPriceIdNombraSoloEse() {
+        String[][] casos = {{"ONVO_PRICE_ID_PYME", "onvo.price-id.pyme", "ONVO_PRICE_ID_NEGOCIO_PLUS"},
+                            {"ONVO_PRICE_ID_NEGOCIO_PLUS", "onvo.price-id.negocio-plus", "ONVO_PRICE_ID_PYME"}};
+        for (String[] c : casos) {
+            MockEnvironment e = envSin(c[1], null);
+            assertThatThrownBy(() -> new OnvoArranqueProdGuard(e, "onvo_live_k", false).verificar())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(c[0])
+                .satisfies(ex -> assertThat(ex.getMessage()).doesNotContain(c[2]).doesNotContain("price_pyme_test").doesNotContain("price_plus_test"));
+        }
+    }
+
+    @Test
     @DisplayName("prod: si faltan varias, el mensaje las nombra todas y no muestra ningún valor")
     void mensajeNombraTodasSinValores() {
         MockEnvironment e = new MockEnvironment();

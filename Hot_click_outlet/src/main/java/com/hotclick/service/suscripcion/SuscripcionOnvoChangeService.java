@@ -194,6 +194,9 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             self.aplicarPlanLocal(empresaId, PLAN_GRATIS, null);
             return Map.of("status", "activado", "planNombre", PLAN_GRATIS);
         }
+        // Fail-closed ANTES de llamar a ONVO: si falta PLANES_MONEDA el ledger de la baja no se podría escribir y la
+        // operación se revertiría localmente después de haber cancelado en ONVO (cancelación huérfana).
+        if (ledgerWriter != null) monedaLedgerOFalla("CANCELACION");
         OnvoBillingClient.ResultadoCancelacion r = onvoBilling.cancelarAlVencer(sub.getOnvoSubscriptionId());
         if (r == OnvoBillingClient.ResultadoCancelacion.CANCELADA) {
             // ONVO ya no cobra: se refleja el estado local en vez de dejar la suscripción ACTIVA.
@@ -432,12 +435,18 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (ledgerWriter == null) return;
         // Fail-closed: sin moneda configurada no se escribe el ledger (ni cae al "crc" de la entidad) y la operación
         // se revierte y se reintenta (transitorio), en vez de dejar COBRO_FALLIDO/CANCELACION con una moneda falsa.
+        String moneda = monedaLedgerOFalla(tipo);
+        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, moneda, detalle);
+    }
+
+    /** Moneda configurada para el ledger ONVO; sin ella lanza una excepción controlada (con alerta sin PII). */
+    private String monedaLedgerOFalla(String tipo) {
         String moneda = preciosPlanes == null ? null : preciosPlanes.moneda().orElse(null);
         if (moneda == null) {
             log.error("[ALERTA-PAGO] Ledger billing ONVO sin moneda configurada, no se registra tipo={}: falta PLANES_MONEDA", tipo);
             throw new ConfigBillingFaltanteException("PLANES_MONEDA");
         }
-        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, moneda, detalle);
+        return moneda;
     }
 
     /**
