@@ -7,6 +7,8 @@ services:
     env_file: .env
     # Planes y precios ONVO: sin default a propósito (los valores salen del .env del servidor).
     environment:
+      # Perfil fijo de producción (debe escribirse exactamente "prod").
+      SPRING_PROFILES_ACTIVE: prod
       PLANES_MONEDA: ${PLANES_MONEDA:?falta PLANES_MONEDA}
       ONVO_PRICE_ID_PYME: ${ONVO_PRICE_ID_PYME:?falta ONVO_PRICE_ID_PYME}
       ONVO_PRICE_ID_NEGOCIO_PLUS: ${ONVO_PRICE_ID_NEGOCIO_PLUS:?falta ONVO_PRICE_ID_NEGOCIO_PLUS}
