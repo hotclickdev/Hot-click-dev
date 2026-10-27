@@ -88,7 +88,7 @@ test.describe.serial('Compra — QA5', () => {
   })
 
   test('E2E-CMP-01: comprador con sesión (dueño de otro negocio) puede elegir Retiro en otra tienda', async ({ request }) => {
-    test.fail(true, 'E2E-CMP-01: CheckoutValidator.assertBodegaTenant compara la bodega con el empresaId del JWT → SecurityException sin capturar → 500 "No se pudo procesar el pedido"')
+    // E2E-CMP-01 arreglado en master (#324: bodega validada contra la empresa vendedora): test normal.
     const s = await login(request, QA.PYME)
     const res = await request.post('/api/payments/checkout', {
       headers: auth(s),
