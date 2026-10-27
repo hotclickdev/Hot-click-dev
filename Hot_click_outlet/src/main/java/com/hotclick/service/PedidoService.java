@@ -65,7 +65,7 @@ public class PedidoService {
     }
 
     @CacheEvict(value = "dashboard-metricas",
-        key = "#pedido.empresa != null ? #pedido.empresa.id.toString() : 'global'")
+        key = "#pedido.empresa != null && #pedido.empresa.id != null ? #pedido.empresa.id.toString() : 'global'")
     @Transactional
     public Pedido crearPedido(Pedido pedido) {
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));

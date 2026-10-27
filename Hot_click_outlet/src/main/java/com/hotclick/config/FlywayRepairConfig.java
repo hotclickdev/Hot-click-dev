@@ -71,6 +71,8 @@ public class FlywayRepairConfig {
             assertDevHostIsLocal();
             if (esPerfilDev() && esquemaPublicoVacio(flyway)) {
                 bootstrapDevVacio(flyway);
+            } else if (esPerfilProd() && esPostgres(flyway) && esquemaPublicoVacio(flyway)) {
+                abortarProdVacio();
             }
             log.info("[flyway] Ejecutando repair() para sincronizar checksums de migraciones fallidas...");
             flyway.repair();
@@ -102,6 +104,34 @@ public class FlywayRepairConfig {
 
     private boolean esPerfilDev() {
         return Arrays.asList(environment.getActiveProfiles()).contains("dev");
+    }
+
+    private boolean esPerfilProd() {
+        List<String> perfiles = Arrays.asList(environment.getActiveProfiles());
+        return perfiles.contains("prod") || perfiles.contains("production");
+    }
+
+    private static boolean esPostgres(Flyway flyway) {
+        try (Connection c = flyway.getConfiguration().getDataSource().getConnection()) {
+            return c.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT).contains("postgres");
+        } catch (SQLException e) {
+            throw new IllegalStateException("[flyway] No se pudo leer el motor de la base", e);
+        }
+    }
+
+    /**
+     * Base vacía + perfil prod: V1 (dump legacy) no es reproducible en cadena
+     * (mezcla "HOT_CLICK_PRODUCTO_TB" entre comillas con hot_click_producto_tb
+     * sin comillas → 'relation hot_click_producto_tb does not exist'). No se
+     * reescribe V1 porque ya corrió en prod (cambiaría el checksum). Se aborta
+     * con un mensaje claro en vez de dejar una migración V1 FAILED.
+     */
+    static void abortarProdVacio() {
+        throw new IllegalStateException(
+            "[flyway] Perfil prod contra una base VACÍA: V1..VN no se pueden rejugar en cadena "
+                + "(V1 es el dump legacy baselinado en prod). No se migra. Para una base nueva, "
+                + "restaurá un respaldo de producción o usá el perfil dev (baseline + Hibernate) "
+                + "en un entorno local. Ver docs del hallazgo Flyway V1.");
     }
 
     private static boolean esquemaPublicoVacio(Flyway flyway) {

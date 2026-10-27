@@ -106,4 +106,11 @@ class FlywayRepairConfigTest {
         assertNull(FlywayRepairConfig.versionDesdeNombre("nativas.sql"));
         assertNull(FlywayRepairConfig.versionDesdeNombre(null));
     }
+
+    @Test
+    void abortarProdVacio_mensajeClaro() {
+        IllegalStateException ex = org.junit.jupiter.api.Assertions.assertThrows(
+            IllegalStateException.class, FlywayRepairConfig::abortarProdVacio);
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("base VACÍA"));
+    }
 }
