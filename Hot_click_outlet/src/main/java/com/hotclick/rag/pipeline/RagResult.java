@@ -1,5 +1,6 @@
 package com.hotclick.rag.pipeline;
 
+import com.hotclick.service.ai.UsoTokens;
 import com.hotclick.rag.dto.ProductoContexto;
 
 import java.util.List;
@@ -15,8 +16,20 @@ public record RagResult(
     List<String>          categorias,
     List<String>          opts,
     int                   tokensEntrada,
-    int                   tokensSalida
+    int                   tokensSalida,
+    long                  tokensCacheLectura,
+    long                  tokensCacheEscritura
 ) {
+    /** Sin tokens de caché. */
+    public RagResult(String respuesta, List<ProductoContexto> productosReferenciados,
+                     List<String> categorias, List<String> opts, int tokensEntrada, int tokensSalida) {
+        this(respuesta, productosReferenciados, categorias, opts, tokensEntrada, tokensSalida, 0L, 0L);
+    }
+
+    public UsoTokens uso() {
+        return new UsoTokens(tokensEntrada, tokensSalida, tokensCacheLectura, tokensCacheEscritura);
+    }
+
     /** Respuesta de contingencia cuando Claude o Gemini no están disponibles. */
     public static RagResult fallback() {
         return new RagResult(

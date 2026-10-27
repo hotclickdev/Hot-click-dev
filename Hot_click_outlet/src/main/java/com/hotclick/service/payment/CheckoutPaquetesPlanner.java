@@ -41,15 +41,20 @@ public class CheckoutPaquetesPlanner {
     public List<Paquete> planificar(PaymentCheckoutRequest req, Map<Long, Producto> productos, Bodega bodegaDefault) {
         Map<Long, Bodega> bodegas = new LinkedHashMap<>();
         Map<Long, List<PaymentCheckoutRequest.ItemDTO>> itemsPorBodega = new LinkedHashMap<>();
+        // Paquetes cuyo origen no es una bodega propia del producto ni de su tienda (la resolvió el backend).
+        java.util.Set<Long> sinBodegaPropia = new java.util.HashSet<>();
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             Producto p = productos.get(item.getProductoId());
             Bodega origen = bodegaDeOrigen(p, bodegaDefault);
+            boolean propia = origen != null && (p.getBodega() != null
+                || (p.getEmpresa() != null && p.getEmpresa().getBodegaVentaOnline() != null));
             if (origen == null) origen = primeraBodegaActivaDeSuTienda(p);
             if (origen == null) {
                 throw new IllegalStateException("El producto " + (p.getNombreProducto() != null ? p.getNombreProducto() : p.getId())
                     + " no tiene bodega de despacho configurada. Escribinos para coordinar tu pedido.");
             }
             bodegas.putIfAbsent(origen.getId(), origen);
+            if (!propia) sinBodegaPropia.add(origen.getId());
             itemsPorBodega.computeIfAbsent(origen.getId(), k -> new ArrayList<>()).add(item);
         }
 
@@ -64,7 +69,7 @@ public class CheckoutPaquetesPlanner {
                 subtotal += precio * item.getCantidad();
                 costoTotal += costo * item.getCantidad();
             }
-            PaymentCheckoutRequest.EnvioPaqueteDTO envio = envioDe(req, e.getKey());
+            PaymentCheckoutRequest.EnvioPaqueteDTO envio = envioDe(req, e.getKey(), sinBodegaPropia.contains(e.getKey()));
             String metodo = envio != null ? envio.getMetodoEnvio()
                 : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO;
             String notas = envio != null && envio.getNotas() != null && !envio.getNotas().isBlank()
@@ -83,10 +88,20 @@ public class CheckoutPaquetesPlanner {
         return bodegaDefault;
     }
 
-    private static PaymentCheckoutRequest.EnvioPaqueteDTO envioDe(PaymentCheckoutRequest req, Long bodegaId) {
+    /**
+     * Envío del paquete: primero el que trae el id de su bodega. Si el paquete no tiene bodega propia (el front lo
+     * manda como "sin-bodega", {@code bodegaId} ausente) se usa el envío sin {@code bodegaId}. Un paquete con
+     * bodega real nunca toma el envío sin id.
+     */
+    private static PaymentCheckoutRequest.EnvioPaqueteDTO envioDe(PaymentCheckoutRequest req, Long bodegaId,
+                                                                 boolean sinBodegaPropia) {
         if (req.getEnvios() == null) return null;
+        PaymentCheckoutRequest.EnvioPaqueteDTO porId = req.getEnvios().stream()
+            .filter(en -> en != null && bodegaId.equals(en.getBodegaId()))
+            .findFirst().orElse(null);
+        if (porId != null || !sinBodegaPropia) return porId;
         return req.getEnvios().stream()
-            .filter(en -> bodegaId.equals(en.getBodegaId()))
+            .filter(en -> en != null && en.getBodegaId() == null)
             .findFirst().orElse(null);
     }
 }

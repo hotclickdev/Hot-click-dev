@@ -50,6 +50,15 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @Autowired(required = false)
     private BillingLedgerWriter ledgerWriter;
 
+    @Autowired(required = false)
+    private org.springframework.cache.CacheManager cacheManager;
+
+    private void evictTenant(Long empresaId) {
+        if (cacheManager == null || empresaId == null) return;
+        org.springframework.cache.Cache c = cacheManager.getCache("tenantInfo");
+        if (c != null) c.evict(empresaId);
+    }
+
     /** PAG-6: el modo simulado de ONVO solo se permite con perfil dev o test. Sin entorno → cerrado. */
     @Autowired(required = false)
     private org.springframework.core.env.Environment environment;
@@ -340,28 +349,23 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         log.info("[billing-onvo] Plan aplicado empresa={} plan={}", empresaId, planNombre);
     }
 
+    /**
+     * S-02: el plan y el fin de período vienen de ONVO (verificados en OnvoBillingVerificador), no de
+     * metadata ni de sub.plan. La suscripción se busca solo por el id ONVO, con lock de fila.
+     */
     @Transactional
-    @CacheEvict(value = "tenantInfo", key = "#empresaId")
-    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
-        Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionId(onvoSubId)
-            // tenant-global-ok: webhook de pago: null solo evita buscar por empresa (Optional.empty)
-            .or(() -> empresaId != null
-                ? suscripcionRepo.findActivaByEmpresaId(empresaId)
-                : Optional.empty())
+    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin) {
+        Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
-
-        Plan plan = planId != null
-            ? planRepo.findById(planId).orElse(sub.getPlan())
-            : sub.getPlan();
-        if (plan == null) {
-            throw new IllegalStateException("Sin plan para activar suscripción ONVO " + onvoSubId);
+        Plan plan = planRepo.findByNombre(planNombre)
+            .orElseThrow(() -> new IllegalStateException("Plan " + planNombre + " no configurado"));
+        if (fin == null) {
+            throw new IllegalStateException("Sin fin de período ONVO para " + onvoSubId);
         }
-
-        sub.setOnvoSubscriptionId(onvoSubId);
         sub.setPlan(plan);
+        sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
-        LocalDate fin = LocalDate.now(Constants.ZONA_CR).plusMonths(1);
         sub.setFechaFin(fin);
         suscripcionRepo.save(sub);
 
@@ -372,8 +376,9 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         SuspensionImpago.reactivarSiSuspendida(empresa);
         empresa.setFechaVencPlan(fin);
         empresaRepo.save(empresa);
-        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO confirmado");
-        log.info("[billing-onvo] Webhook activó empresa={} plan={}", empresa.getId(), plan.getNombre());
+        evictTenant(empresa.getId());
+        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO verificado");
+        log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
     }
 
     @Transactional

@@ -66,8 +66,8 @@ class TelegramFlujoProductoFotoHelper {
                     : " Tocá *Listo* para continuar."),
                 ui.tecladoFotos(fotos.size()));
         } catch (Exception ex) {
-            log.error("[telegram-flujo] fallo subiendo foto de chat {} — {}", vl.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
-            bot.enviarMensaje(vl.getChatId(), "No pude guardar la foto (" + com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()) + "). Probá con otra imagen.");
+            log.error("[telegram-flujo] fallo subiendo foto de chat {} — {}", vl.getChatId(), ex.getClass().getSimpleName());
+            bot.enviarMensaje(vl.getChatId(), "No pude guardar la foto. Probá con otra imagen.");
         }
         return true;
     }

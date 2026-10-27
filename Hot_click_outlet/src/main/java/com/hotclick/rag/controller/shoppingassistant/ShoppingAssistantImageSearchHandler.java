@@ -5,7 +5,7 @@ import com.hotclick.rag.service.VectorSearchService;
 import com.hotclick.service.GoogleVisionService;
 import com.hotclick.service.catalogo.MarketplaceCatalogo;
 import com.hotclick.service.producto.ProductoCatalogQueries;
-import com.hotclick.service.shoppingassistant.ShoppingAssistantCuota;
+import com.hotclick.service.shoppingassistant.AsistenteCuotaDiaria;
 import com.hotclick.service.storage.StorageImageValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,14 +33,14 @@ public class ShoppingAssistantImageSearchHandler {
     private final VectorSearchService          vectorSearchService;
     private final GoogleVisionService          visionService;
     private final ProductoCatalogQueries       catalogQueries;
-    private final ShoppingAssistantCuota       cuota;
+    private final AsistenteCuotaDiaria          cuota;
     private final StorageImageValidator        imageValidator = new StorageImageValidator();
 
     ShoppingAssistantImageSearchHandler(ShoppingAssistantTenantGuard tenantGuard,
                                         VectorSearchService vectorSearchService,
                                         GoogleVisionService visionService,
                                         ProductoCatalogQueries catalogQueries,
-                                        ShoppingAssistantCuota cuota) {
+                                        AsistenteCuotaDiaria cuota) {
         this.cuota               = cuota;
         this.tenantGuard         = tenantGuard;
         this.vectorSearchService = vectorSearchService;
@@ -77,12 +77,14 @@ public class ShoppingAssistantImageSearchHandler {
         Long empresaId = idEmpresaParaBusqueda(empresaSlug, marketplace);
 
         // ALTO-1: Vision cuesta dinero → misma cuota que el chat, ANTES de llamar a Vision.
-        if (!cuota.reservar(empresaId, marketplace)) {
+        AsistenteCuotaDiaria.Reserva reserva = cuota.reservar(empresaId, marketplace, visitorId);
+        if (!reserva.permitida()) {
             Map<String, Object> agotado = new LinkedHashMap<>();
             agotado.put("analisis",   Map.of());
             agotado.put("productos",  List.of());
             agotado.put("encontrado", false);
-            agotado.put("mensaje",    ShoppingAssistantCuota.RESPUESTA_AGOTADA);
+            agotado.put("mensaje",    reserva.mensaje());
+            agotado.put("acciones",   reserva.acciones());
             return ResponseEntity.ok(agotado);
         }
 
