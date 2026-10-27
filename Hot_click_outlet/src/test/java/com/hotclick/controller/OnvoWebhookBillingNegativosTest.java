@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @DisplayName("Webhook ONVO | JSON malformado y respuesta HTTP según el resultado de billing")
 class OnvoWebhookBillingNegativosTest {
 
-    private static final String SECRET = "webhook_secret_prueba";
+    private static final String FIRMA_PRUEBA = "firma-de-prueba-sin-valor";
     private static final String RENOVACION = "{\"type\":\"subscription.renewal.succeeded\",\"data\":{\"id\":\"clinv0001\",\"subscriptionId\":\"clsub0001\"}}";
 
     @Mock OnvoService onvoService;
@@ -39,11 +39,11 @@ class OnvoWebhookBillingNegativosTest {
     void armar() {
         controller = new OnvoWebhookController(
             onvoService, onvoPaymentProvider, posQrVentaService, billingWebhookHandler, new ObjectMapper());
-        when(onvoService.getWebhookSecret()).thenReturn(SECRET);
+        when(onvoService.getWebhookSecret()).thenReturn(FIRMA_PRUEBA);
     }
 
     private int estado(String body) {
-        return controller.recibirWebhookOnvo(body, SECRET).getStatusCode().value();
+        return controller.recibirWebhookOnvo(body, FIRMA_PRUEBA).getStatusCode().value();
     }
 
     @Test
@@ -59,7 +59,7 @@ class OnvoWebhookBillingNegativosTest {
     @DisplayName("Rechazo permanente (el handler lo registra y devuelve true) → 200 scope billing, ONVO no reintenta")
     void rechazoPermanenteResponde200() {
         when(billingWebhookHandler.manejarSiBilling(any(), any(), any())).thenReturn(true);
-        var resp = controller.recibirWebhookOnvo(RENOVACION, SECRET);
+        var resp = controller.recibirWebhookOnvo(RENOVACION, FIRMA_PRUEBA);
         assertThat(resp.getStatusCode().value()).isEqualTo(200);
         assertThat(resp.getBody()).containsEntry("scope", "billing");
     }
