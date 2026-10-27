@@ -128,7 +128,8 @@ public class PublicChatClaudeClient {
      * En EMPRENDEDOR (o sin plan) responde con el de HotClick: la venta tiene que quedar en la plataforma.
      */
     static String whatsappVisible(Object wa, Object plan, String hotclickWa) {
-        String numero = wa != null ? String.valueOf(wa).trim() : "";
+        // Auditor 8: el número del tenant entra al prompt; solo dígitos (sin texto inyectable).
+        String numero = wa != null ? com.hotclick.utils.SoporteTelefono.digitos(String.valueOf(wa)) : "";
         if (numero.isEmpty() || !ContactoPublicoPolicy.permiteContacto(plan != null ? String.valueOf(plan) : null)) {
             return hotclickWa == null ? "" : hotclickWa;
         }
