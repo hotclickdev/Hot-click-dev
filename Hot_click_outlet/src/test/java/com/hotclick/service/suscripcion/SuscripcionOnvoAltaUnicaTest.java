@@ -118,7 +118,7 @@ class SuscripcionOnvoAltaUnicaTest {
     }
 
     @Test
-    @DisplayName("Carrera perdida: si al tomar el lock otra llamada ya guardó su suscripción, se reutiliza sin llamar a ONVO")
+    @DisplayName("Carrera perdida: si al tomar el lock otra llamada ya guardó su suscripción, se reutiliza sin crear suscripción en ONVO")
     void despuesDelLockSeVuelveALeer() {
         Suscripcion ganadora = new Suscripcion();
         ganadora.setOnvoSubscriptionId("sub_ganadora");
@@ -133,7 +133,7 @@ class SuscripcionOnvoAltaUnicaTest {
         var out = service.asegurarSuscripcionTrial(10L);
 
         assertThat(out.subscriptionId()).isEqualTo("sub_ganadora");
-        verify(onvoBilling, never()).crearCustomer(any(), any(), anyMap());
+        // El customer se crea antes del lock (MEDIUM-1): puede sobrar uno en una carrera, pero no cobra nada.
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
         verify(suscripcionRepo, never()).save(any());
     }
@@ -190,5 +190,172 @@ class SuscripcionOnvoAltaUnicaTest {
 
         verify(onvoBilling, never()).cancelarInmediato(any());
         verify(suscripcionRepo, never()).save(any());
+    }
+
+    // ── MEDIUM-1: el customer se crea fuera del lock y el lock tiene tope de espera ───────────────────────────────
+
+    @Test
+    @DisplayName("MEDIUM-1: crearCustomer ocurre ANTES de tomar el lock del negocio (el lock no espera por ese POST)")
+    void customerSeCreaAntesDelLock() {
+        when(onvoBilling.crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_1", "item_1"));
+
+        service.asegurarSuscripcionTrial(10L);
+
+        var orden = org.mockito.Mockito.inOrder(onvoBilling, empresaRepo);
+        orden.verify(onvoBilling).crearCustomer(any(), any(), anyMap());
+        orden.verify(empresaRepo).findByIdForUpdate(10L);
+        orden.verify(onvoBilling).crearSuscripcionIncompleta(eq("cus_1"), any(), anyMap(), anyInt());
+        assertThat(tabla.get(0).getOnvoCustomerId()).isEqualTo("cus_1");
+    }
+
+    @Test
+    @DisplayName("MEDIUM-1: se aplica el tope de espera del lock (LockTimeoutPorFila) antes de findByIdForUpdate")
+    void topeDeLockSeAplicaAntes() {
+        LockTimeoutPorFila topes = org.mockito.Mockito.mock(LockTimeoutPorFila.class);
+        ReflectionTestUtils.setField(service, "lockTimeout", topes);
+        when(onvoBilling.crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_1", "item_1"));
+
+        service.asegurarSuscripcionTrial(10L);
+
+        var orden = org.mockito.Mockito.inOrder(topes, empresaRepo);
+        orden.verify(topes).aplicar();
+        orden.verify(empresaRepo).findByIdForUpdate(10L);
+    }
+
+    @Test
+    @DisplayName("MEDIUM-1: si el lock excede el tope se responde AltaOnvoEnCursoException (409, texto fijo) y no se toca ONVO")
+    void lockTimeoutSeMapeaA409SinTocarOnvo() {
+        for (RuntimeException causa : List.<RuntimeException>of(
+            new org.springframework.dao.CannotAcquireLockException("lock detalle-interno-Z"),
+            new org.springframework.dao.PessimisticLockingFailureException("lock detalle-interno-Z"),
+            new jakarta.persistence.LockTimeoutException("lock detalle-interno-Z"),
+            new jakarta.persistence.PessimisticLockException("lock detalle-interno-Z"))) {
+            tabla.clear();
+            org.mockito.Mockito.reset(empresaRepo);
+            doThrow(causa).when(empresaRepo).findByIdForUpdate(10L);
+            lenient().when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+
+            assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L))
+                .isInstanceOf(com.hotclick.exception.AltaOnvoEnCursoException.class)
+                .hasMessage(com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE)
+                .hasNoCause();
+        }
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        verify(suscripcionRepo, never()).save(any());
+        assertThat(tabla).isEmpty();
+    }
+
+    // ── L1: no cancelar una suscripción que sí quedó guardada ────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("L1: si la suscripción creada resulta estar guardada, NO se cancela en ONVO")
+    void noCancelaSiQuedoGuardada() {
+        when(onvoBilling.crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_guardada", "item_1"));
+        doThrow(new IllegalStateException("fallo tras guardar")).when(suscripcionRepo).save(any());
+        when(suscripcionRepo.findByOnvoSubscriptionId("sub_guardada")).thenReturn(Optional.of(new Suscripcion()));
+
+        assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L)).isInstanceOf(IllegalStateException.class);
+
+        verify(suscripcionRepo).findByOnvoSubscriptionId("sub_guardada");
+        verify(onvoBilling, never()).cancelarInmediato(any());
+    }
+
+    @Test
+    @DisplayName("L1: si no se puede verificar si quedó guardada, NO se cancela (alerta a revisión manual)")
+    void noCancelaSiNoSePuedeVerificar() {
+        when(onvoBilling.crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_dudosa", "item_1"));
+        doThrow(new IllegalStateException("fallo de BD")).when(suscripcionRepo).save(any());
+        when(suscripcionRepo.findByOnvoSubscriptionId("sub_dudosa")).thenThrow(new IllegalStateException("BD caída"));
+
+        assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L)).isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("fallo de BD");
+
+        verify(onvoBilling, never()).cancelarInmediato(any());
+    }
+
+    @Test
+    @DisplayName("L1: la verificación corre en una transacción NUEVA (REQUIRES_NEW) y de solo lectura")
+    void verificacionEnTransaccionNueva() {
+        org.springframework.transaction.PlatformTransactionManager manager =
+            org.mockito.Mockito.mock(org.springframework.transaction.PlatformTransactionManager.class);
+        when(manager.getTransaction(any())).thenReturn(new org.springframework.transaction.support.SimpleTransactionStatus());
+        ReflectionTestUtils.setField(service, "tx", new org.springframework.transaction.support.TransactionTemplate(manager));
+        when(onvoBilling.crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_huerfana", "item_1"));
+        doThrow(new IllegalStateException("fallo de BD")).when(suscripcionRepo).save(any());
+
+        assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L)).isInstanceOf(IllegalStateException.class);
+
+        var defs = org.mockito.ArgumentCaptor.forClass(org.springframework.transaction.TransactionDefinition.class);
+        verify(manager, times(2)).getTransaction(defs.capture());
+        assertThat(defs.getAllValues().get(0).getPropagationBehavior())
+            .isEqualTo(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRED);
+        assertThat(defs.getAllValues().get(1).getPropagationBehavior())
+            .isEqualTo(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        assertThat(defs.getAllValues().get(1).isReadOnly()).isTrue();
+        verify(onvoBilling).cancelarInmediato("sub_huerfana");
+    }
+
+    // ── L2: alerta con empresa_id si POST /subscriptions no responde ─────────────────────────────────────────────
+
+    private List<String> capturarLog(Runnable accion) {
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(SuscripcionOnvoChangeService.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+            new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            accion.run();
+        } finally {
+            logger.detachAppender(appender);
+        }
+        return appender.list.stream().map(ch.qos.logback.classic.spi.ILoggingEvent::getFormattedMessage).toList();
+    }
+
+    @Test
+    @DisplayName("L2: ResourceAccessException al crear la suscripción emite [ALERTA-PAGO] con empresa_id (y sube el error)")
+    void timeoutAlCrearEmiteAlertaConEmpresaId() {
+        when(onvoBilling.crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt()))
+            .thenThrow(new org.springframework.web.client.ResourceAccessException("Read timed out"));
+
+        List<String> logs = capturarLog(() ->
+            assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L))
+                .isInstanceOf(org.springframework.web.client.ResourceAccessException.class));
+
+        assertThat(logs).anySatisfy(m -> assertThat(m).contains("[ALERTA-PAGO]").contains("empresa_id=10")
+            .contains("ResourceAccessException").doesNotContain("Read timed out"));
+        verify(onvoBilling, never()).cancelarInmediato(any());
+    }
+
+    @Test
+    @DisplayName("L2: también si el breaker de ONVO la envolvió (causa ResourceAccessException)")
+    void timeoutEnvueltoTambienAlerta() {
+        when(onvoBilling.crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt()))
+            .thenThrow(new IllegalStateException("Servicio de pagos no disponible temporalmente",
+                new org.springframework.web.client.ResourceAccessException("Read timed out")));
+
+        List<String> logs = capturarLog(() ->
+            assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L)).isInstanceOf(IllegalStateException.class));
+
+        assertThat(logs).anySatisfy(m -> assertThat(m).contains("[ALERTA-PAGO]").contains("empresa_id=10"));
+    }
+
+    @Test
+    @DisplayName("L2: un error que no es de red (p. ej. 400 de ONVO) no emite la alerta de suscripción sin respuesta")
+    void errorQueNoEsDeRedNoAlerta() {
+        when(onvoBilling.crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt()))
+            .thenThrow(new IllegalArgumentException("precio inválido"));
+
+        List<String> logs = capturarLog(() ->
+            assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L)).isInstanceOf(IllegalArgumentException.class));
+
+        assertThat(logs).noneSatisfy(m -> assertThat(m).contains("sin respuesta de ONVO"));
     }
 }

@@ -71,6 +71,10 @@ public class TrialTarjetaController {
                 "codigo", CobroPlanNoDisponibleException.CODIGO));
         } catch (TrialTarjetaService.VerificacionNoDisponibleException ex) {
             return verificacion();
+        } catch (com.hotclick.exception.AltaOnvoEnCursoException ex) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE,
+                "codigo", com.hotclick.exception.AltaOnvoEnCursoException.CODIGO));
         } catch (TrialTarjetaService.PasarelaNoConfiguradaException ex) {
             return ResponseEntity.status(503).body(Map.of(
                 "error", TrialTarjetaService.PasarelaNoConfiguradaException.MENSAJE,

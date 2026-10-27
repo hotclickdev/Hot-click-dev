@@ -69,6 +69,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @Autowired(required = false)
     private TransactionTemplate tx;
 
+    /** Tope de espera por el lock de fila (5 s, PostgreSQL). Sin bean (tests unitarios) no se aplica. */
+    @Autowired(required = false)
+    private LockTimeoutPorFila lockTimeout;
+
     private <T> T enTransaccion(Supplier<T> trabajo) {
         return tx == null ? trabajo.get() : tx.execute(status -> trabajo.get());
     }
@@ -218,7 +222,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      */
     public SuscripcionTrial asegurarSuscripcionTrial(Long empresaId) {
         Empresa empresa = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada"));
         if ((onvoBilling.isMockMode() || onvoBilling.sinLlave()) && !caminoMock()) {
             throw new com.hotclick.exception.CobroPlanNoDisponibleException(PLAN_GRATIS);
         }
@@ -233,7 +237,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw new IllegalStateException("El trial ya terminó.");
         }
         Plan plan = planRepo.findByNombre(PLAN_GRATIS)
-            .orElseThrow(() -> new NoSuchElementException("Plan " + PLAN_GRATIS + " no encontrado"));
+            .orElseThrow(() -> new NoSuchElementException("Plan gratis no encontrado"));
         Suscripcion sub = primeraActiva(empresaId);
         if (tieneStripeActivo(sub)) {
             throw new IllegalStateException("Tenés una suscripción Stripe activa.");
@@ -248,7 +252,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
         // Dos POST seguidos (o un doble clic) llegan hasta acá a la vez con tieneOnvo=false: el alta única la decide el
         // lock del negocio, que vuelve a leer el estado antes de crear nada en ONVO.
-        AltaOnvo alta = altaOnvoUnica(empresaId, plan, priceId, dias);
+        AltaOnvo alta = altaOnvoUnica(empresaId, empresa, sub, plan, priceId, dias);
         return new SuscripcionTrial(alta.customerId(), alta.subscriptionId(), false);
     }
 
@@ -277,10 +281,15 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      *       que cobre al terminar el trial.</li>
      * </ol>
      */
-    private AltaOnvo altaOnvoUnica(Long empresaId, Plan plan, String priceId, int diasTrial) {
+    private AltaOnvo altaOnvoUnica(Long empresaId, Empresa empresaLeida, Suscripcion subPrevia, Plan plan,
+                                  String priceId, int diasTrial) {
+        // MEDIUM-1 (Seguridad #426): el customer se crea ANTES de tomar el lock (con su @Retry): si ONVO está lento, el
+        // lock no queda retenido minutos. Dentro del lock solo queda un POST de suscripción, sin reintentos. Una
+        // carrera puede dejar un customer sin suscripción (inofensivo: no cobra nada).
+        String customerPrevio = tieneOnvoGuardado(subPrevia) ? null : asegurarCustomer(empresaLeida, subPrevia);
         String[] creadaEnOnvo = new String[1];
         try {
-            return enTransaccion(() -> altaOnvoBajoLock(empresaId, plan, priceId, diasTrial, creadaEnOnvo));
+            return enTransaccion(() -> altaOnvoBajoLock(empresaId, plan, priceId, diasTrial, customerPrevio, creadaEnOnvo));
         } catch (RuntimeException ex) {
             if (creadaEnOnvo[0] != null) {
                 cancelarHuerfana(empresaId, creadaEnOnvo[0], ex);
@@ -289,11 +298,30 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
     }
 
-    private AltaOnvo altaOnvoBajoLock(Long empresaId, Plan plan, String priceId, int diasTrial, String[] creadaEnOnvo) {
-        Empresa empresa = empresaRepo.findByIdForUpdate(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+    private static boolean tieneOnvoGuardado(Suscripcion sub) {
+        return sub != null && sub.getOnvoSubscriptionId() != null && !sub.getOnvoSubscriptionId().isBlank();
+    }
+
+    /** Toma el lock de fila con tope de espera; si otra llamada lo retiene demasiado, 409 con texto fijo (sin tocar ONVO). */
+    private Empresa bloquearEmpresa(Long empresaId) {
+        try {
+            if (lockTimeout != null) lockTimeout.aplicar();
+            return empresaRepo.findByIdForUpdate(empresaId)
+                .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada"));
+        } catch (org.springframework.dao.PessimisticLockingFailureException
+                 | jakarta.persistence.PessimisticLockException
+                 | jakarta.persistence.LockTimeoutException e) {
+            log.warn("[onvo-alta] lock del negocio ocupado, se responde 409 empresa={} causa={}",
+                empresaId, e.getClass().getSimpleName());
+            throw new com.hotclick.exception.AltaOnvoEnCursoException();
+        }
+    }
+
+    private AltaOnvo altaOnvoBajoLock(Long empresaId, Plan plan, String priceId, int diasTrial,
+                                      String customerPrevio, String[] creadaEnOnvo) {
+        Empresa empresa = bloquearEmpresa(empresaId);
         Suscripcion sub = primeraActiva(empresaId);
-        if (sub != null && sub.getOnvoSubscriptionId() != null && !sub.getOnvoSubscriptionId().isBlank()) {
+        if (tieneOnvoGuardado(sub)) {
             // Otra llamada ganó la carrera y ya guardó su suscripción: se reutiliza, no se crea una segunda.
             if (!priceId.equals(sub.getOnvoPriceId())) {
                 throw new IllegalStateException("Ya hay una suscripción ONVO en curso con otro precio.");
@@ -301,22 +329,61 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             log.warn("[onvo-alta] alta concurrente evitada empresa={} sub={}", empresaId, sub.getOnvoSubscriptionId());
             return new AltaOnvo(sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId(), false);
         }
-        String customerId = asegurarCustomer(empresa, sub);
+        // Customer: el ya guardado, si no el creado antes del lock; solo si faltara ambos (raro) se crea acá.
+        String customerId = sub != null && sub.getOnvoCustomerId() != null && !sub.getOnvoCustomerId().isBlank()
+            ? sub.getOnvoCustomerId()
+            : (customerPrevio != null ? customerPrevio : asegurarCustomer(empresa, sub));
         Map<String, String> meta = Map.of(
             "empresa_id", String.valueOf(empresaId),
             "plan_id", String.valueOf(plan.getId()),
             "plan_nombre", plan.getNombre()
         );
-        OnvoBillingClient.OnvoSubscription onvoSub = diasTrial > 0
-            ? onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta, diasTrial)
-            : onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta);
+        OnvoBillingClient.OnvoSubscription onvoSub;
+        try {
+            onvoSub = diasTrial > 0
+                ? onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta, diasTrial)
+                : onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta);
+        } catch (RuntimeException e) {
+            if (esErrorDeRed(e)) {
+                // L2: sin respuesta no se sabe si ONVO la creó. No hay listado en ONVO para recuperarla: alerta con el
+                // negocio para revisarla a mano (sin PII, solo clase de la excepción).
+                log.error("[ALERTA-PAGO] [onvo-alta] sin respuesta de ONVO al crear la suscripción; pudo quedar creada sin"
+                        + " guardar. Revisar en ONVO empresa_id={} causa={}",
+                    empresaId, e.getClass().getSimpleName());
+            }
+            throw e;
+        }
         creadaEnOnvo[0] = onvoSub.id();
         persistirAltaOnvo(empresa, sub, plan, customerId, onvoSub.id(), priceId);
         return new AltaOnvo(customerId, onvoSub.id(), true);
     }
 
-    /** Reconciliación: cancela en ONVO una suscripción que no quedó guardada. Mejor esfuerzo; si falla, alerta sin PII. */
+    /** Timeout / red caída: {@code ResourceAccessException}, aunque el breaker la haya envuelto en su fallback. */
+    private static boolean esErrorDeRed(Throwable e) {
+        for (int i = 0; e != null && i < 5; i++, e = e.getCause()) {
+            if (e instanceof org.springframework.web.client.ResourceAccessException) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reconciliación: cancela en ONVO una suscripción que no quedó guardada. Mejor esfuerzo; si falla, alerta sin PII.
+     * L1: antes del DELETE se vuelve a mirar en una transacción NUEVA si la fila sí quedó guardada (p. ej. el commit
+     * llegó a la base y el error vino después): cancelar una suscripción guardada le quitaría el trial a un cliente.
+     */
     private void cancelarHuerfana(Long empresaId, String onvoSubId, RuntimeException causa) {
+        Boolean guardada = estaGuardada(onvoSubId);
+        if (guardada == null) {
+            log.error("[ALERTA-PAGO] [onvo-alta] no se pudo verificar si la suscripción ONVO quedó guardada; NO se cancela."
+                    + " Revisarla a mano en ONVO empresa_id={} sub={} causa={}",
+                empresaId, onvoSubId, causa.getClass().getSimpleName());
+            return;
+        }
+        if (guardada) {
+            log.warn("[ALERTA-PAGO] [onvo-alta] la suscripción ONVO sí quedó guardada; NO se cancela empresa_id={} sub={} causa={}",
+                empresaId, onvoSubId, causa.getClass().getSimpleName());
+            return;
+        }
         log.warn("[ALERTA-PAGO] [onvo-alta] suscripción ONVO no guardada, se cancela empresa={} sub={} causa={}",
             empresaId, onvoSubId, causa.getClass().getSimpleName());
         try {
@@ -325,6 +392,21 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             log.error("[ALERTA-PAGO] [onvo-alta] NO se pudo cancelar la suscripción ONVO huérfana empresa={} sub={} causa={} status={}"
                     + " — cancelarla a mano en ONVO",
                 empresaId, onvoSubId, e.getClass().getSimpleName(), OnvoBillingClient.statusDe(e));
+        }
+    }
+
+    /** {@code true} si hay una fila con ese id, {@code false} si no, {@code null} si no se pudo verificar. Transacción nueva. */
+    private Boolean estaGuardada(String onvoSubId) {
+        try {
+            if (tx == null) {
+                return suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).isPresent();
+            }
+            TransactionTemplate nueva = new TransactionTemplate(tx.getTransactionManager());
+            nueva.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            nueva.setReadOnly(true);
+            return nueva.execute(status -> suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).isPresent());
+        } catch (RuntimeException e) {
+            return null;
         }
     }
 
@@ -385,7 +467,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         int diasTrial = PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())
             ? TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR)) : 0;
         // M1: misma garantía que el trial: el lock del negocio decide quién crea; la otra llamada reutiliza el id guardado.
-        AltaOnvo alta = altaOnvoUnica(empresaId, planDestino, priceId, diasTrial);
+        AltaOnvo alta = altaOnvoUnica(empresaId, empresa, subExistente, planDestino, priceId, diasTrial);
 
         if (caminoMock()) {
             self.aplicarPlanLocal(empresaId, planDestino.getNombre(), priceId);

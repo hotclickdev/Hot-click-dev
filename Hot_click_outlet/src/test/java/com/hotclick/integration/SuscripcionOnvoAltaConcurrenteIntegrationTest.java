@@ -51,6 +51,7 @@ class SuscripcionOnvoAltaConcurrenteIntegrationTest extends BaseIntegrationTest 
     @Autowired EmpresaRepository empresaRepository;
     @Autowired PlanRepository planRepository;
     @Autowired SuscripcionRepository suscripcionRepository;
+    @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
 
     private final AtomicInteger creaciones = new AtomicInteger();
     private Long empresaId;
@@ -136,5 +137,37 @@ class SuscripcionOnvoAltaConcurrenteIntegrationTest extends BaseIntegrationTest 
         assertThat(a).isEqualTo(b);
         assertThat(creaciones.get()).isEqualTo(1);
         assertThat(suscripcionRepository.findActivasByEmpresaId(empresaId)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("MEDIUM-1: con el lock del negocio retenido por otra transacción, el alta espera el tope y responde 409 sin tocar ONVO")
+    void lockRetenidoSeMapeaA409() throws Exception {
+        CountDownLatch lockTomado = new CountDownLatch(1);
+        CountDownLatch soltar = new CountDownLatch(1);
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        Future<?> retenedor = pool.submit(() -> new org.springframework.transaction.support.TransactionTemplate(txManager)
+            .executeWithoutResult(st -> {
+                empresaRepository.findByIdForUpdate(empresaId).orElseThrow();
+                lockTomado.countDown();
+                try {
+                    soltar.await(60, TimeUnit.SECONDS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }));
+        try {
+            assertThat(lockTomado.await(30, TimeUnit.SECONDS)).isTrue();
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.asegurarSuscripcionTrial(empresaId))
+                .isInstanceOf(com.hotclick.exception.AltaOnvoEnCursoException.class)
+                .hasMessage(com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE);
+        } finally {
+            soltar.countDown();
+            retenedor.get(30, TimeUnit.SECONDS);
+            pool.shutdownNow();
+        }
+        assertThat(creaciones.get()).as("no se creó nada en ONVO").isZero();
+        verify(onvoBilling, org.mockito.Mockito.never()).cancelarInmediato(anyString());
+        assertThat(suscripcionRepository.findActivasByEmpresaId(empresaId)).isEmpty();
     }
 }

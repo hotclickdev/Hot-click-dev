@@ -205,6 +205,10 @@ public class SuscripcionController {
             return planSinPrecio(e);
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
             return cobroNoDisponible();
+        } catch (com.hotclick.exception.AltaOnvoEnCursoException e) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE,
+                "codigo", com.hotclick.exception.AltaOnvoEnCursoException.CODIGO));
         } catch (com.hotclick.exception.PlanNoDisponibleException e) {
             return ResponseEntity.status(409).body(Map.of("error", com.hotclick.exception.PlanNoDisponibleException.MENSAJE, "codigo", "PLAN_SIN_PRECIO"));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
