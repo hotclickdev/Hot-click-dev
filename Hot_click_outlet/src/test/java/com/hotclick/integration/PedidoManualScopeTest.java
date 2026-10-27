@@ -149,6 +149,33 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
         assertThat(pedidoRepository.findEntregadosConItemsByUsuarioId(cliA.getId())).hasSize(1);
     }
 
+    private int asignarCompra(String token, long usuarioId) throws Exception {
+        String b = "{\"usuarioId\":" + usuarioId + ",\"bodegaId\":" + bodA.getId()
+            + ",\"items\":[{\"productoId\":" + prodA.getId() + ",\"cantidad\":1,\"precioUnitario\":1000}]}";
+        var res = mockMvc.perform(post("/api/admin/asignar/compra").header("Authorization", token)
+            .contentType(MediaType.APPLICATION_JSON).content(b)).andReturn().getResponse();
+        if (res.getStatus() == 403) {
+            // El 403 del interceptor de propietario (#376) trae otro texto: este es el de P9-01.
+            assertThat(res.getContentAsString()).contains("El cliente no pertenece a tu negocio")
+                .doesNotContain(com.hotclick.security.PropietarioGuard.MSG);
+        }
+        return res.getStatus();
+    }
+
+    @Test
+    @DisplayName("P9-01 (QA) | PROPIETARIO asigna compra a cliente de SU negocio (registrado o con pedido) → 200; a uno ajeno → 403 de P9-01, no de #376")
+    void propietarioAsignaSoloAClientesDeSuNegocio() throws Exception {
+        // Registrado por el negocio (empresaRegistro = A): 200.
+        assertThat(asignarCompra(tokenA, cliA.getId())).isEqualTo(200);
+        // Comprador que ya no tiene empresaRegistro pero tiene un pedido en el negocio A: sigue siendo su cliente.
+        cliA.setEmpresaRegistro(null);
+        usuarioRepository.saveAndFlush(cliA);
+        assertThat(asignarCompra(tokenA, cliA.getId())).isEqualTo(200);
+        // Comprador del marketplace sin relación con A (solo registrado/comprando en B): 403 por diseño (P9-01, 12-oct).
+        assertThat(asignarCompra(tokenA, cliB.getId())).isEqualTo(403);
+        assertThat(pedidoRepository.count()).isEqualTo(2);
+    }
+
     private Empresa empresa(String nombre, String slug) {
         Empresa e = new Empresa();
         e.setNombreEmpresa(nombre);

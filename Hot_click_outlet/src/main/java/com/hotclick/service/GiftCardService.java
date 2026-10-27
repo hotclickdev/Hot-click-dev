@@ -9,6 +9,8 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.GiftCardRepository;
 import com.hotclick.repository.SplitPagoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,15 @@ public class GiftCardService {
     private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final SecureRandom RNG = new SecureRandom();
 
+    /** Largo mínimo de un código manual: con menos caracteres se adivina probando códigos. */
+    public static final int CODIGO_MIN = 8;
+    /** Largo de la columna {@code codigo} (VARCHAR 30). */
+    public static final int CODIGO_MAX = 30;
+
+    /** Tope del saldo de una gift card en colones; configurable con {@code hotclick.giftcard.monto-maximo}. */
+    @Value("${hotclick.giftcard.monto-maximo:1000000}")
+    private int montoMaximo = 1_000_000;
+
     @Autowired private GiftCardRepository giftCardRepository;
     @Autowired private SplitPagoRepository splitPagoRepository;
     @Autowired private EmpresaRepository empresaRepository;
@@ -33,15 +44,23 @@ public class GiftCardService {
 
     @Transactional
     public GiftCard crear(Long empresaId, Integer monto, LocalDate fechaVencimiento, String codigoManual) {
+        validarMonto(monto);
+        boolean manual = codigoManual != null && !codigoManual.isBlank();
+        String codigo = manual ? codigoManual.trim().toUpperCase() : null;
+        if (manual && (codigo.length() < CODIGO_MIN || codigo.length() > CODIGO_MAX)) {
+            throw new IllegalArgumentException(
+                "El código debe tener entre " + CODIGO_MIN + " y " + CODIGO_MAX + " caracteres.");
+        }
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new IllegalArgumentException("Empresa no encontrada"));
 
-        String codigo = codigoManual != null && !codigoManual.isBlank()
-            ? codigoManual.trim().toUpperCase()
-            : generarCodigo(empresaId);
-
-        if (Boolean.TRUE.equals(giftCardRepository.existsByCodigoAndEmpresaId(codigo, empresaId))) {
-            throw new IllegalArgumentException("El código ya existe: " + codigo);
+        if (!manual) {
+            codigo = generarCodigo(empresaId);
+        }
+        // El código es único en toda la plataforma (restricción UNIQUE): se revisa sin distinguir negocio
+        // y el mensaje no dice de quién es, para no servir de oráculo entre negocios.
+        if (giftCardRepository.findByCodigo(codigo).isPresent()) {
+            throw new CodigoGiftCardDuplicadoException();
         }
 
         GiftCard gc = new GiftCard();
@@ -51,7 +70,26 @@ public class GiftCardService {
         gc.setSaldoActual(monto);
         gc.setEstado("ACTIVA");
         gc.setFechaVencimiento(fechaVencimiento);
-        return giftCardRepository.save(gc);
+        try {
+            return giftCardRepository.saveAndFlush(gc);
+        } catch (DataIntegrityViolationException carrera) {
+            // Dos altas simultáneas con el mismo código: gana la primera, la otra recibe 409 y no 500.
+            throw new CodigoGiftCardDuplicadoException();
+        }
+    }
+
+    private void validarMonto(Integer monto) {
+        if (monto == null || monto <= 0 || monto > montoMaximo) {
+            throw new IllegalArgumentException(
+                "El monto debe ser un número entero mayor a 0 y no mayor a ₡" + montoMaximo + ".");
+        }
+    }
+
+    /** El código de la gift card ya lo usa otra (de cualquier negocio): el controlador responde 409. */
+    public static class CodigoGiftCardDuplicadoException extends RuntimeException {
+        public CodigoGiftCardDuplicadoException() {
+            super("Ese código no está disponible. Elegí otro o dejá el campo vacío para generar uno.");
+        }
     }
 
     public List<GiftCard> listarPorEmpresa(Long empresaId) {
