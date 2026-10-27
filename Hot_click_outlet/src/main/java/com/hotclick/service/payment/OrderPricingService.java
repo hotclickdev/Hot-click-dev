@@ -91,15 +91,15 @@ public class OrderPricingService {
         if (codigoCupon != null && !codigoCupon.isBlank()) {
             var cuponOpt = cuponService.validarParaEmpresa(codigoCupon, empresaId);
             if (cuponOpt.isPresent()) {
-                descuento = (int) Math.round(subtotal * cuponOpt.get().getDescuentoPorcentaje() / 100.0);
+                descuento = com.hotclick.service.hacienda.MontoExacto.aInt(Math.round(subtotal * cuponOpt.get().getDescuentoPorcentaje() / 100.0));
                 codigoCuponAplicado = cuponOpt.get().getCodigo();
             }
         }
 
         int base = subtotal - descuento + costoEnvio;
         descuento += descuentoSinpeSiAplica(req.getProvider(), bodega, base);
-        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
-            bodega.getEmpresa(), req.isFacturaElectronica(), lineasIva, descuento);
+        int impuesto = com.hotclick.service.hacienda.MontoExacto.aInt(com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            bodega.getEmpresa(), req.isFacturaElectronica(), lineasIva, descuento));
         int total = Math.max(0, subtotal - descuento + costoEnvio) + impuesto;
 
         int    gcMonto  = 0;
@@ -127,7 +127,7 @@ public class OrderPricingService {
         }
         Empresa empresa = bodega.getEmpresa();
         BigDecimal pct = empresa.getPctDescuentoSinpe();
-        return (int) ComisionPrecioMath.descuentoSinpe(base, pct);
+        return com.hotclick.service.hacienda.MontoExacto.aInt(ComisionPrecioMath.descuentoSinpe(base, pct));
     }
 
     /** La encomienda la cobra la empresa de transporte al retirar en la terminal: no se cobra en el checkout. */

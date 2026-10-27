@@ -107,7 +107,8 @@ public class PosQrSessionService {
             total = Math.addExact(total, Math.multiplyExact(precio, cantidad));
             lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(precio, cantidad, producto.getPorcentajeIva()));
         }
-        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(empresa, facturaElectronica, lineasIva, 0);
+        int impuesto = com.hotclick.service.hacienda.MontoExacto.aInt(
+            com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(empresa, facturaElectronica, lineasIva, 0));
         total = Math.addExact(total, impuesto);
 
         PosQrSesion sesion = new PosQrSesion();

@@ -220,6 +220,58 @@ public class PosVentaIvaRegimenTest {
         assertThatThrownBy(() -> service.cotizarCobro(venta(true, 1), 1L)).isInstanceOf(RuntimeException.class);
     }
 
+    @Test
+    @DisplayName("L2 (#406): cotizar un producto inexistente y uno de otro negocio da la MISMA excepción y mensaje")
+    void cotizarNoRevelaSiElProductoEsAjenoOInexistente() {
+        Empresa otra = new Empresa();
+        otra.setId(2L);
+        Producto ajeno = new Producto();
+        ajeno.setId(11L);
+        ajeno.setPrecioVenta(5000);
+        ajeno.setEmpresa(otra);
+        when(productoRepository.findById(11L)).thenReturn(Optional.of(ajeno));
+        when(productoRepository.findById(404L)).thenReturn(Optional.empty());
+
+        PosVentaDTO dtoAjeno = venta(true, 1);
+        dtoAjeno.getItems().get(0).setProductoId(11L);
+        PosVentaDTO dtoInexistente = venta(true, 1);
+        dtoInexistente.getItems().get(0).setProductoId(404L);
+
+        Throwable ajenoEx = org.assertj.core.api.Assertions.catchThrowable(() -> service.cotizarCobro(dtoAjeno, 1L));
+        Throwable inexistenteEx = org.assertj.core.api.Assertions.catchThrowable(() -> service.cotizarCobro(dtoInexistente, 1L));
+
+        assertThat(ajenoEx).isInstanceOf(com.hotclick.exception.RecursoNoEncontradoException.class);
+        assertThat(inexistenteEx).isInstanceOf(ajenoEx.getClass());
+        assertThat(ajenoEx.getMessage()).isEqualTo("Producto no encontrado").isEqualTo(inexistenteEx.getMessage());
+    }
+
+    @Test
+    @DisplayName("L2 (#406): crearVenta tampoco distingue producto ajeno de inexistente")
+    void crearVentaNoRevelaSiElProductoEsAjeno() {
+        Empresa otra = new Empresa();
+        otra.setId(2L);
+        Producto ajeno = new Producto();
+        ajeno.setId(11L);
+        ajeno.setEmpresa(otra);
+        when(productoRepository.findByIdForUpdate(11L)).thenReturn(Optional.of(ajeno));
+        PosVentaDTO dto = venta(false, 1);
+        dto.getItems().get(0).setProductoId(11L);
+
+        assertThatThrownBy(() -> service.crearVenta(dto, 5L, 1L, "caja@test.cr"))
+            .isInstanceOf(com.hotclick.exception.RecursoNoEncontradoException.class)
+            .hasMessage("Producto no encontrado");
+    }
+
+    @Test
+    @DisplayName("L7 (#406): un IVA que no cabe en int falla con error claro en vez de truncarse a otro monto")
+    void ivaFueraDeRangoNoSeTrunca() {
+        producto.setPrecioVenta(2_000_000_000);
+        producto.setPorcentajeIva(new java.math.BigDecimal("200.00"));   // IVA = 4 000 000 000 > Integer.MAX_VALUE
+        assertThatThrownBy(() -> service.crearVenta(venta(true, 1), 5L, 1L, "caja@test.cr"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Monto fuera de rango");
+    }
+
     public static long totalXml(Pedido pedido, String tipo) {
         com.hotclick.model.ComprobanteFiscal cf = new com.hotclick.model.ComprobanteFiscal();
         cf.setTipo(tipo);

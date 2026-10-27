@@ -303,6 +303,21 @@ class EmpresaPerfilServiceTest {
     }
 
     @Test
+    @DisplayName("L1 (#406): regimenIva null → IllegalArgumentException con texto fijo (antes NPE → 500)")
+    void update_fiscal_regimen_iva_null() {
+        var e = empresaBase(1L);
+        var antes = e.getRegimenIva();
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+        var body = new java.util.HashMap<String, String>();
+        body.put("regimenIva", null);
+
+        assertThatThrownBy(() -> service.updateFiscal(1L, body, false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Régimen de IVA inválido: elegí SIMPLIFICADO o TRADICIONAL.");
+        assertThat(e.getRegimenIva()).isEqualTo(antes);
+    }
+
+    @Test
     @DisplayName("updateFiscal rechaza un régimen de IVA inválido y no lo guarda")
     void update_fiscal_regimen_iva_invalido() {
         var e = empresaBase(1L);
