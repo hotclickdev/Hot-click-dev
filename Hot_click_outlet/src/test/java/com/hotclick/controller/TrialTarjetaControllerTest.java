@@ -93,14 +93,51 @@ class TrialTarjetaControllerTest {
         mvc.perform(post("/api/billing/trial/tarjeta")).andExpect(status().isConflict())
             .andExpect(jsonPath("$.codigo").value(CobroPlanNoDisponibleException.CODIGO));
 
-        when(service.estado(7L)).thenThrow(new TrialTarjetaService.VerificacionNoDisponibleException(new RuntimeException("sk_secreto timeout")));
+        when(service.estado(7L)).thenThrow(new TrialTarjetaService.VerificacionNoDisponibleException(new RuntimeException("DETALLE-INTERNO-Y timeout")));
         mvc.perform(get("/api/billing/trial/tarjeta")).andExpect(status().isServiceUnavailable())
             .andExpect(jsonPath("$.codigo").value(TrialTarjetaService.VerificacionNoDisponibleException.CODIGO))
-            .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("sk_secreto"))));
+            .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("DETALLE-INTERNO-Y"))));
 
-        org.mockito.Mockito.doThrow(new RuntimeException("sk_secreto 500 interno")).when(service).iniciar(7L);
+        org.mockito.Mockito.doThrow(new RuntimeException("DETALLE-INTERNO-Y 500 interno")).when(service).iniciar(7L);
         mvc.perform(post("/api/billing/trial/tarjeta")).andExpect(status().isBadGateway())
-            .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("sk_secreto"))));
+            .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("DETALLE-INTERNO-Y"))));
+    }
+
+    @Test
+    @DisplayName("L3: sin llave pública de ONVO responde 503 con código y mensaje fijos")
+    void sinLlavePublica503() throws Exception {
+        TenantContext.set(7L);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        when(service.iniciar(7L)).thenThrow(new TrialTarjetaService.PasarelaNoConfiguradaException());
+        mvc.perform(post("/api/billing/trial/tarjeta")).andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.codigo").value(TrialTarjetaService.PasarelaNoConfiguradaException.CODIGO))
+            .andExpect(jsonPath("$.error").value(TrialTarjetaService.PasarelaNoConfiguradaException.MENSAJE));
+    }
+
+    @Test
+    @DisplayName("L1: el log del 502 lleva clase y status, nunca el mensaje de la excepción")
+    void log502SinMensaje() throws Exception {
+        TenantContext.set(7L);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        org.mockito.Mockito.doThrow(new RuntimeException("DETALLE-INTERNO-X cuerpo ONVO")).when(service).iniciar(7L);
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(TrialTarjetaController.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+            new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            mvc.perform(post("/api/billing/trial/tarjeta")).andExpect(status().isBadGateway());
+        } finally {
+            logger.detachAppender(appender);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (var ev : appender.list) {
+            sb.append(ev.getFormattedMessage());
+            if (ev.getThrowableProxy() != null) sb.append(ev.getThrowableProxy().getMessage());
+        }
+        org.assertj.core.api.Assertions.assertThat(sb.toString())
+            .contains("RuntimeException").doesNotContain("DETALLE-INTERNO-X").doesNotContain("cuerpo ONVO");
     }
 
     @Test
@@ -114,5 +151,16 @@ class TrialTarjetaControllerTest {
             .andExpect(jsonPath("$.tarjetaGuardada").value(true))
             .andExpect(jsonPath("$.trialDias").value(12))
             .andExpect(jsonPath("$.length()").value(3));
+    }
+
+    @Test
+    @DisplayName("MEDIUM-1: lock del negocio ocupado más del tope → 409 ALTA_ONVO_EN_CURSO con texto fijo, sin detalle interno")
+    void lockOcupado409() throws Exception {
+        TenantContext.set(7L);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        when(service.iniciar(7L)).thenThrow(new com.hotclick.exception.AltaOnvoEnCursoException());
+        mvc.perform(post("/api/billing/trial/tarjeta")).andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value(com.hotclick.exception.AltaOnvoEnCursoException.CODIGO))
+            .andExpect(jsonPath("$.error").value(com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE));
     }
 }
