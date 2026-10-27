@@ -116,11 +116,11 @@ public class PaymentOrderConfirmationService {
         StringBuilder numeros = new StringBuilder();
         for (Pedido pedido : grupo) {
             pedido.setEstadoPedido(Constants.PEDIDO_REVISION_SOBREVENTA);
-            pedidoRepository.save(pedido);
             stockReservationService.liberarReservas(pedido);
             if (numeros.length() > 0) numeros.append(',');
             numeros.append(pedido.getNumeroPedido());
         }
+        pedidoRepository.saveAll(grupo);
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
