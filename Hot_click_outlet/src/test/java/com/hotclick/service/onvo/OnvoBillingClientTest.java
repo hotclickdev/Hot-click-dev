@@ -42,6 +42,7 @@ class OnvoBillingClientTest {
         client = new OnvoBillingClient(restTemplate);
         ReflectionTestUtils.setField(client, "priceIdPyme", "price_pyme");
         ReflectionTestUtils.setField(client, "priceIdNegocioPlus", " ");
+        ReflectionTestUtils.setField(client, "priceIdEmprendedor", "price_emprendedor");
     }
 
     /** Cliente con perfiles activos simulados (sin llave salvo que se fije). */
@@ -282,6 +283,57 @@ class OnvoBillingClientTest {
         assertThat(sub.id()).isEqualTo("sub_9");
         assertThat(sub.itemId()).isEqualTo("si_1");
         server.verify();
+    }
+
+    @Test
+    @DisplayName("Trial Emprendedor: manda trialPeriodDays a ONVO (sin tarjeta, allow_incomplete)")
+    void crearSuscripcion_conTrial_enviaTrialPeriodDays() {
+        conLlave();
+        server.expect(requestTo(BASE + "/subscriptions"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(jsonPath("$.paymentBehavior").value("allow_incomplete"))
+            .andExpect(jsonPath("$.trialPeriodDays").value(90))
+            .andExpect(jsonPath("$.items[0].priceId").value("price_emprendedor"))
+            .andRespond(withSuccess("{\"id\":\"sub_t\",\"status\":\"trialing\",\"items\":[{\"id\":\"si_t\"}]}",
+                MediaType.APPLICATION_JSON));
+        OnvoBillingClient.OnvoSubscription sub =
+            client.crearSuscripcionIncompleta("cus_1", "price_emprendedor", null, 90);
+        assertThat(sub.id()).isEqualTo("sub_t");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("Sin trial (0 días) no se envía trialPeriodDays: cobro inmediato")
+    void crearSuscripcion_sinTrial_noEnviaTrialPeriodDays() {
+        conLlave();
+        server.expect(requestTo(BASE + "/subscriptions"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(jsonPath("$.trialPeriodDays").doesNotExist())
+            .andRespond(withSuccess("{\"id\":\"sub_p\",\"items\":[{\"id\":\"si_p\"}]}", MediaType.APPLICATION_JSON));
+        client.crearSuscripcionIncompleta("cus_1", "price_emprendedor", null, 0);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("Trial: sin llave y sin perfil dev/test falla cerrado (no hay mock en producción)")
+    void crearSuscripcion_conTrial_sinLlaveFallaCerrado() {
+        server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
+        for (String[] perfiles : new String[][]{{}, {"prod"}, {"production"}, {"dev", "prod"}, {"staging"}}) {
+            OnvoBillingClient c = clienteConPerfiles(perfiles);
+            assertThatThrownBy(() -> c.crearSuscripcionIncompleta("cus_1", "price_emprendedor", null, 90))
+                .as("perfiles %s", String.join(",", perfiles)).isInstanceOf(IllegalStateException.class);
+        }
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("El price de Emprendedor se resuelve en ambos sentidos; sin configurar no hay price (fail-closed)")
+    void priceIdEmprendedor() {
+        assertThat(client.getPriceIdForPlan("EMPRENDEDOR")).isEqualTo("price_emprendedor");
+        assertThat(client.planParaPriceId("price_emprendedor")).isEqualTo("EMPRENDEDOR");
+        ReflectionTestUtils.setField(client, "priceIdEmprendedor", "");
+        assertThat(client.getPriceIdForPlan("EMPRENDEDOR")).isNull();
+        assertThat(client.planParaPriceId("price_emprendedor")).isNull();
     }
 
     @Test

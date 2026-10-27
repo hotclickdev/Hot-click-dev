@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useCupoEmprende from './useCupoEmprende'
+import { periodoGratis } from './periodoGratis'
+import type { CupoEmprende } from '@/services/emprendeCupoService'
 
 type Props = {
   compact?: boolean
 }
 
-/** Aviso de cupos gratis (70) o membresía de pago. */
+/** Aviso de cupos con período gratis (el período sale del backend) o membresía de pago. */
 export default function EmprendeCupoBanner({ compact = false }: Props) {
   const { t } = useTranslation()
   const { cupo, error } = useCupoEmprende()
@@ -28,7 +30,7 @@ export default function EmprendeCupoBanner({ compact = false }: Props) {
         {tituloBanner(t, cupo, error, lleno)}
       </p>
       <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-        {lleno ? t('emprende.cupoLlenoHint') : t('emprende.cupoHint')}
+        {lleno ? t('emprende.cupoLlenoHint') : t('emprende.cupoHint', { periodo: periodoGratis(cupo, t) })}
       </p>
       {lleno && !compact ? (
         <Link
@@ -45,12 +47,13 @@ export default function EmprendeCupoBanner({ compact = false }: Props) {
 
 function tituloBanner(
   t: (key: string, opts?: Record<string, unknown>) => string,
-  cupo: { usados: number; limite: number; cuposGratisDisponibles: number } | null,
+  cupo: CupoEmprende | null,
   error: boolean,
   lleno: boolean,
 ): string {
-  if (error) return t('emprende.cupoError')
+  if (error) return t('emprende.cupoError', { periodo: periodoGratis(null, t) })
   if (!cupo) return t('emprende.cupoCargando')
-  if (lleno) return t('emprende.cupoLlenoTitle')
-  return t('emprende.cupoTitle', { quedan: cupo.cuposGratisDisponibles, limite: cupo.limite })
+  const periodo = periodoGratis(cupo, t)
+  if (lleno) return t('emprende.cupoLlenoTitle', { limite: cupo.limite, periodo })
+  return t('emprende.cupoTitle', { quedan: cupo.cuposGratisDisponibles, limite: cupo.limite, periodo })
 }

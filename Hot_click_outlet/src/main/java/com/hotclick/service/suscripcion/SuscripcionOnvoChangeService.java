@@ -162,7 +162,12 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
                 "Tenés una suscripción Stripe activa. Cancelala desde el portal antes de cambiar a ONVO.");
         }
 
-        if (PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())) {
+        // Emprendedor ya no es gratis para quien tomó el trial o entró sin cupo: no «baja a gratis», paga US$9 por ONVO.
+        // Si no, al terminar el trial bastaría con elegir Emprendedor para quedarse gratis para siempre.
+        boolean emprendedorDePago = PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())
+            && TrialEmprendedorService.emprendedorEsDePago(empresa);
+
+        if (PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre()) && !emprendedorDePago) {
             // Seguridad #333: bajar a gratis no es pagar; una tienda suspendida nunca llega acá.
             if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
                 throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
@@ -175,6 +180,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw new IllegalStateException("Pagos no configurados. No se cambió el plan.");
         }
         String priceId = resolverPriceId(planDestino.getNombre());
+        if (emprendedorDePago && sub != null && sub.getOnvoSubscriptionId() != null
+            && priceId.equals(sub.getOnvoPriceId())) {
+            // Ya hay suscripción ONVO de Emprendedor (trial o en cobro): idempotente, no se crea otra ni se cambia precio.
+            return respuestaRequierePago(empresa, planDestino, sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId());
+        }
         if (sub != null && sub.getOnvoSubscriptionId() != null && !sub.getOnvoSubscriptionId().isBlank()) {
             return cambiarPlanExistente(empresaId, sub, planDestino, priceId);
         }
@@ -240,8 +250,12 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             "plan_id", String.valueOf(planDestino.getId()),
             "plan_nombre", planDestino.getNombre()
         );
-        OnvoBillingClient.OnvoSubscription onvoSub =
-            onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta);
+        // Trial Emprendedor: ONVO no cobra durante los días que le quedan y después cobra US$9 cada mes en automático.
+        int diasTrial = PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())
+            ? TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR)) : 0;
+        OnvoBillingClient.OnvoSubscription onvoSub = diasTrial > 0
+            ? onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta, diasTrial)
+            : onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta);
         self.guardarAltaOnvo(empresaId, planDestino, customerId, onvoSub.id(), priceId);
 
         if (caminoMock()) {
@@ -253,9 +267,16 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             return out;
         }
 
+        Map<String, Object> out = respuestaRequierePago(empresa, planDestino, customerId, onvoSub.id());
+        if (diasTrial > 0) out.put("trialDias", diasTrial);
+        return out;
+    }
+
+    private Map<String, Object> respuestaRequierePago(Empresa empresa, Plan planDestino,
+                                                      String customerId, String subscriptionId) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("status", "requiere_pago");
-        out.put("subscriptionId", onvoSub.id());
+        out.put("subscriptionId", subscriptionId);
         out.put("customerId", customerId);
         out.put("publishableKey", onvoService.getPublishableKey());
         out.put("planNombre", planDestino.getNombre());
@@ -290,6 +311,12 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         sub.setOnvoCustomerId(customerId);
         sub.setOnvoSubscriptionId(subscriptionId);
         sub.setOnvoPriceId(priceId);
+        // H1 (fail-closed): durante el trial Emprendedor la fila lleva fecha_fin = último día del trial. Sin ella, si
+        // el cobro falla la fila pasaría a PAST_DUE sin fecha y el job de impago (filtra por fecha_fin) nunca la cerraría.
+        if (sub.getFechaFin() == null && TrialEmprendedorService.tuvoTrial(empresa)
+            && empresa.getTrialEmprendedorHasta() != null) {
+            sub.setFechaFin(empresa.getTrialEmprendedorHasta());
+        }
         suscripcionRepo.save(sub);
     }
 
@@ -398,8 +425,15 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     public void procesarRenovacionFallida(String onvoSubId) {
         suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).ifPresent(sub -> {
             sub.setEstado("PAST_DUE");
-            suscripcionRepo.save(sub);
             Empresa empresa = sub.getEmpresa();
+            // H1 (fail-closed): un PAST_DUE sin fecha_fin nunca lo elige el job de impago y el negocio conservaría el
+            // plan para siempre. Sin fecha (suscripción de trial) se usa el fin del trial, o hoy si no hay trial.
+            if (sub.getFechaFin() == null) {
+                LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
+                LocalDate finTrial = empresa.getTrialEmprendedorHasta();
+                sub.setFechaFin(finTrial != null && finTrial.isBefore(hoy) ? finTrial : hoy);
+            }
+            suscripcionRepo.save(sub);
             empresa.setEstadoPlan("PAST_DUE");
             empresaRepo.save(empresa);
             anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_FALLIDO, onvoSubId, "Renovación ONVO fallida");
@@ -465,7 +499,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
 
     static boolean puedeRepagarMismoPlan(Empresa empresa) {
         String e = empresa.getEstadoPlan();
-        return e != null && java.util.Set.of("PAST_DUE", "VENCIDO", "TRIAL").contains(e.toUpperCase(java.util.Locale.ROOT));
+        return e != null && java.util.Set.of("PAST_DUE", "VENCIDO", "TRIAL", Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA).contains(e.toUpperCase(java.util.Locale.ROOT));
     }
 
     private static boolean tieneStripeActivo(Suscripcion sub) {

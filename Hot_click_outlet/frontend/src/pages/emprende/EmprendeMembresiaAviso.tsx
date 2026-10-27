@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import useTenantStore from '@/store/tenantStore'
+import useCupoEmprende from './useCupoEmprende'
+import { periodoGratis } from './periodoGratis'
 
 const RUTA_PLANES = '/admin/billing/planes'
 
-/** Aviso corto si el negocio quedó sin cupo gratis. */
+/** Aviso corto si el negocio quedó sin cupo de período gratis. */
 export default function EmprendeMembresiaAviso() {
   const { t } = useTranslation()
   const estadoPlan = useTenantStore((s) => s.estadoPlan)
+  const { cupo } = useCupoEmprende()
   if (estadoPlan !== 'REQUIERE_MEMBRESIA') return null
 
   return (
@@ -19,7 +22,7 @@ export default function EmprendeMembresiaAviso() {
         {t('emprende.membresiaTitle')}
       </p>
       <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
-        {t('emprende.membresiaHint')}
+        {t('emprende.membresiaHint', { periodo: periodoGratis(cupo, t) })}
       </p>
       <Link
         to={RUTA_PLANES}
