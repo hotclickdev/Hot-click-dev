@@ -23,9 +23,18 @@ public class AuthTotpSetupHandler {
     @Autowired private PasswordEncoder             passwordEncoder;
     @Autowired private AuthSupport                 authSupport;
 
-    public ResponseEntity<ResponseDTO> setup2FA(HttpServletRequest request) {
+    /**
+     * Si el usuario ya tiene 2FA activo, reconfigurar (rotar el secreto) exige una credencial vigente:
+     * la contraseña actual o un código TOTP válido del secreto actual. Sin esto, una sesión robada
+     * podía reemplazar el segundo factor.
+     */
+    public ResponseEntity<ResponseDTO> setup2FA(Map<String, String> body, HttpServletRequest request) {
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled()) && !credencialVigente(usuario, body)) {
+                return ResponseEntity.status(401).body(ResponseDTO.error(
+                    "Con el 2FA activo necesitás tu contraseña actual o un código de tu app para reconfigurarlo"));
+            }
             String plainSecret  = twoFactorService.generateSecret();
             String encSecret    = twoFactorService.encryptForStorage(plainSecret);  // AES-256-GCM
             usuario.setTwoFactorSecret(encSecret);   // store encrypted
@@ -41,6 +50,18 @@ public class AuthTotpSetupHandler {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(ResponseDTO.error("Error al configurar 2FA"));
         }
+    }
+
+    private boolean credencialVigente(Usuario usuario, Map<String, String> body) {
+        if (body == null) return false;
+        String contrasena = body.get("contrasena");
+        if (contrasena != null && !contrasena.isBlank()
+                && passwordEncoder.matches(contrasena, usuario.getContrasenaHash())) {
+            return true;
+        }
+        String code = body.get("code");
+        return code != null && !code.isBlank() && usuario.getTwoFactorSecret() != null
+                && twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code);
     }
 
     public ResponseEntity<ResponseDTO> activate2FA(Map<String, String> body, HttpServletRequest request) {
@@ -85,14 +106,17 @@ public class AuthTotpSetupHandler {
     }
 
     public ResponseEntity<ResponseDTO> disable2FA(Map<String, String> body, HttpServletRequest request) {
-        String contrasena = body.get("contrasena");
-        String code       = body.get("code");
+        String contrasena = body == null ? null : body.get("contrasena");
+        String code       = body == null ? null : body.get("code");
 
-        if (contrasena == null || code == null) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Contraseña y código son requeridos"));
+        if (contrasena == null || contrasena.isBlank() || code == null || code.isBlank()) {
+            return ResponseEntity.status(401).body(ResponseDTO.error("Contraseña y código son requeridos"));
         }
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            if (usuario.getTwoFactorSecret() == null) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error("La app de autenticación no está activa"));
+            }
             if (!passwordEncoder.matches(contrasena, usuario.getContrasenaHash())) {
                 return ResponseEntity.status(401).body(ResponseDTO.error("Contraseña incorrecta"));
             }
