@@ -58,7 +58,7 @@ public class UsuarioService {
         u.setApellidoPaterno(partes.length > 1 ? partes[1] : "");
         u.setIdentificacion("CLI-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
         u.setCorreo(correo != null && !correo.isBlank()
-            ? correo.trim().toLowerCase()
+            ? correo.trim().toLowerCase(java.util.Locale.ROOT)
             : "cliente-" + UUID.randomUUID() + "@sinemail.hotclick.lat");
         u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
         u.setTelefono(telefono != null && !telefono.isBlank() ? telefono.trim() : "00000000");

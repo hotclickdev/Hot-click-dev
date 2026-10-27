@@ -126,7 +126,7 @@ public class AuthRegistrationService {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Correo y código son requeridos"));
         }
         try {
-            Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase())
+            Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase(java.util.Locale.ROOT))
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             CodigoOtp otp = otpService.verificarOtp(usuario, Constants.OTP_TIPO_REGISTRO, codigo.trim());
             otpService.marcarUsado(otp);

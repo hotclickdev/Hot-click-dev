@@ -49,7 +49,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
                                  "/api/admin/reset-confirmacion", "/api/admin/reset-codigo",
                                  // gift cards (crear/cancelar/listar códigos con saldo) y ficha con IA (costo)
                                  "/api/admin/gift-cards", "/api/admin/gift-cards/**",
-                                 "/api/admin/productos/generar-ia");
+                                 "/api/admin/productos/generar-ia",
+                                 // MED-1..4 re-auditoría área 2: KPIs financieros, IA (cuota del negocio), pronóstico,
+                                 // inventario valorizado y sucursales (crear/renombrar/desactivar)
+                                 "/api/admin/executive", "/api/admin/executive/**",
+                                 "/api/admin/ai", "/api/admin/ai/**",
+                                 "/api/admin/forecast", "/api/admin/forecast/**",
+                                 "/api/admin/inventario", "/api/admin/inventario/**",
+                                 "/api/sucursales", "/api/sucursales/**",
+                                 // revisión de confirmaciones SINPE manuales del POS (lista del dueño; el POS no la usa)
+                                 "/api/admin/pos/sinpe-confirmaciones", "/api/admin/pos/sinpe-confirmaciones/**");
         // Suscripción impaga (día 9+): el negocio solo ve cuenta/monto y paga (allowlist exacta en el interceptor);
         // las rutas de comprador ya rechazan tiendas no ACTIVO por su cuenta.
         registry.addInterceptor(suspensionImpagoInterceptor)

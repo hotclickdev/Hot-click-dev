@@ -7,6 +7,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.CorreoNormalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,10 @@ public class ClerkSyncService {
      */
     public AuthResponse sync(String clerkUserId, String email,
                              String nombre, String apellido, String fotoUrl, boolean declaraMayoriaEdad) {
+        email = CorreoNormalizer.normalizar(email); // MED-5: igual que el registro y el login
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Correo verificado requerido");
+        }
         Usuario usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl, declaraMayoriaEdad);
         authSupport.exigirCuentaActiva(usuario); // antes de tocar ultimoAcceso: una cuenta no activa no entra
         usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now(Constants.ZONA_CR));
