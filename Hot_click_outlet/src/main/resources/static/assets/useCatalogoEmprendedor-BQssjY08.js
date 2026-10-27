@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-pg6Ry-4f.js";function t(){return e()}export{t};
