@@ -113,7 +113,7 @@ class TelegramLogsSinDatosPersonalesTest {
     // ═══ (1) webhook: el mensaje de la excepción va truncado ═══════════════════════════
 
     @Test
-    void webhook_errorDeProcesamiento_mensajeTruncado_sinSaltosDeLinea_sinToken() throws Exception {
+    void webhook_errorDeProcesamiento_soloLaClase_sinMensaje_sinSaltosDeLinea_sinToken() throws Exception {
         TelegramClienteBotService bot = mock(TelegramClienteBotService.class);
         TelegramBotUpdateService updateService = mock(TelegramBotUpdateService.class);
         when(bot.validarSecret("bueno")).thenReturn(true);
@@ -131,8 +131,9 @@ class TelegramLogsSinDatosPersonalesTest {
 
         assertThat(c.recibirUpdate("bueno", req).getStatusCode().value()).isEqualTo(200);
 
-        assertThat(todoElLog()).contains("IllegalStateException").contains("inicio-del-mensaje")
-            .doesNotContain(COLA).doesNotContain("AAFictToken").doesNotContain("linea-falsa-inyectada\n");
+        // BAJO 7 de Seguridad: del error del webhook se registra solo la clase, nunca su mensaje (ni truncado).
+        assertThat(todoElLog()).contains("IllegalStateException").doesNotContain("inicio-del-mensaje")
+            .doesNotContain("linea-falsa-inyectada").doesNotContain(COLA).doesNotContain("AAFictToken").doesNotContain("linea-falsa-inyectada\n");
         assertThat(soloMensajes()).doesNotContain("\nlinea-falsa");
         assertThat(soloMensajes().length()).as("línea de log acotada").isLessThan(400);
     }

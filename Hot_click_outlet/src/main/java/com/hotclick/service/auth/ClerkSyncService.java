@@ -52,7 +52,7 @@ public class ClerkSyncService {
                                  boolean declaraMayoriaEdad) {
         Optional<Usuario> byClerk = usuarioRepository.findByClerkUserId(clerkUserId);
         if (byClerk.isPresent()) {
-            Usuario u = rechazarSiCerrada(byClerk.get());
+            Usuario u = exigirActiva(byClerk.get());
             if (u.getCorreo() != null && !u.getCorreo().equalsIgnoreCase(email)) {
                 log.warn("[clerk-sync] clerkId={} ya vinculado a otra cuenta (id={}); correo del token distinto",
                     clerkUserId, u.getId());
@@ -61,16 +61,18 @@ public class ClerkSyncService {
         }
         Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email);
         if (byEmail.isPresent()) {
-            return vincularCuentaExistente(rechazarSiCerrada(byEmail.get()), clerkUserId, email, fotoUrl);
+            return vincularCuentaExistente(exigirActiva(byEmail.get()), clerkUserId, email, fotoUrl);
         }
         MayoriaEdad.exigir(declaraMayoriaEdad);
         return createOAuthUser(clerkUserId, email, nombre, apellido, fotoUrl);
     }
 
-    private Usuario rechazarSiCerrada(Usuario u) {
-        if (u.getEstado() != null && u.getEstado() == Constants.ESTADO_ELIMINADO) {
-            throw new SecurityException("Esta cuenta fue cerrada.");
-        }
+    /**
+     * Antes de vincular o persistir nada: una cuenta con estado distinto de 1 (eliminada, suspendida, inactiva,
+     * pendiente o sin estado) se rechaza con el mensaje genérico, sin distinguir el estado.
+     */
+    private Usuario exigirActiva(Usuario u) {
+        authSupport.exigirCuentaActiva(u);
         return u;
     }
 

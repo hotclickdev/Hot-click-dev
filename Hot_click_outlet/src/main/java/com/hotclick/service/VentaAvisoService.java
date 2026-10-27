@@ -36,7 +36,7 @@ public class VentaAvisoService {
         try {
             moderacionAdminAvisoService.avisarNuevaVenta(pedido);
         } catch (Exception e) {
-            log.error("[venta-aviso] Telegram admin falló para {}: {}", pedido.getNumeroPedido(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+            log.error("[venta-aviso] Telegram admin falló para {}: {}", pedido.getNumeroPedido(), e.getClass().getSimpleName());
         }
     }
 
