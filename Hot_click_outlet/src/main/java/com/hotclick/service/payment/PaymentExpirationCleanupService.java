@@ -100,7 +100,7 @@ public class PaymentExpirationCleanupService {
             OnvoPaymentProvider.Verificacion v = onvoPaymentProvider.procesarPagoVerificado(
                 pago.getMerchantToken(), "cleanup");
             switch (v) {
-                case OK, DUPLICADO, COBRADO_SOBRE_CANCELADO -> {
+                case OK, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA -> {
                     log.info("[payment-cleanup] ONVO ya cobrado — confirmado: {}", pago.getMerchantToken());
                     return false;
                 }

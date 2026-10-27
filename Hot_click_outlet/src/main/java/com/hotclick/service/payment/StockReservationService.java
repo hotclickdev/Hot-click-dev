@@ -115,7 +115,34 @@ public class StockReservationService {
     }
 
     /**
+     * M-08: ids de los productos del grupo a los que les falta stock para confirmar el cobro (vacío = alcanza).
+     * Bloquea todas las filas en orden ascendente de id (mismo orden que el resto) y suma lo pedido por producto
+     * entre todos los pedidos. Compara con stockActual (la reserva propia del cobro ya cuenta dentro de él).
+     * Los productos personalizados o bajo pedido se venden sin stock y no entran en la revisión.
+     */
+    public List<Long> productosSinStock(List<Pedido> pedidos) {
+        Map<Long, Integer> pedido = new HashMap<>();
+        for (Pedido ped : pedidos) {
+            for (PedidoItem item : ped.getItems()) {
+                if (item.getProducto() == null || item.getProducto().getId() == null) continue;
+                pedido.merge(item.getProducto().getId(), item.getCantidad(), Integer::sum);
+            }
+        }
+        List<Long> faltantes = new ArrayList<>();
+        if (pedido.isEmpty()) return faltantes;
+        for (Producto p : productoRepository.findAllByIdsForUpdate(idsOrdenados(pedido.keySet()))) {
+            if (entityManager != null && entityManager.contains(p)) entityManager.refresh(p);
+            if (Boolean.TRUE.equals(p.getEsPersonalizado())) continue;
+            int stock = p.getStockActual() == null ? 0 : p.getStockActual();
+            if (stock < pedido.get(p.getId())) faltantes.add(p.getId());
+        }
+        return faltantes;
+    }
+
+    /**
      * Descuenta stockActual, libera stockReservado y publica eventos de cambio de stock.
+     * El stock nunca queda negativo. {@link #productosSinStock} ya separó antes los cobros sin stock;
+     * el recorte a 0 solo cubre los personalizados (sin stock propio) y es la última red de seguridad.
      */
     public void confirmAndConsumeStock(Pedido pedido, Object eventSource, ApplicationEventPublisher eventPublisher) {
         for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
@@ -126,8 +153,10 @@ public class StockReservationService {
             int nuevoStock = producto.getStockActual() - cantidad;
 
             if (nuevoStock < 0) {
-                log.error("OVERSELL: producto={} stockActual={} cantidad={}",
-                    producto.getId(), producto.getStockActual(), cantidad);
+                if (!Boolean.TRUE.equals(producto.getEsPersonalizado())) {
+                    log.error("OVERSELL: producto={} stockActual={} cantidad={}",
+                        producto.getId(), producto.getStockActual(), cantidad);
+                }
                 nuevoStock = 0;
             }
             producto.setStockActual(nuevoStock);

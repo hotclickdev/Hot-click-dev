@@ -133,8 +133,8 @@ public class PaymentService {
     }
 
     @Transactional
-    public void confirmarPedido(Pago pago) {
-        orderConfirmationService.confirmarPedido(pago, this, eventPublisher);
+    public PaymentOrderConfirmationService.Resultado confirmarPedido(Pago pago) {
+        return orderConfirmationService.confirmarPedido(pago, this, eventPublisher);
     }
 
     @Transactional

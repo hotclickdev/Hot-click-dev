@@ -2,6 +2,7 @@ package com.hotclick.service.payment;
 
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
+import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -34,7 +36,11 @@ public class PaymentOrderConfirmationService {
         Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
         Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
 
+    /** CONFIRMADO: el grupo quedó PAGADO. YA_CONFIRMADO: no hizo nada (idempotente). SOBREVENTA: ver M-08. */
+    public enum Resultado { CONFIRMADO, YA_CONFIRMADO, SOBREVENTA }
+
     @Autowired private PedidoRepository           pedidoRepository;
+    @Autowired private PagoRepository             pagoRepository;
     @Autowired private CuponService               cuponService;
     @Autowired private GiftCardService            giftCardService;
     @Autowired private StockReservationService    stockReservationService;
@@ -43,19 +49,36 @@ public class PaymentOrderConfirmationService {
     @Autowired private PedidoGrupoService         pedidoGrupoService;
     @Autowired @Lazy private EncargoService       encargoService;
 
+    /**
+     * M-08: si entre el cobro y la confirmación el stock se agotó (segundo pago sobre la última unidad), el
+     * cobro NO se pierde ni se lanza excepción (el rollback dejaría la plata cobrada sin registro y ONVO
+     * reintentaría sin fin): el pago queda REEMBOLSO_PENDIENTE y el grupo en REVISION_SOBREVENTA, que no se
+     * despacha. El stock nunca queda negativo. Los productos personalizados o bajo pedido están exentos.
+     */
     @Transactional
-    public void confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
+    public Resultado confirmarPedido(Pago pago, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
         Pedido principal = pago.getPedido();
         if (principal == null) {
             log.warn("confirmarPedido ignorado — pago {} sin pedido asociado", pago.getId());
-            return;
+            return Resultado.YA_CONFIRMADO;
         }
         List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
 
         // Idempotencia rápida: si el principal ya figura confirmado, el grupo entero ya se procesó.
         if (YA_CONFIRMADOS.contains(principal.getEstadoPedido())) {
             log.info("confirmarPedido ignorado — pedido {} ya está confirmado", principal.getNumeroPedido());
-            return;
+            return Resultado.YA_CONFIRMADO;
+        }
+        if (Constants.PEDIDO_REVISION_SOBREVENTA.equals(principal.getEstadoPedido())) {
+            log.info("confirmarPedido ignorado — pedido {} ya está en revisión por sobreventa", principal.getNumeroPedido());
+            return Resultado.SOBREVENTA;
+        }
+        List<Pedido> porConfirmar = grupo.stream()
+            .filter(p -> !Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido())).toList();
+        porConfirmar.forEach(p -> Hibernate.initialize(p.getItems()));
+        if (!stockReservationService.productosSinStock(porConfirmar).isEmpty()) {
+            pasarARevisionPorSobreventa(pago, porConfirmar);
+            return Resultado.SOBREVENTA;
         }
 
         boolean cuponMarcado = false;
@@ -85,6 +108,24 @@ public class PaymentOrderConfirmationService {
             posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
         }
         publicarCompraPagada(principal, eventPublisher);
+        return Resultado.CONFIRMADO;
+    }
+
+    /** M-08: grupo a revisión, reservas liberadas (sin stock negativo), pago para reembolso. Sin PII en el log. */
+    private void pasarARevisionPorSobreventa(Pago pago, List<Pedido> grupo) {
+        StringBuilder numeros = new StringBuilder();
+        for (Pedido pedido : grupo) {
+            pedido.setEstadoPedido(Constants.PEDIDO_REVISION_SOBREVENTA);
+            pedidoRepository.save(pedido);
+            stockReservationService.liberarReservas(pedido);
+            if (numeros.length() > 0) numeros.append(',');
+            numeros.append(pedido.getNumeroPedido());
+        }
+        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        pagoRepository.save(pago);
+        log.error("[ALERTA-PAGO] Cobro sin stock (sobreventa): pago={} pedidos={}; en revisión, reembolso pendiente",
+            pago.getId(), numeros);
     }
 
     /**
