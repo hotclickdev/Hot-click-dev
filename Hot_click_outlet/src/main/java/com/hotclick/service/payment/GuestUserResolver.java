@@ -4,6 +4,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.CorreoNormalizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,8 +21,10 @@ public class GuestUserResolver {
     @Autowired private PasswordEncoder   passwordEncoder;
 
     public Usuario resolve(String emailEfectivo, String guestPhone) {
-        return usuarioRepository.findByCorreo(emailEfectivo)
-            .orElseGet(() -> crearUsuarioInvitado(emailEfectivo, guestPhone));
+        // MED-5: mismo criterio que el registro y el login (trim + minúsculas); evita cuentas duplicadas por mayúsculas.
+        final String correo = CorreoNormalizer.normalizar(emailEfectivo);
+        return usuarioRepository.findByCorreo(correo)
+            .orElseGet(() -> crearUsuarioInvitado(correo, guestPhone));
     }
 
     private Usuario crearUsuarioInvitado(String correo, String telefono) {

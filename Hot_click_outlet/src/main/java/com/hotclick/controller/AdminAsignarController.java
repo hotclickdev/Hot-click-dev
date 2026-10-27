@@ -96,11 +96,12 @@ public class AdminAsignarController {
 
             String correoFinal = correo.isBlank()
                 ? "tel_" + telefono.replaceAll("[^0-9]", "") + "_" + UUID.randomUUID().toString().substring(0, 6) + "@hotclick.noemail"
-                : correo;
+                : com.hotclick.utils.CorreoNormalizer.normalizar(correo); // MED-5: igual que el registro y el login
 
             // P9-02: no se crea ni se reclama una cuenta existente; el vendedor usa la búsqueda de clientes.
-            if (usuarioRepository.existsByCorreo(correoFinal.toLowerCase(java.util.Locale.ROOT))
-                    || usuarioRepository.existsByCorreo(correoFinal)) {
+            // También se revisa el correo tal como lo escribió el vendedor (cuentas antiguas con mayúsculas).
+            if (usuarioRepository.existsByCorreo(correoFinal)
+                    || (!correo.isBlank() && usuarioRepository.existsByCorreo(correo))) {
                 return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(
                     "No se pudo crear el cliente con ese correo. Búscalo en tus clientes existentes."));
             }

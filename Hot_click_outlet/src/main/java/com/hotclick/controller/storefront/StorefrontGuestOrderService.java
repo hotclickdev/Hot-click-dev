@@ -72,8 +72,10 @@ public class StorefrontGuestOrderService {
         exigirRetiroDisponible(dto.getMetodoEnvio(),
             bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO));
 
-        Usuario usuario = usuarioRepository.findByCorreo(dto.getCorreoCliente())
-            .orElseGet(() -> crearInvitado(dto.getCorreoCliente(), dto.getTelefonoCliente()));
+        // MED-5: mismo criterio que el registro y el login (trim + minúsculas); evita cuentas duplicadas por mayúsculas.
+        final String correoCliente = com.hotclick.utils.CorreoNormalizer.normalizar(dto.getCorreoCliente());
+        Usuario usuario = usuarioRepository.findByCorreo(correoCliente)
+            .orElseGet(() -> crearInvitado(correoCliente, dto.getTelefonoCliente()));
 
         Pedido pedido = construirPedido(empresa, dto, bodega, usuario);
         Pedido guardado = pedidoRepository.save(pedido);
