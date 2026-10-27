@@ -70,7 +70,8 @@ public class TrialEmprendedorService {
      */
     public static boolean emprendedorEsDePago(Empresa empresa) {
         return tuvoTrial(empresa)
-            || (empresa != null && Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA.equals(empresa.getEstadoPlan()));
+            || (empresa != null && (Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA.equals(empresa.getEstadoPlan())
+                || Constants.ESTADO_PLAN_PENDIENTE_CUPO.equals(empresa.getEstadoPlan())));
     }
 
     /**

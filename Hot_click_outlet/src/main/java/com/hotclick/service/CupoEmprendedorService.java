@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Locale;
-import java.util.OptionalInt;
 
 @Service
 public class CupoEmprendedorService {
@@ -23,8 +22,27 @@ public class CupoEmprendedorService {
     private static final Logger log = LoggerFactory.getLogger(CupoEmprendedorService.class);
     private static final String SQL_ESTADO =
         "SELECT usados, limite FROM hot_click_cupo_emprendedor_tb WHERE id = 1";
-    private static final String SQL_POSICION =
-        "SELECT usados FROM hot_click_cupo_emprendedor_tb WHERE id = 1";
+    /** Toma el lock de la fila del contador sin cambiarla: serializa reservas, liberaciones y chequeo de persona. */
+    private static final String SQL_BLOQUEAR =
+        "UPDATE hot_click_cupo_emprendedor_tb SET usados = usados WHERE id = 1";
+    private static final String SQL_TITULAR_EXISTENTE =
+        "SELECT COUNT(*) FROM hot_click_empresa_tb WHERE id_empresa <> ? "
+            + "AND (trial_emprendedor_titular_usuario = ? OR trial_emprendedor_titular_correo = ?)";
+    /** Menor puesto 1.. que nadie ocupa (los puestos liberados se reutilizan; el índice UNIQUE de V206 sigue valiendo). */
+    private static final String SQL_PRIMER_PUESTO_LIBRE =
+        "SELECT MIN(c.n) FROM (SELECT 1 AS n UNION ALL SELECT trial_emprendedor_pos + 1 FROM hot_click_empresa_tb "
+            + "WHERE trial_emprendedor_pos IS NOT NULL) c "
+            + "WHERE NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e WHERE e.trial_emprendedor_pos = c.n)";
+    private static final String SQL_ASIGNAR =
+        "UPDATE hot_click_empresa_tb SET trial_emprendedor_pos = ?, trial_emprendedor_titular_usuario = ?, "
+            + "trial_emprendedor_titular_correo = ? WHERE id_empresa = ?";
+    private static final String SQL_LIBERAR_EMPRESA =
+        "UPDATE hot_click_empresa_tb SET trial_emprendedor_pos = NULL, trial_emprendedor_titular_usuario = NULL, "
+            + "trial_emprendedor_titular_correo = NULL, trial_emprendedor_hasta = NULL, trial_hasta = NULL, "
+            + "fecha_venc_plan = NULL, estado_plan = 'PENDIENTE_CUPO', visibilidad_publica = FALSE "
+            + "WHERE id_empresa = ? AND trial_emprendedor_pos IS NOT NULL AND estado_plan IN ('TRIAL', 'PENDIENTE_CUPO')";
+    private static final String SQL_DEVOLVER =
+        "UPDATE hot_click_cupo_emprendedor_tb SET usados = usados - 1 WHERE id = 1 AND usados > 0";
     /**
      * Contador atómico y portable (PostgreSQL y H2): un único UPDATE condicionado. La fila queda bloqueada hasta el
      * commit, así que dos altas simultáneas se serializan y la 71.ª (o la N+1 del cupo configurado) afecta 0 filas.
@@ -61,10 +79,11 @@ public class CupoEmprendedorService {
     }
 
     /**
-     * Alta de un negocio Emprendedor. Los primeros {@code hotclick.trial-emprendedor.cupo} (70) reciben un trial de
-     * {@code hotclick.trial-emprendedor.dias} (90) días; pasado el trial la mensualidad US$9 se cobra automática por
-     * ONVO. Sin cupo (el 71 en adelante) nunca hay trial: queda REQUIERE_MEMBRESIA, no visible, hasta pagar.
-     * Se une a la transacción del llamador: si el alta falla después, el puesto se devuelve con el rollback.
+     * Alta de un negocio Emprendedor. Desde V207 el registro NO toma puesto ni arranca el trial: un negocio real queda
+     * PENDIENTE_CUPO (plan Emprendedor, oculto) y el puesto, los {@code hotclick.trial-emprendedor.dias} días de trial
+     * y el trial de ONVO cuentan desde que HotClick lo aprueba, con correo del propietario verificado y un puesto por
+     * persona ({@code CupoEmprendedorAprobacionService}). Así un negocio pendiente (o falso) no agota el cupo.
+     * Las cuentas demo (@hotclick.test) siguen en plan gratis sin cupo.
      */
     @Transactional
     public ResultadoAltaCupo aplicarAlta(Empresa empresa, String correoEmpresa) {
@@ -72,14 +91,8 @@ public class CupoEmprendedorService {
             aplicarPlanGratis(empresa);
             return ResultadoAltaCupo.demo(estadoPublico());
         }
-        OptionalInt reservado = reservarCupoGratis();
-        if (reservado.isPresent()) {
-            aplicarTrial(empresa, reservado.getAsInt());
-            return ResultadoAltaCupo.gratis(estadoPublico());
-        }
-        // Fail-closed: sin cupo (o sin poder confirmarlo) nunca entra con trial.
-        aplicarRequiereMembresia(empresa);
-        return ResultadoAltaCupo.pago(estadoPublico());
+        aplicarPendienteCupo(empresa);
+        return ResultadoAltaCupo.pendiente(estadoPublico());
     }
 
     public static boolean esDemo(String correoEmpresa) {
@@ -87,24 +100,78 @@ public class CupoEmprendedorService {
         return correoEmpresa.toLowerCase(Locale.ROOT).endsWith(Constants.CORREO_DEMO_EMPRESA_SUFIJO);
     }
 
+    /** Resultado de pedir un puesto de trial para un titular. */
+    public enum ResultadoReserva { ASIGNADO, SIN_CUPO, PERSONA_YA_TIENE_PUESTO }
+
     /**
-     * Reserva un puesto de trial. Devuelve el puesto (1..cupo) o vacío si el cupo está lleno, es 0, o la BD falló
-     * (fail-closed: ante la duda no se regala trial).
+     * Asigna un puesto de trial a la empresa para un titular (usuario propietario + correo normalizado). DEBE correr
+     * dentro de la transacción del llamador y con la fila de la empresa ya bloqueada.
+     *
+     * <p>Concurrencia: lo primero es tomar el lock de la fila única del contador (un UPDATE). Todas las reservas y
+     * liberaciones pasan por ese lock, así que "¿esta persona ya tiene puesto?" y "¿queda cupo?" se evalúan en serie
+     * y dos negocios de la misma persona aprobados a la vez nunca obtienen dos puestos. El UNIQUE de V207 es la red
+     * de seguridad (en PostgreSQL una violación abortaría la transacción, por eso no se usa como control principal).
+     *
+     * <p>Si la empresa ya traía un puesto del registro anterior (#411, sin titular), no se vuelve a descontar: solo se
+     * le asigna titular, o se libera si la persona ya tenía otro.
      */
-    OptionalInt reservarCupoGratis() {
+    @Transactional
+    public ResultadoReserva reservarPuesto(Empresa empresa, Long usuarioId, String correoClave) {
         try {
-            int cupo = trialConfig.cupo();
-            int filas = jdbcTemplate.update(SQL_RESERVAR, cupo, cupo);
-            if (filas != 1) return OptionalInt.empty();
-            Integer pos = jdbcTemplate.queryForObject(SQL_POSICION, Integer.class);
-            return pos == null ? OptionalInt.empty() : OptionalInt.of(pos);
+            if (jdbcTemplate.update(SQL_BLOQUEAR) != 1) return ResultadoReserva.SIN_CUPO;
+            boolean yaTrajoPuesto = empresa.getTrialEmprendedorPos() != null;
+            Integer otros = jdbcTemplate.queryForObject(SQL_TITULAR_EXISTENTE, Integer.class,
+                empresa.getId(), usuarioId, correoClave);
+            if (otros != null && otros > 0) {
+                if (yaTrajoPuesto) liberarPuesto(empresa);
+                return ResultadoReserva.PERSONA_YA_TIENE_PUESTO;
+            }
+            int posicion;
+            if (yaTrajoPuesto) {
+                posicion = empresa.getTrialEmprendedorPos();
+            } else {
+                int cupo = trialConfig.cupo();
+                if (jdbcTemplate.update(SQL_RESERVAR, cupo, cupo) != 1) return ResultadoReserva.SIN_CUPO;
+                Integer libre = jdbcTemplate.queryForObject(SQL_PRIMER_PUESTO_LIBRE, Integer.class);
+                if (libre == null) throw new IllegalStateException("sin puesto libre calculable");
+                posicion = libre;
+            }
+            int filas = jdbcTemplate.update(SQL_ASIGNAR, posicion, usuarioId, correoClave, empresa.getId());
+            if (filas != 1) throw new IllegalStateException("no se pudo asignar el puesto a la empresa " + empresa.getId());
+            empresa.setTrialEmprendedorPos(posicion);
+            empresa.setTrialEmprendedorTitularUsuario(usuarioId);
+            empresa.setTrialEmprendedorTitularCorreo(correoClave);
+            return ResultadoReserva.ASIGNADO;
         } catch (DataAccessException ex) {
             log.warn("[cupo-emprendedor] no se pudo reservar cupo — {}", ex.getMessage());
-            return OptionalInt.empty();
+            return ResultadoReserva.SIN_CUPO;
         }
     }
 
-    private void aplicarTrial(Empresa empresa, int posicion) {
+    /**
+     * Libera el puesto de la empresa (rechazo): el {@code UPDATE} condicionado a "tiene puesto" y "sigue sin pagar" es
+     * la guarda contra la doble liberación (el segundo intento afecta 0 filas y no toca el contador) y el contador
+     * baja con {@code usados > 0}, así que nunca queda negativo. Devuelve true si liberó.
+     */
+    @Transactional
+    public boolean liberarPuesto(Empresa empresa) {
+        if (empresa == null || empresa.getId() == null) return false;
+        int filas = jdbcTemplate.update(SQL_LIBERAR_EMPRESA, empresa.getId());
+        if (filas != 1) return false;
+        jdbcTemplate.update(SQL_DEVOLVER);
+        empresa.setTrialEmprendedorPos(null);
+        empresa.setTrialEmprendedorTitularUsuario(null);
+        empresa.setTrialEmprendedorTitularCorreo(null);
+        empresa.setTrialEmprendedorHasta(null);
+        empresa.setTrialHasta(null);
+        empresa.setFechaVencPlan(null);
+        empresa.setEstadoPlan(Constants.ESTADO_PLAN_PENDIENTE_CUPO);
+        empresa.setVisibilidadPublica(false);
+        return true;
+    }
+
+    /** Pasa la empresa a TRIAL con los días contados desde hoy (el día de la aprobación). */
+    public void aplicarTrial(Empresa empresa) {
         planRepository.findByNombre("EMPRENDEDOR").ifPresent(empresa::setPlan);
         empresa.setPlanSaas("EMPRENDEDOR");
         LocalDate fin = LocalDate.now(Constants.ZONA_CR).plusDays(trialConfig.dias());
@@ -112,19 +179,26 @@ public class CupoEmprendedorService {
         empresa.setTrialHasta(fin);
         empresa.setFechaVencPlan(fin);
         empresa.setTrialEmprendedorHasta(fin);
-        empresa.setTrialEmprendedorPos(posicion);
+    }
+
+    /** Sin puesto (cupo lleno o la persona ya tiene uno): nunca trial, queda a la espera de pagar. */
+    public void aplicarRequiereMembresia(Empresa empresa) {
+        planRepository.findByNombre("EMPRENDEDOR").ifPresent(empresa::setPlan);
+        empresa.setPlanSaas("EMPRENDEDOR");
+        empresa.setEstadoPlan(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+        empresa.setVisibilidadPublica(false);
+    }
+
+    private void aplicarPendienteCupo(Empresa empresa) {
+        planRepository.findByNombre("EMPRENDEDOR").ifPresent(empresa::setPlan);
+        empresa.setPlanSaas("EMPRENDEDOR");
+        empresa.setEstadoPlan(Constants.ESTADO_PLAN_PENDIENTE_CUPO);
+        empresa.setVisibilidadPublica(false);
     }
 
     private void aplicarPlanGratis(Empresa empresa) {
         planRepository.findByNombre("EMPRENDEDOR").ifPresent(empresa::setPlan);
         empresa.setPlanSaas("EMPRENDEDOR");
         empresa.setEstadoPlan("ACTIVO");
-    }
-
-    private void aplicarRequiereMembresia(Empresa empresa) {
-        planRepository.findByNombre("EMPRENDEDOR").ifPresent(empresa::setPlan);
-        empresa.setPlanSaas("EMPRENDEDOR");
-        empresa.setEstadoPlan(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
-        empresa.setVisibilidadPublica(false);
     }
 }

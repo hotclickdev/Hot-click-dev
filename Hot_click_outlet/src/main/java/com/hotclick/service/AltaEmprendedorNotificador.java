@@ -30,8 +30,13 @@ public class AltaEmprendedorNotificador {
             log.error("[alta-emprendedor] fallo Telegram — {}", ex.getClass().getSimpleName());
         }
         try {
-            notificacionEmailService.enviarAltaEmprendedorAAdminIT(
-                nombreEmpresa, correo, resultado.cupoGratis(), resultado.estado());
+            if (resultado.pendienteCupo()) {
+                notificacionEmailService.enviarAltaEmprendedorPendienteAAdminIT(
+                    nombreEmpresa, correo, resultado.estado());
+            } else {
+                notificacionEmailService.enviarAltaEmprendedorAAdminIT(
+                    nombreEmpresa, correo, resultado.cupoGratis(), resultado.estado());
+            }
         } catch (Exception ex) {
             log.error("[alta-emprendedor] fallo email admin — {}", ex.getClass().getSimpleName());
         }
@@ -46,6 +51,9 @@ public class AltaEmprendedorNotificador {
         sb.append("Cupos: ").append(estado.usados()).append('/').append(estado.limite()).append('\n');
         if (resultado.demo()) {
             sb.append("Demo QA: no consumió cupo.");
+        } else if (resultado.pendienteCupo()) {
+            sb.append("Pendiente de aprobación: el puesto de ").append(estado.textoGratis())
+              .append(" se asigna al aprobar (correo verificado, un puesto por persona).");
         } else if (resultado.cupoGratis()) {
             sb.append(textoCruce(estado));
         } else {

@@ -171,6 +171,14 @@ public class Empresa {
     @Column(name = "trial_emprendedor_pos", unique = true)
     private Integer trialEmprendedorPos;
 
+    /** Titular del puesto (V207): usuario propietario que lo reclamó al aprobarse. UNIQUE = una persona, un puesto. */
+    @Column(name = "trial_emprendedor_titular_usuario", unique = true)
+    private Long trialEmprendedorTitularUsuario;
+
+    /** Titular del puesto (V207): correo verificado normalizado (sin alias +tag ni puntos de Gmail). UNIQUE. */
+    @Column(name = "trial_emprendedor_titular_correo", length = 160, unique = true)
+    private String trialEmprendedorTitularCorreo;
+
     @Column(name = "timezone", length = 50)
     private String timezone = "America/Costa_Rica";
 
@@ -394,6 +402,10 @@ public class Empresa {
     public void setTrialEmprendedorHasta(LocalDate v) { this.trialEmprendedorHasta = v; }
     public Integer getTrialEmprendedorPos() { return trialEmprendedorPos; }
     public void setTrialEmprendedorPos(Integer v) { this.trialEmprendedorPos = v; }
+    public Long getTrialEmprendedorTitularUsuario() { return trialEmprendedorTitularUsuario; }
+    public void setTrialEmprendedorTitularUsuario(Long v) { this.trialEmprendedorTitularUsuario = v; }
+    public String getTrialEmprendedorTitularCorreo() { return trialEmprendedorTitularCorreo; }
+    public void setTrialEmprendedorTitularCorreo(String v) { this.trialEmprendedorTitularCorreo = v; }
 
     public String getTimezone() { return timezone != null ? timezone : "America/Costa_Rica"; }
     public void setTimezone(String timezone) { this.timezone = timezone; }
