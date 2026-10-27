@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 
 /**
  * Distributed rate limiter backed by hot_click_rate_limit_tb.
@@ -24,7 +26,35 @@ public class RateLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimiter.class);
 
+    /** Con la BD caída cada request falla: se avisa a lo sumo una vez por ventana, con el conteo de omitidos. */
+    static final long VENTANA_WARN_MS = 60_000L;
+
     private final JdbcTemplate jdbc;
+
+    /** Reloj en ms del muestreo del warn (sustituible en tests). */
+    LongSupplier relojMs = System::currentTimeMillis;
+
+    private final MuestreoWarn warnTryAcquire = new MuestreoWarn();
+
+    /**
+     * Contador local (memoria, sin tocar la BD: sigue funcionando con la BD caída): deja pasar el primer aviso y
+     * luego uno por ventana, e informa cuántos se omitieron entre medio.
+     */
+    private final class MuestreoWarn {
+        private final AtomicLong omitidos = new AtomicLong();
+        private final AtomicLong ultimo = new AtomicLong(Long.MIN_VALUE);
+
+        /** -1 si este fallo no se loguea; si se loguea, cuántos fallos se omitieron desde el aviso anterior. */
+        long turno() {
+            long ahora = relojMs.getAsLong();
+            long previo = ultimo.get();
+            if (previo == Long.MIN_VALUE || ahora - previo >= VENTANA_WARN_MS) {
+                if (ultimo.compareAndSet(previo, ahora)) return omitidos.getAndSet(0);
+            }
+            omitidos.incrementAndGet();
+            return -1;
+        }
+    }
 
     public RateLimiter(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
@@ -102,7 +132,11 @@ public class RateLimiter {
             int count = incrementarYContar(key, now, expires, windowSeconds);
             return count <= maxRequests;
         } catch (Exception e) {
-            log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getClass().getName());
+            long omitidos = warnTryAcquire.turno();
+            if (omitidos >= 0) {
+                log.warn("[RATE-LIMIT] DB unavailable, fail-open: {} (avisos omitidos desde el anterior: {}; uno por {} s)",
+                    e.getClass().getName(), omitidos, VENTANA_WARN_MS / 1000);
+            }
             return true;
         }
     }
