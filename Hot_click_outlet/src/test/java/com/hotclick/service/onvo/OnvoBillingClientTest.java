@@ -519,4 +519,46 @@ class OnvoBillingClientTest {
         assertThatThrownBy(c::validarLlaveAlArrancar)
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("arranque abortado");
     }
+
+    // ── S-02: lecturas de verificación ────────────────────────────────────
+
+    @Test
+    @DisplayName("S-02: GET payment-intent / subscription / invoice usan la llave del servidor")
+    void s02_lecturasReales() {
+        conLlave();
+        server.expect(requestTo(BASE + "/payment-intents/pi_1")).andExpect(method(HttpMethod.GET))
+            .andExpect(header("Authorization", "Bearer " + LLAVE_FICTICIA))
+            .andRespond(withSuccess("{\"id\":\"pi_1\",\"status\":\"succeeded\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/subscriptions/sub_1")).andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess("{\"id\":\"sub_1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/invoices/inv_1")).andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess("{\"id\":\"inv_1\"}", MediaType.APPLICATION_JSON));
+        assertThat(client.obtenerPaymentIntent("pi_1").get("status")).isEqualTo("succeeded");
+        assertThat(client.obtenerSuscripcion("sub_1").get("id")).isEqualTo("sub_1");
+        assertThat(client.obtenerRenovacion("inv_1").get("id")).isEqualTo("inv_1");
+        assertThat(client.modoEsperado()).isEqualTo("live");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("S-02: sin llave las lecturas fallan cerrado incluso en dev/test (no hay mock para verificar)")
+    void s02_sinLlaveFallaCerrado() {
+        server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
+        OnvoBillingClient dev = clienteConPerfiles("dev");
+        assertThat(dev.modoEsperado()).isNull();
+        assertThatThrownBy(() -> dev.obtenerPaymentIntent("pi_1")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> dev.obtenerSuscripcion("sub_1")).isInstanceOf(IllegalStateException.class);
+        conLlave();
+        assertThatThrownBy(() -> client.obtenerSuscripcion("../x")).isInstanceOf(IllegalStateException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("S-02: 5xx en la lectura se propaga (el webhook queda pendiente y ONVO reintenta)")
+    void s02_errorSePropaga() {
+        conLlave();
+        server.expect(requestTo(BASE + "/payment-intents/pi_1"))
+            .andRespond(withStatus(HttpStatus.BAD_GATEWAY));
+        assertThatThrownBy(() -> client.obtenerPaymentIntent("pi_1")).isInstanceOf(HttpServerErrorException.class);
+    }
 }

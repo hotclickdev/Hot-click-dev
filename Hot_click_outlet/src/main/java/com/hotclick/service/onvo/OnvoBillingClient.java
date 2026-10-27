@@ -248,6 +248,41 @@ public class OnvoBillingClient {
         return extraerPrimerItemId(resp);
     }
 
+    /**
+     * S-02: modo que deben traer los objetos ONVO para esta llave ("test" / "live").
+     * Null si no hay llave real utilizable (sin llave o billing deshabilitado): nada se puede verificar.
+     */
+    public String modoEsperado() {
+        if (sinLlave() || isBillingDeshabilitado()) return null;
+        return esLlaveDePrueba(secretKey) ? "test" : "live";
+    }
+
+    /** S-02: GET /v1/subscriptions/{id} con la llave del servidor. Fail-closed: sin llave real lanza. */
+    public Map<?, ?> obtenerSuscripcion(String subscriptionId) {
+        return leerReal("/subscriptions/", subscriptionId);
+    }
+
+    /** S-02: GET /v1/payment-intents/{id}. Fail-closed. */
+    public Map<?, ?> obtenerPaymentIntent(String paymentIntentId) {
+        return leerReal("/payment-intents/", paymentIntentId);
+    }
+
+    /** S-02: GET /v1/invoices/{id} (renovación). Fail-closed. */
+    public Map<?, ?> obtenerRenovacion(String invoiceId) {
+        return leerReal("/invoices/", invoiceId);
+    }
+
+    /** Lecturas de verificación: nunca hay mock (ni en dev/test); sin llave real no se confirma nada. */
+    private Map<?, ?> leerReal(String ruta, String id) {
+        if (id == null || id.isBlank() || !id.matches("[A-Za-z0-9_\\-]{1,128}")) {
+            throw new IllegalStateException("ONVO: id inválido para verificación");
+        }
+        if (modoEsperado() == null) {
+            throw new IllegalStateException("ONVO: sin llave real; no se puede verificar el evento");
+        }
+        return get(ruta + id);
+    }
+
     private Map<?, ?> get(String path) {
         ResponseEntity<Map> resp = restTemplate.exchange(
             API_BASE + path, HttpMethod.GET, new HttpEntity<>(authHeaders()), Map.class);

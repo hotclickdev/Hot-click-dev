@@ -1,7 +1,9 @@
 package com.hotclick.repository;
 
 import com.hotclick.model.Suscripcion;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,6 +26,11 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     Optional<Suscripcion> findByStripeSubscriptionId(String stripeSubscriptionId);
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
+
+    /** S-02: la suscripción local manda (empresa y plan salen de acá, nunca del payload). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubscriptionId = :id")
+    Optional<Suscripcion> findByOnvoSubscriptionIdForUpdate(@Param("id") String onvoSubscriptionId);
 
     /** Suscripciones vigentes (no canceladas/vencidas) con plan cargado — consola billing. */
     @Query("""

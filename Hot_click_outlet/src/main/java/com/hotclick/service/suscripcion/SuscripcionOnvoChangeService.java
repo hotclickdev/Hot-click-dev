@@ -340,29 +340,27 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         log.info("[billing-onvo] Plan aplicado empresa={} plan={}", empresaId, planNombre);
     }
 
+    /**
+     * S-02: activa solo tras verificar el cobro contra ONVO. Empresa y plan salen de la suscripción
+     * local (por onvoSubId); {@code empresaId} viene de esa misma fila y solo se usa para el cache.
+     * No hay fallback por empresa ni ids sintéticos.
+     */
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
-    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
+    public void procesarPagoOnvoVerificado(Long empresaId, String onvoSubId, LocalDate fin) {
         Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionId(onvoSubId)
-            // tenant-global-ok: webhook de pago: null solo evita buscar por empresa (Optional.empty)
-            .or(() -> empresaId != null
-                ? suscripcionRepo.findActivaByEmpresaId(empresaId)
-                : Optional.empty())
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
-
-        Plan plan = planId != null
-            ? planRepo.findById(planId).orElse(sub.getPlan())
-            : sub.getPlan();
+        Plan plan = sub.getPlan();
         if (plan == null) {
-            throw new IllegalStateException("Sin plan para activar suscripción ONVO " + onvoSubId);
+            throw new IllegalStateException("Sin plan para activar suscripción ONVO");
         }
-
-        sub.setOnvoSubscriptionId(onvoSubId);
-        sub.setPlan(plan);
+        if (sub.getEmpresa() == null || !sub.getEmpresa().getId().equals(empresaId)) {
+            throw new IllegalStateException("Suscripción ONVO no pertenece a la empresa esperada");
+        }
+        LocalDate hasta = fin != null ? fin : LocalDate.now(Constants.ZONA_CR).plusMonths(1);
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
-        LocalDate fin = LocalDate.now(Constants.ZONA_CR).plusMonths(1);
-        sub.setFechaFin(fin);
+        sub.setFechaFin(hasta);
         suscripcionRepo.save(sub);
 
         Empresa empresa = sub.getEmpresa();
@@ -370,10 +368,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresa.setPlanSaas(plan.getNombre());
         empresa.setEstadoPlan("ACTIVO");
         SuspensionImpago.reactivarSiSuspendida(empresa);
-        empresa.setFechaVencPlan(fin);
+        empresa.setFechaVencPlan(hasta);
         empresaRepo.save(empresa);
-        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO confirmado");
-        log.info("[billing-onvo] Webhook activó empresa={} plan={}", empresa.getId(), plan.getNombre());
+        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO verificado");
+        log.info("[billing-onvo] Webhook verificado activó empresa={} plan={}", empresa.getId(), plan.getNombre());
     }
 
     @Transactional

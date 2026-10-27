@@ -383,8 +383,7 @@ class SuscripcionOnvoChangeServiceTest {
         sub.setEmpresa(empresa);
         sub.setPlan(planPyme);
         when(suscripcionRepo.findByOnvoSubscriptionId("sub_1")).thenReturn(Optional.of(sub));
-        when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
-        service.procesarPagoOnvoExitoso(10L, "sub_1", 2L);
+        service.procesarPagoOnvoVerificado(10L, "sub_1", null);
         assertThat(empresa.getEstadoEmpresa()).isEqualTo("ACTIVO");
         assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
     }
