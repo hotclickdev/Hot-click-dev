@@ -172,7 +172,7 @@ class CuentaNoActivaTenantOtpClerkTest {
     @DisplayName("OTP por correo: cuenta no activa → no se envía el código y la respuesta es genérica")
     void otpCuentaNoActivaNoEnvia(int estado) {
         OtpService otpService = mock(OtpService.class);
-        ResponseEntity<ResponseDTO> r = otp(usuario(estado), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"));
+        ResponseEntity<ResponseDTO> r = otp(usuario(estado), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), null);
         verify(otpService, never()).enviarOtp2Fa(any(Usuario.class));
         assertThat(r.getStatusCode().value()).isEqualTo(401);
         assertThat(r.getBody().getMessage()).isEqualTo(GENERICO).doesNotContain("ejemplo.test");
@@ -183,7 +183,7 @@ class CuentaNoActivaTenantOtpClerkTest {
     @DisplayName("OTP por correo: cuenta sin estado → falla cerrado, no se envía")
     void otpSinEstadoNoEnvia(Integer estado) {
         OtpService otpService = mock(OtpService.class);
-        ResponseEntity<ResponseDTO> r = otp(usuario(estado), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"));
+        ResponseEntity<ResponseDTO> r = otp(usuario(estado), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), null);
         verify(otpService, never()).enviarOtp2Fa(any(Usuario.class));
         assertThat(r.getStatusCode().value()).isEqualTo(401);
     }
@@ -192,7 +192,7 @@ class CuentaNoActivaTenantOtpClerkTest {
     @DisplayName("control: OTP por correo a una cuenta activa → 200 y se envía")
     void otpCuentaActivaEnvia() {
         OtpService otpService = mock(OtpService.class);
-        ResponseEntity<ResponseDTO> r = otp(usuario(1), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"));
+        ResponseEntity<ResponseDTO> r = otp(usuario(1), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), null);
         verify(otpService).enviarOtp2Fa(any(Usuario.class));
         assertThat(r.getStatusCode().value()).isEqualTo(200);
     }
