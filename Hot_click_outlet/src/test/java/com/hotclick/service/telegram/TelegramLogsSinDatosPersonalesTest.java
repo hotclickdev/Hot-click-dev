@@ -176,8 +176,9 @@ class TelegramLogsSinDatosPersonalesTest {
         assertThat(todoElLog()).doesNotContain(String.valueOf(CHAT));
         ILoggingEvent ev = appender.list.stream().filter(e -> e.getLevel() == Level.ERROR).findFirst().orElseThrow();
         assertThat(ev.getThrowableProxy()).as("excepción completa en el log del servidor").isNotNull();
-        assertThat(ev.getThrowableProxy().getClassName()).endsWith("IllegalStateException");
-        assertThat(ev.getThrowableProxy().getMessage()).contains(COLA);
+        assertThat(ev.getThrowableProxy().getMessage()).contains("IllegalStateException")
+            .doesNotContain(COLA).doesNotContain("fallo-fict");
+        assertThat(ev.getThrowableProxy().getCause()).as("sin cadena de causas").isNull();
         assertThat(ev.getThrowableProxy().getStackTraceElementProxyArray()).isNotEmpty();
         // nunca al usuario
         var mensajes = org.mockito.ArgumentCaptor.forClass(String.class);
@@ -200,7 +201,7 @@ class TelegramLogsSinDatosPersonalesTest {
         assertThat(soloMensajes()).contains(CHAT_ENMASCARADO);
         ILoggingEvent ev = appender.list.stream().filter(e -> e.getLevel() == Level.ERROR).findFirst().orElseThrow();
         assertThat(ev.getThrowableProxy()).isNotNull();
-        assertThat(ev.getThrowableProxy().getMessage()).contains(COLA);
+        assertThat(ev.getThrowableProxy().getMessage()).contains("IllegalStateException").doesNotContain(COLA);
     }
 
     @Test

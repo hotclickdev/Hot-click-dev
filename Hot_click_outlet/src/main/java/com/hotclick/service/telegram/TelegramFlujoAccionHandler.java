@@ -97,7 +97,7 @@ public class TelegramFlujoAccionHandler {
             // Auditor 8 M-C: el mensaje de la excepción puede traer datos del negocio (SQL, nombres, ids):
             // nunca al usuario (texto genérico). Al log del servidor va la excepción completa, con el chat enmascarado.
             log.error("[telegram-flujo] fallo confirmando acción en chat "
-                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), ex);
+                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), com.hotclick.service.telegram.TelegramTexto.paraLog(ex));
             bot.enviarMensaje(v.getChatId(), "No pude aplicar el cambio. Reintentá en unos minutos o tocá *Cancelar*.");
         }
     }

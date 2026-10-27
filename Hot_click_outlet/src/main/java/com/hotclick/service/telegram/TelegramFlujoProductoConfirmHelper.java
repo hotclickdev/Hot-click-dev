@@ -169,7 +169,7 @@ class TelegramFlujoProductoConfirmHelper {
             bot.enviarMensaje(v.getChatId(), esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage())), TelegramTeclado.soloMenu());
         } catch (Exception ex) {
             log.error("[telegram-flujo] fallo creando producto en chat "
-                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), ex);
+                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), com.hotclick.service.telegram.TelegramTexto.paraLog(ex));
             abuso.avisarErrorDeUsuario(v.getChatId(), ex);
             bot.enviarMensaje(v.getChatId(), "No pude crear el producto."
                 + "\nEl borrador sigue guardado — tocá *Publicar* para reintentar o /cancelar.",

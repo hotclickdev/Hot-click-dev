@@ -89,7 +89,7 @@ public class TelegramBotUpdateService {
             }
         } catch (Exception e) {
             log.error("[telegram-bot] fallo respondiendo texto libre en chat "
-                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(chatId), e);
+                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(chatId), com.hotclick.service.telegram.TelegramTexto.paraLog(e));
             bot.enviarMensaje(chatId, "No pude procesar tu mensaje. Intentá de nuevo en unos minutos o escribí /menu.");
             abuso.avisarErrorDeUsuario(chatId, e);
         }

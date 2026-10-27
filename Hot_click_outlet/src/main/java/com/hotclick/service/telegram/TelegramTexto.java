@@ -51,6 +51,35 @@ public final class TelegramTexto {
         return limpio.length() <= MAX_MENSAJE_LOG ? limpio : limpio.substring(0, MAX_MENSAJE_LOG) + "…";
     }
 
+    /**
+     * Excepción saneada para {@code log.error(msg, throwable)}: sin causa y sin el mensaje original.
+     * Los mensajes de Hibernate/PostgreSQL y sus {@code Caused by} traen datos de filas
+     * ({@code Detail: Key (email)=(...)}, {@code Failing row contains (...)}) que no deben llegar
+     * a logback ni a Sentry. Lleva la clase original, la clase de la causa raíz (sin su mensaje) y
+     * el stack trace original para poder diagnosticar.
+     */
+    public static final class ExcepcionSaneada extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        ExcepcionSaneada(String mensaje) {
+            super(mensaje, null, false, true);
+        }
+    }
+
+    /** Throwable limpio para el log del servidor: clase original + clase de la causa raíz + stack trace, sin mensajes. */
+    public static Throwable paraLog(Throwable original) {
+        if (original == null) return null;
+        Throwable raiz = original;
+        for (int i = 0; i < 50 && raiz.getCause() != null && raiz.getCause() != raiz; i++) {
+            raiz = raiz.getCause();
+        }
+        String mensaje = original.getClass().getName()
+            + (raiz != original ? " (causa raíz: " + raiz.getClass().getName() + ")" : "");
+        ExcepcionSaneada limpia = new ExcepcionSaneada(mensaje);
+        limpia.setStackTrace(original.getStackTrace());
+        return limpia;
+    }
+
     /** El chat_id no va completo a logs ni avisos: {@code ***NNNN} con los últimos 4 dígitos. */
     public static String chatEnmascarado(Long chatId) {
         if (chatId == null) return "***";

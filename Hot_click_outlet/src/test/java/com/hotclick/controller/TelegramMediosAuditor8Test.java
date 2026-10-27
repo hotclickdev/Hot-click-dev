@@ -321,12 +321,7 @@ class TelegramMediosAuditor8Test {
         assertThat(String.join("\n", mensajes.getAllValues()))
             .contains("No pude aplicar el cambio")
             .doesNotContain("Joyeria").doesNotContain("FICT-0001").doesNotContain("hot_click_producto_tb");
-        // Logs de los BAJOS de #382: la línea de log no lleva datos del negocio; la excepción completa
-        // va solo al log del servidor (throwable adjunto) y nunca al usuario ni a las alertas.
-        String lineasDeLog = appender.list.stream().map(e -> e.getFormattedMessage()
-            + (e.getThrowableProxy() != null ? " " + e.getThrowableProxy().getClassName() : ""))
-            .collect(Collectors.joining("\n"));
-        assertThat(lineasDeLog).contains("IllegalStateException")
+        assertThat(logs()).contains("IllegalStateException")
             .doesNotContain("Joyeria").doesNotContain("FICT-0001").doesNotContain("hot_click_producto_tb");
     }
 

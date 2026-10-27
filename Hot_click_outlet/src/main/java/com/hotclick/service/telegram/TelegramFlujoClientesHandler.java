@@ -96,7 +96,7 @@ public class TelegramFlujoClientesHandler {
             }
         } catch (Exception e) {
             log.error("[telegram-flujo] fallo cross-sell chat " + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(chatId)
-                + " cliente " + clienteId, e);
+                + " cliente " + clienteId, com.hotclick.service.telegram.TelegramTexto.paraLog(e));
             bot.enviarMensaje(chatId, "No pude generar sugerencias en este momento. Intentá de nuevo en unos minutos.");
         }
     }
