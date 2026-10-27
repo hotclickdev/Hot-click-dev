@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Sonar S2259 (#300): datos nulos o incompletos de ONVO se rechazan (fail-closed), nunca NPE. */
 class OnvoBillingVerificadorNullTest {
 
-    private static final OnvoBillingVerificador.PrecioPlan PRECIOS = p -> null;
+    private static final OnvoBillingVerificador.PrecioPlan PRECIOS = (plan, priceId) -> null;
 
     @Test
     @DisplayName("alta por intent con mapas nulos: rechazo, sin NPE")
@@ -30,7 +30,7 @@ class OnvoBillingVerificadorNullTest {
     @DisplayName("alta por intent sin monto ni precio del plan: rechazo, sin NPE")
     void altaSinMontoNiPrecio() {
         Map<String, Object> intent = Map.of("id", "pi_1", "mode", "test", "status", "succeeded",
-            "customerId", "cus_1", "currency", "CRC");
+            "customerId", "cus_1", "currency", "USD");
         Map<String, Object> sub = Map.of("id", "sub_1", "mode", "test", "status", "active",
             "customerId", "cus_1", "currentPeriodEnd", "2026-11-26T00:00:00Z");
         Map<String, Object> factura = Map.of("mode", "test", "paymentIntentId", "pi_1",

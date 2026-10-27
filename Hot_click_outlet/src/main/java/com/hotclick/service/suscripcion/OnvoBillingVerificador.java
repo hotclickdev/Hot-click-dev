@@ -12,11 +12,10 @@ import java.util.Map;
 /**
  * S-02: decide si un evento de billing ONVO se aplica, con lo que ONVO devuelve por GET (no con el cuerpo).
  * Mismo criterio fail-closed que OnvoCobroVerificador (C9): sin «mode» o con modo distinto al de la llave,
- * se rechaza. Montos de ONVO en unidad menor (céntimos); el plan guarda colones enteros.
+ * se rechaza. Montos de ONVO en unidad menor (centavos). Moneda y monto esperados salen del price configurado del
+ * plan ({@link PrecioPlan}); el verificador no fija ninguna moneda ni monto.
  */
 public final class OnvoBillingVerificador {
-
-    static final long CENTIMOS_POR_COLON = 100L;
 
     private static final String M_CUSTOMER = "customer";
     private static final String M_NO_PAGADO = "no_pagado";
@@ -35,9 +34,12 @@ public final class OnvoBillingVerificador {
         static Resultado rechazo(String m) { return new Resultado(m, null, null); }
     }
 
-    /** Resuelve el precio mensual (colones) de un plan por nombre; null si no existe. */
+    /** Moneda (ISO, como la configura el plan) y monto en unidad menor que ONVO tiene que cobrar por el plan. */
+    public record PrecioEsperado(String moneda, long unidadMenor) {}
+
+    /** Resuelve el precio esperado de un plan y su price de ONVO; null si no se puede confirmar. */
     @FunctionalInterface
-    public interface PrecioPlan { Integer precio(String planNombre); }
+    public interface PrecioPlan { PrecioEsperado precio(String planNombre, String priceId); }
 
     /** subscription.renewal.succeeded: renovación (invoice) pagada + suscripción activa, mismo modo, monto del plan. */
     public static Resultado renovacion(Map<?, ?> invoice, Map<?, ?> sub, String invoiceId, String subId,
@@ -109,15 +111,11 @@ public final class OnvoBillingVerificador {
                 || (clienteIntent != null && !clienteIntent.equals(clienteSub))) {
             return Resultado.rechazo(M_CUSTOMER);
         }
-        // B1: el alta por intent cobra el plan completo; lo prorrateado entra por la factura (renewal).
+        // El alta por intent cobra el plan completo (moneda y monto del price configurado); lo prorrateado entra por la factura.
+        String monedaFactura = texto(factura, "currency");
         Resultado r = planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
-        if (r.aceptado()) {
-            BigDecimal monto = numero(intent.get("amount"));
-            Integer precioPlan = precios.precio(r.planNombre());
-            if (monto == null || precioPlan == null
-                    || monto.compareTo(BigDecimal.valueOf(precioPlan.longValue() * CENTIMOS_POR_COLON)) != 0) {
-                return Resultado.rechazo(M_PAGO_PARCIAL);
-            }
+        if (r.aceptado() && monedaFactura != null && !monedaFactura.equalsIgnoreCase(texto(intent, "currency"))) {
+            return Resultado.rechazo("moneda");
         }
         return r;
     }
@@ -148,18 +146,21 @@ public final class OnvoBillingVerificador {
                                         java.util.function.Function<String, String> planPorPrice,
                                         PrecioPlan precios, LocalDate fin) {
         if (cobro == null || sub == null) return Resultado.rechazo("sin_datos");
-        if (!"CRC".equalsIgnoreCase(texto(cobro, "currency"))) return Resultado.rechazo("moneda");
-        String plan = planPorPrice.apply(OnvoBillingClient.primerPriceId(sub));
+        String priceId = OnvoBillingClient.primerPriceId(sub);
+        String plan = planPorPrice.apply(priceId);
         if (plan == null) return Resultado.rechazo("price_desconocido");
-        Integer precio = precios.precio(plan);
-        if (precio == null || precio <= 0) return Resultado.rechazo("plan_sin_precio");
+        PrecioEsperado esperado = precios.precio(plan, priceId);
+        if (esperado == null || esperado.moneda() == null || esperado.moneda().isBlank() || esperado.unidadMenor() <= 0) {
+            return Resultado.rechazo("plan_sin_precio");
+        }
+        // La moneda del cobro tiene que ser la del price configurado; otra moneda no se compara por monto.
+        if (!esperado.moneda().equalsIgnoreCase(texto(cobro, "currency"))) return Resultado.rechazo("moneda");
         BigDecimal cobrado = numero(cobro.get(campoMonto));
-        // A5-01 (MEDIO): se exige el monto COMPLETO del plan configurado (precio × 100 céntimos). Un cobro menor
-        // (prorrateo, descuento, parcial) no activa el plan completo; mayor tampoco: no coincide con el catálogo.
-        BigDecimal esperado = BigDecimal.valueOf(precio.longValue() * CENTIMOS_POR_COLON);
+        // Se exige el monto COMPLETO del price configurado. Un cobro menor (prorrateo, descuento, parcial) no activa el
+        // plan completo; mayor tampoco: no coincide con el catálogo.
         if (cobrado == null || cobrado.signum() <= 0) return Resultado.rechazo("monto");
-        int cmp = cobrado.compareTo(esperado);
-        if (cmp < 0) return Resultado.rechazo("pago_parcial");
+        int cmp = cobrado.compareTo(BigDecimal.valueOf(esperado.unidadMenor()));
+        if (cmp < 0) return Resultado.rechazo(M_PAGO_PARCIAL);
         if (cmp > 0) return Resultado.rechazo("monto");
         if (fin == null) return Resultado.rechazo("sin_periodo");
         return new Resultado(null, plan, fin);

@@ -59,6 +59,9 @@ public class AuthTotpVerifyHandler {
 
             Usuario usuario = opt.get();
 
+            var limitado = authSupport.limite2faLoginUsuario(usuario.getId());
+            if (limitado != null) return limitado;
+
             if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
                 return ResponseEntity.status(403).body(ResponseDTO.error(
                     "Cuenta temporalmente bloqueada. Intentá más tarde."));

@@ -82,7 +82,7 @@ public class SuscripcionRenewalService {
             return 0;
         }
         int max = Math.max(1, maxBajasPorCorrida);
-        reconsulta.iniciarCorrida();
+        reconsulta.iniciarCorrida(OnvoRenovacionReconsulta.Corrida.EXPIRAR_PAST_DUE);
         // 26-oct-2026: ya no se difiere a corridas siguientes; se procesan todos los vencidos en lotes
         // de tamaño max para que el día 9 se cumpla para todas las tiendas. Tope duro anti-bucle.
         // A5-01: las filas que ONVO reactivó o que no se pudieron verificar quedan PAST_DUE y se excluyen del resto de la corrida.
@@ -127,7 +127,7 @@ public class SuscripcionRenewalService {
      */
     private boolean confirmadaSinPago(com.hotclick.model.Suscripcion s, LocalDate hoy) {
         if (s.getOnvoSubscriptionId() == null || s.getOnvoSubscriptionId().isBlank()) return true;
-        return reconsulta.reconsultar(s, hoy) == OnvoRenovacionReconsulta.Estado.NO_PAGADA;
+        return reconsulta.reconsultar(s, hoy, OnvoRenovacionReconsulta.Corrida.EXPIRAR_PAST_DUE) == OnvoRenovacionReconsulta.Estado.NO_PAGADA;
     }
 
     private List<com.hotclick.model.Suscripcion> candidatos(LocalDate limite, int max, java.util.Set<Long> omitidas) {

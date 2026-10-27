@@ -46,7 +46,7 @@ class BillingRenovacionAuditor5Test {
         @org.junit.jupiter.api.BeforeEach
         void onvoConfirmaSinPago() {
             // Por defecto ONVO confirma que no hay pago vigente: se da de baja como antes de A5-01.
-            lenient().when(reconsulta.reconsultar(any(), any())).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+            lenient().when(reconsulta.reconsultar(any(), any(), any())).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
         }
 
         @Test @DisplayName("S-01: sin cobro ONVO configurado, un PAST_DUE vencido NO se degrada")
@@ -135,7 +135,7 @@ class BillingRenovacionAuditor5Test {
             Suscripcion sinPago = pastDue(2);
             when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pagada, sinPago), List.of(), List.of());
             when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of());
-            when(reconsulta.reconsultar(eq(pagada), any())).thenReturn(OnvoRenovacionReconsulta.Estado.PAGADA);
+            when(reconsulta.reconsultar(eq(pagada), any(), any())).thenReturn(OnvoRenovacionReconsulta.Estado.PAGADA);
             when(suscripcionRepo.marcarVencidoSiPastDue(20L)).thenReturn(1);
             assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
             verify(suscripcionRepo, never()).marcarVencidoSiPastDue(10L);
@@ -155,12 +155,12 @@ class BillingRenovacionAuditor5Test {
             when(suscripcionRepo.findPastDueOnvoVencidos(any(), pag.capture()))
                 .thenReturn(List.of(incierta), List.of(incierta, sinPago), List.of(incierta));
             when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of());
-            when(reconsulta.reconsultar(eq(incierta), any())).thenReturn(OnvoRenovacionReconsulta.Estado.INCIERTA);
+            when(reconsulta.reconsultar(eq(incierta), any(), any())).thenReturn(OnvoRenovacionReconsulta.Estado.INCIERTA);
             when(suscripcionRepo.marcarVencidoSiPastDue(20L)).thenReturn(1);
             assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
             verify(suscripcionRepo, never()).marcarVencidoSiPastDue(10L);
             verify(planSupport, never()).degradarPlanBatchConCache(argThat(l -> l.contains(1L)), any());
-            verify(reconsulta, times(1)).reconsultar(eq(incierta), any()); // una sola consulta por corrida
+            verify(reconsulta, times(1)).reconsultar(eq(incierta), any(), any()); // una sola consulta por corrida
             assertThat(pag.getAllValues().get(1).getPageSize()).isEqualTo(3); // max + omitidas
         }
 
@@ -175,7 +175,7 @@ class BillingRenovacionAuditor5Test {
             when(suscripcionRepo.marcarVencidoSiPastDue(50L)).thenReturn(1);
             assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
             // B1: solo reinicia el conteo de la corrida; no hay ninguna consulta a ONVO para el legado.
-            verify(reconsulta).iniciarCorrida();
+            verify(reconsulta).iniciarCorrida(OnvoRenovacionReconsulta.Corrida.EXPIRAR_PAST_DUE);
             verifyNoMoreInteractions(reconsulta);
         }
 

@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,12 +58,19 @@ class OnvoRenovacionReconsultaTransaccionTest {
         PlanRepository planRepo = mock(PlanRepository.class);
         Plan pyme = new Plan();
         pyme.setNombre("PYME");
-        pyme.setPrecioMensual(12000);
         when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(pyme));
         when(onvo.modoEsperado()).thenReturn("live");
         when(onvo.planParaPriceId("price_pyme")).thenReturn("PYME");
         reconsulta = new OnvoRenovacionReconsulta(onvo, planRepo, cambio, tm, mock(LockTimeoutPorFila.class),
-            new OnvoReconsultaConfig(8, 7, 5, 0));
+            new OnvoReconsultaConfig(8, 7, 5, 0),
+            new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), onvo));
+        Map<String, Object> price = new HashMap<>();
+        price.put("id", "price_pyme");
+        price.put("mode", "live");
+        price.put("isActive", true);
+        price.put("currency", "USD");
+        price.put("unitAmount", 2_400L);
+        doReturn(price).when(onvo).obtenerPrecio("price_pyme");
     }
 
     @AfterEach
@@ -96,8 +104,8 @@ class OnvoRenovacionReconsultaTransaccionTest {
         factura.put("customerId", "cus_1");
         factura.put("status", "paid");
         factura.put("mode", "live");
-        factura.put("currency", "CRC");
-        factura.put("total", 1_200_000L);
+        factura.put("currency", "USD");
+        factura.put("total", 2_400L);
         factura.put("periodEnd", "2026-12-01T06:00:00.000Z");
         when(onvo.obtenerSuscripcion(subId)).thenReturn((Map) sub);
         when(onvo.obtenerRenovacion(facturaId)).thenReturn((Map) factura);
@@ -128,9 +136,9 @@ class OnvoRenovacionReconsultaTransaccionTest {
 
         new TransactionTemplate(tm).executeWithoutResult(st -> {
             jdbc.update("INSERT INTO corrida(clave, valor) VALUES ('externa', 'job 03:00')");
-            assertThat(reconsulta.reconsultar(fila("clsub0001"), HOY)).isEqualTo(OnvoRenovacionReconsulta.Estado.PAGADA);
-            assertThat(reconsulta.reconsultar(fila("clsub0002"), HOY)).isEqualTo(OnvoRenovacionReconsulta.Estado.INCIERTA);
-            assertThat(reconsulta.reconsultar(fila("clsub0003"), HOY)).isEqualTo(OnvoRenovacionReconsulta.Estado.PAGADA);
+            assertThat(reconsulta.reconsultar(fila("clsub0001"), HOY, OnvoRenovacionReconsulta.Corrida.EXPIRAR_PAST_DUE)).isEqualTo(OnvoRenovacionReconsulta.Estado.PAGADA);
+            assertThat(reconsulta.reconsultar(fila("clsub0002"), HOY, OnvoRenovacionReconsulta.Corrida.EXPIRAR_PAST_DUE)).isEqualTo(OnvoRenovacionReconsulta.Estado.INCIERTA);
+            assertThat(reconsulta.reconsultar(fila("clsub0003"), HOY, OnvoRenovacionReconsulta.Corrida.EXPIRAR_PAST_DUE)).isEqualTo(OnvoRenovacionReconsulta.Estado.PAGADA);
         });
 
         // La externa confirmó (no hubo UnexpectedRollbackException), la fila 2 quedó revertida y las otras dos confirmadas.
@@ -145,7 +153,7 @@ class OnvoRenovacionReconsultaTransaccionTest {
 
         assertThatThrownBy(() -> new TransactionTemplate(tm).executeWithoutResult(st -> {
             jdbc.update("INSERT INTO corrida(clave, valor) VALUES ('externa', 'job 03:00')");
-            reconsulta.reconsultar(fila("clsub0001"), HOY);
+            reconsulta.reconsultar(fila("clsub0001"), HOY, OnvoRenovacionReconsulta.Corrida.EXPIRAR_PAST_DUE);
             throw new IllegalStateException("falla posterior de la corrida");
         })).isInstanceOf(IllegalStateException.class);
 

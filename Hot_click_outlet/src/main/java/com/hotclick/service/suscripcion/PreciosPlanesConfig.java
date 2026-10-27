@@ -1,6 +1,7 @@
 package com.hotclick.service.suscripcion;
 
 import com.hotclick.exception.PlanSinPrecioException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -18,14 +19,29 @@ public class PreciosPlanesConfig {
     private final BigDecimal emprendedor;
     private final BigDecimal pyme;
     private final BigDecimal negocioPlus;
+    private final String moneda;
 
+    /** Moneda en la que se cobran los planes: sale de {@code hotclick.planes.moneda}; vacía = sin moneda (fail-closed). */
+    @Autowired
     public PreciosPlanesConfig(
             @Value("${hotclick.planes.emprendedor.precio-mensual-usd:}") String emprendedor,
             @Value("${hotclick.planes.pyme.precio-mensual-usd:}") String pyme,
-            @Value("${hotclick.planes.negocio-plus.precio-mensual-usd:}") String negocioPlus) {
+            @Value("${hotclick.planes.negocio-plus.precio-mensual-usd:}") String negocioPlus,
+            @Value("${hotclick.planes.moneda:}") String moneda) {
         this.emprendedor = parse(emprendedor);
         this.pyme = parse(pyme);
         this.negocioPlus = parse(negocioPlus);
+        this.moneda = moneda == null || moneda.isBlank() ? null : moneda.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** Sin moneda configurada (solo precios): para quien no valida cobros de billing. */
+    public PreciosPlanesConfig(String emprendedor, String pyme, String negocioPlus) {
+        this(emprendedor, pyme, negocioPlus, null);
+    }
+
+    /** Moneda de cobro de los planes (minúsculas); vacío si no está configurada. */
+    public Optional<String> moneda() {
+        return Optional.ofNullable(moneda);
     }
 
     static BigDecimal parse(String v) {
