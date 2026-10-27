@@ -33,6 +33,7 @@ class JwtRequestFilterEstadoTest {
     private JwtUtil jwtUtil;
     private UserDetailsService userDetailsService;
     private JwtRequestFilter filter;
+    private SecurityAuditService auditService;
     private final FilterChain chain = mock(FilterChain.class);
 
     @BeforeEach
@@ -48,7 +49,8 @@ class JwtRequestFilterEstadoTest {
         filter = new JwtRequestFilter();
         ReflectionTestUtils.setField(filter, "jwtUtil", jwtUtil);
         ReflectionTestUtils.setField(filter, "userDetailsService", userDetailsService);
-        ReflectionTestUtils.setField(filter, "auditService", mock(SecurityAuditService.class));
+        auditService = mock(SecurityAuditService.class);
+        ReflectionTestUtils.setField(filter, "auditService", auditService);
         ReflectionTestUtils.setField(filter, "userDetailsCache", cache);
         ReflectionTestUtils.setField(filter, "tokenRevocadoService", revocados);
     }
@@ -80,6 +82,14 @@ class JwtRequestFilterEstadoTest {
         when(userDetailsService.loadUserByUsername(anyString())).thenThrow(new DisabledException("Cuenta no activa"));
         pasarPorElFiltro();
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    @DisplayName("el loader rechaza la cuenta (caso real) → queda en la auditoría como UsuarioNoActivo")
+    void loaderRechazaAuditaUsuarioNoActivo() throws Exception {
+        when(userDetailsService.loadUserByUsername(anyString())).thenThrow(new DisabledException("Cuenta no activa"));
+        pasarPorElFiltro();
+        verify(auditService).logTokenRejected(any(), any(), anyString(), org.mockito.ArgumentMatchers.eq("UsuarioNoActivo"));
     }
 
     @Test
