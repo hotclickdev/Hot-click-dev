@@ -39,6 +39,7 @@ class EquipoServiceNombreCompletoTest {
     @Mock MiembroEmpresaRepository miembroEmpresaRepository;
     @Mock NotificacionEmailService notificacionEmailService;
     @Mock TenantService tenantService;
+    @Mock com.hotclick.repository.EmpresaRepository empresaRepository;
     @InjectMocks EquipoService equipoService;
 
     @BeforeEach
@@ -54,7 +55,9 @@ class EquipoServiceNombreCompletoTest {
     private Usuario invitar(String nombreCompleto) {
         Empresa empresa = new Empresa();
         empresa.setNombreEmpresa("Tienda QA3");
-        equipoService.invitar(empresa, null, nombreCompleto, "n@test.cr", "Temporal1!", "88887777", "EDITOR");
+        empresa.setId(9L);
+        when(empresaRepository.findByIdForUpdate(9L)).thenReturn(Optional.of(empresa));
+        equipoService.invitar(9L, nombreCompleto, "n@test.cr", "Temporal1!", "88887777", "EDITOR");
         ArgumentCaptor<Usuario> c = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(c.capture());
         return c.getValue();
