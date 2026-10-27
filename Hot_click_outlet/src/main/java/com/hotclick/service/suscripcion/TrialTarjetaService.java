@@ -45,6 +45,14 @@ public class TrialTarjetaService {
         public VerificacionNoDisponibleException(Throwable causa) { super(MENSAJE, causa); }
     }
 
+    /** Falta la llave pública de ONVO: sin ella el SDK no puede mostrar el formulario. Se corta ANTES de crear nada en ONVO. */
+    public static class PasarelaNoConfiguradaException extends RuntimeException {
+        public static final String CODIGO = "TRIAL_TARJETA_NO_CONFIGURADA";
+        public static final String MENSAJE = "Todavía no podemos guardar tu tarjeta. Probá de nuevo más tarde.";
+
+        public PasarelaNoConfiguradaException() { super(MENSAJE); }
+    }
+
     public record Estado(boolean elegible, boolean tarjetaGuardada, long trialDias) {
         static final Estado NO_ELEGIBLE = new Estado(false, false, 0);
     }
@@ -93,11 +101,19 @@ public class TrialTarjetaService {
         if (tarjetaGuardada(empresaId)) {
             return Map.of("status", "tarjeta_guardada", "trialDias", (long) TrialEmprendedorService.diasRestantes(e, hoy));
         }
+        // L3: sin llave pública no hay formulario; antes se devolvía "" y recién el SDK fallaba. Se avisa 503 y no se
+        // crea ninguna suscripción en ONVO (en dev/test sin llave secreta el camino simulado no usa SDK).
+        if (!onvoBilling.isMockMode() && !llavePublicaConfigurada()) {
+            log.error("[ALERTA-PAGO] [trial-tarjeta] falta la llave pública de ONVO; no se prepara la tarjeta empresa={}", empresaId);
+            throw new PasarelaNoConfiguradaException();
+        }
         SuscripcionOnvoChangeService.SuscripcionTrial sub;
         try {
             sub = changeService.asegurarSuscripcionTrial(empresaId);
         } catch (IllegalStateException | IllegalArgumentException | java.util.NoSuchElementException ex) {
-            log.warn("[trial-tarjeta] no se pudo preparar la suscripción de empresa={}: {}", empresaId, ex.getMessage());
+            // L1: solo clase y status; el mensaje puede traer cuerpo de ONVO o datos del negocio.
+            log.warn("[trial-tarjeta] no se pudo preparar la suscripción de empresa={}: {} status={}",
+                empresaId, ex.getClass().getSimpleName(), OnvoBillingClient.statusDe(ex));
             throw new NoDisponibleException();
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -117,6 +133,11 @@ public class TrialTarjetaService {
         return out;
     }
 
+    private boolean llavePublicaConfigurada() {
+        String pk = onvoService.getPublishableKey();
+        return pk != null && !pk.isBlank();
+    }
+
     /** true si la suscripción ONVO del negocio ya tiene método de pago. Sin suscripción: false. Error de ONVO: excepción. */
     boolean tarjetaGuardada(Long empresaId) {
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
@@ -126,7 +147,8 @@ public class TrialTarjetaService {
             Map<?, ?> onvo = onvoBilling.obtenerSuscripcion(sub.getOnvoSubscriptionId());
             return tienePaymentMethod(onvo);
         } catch (RuntimeException ex) {
-            log.warn("[trial-tarjeta] no se pudo leer la suscripción ONVO de empresa={}: {}", empresaId, ex.getMessage());
+            log.warn("[trial-tarjeta] no se pudo leer la suscripción ONVO de empresa={}: {} status={}",
+                empresaId, ex.getClass().getSimpleName(), OnvoBillingClient.statusDe(ex));
             throw new VerificacionNoDisponibleException(ex);
         }
     }

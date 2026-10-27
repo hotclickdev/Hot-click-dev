@@ -3,6 +3,7 @@ package com.hotclick.controller;
 import com.hotclick.exception.CobroPlanNoDisponibleException;
 import com.hotclick.security.PropietarioGuard;
 import com.hotclick.security.TenantContext;
+import com.hotclick.service.onvo.OnvoBillingClient;
 import com.hotclick.service.suscripcion.TrialTarjetaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -70,8 +71,18 @@ public class TrialTarjetaController {
                 "codigo", CobroPlanNoDisponibleException.CODIGO));
         } catch (TrialTarjetaService.VerificacionNoDisponibleException ex) {
             return verificacion();
+        } catch (com.hotclick.exception.AltaOnvoEnCursoException ex) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE,
+                "codigo", com.hotclick.exception.AltaOnvoEnCursoException.CODIGO));
+        } catch (TrialTarjetaService.PasarelaNoConfiguradaException ex) {
+            return ResponseEntity.status(503).body(Map.of(
+                "error", TrialTarjetaService.PasarelaNoConfiguradaException.MENSAJE,
+                "codigo", TrialTarjetaService.PasarelaNoConfiguradaException.CODIGO));
         } catch (RuntimeException ex) {
-            log.error("[trial-tarjeta] error preparando la tarjeta empresa={}: {}", empresaId, ex.getMessage());
+            // L1: solo clase y status; getMessage() puede traer el cuerpo de ONVO.
+            log.error("[trial-tarjeta] error preparando la tarjeta empresa={}: {} status={}",
+                empresaId, ex.getClass().getSimpleName(), OnvoBillingClient.statusDe(ex));
             return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
         }
     }
