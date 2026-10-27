@@ -59,7 +59,7 @@ public class AuthTotpVerifyHandler {
 
             Usuario usuario = opt.get();
 
-            var limitado = authSupport.limite2faLoginUsuario(usuario.getId());
+            var limitado = authSupport.limite2faLoginUsuario(usuario.getId(), httpRequest);
             if (limitado != null) return limitado;
 
             if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {

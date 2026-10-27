@@ -113,7 +113,7 @@ class TwoFactorSeguimientoTest extends BaseIntegrationTest {
     void setup_conTotpActivo_noPisaElSecretoVigente_yElLoginSigueConElViejo() throws Exception {
         activar2faTotp();
         String cifradoAntes = recargar().getTwoFactorSecret();
-        String resp = llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk())
+        String resp = llamar("setup", Map.of("contrasena", PASS, "code", codigo(semilla))).andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         String nuevo = secretoDelSetup(resp);
         Usuario u = recargar();
@@ -129,7 +129,7 @@ class TwoFactorSeguimientoTest extends BaseIntegrationTest {
     void activate_conCodigoDelSecretoViejo_400_yElVigenteNoCambia() throws Exception {
         activar2faTotp();
         String cifradoAntes = recargar().getTwoFactorSecret();
-        llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk());
+        llamar("setup", Map.of("contrasena", PASS, "code", codigo(semilla))).andExpect(status().isOk());
         llamar("activate", Map.of("code", codigo(semilla), "contrasena", PASS)).andExpect(status().isBadRequest());
         Usuario u = recargar();
         assertThat(u.getTwoFactorSecret()).isEqualTo(cifradoAntes);
@@ -140,7 +140,7 @@ class TwoFactorSeguimientoTest extends BaseIntegrationTest {
     void activate_conCodigoDelPendiente_200_yRecienAhoraRotaElSecreto() throws Exception {
         activar2faTotp();
         String cifradoAntes = recargar().getTwoFactorSecret();
-        String resp = llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk())
+        String resp = llamar("setup", Map.of("contrasena", PASS, "code", codigo(semilla))).andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         String nuevo = secretoDelSetup(resp);
         llamar("activate", Map.of("code", codigo(nuevo), "contrasena", PASS)).andExpect(status().isOk());
@@ -149,6 +149,50 @@ class TwoFactorSeguimientoTest extends BaseIntegrationTest {
         assertThat(u.getTwoFactorPendingSecret()).isNull();
         assertThat(u.hasTotpEnabled()).isTrue();
         assertThat(twoFactorService.verifyCode(u.getTwoFactorSecret(), codigo(nuevo))).isTrue();
+    }
+
+    // ── (4b) B3: rotar un secreto TOTP vigente exige también el código actual ──────
+
+    @Test
+    void setup_conTotpActivo_soloConContrasena_401_yNoGuardaPendiente() throws Exception {
+        activar2faTotp();
+        String cifradoAntes = recargar().getTwoFactorSecret();
+        llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isUnauthorized());
+        llamar("setup", Map.of("contrasena", PASS, "code", "")).andExpect(status().isUnauthorized());
+        Usuario u = recargar();
+        assertThat(u.getTwoFactorPendingSecret()).isNull();
+        assertThat(u.getTwoFactorSecret()).isEqualTo(cifradoAntes);
+    }
+
+    @Test
+    void setup_conTotpActivo_contrasenaMala_codigoMalo_o_ambos_responden_identico() throws Exception {
+        activar2faTotp();
+        var sinCodigo = llamar("setup", Map.of("contrasena", PASS))
+            .andExpect(status().isUnauthorized()).andReturn().getResponse().getContentAsString();
+        var codigoMalo = llamar("setup", Map.of("contrasena", PASS, "code", "000000"))
+            .andExpect(status().isUnauthorized()).andReturn().getResponse().getContentAsString();
+        var contrasenaMala = llamar("setup", Map.of("contrasena", "Otra1234!", "code", codigo(semilla)))
+            .andExpect(status().isUnauthorized()).andReturn().getResponse().getContentAsString();
+        var ambosMalos = llamar("setup", Map.of("contrasena", "Otra1234!", "code", "000000"))
+            .andExpect(status().isUnauthorized()).andReturn().getResponse().getContentAsString();
+        assertThat(sinHora(codigoMalo)).isEqualTo(sinHora(sinCodigo));
+        assertThat(sinHora(contrasenaMala)).isEqualTo(sinHora(sinCodigo));
+        assertThat(sinHora(ambosMalos)).isEqualTo(sinHora(sinCodigo));
+        assertThat(sinHora(sinCodigo)).contains("Contraseña o código incorrecto");
+        assertThat(recargar().getTwoFactorPendingSecret()).isNull();
+    }
+
+    @Test
+    void setup_conTotpActivo_contrasenaYCodigoCorrectos_200_yGuardaElPendiente() throws Exception {
+        activar2faTotp();
+        llamar("setup", Map.of("contrasena", PASS, "code", codigo(semilla))).andExpect(status().isOk());
+        assertThat(recargar().getTwoFactorPendingSecret()).isNotNull();
+    }
+
+    @Test
+    void setup_sinTotpActivo_sigueBastandoLaContrasena() throws Exception {
+        llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk());
+        assertThat(recargar().getTwoFactorPendingSecret()).isNotNull();
     }
 
     @Test
@@ -189,19 +233,56 @@ class TwoFactorSeguimientoTest extends BaseIntegrationTest {
         assertThat(rateLimiter.tryAcquireEstricto("2fa:usuario:" + (testUser.getId() + 1000), 15, 300)).isTrue();
     }
 
-    @Test
-    void conElTopeDeLoginAgotado_verifyYEmailSend_responden429() throws Exception {
-        activar2faTotp();
+    private static final String IP_ATACANTE = "203.0.113.5";
+    private static final String IP_DUENO     = "198.51.100.7";
+
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor desde(String ip) {
+        return req -> { req.setRemoteAddr(ip); return req; };
+    }
+
+    private void agotarTopeLogin(String ip) {
         for (int i = 0; i < 10; i++) {
-            assertThat(rateLimiter.tryAcquireEstricto("2fa:login:usuario:" + testUser.getId(), 10, 300)).isTrue();
+            assertThat(rateLimiter.tryAcquireEstricto("2fa:login:usuario:" + testUser.getId() + ":ip:" + ip, 10, 300)).isTrue();
         }
+    }
+
+    private ResultActions verify(String ip, String temp, String code) throws Exception {
+        return mockMvc.perform(post("/api/auth/2fa/verify").with(desde(ip)).contentType(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsString(Map.of("tempToken", temp, "code", code))));
+    }
+
+    private ResultActions emailSend(String ip, String temp) throws Exception {
+        return mockMvc.perform(post("/api/auth/2fa/email/send").with(desde(ip)).contentType(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsString(Map.of("tempToken", temp))));
+    }
+
+    @Test
+    void conElTopeDeLoginAgotado_verifyYEmailSend_responden429_paraEsaIp() throws Exception {
+        activar2faTotp();
+        agotarTopeLogin(IP_ATACANTE);
         String temp = jwtUtil.generateTempToken(testUser.getCorreo(), testUser.getId());
-        mockMvc.perform(post("/api/auth/2fa/verify").contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(Map.of("tempToken", temp, "code", codigo(semilla)))))
-            .andExpect(status().isTooManyRequests());
-        mockMvc.perform(post("/api/auth/2fa/email/send").contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(Map.of("tempToken", temp))))
-            .andExpect(status().isTooManyRequests());
+        verify(IP_ATACANTE, temp, codigo(semilla)).andExpect(status().isTooManyRequests());
+        emailSend(IP_ATACANTE, temp).andExpect(status().isTooManyRequests());
+    }
+
+    /** B1: quien tiene la contraseña (y por eso un tempToken) no le gasta el cupo de login al dueño desde otra IP. */
+    @Test
+    void elTopeDeLoginEsPorUsuarioMasIp_unAtacanteConLaContrasenaNoBloqueaAlDueno() throws Exception {
+        activar2faTotp();
+        agotarTopeLogin(IP_ATACANTE);
+        String temp = jwtUtil.generateTempToken(testUser.getCorreo(), testUser.getId());
+        verify(IP_ATACANTE, temp, "000000").andExpect(status().isTooManyRequests());
+        // El dueño, desde su IP, sigue pudiendo entrar con su código.
+        verify(IP_DUENO, temp, codigo(semilla)).andExpect(status().isOk());
+    }
+
+    @Test
+    void elTopeDeLoginEsPorUsuarioMasIp_elDuenoTampocoPierdeElEmailSend() throws Exception {
+        activar2faTotp();
+        agotarTopeLogin(IP_ATACANTE);
+        String temp = jwtUtil.generateTempToken(testUser.getCorreo(), testUser.getId());
+        emailSend(IP_DUENO, temp).andExpect(result ->
+            assertThat(result.getResponse().getStatus()).isNotEqualTo(429));
     }
 
     @Test

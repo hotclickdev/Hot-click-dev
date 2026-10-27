@@ -73,9 +73,10 @@ class TwoFactorHardeningTest extends BaseIntegrationTest {
     }
 
     @Test
-    void setup_conDosFaActivo_conContrasenaVigente_200_peroNoPisaElSecretoVigente() throws Exception {
+    void setup_conDosFaActivo_conContrasenaVigenteYCodigo_200_peroNoPisaElSecretoVigente() throws Exception {
         activar2faTotp();
-        llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isOk());
+        llamar("setup", Map.of("contrasena", PASS)).andExpect(status().isUnauthorized());   // B3: falta el código vigente
+        llamar("setup", Map.of("contrasena", PASS, "code", codigoValido())).andExpect(status().isOk());
         Usuario u = recargar();
         assertThat(u.getTwoFactorSecret()).isEqualTo(semilla);   // el vigente sigue igual hasta activar
         assertThat(u.getTwoFactorPendingSecret()).isNotNull();

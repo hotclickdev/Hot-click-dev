@@ -45,9 +45,12 @@ export const authService = {
   changePassword: (contrasenaActual: string, nuevaContrasena: string, refreshToken: string) =>
     api.post('/auth/change-password', { contrasenaActual, nuevaContrasena, refreshToken }),
 
-  /** El backend exige la contraseña actual aunque el 2FA esté apagado. */
-  setup2FA: (contrasena: string) =>
-    api.post('/auth/2fa/setup', { contrasena }),
+  /**
+   * El backend exige la contraseña actual aunque el 2FA esté apagado. Si la app (TOTP) ya está activa y se
+   * rota el secreto, exige además el código vigente (`code`); sin TOTP activo no se manda.
+   */
+  setup2FA: (contrasena: string, code?: string) =>
+    api.post('/auth/2fa/setup', code ? { contrasena, code } : { contrasena }),
 
   activate2FA: (code: string, contrasena: string) =>
     api.post('/auth/2fa/activate', { code, contrasena }),

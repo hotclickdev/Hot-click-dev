@@ -81,6 +81,7 @@ class CuentaNoActivaNoRecibeTokensTest {
         ReflectionTestUtils.setField(authSupport, "refreshTokenService", refreshTokenService);
         ReflectionTestUtils.setField(authSupport, "permisoRepository", permisoRepository);
         ReflectionTestUtils.setField(authSupport, "rateLimiter", rateLimiter);
+        ReflectionTestUtils.setField(authSupport, "clientIpResolver", mock(com.hotclick.security.ClientIpResolver.class));
     }
 
     private static Usuario usuario(Integer estado) {

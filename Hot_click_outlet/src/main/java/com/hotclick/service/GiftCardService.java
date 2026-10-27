@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +34,13 @@ public class GiftCardService {
     /** Largo de la columna {@code codigo} (VARCHAR 30). */
     public static final int CODIGO_MAX = 30;
 
+    /**
+     * Alfabeto de un código manual: letras ASCII (sin tildes ni ß/ı, que al pasar a mayúsculas cambian de forma),
+     * números y guion. Se valida el texto tal como llega y después se pasa a mayúsculas con {@link Locale#ROOT},
+     * así el resultado cumple {@code ^[A-Z0-9-]{8,30}$}. Sin esto entraban NBSP, caracteres de ancho cero o HTML.
+     */
+    private static final Pattern CODIGO_MANUAL = Pattern.compile("^[A-Za-z0-9-]{" + CODIGO_MIN + "," + CODIGO_MAX + "}$");
+
     /** Tope del saldo de una gift card en colones; configurable con {@code hotclick.giftcard.monto-maximo}. */
     @Value("${hotclick.giftcard.monto-maximo:1000000}")
     private int montoMaximo = 1_000_000;
@@ -46,10 +55,14 @@ public class GiftCardService {
     public GiftCard crear(Long empresaId, Integer monto, LocalDate fechaVencimiento, String codigoManual) {
         validarMonto(monto);
         boolean manual = codigoManual != null && !codigoManual.isBlank();
-        String codigo = manual ? codigoManual.trim().toUpperCase() : null;
-        if (manual && (codigo.length() < CODIGO_MIN || codigo.length() > CODIGO_MAX)) {
-            throw new IllegalArgumentException(
-                "El código debe tener entre " + CODIGO_MIN + " y " + CODIGO_MAX + " caracteres.");
+        String codigo = null;
+        if (manual) {
+            String crudo = codigoManual.trim();
+            if (!CODIGO_MANUAL.matcher(crudo).matches()) {
+                throw new IllegalArgumentException("El código debe tener entre " + CODIGO_MIN + " y " + CODIGO_MAX
+                    + " caracteres y solo puede llevar letras sin tildes (A-Z), números y guiones.");
+            }
+            codigo = crudo.toUpperCase(Locale.ROOT);
         }
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new IllegalArgumentException("Empresa no encontrada"));
@@ -76,6 +89,13 @@ public class GiftCardService {
             // Dos altas simultáneas con el mismo código: gana la primera, la otra recibe 409 y no 500.
             throw new CodigoGiftCardDuplicadoException();
         }
+    }
+
+    /** Para logs: solo los últimos 4 caracteres del código ({@code ****AB12}); un código con saldo vale dinero. */
+    public static String enmascarar(String codigo) {
+        if (codigo == null || codigo.isBlank()) return "****";
+        String c = codigo.trim();
+        return c.length() <= 8 ? "****" : "****" + c.substring(c.length() - 4);
     }
 
     private void validarMonto(Integer monto) {
@@ -124,7 +144,7 @@ public class GiftCardService {
      */
     @Transactional
     public Optional<GiftCard> validarPublico(String codigo) {
-        Optional<GiftCard> opt = giftCardRepository.findByCodigo(codigo.trim().toUpperCase());
+        Optional<GiftCard> opt = giftCardRepository.findByCodigo(codigo.trim().toUpperCase(Locale.ROOT));
         if (opt.isEmpty()) return Optional.empty();
 
         GiftCard gc = opt.get();
@@ -153,8 +173,8 @@ public class GiftCardService {
      */
     @Transactional
     public int canjear(String codigo, Pedido pedido, int montoSolicitado) {
-        GiftCard gc = giftCardRepository.findByCodigoForUpdate(codigo.toUpperCase())
-            .orElseThrow(() -> new IllegalStateException("Gift card no encontrada: " + codigo));
+        GiftCard gc = giftCardRepository.findByCodigoForUpdate(codigo.toUpperCase(Locale.ROOT))
+            .orElseThrow(() -> new IllegalStateException("Gift card no encontrada: " + enmascarar(codigo)));
 
         // Defensa en profundidad: aunque hoy los dos callers ya validan el tenant
         // antes de llegar acá (ver PaymentService), el canje en sí no debe confiar
