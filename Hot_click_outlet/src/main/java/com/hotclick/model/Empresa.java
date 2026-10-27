@@ -163,6 +163,14 @@ public class Empresa {
     @Column(name = "trial_hasta")
     private LocalDate trialHasta;
 
+    /** Último día del trial del plan Emprendedor (V206). NULL si el negocio no recibió ese trial. */
+    @Column(name = "trial_emprendedor_hasta")
+    private LocalDate trialEmprendedorHasta;
+
+    /** Puesto (1..cupo) que ocupó en el trial Emprendedor (V206). UNIQUE: dos negocios nunca comparten puesto. */
+    @Column(name = "trial_emprendedor_pos", unique = true)
+    private Integer trialEmprendedorPos;
+
     @Column(name = "timezone", length = 50)
     private String timezone = "America/Costa_Rica";
 
@@ -379,6 +387,10 @@ public class Empresa {
 
     public LocalDate getTrialHasta() { return trialHasta; }
     public void setTrialHasta(LocalDate trialHasta) { this.trialHasta = trialHasta; }
+    public LocalDate getTrialEmprendedorHasta() { return trialEmprendedorHasta; }
+    public void setTrialEmprendedorHasta(LocalDate v) { this.trialEmprendedorHasta = v; }
+    public Integer getTrialEmprendedorPos() { return trialEmprendedorPos; }
+    public void setTrialEmprendedorPos(Integer v) { this.trialEmprendedorPos = v; }
 
     public String getTimezone() { return timezone != null ? timezone : "America/Costa_Rica"; }
     public void setTimezone(String timezone) { this.timezone = timezone; }

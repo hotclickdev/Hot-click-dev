@@ -37,6 +37,10 @@ public class OnvoBillingClient {
     @Value("${payments.onvo.permitir-llave-test:false}")
     private boolean permitirLlaveTest;
 
+    /** Price ONVO recurrente del plan Emprendedor (US$9/mes). Vacío = el cobro de Emprendedor no está disponible. */
+    @Value("${onvo.price-id.emprendedor:}")
+    private String priceIdEmprendedor;
+
     @Value("${onvo.price-id.pyme:}")
     private String priceIdPyme;
 
@@ -140,6 +144,7 @@ public class OnvoBillingClient {
     public String getPriceIdForPlan(String planNombre) {
         if (planNombre == null) return null;
         return switch (planNombre.toUpperCase()) {
+            case "EMPRENDEDOR" -> blankToNull(priceIdEmprendedor);
             case "PYME" -> blankToNull(priceIdPyme);
             case "NEGOCIO_PLUS" -> blankToNull(priceIdNegocioPlus);
             default -> null;
@@ -188,6 +193,34 @@ public class OnvoBillingClient {
         String subId = requireId(resp, "subscription");
         String itemId = extraerPrimerItemId(resp);
         return new OnvoSubscription(subId, itemId);
+    }
+
+    /**
+     * Igual que {@link #crearSuscripcionIncompleta(String, String, Map)} pero con período de prueba:
+     * ONVO crea la suscripción en {@code trialing} (verificado en modo TEST, sin tarjeta con allow_incomplete),
+     * no cobra durante {@code trialPeriodDays} y al terminar cobra el price cada mes. {@code trialDias <= 0}
+     * equivale a la versión sin trial.
+     */
+    @CircuitBreaker(name = "onvo", fallbackMethod = "crearSuscripcionTrialFallback")
+    @Retry(name = "onvo")
+    public OnvoSubscription crearSuscripcionIncompleta(String customerId, String priceId,
+                                                       Map<String, String> metadata, int trialDias) {
+        if (sinLlave()) {
+            exigirSimulacionPermitida("crearSuscripcion");
+            return new OnvoSubscription("sub_mock_" + System.currentTimeMillis(), "item_mock");
+        }
+        Map<String, Object> body = new HashMap<>();
+        body.put("customerId", customerId);
+        body.put("paymentBehavior", "allow_incomplete");
+        body.put("items", List.of(Map.of("priceId", priceId, "quantity", 1)));
+        if (trialDias > 0) {
+            body.put("trialPeriodDays", trialDias);
+        }
+        if (metadata != null && !metadata.isEmpty()) {
+            body.put("metadata", metadata);
+        }
+        Map<?, ?> resp = post("/subscriptions", body);
+        return new OnvoSubscription(requireId(resp, "subscription"), extraerPrimerItemId(resp));
     }
 
     @CircuitBreaker(name = "onvo", fallbackMethod = "cambiarPrecioFallback")
@@ -244,6 +277,7 @@ public class OnvoBillingClient {
     /** Inverso de getPriceIdForPlan: el plan sale del priceId que confirma ONVO, nunca de metadata. */
     public String planParaPriceId(String priceId) {
         if (priceId == null || priceId.isBlank()) return null;
+        if (priceId.equals(blankToNull(priceIdEmprendedor))) return "EMPRENDEDOR";
         if (priceId.equals(blankToNull(priceIdPyme))) return "PYME";
         if (priceId.equals(blankToNull(priceIdNegocioPlus))) return "NEGOCIO_PLUS";
         return null;
@@ -381,6 +415,12 @@ public class OnvoBillingClient {
     private OnvoSubscription crearSuscripcionFallback(String customerId, String priceId,
                                                       Map<String, String> metadata, Throwable t) {
         log.error("[onvo-circuit] OPEN crearSuscripcion: {} status={}", t.getClass().getSimpleName(), statusDe(t));
+        throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
+    }
+
+    private OnvoSubscription crearSuscripcionTrialFallback(String customerId, String priceId,
+                                                           Map<String, String> metadata, int trialDias, Throwable t) {
+        log.error("[onvo-circuit] OPEN crearSuscripcionTrial: {} status={}", t.getClass().getSimpleName(), statusDe(t));
         throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
     }
 

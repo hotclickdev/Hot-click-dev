@@ -4384,3 +4384,14 @@ CREATE TABLE IF NOT EXISTS hot_click_suspension_extension_tb (
     CONSTRAINT uq_suspension_extension_ciclo UNIQUE (suscripcion_id)
 );
 CREATE INDEX IF NOT EXISTS idx_suspension_extension_empresa ON hot_click_suspension_extension_tb (fk_id_empresa, vence_en);
+
+-- ====================================================
+-- V206 Trial del plan Emprendedor (27-oct-2026). Aditiva: columnas NULL e índices, no toca filas existentes.
+-- Primeros N negocios (cupo configurable, 70 por defecto) con trial de M días (90 por defecto); luego US$9/mes por ONVO.
+-- trial_emprendedor_pos UNIQUE = defensa extra contra puestos duplicados.
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_hasta DATE;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_pos INTEGER;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_trial_emprendedor_pos
+    ON hot_click_empresa_tb (trial_emprendedor_pos);
+CREATE INDEX IF NOT EXISTS idx_empresa_trial_emprendedor_hasta
+    ON hot_click_empresa_tb (trial_emprendedor_hasta) WHERE trial_emprendedor_hasta IS NOT NULL;
