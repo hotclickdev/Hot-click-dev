@@ -35,6 +35,36 @@ CREATE TABLE IF NOT EXISTS hot_click_empresa_feature_tb (
     PRIMARY KEY (fk_id_empresa, fk_id_flag)
 );
 
+-- Catálogo de tipos de OTP. Aunque TipoOtp es @Entity, el bootstrap corre ANTES de que
+-- Hibernate cree tablas, y V1..VN (que sembraban los tipos) no se rejuegan en dev: sin esto,
+-- POST /api/auth/send-verification da 400 "Tipo de OTP no configurado: REGISTRO".
+-- Misma DDL que V1/V171_1 (Hibernate update no la toca) y seeds idempotentes (WHERE NOT EXISTS,
+-- sin depender de que exista el UNIQUE). Fuentes: V1 (REGISTRO, RESET_PASSWORD),
+-- V19 (2FA_LOGIN), V171_1 (RESET_DATOS).
+CREATE TABLE IF NOT EXISTS hot_click_tipo_otp_tb (
+    id_tipo_otp           SERIAL PRIMARY KEY,
+    nombre                VARCHAR(30)  NOT NULL UNIQUE,
+    tiempo_expiracion_seg INTEGER      NOT NULL DEFAULT 300,
+    longitud_codigo       INTEGER      NOT NULL DEFAULT 6,
+    fk_id_estado          INTEGER      NOT NULL DEFAULT 1
+);
+
+INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado)
+SELECT 'REGISTRO', 300, 6, 1
+WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = 'REGISTRO');
+
+INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado)
+SELECT 'RESET_PASSWORD', 300, 6, 1
+WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_PASSWORD');
+
+INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado)
+SELECT '2FA_LOGIN', 300, 6, 1
+WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = '2FA_LOGIN');
+
+INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado)
+SELECT 'RESET_DATOS', 600, 6, 1
+WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_DATOS');
+
 -- Marcador: deja el esquema "no vacío" para flyway.baseline()
 CREATE TABLE IF NOT EXISTS hotclick_dev_flyway_bootstrap (
     ok BOOLEAN NOT NULL DEFAULT TRUE

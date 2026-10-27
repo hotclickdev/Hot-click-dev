@@ -113,4 +113,60 @@ class FlywayRepairConfigTest {
             IllegalStateException.class, FlywayRepairConfig::abortarProdVacio);
         org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("base VACÍA"));
     }
+
+    // ── Bootstrap dev en base vacía: catálogo de tipos de OTP ─────────────────
+
+    private static org.springframework.jdbc.datasource.DriverManagerDataSource baseVaciaH2(String nombre) {
+        return new org.springframework.jdbc.datasource.DriverManagerDataSource(
+            "jdbc:h2:mem:" + nombre + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "sa", "");
+    }
+
+    private static List<String> tiposOtp(javax.sql.DataSource ds) throws Exception {
+        try (var c = ds.getConnection();
+             var s = c.createStatement();
+             var rs = s.executeQuery("SELECT nombre FROM hot_click_tipo_otp_tb ORDER BY nombre")) {
+            var out = new java.util.ArrayList<String>();
+            while (rs.next()) {
+                out.add(rs.getString(1));
+            }
+            return out;
+        }
+    }
+
+    @Test
+    void bootstrapDev_baseVacia_siembraTiposOtp_incluidoRegistro() throws Exception {
+        var ds = baseVaciaH2("nativas_otp_vacia");
+        // Base realmente vacía: la tabla no existe antes del bootstrap.
+        assertThrows(Exception.class, () -> tiposOtp(ds));
+
+        FlywayRepairConfig.ejecutarSqlClasspath(ds, "db/dev-bootstrap/nativas.sql");
+
+        List<String> tipos = tiposOtp(ds);
+        assertTrue(tipos.contains("REGISTRO"), "falta REGISTRO: " + tipos);
+        assertEquals(List.of("2FA_LOGIN", "REGISTRO", "RESET_DATOS", "RESET_PASSWORD"), tipos);
+    }
+
+    @Test
+    void bootstrapDev_idempotente_noDuplicaTiposOtp() throws Exception {
+        var ds = baseVaciaH2("nativas_otp_idem");
+        FlywayRepairConfig.ejecutarSqlClasspath(ds, "db/dev-bootstrap/nativas.sql");
+        FlywayRepairConfig.ejecutarSqlClasspath(ds, "db/dev-bootstrap/nativas.sql");
+        assertEquals(4, tiposOtp(ds).size());
+    }
+
+    @Test
+    void bootstrapDev_tipoRegistro_tieneValoresDeV1() throws Exception {
+        var ds = baseVaciaH2("nativas_otp_valores");
+        FlywayRepairConfig.ejecutarSqlClasspath(ds, "db/dev-bootstrap/nativas.sql");
+        try (var c = ds.getConnection();
+             var s = c.createStatement();
+             var rs = s.executeQuery(
+                 "SELECT tiempo_expiracion_seg, longitud_codigo, fk_id_estado "
+                     + "FROM hot_click_tipo_otp_tb WHERE nombre = 'REGISTRO'")) {
+            assertTrue(rs.next());
+            assertEquals(300, rs.getInt(1));
+            assertEquals(6, rs.getInt(2));
+            assertEquals(1, rs.getInt(3));
+        }
+    }
 }

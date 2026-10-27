@@ -224,11 +224,16 @@ public class FlywayRepairConfig {
     }
 
     private static void ejecutarSqlClasspath(Flyway flyway, String classpathLocation) {
+        ejecutarSqlClasspath(flyway.getConfiguration().getDataSource(), classpathLocation);
+    }
+
+    /** Mismo runner que usa el arranque dev; package-private para poder probarlo contra una base vacía. */
+    static void ejecutarSqlClasspath(javax.sql.DataSource dataSource, String classpathLocation) {
         ClassPathResource resource = new ClassPathResource(classpathLocation);
         if (!resource.exists()) {
             throw new IllegalStateException("[flyway] Falta recurso " + classpathLocation);
         }
-        try (Connection c = flyway.getConfiguration().getDataSource().getConnection();
+        try (Connection c = dataSource.getConnection();
              Statement s = c.createStatement();
              BufferedReader reader = new BufferedReader(
                  new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
