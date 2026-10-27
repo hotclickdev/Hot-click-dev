@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.producto.BodegaTenantGuard;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -27,6 +28,7 @@ public class VentaService {
     @Autowired private StockService                stockService;
     @Autowired private ProductoRepository          productoRepository;
     @Autowired private BodegaRepository            bodegaRepository;
+    @Autowired private BodegaTenantGuard           bodegaTenantGuard;
     @Autowired private UsuarioRepository           usuarioRepository;
     @Autowired private CarritoRepository           carritoRepository;
     @Autowired private MovimientoStockRepository   movimientoStockRepository;
@@ -250,13 +252,8 @@ public class VentaService {
 
     private Bodega resolverBodega(VentaRequestDTO dto, Long empresaId) {
         if (dto.getBodegaId() != null) {
-            Bodega bodega = bodegaRepository.findById(dto.getBodegaId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada: id=" + dto.getBodegaId()));
-            // Evita que una empresa registre una venta contra la bodega de otra empresa.
-            if (bodega.getEmpresa() != null && !empresaId.equals(bodega.getEmpresa().getId())) {
-                throw new IllegalArgumentException("La bodega indicada no pertenece a tu empresa");
-            }
-            return bodega;
+            // Una bodega ajena responde igual que una inexistente (404 con el mismo mensaje): no revela que existe.
+            return bodegaTenantGuard.exigirDeLaEmpresa(dto.getBodegaId(), empresaId);
         }
         // Antes caía a la PRIMERA bodega activa de TODO el sistema (fuga entre empresas).
         // Ahora se limita a las bodegas de la empresa actual.
