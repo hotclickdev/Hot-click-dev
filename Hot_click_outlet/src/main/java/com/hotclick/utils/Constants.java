@@ -87,6 +87,8 @@ public class Constants {
 
     // Estados de pedido extendidos
     public static final String PEDIDO_PAGADO        = "PAGADO";
+    /** M-08: cobrado sin stock (segundo pago sobre la última unidad). No se despacha; el reembolso queda pendiente. */
+    public static final String PEDIDO_REVISION_SOBREVENTA = "REVISION_SOBREVENTA";
     public static final String PEDIDO_EN_PREPARACION = "EN_PREPARACION";
     public static final String PEDIDO_LISTO_RETIRO   = "LISTO_RETIRO";
 
