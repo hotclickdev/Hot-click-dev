@@ -154,7 +154,8 @@ class OnvoJobsRenovacionNegativosTest {
     // ---- job ACTIVO -> PAST_DUE (RenovacionesTilopayService) ----
     RenovacionesTilopayService job2(SuscripcionTilopayService svc) {
         return new RenovacionesTilopayService(subRepo, mock(CobroSuscripcionRepository.class), svc,
-            mock(BillingLedgerWriter.class), reconsulta);
+            mock(BillingLedgerWriter.class), reconsulta,
+            mock(com.hotclick.service.SecurityAuditService.class));
     }
     Suscripcion activa() { pastDue.setEstado("ACTIVO"); pastDue.setFechaFin(hoy); return pastDue; }
 

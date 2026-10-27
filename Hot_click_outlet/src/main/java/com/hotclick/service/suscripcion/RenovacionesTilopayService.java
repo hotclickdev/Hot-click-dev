@@ -6,6 +6,9 @@ import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
 import com.hotclick.repository.CobroSuscripcionRepository;
 import com.hotclick.repository.SuscripcionRepository;
+import com.hotclick.security.SecurityEventSeverity;
+import com.hotclick.security.SecurityEventType;
+import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.billing.BillingLedgerWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,11 +39,13 @@ public class RenovacionesTilopayService {
     private final SuscripcionTilopayService suscripciones;
     private final BillingLedgerWriter ledgerWriter;
     private final OnvoRenovacionReconsulta reconsulta;
+    private final SecurityAuditService auditoria;
 
     public RenovacionesTilopayService(SuscripcionRepository suscripcionRepo, CobroSuscripcionRepository cobroRepo,
                                       SuscripcionTilopayService suscripciones, BillingLedgerWriter ledgerWriter,
-                                      OnvoRenovacionReconsulta reconsulta) {
+                                      OnvoRenovacionReconsulta reconsulta, SecurityAuditService auditoria) {
         this.reconsulta = reconsulta;
+        this.auditoria = auditoria;
         this.suscripcionRepo = suscripcionRepo;
         this.cobroRepo = cobroRepo;
         this.suscripciones = suscripciones;
@@ -79,8 +86,7 @@ public class RenovacionesTilopayService {
             String moneda = BillingLedger.PROVEEDOR_ONVO.equals(proveedor)
                 ? reconsulta.monedaConfigurada().orElse(null) : "crc";
             if (moneda == null) {
-                log.error("[ALERTA-PAGO] Ledger renovación ONVO sin moneda configurada, no se registra empresa={}",
-                    sub.getEmpresa().getId());
+                omitirAsientoSinMoneda(sub, proveedor, hoy);
                 continue;
             }
             ledgerWriter.registrar(sub.getEmpresa(), sub, BillingLedger.TIPO_COBRO_FALLIDO,
@@ -89,6 +95,31 @@ public class RenovacionesTilopayService {
         }
         if (!cobros.isEmpty()) log.info("[billing-tilopay] {} cobro(s) de renovación generados", cobros.size());
         return cobros.size();
+    }
+
+    /**
+     * Sin moneda no se escribe el asiento (nunca una moneda inventada), pero la omisión NO queda solo en el log:
+     * se persiste un registro de auditoría (REQUIRES_NEW, sobrevive a cualquier rollback) para que operaciones
+     * pueda conciliar. La suscripción ya quedó en PAST_DUE (no se regala servicio) y el job no se rompe.
+     */
+    private void omitirAsientoSinMoneda(Suscripcion sub, String proveedor, LocalDate hoy) {
+        Long empresaId = sub.getEmpresa().getId();
+        log.error("[ALERTA-PAGO] Ledger renovación ONVO sin moneda configurada, asiento omitido y auditado empresa={} sub={}",
+            empresaId, sub.getId());
+        Map<String, Object> meta = new LinkedHashMap<>();
+        meta.put("tipo", BillingLedger.TIPO_COBRO_FALLIDO);
+        meta.put("proveedor", proveedor);
+        meta.put("empresaId", empresaId);
+        meta.put("suscripcionId", sub.getId());
+        meta.put("fecha", hoy.toString());
+        meta.put("motivo", "falta PLANES_MONEDA");
+        meta.put("estadoSuscripcion", sub.getEstado());
+        try {
+            auditoria.log(SecurityEventType.BILLING_LEDGER_OMITIDO, SecurityEventSeverity.HIGH, null, null, null, null,
+                "job:renovaciones", meta);
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] No se pudo auditar la omisión del asiento empresa={} sub={}", empresaId, sub.getId());
+        }
     }
 
     /** El ledger registra el proveedor que cobra la suscripción: ONVO si tiene id de ONVO, Tilopay si es heredada. */
