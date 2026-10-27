@@ -33,6 +33,14 @@ services:
     image: hot_click_outlet-app
     container_name: hotclick
     env_file: .env
+    # Planes y precios ONVO: sin default a propósito (los valores salen del .env del servidor).
+    environment:
+      PLANES_MONEDA: ${PLANES_MONEDA:?falta PLANES_MONEDA}
+      ONVO_PRICE_ID_PYME: ${ONVO_PRICE_ID_PYME:?falta ONVO_PRICE_ID_PYME}
+      ONVO_PRICE_ID_NEGOCIO_PLUS: ${ONVO_PRICE_ID_NEGOCIO_PLUS:?falta ONVO_PRICE_ID_NEGOCIO_PLUS}
+      EMPRENDEDOR_PRECIO_MENSUAL_USD: ${EMPRENDEDOR_PRECIO_MENSUAL_USD:?falta EMPRENDEDOR_PRECIO_MENSUAL_USD}
+      PYME_PRECIO_MENSUAL_USD: ${PYME_PRECIO_MENSUAL_USD:?falta PYME_PRECIO_MENSUAL_USD}
+      NEGOCIO_PLUS_PRECIO_MENSUAL_USD: ${NEGOCIO_PLUS_PRECIO_MENSUAL_USD:?falta NEGOCIO_PLUS_PRECIO_MENSUAL_USD}
     ports:
       - "8080:8080"
     depends_on:
