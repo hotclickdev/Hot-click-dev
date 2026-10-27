@@ -132,11 +132,11 @@ public class UsuarioService {
     @Value("${hotclick.auth.lockout.global-window:1800}") private int lockoutGlobalWindow = 1800;
 
     private static String claveFallosIp(Long id, String ip) {
-        return "auth:fallos:usuario:" + id + ":ip:" + (ip == null || ip.isBlank() ? "desconocida" : ip);
+        return com.hotclick.security.ClavesFallos.claveIp(id, ip);
     }
 
     private static String claveFallosGlobal(Long id) {
-        return "auth:fallos:usuario:" + id + ":global";
+        return com.hotclick.security.ClavesFallos.claveGlobal(id);
     }
 
     /** true si esta IP agotó sus fallos contra este usuario (se rechaza antes de mirar la contraseña o el código). */
@@ -210,7 +210,9 @@ public class UsuarioService {
         usuario.setBloqueadoHasta(null);
         usuario.setEstado(Constants.ESTADO_PENDIENTE);
         usuario.setIntentosFallidos(0);
-        return usuarioRepository.save(usuario);
+        Usuario guardado = usuarioRepository.save(usuario);
+        com.hotclick.security.ClavesFallos.liberarTodo(rateLimiter, usuario.getId()); // cuenta nueva: sin fallos heredados
+        return guardado;
     }
 
     /**
@@ -234,7 +236,9 @@ public class UsuarioService {
         usuario.setEstado(Constants.ESTADO_PENDIENTE);
         usuario.setIntentosFallidos(0);
         usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        return usuarioRepository.save(usuario);
+        Usuario guardado = usuarioRepository.save(usuario);
+        com.hotclick.security.ClavesFallos.liberarTodo(rateLimiter, usuario.getId()); // cuenta nueva: sin fallos heredados
+        return guardado;
     }
 
     /** Activa la cuenta tras verificación exitosa del OTP de registro. */

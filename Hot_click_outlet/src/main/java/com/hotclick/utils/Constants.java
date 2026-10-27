@@ -1,6 +1,7 @@
 package com.hotclick.utils;
 
 import java.time.ZoneId;
+import java.util.Locale;
 
 public class Constants {
 
@@ -28,7 +29,7 @@ public class Constants {
      */
     public static String generarNumeroPedido(String prefijo) {
         return prefijo + java.util.UUID.randomUUID().toString()
-                .replace("-", "").substring(0, 12).toUpperCase();
+                .replace("-", "").substring(0, 12).toUpperCase(Locale.ROOT);
     }
 
 

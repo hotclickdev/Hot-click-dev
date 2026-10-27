@@ -24,4 +24,23 @@ class AuthSupportPrefijoIpTest {
         assertThat(AuthSupport.prefijoIp("desconocida")).isEqualTo("desconocida");
         assertThat(AuthSupport.prefijoIp(null)).isNull();
     }
+
+    @Test
+    @DisplayName("NAT64 (64:ff9b::/96): la llave es la IPv4 embebida, no un /64 compartido por todos los clientes del NAT")
+    void nat64UsaLaIpv4Embebida() {
+        // 203.0.113.5 = cb00:7105 ; 198.51.100.7 = c633:6407
+        assertThat(AuthSupport.prefijoIp("64:ff9b::cb00:7105")).isEqualTo("203.0.113.5");
+        assertThat(AuthSupport.prefijoIp("64:ff9b::203.0.113.5")).isEqualTo("203.0.113.5");
+        assertThat(AuthSupport.prefijoIp("64:ff9b::c633:6407")).isEqualTo("198.51.100.7");
+        assertThat(AuthSupport.prefijoIp("64:ff9b::c633:6407")).isNotEqualTo(AuthSupport.prefijoIp("64:ff9b::cb00:7105"));
+        // coincide con la misma IPv4 vista de forma nativa (mismo cliente = mismos contadores)
+        assertThat(AuthSupport.prefijoIp("64:ff9b::cb00:7105")).isEqualTo(AuthSupport.prefijoIp("203.0.113.5"));
+    }
+
+    @Test
+    @DisplayName("Un IPv6 cercano a NAT64 pero fuera de /96 sigue siendo /64 (64:ff9b:1::/48 no se toca)")
+    void fueraDeNat64SigueSiendo64() {
+        assertThat(AuthSupport.prefijoIp("64:ff9b:1::cb00:7105")).isEqualTo("0064:ff9b:0001:0000::/64");
+        assertThat(AuthSupport.prefijoIp("64:ff9b::1:cb00:7105")).isEqualTo("0064:ff9b:0000:0000::/64");
+    }
 }

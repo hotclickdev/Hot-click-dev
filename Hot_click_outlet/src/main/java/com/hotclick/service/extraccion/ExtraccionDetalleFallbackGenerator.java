@@ -3,13 +3,14 @@ package com.hotclick.service.extraccion;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 class ExtraccionDetalleFallbackGenerator {
 
     String generarComoUsar(String nombre, List<String> etiquetas) {
-        String ctx = (nombre != null ? nombre.toLowerCase() : "") + " " +
-                     (etiquetas != null ? String.join(" ", etiquetas).toLowerCase() : "");
+        String ctx = (nombre != null ? nombre.toLowerCase(Locale.ROOT) : "") + " " +
+                     (etiquetas != null ? String.join(" ", etiquetas).toLowerCase(Locale.ROOT) : "");
         if (ctx.contains("crema") || ctx.contains("serum") || ctx.contains("moisturizer") ||
             ctx.contains("skincare") || ctx.contains("lotion") || ctx.contains("toner") ||
             ctx.contains("cleanser") || ctx.contains("face cream") || ctx.contains("skin care")) {

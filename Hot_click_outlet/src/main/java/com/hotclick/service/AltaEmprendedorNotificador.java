@@ -33,7 +33,7 @@ public class AltaEmprendedorNotificador {
             notificacionEmailService.enviarAltaEmprendedorAAdminIT(
                 nombreEmpresa, correo, resultado.cupoGratis(), resultado.estado());
         } catch (Exception ex) {
-            log.error("[alta-emprendedor] fallo email admin — {}", ex.getMessage());
+            log.error("[alta-emprendedor] fallo email admin — {}", ex.getClass().getSimpleName());
         }
     }
 

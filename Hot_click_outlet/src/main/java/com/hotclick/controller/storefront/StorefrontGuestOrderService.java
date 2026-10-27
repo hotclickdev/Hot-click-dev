@@ -11,20 +11,17 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
-import com.hotclick.repository.RolRepository;
-import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.StockService;
+import com.hotclick.service.payment.GuestUserResolver;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class StorefrontGuestOrderService {
@@ -34,29 +31,23 @@ public class StorefrontGuestOrderService {
     private final BodegaRepository bodegaRepository;
     private final PedidoRepository pedidoRepository;
     private final ProductoRepository productoRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final RolRepository rolRepository;
+    private final GuestUserResolver guestUserResolver;
     private final StockService stockService;
-    private final PasswordEncoder passwordEncoder;
     private final N8nWebhookService n8nWebhookService;
     private final NotificacionEmailService notificacionEmailService;
 
     public StorefrontGuestOrderService(BodegaRepository bodegaRepository,
                                        PedidoRepository pedidoRepository,
                                        ProductoRepository productoRepository,
-                                       UsuarioRepository usuarioRepository,
-                                       RolRepository rolRepository,
+                                       GuestUserResolver guestUserResolver,
                                        StockService stockService,
-                                       PasswordEncoder passwordEncoder,
                                        N8nWebhookService n8nWebhookService,
                                        NotificacionEmailService notificacionEmailService) {
         this.bodegaRepository = bodegaRepository;
         this.pedidoRepository = pedidoRepository;
         this.productoRepository = productoRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.rolRepository = rolRepository;
+        this.guestUserResolver = guestUserResolver;
         this.stockService = stockService;
-        this.passwordEncoder = passwordEncoder;
         this.n8nWebhookService = n8nWebhookService;
         this.notificacionEmailService = notificacionEmailService;
     }
@@ -72,10 +63,9 @@ public class StorefrontGuestOrderService {
         exigirRetiroDisponible(dto.getMetodoEnvio(),
             bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO));
 
-        // MED-5: mismo criterio que el registro y el login (trim + minúsculas); evita cuentas duplicadas por mayúsculas.
-        final String correoCliente = com.hotclick.utils.CorreoNormalizer.normalizar(dto.getCorreoCliente());
-        Usuario usuario = usuarioRepository.findByCorreo(correoCliente)
-            .orElseGet(() -> crearInvitado(correoCliente, dto.getTelefonoCliente()));
+        // M2b (#399): mismo resolvedor que el checkout y SINPE: correo exacto, normalizado o, si hay una cuenta antigua
+        // guardada con mayúsculas («Juan@X.com»), esa cuenta; solo si no existe se crea el invitado (sin duplicados).
+        Usuario usuario = guestUserResolver.resolve(dto.getCorreoCliente(), dto.getTelefonoCliente());
 
         Pedido pedido = construirPedido(empresa, dto, bodega, usuario);
         Pedido guardado = pedidoRepository.save(pedido);
@@ -226,25 +216,5 @@ public class StorefrontGuestOrderService {
         }
         List<Bodega> bodegas = bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO);
         return bodegas.isEmpty() ? null : bodegas.get(0);
-    }
-
-    private static String digitosTelefono(String telefono) {
-        return telefono == null ? "" : telefono.replaceAll("[^0-9]", "");
-    }
-
-    private Usuario crearInvitado(String correo, String telefono) {
-        Usuario usuario = new Usuario();
-        String uid = UUID.randomUUID().toString().replace("-", "");
-        usuario.setIdentificacion("GUEST-" + uid.substring(0, 13));
-        usuario.setNombre("Invitado");
-        usuario.setApellidoPaterno("Guest");
-        usuario.setCorreo(correo);
-        usuario.setTelefono(digitosTelefono(telefono));
-        usuario.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        usuario.setEstado(Constants.ESTADO_ACTIVO);
-        rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL)
-            .ifPresent(rol -> usuario.setRoles(List.of(rol)));
-        return usuarioRepository.save(usuario);
     }
 }

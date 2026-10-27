@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.OptionalInt;
 
 @Service
@@ -83,7 +84,7 @@ public class CupoEmprendedorService {
 
     public static boolean esDemo(String correoEmpresa) {
         if (correoEmpresa == null) return false;
-        return correoEmpresa.toLowerCase().endsWith(Constants.CORREO_DEMO_EMPRESA_SUFIJO);
+        return correoEmpresa.toLowerCase(Locale.ROOT).endsWith(Constants.CORREO_DEMO_EMPRESA_SUFIJO);
     }
 
     /**

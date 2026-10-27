@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -42,7 +43,7 @@ public class SuscripcionReposicionService {
     public Map<String, Object> suscribirse(Long productoId, String correoRaw) {
         Producto producto = productoRepository.findById(productoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-        String correo = correoRaw.trim().toLowerCase();
+        String correo = correoRaw.trim().toLowerCase(Locale.ROOT);
 
         boolean yaExiste = repo.existsByProducto_IdAndCorreoIgnoreCase(productoId, correo);
         if (!yaExiste) {

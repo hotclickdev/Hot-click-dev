@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -143,7 +144,7 @@ public class OnvoBillingClient {
 
     public String getPriceIdForPlan(String planNombre) {
         if (planNombre == null) return null;
-        return switch (planNombre.toUpperCase()) {
+        return switch (planNombre.toUpperCase(Locale.ROOT)) {
             case "EMPRENDEDOR" -> blankToNull(priceIdEmprendedor);
             case "PYME" -> blankToNull(priceIdPyme);
             case "NEGOCIO_PLUS" -> blankToNull(priceIdNegocioPlus);

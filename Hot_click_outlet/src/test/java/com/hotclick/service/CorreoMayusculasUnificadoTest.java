@@ -91,8 +91,12 @@ class CorreoMayusculasUnificadoTest {
         when(productos.findByIdForUpdate(anyLong())).thenReturn(Optional.empty()); // corta después de crear al invitado
         PasswordEncoder enc = mock(PasswordEncoder.class);
         when(enc.encode(any())).thenReturn("hash-fict");
+        GuestUserResolver resolvedor = new GuestUserResolver();
+        ReflectionTestUtils.setField(resolvedor, "usuarioRepository", repo);
+        ReflectionTestUtils.setField(resolvedor, "rolRepository", mock(RolRepository.class));
+        ReflectionTestUtils.setField(resolvedor, "passwordEncoder", enc);
         StorefrontGuestOrderService svc = new StorefrontGuestOrderService(bodegas, mock(PedidoRepository.class),
-            productos, repo, mock(RolRepository.class), mock(StockService.class), enc,
+            productos, resolvedor, mock(StockService.class),
             mock(N8nWebhookService.class), mock(NotificacionEmailService.class));
         Empresa e = new Empresa();
         e.setId(7L);

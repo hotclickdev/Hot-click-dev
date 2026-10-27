@@ -54,19 +54,19 @@ public class TelegramService {
                 reenviarSinFormato(mensaje, respuesta);
                 return;
             }
-            log.error("[telegram] error al enviar — HTTP {} {}", e.getStatusCode().value(), TelegramTexto.sinToken(respuesta));
+            log.error("[telegram] error al enviar — HTTP {} {}", e.getStatusCode().value(), e.getClass().getSimpleName());
         } catch (Exception e) {
             log.error("[telegram] error al enviar — {}", e.getClass().getSimpleName());
         }
     }
 
     private void reenviarSinFormato(String mensaje, String respuesta) {
-        log.warn("[telegram] Markdown rechazado, se reenvía como texto plano — {}", TelegramTexto.sinToken(respuesta));
+        log.warn("[telegram] Markdown rechazado, se reenvía como texto plano");
         try {
             publicar(mensaje, false);
             log.info("[telegram] mensaje enviado (texto plano)");
         } catch (HttpClientErrorException e) {
-            log.error("[telegram] error al enviar — HTTP {} {}", e.getStatusCode().value(), TelegramTexto.sinToken(e.getResponseBodyAsString()));
+            log.error("[telegram] error al enviar — HTTP {} {}", e.getStatusCode().value(), e.getClass().getSimpleName());
         } catch (Exception e) {
             log.error("[telegram] error al enviar — {}", e.getClass().getSimpleName());
         }

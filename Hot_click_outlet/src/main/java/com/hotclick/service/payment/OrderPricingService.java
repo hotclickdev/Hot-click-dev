@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 
 @Service
 public class OrderPricingService {
@@ -120,7 +121,7 @@ public class OrderPricingService {
         if (provider == null || bodega == null || bodega.getEmpresa() == null) {
             return 0;
         }
-        String p = provider.toUpperCase();
+        String p = provider.toUpperCase(Locale.ROOT);
         if (!Constants.PROVEEDOR_SINPE.equals(p) && !"EFECTIVO".equals(p)) {
             return 0;
         }

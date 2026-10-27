@@ -64,7 +64,7 @@ public class AuthTenantSwitchHandler {
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("[cambiar-negocio] {}", e.getMessage(), e);
+            log.error("[cambiar-negocio] {}", e.getClass().getSimpleName());
             return ResponseEntity.status(500).body(ResponseDTO.error("Error al cambiar de negocio"));
         }
     }
@@ -130,7 +130,7 @@ public class AuthTenantSwitchHandler {
         } catch (CuentaNoActivaException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         } catch (Exception e) {
-            log.error("[seleccionar-empresa] {}", e.getMessage(), e);
+            log.error("[seleccionar-empresa] {}", e.getClass().getSimpleName());
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         }
     }

@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,7 +90,7 @@ public class WebhookDispatcherService {
         }
         String host = uri.getHost();
         if (host == null) throw new IllegalArgumentException("URL sin host");
-        if (BLOCKED_HOSTS.contains(host.toLowerCase())) {
+        if (BLOCKED_HOSTS.contains(host.toLowerCase(Locale.ROOT))) {
             throw new IllegalArgumentException("URL apunta a host restringido: " + host);
         }
         // Reject common internal ports before DNS (DNS can fail in CI for fake hosts)

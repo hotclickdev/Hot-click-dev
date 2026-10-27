@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -106,11 +107,11 @@ public class AdminAsignarController {
             }
 
             String ident = telefono.isBlank()
-                ? "HC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase()
+                ? "HC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase(Locale.ROOT)
                 : telefono.substring(0, Math.min(telefono.length(), 20));
 
             if (usuarioRepository.existsByIdentificacion(ident)) {
-                ident = "HC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase();
+                ident = "HC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase(Locale.ROOT);
             }
 
             Usuario usuario = new Usuario();

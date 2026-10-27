@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,7 +34,7 @@ public class ConsentimientoController {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             HttpServletRequest request) {
 
-        String tipo = body.getOrDefault("tipo", "").toUpperCase();
+        String tipo = body.getOrDefault("tipo", "").toUpperCase(Locale.ROOT);
         if (!TIPOS_VALIDOS.contains(tipo)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Tipo inválido"));
         }

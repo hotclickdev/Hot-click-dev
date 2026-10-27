@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -241,7 +242,7 @@ public class EmprendedorRegistroService {
     }
 
     private String slugify(String text) {
-        String normalized = Normalizer.normalize(text.toLowerCase().trim(), Normalizer.Form.NFD);
+        String normalized = Normalizer.normalize(text.toLowerCase(Locale.ROOT).trim(), Normalizer.Form.NFD);
         return normalized.replaceAll("[^\\p{ASCII}]", "")
                          .replaceAll("[^a-z0-9\\s-]", "")
                          .replaceAll("\\s+", "-")

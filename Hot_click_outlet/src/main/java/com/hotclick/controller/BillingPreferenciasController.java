@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,7 +65,7 @@ public class BillingPreferenciasController {
             e.setDiaCobro(dia);
         }
         if (body.containsKey("frecuenciaPayout")) {
-            String f = body.get("frecuenciaPayout") instanceof String s ? s.trim().toUpperCase() : null;
+            String f = body.get("frecuenciaPayout") instanceof String s ? s.trim().toUpperCase(Locale.ROOT) : null;
             if (f == null || !FRECUENCIAS.contains(f)) {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("La frecuencia de pago puede ser QUINCENAL o MENSUAL."));
             }

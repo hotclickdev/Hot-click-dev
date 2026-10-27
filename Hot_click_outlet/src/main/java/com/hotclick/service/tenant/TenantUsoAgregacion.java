@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -110,7 +111,7 @@ public final class TenantUsoAgregacion {
             return maxCreditosAi;
         }
         if (planSaas == null) return 0;
-        return switch (planSaas.toUpperCase()) {
+        return switch (planSaas.toUpperCase(Locale.ROOT)) {
             case "ENTERPRISE" -> 500;
             case "PRO" -> 50;
             default -> 0;

@@ -5,6 +5,7 @@ import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Component;
 
 import java.text.Normalizer;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -44,7 +45,7 @@ public class InputSanitizer {
      */
     public String cleanEmail(String value) {
         if (value == null) return null;
-        return clean(value).toLowerCase();
+        return clean(value).toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -52,7 +53,7 @@ public class InputSanitizer {
      */
     public String cleanSlug(String value) {
         if (value == null) return null;
-        return SLUG_ALLOWED.matcher(clean(value).toLowerCase().replace(" ", "-")).replaceAll("");
+        return SLUG_ALLOWED.matcher(clean(value).toLowerCase(Locale.ROOT).replace(" ", "-")).replaceAll("");
     }
 
     /**
@@ -72,6 +73,6 @@ public class InputSanitizer {
     public String normalizeGeo(String value) {
         if (value == null || value.isBlank()) return "";
         String nfd = Normalizer.normalize(value.trim(), Normalizer.Form.NFD);
-        return nfd.replaceAll("\\p{InCombiningDiacriticalMarks}", "").toUpperCase();
+        return nfd.replaceAll("\\p{InCombiningDiacriticalMarks}", "").toUpperCase(Locale.ROOT);
     }
 }
