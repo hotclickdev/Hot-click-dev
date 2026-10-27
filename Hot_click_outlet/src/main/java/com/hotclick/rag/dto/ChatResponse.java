@@ -18,8 +18,15 @@ public class ChatResponse {
     private List<ProductoContexto> productos;
     private List<String>          categorias;
     private List<String>          opts;
+    /** Botones (p. ej. al llegar al límite diario); null o vacío si no hay. */
+    private List<AccionChat>      acciones;
 
     public ChatResponse() {}
+
+    public ChatResponse(String respuesta, String sesionId, List<AccionChat> acciones) {
+        this(respuesta, sesionId, List.of(), List.of(), List.of());
+        this.acciones = acciones;
+    }
 
     public ChatResponse(String respuesta, String sesionId,
                         List<ProductoContexto> productos, List<String> categorias,
@@ -45,4 +52,7 @@ public class ChatResponse {
 
     public List<String>           getOpts() { return opts; }
     public void                   setOpts(List<String> opts) { this.opts = opts; }
+
+    public List<AccionChat>       getAcciones() { return acciones; }
+    public void                   setAcciones(List<AccionChat> acciones) { this.acciones = acciones; }
 }

@@ -103,6 +103,23 @@ class AuthRefreshHandlerTest {
         verify(refreshTokenService, never()).rotar(any(), any());
     }
 
+    @org.junit.jupiter.params.ParameterizedTest(name = "refresh con cuenta estado {0} → 401 sin access token")
+    @org.junit.jupiter.params.provider.ValueSource(ints = {2, 3, 4, 5})
+    @DisplayName("refresh con cuenta no activa → 401, sin token, revoca la familia")
+    void refresh_cuentaNoActiva_unauthorizedSinToken(int estado) {
+        usuario.setEstado(estado);
+        when(refreshTokenService.readCookie(request)).thenReturn("viva");
+        when(refreshTokenService.rotar("viva", request)).thenReturn(rotated);
+
+        ResponseEntity<?> resp = handler.refresh(Map.of(), request, response);
+
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        verify(jwtUtil, never()).generateTokenFull(any(), any(), any(), any(), any(), any());
+        verify(refreshTokenService, never()).writeCookie(any(), any());
+        verify(refreshTokenService).revocarTodosDeUsuario(usuario);
+        verify(refreshTokenService).clearCookie(response);
+    }
+
     @Test
     @DisplayName("refresh con reuso → 401 y limpia cookie")
     void refresh_reuse_unauthorizedClearsCookie() {

@@ -19,7 +19,7 @@ BEGIN
          GROUP BY fk_id_pedido
         HAVING COUNT(*) > 1
     ) THEN
-        RAISE NOTICE 'V194: hay pedidos con más de un comprobante activo; no se crea ux_comprobante_activo_pedido';
+        RAISE NOTICE 'V196: hay pedidos con más de un comprobante activo; no se crea ux_comprobante_activo_pedido';
     ELSE
         CREATE UNIQUE INDEX IF NOT EXISTS ux_comprobante_activo_pedido
             ON hot_click_comprobante_fiscal_tb (fk_id_pedido)

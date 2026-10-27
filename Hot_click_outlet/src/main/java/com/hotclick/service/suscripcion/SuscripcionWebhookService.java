@@ -91,6 +91,7 @@ public class SuscripcionWebhookService {
 
             Empresa empresa = sub.getEmpresa();
             empresa.setEstadoPlan("ACTIVO");
+            // Stripe legado no reactiva una tienda SUSPENDIDO_IMPAGO: solo un cobro ONVO confirmado.
             empresa.setFechaVencPlan(periodoFin);
             empresa.setPlan(sub.getPlan());
             empresaRepo.save(empresa);
@@ -136,9 +137,8 @@ public class SuscripcionWebhookService {
             Empresa empresa = sub.getEmpresa();
             empresa.setEstadoPlan("PAST_DUE");
             empresaRepo.save(empresa);
-            ledgerWriter.registrar(empresa, sub, BillingLedger.TIPO_COBRO_FALLIDO,
-                BillingLedger.PROVEEDOR_STRIPE, stripeInvoiceId, null, null,
-                "Pago Stripe fallido");
+            anotarLedgerStripe(empresa, sub, BillingLedger.TIPO_COBRO_FALLIDO, stripeInvoiceId,
+                monedaDeFactura(stripeInvoiceId, sub), "Pago Stripe fallido");
             log.warn("[billing] Pago fallido empresa={} stripeSubId={}", empresa.getId(), stripeSubId);
         });
 
@@ -158,10 +158,31 @@ public class SuscripcionWebhookService {
             sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
             suscripcionRepo.save(sub);
             planSupport.degradarAPlanBase(sub.getEmpresa());
-            ledgerWriter.registrar(sub.getEmpresa(), sub, BillingLedger.TIPO_CANCELACION,
-                BillingLedger.PROVEEDOR_STRIPE, stripeSubId, null, null,
-                "Suscripción Stripe cancelada");
+            anotarLedgerStripe(sub.getEmpresa(), sub, BillingLedger.TIPO_CANCELACION, stripeSubId,
+                monedaDeFactura(null, sub), "Suscripción Stripe cancelada");
             log.info("[billing] Suscripción eliminada empresa={}", sub.getEmpresa().getId());
         });
+    }
+
+    /** Moneda real de lo que Stripe le cobra a la suscripción: la de la factura del evento o, si no, la de su última factura. */
+    private String monedaDeFactura(String stripeInvoiceId, Suscripcion sub) {
+        java.util.Optional<FacturaSaas> factura = stripeInvoiceId == null ? java.util.Optional.empty()
+            : facturaRepo.findByStripeInvoiceId(stripeInvoiceId);
+        if (factura.isEmpty() && sub.getId() != null) {
+            factura = facturaRepo.findFirstBySuscripcionIdOrderByFechaCreacionDesc(sub.getId());
+        }
+        return factura.map(FacturaSaas::getMoneda).filter(m -> m != null && !m.isBlank()).orElse(null);
+    }
+
+    /**
+     * El ledger registra la moneda real del cobro. Si no se conoce, no se inventa "crc": se deja una alerta (sin PII) y
+     * no se escribe la fila, sin romper la baja/PAST_DUE que ya ocurrió.
+     */
+    private void anotarLedgerStripe(Empresa empresa, Suscripcion sub, String tipo, String ref, String moneda, String detalle) {
+        if (moneda == null) {
+            log.error("[ALERTA-PAGO] Ledger Stripe sin moneda conocida, no se registra tipo={}", tipo);
+            return;
+        }
+        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_STRIPE, ref, null, moneda, detalle);
     }
 }

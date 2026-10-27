@@ -1,15 +1,6 @@
 import api from './api'
 import type { Id, JsonBody } from '@/types/api'
-import { formatPrice } from '@/utils/format'
-
-// ── Clientes B2B ─────────────────────────────────────────────────────────────
-
-export const cotizacionClienteService = {
-  listar: () => api.get('/cotizaciones/clientes').then(r => r.data),
-  crear:  (dto: JsonBody) => api.post('/cotizaciones/clientes', dto).then(r => r.data),
-  actualizar: (id: Id, dto: JsonBody) => api.put(`/cotizaciones/clientes/${id}`, dto).then(r => r.data),
-  eliminar:   (id: Id) => api.delete(`/cotizaciones/clientes/${id}`).then(r => r.data),
-}
+import { formatPrice, formatUSD } from '@/utils/format'
 
 // ── Cotizaciones B2B ─────────────────────────────────────────────────────────
 
@@ -40,7 +31,7 @@ export function labelEstado(estado: string) {
 
 export function formatMonto(monto: number | undefined, moneda: string = 'CRC') {
   if (moneda === 'USD') {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format((monto ?? 0) / 100)
+    return formatUSD((monto ?? 0) / 100)
   }
   return formatPrice(monto)
 }

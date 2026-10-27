@@ -1,3 +1,4 @@
+import { formatMiles } from '@/utils/format'
 export type ItemBusquedaGlobal = {
   label: string | undefined
   sub?: string
@@ -32,7 +33,7 @@ type ClienteBusqueda = {
   puntosFidelidad?: number
 }
 
-const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 
 export function mapearProductosBusqueda(prodList: unknown[]): ItemBusquedaGlobal[] {
   return prodList.slice(0, 5).map((raw) => {

@@ -1,5 +1,7 @@
 package com.hotclick.service.suscripcion;
 
+import com.hotclick.exception.EmpresaPendienteAprobacionException;
+
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.BillingLedger;
 import com.hotclick.model.Empresa;
@@ -47,6 +49,19 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
 
     @Autowired(required = false)
     private BillingLedgerWriter ledgerWriter;
+
+    /** Moneda de cobro de los planes para el ledger (config); sin ella el ledger usa su valor por defecto. */
+    @Autowired(required = false)
+    private PreciosPlanesConfig preciosPlanes;
+
+    @Autowired(required = false)
+    private org.springframework.cache.CacheManager cacheManager;
+
+    private void evictTenant(Long empresaId) {
+        if (cacheManager == null || empresaId == null) return;
+        org.springframework.cache.Cache c = cacheManager.getCache("tenantInfo");
+        if (c != null) c.evict(empresaId);
+    }
 
     /** PAG-6: el modo simulado de ONVO solo se permite con perfil dev o test. Sin entorno → cerrado. */
     @Autowired(required = false)
@@ -98,6 +113,40 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     public Map<String, Object> cambiarPlan(Long empresaId, Long planId) {
         Empresa empresa = empresaRepo.findById(empresaId)
             .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+        // Decisión 26-oct: una tienda SUSPENDIDO_IMPAGO no cambia de plan (ni al gratis); solo paga lo pendiente.
+        if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
+        }
+        // QA8: un negocio sin aprobar no elige ni paga plan (fail-closed, antes de tocar ONVO).
+        if (EmpresaPendienteAprobacionException.ESTADO.equals(empresa.getEstadoEmpresa())) {
+            throw new EmpresaPendienteAprobacionException();
+        }
+        return cambiarPlanInterno(empresa, planId);
+    }
+
+    /** Plan cuya mensualidad quedó impaga: el de la última suscripción VENCIDO, si es de pago. */
+    @Transactional(readOnly = true)
+    public Optional<Plan> planPendienteDeSuspension(Long empresaId) {
+        return suscripcionRepo.findTopByEmpresaIdAndEstadoOrderByFechaCreacionDesc(empresaId, "VENCIDO")
+            .map(Suscripcion::getPlan)
+            .filter(p -> p.getPrecioMensual() != null && p.getPrecioMensual() > 0);
+    }
+
+    /** Inicia por ONVO el pago del plan impago de una tienda suspendida. Reactiva solo el webhook ONVO. */
+    @CacheEvict(value = "tenantInfo", key = "#empresaId")
+    public Map<String, Object> pagarSuspension(Long empresaId) {
+        Empresa empresa = empresaRepo.findById(empresaId)
+            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+        if (!SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new IllegalStateException("La tienda no está suspendida.");
+        }
+        Plan plan = planPendienteDeSuspension(empresaId)
+            .orElseThrow(() -> new IllegalStateException("Sin mensualidad pendiente."));
+        return cambiarPlanInterno(empresa, plan.getId());
+    }
+
+    private Map<String, Object> cambiarPlanInterno(Empresa empresa, Long planId) {
+        Long empresaId = empresa.getId();
         Plan planDestino = planRepo.findById(planId)
             .orElseThrow(() -> new NoSuchElementException("Plan no encontrado: " + planId));
 
@@ -114,6 +163,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
 
         if (PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())) {
+            // Seguridad #333: bajar a gratis no es pagar; una tienda suspendida nunca llega acá.
+            if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+                throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
+            }
             return bajarAGratis(empresaId, sub);
         }
 
@@ -141,6 +194,9 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             self.aplicarPlanLocal(empresaId, PLAN_GRATIS, null);
             return Map.of("status", "activado", "planNombre", PLAN_GRATIS);
         }
+        // Fail-closed ANTES de llamar a ONVO: si falta PLANES_MONEDA el ledger de la baja no se podría escribir y la
+        // operación se revertiría localmente después de haber cancelado en ONVO (cancelación huérfana).
+        if (ledgerWriter != null) monedaLedgerOFalla("CANCELACION");
         OnvoBillingClient.ResultadoCancelacion r = onvoBilling.cancelarAlVencer(sub.getOnvoSubscriptionId());
         if (r == OnvoBillingClient.ResultadoCancelacion.CANCELADA) {
             // ONVO ya no cobra: se refleja el estado local en vez de dejar la suscripción ACTIVA.
@@ -261,12 +317,18 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public void planPagoConfirmado(Long empresaId, String planNombre, String proveedor, String referencia) {
         log.info("[plan-pago] Plan {} confirmado empresa={} proveedor={} ref={}", planNombre, empresaId, proveedor, referencia);
-        aplicarPlanLocal(empresaId, planNombre, null);
+        // Solo un cobro ONVO confirmado reactiva una tienda suspendida (decisión 26-oct).
+        aplicarPlanInterno(empresaId, planNombre, null, Constants.PROVEEDOR_ONVO.equalsIgnoreCase(proveedor));
     }
 
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public void aplicarPlanLocal(Long empresaId, String planNombre, String onvoPriceId) {
+        // Sin reactivar: este camino no implica pago confirmado (bajar a gratis, mock dev/test).
+        aplicarPlanInterno(empresaId, planNombre, onvoPriceId, false);
+    }
+
+    private void aplicarPlanInterno(Long empresaId, String planNombre, String onvoPriceId, boolean pagoConfirmado) {
         Plan plan = planRepo.findByNombre(planNombre)
             .orElseThrow(() -> new IllegalStateException("Plan " + planNombre + " no configurado"));
         Empresa empresa = empresaRepo.findById(empresaId)
@@ -288,33 +350,34 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresa.setPlan(plan);
         empresa.setPlanSaas(planNombre);
         empresa.setEstadoPlan("ACTIVO");
+        if (pagoConfirmado) SuspensionImpago.reactivarSiSuspendida(empresa);
         empresa.setFechaVencPlan(fin);
         empresaRepo.save(empresa);
         log.info("[billing-onvo] Plan aplicado empresa={} plan={}", empresaId, planNombre);
     }
 
+    /**
+     * S-02: el plan y el fin de período vienen de ONVO (verificados en OnvoBillingVerificador), no de
+     * metadata ni de sub.plan. La suscripción se busca solo por el id ONVO, con lock de fila.
+     * B2: {@code referenciaLedger} es el id de la factura de ONVO (una por cobro) y es obligatorio: no hay sobrecarga
+     * sin referencia ni caída al id de la suscripción, que volvería a deduplicar el ledger por suscripción.
+     */
     @Transactional
-    @CacheEvict(value = "tenantInfo", key = "#empresaId")
-    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
-        Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionId(onvoSubId)
-            // tenant-global-ok: webhook de pago: null solo evita buscar por empresa (Optional.empty)
-            .or(() -> empresaId != null
-                ? suscripcionRepo.findActivaByEmpresaId(empresaId)
-                : Optional.empty())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
-
-        Plan plan = planId != null
-            ? planRepo.findById(planId).orElse(sub.getPlan())
-            : sub.getPlan();
-        if (plan == null) {
-            throw new IllegalStateException("Sin plan para activar suscripción ONVO " + onvoSubId);
+    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin, String referenciaLedger) {
+        if (!referenciaValida(referenciaLedger)) {
+            throw new IllegalArgumentException("Referencia de ledger ONVO inválida: se requiere el id de la factura");
         }
-
-        sub.setOnvoSubscriptionId(onvoSubId);
+        Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
+        Plan plan = planRepo.findByNombre(planNombre)
+            .orElseThrow(() -> new IllegalStateException("Plan " + planNombre + " no configurado"));
+        if (fin == null) {
+            throw new IllegalStateException("Sin fin de período ONVO para " + onvoSubId);
+        }
         sub.setPlan(plan);
+        sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
-        LocalDate fin = LocalDate.now(Constants.ZONA_CR).plusMonths(1);
         sub.setFechaFin(fin);
         suscripcionRepo.save(sub);
 
@@ -322,10 +385,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresa.setPlan(plan);
         empresa.setPlanSaas(plan.getNombre());
         empresa.setEstadoPlan("ACTIVO");
+        SuspensionImpago.reactivarSiSuspendida(empresa);
         empresa.setFechaVencPlan(fin);
         empresaRepo.save(empresa);
-        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO confirmado");
-        log.info("[billing-onvo] Webhook activó empresa={} plan={}", empresa.getId(), plan.getNombre());
+        evictTenant(empresa.getId());
+        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK,
+            referenciaLedger, "Pago ONVO verificado");
+        log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
     }
 
     @Transactional
@@ -360,14 +426,39 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         });
     }
 
-    private void anotarLedger(Empresa empresa, Suscripcion sub, String tipo, String ref, String detalle) {
-        if (ledgerWriter == null) return;
-        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, "crc", detalle);
+    /** referencia_externa del ledger: id de ONVO con forma válida (y por tanto dentro de los 120 caracteres de la columna). */
+    private static boolean referenciaValida(String ref) {
+        return ref != null && OnvoBillingClient.idValido(ref);
     }
 
-    private static String nombrePlanActual(Empresa empresa) {
-        if (empresa.getPlan() != null && empresa.getPlan().getNombre() != null) {
-            return empresa.getPlan().getNombre();
+    private void anotarLedger(Empresa empresa, Suscripcion sub, String tipo, String ref, String detalle) {
+        if (ledgerWriter == null) return;
+        // Fail-closed: sin moneda configurada no se escribe el ledger (ni cae al "crc" de la entidad) y la operación
+        // se revierte y se reintenta (transitorio), en vez de dejar COBRO_FALLIDO/CANCELACION con una moneda falsa.
+        String moneda = monedaLedgerOFalla(tipo);
+        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, moneda, detalle);
+    }
+
+    /** Moneda configurada para el ledger ONVO; sin ella lanza una excepción controlada (con alerta sin PII). */
+    private String monedaLedgerOFalla(String tipo) {
+        String moneda = preciosPlanes == null ? null : preciosPlanes.moneda().orElse(null);
+        if (moneda == null) {
+            log.error("[ALERTA-PAGO] Ledger billing ONVO sin moneda configurada, no se registra tipo={}: falta PLANES_MONEDA", tipo);
+            throw new ConfigBillingFaltanteException("PLANES_MONEDA");
+        }
+        return moneda;
+    }
+
+    /**
+     * QA8: {@code empresa.plan} es LAZY y este servicio corre sin transacción (open-in-view=false):
+     * leer {@code getNombre()} del proxy lanzaba LazyInitializationException («no session») y el
+     * cambio de plan respondía 500. Se lee solo el id del proxy (no lo inicializa) y el plan por repo.
+     */
+    private String nombrePlanActual(Empresa empresa) {
+        Plan actual = empresa.getPlan();
+        if (actual != null && actual.getId() != null) {
+            String nombre = planRepo.findById(actual.getId()).map(Plan::getNombre).orElse(null);
+            if (nombre != null) return nombre;
         }
         return empresa.getPlanSaas() != null ? empresa.getPlanSaas() : PLAN_GRATIS;
     }

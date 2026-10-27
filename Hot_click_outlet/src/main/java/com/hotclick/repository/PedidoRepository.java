@@ -151,7 +151,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT DISTINCT p FROM Pedido p " +
            "LEFT JOIN FETCH p.items i " +
            "LEFT JOIN FETCH i.producto pr " +
-           "WHERE p.usuarioFinal.id = :usuarioId AND p.estadoPedido = 'ENTREGADO'")
+           "WHERE p.usuarioFinal.id = :usuarioId AND p.estadoPedido = 'ENTREGADO' " +
+           // Seguridad #343: compras externas registradas a mano no habilitan reseñas.
+           "AND NOT (UPPER(COALESCE(p.origen, '')) = 'MANUAL' AND UPPER(TRIM(COALESCE(p.metodoPago, ''))) = 'EXTERNO')")
     List<Pedido> findEntregadosConItemsByUsuarioId(@Param("usuarioId") Long usuarioId);
 
     @Query("SELECT DISTINCT p FROM Pedido p " +
@@ -204,8 +206,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         "FROM hot_click_pedido_tb p " +
         "WHERE p.fk_id_empresa = :empresaId " +
         "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') AND p.es_prueba = false " +
-        "AND (:desde IS NULL OR DATE(p.fecha_pedido) >= CAST(:desde AS date)) " +
-        "AND (:hasta IS NULL OR DATE(p.fecha_pedido) <= CAST(:hasta AS date))",
+        "AND (:desde IS NULL OR CAST(p.fecha_pedido AS date) >= CAST(:desde AS date)) " +
+        "AND (:hasta IS NULL OR CAST(p.fecha_pedido AS date) <= CAST(:hasta AS date))",
         nativeQuery = true)
     List<Object[]> reporteIvaKpis(@Param("empresaId") Long empresaId,
                                  @Param("desde") String desde,
@@ -216,7 +218,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
      * Orden de columnas: fecha, documento, cliente, subtotal, iva, total, metodoPago, origen.
      */
     @Query(value =
-        "SELECT DATE(p.fecha_pedido), " +
+        "SELECT CAST(p.fecha_pedido AS date), " +
         "p.numero_pedido, " +
         "COALESCE(u.nombre, p.cliente_nombre, 'Consumidor Final'), " +
         "p.subtotal, " +
@@ -228,8 +230,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         "LEFT JOIN hot_click_usuario_tb u ON u.id_usuario = p.fk_id_usuario_final " +
         "WHERE p.fk_id_empresa = :empresaId " +
         "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') AND p.es_prueba = false " +
-        "AND (:desde IS NULL OR DATE(p.fecha_pedido) >= CAST(:desde AS date)) " +
-        "AND (:hasta IS NULL OR DATE(p.fecha_pedido) <= CAST(:hasta AS date)) " +
+        "AND (:desde IS NULL OR CAST(p.fecha_pedido AS date) >= CAST(:desde AS date)) " +
+        "AND (:hasta IS NULL OR CAST(p.fecha_pedido AS date) <= CAST(:hasta AS date)) " +
         "ORDER BY p.fecha_pedido DESC",
         nativeQuery = true)
     List<Object[]> reporteIvaDetalle(@Param("empresaId") Long empresaId,
@@ -316,4 +318,18 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
                                               @Param("corte") java.time.LocalDateTime corte,
                                               Pageable pageable);
 
+
+    /** Extensión de impago: ¿el pedido es de la empresa y se creó en la ventana de gracia [desde, hasta)? */
+    @Query("SELECT COUNT(p) FROM Pedido p WHERE p.id = :id AND p.empresa.id = :empresaId "
+         + "AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta")
+    long countGestionableEnGracia(@Param("id") Long id, @Param("empresaId") Long empresaId,
+                                  @Param("desde") java.time.LocalDateTime desde,
+                                  @Param("hasta") java.time.LocalDateTime hasta);
+
+    @Query("SELECT p FROM Pedido p WHERE p.empresa.id = :empresaId "
+         + "AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta ORDER BY p.fechaPedido DESC")
+    List<Pedido> findCreadosEnGracia(@Param("empresaId") Long empresaId,
+                                     @Param("desde") java.time.LocalDateTime desde,
+                                     @Param("hasta") java.time.LocalDateTime hasta,
+                                     org.springframework.data.domain.Pageable pageable);
 }

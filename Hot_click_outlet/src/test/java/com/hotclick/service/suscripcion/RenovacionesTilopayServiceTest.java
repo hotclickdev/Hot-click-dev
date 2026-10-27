@@ -5,6 +5,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
 import com.hotclick.repository.*;
+import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.TilopayService;
 import com.hotclick.service.billing.BillingLedgerWriter;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.*;
 
 /** SCALE1: la corrida de renovaciones consulta en lote y guarda en lote, sin consultas por negocio. */
 class RenovacionesTilopayServiceTest {
+    private static final OnvoRenovacionReconsulta.Corrida JOB = OnvoRenovacionReconsulta.Corrida.GENERAR_RENOVACIONES;
 
     private static Suscripcion sub(long empresaId, int precio, LocalDate fin) {
         Empresa e = new Empresa();
@@ -51,7 +53,7 @@ class RenovacionesTilopayServiceTest {
         when(cobros.empresasConCobro(eq(CobroSuscripcion.PENDIENTE), eq(CobroSuscripcion.MOTIVO_RENOVACION), anyCollection()))
             .thenReturn(List.of(2L));
 
-        int n = new RenovacionesTilopayService(subs, cobros, svc, ledger).generarRenovaciones(hoy);
+        int n = new RenovacionesTilopayService(subs, cobros, svc, ledger, mock(OnvoRenovacionReconsulta.class), mock(SecurityAuditService.class)).generarRenovaciones(hoy);
 
         assertThat(n).isZero(); // [ALERTA-PAGO]: no se genera cobro de renovación por Tilopay
         verify(cobros, times(1)).empresasConCobro(any(), any(), anyCollection());
@@ -69,5 +71,126 @@ class RenovacionesTilopayServiceTest {
         verify(cobros, never()).save(any());
         verify(subs, never()).save(any());
         verify(ledger, times(2)).registrar(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    private static Suscripcion subOnvo(long empresaId, LocalDate fin) {
+        Suscripcion s = sub(empresaId, 12900, fin);
+        s.setOnvoSubscriptionId("sub_" + empresaId);
+        return s;
+    }
+
+    /** A5-01: ONVO manda. Solo pasa a PAST_DUE si ONVO confirma que no hay pago; pagada o GET caído → no se toca. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void a501_suscripcionOnvoSoloPasaAPastDueSiOnvoConfirmaSinPago() {
+        LocalDate hoy = LocalDate.of(2026, 10, 28);
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
+        Suscripcion pagada = subOnvo(1, hoy);
+        Suscripcion incierta = subOnvo(2, hoy);
+        Suscripcion sinPago = subOnvo(3, hoy);
+        Suscripcion legado = sub(4, 12900, hoy);
+        when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(pagada, incierta, sinPago, legado));
+        when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
+        when(reconsulta.reconsultar(eq(pagada), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.PAGADA);
+        when(reconsulta.reconsultar(eq(incierta), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.INCIERTA);
+        when(reconsulta.reconsultar(eq(sinPago), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+
+        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta, mock(SecurityAuditService.class)).generarRenovaciones(hoy);
+
+        ArgumentCaptor<List<Suscripcion>> pastDue = ArgumentCaptor.forClass(List.class);
+        verify(svc).guardarRenovaciones(any(), pastDue.capture());
+        assertThat(pastDue.getValue()).containsExactlyInAnyOrder(sinPago, legado);
+        assertThat(pagada.getEstado()).isEqualTo("ACTIVO");
+        assertThat(incierta.getEstado()).isEqualTo("ACTIVO");
+        verify(reconsulta, never()).reconsultar(eq(legado), any(), any());
+    }
+
+    @Test
+    void ledgerRegistraElProveedorQueCobra_onvoSiTieneIdDeOnvo_tilopaySiEsHeredada() {
+        LocalDate hoy = LocalDate.of(2026, 10, 28);
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        SuscripcionTilopayService svc = spy(new SuscripcionTilopayService(cobros, mock(PlanRepository.class),
+            mock(EmpresaRepository.class), subs, mock(TilopayService.class), mock(SuscripcionOnvoChangeService.class),
+            ledger, 28, "DIAS"));
+        OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
+        Suscripcion conOnvo = sub(1, 12900, hoy);
+        conOnvo.setOnvoSubscriptionId("clsub0001");
+        when(reconsulta.reconsultar(eq(conOnvo), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+        when(reconsulta.monedaConfigurada()).thenReturn(java.util.Optional.of("usd"));
+        Suscripcion heredada = sub(2, 12900, hoy);
+        when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(conOnvo, heredada));
+        when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
+
+        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta, mock(SecurityAuditService.class)).generarRenovaciones(hoy);
+
+        // moneda real: ONVO usa la configurada (usd), Tilopay cobra en colones; nunca un "crc" por defecto para ONVO
+        verify(ledger).registrar(any(), eq(conOnvo), eq("COBRO_FALLIDO"), eq("ONVO"), any(), any(), eq("usd"), any());
+        verify(ledger).registrar(any(), eq(heredada), eq("COBRO_FALLIDO"), eq("TILOPAY"), any(), any(), eq("crc"), any());
+        verify(ledger, never()).registrar(any(), eq(conOnvo), any(), eq("TILOPAY"), any(), any(), any(), any());
+    }
+
+    @Test
+    void ledgerOnvoSinMonedaConfiguradaNoEscribeCrcYNoRompeElJob() {
+        LocalDate hoy = LocalDate.of(2026, 10, 28);
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        SuscripcionTilopayService svc = spy(new SuscripcionTilopayService(cobros, mock(PlanRepository.class),
+            mock(EmpresaRepository.class), subs, mock(TilopayService.class), mock(SuscripcionOnvoChangeService.class),
+            ledger, 28, "DIAS"));
+        OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
+        Suscripcion conOnvo = sub(1, 12900, hoy);
+        conOnvo.setOnvoSubscriptionId("clsub0001");
+        when(reconsulta.reconsultar(eq(conOnvo), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+        when(reconsulta.monedaConfigurada()).thenReturn(java.util.Optional.empty());
+        when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(conOnvo));
+        when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
+
+        SecurityAuditService auditoria = mock(SecurityAuditService.class);
+        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta, auditoria).generarRenovaciones(hoy);
+
+        verify(ledger, never()).registrar(any(), any(), any(), any(), any(), any(), any(), any());
+        // sigue en PAST_DUE: sin moneda no se regala servicio
+        assertThat(conOnvo.getEstado()).isEqualTo("PAST_DUE");
+        // la omisión queda persistida (auditoría), no solo en el log; sin valores sensibles
+        ArgumentCaptor<java.util.Map<String, Object>> meta = ArgumentCaptor.forClass(java.util.Map.class);
+        verify(auditoria).log(eq(com.hotclick.security.SecurityEventType.BILLING_LEDGER_OMITIDO),
+            eq(com.hotclick.security.SecurityEventSeverity.HIGH), isNull(), isNull(), isNull(), isNull(),
+            eq("job:renovaciones"), meta.capture());
+        assertThat(meta.getValue()).containsEntry("motivo", "falta PLANES_MONEDA")
+            .containsEntry("proveedor", "ONVO").containsEntry("tipo", "COBRO_FALLIDO")
+            .containsEntry("suscripcionId", conOnvo.getId());
+    }
+
+    @Test
+    void ledgerOnvoSinMonedaNoRompeElJobSiLaAuditoriaFalla() {
+        LocalDate hoy = LocalDate.of(2026, 10, 28);
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
+        Suscripcion a = sub(1, 12900, hoy);
+        a.setOnvoSubscriptionId("clsub0001");
+        Suscripcion b = sub(2, 12900, hoy);
+        b.setOnvoSubscriptionId("clsub0002");
+        when(reconsulta.reconsultar(any(), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+        when(reconsulta.monedaConfigurada()).thenReturn(java.util.Optional.empty());
+        when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(a, b));
+        when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
+        SecurityAuditService auditoria = mock(SecurityAuditService.class);
+        doThrow(new RuntimeException("db caída")).when(auditoria).log(any(), any(), any(), any(), any(), any(), any(), any());
+
+        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta, auditoria).generarRenovaciones(hoy);
+
+        assertThat(a.getEstado()).isEqualTo("PAST_DUE");
+        assertThat(b.getEstado()).isEqualTo("PAST_DUE");
+        verify(auditoria, times(2)).log(any(), any(), any(), any(), any(), any(), any(), any());
     }
 }

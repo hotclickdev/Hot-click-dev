@@ -179,7 +179,7 @@ function CuentaUsuario() {
         <div role="menu" className="absolute right-0 top-12 z-30 w-64 rounded-[14px] border border-hc-n-200 bg-hc-surface p-3">
           <p className="font-display text-base font-bold">{visible}</p>
           <p className="truncate text-xs text-hc-n-600">{correo}</p>
-          <p className="mt-2 text-xs font-semibold text-hc-blue-600">Usted es el administrador, no un vendedor.</p>
+          <p className="mt-2 text-xs font-semibold text-hc-blue-600">Vos sos el administrador, no un vendedor.</p>
           <button type="button" className="mt-3 h-10 w-full rounded-xl bg-hc-n-100 text-sm font-semibold" onClick={() => { setAbierta(false); navigate('/plataforma/cuenta') }}>
             Ver la cuenta
           </button>

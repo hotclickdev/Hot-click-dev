@@ -48,17 +48,27 @@ public class CheckoutGrupoFactory {
 
     /**
      * CMP-4: la {@code bodegaId} del body tiene que ser de un negocio que vende algo del carrito.
-     * Si no se mandó o es la default HotClick (id 1), o la bodega no tiene negocio, no se exige.
+     * Si no se mandó, o la bodega no tiene negocio, no se exige. P-08: la id 1 ya no es excepción.
      */
     static void exigirBodegaDeLaTienda(PaymentCheckoutRequest req, java.util.Map<Long, com.hotclick.model.Producto> productos,
                                        Bodega bodega) {
-        // bodegaId=1 es la default HotClick que el front manda en todo envío: se trata como "no se mandó".
-        if (req.getBodegaId() == null || java.util.Objects.equals(req.getBodegaId(), com.hotclick.utils.Constants.BODEGA_DEFAULT_ID)
-            || bodega == null || bodega.getEmpresa() == null || productos == null || productos.isEmpty()) return;
+        if (req.getBodegaId() == null || bodega == null || bodega.getEmpresa() == null || productos == null || productos.isEmpty()) return;
         Long empresaBodega = bodega.getEmpresa().getId();
         boolean coincide = productos.values().stream()
             .anyMatch(p -> empresaBodega.equals(empresaDe(p)));
         if (!coincide) throw new IllegalArgumentException("La bodega elegida no es de la tienda de estos productos.");
+    }
+
+    /** E2E-CMP-01: empresas que venden los productos del paquete; un ítem sin empresa aporta null (se rechaza). */
+    static java.util.Set<Long> empresasVendedoras(CheckoutPaquetesPlanner.Paquete paquete,
+                                                  java.util.Map<Long, com.hotclick.model.Producto> productos) {
+        java.util.Set<Long> ids = new java.util.HashSet<>();
+        if (productos == null) return ids;
+        for (PaymentCheckoutRequest.ItemDTO item : paquete.items()) {
+            com.hotclick.model.Producto p = productos.get(item.getProductoId());
+            ids.add(p != null ? empresaDe(p) : null);
+        }
+        return ids;
     }
 
     private static Long empresaDe(com.hotclick.model.Producto p) {
@@ -72,7 +82,8 @@ public class CheckoutGrupoFactory {
         List<CheckoutPaquetesPlanner.Paquete> paquetes =
             planner.planificar(req, reservation.productosMap(), bodegaDefault);
         for (CheckoutPaquetesPlanner.Paquete paquete : paquetes) {
-            checkoutValidator.assertBodegaTenant(paquete.bodega(), paquete.bodega().getId());
+            checkoutValidator.assertBodegaTenant(paquete.bodega(), paquete.bodega() != null ? paquete.bodega().getId() : null,
+                empresasVendedoras(paquete, reservation.productosMap()));
             checkoutValidator.validarRetiroPaquete(paquete.metodoEnvio(), paquete.bodega());
         }
         orderPricingService.exigirCuponValido(req.getCodigoCupon(), paquetes.stream()

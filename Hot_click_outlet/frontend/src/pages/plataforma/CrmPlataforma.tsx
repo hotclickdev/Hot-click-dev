@@ -7,6 +7,7 @@ import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, Segmento, TARJETA
 import { NotaNegocio } from './NotaNegocio'
 import { accionNota } from './notaAccion'
 import { enlaceWhatsapp } from './whatsapp'
+import { formatPrice } from '@/utils/format'
 
 const BANDEJAS = [
   { id: 'porContactar', label: 'Por contactar' },
@@ -115,7 +116,7 @@ function MensajePrevio({ contacto, onNota }: { contacto: Contacto | null; onNota
     <div className="flex flex-col gap-3">
       <Borrador
         titulo="Mensaje previo"
-        detalle="Se abre WhatsApp en su teléfono. Usted lo envía; HotClick no tiene una línea automática."
+        detalle="Se abre WhatsApp en tu teléfono. Vos lo enviás; HotClick no tiene una línea automática."
         persona={contacto?.persona ?? ''}
         negocio={contacto?.negocio ?? ''}
         telefono={contacto?.telefono ?? ''}
@@ -271,5 +272,5 @@ function cifra(valor: unknown): string {
 }
 
 function colones(valor: number): string {
-  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(valor)
+  return formatPrice(valor)
 }

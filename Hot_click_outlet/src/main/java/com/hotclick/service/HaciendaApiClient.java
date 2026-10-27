@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import com.hotclick.service.hacienda.HaciendaConfiguracionException;
+import com.hotclick.service.hacienda.HaciendaLogSanitizer;
 import com.hotclick.service.hacienda.HaciendaTransitoriaException;
 import com.hotclick.service.hacienda.ResultadoEnvioHacienda;
 import org.springframework.web.client.HttpClientErrorException;
@@ -93,18 +94,18 @@ public class HaciendaApiClient {
                 String.class
             );
             log.info("[hacienda-api] POST /recepcion empresa={} clave={} status={}",
-                empresa.getId(), clave, resp.getStatusCode());
+                empresa.getId(), HaciendaLogSanitizer.clave(clave), resp.getStatusCode());
             return ResultadoEnvioHacienda.recibido(resp.getStatusCode().value());
         } catch (HttpClientErrorException e) {
             String causa = e.getResponseHeaders() != null ? e.getResponseHeaders().getFirst("X-Error-Cause") : null;
-            String motivo = causa != null && !causa.isBlank() ? causa : "Hacienda rechazó la recepción (HTTP " + e.getStatusCode().value() + ")";
+            String motivo = causa != null && !causa.isBlank() ? HaciendaLogSanitizer.mensaje(causa) : "Hacienda rechazó la recepción (HTTP " + e.getStatusCode().value() + ")";
             log.warn("[hacienda-api] Rechazo de recepción empresa={} clave={} status={} causa={}",
-                empresa.getId(), clave, e.getStatusCode().value(), motivo);
+                empresa.getId(), HaciendaLogSanitizer.clave(clave), e.getStatusCode().value(), motivo);
             return ResultadoEnvioHacienda.rechazoRecepcion(e.getStatusCode().value(), motivo);
         } catch (HttpServerErrorException | ResourceAccessException e) {
             log.error("[hacienda-api] Falla transitoria enviando empresa={} clave={}: {}",
-                empresa.getId(), clave, e.getMessage());
-            throw new HaciendaTransitoriaException("Hacienda no respondió bien al envío: " + e.getMessage(), e);
+                empresa.getId(), HaciendaLogSanitizer.clave(clave), HaciendaLogSanitizer.error(e));
+            throw new HaciendaTransitoriaException("Hacienda no respondió bien al envío: " + HaciendaLogSanitizer.error(e), e);
         }
     }
 
@@ -137,8 +138,8 @@ public class HaciendaApiClient {
             }
             return "en_procesamiento";
         } catch (HttpServerErrorException | ResourceAccessException e) {
-            log.error("[hacienda-api] Falla transitoria consultando clave={}: {}", clave, e.getMessage());
-            throw new HaciendaTransitoriaException("Hacienda no respondió la consulta: " + e.getMessage(), e);
+            log.error("[hacienda-api] Falla transitoria consultando clave={}: {}", HaciendaLogSanitizer.clave(clave), HaciendaLogSanitizer.error(e));
+            throw new HaciendaTransitoriaException("Hacienda no respondió la consulta: " + HaciendaLogSanitizer.error(e), e);
         }
     }
 

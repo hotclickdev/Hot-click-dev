@@ -105,6 +105,9 @@ class OnvoWebhookVerificadoTest {
         when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.COBRADO_SOBRE_CANCELADO);
         assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(200);
 
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.COBRADO_SOBREVENTA);
+        assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(200);
+
         when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.NO_CONSULTABLE);
         assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(503);
 
@@ -132,5 +135,18 @@ class OnvoWebhookVerificadoTest {
         assertThat(estado("{\"type\":\"payment-intent.succeeded\",\"data\":{\"id\":\"pi_1\"}}",
             "webhook_secret_prueba")).isEqualTo(200);
         verify(onvoPaymentProvider, never()).procesarPagoVerificado(any(), any());
+    }
+
+    @Test
+    @DisplayName("Caso 3 QA: llegan checkout-session.succeeded (x2) y payment-intent.succeeded → solo la sesión confirma; reentrega 200 duplicate")
+    void dosEventosUnaConfirmacion() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook"))
+            .thenReturn(Verificacion.OK, Verificacion.DUPLICADO);
+        assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(200);
+        assertThat(estado("{\"type\":\"payment-intent.succeeded\",\"data\":{\"id\":\"pi_1\"}}",
+            "webhook_secret_prueba")).isEqualTo(200);
+        assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(200);
+        verify(onvoPaymentProvider, org.mockito.Mockito.times(2)).procesarPagoVerificado("cs_1", "webhook");
+        verify(onvoPaymentProvider, never()).procesarPagoVerificado(org.mockito.ArgumentMatchers.eq("pi_1"), any());
     }
 }

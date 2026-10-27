@@ -45,17 +45,21 @@ public class AdminAsignarController {
 
     /** Busca clientes de la empresa por nombre, correo o teléfono (mínimo 3 caracteres, máximo 20). */
     @GetMapping("/buscar-cliente")
-    public ResponseDTO buscarCliente(@RequestParam String q) {
+    public ResponseEntity<ResponseDTO> buscarCliente(@RequestParam(required = false) String q) {
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
-        if (q == null || q.trim().length() < MIN_CARACTERES_Q) {
-            return ResponseDTO.success("Resultados", List.of());
+        if (q == null) { // sin el parámetro: error del cliente (400), no 500
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Falta el texto a buscar (q)."));
+        }
+        if (q.trim().length() < MIN_CARACTERES_Q) {
+            return ResponseEntity.ok(ResponseDTO.success("Resultados", List.of()));
         }
         String texto = q.trim();
         org.springframework.data.domain.Pageable top = org.springframework.data.domain.PageRequest.of(0, MAX_RESULTADOS);
         List<Usuario> encontrados = empresaId == null // tenant-global-ok: requireEmpresaIdOrAdmin, null solo ADMIN
             ? usuarioRepository.buscarClientes(texto, top)
             : usuarioRepository.buscarClientesByEmpresa(texto, empresaId, top);
-        return ResponseDTO.success("Resultados", encontrados.stream().map(AdminAsignarController::resumen).toList());
+        return ResponseEntity.ok(ResponseDTO.success("Resultados",
+            encontrados.stream().map(AdminAsignarController::resumen).toList()));
     }
 
     /** DTO mínimo: lo que muestra BuscarCliente.tsx. Nada de cédula, Clerk ID, notas ni crédito. */
@@ -144,7 +148,15 @@ public class AdminAsignarController {
     @PostMapping("/compra")
     public ResponseEntity<ResponseDTO> asignarCompra(@RequestBody Map<String, Object> body) {
         Long eid = companyScope.requireEmpresaIdOrAdmin();
-        Long usuarioIdBody = body.get("usuarioId") == null ? null : Long.valueOf(body.get("usuarioId").toString());
+        Long usuarioIdBody;
+        Long bodegaIdBody;
+        try {
+            usuarioIdBody = idOpcional(body.get("usuarioId"), "usuarioId");
+            bodegaIdBody  = idOpcional(body.get("bodegaId"), "bodegaId");
+        } catch (IllegalArgumentException e) {
+            // Id mal formado = error del cliente (400), no 500.
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
         if (eid != null && (usuarioIdBody == null || !usuarioRepository.esClienteDeEmpresa(usuarioIdBody, eid))) {
             // P9-01: el vendedor solo asigna compras a clientes de su negocio
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
@@ -164,7 +176,8 @@ public class AdminAsignarController {
 
             ManualPedidoDTO dto = new ManualPedidoDTO();
             dto.setUsuarioId(usuarioId);
-            dto.setBodegaId(1L);
+            // P-07: sin bodega fija; si no viene, PedidoManualFactory resuelve la del negocio.
+            dto.setBodegaId(bodegaIdBody);
             dto.setMetodoEnvio(Constants.ENVIO_RETIRO);
             dto.setMetodoPago(metodoPago);
             dto.setEstadoPedido(Constants.PEDIDO_ENTREGADO);
@@ -189,5 +202,17 @@ public class AdminAsignarController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
+    }
+
+    /** Id opcional del body: null si no viene o viene vacío; IllegalArgumentException (→ 400) si no es un entero positivo. */
+    static Long idOpcional(Object raw, String campo) {
+        if (raw == null || raw.toString().isBlank()) return null;
+        try {
+            long v = Long.parseLong(raw.toString().trim());
+            if (v > 0) return v;
+        } catch (NumberFormatException ignored) {
+            // cae al mensaje de abajo
+        }
+        throw new IllegalArgumentException("El campo " + campo + " no es un id válido.");
     }
 }

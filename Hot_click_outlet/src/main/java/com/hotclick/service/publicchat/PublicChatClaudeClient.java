@@ -82,7 +82,7 @@ public class PublicChatClaudeClient {
                                      Long maxBudget, Set<String> negations,
                                      boolean afterHours, List<String> smartOpts, boolean mostrarFichas) {
         EmpresaChatInfo info = getEmpresaChatInfo(empresaId);
-        streamer.streamClaudeResponse(log, emitter, userMessage, productos, history,
+        streamer.streamClaudeResponse(log, emitter, empresaId, userMessage, productos, history,
             info.whatsapp(), info.nombre(), marketplace, context,
             isEnglish, isGift, maxBudget, negations, afterHours, smartOpts, mostrarFichas);
     }
@@ -94,7 +94,7 @@ public class PublicChatClaudeClient {
                                       boolean isEnglish, boolean afterHours,
                                       List<String> smartOpts) {
         EmpresaChatInfo info = getEmpresaChatInfo(empresaId);
-        streamer.streamAdvisor(log, emitter, userMessage, ficha, history,
+        streamer.streamAdvisor(log, emitter, empresaId, userMessage, ficha, history,
             info.whatsapp(), info.nombre(), marketplace, isEnglish, afterHours, smartOpts);
     }
 
@@ -128,7 +128,8 @@ public class PublicChatClaudeClient {
      * En EMPRENDEDOR (o sin plan) responde con el de HotClick: la venta tiene que quedar en la plataforma.
      */
     static String whatsappVisible(Object wa, Object plan, String hotclickWa) {
-        String numero = wa != null ? String.valueOf(wa).trim() : "";
+        // Auditor 8: el número del tenant entra al prompt; solo dígitos (sin texto inyectable).
+        String numero = wa != null ? com.hotclick.utils.SoporteTelefono.digitos(String.valueOf(wa)) : "";
         if (numero.isEmpty() || !ContactoPublicoPolicy.permiteContacto(plan != null ? String.valueOf(plan) : null)) {
             return hotclickWa == null ? "" : hotclickWa;
         }

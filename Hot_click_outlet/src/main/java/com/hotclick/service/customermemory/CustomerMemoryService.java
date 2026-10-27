@@ -110,12 +110,13 @@ public class CustomerMemoryService {
      * Extrae información relevante del último turno y actualiza la memoria de forma asíncrona.
      * No bloquea el hilo del request. Si falla, solo se loguea — nunca propaga excepción.
      *
+     * @param empresaId        Empresa a la que se le atribuyen los tokens de la extracción (null → plataforma).
      * @param visitorId        Cookie del visitante.
      * @param userMessage      Último mensaje del usuario.
      * @param assistantMessage Última respuesta del asistente.
      */
     @Async
-    public void updateMemoryAsync(String visitorId, String userMessage, String assistantMessage) {
+    public void updateMemoryAsync(Long empresaId, String visitorId, String userMessage, String assistantMessage) {
         if (!CustomerMemoryHelpers.isValidVisitorId(visitorId)) return;
         if (apiKey == null || apiKey.isBlank()) return; // sin API key en dev, silencioso
 
@@ -124,7 +125,7 @@ public class CustomerMemoryService {
             CustomerMemoryDto existing = getOrCreate(visitorId);
 
             // Llamar a Claude para extraer datos estructurados
-            Map<String, Object> extracted = extractor.extractFromConversation(userMessage, assistantMessage);
+            Map<String, Object> extracted = extractor.extractFromConversation(empresaId, userMessage, assistantMessage);
             if (extracted == null || extracted.isEmpty()) return;
 
             // Merge de listas (union, sin duplicados, limite máximo)

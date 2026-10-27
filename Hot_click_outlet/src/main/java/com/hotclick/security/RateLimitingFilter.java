@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Distributed IP-level rate limiter (fixed-window, per POST).
+ * Distributed IP-level rate limiter (fixed-window, per POST / GET / HEAD).
  * Clave: IP del cliente (ClientIpResolver, solo cree X-Forwarded-For de proxies de confianza)
  * + path exacto, o + prefijo/sufijo para PREFIX_LIMITS (todas las rutas con id comparten bucket).
  * State is stored in hot_click_rate_limit_tb — safe for multi-pod.
@@ -37,6 +38,7 @@ import java.util.Map;
  *   /api/auth/registro-empresa   →  5 / 60s
  *   /api/auth/register           →  5 / 3600s
  *   /api/auth/send-verification  →  5 / 60s
+ *   /api/auth/reenviar-verificacion → 3 / 300s
  *   /api/auth/refresh            → 30 / 60s
  *   /api/auth/change-password    →  5 / 300s
  *
@@ -53,12 +55,14 @@ import java.util.Map;
  *   /api/public/shopping-assistant/chat   → 10 / 60s
  *   /api/admin/ai/chat                    → 20 / 60s
  *
- * Limits (GET, per IP — endpoints públicos sin auth):
+ * Limits (GET y HEAD, per IP — endpoints públicos sin auth; HEAD comparte el bucket de GET porque
+ * Spring MVC lo enruta al handler de GET. OPTIONS no ejecuta handler y PUT/PATCH/DELETE no están limitados aquí):
  *   /api/hacienda/contribuyente/** →  10 / 60s  (proxy a API externa de CR)
  *   /api/convenios/publicos        →  60 / 60s
  *   /api/marcas/publicas           →  60 / 60s
  *   /api/categorias/**             →  60 / 60s
  *   /api/blog/publico/**           →  60 / 60s
+ *   /api/gift-cards/validar        →  30 / 60s  (además 10 / 60s por usuario, fail-closed, en el controlador)
  *   /api/public/pedidos/seguimiento/** → 20 / 60s
  *   /api/public/tienda-rapida/**   →  20 / 60s
  *   /api/public/**                 →  60 / 60s
@@ -72,6 +76,24 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     @Autowired private SecurityAuditService auditService;
     @Autowired private RateLimiter          rateLimiter;
     @Autowired private ClientIpResolver     clientIpResolver;
+
+    // Topes de /2fa/setup|activate|disable por IP. Configurables en application.properties
+    // (hotclick.ratelimit.2fa-*); el valor del inicializador aplica si el filtro se crea sin Spring.
+    @Value("${hotclick.ratelimit.2fa-setup.max:5}")        private int tfaSetupMax = 5;
+    @Value("${hotclick.ratelimit.2fa-setup.window:300}")   private int tfaSetupWindow = 300;
+    @Value("${hotclick.ratelimit.2fa-activate.max:10}")    private int tfaActivateMax = 10;
+    @Value("${hotclick.ratelimit.2fa-activate.window:300}") private int tfaActivateWindow = 300;
+    @Value("${hotclick.ratelimit.2fa-disable.max:5}")      private int tfaDisableMax = 5;
+    @Value("${hotclick.ratelimit.2fa-disable.window:300}") private int tfaDisableWindow = 300;
+
+    private Limit limite2fa(String path) {
+        return switch (path) {
+            case "/api/auth/2fa/setup"    -> new Limit(tfaSetupMax, tfaSetupWindow);
+            case "/api/auth/2fa/activate" -> new Limit(tfaActivateMax, tfaActivateWindow);
+            case "/api/auth/2fa/disable"  -> new Limit(tfaDisableMax, tfaDisableWindow);
+            default -> null;
+        };
+    }
 
     private record Limit(int maxRequests, int windowSeconds) {}
     /**
@@ -93,6 +115,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
     private record GetLimit(String prefix, int maxRequests, int windowSeconds) {}
 
+    // B1: tope de rutas inválidas (400) por IP y ventana; el log de ese rechazo se muestrea con la misma ventana.
+    private static final int RUTA_INVALIDA_MAX = 20;
+    private static final int RUTA_INVALIDA_VENTANA = 60;
+
     // Exact-path limits (POST only)
     private static final Map<String, Limit> LIMITS = Map.ofEntries(
         // Auth
@@ -106,6 +132,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/register",           new Limit(5,  3600)),
         Map.entry("/api/auth/send-verification",  new Limit(5,    60)),
         Map.entry("/api/auth/reenviar-codigo-negocio", new Limit(3, 300)),
+        // QA4-004: reenvío público de verificación desde /login (además tope por correo en el servicio)
+        Map.entry("/api/auth/reenviar-verificacion", new Limit(3, 300)),
         Map.entry("/api/auth/refresh",            new Limit(30,   60)),
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
         // General
@@ -168,6 +196,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/hacienda/contribuyente",      10,  60), // proxy a API Hacienda CR
         // Estado del QR POS consulta ONVO en cada llamada; cajero (3 s) y cliente (2,5 s) suelen compartir IP
         new GetLimit("/api/pos/qr/pago",               120,  60),
+        // Segunda capa por IP (la principal es por usuario, fail-closed, en GiftCardController): probar códigos con saldo
+        new GetLimit("/api/gift-cards/validar",          30,  60),
         new GetLimit("/api/img",                         60,  60),
         new GetLimit("/api/convenios/publicos",          60,  60),
         new GetLimit("/api/marcas/publicas",             60,  60),
@@ -188,18 +218,35 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
-        // getServletPath() devuelve "" en MockMvc (y con el dispatcher mapeado en "/"
-        // bajo ciertos contenedores) — usar requestURI menos contextPath es portable.
-        String path = request.getRequestURI();
-        String contextPath = request.getContextPath();
-        if (contextPath != null && !contextPath.isEmpty() && path.startsWith(contextPath)) {
-            path = path.substring(contextPath.length());
+        // El tope se decide sobre la ruta canónica (RutaCanonica): sin decodificar, ";x", "//" ni "/./" la
+        // petición llegaba al controlador (Spring MVC la decodifica) sin tocar el cupo. getServletPath()
+        // no sirve: devuelve "" en MockMvc y ya viene decodificado según el contenedor.
+        String path = RutaCanonica.de(request.getRequestURI(), request.getContextPath());
+        if (path == null) {
+            // Ruta inválida (porcentaje roto, UTF-8 inválido, control o encoding de más de 3 niveles): fail-closed.
+            // B1: el rechazo cuenta contra un cupo por IP (así no es una vía gratis para inundar) y el log se
+            // muestrea, uno por IP y ventana, para que repetirla no llene el log.
+            String ipInvalida = clientIpResolver.resolve(request);
+            boolean dentroDelCupo = rateLimiter.tryAcquire(
+                "ip:" + ipInvalida + ":ruta-invalida", RUTA_INVALIDA_MAX, RUTA_INVALIDA_VENTANA);
+            if (rateLimiter.tryAcquire("ip:" + ipInvalida + ":ruta-invalida-log", 1, RUTA_INVALIDA_VENTANA)) {
+                log.warn("[RATE-LIMIT] ruta no canónica rechazada ip={} (se muestrea: un log por IP cada {}s)",
+                    ipInvalida, RUTA_INVALIDA_VENTANA);
+            }
+            response.setStatus(dentroDelCupo ? 400 : 429);
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write(dentroDelCupo
+                ? "{\"success\":false,\"message\":\"Ruta no válida.\"}"
+                : "{\"success\":false,\"message\":\"Demasiados intentos. Esperá un momento antes de volver a intentar.\"}");
+            return;
         }
         String method = request.getMethod();
 
         if ("POST".equalsIgnoreCase(method)) {
             String ip    = clientIpResolver.resolve(request);
             Limit  limit = LIMITS.get(path);
+            if (limit == null) limit = limite2fa(path);
             String bucket = path;
 
             // Exact-path check
@@ -229,7 +276,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                     return;
                 }
             }
-        } else if ("GET".equalsIgnoreCase(method)) {
+        } else if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) {
+            // HEAD: Spring MVC lo enruta al handler de GET y ejecuta el mismo código, así que comparte el
+            // bucket de GET ("ip:<ip>:GET:<prefijo>"). Sin esto, repetir HEAD evadía todos los GetLimit.
             String ip = clientIpResolver.resolve(request);
             for (GetLimit gl : GET_LIMITS) {
                 if (path.startsWith(gl.prefix())) {

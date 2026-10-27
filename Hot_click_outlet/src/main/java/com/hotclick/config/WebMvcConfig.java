@@ -2,6 +2,8 @@ package com.hotclick.config;
 
 import com.hotclick.security.LectorSoloLecturaInterceptor;
 import com.hotclick.security.SlugTenantInterceptor;
+import com.hotclick.security.SoloPropietarioNegocioInterceptor;
+import com.hotclick.security.SuspensionImpagoInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -13,11 +15,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     private final @NonNull HandlerInterceptor slugTenantInterceptor;
     private final @NonNull HandlerInterceptor lectorSoloLecturaInterceptor;
+    private final @NonNull HandlerInterceptor suspensionImpagoInterceptor;
+    private final @NonNull HandlerInterceptor soloPropietarioNegocioInterceptor;
 
     public WebMvcConfig(@NonNull SlugTenantInterceptor slugTenantInterceptor,
-                        @NonNull LectorSoloLecturaInterceptor lectorSoloLecturaInterceptor) {
+                        @NonNull LectorSoloLecturaInterceptor lectorSoloLecturaInterceptor,
+                        @NonNull SuspensionImpagoInterceptor suspensionImpagoInterceptor,
+                        @NonNull SoloPropietarioNegocioInterceptor soloPropietarioNegocioInterceptor) {
         this.slugTenantInterceptor = slugTenantInterceptor;
         this.lectorSoloLecturaInterceptor = lectorSoloLecturaInterceptor;
+        this.suspensionImpagoInterceptor = suspensionImpagoInterceptor;
+        this.soloPropietarioNegocioInterceptor = soloPropietarioNegocioInterceptor;
     }
 
     @Override
@@ -32,5 +40,27 @@ public class WebMvcConfig implements WebMvcConfigurer {
                                      "/api/payments/**", "/api/sinpe/**",
                                      // pago público POS-QR del comprador (no es escritura del negocio actual)
                                      "/api/pos/qr/pago/**");
+        // Área 2: pantallas de gestión del negocio (finanzas, métricas, ads, clientes, mesas, importación, borrado
+        // de datos) solo para el PROPIETARIO o el ADMIN; EDITOR y LECTOR (rol Spring EMPRENDEDOR) reciben 403.
+        registry.addInterceptor(soloPropietarioNegocioInterceptor)
+                .addPathPatterns("/api/admin/finanzas/**", "/api/admin/dashboard", "/api/admin/ads/**",
+                                 "/api/admin/asignar/**", "/api/admin/mesas", "/api/admin/mesas/**",
+                                 "/api/admin/importar/**", "/api/admin/reset-datos",
+                                 "/api/admin/reset-confirmacion", "/api/admin/reset-codigo",
+                                 // gift cards (crear/cancelar/listar códigos con saldo) y ficha con IA (costo)
+                                 "/api/admin/gift-cards", "/api/admin/gift-cards/**",
+                                 "/api/admin/productos/generar-ia");
+        // Suscripción impaga (día 9+): el negocio solo ve cuenta/monto y paga (allowlist exacta en el interceptor);
+        // las rutas de comprador ya rechazan tiendas no ACTIVO por su cuenta.
+        registry.addInterceptor(suspensionImpagoInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/public/**",
+                                     // comprador: rutas exactas (ya rechazan tiendas no ACTIVO por su cuenta)
+                                     "/api/tienda/*/pedidos",
+                                     "/api/payments/guest-checkout", "/api/payments/guest/cancel/*",
+                                     "/api/payments/tilopay/confirmar/*", "/api/payments/tilopay/reintentar/*",
+                                     "/api/sinpe/checkout", "/api/sinpe/guest-checkout",
+                                     "/api/sinpe/comprobantes/*/url-firmada",
+                                     "/api/webhooks/**", "/api/pos/qr/pago/**");
     }
 }

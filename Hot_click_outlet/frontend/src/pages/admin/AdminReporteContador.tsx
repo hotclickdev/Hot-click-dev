@@ -135,7 +135,7 @@ export default function AdminReporteContador() {
 
       {error && !denied && (
         <div className="bg-[#111114] border border-red-500/20 rounded-2xl p-8 text-center">
-          <p className="text-[#f87171] text-sm">Error al cargar el reporte. Intenta de nuevo.</p>
+          <p className="text-[#f87171] text-sm">Error al cargar el reporte. Intentá de nuevo.</p>
         </div>
       )}
 

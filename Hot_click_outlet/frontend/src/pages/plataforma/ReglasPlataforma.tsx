@@ -4,6 +4,7 @@ import { adminService } from '@/services/orderService'
 import { flagService } from '@/services/flagService'
 import { filasDe, texto, type Fila } from './normalizar'
 import { Aviso, Carga, Chip, Encabezado, MarcoIcono, Segmento, TARJETA } from './piezas'
+import { formatPrice } from '@/utils/format'
 
 type CargaEstado = 'carga' | 'listo' | 'error'
 
@@ -104,7 +105,7 @@ function porcentaje(valor: unknown): string {
 function plata(valor: unknown): string {
   const n = typeof valor === 'number' ? valor : Number(texto(valor, ''))
   if (!texto(valor, '') || !Number.isFinite(n)) return '—'
-  return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(n)
+  return formatPrice(n)
 }
 
 function useLista(cargar: () => Promise<{ data: unknown }>) {

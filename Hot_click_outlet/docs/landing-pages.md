@@ -15,9 +15,9 @@ HotClick tiene 3 landings públicas de venta de planes para emprendedores/PYMEs:
 | `/para-pymes` | PYME | `frontend/src/pages/planes/PymeLandingPage.tsx` → `<PymeLanding />` de `frontend/src/pages/pyme/` |
 | `/negocio-plus-plan` | Negocio Plus | `frontend/src/pages/planes/NegocioPlusLandingPage.tsx` → `<NegocioPlusLanding />` de `frontend/src/pages/negocioplus/` |
 
-Precios/comisión (ya correctos en `frontend/src/pages/planes/planLandingCopy.ts`,
-NO tocar sin que el usuario lo pida): Emprendedor 9% por venta (mín. ₡700,
-incluye pasarela), PYME y Negocio Plus 4% + mensualidad.
+Comisión por venta (26-oct-2026, sin mínimo): Emprendedor 9%, PYME 7,5% y Negocio Plus 6%.
+Fuente única: `hotclick.planes.*.comision-pct` (backend, V185) y `PLAN_PRECIOS` en
+`frontend/src/config/planesPrecios.ts`. No repetir los números en componentes.
 
 ## El diseño de referencia es Figma
 

@@ -102,7 +102,7 @@ public class OrderPricingService {
         int total = Math.max(0, subtotal - descuento + costoEnvio) + impuesto;
 
         int    gcMonto  = 0;
-        String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase() : null;
+        String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase(java.util.Locale.ROOT) : null;
         if (gcCodigo != null && !gcCodigo.isBlank() && empresaId != null && gcSaldoRestante > 0) {
             var gcOpt = giftCardService.validar(gcCodigo, empresaId);
             if (gcOpt.isPresent()) {

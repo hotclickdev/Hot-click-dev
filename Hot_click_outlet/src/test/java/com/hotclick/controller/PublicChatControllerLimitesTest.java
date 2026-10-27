@@ -8,6 +8,7 @@ import com.hotclick.security.ClientIpResolver;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.PublicChatService;
 import com.hotclick.service.TextModerationService;
+import com.hotclick.service.shoppingassistant.AsistenteCuotaDiaria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ class PublicChatControllerLimitesTest {
     private PublicChatController controller;
     private PublicChatService chatService;
     private RateLimiter rateLimiter;
+    private AsistenteCuotaDiaria asistenteCuota;
     private MockHttpServletRequest request;
 
     @BeforeEach
@@ -58,6 +60,11 @@ class PublicChatControllerLimitesTest {
         ReflectionTestUtils.setField(controller, "objectMapper", new ObjectMapper());
         ReflectionTestUtils.setField(controller, "maxDiarioVisitante", 60);
         ReflectionTestUtils.setField(controller, "maxDiarioEmpresa", 3000);
+        ReflectionTestUtils.setField(controller, "maxDiarioGlobal", 5000);
+        when(rateLimiter.tryAcquireEstricto(anyString(), anyInt(), anyInt())).thenReturn(true);
+        asistenteCuota = mock(AsistenteCuotaDiaria.class);
+        when(asistenteCuota.reservar(any(), anyBoolean(), any())).thenReturn(AsistenteCuotaDiaria.Reserva.OK);
+        ReflectionTestUtils.setField(controller, "asistenteCuota", asistenteCuota);
         request = new MockHttpServletRequest();
     }
 
@@ -93,6 +100,44 @@ class PublicChatControllerLimitesTest {
 
         verifyNoInteractions(chatService);
         verify(rateLimiter, never()).tryAcquire(startsWith("empresa:"), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Tope GLOBAL superado: responde sin modelo (no llama a Claude)")
+    void topeGlobal_degradaSinModelo() {
+        when(rateLimiter.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(true);
+        when(rateLimiter.tryAcquireEstricto(eq(PublicChatController.GLOBAL_KEY), eq(5000), anyInt())).thenReturn(false);
+
+        controller.chat("tienda", mensaje("una lampara"), request);
+
+        verify(chatService).chat(eq(EMPRESA_ID), anyBoolean(), eq("una lampara"), anyInt(), any(), any(), any(), any(),
+            eq(false), any());
+    }
+
+    @Test
+    @DisplayName("Tope de empresa superado: no consume el cupo global")
+    void topeEmpresa_noConsumeGlobal() {
+        when(rateLimiter.tryAcquire(startsWith("public_chat:ip:"), anyInt(), anyInt())).thenReturn(true);
+        when(rateLimiter.tryAcquire(startsWith("empresa:"), anyInt(), anyInt())).thenReturn(false);
+
+        controller.chat("tienda", mensaje("una lampara"), request);
+
+        verify(rateLimiter, never()).tryAcquireEstricto(anyString(), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Cupo diario del asistente agotado: no se llama al modelo y se usa el visitorId")
+    void cupoAsistenteAgotado_noLlamaAlModelo() {
+        when(rateLimiter.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(true);
+        when(asistenteCuota.reservar(any(), anyBoolean(), any())).thenReturn(new AsistenteCuotaDiaria.Reserva(
+            false, AsistenteCuotaDiaria.Motivo.CLIENTE, "Llegaste al límite", java.util.List.of()));
+        PublicChatRequest body = mensaje("una lampara");
+        body.setVisitorId("0b5f2c1e-3f0a-4d0e-9a52-1d6f0c9a7b11");
+
+        controller.chat("tienda", body, request);
+
+        verifyNoInteractions(chatService);
+        verify(asistenteCuota).reservar(eq(EMPRESA_ID), eq(false), eq("0b5f2c1e-3f0a-4d0e-9a52-1d6f0c9a7b11"));
     }
 
     private static PublicChatRequest mensaje(String texto) {

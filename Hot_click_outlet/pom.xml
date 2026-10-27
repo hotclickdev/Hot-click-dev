@@ -122,6 +122,12 @@
             <version>4.10.2</version>
         </dependency>
 
+        <!-- SMTP opcional (solo con mail.provider=smtp, p.ej. Mailpit en staging local) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- TOTP / 2FA (Google Authenticator compatible) -->
         <dependency>
             <groupId>dev.samstevens.totp</groupId>

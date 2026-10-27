@@ -22,7 +22,8 @@ export type PedidoTiendaInvitado = {
 
 /** Forma de entrega de un paquete puntual dentro de un checkout multivendedor. */
 export type EnvioPaqueteDTO = {
-  bodegaId: number
+  /** Solo si el paquete tiene bodega real; sin bodega el backend resuelve la de origen. */
+  bodegaId?: number
   metodoEnvio: string
   notas?: string | null
 }

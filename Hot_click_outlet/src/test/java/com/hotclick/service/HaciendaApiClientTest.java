@@ -109,6 +109,38 @@ class HaciendaApiClientTest {
         server.verify();
     }
 
+    private static final String CLAVE_50 = "50626102600310100000000100001010000000001199999999";
+
+    @Test
+    @DisplayName("logs: clave enmascarada (lleva la cédula) y causa sin dígitos largos ni saltos de línea")
+    void logsSinClaveNiCausaCruda() {
+        ch.qos.logback.classic.Logger lg = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(HaciendaApiClient.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> app = new ch.qos.logback.core.read.ListAppender<>();
+        app.start();
+        lg.addAppender(app);
+        try {
+            server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.ACCEPTED));
+            HttpHeaders h = new HttpHeaders();
+            h.add("X-Error-Cause", "Clave " + CLAVE_50 + " duplicada\ninyectado");
+            server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.BAD_REQUEST).headers(h));
+            server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE).body("cedula 3101000000"));
+            client.enviar("<x/>", CLAVE_50, empresa());
+            ResultadoEnvioHacienda r = client.enviar("<x/>", CLAVE_50, empresa());
+            assertThat(r.motivo()).doesNotContain(CLAVE_50).doesNotContain("\n");
+            assertThatThrownBy(() -> client.enviar("<x/>", CLAVE_50, empresa()))
+                .isInstanceOf(HaciendaTransitoriaException.class)
+                .satisfies(ex -> assertThat(ex.getMessage()).doesNotContain(CLAVE_50).doesNotContain("3101000000"));
+            assertThat(app.list).hasSizeGreaterThanOrEqualTo(3);
+            for (var ev : app.list) {
+                String msg = ev.getFormattedMessage();
+                assertThat(msg).doesNotContain(CLAVE_50).doesNotContain("3101000000").doesNotContain("\n");
+            }
+            assertThat(app.list.get(0).getFormattedMessage()).contains("clave=***9999");
+        } finally {
+            lg.detachAppender(app);
+        }
+    }
+
     private static Empresa empresa() {
         Empresa e = new Empresa();
         e.setId(7L);

@@ -1,0 +1,1 @@
+import{a as e}from"./format-EWtn23kz.js";function t(t){return e(Math.round(t??0))}export{t};

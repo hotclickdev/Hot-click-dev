@@ -22,6 +22,7 @@ public class AdminUsuarioService {
 
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private RolRepository rolRepository;
+    @Autowired private SesionesUsuarioService sesionesUsuarioService;
 
     @Transactional(readOnly = true)
     public List<Usuario> listarTodos() {
@@ -99,6 +100,7 @@ public class AdminUsuarioService {
         }
         usuario.setEstado(Constants.ESTADO_SUSPENDIDO);
         usuarioRepository.save(usuario);
+        sesionesUsuarioService.cortarSesiones(usuario);
     }
 
     public void desbloquear(Long id) {
@@ -125,6 +127,10 @@ public class AdminUsuarioService {
         Usuario usuario = usuario(id);
         usuario.setEstado(estado);
         usuarioRepository.save(usuario);
+        // Cualquier estado distinto de activo (eliminado, rechazado, inactivo) corta las sesiones vivas.
+        if (estado != Constants.ESTADO_ACTIVO) {
+            sesionesUsuarioService.cortarSesiones(usuario);
+        }
     }
 
     private Map<String, Object> filaOperador(Usuario usuario) {

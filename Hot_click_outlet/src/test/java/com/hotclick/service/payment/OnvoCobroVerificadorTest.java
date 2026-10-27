@@ -149,4 +149,46 @@ class OnvoCobroVerificadorTest {
         sesionSinIntent.remove("paymentIntentId");
         assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesionSinIntent, i, "test")).isEqualTo(Decision.RECHAZAR_MONTO);
     }
+
+    @Test
+    @DisplayName("Caso 3 QA: sesión paid+open con intent succeeded y monto exacto → se acepta")
+    void pagadaAbiertaConIntentSucceededSeAcepta() {
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "open"),
+            intent("succeeded", 1_250_000, "CRC"), "live")).isEqualTo(Decision.ACEPTAR);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("PAID", "OPEN"),
+            intent("succeeded", 1_250_000, "CRC"), "live")).isEqualTo(Decision.ACEPTAR);
+    }
+
+    @Test
+    @DisplayName("Caso 3 QA: paid+expired, unpaid, status ausente o desconocido, o intent no succeeded → nunca ACEPTAR")
+    void pagadaAbiertaFailClosed() {
+        Map<String, Object> ok = intent("succeeded", 1_250_000, "CRC");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "expired"), ok, "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("unpaid", "open"), ok, "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("unpaid", "complete"), ok, "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", null), ok, "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "raro"), ok, "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "open"),
+            intent("failed", 1_250_000, "CRC"), "live")).isEqualTo(Decision.NO_PAGADO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "open"),
+            intent("processing", 1_250_000, "CRC"), "live")).isEqualTo(Decision.EN_PROCESO);
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), sesion("paid", "open"),
+            intent("succeeded", 12_500, "CRC"), "live")).isEqualTo(Decision.RECHAZAR_MONTO);
+        Map<String, Object> otroModo = sesion("paid", "open");
+        otroModo.put("mode", "test");
+        assertThat(OnvoCobroVerificador.decidir(pago(12_500), otroModo, ok, "live")).isEqualTo(Decision.RECHAZAR_MODO);
+    }
+
+    @Test
+    @DisplayName("Caso 3 QA (navegador, checkout hospedado real): payload ONVO test open+paid → se acepta")
+    void payloadRealNavegadorOpenPaid() {
+        Map<String, Object> s = new HashMap<>(Map.of("id", "test_YsXR2HWxvmHyOgKmzaX6PwkHWA4", "status", "open",
+            "paymentStatus", "paid", "paymentIntentId", "cmvp4gxnq0bxok77fl4cu9vlr", "mode", "test"));
+        Map<String, Object> i = new HashMap<>(Map.of("id", "cmvp4gxnq0bxok77fl4cu9vlr", "status", "succeeded",
+            "amount", 500_000, "currency", "CRC", "mode", "test",
+            "metadata", Map.of("pedidoId", "15", "numeroPedido", "ORD-6A440B318BA0")));
+        assertThat(OnvoCobroVerificador.decidir(pago(5_000), s, i, "test")).isEqualTo(Decision.ACEPTAR);
+        // Mismo payload con llave live → otro modo, nunca se acepta.
+        assertThat(OnvoCobroVerificador.decidir(pago(5_000), s, i, "live")).isEqualTo(Decision.RECHAZAR_MODO);
+    }
 }

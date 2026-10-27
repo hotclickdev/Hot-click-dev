@@ -48,6 +48,7 @@ class PedidoServiceTest {
     @Mock private PedidoPagoManualService   pedidoPagoManualService;
     @Mock private PedidoGrupoService        pedidoGrupoService;
     @Mock private com.hotclick.service.payment.StockReservationService stockReservationService;
+    @Mock private com.hotclick.security.CompanyScope companyScope; // Seguridad #343: no admin de plataforma
 
     @InjectMocks private PedidoManualFactory         pedidoManualFactory;
     @InjectMocks private PedidoNotificacionAppender  pedidoNotificacionAppender;

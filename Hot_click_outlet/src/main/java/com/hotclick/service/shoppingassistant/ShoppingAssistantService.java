@@ -35,9 +35,8 @@ import java.util.UUID;
  * La sesión y los mensajes se manejan con JdbcTemplate para evitar mapear
  * el tipo JSONB y UUID de las tablas RAG con JPA/Hibernate.
  *
- * No se verifica cuota antes de llamar a Claude (endpoint público, la degradación
- * graceful del Circuit Breaker es suficiente protección). Sí se registran los tokens
- * consumidos vía {@link AiQuotaService#actualizarTokens} para billing y analytics.
+ * ALTO-1: la cuota ({@link AsistenteCuotaDiaria}) se reserva ANTES de crear la sesión y de
+ * llamar al LLM. Se registran los tokens vía {@link AiQuotaService#actualizarTokens}.
  */
 @Service
 public class ShoppingAssistantService {
@@ -55,6 +54,8 @@ public class ShoppingAssistantService {
     private final ShoppingAssistantSessionHelper sessionHelper;
     private final ShoppingAssistantPersistence   persistence;
     private final ShoppingAssistantFeedbackHandler feedbackHandler;
+    private final AsistenteCuotaDiaria            cuota;
+    private final ShoppingAssistantSesionFirma   firma;
 
     public ShoppingAssistantService(RagPipeline ragPipeline,
                                     AiQuotaService aiQuotaService,
@@ -64,7 +65,9 @@ public class ShoppingAssistantService {
                                     AssistantMetricsService metricsService,
                                     ShoppingAssistantSessionHelper sessionHelper,
                                     ShoppingAssistantPersistence persistence,
-                                    ShoppingAssistantFeedbackHandler feedbackHandler) {
+                                    ShoppingAssistantFeedbackHandler feedbackHandler,
+                                    AsistenteCuotaDiaria cuota,
+                                    ShoppingAssistantSesionFirma firma) {
         this.ragPipeline           = ragPipeline;
         this.aiQuotaService        = aiQuotaService;
         this.sanitizer             = sanitizer;
@@ -74,6 +77,8 @@ public class ShoppingAssistantService {
         this.sessionHelper         = sessionHelper;
         this.persistence           = persistence;
         this.feedbackHandler       = feedbackHandler;
+        this.cuota                 = cuota;
+        this.firma                 = firma;
     }
 
     // ── Punto de entrada público ──────────────────────────────────────────────
@@ -140,8 +145,20 @@ public class ShoppingAssistantService {
             return new ChatResponse(respuesta, sesionIdStr, List.of(), List.of(), List.of());
         }
 
+        // ALTO-1: sólo se reutiliza una sesión con token firmado por el servidor PARA ESTA tienda.
+        UUID sesionPrevia = firma.verificar(sesionIdStr, empresaId);
+
+        // ALTO-1: tope de costo ANTES de crear sesión y de cualquier llamada al LLM → 200 degradado.
+        AsistenteCuotaDiaria.Reserva reserva = cuota.reservar(empresaId, marketplace, visitorId);
+        if (!reserva.permitida()) {
+            return new ChatResponse(reserva.mensaje(),
+                sesionPrevia == null ? null : sesionIdStr.trim(), reserva.acciones());
+        }
+
         // 3. Resolver o crear sesión
-        UUID sesionId = sessionHelper.resolveSession(sesionIdStr, empresaId);
+        UUID sesionId = sessionHelper.resolveSession(
+            sesionPrevia == null ? null : sesionPrevia.toString(), empresaId);
+        String sesionToken = firma.firmar(empresaId, sesionId);
 
         // 4. Cargar historial (antes de persistir el mensaje actual)
         List<Map<String, Object>> historial = sessionHelper.loadHistory(sesionId);
@@ -166,9 +183,8 @@ public class ShoppingAssistantService {
 
         // 8. Registrar tokens para billing/analytics (best-effort)
         try {
-            if (resultado.tokensEntrada() > 0 || resultado.tokensSalida() > 0) {
-                aiQuotaService.actualizarTokens(
-                    empresaId, resultado.tokensEntrada(), resultado.tokensSalida());
+            if (!resultado.uso().esVacio()) {
+                aiQuotaService.actualizarTokens(empresaId, resultado.uso());
             }
         } catch (Exception e) {
             // C2: sin mensaje (puede traer SQL/datos del visitante), solo la clase.
@@ -177,14 +193,14 @@ public class ShoppingAssistantService {
 
         // 9. Actualizar memoria del visitante de forma asíncrona (no bloquea el response)
         try {
-            customerMemoryService.updateMemoryAsync(visitorId, mensaje, resultado.respuesta());
+            customerMemoryService.updateMemoryAsync(empresaId, visitorId, mensaje, resultado.respuesta());
         } catch (RuntimeException e) {
             log.warn("[rag] No se pudo programar memoria visitante: {}", e.getClass().getSimpleName());
         }
 
         return new ChatResponse(
             resultado.respuesta(),
-            sesionId.toString(),
+            sesionToken,
             resultado.productosReferenciados(),
             resultado.categorias(),
             resultado.opts()
@@ -203,7 +219,14 @@ public class ShoppingAssistantService {
      * @param rating      1 = positivo, -1 = negativo.
      */
     public void submitFeedback(String sesionIdStr, int msgIndex, int rating) {
-        feedbackHandler.submitFeedback(sesionIdStr, msgIndex, rating);
+        submitFeedback(sesionIdStr, msgIndex, rating, null);
+    }
+
+    /** @param empresaIdActual empresa del tenant de la request (null si el cliente no envió slug). */
+    public void submitFeedback(String sesionIdStr, int msgIndex, int rating, Long empresaIdActual) {
+        UUID sesion = verificarParaTienda(sesionIdStr, empresaIdActual);
+        if (sesion == null) return;
+        feedbackHandler.submitFeedback(sesion.toString(), msgIndex, rating);
     }
 
     // ── Historial público ─────────────────────────────────────────────────────
@@ -217,7 +240,15 @@ public class ShoppingAssistantService {
      * como token opaco. Si el UUID no existe en BD se retorna lista vacía.
      */
     public Map<String, Object> getSessionHistory(String sesionIdStr) {
-        return sessionHelper.getSessionHistory(sesionIdStr);
+        return getSessionHistory(sesionIdStr, null);
+    }
+
+    public Map<String, Object> getSessionHistory(String sesionIdStr, Long empresaIdActual) {
+        UUID sesion = verificarParaTienda(sesionIdStr, empresaIdActual);
+        if (sesion == null) return Map.of("sesionId", "", "mensajes", List.of());
+        Map<String, Object> h = new java.util.HashMap<>(sessionHelper.getSessionHistory(sesion.toString()));
+        if (h.containsKey("sesionId") && !"".equals(h.get("sesionId"))) h.put("sesionId", sesionIdStr.trim());
+        return h;
     }
 
     // ── Expiración manual de sesión ───────────────────────────────────────────
@@ -230,7 +261,31 @@ public class ShoppingAssistantService {
      * Operación idempotente: si la sesión no existe o el UUID es inválido, retorna sin error.
      */
     public void expireSession(String sesionIdStr) {
-        sessionHelper.expireSession(sesionIdStr);
+        expireSession(sesionIdStr, null);
+    }
+
+    public void expireSession(String sesionIdStr, Long empresaIdActual) {
+        UUID sesion = verificarParaTienda(sesionIdStr, empresaIdActual);
+        if (sesion == null) return;
+        sessionHelper.expireSession(sesion.toString());
+    }
+
+    /**
+     * Verifica el token contra la empresa dueña de la sesión en BD y, si la request trae tenant,
+     * exige que sea esa misma empresa. Un token de la tienda A nunca opera sobre la tienda B.
+     */
+    private UUID verificarParaTienda(String token, Long empresaIdActual) {
+        UUID uuid = ShoppingAssistantSesionFirma.uuidDe(token);
+        if (uuid == null) return null;
+        Long duena;
+        try {
+            duena = sessionHelper.empresaDeSesion(uuid);
+        } catch (DataAccessException e) {
+            return null;
+        }
+        if (duena == null) return null;
+        if (empresaIdActual != null && !empresaIdActual.equals(duena)) return null;
+        return firma.verificar(token, duena);
     }
 
     /**

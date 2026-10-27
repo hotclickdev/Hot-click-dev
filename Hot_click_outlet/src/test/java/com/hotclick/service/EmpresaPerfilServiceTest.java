@@ -128,7 +128,7 @@ class EmpresaPerfilServiceTest {
     void toggle_pendiente_aprobacion() {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("PENDIENTE_APROBACION");
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, true))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -141,7 +141,7 @@ class EmpresaPerfilServiceTest {
     void toggle_sin_valor() {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("ACTIVO");
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, null))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -154,7 +154,7 @@ class EmpresaPerfilServiceTest {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("ACTIVO");
         e.setVisibilidadPublica(false);
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Map<String, Object> out = service.toggleVisibilidad(3L, "true");
@@ -170,7 +170,7 @@ class EmpresaPerfilServiceTest {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("SUSPENDIDO");
         e.setVisibilidadPublica(false);
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, true))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -184,7 +184,7 @@ class EmpresaPerfilServiceTest {
         Empresa e = empresaBase(3L);
         e.setEstadoEmpresa("INACTIVO");
         e.setVisibilidadPublica(false);
-        when(empresaRepository.findById(3L)).thenReturn(Optional.of(e));
+        when(empresaRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(e));
 
         assertThatThrownBy(() -> service.toggleVisibilidad(3L, true))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -321,8 +321,36 @@ class EmpresaPerfilServiceTest {
         when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
         when(empresaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "cambioRegimenIvaHabilitado", true);
+
         service.updateFiscal(1L, Map.of("regimenIva", "TRADICIONAL"), false);
 
         assertThat(e.getRegimenIva()).isEqualTo("TRADICIONAL");
+    }
+
+    @Test
+    @DisplayName("Con el flag apagado (default) NO se puede pasar a TRADICIONAL: sigue SIMPLIFICADO")
+    void update_fiscal_cambio_regimen_apagado_por_defecto() {
+        var e = empresaBase(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+
+        assertThat(e.getRegimenIva()).isEqualTo("SIMPLIFICADO");
+        assertThatThrownBy(() -> service.updateFiscal(1L, Map.of("regimenIva", "TRADICIONAL"), false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("todavía no está habilitado");
+        assertThat(e.getRegimenIva()).isEqualTo("SIMPLIFICADO");
+        verify(empresaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Con el flag apagado, reenviar el régimen actual (SIMPLIFICADO) se acepta")
+    void update_fiscal_mismo_regimen_con_flag_apagado() {
+        var e = empresaBase(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(empresaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        service.updateFiscal(1L, Map.of("regimenIva", "SIMPLIFICADO"), false);
+
+        assertThat(e.getRegimenIva()).isEqualTo("SIMPLIFICADO");
     }
 }

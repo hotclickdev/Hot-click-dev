@@ -1,7 +1,8 @@
 import type { Id } from '@/types/api'
 import type { Producto } from '@/types/producto'
+import { formatMiles } from '@/utils/format'
 
-export const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+export const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 
 export const CAT_COLORS = [
   { bg: 'rgba(23,71,168,0.15)',  border: 'rgba(23,71,168,0.35)',  text: '#7aa3ff' },

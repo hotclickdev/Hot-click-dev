@@ -166,7 +166,7 @@ public class OnvoWebhookController {
             case NO_ENCONTRADO -> null;
             case CONFIRMADO -> ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "sinpe"));
             case DUPLICADO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
-            case COBRADO_SOBRE_CANCELADO -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
+            case COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
             case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));
             case EN_ESPERA, NO_VERIFICADO -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
         };
@@ -179,7 +179,7 @@ public class OnvoWebhookController {
             case OK -> null;
             case DUPLICADO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
             // Procesado: queda para reembolso del admin; reintentar no cambia nada.
-            case COBRADO_SOBRE_CANCELADO -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
+            case COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
             case NO_ENCONTRADO -> ResponseEntity.status(404).body(Map.of("error", "not found"));
             // Sin llave no se pudo verificar: error temporal para que ONVO reintente cuando vuelva la llave.
             case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));

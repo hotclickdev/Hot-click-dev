@@ -5,6 +5,7 @@ import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.rag.service.VectorSearchService;
 import com.hotclick.service.GoogleVisionService;
 import com.hotclick.service.producto.ProductoCatalogQueries;
+import com.hotclick.service.shoppingassistant.AsistenteCuotaDiaria;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -22,6 +24,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +50,7 @@ class ShoppingAssistantImageSearchHandlerTest {
             new ProductoContexto(11L, "Banco", "B1", 4000, null, null, 2, null, "Muebles", null, null)));
         when(queries.tiendasVisibles(anyCollection())).thenReturn(Map.of(10L, "Casa Luna"));
 
-        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries);
+        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries, cuotaLibre());
         Map<String, Object> body = handler.searchByImage(new MockMultipartFile("image", "f.png", "image/png", PNG), "hotclick", null).getBody();
 
         List<Map<String, Object>> productos = (List<Map<String, Object>>) body.get("productos");
@@ -70,7 +73,7 @@ class ShoppingAssistantImageSearchHandlerTest {
         when(vector.buscarSimilares(nullable(Long.class), anyString(), anyInt(), anyBoolean())).thenReturn(List.of());
         when(queries.tiendasVisibles(anyCollection())).thenReturn(Map.of());
 
-        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries);
+        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries, cuotaLibre());
         handler.searchByImage(new MockMultipartFile("image", "f.png", "image/png", PNG), "hotclick", null);
 
         verify(vector).buscarSimilares(isNull(), eq("Sillón verde"), eq(5), eq(true));
@@ -94,9 +97,37 @@ class ShoppingAssistantImageSearchHandlerTest {
         when(vector.buscarSimilares(eq(7L), anyString(), anyInt(), eq(false))).thenReturn(List.of());
         when(queries.tiendasVisibles(anyCollection())).thenReturn(Map.of());
 
-        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries);
+        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(guard, vector, vision, queries, cuotaLibre());
         handler.searchByImage(new MockMultipartFile("image", "f.png", "image/png", PNG), "casa-luna", null);
 
         verify(vector).buscarSimilares(eq(7L), eq("Chair"), eq(5), eq(false));
+    }
+
+    private static AsistenteCuotaDiaria cuotaLibre() {
+        AsistenteCuotaDiaria c = mock(AsistenteCuotaDiaria.class);
+        when(c.reservar(any(), anyBoolean(), any())).thenReturn(AsistenteCuotaDiaria.Reserva.OK);
+        return c;
+    }
+
+    @Test
+    @DisplayName("ALTO-1: sin cuota no se llama a Vision ni a la búsqueda; 200 degradado")
+    void sinCuota_noLlamaAVision() throws Exception {
+        ShoppingAssistantTenantGuard guard = mock(ShoppingAssistantTenantGuard.class);
+        VectorSearchService vector = mock(VectorSearchService.class);
+        GoogleVisionService vision = mock(GoogleVisionService.class);
+        AsistenteCuotaDiaria cuota = mock(AsistenteCuotaDiaria.class);
+        var acciones = java.util.List.of(new com.hotclick.rag.dto.AccionChat("buscar", "Buscar productos", "/productos"));
+        when(cuota.reservar(any(), anyBoolean(), any())).thenReturn(new AsistenteCuotaDiaria.Reserva(
+            false, AsistenteCuotaDiaria.Motivo.CLIENTE, "Llegaste al límite", acciones));
+        ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(
+            guard, vector, vision, mock(ProductoCatalogQueries.class), cuota);
+
+        var resp = handler.searchByImage(new MockMultipartFile("image", "f.png", "image/png", PNG), "hotclick", null);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(200);
+        assertThat(resp.getBody()).containsEntry("encontrado", false)
+            .containsEntry("mensaje", "Llegaste al límite").containsEntry("acciones", acciones);
+        verify(cuota).reservar(isNull(), eq(true), isNull());
+        verifyNoInteractions(vision, vector);
     }
 }

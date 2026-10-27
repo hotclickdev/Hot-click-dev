@@ -32,8 +32,8 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long> 
         "FROM hot_click_orden_compra_tb oc " +
         "WHERE oc.fk_id_empresa = :empresaId " +
         "AND oc.estado = 'RECIBIDA' " +
-        "AND (:desde IS NULL OR DATE(oc.fecha_recepcion) >= CAST(:desde AS date)) " +
-        "AND (:hasta IS NULL OR DATE(oc.fecha_recepcion) <= CAST(:hasta AS date))",
+        "AND (:desde IS NULL OR CAST(oc.fecha_recepcion AS date) >= CAST(:desde AS date)) " +
+        "AND (:hasta IS NULL OR CAST(oc.fecha_recepcion AS date) <= CAST(:hasta AS date))",
         nativeQuery = true)
     long sumComprasRecibidasEnPeriodo(@Param("empresaId") Long empresaId,
                                       @Param("desde") String desde,

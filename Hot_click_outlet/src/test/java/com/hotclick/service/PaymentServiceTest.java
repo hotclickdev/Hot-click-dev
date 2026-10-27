@@ -88,6 +88,12 @@ class PaymentServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
+
+        // P-05: la reserva usa el batch lock ordenado; delega en los stubs por id de cada test.
+        org.mockito.Mockito.lenient().when(productoRepository.findAllByIdsForUpdate(org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
+                .map(id -> productoRepository.findByIdForUpdate(id))
+                .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
         // Por defecto cada confirmación/fallo gana su UPDATE condicional (la carrera se prueba en TilopayDobleConfirmacionTest).
         lenient().when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
         lenient().when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
@@ -165,8 +171,10 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(userCancellationService, "guestCancelTokenService", guestCancelTokenService);
-        ReflectionTestUtils.setField(paymentExpirationCleanupService, "stockReservationService", stockReservationService);
-        ReflectionTestUtils.setField(paymentExpirationCleanupService, "pedidoGrupoService", pedidoGrupoService);
+        // QA5 ALTO: la cancelación por pago vive en PagoExpiradoCancelador (una tx por pago).
+        ReflectionTestUtils.setField(paymentExpirationCleanupService, "pagoExpiradoCancelador",
+            new com.hotclick.service.payment.PagoExpiradoCancelador(
+                pagoRepository, pedidoRepository, stockReservationService, pedidoGrupoService));
     }
 
     // ── M-01: oferta cobrada en checkout con tarjeta ONVO (proveedor mock) ──
@@ -221,6 +229,7 @@ class PaymentServiceTest {
 
         PaymentCheckoutRequest req = buildRequest(1);
         req.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        req.setDireccionEntrega("Barrio Escalante, casa 12");
 
         PaymentCheckoutResponse resp = service.checkout(req, CORREO);
 
@@ -468,6 +477,7 @@ class PaymentServiceTest {
 
         when(empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")).thenReturn(List.of(empresa));
         when(pagoRepository.findExpiradosPendientesByEmpresa(any(), eq(1L))).thenReturn(List.of(pago));
+        when(pagoRepository.findByIdForUpdate(any())).thenReturn(Optional.of(pago));
         when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(testProducto));
         when(productoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(pagoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));

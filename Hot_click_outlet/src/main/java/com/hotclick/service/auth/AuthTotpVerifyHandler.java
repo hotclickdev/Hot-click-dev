@@ -59,9 +59,18 @@ public class AuthTotpVerifyHandler {
 
             Usuario usuario = opt.get();
 
+            var limitado = authSupport.limite2faLoginUsuario(usuario.getId(), httpRequest);
+            if (limitado != null) return limitado;
+
             if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
                 return ResponseEntity.status(403).body(ResponseDTO.error(
                     "Cuenta temporalmente bloqueada. Intentá más tarde."));
+            }
+
+            // Cuenta que dejó de estar activa entre la contraseña y el 2FA: respuesta genérica, sin gastar el
+            // código de recuperación ni contar un intento fallido.
+            if (!AuthSupport.estaActiva(usuario)) {
+                return ResponseEntity.status(401).body(ResponseDTO.error(CuentaNoActivaException.MENSAJE));
             }
 
             // ── Códigos de recuperación (method-agnostic) ─────────────────────

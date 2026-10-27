@@ -10,8 +10,9 @@ import { mensajeErrorCompra } from './compras/comprasHelpers'
 import type { ProveedorAdmin } from './proveedores/proveedoresHelpers'
 import type { Producto } from '@/types/producto'
 import type { JsonBody } from '@/types/api'
+import { formatMiles } from '@/utils/format'
 
-const fmt = (n: number | null | undefined) => new Intl.NumberFormat('es-CR').format(n ?? 0)
+const fmt = (n: number | null | undefined) => formatMiles(n ?? 0)
 
 type LineaCompra = { productoId: string; cantidad: number | string; precioUnitario: number | string }
 

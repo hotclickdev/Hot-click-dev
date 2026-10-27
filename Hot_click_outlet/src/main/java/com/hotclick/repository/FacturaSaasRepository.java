@@ -16,6 +16,9 @@ public interface FacturaSaasRepository extends JpaRepository<FacturaSaas, Long> 
 
     Optional<FacturaSaas> findByStripeInvoiceId(String stripeInvoiceId);
 
+    /** Última factura de una suscripción: su moneda es la real con la que se le cobra (Stripe). */
+    Optional<FacturaSaas> findFirstBySuscripcionIdOrderByFechaCreacionDesc(Long suscripcionId);
+
     long countByEmpresaIdAndEstado(Long empresaId, String estado);
 
     @Query("""
