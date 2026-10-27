@@ -27,6 +27,7 @@ public class TelegramConfigController {
     @Autowired private TelegramClienteBotService bot;
     @Autowired private CompanyScope companyScope;
     @Autowired private TelegramConfigService telegramConfigService;
+    @Autowired private TelegramAbusoService abusoService;
 
     @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/vincular")
@@ -89,7 +90,7 @@ public class TelegramConfigController {
         if (!companyScope.isAdminIT()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return switch (telegramConfigService.desbloquear(usuarioId)) {
+        return switch (abusoService.desbloquear(usuarioId)) {
             case NO_ENCONTRADA -> ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             case SIN_BLOQUEO -> ResponseEntity.ok(Map.of("ok", true, "desbloqueado", false));
             case DESBLOQUEADA -> ResponseEntity.ok(Map.of("ok", true, "desbloqueado", true));

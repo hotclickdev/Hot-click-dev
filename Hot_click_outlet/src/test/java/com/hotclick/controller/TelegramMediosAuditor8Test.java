@@ -21,7 +21,6 @@ import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.service.TelegramFlujoService;
 import com.hotclick.service.TelegramService;
 import com.hotclick.service.telegram.TelegramAbusoService;
-import com.hotclick.service.telegram.TelegramConfigService;
 import com.hotclick.service.telegram.TelegramDatosQueryService;
 import com.hotclick.service.telegram.TelegramEmpresaContextService;
 import com.hotclick.service.telegram.TelegramFlujoAccionHandler;
@@ -111,12 +110,12 @@ class TelegramMediosAuditor8Test {
     private MockMvc mvcDesbloqueo(boolean admin, TelegramVinculacionRepository repo, AuditoriaAdminRegistroService auditoria) {
         CompanyScope scope = mock(CompanyScope.class);
         when(scope.isAdminIT()).thenReturn(admin);
-        TelegramConfigService svc = new TelegramConfigService();
+        TelegramAbusoService svc = new TelegramAbusoService();
         set(svc, "vinculacionRepository", repo);
         set(svc, "auditoria", auditoria);
         TelegramConfigController c = new TelegramConfigController();
         set(c, "companyScope", scope);
-        set(c, "telegramConfigService", svc);
+        set(c, "abusoService", svc);
         set(c, "bot", mock(TelegramClienteBotService.class));
         return MockMvcBuilders.standaloneSetup(c).build();
     }

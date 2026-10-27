@@ -7,17 +7,23 @@ import com.hotclick.repository.IpBloqueadaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.security.SecurityEventSeverity;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.service.TelegramService;
 import com.hotclick.service.security.SecurityAlertNotifier;
 import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Service
 public class TelegramAbusoService {
+
+    private static final Logger log = LoggerFactory.getLogger(TelegramAbusoService.class);
 
     static final int PAUSA_MINUTOS = 30;
     static final int BLOQUEO_DIAS = 365;
@@ -30,6 +36,10 @@ public class TelegramAbusoService {
     @Autowired private SecurityAlertNotifier alertNotifier;
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private IpBloqueadaRepository ipBloqueadaRepository;
+    @Autowired private AuditoriaAdminRegistroService auditoria;
+
+    /** Resultado de {@link #desbloquear(Long)}. */
+    public enum Desbloqueo { NO_ENCONTRADA, SIN_BLOQUEO, DESBLOQUEADA }
 
     public boolean rechazarSiPausadoOBloqueado(TelegramVinculacion v) {
         if (cuentaBloqueada(v.getUsuario())) {
@@ -118,6 +128,27 @@ public class TelegramAbusoService {
         }
         bot.enviarMensaje(chatId,
             "Bloqueé el acceso por Telegram por actividad sospechosa repetida. Un administrador tiene que habilitarlo.");
+    }
+
+    /**
+     * Auditor 8 M-A: salida administrativa del bloqueo por abuso ({@link #bloquearCuenta}, pausa de hasta
+     * {@value #BLOQUEO_DIAS} días). Solo limpia {@code pausadoHasta} de la vinculación del usuario; no
+     * reactiva una vinculación revocada ni toca la cuenta web. La autorización (admin de plataforma) la
+     * exige el controlador. Cada desbloqueo real queda en hot_click_auditoria_admin_tb.
+     */
+    @Transactional
+    public Desbloqueo desbloquear(Long usuarioId) {
+        TelegramVinculacion v = vinculacionRepository.findByUsuarioId(usuarioId).orElse(null);
+        if (v == null) return Desbloqueo.NO_ENCONTRADA;
+        LocalDateTime hasta = v.getPausadoHasta();
+        if (hasta == null || !LocalDateTime.now(Constants.ZONA_CR).isBefore(hasta)) return Desbloqueo.SIN_BLOQUEO;
+        v.setPausadoHasta(null);
+        vinculacionRepository.save(v);
+        Long empresaId = v.getUsuario() != null ? v.getUsuario().getEmpresaId() : null;
+        auditoria.registrar("TELEGRAM_DESBLOQUEO", "TELEGRAM_VINCULACION", v.getId(), empresaId,
+            "Desbloqueo del bot de Telegram del usuario " + usuarioId + " (pausa vigente hasta " + hasta + ")");
+        log.info("[telegram] admin desbloqueó la vinculación del usuario {}", usuarioId);
+        return Desbloqueo.DESBLOQUEADA;
     }
 
     private void bloquearIp(String ip) {
