@@ -3,11 +3,16 @@ package com.hotclick.service;
 import com.hotclick.dto.CupoEmprendedorEstado;
 import com.hotclick.dto.ResultadoAltaCupo;
 import com.hotclick.model.Empresa;
+import com.hotclick.exception.CupoEmprendedorNoDisponibleException;
 import com.hotclick.repository.PlanRepository;
+import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.suscripcion.TrialEmprendedorConfig;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -55,12 +60,24 @@ public class CupoEmprendedorService {
     private final JdbcTemplate jdbcTemplate;
     private final PlanRepository planRepository;
     private final TrialEmprendedorConfig trialConfig;
+    private final SuscripcionRepository suscripcionRepository;
+    private final Environment environment;
+    private final boolean demoCorreoHabilitado;
 
+    /**
+     * @param demoCorreoHabilitado {@code hotclick.cupo-emprendedor.demo-correo-habilitado}: por defecto {@code false}.
+     *        Solo se respeta con perfil dev o test (y nunca con prod/production); ver {@link #esDemo(String)}.
+     */
     public CupoEmprendedorService(JdbcTemplate jdbcTemplate, PlanRepository planRepository,
-                                  TrialEmprendedorConfig trialConfig) {
+                                  TrialEmprendedorConfig trialConfig, SuscripcionRepository suscripcionRepository,
+                                  Environment environment,
+                                  @Value("${hotclick.cupo-emprendedor.demo-correo-habilitado:false}") boolean demoCorreoHabilitado) {
         this.jdbcTemplate = jdbcTemplate;
         this.planRepository = planRepository;
         this.trialConfig = trialConfig;
+        this.suscripcionRepository = suscripcionRepository;
+        this.environment = environment;
+        this.demoCorreoHabilitado = demoCorreoHabilitado;
     }
 
     public CupoEmprendedorEstado estadoPublico() {
@@ -83,7 +100,8 @@ public class CupoEmprendedorService {
      * PENDIENTE_CUPO (plan Emprendedor, oculto) y el puesto, los {@code hotclick.trial-emprendedor.dias} días de trial
      * y el trial de ONVO cuentan desde que HotClick lo aprueba, con correo del propietario verificado y un puesto por
      * persona ({@code CupoEmprendedorAprobacionService}). Así un negocio pendiente (o falso) no agota el cupo.
-     * Las cuentas demo (@hotclick.test) siguen en plan gratis sin cupo.
+     * Las cuentas demo (@hotclick.test) van en plan gratis sin cupo SOLO en dev/test con el flag explícito
+     * ({@link #esDemo(String)}); en cualquier otro perfil siguen la ruta normal.
      */
     @Transactional
     public ResultadoAltaCupo aplicarAlta(Empresa empresa, String correoEmpresa) {
@@ -95,13 +113,32 @@ public class CupoEmprendedorService {
         return ResultadoAltaCupo.pendiente(estadoPublico());
     }
 
-    public static boolean esDemo(String correoEmpresa) {
-        if (correoEmpresa == null) return false;
-        return correoEmpresa.toLowerCase(Locale.ROOT).endsWith(Constants.CORREO_DEMO_EMPRESA_SUFIJO);
+    /**
+     * Cuenta demo (plan gratis, sin puesto ni correo verificado). El correo lo escribe quien se registra, así que el
+     * sufijo por sí solo NUNCA basta: hace falta el flag {@code hotclick.cupo-emprendedor.demo-correo-habilitado=true}
+     * Y un perfil dev o test activo Y ningún perfil prod/production. Sin entorno, sin flag o con cualquier otro perfil
+     * (staging, prod, sin perfil…) devuelve false: fail-closed.
+     */
+    public boolean esDemo(String correoEmpresa) {
+        if (correoEmpresa == null || !demoCorreoHabilitado || !perfilDemoPermitido()) return false;
+        return correoEmpresa.trim().toLowerCase(Locale.ROOT).endsWith(Constants.CORREO_DEMO_EMPRESA_SUFIJO);
+    }
+
+    private boolean perfilDemoPermitido() {
+        if (environment == null) return false;
+        for (String p : environment.getActiveProfiles()) {
+            String n = p == null ? "" : p.trim().toLowerCase(Locale.ROOT);
+            if (n.equals("prod") || n.equals("production")) return false;
+        }
+        return environment.acceptsProfiles(Profiles.of("(dev | test) & !prod & !production"));
     }
 
     /** Resultado de pedir un puesto de trial para un titular. */
-    public enum ResultadoReserva { ASIGNADO, SIN_CUPO, PERSONA_YA_TIENE_PUESTO }
+    public enum ResultadoReserva {
+        ASIGNADO, SIN_CUPO, PERSONA_YA_TIENE_PUESTO,
+        /** La persona ya tiene otro puesto, pero este negocio trae uno con suscripción vigente: no se toca. */
+        PUESTO_CONSERVADO_CON_SUSCRIPCION
+    }
 
     /**
      * Asigna un puesto de trial a la empresa para un titular (usuario propietario + correo normalizado). DEBE correr
@@ -113,7 +150,12 @@ public class CupoEmprendedorService {
      * de seguridad (en PostgreSQL una violación abortaría la transacción, por eso no se usa como control principal).
      *
      * <p>Si la empresa ya traía un puesto del registro anterior (#411, sin titular), no se vuelve a descontar: solo se
-     * le asigna titular, o se libera si la persona ya tenía otro.
+     * le asigna titular, o se libera si la persona ya tenía otro. Si ese puesto heredado tiene una suscripción vigente
+     * (cobro ONVO creado) NO se libera: devuelve {@link ResultadoReserva#PUESTO_CONSERVADO_CON_SUSCRIPCION} y el
+     * negocio queda como está (es del flujo de pagos).
+     *
+     * @throws CupoEmprendedorNoDisponibleException si la base de datos falla: la transacción puede quedar abortada
+     *         (PostgreSQL), así que no se sigue como si fuera «sin cupo»; se revierte todo y se responde 409.
      */
     @Transactional
     public ResultadoReserva reservarPuesto(Empresa empresa, Long usuarioId, String correoClave) {
@@ -123,7 +165,14 @@ public class CupoEmprendedorService {
             Integer otros = jdbcTemplate.queryForObject(SQL_TITULAR_EXISTENTE, Integer.class,
                 empresa.getId(), usuarioId, correoClave);
             if (otros != null && otros > 0) {
-                if (yaTrajoPuesto) liberarPuesto(empresa);
+                if (yaTrajoPuesto) {
+                    if (suscripcionRepository.findActivaByEmpresaId(empresa.getId()).isPresent()) {
+                        log.warn("[cupo-emprendedor] empresa={} con suscripción vigente: el puesto heredado no se libera",
+                            empresa.getId());
+                        return ResultadoReserva.PUESTO_CONSERVADO_CON_SUSCRIPCION;
+                    }
+                    liberarPuesto(empresa);
+                }
                 return ResultadoReserva.PERSONA_YA_TIENE_PUESTO;
             }
             int posicion;
@@ -143,8 +192,9 @@ public class CupoEmprendedorService {
             empresa.setTrialEmprendedorTitularCorreo(correoClave);
             return ResultadoReserva.ASIGNADO;
         } catch (DataAccessException ex) {
-            log.warn("[cupo-emprendedor] no se pudo reservar cupo — {}", ex.getMessage());
-            return ResultadoReserva.SIN_CUPO;
+            // Solo el tipo: el mensaje de un UNIQUE/FK puede traer el correo del titular (PII).
+            log.warn("[cupo-emprendedor] no se pudo reservar cupo — {}", ex.getClass().getSimpleName());
+            throw new CupoEmprendedorNoDisponibleException();
         }
     }
 

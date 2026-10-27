@@ -89,7 +89,8 @@ class CupoEmprendedorPostgresTest {
     }
 
     private CupoEmprendedorService servicio(int cupo) {
-        return new CupoEmprendedorService(jdbc, Mockito.mock(PlanRepository.class), new TrialEmprendedorConfig(cupo, 90));
+        return new CupoEmprendedorService(jdbc, Mockito.mock(PlanRepository.class), new TrialEmprendedorConfig(cupo, 90),
+            Mockito.mock(com.hotclick.repository.SuscripcionRepository.class), null, false);
     }
 
     private Empresa empresa(long id) {

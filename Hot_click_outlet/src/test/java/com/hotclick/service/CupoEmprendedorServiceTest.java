@@ -34,6 +34,7 @@ class CupoEmprendedorServiceTest {
 
     @Mock JdbcTemplate jdbc;
     @Mock PlanRepository planRepository;
+    @Mock com.hotclick.repository.SuscripcionRepository suscripcionRepository;
 
     CupoEmprendedorService service;
 
@@ -43,7 +44,19 @@ class CupoEmprendedorServiceTest {
     }
 
     private CupoEmprendedorService servicio(int cupo, int dias) {
-        return new CupoEmprendedorService(jdbc, planRepository, new TrialEmprendedorConfig(cupo, dias));
+        return servicio(cupo, dias, null, false);
+    }
+
+    private CupoEmprendedorService servicio(int cupo, int dias, org.springframework.core.env.Environment env,
+                                            boolean flagDemo) {
+        return new CupoEmprendedorService(jdbc, planRepository, new TrialEmprendedorConfig(cupo, dias),
+            suscripcionRepository, env, flagDemo);
+    }
+
+    private static org.springframework.core.env.Environment env(String... perfiles) {
+        org.springframework.mock.env.MockEnvironment e = new org.springframework.mock.env.MockEnvironment();
+        e.setActiveProfiles(perfiles);
+        return e;
     }
 
     @Test
@@ -124,32 +137,134 @@ class CupoEmprendedorServiceTest {
     }
 
     @Test
-    @DisplayName("Fail-closed: si la BD falla al reservar, no hay puesto")
+    @DisplayName("Fail-closed: si la BD falla al reservar no hay puesto y se lanza un error claro (409), no SIN_CUPO")
     void errorDeBdNoRegalaPuesto() {
         when(jdbc.update(contains("usados = usados"))).thenThrow(new org.springframework.dao.DataAccessResourceFailureException("bd caída"));
 
         Empresa empresa = new Empresa();
         empresa.setId(5L);
-        assertThat(service.reservarPuesto(empresa, 9L, "a@b.com"))
-            .isEqualTo(CupoEmprendedorService.ResultadoReserva.SIN_CUPO);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.reservarPuesto(empresa, 9L, "a@b.com"))
+            .isInstanceOf(com.hotclick.exception.CupoEmprendedorNoDisponibleException.class);
         assertThat(empresa.getTrialEmprendedorPos()).isNull();
     }
 
     @Test
-    @DisplayName("Correos demo QA no consumen cupo")
+    @DisplayName("L1: el log no lleva el mensaje de la excepción (puede traer el correo del UNIQUE)")
+    void logSoloConElTipoDeLaExcepcion() {
+        String correo = "persona.privada@correo.com";
+        when(jdbc.update(contains("usados = usados"))).thenThrow(
+            new org.springframework.dao.DuplicateKeyException("duplicate key (trial_emprendedor_titular_correo)=(" + correo + ")"));
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(CupoEmprendedorService.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+            new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            Empresa empresa = new Empresa();
+            empresa.setId(5L);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.reservarPuesto(empresa, 9L, correo))
+                .isInstanceOf(com.hotclick.exception.CupoEmprendedorNoDisponibleException.class)
+                .hasMessageNotContaining(correo);
+            assertThat(appender.list).isNotEmpty();
+            assertThat(appender.list).allSatisfy(ev -> {
+                assertThat(ev.getFormattedMessage()).doesNotContain(correo).contains("DuplicateKeyException");
+                assertThat(ev.getThrowableProxy()).isNull();
+            });
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
+    @DisplayName("L3: puesto heredado + persona con otro puesto + suscripción vigente: NO se libera")
+    void noLiberaPuestoHeredadoConSuscripcionVigente() {
+        when(jdbc.update(contains("usados = usados"))).thenReturn(1);
+        when(jdbc.queryForObject(contains("COUNT(*)"), eq(Integer.class), any(), any(), any())).thenReturn(1);
+        when(suscripcionRepository.findActivaByEmpresaId(5L)).thenReturn(Optional.of(new com.hotclick.model.Suscripcion()));
+
+        Empresa empresa = new Empresa();
+        empresa.setId(5L);
+        empresa.setTrialEmprendedorPos(3);
+        empresa.setEstadoPlan(Constants.ESTADO_PLAN_TRIAL);
+
+        assertThat(service.reservarPuesto(empresa, 9L, "a@b.com"))
+            .isEqualTo(CupoEmprendedorService.ResultadoReserva.PUESTO_CONSERVADO_CON_SUSCRIPCION);
+        verify(jdbc, never()).update(contains("estado_plan = 'PENDIENTE_CUPO'"), any(Object[].class));
+        verify(jdbc, never()).update(contains("usados - 1"));
+        assertThat(empresa.getTrialEmprendedorPos()).isEqualTo(3);
+        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
+    }
+
+    @Test
+    @DisplayName("L3: puesto heredado + persona con otro puesto + SIN suscripción: se libera como antes")
+    void liberaPuestoHeredadoSinSuscripcion() {
+        when(jdbc.update(contains("usados = usados"))).thenReturn(1);
+        when(jdbc.queryForObject(contains("COUNT(*)"), eq(Integer.class), any(), any(), any())).thenReturn(1);
+        when(suscripcionRepository.findActivaByEmpresaId(5L)).thenReturn(Optional.empty());
+        when(jdbc.update(contains("estado_plan = 'PENDIENTE_CUPO'"), eq(5L))).thenReturn(1);
+
+        Empresa empresa = new Empresa();
+        empresa.setId(5L);
+        empresa.setTrialEmprendedorPos(3);
+        empresa.setEstadoPlan(Constants.ESTADO_PLAN_TRIAL);
+
+        assertThat(service.reservarPuesto(empresa, 9L, "a@b.com"))
+            .isEqualTo(CupoEmprendedorService.ResultadoReserva.PERSONA_YA_TIENE_PUESTO);
+        assertThat(empresa.getTrialEmprendedorPos()).isNull();
+        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_PENDIENTE_CUPO);
+    }
+
+    @Test
+    @DisplayName("Correos demo QA no consumen cupo, solo con flag explícito y perfil dev/test")
     void demoNoConsumeCupo() {
         stubPlan();
         when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
             .thenReturn(CupoEmprendedorEstado.of(5, 70));
+        CupoEmprendedorService conFlag = servicio(70, 90, env("test"), true);
         Empresa empresa = new Empresa();
-        ResultadoAltaCupo alta = service.aplicarAlta(empresa, "qa.pyme.demo@hotclick.test");
+        ResultadoAltaCupo alta = conFlag.aplicarAlta(empresa, "qa.pyme.demo@hotclick.test");
 
         assertThat(alta.demo()).isTrue();
         assertThat(alta.cupoGratis()).isTrue();
         assertThat(alta.pendienteCupo()).isFalse();
         assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
-        assertThat(CupoEmprendedorService.esDemo("qa.negocioplus.demo@hotclick.test")).isTrue();
-        assertThat(CupoEmprendedorService.esDemo("real@gmail.com")).isFalse();
+        assertThat(conFlag.esDemo("qa.negocioplus.demo@hotclick.test")).isTrue();
+        assertThat(conFlag.esDemo("real@gmail.com")).isFalse();
+        assertThat(servicio(70, 90, env("dev"), true).esDemo("x@hotclick.test")).isTrue();
+    }
+
+    @Test
+    @DisplayName("esDemo fail-closed: sin flag, sin entorno, prod/production (cualquier mayúscula), staging o sin perfil")
+    void esDemoFailClosed() {
+        String demo = "x@hotclick.test";
+        assertThat(servicio(70, 90, env("test"), false).esDemo(demo)).isFalse();      // sin flag
+        assertThat(servicio(70, 90, null, true).esDemo(demo)).isFalse();              // sin entorno
+        assertThat(servicio(70, 90, env("prod"), true).esDemo(demo)).isFalse();
+        assertThat(servicio(70, 90, env("production"), true).esDemo(demo)).isFalse();
+        assertThat(servicio(70, 90, env("test", "prod"), true).esDemo(demo)).isFalse();
+        assertThat(servicio(70, 90, env("dev", "PROD"), true).esDemo(demo)).isFalse();
+        assertThat(servicio(70, 90, env("staging"), true).esDemo(demo)).isFalse();
+        assertThat(servicio(70, 90, env(), true).esDemo(demo)).isFalse();             // sin perfil activo
+        assertThat(servicio(70, 90, env("test"), true).esDemo(null)).isFalse();
+    }
+
+    @Test
+    @DisplayName("En prod, un correo @hotclick.test va por la ruta normal: PENDIENTE_CUPO, sin plan gratis ni puesto")
+    void aplicarAltaEnProdNoRegalaPlan() {
+        stubPlan();
+        when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
+            .thenReturn(CupoEmprendedorEstado.of(5, 70));
+        Empresa empresa = new Empresa();
+
+        ResultadoAltaCupo alta = servicio(70, 90, env("prod"), true).aplicarAlta(empresa, "Cualquiera@HotClick.Test");
+
+        assertThat(alta.demo()).isFalse();
+        assertThat(alta.cupoGratis()).isFalse();
+        assertThat(alta.pendienteCupo()).isTrue();
+        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_PENDIENTE_CUPO);
+        assertThat(empresa.getTrialEmprendedorPos()).isNull();
+        verify(jdbc, never()).update(anyString());
     }
 
     private void stubPlan() {

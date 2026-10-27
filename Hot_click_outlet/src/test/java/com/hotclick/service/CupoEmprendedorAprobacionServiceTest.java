@@ -72,11 +72,11 @@ class CupoEmprendedorAprobacionServiceTest {
         jdbc.execute("CREATE UNIQUE INDEX uq_tc ON hot_click_empresa_tb (trial_emprendedor_titular_correo)");
 
         PlanRepository planes = mock(PlanRepository.class);
-        cupo = new CupoEmprendedorService(jdbc, planes, new TrialEmprendedorConfig(70, 90));
         miembros = mock(MiembroEmpresaRepository.class);
         usuarios = mock(UsuarioRepository.class);
         suscripciones = mock(SuscripcionRepository.class);
         when(suscripciones.findActivaByEmpresaId(anyLong())).thenReturn(Optional.empty());
+        cupo = new CupoEmprendedorService(jdbc, planes, new TrialEmprendedorConfig(70, 90), suscripciones, null, false);
         servicio = new CupoEmprendedorAprobacionService(cupo, miembros, usuarios, suscripciones);
     }
 
@@ -289,6 +289,110 @@ class CupoEmprendedorAprobacionServiceTest {
         assertThat(usados()).isEqualTo(1);
         assertThat(e.getTrialEmprendedorTitularUsuario()).isEqualTo(10L);
         assertThat(e.getTrialEmprendedorTitularCorreo()).isEqualTo("dueno@correo.com");
+    }
+
+    /** Negocio del registro anterior (TRIAL con puesto 2 y sin titular) cuyo dueño ya tiene otro puesto (negocio 1). */
+    private Empresa heredadoDeQuienYaTienePuesto() {
+        Usuario dueno = usuario(10, "dueno@correo.com", true);
+        Empresa primero = pendiente(1, dueno);
+        assertThat(aprobar(primero)).isEqualTo(Resultado.TRIAL_ASIGNADO);
+        Empresa heredado = pendiente(2, dueno);
+        jdbc.update("UPDATE hot_click_empresa_tb SET estado_plan = 'TRIAL', trial_emprendedor_pos = 2 WHERE id_empresa = 2");
+        jdbc.update("UPDATE hot_click_cupo_emprendedor_tb SET usados = 2");
+        heredado.setEstadoPlan(Constants.ESTADO_PLAN_TRIAL);
+        heredado.setTrialEmprendedorPos(2);
+        return heredado;
+    }
+
+    @Test
+    @DisplayName("L3: puesto heredado con suscripción vigente y dueño con otro puesto: NO se libera (NO_APLICA)")
+    void heredadoConSuscripcionVigenteNoSeLibera() {
+        Empresa heredado = heredadoDeQuienYaTienePuesto();
+        when(suscripciones.findActivaByEmpresaId(2L)).thenReturn(Optional.of(Mockito.mock(Suscripcion.class)));
+
+        assertThat(aprobar(heredado)).isEqualTo(Resultado.NO_APLICA);
+
+        assertThat(usados()).isEqualTo(2);
+        assertThat(heredado.getTrialEmprendedorPos()).isEqualTo(2);
+        assertThat(heredado.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
+        assertThat(jdbc.queryForObject("SELECT trial_emprendedor_pos FROM hot_click_empresa_tb WHERE id_empresa = 2",
+            Integer.class)).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("L3: el mismo caso sin suscripción sí libera el puesto heredado y queda REQUIERE_MEMBRESIA")
+    void heredadoSinSuscripcionSeLibera() {
+        Empresa heredado = heredadoDeQuienYaTienePuesto();
+
+        assertThat(aprobar(heredado)).isEqualTo(Resultado.REQUIERE_MEMBRESIA);
+
+        assertThat(usados()).isEqualTo(1);
+        assertThat(heredado.getTrialEmprendedorPos()).isNull();
+        assertThat(heredado.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+    }
+
+    @Test
+    @DisplayName("L2: si la BD falla al reservar, la aprobación lanza CupoEmprendedorNoDisponibleException y no deja puesto")
+    void falloDeBdAlReservarEsErrorClaroYNoConsume() {
+        Empresa e = pendiente(1, usuario(10, "dueno@correo.com", true));
+        jdbc.execute("DROP TABLE hot_click_cupo_emprendedor_tb");
+
+        assertThatThrownBy(() -> aprobar(e))
+            .isInstanceOf(com.hotclick.exception.CupoEmprendedorNoDisponibleException.class);
+
+        assertThat(e.getTrialEmprendedorPos()).isNull();
+        assertThat(e.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_PENDIENTE_CUPO);
+        assertThat(jdbc.queryForObject("SELECT trial_emprendedor_pos FROM hot_click_empresa_tb WHERE id_empresa = 1",
+            Integer.class)).isNull();
+    }
+
+    private static MiembroEmpresa miembro(Usuario u, String rol) {
+        MiembroEmpresa m = new MiembroEmpresa();
+        m.setUsuario(u);
+        m.setRolEnEmpresa(rol);
+        return m;
+    }
+
+    @Test
+    @DisplayName("L4: con varios PROPIETARIO el titular es el de menor id, sin importar el orden de la consulta")
+    void propietarioEsDeterministaEntreMiembros() {
+        Usuario menor = usuario(10, "menor@correo.com", true), mayor = usuario(20, "mayor@correo.com", true);
+        Usuario socio = usuario(5, "socio@correo.com", true);
+        for (List<MiembroEmpresa> orden : List.of(
+                List.of(miembro(mayor, "PROPIETARIO"), miembro(socio, "SOCIO"), miembro(menor, "PROPIETARIO")),
+                List.of(miembro(menor, "PROPIETARIO"), miembro(socio, "SOCIO"), miembro(mayor, "PROPIETARIO")))) {
+            Empresa e = pendiente(1, menor);
+            when(miembros.findByEmpresaIdAndEstado(1L, 1)).thenReturn(orden);
+
+            assertThat(aprobar(e)).isEqualTo(Resultado.TRIAL_ASIGNADO);
+
+            assertThat(e.getTrialEmprendedorTitularUsuario()).isEqualTo(10L);
+            assertThat(e.getTrialEmprendedorTitularCorreo()).isEqualTo("menor@correo.com");
+            jdbc.update("DELETE FROM hot_click_empresa_tb");
+            jdbc.update("UPDATE hot_click_cupo_emprendedor_tb SET usados = 0");
+        }
+    }
+
+    @Test
+    @DisplayName("L4: sin PROPIETARIO el respaldo es el usuario de menor id (no el primero que devuelva la consulta)")
+    void propietarioRespaldoEsDeterminista() {
+        Usuario viejo = usuario(3, "viejo@correo.com", true);
+        Usuario medio = usuario(7, "medio@correo.com", true);
+        Usuario nuevo = usuario(9, "nuevo@correo.com", false);
+        for (List<Usuario> orden : List.of(List.of(nuevo, viejo, medio), List.of(medio, nuevo, viejo))) {
+            jdbc.update("INSERT INTO hot_click_empresa_tb (id_empresa) VALUES (1)");
+            Empresa e = new Empresa();
+            e.setId(1L);
+            e.setEstadoPlan(Constants.ESTADO_PLAN_PENDIENTE_CUPO);
+            when(miembros.findByEmpresaIdAndEstado(1L, 1)).thenReturn(List.of(miembro(nuevo, "SOCIO")));
+            when(usuarios.findByEmpresaIdConRoles(1L)).thenReturn(orden);
+
+            assertThat(aprobar(e)).isEqualTo(Resultado.TRIAL_ASIGNADO);
+
+            assertThat(e.getTrialEmprendedorTitularUsuario()).isEqualTo(3L);
+            jdbc.update("DELETE FROM hot_click_empresa_tb");
+            jdbc.update("UPDATE hot_click_cupo_emprendedor_tb SET usados = 0");
+        }
     }
 
     @Test

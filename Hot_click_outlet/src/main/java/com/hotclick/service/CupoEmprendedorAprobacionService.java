@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -78,6 +79,10 @@ public class CupoEmprendedorAprobacionService {
             cupoService.aplicarTrial(e);
             return Resultado.TRIAL_ASIGNADO;
         }
+        if (r == ResultadoReserva.PUESTO_CONSERVADO_CON_SUSCRIPCION) {
+            // Puesto heredado con suscripción vigente: no se toca ni el puesto ni el estado del plan.
+            return Resultado.NO_APLICA;
+        }
         log.info("[cupo-emprendedor] empresa={} aprobada sin trial ({})", e.getId(), r);
         cupoService.aplicarRequiereMembresia(e);
         return Resultado.REQUIERE_MEMBRESIA;
@@ -98,15 +103,24 @@ public class CupoEmprendedorAprobacionService {
         return cupoService.liberarPuesto(e);
     }
 
-    /** El propietario del negocio: miembro PROPIETARIO activo; si no hay, el usuario ligado a la empresa. */
+    /**
+     * El propietario del negocio, de forma determinista: entre los miembros PROPIETARIO activos el de menor id de
+     * usuario; si no hay, el usuario ligado a la empresa con menor id (el más antiguo, quien creó el negocio). La
+     * consulta no garantiza orden, así que se ordena acá: dos aprobaciones nunca eligen titulares distintos.
+     */
     private Usuario propietario(Long empresaId) {
         List<MiembroEmpresa> miembros = miembroRepository.findByEmpresaIdAndEstado(empresaId, 1);
-        for (MiembroEmpresa m : miembros) {
-            if ("PROPIETARIO".equals(m.getRolEnEmpresa()) && m.getUsuario() != null) return m.getUsuario();
-        }
-        List<Usuario> usuarios = usuarioRepository.findByEmpresaIdConRoles(empresaId);
-        return usuarios.isEmpty() ? null : usuarios.get(0);
+        Usuario propietario = miembros.stream()
+            .filter(m -> "PROPIETARIO".equals(m.getRolEnEmpresa()) && m.getUsuario() != null)
+            .map(MiembroEmpresa::getUsuario)
+            .min(PORID)
+            .orElse(null);
+        if (propietario != null) return propietario;
+        return usuarioRepository.findByEmpresaIdConRoles(empresaId).stream().min(PORID).orElse(null);
     }
+
+    private static final Comparator<Usuario> PORID =
+        Comparator.comparing(Usuario::getId, Comparator.nullsLast(Comparator.naturalOrder()));
 
     /**
      * Clave de "misma persona" por correo: minúsculas, sin alias {@code +tag} y, en Gmail/Googlemail, sin puntos del

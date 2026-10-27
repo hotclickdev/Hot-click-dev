@@ -67,7 +67,8 @@ class CupoEmprendedorConcurrenciaTest {
 
     private CupoEmprendedorService servicio(int cupo) {
         return new CupoEmprendedorService(jdbc, Mockito.mock(PlanRepository.class),
-            new TrialEmprendedorConfig(cupo, 90));
+            new TrialEmprendedorConfig(cupo, 90), Mockito.mock(com.hotclick.repository.SuscripcionRepository.class),
+            null, false);
     }
 
     private Empresa empresa(long id) {
@@ -160,10 +161,11 @@ class CupoEmprendedorConcurrenciaTest {
     }
 
     @Test
-    @DisplayName("Fail-closed: sin tabla de cupo no hay puesto")
+    @DisplayName("Fail-closed: sin tabla de cupo no hay puesto (error claro, no SIN_CUPO silencioso)")
     void sinTablaNoHayPuesto() {
         jdbc.execute("DROP TABLE hot_click_cupo_emprendedor_tb");
-        assertThat(reservar(servicio(70), empresa(1), 1, "p1@correo.com")).isEqualTo(ResultadoReserva.SIN_CUPO);
+        assertThatThrownBy(() -> reservar(servicio(70), empresa(1), 1, "p1@correo.com"))
+            .isInstanceOf(com.hotclick.exception.CupoEmprendedorNoDisponibleException.class);
     }
 
     // ── una persona, un puesto ────────────────────────────────────────────────
