@@ -174,7 +174,7 @@ public class GiftCardService {
     @Transactional
     public int canjear(String codigo, Pedido pedido, int montoSolicitado) {
         GiftCard gc = giftCardRepository.findByCodigoForUpdate(codigo.toUpperCase(Locale.ROOT))
-            .orElseThrow(() -> new IllegalStateException("Gift card no encontrada: " + codigo));
+            .orElseThrow(() -> new IllegalStateException("Gift card no encontrada: " + enmascarar(codigo)));
 
         // Defensa en profundidad: aunque hoy los dos callers ya validan el tenant
         // antes de llegar acá (ver PaymentService), el canje en sí no debe confiar
