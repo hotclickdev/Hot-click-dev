@@ -156,7 +156,8 @@ public class ImportController {
                     }
                 } catch (Exception e) {
                     log.warn("[import-confirmar] producto '{}' falló: {}", ext.getNombreProducto(), e.getMessage());
-                    errores.add(ext.getNombreProducto() + ": " + e.getMessage());
+                    errores.add(ext.getNombreProducto() + ": "
+                        + com.hotclick.service.producto.ProductoRequestSanitizer.mensajePublico(e));
                 }
             }
 
