@@ -3,7 +3,7 @@ import { formatUSD } from '@/utils/format'
  * Textos de precio de los planes (22-oct-2026, V185). Mensualidad en dólares (USD), cobrada por ONVO.
  * Los montos NO viven en el frontend: salen de config del backend (`GET /api/billing/planes` → precioUsd,
  * `GET /api/public/emprende/cupos` → mensualidadUsdSinCupo). Aquí solo quedan las comisiones de respaldo.
- * Emprendedor es gratis mientras haya cupo (primeros 70 negocios); «Sin mensualidad» solo se muestra
+ * Emprendedor es gratis mientras haya cupo (los primeros N negocios, N = `limite` de ese mismo endpoint); «Sin mensualidad» solo se muestra
  * cuando el backend confirma que hay cupo.
  */
 export type ClavePlan = 'EMPRENDEDOR' | 'PYME' | 'NEGOCIO_PLUS'
