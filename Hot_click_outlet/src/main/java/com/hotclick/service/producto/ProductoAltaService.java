@@ -59,7 +59,8 @@ public class ProductoAltaService {
         return productoApprovalService.aplicarReglasPublicacion(creado, empresa);
     }
 
-    public static class ContenidoNoPermitidoException extends RuntimeException {
+    public static class ContenidoNoPermitidoException extends RuntimeException
+            implements com.hotclick.exception.MensajePublicoSeguro {
         public ContenidoNoPermitidoException() {
             super(MENSAJE_CONTENIDO_NO_PERMITIDO);
         }

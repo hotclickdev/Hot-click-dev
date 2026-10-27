@@ -99,7 +99,7 @@ public class ProductoBulkOperationsService {
             } catch (Exception e) {
                 errors++;
                 if (errors <= 5) {
-                    errMsg.append("Fila ").append(i + 1).append(": ").append(e.getMessage()).append(". ");
+                    errMsg.append("Fila ").append(i + 1).append(": ").append(ProductoRequestSanitizer.mensajePublico(e)).append(". ");
                 }
             }
         }

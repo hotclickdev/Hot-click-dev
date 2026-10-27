@@ -53,7 +53,7 @@ public class ProductoWriteHandler {
             var producto = productoService.toggleCarrusel(id, valor, orden);
             return ResponseEntity.ok(ResponseDTO.success("Carrusel actualizado", producto));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
@@ -69,7 +69,7 @@ public class ProductoWriteHandler {
             var producto = productoService.toggleDestacado(id, valor);
             return ResponseEntity.ok(ResponseDTO.success("Destacado actualizado", producto));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
@@ -90,7 +90,7 @@ public class ProductoWriteHandler {
                 id, existente.getEmpresaId(), valor ? "Producto publicado" : "Producto pausado");
             return ResponseEntity.ok(ResponseDTO.success(msg, producto));
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
@@ -112,7 +112,7 @@ public class ProductoWriteHandler {
         } catch (com.hotclick.exception.TenantAccessDeniedException e) {
             throw e;
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Error: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -123,7 +123,7 @@ public class ProductoWriteHandler {
             int actualizados = productoBulkOperationsService.ajustarPrecios(pct);
             return ResponseEntity.ok(ResponseDTO.success(actualizados + " productos actualizados", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Error: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 
@@ -134,7 +134,7 @@ public class ProductoWriteHandler {
         try {
             result = productoBulkOperationsService.importar(dtos, currentUserName());
         } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
         return ResponseEntity.ok(ResponseDTO.success(result.mensaje(), result.data()));
     }
