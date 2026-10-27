@@ -264,6 +264,41 @@ class SuscripcionOnvoChangeServiceTest {
     }
 
     @Test
+    @DisplayName("Seguridad #391: sin PLANES_MONEDA la baja a gratis falla cerrado ANTES de cancelar en ONVO")
+    void bajaGratis_sinMoneda_noCancelaEnOnvoNiCambiaEstado() {
+        for (PreciosPlanesConfig config : new PreciosPlanesConfig[]{
+                null, new PreciosPlanesConfig("9", "24", "49", "")}) {
+            Suscripcion sub = prepararBajaConSubOnvo();
+            org.springframework.test.util.ReflectionTestUtils.setField(service, "ledgerWriter",
+                org.mockito.Mockito.mock(com.hotclick.service.billing.BillingLedgerWriter.class));
+            org.springframework.test.util.ReflectionTestUtils.setField(service, "preciosPlanes", config);
+
+            assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+                .isInstanceOf(ConfigBillingFaltanteException.class)
+                .hasMessageContaining("PLANES_MONEDA");
+
+            org.mockito.Mockito.verify(onvoBilling, org.mockito.Mockito.never()).cancelarAlVencer(any());
+            assertThat(sub.getEstado()).isEqualTo("ACTIVA");
+            assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
+        }
+    }
+
+    @Test
+    @DisplayName("Seguridad #391: con PLANES_MONEDA la baja a gratis sigue llamando a ONVO")
+    void bajaGratis_conMoneda_cancelaEnOnvo() {
+        prepararBajaConSubOnvo();
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "ledgerWriter",
+            org.mockito.Mockito.mock(com.hotclick.service.billing.BillingLedgerWriter.class));
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "preciosPlanes",
+            new PreciosPlanesConfig("9", "24", "49", "usd"));
+        when(onvoBilling.cancelarAlVencer("sub_real_l210"))
+            .thenReturn(OnvoBillingClient.ResultadoCancelacion.PROGRAMADA);
+
+        assertThat(service.cambiarPlan(10L, 1L).get("status")).isEqualTo("pendiente_ciclo");
+        org.mockito.Mockito.verify(onvoBilling).cancelarAlVencer("sub_real_l210");
+    }
+
+    @Test
     @DisplayName("L210: ONVO responde canceled → suscripción local CANCELADO y empresa en Emprendedor")
     void bajaGratis_onvoCanceled_actualizaEstadoLocal() {
         Suscripcion sub = prepararBajaConSubOnvo();
@@ -384,7 +419,7 @@ class SuscripcionOnvoChangeServiceTest {
         sub.setPlan(planPyme);
         when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("sub_1")).thenReturn(Optional.of(sub));
         when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(planPyme));
-        service.procesarPagoOnvoVerificado("sub_1", "PYME", java.time.LocalDate.of(2026, 12, 1));
+        service.procesarPagoOnvoVerificado("sub_1", "PYME", java.time.LocalDate.of(2026, 12, 1), "clinv0001");
         assertThat(empresa.getEstadoEmpresa()).isEqualTo("ACTIVO");
         assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
     }

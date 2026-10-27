@@ -27,6 +27,11 @@ public class PrecioPlanOnvo {
     private final PreciosPlanesConfig config;
     private final OnvoBillingClient onvo;
 
+    /** Moneda configurada de los planes ({@code PLANES_MONEDA}), vacía si falta. */
+    public Optional<String> moneda() {
+        return config.moneda();
+    }
+
     public PrecioPlanOnvo(PreciosPlanesConfig config, OnvoBillingClient onvo) {
         this.config = config;
         this.onvo = onvo;

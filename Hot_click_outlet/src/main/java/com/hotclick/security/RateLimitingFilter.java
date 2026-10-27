@@ -213,12 +213,18 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
-        // getServletPath() devuelve "" en MockMvc (y con el dispatcher mapeado en "/"
-        // bajo ciertos contenedores) — usar requestURI menos contextPath es portable.
-        String path = request.getRequestURI();
-        String contextPath = request.getContextPath();
-        if (contextPath != null && !contextPath.isEmpty() && path.startsWith(contextPath)) {
-            path = path.substring(contextPath.length());
+        // El tope se decide sobre la ruta canónica (RutaCanonica): sin decodificar, ";x", "//" ni "/./" la
+        // petición llegaba al controlador (Spring MVC la decodifica) sin tocar el cupo. getServletPath()
+        // no sirve: devuelve "" en MockMvc y ya viene decodificado según el contenedor.
+        String path = RutaCanonica.de(request.getRequestURI(), request.getContextPath());
+        if (path == null) {
+            // Ruta inválida (porcentaje roto, UTF-8 inválido, control o encoding de más de 3 niveles): fail-closed.
+            log.warn("[RATE-LIMIT] ruta no canónica rechazada ip={}", clientIpResolver.resolve(request));
+            response.setStatus(400);
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write("{\"success\":false,\"message\":\"Ruta no válida.\"}");
+            return;
         }
         String method = request.getMethod();
 
