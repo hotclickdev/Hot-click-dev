@@ -137,20 +137,11 @@ class UsuarioServiceLockoutTest {
     }
 
     @Test
-    @DisplayName("registrarSolicitud: la cuenta nueva arranca sin contadores (global + todos los de IP de ese id)")
-    void registrarSolicitud_liberaContadores() {
+    @DisplayName("registrarSolicitud / registrarPendiente: id nuevo, no hay nada que limpiar → ningún DELETE en el limitador")
+    void altasNoTocanElLimitador() {
         service.registrarSolicitud(nuevoQueRecibeId(77L));
-
-        verify(rateLimiter).liberar("auth:fallos:usuario:77:global");
-        verify(rateLimiter).liberarPrefijo("auth:fallos:usuario:77:ip:");
-    }
-
-    @Test
-    @DisplayName("registrarPendiente: la cuenta nueva arranca sin contadores (global + todos los de IP de ese id)")
-    void registrarPendiente_liberaContadores() {
         service.registrarPendiente(nuevoQueRecibeId(78L));
 
-        verify(rateLimiter).liberar("auth:fallos:usuario:78:global");
-        verify(rateLimiter).liberarPrefijo("auth:fallos:usuario:78:ip:");
+        verifyNoInteractions(rateLimiter);
     }
 }

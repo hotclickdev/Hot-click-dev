@@ -22,7 +22,7 @@ public class AdminUsuarioService {
 
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private RolRepository rolRepository;
-    @Autowired private com.hotclick.security.RateLimiter rateLimiter;
+    @Autowired private com.hotclick.security.LiberadorFallos liberadorFallos;
     @Autowired private SesionesUsuarioService sesionesUsuarioService;
 
     @Transactional(readOnly = true)
@@ -114,7 +114,7 @@ public class AdminUsuarioService {
         usuarioRepository.save(usuario);
         // Los contadores de fallos (global y por IP) se limpian junto con bloqueadoHasta: si no, el primer error
         // después del desbloqueo volvía a bloquear la cuenta.
-        com.hotclick.security.ClavesFallos.liberarTodo(rateLimiter, usuario.getId());
+        liberadorFallos.liberar(usuario.getId()); // tras el commit y en transacción aparte
     }
 
     private Usuario usuario(Long id) {
