@@ -124,6 +124,22 @@ class ProductoAltaAtomicaTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("Alta individual: si solo falla la auditoría (post-commit) responde 200 con aviso y el producto existe")
+    void altaIndividual_falloAuditoria_respondeExito() throws Exception {
+        doThrow(new IllegalStateException("auditoría caída"))
+            .when(auditoriaAdminRegistroService).registrarSiAdmin(anyString(), anyString(), anyLong(), anyLong(), anyString());
+
+        mockMvc.perform(post("/api/productos")
+                .header("Authorization", tokenAprobada).contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo("Atom Auditoria Individual", "SKU-ATOM-9", bodegaAprobada, "")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("auditoría")));
+
+        assertEquals(1, contar("Atom Auditoria Individual"));
+    }
+
+    @Test
     @DisplayName("Bulk vacío ([]) → 400")
     void bulk_listaVacia_400() throws Exception {
         bulk(tokenAprobada, "[]").andExpect(status().isBadRequest());

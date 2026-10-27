@@ -63,6 +63,7 @@ public class TelegramFlujoService {
     @Autowired private EmpresaRepository             empresaRepository;
     @Autowired private VentaService                  ventaService;
     @Autowired private ProductoService               productoService;
+    @Autowired private com.hotclick.service.producto.ProductoAltaService productoAltaService;
     @Autowired private PedidoService                 pedidoService;
     @Autowired private StockService                  stockService;
     @Autowired private ProductoImagenService         productoImagenService;
@@ -169,7 +170,9 @@ public class TelegramFlujoService {
             dto.setInstruccionesPersonalizacion(d.getInstr());
         }
 
-        Producto producto = productoService.crearProducto(dto, usuario.getCorreo(), empresa);
+        // Mismo pipeline que el panel, el bulk y el import: campos solo-admin, moderación de texto y reglas de
+        // publicación (negocio sin aprobar / sin ubicación de despacho no publica) en esta misma transacción.
+        Producto producto = productoAltaService.crearYPublicar(dto, usuario.getCorreo(), empresa).producto();
         productoImagenService.sincronizar(producto.getId(), d.getFotos());
 
         return producto;

@@ -19,6 +19,7 @@ import com.hotclick.service.StockService;
 import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.service.TurnoCajaService;
 import com.hotclick.service.VentaAvisoService;
+import com.hotclick.service.producto.BodegaTenantGuard;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
@@ -43,6 +44,7 @@ public class PosVentaService {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private BodegaTenantGuard bodegaTenantGuard;
     @Autowired private ProductoRepository productoRepository;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private StockService stockService;
@@ -147,8 +149,7 @@ public class PosVentaService {
 
     private Bodega resolverBodega(Long bodegaId, Long empresaId) {
         Bodega bodega = bodegaId != null
-            ? bodegaRepository.findById(bodegaId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId))
+            ? bodegaTenantGuard.exigirDeLaEmpresa(bodegaId, empresaId)
             : bodegaRepository.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO).stream().findFirst()
                 .orElseThrow(() -> new IllegalStateException("No hay bodega configurada"));
         Long empresaBodega = bodega.getEmpresaId();
