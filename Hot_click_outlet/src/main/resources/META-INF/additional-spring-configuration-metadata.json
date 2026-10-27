@@ -31,6 +31,26 @@
       "description": "Claude model ID para esos servicios. Default: claude-haiku-4-5-20251001."
     },
     {
+      "name": "ia.precio.input-por-m",
+      "type": "java.lang.Double",
+      "description": "USD por millon de tokens de entrada del modelo Claude (panel admin). Default Haiku 4.5: 1.00."
+    },
+    {
+      "name": "ia.precio.output-por-m",
+      "type": "java.lang.Double",
+      "description": "USD por millon de tokens de salida. Default Haiku 4.5: 5.00."
+    },
+    {
+      "name": "ia.precio.cache-lectura-por-m",
+      "type": "java.lang.Double",
+      "description": "USD por millon de tokens leidos de la cache de prompts. Default Haiku 4.5: 0.10."
+    },
+    {
+      "name": "ia.precio.cache-escritura-por-m",
+      "type": "java.lang.Double",
+      "description": "USD por millon de tokens escritos a la cache de prompts (5 min). Default Haiku 4.5: 1.25."
+    },
+    {
       "name": "nvidia.api-key",
       "type": "java.lang.String",
       "description": "NVIDIA NIM API key (integrate.api.nvidia.com). Solo deepteam/guardrails; el copilot de admin usa Claude."

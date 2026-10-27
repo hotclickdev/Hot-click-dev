@@ -182,9 +182,8 @@ public class ShoppingAssistantService {
 
         // 8. Registrar tokens para billing/analytics (best-effort)
         try {
-            if (resultado.tokensEntrada() > 0 || resultado.tokensSalida() > 0) {
-                aiQuotaService.actualizarTokens(
-                    empresaId, resultado.tokensEntrada(), resultado.tokensSalida());
+            if (!resultado.uso().esVacio()) {
+                aiQuotaService.actualizarTokens(empresaId, resultado.uso());
             }
         } catch (Exception e) {
             // C2: sin mensaje (puede traer SQL/datos del visitante), solo la clase.
@@ -193,7 +192,7 @@ public class ShoppingAssistantService {
 
         // 9. Actualizar memoria del visitante de forma asíncrona (no bloquea el response)
         try {
-            customerMemoryService.updateMemoryAsync(visitorId, mensaje, resultado.respuesta());
+            customerMemoryService.updateMemoryAsync(empresaId, visitorId, mensaje, resultado.respuesta());
         } catch (RuntimeException e) {
             log.warn("[rag] No se pudo programar memoria visitante: {}", e.getClass().getSimpleName());
         }
