@@ -175,7 +175,7 @@ public class ImportController {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
             log.error("[import-confirmar] Error: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al importar: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al importar: " + com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
     }
 

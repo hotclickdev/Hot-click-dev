@@ -11,6 +11,7 @@ import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
+import com.hotclick.security.ClientIpResolver;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.OtpService;
@@ -24,6 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -81,6 +83,7 @@ class CuentaNoActivaTenantOtpClerkTest {
         ReflectionTestUtils.setField(authSupport, "rateLimiter", rateLimiter);
         // el bloqueo por fallos (usuario+IP) consulta a UsuarioService antes de mirar la clave o el código
         ReflectionTestUtils.setField(authSupport, "usuarioService", mock(com.hotclick.service.UsuarioService.class));
+        ReflectionTestUtils.setField(authSupport, "clientIpResolver", mock(ClientIpResolver.class));
     }
 
     private static Usuario usuario(Integer estado) {
@@ -174,7 +177,7 @@ class CuentaNoActivaTenantOtpClerkTest {
     @DisplayName("OTP por correo: cuenta no activa → no se envía el código y la respuesta es genérica")
     void otpCuentaNoActivaNoEnvia(int estado) {
         OtpService otpService = mock(OtpService.class);
-        ResponseEntity<ResponseDTO> r = otp(usuario(estado), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), null);
+        ResponseEntity<ResponseDTO> r = otp(usuario(estado), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), new MockHttpServletRequest());
         verify(otpService, never()).enviarOtp2Fa(any(Usuario.class));
         assertThat(r.getStatusCode().value()).isEqualTo(401);
         assertThat(r.getBody().getMessage()).isEqualTo(GENERICO).doesNotContain("ejemplo.test");
@@ -185,7 +188,7 @@ class CuentaNoActivaTenantOtpClerkTest {
     @DisplayName("OTP por correo: cuenta sin estado → falla cerrado, no se envía")
     void otpSinEstadoNoEnvia(Integer estado) {
         OtpService otpService = mock(OtpService.class);
-        ResponseEntity<ResponseDTO> r = otp(usuario(estado), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), null);
+        ResponseEntity<ResponseDTO> r = otp(usuario(estado), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), new MockHttpServletRequest());
         verify(otpService, never()).enviarOtp2Fa(any(Usuario.class));
         assertThat(r.getStatusCode().value()).isEqualTo(401);
     }
@@ -194,7 +197,7 @@ class CuentaNoActivaTenantOtpClerkTest {
     @DisplayName("control: OTP por correo a una cuenta activa → 200 y se envía")
     void otpCuentaActivaEnvia() {
         OtpService otpService = mock(OtpService.class);
-        ResponseEntity<ResponseDTO> r = otp(usuario(1), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), null);
+        ResponseEntity<ResponseDTO> r = otp(usuario(1), otpService).sendLoginEmailOtp(Map.of("tempToken", "temp"), new MockHttpServletRequest());
         verify(otpService).enviarOtp2Fa(any(Usuario.class));
         assertThat(r.getStatusCode().value()).isEqualTo(200);
     }

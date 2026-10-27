@@ -34,11 +34,13 @@ public class BodegaTenantGuard {
      * {@link RecursoNoEncontradoException} (404/400 según el handler, sin datos de la bodega).
      */
     public Bodega exigirDeLaEmpresa(Long bodegaId, Long empresaId) {
+        // Una sola ruta para «no existe» y «es de otro negocio»: mismo trabajo, mismo log y misma excepción,
+        // para que ni el mensaje ni el tiempo de respuesta distingan un caso del otro.
         Bodega bodega = bodegaRepository.findById(bodegaId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
-        if (!perteneceA(bodega, empresaId)) {
-            log.warn("[producto] Bodega ajena bloqueada: bodegaId={}, bodega.empresaId={}, empresaId={}",
-                bodegaId, bodega.getEmpresaId(), empresaId);
+            .filter(b -> perteneceA(b, empresaId))
+            .orElse(null);
+        if (bodega == null) {
+            log.warn("[producto] Bodega no válida para el negocio: bodegaId={}, empresaId={}", bodegaId, empresaId);
             throw new RecursoNoEncontradoException("Bodega", bodegaId);
         }
         return bodega;
