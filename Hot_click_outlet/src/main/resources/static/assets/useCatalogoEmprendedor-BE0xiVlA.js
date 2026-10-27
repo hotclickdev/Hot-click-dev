@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-DXgcpab9.js";function t(){return e()}export{t};
