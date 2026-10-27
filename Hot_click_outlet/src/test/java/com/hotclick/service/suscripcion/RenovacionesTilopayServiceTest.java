@@ -19,6 +19,7 @@ import static org.mockito.Mockito.*;
 
 /** SCALE1: la corrida de renovaciones consulta en lote y guarda en lote, sin consultas por negocio. */
 class RenovacionesTilopayServiceTest {
+    private static final OnvoRenovacionReconsulta.Corrida JOB = OnvoRenovacionReconsulta.Corrida.GENERAR_RENOVACIONES;
 
     private static Suscripcion sub(long empresaId, int precio, LocalDate fin) {
         Empresa e = new Empresa();
@@ -93,9 +94,9 @@ class RenovacionesTilopayServiceTest {
         Suscripcion legado = sub(4, 12900, hoy);
         when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(pagada, incierta, sinPago, legado));
         when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
-        when(reconsulta.reconsultar(pagada, hoy)).thenReturn(OnvoRenovacionReconsulta.Estado.PAGADA);
-        when(reconsulta.reconsultar(incierta, hoy)).thenReturn(OnvoRenovacionReconsulta.Estado.INCIERTA);
-        when(reconsulta.reconsultar(sinPago, hoy)).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+        when(reconsulta.reconsultar(eq(pagada), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.PAGADA);
+        when(reconsulta.reconsultar(eq(incierta), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.INCIERTA);
+        when(reconsulta.reconsultar(eq(sinPago), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
 
         new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta).generarRenovaciones(hoy);
 
@@ -104,7 +105,7 @@ class RenovacionesTilopayServiceTest {
         assertThat(pastDue.getValue()).containsExactlyInAnyOrder(sinPago, legado);
         assertThat(pagada.getEstado()).isEqualTo("ACTIVO");
         assertThat(incierta.getEstado()).isEqualTo("ACTIVO");
-        verify(reconsulta, never()).reconsultar(eq(legado), any());
+        verify(reconsulta, never()).reconsultar(eq(legado), any(), any());
     }
 
     @Test
@@ -119,7 +120,7 @@ class RenovacionesTilopayServiceTest {
         OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
         Suscripcion conOnvo = sub(1, 12900, hoy);
         conOnvo.setOnvoSubscriptionId("clsub0001");
-        when(reconsulta.reconsultar(conOnvo, hoy)).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+        when(reconsulta.reconsultar(eq(conOnvo), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
         Suscripcion heredada = sub(2, 12900, hoy);
         when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(conOnvo, heredada));
         when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());

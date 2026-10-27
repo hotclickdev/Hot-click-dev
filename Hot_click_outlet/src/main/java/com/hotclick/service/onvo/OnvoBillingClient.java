@@ -259,6 +259,11 @@ public class OnvoBillingClient {
         return leerReal("/invoices/", invoiceId);
     }
 
+    /** GET /v1/prices/{id}: moneda y monto (unidad menor) que ONVO cobra por ese price. */
+    public Map<?, ?> obtenerPrecio(String priceId) {
+        return leerReal("/prices/", priceId);
+    }
+
     /** GET /v1/payment-intents/{id}. */
     public Map<?, ?> obtenerPaymentIntent(String intentId) {
         return leerReal("/payment-intents/", intentId);
