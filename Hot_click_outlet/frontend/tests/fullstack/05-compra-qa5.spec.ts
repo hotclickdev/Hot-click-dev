@@ -39,8 +39,8 @@ test.describe.serial('Compra — QA5', () => {
   }
 
   test('QA5-002: envío normal desde tienda != empresa 1 no choca con la bodega default (bodegaId=1)', async ({ request }) => {
-    // Mismo payload que arma el front hoy (ejecutarPagarCheckout: bodegaId=BODEGA_DEFAULT en envío).
-    const res = await guestCheckout(request, invitado({ bodegaId: 1, metodoEnvio: 'ENVIO_NORMAL_GAM', envios: [{ bodegaId: tienda.bodegaId, metodoEnvio: 'ENVIO_NORMAL_GAM' }] }))
+    // Mismo payload que arma el front hoy: ya no manda bodegaId=1 por defecto (P-08), solo la bodega real por envío.
+    const res = await guestCheckout(request, invitado({ metodoEnvio: 'ENVIO_NORMAL_GAM', envios: [{ bodegaId: tienda.bodegaId, metodoEnvio: 'ENVIO_NORMAL_GAM' }] }))
     const body = await res.json()
     expect(body.message ?? '').not.toMatch(/La bodega elegida no es de la tienda/)
     expect(res.status()).not.toBe(500)

@@ -4,7 +4,7 @@ import { QA, auth, login } from './api'
 /**
  * Flujo 4: suscripción a los 3 planes.
  * Contrato actual: EMPRENDEDOR es el plan gratis; el cobro de PYME / NEGOCIO_PLUS está bloqueado
- * fail-closed (409 COBRO_PLAN_NO_DISPONIBLE, "TODO: cobro por ONVO") y el plan no cambia.
+ * fail-closed por ONVO sin llave (respuesta no-OK) y el plan no cambia.
  * Cuando exista cobro de planes por ONVO, este spec se actualiza con el flujo de pago de prueba.
  */
 const PLANES = ['EMPRENDEDOR', 'PYME', 'NEGOCIO_PLUS'] as const
@@ -42,8 +42,11 @@ test.describe('Flujo 4 — suscripciones', () => {
       const id = planes.find((p) => p.nombre === destino)!.id
       const s = await login(request, QA.EMPRENDEDOR)
       const r = await request.post(`/api/billing/checkout/${id}`, { headers: auth(s) })
-      expect(r.status()).toBe(409)
-      expect((await r.json()).codigo).toBe('COBRO_PLAN_NO_DISPONIBLE')
+      // Contrato actual (Auditor 5 S-01): el cambio va por ONVO y sin llave falla cerrado; el código exacto
+      // depende de la rama del fail-closed, lo que importa es que no responda OK ni filtre detalles.
+      expect(r.ok(), await r.text()).toBeFalsy()
+      expect(r.status()).not.toBe(500)
+      expect(await r.text()).not.toMatch(/exception|sk_|stack/i)
       const info = await (await request.get('/api/tenant/info', { headers: auth(s) })).json()
       expect(info.planNombre).toBe('EMPRENDEDOR')
     })

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { expect, type APIRequestContext, type Page } from '@playwright/test'
+import { test, expect, type APIRequestContext, type Page } from '@playwright/test'
 
 /** Cuentas que crea QaCuentasSeeder (perfil dev, nunca prod) con QA_DEFAULT_PASSWORD. */
 export const QA = {
@@ -22,7 +22,14 @@ const sesiones = new Map<string, Sesion>()
 export async function login(api: APIRequestContext, correo: string, contrasena = claveQa()): Promise<Sesion> {
   const cacheada = sesiones.get(correo)
   if (cacheada) return cacheada
-  const res = await api.post('/api/auth/login', { data: { correo, contrasena } })
+  let res = await api.post('/api/auth/login', { data: { correo, contrasena } })
+  // /api/auth/login tiene rate limit 10/60s por IP y la suite entera corre desde una sola IP:
+  // si se agotó el cupo, se espera la ventana una vez (no se reintenta a ciegas).
+  if (res.status() === 429) {
+    test.setTimeout(180_000)
+    await new Promise((r) => setTimeout(r, 61_000))
+    res = await api.post('/api/auth/login', { data: { correo, contrasena } })
+  }
   expect(res.status(), `login ${correo}`).toBe(200)
   const body = await res.json()
   const d = body.data ?? body
