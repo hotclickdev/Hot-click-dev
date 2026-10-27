@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.service.contacto.ContactoPublicoPolicy;
 import com.hotclick.service.contacto.ContactoTextoFiltro;
 
@@ -139,7 +140,7 @@ public class SelfCheckoutService {
             int cantidad    = ((Number) item.get("cantidad")).intValue();
 
             Producto producto = productoRepo.findById(productoId)
-                .orElseThrow(() -> new NoSuchElementException("Producto " + productoId + " no encontrado"));
+                .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Producto no encontrado", "productoId=" + productoId));
 
             if (!producto.getEmpresa().getId().equals(empresa.getId()))
                 throw new SecurityException("Producto no pertenece a esta empresa");

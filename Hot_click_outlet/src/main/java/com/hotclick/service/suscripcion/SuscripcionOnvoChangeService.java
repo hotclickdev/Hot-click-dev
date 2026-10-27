@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -112,7 +111,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public Map<String, Object> cambiarPlan(Long empresaId, Long planId) {
         Empresa empresa = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
         // Decisión 26-oct: una tienda SUSPENDIDO_IMPAGO no cambia de plan (ni al gratis); solo paga lo pendiente.
         if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
             throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
@@ -136,7 +135,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public Map<String, Object> pagarSuspension(Long empresaId) {
         Empresa empresa = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
         if (!SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
             throw new IllegalStateException("La tienda no está suspendida.");
         }
@@ -148,7 +147,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     private Map<String, Object> cambiarPlanInterno(Empresa empresa, Long planId) {
         Long empresaId = empresa.getId();
         Plan planDestino = planRepo.findById(planId)
-            .orElseThrow(() -> new NoSuchElementException("Plan no encontrado: " + planId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Plan no encontrado", "planId=" + planId));
 
         String planActual = nombrePlanActual(empresa);
         // Auditor 5 S-01: con PAST_DUE/VENCIDO/TRIAL el mismo plan se puede pagar (reactivar).

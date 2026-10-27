@@ -49,7 +49,7 @@ public class VentaService {
             throw new IllegalStateException("No se pudo determinar la empresa del usuario actual");
         }
         Empresa empresa = empresaRepository.findById(empresaId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada: id=" + empresaId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
         boolean desdeCarrito = dto.getCarritoId() != null;
         Usuario usuario      = resolverUsuario(dto, correoOperador);
@@ -238,10 +238,10 @@ public class VentaService {
     private Usuario resolverUsuario(VentaRequestDTO dto, String correoOperador) {
         if (dto.getClienteId() != null) {
             return usuarioRepository.findById(dto.getClienteId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado: id=" + dto.getClienteId()));
+                .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Cliente no encontrado", "clienteId=" + dto.getClienteId()));
         }
         return usuarioRepository.findByCorreo(correoOperador)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario operador no encontrado: " + correoOperador));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Usuario operador no encontrado", "usuario del token sin cuenta (correo omitido)"));
     }
 
     private String resolverMetodoEnvio(VentaRequestDTO dto) {
