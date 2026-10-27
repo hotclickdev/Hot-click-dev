@@ -55,6 +55,12 @@ public class PaymentCheckoutRequest {
     @jakarta.validation.constraints.Size(max = 500, message = "La dirección es demasiado larga")
     private String direccionEntrega;
 
+    /** M4: el comprador pide factura electrónica (en régimen simplificado suma el IVA al cobro). */
+    private Boolean facturaElectronica;
+    public boolean isFacturaElectronica() { return Boolean.TRUE.equals(facturaElectronica); }
+    public Boolean getFacturaElectronica() { return facturaElectronica; }
+    public void setFacturaElectronica(Boolean v) { this.facturaElectronica = v; }
+
     public String getDireccionEntrega() { return direccionEntrega; }
     public void setDireccionEntrega(String direccionEntrega) { this.direccionEntrega = direccionEntrega; }
 

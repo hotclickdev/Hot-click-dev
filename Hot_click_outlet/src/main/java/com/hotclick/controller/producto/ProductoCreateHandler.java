@@ -42,9 +42,9 @@ public class ProductoCreateHandler {
         try {
             empresa = empresaDestinoAlta.resolver(empresaId);
         } catch (TenantAccessDeniedException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (IllegalArgumentException | RecursoNoEncontradoException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
         tenantService.verificarLimiteProductos(empresa.getId());
         return persistirAlta(dto, idempotencyKey, empresa);
@@ -70,7 +70,7 @@ public class ProductoCreateHandler {
             }
             return ResponseEntity.ok(ResponseDTO.success(mensaje, creationResult.producto()));
         } catch (ProductoAltaService.ContenidoNoPermitidoException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(productoRequestSanitizer.mensajeAmigable(e)));
         }

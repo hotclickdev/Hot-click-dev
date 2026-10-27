@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { posService } from '@/services/posService'
+import { campoFactura } from '@/components/facturacion/facturaElectronica'
+import { normalizarCotizacion, resolverTotalCobro, type CotizacionPos } from './cotizacionPos'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import usePosStore from '@/store/posStore'
@@ -69,6 +71,8 @@ export function useAdminPOS() {
 
   const [cartItems, setCartItems]   = useState<ItemCarritoPos[]>([])
   const [descuento, setDescuento]   = useState(0)
+  // M4: factura electrónica para el cliente (en régimen simplificado suma el IVA al cobro).
+  const [facturaElectronica, setFacturaElectronica] = useState(false)
   const [cliente, setCliente]       = useState<ClienteSeleccionadoPos>(null) // { id, nombre } | null = mostrador
   const [receipt, setReceipt]       = useState<PosVenta | null>(null)
   const [qrData, setQrData]         = useState<PosQrData | null>(null)
@@ -131,6 +135,7 @@ export function useAdminPOS() {
   const nuevaVenta = () => {
     setCartItems([])
     setDescuento(0)
+    setFacturaElectronica(false)
     setCliente(null)
     setReceipt(null)
     setQrData(null)
@@ -138,7 +143,30 @@ export function useAdminPOS() {
   }
 
   const subtotal = cartItems.reduce((s, i) => s + Number(i.precio) * i.cantidad, 0)
-  const total    = Math.max(0, subtotal - descuento)
+  const totalLocal = Math.max(0, subtotal - descuento)
+
+  // M4: con factura se cobra lo que cotiza el backend (IVA según régimen). Fail-closed si falla.
+  // La cotización vale solo para el carrito/descuento con que se pidió (firma).
+  const [cotizado, setCotizado] = useState<{ firma: string; cotizacion: CotizacionPos | null } | null>(null)
+  const firmaCotizacion = JSON.stringify([descuento, cartItems.map(i => [i.id, i.cantidad])])
+  const debeCotizar = facturaElectronica && step === 'cobro' && cartItems.length > 0
+  useEffect(() => {
+    if (!debeCotizar) return
+    let vigente = true
+    const firma = firmaCotizacion
+    posService.cotizarVenta({
+      descuentoGlobal: descuento,
+      ...campoFactura(true),
+      items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio })),
+    } as JsonBody)
+      .then(data => { if (vigente) setCotizado({ firma, cotizacion: normalizarCotizacion(data) }) })
+      .catch(() => { if (vigente) setCotizado({ firma, cotizacion: null }) })
+    return () => { vigente = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debeCotizar, firmaCotizacion])
+  const cotizacion = cotizado?.firma === firmaCotizacion ? cotizado.cotizacion : null
+  const cobro = resolverTotalCobro(totalLocal, facturaElectronica, cotizacion)
+  const total = cobro.total
 
   const handleAbrir = async (montoInicial: number) => {
     setSaving(true)
@@ -173,6 +201,7 @@ export function useAdminPOS() {
       const ventaData = await posService.crearVenta({
         ...payload,
         descuentoGlobal: descuento,
+        ...campoFactura(facturaElectronica),
         bodegaId,
         clienteId: cliente?.id ?? null,
         items: cartItems.map(i => ({ productoId: i.id, cantidad: i.cantidad, precioUnitario: i.precio })),
@@ -180,6 +209,7 @@ export function useAdminPOS() {
       setReceipt(ventaData)
       setCartItems([])
       setDescuento(0)
+      setFacturaElectronica(false)
       setCliente(null)
       setStep('recibo')
       showToast('Venta registrada', 'success')
@@ -196,6 +226,7 @@ export function useAdminPOS() {
       const data = await posService.crearQrSesion({
         metodoPago,
         metodosPago,
+        ...campoFactura(facturaElectronica),
         bodegaId,
         clienteId: cliente?.id ?? null,
         items: cartItems.map(i => ({
@@ -233,6 +264,7 @@ export function useAdminPOS() {
       setQrData(null)
       setCartItems([])
       setDescuento(0)
+      setFacturaElectronica(false)
       setStep('recibo')
       const metodo = metodoFinal ?? qrData?.metodoPago
       showToast(
@@ -265,6 +297,8 @@ export function useAdminPOS() {
     cartItems,
     descuento,
     setDescuento,
+    facturaElectronica,
+    setFacturaElectronica,
     cliente,
     setCliente,
     receipt,
@@ -275,6 +309,8 @@ export function useAdminPOS() {
     limpiarReportePendiente,
     subtotal,
     total,
+    impuestoCobro: cobro.impuesto,
+    cotizacionPendiente: cobro.pendiente,
     agregarProducto,
     setCantidad,
     setPrecio,

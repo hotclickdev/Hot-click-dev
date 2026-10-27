@@ -213,6 +213,9 @@ public class Empresa {
     @Column(name = "regimen_tributario", length = 60)
     private String regimenTributario;
 
+    /** M4: SIMPLIFICADO (precio sin IVA; la factura suma el 13 %) o TRADICIONAL (precio con IVA incluido). */
+    @Column(name = "regimen_iva", length = 20, nullable = false)
+    private String regimenIva = "SIMPLIFICADO";
     /** Ubicación del emisor para el XML 4.4 (códigos de Hacienda). Obligatoria para emitir. */
     @Column(name = "ubicacion_provincia", length = 1)
     private String ubicacionProvincia;
@@ -422,6 +425,8 @@ public class Empresa {
     public String getRegimenTributario() { return regimenTributario; }
     public void setRegimenTributario(String v) { this.regimenTributario = v; }
 
+    public String getRegimenIva() { return regimenIva != null ? regimenIva : "SIMPLIFICADO"; }
+    public void setRegimenIva(String v) { this.regimenIva = v; }
     public String getUbicacionProvincia() { return ubicacionProvincia; }
     public void setUbicacionProvincia(String v) { this.ubicacionProvincia = v; }
     public String getUbicacionCanton() { return ubicacionCanton; }

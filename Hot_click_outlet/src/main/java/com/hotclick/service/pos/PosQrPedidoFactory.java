@@ -70,7 +70,10 @@ public class PosQrPedidoFactory {
 
             Pedido pedido = armarPedido(sesion, metodoPago, empresa, cliente, bodega, cajero);
             TotalesQr totales = totalesCobrados(cargarItems(items, pedido, correoCajero(cajero)),
-                sesion.getTotal(), sesion.getToken());
+                sesion.getTotal(), sesion.getMontoImpuesto(), sesion.getToken());
+            // M4: el IVA que se cobró en el QR (factura en régimen simplificado) queda en el pedido.
+            pedido.setMontoImpuesto(totales.impuesto());
+            pedido.setAplicaImpuesto(totales.impuesto() > 0);
             aplicarTotales(pedido, totales);
 
             Pedido saved = pedidoRepo.save(pedido);
@@ -208,16 +211,21 @@ public class PosQrPedidoFactory {
 
     /** MEDIO 4: el total del pedido es lo cobrado (total de la sesión); si las líneas no cuadran, alerta. */
     static TotalesQr totalesCobrados(TotalesQr lineas, Integer totalSesion, String token) {
+        return totalesCobrados(lineas, totalSesion, 0, token);
+    }
+
+    /** @param impuesto IVA incluido en {@code totalSesion} (M4); el subtotal del pedido es lo cobrado sin IVA. */
+    static TotalesQr totalesCobrados(TotalesQr lineas, Integer totalSesion, int impuesto, String token) {
         if (totalSesion == null) throw new IllegalStateException("Sesión POS sin total cobrado");
-        if (lineas.subtotal() != totalSesion) {
-            log.error("[ALERTA-PAGO] POS QR {}: líneas suman {} y se cobró {}; el pedido registra lo cobrado",
-                PosQrVentaService.mascararToken(token), lineas.subtotal(), totalSesion);
+        if (lineas.subtotal() + impuesto != totalSesion) {
+            log.error("[ALERTA-PAGO] POS QR {}: líneas suman {} (+IVA {}) y se cobró {}; el pedido registra lo cobrado",
+                PosQrVentaService.mascararToken(token), lineas.subtotal(), impuesto, totalSesion);
         }
-        return new TotalesQr(totalSesion, lineas.costoTotal());
+        return new TotalesQr(totalSesion - impuesto, lineas.costoTotal(), impuesto);
     }
 
     private void aplicarTotales(Pedido pedido, TotalesQr totales) {
-        int utilidad = totales.totalPedido() - totales.costoTotal();
+        int utilidad = totales.subtotal() - totales.costoTotal(); // el IVA no es utilidad
         pedido.setSubtotal(totales.subtotal());
         pedido.setTotalPedido(totales.totalPedido());
         pedido.setCostoTotalProductos(totales.costoTotal());
@@ -254,8 +262,9 @@ public class PosQrPedidoFactory {
         }
     }
 
-    record TotalesQr(int subtotal, int costoTotal) {
-        int totalPedido() { return subtotal; }
+    record TotalesQr(int subtotal, int costoTotal, int impuesto) {
+        TotalesQr(int subtotal, int costoTotal) { this(subtotal, costoTotal, 0); }
+        int totalPedido() { return subtotal + impuesto; }
     }
 
     private void marcarReembolsoPendiente(PosQrSesion sesion) {

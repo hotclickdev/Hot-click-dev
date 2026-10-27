@@ -45,6 +45,8 @@ export type CheckoutPayload = {
   guestEmail?: string
   /** Token del QR del POS — al pagar, marca la sesión del cajero como PAGADO. */
   posQrToken?: string
+  /** M4: el comprador pidió factura electrónica (sin la bandera es tiquete). */
+  facturaElectronica?: boolean
   [key: string]: unknown
 }
 

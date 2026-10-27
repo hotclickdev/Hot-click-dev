@@ -3487,6 +3487,8 @@
       "tarjeta": "Card",
       "descuento": "Discount",
       "totalACobrar": "Amount due",
+      "iva": "VAT",
+      "calculandoIva": "Calculating the invoice VAT… Wait a moment before charging.",
       "montoRecibido": "Amount received",
       "pagoExacto": "Exact",
       "faltante": "Short",
@@ -4734,6 +4736,12 @@
     "tilopayConfirmando": "Confirming your plan payment…",
     "tilopayNoConfirmado": "We couldn't confirm the payment. Please try again.",
     "volverPlanes": "Back to plans"
+  },
+  "facturaElectronica": {
+    "checkout": "I want an electronic invoice",
+    "checkoutAyuda": "The invoice uses your tax details. If the business is under the simplified regime, VAT (13%) is added to the total.",
+    "pos": "Electronic invoice for the customer",
+    "posAyuda": "If the business is under the simplified regime, VAT (13%) is added to the total."
   },
   "suspension": {
     "titulo": "Your store is suspended",

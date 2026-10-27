@@ -301,4 +301,56 @@ class EmpresaPerfilServiceTest {
         e.setNombreComercial("Comercial " + id);
         return e;
     }
+
+    @Test
+    @DisplayName("updateFiscal rechaza un régimen de IVA inválido y no lo guarda")
+    void update_fiscal_regimen_iva_invalido() {
+        var e = empresaBase(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+
+        assertThatThrownBy(() -> service.updateFiscal(1L, Map.of("regimenIva", "MIXTO"), false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Régimen de IVA inválido");
+        assertThat(e.getRegimenIva()).isNotEqualTo("MIXTO");
+    }
+
+    @Test
+    @DisplayName("updateFiscal guarda el régimen de IVA tradicional")
+    void update_fiscal_regimen_iva_valido() {
+        var e = empresaBase(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(empresaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "cambioRegimenIvaHabilitado", true);
+
+        service.updateFiscal(1L, Map.of("regimenIva", "TRADICIONAL"), false);
+
+        assertThat(e.getRegimenIva()).isEqualTo("TRADICIONAL");
+    }
+
+    @Test
+    @DisplayName("Con el flag apagado (default) NO se puede pasar a TRADICIONAL: sigue SIMPLIFICADO")
+    void update_fiscal_cambio_regimen_apagado_por_defecto() {
+        var e = empresaBase(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+
+        assertThat(e.getRegimenIva()).isEqualTo("SIMPLIFICADO");
+        assertThatThrownBy(() -> service.updateFiscal(1L, Map.of("regimenIva", "TRADICIONAL"), false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("todavía no está habilitado");
+        assertThat(e.getRegimenIva()).isEqualTo("SIMPLIFICADO");
+        verify(empresaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Con el flag apagado, reenviar el régimen actual (SIMPLIFICADO) se acepta")
+    void update_fiscal_mismo_regimen_con_flag_apagado() {
+        var e = empresaBase(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
+        when(empresaRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        service.updateFiscal(1L, Map.of("regimenIva", "SIMPLIFICADO"), false);
+
+        assertThat(e.getRegimenIva()).isEqualTo("SIMPLIFICADO");
+    }
 }

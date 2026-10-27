@@ -1,3 +1,5 @@
+import FacturaElectronicaCheck from '@/components/facturacion/FacturaElectronicaCheck'
+import { useFacturaElectronica } from '@/components/facturacion/facturaElectronica'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -257,6 +259,12 @@ export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVar
 }
 
 /** Consentimiento de tratamiento de datos (Ley 8968). Obligatorio; Figma no lo dibuja. */
+/** M4: casilla de factura electrónica del checkout (estado compartido con el payload del pago). */
+export function FacturaElectronicaCheckout() {
+  const [marcado, cambiar] = useFacturaElectronica()
+  return <FacturaElectronicaCheck marcado={marcado} onCambiar={cambiar} contexto="checkout" />
+}
+
 export function ConsentimientoDatos({ marcado, onCambiar, error }: { marcado: boolean; onCambiar: (valor: boolean) => void; error?: boolean }) {
   const { t } = useTranslation()
   return (
