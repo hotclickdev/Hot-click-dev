@@ -5,7 +5,7 @@ import com.hotclick.rag.dto.ProductoContexto;
 import com.hotclick.rag.service.VectorSearchService;
 import com.hotclick.service.GoogleVisionService;
 import com.hotclick.service.producto.ProductoCatalogQueries;
-import com.hotclick.service.shoppingassistant.ShoppingAssistantCuota;
+import com.hotclick.service.shoppingassistant.AsistenteCuotaDiaria;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -103,9 +103,9 @@ class ShoppingAssistantImageSearchHandlerTest {
         verify(vector).buscarSimilares(eq(7L), eq("Chair"), eq(5), eq(false));
     }
 
-    private static ShoppingAssistantCuota cuotaLibre() {
-        ShoppingAssistantCuota c = mock(ShoppingAssistantCuota.class);
-        when(c.reservar(any(), anyBoolean())).thenReturn(true);
+    private static AsistenteCuotaDiaria cuotaLibre() {
+        AsistenteCuotaDiaria c = mock(AsistenteCuotaDiaria.class);
+        when(c.reservar(any(), anyBoolean(), any())).thenReturn(AsistenteCuotaDiaria.Reserva.OK);
         return c;
     }
 
@@ -115,16 +115,19 @@ class ShoppingAssistantImageSearchHandlerTest {
         ShoppingAssistantTenantGuard guard = mock(ShoppingAssistantTenantGuard.class);
         VectorSearchService vector = mock(VectorSearchService.class);
         GoogleVisionService vision = mock(GoogleVisionService.class);
-        ShoppingAssistantCuota cuota = mock(ShoppingAssistantCuota.class);
-        when(cuota.reservar(any(), anyBoolean())).thenReturn(false);
+        AsistenteCuotaDiaria cuota = mock(AsistenteCuotaDiaria.class);
+        var acciones = java.util.List.of(new com.hotclick.rag.dto.AccionChat("buscar", "Buscar productos", "/productos"));
+        when(cuota.reservar(any(), anyBoolean(), any())).thenReturn(new AsistenteCuotaDiaria.Reserva(
+            false, AsistenteCuotaDiaria.Motivo.CLIENTE, "Llegaste al límite", acciones));
         ShoppingAssistantImageSearchHandler handler = new ShoppingAssistantImageSearchHandler(
             guard, vector, vision, mock(ProductoCatalogQueries.class), cuota);
 
         var resp = handler.searchByImage(new MockMultipartFile("image", "f.png", "image/png", PNG), "hotclick", null);
 
         assertThat(resp.getStatusCode().value()).isEqualTo(200);
-        assertThat(resp.getBody()).containsEntry("encontrado", false).containsKey("mensaje");
-        verify(cuota).reservar(isNull(), eq(true));
+        assertThat(resp.getBody()).containsEntry("encontrado", false)
+            .containsEntry("mensaje", "Llegaste al límite").containsEntry("acciones", acciones);
+        verify(cuota).reservar(isNull(), eq(true), isNull());
         verifyNoInteractions(vision, vector);
     }
 }
