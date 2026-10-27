@@ -39,6 +39,7 @@ class ImportConfirmarMismasReglasAltaTest extends BaseIntegrationTest {
     @Autowired private PaqueteInventarioRepository paqueteRepository;
     @MockitoSpyBean private ProductoApprovalService productoApprovalService;
     @MockitoSpyBean private com.hotclick.service.AuditoriaAdminRegistroService auditoriaAdminRegistroService;
+    @MockitoSpyBean private com.hotclick.service.TenantService tenantServiceSpy;
 
     private Categoria categoria;
     private Empresa   aprobada;
@@ -160,6 +161,21 @@ class ImportConfirmarMismasReglasAltaTest extends BaseIntegrationTest {
 
         assertEquals(1, productoRepository.findAll().stream()
             .filter(p -> "Import Falla Posterior".equals(p.getNombreProducto())).count());
+    }
+
+    @Test
+    @DisplayName("BAJO | Un error inesperado devuelve 500 con mensaje genérico (sin SQL ni nombres de tablas)")
+    void import_error500_noFiltraElMensajeInterno() throws Exception {
+        doThrow(new RuntimeException("could not execute statement [SELECT * FROM hot_click_secreto] SQL [x]"))
+            .when(tenantServiceSpy).verificarLimiteProductosBulk(anyLong(), org.mockito.ArgumentMatchers.anyInt());
+
+        ResultActions r = confirmar(tokenAprobada, "[" + item("Import Error 500", bodegaAprobada) + "]");
+
+        r.andExpect(status().isInternalServerError());
+        String body = r.andReturn().getResponse().getContentAsString();
+        assertFalse(body.contains("hot_click_secreto") || body.toLowerCase().contains("sql"),
+            "la respuesta no debe incluir el mensaje interno: " + body);
+        assertTrue(body.contains(com.hotclick.utils.ErrorPublico.GENERICO));
     }
 
     @Test

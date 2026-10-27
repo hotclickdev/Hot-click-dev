@@ -56,9 +56,19 @@ public class ProductoCreateHandler {
             var creationResult = productoAltaService.crearYPublicar(dto, currentUserName(), empresa);
             var producto = creationResult.producto();
             productoIdempotencyService.remember(idempotencyKey);
-            auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
-                producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
-            return ResponseEntity.ok(ResponseDTO.success(creationResult.mensaje(), creationResult.producto()));
+            String mensaje = creationResult.mensaje();
+            // El producto ya está confirmado: si solo falla la auditoría la respuesta sigue siendo de éxito
+            // (un 400 haría que el cliente reintente y duplique el producto), con un aviso en el mensaje.
+            try {
+                auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
+                    producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
+            } catch (Exception posterior) {
+                org.slf4j.LoggerFactory.getLogger(ProductoCreateHandler.class).error(
+                    "[producto-alta] producto {} creado pero falló la auditoría: {}",
+                    producto.getId(), posterior.getMessage(), posterior);
+                mensaje += " (no se pudo registrar la auditoría; el producto sí quedó creado, no lo vuelvas a crear)";
+            }
+            return ResponseEntity.ok(ResponseDTO.success(mensaje, creationResult.producto()));
         } catch (ProductoAltaService.ContenidoNoPermitidoException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
