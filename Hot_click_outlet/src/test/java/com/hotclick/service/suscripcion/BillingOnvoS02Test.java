@@ -63,6 +63,8 @@ class BillingOnvoS02Test {
                                                            BillingLedgerWriter ledger) {
         SuscripcionOnvoChangeService svc = servicio(subs, mock(EmpresaRepository.class), planes, mock(OnvoBillingClient.class));
         org.springframework.test.util.ReflectionTestUtils.setField(svc, "ledgerWriter", ledger);
+        org.springframework.test.util.ReflectionTestUtils.setField(svc, "preciosPlanes",
+            new PreciosPlanesConfig("9", "24", "49", "usd"));
         return svc;
     }
 
@@ -127,5 +129,58 @@ class BillingOnvoS02Test {
                 .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), mala);
             verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clsub"), any(), any(), any());
         }
+    }
+
+    private SuscripcionOnvoChangeService servicioSinMoneda(SuscripcionRepository subs, PlanRepository planes,
+                                                           BillingLedgerWriter ledger, PreciosPlanesConfig config) {
+        SuscripcionOnvoChangeService svc = servicio(subs, mock(EmpresaRepository.class), planes, mock(OnvoBillingClient.class));
+        org.springframework.test.util.ReflectionTestUtils.setField(svc, "ledgerWriter", ledger);
+        org.springframework.test.util.ReflectionTestUtils.setField(svc, "preciosPlanes", config);
+        return svc;
+    }
+
+    @Test
+    @DisplayName("B2: COBRO_FALLIDO sin moneda configurada falla cerrado (transitorio, no escribe ni cae a crc)")
+    void cobroFallidoSinMonedaFallaCerrado() {
+        for (PreciosPlanesConfig config : new PreciosPlanesConfig[]{null, new PreciosPlanesConfig("9", "24", "49", "")}) {
+            SuscripcionRepository subs = mock(SuscripcionRepository.class);
+            PlanRepository planes = mock(PlanRepository.class);
+            Suscripcion sub = prepararPago(subs, planes);
+            when(subs.findByOnvoSubscriptionId("clsub")).thenReturn(Optional.of(sub));
+            BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+            var svc = servicioSinMoneda(subs, planes, ledger, config);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> svc.procesarRenovacionFallida("clsub"))
+                .isInstanceOf(ConfigBillingFaltanteException.class);
+            verify(ledger, org.mockito.Mockito.never()).registrar(any(), any(), any(), any(), any(), any(), any(), any());
+        }
+    }
+
+    @Test
+    @DisplayName("B2: CANCELACION sin moneda configurada falla cerrado (transitorio, no escribe ni cae a crc)")
+    void cancelacionSinMonedaFallaCerrado() {
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        PlanRepository planes = mock(PlanRepository.class);
+        Suscripcion sub = prepararPago(subs, planes);
+        when(subs.findByOnvoSubscriptionId("clsub")).thenReturn(Optional.of(sub));
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        var svc = servicioSinMoneda(subs, planes, ledger, new PreciosPlanesConfig("9", "24", "49", " "));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> svc.procesarSuscripcionEliminada("clsub"))
+            .isInstanceOf(ConfigBillingFaltanteException.class);
+        verify(ledger, org.mockito.Mockito.never()).registrar(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("B2: con moneda configurada COBRO_FALLIDO y CANCELACION se registran con esa moneda, no con crc")
+    void cobroFallidoYCancelacionUsanLaMonedaConfigurada() {
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        PlanRepository planes = mock(PlanRepository.class);
+        Suscripcion sub = prepararPago(subs, planes);
+        when(subs.findByOnvoSubscriptionId("clsub")).thenReturn(Optional.of(sub));
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        var svc = servicioConLedger(subs, planes, ledger);
+        svc.procesarRenovacionFallida("clsub");
+        verify(ledger).registrar(any(), eq(sub), eq("COBRO_FALLIDO"), eq("ONVO"), eq("clsub"), any(), eq("usd"), any());
+        svc.procesarSuscripcionEliminada("clsub");
+        verify(ledger).registrar(any(), eq(sub), eq("CANCELACION"), eq("ONVO"), eq("clsub"), any(), eq("usd"), any());
     }
 }

@@ -21,6 +21,8 @@ public final class OnvoBillingVerificador {
     private static final String M_NO_PAGADO = "no_pagado";
     private static final String M_SUB_NO_ACTIVA = "sub_no_activa";
     private static final String M_PAGO_PARCIAL = "pago_parcial";
+    /** Falta configuración (moneda, precio del plan o price ids): motivo TRANSITORIO, nunca permanente. */
+    public static final String M_CONFIG_FALTANTE = "config_faltante";
     private static final String F_STATUS = "status";
     private static final String F_TOTAL = "total";
     private static final String F_CUSTOMER_ID = "customerId";
@@ -147,9 +149,16 @@ public final class OnvoBillingVerificador {
                                         PrecioPlan precios, LocalDate fin) {
         if (cobro == null || sub == null) return Resultado.rechazo("sin_datos");
         String priceId = OnvoBillingClient.primerPriceId(sub);
-        String plan = planPorPrice.apply(priceId);
-        if (plan == null) return Resultado.rechazo("price_desconocido");
-        PrecioEsperado esperado = precios.precio(plan, priceId);
+        String plan;
+        PrecioEsperado esperado;
+        try {
+            plan = planPorPrice.apply(priceId);
+            if (plan == null) return Resultado.rechazo("price_desconocido");
+            esperado = precios.precio(plan, priceId);
+        } catch (ConfigBillingFaltanteException e) {
+            // Configuración faltante: transitorio (no está en PERMANENTES), no se pierde un pago ya cobrado.
+            return Resultado.rechazo(M_CONFIG_FALTANTE);
+        }
         if (esperado == null || esperado.moneda() == null || esperado.moneda().isBlank() || esperado.unidadMenor() <= 0) {
             return Resultado.rechazo("plan_sin_precio");
         }

@@ -555,17 +555,6 @@ class OnvoBillingWebhookHandlerTest {
     }
 
     @Test
-    @DisplayName("USD: sin moneda configurada (hotclick.planes.moneda) ningún pago se activa (fail-closed)")
-    void sinMonedaConfiguradaNoActiva() throws Exception {
-        handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
-            new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", ""), onvo), suscripcionRepo);
-        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
-        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
-        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:plan_sin_precio");
-    }
-
-    @Test
     @DisplayName("USD: si el GET del price falla el evento se reintenta (no queda rechazado ni activado)")
     void getDelPriceCaidoReintenta() throws Exception {
         renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
@@ -633,5 +622,111 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) factura);
         assertThat(handler.manejarSiBilling("payment-intent.succeeded", json(ALTA_BODY), null)).isTrue();
         verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "pi_1");
+    }
+
+    // ------------------------------------------------------------ A1: configuración faltante = TRANSITORIO (500, reintento)
+
+    private OnvoBillingWebhookHandler conConfig(String moneda, String pyme) {
+        return new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
+            new PrecioPlanOnvo(new PreciosPlanesConfig("9", pyme, "49", moneda), onvo), suscripcionRepo);
+    }
+
+    private ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> logsDe(Class<?> clase) {
+        var appender = new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+        appender.start();
+        ((ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(clase)).addAppender(appender);
+        ((ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(OnvoBillingWebhookHandler.class)).addAppender(appender);
+        return appender;
+    }
+
+    private void afirmarTransitorio(org.assertj.core.api.ThrowableAssert.ThrowingCallable llamada, String faltante,
+            ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> logs) {
+        assertThatThrownBy(llamada)
+            .isInstanceOfSatisfying(OnvoBillingWebhookHandler.EventoBillingRechazado.class, e -> {
+                assertThat(e.getMotivo()).isEqualTo("config_faltante");
+                assertThat(e.esPermanente()).isFalse(); // → el controlador responde 500 y ONVO reintenta
+            });
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:config_faltante");
+        assertThat(eventos.get(KEY_RENOVACION).getProcesadoOk()).isFalse(); // no queda procesado: el reintento lo toma
+        var alertas = logs.list.stream().map(ev -> ev.getFormattedMessage())
+            .filter(m -> m.contains("[ALERTA-PAGO]")).toList();
+        // La alerta de configuración solo nombra la propiedad que falta: ningún id de cliente, factura ni suscripción.
+        assertThat(alertas).anySatisfy(m -> assertThat(m).contains(faltante)
+            .doesNotContain("cus_1", "clsub0001", "clinv0001", "@"));
+        // Y ninguna alerta del evento filtra datos del cliente.
+        assertThat(alertas).allSatisfy(m -> assertThat(m).doesNotContain("cus_1", "@"));
+    }
+
+    @Test
+    @DisplayName("A1: sin PLANES_MONEDA el evento es transitorio (500), queda sin procesar y deja alerta sin PII")
+    void sinMonedaConfiguradaEsTransitorio() throws Exception {
+        var logs = logsDe(PrecioPlanOnvo.class);
+        handler = conConfig("", "24");
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
+        afirmarTransitorio(() -> handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null), "PLANES_MONEDA", logs);
+    }
+
+    @Test
+    @DisplayName("A1: sin *_PRECIO_MENSUAL_USD del plan el evento es transitorio (500) y deja alerta sin PII")
+    void sinPrecioMensualConfiguradoEsTransitorio() throws Exception {
+        var logs = logsDe(PrecioPlanOnvo.class);
+        handler = conConfig("usd", "");
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
+        afirmarTransitorio(() -> handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null), "PYME_PRECIO_MENSUAL_USD", logs);
+    }
+
+    @Test
+    @DisplayName("A1: sin ONVO_PRICE_ID_* un price sin plan es transitorio (500); con los ids configurados es price_desconocido permanente (200)")
+    void sinPriceIdsConfiguradosEsTransitorio() throws Exception {
+        var logs = logsDe(PrecioPlanOnvo.class);
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_sin_plan");
+        when(onvo.faltanPriceIds()).thenReturn(true);
+        afirmarTransitorio(() -> handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null), "ONVO_PRICE_ID_*", logs);
+
+        eventos.clear();
+        when(onvo.faltanPriceIds()).thenReturn(false);
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // 200
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:price_desconocido");
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("A1: un price de ONVO que no coincide con la config sigue siendo PERMANENTE (200), no se reintenta")
+    void priceQueNoCoincideSigueSiendoPermanente() throws Exception {
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
+        doReturn(precioOnvo("price_pyme", "USD", 9_999)).when(onvo).obtenerPrecio("price_pyme");
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:plan_sin_precio");
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("A1: el alta por intent con configuración faltante también es transitoria (500)")
+    void altaPorIntentSinConfigEsTransitoria() throws Exception {
+        handler = conConfig("", "24");
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0001")).thenReturn(Optional.of(local("clsub0001")));
+        when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
+        when(onvo.obtenerPaymentIntent("pi_1")).thenReturn((Map) INTENT_OK);
+        when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) facturaAlta("pi_1"));
+        var body = json("{\"id\":\"pi_1\",\"subscriptionId\":\"clsub0001\"}");
+        assertThatThrownBy(() -> handler.manejarSiBilling("payment-intent.succeeded", body, null))
+            .isInstanceOfSatisfying(OnvoBillingWebhookHandler.EventoBillingRechazado.class,
+                e -> assertThat(e.esPermanente()).isFalse());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("A1: al corregir la configuración, el reintento de ONVO activa el alta ya cobrada (no se pierde)")
+    void reintentoConConfigCorregidaActiva() throws Exception {
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
+        var roto = conConfig("", "24");
+        assertThatThrownBy(() -> roto.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null))
+            .isInstanceOf(OnvoBillingWebhookHandler.EventoBillingRechazado.class);
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv0001");
+        assertThat(eventos.get(KEY_RENOVACION).getProcesadoOk()).isTrue();
     }
 }
