@@ -38,6 +38,8 @@ public class AuthEmailOtpHandler {
             Long userId = jwtUtil.extractUserId(tempToken);
             Usuario usuario = usuarioService.buscarPorId(userId)
                 .orElseThrow(() -> new SecurityException("Usuario no encontrado"));
+            var limitado = authSupport.limite2faLoginUsuario(usuario.getId());
+            if (limitado != null) return limitado;
             if (!usuario.hasEmailOtpEnabled())
                 return ResponseEntity.status(400).body(ResponseDTO.error("EMAIL_OTP no habilitado para esta cuenta"));
             otpService.enviarOtp2Fa(usuario);
@@ -51,6 +53,8 @@ public class AuthEmailOtpHandler {
     public ResponseEntity<ResponseDTO> enableEmailOtp(HttpServletRequest request) {
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            var limitado = authSupport.limite2faUsuario(usuario.getId());
+            if (limitado != null) return limitado;
             otpService.enviarOtp2Fa(usuario);
             return ResponseEntity.ok(ResponseDTO.success(
                 "Código enviado a " + usuario.getCorreo() + ". Ingresalo para activar Email OTP.", null));
@@ -68,6 +72,8 @@ public class AuthEmailOtpHandler {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Código requerido"));
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            var limitado = authSupport.limite2faUsuario(usuario.getId());
+            if (limitado != null) return limitado;
             CodigoOtp otp = otpService.verificarOtp(
                 usuario, Constants.OTP_TIPO_2FA_LOGIN, code.trim());
             otpService.marcarUsado(otp);
@@ -91,6 +97,8 @@ public class AuthEmailOtpHandler {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Contraseña requerida para desactivar Email OTP"));
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            var limitado = authSupport.limite2faUsuario(usuario.getId());
+            if (limitado != null) return limitado;
             if (!passwordEncoder.matches(contrasena, usuario.getContrasenaHash()))
                 return ResponseEntity.status(401).body(ResponseDTO.error("Contraseña incorrecta"));
             usuario.removeMethod(Constants.METODO_2FA_EMAIL_OTP);

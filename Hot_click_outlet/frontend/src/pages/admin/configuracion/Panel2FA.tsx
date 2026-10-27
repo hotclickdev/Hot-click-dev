@@ -7,6 +7,7 @@ import { authService } from '@/services/authService'
 import { Block, mensajeErrorConfig, mensajeErrorConfigOLocal } from './configUi'
 import TfaStatusRow from './tfa/TfaStatusRow'
 import TfaSetupStep from './tfa/TfaSetupStep'
+import TfaPasswordStep from './tfa/TfaPasswordStep'
 import TfaDisableStep from './tfa/TfaDisableStep'
 import TfaRegenStep from './tfa/TfaRegenStep'
 import TfaRecoveryModal from './tfa/TfaRecoveryModal'
@@ -58,7 +59,7 @@ export default function Panel2FA({ enabled, loading, toast, onEnabled, onDisable
   const startSetup = async () => {
     setWorking(true)
     try {
-      const { data } = await authService.setup2FA()
+      const { data } = await authService.setup2FA(password)
       // api.js auto-unwraps ResponseDTO → data ya es { secret, qrUri }
       const payload = (data as QrPayload)?.qrUri ? data as QrPayload : (data as QrPayload)?.data
       if (!payload?.qrUri) throw new Error('Respuesta inválida del servidor')
@@ -68,14 +69,15 @@ export default function Panel2FA({ enabled, loading, toast, onEnabled, onDisable
     } catch (err: unknown) {
       const msg = mensajeErrorConfigOLocal(err, t('adminConfig.tfaErrorInit'))
       toast({ message: msg, type: 'error' })
+      setPassword('')
     } finally { setWorking(false) }
   }
   const activate = async () => {
     if (codeStr.length !== 6) { toast({ message: t('adminConfig.tfaEnterCode'), type: 'error' }); return }
     setWorking(true)
     try {
-      const { data } = await authService.activate2FA(codeStr)
-      onEnabled(); setStep('idle'); setQrData(null); setQrDataUrl(null); resetCode(); setCopiedAll(false)
+      const { data } = await authService.activate2FA(codeStr, password)
+      onEnabled(); setStep('idle'); setQrData(null); setQrDataUrl(null); resetCode(); setCopiedAll(false); setPassword('')
       setRecoveryCodes((data as QrPayload)?.recoveryCodes ?? (data as QrPayload)?.data?.recoveryCodes ?? null)
     } catch (err: unknown) { toast({ message: mensajeErrorConfig(err, t('adminConfig.tfaWrongCode')), type: 'error' }) }
     finally { setWorking(false) }
@@ -118,9 +120,16 @@ export default function Panel2FA({ enabled, loading, toast, onEnabled, onDisable
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <TfaStatusRow
               t={t} enabled={enabled} step={step} working={working} copiedAll={copiedAll}
-              onDisable={() => setStep('disable')} onStartSetup={startSetup}
+              onDisable={() => setStep('disable')} onStartSetup={() => { setPassword(''); setStep('password') }}
               onRegen={() => { setStep('regen'); resetCode() }}
             />
+
+            {step === 'password' && (
+              <TfaPasswordStep
+                t={t} password={password} setPassword={setPassword} working={working}
+                onContinue={startSetup} onCancel={cancel}
+              />
+            )}
 
             {step === 'setup' && qrData && (
               <TfaSetupStep
