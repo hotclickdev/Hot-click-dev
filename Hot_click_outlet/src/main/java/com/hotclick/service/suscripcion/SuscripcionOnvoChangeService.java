@@ -356,15 +356,14 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     /**
      * S-02: el plan y el fin de período vienen de ONVO (verificados en OnvoBillingVerificador), no de
      * metadata ni de sub.plan. La suscripción se busca solo por el id ONVO, con lock de fila.
+     * B2: {@code referenciaLedger} es el id de la factura de ONVO (una por cobro) y es obligatorio: no hay sobrecarga
+     * sin referencia ni caída al id de la suscripción, que volvería a deduplicar el ledger por suscripción.
      */
     @Transactional
-    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin) {
-        procesarPagoOnvoVerificado(onvoSubId, planNombre, fin, onvoSubId);
-    }
-
-    /** B2: {@code referenciaLedger} es el id de la factura de ONVO (una por cobro); sin él se usa el id de la suscripción. */
-    @Transactional
     public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin, String referenciaLedger) {
+        if (!referenciaValida(referenciaLedger)) {
+            throw new IllegalArgumentException("Referencia de ledger ONVO inválida: se requiere el id de la factura");
+        }
         Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
         Plan plan = planRepo.findByNombre(planNombre)
@@ -388,7 +387,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresaRepo.save(empresa);
         evictTenant(empresa.getId());
         anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK,
-            referenciaValida(referenciaLedger) ? referenciaLedger : onvoSubId, "Pago ONVO verificado");
+            referenciaLedger, "Pago ONVO verificado");
         log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
     }
 

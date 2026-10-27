@@ -74,8 +74,17 @@ public class RenovacionesTilopayService {
         }
         suscripciones.guardarRenovaciones(cobros, pastDue);
         for (Suscripcion sub : pastDue) {
+            String proveedor = proveedorDeCobro(sub);
+            // Moneda real del cobro: ONVO la toma de la configuración de planes, Tilopay cobra en colones.
+            String moneda = BillingLedger.PROVEEDOR_ONVO.equals(proveedor)
+                ? reconsulta.monedaConfigurada().orElse(null) : "crc";
+            if (moneda == null) {
+                log.error("[ALERTA-PAGO] Ledger renovación ONVO sin moneda configurada, no se registra empresa={}",
+                    sub.getEmpresa().getId());
+                continue;
+            }
             ledgerWriter.registrar(sub.getEmpresa(), sub, BillingLedger.TIPO_COBRO_FALLIDO,
-                proveedorDeCobro(sub), "renov-" + sub.getId() + "-" + hoy, null, "crc",
+                proveedor, "renov-" + sub.getId() + "-" + hoy, null, moneda,
                 "Mensualidad pendiente de pago");
         }
         if (!cobros.isEmpty()) log.info("[billing-tilopay] {} cobro(s) de renovación generados", cobros.size());

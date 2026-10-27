@@ -55,30 +55,34 @@ class BillingLedgerWriterTest {
     }
 
     @Test
-    @DisplayName("B2: un cobro ONVO sin moneda falla cerrado: no se guarda ni cae a crc (COBRO_FALLIDO y CANCELACION)")
-    void onvoSinMonedaFallaCerrado() {
+    @DisplayName("Ledger: sin moneda falla cerrado para TODO proveedor (no hay crc por defecto, ni en la entidad)")
+    void sinMonedaFallaCerradoParaTodoProveedor() {
         Empresa e = new Empresa();
         e.setId(10L);
-        for (String tipo : new String[]{BillingLedger.TIPO_COBRO_FALLIDO, BillingLedger.TIPO_CANCELACION}) {
-            for (String sinMoneda : new String[]{null, "", "  "}) {
-                org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                    writer.registrar(e, null, tipo, BillingLedger.PROVEEDOR_ONVO, "clsub", null, sinMoneda, "x"))
-                    .isInstanceOf(IllegalArgumentException.class);
+        assertThat(new BillingLedger().getMoneda()).isNull();
+        for (String proveedor : new String[]{BillingLedger.PROVEEDOR_ONVO, BillingLedger.PROVEEDOR_STRIPE,
+                BillingLedger.PROVEEDOR_TILOPAY, BillingLedger.PROVEEDOR_MANUAL, null}) {
+            for (String tipo : new String[]{BillingLedger.TIPO_COBRO_FALLIDO, BillingLedger.TIPO_CANCELACION}) {
+                for (String sinMoneda : new String[]{null, "", "  "}) {
+                    org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        writer.registrar(e, null, tipo, proveedor, "ref_1", null, sinMoneda, "x"))
+                        .isInstanceOf(IllegalArgumentException.class);
+                }
             }
         }
         verify(ledgerRepo, never()).save(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
-    @DisplayName("B2: ONVO con moneda se guarda en minúsculas; otros proveedores (Stripe/Tilopay) conservan su comportamiento previo")
-    void onvoConMonedaYOtrosProveedoresSinCambio() {
+    @DisplayName("Ledger: guarda la moneda real recibida, normalizada en minúsculas (usd, crc), sin sustituirla")
+    void guardaLaMonedaRealDelCobro() {
         Empresa e = new Empresa();
         e.setId(10L);
-        writer.registrar(e, null, BillingLedger.TIPO_COBRO_FALLIDO, BillingLedger.PROVEEDOR_ONVO, "clsub", null, "USD", "x");
-        writer.registrar(e, null, BillingLedger.TIPO_CANCELACION, "STRIPE", "sub_s", null, null, "x");
+        writer.registrar(e, null, BillingLedger.TIPO_COBRO_OK, BillingLedger.PROVEEDOR_ONVO, "clinv1", 4900, " USD ", "x");
+        writer.registrar(e, null, BillingLedger.TIPO_COBRO_OK, BillingLedger.PROVEEDOR_TILOPAY, "ord1", null, "crc", "x");
         ArgumentCaptor<BillingLedger> cap = ArgumentCaptor.forClass(BillingLedger.class);
         verify(ledgerRepo, org.mockito.Mockito.times(2)).save(cap.capture());
         assertThat(cap.getAllValues().get(0).getMoneda()).isEqualTo("usd");
-        assertThat(cap.getAllValues().get(1).getMoneda()).isEqualTo("crc"); // Stripe: sin cambio en este PR
+        assertThat(cap.getAllValues().get(1).getMoneda()).isEqualTo("crc");
     }
 }
