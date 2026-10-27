@@ -185,6 +185,7 @@ public class PosVentaService {
         int subtotal = 0;
         int costoTotal = 0;
         List<PedidoItem> items = new ArrayList<>();
+        List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
         for (PosVentaDTO.Item itemDto : dto.getItems()) {
             Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
@@ -208,14 +209,57 @@ public class PosVentaService {
             items.add(itemDeVenta(pedido, producto, cantidad, precio, costo));
             subtotal += precio * cantidad;
             costoTotal += costo * cantidad;
+            lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(precio, cantidad, producto.getPorcentajeIva()));
         }
         pedido.setItems(items);
+        // M4: en régimen simplificado la factura suma el IVA; el tiquete cobra el precio tal cual.
         int descuento = Math.min(Math.max(0, pedido.getDescuentoTotal()), subtotal);
         pedido.setDescuentoTotal(descuento);
-        return new TotalesPos(subtotal, costoTotal, descuento);
+        // IVA sobre el neto después del descuento de caja, igual que el XML.
+        int impuesto = (int) com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            pedido.getEmpresa(), dto.isFacturaElectronica(), lineasIva, descuento);
+        pedido.setMontoImpuesto(impuesto);
+        pedido.setAplicaImpuesto(impuesto > 0);
+        return new TotalesPos(subtotal, costoTotal, descuento, impuesto);
     }
 
     /** Descuento manual solo con permiso pos.descuento (o ADMIN_IT). */
+    /**
+     * M4: total que verá la caja antes de cobrar. Misma regla que {@link #crearVenta}
+     * (precio de catálogo, descuento topado, IVA de {@code CalculadoraIva} sobre el neto),
+     * sin bloquear stock ni guardar nada: lo que muestra StepCobro es lo que se va a cobrar.
+     */
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Object> cotizarCobro(PosVentaDTO dto, Long empresaId) {
+        Empresa empresa = empresaRepository.findById(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
+        exigirCantidadesValidas(dto);
+        long subtotal = 0;
+        List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
+        for (PosVentaDTO.Item itemDto : dto.getItems()) {
+            Producto producto = productoRepository.findById(itemDto.getProductoId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
+            PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), empresaId);
+            exigirVendiblePorPos(producto);
+            int cantidad = cantidadValida(itemDto.getCantidad());
+            Integer precio = producto.getPrecioEfectivo();
+            if (precio == null) {
+                throw new IllegalStateException("Producto sin precio de venta: " + itemDto.getProductoId());
+            }
+            subtotal += (long) precio * cantidad;
+            lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(precio, cantidad, producto.getPorcentajeIva()));
+        }
+        long descuento = Math.min(resolverDescuento(dto.getDescuentoGlobal()), subtotal);
+        long impuesto = com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            empresa, dto.isFacturaElectronica(), lineasIva, descuento);
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("subtotal", subtotal);
+        m.put("descuento", descuento);
+        m.put("impuesto", impuesto);
+        m.put("total", subtotal - descuento + impuesto);
+        return m;
+    }
+
     private int resolverDescuento(Integer solicitado) {
         if (solicitado == null || solicitado <= 0) {
             return 0;
@@ -295,9 +339,10 @@ public class PosVentaService {
         }
     }
 
-    private record TotalesPos(int subtotal, int costoTotal, int descuento) {
-        int totalPedido() { return subtotal - descuento; }
-        int utilidadBruta() { return totalPedido() - costoTotal; }
+    private record TotalesPos(int subtotal, int costoTotal, int descuento, int impuesto) {
+        int totalPedido() { return subtotal - descuento + impuesto; }
+        /** El IVA cobrado es de Hacienda, no utilidad. */
+        int utilidadBruta() { return subtotal - descuento - costoTotal; }
         BigDecimal margen() {
             if (costoTotal <= 0) return BigDecimal.ZERO;
             return BigDecimal.valueOf(utilidadBruta() * 100.0 / costoTotal)

@@ -3487,6 +3487,8 @@
       "tarjeta": "Tarjeta",
       "descuento": "Descuento",
       "totalACobrar": "Total a cobrar",
+      "iva": "IVA",
+      "calculandoIva": "Calculando el IVA de la factura… Esperá un momento antes de cobrar.",
       "montoRecibido": "Monto recibido",
       "pagoExacto": "Exacto",
       "faltante": "Faltante",
@@ -4734,6 +4736,12 @@
     "tilopayConfirmando": "Confirmando el pago de tu plan…",
     "tilopayNoConfirmado": "No pudimos confirmar el pago. No se te cobró de más; intentá de nuevo.",
     "volverPlanes": "Volver a planes"
+  },
+  "facturaElectronica": {
+    "checkout": "Quiero factura electrónica",
+    "checkoutAyuda": "La factura sale con tus datos fiscales. Si el negocio está en régimen simplificado, al total se le suma el IVA (13 %).",
+    "pos": "Factura electrónica para el cliente",
+    "posAyuda": "Si el negocio está en régimen simplificado, se le suma el IVA (13 %) al total."
   },
   "suspension": {
     "titulo": "Tu tienda está suspendida",

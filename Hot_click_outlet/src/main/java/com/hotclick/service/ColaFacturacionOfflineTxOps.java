@@ -7,6 +7,7 @@ import com.hotclick.repository.ColaFacturacionOfflineRepository;
 import com.hotclick.repository.ComprobanteFiscalRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,10 +59,15 @@ public class ColaFacturacionOfflineTxOps {
             comprobanteId, cf.getEmpresa().getId());
     }
 
-    /** Reclama y marca PROCESANDO en un único statement (ver ColaFacturacionOfflineRepository). */
+    /**
+     * Reclama y marca PROCESANDO en una sola transacción: las filas quedan bloqueadas (SKIP LOCKED)
+     * hasta el commit, así que otra ejecución concurrente no puede tomarlas (ver ColaFacturacionOfflineRepository).
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<ColaFacturacionOffline> reclamarLote(int limite) {
-        return colaRepo.reclamarPendientes(limite);
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        List<ColaFacturacionOffline> lote = colaRepo.bloquearPendientesListas(ahora, PageRequest.of(0, limite));
+        return colaRepo.saveAll(marcarProcesando(lote, ahora));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -112,5 +118,14 @@ public class ColaFacturacionOfflineTxOps {
     private String truncar(String texto) {
         if (texto == null) return null;
         return texto.length() > 2000 ? texto.substring(0, 2000) : texto;
+    }
+
+    /** Solo cambia el estado en memoria (sin tocar la DB); el guardado lo hace el llamador. */
+    private static List<ColaFacturacionOffline> marcarProcesando(List<ColaFacturacionOffline> lote, LocalDateTime ahora) {
+        for (ColaFacturacionOffline c : lote) {
+            c.setEstado(ColaFacturacionOffline.ESTADO_PROCESANDO);
+            c.setFechaInicioProceso(ahora);
+        }
+        return lote;
     }
 }

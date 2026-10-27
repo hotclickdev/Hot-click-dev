@@ -14,6 +14,8 @@ export type FormularioEmpresa = {
 
 export type EmpresaPerfil = {
   id: Id
+  /** M4: SIMPLIFICADO (IVA se suma con factura) o TRADICIONAL (precio con IVA incluido). */
+  regimenIva?: string
   nombreEmpresa?: string
   nombreComercial?: string
   slug?: string

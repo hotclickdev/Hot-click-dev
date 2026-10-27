@@ -1,3 +1,4 @@
+import { campoFactura, leerFacturaElectronica } from '@/components/facturacion/facturaElectronica'
 import { authService } from '@/services/authService'
 import { analytics } from '@/utils/analytics'
 import { attributionForCheckout } from '@/utils/attribution'
@@ -239,6 +240,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
           : {}),
       })),
       codigoCupon: cuponCodigo || null,
+      // M4: «Quiero factura electrónica» (en régimen simplificado el backend suma el IVA).
+      ...campoFactura(leerFacturaElectronica()),
       codigoGiftCard: gcCodigo || null,
       ...(atrib
         ? {
