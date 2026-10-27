@@ -68,4 +68,48 @@ class RateLimiterPostgresSqlTest {
             logger.setLevel(antes);
         }
     }
+
+    private static java.util.List<String> mensajesDeArranque(JdbcTemplate jdbc) {
+        Logger logger = (Logger) LoggerFactory.getLogger(RateLimiter.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        Level antes = logger.getLevel();
+        logger.setLevel(Level.INFO);
+        try {
+            new RateLimiter(jdbc).logDialecto();
+            return appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(antes);
+        }
+    }
+
+    @Test
+    @DisplayName("L3: al arrancar deja en el log que eligió la rama PostgreSQL (sin llaves ni datos personales)")
+    @SuppressWarnings("unchecked")
+    void logDeArranquePostgres() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.execute(any(ConnectionCallback.class))).thenReturn("PostgreSQL");
+        assertThat(mensajesDeArranque(jdbc)).singleElement().satisfies(m ->
+            assertThat(m).contains("[RATE-LIMIT]").contains("PostgreSQL").contains("ON CONFLICT").doesNotContain("auth:"));
+    }
+
+    @Test
+    @DisplayName("L3: con otro motor (H2) el log avisa que usa la rama genérica no atómica")
+    @SuppressWarnings("unchecked")
+    void logDeArranqueGenerico() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.execute(any(ConnectionCallback.class))).thenReturn("H2");
+        assertThat(mensajesDeArranque(jdbc)).singleElement().satisfies(m ->
+            assertThat(m).contains("[RATE-LIMIT]").contains("genérico").doesNotContain("ON CONFLICT"));
+    }
+
+    @Test
+    @DisplayName("L3: si la BD no responde al arrancar avisa sin la excepción ni datos y no tumba el arranque")
+    void logDeArranqueSinBd() {
+        JdbcTemplate roto = mock(JdbcTemplate.class, invocation -> { throw new org.springframework.dao.DataAccessResourceFailureException("jdbc:postgresql://host/secreto"); });
+        assertThat(mensajesDeArranque(roto)).singleElement().satisfies(m ->
+            assertThat(m).contains("[RATE-LIMIT]").doesNotContain("secreto").doesNotContain("jdbc:"));
+    }
 }
