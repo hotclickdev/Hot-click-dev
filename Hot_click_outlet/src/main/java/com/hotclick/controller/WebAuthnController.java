@@ -84,7 +84,8 @@ public class WebAuthnController {
     }
 
     @PostMapping("/login/finish")
-    public ResponseEntity<?> loginFinish(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> loginFinish(@RequestBody Map<String, String> body,
+                                         jakarta.servlet.http.HttpServletRequest httpRequest) {
         try {
             String email    = body.get("email");
             String response = body.get("response");
@@ -104,6 +105,8 @@ public class WebAuthnController {
             String accessToken = jwtUtil.generateTokenFull(
                 usuario.getCorreo(), usuario.getId(), rol, usuario.getEmpresaId(), empresaSlug, perms);
             refreshTokenService.crear(usuario);
+            // Login completo con llave de seguridad: los tropiezos previos ya no cuentan (igual que un login completo).
+            authSupport.autenticacionCompleta(usuario.getId(), httpRequest);
 
             String nombre = usuario.getNombre() != null ? usuario.getNombre() : email.split("@")[0];
             AuthResponse auth = new AuthResponse(accessToken, null, usuario.getId(), email, rol, nombre);

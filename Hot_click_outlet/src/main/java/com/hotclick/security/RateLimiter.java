@@ -46,6 +46,23 @@ public class RateLimiter {
 
     private volatile Boolean postgres;
 
+    /**
+     * Deja en el log de arranque qué rama eligió el limitador (upsert atómico de PostgreSQL o la genérica): si en
+     * producción dijera "genérica", el arreglo de la carrera (M1) no estaría activo. Sin datos personales.
+     * Si la BD no responde al arrancar no se cachea nada y se vuelve a detectar en el primer uso.
+     */
+    @jakarta.annotation.PostConstruct
+    public void logDialecto() {
+        try {
+            log.info("[RATE-LIMIT] dialecto de conteo: {}", esPostgres()
+                ? "PostgreSQL (INSERT … ON CONFLICT DO UPDATE atómico)"
+                : "genérico (SELECT + INSERT/UPDATE, no atómico: solo H2/tests)");
+        } catch (Exception e) {
+            log.warn("[RATE-LIMIT] no se pudo detectar el dialecto al arrancar ({}); se detecta en el primer uso",
+                e.getClass().getName());
+        }
+    }
+
     private boolean esPostgres() {
         Boolean p = postgres;
         if (p == null) {
@@ -145,6 +162,16 @@ public class RateLimiter {
             jdbc.update("DELETE FROM hot_click_rate_limit_tb WHERE bucket_key = ?", key);
         } catch (Exception e) {
             log.warn("[RATE-LIMIT] DB unavailable al liberar: {}", e.getClass().getName());
+        }
+    }
+
+    /** Borra todos los buckets cuya llave empieza con {@code prefijo} (p. ej. los de IP de un usuario al desbloquearlo). */
+    public void liberarPrefijo(String prefijo) {
+        try {
+            String patron = prefijo.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+            jdbc.update("DELETE FROM hot_click_rate_limit_tb WHERE bucket_key LIKE ? ESCAPE '\\'", patron);
+        } catch (Exception e) {
+            log.warn("[RATE-LIMIT] DB unavailable al liberar por prefijo: {}", e.getClass().getName());
         }
     }
 

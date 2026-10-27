@@ -123,4 +123,34 @@ class UsuarioServiceLockoutTest {
         verify(rateLimiter).liberar("auth:fallos:usuario:1:global");
         verify(rateLimiter).liberar("auth:fallos:usuario:1:ip:198.51.100.7");
     }
+
+    private Usuario nuevoQueRecibeId(long id) {
+        Usuario nuevo = new Usuario();
+        nuevo.setCorreo("nuevo@test.cr");
+        nuevo.setIdentificacion("111222333");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> {
+            Usuario u = inv.getArgument(0);
+            u.setId(id);
+            return u;
+        });
+        return nuevo;
+    }
+
+    @Test
+    @DisplayName("registrarSolicitud: la cuenta nueva arranca sin contadores (global + todos los de IP de ese id)")
+    void registrarSolicitud_liberaContadores() {
+        service.registrarSolicitud(nuevoQueRecibeId(77L));
+
+        verify(rateLimiter).liberar("auth:fallos:usuario:77:global");
+        verify(rateLimiter).liberarPrefijo("auth:fallos:usuario:77:ip:");
+    }
+
+    @Test
+    @DisplayName("registrarPendiente: la cuenta nueva arranca sin contadores (global + todos los de IP de ese id)")
+    void registrarPendiente_liberaContadores() {
+        service.registrarPendiente(nuevoQueRecibeId(78L));
+
+        verify(rateLimiter).liberar("auth:fallos:usuario:78:global");
+        verify(rateLimiter).liberarPrefijo("auth:fallos:usuario:78:ip:");
+    }
 }

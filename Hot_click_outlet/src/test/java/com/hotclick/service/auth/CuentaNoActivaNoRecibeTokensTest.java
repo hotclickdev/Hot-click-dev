@@ -257,7 +257,7 @@ class CuentaNoActivaNoRecibeTokensTest {
         Usuario u = usuario(estado);
         when(svc.finishAuthentication(eq(u.getCorreo()), anyString())).thenReturn(true);
         when(repo.findByCorreo(u.getCorreo())).thenReturn(Optional.of(u));
-        ResponseEntity<?> r = webauthn(svc, repo).loginFinish(Map.of("email", u.getCorreo(), "response", "{}"));
+        ResponseEntity<?> r = webauthn(svc, repo).loginFinish(Map.of("email", u.getCorreo(), "response", "{}"), new org.springframework.mock.web.MockHttpServletRequest());
         assertThat(r.getStatusCode().value()).isEqualTo(401);
         assertThat(String.valueOf(r.getBody())).contains("Autenticación WebAuthn fallida");
         sinTokens();
@@ -271,7 +271,7 @@ class CuentaNoActivaNoRecibeTokensTest {
         Usuario u = usuario(1);
         when(svc.finishAuthentication(eq(u.getCorreo()), anyString())).thenReturn(true);
         when(repo.findByCorreo(u.getCorreo())).thenReturn(Optional.of(u));
-        ResponseEntity<?> r = webauthn(svc, repo).loginFinish(Map.of("email", u.getCorreo(), "response", "{}"));
+        ResponseEntity<?> r = webauthn(svc, repo).loginFinish(Map.of("email", u.getCorreo(), "response", "{}"), new org.springframework.mock.web.MockHttpServletRequest());
         assertThat(r.getStatusCode().value()).isEqualTo(200);
     }
 }
