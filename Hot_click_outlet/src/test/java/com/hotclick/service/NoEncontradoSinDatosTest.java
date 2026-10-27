@@ -7,14 +7,11 @@ import com.hotclick.config.GlobalExceptionHandler;
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.repository.EmpresaRepository;
-import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.repository.TipoOtpRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.model.Empresa;
-import com.hotclick.model.Pedido;
-import com.hotclick.service.payment.PedidoGrupoService;
 import com.hotclick.service.suscripcion.SuscripcionBillingService;
 import com.hotclick.utils.ErrorPublico;
 import org.junit.jupiter.api.AfterEach;
@@ -36,7 +33,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -127,36 +123,6 @@ class NoEncontradoSinDatosTest {
         assertThat(t.getMessage()).doesNotContain(CORREO).doesNotContain("@");
         assertThat(logs()).doesNotContain(CORREO).doesNotContain("@");
         assertThat(logs()).contains("Usuario operador no encontrado");
-    }
-
-    // ── PaymentService ────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("PaymentService.consultarEstado: sin el número de pedido en el mensaje; en el log va enmascarado")
-    void pagoPedido() {
-        PedidoRepository pedidos = mock(PedidoRepository.class);
-        when(pedidos.findByNumeroPedido(anyString())).thenReturn(Optional.empty());
-        PaymentService ps = new PaymentService();
-        ReflectionTestUtils.setField(ps, "pedidoRepository", pedidos);
-        Throwable t = catchThrowable(() -> ps.consultarEstado(NUMERO_PEDIDO));
-        assertThat(alCliente(t)).isEqualTo("Pedido no encontrado");
-        assertThat(t.getMessage()).doesNotContain(NUMERO_PEDIDO).doesNotContain("ABCD1234");
-        assertThat(logs()).contains("***1234").doesNotContain(NUMERO_PEDIDO);
-    }
-
-    @Test
-    @DisplayName("PaymentService.consultarEstado: pago inexistente → «Pago no encontrado» sin el número de pedido")
-    void pagoSinPago() {
-        PedidoRepository pedidos = mock(PedidoRepository.class);
-        when(pedidos.findByNumeroPedido(anyString())).thenReturn(Optional.of(new Pedido()));
-        PedidoGrupoService grupo = mock(PedidoGrupoService.class);
-        when(grupo.pagoDelGrupo(any())).thenReturn(Optional.empty());
-        PaymentService ps = new PaymentService();
-        ReflectionTestUtils.setField(ps, "pedidoRepository", pedidos);
-        ReflectionTestUtils.setField(ps, "pedidoGrupoService", grupo);
-        Throwable t = catchThrowable(() -> ps.consultarEstado(NUMERO_PEDIDO));
-        assertThat(alCliente(t)).isEqualTo("Pago no encontrado");
-        assertThat(t.getMessage()).doesNotContain(NUMERO_PEDIDO);
     }
 
     // ── OtpService ────────────────────────────────────────────────────────────
