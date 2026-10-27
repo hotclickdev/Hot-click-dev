@@ -68,6 +68,8 @@ public class AuthCredentialLoginHandler {
         Usuario usuario = usuarioOpt.get();
         ResponseEntity<?> bloqueo = rechazarSiBloqueado(usuario, request, httpRequest);
         if (bloqueo != null) return bloqueo;
+        ResponseEntity<?> ipAgotada = rechazarSiIpAgotada(usuario, request, httpRequest);
+        if (ipAgotada != null) return ipAgotada;
         ResponseEntity<?> clave = rechazarSiClaveIncorrecta(usuario, request, httpRequest);
         if (clave != null) return clave;
         ResponseEntity<?> estado = rechazarSiEstadoInvalido(usuario);
@@ -85,6 +87,8 @@ public class AuthCredentialLoginHandler {
         if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
             return respuesta2fa(usuario);
         }
+        // Sin 2FA, la autenticación terminó acá: los tropiezos previos de esta IP ya no cuentan.
+        usuarioService.liberarFallosIp(usuario.getId(), authSupport.ipCliente(httpRequest));
         ResponseEntity<?> multi = respuestaMultiEmpresa(usuario);
         if (multi != null) return multi;
         return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
@@ -107,9 +111,20 @@ public class AuthCredentialLoginHandler {
             "Cuenta temporalmente bloqueada por múltiples intentos fallidos. Revisá tu correo para recuperar el acceso."));
     }
 
+    /**
+     * Esta IP ya falló {@code ip-max} veces contra este usuario: se rechaza igual que una contraseña mala (mismo
+     * 401, mismo costo de hash) para que el bloqueo no sirva para saber que el correo existe. Solo afecta a esa IP.
+     */
+    private ResponseEntity<?> rechazarSiIpAgotada(Usuario usuario, JwtRequest request, HttpServletRequest httpRequest) {
+        if (!usuarioService.ipBloqueadaParaUsuario(usuario.getId(), authSupport.ipCliente(httpRequest))) return null;
+        passwordEncoder.matches(request.getContrasena(), HASH_TIMING_DESCONOCIDO);
+        AuthAuditSupport.run(log, () -> securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest));
+        return respuestaCredencialesInvalidas();
+    }
+
     private ResponseEntity<?> rechazarSiClaveIncorrecta(Usuario usuario, JwtRequest request, HttpServletRequest httpRequest) {
         if (passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash())) return null;
-        usuarioService.incrementarIntentosFallidos(usuario.getId());
+        authSupport.registrarFalloCredencial(usuario.getId(), httpRequest);
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "wrong_password"));
         AuthAuditSupport.run(log, () -> securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()));
         return respuestaCredencialesInvalidas();

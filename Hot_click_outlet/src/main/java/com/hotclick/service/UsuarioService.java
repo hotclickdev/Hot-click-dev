@@ -3,10 +3,12 @@ package com.hotclick.service;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.model.Rol;
+import com.hotclick.security.RateLimiter;
 import com.hotclick.utils.Constants;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.repository.RolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,6 +36,9 @@ public class UsuarioService {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private RateLimiter rateLimiter;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -110,22 +115,69 @@ public class UsuarioService {
         usuarioRepository.updateUltimoAcceso(id, LocalDateTime.now(Constants.ZONA_CR));
     }
 
+    // ── Bloqueo por fallos de autenticación ───────────────────────────────────
+    //
+    // Diseño: quien conoce el correo (o la contraseña) no debe poder dejar fuera al dueño.
+    //  1) Tope POR USUARIO + IP: tras {ip-max} fallos desde una IP, esa IP queda bloqueada para ese usuario durante
+    //     {ip-window} s. El dueño, desde otra IP, no se entera.
+    //  2) Tope GLOBAL por usuario (defensa contra ataques repartidos en muchas IP): {global-max} fallos dentro de
+    //     {global-window} s bloquean la cuenta de forma TEMPORAL (bloqueadoHasta = ahora + global-window) y avisan al
+    //     dueño por correo. Una sola IP no puede llegar a este tope porque el tope por IP la corta antes.
+    // Los dos topes viven en hot_click_rate_limit_tb (ventana fija, se limpian solos) y salen de aquí para que
+    // login, 2FA verify y los endpoints de gestión 2FA cuenten igual.
+
+    @Value("${hotclick.auth.lockout.ip-max:5}")           private int lockoutIpMax = 5;
+    @Value("${hotclick.auth.lockout.ip-window:1800}")     private int lockoutIpWindow = 1800;
+    @Value("${hotclick.auth.lockout.global-max:20}")      private int lockoutGlobalMax = 20;
+    @Value("${hotclick.auth.lockout.global-window:1800}") private int lockoutGlobalWindow = 1800;
+
+    private static String claveFallosIp(Long id, String ip) {
+        return "auth:fallos:usuario:" + id + ":ip:" + (ip == null || ip.isBlank() ? "desconocida" : ip);
+    }
+
+    private static String claveFallosGlobal(Long id) {
+        return "auth:fallos:usuario:" + id + ":global";
+    }
+
+    /** true si esta IP agotó sus fallos contra este usuario (se rechaza antes de mirar la contraseña o el código). */
+    public boolean ipBloqueadaParaUsuario(Long id, String ip) {
+        return rateLimiter.alcanzoLimite(claveFallosIp(id, ip), lockoutIpMax, lockoutIpWindow);
+    }
+
+    /**
+     * Cuenta un fallo de credencial (contraseña, código TOTP/OTP/recuperación) contra el usuario desde {@code ip}.
+     * Aplica el tope por IP y, si se repartió en muchas IP, el bloqueo temporal global.
+     */
     @Transactional
-    public void incrementarIntentosFallidos(Long id) {
-        // Incremento + lectura en la MISMA transacción: el lock de fila de la UPDATE
-        // se mantiene hasta el SELECT, así que intentos == 5 (no >= 5) garantiza que
-        // solo un hilo concurrente ve el umbral y dispara el evento de bloqueo.
-        usuarioRepository.incrementarYBloquear(id);
-        int intentos = usuarioRepository.findIntentosFallidos(id).orElse(0);
-        if (intentos == 5) {
-            usuarioRepository.findById(id).ifPresent(u ->
-                eventPublisher.publishEvent(new CuentaBloqueadaEvent(this, u.getCorreo())));
+    public void registrarFalloAutenticacion(Long id, String ip) {
+        rateLimiter.registrar(claveFallosIp(id, ip), lockoutIpWindow);
+        usuarioRepository.incrementarIntentosFallidos(id);
+        int global = rateLimiter.registrar(claveFallosGlobal(id), lockoutGlobalWindow);
+        if (global >= lockoutGlobalMax && global > 0) {
+            usuarioRepository.bloquearUsuario(id,
+                LocalDateTime.now(Constants.ZONA_CR).plusSeconds(lockoutGlobalWindow));
+            if (global == lockoutGlobalMax) {
+                usuarioRepository.findById(id).ifPresent(u ->
+                    eventPublisher.publishEvent(new CuentaBloqueadaEvent(this, u.getCorreo())));
+            }
         }
+    }
+
+    /** Autenticación completa: el usuario llegó bien desde {@code ip}; los tropiezos previos de esa IP ya no cuentan. */
+    @Transactional
+    public void resetearIntentosFallidos(Long id, String ip) {
+        resetearIntentosFallidos(id);
+        liberarFallosIp(id, ip);
+    }
+
+    public void liberarFallosIp(Long id, String ip) {
+        rateLimiter.liberar(claveFallosIp(id, ip));
     }
 
     @Transactional
     public void resetearIntentosFallidos(Long id) {
         usuarioRepository.resetearIntentosFallidos(id);
+        rateLimiter.liberar(claveFallosGlobal(id));
     }
 
     @Transactional

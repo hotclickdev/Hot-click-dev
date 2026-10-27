@@ -91,7 +91,7 @@ class AuthCredentialLoginHandlerTest {
         assertCredencialesInvalidas(resp);
         verify(securityAuditService).logLoginFailed(CORREO, httpRequest, "wrong_password");
         verify(securityDetectionService).recordFailedLogin("127.0.0.1", CORREO);
-        verify(usuarioService).incrementarIntentosFallidos(u.getId());
+        verify(authSupport).registrarFalloCredencial(u.getId(), httpRequest);
         verify(otpService, never()).enviarOtp(any(), anyString());
     }
 

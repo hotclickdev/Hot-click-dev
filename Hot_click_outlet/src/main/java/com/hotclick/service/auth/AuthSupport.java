@@ -54,12 +54,34 @@ public class AuthSupport {
     /**
      * Igual, para /2fa/verify y /2fa/email/send (el usuario sale del tempToken). El cupo es por usuario + IP:
      * quien conoce la contraseña (y por eso obtiene un tempToken) y dispara intentos desde otra IP no le gasta el
-     * cupo de login al dueño de la cuenta. El bloqueo de cuenta por fallos ({@code incrementarIntentosFallidos})
+     * cupo de login al dueño de la cuenta. El bloqueo de cuenta por fallos ({@code registrarFalloAutenticacion})
      * sigue siendo el tope global por usuario.
      */
     public ResponseEntity<ResponseDTO> limite2faLoginUsuario(Long usuarioId, HttpServletRequest request) {
         String ip = request == null ? "desconocida" : clientIpResolver.resolve(request);
         return limite("2fa:login:usuario:" + usuarioId + ":ip:" + ip, tfaLoginMax, tfaLoginWindow);
+    }
+
+    // ── Bloqueo por fallos de credencial (ver UsuarioService.registrarFalloAutenticacion) ──
+
+    /** IP del cliente tal como la ve el limitador (misma fuente que el resto de llaves por IP). */
+    public String ipCliente(HttpServletRequest request) {
+        return request == null ? "desconocida" : clientIpResolver.resolve(request);
+    }
+
+    /**
+     * Para endpoints con sesión o tempToken: 403 si esta IP ya agotó sus fallos contra este usuario (antes de mirar
+     * la contraseña o el código); null si puede seguir. Solo esa IP queda afuera: el dueño, desde la suya, no.
+     */
+    public ResponseEntity<ResponseDTO> bloqueoPorFallos(Long usuarioId, HttpServletRequest request) {
+        if (!usuarioService.ipBloqueadaParaUsuario(usuarioId, ipCliente(request))) return null;
+        return ResponseEntity.status(403).body(ResponseDTO.error(
+            "Demasiados intentos fallidos desde esta ubicación. Esperá unos minutos antes de volver a intentar."));
+    }
+
+    /** Cuenta una contraseña o código incorrecto (login, 2FA verify y gestión 2FA cuentan por el mismo camino). */
+    public void registrarFalloCredencial(Long usuarioId, HttpServletRequest request) {
+        usuarioService.registrarFalloAutenticacion(usuarioId, ipCliente(request));
     }
 
     private ResponseEntity<ResponseDTO> limite(String bucket, int max, int window) {
