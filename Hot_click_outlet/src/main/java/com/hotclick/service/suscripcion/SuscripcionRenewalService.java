@@ -82,6 +82,7 @@ public class SuscripcionRenewalService {
             return 0;
         }
         int max = Math.max(1, maxBajasPorCorrida);
+        reconsulta.iniciarCorrida();
         // 26-oct-2026: ya no se difiere a corridas siguientes; se procesan todos los vencidos en lotes
         // de tamaño max para que el día 9 se cumpla para todas las tiendas. Tope duro anti-bucle.
         // A5-01: las filas que ONVO reactivó o que no se pudieron verificar quedan PAST_DUE y se excluyen del resto de la corrida.

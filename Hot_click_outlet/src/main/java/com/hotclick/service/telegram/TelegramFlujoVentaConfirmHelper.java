@@ -111,7 +111,8 @@ class TelegramFlujoVentaConfirmHelper {
                 List.of(TelegramClienteBotService.boton("➕ Elegir productos", "vta:add"),
                         TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR))));
         } catch (Exception ex) {
-            log.error("[telegram-flujo] fallo confirmando venta en chat {} — {}", v.getChatId(), ex.getClass().getSimpleName());
+            log.error("[telegram-flujo] fallo confirmando venta en chat "
+                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), com.hotclick.service.telegram.TelegramTexto.paraLog(ex));
             abuso.avisarErrorDeUsuario(v.getChatId(), ex);
             bot.enviarMensaje(v.getChatId(), "No pude registrar la venta."
                 + "\nProbá de nuevo en unos minutos o registrala desde el panel.");

@@ -174,7 +174,9 @@ class BillingRenovacionAuditor5Test {
             when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of(legado), List.of());
             when(suscripcionRepo.marcarVencidoSiPastDue(50L)).thenReturn(1);
             assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
-            verifyNoInteractions(reconsulta);
+            // B1: solo reinicia el conteo de la corrida; no hay ninguna consulta a ONVO para el legado.
+            verify(reconsulta).iniciarCorrida();
+            verifyNoMoreInteractions(reconsulta);
         }
 
         @Test @DisplayName("MEDIO carrera: si todas las filas cambiaron, no se degrada a nadie")

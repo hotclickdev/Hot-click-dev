@@ -114,7 +114,7 @@ public class TelegramClienteBotService {
             recordarPanel(chatId, nuevo);
             borrarEntradaDelTurno(chatId);
         } catch (Exception e) {
-            log.error("[telegram-cliente] error enviando a chat {} — {}", chatId, TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram-cliente] error enviando a chat {} — {}", TelegramTexto.chatEnmascarado(chatId), TelegramTexto.paraLog(e.getMessage()));
         }
     }
 
@@ -243,7 +243,7 @@ public class TelegramClienteBotService {
                 return null;
             }
             if (filePath.isBlank() || filePath.contains("..") || filePath.startsWith("/")) {
-                log.warn("[telegram-cliente] file_path sospechoso para {}: '{}'", fileId, filePath);
+                log.warn("[telegram-cliente] file_path sospechoso para el archivo {} (no se registra la ruta)", fileId);
                 return null;
             }
 
@@ -252,7 +252,7 @@ public class TelegramClienteBotService {
             if (bytes != null && bytes.length > maxBytes) return null;
             return bytes;
         } catch (Exception e) {
-            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, TelegramTexto.paraLog(e.getMessage()));
             return null;
         }
     }

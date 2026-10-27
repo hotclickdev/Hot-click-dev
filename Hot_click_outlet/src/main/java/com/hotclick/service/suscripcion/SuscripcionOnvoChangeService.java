@@ -355,6 +355,12 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      */
     @Transactional
     public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin) {
+        procesarPagoOnvoVerificado(onvoSubId, planNombre, fin, onvoSubId);
+    }
+
+    /** B2: {@code referenciaLedger} es el id de la factura de ONVO (una por cobro); sin él se usa el id de la suscripción. */
+    @Transactional
+    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin, String referenciaLedger) {
         Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
         Plan plan = planRepo.findByNombre(planNombre)
@@ -377,7 +383,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresa.setFechaVencPlan(fin);
         empresaRepo.save(empresa);
         evictTenant(empresa.getId());
-        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK, onvoSubId, "Pago ONVO verificado");
+        anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK,
+            referenciaLedger == null || referenciaLedger.isBlank() ? onvoSubId : referenciaLedger, "Pago ONVO verificado");
         log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
     }
 
