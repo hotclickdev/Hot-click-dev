@@ -50,7 +50,7 @@ public class ImportController {
             List<ProductoExtraidoDto> productos = importService.extraerDeUrl(url);
             return ResponseEntity.ok(ResponseDTO.success("Extraídos " + productos.size() + " productos", productos));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             log.error("[import-url] Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
@@ -65,7 +65,7 @@ public class ImportController {
             List<ProductoExtraidoDto> productos = importService.extraerDePdf(archivo);
             return ResponseEntity.ok(ResponseDTO.success("Extraídos " + productos.size() + " productos", productos));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             log.error("[import-pdf] Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
@@ -80,7 +80,7 @@ public class ImportController {
             List<ProductoExtraidoDto> productos = importService.extraerDeCsv(archivo);
             return ResponseEntity.ok(ResponseDTO.success("Extraídos " + productos.size() + " productos", productos));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             log.error("[import-csv] Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
@@ -169,11 +169,11 @@ public class ImportController {
                 Map.of("ok", ok, "errores", errores, "advertencias", advertencias)));
 
         } catch (com.hotclick.exception.PlanLimitException e) {
-            return ResponseEntity.status(402).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(402).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (TenantAccessDeniedException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (IllegalArgumentException | RecursoNoEncontradoException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             log.error("[import-confirmar] Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al importar: " + com.hotclick.utils.ErrorPublico.mensaje(e)));

@@ -38,9 +38,6 @@ public class ProductoRequestSanitizer {
             return "Uno de los campos de texto supera el límite permitido. "
                 + "Revisá descripción, especificaciones o cómo usar y reducí el texto.";
         }
-        if (e instanceof ProductoAltaService.ContenidoNoPermitidoException && msg != null && !msg.isBlank()) {
-            return msg;
-        }
         return ErrorPublico.mensaje(e);
     }
 }
