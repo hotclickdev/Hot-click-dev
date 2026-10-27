@@ -56,7 +56,7 @@ public class TelegramService {
             }
             log.error("[telegram] error al enviar — HTTP {} {}", e.getStatusCode().value(), TelegramTexto.sinToken(respuesta));
         } catch (Exception e) {
-            log.error("[telegram] error al enviar — {}: {}", e.getClass().getSimpleName(), TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram] error al enviar — {}", e.getClass().getSimpleName());
         }
     }
 
@@ -68,7 +68,7 @@ public class TelegramService {
         } catch (HttpClientErrorException e) {
             log.error("[telegram] error al enviar — HTTP {} {}", e.getStatusCode().value(), TelegramTexto.sinToken(e.getResponseBodyAsString()));
         } catch (Exception e) {
-            log.error("[telegram] error al enviar — {}: {}", e.getClass().getSimpleName(), TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram] error al enviar — {}", e.getClass().getSimpleName());
         }
     }
 

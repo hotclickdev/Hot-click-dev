@@ -98,11 +98,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                         k -> userDetailsService.loadUserByUsername(k));
                 if (!userDetails.isEnabled()) {
                     // Cuenta no activa (estado distinto de 1): no se autentica aunque el JWT sea válido.
-                    log.debug("[JWT] Usuario no activo from ip={}", request.getRemoteAddr());
-                    try {
-                        auditService.logTokenRejected(request.getRemoteAddr(),
-                            request.getHeader("User-Agent"), request.getServletPath(), "UsuarioNoActivo");
-                    } catch (Exception ae) { log.warn("audit error: {}", ae.getMessage()); }
+                    auditarUsuarioNoActivo(request);
                     chain.doFilter(request, response);
                     return;
                 }
@@ -137,7 +133,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
             } catch (DisabledException e) {
                 // CustomUserDetailsService rechaza las cuentas con estado distinto de 1.
-                log.debug("[JWT] Usuario no activo from ip={}", request.getRemoteAddr());
+                auditarUsuarioNoActivo(request);
                 SecurityContextHolder.clearContext();
             } catch (Exception e) {
                 log.error("[JWT] Auth failed for user {}: {}", username, e.toString());
@@ -151,6 +147,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
         chain.doFilter(request, response);
+    }
+
+    /** Un JWT válido de una cuenta no activa: se registra en la auditoría de tokens rechazados. */
+    private void auditarUsuarioNoActivo(HttpServletRequest request) {
+        log.debug("[JWT] Usuario no activo from ip={}", request.getRemoteAddr());
+        try {
+            auditService.logTokenRejected(request.getRemoteAddr(),
+                request.getHeader("User-Agent"), request.getServletPath(), "UsuarioNoActivo");
+        } catch (Exception ae) { log.warn("audit error: {}", ae.getMessage()); }
     }
 
     /**
