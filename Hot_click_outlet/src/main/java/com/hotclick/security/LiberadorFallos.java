@@ -30,22 +30,45 @@ public class LiberadorFallos {
         this.txNueva.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
+    /** Desbloqueo de cuenta: borra el bucket global y todos los de IP del usuario ({@link ClavesFallos#liberarTodo}). */
     public void liberar(Long usuarioId) {
         if (usuarioId == null) return;
+        trasCommit(() -> ClavesFallos.liberarTodo(rateLimiter, usuarioId));
+    }
+
+    /**
+     * Autenticación completa desde {@code ip}: borra el bucket global y el de esa IP (los de otras IP no se tocan).
+     * Mismo manejo que {@link #liberar}: tras el commit, en transacción nueva y sin propagar errores.
+     */
+    public void liberarGlobalEIp(Long usuarioId, String ip) {
+        if (usuarioId == null) return;
+        trasCommit(() -> {
+            rateLimiter.liberar(ClavesFallos.claveGlobal(usuarioId));
+            rateLimiter.liberar(ClavesFallos.claveIp(usuarioId, ip));
+        });
+    }
+
+    /** Solo el bucket global (sin IP conocida). */
+    public void liberarGlobal(Long usuarioId) {
+        if (usuarioId == null) return;
+        trasCommit(() -> rateLimiter.liberar(ClavesFallos.claveGlobal(usuarioId)));
+    }
+
+    private void trasCommit(Runnable limpieza) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override public void afterCommit() { ejecutar(usuarioId); }
+                @Override public void afterCommit() { ejecutar(limpieza); }
             });
         } else {
-            ejecutar(usuarioId);
+            ejecutar(limpieza);
         }
     }
 
-    private void ejecutar(Long usuarioId) {
+    private void ejecutar(Runnable limpieza) {
         try {
-            txNueva.executeWithoutResult(s -> ClavesFallos.liberarTodo(rateLimiter, usuarioId));
+            txNueva.executeWithoutResult(s -> limpieza.run());
         } catch (Exception e) {
-            log.warn("[RATE-LIMIT] no se pudieron limpiar los contadores al desbloquear: {}", e.getClass().getName());
+            log.warn("[RATE-LIMIT] no se pudieron limpiar los contadores: {}", e.getClass().getName());
         }
     }
 }

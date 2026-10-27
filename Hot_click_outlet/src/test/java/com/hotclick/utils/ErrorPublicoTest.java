@@ -140,4 +140,43 @@ class ErrorPublicoTest {
     void validacionesPropiasNormalesSiguenViendose(String texto) {
         assertThat(ErrorPublico.mensaje(new IllegalArgumentException(texto))).isEqualTo(texto);
     }
+
+    // ── Seguimiento de #415: más TLDs/hosts internos y tope propio de pareceInterno ──────────────
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+        "No se pudo conectar a pagos.xyz",
+        "Falló la llamada a api.banco.es",
+        "Servidor mail.empresa.me no responde",
+        "Host db.hotclick.corp rechazó la conexión",
+        "Conexión rechazada por localhost",
+        "No se alcanzó internal-db",
+        "Timeout con internal-db-1 y reintento",
+        "Error al hablar con redis-cache",
+        "Falló svc-pagos al responder"})
+    void masTldsYHostsInternosSonGenericos(String texto) {
+        assertThat(ErrorPublico.mensaje(new IllegalArgumentException(texto))).isEqualTo(ErrorPublico.GENERICO);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+        "Elegí un plan distinto o contactá a soporte",
+        "El monto debe estar entre 1 y 10",
+        "Ese código ya no está disponible",
+        "El internet de la tienda no está configurado"})
+    void losNuevosPatronesNoTocanTextoNormal(String texto) {
+        assertThat(ErrorPublico.mensaje(new IllegalArgumentException(texto))).isEqualTo(texto);
+    }
+
+    @Test
+    void pareceInternoTieneTopePropioDeLargo() {
+        String limpio = "a".repeat(ErrorPublico.MAX_LARGO_ANALISIS);
+        String largo = "a".repeat(ErrorPublico.MAX_LARGO_ANALISIS + 1);
+        assertThat(ErrorPublico.pareceInterno(limpio)).isFalse();
+        assertThat(ErrorPublico.pareceInterno(largo)).as("más largo que el tope: interno, sin pasar por las regex").isTrue();
+        // entrada hostil muy larga: responde enseguida (no depende de que el llamador la haya cortado)
+        String hostil = "1:".repeat(100_000);
+        assertThat(org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(java.time.Duration.ofSeconds(2),
+            () -> ErrorPublico.pareceInterno(hostil))).isTrue();
+    }
 }
