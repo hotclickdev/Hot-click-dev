@@ -117,4 +117,32 @@ class LockoutPorIpIntegrationTest extends BaseIntegrationTest {
         assertThat(login(IP_DUENO, PASS).getStatus()).isEqualTo(200);
         assertThat(activar(IP_DUENO, PASS).getStatus()).as("no es 403").isNotEqualTo(403);
     }
+
+    @Test
+    @DisplayName("M2: con 2FA activo, la contraseña correcta NO borra el tope global (quien solo tiene la clave no cancela los 20)")
+    void claveCorrectaConDosFactoresNoLimpiaElTopeGlobal() throws Exception {
+        Usuario u = recargar();
+        u.setTwoFactorEnabled(true);
+        usuarioRepository.save(u);
+
+        for (int i = 1; i <= 19; i++) login("192.0.2." + i, "mala");
+        var conClave = login(IP_ATACANTE, PASS);
+        assertThat(conClave.getStatus()).as("la clave correcta solo abre el paso 2FA").isEqualTo(200);
+        assertThat(conClave.getContentAsString()).contains("2fa").doesNotContain("\"token\"");
+        assertThat(jdbcTemplate.queryForObject(
+            "SELECT count FROM hot_click_rate_limit_tb WHERE bucket_key = ?", Integer.class,
+            "auth:fallos:usuario:" + testUser.getId() + ":global")).as("el contador global sigue en 19").isEqualTo(19);
+
+        login("192.0.2.20", "mala");
+        assertThat(recargar().getBloqueadoHasta()).as("el fallo 20 sí bloquea").isNotNull();
+    }
+
+    @Test
+    @DisplayName("M3: IPv6 se cuenta por /64: 5 direcciones del mismo /64 agotan el cupo; otro /64 no se entera")
+    void ipv6SeCuentaPorPrefijo64() throws Exception {
+        for (int i = 1; i <= 5; i++) login("2001:db8:1:2::" + i, "mala");
+        assertThat(login("2001:db8:1:2:aaaa:bbbb:cccc:dddd", PASS).getStatus())
+            .as("otra dirección del mismo /64 comparte el cupo").isEqualTo(401);
+        assertThat(login("2001:db8:1:3::1", PASS).getStatus()).as("otro /64 no está afectado").isEqualTo(200);
+    }
 }

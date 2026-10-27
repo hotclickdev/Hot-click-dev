@@ -75,7 +75,9 @@ public class AuthCredentialLoginHandler {
         ResponseEntity<?> estado = rechazarSiEstadoInvalido(usuario);
         if (estado != null) return estado;
 
-        usuarioService.resetearIntentosFallidos(usuario.getId());
+        // La contraseña correcta NO limpia los contadores de fallos: con 2FA/WebAuthn la autenticación aún no terminó
+        // y quien solo tiene la contraseña no debe poder borrar el tope global. Se limpian al completar el login
+        // (sin 2FA, abajo; con 2FA, en AuthTotpVerifyHandler tras verificar el código).
         usuarioService.actualizarUltimoAcceso(usuario.getId());
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest));
 
@@ -87,8 +89,8 @@ public class AuthCredentialLoginHandler {
         if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
             return respuesta2fa(usuario);
         }
-        // Sin 2FA, la autenticación terminó acá: los tropiezos previos de esta IP ya no cuentan.
-        usuarioService.liberarFallosIp(usuario.getId(), authSupport.ipCliente(httpRequest));
+        // Sin 2FA, la autenticación terminó acá: los tropiezos previos ya no cuentan.
+        usuarioService.resetearIntentosFallidos(usuario.getId(), authSupport.ipCliente(httpRequest));
         ResponseEntity<?> multi = respuestaMultiEmpresa(usuario);
         if (multi != null) return multi;
         return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));

@@ -30,9 +30,31 @@ public class RateLimiter {
         this.jdbc = jdbc;
     }
 
-    // No usa ON CONFLICT / RETURNING (H2 no soporta ninguno de los dos en tests) —
-    // lectura + insert-o-update explícito. La ventana de carrera entre el SELECT y el
-    // INSERT/UPDATE es aceptable: el diseño ya es fail-open (disponibilidad > precisión).
+    // PostgreSQL (producción): UN solo INSERT … ON CONFLICT DO UPDATE … RETURNING, atómico. Antes, la carrera
+    // SELECT→INSERT terminaba en un INSERT duplicado que, dentro de una transacción del llamador (p. ej.
+    // UsuarioService.registrarFalloAutenticacion), la abortaba en PostgreSQL ("current transaction is aborted"):
+    // un 500 solo para correos que existen y el fallo sin contar.
+    // H2 (suite de tests) no soporta ON CONFLICT … DO UPDATE ni RETURNING: ahí queda la lectura + insert-o-update
+    // explícito de abajo (en H2 un INSERT duplicado no aborta la transacción).
+    private static final String UPSERT_PG_SQL =
+        "INSERT INTO hot_click_rate_limit_tb AS t (bucket_key, count, window_start, expires_at) VALUES (?, 1, ?, ?) "
+        + "ON CONFLICT (bucket_key) DO UPDATE SET "
+        + "count = CASE WHEN t.window_start + ? <= ? THEN 1 ELSE t.count + 1 END, "
+        + "window_start = CASE WHEN t.window_start + ? <= ? THEN ? ELSE t.window_start END, "
+        + "expires_at = ? "
+        + "RETURNING count";
+
+    private volatile Boolean postgres;
+
+    private boolean esPostgres() {
+        Boolean p = postgres;
+        if (p == null) {
+            String producto = jdbc.execute((java.sql.Connection c) -> c.getMetaData().getDatabaseProductName());
+            p = producto != null && producto.toLowerCase(java.util.Locale.ROOT).contains("postgres");
+            postgres = p;
+        }
+        return p;
+    }
     private static final String SELECT_WINDOW_SQL =
         "SELECT window_start FROM hot_click_rate_limit_tb WHERE bucket_key = ?";
 
@@ -63,7 +85,7 @@ public class RateLimiter {
             int count = incrementarYContar(key, now, expires, windowSeconds);
             return count <= maxRequests;
         } catch (Exception e) {
-            log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getMessage());
+            log.warn("[RATE-LIMIT] DB unavailable, fail-open: {}", e.getClass().getName());
             return true;
         }
     }
@@ -79,7 +101,7 @@ public class RateLimiter {
             int count = incrementarYContar(key, now, expires, windowSeconds);
             return count <= maxRequests;
         } catch (Exception e) {
-            log.warn("[RATE-LIMIT] DB unavailable, fail-closed key={}: {}", key, e.getClass().getName());
+            log.warn("[RATE-LIMIT] DB unavailable, fail-closed: {}", e.getClass().getName());
             return false;
         }
     }
@@ -93,7 +115,7 @@ public class RateLimiter {
         try {
             return incrementarYContar(key, now, now + windowSeconds, windowSeconds);
         } catch (Exception e) {
-            log.warn("[RATE-LIMIT] DB unavailable al registrar key={}: {}", key, e.getClass().getName());
+            log.warn("[RATE-LIMIT] DB unavailable al registrar: {}", e.getClass().getName());
             return 0;
         }
     }
@@ -112,7 +134,7 @@ public class RateLimiter {
             int  cuenta = ((Number) filas.get(0).get("count")).intValue();
             return inicio + windowSeconds > now && cuenta >= max;
         } catch (Exception e) {
-            log.warn("[RATE-LIMIT] DB unavailable al leer key={}: {}", key, e.getClass().getName());
+            log.warn("[RATE-LIMIT] DB unavailable al leer: {}", e.getClass().getName());
             return false;
         }
     }
@@ -122,7 +144,7 @@ public class RateLimiter {
         try {
             jdbc.update("DELETE FROM hot_click_rate_limit_tb WHERE bucket_key = ?", key);
         } catch (Exception e) {
-            log.warn("[RATE-LIMIT] DB unavailable al liberar key={}: {}", key, e.getClass().getName());
+            log.warn("[RATE-LIMIT] DB unavailable al liberar: {}", e.getClass().getName());
         }
     }
 
@@ -144,6 +166,11 @@ public class RateLimiter {
     }
 
     private int incrementarYContar(String key, long now, long expires, int windowSeconds) {
+        if (esPostgres()) {
+            Integer n = jdbc.queryForObject(UPSERT_PG_SQL, Integer.class,
+                key, now, expires, windowSeconds, now, windowSeconds, now, now, expires);
+            return n == null ? 1 : n;
+        }
         java.util.List<Long> existing = jdbc.queryForList(SELECT_WINDOW_SQL, Long.class, key);
         if (existing.isEmpty()) {
             try {
