@@ -32,13 +32,32 @@ public class PrecioPlanOnvo {
         this.onvo = onvo;
     }
 
-    /** @return moneda y monto esperados, o null si el plan o el price no se pueden confirmar. */
+    /**
+     * Plan de un price de ONVO. Un price que no es de ningún plan es un rechazo permanente (null), salvo que falte
+     * configurar los price ids (ONVO_PRICE_ID_*): entonces es un problema de configuración y se lanza
+     * {@link ConfigBillingFaltanteException} (transitorio).
+     */
+    public String planParaPriceId(String priceId) {
+        String plan = onvo.planParaPriceId(priceId);
+        if (plan == null && onvo.faltanPriceIds()) {
+            throw faltante("ONVO_PRICE_ID_*");
+        }
+        return plan;
+    }
+
+    /**
+     * @return moneda y monto esperados, o null si el price de ONVO no coincide con la configuración (permanente).
+     * @throws ConfigBillingFaltanteException si falta o es inválida la configuración (moneda o precio del plan):
+     *         transitorio, se corrige por configuración y el evento se reintenta.
+     */
     public OnvoBillingVerificador.PrecioEsperado esperado(String planNombre, String priceId) {
         Optional<BigDecimal> precioCfg = config.precioUsd(planNombre).filter(v -> v.signum() > 0);
         Optional<String> monedaCfg = config.moneda();
+        if (monedaCfg.isEmpty()) throw faltante("PLANES_MONEDA");
         Long configurado = precioCfg.map(PrecioPlanOnvo::enUnidadMenor).orElse(null);
-        if (configurado == null || monedaCfg.isEmpty() || priceId == null) {
-            return sinPrecio(planNombre, "plan sin precio o moneda configurados");
+        if (configurado == null) throw faltante(String.valueOf(planNombre).toUpperCase(java.util.Locale.ROOT) + "_PRECIO_MENSUAL_USD");
+        if (priceId == null) {
+            return sinPrecio(planNombre, "plan sin price");
         }
         Map<?, ?> price = onvo.obtenerPrecio(priceId);
         boolean coincide = priceId.equals(OnvoBillingVerificador.texto(price, "id"))
@@ -48,6 +67,12 @@ public class PrecioPlanOnvo {
             && configurado.equals(unitAmount(price));
         return coincide ? new OnvoBillingVerificador.PrecioEsperado(monedaCfg.get(), configurado)
             : sinPrecio(planNombre, "el price de ONVO no coincide con la moneda y el precio configurados");
+    }
+
+    /** Alerta sin datos personales: solo el nombre de la propiedad que falta, nunca valores. */
+    private static ConfigBillingFaltanteException faltante(String propiedad) {
+        log.error("[ALERTA-PAGO] Billing ONVO sin configuración, el evento se reintenta: falta {}", propiedad);
+        return new ConfigBillingFaltanteException(propiedad);
     }
 
     private static OnvoBillingVerificador.PrecioEsperado sinPrecio(String plan, String motivo) {

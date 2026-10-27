@@ -163,12 +163,13 @@ public class OnvoRenovacionReconsulta {
         if (facturaId == null || !idValido(facturaId)) return incierta(subId, "sin factura", false);
         Map<?, ?> factura = onvo.obtenerRenovacion(facturaId);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.renovacion(
-            factura, sub, facturaId, subId, modo, onvo::planParaPriceId, precioPlan::esperado);
+            factura, sub, facturaId, subId, modo, precioPlan::planParaPriceId, precioPlan::esperado);
         if (!r.aceptado()) {
             // Solo una factura sin pagar confirma que no hay pago. Cualquier otra discrepancia (monto distinto al
             // plan, moneda, price, ids) no autoriza a dar de baja a quien puede haber pagado: queda para revisión.
             return "no_pagado".equals(r.motivo()) ? Consulta.NO_PAGADA
-                : incierta(subId, "factura no verificable: " + r.motivo(), false);
+                : incierta(subId, "factura no verificable: " + r.motivo(),
+                    OnvoBillingVerificador.M_CONFIG_FALTANTE.equals(r.motivo())); // config faltante: transitoria
         }
         // Factura pagada de un período que ya terminó = ONVO todavía no renovó: sigue el flujo normal de gracia.
         if (!r.fechaFin().isAfter(hoy)) return Consulta.NO_PAGADA;

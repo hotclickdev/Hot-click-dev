@@ -47,7 +47,7 @@ public class OnvoBillingWebhookHandler {
     private static final String F_SUBSCRIPTION_ID = "subscriptionId";
 
     /** M2: motivos permanentes → se registran en el ledger y se responde 200. El resto (GET caído,
-     *  estado aún no pagado/activo en ONVO) sigue lanzando para que el controlador responda 5xx y ONVO reintente. */
+     *  estado aún no pagado/activo en ONVO, configuración faltante: {@code config_faltante}) sigue lanzando para que el controlador responda 5xx y ONVO reintente. */
     static final java.util.Set<String> PERMANENTES = java.util.Set.of(
         "modo", "monto", "moneda", "price_desconocido", "plan_sin_precio", M_CUSTOMER, "id",
         "pago_parcial", "falta_id", "falta_subscriptionId", M_FALTA_PERIODO);
@@ -164,7 +164,7 @@ public class OnvoBillingWebhookHandler {
         Map<?, ?> invoice = onvo.obtenerRenovacion(invoiceId);
         Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.renovacion(
-            invoice, sub, invoiceId, subId, onvo.modoEsperado(), onvo::planParaPriceId, precioPlan::esperado);
+            invoice, sub, invoiceId, subId, onvo.modoEsperado(), precioPlan::planParaPriceId, precioPlan::esperado);
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         exigirCustomerLocal(subId, sub);
         suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), invoiceId);
@@ -208,7 +208,7 @@ public class OnvoBillingWebhookHandler {
         Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
         Map<?, ?> factura = facturaMasReciente(sub);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.altaPorIntent(
-            new OnvoBillingVerificador.AltaObjetos(intent, factura, sub), intentId, subId, onvo.modoEsperado(), onvo::planParaPriceId, precioPlan::esperado);
+            new OnvoBillingVerificador.AltaObjetos(intent, factura, sub), intentId, subId, onvo.modoEsperado(), precioPlan::planParaPriceId, precioPlan::esperado);
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         exigirCustomerLocal(subId, sub);
         // Referencia del ledger (referencia_externa, 120): el id de la factura que ONVO devuelve tiene que ser un id válido.

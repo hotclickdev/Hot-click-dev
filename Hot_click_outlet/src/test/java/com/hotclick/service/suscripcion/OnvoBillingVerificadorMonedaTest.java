@@ -88,4 +88,17 @@ class OnvoBillingVerificadorMonedaTest {
             p -> "PYME", PRECIOS);
         assertThat(r.motivo()).isEqualTo("plan_sin_precio");
     }
+
+    @Test
+    @DisplayName("A1: configuración faltante (precio o price ids) → motivo config_faltante, distinto de plan_sin_precio y price_desconocido")
+    void configFaltanteEsMotivoPropio() {
+        var sinConfig = OnvoBillingVerificador.renovacion(factura("USD", PRECIO), sub(), "inv_1", "sub_1", MODO,
+            p -> "PYME", (plan, priceId) -> { throw new ConfigBillingFaltanteException("PLANES_MONEDA"); });
+        assertThat(sinConfig.aceptado()).isFalse();
+        assertThat(sinConfig.motivo()).isEqualTo("config_faltante");
+        var sinIds = OnvoBillingVerificador.renovacion(factura("USD", PRECIO), sub(), "inv_1", "sub_1", MODO,
+            p -> { throw new ConfigBillingFaltanteException("ONVO_PRICE_ID_*"); }, PRECIOS);
+        assertThat(sinIds.motivo()).isEqualTo("config_faltante");
+        assertThat(OnvoBillingWebhookHandler.PERMANENTES).doesNotContain("config_faltante");
+    }
 }

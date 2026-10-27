@@ -431,7 +431,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
 
     private void anotarLedger(Empresa empresa, Suscripcion sub, String tipo, String ref, String detalle) {
         if (ledgerWriter == null) return;
+        // Fail-closed: sin moneda configurada no se escribe el ledger (ni cae al "crc" de la entidad) y la operación
+        // se revierte y se reintenta (transitorio), en vez de dejar COBRO_FALLIDO/CANCELACION con una moneda falsa.
         String moneda = preciosPlanes == null ? null : preciosPlanes.moneda().orElse(null);
+        if (moneda == null) {
+            log.error("[ALERTA-PAGO] Ledger billing ONVO sin moneda configurada, no se registra tipo={}: falta PLANES_MONEDA", tipo);
+            throw new ConfigBillingFaltanteException("PLANES_MONEDA");
+        }
         ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, moneda, detalle);
     }
 

@@ -249,6 +249,11 @@ public class OnvoBillingClient {
         return null;
     }
 
+    /** true si falta alguno de los price ids de planes (ONVO_PRICE_ID_*): sin ellos no se puede clasificar un price. */
+    public boolean faltanPriceIds() {
+        return blankToNull(priceIdPyme) == null || blankToNull(priceIdNegocioPlus) == null;
+    }
+
     /** GET /v1/subscriptions/{id}. Fail-closed: sin llave real no se inventa nada. */
     public Map<?, ?> obtenerSuscripcion(String subscriptionId) {
         return leerReal("/subscriptions/", subscriptionId);

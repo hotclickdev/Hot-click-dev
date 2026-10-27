@@ -66,15 +66,29 @@ class PrecioPlanOnvoTest {
     }
 
     @Test
-    @DisplayName("sin moneda, sin precio del plan, con fracción de centavo o sin priceId: no hay precio y ni se consulta a ONVO")
-    void configIncompleta() {
-        assertThat(con("").esperado("PYME", "price_pyme")).isNull();
-        assertThat(con(null).esperado("PYME", "price_pyme")).isNull();
-        assertThat(con("usd").esperado("PLAN_X", "price_pyme")).isNull();
-        assertThat(con("usd").esperado("PYME", null)).isNull();
+    @DisplayName("A1: sin moneda, sin precio del plan o con fracción de centavo es configuración faltante (transitoria); sin consultar a ONVO")
+    void configIncompletaLanza() {
+        assertThatThrownBy(() -> con("").esperado("PYME", "price_pyme"))
+            .isInstanceOf(ConfigBillingFaltanteException.class).hasMessageContaining("PLANES_MONEDA");
+        assertThatThrownBy(() -> con(null).esperado("PYME", "price_pyme")).isInstanceOf(ConfigBillingFaltanteException.class);
+        assertThatThrownBy(() -> con("usd").esperado("PLAN_X", "price_pyme"))
+            .isInstanceOf(ConfigBillingFaltanteException.class).hasMessageContaining("PLAN_X_PRECIO_MENSUAL_USD");
         var fraccion = new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24.005", "49", "usd"), onvo);
-        assertThat(fraccion.esperado("PYME", "price_pyme")).isNull();
+        assertThatThrownBy(() -> fraccion.esperado("PYME", "price_pyme")).isInstanceOf(ConfigBillingFaltanteException.class);
+        assertThat(con("usd").esperado("PYME", null)).isNull(); // sin price: no hay precio (permanente)
         verify(onvo, never()).obtenerPrecio(any());
+    }
+
+    @Test
+    @DisplayName("A1: planParaPriceId: price de un plan → plan; sin plan → null si los ids están configurados, config faltante si no")
+    void planParaPriceIdDistingueConfigDePriceAjeno() {
+        when(onvo.planParaPriceId("price_pyme")).thenReturn("PYME");
+        assertThat(con("usd").planParaPriceId("price_pyme")).isEqualTo("PYME");
+        when(onvo.faltanPriceIds()).thenReturn(false);
+        assertThat(con("usd").planParaPriceId("price_ajeno")).isNull();
+        when(onvo.faltanPriceIds()).thenReturn(true);
+        assertThatThrownBy(() -> con("usd").planParaPriceId("price_ajeno"))
+            .isInstanceOf(ConfigBillingFaltanteException.class).hasMessageContaining("ONVO_PRICE_ID_*");
     }
 
     @Test

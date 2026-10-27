@@ -488,6 +488,19 @@ class OnvoRenovacionReconsultaTest {
         verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
     }
 
+    @Test
+    @DisplayName("A1: sin PLANES_MONEDA la fila queda INCIERTA transitoria (cuenta para el circuito), no se activa ni se da de baja")
+    void sinMonedaConfiguradaEsTransitorioEnLaReconsulta() {
+        var sinMoneda = new OnvoRenovacionReconsulta(onvo, planRepo, cambio, tx, lockTimeout,
+            new OnvoReconsultaConfig(DIAS_GRACIA, DIAS_MAX_INCIERTA, MAX_INCIERTAS_SEGUIDAS, 5000),
+            new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", ""), onvo));
+        onvoResponde(sub("active"), factura("paid", PRECIO_USD_CENTAVOS, "2026-12-01T06:00:00.000Z"));
+        for (int i = 0; i < MAX_INCIERTAS_SEGUIDAS; i++) assertThat(sinMoneda.reconsultar(local, HOY, JOB)).isEqualTo(INCIERTA);
+        sinMoneda.reconsultar(local, HOY, JOB); // el circuito de transitorias se abrió: sin GET
+        verify(onvo, org.mockito.Mockito.times(MAX_INCIERTAS_SEGUIDAS)).obtenerSuscripcion(SUB);
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+    }
+
     // ---------------------------------------------------------------- lock_timeout y referencia B2
 
     @Test
