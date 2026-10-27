@@ -5,6 +5,8 @@ import com.hotclick.model.ColaFacturacionOffline;
 import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.repository.ColaFacturacionOfflineRepository;
 import com.hotclick.repository.ComprobanteFiscalRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -33,12 +35,20 @@ public class ColaFacturacionOfflineTxOps {
 
     private final ColaFacturacionOfflineRepository colaRepo;
     private final ComprobanteFiscalRepository comprobanteRepo;
+    private final Counter filasRecuperadas;
 
     public ColaFacturacionOfflineTxOps(ColaFacturacionOfflineRepository colaRepo,
-                                        ComprobanteFiscalRepository comprobanteRepo) {
+                                        ComprobanteFiscalRepository comprobanteRepo,
+                                        MeterRegistry registry) {
         this.colaRepo        = colaRepo;
         this.comprobanteRepo = comprobanteRepo;
+        // BAJO-3 (#428): cuántas filas rescata L4 de PROCESANDO (una subida sostenida indica pods que caen o Hacienda lenta).
+        this.filasRecuperadas = Counter.builder(METRICA_FILAS_RECUPERADAS)
+            .description("Filas de la cola de contingencia recuperadas de PROCESANDO tras superar el timeout")
+            .register(registry);
     }
+
+    public static final String METRICA_FILAS_RECUPERADAS = "hotclick.contingencia.filas.recuperadas";
 
     /** Encola un comprobante agotado. Idempotente vía constraint UNIQUE(fk_id_comprobante). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -99,9 +109,20 @@ public class ColaFacturacionOfflineTxOps {
         }
         colaRepo.saveAll(trabadas);
         if (!trabadas.isEmpty()) {
+            filasRecuperadas.increment(trabadas.size());
             log.warn("[contingencia] {} fila(s) trabada(s) en PROCESANDO recuperada(s)", trabadas.size());
         }
         return trabadas.size();
+    }
+
+    /**
+     * BAJO-2 (#428): reinicia el reloj de PROCESANDO de esta fila justo antes de procesarla.
+     *
+     * @return false si la fila ya no está PROCESANDO (otra corrida la recuperó): no hay que enviarla
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean renovarInicioProceso(Long colaId) {
+        return colaRepo.renovarInicioProceso(colaId, LocalDateTime.now(Constants.ZONA_CR)) == 1;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

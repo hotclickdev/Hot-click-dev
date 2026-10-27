@@ -1,6 +1,5 @@
 package com.hotclick.service.pos;
 
-import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.model.Producto;
@@ -96,7 +95,8 @@ public class PosQrStockReserva {
         Map<Long, Producto> productos = bloquear(pedidas.keySet());
         pedidas.forEach((productoId, cantidad) -> {
             Producto p = productos.get(productoId);
-            if (p == null) throw new RecursoNoEncontradoException("Producto", productoId);
+            // MEDIO-2 (#428): 404 de texto fijo, sin id, igual para inexistente y de otro negocio.
+            PosProductoDeEmpresa.ocultandoExistencia(p, productoId, sesion.getEmpresa().getId());
             if (p.getStockDisponible() < cantidad) {
                 throw new StockInsuficienteException(p.getNombreProducto(), p.getStockDisponible(), cantidad);
             }

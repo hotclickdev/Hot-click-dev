@@ -39,6 +39,9 @@ class PosQrStockReservaTest {
         p.setNombreProducto("Mouse");
         p.setStockActual(actual);
         p.setStockReservado(reservado);
+        com.hotclick.model.Empresa e = new com.hotclick.model.Empresa();
+        e.setId(7L); // mismo negocio que sesionEmpresa(): MEDIO-2 (#428) valida el dueño al reservar
+        p.setEmpresa(e);
         return p;
     }
 
@@ -147,5 +150,22 @@ class PosQrStockReservaTest {
         assertThatThrownBy(() -> reserva.reservar(new PosQrSesion(), items(1), AHORA))
             .isInstanceOf(IllegalStateException.class).hasMessage(PosQrStockReserva.MSG_TOPE_PENDIENTES);
         verify(productoRepo, never()).findAllByIdsForUpdate(any());
+    }
+
+    @Test
+    @DisplayName("MEDIO-2 (#428): reservar un producto de otro negocio o inexistente da el mismo 404 de texto fijo, sin id")
+    void reservarNoRevelaAjenoNiInexistente() {
+        reserva.setReservaMinutosParaTest("15");
+        reserva.setMaxPendientesParaTest("3");
+        Producto ajeno = producto(5, 0);
+        ajeno.getEmpresa().setId(99L);
+        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(ajeno));
+        Throwable a = org.assertj.core.api.Assertions.catchThrowable(() -> reserva.reservar(sesionEmpresa(), items(1), AHORA));
+        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of());
+        Throwable n = org.assertj.core.api.Assertions.catchThrowable(() -> reserva.reservar(sesionEmpresa(), items(1), AHORA));
+        assertThat(a).isInstanceOf(com.hotclick.exception.RecursoNoEncontradoException.class).hasMessage("Producto no encontrado");
+        assertThat(n).isInstanceOf(a.getClass()).hasMessage(a.getMessage());
+        assertThat(a.getMessage()).doesNotContain("10");
+        assertThat(ajeno.getStockReservado()).isZero();
     }
 }

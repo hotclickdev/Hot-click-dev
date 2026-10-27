@@ -106,4 +106,22 @@ class PosQrIvaRegimenTest {
         pedido.setMontoImpuesto(t.impuesto()); pedido.setTotalPedido(t.totalPedido());
         assertThat(PosVentaIvaRegimenTest.totalXml(pedido, ComprobanteFiscal.TIPO_FACTURA)).isEqualTo(16950L);
     }
+
+    @Test
+    @DisplayName("MEDIO-2 (#428): crear QR con producto de otro negocio o inexistente da el mismo 404 fijo, sin id")
+    void crearSesionNoRevelaAjenoNiInexistente() {
+        when(productoRepo.findEmpresaIdById(11L)).thenReturn(Optional.of(2L));
+        when(productoRepo.findEmpresaIdById(404L)).thenReturn(Optional.empty());
+        Throwable a = org.assertj.core.api.Assertions.catchThrowable(() -> crearCon(11L));
+        Throwable n = org.assertj.core.api.Assertions.catchThrowable(() -> crearCon(404L));
+        org.assertj.core.api.Assertions.assertThat(a).isInstanceOf(com.hotclick.exception.RecursoNoEncontradoException.class)
+            .hasMessage("Producto no encontrado");
+        org.assertj.core.api.Assertions.assertThat(n).isInstanceOf(a.getClass()).hasMessage(a.getMessage());
+        org.assertj.core.api.Assertions.assertThat(a.getMessage()).doesNotContain("11");
+    }
+
+    private PosQrSesion crearCon(Long productoId) {
+        Map<String, Object> item = new HashMap<>(Map.of("productoId", productoId, "cantidad", 1));
+        return service.crearSesion(5L, 1L, null, "TARJETA", null, new ArrayList<>(List.of(item)), null, null, null, false);
+    }
 }

@@ -22,6 +22,7 @@ class ColaContingenciaTrabadasTest extends BaseIntegrationTest {
 
     @Autowired private ColaFacturacionOfflineRepository colaRepo;
     @Autowired private ColaFacturacionOfflineTxOps txOps;
+    @Autowired private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
     private static final Duration TIMEOUT = Duration.ofMinutes(30);
 
@@ -82,6 +83,43 @@ class ColaContingenciaTrabadasTest extends BaseIntegrationTest {
         for (long i = 1; i <= 3; i++) cola(i, ColaFacturacionOffline.ESTADO_PROCESANDO, ahora.minusHours(2), ahora.minusHours(1), 0);
         assertThat(txOps.recuperarTrabadas(TIMEOUT, 2)).isEqualTo(2);
         assertThat(txOps.recuperarTrabadas(TIMEOUT, 2)).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("BAJO-3 (#428): el contador hotclick.contingencia.filas.recuperadas sube por cada fila recuperada")
+    void contadorDeRecuperadas() {
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        double antes = recuperadas();
+        cola(21L, ColaFacturacionOffline.ESTADO_PROCESANDO, ahora.minusHours(2), ahora.minusHours(1), 0);
+        cola(22L, ColaFacturacionOffline.ESTADO_PROCESANDO, ahora.minusHours(2), ahora.minusHours(1), 11);
+        cola(23L, ColaFacturacionOffline.ESTADO_PROCESANDO, ahora.minusMinutes(1), ahora.minusHours(1), 0);
+        assertThat(txOps.recuperarTrabadas(TIMEOUT, 100)).isEqualTo(2);
+        assertThat(recuperadas() - antes).isEqualTo(2.0);
+        assertThat(txOps.recuperarTrabadas(TIMEOUT, 100)).isZero();
+        assertThat(recuperadas() - antes).isEqualTo(2.0);
+    }
+
+    @Test
+    @DisplayName("BAJO-2 (#428): renovar el inicio de proceso por fila solo toca filas PROCESANDO y evita recuperarla a mitad de lote")
+    void renovarInicioPorFila() {
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        // Reclamada hace 40 min (lote largo): sin renovar, se recuperaría aunque recién empiece su envío.
+        Long id = cola(31L, ColaFacturacionOffline.ESTADO_PROCESANDO, ahora.minusMinutes(40), ahora.minusHours(1), 0);
+        Long pendiente = cola(32L, ColaFacturacionOffline.ESTADO_PENDIENTE, null, ahora.minusHours(1), 0);
+
+        assertThat(txOps.renovarInicioProceso(id)).isTrue();
+        assertThat(colaRepo.findById(id).orElseThrow().getFechaInicioProceso()).isAfter(ahora.minusMinutes(1));
+        assertThat(txOps.recuperarTrabadas(TIMEOUT, 100)).isZero();
+        assertThat(colaRepo.findById(id).orElseThrow().getEstado()).isEqualTo(ColaFacturacionOffline.ESTADO_PROCESANDO);
+
+        assertThat(txOps.renovarInicioProceso(pendiente)).isFalse();
+        assertThat(colaRepo.findById(pendiente).orElseThrow().getFechaInicioProceso()).isNull();
+        assertThat(txOps.renovarInicioProceso(-1L)).isFalse();
+    }
+
+    private double recuperadas() {
+        var c = meterRegistry.find(ColaFacturacionOfflineTxOps.METRICA_FILAS_RECUPERADAS).counter();
+        return c == null ? 0.0 : c.count();
     }
 
     private Long cola(Long comprobanteId, String estado, LocalDateTime inicio, LocalDateTime proximo, int intentos) {

@@ -77,11 +77,10 @@ public class VentaService {
         for (VentaRequestDTO.ItemVentaDTO itemDto : dto.getItems()) {
             // SELECT FOR UPDATE: bloquea la fila en PostgreSQL hasta el COMMIT.
             // Si otra transacción concurrente intenta modificar el mismo producto, espera aquí.
-            Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
-
-            // IDOR-11: no se vende (ni se descuenta stock de) un producto de otro negocio
-            com.hotclick.service.pos.PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), empresaId);
+            // IDOR-11 + MEDIO-2/BAJO-1 (#428): el dueño se valida SIN lock y con el mismo 404 de texto fijo para
+            // inexistente y ajeno; solo entonces se bloquea la fila. Nunca se vende (ni descuenta stock de) un producto ajeno.
+            Producto producto = com.hotclick.service.pos.PosProductoDeEmpresa.bloqueandoSoloSiEsDelNegocio(
+                productoRepository, itemDto.getProductoId(), empresaId);
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
 
             validarProductoParaVenta(producto, cantidad, desdeCarrito);

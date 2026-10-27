@@ -95,8 +95,8 @@ public class PosQrSessionService {
         for (Map<String, Object> item : items) {
             Long productoId = productoIdDe(item);
             int cantidad = cantidadDe(item);
-            var producto = productoRepo.findById(productoId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+            var producto = PosProductoDeEmpresa.ocultandoExistencia(
+                productoRepo.findById(productoId).orElse(null), productoId, empresaId);
             PosVentaService.exigirVendiblePorPos(producto);
             Integer precioObj = producto.getPrecioEfectivo();
             if (precioObj == null) {
@@ -265,9 +265,9 @@ public class PosQrSessionService {
     private void exigirItemsDelNegocio(Long empresaId, List<Map<String, Object>> items) {
         for (Map<String, Object> item : items) {
             Long productoId = productoIdDe(item);
-            Long empresaDueno = productoRepo.findEmpresaIdById(productoId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-            PosProductoDeEmpresa.exigirMismoNegocio(empresaDueno, empresaId);
+            // MEDIO-2 (#428): inexistente y de otro negocio dan el mismo 404 de texto fijo (antes: 404 con id vs 400).
+            PosProductoDeEmpresa.ocultandoExistenciaDeDueno(
+                productoRepo.findEmpresaIdById(productoId).orElse(null), productoId, empresaId);
         }
     }
 

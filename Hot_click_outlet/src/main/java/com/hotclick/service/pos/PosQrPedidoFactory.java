@@ -2,7 +2,6 @@ package com.hotclick.service.pos;
 
 import com.hotclick.model.OrigenPedido;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -106,10 +105,9 @@ public class PosQrPedidoFactory {
 
     Bodega resolverBodega(Long bodegaId, Long empresaId) {
         if (bodegaId != null) {
-            Bodega bodega = bodegaRepo.findById(bodegaId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
-            PosProductoDeEmpresa.exigirMismoNegocio(bodega.getEmpresaId(), empresaId);
-            return bodega;
+            // MEDIO-2 (#428): inexistente y ajena dan el mismo 404 de texto fijo (antes: 404 con id vs 400).
+            return PosProductoDeEmpresa.ocultandoExistenciaBodega(
+                bodegaRepo.findById(bodegaId).orElse(null), bodegaId, empresaId);
         }
         return bodegaRepo.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO).stream().findFirst()
             .orElseThrow(() -> new IllegalStateException("No hay bodega configurada"));
@@ -179,8 +177,9 @@ public class PosQrPedidoFactory {
         Long productoId = PosQrSessionService.productoIdDe(itemMap);
         int cantidad    = PosQrSessionService.cantidadDe(itemMap);
 
-        Producto producto = productoRepo.findByIdForUpdate(productoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+        // MEDIO-2/BAJO-1 (#428): 404 de texto fijo (sin id) igual para inexistente y ajeno; dueño validado antes del lock.
+        Producto producto = PosProductoDeEmpresa.bloqueandoSoloSiEsDelNegocio(
+            productoRepo, productoId, pedido.getEmpresa().getId());
         // MEDIO 4: se registra el precio que se cobró (snapshot de la sesión), no el precio actual del producto.
         int precio = precioCobrado(itemMap, productoId);
         if (producto.getStockDisponible() < cantidad) {
