@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,6 +33,11 @@ public class GiftCardController {
     // Tope por usuario de GET /gift-cards/validar (un código con saldo vale dinero: sin tope se prueban códigos).
     @Value("${hotclick.ratelimit.giftcard-validar.max:10}")    private int validarMax = 10;
     @Value("${hotclick.ratelimit.giftcard-validar.window:60}") private int validarWindow = 60;
+
+    // Tope por usuario de POST /admin/gift-cards: el 409 de «código ya usado» es global (UNIQUE entre negocios),
+    // así que sin tope serviría para probar si un código existe en otro negocio.
+    @Value("${hotclick.ratelimit.giftcard-crear.max:10}")    private int crearMax = 10;
+    @Value("${hotclick.ratelimit.giftcard-crear.window:60}") private int crearWindow = 60;
 
     // ── Admin: listar gift cards de la empresa ────────────────────────────────
     @GetMapping("/admin/gift-cards")
@@ -55,6 +61,15 @@ public class GiftCardController {
             Long empresaId = TenantContext.get();
             if (empresaId == null) {
                 return ResponseEntity.status(403).build();
+            }
+            // Por usuario y FAIL-CLOSED (BD del limitador caída → se niega): antes de leer el cuerpo y de tocar la BD.
+            Long usuarioId = companyScope.getCurrentUserId();
+            if (usuarioId == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Autenticación requerida"));
+            }
+            if (!rateLimiter.tryAcquireEstricto("user:" + usuarioId + ":gift-cards:crear", crearMax, crearWindow)) {
+                return ResponseEntity.status(429).body(Map.of("error",
+                    "Demasiados intentos. Esperá un momento antes de volver a intentar."));
             }
             tenantLimitChecker.verificarFeature(empresaId, "giftCards");
             Integer monto = montoDe(body.get("monto"));
@@ -124,7 +139,7 @@ public class GiftCardController {
             return ResponseEntity.status(429).body(Map.of("error",
                 "Demasiados intentos. Esperá un momento antes de volver a intentar."));
         }
-        Optional<GiftCard> opt = giftCardService.validar(codigo.trim().toUpperCase(), empresaId);
+        Optional<GiftCard> opt = giftCardService.validar(codigo.trim().toUpperCase(Locale.ROOT), empresaId);
         if (opt.isEmpty()) {
             return ResponseEntity.ok(Map.of("valida", false, "mensaje", "Código inválido, vencido o sin saldo"));
         }

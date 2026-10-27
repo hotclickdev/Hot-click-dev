@@ -30,8 +30,8 @@ public class AuthTotpSetupHandler {
 
     /**
      * Configurar el 2FA exige siempre la contraseña actual, con el 2FA activo o no: sin esto, una sesión
-     * robada podía armar un segundo factor propio. El secreto nuevo queda PENDIENTE
-     * ({@code twoFactorPendingSecret}) hasta que {@link #activate2FA} valide un código; el secreto vigente, los
+     * robada podía armar un segundo factor propio. Con la app (TOTP) ya activa pide además el código vigente.
+     * El secreto nuevo queda PENDIENTE ({@code twoFactorPendingSecret}) hasta que {@link #activate2FA} valide un código; el secreto vigente, los
      * métodos activos y {@code twoFactorEnabled} no se tocan, así un setup abandonado no apaga el 2FA.
      */
     public ResponseEntity<ResponseDTO> setup2FA(Map<String, String> body, HttpServletRequest request) {
@@ -39,7 +39,16 @@ public class AuthTotpSetupHandler {
             Usuario usuario = authSupport.usuarioFromRequest(request);
             var limitado = authSupport.limite2faUsuario(usuario.getId());
             if (limitado != null) return limitado;
-            if (!contrasenaVigente(usuario, body)) {
+            boolean contrasenaOk = contrasenaVigente(usuario, body);
+            if (usuario.hasTotpEnabled()) {
+                // Rotar un secreto TOTP vigente exige además el código actual: la contraseña sola (o una sesión robada
+                // con la contraseña) no alcanza para sustituir el segundo factor. Se evalúan SIEMPRE los dos y se
+                // responde el mismo 401 que disable, sin revelar cuál de los dos falló.
+                boolean codigoOk = codigoVigente(usuario, body);
+                if (!contrasenaOk || !codigoOk) {
+                    return ResponseEntity.status(401).body(ResponseDTO.error(MSG_DISABLE_CREDENCIALES));
+                }
+            } else if (!contrasenaOk) {
                 return ResponseEntity.status(401).body(ResponseDTO.error(MSG_CONTRASENA_REQUERIDA));
             }
             String plainSecret  = twoFactorService.generateSecret();
@@ -56,6 +65,12 @@ public class AuthTotpSetupHandler {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(ResponseDTO.error("Error al configurar 2FA"));
         }
+    }
+
+    private boolean codigoVigente(Usuario usuario, Map<String, String> body) {
+        String code = body == null ? null : body.get("code");
+        return code != null && !code.isBlank() && usuario.getTwoFactorSecret() != null
+                && twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code);
     }
 
     private boolean contrasenaVigente(Usuario usuario, Map<String, String> body) {

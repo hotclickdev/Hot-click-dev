@@ -96,6 +96,75 @@ class GiftCardsValidacionTest extends BaseIntegrationTest {
         assertThat(llamar(HttpMethod.GET, VALIDAR, tokenB, "").getStatus()).as("otro usuario").isEqualTo(200);
     }
 
+    // ── (1b) rate limit por usuario en crear (el 409 no puede ser un oráculo de existencia) ──────
+
+    @Test
+    @DisplayName("POST /admin/gift-cards: el intento 11 del mismo usuario en 60 s → 429 (también con códigos que ya existen); otro usuario no se ve afectado")
+    void crearTienePorUsuario429() throws Exception {
+        for (int i = 1; i <= 10; i++) {
+            assertThat(llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"SONDEO-" + i + "0000\"}").getStatus())
+                .as("intento " + i).isEqualTo(200);
+        }
+        long antes = totalGiftCards();
+        assertThat(llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"SONDEO-10000\"}").getStatus())
+            .as("intento 11 con un código que existe: 429, no 409").isEqualTo(429);
+        assertThat(llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"NOEXISTE-99\"}").getStatus())
+            .as("intento 12 con un código libre").isEqualTo(429);
+        assertThat(llamar(HttpMethod.POST, GC, tokenA, "{}").getStatus()).as("cuerpo inválido también cuenta").isEqualTo(429);
+        assertThat(totalGiftCards()).isEqualTo(antes);
+        assertThat(llamar(HttpMethod.POST, GC, tokenB, "{\"monto\":5000,\"codigo\":\"SONDEO-10000\"}").getStatus())
+            .as("otro usuario: su propio cupo (409 por duplicado global)").isEqualTo(409);
+    }
+
+    @Test
+    @DisplayName("POST /admin/gift-cards falla cerrado: si el cupo no se puede registrar (BD del limitador caída) → 429 y no crea nada")
+    void crearFallaCerradoSiElLimitadorNoResponde() throws Exception {
+        jdbcTemplate.execute("ALTER TABLE hot_click_rate_limit_tb RENAME TO hot_click_rate_limit_tb_off");
+        try {
+            assertThat(llamar(HttpMethod.POST, GC, tokenA, "{\"monto\":5000,\"codigo\":\"FALLACERRADO1\"}").getStatus()).isEqualTo(429);
+        } finally {
+            jdbcTemplate.execute("ALTER TABLE hot_click_rate_limit_tb_off RENAME TO hot_click_rate_limit_tb");
+        }
+        assertThat(totalGiftCards()).isZero();
+    }
+
+    // ── (2b) alfabeto del código manual: ^[A-Z0-9-]{8,30}$ tras toUpperCase(Locale.ROOT) ──────
+
+    @Test
+    @DisplayName("Código manual con caracteres fuera de A-Z, 0-9 y guion (NBSP, ancho cero, ß, ı, tildes, ñ, HTML, espacios, _ .) → 400 y no crea nada")
+    void codigoManualFueraDelAlfabeto400() throws Exception {
+        String[] malos = {
+            "ABC\u00A01234",           // NBSP en medio
+            "ABC\u200B12345",          // ancho cero
+            "ABC\uFEFF12345",          // BOM
+            "STRA\u00DFE123",          // ß: en mayúsculas daría SS
+            "\u0131NICIO123",          // ı sin punto: en mayúsculas daría I
+            "\u017Fecreto123",         // s larga: en mayúsculas daría S
+            "CAF\u00C91234", "caf\u00E91234", "A\u00F1O-2026X", "<b>CODIGO12</b>", "<script>1</script>",
+            "ABC 12345", "ABC_12345", "ABC.12345", "ABC/12345", "ABC%2012345", "\uFF21\uFF22\uFF23\uFF11\uFF12\uFF13\uFF14\uFF15",
+            "\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668"   // dígitos árabes
+        };
+        for (String c : malos) {
+            jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
+            var res = llamar(HttpMethod.POST, GC, tokenA, om.writeValueAsString(java.util.Map.of("monto", 5000, "codigo", c)));
+            assertThat(res.getStatus()).as("«" + c + "» → " + res.getContentAsString()).isEqualTo(400);
+        }
+        assertThat(totalGiftCards()).isZero();
+    }
+
+    @Test
+    @DisplayName("Código manual válido: minúsculas se guardan en mayúsculas, con guiones y recortando espacios de los extremos")
+    void codigoManualValidoSeNormaliza() throws Exception {
+        for (String[] par : new String[][] {
+            {"ABC-1234", "ABC-1234"}, {"navidad-2026", "NAVIDAD-2026"}, {"  abc12345  ", "ABC12345"}, {"1".repeat(30), "1".repeat(30)}
+        }) {
+            jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
+            var res = llamar(HttpMethod.POST, GC, tokenA, om.writeValueAsString(java.util.Map.of("monto", 5000, "codigo", par[0])));
+            assertThat(res.getStatus()).as(par[0] + " → " + res.getContentAsString()).isEqualTo(200);
+            assertThat(om.readTree(res.getContentAsString()).get("codigo").asText()).isEqualTo(par[1]);
+        }
+    }
+
     // ── (2) código mínimo ────────────────────────────────────────────────────
 
     @Test
@@ -130,6 +199,7 @@ class GiftCardsValidacionTest extends BaseIntegrationTest {
             "{\"monto\":1000001}", "{\"monto\":99999999999}", "{\"monto\":1e30}"
         };
         for (String c : cuerpos) {
+            jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb"); // 12 cuerpos > tope de crear por minuto
             var res = llamar(HttpMethod.POST, GC, tokenA, c);
             assertThat(res.getStatus()).as(c + " → " + res.getContentAsString()).isEqualTo(400);
             assertThat(res.getContentAsString()).contains("monto");

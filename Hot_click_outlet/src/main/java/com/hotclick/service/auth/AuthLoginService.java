@@ -58,8 +58,8 @@ public class AuthLoginService {
         return totpHandler.verify2FA(body, httpRequest);
     }
 
-    public ResponseEntity<ResponseDTO> sendLoginEmailOtp(Map<String, String> body) {
-        return emailOtpHandler.sendLoginEmailOtp(body);
+    public ResponseEntity<ResponseDTO> sendLoginEmailOtp(Map<String, String> body, HttpServletRequest request) {
+        return emailOtpHandler.sendLoginEmailOtp(body, request);
     }
 
     public ResponseEntity<ResponseDTO> enableEmailOtp(HttpServletRequest request) {
