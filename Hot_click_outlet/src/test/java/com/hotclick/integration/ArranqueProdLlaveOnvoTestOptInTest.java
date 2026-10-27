@@ -22,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, properties = {
     "onvo.secret-key=onvo_test_ficticia_no_es_real",
-    "payments.onvo.permitir-llave-test=true"
+    "payments.onvo.permitir-llave-test=true",
+    // En prod la URL pública no puede ser localhost (UrlPublicaArranqueGuard); application-test.properties usa localhost.
+    "app.url=https://hotclick.lat"
 })
 @ActiveProfiles({"test", "prod"})
 @DisplayName("[ONVO] Arranque con perfil prod + llave onvo_test_ + opt-in")
