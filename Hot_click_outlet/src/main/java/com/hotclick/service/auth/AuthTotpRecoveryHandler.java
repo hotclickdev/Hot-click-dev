@@ -29,6 +29,8 @@ public class AuthTotpRecoveryHandler {
         }
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            var limitado = authSupport.limite2faUsuario(usuario.getId());
+            if (limitado != null) return limitado;
             if (!Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El 2FA no está activado"));
             }

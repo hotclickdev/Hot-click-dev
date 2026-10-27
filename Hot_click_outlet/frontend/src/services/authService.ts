@@ -45,11 +45,12 @@ export const authService = {
   changePassword: (contrasenaActual: string, nuevaContrasena: string, refreshToken: string) =>
     api.post('/auth/change-password', { contrasenaActual, nuevaContrasena, refreshToken }),
 
-  setup2FA: () =>
-    api.post('/auth/2fa/setup'),
+  /** El backend exige la contraseña actual aunque el 2FA esté apagado. */
+  setup2FA: (contrasena: string) =>
+    api.post('/auth/2fa/setup', { contrasena }),
 
-  activate2FA: (code: string) =>
-    api.post('/auth/2fa/activate', { code }),
+  activate2FA: (code: string, contrasena: string) =>
+    api.post('/auth/2fa/activate', { code, contrasena }),
 
   disable2FA: (contrasena: string, code: string) =>
     api.post('/auth/2fa/disable', { contrasena, code }),
