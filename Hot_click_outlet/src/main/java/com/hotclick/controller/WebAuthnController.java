@@ -97,6 +97,10 @@ public class WebAuthnController {
             // Solo cuentas activas reciben token; el catch devuelve el mismo 401 genérico de una huella inválida.
             authSupport.exigirCuentaActiva(usuario);
 
+            // Login completo con llave de seguridad: los tropiezos previos ya no cuentan (igual que un login completo).
+            // Antes de emitir cualquier token: si esto falla, no queda un refresh token huérfano.
+            authSupport.autenticacionCompleta(usuario.getId(), httpRequest);
+
             String rol         = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
             String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug()          : null;
             String empresaNom  = usuario.getEmpresa() != null ? usuario.getEmpresa().getNombreEmpresa()  : null;
@@ -105,8 +109,6 @@ public class WebAuthnController {
             String accessToken = jwtUtil.generateTokenFull(
                 usuario.getCorreo(), usuario.getId(), rol, usuario.getEmpresaId(), empresaSlug, perms);
             refreshTokenService.crear(usuario);
-            // Login completo con llave de seguridad: los tropiezos previos ya no cuentan (igual que un login completo).
-            authSupport.autenticacionCompleta(usuario.getId(), httpRequest);
 
             String nombre = usuario.getNombre() != null ? usuario.getNombre() : email.split("@")[0];
             AuthResponse auth = new AuthResponse(accessToken, null, usuario.getId(), email, rol, nombre);

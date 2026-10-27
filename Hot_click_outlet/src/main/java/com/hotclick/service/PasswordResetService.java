@@ -30,7 +30,7 @@ public class PasswordResetService {
 
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private OtpService otpService;
-    @Autowired private com.hotclick.security.RateLimiter rateLimiter;
+    @Autowired private com.hotclick.security.LiberadorFallos liberadorFallos;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private RefreshTokenService refreshTokenService;
     @Autowired private com.github.benmanes.caffeine.cache.Cache<String, org.springframework.security.core.userdetails.UserDetails> userDetailsCache;
@@ -90,7 +90,8 @@ public class PasswordResetService {
         usuario.setSesionesInvalidadasEn(LocalDateTime.now(Constants.ZONA_CR));
         usuarioRepository.save(usuario);
         // Desbloqueo: sin esto el contador global seguía en el tope y el primer error después volvía a bloquear.
-        com.hotclick.security.ClavesFallos.liberarTodo(rateLimiter, usuario.getId());
+        // Corre tras el commit y en transacción aparte: un fallo de SQL no aborta este cambio de contraseña.
+        liberadorFallos.liberar(usuario.getId());
         refreshTokenService.revocarTodosDeUsuario(usuario);
         userDetailsCache.invalidate(usuario.getCorreo()); // P1-02
         return Optional.of(usuario);
