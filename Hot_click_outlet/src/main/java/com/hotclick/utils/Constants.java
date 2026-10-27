@@ -156,6 +156,9 @@ public class Constants {
     public static final String ESTADO_EMPRESA_EXTENSION_IMPAGO = "EXTENSION_IMPAGO";
     public static final String ESTADO_PLAN_REQUIERE_MEMBRESIA = "REQUIERE_MEMBRESIA";
 
+    /** Emprendedor aprobado o por aprobar sin puesto de trial asignado: el puesto se asigna al aprobar el negocio. */
+    public static final String ESTADO_PLAN_PENDIENTE_CUPO = "PENDIENTE_CUPO";
+
     /** Prueba QA abierta. Cabe en estado_plan (varchar 20). */
     public static final String ESTADO_PLAN_TRIAL = "TRIAL";
 

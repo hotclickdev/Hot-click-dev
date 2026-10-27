@@ -35,4 +35,38 @@ class TrialEmprendedorMigrationTest {
         assertThat(sql).contains("V206 Trial del plan Emprendedor");
         assertThat(sql).contains("trial_emprendedor_pos");
     }
+
+    @Test
+    @DisplayName("V207: columnas NULL, UNIQUE de titular y trigger de liberación; nada destructivo sobre datos")
+    void v207Aditiva() throws IOException {
+        String sql = leer("src/main/resources/db/migration/V207__cupo_emprendedor_un_puesto_por_persona.sql").lines()
+            .filter(l -> !l.trim().startsWith("--")).collect(java.util.stream.Collectors.joining("\n")).toUpperCase();
+        assertThat(sql).contains("ADD COLUMN IF NOT EXISTS TRIAL_EMPRENDEDOR_TITULAR_USUARIO BIGINT");
+        assertThat(sql).contains("ADD COLUMN IF NOT EXISTS TRIAL_EMPRENDEDOR_TITULAR_CORREO VARCHAR(160)");
+        assertThat(sql).contains("CREATE UNIQUE INDEX IF NOT EXISTS UQ_EMPRESA_TRIAL_EMPRENDEDOR_TITULAR_USUARIO");
+        assertThat(sql).contains("CREATE UNIQUE INDEX IF NOT EXISTS UQ_EMPRESA_TRIAL_EMPRENDEDOR_TITULAR_CORREO");
+        assertThat(sql).contains("AFTER DELETE ON HOT_CLICK_EMPRESA_TB");
+        assertThat(sql).contains("USADOS > 0"); // nunca bajo 0
+        assertThat(sql).doesNotContain("DROP ").doesNotContain("DELETE FROM").doesNotContain("TRUNCATE")
+            .doesNotContain("BIGINT NOT NULL").doesNotContain("VARCHAR(160) NOT NULL");
+        // Solo se toca el contador (liberación); ninguna fila de empresa se reescribe.
+        assertThat(sql).doesNotContain("UPDATE HOT_CLICK_EMPRESA_TB");
+    }
+
+    @Test
+    @DisplayName("Actualizado.sql lleva el mismo bloque V207")
+    void actualizadoLlevaV207() throws IOException {
+        String sql = leer("Actualizado.sql");
+        assertThat(sql).contains("V207");
+        assertThat(sql).contains("trial_emprendedor_titular_usuario");
+        assertThat(sql).contains("fn_cupo_emprendedor_liberar_al_borrar");
+    }
+
+    @Test
+    @DisplayName("V207 es el siguiente número libre: no hay dos migraciones V207 ni un hueco que la pise")
+    void v207UnicaConEseNumero() {
+        String[] v207 = Path.of("src/main/resources/db/migration").toFile()
+            .list((d, n) -> n.startsWith("V207__"));
+        assertThat(v207).hasSize(1);
+    }
 }
