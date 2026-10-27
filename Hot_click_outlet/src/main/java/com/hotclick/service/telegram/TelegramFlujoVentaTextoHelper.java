@@ -144,7 +144,7 @@ class TelegramFlujoVentaTextoHelper {
             bot.enviarMensaje(v.getChatId(), "Cliente *" + esc(support.nombreCompleto(nuevo)) + "* registrado ✅");
             confirm.mostrarResumenVenta(v, empresaId, e);
         } catch (Exception ex) {
-            log.error("[telegram-flujo] fallo creando cliente en chat {} — {}", v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
+            log.error("[telegram-flujo] fallo creando cliente en chat {} — {}", v.getChatId(), ex.getClass().getSimpleName());
             bot.enviarMensaje(v.getChatId(), "No pude registrar el cliente. Probá de nuevo o tocá *Sin cliente*.",
                 List.of(List.of(TelegramClienteBotService.boton("🚫 Sin cliente", "vta:nocli"))));
         }

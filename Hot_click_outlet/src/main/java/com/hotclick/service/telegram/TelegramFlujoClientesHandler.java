@@ -95,7 +95,7 @@ public class TelegramFlujoClientesHandler {
                 bot.enviarMensaje(chatId, "La IA no está disponible y no encontré productos relacionados con su historial para sugerir.");
             }
         } catch (Exception e) {
-            log.error("[telegram-flujo] fallo cross-sell chat {} cliente {} — {}", chatId, clienteId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram-flujo] fallo cross-sell chat {} cliente {} — {}", chatId, clienteId, e.getClass().getSimpleName());
             bot.enviarMensaje(chatId, "No pude generar sugerencias en este momento. Intentá de nuevo en unos minutos.");
         }
     }
