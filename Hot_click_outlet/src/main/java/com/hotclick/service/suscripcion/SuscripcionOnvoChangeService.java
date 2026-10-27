@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -201,7 +202,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      */
     public SuscripcionTrial asegurarSuscripcionTrial(Long empresaId) {
         Empresa empresa = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada"));
         if ((onvoBilling.isMockMode() || onvoBilling.sinLlave()) && !caminoMock()) {
             throw new com.hotclick.exception.CobroPlanNoDisponibleException(PLAN_GRATIS);
         }
@@ -216,7 +217,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw new IllegalStateException("El trial ya terminó.");
         }
         Plan plan = planRepo.findByNombre(PLAN_GRATIS)
-            .orElseThrow(() -> new NoSuchElementException("Plan " + PLAN_GRATIS + " no encontrado"));
+            .orElseThrow(() -> new NoSuchElementException("Plan gratis no encontrado"));
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
         if (tieneStripeActivo(sub)) {
             throw new IllegalStateException("Tenés una suscripción Stripe activa.");
