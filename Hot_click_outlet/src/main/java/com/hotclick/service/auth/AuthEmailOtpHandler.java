@@ -40,6 +40,9 @@ public class AuthEmailOtpHandler {
                 .orElseThrow(() -> new SecurityException("Usuario no encontrado"));
             var limitado = authSupport.limite2faLoginUsuario(usuario.getId());
             if (limitado != null) return limitado;
+            // Cuenta que dejó de estar activa: no se envía el código y la respuesta es la genérica de 2FA.
+            if (!AuthSupport.estaActiva(usuario))
+                return ResponseEntity.status(401).body(ResponseDTO.error(CuentaNoActivaException.MENSAJE));
             if (!usuario.hasEmailOtpEnabled())
                 return ResponseEntity.status(400).body(ResponseDTO.error("EMAIL_OTP no habilitado para esta cuenta"));
             otpService.enviarOtp2Fa(usuario);
