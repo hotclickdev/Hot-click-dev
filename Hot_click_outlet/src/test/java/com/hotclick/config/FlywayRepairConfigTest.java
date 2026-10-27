@@ -113,4 +113,31 @@ class FlywayRepairConfigTest {
             IllegalStateException.class, FlywayRepairConfig::abortarProdVacio);
         org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("base VACÍA"));
     }
+
+    @Test
+    void versionBootstrap_leeLaVersionDeclarada() {
+        org.junit.jupiter.api.Assertions.assertEquals(200,
+            FlywayRepairConfig.versionBootstrap("-- x\n-- hotclick.bootstrap.version=200\nCREATE TABLE t();"));
+    }
+
+    @Test
+    void versionBootstrap_sinMarca_falla() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+            () -> FlywayRepairConfig.versionBootstrap("CREATE TABLE t();"));
+    }
+
+    @Test
+    void esquemaBaseVersionado_noSuperaLaUltimaMigracion() throws Exception {
+        String sql = new String(new org.springframework.core.io.ClassPathResource(
+            FlywayRepairConfig.BOOTSTRAP_SQL).getInputStream().readAllBytes(),
+            java.nio.charset.StandardCharsets.UTF_8);
+        int declarada = FlywayRepairConfig.versionBootstrap(sql);
+        org.springframework.core.io.Resource[] rs =
+            new org.springframework.core.io.support.PathMatchingResourcePatternResolver()
+                .getResources("classpath*:db/migration/V*.sql");
+        java.util.List<String> nombres = java.util.Arrays.stream(rs)
+            .map(org.springframework.core.io.Resource::getFilename).toList();
+        org.junit.jupiter.api.Assertions.assertTrue(
+            declarada <= FlywayRepairConfig.ultimaVersionMigracion(nombres));
+    }
 }

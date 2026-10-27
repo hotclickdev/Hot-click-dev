@@ -72,7 +72,11 @@ public class FlywayRepairConfig {
             if (esPerfilDev() && esquemaPublicoVacio(flyway)) {
                 bootstrapDevVacio(flyway);
             } else if (esPerfilProd() && esPostgres(flyway) && esquemaPublicoVacio(flyway)) {
-                abortarProdVacio();
+                if (bootstrapProdHabilitado()) {
+                    bootstrapProdVacio(flyway);
+                } else {
+                    abortarProdVacio();
+                }
             }
             log.info("[flyway] Ejecutando repair() para sincronizar checksums de migraciones fallidas...");
             flyway.repair();
@@ -109,6 +113,76 @@ public class FlywayRepairConfig {
     private boolean esPerfilProd() {
         List<String> perfiles = Arrays.asList(environment.getActiveProfiles());
         return perfiles.contains("prod") || perfiles.contains("production");
+    }
+
+    /** PROPUESTA: opt-in explícito; por defecto prod sigue abortando con base vacía. */
+    static final String PROP_BOOTSTRAP_PROD = "hotclick.flyway.bootstrap-vacio";
+
+    static final String BOOTSTRAP_LOCATION = "classpath:db/bootstrap";
+
+    static final String BOOTSTRAP_HISTORIAL = "flyway_bootstrap_history";
+
+    static final String BOOTSTRAP_SQL = "db/bootstrap/V1__esquema_base_consolidado.sql";
+
+    private static final Pattern VERSION_BOOTSTRAP =
+        Pattern.compile("^-- hotclick\\.bootstrap\\.version=(\\d+)\\s*$", Pattern.MULTILINE);
+
+    private boolean bootstrapProdHabilitado() {
+        return environment.getProperty(PROP_BOOTSTRAP_PROD, Boolean.class, false);
+    }
+
+    /**
+     * PROPUESTA (decisión pendiente del dueño). Base vacía + prod + opt-in:
+     * aplica el esquema base consolidado (generado por
+     * scripts/flyway/generar-esquema-base.sh) con su propio historial Flyway,
+     * y hace baseline del historial principal en la versión que declara ese
+     * archivo. migrate() luego solo aplica migraciones posteriores.
+     * Una base de prod existente nunca entra aquí (no está vacía).
+     */
+    private void bootstrapProdVacio(Flyway flyway) {
+        int versionArchivo = versionBootstrap(leerClasspath(BOOTSTRAP_SQL));
+        int ultima = ultimaVersionMigracion(nombresMigracionesClasspath());
+        if (versionArchivo > ultima) {
+            throw new IllegalStateException("[flyway] El esquema base declara V" + versionArchivo
+                + " pero la última migración del classpath es V" + ultima + ". Regeneralo.");
+        }
+        log.warn("[flyway] Base vacía + perfil prod + {}=true: aplicando esquema base hasta V{}",
+            PROP_BOOTSTRAP_PROD, versionArchivo);
+        Flyway.configure()
+            .configuration(flyway.getConfiguration())
+            .locations(BOOTSTRAP_LOCATION)
+            .table(BOOTSTRAP_HISTORIAL)
+            .baselineOnMigrate(false)
+            .load()
+            .migrate();
+        Flyway.configure()
+            .configuration(flyway.getConfiguration())
+            .baselineVersion(String.valueOf(versionArchivo))
+            .baselineDescription("Esquema base consolidado hasta V" + versionArchivo)
+            .load()
+            .baseline();
+    }
+
+    static int versionBootstrap(String sql) {
+        Matcher m = VERSION_BOOTSTRAP.matcher(sql == null ? "" : sql);
+        if (!m.find()) {
+            throw new IllegalStateException("[flyway] " + BOOTSTRAP_SQL
+                + " no declara '-- hotclick.bootstrap.version=N'");
+        }
+        return Integer.parseInt(m.group(1));
+    }
+
+    private static String leerClasspath(String location) {
+        ClassPathResource resource = new ClassPathResource(location);
+        if (!resource.exists()) {
+            throw new IllegalStateException("[flyway] Falta recurso " + location);
+        }
+        try (BufferedReader reader = new BufferedReader(
+                 new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            return reader.lines().collect(Collectors.joining("\n"));
+        } catch (IOException e) {
+            throw new IllegalStateException("[flyway] No se pudo leer " + location, e);
+        }
     }
 
     private static boolean esPostgres(Flyway flyway) {
