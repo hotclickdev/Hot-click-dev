@@ -1,5 +1,6 @@
 package com.hotclick.service.auth;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
@@ -134,7 +135,7 @@ public class AuthTotpVerifyHandler {
             return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
 
         } catch (Exception e) {
-            log.error("[2FA] verify error: {}", e.getClass().getSimpleName());
+            log.error("[2FA] verify error: {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         }
     }

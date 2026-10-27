@@ -50,8 +50,9 @@ public class GuestUserResolver {
         u.setNombre("Invitado");
         u.setApellidoPaterno("Guest");
         u.setCorreo(correo);
-        u.setTelefono(telefono != null && !telefono.isBlank()
-            ? telefono.replaceAll("[^0-9]", "") : "00000000");
+        // Sin dígitos (solo símbolos o letras) queda igual que vacío: 00000000, nunca "".
+        String digitos = telefono == null ? "" : telefono.replaceAll("[^0-9]", "");
+        u.setTelefono(digitos.isEmpty() ? "00000000" : digitos);
         u.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
         u.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         u.setEstado(Constants.ESTADO_ACTIVO);

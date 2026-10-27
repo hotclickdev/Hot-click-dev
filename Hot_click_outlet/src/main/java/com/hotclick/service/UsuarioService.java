@@ -210,9 +210,7 @@ public class UsuarioService {
         usuario.setBloqueadoHasta(null);
         usuario.setEstado(Constants.ESTADO_PENDIENTE);
         usuario.setIntentosFallidos(0);
-        Usuario guardado = usuarioRepository.save(usuario);
-        com.hotclick.security.ClavesFallos.liberarTodo(rateLimiter, usuario.getId()); // cuenta nueva: sin fallos heredados
-        return guardado;
+        return usuarioRepository.save(usuario);
     }
 
     /**
@@ -236,9 +234,7 @@ public class UsuarioService {
         usuario.setEstado(Constants.ESTADO_PENDIENTE);
         usuario.setIntentosFallidos(0);
         usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        Usuario guardado = usuarioRepository.save(usuario);
-        com.hotclick.security.ClavesFallos.liberarTodo(rateLimiter, usuario.getId()); // cuenta nueva: sin fallos heredados
-        return guardado;
+        return usuarioRepository.save(usuario);
     }
 
     /** Activa la cuenta tras verificación exitosa del OTP de registro. */

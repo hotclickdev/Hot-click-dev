@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 /**
  * Limpieza frecuente de hot_click_rate_limit_tb. Las llaves por usuario+IP (2fa:login, fallos de autenticación)
  * crean una fila por cada IP distinta; el borrado nocturno de DataRetentionScheduler las dejaba acumularse hasta
- * 24 h. Acá se borran las vencidas ({@code expires_at < ahora}) cada 15 minutos, en lotes de 1000 con tope de
+ * 24 h. Acá se borran las vencidas ({@code expires_at < ahora}) cada 5 minutos (una ruta inválida abre una fila por IP; así la tabla no crece hasta la madrugada), en lotes de 1000 con tope de
  * lotes por corrida, con ShedLock para que lo corra un solo pod.
  */
 @Component
@@ -26,7 +26,7 @@ public class RateLimitLimpiezaScheduler {
         this.rateLimiter = rateLimiter;
     }
 
-    @Scheduled(fixedDelay = 900_000, initialDelay = 120_000)
+    @Scheduled(fixedDelay = 300_000, initialDelay = 120_000)
     @SchedulerLock(name = "rate_limit_limpieza", lockAtMostFor = "PT10M", lockAtLeastFor = "PT1M")
     public void limpiarProgramado() {
         try {
