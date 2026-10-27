@@ -1,5 +1,6 @@
 package com.hotclick.service.auth;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
@@ -19,6 +20,10 @@ import java.util.Map;
 
 @Service
 public class AuthEmailOtpHandler {
+
+    /** Respuesta genérica del envío de código: el texto de la excepción puede traer el correo u otros datos. */
+    static final String MENSAJE_ENVIO_FALLIDO = "No se pudo enviar el código. Intentá de nuevo en unos minutos.";
+
 
     private static final Logger log = LoggerFactory.getLogger(AuthEmailOtpHandler.class);
 
@@ -48,8 +53,8 @@ public class AuthEmailOtpHandler {
             otpService.enviarOtp2Fa(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código enviado a " + usuario.getCorreo(), null));
         } catch (RuntimeException e) {
-            log.warn("[2FA/email/send] {}", e.getClass().getSimpleName());
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            log.warn("[2FA/email/send] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(MENSAJE_ENVIO_FALLIDO));
         }
     }
 
@@ -64,8 +69,8 @@ public class AuthEmailOtpHandler {
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("[2FA/email/enable] {}", e.getClass().getSimpleName());
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            log.error("[2FA/email/enable] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(MENSAJE_ENVIO_FALLIDO));
         }
     }
 

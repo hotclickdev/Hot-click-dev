@@ -1,5 +1,6 @@
 package com.hotclick.service.auth;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
@@ -64,7 +65,7 @@ public class AuthTenantSwitchHandler {
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("[cambiar-negocio] {}", e.getClass().getSimpleName());
+            log.error("[cambiar-negocio] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
             return ResponseEntity.status(500).body(ResponseDTO.error("Error al cambiar de negocio"));
         }
     }
@@ -130,7 +131,7 @@ public class AuthTenantSwitchHandler {
         } catch (CuentaNoActivaException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         } catch (Exception e) {
-            log.error("[seleccionar-empresa] {}", e.getClass().getSimpleName());
+            log.error("[seleccionar-empresa] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         }
     }

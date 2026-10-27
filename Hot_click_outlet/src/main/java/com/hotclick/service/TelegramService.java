@@ -51,7 +51,7 @@ public class TelegramService {
         } catch (HttpClientErrorException e) {
             String respuesta = e.getResponseBodyAsString();
             if (TelegramTexto.esErrorDeFormato(respuesta)) {
-                reenviarSinFormato(mensaje, respuesta);
+                reenviarSinFormato(mensaje);
                 return;
             }
             log.error("[telegram] error al enviar — HTTP {} {}", e.getStatusCode().value(), e.getClass().getSimpleName());
@@ -60,7 +60,7 @@ public class TelegramService {
         }
     }
 
-    private void reenviarSinFormato(String mensaje, String respuesta) {
+    private void reenviarSinFormato(String mensaje) {
         log.warn("[telegram] Markdown rechazado, se reenvía como texto plano");
         try {
             publicar(mensaje, false);

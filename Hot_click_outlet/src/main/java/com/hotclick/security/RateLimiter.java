@@ -13,7 +13,7 @@ import java.time.Instant;
  * Safe for multi-pod deployments — all pods share the same DB counter.
  *
  * Fail-open: if DB is unavailable, request is allowed (availability > rate limiting).
- * Cleanup: RateLimitLimpiezaScheduler (cada 15 min, por lotes) y, de respaldo, DataRetentionScheduler (nocturno).
+ * Cleanup: RateLimitLimpiezaScheduler (cada 5 min, por lotes) y, de respaldo, DataRetentionScheduler (nocturno).
  *
  * Typical usage:
  *   rateLimiter.tryAcquire("empresa:42:ai:burst", 10, 300)
