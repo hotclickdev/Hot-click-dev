@@ -50,6 +50,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @Autowired(required = false)
     private BillingLedgerWriter ledgerWriter;
 
+    /** Moneda de cobro de los planes para el ledger (config); sin ella el ledger usa su valor por defecto. */
+    @Autowired(required = false)
+    private PreciosPlanesConfig preciosPlanes;
+
     @Autowired(required = false)
     private org.springframework.cache.CacheManager cacheManager;
 
@@ -384,7 +388,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresaRepo.save(empresa);
         evictTenant(empresa.getId());
         anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK,
-            referenciaLedger == null || referenciaLedger.isBlank() ? onvoSubId : referenciaLedger, "Pago ONVO verificado");
+            referenciaValida(referenciaLedger) ? referenciaLedger : onvoSubId, "Pago ONVO verificado");
         log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
     }
 
@@ -420,9 +424,15 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         });
     }
 
+    /** referencia_externa del ledger: id de ONVO con forma válida (y por tanto dentro de los 120 caracteres de la columna). */
+    private static boolean referenciaValida(String ref) {
+        return ref != null && OnvoBillingClient.idValido(ref);
+    }
+
     private void anotarLedger(Empresa empresa, Suscripcion sub, String tipo, String ref, String detalle) {
         if (ledgerWriter == null) return;
-        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, "crc", detalle);
+        String moneda = preciosPlanes == null ? null : preciosPlanes.moneda().orElse(null);
+        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, moneda, detalle);
     }
 
     /**

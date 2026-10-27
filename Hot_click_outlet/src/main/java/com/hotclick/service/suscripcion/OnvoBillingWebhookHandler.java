@@ -1,10 +1,8 @@
 package com.hotclick.service.suscripcion;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hotclick.model.Plan;
 import com.hotclick.model.StripeEvento;
 import com.hotclick.model.Suscripcion;
-import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.StripeEventoRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.SuscripcionService;
@@ -24,7 +22,7 @@ import java.util.Map;
  *
  * S-02: el cuerpo del webhook solo dispara la verificación. Todo se relee por GET a ONVO
  * (renovación, payment intent, suscripción) y se exige mode = modo de la llave, estado pagado,
- * moneda CRC y monto = precio del plan del priceId que confirma ONVO. El plan nunca sale de metadata.
+ * moneda y monto = price configurado del plan del priceId que confirma ONVO (sin moneda ni monto fijos en el código). El plan nunca sale de metadata.
  * Un evento que no se puede verificar lanza {@link EventoBillingRechazado} (el controlador responde 5xx
  * y ONVO reintenta); no se marca como procesado.
  */
@@ -57,18 +55,18 @@ public class OnvoBillingWebhookHandler {
     private final StripeEventoRepository eventoRepo;
     private final SuscripcionService suscripcionService;
     private final OnvoBillingClient onvo;
-    private final PlanRepository planRepo;
+    private final PrecioPlanOnvo precioPlan;
     private final SuscripcionRepository suscripcionRepo;
 
     public OnvoBillingWebhookHandler(StripeEventoRepository eventoRepo,
                                      SuscripcionService suscripcionService,
                                      OnvoBillingClient onvo,
-                                     PlanRepository planRepo,
+                                     PrecioPlanOnvo precioPlan,
                                      SuscripcionRepository suscripcionRepo) {
         this.eventoRepo = eventoRepo;
         this.suscripcionService = suscripcionService;
         this.onvo = onvo;
-        this.planRepo = planRepo;
+        this.precioPlan = precioPlan;
         this.suscripcionRepo = suscripcionRepo;
     }
 
@@ -166,7 +164,7 @@ public class OnvoBillingWebhookHandler {
         Map<?, ?> invoice = onvo.obtenerRenovacion(invoiceId);
         Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.renovacion(
-            invoice, sub, invoiceId, subId, onvo.modoEsperado(), onvo::planParaPriceId, this::precioPlan);
+            invoice, sub, invoiceId, subId, onvo.modoEsperado(), onvo::planParaPriceId, precioPlan::esperado);
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         exigirCustomerLocal(subId, sub);
         suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), invoiceId);
@@ -210,10 +208,12 @@ public class OnvoBillingWebhookHandler {
         Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
         Map<?, ?> factura = facturaMasReciente(sub);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.altaPorIntent(
-            new OnvoBillingVerificador.AltaObjetos(intent, factura, sub), intentId, subId, onvo.modoEsperado(), onvo::planParaPriceId, this::precioPlan);
+            new OnvoBillingVerificador.AltaObjetos(intent, factura, sub), intentId, subId, onvo.modoEsperado(), onvo::planParaPriceId, precioPlan::esperado);
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         exigirCustomerLocal(subId, sub);
+        // Referencia del ledger (referencia_externa, 120): el id de la factura que ONVO devuelve tiene que ser un id válido.
         String facturaId = OnvoBillingVerificador.texto(factura, "id");
+        if (facturaId != null && !OnvoBillingClient.idValido(facturaId)) throw rechazo("id", "facturaId");
         suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId != null ? facturaId : intentId);
     }
 
@@ -243,10 +243,6 @@ public class OnvoBillingWebhookHandler {
         Object meta = subOnvo == null ? null : subOnvo.get("metadata");
         Object enOnvo = meta instanceof Map<?, ?> m ? m.get("empresa_id") : null;
         return enOnvo != null && String.valueOf(local.getEmpresa().getId()).equals(String.valueOf(enOnvo));
-    }
-
-    private Integer precioPlan(String nombre) {
-        return planRepo.findByNombre(nombre).map(Plan::getPrecioMensual).orElse(null);
     }
 
     private static EventoBillingRechazado rechazo(String motivo, String ref) {

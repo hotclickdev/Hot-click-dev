@@ -2,9 +2,7 @@ package com.hotclick.service.suscripcion;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotclick.model.Plan;
 import com.hotclick.model.StripeEvento;
-import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.StripeEventoRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.SuscripcionService;
@@ -28,6 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,7 +41,6 @@ class OnvoBillingWebhookNegativosTest {
     @Mock StripeEventoRepository eventoRepo;
     @Mock SuscripcionService suscripcionService;
     @Mock OnvoBillingClient onvo;
-    @Mock PlanRepository planRepo;
     @Mock SuscripcionRepository suscripcionRepo;
     OnvoBillingWebhookHandler handler;
     final ObjectMapper mapper = new ObjectMapper();
@@ -49,14 +48,17 @@ class OnvoBillingWebhookNegativosTest {
 
     @BeforeEach
     void setUp() {
-        handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo, planRepo, suscripcionRepo);
+        handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
+            new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), onvo), suscripcionRepo);
         when(eventoRepo.findByIdForUpdate(anyString())).thenAnswer(i -> Optional.ofNullable(eventos.get((String) i.getArgument(0))));
         when(eventoRepo.findById(anyString())).thenAnswer(i -> Optional.ofNullable(eventos.get((String) i.getArgument(0))));
         when(eventoRepo.save(any())).thenAnswer(i -> { StripeEvento e = i.getArgument(0); eventos.put(e.getStripeEventId(), e); return e; });
         when(onvo.modoEsperado()).thenReturn("live");
         when(onvo.planParaPriceId("price_pyme")).thenReturn("PYME");
-        Plan p = new Plan(); p.setNombre("PYME"); p.setPrecioMensual(12000);
-        when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(p));
+        Map<String, Object> price = new HashMap<>();
+        price.put("id", "price_pyme"); price.put("mode", "live"); price.put("isActive", true);
+        price.put("currency", "USD"); price.put("unitAmount", 2_400L);
+        lenient().doReturn(price).when(onvo).obtenerPrecio("price_pyme");
     }
 
     JsonNode json(String s) throws Exception { return mapper.readTree(s); }
@@ -73,7 +75,7 @@ class OnvoBillingWebhookNegativosTest {
     Map<String, Object> invoice() {
         Map<String, Object> m = new HashMap<>();
         m.put("id", "clinv0001"); m.put("subscriptionId", "clsub0001"); m.put("status", "paid"); m.put("mode", "live");
-        m.put("currency", "CRC"); m.put("customerId", "cus_1"); m.put("total", 1_200_000L); m.put("periodEnd", "2026-12-01T06:00:00.000Z");
+        m.put("currency", "USD"); m.put("customerId", "cus_1"); m.put("total", 2_400L); m.put("periodEnd", "2026-12-01T06:00:00.000Z");
         return m;
     }
 
@@ -183,9 +185,9 @@ class OnvoBillingWebhookNegativosTest {
     @Test
     void rechazoPermanenteSeRegistraResponde200YDejaAlerta() throws Exception {
         var logs = capturarLogs();
-        Map<String, Object> enDolares = invoice();
-        enDolares.put("currency", "USD");
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) enDolares);
+        Map<String, Object> enColones = invoice();
+        enColones.put("currency", "CRC"); // moneda distinta a la del price (USD)
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) enColones);
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) sub("active"));
 
         boolean atendido = handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), null);

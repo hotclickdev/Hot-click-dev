@@ -100,4 +100,32 @@ class BillingOnvoS02Test {
             .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1));
         verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clsub"), any(), any(), any());
     }
+
+    @Test
+    @DisplayName("Ledger: la moneda del cobro sale de la config de los planes (usd), no de un literal crc")
+    void ledgerUsaLaMonedaConfigurada() {
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        PlanRepository planes = mock(PlanRepository.class);
+        Suscripcion sub = prepararPago(subs, planes);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        SuscripcionOnvoChangeService svc = servicioConLedger(subs, planes, ledger);
+        org.springframework.test.util.ReflectionTestUtils.setField(svc, "preciosPlanes",
+            new PreciosPlanesConfig("9", "24", "49", "usd"));
+        svc.procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0007");
+        verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clinv0007"), any(), eq("usd"), any());
+    }
+
+    @Test
+    @DisplayName("Ledger: una referencia de más de 120 caracteres o con forma inválida cae al id de la suscripción")
+    void ledgerReferenciaInvalidaUsaLaSuscripcion() {
+        for (String mala : new String[]{"x".repeat(121), "inv/../x"}) {
+            SuscripcionRepository subs = mock(SuscripcionRepository.class);
+            PlanRepository planes = mock(PlanRepository.class);
+            Suscripcion sub = prepararPago(subs, planes);
+            BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+            servicioConLedger(subs, planes, ledger)
+                .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), mala);
+            verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clsub"), any(), any(), any());
+        }
+    }
 }

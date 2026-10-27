@@ -52,7 +52,7 @@ public class RenovacionesTilopayService {
             if (vence(sub, hoy)) vencidas.add(sub);
         }
         if (vencidas.isEmpty()) return 0;
-        reconsulta.iniciarCorrida();
+        reconsulta.iniciarCorrida(OnvoRenovacionReconsulta.Corrida.GENERAR_RENOVACIONES);
         Set<Long> empresas = new HashSet<>();
         for (Suscripcion sub : vencidas) empresas.add(sub.getEmpresa().getId());
         Set<Long> conPendiente = new HashSet<>(cobroRepo.empresasConCobro(
@@ -94,7 +94,7 @@ public class RenovacionesTilopayService {
      */
     private boolean puedePasarAPastDue(Suscripcion sub, LocalDate hoy) {
         if (sub.getOnvoSubscriptionId() == null || sub.getOnvoSubscriptionId().isBlank()) return true;
-        return reconsulta.reconsultar(sub, hoy) == OnvoRenovacionReconsulta.Estado.NO_PAGADA;
+        return reconsulta.reconsultar(sub, hoy, OnvoRenovacionReconsulta.Corrida.GENERAR_RENOVACIONES) == OnvoRenovacionReconsulta.Estado.NO_PAGADA;
     }
 
     static boolean vence(Suscripcion sub, LocalDate hoy) {

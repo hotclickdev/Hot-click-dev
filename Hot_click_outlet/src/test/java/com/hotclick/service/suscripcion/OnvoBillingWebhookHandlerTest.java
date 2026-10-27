@@ -2,10 +2,8 @@ package com.hotclick.service.suscripcion;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotclick.model.Plan;
 import com.hotclick.model.StripeEvento;
 import com.hotclick.model.Suscripcion;
-import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.StripeEventoRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.SuscripcionService;
@@ -29,6 +27,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -42,7 +43,6 @@ class OnvoBillingWebhookHandlerTest {
     @Mock StripeEventoRepository eventoRepo;
     @Mock SuscripcionService suscripcionService;
     @Mock OnvoBillingClient onvo;
-    @Mock PlanRepository planRepo;
     @Mock SuscripcionRepository suscripcionRepo;
     OnvoBillingWebhookHandler handler;
 
@@ -51,7 +51,8 @@ class OnvoBillingWebhookHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo, planRepo, suscripcionRepo);
+        handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
+            new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), onvo), suscripcionRepo);
         when(eventoRepo.findByIdForUpdate(anyString())).thenAnswer(i -> Optional.ofNullable(eventos.get((String) i.getArgument(0))));
         when(eventoRepo.findById(anyString())).thenAnswer(i -> Optional.ofNullable(eventos.get((String) i.getArgument(0))));
         when(eventoRepo.save(any())).thenAnswer(i -> {
@@ -62,15 +63,19 @@ class OnvoBillingWebhookHandlerTest {
         when(onvo.modoEsperado()).thenReturn("live");
         when(onvo.planParaPriceId("price_pyme")).thenReturn("PYME");
         when(onvo.planParaPriceId("price_plus")).thenReturn("NEGOCIO_PLUS");
-        when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(plan("PYME", 12000)));
-        when(planRepo.findByNombre("NEGOCIO_PLUS")).thenReturn(Optional.of(plan("NEGOCIO_PLUS", 25000)));
+        // Price de ONVO de cada plan: moneda y unitAmount que tienen que coincidir con la config (9 / 24 / 49 USD).
+        lenient().doReturn(precioOnvo("price_pyme", "USD", 2_400)).when(onvo).obtenerPrecio("price_pyme");
+        lenient().doReturn(precioOnvo("price_plus", "USD", 4_900)).when(onvo).obtenerPrecio("price_plus");
     }
 
-    private static Plan plan(String n, int precio) {
-        Plan p = new Plan();
-        p.setNombre(n);
-        p.setPrecioMensual(precio);
-        return p;
+    private static Map<String, Object> precioOnvo(String id, String moneda, long unitAmount) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("id", id);
+        m.put("mode", "live");
+        m.put("isActive", true);
+        m.put("currency", moneda);
+        m.put("unitAmount", unitAmount);
+        return m;
     }
 
     private static Map<String, Object> subOnvo(String id, String status, String mode, String priceId) {
@@ -93,7 +98,7 @@ class OnvoBillingWebhookHandlerTest {
         m.put("subscriptionId", sub);
         m.put("status", status);
         if (mode != null) m.put("mode", mode);
-        m.put("currency", "CRC");
+        m.put("currency", "USD");
         m.put("customerId", "cus_1");
         m.put("total", total);
         m.put("periodEnd", "2026-12-01T06:00:00.000Z");
@@ -102,7 +107,7 @@ class OnvoBillingWebhookHandlerTest {
 
     /** Factura del alta con la forma real de ONVO (sandbox): paymentIntentId + subscriptionId. */
     private static Map<String, Object> facturaAlta(String intentId) {
-        Map<String, Object> m = invoice("clinv_alta", "clsub0001", "paid", "live", 1_200_000);
+        Map<String, Object> m = invoice("clinv_alta", "clsub0001", "paid", "live", 2_400);
         m.put("paymentIntentId", intentId);
         return m;
     }
@@ -110,13 +115,13 @@ class OnvoBillingWebhookHandlerTest {
     private JsonNode json(String s) throws Exception { return mapper.readTree(s); }
 
     private static final String RENOVACION_DOC = """
-        {"id":"clinv0001","mode":"live","status":"paid","currency":"CRC","total":1200000,
+        {"id":"clinv0001","mode":"live","status":"paid","currency":"USD","total":2400,
          "subscriptionId":"clsub0001","periodEnd":"2026-12-01T06:00:00.000Z"}""";
 
     @Test
     @DisplayName("Renovación verificada por GET activa el plan del priceId de ONVO con el fin de período de ONVO")
     void renovacionVerificadaActiva() throws Exception {
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 1_200_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 2_400));
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
 
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
@@ -126,7 +131,7 @@ class OnvoBillingWebhookHandlerTest {
     @Test
     @DisplayName("S-02: la suscripción local es de otro customer que el que confirma ONVO → rechazo, no activa")
     void suscripcionLocalDeOtroCustomerNoActiva() throws Exception {
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 1_200_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 2_400));
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
         Suscripcion local = new Suscripcion();
         local.setOnvoCustomerId("cus_de_otra_empresa");
@@ -144,7 +149,7 @@ class OnvoBillingWebhookHandlerTest {
     @Test
     @DisplayName("S-02 repro: cuerpo con mode test y total 1 ya no activa; ONVO por GET dice test → rechazo")
     void cuerpoFalsoModoTestNoActiva() throws Exception {
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "test", 1_200_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "test", 2_400));
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "test", "price_pyme"));
         var body = json("""
             {"id":"clinv0001","mode":"test","subscriptionId":"clsub0001","total":1}""");
@@ -157,7 +162,7 @@ class OnvoBillingWebhookHandlerTest {
     @Test
     @DisplayName("S-02: sin mode en la respuesta de ONVO se rechaza (fail-closed)")
     void sinModoRechaza() throws Exception {
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", null, 1_200_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", null, 2_400));
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // M2: permanente → 200
         verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
@@ -167,10 +172,10 @@ class OnvoBillingWebhookHandlerTest {
     @DisplayName("S-02: renovación no pagada, monto 0 o mayor al plan → rechazo")
     void noPagadaOMontoDistinto() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "open", "live", 1_200_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "open", "live", 2_400));
         assertThatThrownBy(() -> handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null))
             .isInstanceOf(OnvoBillingWebhookHandler.EventoBillingRechazado.class);
-        for (long total : new long[]{0, 1_200_001}) {
+        for (long total : new long[]{0, 2_401}) {
             when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", total));
             assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // M2: permanente → 200
         }
@@ -181,7 +186,7 @@ class OnvoBillingWebhookHandlerTest {
     @DisplayName("A5-01 MEDIO: factura con el monto COMPLETO del plan configurado se acepta con el plan del priceId")
     void facturaConMontoCompletoAceptada() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_plus"));
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 2_500_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 4_900));
         handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null);
         verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0001");
     }
@@ -190,7 +195,7 @@ class OnvoBillingWebhookHandlerTest {
     @DisplayName("A5-01 MEDIO: factura pagada con monto MENOR al precio del plan NO activa el plan completo (rechazo permanente)")
     void facturaMenorAlPlanNoActiva() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_plus"));
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 830_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 1_500));
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
         verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:pago_parcial");
@@ -200,7 +205,7 @@ class OnvoBillingWebhookHandlerTest {
     @DisplayName("A5-01 MEDIO: factura con monto MAYOR al precio del plan tampoco activa (no coincide con el catálogo)")
     void facturaMayorAlPlanNoActiva() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 1_200_001));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 2_401));
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
         verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:monto");
@@ -210,11 +215,11 @@ class OnvoBillingWebhookHandlerTest {
     @DisplayName("S-02: renovación de otro customer o sin subscriptionId en la factura → rechazo")
     void renovacionDeOtroCustomer() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
-        Map<String, Object> inv = invoice("clinv0001", "clsub0001", "paid", "live", 1_200_000);
+        Map<String, Object> inv = invoice("clinv0001", "clsub0001", "paid", "live", 2_400);
         inv.put("customerId", "cus_otro");
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) inv);
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // M2: permanente → 200
-        Map<String, Object> inv2 = invoice("clinv0001", null, "paid", "live", 1_200_000);
+        Map<String, Object> inv2 = invoice("clinv0001", null, "paid", "live", 2_400);
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) inv2);
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // M2: permanente → 200
         verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
@@ -229,7 +234,7 @@ class OnvoBillingWebhookHandlerTest {
     }
 
     private static final Map<String, Object> INTENT_OK = Map.of("id", "pi_1", "mode", "live",
-        "status", "succeeded", "currency", "CRC", "amount", 1_200_000,
+        "status", "succeeded", "currency", "USD", "amount", 2_400,
         "customer", Map.of("id", "cus_1"));
 
     private static Suscripcion local(String subId) {
@@ -288,7 +293,7 @@ class OnvoBillingWebhookHandlerTest {
     void altaParcialNoActiva() throws Exception {
         when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0001")).thenReturn(Optional.of(local("clsub0001")));
         Map<String, Object> intent = new HashMap<>(INTENT_OK);
-        intent.put("amount", 600_000);
+        intent.put("amount", 1_200);
         when(onvo.obtenerPaymentIntent("pi_1")).thenReturn((Map) intent);
         when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) facturaAlta("pi_1"));
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
@@ -302,8 +307,8 @@ class OnvoBillingWebhookHandlerTest {
     @DisplayName("B1: factura con saldo pendiente no activa el plan")
     void facturaConSaldoPendiente() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
-        Map<String, Object> inv = invoice("clinv0001", "clsub0001", "paid", "live", 1_200_000);
-        inv.put("amountPaid", 600_000);
+        Map<String, Object> inv = invoice("clinv0001", "clsub0001", "paid", "live", 2_400);
+        inv.put("amountPaid", 1_200);
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) inv);
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
         verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
@@ -339,7 +344,7 @@ class OnvoBillingWebhookHandlerTest {
 
     private static String fallo(String periodo, int intento, String pi) {
         return """
-            {"subscriptionId":"clsub0002","paymentIntentId":"%s","currency":"CRC","attemptCount":%d,
+            {"subscriptionId":"clsub0002","paymentIntentId":"%s","currency":"USD","attemptCount":%d,
              "invoiceStatus":"open","subscriptionStatus":"past_due","invoicePeriodStart":"%s"}"""
             .formatted(pi, intento, periodo);
     }
@@ -408,7 +413,7 @@ class OnvoBillingWebhookHandlerTest {
     @Test
     @DisplayName("Fila local sin onvo_customer_id: solo activa si la metadata de la suscripción en ONVO (GET) es de la misma empresa")
     void customerLocalNuloSoloPorMetadataDeOnvo() throws Exception {
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 1_200_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 2_400));
         // misma empresa en la metadata de ONVO → activa
         when(suscripcionRepo.findByOnvoSubscriptionId("clsub0001")).thenReturn(Optional.of(localConEmpresa("clsub0001", null, 10L)));
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
@@ -448,15 +453,15 @@ class OnvoBillingWebhookHandlerTest {
     @DisplayName("Forma real de ONVO: sin amountRemaining; el paymentIntent embebido con receivedAmount < total no activa")
     void facturaConPagoRecibidoParcial() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
-        Map<String, Object> inv = invoice("clinv0001", "clsub0001", "paid", "live", 1_200_000);
-        inv.put("paymentIntent", Map.of("status", "succeeded", "amount", 1_200_000, "receivedAmount", 600_000));
+        Map<String, Object> inv = invoice("clinv0001", "clsub0001", "paid", "live", 2_400);
+        inv.put("paymentIntent", Map.of("status", "succeeded", "amount", 2_400, "receivedAmount", 1_200));
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) inv);
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
         verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:pago_parcial");
         // pago completo con la misma forma real → activa
         eventos.clear();
-        inv.put("paymentIntent", Map.of("status", "succeeded", "amount", 1_200_000, "receivedAmount", 1_200_000));
+        inv.put("paymentIntent", Map.of("status", "succeeded", "amount", 2_400, "receivedAmount", 2_400));
         handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null);
         verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv0001");
     }
@@ -484,5 +489,149 @@ class OnvoBillingWebhookHandlerTest {
         handler.manejarSiBilling("subscription.renewal.failed", json(fallo("2026-04-01T00:00:00.000Z", 3, "pi_a")), null);
         verify(suscripcionService).procesarSuscripcionOnvoEliminada("clsub0002");
         verify(suscripcionService, never()).procesarRenovacionOnvoFallida(any());
+    }
+
+    // ------------------------------------------------------------ moneda y monto contra el price configurado (USD)
+
+    private static final String ALTA_BODY = "{\"id\":\"pi_1\",\"subscriptionId\":\"clsub0001\"}";
+    private static final String KEY_RENOVACION = "onvo_subscription.renewal.succeeded_clinv0001";
+
+    private void renovacionConFactura(Map<String, Object> factura, String priceId) {
+        when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", priceId));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) factura);
+    }
+
+    @Test
+    @DisplayName("USD: un pago en USD con la moneda y el monto del price configurado activa el plan")
+    void pagoUsdQueCoincideActiva() throws Exception {
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv0001");
+    }
+
+    @Test
+    @DisplayName("USD: un pago en USD con monto menor al price no activa (rechazo permanente pago_parcial)")
+    void pagoUsdMenorNoActiva() throws Exception {
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_399), "price_pyme");
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:pago_parcial");
+    }
+
+    @Test
+    @DisplayName("USD: una moneda distinta a la del price no activa, aunque el monto numérico coincida")
+    void monedaDistintaNoActiva() throws Exception {
+        Map<String, Object> enCrc = invoice("clinv0001", "clsub0001", "paid", "live", 2_400);
+        enCrc.put("currency", "CRC");
+        renovacionConFactura(enCrc, "price_pyme");
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:moneda");
+    }
+
+    @Test
+    @DisplayName("USD: ya no se acepta CRC fijo: una factura en CRC con el monto en colones del plan viejo no activa")
+    void crcYaNoActiva() throws Exception {
+        Map<String, Object> enCrc = invoice("clinv0001", "clsub0001", "paid", "live", 1_200_000);
+        enCrc.put("currency", "CRC");
+        renovacionConFactura(enCrc, "price_pyme");
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:moneda");
+    }
+
+    @Test
+    @DisplayName("USD: si el price de ONVO no coincide con la config (monto o moneda) no se activa (plan_sin_precio)")
+    void priceDeOnvoDistintoDeLaConfigNoActiva() throws Exception {
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
+        doReturn(precioOnvo("price_pyme", "USD", 3_000)).when(onvo).obtenerPrecio("price_pyme");
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:plan_sin_precio");
+        eventos.clear();
+        doReturn(precioOnvo("price_pyme", "CRC", 2_400)).when(onvo).obtenerPrecio("price_pyme");
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:plan_sin_precio");
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("USD: sin moneda configurada (hotclick.planes.moneda) ningún pago se activa (fail-closed)")
+    void sinMonedaConfiguradaNoActiva() throws Exception {
+        handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
+            new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", ""), onvo), suscripcionRepo);
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("rechazo:plan_sin_precio");
+    }
+
+    @Test
+    @DisplayName("USD: si el GET del price falla el evento se reintenta (no queda rechazado ni activado)")
+    void getDelPriceCaidoReintenta() throws Exception {
+        renovacionConFactura(invoice("clinv0001", "clsub0001", "paid", "live", 2_400), "price_pyme");
+        doThrow(new IllegalStateException("timeout")).when(onvo).obtenerPrecio("price_pyme");
+        assertThatThrownBy(() -> handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null))
+            .isInstanceOf(IllegalStateException.class);
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        assertThat(eventos.get(KEY_RENOVACION).getError()).isEqualTo("IllegalStateException"); // transitorio, no rechazo definitivo
+    }
+
+    @Test
+    @DisplayName("USD: alta por intent en USD que coincide activa; con otra moneda en el intent o en la factura no")
+    void altaPorIntentMoneda() throws Exception {
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0001")).thenReturn(Optional.of(local("clsub0001")));
+        when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
+        when(onvo.obtenerPaymentIntent("pi_1")).thenReturn((Map) INTENT_OK);
+        when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) facturaAlta("pi_1"));
+        assertThat(handler.manejarSiBilling("payment-intent.succeeded", json(ALTA_BODY), null)).isTrue();
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv_alta");
+
+        eventos.clear();
+        Map<String, Object> intentCrc = new HashMap<>(INTENT_OK);
+        intentCrc.put("currency", "CRC");
+        when(onvo.obtenerPaymentIntent("pi_1")).thenReturn((Map) intentCrc);
+        assertThat(handler.manejarSiBilling("payment-intent.succeeded", json(ALTA_BODY), null)).isTrue();
+        assertThat(eventos.get("onvo_payment-intent.succeeded_pi_1").getError()).isEqualTo("rechazo:moneda");
+
+        eventos.clear();
+        when(onvo.obtenerPaymentIntent("pi_1")).thenReturn((Map) INTENT_OK);
+        Map<String, Object> facturaCrc = facturaAlta("pi_1");
+        facturaCrc.put("currency", "CRC");
+        when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) facturaCrc);
+        assertThat(handler.manejarSiBilling("payment-intent.succeeded", json(ALTA_BODY), null)).isTrue();
+        assertThat(eventos.get("onvo_payment-intent.succeeded_pi_1").getError()).isEqualTo("rechazo:moneda");
+        verify(suscripcionService, org.mockito.Mockito.times(1)).procesarPagoOnvoVerificado(any(), any(), any(), any());
+    }
+
+    // ------------------------------------------------------------ referencia del ledger (id de la factura del alta)
+
+    @Test
+    @DisplayName("Ledger: el id de la factura del alta con forma inválida o de más de 120 caracteres se rechaza (id), no se usa de referencia")
+    void facturaIdInvalidoDelAltaSeRechaza() throws Exception {
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0001")).thenReturn(Optional.of(local("clsub0001")));
+        when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
+        when(onvo.obtenerPaymentIntent("pi_1")).thenReturn((Map) INTENT_OK);
+        for (String malo : new String[]{"x".repeat(121), "inv/../admin", "clinv 01"}) {
+            eventos.clear();
+            Map<String, Object> factura = facturaAlta("pi_1");
+            factura.put("id", malo);
+            when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) factura);
+            assertThat(handler.manejarSiBilling("payment-intent.succeeded", json(ALTA_BODY), null)).isTrue(); // permanente → 200
+            assertThat(eventos.get("onvo_payment-intent.succeeded_pi_1").getError()).isEqualTo("rechazo:id");
+        }
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Ledger: sin id de factura en el alta la referencia es el id del intent (ya validado)")
+    void sinFacturaIdUsaElIntent() throws Exception {
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0001")).thenReturn(Optional.of(local("clsub0001")));
+        when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
+        when(onvo.obtenerPaymentIntent("pi_1")).thenReturn((Map) INTENT_OK);
+        Map<String, Object> factura = facturaAlta("pi_1");
+        factura.remove("id");
+        when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) factura);
+        assertThat(handler.manejarSiBilling("payment-intent.succeeded", json(ALTA_BODY), null)).isTrue();
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "pi_1");
     }
 }
