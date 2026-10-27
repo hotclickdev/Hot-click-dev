@@ -39,6 +39,9 @@ public class ClerkSyncService {
     public AuthResponse sync(String clerkUserId, String email,
                              String nombre, String apellido, String fotoUrl, boolean declaraMayoriaEdad) {
         email = CorreoNormalizer.normalizar(email); // MED-5: igual que el registro y el login
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Correo verificado requerido");
+        }
         Usuario usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl, declaraMayoriaEdad);
         authSupport.exigirCuentaActiva(usuario); // antes de tocar ultimoAcceso: una cuenta no activa no entra
         usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now(Constants.ZONA_CR));
