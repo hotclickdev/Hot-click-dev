@@ -56,7 +56,7 @@ public final class ErrorPublico {
     private static final java.util.regex.Pattern URL = java.util.regex.Pattern.compile("(?i)\\b[a-z][a-z0-9+.-]*://|\\bwww\\.");
     private static final java.util.regex.Pattern HOST_PUERTO = java.util.regex.Pattern.compile("(?i)\\b[a-z][a-z0-9_.-]*:\\d{2,5}\\b");
     private static final java.util.regex.Pattern DOMINIO = java.util.regex.Pattern.compile(
-        "(?i)\\b[a-z0-9-]+(\\.[a-z0-9-]+)*\\.(com|lat|net|org|io|dev|app|cloud|internal|local|info|biz|co|cr)\\b");
+        "(?i)[a-z0-9-]\\.(?:com|lat|net|org|io|dev|app|cloud|internal|local|info|biz|co|cr)\\b");
     private static final java.util.regex.Pattern IP = java.util.regex.Pattern.compile("\\b\\d{1,3}(\\.\\d{1,3}){3}\\b|\\[?[0-9a-fA-F]{0,4}(:[0-9a-fA-F]{0,4}){3,7}\\]?");
     private static final java.util.regex.Pattern RUTA = java.util.regex.Pattern.compile(
         "(?:^|[\\s(\\[\"'=:])/[A-Za-z0-9_.~-]+|\\b[A-Za-z]:\\\\|\\\\\\\\[A-Za-z0-9_.$-]+|(?i)\\bfile:");
