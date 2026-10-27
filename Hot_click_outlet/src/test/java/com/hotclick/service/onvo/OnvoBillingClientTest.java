@@ -571,4 +571,39 @@ class OnvoBillingClientTest {
         assertThatThrownBy(c::validarLlaveAlArrancar)
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("arranque abortado");
     }
+
+    @Test
+    @DisplayName("M1: cancelarInmediato hace DELETE /subscriptions/{id} (reconciliar una suscripción duplicada)")
+    void cancelarInmediato_hacedelete() {
+        OnvoBillingClient c = clienteConPerfiles("test");
+        ReflectionTestUtils.setField(c, "secretKey", "onvo_test_ficticia");
+        server.expect(requestTo(BASE + "/subscriptions/sub_dup1"))
+            .andExpect(method(HttpMethod.DELETE))
+            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        c.cancelarInmediato("sub_dup1");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("M1: cancelarInmediato falla cerrado sin llave en producción y rechaza ids con forma inválida")
+    void cancelarInmediato_failClosed() {
+        server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
+        assertThatThrownBy(() -> clienteConPerfiles("production").cancelarInmediato("sub_1"))
+            .isInstanceOf(IllegalStateException.class);
+        OnvoBillingClient c = clienteConPerfiles("test");
+        ReflectionTestUtils.setField(c, "secretKey", "onvo_test_ficticia");
+        assertThatThrownBy(() -> c.cancelarInmediato("../customers/cus_1")).isInstanceOf(IllegalArgumentException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("M1: crear suscripción NO se reintenta automáticamente (POST sin llave de idempotencia en ONVO)")
+    void crearSuscripcion_sinRetry() throws Exception {
+        for (var m : OnvoBillingClient.class.getDeclaredMethods()) {
+            if (m.getName().equals("crearSuscripcionIncompleta")) {
+                assertThat(m.isAnnotationPresent(io.github.resilience4j.retry.annotation.Retry.class))
+                    .as("@Retry en " + m).isFalse();
+            }
+        }
+    }
 }

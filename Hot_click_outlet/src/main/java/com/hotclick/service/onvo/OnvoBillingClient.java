@@ -174,9 +174,13 @@ public class OnvoBillingClient {
 
     /**
      * Crea suscripción incompleta para cobrar con el Web SDK (paymentType=subscription).
+     *
+     * <p>SIN {@code @Retry} a propósito: ONVO no documenta una llave de idempotencia para {@code POST /subscriptions}, así
+     * que reintentar tras un timeout (la suscripción pudo haberse creado) fabrica una segunda suscripción huérfana que
+     * cobraría al terminar el trial. Un fallo transitorio sube al llamador, que lo reintenta bajo el lock del negocio
+     * (ver {@code SuscripcionOnvoChangeService}); el único alta por negocio lo garantiza ese lock.
      */
     @CircuitBreaker(name = "onvo", fallbackMethod = "crearSuscripcionFallback")
-    @Retry(name = "onvo")
     public OnvoSubscription crearSuscripcionIncompleta(String customerId, String priceId,
                                                        Map<String, String> metadata) {
         if (sinLlave()) {
@@ -203,7 +207,6 @@ public class OnvoBillingClient {
      * equivale a la versión sin trial.
      */
     @CircuitBreaker(name = "onvo", fallbackMethod = "crearSuscripcionTrialFallback")
-    @Retry(name = "onvo")
     public OnvoSubscription crearSuscripcionIncompleta(String customerId, String priceId,
                                                        Map<String, String> metadata, int trialDias) {
         if (sinLlave()) {
@@ -222,6 +225,26 @@ public class OnvoBillingClient {
         }
         Map<?, ?> resp = post("/subscriptions", body);
         return new OnvoSubscription(requireId(resp, "subscription"), extraerPrimerItemId(resp));
+    }
+
+    /**
+     * Cancela de inmediato una suscripción que NO debía existir (alta duplicada u huérfana): {@code DELETE
+     * /v1/subscriptions/{id}} (cancela ya, sin esperar al fin del período). Solo para reconciliar; el id tiene que
+     * tener forma válida y en dev/test sin llave un id simulado no llama a ONVO. Idempotente, por eso sí lleva {@code @Retry}.
+     */
+    @Retry(name = "onvo")
+    public void cancelarInmediato(String subscriptionId) {
+        boolean idMock = subscriptionId != null && subscriptionId.startsWith("sub_mock");
+        if (sinLlave() || idMock) exigirSimulacionPermitida("cancelarInmediato");
+        if (sinLlave() || idMock) {
+            log.info("[onvo-mock] cancelarInmediato({})", subscriptionId);
+            return;
+        }
+        if (!idValido(subscriptionId)) {
+            throw new IllegalArgumentException("Id de suscripción ONVO inválido");
+        }
+        delete("/subscriptions/" + subscriptionId);
+        log.warn("[onvo] Suscripción cancelada de inmediato (reconciliación) sub={}", subscriptionId);
     }
 
     @CircuitBreaker(name = "onvo", fallbackMethod = "cambiarPrecioFallback")
@@ -366,6 +389,11 @@ public class OnvoBillingClient {
         return resp.getBody() != null ? resp.getBody() : Map.of();
     }
 
+    private void delete(String path) {
+        restTemplate.exchange(
+            API_BASE + path, HttpMethod.DELETE, new HttpEntity<>(authHeaders()), Map.class);
+    }
+
     private void patch(String path, Map<String, Object> body) {
         restTemplate.exchange(
             API_BASE + path, HttpMethod.PATCH, new HttpEntity<>(body, authHeaders()), Map.class);
@@ -437,7 +465,7 @@ public class OnvoBillingClient {
     }
 
     /** Para logs de fallback: status HTTP si lo hay, nunca el mensaje (puede traer cuerpo de ONVO o datos). */
-    static String statusDe(Throwable t) {
+    public static String statusDe(Throwable t) {
         if (t instanceof org.springframework.web.client.RestClientResponseException r) {
             return String.valueOf(r.getStatusCode().value());
         }

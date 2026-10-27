@@ -73,6 +73,7 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         lenient().when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
         lenient().when(planRepo.findByNombre("EMPRENDEDOR")).thenReturn(Optional.of(planEmprendedor));
         lenient().when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        lenient().when(empresaRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(empresa));
         lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
         lenient().when(suscripcionRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(onvoBilling.getPriceIdForPlan("EMPRENDEDOR")).thenReturn("price_emprendedor");
@@ -146,7 +147,8 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         sub.setOnvoSubscriptionId("sub_trial");
         sub.setOnvoCustomerId("cus_1");
         sub.setOnvoPriceId("price_emprendedor");
-        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(sub));
 
         Map<String, Object> out = service.cambiarPlan(10L, 1L);
 
@@ -275,7 +277,8 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         existente.setOnvoSubscriptionId("sub_previa");
         existente.setOnvoCustomerId("cus_9");
         existente.setOnvoPriceId("price_emprendedor");
-        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(existente));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(existente));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(existente));
 
         SuscripcionOnvoChangeService.SuscripcionTrial out = service.asegurarSuscripcionTrial(10L);
 
@@ -290,7 +293,8 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         Suscripcion otra = new Suscripcion();
         otra.setOnvoSubscriptionId("sub_pyme");
         otra.setOnvoPriceId("price_pyme");
-        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(otra));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(otra));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(otra));
         assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L)).isInstanceOf(IllegalStateException.class);
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
     }

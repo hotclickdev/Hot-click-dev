@@ -104,6 +104,43 @@ class TrialTarjetaControllerTest {
     }
 
     @Test
+    @DisplayName("L3: sin llave pública de ONVO responde 503 con código y mensaje fijos")
+    void sinLlavePublica503() throws Exception {
+        TenantContext.set(7L);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        when(service.iniciar(7L)).thenThrow(new TrialTarjetaService.PasarelaNoConfiguradaException());
+        mvc.perform(post("/api/billing/trial/tarjeta")).andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.codigo").value(TrialTarjetaService.PasarelaNoConfiguradaException.CODIGO))
+            .andExpect(jsonPath("$.error").value(TrialTarjetaService.PasarelaNoConfiguradaException.MENSAJE));
+    }
+
+    @Test
+    @DisplayName("L1: el log del 502 lleva clase y status, nunca el mensaje de la excepción")
+    void log502SinMensaje() throws Exception {
+        TenantContext.set(7L);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        org.mockito.Mockito.doThrow(new RuntimeException("sk_live_SECRETO cuerpo ONVO")).when(service).iniciar(7L);
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(TrialTarjetaController.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+            new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            mvc.perform(post("/api/billing/trial/tarjeta")).andExpect(status().isBadGateway());
+        } finally {
+            logger.detachAppender(appender);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (var ev : appender.list) {
+            sb.append(ev.getFormattedMessage());
+            if (ev.getThrowableProxy() != null) sb.append(ev.getThrowableProxy().getMessage());
+        }
+        org.assertj.core.api.Assertions.assertThat(sb.toString())
+            .contains("RuntimeException").doesNotContain("sk_live_SECRETO").doesNotContain("cuerpo ONVO");
+    }
+
+    @Test
     @DisplayName("GET devuelve solo elegible, tarjetaGuardada y trialDias")
     void estadoMinimo() throws Exception {
         TenantContext.set(7L);

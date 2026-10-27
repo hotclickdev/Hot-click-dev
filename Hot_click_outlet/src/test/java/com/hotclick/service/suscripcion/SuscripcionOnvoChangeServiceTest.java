@@ -79,6 +79,8 @@ class SuscripcionOnvoChangeServiceTest {
         empresa.setPlan(planEmprendedor);
         // QA8: el plan actual se resuelve por repo (el proxy LAZY no se inicializa fuera de sesión).
         org.mockito.Mockito.lenient().when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+        // M1: el alta ONVO toma el lock de fila del negocio.
+        org.mockito.Mockito.lenient().when(empresaRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(empresa));
     }
 
     @Test
@@ -131,7 +133,8 @@ class SuscripcionOnvoChangeServiceTest {
 
         when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
-        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(sub));
 
         assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
             .isInstanceOf(IllegalStateException.class)
@@ -259,7 +262,8 @@ class SuscripcionOnvoChangeServiceTest {
         sub.setOnvoSubscriptionId("sub_real_l210");
         when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
-        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(sub));
         return sub;
     }
 

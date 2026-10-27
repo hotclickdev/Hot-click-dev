@@ -185,6 +185,69 @@ class TrialTarjetaServiceTest {
             .hasMessageNotContaining("detalle interno");
     }
 
+    @ParameterizedTest(name = "L3: llave pública «{0}» → PasarelaNoConfigurada (503) y no se crea nada en ONVO")
+    @ValueSource(strings = {"", "   "})
+    void sinLlavePublicaNoCreaNada(String llave) {
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+        when(onvoService.getPublishableKey()).thenReturn(llave);
+        assertThatThrownBy(() -> service.iniciar(10L))
+            .isInstanceOf(TrialTarjetaService.PasarelaNoConfiguradaException.class);
+        verifyNoInteractions(changeService);
+    }
+
+    @Test
+    @DisplayName("L3: llave pública nula → PasarelaNoConfigurada, nunca un \"\" que rompe recién en el SDK")
+    void llavePublicaNulaNoDevuelveVacio() {
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+        when(onvoService.getPublishableKey()).thenReturn(null);
+        assertThatThrownBy(() -> service.iniciar(10L))
+            .isInstanceOf(TrialTarjetaService.PasarelaNoConfiguradaException.class);
+        verifyNoInteractions(changeService);
+    }
+
+    @Test
+    @DisplayName("L1: el log de un fallo al preparar la suscripción lleva clase y status, nunca el mensaje de la excepción")
+    void logDeIniciarSinMensaje() {
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
+        when(changeService.asegurarSuscripcionTrial(10L))
+            .thenThrow(new IllegalStateException("cuerpo ONVO con dueno@negocio.cr y sk_test_ABC"));
+        String log = capturarLog(() ->
+            assertThatThrownBy(() -> service.iniciar(10L)).isInstanceOf(TrialTarjetaService.NoDisponibleException.class));
+        assertThat(log).contains("IllegalStateException").contains("empresa=10")
+            .doesNotContain("dueno@negocio.cr").doesNotContain("sk_test_ABC").doesNotContain("cuerpo ONVO");
+    }
+
+    @Test
+    @DisplayName("L1: el log de un fallo al leer la tarjeta en ONVO lleva clase y status, nunca el mensaje")
+    void logDeTarjetaGuardadaSinMensaje() {
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(subOnvo("sub_1")));
+        when(onvoBilling.obtenerSuscripcion("sub_1")).thenThrow(new IllegalStateException("respuesta con 4111111111111111"));
+        String log = capturarLog(() ->
+            assertThatThrownBy(() -> service.estado(10L))
+                .isInstanceOf(TrialTarjetaService.VerificacionNoDisponibleException.class));
+        assertThat(log).contains("IllegalStateException").doesNotContain("4111111111111111");
+    }
+
+    private static String capturarLog(Runnable accion) {
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(TrialTarjetaService.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+            new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            accion.run();
+        } finally {
+            logger.detachAppender(appender);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (var ev : appender.list) {
+            sb.append(ev.getFormattedMessage()).append('\n');
+            if (ev.getThrowableProxy() != null) sb.append(ev.getThrowableProxy().getMessage());
+        }
+        return sb.toString();
+    }
+
     @Test
     @DisplayName("tienePaymentMethod ignora nulos, vacíos y el literal «null»")
     void tienePaymentMethod() {
