@@ -234,7 +234,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             // Ruta inválida (porcentaje roto, UTF-8 inválido, control o encoding de más de 3 niveles): fail-closed.
             // B1: el rechazo cuenta contra un cupo por IP (así no es una vía gratis para inundar) y el log se
             // muestrea, uno por IP y ventana, para que repetirla no llene el log.
-            String ipInvalida = clientIpResolver.resolve(request);
+            // B1/B2 (#395): la IP puede llegar null (peer ilegible): comparte la llave "desconocida" en vez de lanzar
+            // NPE (500); una IPv6 cuenta por su /64, así rotar direcciones del mismo prefijo no abre cupos nuevos.
+            String ipInvalida = IpParaLlave.clave(clientIpResolver.resolve(request));
             boolean dentroDelCupo = rateLimiter.tryAcquire(
                 "ip:" + ipInvalida + ":ruta-invalida", RUTA_INVALIDA_MAX, RUTA_INVALIDA_VENTANA);
             // El muestreo del log es local (memoria): no abre una segunda fila por IP en la BD y sigue
@@ -254,7 +256,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         if ("POST".equalsIgnoreCase(method)) {
-            String ip    = clientIpResolver.resolve(request);
+            String ip    = clientIpResolver.resolve(request); // IP real: para log y auditoría
             Limit  limit = LIMITS.get(path);
             if (limit == null) limit = limite2fa(path);
             String bucket = path;
@@ -274,7 +276,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             }
 
             if (limit != null) {
-                String key = "ip:" + ip + ":" + bucket;
+                String key = "ip:" + IpParaLlave.clave(ip) + ":" + bucket; // llave por /64 (B2)
                 if (!rateLimiter.tryAcquire(key, limit.maxRequests(), limit.windowSeconds())) {
                     log.warn("[RATE-LIMIT] ip={} path={}", ip, RutaLogSegura.enmascarar(path));
                     try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }
@@ -289,10 +291,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         } else if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)) {
             // HEAD: Spring MVC lo enruta al handler de GET y ejecuta el mismo código, así que comparte el
             // bucket de GET ("ip:<ip>:GET:<prefijo>"). Sin esto, repetir HEAD evadía todos los GetLimit.
-            String ip = clientIpResolver.resolve(request);
+            String ip = clientIpResolver.resolve(request); // IP real: para log y auditoría
             for (GetLimit gl : GET_LIMITS) {
                 if (path.startsWith(gl.prefix())) {
-                    String key = "ip:" + ip + ":GET:" + gl.prefix();
+                    String key = "ip:" + IpParaLlave.clave(ip) + ":GET:" + gl.prefix(); // llave por /64 (B2)
                     if (!rateLimiter.tryAcquire(key, gl.maxRequests(), gl.windowSeconds())) {
                         log.warn("[RATE-LIMIT] GET ip={} path={}", ip, RutaLogSegura.enmascarar(path));
                         try { auditService.logRateLimitTriggered(ip, RutaLogSegura.enmascarar(path)); } catch (Exception e) { log.warn("audit error: {}", e.getMessage()); }

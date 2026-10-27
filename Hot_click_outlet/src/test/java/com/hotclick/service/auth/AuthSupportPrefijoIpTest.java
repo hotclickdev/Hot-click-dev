@@ -43,4 +43,14 @@ class AuthSupportPrefijoIpTest {
         assertThat(AuthSupport.prefijoIp("64:ff9b:1::cb00:7105")).isEqualTo("0064:ff9b:0001:0000::/64");
         assertThat(AuthSupport.prefijoIp("64:ff9b::1:cb00:7105")).isEqualTo("0064:ff9b:0000:0000::/64");
     }
+
+    @Test
+    @DisplayName("Misma reducción que las llaves del limitador por IP (IpParaLlave): login y RateLimitingFilter cuentan igual")
+    void coincideConLasLlavesDelFiltro() {
+        for (String ip : new String[] {"2001:db8:1:2::1", "2001:db8:1:2:aaaa:bbbb:cccc:dddd", "64:ff9b::cb00:7105",
+                "::ffff:203.0.113.5", "203.0.113.5", "desconocida"}) {
+            assertThat(AuthSupport.prefijoIp(ip)).isEqualTo(com.hotclick.security.IpParaLlave.reducir(ip));
+        }
+        assertThat(com.hotclick.security.IpParaLlave.clave(null)).isEqualTo("desconocida");
+    }
 }
