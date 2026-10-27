@@ -65,6 +65,22 @@ INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codig
 SELECT 'RESET_DATOS', 600, 6, 1
 WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb WHERE nombre = 'RESET_DATOS');
 
+-- Cupo de altas gratis del plan Emprendedor (V127). Sin @Entity (se usa por JdbcTemplate), Hibernate update
+-- no la crea y el baseline salta V127: sin esto el alta de negocio falla en base vacía (tx abortada -> 500).
+-- Misma DDL y seed que V127. Se omite su UPDATE de "usados" (cuenta empresas, tabla que aún no existe) porque
+-- en base vacía no hay empresas: usados=0.
+CREATE TABLE IF NOT EXISTS hot_click_cupo_emprendedor_tb (
+    id     SMALLINT PRIMARY KEY,
+    limite INTEGER NOT NULL DEFAULT 70,
+    usados INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT cupo_emprendedor_unica CHECK (id = 1),
+    CONSTRAINT cupo_emprendedor_rango CHECK (usados >= 0 AND limite > 0)
+);
+
+INSERT INTO hot_click_cupo_emprendedor_tb (id, limite, usados)
+SELECT 1, 70, 0
+WHERE NOT EXISTS (SELECT 1 FROM hot_click_cupo_emprendedor_tb WHERE id = 1);
+
 -- Marcador: deja el esquema "no vacío" para flyway.baseline()
 CREATE TABLE IF NOT EXISTS hotclick_dev_flyway_bootstrap (
     ok BOOLEAN NOT NULL DEFAULT TRUE

@@ -169,4 +169,37 @@ class FlywayRepairConfigTest {
             assertEquals(1, rs.getInt(3));
         }
     }
+
+    // ── Bootstrap dev en base vacía: cupo Emprendedor (V127) ──────────────────
+
+    private static int[] cupo(javax.sql.DataSource ds) throws Exception {
+        try (var c = ds.getConnection();
+             var s = c.createStatement();
+             var rs = s.executeQuery("SELECT usados, limite FROM hot_click_cupo_emprendedor_tb WHERE id = 1")) {
+            assertTrue(rs.next(), "falta la fila id=1 del cupo");
+            return new int[] {rs.getInt(1), rs.getInt(2)};
+        }
+    }
+
+    @Test
+    void bootstrapDev_baseVacia_creaCupoEmprendedor_conFilaUnica() throws Exception {
+        var ds = baseVaciaH2("nativas_cupo_vacia");
+        assertThrows(Exception.class, () -> cupo(ds));
+
+        FlywayRepairConfig.ejecutarSqlClasspath(ds, "db/dev-bootstrap/nativas.sql");
+
+        assertEquals(0, cupo(ds)[0]);
+        assertEquals(70, cupo(ds)[1]);
+    }
+
+    @Test
+    void bootstrapDev_idempotente_noPisaUsadosDelCupo() throws Exception {
+        var ds = baseVaciaH2("nativas_cupo_idem");
+        FlywayRepairConfig.ejecutarSqlClasspath(ds, "db/dev-bootstrap/nativas.sql");
+        try (var c = ds.getConnection(); var s = c.createStatement()) {
+            s.executeUpdate("UPDATE hot_click_cupo_emprendedor_tb SET usados = 5 WHERE id = 1");
+        }
+        FlywayRepairConfig.ejecutarSqlClasspath(ds, "db/dev-bootstrap/nativas.sql");
+        assertEquals(5, cupo(ds)[0]);
+    }
 }
