@@ -4,6 +4,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Rol;
 import com.hotclick.model.Usuario;
+import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -44,6 +45,7 @@ class EquipoServiceCorreoVerificadoTest {
     @Mock MiembroEmpresaRepository miembroEmpresaRepository;
     @Mock NotificacionEmailService notificacionEmailService;
     @Mock TenantService tenantService;
+    @Mock EmpresaRepository empresaRepository;
     @InjectMocks EquipoService equipoService;
 
     private Empresa empresa;
@@ -90,6 +92,8 @@ class EquipoServiceCorreoVerificadoTest {
         existente.setCorreoVerificado(true);
         when(usuarioRepository.findByCorreo("ya@test.cr")).thenReturn(Optional.of(existente));
         empresa.setId(5L);
+        // invitar() toma el lock pesimista de la empresa antes de verificar el limite del plan
+        when(empresaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(empresa));
         when(miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(77L, 5L, 1)).thenReturn(false);
         when(miembroEmpresaRepository.countEmpresasByUsuarioId(77L)).thenReturn(1L);
         when(miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(77L, 5L)).thenReturn(Optional.empty());
