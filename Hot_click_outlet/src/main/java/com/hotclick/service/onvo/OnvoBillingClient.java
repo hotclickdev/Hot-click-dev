@@ -286,7 +286,8 @@ public class OnvoBillingClient {
             return ResultadoCancelacion.CANCELADA;
         }
         if (!Boolean.TRUE.equals(resp.get("cancelAtPeriodEnd"))) {
-            throw new IllegalStateException("ONVO no confirmó cancelAtPeriodEnd para " + subscriptionId);
+            log.error("[ALERTA-PAGO] ONVO no confirmó cancelAtPeriodEnd: sub={}", subscriptionId);
+            throw new IllegalStateException("ONVO no confirmó la cancelación al final del período");
         }
         log.info("[onvo] Suscripción marcada cancelAtPeriodEnd: {}", subscriptionId);
         return ResultadoCancelacion.PROGRAMADA;

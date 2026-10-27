@@ -82,7 +82,8 @@ public class WebhookDispatcherService {
         try {
             uri = URI.create(url);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("URL inválida: " + e.getMessage());
+            log.debug("[webhook] URL inválida: {}", e.getClass().getSimpleName());
+            throw new IllegalArgumentException("URL inválida");
         }
         String scheme = uri.getScheme();
         if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {

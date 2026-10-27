@@ -57,7 +57,7 @@ public class RecoleccionService {
             throw new IllegalStateException("Tu cuenta no tiene un negocio asociado");
         }
         Empresa empresa = empresaRepo.findById(empresaId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", empresaId));
+                .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
         SolicitudRecoleccion s = new SolicitudRecoleccion();
         s.setEmpresa(empresa);
