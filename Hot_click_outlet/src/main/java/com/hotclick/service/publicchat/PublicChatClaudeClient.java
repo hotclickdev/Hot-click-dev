@@ -82,7 +82,7 @@ public class PublicChatClaudeClient {
                                      Long maxBudget, Set<String> negations,
                                      boolean afterHours, List<String> smartOpts, boolean mostrarFichas) {
         EmpresaChatInfo info = getEmpresaChatInfo(empresaId);
-        streamer.streamClaudeResponse(log, emitter, userMessage, productos, history,
+        streamer.streamClaudeResponse(log, emitter, empresaId, userMessage, productos, history,
             info.whatsapp(), info.nombre(), marketplace, context,
             isEnglish, isGift, maxBudget, negations, afterHours, smartOpts, mostrarFichas);
     }
@@ -94,7 +94,7 @@ public class PublicChatClaudeClient {
                                       boolean isEnglish, boolean afterHours,
                                       List<String> smartOpts) {
         EmpresaChatInfo info = getEmpresaChatInfo(empresaId);
-        streamer.streamAdvisor(log, emitter, userMessage, ficha, history,
+        streamer.streamAdvisor(log, emitter, empresaId, userMessage, ficha, history,
             info.whatsapp(), info.nombre(), marketplace, isEnglish, afterHours, smartOpts);
     }
 

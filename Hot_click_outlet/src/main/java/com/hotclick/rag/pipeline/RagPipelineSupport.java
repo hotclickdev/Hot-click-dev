@@ -1,5 +1,6 @@
 package com.hotclick.rag.pipeline;
 
+import com.hotclick.service.ai.UsoTokens;
 import com.hotclick.rag.dto.ProductoContexto;
 
 import java.util.*;
@@ -61,6 +62,10 @@ final class RagPipelineSupport {
     }
 
     static RagResult parseClaudeText(String texto, List<ProductoContexto> productos, int tokIn, int tokOut) {
+        return parseClaudeText(texto, productos, UsoTokens.de(tokIn, tokOut));
+    }
+
+    static RagResult parseClaudeText(String texto, List<ProductoContexto> productos, UsoTokens uso) {
         // Extraer [CATS:...] del texto
         List<String> categoriasSugeridas = List.of();
         Matcher mc = CATS_TAG.matcher(texto);
@@ -97,6 +102,7 @@ final class RagPipelineSupport {
             texto = texto.replace(mp.group(0), "").strip();
         }
 
-        return new RagResult(texto, productosAMostrar, categoriasSugeridas, opts, tokIn, tokOut);
+        return new RagResult(texto, productosAMostrar, categoriasSugeridas, opts,
+            uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
     }
 }

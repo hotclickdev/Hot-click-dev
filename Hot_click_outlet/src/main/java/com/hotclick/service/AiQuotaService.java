@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.service.ai.UsoTokens;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.AiUso;
@@ -78,17 +79,33 @@ public class AiQuotaService {
     /** Incrementa contadores completos (llamadas + tokens). Usar cuando NO se usó verificarYReservar(). */
     @Transactional
     public void registrarUso(Long empresaId, int tokensEntrada, int tokensSalida) {
+        registrarUso(empresaId, UsoTokens.de(tokensEntrada, tokensSalida));
+    }
+
+    /** Igual que {@link #registrarUso(Long, int, int)} pero con los tokens de caché. */
+    @Transactional
+    public void registrarUso(Long empresaId, UsoTokens uso) {
         LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         aiUsoRepository.upsertIncrement(empresaId, hoy.getYear(), hoy.getMonthValue(),
-            1, tokensEntrada, tokensSalida);
+            1, uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
     }
 
     /** Actualiza solo tokens IN/OUT después del call a Claude. Llamadas ya fue incrementado por verificarYReservar(). */
     @Transactional
     public void actualizarTokens(Long empresaId, int tokensEntrada, int tokensSalida) {
+        actualizarTokens(empresaId, UsoTokens.de(tokensEntrada, tokensSalida));
+    }
+
+    /**
+     * Suma los tokens de una llamada a Claude (entrada, salida y caché) al mes de la empresa
+     * sin tocar {@code llamadas}. UPSERT: persiste aunque aún no exista fila del mes.
+     */
+    @Transactional
+    public void actualizarTokens(Long empresaId, UsoTokens uso) {
+        if (uso == null || uso.esVacio()) return;
         LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         aiUsoRepository.actualizarTokens(empresaId, hoy.getYear(), hoy.getMonthValue(),
-            tokensEntrada, tokensSalida);
+            uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
     }
 
     /** Resumen del consumo del mes actual para el dashboard. */

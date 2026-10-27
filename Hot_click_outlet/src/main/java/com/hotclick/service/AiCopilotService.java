@@ -116,7 +116,7 @@ public class AiCopilotService {
             String texto = AiCopilotTextoRespuesta.normalizar(loop.texto(), AiCopilotTextoRespuesta.MAX_CHARS);
             streamProcessor.streamText(emitter, texto);
             messageStore.saveMsg(empresa, "assistant", texto, loop.tokensOut());
-            aiQuotaService.actualizarTokens(empresaId, loop.tokensIn(), loop.tokensOut());
+            aiQuotaService.actualizarTokens(empresaId, loop.uso());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IntegracionExternaException("claude-api",
