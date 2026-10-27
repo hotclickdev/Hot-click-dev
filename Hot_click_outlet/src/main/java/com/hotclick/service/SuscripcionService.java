@@ -121,12 +121,7 @@ public class SuscripcionService {
     }
 
 
-    /** S-02: activa/renueva con lo que ONVO confirmó por GET (plan del priceId, fin del período). */
-    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin) {
-        onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin);
-    }
-
-    /** B2: igual que el anterior, con el id de la factura de ONVO como referencia del ledger. */
+    /** S-02/B2: activa/renueva con lo que ONVO confirmó por GET; {@code facturaId} (obligatorio) es la referencia del ledger. */
     public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin, String facturaId) {
         onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin, facturaId);
     }

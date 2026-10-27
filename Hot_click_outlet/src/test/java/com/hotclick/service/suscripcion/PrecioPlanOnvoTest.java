@@ -105,4 +105,31 @@ class PrecioPlanOnvoTest {
         var cfg = new PreciosPlanesConfig("9", "9.50", "49", "usd");
         assertThat(new PrecioPlanOnvo(cfg, onvo).esperado("PYME", "price_pyme").unidadMenor()).isEqualTo(950);
     }
+
+    private static OnvoBillingClient clienteReal(String pyme, String plus) {
+        OnvoBillingClient c = new OnvoBillingClient(new org.springframework.web.client.RestTemplate());
+        org.springframework.test.util.ReflectionTestUtils.setField(c, "priceIdPyme", pyme);
+        org.springframework.test.util.ReflectionTestUtils.setField(c, "priceIdNegocioPlus", plus);
+        return c;
+    }
+
+    @Test
+    @DisplayName("Seguridad #391: falta solo uno de los dos ONVO_PRICE_ID: el price desconocido es transitorio y el configurado sigue resolviendo")
+    void faltaSoloUnPriceIdEsTransitorioParaElDesconocido() {
+        for (String[] ids : new String[][] {{"price_pyme", null}, {null, "price_plus"}, {"price_pyme", "  "}}) {
+            PrecioPlanOnvo precio = new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), clienteReal(ids[0], ids[1]));
+            assertThat(clienteReal(ids[0], ids[1]).faltanPriceIds()).isTrue();
+            // un price que no es ninguno de los configurados no se puede clasificar: config faltante, no price_desconocido permanente
+            assertThatThrownBy(() -> precio.planParaPriceId("price_cualquiera"))
+                .isInstanceOf(ConfigBillingFaltanteException.class)
+                .hasMessageContaining("ONVO_PRICE_ID_*");
+            // el que sí está configurado se sigue clasificando
+            String configurado = ids[0] != null ? ids[0] : ids[1];
+            assertThat(precio.planParaPriceId(configurado)).isEqualTo(ids[0] != null ? "PYME" : "NEGOCIO_PLUS");
+        }
+        // con ambos configurados, un price ajeno es desconocido permanente (null), sin excepción
+        PrecioPlanOnvo completo = new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"),
+            clienteReal("price_pyme", "price_plus"));
+        assertThat(completo.planParaPriceId("price_ajeno")).isNull();
+    }
 }
