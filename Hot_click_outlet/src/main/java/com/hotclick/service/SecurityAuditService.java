@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -206,7 +207,7 @@ public class SecurityAuditService {
 
     private String sanitizeEmail(String email) {
         if (email == null) return null;
-        return truncate(email.toLowerCase().trim(), 150);
+        return truncate(email.toLowerCase(Locale.ROOT).trim(), 150);
     }
 
     private String truncate(String value, int maxLen) {

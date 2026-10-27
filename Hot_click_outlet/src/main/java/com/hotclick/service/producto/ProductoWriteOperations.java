@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Component
@@ -72,7 +73,7 @@ public class ProductoWriteOperations {
         if (empresa != null) {
             skuAsignador.asignarSiguiente(p, empresa);
         } else if (p.getSku() == null) {
-            p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT));
         }
         Producto saved = productoRepository.save(p);
         guardadoNotifier.publish(source, saved, empresa != null ? empresa.getId() : null);

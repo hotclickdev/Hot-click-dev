@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class PublicacionFacebookService {
@@ -124,7 +125,7 @@ public class PublicacionFacebookService {
 
     private String mapearCondicion(String condicion) {
         if (condicion == null) return "Nuevo";
-        return switch (condicion.toUpperCase()) {
+        return switch (condicion.toUpperCase(Locale.ROOT)) {
             case "NUEVO" -> "Nuevo";
             case "USADO" -> "Usado - Buenas condiciones";
             case "REACONDICIONADO" -> "Reacondicionado por el vendedor";

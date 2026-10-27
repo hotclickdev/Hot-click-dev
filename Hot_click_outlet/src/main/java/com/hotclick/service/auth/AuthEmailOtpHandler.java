@@ -48,7 +48,7 @@ public class AuthEmailOtpHandler {
             otpService.enviarOtp2Fa(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código enviado a " + usuario.getCorreo(), null));
         } catch (RuntimeException e) {
-            log.warn("[2FA/email/send] {}", e.getMessage());
+            log.warn("[2FA/email/send] {}", e.getClass().getSimpleName());
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
     }
@@ -64,7 +64,7 @@ public class AuthEmailOtpHandler {
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("[2FA/email/enable] {}", e.getMessage(), e);
+            log.error("[2FA/email/enable] {}", e.getClass().getSimpleName());
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
     }

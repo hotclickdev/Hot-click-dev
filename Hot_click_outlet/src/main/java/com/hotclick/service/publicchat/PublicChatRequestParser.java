@@ -5,6 +5,7 @@ import com.hotclick.utils.ChatContextoPermitido;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -79,7 +80,7 @@ public final class PublicChatRequestParser {
 
     private static Map<String, Object> historyItem(PublicChatRequest.HistoryItem item) {
         if (item == null) return null;
-        String rol = item.getRol() == null ? "" : item.getRol().trim().toLowerCase();
+        String rol = item.getRol() == null ? "" : item.getRol().trim().toLowerCase(Locale.ROOT);
         if (!ROLES_PERMITIDOS.contains(rol)) return null;
         String texto = item.getTexto() == null ? "" : item.getTexto().trim();
         if (texto.isBlank()) return null;

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 class ExtraccionGeminiDetalleExtractor {
@@ -28,8 +29,8 @@ class ExtraccionGeminiDetalleExtractor {
                 if (ia.nombre != null) {
                     boolean nombreCoherente = d.todasEtiquetas.isEmpty() ||
                         d.todasEtiquetas.stream().anyMatch(e ->
-                            ia.nombre.toLowerCase().contains(e.toLowerCase().split(" ")[0]) ||
-                            e.toLowerCase().contains(ia.nombre.toLowerCase().split(" ")[0])
+                            ia.nombre.toLowerCase(Locale.ROOT).contains(e.toLowerCase(Locale.ROOT).split(" ")[0]) ||
+                            e.toLowerCase(Locale.ROOT).contains(ia.nombre.toLowerCase(Locale.ROOT).split(" ")[0])
                         );
                     if (nombreCoherente) {
                         d.nombre = ia.nombre;

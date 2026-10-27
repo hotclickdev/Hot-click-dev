@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
@@ -277,7 +278,7 @@ public class DataSeeder implements ApplicationRunner {
     private void asegurarAdminSecundario() {
         String correoExtra = entorno.apply("ADMIN_EMAIL");
         if (correoExtra == null || correoExtra.isBlank()) return;
-        usuarioRepository.findByCorreo(correoExtra.trim().toLowerCase()).ifPresent(u -> {
+        usuarioRepository.findByCorreo(correoExtra.trim().toLowerCase(Locale.ROOT)).ifPresent(u -> {
             u.setEstado(Constants.ESTADO_ACTIVO);
             u.setIntentosFallidos(0);
             u.setBloqueadoHasta(null);

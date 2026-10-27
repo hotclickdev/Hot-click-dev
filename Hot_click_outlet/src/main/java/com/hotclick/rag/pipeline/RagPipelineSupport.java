@@ -93,11 +93,11 @@ final class RagPipelineSupport {
         Matcher mp = PRODS_TAG.matcher(texto);
         if (mp.find()) {
             Set<String> skusSeleccionados = Arrays.stream(mp.group(1).split(","))
-                .map(s -> s.trim().toUpperCase())
+                .map(s -> s.trim().toUpperCase(Locale.ROOT))
                 .filter(s -> !s.isBlank())
                 .collect(Collectors.toSet());
             productosAMostrar = productos.stream()
-                .filter(p -> p.sku() != null && skusSeleccionados.contains(p.sku().toUpperCase()))
+                .filter(p -> p.sku() != null && skusSeleccionados.contains(p.sku().toUpperCase(Locale.ROOT)))
                 .toList();
             texto = texto.replace(mp.group(0), "").strip();
         }

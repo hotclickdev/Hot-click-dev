@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Component
@@ -97,7 +98,7 @@ class CustomerMemoryExtractor {
             JsonNode interestsNode = parsed.path("interests");
             if (interestsNode.isArray()) {
                 List<String> list = new ArrayList<>();
-                interestsNode.forEach(n -> { if (!n.asText().isBlank()) list.add(n.asText().toLowerCase()); });
+                interestsNode.forEach(n -> { if (!n.asText().isBlank()) list.add(n.asText().toLowerCase(Locale.ROOT)); });
                 result.put("interests", list);
             }
 

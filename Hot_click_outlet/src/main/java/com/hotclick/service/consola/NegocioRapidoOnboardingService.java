@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,7 +57,7 @@ public class NegocioRapidoOnboardingService {
     @Transactional
     public Map<String, Object> marcar(Long empresaId, String paso, String accion) {
         TiendaRapida fila = fila(empresaId);
-        String p = paso == null ? "" : paso.trim().toUpperCase();
+        String p = paso == null ? "" : paso.trim().toUpperCase(Locale.ROOT);
         if (!PASOS.contains(p)) throw new IllegalArgumentException("Ese paso no existe.");
         if (!OMITIBLES.contains(p)) {
             throw new IllegalArgumentException("Ese paso se completa creando el dato, no se puede omitir.");
@@ -67,7 +68,7 @@ public class NegocioRapidoOnboardingService {
                 throw new IllegalStateException("Primero completá el paso " + anterior + ".");
             }
         }
-        String a = accion == null ? "" : accion.trim().toUpperCase();
+        String a = accion == null ? "" : accion.trim().toUpperCase(Locale.ROOT);
         if (!HECHO.equals(a) && !"OMITIR".equals(a)) throw new IllegalArgumentException("Acción no válida.");
         Set<String> hechos = hechos(fila);
         hechos.removeIf(h -> h.startsWith(p + ":"));

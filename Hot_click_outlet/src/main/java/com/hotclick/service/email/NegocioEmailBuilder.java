@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import java.util.Locale;
 import com.hotclick.dto.CupoEmprendedorEstado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -161,7 +162,7 @@ public class NegocioEmailBuilder {
               + "<p style='margin:0;color:#4D5560;font-size:14px;line-height:1.6'>" + layout.esc(motivo) + "</p></div>"
             : "";
         return layout.abrirHtml()
-            + layout.header("Actualización sobre " + layout.esc(tipoLabel.toLowerCase()), null)
+            + layout.header("Actualización sobre " + layout.esc(tipoLabel.toLowerCase(Locale.ROOT)), null)
             + layout.abrirCuerpo()
             + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
             + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>Revisamos <strong style='color:#14171C'>"

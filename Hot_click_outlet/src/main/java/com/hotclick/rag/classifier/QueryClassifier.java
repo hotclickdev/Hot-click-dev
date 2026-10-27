@@ -1,5 +1,6 @@
 package com.hotclick.rag.classifier;
 
+import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,7 +32,7 @@ public class QueryClassifier {
     public QueryClassification classify(String query) {
         if (query == null || query.isBlank()) return QueryClassification.PRODUCTO;
 
-        String q = query.toLowerCase().trim();
+        String q = query.toLowerCase(Locale.ROOT).trim();
 
         // 1. Hard block terms → siempre PROMPT_INJECTION
         for (String term : QueryClassifierLexicon.HARD_BLOCK_TERMS) {

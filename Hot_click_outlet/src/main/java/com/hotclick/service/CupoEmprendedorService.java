@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.OptionalInt;
 
 @Service
@@ -67,7 +68,7 @@ public class CupoEmprendedorService {
 
     public static boolean esDemo(String correoEmpresa) {
         if (correoEmpresa == null) return false;
-        return correoEmpresa.toLowerCase().endsWith(Constants.CORREO_DEMO_EMPRESA_SUFIJO);
+        return correoEmpresa.toLowerCase(Locale.ROOT).endsWith(Constants.CORREO_DEMO_EMPRESA_SUFIJO);
     }
 
     OptionalInt reservarCupoGratis() {

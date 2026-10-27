@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -160,7 +161,7 @@ public class AiQuotaService {
         }
 
         // Fallback para empresas que aún no tienen plan FK asignado
-        return switch (empresa.getPlanSaas().toUpperCase()) {
+        return switch (empresa.getPlanSaas().toUpperCase(Locale.ROOT)) {
             case "ENTERPRISE" -> 500;
             case "PRO"        -> 50;
             default           -> 0;

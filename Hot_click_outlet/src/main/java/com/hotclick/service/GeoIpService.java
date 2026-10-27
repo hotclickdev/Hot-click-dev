@@ -15,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -111,8 +112,8 @@ public class GeoIpService {
             JsonNode node = objectMapper.readTree(resp.body());
             if (!"success".equalsIgnoreCase(node.path("status").asText())) return;
 
-            String isp    = node.path("isp").asText("").toLowerCase();
-            String org    = node.path("org").asText("").toLowerCase();
+            String isp    = node.path("isp").asText("").toLowerCase(Locale.ROOT);
+            String org    = node.path("org").asText("").toLowerCase(Locale.ROOT);
             String city   = node.path("city").asText("");
             String region = node.path("regionName").asText("");
             String country= node.path("country").asText("");
