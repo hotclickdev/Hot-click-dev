@@ -4787,5 +4787,41 @@
     "motivo": "Motivo (obrigatório)",
     "cancelar": "Cancelar",
     "error": "Não foi possível concluir. Tente novamente."
+  },
+  "trialTarjeta": {
+    "titulo": "Seu teste do Emprendedor",
+    "cargando": "Verificando o estado do seu teste…",
+    "dias_one": "{{count}} dia",
+    "dias_other": "{{count}} dias",
+    "quedan": "Restam {{dias}} de teste. Adicione seu cartão agora para continuar vendendo sem interrupções quando ele terminar.",
+    "sinCobro": "Não cobramos nada hoje. A cobrança mensal do Emprendedor só começa quando seu teste termina, e você pode cancelar antes.",
+    "sinCobroConMonto": "Não cobramos nada hoje. Quando seu teste terminar, o Emprendedor custa {{monto}} por mês, e você pode cancelar antes.",
+    "agregar": "Adicionar cartão",
+    "preparando": "Preparando…",
+    "guardar": "Salvar cartão",
+    "cancelar": "Agora não",
+    "confirmando": "Estamos confirmando seu cartão…",
+    "sinConfirmar": "Ainda não vemos seu cartão salvo. Às vezes leva alguns segundos; verifique de novo.",
+    "verificarDeNuevo": "Verificar de novo",
+    "reintentar": "Tentar de novo",
+    "noVerificable": "Não conseguimos verificar o estado do seu cartão. Tente de novo em alguns minutos.",
+    "errorGenerico": "Não conseguimos salvar seu cartão. Tente de novo.",
+    "errorIniciar": "Não conseguimos preparar o salvamento do seu cartão. Tente de novo em alguns minutos.",
+    "banner": {
+      "esperaCupo": "Seu negócio aguarda a aprovação da vaga do Emprendedor. Nada é cobrado enquanto isso.",
+      "verEstado": "Ver estado"
+    },
+    "guardada": {
+      "titulo": "Cartão salvo",
+      "detalle": "Pronto, seu cartão foi salvo. Nada é cobrado durante o teste: restam {{dias}}."
+    },
+    "simulada": {
+      "titulo": "Cartão simulado (modo de teste)",
+      "detalle": "Este ambiente não usa o ONVO real, então nenhum cartão foi salvo."
+    },
+    "esperaCupo": {
+      "titulo": "Seu negócio aguarda uma vaga",
+      "detalle": "Estamos analisando seu pedido de vaga do Emprendedor. Quando aprovado, seu teste começa e você poderá adicionar seu cartão. Nada é cobrado enquanto você espera."
+    }
   }
 }

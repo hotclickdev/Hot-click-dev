@@ -16,6 +16,7 @@ import {
 import { ItemListaStagger, ListaStagger } from './motion/ListaStagger'
 import useAuthStore from '@/store/authStore'
 import EmprendimientoPasoVerificar from '@/pages/auth/emprendimiento/EmprendimientoPasoVerificar'
+import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useVerificarCorreoOtp } from '@/hooks/useVerificarCorreoOtp'
 import { requiereVerificarCorreo } from './planesPageHelpers'
 
@@ -148,44 +149,50 @@ export default function CompararPlanesVista({
 
   return renderShell({
     error,
-    children: cargando ? (
-      <p className="text-sm text-hc-muted">Cargando planes…</p>
-    ) : (
-      <FormularioPorPasos
-        pasos={PASOS_CAMBIAR_PLAN}
-        pasoActual={paso}
-        onPasoChange={setPaso}
-        validarPaso={validarPaso}
-        onFinalizar={confirmarCambio}
-        etiquetaFinal="Confirmar cambio"
-        enviando={confirmando}
-        totalProgreso={TOTAL_PASOS_PLAN}
-      >
-        {idPaso === 'elegir' ? (
-          <ListaStagger
-            className={
-              emp
-                ? 'flex flex-col gap-4 md:flex-row md:items-stretch md:gap-5'
-                : 'flex flex-col gap-4'
-            }
+    children: (
+      <>
+        {/* Trial Emprendedor: días que quedan + «Agregar tarjeta» (solo se pinta en TRIAL / PENDIENTE_CUPO del propietario). */}
+        <TarjetaTrialCard />
+        {cargando ? (
+          <p className="text-sm text-hc-muted">Cargando planes…</p>
+        ) : (
+          <FormularioPorPasos
+            pasos={PASOS_CAMBIAR_PLAN}
+            pasoActual={paso}
+            onPasoChange={setPaso}
+            validarPaso={validarPaso}
+            onFinalizar={confirmarCambio}
+            etiquetaFinal="Confirmar cambio"
+            enviando={confirmando}
+            totalProgreso={TOTAL_PASOS_PLAN}
           >
-            {planes.map((plan) => (
-              <ItemListaStagger key={String(plan.id)} className={emp ? 'flex-1' : undefined}>
-                <TarjetaPlan
-                  plan={plan}
-                  actual={plan.nombreApi === planActualApi}
-                  seleccionado={planElegido?.id === plan.id}
-                  onSelect={() => setPlanElegido(plan)}
-                  emp={emp}
-                />
-              </ItemListaStagger>
-            ))}
-          </ListaStagger>
-        ) : null}
-        {idPaso === 'confirmar' && planElegido ? (
-          <ResumenPlan plan={planElegido} />
-        ) : null}
-      </FormularioPorPasos>
+            {idPaso === 'elegir' ? (
+              <ListaStagger
+                className={
+                  emp
+                    ? 'flex flex-col gap-4 md:flex-row md:items-stretch md:gap-5'
+                    : 'flex flex-col gap-4'
+                }
+              >
+                {planes.map((plan) => (
+                  <ItemListaStagger key={String(plan.id)} className={emp ? 'flex-1' : undefined}>
+                    <TarjetaPlan
+                      plan={plan}
+                      actual={plan.nombreApi === planActualApi}
+                      seleccionado={planElegido?.id === plan.id}
+                      onSelect={() => setPlanElegido(plan)}
+                      emp={emp}
+                    />
+                  </ItemListaStagger>
+                ))}
+              </ListaStagger>
+            ) : null}
+            {idPaso === 'confirmar' && planElegido ? (
+              <ResumenPlan plan={planElegido} />
+            ) : null}
+          </FormularioPorPasos>
+        )}
+      </>
     ),
   })
 }

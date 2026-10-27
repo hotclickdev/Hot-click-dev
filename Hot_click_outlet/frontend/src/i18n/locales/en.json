@@ -4787,5 +4787,38 @@
     "motivo": "Reason (required)",
     "cancelar": "Cancel",
     "error": "Could not complete. Please try again."
+  },
+  "trialTarjeta": {
+    "titulo": "Your Emprendedor trial",
+    "cargando": "Checking your trial…",
+    "dias_one": "{{count}} day",
+    "dias_other": "{{count}} days",
+    "quedan": "You have {{dias}} of trial left. Add your card now to keep selling without interruptions when it ends.",
+    "sinCobro": "You are not charged today. The monthly Emprendedor charge only starts when your trial ends, and you can cancel before.",
+    "sinCobroConMonto": "You are not charged today. When your trial ends, Emprendedor costs {{monto}} per month, and you can cancel before.",
+    "agregar": "Add card",
+    "preparando": "Preparing…",
+    "guardar": "Save card",
+    "cancelar": "Not now",
+    "confirmando": "Confirming your card…",
+    "sinConfirmar": "We do not see your card saved yet. It can take a few seconds; check again.",
+    "verificarDeNuevo": "Check again",
+    "reintentar": "Retry",
+    "noVerificable": "We could not verify your card status. Try again in a few minutes.",
+    "errorGenerico": "We could not save your card. Try again.",
+    "errorIniciar": "We could not prepare saving your card. Try again in a few minutes.",
+    "guardada": {
+      "titulo": "Card saved",
+      "detalle": "Done, your card is saved. Nothing is charged during your trial: you have {{dias}} left."
+    },
+    "banner": {"esperaCupo": "Your business is waiting for its Emprendedor slot to be approved. Nothing is charged meanwhile.", "verEstado": "View status"},
+    "simulada": {
+      "titulo": "Simulated card (test mode)",
+      "detalle": "This environment does not use real ONVO, so no card was saved."
+    },
+    "esperaCupo": {
+      "titulo": "Your business is waiting for a slot",
+      "detalle": "We are reviewing your Emprendedor slot request. When approved your trial starts and you can add your card. You are not charged while you wait."
+    }
   }
 }

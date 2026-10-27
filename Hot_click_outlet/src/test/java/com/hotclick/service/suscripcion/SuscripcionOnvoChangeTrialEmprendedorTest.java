@@ -71,6 +71,7 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         empresa.setTrialEmprendedorPos(4);
 
         lenient().when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+        lenient().when(planRepo.findByNombre("EMPRENDEDOR")).thenReturn(Optional.of(planEmprendedor));
         lenient().when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
         lenient().when(suscripcionRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -248,5 +249,86 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
 
         assertThat(sinFecha.getFechaFin()).isEqualTo(hoy);
         assertThat(conFecha.getFechaFin()).isEqualTo(hoy.plusDays(5));
+    }
+
+    @Test
+    @DisplayName("Captura de tarjeta: crea la suscripción ONVO del trial con los días que quedan y NO activa el plan")
+    void tarjetaTrialCreaSuscripcionSinActivar() {
+        estadoTrial(40);
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_emprendedor"), anyMap(), eq(40)))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_trial", "item_1"));
+
+        SuscripcionOnvoChangeService.SuscripcionTrial out = service.asegurarSuscripcionTrial(10L);
+
+        assertThat(out.subscriptionId()).isEqualTo("sub_trial");
+        assertThat(out.customerId()).isEqualTo("cus_1");
+        assertThat(out.mock()).isFalse();
+        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
+        verify(empresaRepo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Captura de tarjeta: si ya hay suscripción ONVO de Emprendedor se reutiliza, no se crea otra")
+    void tarjetaTrialReutilizaSuscripcion() {
+        estadoTrial(40);
+        Suscripcion existente = new Suscripcion();
+        existente.setOnvoSubscriptionId("sub_previa");
+        existente.setOnvoCustomerId("cus_9");
+        existente.setOnvoPriceId("price_emprendedor");
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(existente));
+
+        SuscripcionOnvoChangeService.SuscripcionTrial out = service.asegurarSuscripcionTrial(10L);
+
+        assertThat(out.subscriptionId()).isEqualTo("sub_previa");
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Captura de tarjeta: una suscripción ONVO de otro precio no se toca (estado ajeno al trial)")
+    void tarjetaTrialSuscripcionDeOtroPrecio() {
+        estadoTrial(40);
+        Suscripcion otra = new Suscripcion();
+        otra.setOnvoSubscriptionId("sub_pyme");
+        otra.setOnvoPriceId("price_pyme");
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(otra));
+        assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L)).isInstanceOf(IllegalStateException.class);
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Captura de tarjeta, fail-closed: sin llave de ONVO en producción no se crea nada")
+    void tarjetaTrialSinLlaveEnProduccion() {
+        estadoTrial(40);
+        when(onvoBilling.sinLlave()).thenReturn(true);
+        assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L))
+            .isInstanceOf(com.hotclick.exception.CobroPlanNoDisponibleException.class);
+        verify(onvoBilling, never()).crearCustomer(any(), any(), anyMap());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Captura de tarjeta, fail-closed: llave de prueba en un entorno productivo (billing deshabilitado)")
+    void tarjetaTrialBillingDeshabilitado() {
+        estadoTrial(40);
+        when(onvoBilling.isBillingDeshabilitado()).thenReturn(true);
+        assertThatThrownBy(() -> service.asegurarSuscripcionTrial(10L))
+            .isInstanceOf(com.hotclick.exception.CobroPlanNoDisponibleException.class);
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Captura de tarjeta en dev/test sin llave: modo simulado, no activa el plan local ni llama a ONVO")
+    void tarjetaTrialMockNoActivaPlan() {
+        estadoTrial(40);
+        MockEnvironment dev = new MockEnvironment();
+        dev.setActiveProfiles("dev");
+        ReflectionTestUtils.setField(service, "environment", dev);
+        when(onvoBilling.isMockMode()).thenReturn(true);
+
+        SuscripcionOnvoChangeService.SuscripcionTrial out = service.asegurarSuscripcionTrial(10L);
+
+        assertThat(out.mock()).isTrue();
+        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
     }
 }

@@ -4787,5 +4787,38 @@
     "motivo": "Motivo (obligatorio)",
     "cancelar": "Cancelar",
     "error": "No se pudo completar. Probá de nuevo."
+  },
+  "trialTarjeta": {
+    "titulo": "Tu prueba de Emprendedor",
+    "cargando": "Revisando el estado de tu prueba…",
+    "dias_one": "{{count}} día",
+    "dias_other": "{{count}} días",
+    "quedan": "Te quedan {{dias}} de prueba. Agregá tu tarjeta ahora y seguí vendiendo sin cortes cuando termine.",
+    "sinCobro": "No te cobramos nada hoy. El cobro mensual de Emprendedor empieza recién cuando termina tu prueba, y podés cancelar antes.",
+    "sinCobroConMonto": "No te cobramos nada hoy. Cuando termine tu prueba, Emprendedor cuesta {{monto}} al mes, y podés cancelar antes.",
+    "agregar": "Agregar tarjeta",
+    "preparando": "Preparando…",
+    "guardar": "Guardar tarjeta",
+    "cancelar": "Ahora no",
+    "confirmando": "Estamos confirmando tu tarjeta…",
+    "sinConfirmar": "Todavía no vemos tu tarjeta guardada. A veces tarda unos segundos; revisá de nuevo.",
+    "verificarDeNuevo": "Verificar de nuevo",
+    "reintentar": "Reintentar",
+    "noVerificable": "No pudimos verificar el estado de tu tarjeta. Probá de nuevo en unos minutos.",
+    "errorGenerico": "No pudimos guardar tu tarjeta. Probá de nuevo.",
+    "errorIniciar": "No pudimos preparar el guardado de tu tarjeta. Probá de nuevo en unos minutos.",
+    "guardada": {
+      "titulo": "Tarjeta guardada",
+      "detalle": "Listo, tu tarjeta quedó guardada. No se cobra nada durante tu prueba: te quedan {{dias}}."
+    },
+    "banner": {"esperaCupo": "Tu negocio espera que aprobemos tu cupo de Emprendedor. Te avisamos apenas esté; mientras tanto no se cobra nada.", "verEstado": "Ver estado"},
+    "simulada": {
+      "titulo": "Tarjeta simulada (modo de prueba)",
+      "detalle": "Este entorno no usa ONVO real, así que no se guardó ninguna tarjeta."
+    },
+    "esperaCupo": {
+      "titulo": "Tu negocio espera un cupo",
+      "detalle": "Estamos revisando tu solicitud de cupo de Emprendedor. Cuando la aprobemos empieza tu prueba y vas a poder agregar tu tarjeta. No te cobramos nada mientras esperás."
+    }
   }
 }
