@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.time.temporal.ChronoUnit;
 
 /**
@@ -73,31 +74,35 @@ public class TrialEmprendedorService {
         return (int) Math.max(0, ChronoUnit.DAYS.between(hoy, empresa.getTrialEmprendedorHasta()));
     }
 
-    /** Cierra los trials vencidos. Devuelve cuántos negocios pasaron a VENCIDO. */
+    /** Ids de los negocios con trial Emprendedor vencido que siguen en TRIAL (una sola consulta). */
+    public List<Long> idsTrialVencidos(LocalDate hoy) {
+        return trialRepo.idsTrialVencidos(hoy);
+    }
+
+    /**
+     * Cierra el trial de UN negocio en su propia transacción corta (el scheduler itera los ids; así un fallo no
+     * revierte a los demás ni se mantiene una transacción larga). Devuelve true si pasó a VENCIDO.
+     */
     @Transactional
-    public int cerrarTrialsVencidos(LocalDate hoy) {
-        int cerrados = 0;
-        for (Long id : trialRepo.idsTrialVencidos(hoy)) {
-            Empresa e = empresaRepo.findByIdForUpdate(id).orElse(null);
-            // Releído con lock: si el webhook de cobro lo activó mientras tanto, no se toca.
-            if (e == null || !Constants.ESTADO_PLAN_TRIAL.equals(e.getEstadoPlan()) || !tuvoTrial(e)
-                || e.getTrialEmprendedorHasta() == null || !e.getTrialEmprendedorHasta().isBefore(hoy)) {
-                continue;
-            }
-            boolean conCobroOnvo = suscripcionRepo.findActivaByEmpresaId(id)
-                .map(s -> s.getOnvoSubscriptionId() != null && !s.getOnvoSubscriptionId().isBlank())
-                .orElse(false);
-            if (conCobroOnvo && !e.getTrialEmprendedorHasta().plusDays(diasGracia).isBefore(hoy)) {
-                continue; // dentro de la gracia: esperando el webhook del primer cobro
-            }
-            e.setEstadoPlan("VENCIDO");
-            e.setFechaVencPlan(hoy);
-            empresaRepo.save(e);
-            evictTenant(id);
-            cerrados++;
-            log.info("[trial-emprendedor] trial vencido empresa={} conCobroOnvo={}", id, conCobroOnvo);
+    public boolean cerrarTrial(Long id, LocalDate hoy) {
+        Empresa e = empresaRepo.findByIdForUpdate(id).orElse(null);
+        // Releído con lock: si el webhook de cobro lo activó mientras tanto, no se toca.
+        if (e == null || !Constants.ESTADO_PLAN_TRIAL.equals(e.getEstadoPlan()) || !tuvoTrial(e)
+            || e.getTrialEmprendedorHasta() == null || !e.getTrialEmprendedorHasta().isBefore(hoy)) {
+            return false;
         }
-        return cerrados;
+        boolean conCobroOnvo = suscripcionRepo.findActivaByEmpresaId(id)
+            .map(s -> s.getOnvoSubscriptionId() != null && !s.getOnvoSubscriptionId().isBlank())
+            .orElse(false);
+        if (conCobroOnvo && !e.getTrialEmprendedorHasta().plusDays(diasGracia).isBefore(hoy)) {
+            return false; // dentro de la gracia: esperando el webhook del primer cobro
+        }
+        e.setEstadoPlan("VENCIDO");
+        e.setFechaVencPlan(hoy);
+        empresaRepo.save(e);
+        evictTenant(id);
+        log.info("[trial-emprendedor] trial vencido empresa={} conCobroOnvo={}", id, conCobroOnvo);
+        return true;
     }
 
     private void evictTenant(Long empresaId) {

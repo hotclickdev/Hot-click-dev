@@ -88,11 +88,10 @@ class TrialEmprendedorServiceTest {
     @DisplayName("Trial vencido sin cobro ONVO → VENCIDO (fail-closed: sin pago no hay plan)")
     void vencidoSinCobro() {
         Empresa e = empresaEnTrial(7, HOY.minusDays(1));
-        when(trialRepo.idsTrialVencidos(HOY)).thenReturn(List.of(7L));
         when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
         when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.empty());
 
-        assertThat(service.cerrarTrialsVencidos(HOY)).isEqualTo(1);
+        assertThat(service.cerrarTrial(7L, HOY)).isTrue();
         assertThat(e.getEstadoPlan()).isEqualTo("VENCIDO");
         assertThat(e.getFechaVencPlan()).isEqualTo(HOY);
     }
@@ -101,11 +100,10 @@ class TrialEmprendedorServiceTest {
     @DisplayName("Trial vencido con suscripción ONVO dentro de la gracia: se espera el webhook del cobro")
     void conCobroOnvoEsperaWebhook() {
         Empresa e = empresaEnTrial(7, HOY.minusDays(3));
-        when(trialRepo.idsTrialVencidos(HOY)).thenReturn(List.of(7L));
         when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
         when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(subOnvo("sub_1")));
 
-        assertThat(service.cerrarTrialsVencidos(HOY)).isZero();
+        assertThat(service.cerrarTrial(7L, HOY)).isFalse();
         assertThat(e.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
         verify(empresaRepo, never()).save(any());
     }
@@ -114,11 +112,10 @@ class TrialEmprendedorServiceTest {
     @DisplayName("Con suscripción ONVO pero sin cobro tras la gracia (8 días): VENCIDO")
     void conCobroOnvoPasadaLaGracia() {
         Empresa e = empresaEnTrial(7, HOY.minusDays(9));
-        when(trialRepo.idsTrialVencidos(HOY)).thenReturn(List.of(7L));
         when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
         when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(subOnvo("sub_1")));
 
-        assertThat(service.cerrarTrialsVencidos(HOY)).isEqualTo(1);
+        assertThat(service.cerrarTrial(7L, HOY)).isTrue();
         assertThat(e.getEstadoPlan()).isEqualTo("VENCIDO");
     }
 
@@ -127,10 +124,9 @@ class TrialEmprendedorServiceTest {
     void yaActivadoPorElCobro() {
         Empresa e = empresaEnTrial(7, HOY.minusDays(1));
         e.setEstadoPlan("ACTIVO");
-        when(trialRepo.idsTrialVencidos(HOY)).thenReturn(List.of(7L));
         when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
 
-        assertThat(service.cerrarTrialsVencidos(HOY)).isZero();
+        assertThat(service.cerrarTrial(7L, HOY)).isFalse();
         assertThat(e.getEstadoPlan()).isEqualTo("ACTIVO");
         verify(empresaRepo, never()).save(any());
     }

@@ -25,7 +25,15 @@ public class TrialEmprendedorScheduler {
     @Scheduled(cron = "${hotclick.trial-emprendedor.cierre-cron:0 30 3 * * *}", zone = "America/Costa_Rica")
     @SchedulerLock(name = "trial_emprendedor_cierre", lockAtMostFor = "PT20M", lockAtLeastFor = "PT1M")
     public void cerrarTrialsVencidos() {
-        int n = service.cerrarTrialsVencidos(LocalDate.now(Constants.ZONA_CR));
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
+        int n = 0;
+        for (Long id : service.idsTrialVencidos(hoy)) {
+            try {
+                if (service.cerrarTrial(id, hoy)) n++;
+            } catch (RuntimeException ex) {
+                log.warn("[trial-emprendedor] no se pudo cerrar el trial de empresa={}: {}", id, ex.getClass().getSimpleName());
+            }
+        }
         if (n > 0) log.info("[trial-emprendedor] {} trial(s) vencido(s) cerrado(s)", n);
     }
 }
