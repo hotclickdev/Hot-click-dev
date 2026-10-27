@@ -44,11 +44,15 @@ public class OnvoBillingWebhookHandler {
         public boolean esPermanente() { return motivo != null && PERMANENTES.contains(motivo); }
     }
 
+    private static final String M_CUSTOMER = "customer";
+    private static final String M_FALTA_PERIODO = "falta_periodo";
+    private static final String F_SUBSCRIPTION_ID = "subscriptionId";
+
     /** M2: motivos permanentes → se registran en el ledger y se responde 200. El resto (GET caído,
      *  estado aún no pagado/activo en ONVO) sigue lanzando para que el controlador responda 5xx y ONVO reintente. */
     static final java.util.Set<String> PERMANENTES = java.util.Set.of(
-        "modo", "monto", "moneda", "price_desconocido", "plan_sin_precio", "customer", "id",
-        "pago_parcial", "falta_id", "falta_subscriptionId", "falta_periodo");
+        "modo", "monto", "moneda", "price_desconocido", "plan_sin_precio", M_CUSTOMER, "id",
+        "pago_parcial", "falta_id", "falta_subscriptionId", M_FALTA_PERIODO);
 
     private final StripeEventoRepository eventoRepo;
     private final SuscripcionService suscripcionService;
@@ -82,7 +86,7 @@ public class OnvoBillingWebhookHandler {
         }
         String eventId;
         try {
-            eventId = eventIdParaIdempotencia(type, data, eventIdRaw);
+            eventId = eventIdParaIdempotencia(type, data, eventIdRaw, this::periodoDesdeOnvo);
         } catch (EventoBillingRechazado e) {
             if (e.esPermanente()) {
                 log.error("[onvo-billing] Evento sin clave de idempotencia descartado (200): type={} motivo={}",
@@ -134,7 +138,7 @@ public class OnvoBillingWebhookHandler {
             case "payment-intent.succeeded" -> activarAltaPorIntent(data);
             case "subscription.renewal.failed",
                  "invoice.payment_failed" -> {
-                String subId = exigir(subIdDeEvento(data), "subscriptionId");
+                String subId = exigirId(subIdDeEvento(data), F_SUBSCRIPTION_ID);
                 Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
                 if (!OnvoBillingVerificador.modoCoincide(sub, onvo.modoEsperado())) {
                     throw rechazo("modo", subId);
@@ -157,15 +161,15 @@ public class OnvoBillingWebhookHandler {
     }
 
     private void activarRenovacion(JsonNode data) {
-        String invoiceId = exigir(textOrNull(data, "id"), "id");
-        String subId = exigir(subIdDeEvento(data), "subscriptionId");
+        String invoiceId = exigirId(textOrNull(data, "id"), "id");
+        String subId = exigirId(subIdDeEvento(data), F_SUBSCRIPTION_ID);
         Map<?, ?> invoice = onvo.obtenerRenovacion(invoiceId);
         Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.renovacion(
             invoice, sub, invoiceId, subId, onvo.modoEsperado(), onvo::planParaPriceId, this::precioPlan);
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         exigirCustomerLocal(subId, sub);
-        suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin());
+        suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), invoiceId);
     }
 
     /**
@@ -177,28 +181,40 @@ public class OnvoBillingWebhookHandler {
         String subId = subIdDeEvento(data);
         String intentId = textOrNull(data, "id");
         if (subId == null || intentId == null) return false;
+        if (!OnvoBillingClient.idValido(subId) || !OnvoBillingClient.idValido(intentId)) return false;
         if (suscripcionRepo.findByOnvoSubscriptionIdForUpdate(subId).isEmpty()) return false;
-        Map<?, ?> intent = onvo.obtenerPaymentIntent(intentId);
-        String subConfirmada = OnvoBillingVerificador.texto(intent, "subscriptionId");
-        if (!subId.equals(subConfirmada)) {
-            log.warn("[onvo-billing] Intent {} con subscriptionId={} que ONVO no confirma ({}): va a checkout",
-                intentId, subId, subConfirmada);
+        // Sandbox ONVO: el payment intent NO trae subscriptionId; el vínculo es factura.paymentIntentId y
+        // factura.subscriptionId (la factura más reciente de la suscripción, latestInvoiceId).
+        Map<?, ?> factura = facturaMasReciente(onvo.obtenerSuscripcion(subId));
+        if (!subId.equals(OnvoBillingVerificador.texto(factura, F_SUBSCRIPTION_ID))
+                || !intentId.equals(OnvoBillingVerificador.texto(factura, "paymentIntentId"))) {
+            log.warn("[onvo-billing] Intent {} con subscriptionId={} que la factura de ONVO no confirma: va a checkout",
+                intentId, subId);
             return false;
         }
         return true;
     }
 
+    /** Factura referida por latestInvoiceId de la suscripción (GET); mapa vacío si no hay. */
+    private Map<?, ?> facturaMasReciente(Map<?, ?> sub) {
+        String facturaId = OnvoBillingVerificador.texto(sub, "latestInvoiceId");
+        if (facturaId == null) return Map.of();
+        return onvo.obtenerRenovacion(facturaId);
+    }
+
     /** Alta: ya atribuida por {@link #intentAtribuibleASuscripcion}; se relee el intent por GET y se verifica. */
     private void activarAltaPorIntent(JsonNode data) {
-        String intentId = exigir(textOrNull(data, "id"), "id");
-        String subId = exigir(subIdDeEvento(data), "subscriptionId");
+        String intentId = exigirId(textOrNull(data, "id"), "id");
+        String subId = exigirId(subIdDeEvento(data), F_SUBSCRIPTION_ID);
         Map<?, ?> intent = onvo.obtenerPaymentIntent(intentId);
         Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
+        Map<?, ?> factura = facturaMasReciente(sub);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.altaPorIntent(
-            intent, sub, intentId, subId, onvo.modoEsperado(), onvo::planParaPriceId, this::precioPlan);
+            new OnvoBillingVerificador.AltaObjetos(intent, factura, sub), intentId, subId, onvo.modoEsperado(), onvo::planParaPriceId, this::precioPlan);
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         exigirCustomerLocal(subId, sub);
-        suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin());
+        String facturaId = OnvoBillingVerificador.texto(factura, "id");
+        suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId != null ? facturaId : intentId);
     }
 
     /**
@@ -208,10 +224,25 @@ public class OnvoBillingWebhookHandler {
     private void exigirCustomerLocal(String subId, Map<?, ?> subOnvo) {
         suscripcionRepo.findByOnvoSubscriptionId(subId).ifPresent(local -> {
             String esperado = OnvoBillingVerificador.texto(subOnvo, "customerId");
-            if (esperado == null || !esperado.equals(local.getOnvoCustomerId())) {
-                throw rechazo("customer", subId);
-            }
+            if (esperado == null) throw rechazo(M_CUSTOMER, subId);
+            String propio = local.getOnvoCustomerId();
+            boolean coincide = propio != null && !propio.isBlank()
+                ? esperado.equals(propio)
+                : empresaCoincideEnOnvo(local, subOnvo);
+            if (!coincide) throw rechazo(M_CUSTOMER, subId);
         });
+    }
+
+    /**
+     * Fila local heredada sin onvo_customer_id: solo se acepta si la suscripción que ONVO devuelve por GET
+     * lleva en su metadata (la escribe nuestro backend al crearla; el cliente no puede escribirla) el id
+     * de la misma empresa dueña de la fila local. Nunca se toma de la metadata del webhook.
+     */
+    private static boolean empresaCoincideEnOnvo(Suscripcion local, Map<?, ?> subOnvo) {
+        if (local.getEmpresa() == null || local.getEmpresa().getId() == null) return false;
+        Object meta = subOnvo == null ? null : subOnvo.get("metadata");
+        Object enOnvo = meta instanceof Map<?, ?> m ? m.get("empresa_id") : null;
+        return enOnvo != null && String.valueOf(local.getEmpresa().getId()).equals(String.valueOf(enOnvo));
     }
 
     private Integer precioPlan(String nombre) {
@@ -228,6 +259,13 @@ public class OnvoBillingWebhookHandler {
         return valor;
     }
 
+    /** Los ids del webhook son entrada no confiable: forma válida antes de armar cualquier GET a ONVO. */
+    private static String exigirId(String valor, String campo) {
+        exigir(valor, campo);
+        if (!OnvoBillingClient.idValido(valor)) throw rechazo("id", campo);
+        return valor;
+    }
+
     static boolean esEventoBilling(String type, JsonNode data) {
         if (type == null) return false;
         if (type.startsWith("subscription.") || type.startsWith("invoice.")) {
@@ -239,7 +277,7 @@ public class OnvoBillingWebhookHandler {
 
     /** Solo campos explícitos de suscripción; nunca data.id (que es la renovación o el intent). */
     private static String subIdDeEvento(JsonNode data) {
-        String id = textOrNull(data, "subscriptionId");
+        String id = textOrNull(data, F_SUBSCRIPTION_ID);
         if (id != null) return id;
         id = textOrNull(data, "subscription_id");
         if (id != null) return id;
@@ -259,18 +297,33 @@ public class OnvoBillingWebhookHandler {
     }
 
     /**
-     * S-04: ONVO no manda id de evento arriba. La clave sale del objeto:
-     * éxitos = id de la renovación/intent; fallas = suscripción + período (invoicePeriodStart).
+     * Período de facturación que ONVO confirma por GET (currentPeriodStart de la suscripción), para fallas
+     * cuyo cuerpo no trae invoicePeriodStart. Mismo criterio de modo que el resto: sin modo coincidente no hay clave.
      */
-    static String eventIdParaIdempotencia(String type, JsonNode data, String eventIdRaw) {
+    private String periodoDesdeOnvo(String subId) {
+        exigirId(subId, F_SUBSCRIPTION_ID);
+        Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
+        if (!OnvoBillingVerificador.modoCoincide(sub, onvo.modoEsperado())) throw rechazo("modo", subId);
+        if (!subId.equals(OnvoBillingVerificador.texto(sub, "id"))) throw rechazo("id", subId);
+        return OnvoBillingVerificador.texto(sub, "currentPeriodStart");
+    }
+
+    /**
+     * S-04: ONVO no manda id de evento arriba. La clave sale del objeto:
+     * éxitos = id de la renovación/intent; fallas = suscripción + período de facturación
+     * (invoicePeriodStart del cuerpo o, si falta, currentPeriodStart que ONVO confirma por GET).
+     */
+    static String eventIdParaIdempotencia(String type, JsonNode data, String eventIdRaw,
+                                          java.util.function.UnaryOperator<String> periodoOnvo) {
         if (eventIdRaw != null && !eventIdRaw.isBlank()) {
             return PREFIX + eventIdRaw;
         }
         if ("subscription.renewal.failed".equals(type) || "invoice.payment_failed".equals(type)) {
-            // ONVO: una falla por suscripción y período (subscriptionId + invoicePeriodStart).
             String sub = subIdDeEvento(data);
+            if (sub == null) throw rechazo(M_FALTA_PERIODO, type);
             String periodo = textOrNull(data, "invoicePeriodStart");
-            if (sub == null || periodo == null) throw rechazo("falta_periodo", type);
+            if (periodo == null && periodoOnvo != null) periodo = periodoOnvo.apply(sub);
+            if (periodo == null) throw rechazo(M_FALTA_PERIODO, type);
             return PREFIX + type + "_" + sub + "_" + periodo;
         }
         String id = textOrNull(data, "id");

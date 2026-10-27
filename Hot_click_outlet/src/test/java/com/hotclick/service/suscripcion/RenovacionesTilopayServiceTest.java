@@ -106,4 +106,28 @@ class RenovacionesTilopayServiceTest {
         assertThat(incierta.getEstado()).isEqualTo("ACTIVO");
         verify(reconsulta, never()).reconsultar(eq(legado), any());
     }
+
+    @Test
+    void ledgerRegistraElProveedorQueCobra_onvoSiTieneIdDeOnvo_tilopaySiEsHeredada() {
+        LocalDate hoy = LocalDate.of(2026, 10, 28);
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        SuscripcionTilopayService svc = spy(new SuscripcionTilopayService(cobros, mock(PlanRepository.class),
+            mock(EmpresaRepository.class), subs, mock(TilopayService.class), mock(SuscripcionOnvoChangeService.class),
+            ledger, 28, "DIAS"));
+        OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
+        Suscripcion conOnvo = sub(1, 12900, hoy);
+        conOnvo.setOnvoSubscriptionId("clsub0001");
+        when(reconsulta.reconsultar(conOnvo, hoy)).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+        Suscripcion heredada = sub(2, 12900, hoy);
+        when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(conOnvo, heredada));
+        when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
+
+        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta).generarRenovaciones(hoy);
+
+        verify(ledger).registrar(any(), eq(conOnvo), eq("COBRO_FALLIDO"), eq("ONVO"), any(), any(), any(), any());
+        verify(ledger).registrar(any(), eq(heredada), eq("COBRO_FALLIDO"), eq("TILOPAY"), any(), any(), any(), any());
+        verify(ledger, never()).registrar(any(), eq(conOnvo), any(), eq("TILOPAY"), any(), any(), any(), any());
+    }
 }

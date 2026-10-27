@@ -275,9 +275,19 @@ public class OnvoBillingClient {
         return null;
     }
 
+    private static final java.util.regex.Pattern ID_ONVO = java.util.regex.Pattern.compile("^[A-Za-z0-9_-]{1,64}$");
+
+    /** Forma válida de un id de ONVO; los ids vienen de webhooks (no confiables) y van dentro de la URL del GET. */
+    public static boolean idValido(String id) {
+        return id != null && ID_ONVO.matcher(id).matches();
+    }
+
     private Map<?, ?> leerReal(String base, String id) {
         if (id == null || id.isBlank()) {
             throw new IllegalStateException("ONVO: id requerido para consultar " + base);
+        }
+        if (!idValido(id)) {
+            throw new IllegalArgumentException("ONVO: id con formato inválido para consultar " + base);
         }
         if (sinLlave() || isBillingDeshabilitado()) {
             log.error("[ALERTA-PAGO] ONVO billing sin llave válida; no se puede verificar {}", base);
