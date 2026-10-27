@@ -44,5 +44,7 @@ public enum SecurityEventType {
     REGISTRATION_FAILED,
     // ── Geolocalización de riesgo ─────────────────────────────────────────────
     PRISON_IP_DETECTED,
-    ABUSIVE_IP_DETECTED
+    ABUSIVE_IP_DETECTED,
+    // ── Billing ───────────────────────────────────────────────────────────────
+    BILLING_LEDGER_OMITIDO
 }

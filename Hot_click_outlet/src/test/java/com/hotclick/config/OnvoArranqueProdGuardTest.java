@@ -88,6 +88,36 @@ class OnvoArranqueProdGuardTest {
     }
 
     @Test
+    @DisplayName("prod: PLANES_MONEDA con formato inválido (no ^[a-z]{3}$ tras trim y minúsculas) no arranca y nombra solo la variable")
+    void monedaInvalidaNoArranca() {
+        for (String mala : new String[] {"us", "usdd", "us$", "u s", "dólares", "12a", "usd1", "u-d", "ÚSD", "US\nD"}) {
+            MockEnvironment e = envSin("hotclick.planes.moneda", mala);
+            assertThatThrownBy(() -> new OnvoArranqueProdGuard(e, "onvo_live_k", false).verificar())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("PLANES_MONEDA")
+                .satisfies(ex -> assertThat(ex.getMessage()).doesNotContain("PYME_PRECIO").doesNotContain("ONVO_PRICE_ID")
+                    .doesNotContain(mala.trim()));
+        }
+    }
+
+    @Test
+    @DisplayName("prod: PLANES_MONEDA válida arranca; mayúsculas y espacios se normalizan (usd, USD, ' crc ')")
+    void monedaValidaArranca() {
+        for (String buena : new String[] {"usd", "USD", " crc ", "Crc"}) {
+            MockEnvironment e = envSin("hotclick.planes.moneda", buena);
+            new OnvoArranqueProdGuard(e, "onvo_live_k", false).verificar();
+        }
+    }
+
+    @Test
+    @DisplayName("fuera de prod una moneda inválida no frena el arranque")
+    void monedaInvalidaFueraDeProdNoFalla() {
+        MockEnvironment e = envSin("hotclick.planes.moneda", "no-es-moneda");
+        e.setActiveProfiles("dev");
+        new OnvoArranqueProdGuard(e, "", false).verificar();
+    }
+
+    @Test
     @DisplayName("prod: si falta solo uno de los dos ONVO_PRICE_ID, el arranque falla nombrando solo ese")
     void faltaSoloUnPriceIdNombraSoloEse() {
         String[][] casos = {{"ONVO_PRICE_ID_PYME", "onvo.price-id.pyme", "ONVO_PRICE_ID_NEGOCIO_PLUS"},
