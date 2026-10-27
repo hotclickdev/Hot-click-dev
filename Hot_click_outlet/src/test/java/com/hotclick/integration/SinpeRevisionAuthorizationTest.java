@@ -86,10 +86,10 @@ class SinpeRevisionAuthorizationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Vendedor sigue viendo la lista de pagos de su negocio")
-    void emprendedor_sigueListandoSusPagos() throws Exception {
+    @DisplayName("QA2-área2: /api/admin/pagos es de plataforma; un vendedor recibe 403")
+    void emprendedor_noListaPagosDePlataforma() throws Exception {
         mockMvc.perform(get("/api/admin/pagos").header("Authorization", tokenEmp))
-            .andExpect(status().isOk());
+            .andExpect(status().isForbidden());
     }
 
     @Test

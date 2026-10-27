@@ -91,7 +91,9 @@ public class PedidoService {
         return saved;
     }
 
-    @CacheEvict(value = "dashboard-metricas", key = "#empresa.id.toString()")
+    // QA5-M-01: admin de plataforma llega con empresa=null; la clave sin null-safe tiraba SpEL después del
+    // commit (pedido guardado + 400 → reintentos duplicados). Misma clave 'global' que DashboardService.
+    @CacheEvict(value = "dashboard-metricas", key = "#empresa != null && #empresa.id != null ? #empresa.id.toString() : 'global'")
     @Transactional
     public Pedido crearPedidoManual(ManualPedidoDTO dto, Empresa empresa) {
         return pedidoManualFactory.crearPedidoManual(dto, empresa);

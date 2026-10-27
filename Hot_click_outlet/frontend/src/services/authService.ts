@@ -25,6 +25,10 @@ export const authService = {
     api.post('/auth/send-verification', data,
       turnstileToken ? { headers: { 'X-Turnstile-Token': turnstileToken } } : undefined),
 
+  /** QA4-004: reenvío público desde /login; la respuesta es genérica exista o no la cuenta. */
+  reenviarVerificacion: (correo: string) =>
+    api.post('/auth/reenviar-verificacion', { correo }),
+
   verifyRegistration: (correo: string, codigo: string) =>
     api.post('/auth/verify-registration', { correo, codigo }),
 
