@@ -190,6 +190,57 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         return altaPlanPago(empresaId, empresa, planDestino, priceId, sub);
     }
 
+    /** Suscripción ONVO del trial Emprendedor sobre la que el SDK confirma la tarjeta ({@code mock} = sin ONVO real). */
+    public record SuscripcionTrial(String customerId, String subscriptionId, boolean mock) {}
+
+    /**
+     * Devuelve (o crea una vez) la suscripción ONVO en {@code trialing} del trial Emprendedor, para que el SDK web
+     * confirme la tarjeta. NUNCA activa el plan local ni cambia el estado del negocio: sigue en TRIAL y no se cobra
+     * nada hasta que termina el trial. Fail-closed: sin llave real (y fuera de dev/test) no se hace nada.
+     * Otra suscripción ONVO con otro precio, o una de Stripe, no se toca: es un estado ajeno al trial.
+     */
+    public SuscripcionTrial asegurarSuscripcionTrial(Long empresaId) {
+        Empresa empresa = empresaRepo.findById(empresaId)
+            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+        if ((onvoBilling.isMockMode() || onvoBilling.sinLlave()) && !caminoMock()) {
+            throw new com.hotclick.exception.CobroPlanNoDisponibleException(PLAN_GRATIS);
+        }
+        if (onvoBilling.isBillingDeshabilitado()) {
+            throw new com.hotclick.exception.CobroPlanNoDisponibleException(PLAN_GRATIS);
+        }
+        if (caminoMock()) {
+            return new SuscripcionTrial(null, null, true);
+        }
+        int dias = TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR));
+        if (dias <= 0) {
+            throw new IllegalStateException("El trial ya terminó.");
+        }
+        Plan plan = planRepo.findByNombre(PLAN_GRATIS)
+            .orElseThrow(() -> new NoSuchElementException("Plan " + PLAN_GRATIS + " no encontrado"));
+        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
+        if (tieneStripeActivo(sub)) {
+            throw new IllegalStateException("Tenés una suscripción Stripe activa.");
+        }
+        String priceId = resolverPriceId(PLAN_GRATIS);
+        boolean tieneOnvo = sub != null && sub.getOnvoSubscriptionId() != null && !sub.getOnvoSubscriptionId().isBlank();
+        if (tieneOnvo) {
+            if (!priceId.equals(sub.getOnvoPriceId())) {
+                throw new IllegalStateException("La suscripción ONVO no es la del trial Emprendedor.");
+            }
+            return new SuscripcionTrial(sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId(), false);
+        }
+        String customerId = asegurarCustomer(empresa, sub);
+        Map<String, String> meta = Map.of(
+            "empresa_id", String.valueOf(empresaId),
+            "plan_id", String.valueOf(plan.getId()),
+            "plan_nombre", plan.getNombre()
+        );
+        OnvoBillingClient.OnvoSubscription onvoSub =
+            onvoBilling.crearSuscripcionIncompleta(customerId, priceId, meta, dias);
+        self.guardarAltaOnvo(empresaId, plan, customerId, onvoSub.id(), priceId);
+        return new SuscripcionTrial(customerId, onvoSub.id(), false);
+    }
+
     private String resolverPriceId(String planNombre) {
         String priceId = onvoBilling.getPriceIdForPlan(planNombre);
         if (priceId == null && !caminoMock()) {
