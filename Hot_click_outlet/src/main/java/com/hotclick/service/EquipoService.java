@@ -112,6 +112,9 @@ public class EquipoService {
         nuevo.setContrasenaHash(passwordEncoder.encode(password));
         nuevo.setTelefono(telefono);
         nuevo.setEstado(Constants.ESTADO_ACTIVO);
+        // QA3 (seguridad): el correo del invitado no está probado, lo escribió quien invita. El default de
+        // Usuario es true; sin esto el LECTOR/EDITOR invitado pasaría los gates de "correo verificado".
+        nuevo.setCorreoVerificado(false);
         nuevo.setIntentosFallidos(0);
         nuevo.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         nuevo.setEmpresa(empresa);
