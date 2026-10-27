@@ -30,6 +30,7 @@ public class ClaudeUsoRegistrador {
 
     public void registrar(Long empresaId, UsoTokens uso) {
         if (uso == null || uso.esVacio()) return;
+        // tenant-global-ok: solo escritura de consumo; sin empresa (llamadas de plataforma) se acumula en la empresa plataforma y nada se lee entre tenants
         Long destino = empresaId != null ? empresaId : Constants.EMPRESA_PLATAFORMA_ID;
         try {
             aiQuotaService.actualizarTokens(destino, uso);
