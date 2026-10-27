@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * C2: con perfil prod/production la app NO arranca sin una llave ONVO live (onvo_live_...).
@@ -37,6 +38,9 @@ public class OnvoArranqueProdGuard {
         {"PYME_PRECIO_MENSUAL_USD", "hotclick.planes.pyme.precio-mensual-usd"},
         {"NEGOCIO_PLUS_PRECIO_MENSUAL_USD", "hotclick.planes.negocio-plus.precio-mensual-usd"},
     };
+
+    /** ISO 4217 en minúsculas (usd, crc). Se normaliza con trim + minúsculas antes de validar: "USD" es válido. */
+    private static final Pattern MONEDA = Pattern.compile("^[a-z]{3}$");
 
     private final Environment environment;
     private final String secretKey;
@@ -77,6 +81,9 @@ public class OnvoArranqueProdGuard {
         for (String[] v : CONFIG_TEXTO) {
             if (valor(v[1]).isEmpty()) faltan.add(v[0]);
         }
+        // PLANES_MONEDA presente pero con formato inválido ("us", "dólares", "US$"): tampoco arranca.
+        String moneda = valor("hotclick.planes.moneda");
+        if (!moneda.isEmpty() && !monedaValida(moneda)) faltan.add("PLANES_MONEDA");
         for (String[] v : CONFIG_PRECIOS) {
             if (!precioValido(valor(v[1]))) faltan.add(v[0]);
         }
@@ -92,6 +99,11 @@ public class OnvoArranqueProdGuard {
     private String valor(String propiedad) {
         String v = environment.getProperty(propiedad);
         return v == null ? "" : v.trim();
+    }
+
+    /** Código de 3 letras ASCII (case-insensitive: las comparaciones aguas abajo ignoran mayúsculas y el ledger guarda minúsculas). */
+    static boolean monedaValida(String v) {
+        return v != null && MONEDA.matcher(v.trim().toLowerCase(Locale.ROOT)).matches();
     }
 
     /** Número mayor que 0 (igual criterio que PreciosPlanesConfig: vacío, 0, negativo o mal escrito = sin precio). */
