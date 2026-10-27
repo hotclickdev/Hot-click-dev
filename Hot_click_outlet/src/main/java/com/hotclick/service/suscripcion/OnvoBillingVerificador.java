@@ -64,17 +64,8 @@ public final class OnvoBillingVerificador {
         if (!"succeeded".equalsIgnoreCase(texto(intent, "status"))) return Resultado.rechazo("no_pagado");
         if (!"active".equalsIgnoreCase(texto(sub, "status"))) return Resultado.rechazo("sub_no_activa");
         if (!igual(texto(intent, "customerId"), texto(sub, "customerId"))) return Resultado.rechazo("customer");
-        // B1: el alta por intent cobra el plan completo; lo prorrateado entra por la factura (renewal).
-        Resultado r = planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
-        if (r.aceptado()) {
-            BigDecimal monto = numero(intent.get("amount"));
-            Integer precioPlan = precios.precio(r.planNombre());
-            if (monto == null || precioPlan == null
-                    || monto.compareTo(BigDecimal.valueOf(precioPlan.longValue() * CENTIMOS_POR_COLON)) != 0) {
-                return Resultado.rechazo("pago_parcial");
-            }
-        }
-        return r;
+        // El alta por intent cobra el plan completo (planYMonto exige el monto exacto del plan configurado).
+        return planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
     }
 
     /** Falla/cancelación: solo se aplica si ONVO (por GET, mismo modo) reporta ese estado. */
@@ -101,11 +92,13 @@ public final class OnvoBillingVerificador {
         Integer precio = precios.precio(plan);
         if (precio == null || precio <= 0) return Resultado.rechazo("plan_sin_precio");
         BigDecimal cobrado = numero(cobro.get(campoMonto));
-        // La primera factura puede venir prorrateada (ONVO): 0 < total <= precio del plan.
-        if (cobrado == null || cobrado.signum() <= 0
-                || cobrado.compareTo(BigDecimal.valueOf(precio.longValue() * CENTIMOS_POR_COLON)) > 0) {
-            return Resultado.rechazo("monto");
-        }
+        // A5-01 (MEDIO): se exige el monto COMPLETO del plan configurado (precio × 100 céntimos). Un cobro menor
+        // (prorrateo, descuento, parcial) no activa el plan completo; mayor tampoco: no coincide con el catálogo.
+        BigDecimal esperado = BigDecimal.valueOf(precio.longValue() * CENTIMOS_POR_COLON);
+        if (cobrado == null || cobrado.signum() <= 0) return Resultado.rechazo("monto");
+        int cmp = cobrado.compareTo(esperado);
+        if (cmp < 0) return Resultado.rechazo("pago_parcial");
+        if (cmp > 0) return Resultado.rechazo("monto");
         if (fin == null) return Resultado.rechazo("sin_periodo");
         return new Resultado(null, plan, fin);
     }

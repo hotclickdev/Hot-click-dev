@@ -51,7 +51,7 @@ class RenovacionesTilopayServiceTest {
         when(cobros.empresasConCobro(eq(CobroSuscripcion.PENDIENTE), eq(CobroSuscripcion.MOTIVO_RENOVACION), anyCollection()))
             .thenReturn(List.of(2L));
 
-        int n = new RenovacionesTilopayService(subs, cobros, svc, ledger).generarRenovaciones(hoy);
+        int n = new RenovacionesTilopayService(subs, cobros, svc, ledger, mock(OnvoRenovacionReconsulta.class)).generarRenovaciones(hoy);
 
         assertThat(n).isZero(); // [ALERTA-PAGO]: no se genera cobro de renovación por Tilopay
         verify(cobros, times(1)).empresasConCobro(any(), any(), anyCollection());
@@ -69,5 +69,41 @@ class RenovacionesTilopayServiceTest {
         verify(cobros, never()).save(any());
         verify(subs, never()).save(any());
         verify(ledger, times(2)).registrar(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    private static Suscripcion subOnvo(long empresaId, LocalDate fin) {
+        Suscripcion s = sub(empresaId, 12900, fin);
+        s.setOnvoSubscriptionId("sub_" + empresaId);
+        return s;
+    }
+
+    /** A5-01: ONVO manda. Solo pasa a PAST_DUE si ONVO confirma que no hay pago; pagada o GET caído → no se toca. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void a501_suscripcionOnvoSoloPasaAPastDueSiOnvoConfirmaSinPago() {
+        LocalDate hoy = LocalDate.of(2026, 10, 28);
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
+        Suscripcion pagada = subOnvo(1, hoy);
+        Suscripcion incierta = subOnvo(2, hoy);
+        Suscripcion sinPago = subOnvo(3, hoy);
+        Suscripcion legado = sub(4, 12900, hoy);
+        when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(pagada, incierta, sinPago, legado));
+        when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
+        when(reconsulta.reconsultar(pagada, hoy)).thenReturn(OnvoRenovacionReconsulta.Estado.PAGADA);
+        when(reconsulta.reconsultar(incierta, hoy)).thenReturn(OnvoRenovacionReconsulta.Estado.INCIERTA);
+        when(reconsulta.reconsultar(sinPago, hoy)).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+
+        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta).generarRenovaciones(hoy);
+
+        ArgumentCaptor<List<Suscripcion>> pastDue = ArgumentCaptor.forClass(List.class);
+        verify(svc).guardarRenovaciones(any(), pastDue.capture());
+        assertThat(pastDue.getValue()).containsExactlyInAnyOrder(sinPago, legado);
+        assertThat(pagada.getEstado()).isEqualTo("ACTIVO");
+        assertThat(incierta.getEstado()).isEqualTo("ACTIVO");
+        verify(reconsulta, never()).reconsultar(eq(legado), any());
     }
 }
