@@ -114,7 +114,7 @@ public class TelegramClienteBotService {
             recordarPanel(chatId, nuevo);
             borrarEntradaDelTurno(chatId);
         } catch (Exception e) {
-            log.error("[telegram-cliente] error enviando a chat {} — {}", TelegramTexto.chatEnmascarado(chatId), TelegramTexto.paraLog(e.getMessage()));
+            log.error("[telegram-cliente] error enviando a chat {} — {}", TelegramTexto.chatEnmascarado(chatId), e.getClass().getSimpleName());
         }
     }
 
@@ -252,7 +252,7 @@ public class TelegramClienteBotService {
             if (bytes != null && bytes.length > maxBytes) return null;
             return bytes;
         } catch (Exception e) {
-            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, TelegramTexto.paraLog(e.getMessage()));
+            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, e.getClass().getSimpleName());
             return null;
         }
     }
