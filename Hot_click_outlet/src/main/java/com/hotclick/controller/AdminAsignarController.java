@@ -45,17 +45,21 @@ public class AdminAsignarController {
 
     /** Busca clientes de la empresa por nombre, correo o teléfono (mínimo 3 caracteres, máximo 20). */
     @GetMapping("/buscar-cliente")
-    public ResponseDTO buscarCliente(@RequestParam String q) {
+    public ResponseEntity<ResponseDTO> buscarCliente(@RequestParam(required = false) String q) {
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
-        if (q == null || q.trim().length() < MIN_CARACTERES_Q) {
-            return ResponseDTO.success("Resultados", List.of());
+        if (q == null) { // sin el parámetro: error del cliente (400), no 500
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Falta el texto a buscar (q)."));
+        }
+        if (q.trim().length() < MIN_CARACTERES_Q) {
+            return ResponseEntity.ok(ResponseDTO.success("Resultados", List.of()));
         }
         String texto = q.trim();
         org.springframework.data.domain.Pageable top = org.springframework.data.domain.PageRequest.of(0, MAX_RESULTADOS);
         List<Usuario> encontrados = empresaId == null // tenant-global-ok: requireEmpresaIdOrAdmin, null solo ADMIN
             ? usuarioRepository.buscarClientes(texto, top)
             : usuarioRepository.buscarClientesByEmpresa(texto, empresaId, top);
-        return ResponseDTO.success("Resultados", encontrados.stream().map(AdminAsignarController::resumen).toList());
+        return ResponseEntity.ok(ResponseDTO.success("Resultados",
+            encontrados.stream().map(AdminAsignarController::resumen).toList()));
     }
 
     /** DTO mínimo: lo que muestra BuscarCliente.tsx. Nada de cédula, Clerk ID, notas ni crédito. */

@@ -5,6 +5,7 @@ import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -50,6 +51,20 @@ public class TelegramUpdateDedup {
             log.error("[telegram-dedup] no se pudo marcar update {}; se descarta (fail-closed): {}",
                 updateId, e.getClass().getName());
             return false;
+        }
+    }
+
+    /** Auditor 8: la tabla V199 no crece sin límite; se borran marcas de más de {@value #DIAS_RETENCION} días. */
+    static final int DIAS_RETENCION = 7;
+
+    @Scheduled(cron = "0 40 3 * * *", zone = "America/Costa_Rica")
+    public void purgarPersistidos() {
+        LocalDateTime limite = LocalDateTime.now(Constants.ZONA_CR).minusDays(DIAS_RETENCION);
+        try {
+            Integer n = tx.execute(s -> repo.borrarAnteriores(limite));
+            log.info("[telegram-dedup] purga: {} marcas anteriores a {} días", n, DIAS_RETENCION);
+        } catch (RuntimeException e) {
+            log.warn("[telegram-dedup] purga falló: {}", e.getClass().getName());
         }
     }
 

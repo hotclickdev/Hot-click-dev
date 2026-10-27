@@ -1,5 +1,6 @@
 package com.hotclick.service.copilot;
 
+import com.hotclick.service.ai.UsoTokens;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +28,18 @@ public class AiCopilotClaudeClient {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private AiCopilotClaudeLoopHelper loopHelper;
 
-    public record ResultadoLoopClaude(String texto, int tokensIn, int tokensOut, AccionPropuestaTelegram accionPropuesta) {}
+    public record ResultadoLoopClaude(String texto, int tokensIn, int tokensOut,
+                                      long tokensCacheLectura, long tokensCacheEscritura,
+                                      AccionPropuestaTelegram accionPropuesta) {
+        /** Sin tokens de caché. */
+        public ResultadoLoopClaude(String texto, int tokensIn, int tokensOut, AccionPropuestaTelegram accionPropuesta) {
+            this(texto, tokensIn, tokensOut, 0L, 0L, accionPropuesta);
+        }
+
+        public UsoTokens uso() {
+            return new UsoTokens(tokensIn, tokensOut, tokensCacheLectura, tokensCacheEscritura);
+        }
+    }
 
     /**
      * Loop compartido de tool-calling de Claude — usado por chatSync y chatSyncConAcciones.
@@ -37,7 +49,7 @@ public class AiCopilotClaudeClient {
     public ResultadoLoopClaude ejecutarLoopClaude(Long empresaId, String systemPrompt,
             List<Map<String, Object>> messages, List<Map<String, Object>> tools)
             throws IOException, InterruptedException {
-        int tokensInTotal = 0, tokensOutTotal = 0;
+        UsoTokens usoTotal = UsoTokens.VACIO;
         String texto = null;
         AccionPropuestaTelegram[] accionHolder = new AccionPropuestaTelegram[1];
         long deadline = System.currentTimeMillis() + TOOL_LOOP_BUDGET_MS;
@@ -49,9 +61,7 @@ public class AiCopilotClaudeClient {
 
             JsonNode node    = objectMapper.readTree(response.body());
             JsonNode content = node.path("content");
-            int[] tokens = loopHelper.leerTokens(node);
-            tokensInTotal  += tokens[0];
-            tokensOutTotal += tokens[1];
+            usoTotal = usoTotal.mas(loopHelper.leerUso(node));
 
             if ("tool_use".equals(node.path("stop_reason").asText(""))) {
                 loopHelper.procesarToolUse(empresaId, content, messages, accionHolder);
@@ -62,7 +72,8 @@ public class AiCopilotClaudeClient {
             break;
         }
 
-        return new ResultadoLoopClaude(texto, tokensInTotal, tokensOutTotal, accionHolder[0]);
+        return new ResultadoLoopClaude(texto, usoTotal.entrada(), usoTotal.salida(),
+            usoTotal.cacheLectura(), usoTotal.cacheEscritura(), accionHolder[0]);
     }
 
     /**

@@ -31,6 +31,14 @@ public class AiUso {
     @Column(name = "tokens_salida", nullable = false)
     private Integer tokensSalida = 0;
 
+    /** Tokens leídos de la caché de prompts (cache_read_input_tokens), facturados aparte. */
+    @Column(name = "tokens_cache_lectura", nullable = false)
+    private Long tokensCacheLectura = 0L;
+
+    /** Tokens escritos a la caché de prompts (cache_creation_input_tokens), facturados aparte. */
+    @Column(name = "tokens_cache_escritura", nullable = false)
+    private Long tokensCacheEscritura = 0L;
+
     public Long getId() { return id; }
 
     public Empresa getEmpresa() { return empresa; }
@@ -50,4 +58,10 @@ public class AiUso {
 
     public Integer getTokensSalida() { return tokensSalida; }
     public void setTokensSalida(Integer tokensSalida) { this.tokensSalida = tokensSalida; }
+
+    public Long getTokensCacheLectura() { return tokensCacheLectura; }
+    public void setTokensCacheLectura(Long tokensCacheLectura) { this.tokensCacheLectura = tokensCacheLectura; }
+
+    public Long getTokensCacheEscritura() { return tokensCacheEscritura; }
+    public void setTokensCacheEscritura(Long tokensCacheEscritura) { this.tokensCacheEscritura = tokensCacheEscritura; }
 }

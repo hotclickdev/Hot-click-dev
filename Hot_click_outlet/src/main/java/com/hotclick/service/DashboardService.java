@@ -32,7 +32,7 @@ public class DashboardService {
         DashboardDTO dto = new DashboardDTO();
 
         if (empresaId != null) {
-            dto.setTotalUsuarios(usuarioRepository.countActivosByEmpresaId(empresaId));
+            dto.setTotalUsuarios(usuarioRepository.countMiembrosActivosByEmpresaId(empresaId));
             dto.setTotalProductos(productoRepository.countProductosActivosByEmpresaId(empresaId));
             dto.setTotalPedidos(pedidoRepository.countTotalPedidosByEmpresaId(empresaId));
             dto.setTotalVentas(pedidoRepository.sumTotalVentasByEmpresaId(empresaId));

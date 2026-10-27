@@ -157,8 +157,9 @@ public class AuthController {
     }
 
     @PostMapping("/2fa/setup")
-    public ResponseEntity<ResponseDTO> setup2FA(HttpServletRequest request) {
-        return authLoginService.setup2FA(request);
+    public ResponseEntity<ResponseDTO> setup2FA(@RequestBody(required = false) Map<String, String> body,
+                                                 HttpServletRequest request) {
+        return authLoginService.setup2FA(body, request);
     }
 
     @PostMapping("/2fa/activate")
@@ -168,7 +169,7 @@ public class AuthController {
     }
 
     @PostMapping("/2fa/disable")
-    public ResponseEntity<ResponseDTO> disable2FA(@RequestBody Map<String, String> body,
+    public ResponseEntity<ResponseDTO> disable2FA(@RequestBody(required = false) Map<String, String> body,
                                                    HttpServletRequest request) {
         return authLoginService.disable2FA(body, request);
     }
