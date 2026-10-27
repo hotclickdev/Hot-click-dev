@@ -3,7 +3,6 @@ package com.hotclick.controller;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.TelegramBotUpdateService;
@@ -105,9 +104,12 @@ class TelegramTokenFugaTest {
         ReflectionTestUtils.setField(c, "updateService", updateService);
         ReflectionTestUtils.setField(c, "abuso", abusoMock);
         ReflectionTestUtils.setField(c, "clientIpResolver", ipResolver);
+        ReflectionTestUtils.setField(c, "objectMapper", new com.fasterxml.jackson.databind.ObjectMapper());
         when(bot.validarSecret("s")).thenReturn(true);
         doThrow(new ResourceAccessException(MSG)).when(updateService).procesarUpdate(any());
-        c.recibirUpdate("s", JsonNodeFactory.instance.objectNode(), new MockHttpServletRequest());
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.setContent("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        c.recibirUpdate("s", req);
         assertThat(logs()).contains("ResourceAccessException").doesNotContain(TOKEN);
     }
 
@@ -118,7 +120,8 @@ class TelegramTokenFugaTest {
         when(rl.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(true);
         ReflectionTestUtils.setField(abuso, "rateLimiter", rl);
         ReflectionTestUtils.setField(abuso, "telegramService", ts);
-        abuso.avisarErrorDeUsuario(42L, MSG);
-        verify(ts).enviar(argThat(s -> s.contains("bot***") && !s.contains(TOKEN)));
+        abuso.avisarErrorDeUsuario(42L, new ResourceAccessException(MSG));
+        // Auditor 8 M-C: la alerta lleva solo el tipo de la excepción, nunca su mensaje
+        verify(ts).enviar(argThat(s -> s.contains("ResourceAccessException") && !s.contains(TOKEN) && !s.contains("bot***")));
     }
 }

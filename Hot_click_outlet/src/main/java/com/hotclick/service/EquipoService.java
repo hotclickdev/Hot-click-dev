@@ -5,6 +5,7 @@ import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
+import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -13,6 +14,7 @@ import com.hotclick.utils.EmpresaNombre;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -32,6 +34,7 @@ public class EquipoService {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private TenantService tenantService;
+    @Autowired private EmpresaRepository empresaRepository;
 
     public List<Map<String, Object>> listar(Long empresaId) {
         return miembroEmpresaRepository.findByEmpresaIdAndEstado(empresaId, 1).stream()
@@ -39,9 +42,15 @@ public class EquipoService {
             .toList();
     }
 
+    @Transactional
     public void invitar(Empresa empresa, Long empresaId, String nombre, String correoNorm,
                         String password, String telefono, String rolEnEmpresa) {
-        if (empresaId != null) tenantService.verificarLimiteUsuariosEquipo(empresaId);
+        if (empresaId != null) {
+            // Lock de la fila de la empresa hasta el commit: dos invitaciones simultáneas no pueden leer el mismo
+            // conteo y pasar las dos el límite del plan (TOCTOU).
+            empresaRepository.findByIdForUpdate(empresaId);
+            tenantService.verificarLimiteUsuariosEquipo(empresaId);
+        }
         var rolMiembro = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
             .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado"));
         Optional<Usuario> existente = usuarioRepository.findByCorreo(correoNorm);

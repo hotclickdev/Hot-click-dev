@@ -74,8 +74,8 @@ public class AuthLoginService {
         return emailOtpHandler.disableEmailOtp(body, request);
     }
 
-    public ResponseEntity<ResponseDTO> setup2FA(HttpServletRequest request) {
-        return totpHandler.setup2FA(request);
+    public ResponseEntity<ResponseDTO> setup2FA(Map<String, String> body, HttpServletRequest request) {
+        return totpHandler.setup2FA(body, request);
     }
 
     public ResponseEntity<ResponseDTO> activate2FA(Map<String, String> body, HttpServletRequest request) {

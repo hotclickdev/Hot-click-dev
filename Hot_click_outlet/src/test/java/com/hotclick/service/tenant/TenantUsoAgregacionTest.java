@@ -23,9 +23,10 @@ class TenantUsoAgregacionTest {
     }
 
     @Test
-    void costoUsd_preciosHaiku() {
+    void costoUsd_preciosHaiku45() {
+        // Haiku 4.5: US$1 in + US$5 out por millon (antes se usaba Haiku 3.5: 0.80 / 4.00).
         assertThat(TenantUsoAgregacion.costoUsd(1_000_000, 1_000_000))
-            .isEqualTo(4.80, org.assertj.core.data.Offset.offset(0.0001));
+            .isEqualTo(6.00, org.assertj.core.data.Offset.offset(0.0001));
         assertThat(TenantUsoAgregacion.redondearCostoUsd(0.123456)).isEqualTo(0.1235);
     }
 

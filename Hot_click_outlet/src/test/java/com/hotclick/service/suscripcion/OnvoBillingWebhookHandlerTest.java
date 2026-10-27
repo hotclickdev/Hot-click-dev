@@ -178,12 +178,32 @@ class OnvoBillingWebhookHandlerTest {
     }
 
     @Test
-    @DisplayName("ONVO: primera factura prorrateada (0 < total <= precio) se acepta con el plan del priceId")
-    void facturaProrrateadaAceptada() throws Exception {
+    @DisplayName("A5-01 MEDIO: factura con el monto COMPLETO del plan configurado se acepta con el plan del priceId")
+    void facturaConMontoCompletoAceptada() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_plus"));
-        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 830_000));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 2_500_000));
         handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null);
         verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1));
+    }
+
+    @Test
+    @DisplayName("A5-01 MEDIO: factura pagada con monto MENOR al precio del plan NO activa el plan completo (rechazo permanente)")
+    void facturaMenorAlPlanNoActiva() throws Exception {
+        when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_plus"));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 830_000));
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:pago_parcial");
+    }
+
+    @Test
+    @DisplayName("A5-01 MEDIO: factura con monto MAYOR al precio del plan tampoco activa (no coincide con el catálogo)")
+    void facturaMayorAlPlanNoActiva() throws Exception {
+        when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
+        when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", 1_200_001));
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any());
+        assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("rechazo:monto");
     }
 
     @Test

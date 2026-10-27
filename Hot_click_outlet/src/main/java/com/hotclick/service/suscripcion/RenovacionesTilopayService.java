@@ -33,9 +33,12 @@ public class RenovacionesTilopayService {
     private final CobroSuscripcionRepository cobroRepo;
     private final SuscripcionTilopayService suscripciones;
     private final BillingLedgerWriter ledgerWriter;
+    private final OnvoRenovacionReconsulta reconsulta;
 
     public RenovacionesTilopayService(SuscripcionRepository suscripcionRepo, CobroSuscripcionRepository cobroRepo,
-                                      SuscripcionTilopayService suscripciones, BillingLedgerWriter ledgerWriter) {
+                                      SuscripcionTilopayService suscripciones, BillingLedgerWriter ledgerWriter,
+                                      OnvoRenovacionReconsulta reconsulta) {
+        this.reconsulta = reconsulta;
         this.suscripcionRepo = suscripcionRepo;
         this.cobroRepo = cobroRepo;
         this.suscripciones = suscripciones;
@@ -63,7 +66,7 @@ public class RenovacionesTilopayService {
                 log.warn("[ALERTA-PAGO] renovación sin cobro: Tilopay deshabilitado para planes empresa={} plan={}",
                     empresaId, sub.getPlan() != null ? sub.getPlan().getNombre() : null);
             }
-            if ("ACTIVO".equals(sub.getEstado())) {
+            if ("ACTIVO".equals(sub.getEstado()) && puedePasarAPastDue(sub, hoy)) {
                 sub.setEstado("PAST_DUE");
                 pastDue.add(sub);
             }
@@ -82,6 +85,15 @@ public class RenovacionesTilopayService {
     static String proveedorDeCobro(Suscripcion sub) {
         String onvoId = sub.getOnvoSubscriptionId();
         return onvoId != null && !onvoId.isBlank() ? BillingLedger.PROVEEDOR_ONVO : BillingLedger.PROVEEDOR_TILOPAY;
+    }
+
+    /**
+     * A5-01: una suscripción ONVO solo pasa a PAST_DUE si ONVO (GET) confirma que no hay pago vigente.
+     * Pagada → ya quedó reactivada; incierta (GET falló) → se deja como está y se reintenta en la próxima corrida.
+     */
+    private boolean puedePasarAPastDue(Suscripcion sub, LocalDate hoy) {
+        if (sub.getOnvoSubscriptionId() == null || sub.getOnvoSubscriptionId().isBlank()) return true;
+        return reconsulta.reconsultar(sub, hoy) == OnvoRenovacionReconsulta.Estado.NO_PAGADA;
     }
 
     static boolean vence(Suscripcion sub, LocalDate hoy) {
