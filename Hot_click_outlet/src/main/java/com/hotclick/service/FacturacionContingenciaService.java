@@ -165,8 +165,10 @@ public class FacturacionContingenciaService {
                 txOps.marcarAgotado(item.getId(), r.motivo());
             }
         } catch (ComprobanteInvalidoException e) {
-            log.error("[contingencia] comprobante={} no cumple el XSD oficial: {}", item.getComprobanteId(), e.getMessage());
-            txOps.marcarAgotado(item.getId(), e.getMessage());
+            // BAJO (#429): el mensaje del validador XSD puede citar el XML (datos del receptor): nunca crudo.
+            String resumen = resumenSeguro(e);
+            log.error("[contingencia] comprobante={} no cumple el XSD oficial: {}", item.getComprobanteId(), resumen);
+            txOps.marcarAgotado(item.getId(), resumen);
         } catch (Exception e) {
             String resumen = resumenSeguro(e);
             log.error("[contingencia] error procesando cola_offline={} comprobante={}: {}",

@@ -140,4 +140,29 @@ class FacturacionContingenciaReintento428Test {
                 HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "cuerpo sensible", null, null, null)))
             .endsWith("status=429").doesNotContain("sensible");
     }
+
+    @Test
+    @DisplayName("BAJO (#429): el XSD inválido no deja el XML citado ni en el log ni en ultimoError")
+    void xsdInvalidoNoFiltraXml() {
+        String fragmento = "<Receptor><Nombre>Juan Perez</Nombre><Identificacion>112345678</Identificacion></Receptor>";
+        when(preparer.preparar(5L)).thenThrow(new com.hotclick.service.hacienda.ComprobanteInvalidoException(
+            "cvc-complex-type.2.4.a: contenido invalido en " + fragmento, null));
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(FacturacionContingenciaService.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> app = new ch.qos.logback.core.read.ListAppender<>();
+        app.start();
+        logger.addAppender(app);
+        try {
+            procesar(0);
+        } finally {
+            logger.detachAppender(app);
+        }
+        org.mockito.ArgumentCaptor<String> error = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(txOps).marcarAgotado(eq(77L), error.capture());
+        org.assertj.core.api.Assertions.assertThat(error.getValue()).isEqualTo("ComprobanteInvalidoException")
+            .doesNotContain("<").doesNotContain("Juan").doesNotContain("112345678");
+        org.assertj.core.api.Assertions.assertThat(app.list).isNotEmpty().allSatisfy(ev ->
+            org.assertj.core.api.Assertions.assertThat(ev.getFormattedMessage())
+                .doesNotContain("Receptor").doesNotContain("Juan").doesNotContain("112345678"));
+    }
 }
