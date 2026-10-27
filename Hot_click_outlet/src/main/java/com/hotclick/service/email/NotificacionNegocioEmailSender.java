@@ -93,6 +93,18 @@ public class NotificacionNegocioEmailSender {
         }
     }
 
+    public void enviarAltaEmprendedorPendienteAdmin(String correoAdmin, String nombreEmpresa, String correo,
+                                                    CupoEmprendedorEstado estado) {
+        try {
+            resendEmailService.send(correoAdmin,
+                "Nueva alta de emprendimiento — " + emailLayoutHelper.esc(nombreEmpresa),
+                negocioEmailBuilder.buildAltaEmprendedorPendienteAdmin(nombreEmpresa, correo, estado));
+            log.info("Email alta emprendedor pendiente enviado");
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de alta emprendedor pendiente: {}", e.getClass().getSimpleName());
+        }
+    }
+
     public void enviarModeracionAprobada(String correo, String nombre, String tipoLabel, String nombreItem) {
         try {
             resendEmailService.send(correo,

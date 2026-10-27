@@ -67,7 +67,7 @@ class RateLimitRutaInvalidaFilasYLogTest {
         RateLimitingFilter f = filtro(rl);
         int ips = 50;
         for (int i = 0; i < ips; i++) {
-            for (int k = 0; k < 3; k++) llamarInvalida(f, "2001:db8::" + Integer.toHexString(i + 1));
+            for (int k = 0; k < 3; k++) llamarInvalida(f, "203.0.113." + (i + 1)); // IPv4 distintas: las IPv6 del mismo /64 comparten llave (B2)
         }
         assertThat(llaves).as("una llave (una fila) por IP, sin la llave aparte del log").hasSize(ips);
         assertThat(llaves).allSatisfy(k -> assertThat(k).endsWith(":ruta-invalida"));

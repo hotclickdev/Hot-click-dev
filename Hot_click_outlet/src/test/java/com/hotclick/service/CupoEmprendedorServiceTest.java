@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -43,13 +44,6 @@ class CupoEmprendedorServiceTest {
 
     private CupoEmprendedorService servicio(int cupo, int dias) {
         return new CupoEmprendedorService(jdbc, planRepository, new TrialEmprendedorConfig(cupo, dias));
-    }
-
-    private void reservaDevuelve(int filas, Integer posicion) {
-        when(jdbc.update(contains("usados = usados + 1"), any(Object[].class))).thenReturn(filas);
-        if (posicion != null) {
-            when(jdbc.queryForObject(contains("SELECT usados"), eq(Integer.class))).thenReturn(posicion);
-        }
     }
 
     @Test
@@ -77,116 +71,68 @@ class CupoEmprendedorServiceTest {
     }
 
     @Test
-    @DisplayName("Reserva atómica asigna trial Emprendedor de 90 días (no plan gratis permanente)")
-    void reservaExitosaEsGratis() {
+    @DisplayName("El alta NO toma puesto ni arranca el trial: queda PENDIENTE_CUPO, oculto, sin tocar el contador")
+    void altaQuedaPendienteSinConsumirCupo() {
         stubPlan();
-        reservaDevuelve(1, 1);
-        when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
-            .thenReturn(CupoEmprendedorEstado.of(1, 70));
-
-        Empresa empresa = new Empresa();
-        ResultadoAltaCupo alta = service.aplicarAlta(empresa, "tienda@correo.com");
-
-        assertThat(alta.cupoGratis()).isTrue();
-        assertThat(alta.demo()).isFalse();
-        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
-        assertThat(empresa.getPlanSaas()).isEqualTo("EMPRENDEDOR");
-        LocalDate esperado = LocalDate.now(Constants.ZONA_CR).plusDays(90);
-        assertThat(empresa.getTrialEmprendedorHasta()).isEqualTo(esperado);
-        assertThat(empresa.getTrialHasta()).isEqualTo(esperado);
-        assertThat(empresa.getTrialEmprendedorPos()).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("Los días del trial salen de la configuración, no del código")
-    void diasDelTrialConfigurables() {
-        stubPlan();
-        service = servicio(70, 30);
-        reservaDevuelve(1, 5);
-        when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
-            .thenReturn(CupoEmprendedorEstado.of(5, 70));
-
-        Empresa empresa = new Empresa();
-        service.aplicarAlta(empresa, "tienda@correo.com");
-
-        assertThat(empresa.getTrialEmprendedorHasta()).isEqualTo(LocalDate.now(Constants.ZONA_CR).plusDays(30));
-        assertThat(empresa.getTrialEmprendedorPos()).isEqualTo(5);
-    }
-
-    @Test
-    @DisplayName("El tope del contador sale de la configuración (UPDATE condicionado con cupo y límite)")
-    void topeConfigurable() {
-        service = servicio(10, 90);
-        when(jdbc.update(contains("usados < ?"), eq(10), eq(10))).thenReturn(0);
-
-        assertThat(service.reservarCupoGratis().isPresent()).isFalse();
-        verify(jdbc, never()).queryForObject(contains("SELECT usados"), eq(Integer.class));
-    }
-
-    @Test
-    @DisplayName("Cupo 0 (trial apagado): nadie entra con trial")
-    void cupoCeroNadieEntra() {
-        stubPlan();
-        service = servicio(0, 90);
-        when(jdbc.update(contains("usados < ?"), eq(0), eq(0))).thenReturn(0);
-        when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
-            .thenReturn(CupoEmprendedorEstado.of(3, 0));
-
-        Empresa empresa = new Empresa();
-        service.aplicarAlta(empresa, "nueva@correo.com");
-
-        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
-        assertThat(empresa.getTrialEmprendedorPos()).isNull();
-    }
-
-    @Test
-    @DisplayName("Fail-closed: si la BD falla al reservar, no hay trial")
-    void errorDeBdNoRegalaTrial() {
-        stubPlan();
-        when(jdbc.update(contains("usados = usados + 1"), any(Object[].class)))
-            .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("bd caída"));
         when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
             .thenReturn(CupoEmprendedorEstado.of(3, 70));
 
         Empresa empresa = new Empresa();
-        ResultadoAltaCupo alta = service.aplicarAlta(empresa, "nueva@correo.com");
+        ResultadoAltaCupo alta = service.aplicarAlta(empresa, "tienda@correo.com");
 
+        assertThat(alta.pendienteCupo()).isTrue();
         assertThat(alta.cupoGratis()).isFalse();
-        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
-        assertThat(empresa.getTrialEmprendedorPos()).isNull();
+        assertThat(alta.demo()).isFalse();
+        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_PENDIENTE_CUPO);
+        assertThat(empresa.getPlanSaas()).isEqualTo("EMPRENDEDOR");
         assertThat(empresa.getVisibilidadPublica()).isFalse();
+        assertThat(empresa.getTrialEmprendedorPos()).isNull();
+        assertThat(empresa.getTrialEmprendedorHasta()).isNull();
+        assertThat(empresa.getTrialHasta()).isNull();
+        assertThat(empresa.getFechaVencPlan()).isNull();
+        // Ningún UPDATE: ni reserva ni lock del contador durante el registro.
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
+        verify(jdbc, never()).update(anyString());
     }
 
     @Test
-    @DisplayName("Cupo lleno (negocio 71+): fail-closed, nunca entra gratis ni visible")
-    void cupoLlenoNuncaEntraGratis() {
+    @DisplayName("aplicarTrial cuenta los días desde hoy (la aprobación) y salen de la configuración")
+    void trialCuentaDesdeLaAprobacionConDiasConfigurables() {
         stubPlan();
-        reservaDevuelve(0, null);
-        when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
-            .thenReturn(CupoEmprendedorEstado.of(70, 70));
-
+        service = servicio(70, 30);
         Empresa empresa = new Empresa();
-        service.aplicarAlta(empresa, "nueva@correo.com");
+        service.aplicarTrial(empresa);
 
-        assertThat(empresa.getEstadoPlan()).isNotEqualTo("ACTIVO").isNotEqualTo(Constants.ESTADO_PLAN_TRIAL);
-        assertThat(empresa.getTrialEmprendedorPos()).isNull();
-        assertThat(empresa.getVisibilidadPublica()).isNotEqualTo(Boolean.TRUE);
+        LocalDate esperado = LocalDate.now(Constants.ZONA_CR).plusDays(30);
+        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
+        assertThat(empresa.getTrialEmprendedorHasta()).isEqualTo(esperado);
+        assertThat(empresa.getTrialHasta()).isEqualTo(esperado);
+        assertThat(empresa.getFechaVencPlan()).isEqualTo(esperado);
     }
 
     @Test
-    @DisplayName("Cupo lleno con mensualidad fijada: requiere membresía")
-    void cupoLlenoRequiereMembresia() {
+    @DisplayName("Sin puesto: REQUIERE_MEMBRESIA, oculto y sin trial")
+    void sinPuestoRequiereMembresia() {
         stubPlan();
-        reservaDevuelve(0, null);
-        when(jdbc.queryForObject(contains("SELECT usados"), any(RowMapper.class)))
-            .thenReturn(CupoEmprendedorEstado.of(70, 70));
-
         Empresa empresa = new Empresa();
-        ResultadoAltaCupo alta = service.aplicarAlta(empresa, "nueva@correo.com");
+        service.aplicarRequiereMembresia(empresa);
 
-        assertThat(alta.cupoGratis()).isFalse();
         assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
         assertThat(empresa.getVisibilidadPublica()).isFalse();
+        assertThat(empresa.getTrialEmprendedorPos()).isNull();
+        assertThat(empresa.getTrialEmprendedorHasta()).isNull();
+    }
+
+    @Test
+    @DisplayName("Fail-closed: si la BD falla al reservar, no hay puesto")
+    void errorDeBdNoRegalaPuesto() {
+        when(jdbc.update(contains("usados = usados"))).thenThrow(new org.springframework.dao.DataAccessResourceFailureException("bd caída"));
+
+        Empresa empresa = new Empresa();
+        empresa.setId(5L);
+        assertThat(service.reservarPuesto(empresa, 9L, "a@b.com"))
+            .isEqualTo(CupoEmprendedorService.ResultadoReserva.SIN_CUPO);
+        assertThat(empresa.getTrialEmprendedorPos()).isNull();
     }
 
     @Test
@@ -200,6 +146,7 @@ class CupoEmprendedorServiceTest {
 
         assertThat(alta.demo()).isTrue();
         assertThat(alta.cupoGratis()).isTrue();
+        assertThat(alta.pendienteCupo()).isFalse();
         assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
         assertThat(CupoEmprendedorService.esDemo("qa.negocioplus.demo@hotclick.test")).isTrue();
         assertThat(CupoEmprendedorService.esDemo("real@gmail.com")).isFalse();

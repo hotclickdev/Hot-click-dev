@@ -144,6 +144,22 @@ public class NegocioEmailBuilder {
             + layout.footer("Alerta automática de HotClick");
     }
 
+    /** Alta pendiente: el puesto y el trial arrancan al aprobar (con correo verificado y un puesto por persona). */
+    public String buildAltaEmprendedorPendienteAdmin(String nombreEmpresa, String correo, CupoEmprendedorEstado estado) {
+        return layout.abrirHtml()
+            + layout.header("Nueva alta de emprendimiento",
+                "Pendiente de aprobación: el puesto de " + estado.textoGratis() + " se asigna al aprobar.")
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 12px;color:#14171C;font-size:16px'><strong>"
+            + layout.esc(nombreEmpresa) + "</strong></p>"
+            + "<p style='margin:0 0 8px;color:#4D5560;font-size:14px'>Correo: "
+            + layout.esc(correo) + "</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px'>Cupos ocupados: "
+            + estado.usados() + " / " + estado.limite()
+            + " (quedan " + estado.cuposGratisDisponibles() + ")</p>"
+            + layout.footer("Alerta automática de HotClick");
+    }
+
     public String buildModeracionAprobada(String nombre, String tipoLabel, String nombreItem) {
         return layout.abrirHtml()
             + layout.header(layout.esc(tipoLabel) + " aprobado", "Ya está activo en HotClick")
