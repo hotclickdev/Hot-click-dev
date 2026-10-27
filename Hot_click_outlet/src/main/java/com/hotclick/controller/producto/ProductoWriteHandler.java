@@ -128,9 +128,14 @@ public class ProductoWriteHandler {
     }
 
     public ResponseEntity<ResponseDTO> importarBulk(List<ProductoRequestDTO> dtos) {
-        if (dtos == null || dtos.size() > 200)
+        if (dtos == null || dtos.isEmpty() || dtos.size() > 200)
             return ResponseEntity.badRequest().body(ResponseDTO.error("El bulk acepta entre 1 y 200 productos por lote"));
-        var result = productoBulkOperationsService.importar(dtos, currentUserName());
+        com.hotclick.service.producto.ProductoBulkOperationsService.BulkImportResult result;
+        try {
+            result = productoBulkOperationsService.importar(dtos, currentUserName());
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
         return ResponseEntity.ok(ResponseDTO.success(result.mensaje(), result.data()));
     }
 

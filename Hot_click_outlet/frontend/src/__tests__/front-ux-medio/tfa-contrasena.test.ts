@@ -11,6 +11,10 @@ describe('2FA: setup y activate llevan la contraseña actual', () => {
     await authService.setup2FA('Clave1234!')
     expect(post).toHaveBeenCalledWith('/auth/2fa/setup', { contrasena: 'Clave1234!' })
   })
+  it('setup2FA con la app activa manda también el código vigente', async () => {
+    await authService.setup2FA('Clave1234!', '654321')
+    expect(post).toHaveBeenCalledWith('/auth/2fa/setup', { contrasena: 'Clave1234!', code: '654321' })
+  })
   it('activate2FA manda { code, contrasena }', async () => {
     await authService.activate2FA('123456', 'Clave1234!')
     expect(post).toHaveBeenCalledWith('/auth/2fa/activate', { code: '123456', contrasena: 'Clave1234!' })

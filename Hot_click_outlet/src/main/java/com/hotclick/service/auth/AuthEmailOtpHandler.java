@@ -28,7 +28,7 @@ public class AuthEmailOtpHandler {
     @Autowired private OtpService                  otpService;
     @Autowired private AuthSupport                 authSupport;
 
-    public ResponseEntity<ResponseDTO> sendLoginEmailOtp(Map<String, String> body) {
+    public ResponseEntity<ResponseDTO> sendLoginEmailOtp(Map<String, String> body, HttpServletRequest request) {
         String tempToken = body.get("tempToken");
         if (tempToken == null || tempToken.isBlank())
             return ResponseEntity.badRequest().body(ResponseDTO.error("tempToken requerido"));
@@ -38,8 +38,11 @@ public class AuthEmailOtpHandler {
             Long userId = jwtUtil.extractUserId(tempToken);
             Usuario usuario = usuarioService.buscarPorId(userId)
                 .orElseThrow(() -> new SecurityException("Usuario no encontrado"));
-            var limitado = authSupport.limite2faLoginUsuario(usuario.getId());
+            var limitado = authSupport.limite2faLoginUsuario(usuario.getId(), request);
             if (limitado != null) return limitado;
+            // Cuenta que dejó de estar activa: no se envía el código y la respuesta es la genérica de 2FA.
+            if (!AuthSupport.estaActiva(usuario))
+                return ResponseEntity.status(401).body(ResponseDTO.error(CuentaNoActivaException.MENSAJE));
             if (!usuario.hasEmailOtpEnabled())
                 return ResponseEntity.status(400).body(ResponseDTO.error("EMAIL_OTP no habilitado para esta cuenta"));
             otpService.enviarOtp2Fa(usuario);

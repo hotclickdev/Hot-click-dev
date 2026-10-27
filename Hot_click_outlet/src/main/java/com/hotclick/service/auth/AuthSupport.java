@@ -6,6 +6,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.dto.ResponseDTO;
+import com.hotclick.security.ClientIpResolver;
 import com.hotclick.security.PlatformStaff;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.RefreshTokenService;
@@ -33,6 +34,7 @@ public class AuthSupport {
     @Autowired private RefreshTokenService refreshTokenService;
     @Autowired private PermisoRepository   permisoRepository;
     @Autowired private RateLimiter         rateLimiter;
+    @Autowired private ClientIpResolver    clientIpResolver;
 
     // Tope por usuario (no por IP) en /2fa/*: un atacante con varias IP no multiplica los intentos.
     // Gestión (sesión): setup, activate, disable, recovery-codes/regenerate, email/enable|activate|disable.
@@ -49,9 +51,15 @@ public class AuthSupport {
         return limite("2fa:usuario:" + usuarioId, tfaUsuarioMax, tfaUsuarioWindow);
     }
 
-    /** Igual, para /2fa/verify y /2fa/email/send (el usuario sale del tempToken). */
-    public ResponseEntity<ResponseDTO> limite2faLoginUsuario(Long usuarioId) {
-        return limite("2fa:login:usuario:" + usuarioId, tfaLoginMax, tfaLoginWindow);
+    /**
+     * Igual, para /2fa/verify y /2fa/email/send (el usuario sale del tempToken). El cupo es por usuario + IP:
+     * quien conoce la contraseña (y por eso obtiene un tempToken) y dispara intentos desde otra IP no le gasta el
+     * cupo de login al dueño de la cuenta. El bloqueo de cuenta por fallos ({@code incrementarIntentosFallidos})
+     * sigue siendo el tope global por usuario.
+     */
+    public ResponseEntity<ResponseDTO> limite2faLoginUsuario(Long usuarioId, HttpServletRequest request) {
+        String ip = request == null ? "desconocida" : clientIpResolver.resolve(request);
+        return limite("2fa:login:usuario:" + usuarioId + ":ip:" + ip, tfaLoginMax, tfaLoginWindow);
     }
 
     private ResponseEntity<ResponseDTO> limite(String bucket, int max, int window) {
