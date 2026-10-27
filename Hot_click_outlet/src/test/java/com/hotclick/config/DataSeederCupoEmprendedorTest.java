@@ -70,7 +70,17 @@ class DataSeederCupoEmprendedorTest {
     @Test
     @DisplayName("DataSeeder.java no vuelve a traer «70 negocios» fijo")
     void fuenteSinCupoFijo() throws Exception {
-        Path fuente = Path.of("src/main/java/com/hotclick/config/DataSeeder.java");
+        Path fuente = raizDelProyecto().resolve("src/main/java/com/hotclick/config/DataSeeder.java");
         assertThat(Files.readString(fuente)).doesNotContain("primeros 70").doesNotContain("70 negocios");
+    }
+
+    /** Sube desde la ubicación de las clases compiladas hasta el pom.xml; no depende del directorio de trabajo. */
+    private static Path raizDelProyecto() throws Exception {
+        Path dir = Path.of(DataSeeder.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        while (dir != null && !Files.exists(dir.resolve("pom.xml"))) {
+            dir = dir.getParent();
+        }
+        assertThat(dir).as("raíz del proyecto (pom.xml) encontrada desde el classpath").isNotNull();
+        return dir;
     }
 }
