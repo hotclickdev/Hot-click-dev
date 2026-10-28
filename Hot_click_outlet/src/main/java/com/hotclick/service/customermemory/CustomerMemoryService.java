@@ -181,7 +181,7 @@ public class CustomerMemoryService {
                        updated_at       = NOW()
                 WHERE  visitor_id       = ?
                 """ + " AND " + filtroEmpresa(empresaId),
-                empresaId == null
+                empresaId == null // tenant-global-ok: null = fila global de plataforma (filtro IS NULL), nunca otra tienda
                     ? new Object[]{newSummary, interestsJson, brandsJson, newBudget, visitorId}
                     : new Object[]{newSummary, interestsJson, brandsJson, newBudget, visitorId, empresaId}
             );
