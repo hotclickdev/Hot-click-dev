@@ -23,7 +23,7 @@ describe('leerRespuestaFoto', () => {
   })
 
   it('tolera una respuesta vacía o rara', () => {
-    expect(leerRespuestaFoto(null)).toEqual({ categoriaDetectada: '', etiquetas: [], productos: [] })
+    expect(leerRespuestaFoto(null)).toEqual({ categoriaDetectada: '', etiquetas: [], productos: [], limite: null })
   })
 })
 
@@ -54,5 +54,26 @@ describe('validarFoto (mismas reglas que search-by-image)', () => {
     expect(validarFoto({ type: 'application/pdf', size: 10 })).toBe('formato')
     expect(validarFoto({ type: '', size: 10 })).toBe('formato')
     expect(validarFoto({ type: 'image/jpeg', size: FOTO_MAX_BYTES + 1 })).toBe('pesada')
+  })
+})
+
+describe('leerRespuestaFoto · cupo diario agotado', () => {
+  it('lee el aviso y solo deja botones seguros', () => {
+    const r = leerRespuestaFoto({
+      analisis: {}, productos: [], encontrado: false,
+      mensaje: 'Llegaste al límite de consultas con el asistente por hoy.',
+      acciones: [
+        { tipo: 'buscar', label: 'Buscar productos', url: '/productos' },
+        { tipo: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/50688887777' },
+        { tipo: 'whatsapp', label: 'Malo', url: 'javascript:alert(1)' },
+      ],
+    })
+    expect(r.limite?.mensaje).toBe('Llegaste al límite de consultas con el asistente por hoy.')
+    expect(r.limite?.acciones.map((a) => a.tipo)).toEqual(['buscar', 'whatsapp'])
+  })
+
+  it('una respuesta normal no trae aviso', () => {
+    expect(leerRespuestaFoto({ analisis: {}, productos: [], encontrado: false }).limite).toBeNull()
+    expect(leerRespuestaFoto({ productos: [{ id: 1, nombre: 'x' }], mensaje: 'hola', acciones: [] }).limite).toBeNull()
   })
 })

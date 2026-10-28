@@ -120,8 +120,8 @@ public class AiQuotaService {
         int limite   = empresa != null ? resolverLimite(empresa) : 0;
         String plan  = nombrePlanAi(empresa);
         int llamadas = (uso != null) ? uso.getLlamadas() : 0;
-        int teInput  = (uso != null) ? uso.getTokensEntrada() : 0;
-        int tsOutput = (uso != null) ? uso.getTokensSalida() : 0;
+        long teInput  = (uso != null) ? uso.getTokensEntrada() : 0L;
+        long tsOutput = (uso != null) ? uso.getTokensSalida() : 0L;
 
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("plan",          plan);
