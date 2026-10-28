@@ -45,6 +45,11 @@ public class OnvoWebhookController {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hotclick.service.sinpe.SinpeOnvoMarketplaceService sinpeMarketplace;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.monitoreo.OnvoWebhookSecretInvalidoAlerta alertaSecretInvalido;
+
+    void setAlertaSecretInvalidoParaTest(com.hotclick.monitoreo.OnvoWebhookSecretInvalidoAlerta a) { this.alertaSecretInvalido = a; }
+
     void setSinpeMarketplaceParaTest(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService s) { this.sinpeMarketplace = s; }
 
     /** Tope de cuerpo y de intentos con secret inválido por minuto (un secret válido nunca se limita). */
@@ -77,7 +82,9 @@ public class OnvoWebhookController {
             if (!dentroDelLimite()) {
                 return ResponseEntity.status(429).body(Map.of("error", "too many requests"));
             }
-            log.warn("[onvo-webhook] Secret inválido o no configurado");
+            // INF-03: nivel error para que llegue a Sentry; sin el secret recibido ni datos del cuerpo.
+            log.error("[onvo-webhook] 401: secret inválido o no configurado");
+            if (alertaSecretInvalido != null) alertaSecretInvalido.registrarFallo();
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
         }
 
