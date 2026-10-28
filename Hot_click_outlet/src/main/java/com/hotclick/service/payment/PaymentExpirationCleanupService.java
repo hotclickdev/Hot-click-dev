@@ -10,6 +10,7 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +30,11 @@ public class PaymentExpirationCleanupService {
     @Autowired private ReservaAntiBotService      reservaAntiBot;
     @Autowired private ReservaSospechosaLiberador reservaSospechosaLiberador;
 
-    @Scheduled(fixedRate = 5 * 60 * 1000)
+    /** Minutos sin pagar tras los que un pago pendiente se reconsulta y, si corresponde, se cancela. */
+    @Value("${hotclick.pagos.onvo.vencimiento-minutos:30}")
+    private long vencimientoMinutos = 30;
+
+    @Scheduled(fixedRateString = "${hotclick.pagos.onvo.cleanup-intervalo-ms:300000}")
     @SchedulerLock(name = "payment_expiration_cleanup", lockAtMostFor = "PT3M", lockAtLeastFor = "PT30S")
     // Sin @Transactional (QA5 ALTO): ver PagoExpiradoCancelador.
     public void cancelarExpirados() {
@@ -39,7 +44,7 @@ public class PaymentExpirationCleanupService {
     /** Cuerpo del scheduler, sin ShedLock (lo usan los tests con reloj controlado). */
     public void ejecutar() {
         LocalDateTime ahora = reservaAntiBot.ahora();
-        LocalDateTime corte = ahora.minusMinutes(30);
+        LocalDateTime corte = ahora.minusMinutes(Math.max(1, vencimientoMinutos));
         for (Empresa empresa : empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
             try {
                 cancelarExpiradosDeEmpresa(empresa.getId(), corte);
