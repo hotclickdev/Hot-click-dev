@@ -47,11 +47,46 @@ class ClaudePreciosTest {
     @DisplayName("El bean toma los precios de ia.precio.* y los publica para codigo estatico")
     void beanPublicaPrecios() {
         try {
-            new ClaudePrecios(3.0, 15.0, 0.3, 3.75);
+            new ClaudePrecios(3.0, 15.0, 0.3, 3.75, 3.0, 15.0, 0.3, 3.75);
             assertThat(ClaudePrecios.actual().costoUsd(1_000_000, 0)).isCloseTo(3.0, offset(EPS));
         } finally {
             new ClaudePrecios(ClaudePrecios.INPUT_POR_M_DEFECTO, ClaudePrecios.OUTPUT_POR_M_DEFECTO,
-                ClaudePrecios.CACHE_LECTURA_POR_M_DEFECTO, ClaudePrecios.CACHE_ESCRITURA_POR_M_DEFECTO);
+                ClaudePrecios.CACHE_LECTURA_POR_M_DEFECTO, ClaudePrecios.CACHE_ESCRITURA_POR_M_DEFECTO,
+                ClaudePrecios.SONNET_INPUT_POR_M_DEFECTO, ClaudePrecios.SONNET_OUTPUT_POR_M_DEFECTO,
+                ClaudePrecios.SONNET_CACHE_LECTURA_POR_M_DEFECTO, ClaudePrecios.SONNET_CACHE_ESCRITURA_POR_M_DEFECTO);
         }
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(doubles = {-0.01, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    @DisplayName("Rechaza precios negativos, NaN o infinitos (falla el arranque)")
+    void rechazaPreciosInvalidos(double malo) {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> ClaudePrecios.de(malo, 5, 0.1, 1.25))
+            .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("input-por-m");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> ClaudePrecios.de(1, 5, 0.1, malo))
+            .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("cache-escritura-por-m");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new ClaudePrecios(1, 5, 0.1, 1.25, 3, malo, 0.3, 3.75))
+            .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("output-por-m");
+    }
+
+    @Test
+    @DisplayName("Cero es valido (modelo gratis / pruebas)")
+    void ceroEsValido() {
+        assertThat(ClaudePrecios.de(0, 0, 0, 0).costoUsd(1_000_000, 1_000_000)).isZero();
+    }
+
+    @Test
+    @DisplayName("Sonnet 4.6 usa su tarifa publica 3 / 15 / 0.30 / 3.75; Haiku y otros la principal")
+    void tarifaPorModelo() {
+        ClaudePrecios p = ClaudePrecios.actual();
+        ClaudePrecios s = p.paraModelo("claude-sonnet-4-6");
+        assertThat(s.inputPorM()).isEqualTo(3.00);
+        assertThat(s.outputPorM()).isEqualTo(15.00);
+        assertThat(s.cacheLecturaPorM()).isEqualTo(0.30);
+        assertThat(s.cacheEscrituraPorM()).isEqualTo(3.75);
+        assertThat(s.costoUsd(1_000_000, 1_000_000)).isCloseTo(18.00, offset(EPS));
+        assertThat(p.paraModelo("claude-haiku-4-5-20251001")).isSameAs(p);
+        assertThat(p.paraModelo(null)).isSameAs(p);
+        assertThat(p.sonnet().comoMapa()).containsEntry("outputPorM", 15.00);
     }
 }
