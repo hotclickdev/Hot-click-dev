@@ -73,7 +73,7 @@ test.describe('Trial Emprendedor · captura de tarjeta', () => {
     const card = page.getByTestId('trial-tarjeta')
     await expect(card).toHaveAttribute('data-estado', 'agregar')
     await expect(page.getByTestId('trial-tarjeta-dias')).toContainText('5 días')
-    await expect(card).toContainText('US$9.99')
+    await expect(card).toContainText('US$9,99')
     await expect(card).not.toContainText('₡')
 
     await page.getByTestId('trial-tarjeta-agregar').click()

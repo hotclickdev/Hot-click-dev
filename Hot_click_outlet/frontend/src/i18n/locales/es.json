@@ -314,7 +314,7 @@
     "comoEntras3Titulo": "Cobrás por tarjeta o SINPE",
     "comoEntras3Desc": "HotClick retiene {{comision}}% por venta, sin mínimo, pasarela incluida.",
     "precioMensualidad": "Sin mensualidad",
-    "precioMensualidadUsd": "US${{monto}}/mes",
+    "precioMensualidadUsd": "{{monto}}/mes",
     "precioMensualidadDolares": "Mensualidad en dólares",
     "precioComision": "Comisión {{comision}}% por venta, sin mínimo (incluye la pasarela de pago)",
     "ctaFinalTitle": "¿Listo para vender en HotClick?"

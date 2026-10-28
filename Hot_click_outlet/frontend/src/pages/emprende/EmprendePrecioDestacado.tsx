@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { PLAN_EMPRENDEDOR } from './emprendePrecios'
 import useCupoEmprende from './useCupoEmprende'
+import { formatUSD } from '@/utils/format'
 
 /** Banner de precio grande — «Sin mensualidad» solo si el backend confirma cupo gratis; si no, US$/mes desde config. */
 export default function EmprendePrecioDestacado() {
@@ -11,7 +12,7 @@ export default function EmprendePrecioDestacado() {
   const mensualidad = cupo != null && cupo.cuposGratisDisponibles > 0
     ? t('emprende.precioMensualidad')
     : usd != null && usd > 0
-      ? t('emprende.precioMensualidadUsd', { monto: usd })
+      ? t('emprende.precioMensualidadUsd', { monto: formatUSD(usd) })
       : t('emprende.precioMensualidadDolares')
 
   return (
