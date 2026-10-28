@@ -89,7 +89,7 @@ WHERE NOT EXISTS (SELECT 1 FROM hot_click_cupo_emprendedor_tb WHERE id = 1);
 -- tablas de este mismo archivo.
 -- ---------------------------------------------------------------------------------------------------------------
 
--- V65 customer_memory: memoria del visitante anonimo (CustomerMemoryService)
+-- V65 customer_memory: memoria del visitante anonimo (CustomerMemoryService), V210 la aisla por empresa
 CREATE TABLE IF NOT EXISTS customer_memory (
     id               BIGSERIAL    PRIMARY KEY,
     visitor_id       VARCHAR(36)  NOT NULL,
@@ -100,7 +100,8 @@ CREATE TABLE IF NOT EXISTS customer_memory (
     last_visit       TIMESTAMP WITH TIME ZONE,
     created_at       TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_customer_memory_visitor UNIQUE (visitor_id)
+    empresa_id       BIGINT,
+    CONSTRAINT uq_customer_memory_visitor_empresa UNIQUE NULLS NOT DISTINCT (visitor_id, empresa_id)
 );
 
 -- V90 chat_log: analytics del chat publico (PublicChatDiscoveryHandler y PublicChatAdvisorHandler)
