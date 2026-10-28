@@ -38,8 +38,10 @@ class FacturacionEmisionSupportTest {
         // Simula la BD: el único comprobante del pedido 5 está en ERROR.
         when(repo.existsByPedidoIdAndEstadoIn(eq(5L), anyList()))
             .thenAnswer(i -> ((List<String>) i.getArgument(1)).contains(ComprobanteFiscal.ESTADO_ERROR));
+        CompanyScope scope = mock(CompanyScope.class);
+        when(scope.isAdminIT()).thenReturn(true); // Área 7 N1: solo el admin de HotClick emite
         FacturacionEmisionSupport support = new FacturacionEmisionSupport(repo, consecutivos,
-            mock(ClaveNumericaService.class), mock(CompanyScope.class), mock(PedidoRepository.class),
+            mock(ClaveNumericaService.class), scope, mock(PedidoRepository.class),
             mock(EmpresaRepository.class));
 
         Empresa empresa = new Empresa();
