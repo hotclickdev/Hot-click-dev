@@ -73,8 +73,8 @@ public class AiControlController {
             String  plan          = (String) row.get("plan_nombre");
             Number  maxCreditosAi = (Number) row.get("max_creditos_ai");
             int     llamadas      = ((Number) row.get("llamadas")).intValue();
-            int     te            = ((Number) row.get("tokens_entrada")).intValue();
-            int     ts            = ((Number) row.get("tokens_salida")).intValue();
+            long    te            = ((Number) row.get("tokens_entrada")).longValue();
+            long    ts            = ((Number) row.get("tokens_salida")).longValue();
             long    tcl           = ((Number) row.get("tokens_cache_lectura")).longValue();
             long    tce           = ((Number) row.get("tokens_cache_escritura")).longValue();
 
@@ -134,6 +134,12 @@ public class AiControlController {
         result.put("alertas",      alertas);
         result.put("costoTotal",   Math.round(costoTotalUsd * 10000.0) / 10000.0);
         result.put("totalLlamadas", totalLlamadas);
+        // Tarifas vigentes (configurables con ia.precio.* e ia.precio.sonnet.*) para que el panel muestre con qué se calcula.
+        ClaudePrecios precios = ClaudePrecios.actual();
+        Map<String, Object> tarifas = new LinkedHashMap<>();
+        tarifas.put("principal", precios.comoMapa());
+        tarifas.put("sonnet46",  precios.sonnet().comoMapa());
+        result.put("tarifasUsdPorMillon", tarifas);
         result.put("mes",          LocalDate.now(Constants.ZONA_CR).toString().substring(0, 7));
         return ResponseEntity.ok(result);
     }
