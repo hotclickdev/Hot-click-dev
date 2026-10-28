@@ -164,7 +164,7 @@ public class ShoppingAssistantService {
         List<Map<String, Object>> historial = sessionHelper.loadHistory(sesionId);
 
         // 5. Cargar memoria del visitante (best-effort, nunca falla el request)
-        CustomerMemoryDto memoria = customerMemoryService.getOrCreate(visitorId);
+        CustomerMemoryDto memoria = customerMemoryService.getOrCreate(empresaId, visitorId);
 
         // 6. Ejecutar el pipeline RAG con memoria del cliente inyectada en el prompt
         String contextoSeguro = ChatContextoPermitido.normalizar(contexto);

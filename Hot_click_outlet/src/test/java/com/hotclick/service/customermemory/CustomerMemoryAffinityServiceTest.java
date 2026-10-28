@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -51,7 +52,7 @@ class CustomerMemoryAffinityServiceTest {
         nike.setId(5L);
         nike.setNombreMarca("Nike");
 
-        when(memoryService.getOrCreate(visitorId)).thenReturn(new CustomerMemoryDto(
+        when(memoryService.getOrCreate(null, visitorId)).thenReturn(new CustomerMemoryDto(
             visitorId,
             "Busca zapatillas",
             List.of("tecnología"),
@@ -81,7 +82,7 @@ class CustomerMemoryAffinityServiceTest {
     @Test
     void buildAffinity_emptyMemory_returnsEmpty() {
         String visitorId = "550e8400-e29b-41d4-a716-446655440001";
-        when(memoryService.getOrCreate(anyString()))
+        when(memoryService.getOrCreate(isNull(), anyString()))
             .thenReturn(CustomerMemoryDto.empty(visitorId));
 
         GustosAffinityDto dto = service.buildAffinity(visitorId);
