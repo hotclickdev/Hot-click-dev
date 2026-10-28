@@ -2858,7 +2858,8 @@ CREATE TABLE IF NOT EXISTS customer_memory (
     last_visit       TIMESTAMPTZ,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_customer_memory_visitor UNIQUE (visitor_id)
+    empresa_id       BIGINT,
+    CONSTRAINT uq_customer_memory_visitor_empresa UNIQUE NULLS NOT DISTINCT (visitor_id, empresa_id)
 );
 CREATE INDEX IF NOT EXISTS idx_customer_memory_visitor ON customer_memory (visitor_id);
 
