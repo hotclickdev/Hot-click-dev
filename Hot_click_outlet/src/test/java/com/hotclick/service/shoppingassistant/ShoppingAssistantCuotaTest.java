@@ -54,7 +54,7 @@ class ShoppingAssistantCuotaTest {
         QueryClassifier cls = mock(QueryClassifier.class);
         when(cls.classify(anyString(), any())).thenReturn(QueryClassification.PRODUCTO);
         CustomerMemoryService mem = mock(CustomerMemoryService.class);
-        when(mem.getOrCreate(any())).thenReturn(CustomerMemoryDto.empty(null));
+        when(mem.getOrCreate(any(), any())).thenReturn(CustomerMemoryDto.empty(null));
         when(sesiones.resolveSession(any(), anyLong())).thenReturn(sesion);
         when(sesiones.loadHistory(any())).thenReturn(List.of());
         when(pipeline.ejecutar(anyString(), anyLong(), any(), any(), any(), any(), anyBoolean(), any()))

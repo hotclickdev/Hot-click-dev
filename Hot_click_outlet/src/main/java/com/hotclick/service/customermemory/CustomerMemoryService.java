@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -51,19 +51,18 @@ public class CustomerMemoryService {
     // ── API pública ───────────────────────────────────────────────────────────
 
     /**
-     * Retorna la memoria del visitante. Si no existe, crea un registro vacío.
-     * Nunca retorna null.
+     * MEDIO-1: la memoria se aísla por tienda. La clave es (visitorId, empresaId);
+     * {@code empresaId == null} es la memoria global de la plataforma (Descubrí).
+     * El mismo visitante en la tienda A y en la tienda B tiene memorias separadas.
+     * Si no existe, crea un registro vacío. Nunca retorna null.
      */
-    public CustomerMemoryDto getOrCreate(String visitorId) {
+    public CustomerMemoryDto getOrCreate(Long empresaId, String visitorId) {
         if (!CustomerMemoryHelpers.isValidVisitorId(visitorId)) return CustomerMemoryDto.empty(visitorId);
 
         try {
-            return jdbc.queryForObject(
-                """
-                SELECT visitor_id, summary, interests, preferred_brands, estimated_budget, updated_at
-                FROM   customer_memory
-                WHERE  visitor_id = ?
-                """,
+            List<CustomerMemoryDto> filas = jdbc.query(
+                "SELECT visitor_id, summary, interests, preferred_brands, estimated_budget, updated_at"
+                    + " FROM customer_memory WHERE visitor_id = ? AND " + filtroEmpresa(empresaId),
                 (rs, rowNum) -> {
                     Timestamp updatedAt = rs.getTimestamp("updated_at");
                     boolean stale = updatedAt == null ||
@@ -76,41 +75,59 @@ public class CustomerMemoryService {
                         rs.getObject("estimated_budget", Long.class)
                     );
                 },
-                visitorId
+                parametros(visitorId, empresaId)
             );
-        } catch (EmptyResultDataAccessException e) {
-            // Primera visita — crear registro vacío
-            jdbc.update(
-                "INSERT INTO customer_memory (visitor_id, last_visit) VALUES (?, NOW()) ON CONFLICT (visitor_id) DO NOTHING",
-                visitorId
-            );
+            if (!filas.isEmpty()) return filas.get(0);
+
+            // Primera visita en esta tienda — crear registro vacío (portable H2/Postgres, sin ON CONFLICT).
+            try {
+                jdbc.update(
+                    "INSERT INTO customer_memory (visitor_id, empresa_id, last_visit) VALUES (?, ?, NOW())",
+                    visitorId, empresaId
+                );
+            } catch (DuplicateKeyException carrera) {
+                // Otra request creó la fila al mismo tiempo: UNIQUE (visitor_id, empresa_id) la protege.
+            }
             return CustomerMemoryDto.empty(visitorId);
         } catch (Exception e) {
-            log.warn("[memory] Error cargando memoria visitor={}: {}", visitorId, e.getMessage());
+            // BAJO: sin visitorId ni e.getMessage() (puede traer SQL/datos del visitante).
+            log.warn("[memory] Error cargando memoria empresa={}: {}", empresaId, e.getClass().getSimpleName());
             return CustomerMemoryDto.empty(visitorId);
         }
     }
 
     /**
-     * Actualiza {@code last_visit} del visitante. Llamado al inicio de cada sesión.
+     * Actualiza {@code last_visit} del visitante en esa tienda. Llamado al inicio de cada sesión.
      */
-    public void touchLastVisit(String visitorId) {
+    public void touchLastVisit(Long empresaId, String visitorId) {
         if (!CustomerMemoryHelpers.isValidVisitorId(visitorId)) return;
         try {
             jdbc.update(
-                "UPDATE customer_memory SET last_visit = NOW(), updated_at = NOW() WHERE visitor_id = ?",
-                visitorId
+                "UPDATE customer_memory SET last_visit = NOW(), updated_at = NOW() WHERE visitor_id = ? AND "
+                    + filtroEmpresa(empresaId),
+                parametros(visitorId, empresaId)
             );
         } catch (Exception e) {
-            log.warn("[memory] Error actualizando last_visit visitor={}: {}", visitorId, e.getMessage());
+            log.warn("[memory] Error actualizando last_visit empresa={}: {}", empresaId, e.getClass().getSimpleName());
         }
+    }
+
+    /** empresa_id = ? para una tienda; IS NULL para la memoria global de la plataforma. */
+    private static String filtroEmpresa(Long empresaId) {
+        // tenant-global-ok: empresaId null = memoria global de plataforma (Descubrí), nunca otra tienda
+        return empresaId == null ? "empresa_id IS NULL" : "empresa_id = ?";
+    }
+
+    private static Object[] parametros(String visitorId, Long empresaId) {
+        // tenant-global-ok: con empresaId null el filtro es IS NULL (solo fila global), sin parámetro
+        return empresaId == null ? new Object[]{visitorId} : new Object[]{visitorId, empresaId};
     }
 
     /**
      * Extrae información relevante del último turno y actualiza la memoria de forma asíncrona.
      * No bloquea el hilo del request. Si falla, solo se loguea — nunca propaga excepción.
      *
-     * @param empresaId        Empresa a la que se le atribuyen los tokens de la extracción (null → plataforma).
+     * @param empresaId        Tienda dueña de la memoria y de los tokens de la extracción (null → plataforma).
      * @param visitorId        Cookie del visitante.
      * @param userMessage      Último mensaje del usuario.
      * @param assistantMessage Última respuesta del asistente.
@@ -122,7 +139,7 @@ public class CustomerMemoryService {
 
         try {
             // Cargar memoria existente para hacer merge
-            CustomerMemoryDto existing = getOrCreate(visitorId);
+            CustomerMemoryDto existing = getOrCreate(empresaId, visitorId);
 
             // Llamar a Claude para extraer datos estructurados
             Map<String, Object> extracted = extractor.extractFromConversation(empresaId, userMessage, assistantMessage);
@@ -157,21 +174,24 @@ public class CustomerMemoryService {
                 """
                 UPDATE customer_memory
                 SET    summary          = ?,
-                       interests        = ?::jsonb,
-                       preferred_brands = ?::jsonb,
+                       interests        = CAST(? AS jsonb),
+                       preferred_brands = CAST(? AS jsonb),
                        estimated_budget = ?,
                        last_visit       = NOW(),
                        updated_at       = NOW()
                 WHERE  visitor_id       = ?
-                """,
-                newSummary, interestsJson, brandsJson, newBudget, visitorId
+                """ + " AND " + filtroEmpresa(empresaId),
+                empresaId == null
+                    ? new Object[]{newSummary, interestsJson, brandsJson, newBudget, visitorId}
+                    : new Object[]{newSummary, interestsJson, brandsJson, newBudget, visitorId, empresaId}
             );
 
-            log.debug("[memory] Memoria actualizada visitor={} intereses={} marcas={}",
-                visitorId, newInterests.size(), newBrands.size());
+            log.debug("[memory] Memoria actualizada empresa={} intereses={} marcas={}",
+                empresaId, newInterests.size(), newBrands.size());
 
         } catch (Exception e) {
-            log.warn("[memory] Error actualizando memoria visitor={}: {}", visitorId, e.getMessage());
+            // BAJO: sin visitorId ni e.getMessage() (puede traer SQL/datos del visitante).
+            log.warn("[memory] Error actualizando memoria empresa={}: {}", empresaId, e.getClass().getSimpleName());
         }
     }
 }

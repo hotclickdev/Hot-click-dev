@@ -43,7 +43,7 @@ public class CustomerMemoryAffinityService {
             return GustosAffinityDto.empty();
         }
 
-        CustomerMemoryDto memoria = memoryService.getOrCreate(visitorId);
+        CustomerMemoryDto memoria = memoryService.getOrCreate(null, visitorId); // tenant-global-ok: Descubrí usa la memoria global de plataforma
         if (!memoria.hasContent()) {
             return GustosAffinityDto.empty();
         }
