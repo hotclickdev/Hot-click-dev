@@ -1,0 +1,1 @@
+import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{x as t}from"./vendor-clerk-Caczcu0U.js";import{t as n}from"./emprendeCupoService-RkyXN5u5.js";var r=e(t(),1);function i(){let[e,t]=(0,r.useState)(null),[i,a]=(0,r.useState)(!1);return(0,r.useEffect)(()=>{let e=!1;return n.get().then(n=>{e||t(n.data)}).catch(()=>{e||a(!0)}),()=>{e=!0}},[]),{cupo:e,error:i}}export{i as t};
