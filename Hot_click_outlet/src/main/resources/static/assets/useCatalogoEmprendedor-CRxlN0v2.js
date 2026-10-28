@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-CciBr8_x.js";function t(){return e()}export{t};
