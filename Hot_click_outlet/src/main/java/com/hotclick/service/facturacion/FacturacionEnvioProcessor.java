@@ -7,6 +7,7 @@ import com.hotclick.service.FacturacionContingenciaService;
 import com.hotclick.service.HaciendaApiClient;
 import com.hotclick.service.hacienda.ComprobanteInvalidoException;
 import com.hotclick.service.hacienda.HaciendaConfiguracionException;
+import com.hotclick.service.hacienda.HaciendaLogSanitizer;
 import com.hotclick.service.hacienda.ResultadoEnvioHacienda;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
@@ -57,18 +58,18 @@ public class FacturacionEnvioProcessor {
         try {
             preparado = preparer.preparar(comprobanteId);
         } catch (HaciendaConfiguracionException e) {
-            pendienteConfig(comprobanteId, e.getMessage());
+            pendienteConfig(comprobanteId, HaciendaLogSanitizer.error(e));
             return;
         } catch (ComprobanteInvalidoException e) {
             // Datos que no cumplen el XSD: reintentar no sirve, hay que corregirlos.
             actualizar(comprobanteId, cf -> {
                 cf.setEstado(ComprobanteFiscal.ESTADO_ERROR);
-                cf.setMensajeHacienda(truncar(e.getMessage()));
+                cf.setMensajeHacienda(truncar(HaciendaLogSanitizer.error(e)));
             });
-            log.error("[facturacion] comprobante={} no cumple el XSD oficial: {}", comprobanteId, e.getMessage());
+            log.error("[facturacion] comprobante={} no cumple el XSD oficial: {}", comprobanteId, HaciendaLogSanitizer.error(e));
             return;
         } catch (Exception e) {
-            errorYContingencia(comprobanteId, e.getMessage());
+            errorYContingencia(comprobanteId, HaciendaLogSanitizer.error(e));
             return;
         }
 
@@ -86,10 +87,10 @@ public class FacturacionEnvioProcessor {
                 });
             }
         } catch (HaciendaConfiguracionException e) {
-            pendienteConfig(comprobanteId, e.getMessage());
+            pendienteConfig(comprobanteId, HaciendaLogSanitizer.error(e));
         } catch (Exception e) {
-            log.error("[facturacion] Error enviando comprobante={}: {}", comprobanteId, e.getMessage());
-            errorYContingencia(comprobanteId, e.getMessage());
+            log.error("[facturacion] Error enviando comprobante={}: {}", comprobanteId, HaciendaLogSanitizer.error(e));
+            errorYContingencia(comprobanteId, HaciendaLogSanitizer.error(e));
         }
     }
 
@@ -103,7 +104,7 @@ public class FacturacionEnvioProcessor {
         try {
             estadoHacienda = haciendaClient.consultarEstado(cf.getClaveNumerica(), cf.getEmpresa());
         } catch (HaciendaConfiguracionException e) {
-            log.warn("[facturacion] comprobante={} sin credenciales para consultar: {}", comprobanteId, e.getMessage());
+            log.warn("[facturacion] comprobante={} sin credenciales para consultar: {}", comprobanteId, HaciendaLogSanitizer.error(e));
             return;
         } catch (Exception e) {
             estadoHacienda = "error_consulta";

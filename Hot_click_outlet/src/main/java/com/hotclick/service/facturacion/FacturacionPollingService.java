@@ -32,7 +32,7 @@ public class FacturacionPollingService {
             try {
                 consultarPendientesDeEmpresa(empresa.getId());
             } catch (Exception e) {
-                log.error("[facturacion] Error empresa={}: {}", empresa.getId(), e.getMessage());
+                log.error("[facturacion] Error empresa={}: {}", empresa.getId(), com.hotclick.service.hacienda.HaciendaLogSanitizer.error(e));
             }
         }
     }
@@ -52,7 +52,7 @@ public class FacturacionPollingService {
                     envioProcessor.actualizarEstadoDesdeHacienda(cf.getId());
                 }
             } catch (Exception e) {
-                log.error("[facturacion] Error en polling comprobante={}: {}", cf.getId(), e.getMessage());
+                log.error("[facturacion] Error en polling comprobante={}: {}", cf.getId(), com.hotclick.service.hacienda.HaciendaLogSanitizer.error(e));
             }
         }
     }
