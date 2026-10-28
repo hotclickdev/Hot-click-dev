@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -35,7 +34,10 @@ class PagoEstadoReconsultaOnvoTest extends BaseIntegrationTest {
 
     private static final String SESION = "cs_estado_reconsulta_test";
 
-    @MockitoBean private OnvoPaymentProvider onvo;
+    /** Mock inyectado a mano (no @MockitoBean) para reutilizar el contexto compartido de la suite. */
+    private final OnvoPaymentProvider onvo = mock(OnvoPaymentProvider.class);
+    private Object onvoOriginal;
+    private Object relojOriginal;
     @Autowired private PagoEstadoConsultaService servicio;
     @Autowired private GuestCancelTokenService tokens;
     @Autowired private EmpresaRepository empresaRepository;
@@ -49,6 +51,9 @@ class PagoEstadoReconsultaOnvoTest extends BaseIntegrationTest {
 
     @BeforeEach
     void armar() {
+        onvoOriginal = ReflectionTestUtils.getField(servicio, "onvoPaymentProvider");
+        relojOriginal = ReflectionTestUtils.getField(servicio, "reloj");
+        ReflectionTestUtils.setField(servicio, "onvoPaymentProvider", onvo);
         ReflectionTestUtils.setField(servicio, "reloj", (LongSupplier) ahora::get);
         String slug = "estado-onvo-" + System.nanoTime();
         Empresa empresa = new Empresa();
@@ -107,6 +112,8 @@ class PagoEstadoReconsultaOnvoTest extends BaseIntegrationTest {
 
     @AfterEach
     void limpiar() {
+        ReflectionTestUtils.setField(servicio, "onvoPaymentProvider", onvoOriginal);
+        ReflectionTestUtils.setField(servicio, "reloj", relojOriginal);
         pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         bodegaRepository.deleteAll();
