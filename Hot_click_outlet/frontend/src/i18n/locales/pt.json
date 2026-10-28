@@ -314,7 +314,7 @@
     "comoEntras3Titulo": "Você recebe por cartão ou SINPE",
     "comoEntras3Desc": "O HotClick retém {{comision}}% por venda, sem mínimo, gateway incluído.",
     "precioMensualidad": "₡0 /mês",
-    "precioMensualidadUsd": "US${{monto}}/mês",
+    "precioMensualidadUsd": "{{monto}}/mês",
     "precioMensualidadDolares": "Mensalidade em dólares",
     "precioComision": "Comissão {{comision}}% por venda, sem mínimo (gateway de pagamento incluído)",
     "ctaFinalTitle": "Pronto para vender sem mensalidade?"

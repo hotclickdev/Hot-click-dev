@@ -88,7 +88,8 @@ describe('PENDIENTE_CUPO (#419)', () => {
 describe('Ayudas de texto y errores', () => {
   it('formatoUsd muestra US$ y no inventa un precio si falta', () => {
     expect(formatoUsd(9)).toBe('US$9')
-    expect(formatoUsd(9.5)).toBe('US$9.50')
+    expect(formatoUsd(9.5)).toBe('US$9,50')
+    expect(formatoUsd(1234.5)).toBe('US$1.234,50')
     expect(formatoUsd(null)).toBeNull()
     expect(formatoUsd(0)).toBeNull()
     expect(formatoUsd(Number.NaN)).toBeNull()

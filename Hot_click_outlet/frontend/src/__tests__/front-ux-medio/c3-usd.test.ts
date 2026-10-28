@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { formatUSD } from '@/utils/format'
+import { formatMontoMoneda, formatPrice, formatUSD } from '@/utils/format'
+import { formatoUsd } from '@/features/billing/trialTarjeta'
 import { formatMonto } from '@/services/cotizacionService'
 import { dolares } from '@/config/planesPrecios'
 import { fmtMontoFactura } from '@/pages/admin/suscripcion/suscripcionHelpers'
@@ -25,5 +26,29 @@ describe('C3: un solo formato de US$', () => {
       return /currency:\s*'USD'/.test(s) || /US\$ \$\{|'US\$' : moneda\} /.test(s)
     })
     expect(malos).toEqual([])
+  })
+})
+
+describe('C3 (seguimiento): restos de US$ fuera del helper', () => {
+  it('formatUSD con decimales para costos de IA y valores no finitos', () => {
+    expect(formatUSD(0.0123, 4)).toBe('US$0,0123')
+    expect(formatUSD(12.5, 4)).toBe('US$12,5000')
+    expect(formatUSD(Number.NaN)).toBe('US$0')
+  })
+  it('trial, suspensión y emprende usan el mismo formato', () => {
+    expect(formatoUsd(1234.5)).toBe('US$1.234,50')
+    expect(formatMontoMoneda(9.5, 'usd', 'es')).toBe('US$9,50')
+    expect(formatMontoMoneda(6200, null, 'es')).toBe(formatPrice(6200))
+  })
+  it('sin «US$» armado a mano, ni toLocaleString en-US, ni «USD ${…}» en el código', () => {
+    const malos = archivosFuente().filter((f) => {
+      if (f.endsWith('utils/format.ts')) return false
+      const s = leer(f)
+      return /US\$\$\{/.test(s) || /`USD \$\{/.test(s) || / · USD \$\{/.test(s) || /toLocaleString\('en-US', \{ minimumFractionDigits/.test(s)
+    })
+    expect(malos).toEqual([])
+  })
+  it('las traducciones no anteponen US$ a un número crudo', () => {
+    for (const l of ['es', 'en', 'pt']) expect(leer(`i18n/locales/${l}.json`)).not.toMatch(/US\$\{\{/)
   })
 })

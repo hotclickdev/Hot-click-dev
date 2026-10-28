@@ -1,3 +1,4 @@
+import { formatUSD } from '@/utils/format'
 import { esperandoCupo } from '@/services/emprendeCupoService'
 import type { TrialTarjetaEstado } from '@/services/billingService'
 
@@ -69,8 +70,7 @@ export function estadoHttp(err: unknown): number | null {
 /** US$ con símbolo de la moneda; null si el backend no fijó el monto (no se inventa un precio). */
 export function formatoUsd(monto: number | null | undefined): string | null {
   if (typeof monto !== 'number' || !Number.isFinite(monto) || monto <= 0) return null
-  const hayDecimales = Math.round(monto * 100) % 100 !== 0
-  return `US$${monto.toLocaleString('en-US', { minimumFractionDigits: hayDecimales ? 2 : 0, maximumFractionDigits: 2 })}`
+  return formatUSD(monto)
 }
 
 /** Intentos para ver reflejada la tarjeta en ONVO tras confirmar en el SDK (ms entre intentos). */
