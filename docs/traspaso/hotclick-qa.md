@@ -76,3 +76,6 @@ Verificado el 26-oct, 6:10 PM CR, contra `origin/master` `3323bd1a8` y README `a
 - Actualizar el prompt de HotClick QA en la sección 7 con el rol QA 7, la regla de test de regresión y las rutas de herramientas.
 - En el paso 4 de la lista, marcar #350 como "necesita APTO nuevo sobre el head actual + CI verde; el secret lo crea Andrés". En el paso 7, aclarar que la línea de `ci.yml` ya está (#353).
 - Agregar al README una sección común "Entorno del box" (JDK, Maven, gitleaks, lock de suite, staging) para no repetirla por bot.
+
+## Estado por área (30-oct)
+El estado vigente de las áreas C1–C6 y 2–10, la evidencia, la checklist predeploy y cómo continuar están en `qa.md`. Lo de arriba de esta nota (#350, re-QA 3/10 sobre `f9f0e506`) es histórico.
