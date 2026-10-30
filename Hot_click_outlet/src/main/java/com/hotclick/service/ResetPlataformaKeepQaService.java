@@ -44,6 +44,17 @@ public class ResetPlataformaKeepQaService {
     /** Únicos perfiles con los que puede correr. Cualquier otro perfil activo (prod incluido) lo bloquea. */
     public static final Set<String> PERFILES_PERMITIDOS = Set.of("dev", "test", "local");
 
+    private static final String SQL_TABLAS_QUE_REFERENCIAN = """
+                SELECT DISTINCT quote_ident(n.nspname) || '.' || quote_ident(rel.relname) AS tbl
+                  FROM pg_constraint con
+                  JOIN pg_class rel ON rel.oid = con.conrelid
+                  JOIN pg_namespace n ON n.oid = rel.relnamespace
+                 WHERE con.contype = 'f'
+                   AND con.confrelid = to_regclass(?)
+                   AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+                   AND rel.relname NOT LIKE 'hot_click_wipe_keep%'
+                """;
+
     private final JdbcTemplate jdbc;
     private final Environment env;
 
@@ -52,17 +63,8 @@ public class ResetPlataformaKeepQaService {
         this.env = env;
     }
 
-    /** El vaciado está prohibido: se responde como si el recurso no existiera (404). */
-    public static final class NoHabilitadoException extends RecursoNoEncontradoException {
-        private static final long serialVersionUID = 1L;
-
-        public NoHabilitadoException() {
-            super("Recurso no encontrado");
-        }
-    }
-
     /**
-     * true solo si hay perfiles activos, TODOS están en {@link #PERFILES_PERMITIDOS} (dev+prod se rechaza)
+     * true solo si hay perfiles activos, cada uno está en {@link #PERFILES_PERMITIDOS} (dev+prod se rechaza)
      * y {@link #PROPIEDAD_HABILITADO} es true. Sin perfiles activos (solo "default") se rechaza.
      */
     public boolean habilitado() {
@@ -82,7 +84,7 @@ public class ResetPlataformaKeepQaService {
             LOG.warn("[reset-plataforma] bloqueado: perfiles={} {}={}",
                 env == null ? List.of() : List.of(env.getActiveProfiles()), PROPIEDAD_HABILITADO,
                 env == null ? null : env.getProperty(PROPIEDAD_HABILITADO));
-            throw new NoHabilitadoException();
+            throw new RecursoNoEncontradoException("Recurso no encontrado");
         }
     }
 
@@ -248,16 +250,7 @@ public class ResetPlataformaKeepQaService {
 
     private List<String> tablasQueReferencian(String tabla) {
         try {
-            return aislado(() -> jdbc.query("""
-                SELECT DISTINCT quote_ident(n.nspname) || '.' || quote_ident(rel.relname) AS tbl
-                  FROM pg_constraint con
-                  JOIN pg_class rel ON rel.oid = con.conrelid
-                  JOIN pg_namespace n ON n.oid = rel.relnamespace
-                 WHERE con.contype = 'f'
-                   AND con.confrelid = to_regclass(?)
-                   AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-                   AND rel.relname NOT LIKE 'hot_click_wipe_keep%'
-                """, (rs, i) -> rs.getString("tbl"), tabla));
+            return aislado(() -> jdbc.query(SQL_TABLAS_QUE_REFERENCIAN, (rs, i) -> rs.getString("tbl"), tabla));
         } catch (DataAccessException e) {
             if (ignorable(e)) return List.of();
             throw e;
@@ -327,7 +320,7 @@ public class ResetPlataformaKeepQaService {
 
     /**
      * Corre un paso dentro de un SAVEPOINT. En Postgres cualquier error (tabla que no existe en una BD
-     * vacía, falta de permiso para session_replication_role...) deja la transacción abortada y todo lo
+     * vacía, falta de permiso para session_replication_role...) deja la transacción abortada y lo
      * que sigue falla con 25P02 "transaction is aborted". Con el savepoint, un error esperado se deshace
      * solo para ese paso; el error se relanza siempre y quien llama decide si es ignorable o no.
      */

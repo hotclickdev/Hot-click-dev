@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 /**
  * Regresión: en una instancia dev limpia (BD migrada pero vacía, usuario sin superusuario) el reset
  * tiraba 'transaction is aborted'. Postgres deja la transacción abortada ante cualquier error aunque
- * Java lo atrape, y todo lo siguiente falla con 25P02. El JdbcTemplate falso de abajo reproduce esa
+ * Java lo atrape, y lo siguiente falla con 25P02. El JdbcTemplate falso de abajo reproduce esa
  * semántica (incluido ROLLBACK TO SAVEPOINT), así que corre igual en CI con H2.
  */
 @DisplayName("Reset plataforma QA: BD vacía sin abortar la transacción")
