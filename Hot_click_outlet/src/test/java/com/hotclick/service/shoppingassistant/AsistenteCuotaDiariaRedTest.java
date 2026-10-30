@@ -74,7 +74,7 @@ class AsistenteCuotaDiariaRedTest {
         assertThat(r.motivo()).isEqualTo(AsistenteCuotaDiaria.Motivo.CLIENTE);
         // Los rechazos devuelven lo tomado: el negocio solo cuenta las 30 permitidas.
         assertThat(usos("n:7")).isEqualTo(30);
-        assertThat(usos("r:203.0.113.9")).isEqualTo(30);
+        assertThat(usos("r:" + c.huella("203.0.113.9"))).isEqualTo(30);
     }
 
     @Test
@@ -87,7 +87,7 @@ class AsistenteCuotaDiariaRedTest {
             if (c.reservar(null, true, visitor(i)).permitida()) permitidas++;
         }
         assertThat(permitidas).isEqualTo(50);
-        assertThat(usos("s:198.51.100.0/24")).isEqualTo(50);
+        assertThat(usos("s:" + c.huella("198.51.100.0/24"))).isEqualTo(50);
         assertThat(usos("g")).isEqualTo(50);
     }
 
@@ -145,5 +145,68 @@ class AsistenteCuotaDiariaRedTest {
         assertThat(r.motivo()).isEqualTo(AsistenteCuotaDiaria.Motivo.GLOBAL);
         assertThat(c.alertaGlobalEnviadaHoy()).isTrue();
         assertThat(usos("n:marketplace")).isEqualTo(3);
+    }
+
+    private static AsistenteCuotaDiaria.TopesRed red(int ip, int subred, int desconocida, int pct) {
+        return new AsistenteCuotaDiaria.TopesRed(ip, subred, 0, true, desconocida, 24, 64, 48, pct, "sal-de-prueba");
+    }
+
+    @Test
+    @DisplayName("MEDIO-2: muchos visitorId e IPs de una /24 no agotan el cupo del negocio ni el global; otras redes siguen")
+    void subredAtacanteNoAgotaNegocioNiGlobal() {
+        AsistenteCuotaDiaria c = cuota(20, 100, 150, red(60, 40, 100, 0));
+        for (int i = 0; i < 500; i++) {
+            ip = "198.51.100." + (i % 250 + 1);
+            c.reservar(7L, false, visitor(i));
+        }
+        assertThat(usos("n:7")).isEqualTo(40);
+        assertThat(usos("g")).isLessThanOrEqualTo(40);
+        int legitimas = 0;
+        for (int i = 0; i < 30; i++) {
+            ip = "192.0." + (i + 1) + ".7";
+            if (c.reservar(7L, false, visitor(10_000 + i)).permitida()) legitimas++;
+        }
+        assertThat(legitimas).isEqualTo(30);
+    }
+
+    @Test
+    @DisplayName("MEDIO-2: IPv6 rotando dentro de la misma /48 choca con el tope de subred")
+    void ipv6RotandoMismaSubred() {
+        AsistenteCuotaDiaria c = cuota(20, 1000, 3000, red(10, 25, 100, 0));
+        int permitidas = 0;
+        for (int i = 0; i < 200; i++) {
+            ip = "2001:db8:1:" + Integer.toHexString(i) + "::" + Integer.toHexString(i + 1);
+            if (c.reservar(7L, false, visitor(i)).permitida()) permitidas++;
+        }
+        assertThat(permitidas).isEqualTo(25);
+        ip = "2001:db8:2::1";
+        assertThat(c.reservar(7L, false, visitor(9999)).permitida()).isTrue();
+    }
+
+    @Test
+    @DisplayName("MEDIO-2: sin IP conocida todo comparte un tope propio y no agota el negocio")
+    void ipDesconocidaTieneTope() {
+        AsistenteCuotaDiaria c = cuota(20, 1000, 3000, red(60, 200, 15, 0));
+        int permitidas = 0;
+        for (int i = 0; i < 100; i++) {
+            ip = (i % 2 == 0) ? null : "no-es-ip";
+            if (c.reservar(7L, false, visitor(i)).permitida()) permitidas++;
+        }
+        assertThat(permitidas).isEqualTo(15);
+        assertThat(usos("n:7")).isEqualTo(15);
+        ip = "203.0.113.50";
+        assertThat(c.reservar(7L, false, visitor(5000)).permitida()).isTrue();
+    }
+
+    @Test
+    @DisplayName("MEDIO-2: las llaves no guardan IPs en claro y la alerta de porcentaje salta una vez")
+    void llavesSinIpYAlertaPorcentaje() {
+        AsistenteCuotaDiaria c = cuota(20, 1000, 10, red(60, 200, 100, 80));
+        for (int i = 0; i < 8; i++) c.reservar(7L, false, null);
+        assertThat(c.alertaPorcentajeEnviadaHoy()).isTrue();
+        List<String> claves = jdbc.queryForList("SELECT clave FROM hot_click_asistente_cuota_dia_tb", String.class);
+        assertThat(claves).noneMatch(k -> k.contains("203.0.113") || k.contains("/24"));
+        assertThat(c.huella("203.0.113.9")).hasSize(32).isNotEqualTo(c.huella("203.0.113.10"));
+        assertThat(AsistenteCuotaDiaria.redes("10.1.2.3", 16, 64, 48)[1]).isEqualTo("0a010000/16");
     }
 }
