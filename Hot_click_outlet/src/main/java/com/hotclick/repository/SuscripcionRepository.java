@@ -21,9 +21,24 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
            "ORDER BY s.fechaCreacion DESC")
     Optional<Suscripcion> findActivaByEmpresaId(@Param("empresaId") Long empresaId);
 
+    /**
+     * Igual que {@link #findActivaByEmpresaId} pero como lista: no tira IncorrectResultSize si por una carrera hay más
+     * de una suscripción no cancelada. Los caminos que crean suscripciones en ONVO la usan para detectarlo y avisar.
+     */
+    @Query("SELECT s FROM Suscripcion s WHERE s.empresa.id = :empresaId " +
+           "AND s.estado NOT IN ('CANCELADO', 'VENCIDO') " +
+           "ORDER BY s.fechaCreacion DESC, s.id DESC")
+    List<Suscripcion> findActivasByEmpresaId(@Param("empresaId") Long empresaId);
+
     Optional<Suscripcion> findByStripeSubscriptionId(String stripeSubscriptionId);
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
+
+    /** S-02 (C6 heredado): lock de fila al aplicar un pago ONVO verificado. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubscriptionId = :id")
+    Optional<Suscripcion> findByOnvoSubscriptionIdForUpdate(@Param("id") String onvoSubscriptionId);
+
 
     /** Suscripciones vigentes (no canceladas/vencidas) con plan cargado — consola billing. */
     @Query("""

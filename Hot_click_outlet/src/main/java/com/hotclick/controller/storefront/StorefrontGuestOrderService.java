@@ -1,5 +1,6 @@
 package com.hotclick.controller.storefront;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.StorefrontPedidoDTO;
 import com.hotclick.model.Bodega;
@@ -11,20 +12,17 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
-import com.hotclick.repository.RolRepository;
-import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.StockService;
+import com.hotclick.service.payment.GuestUserResolver;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class StorefrontGuestOrderService {
@@ -34,29 +32,23 @@ public class StorefrontGuestOrderService {
     private final BodegaRepository bodegaRepository;
     private final PedidoRepository pedidoRepository;
     private final ProductoRepository productoRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final RolRepository rolRepository;
+    private final GuestUserResolver guestUserResolver;
     private final StockService stockService;
-    private final PasswordEncoder passwordEncoder;
     private final N8nWebhookService n8nWebhookService;
     private final NotificacionEmailService notificacionEmailService;
 
     public StorefrontGuestOrderService(BodegaRepository bodegaRepository,
                                        PedidoRepository pedidoRepository,
                                        ProductoRepository productoRepository,
-                                       UsuarioRepository usuarioRepository,
-                                       RolRepository rolRepository,
+                                       GuestUserResolver guestUserResolver,
                                        StockService stockService,
-                                       PasswordEncoder passwordEncoder,
                                        N8nWebhookService n8nWebhookService,
                                        NotificacionEmailService notificacionEmailService) {
         this.bodegaRepository = bodegaRepository;
         this.pedidoRepository = pedidoRepository;
         this.productoRepository = productoRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.rolRepository = rolRepository;
+        this.guestUserResolver = guestUserResolver;
         this.stockService = stockService;
-        this.passwordEncoder = passwordEncoder;
         this.n8nWebhookService = n8nWebhookService;
         this.notificacionEmailService = notificacionEmailService;
     }
@@ -72,8 +64,9 @@ public class StorefrontGuestOrderService {
         exigirRetiroDisponible(dto.getMetodoEnvio(),
             bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO));
 
-        Usuario usuario = usuarioRepository.findByCorreo(dto.getCorreoCliente())
-            .orElseGet(() -> crearInvitado(dto.getCorreoCliente(), dto.getTelefonoCliente()));
+        // M2b (#399): mismo resolvedor que el checkout y SINPE: correo exacto, normalizado o, si hay una cuenta antigua
+        // guardada con mayúsculas («Juan@X.com»), esa cuenta; solo si no existe se crea el invitado (sin duplicados).
+        Usuario usuario = guestUserResolver.resolve(dto.getCorreoCliente(), dto.getTelefonoCliente());
 
         Pedido pedido = construirPedido(empresa, dto, bodega, usuario);
         Pedido guardado = pedidoRepository.save(pedido);
@@ -93,9 +86,7 @@ public class StorefrontGuestOrderService {
             if (!empresa.getId().equals(producto.getEmpresa().getId())) {
                 throw new IllegalArgumentException("Producto no disponible en esta tienda");
             }
-            if (!Boolean.TRUE.equals(producto.getVisibleCatalogo()) || Boolean.TRUE.equals(producto.getVendido())) {
-                throw new IllegalStateException("Producto no disponible: " + producto.getNombreProducto());
-            }
+            validarComprable(producto);
 
             if (producto.esACotizar()) {
                 throw new IllegalArgumentException("«" + producto.getNombreProducto() + "» es a cotizar: solicitá una cotización al vendedor");
@@ -134,6 +125,18 @@ public class StorefrontGuestOrderService {
         return pedido;
     }
 
+    /**
+     * M-04 (re-QA área 3): mismo criterio que el checkout y el carrito: activo, visible, de un negocio
+     * ACTIVO y público ({@code esPublicableEnMemoria}) y no vendido. Un producto borrado o inactivo ya no
+     * se puede pedir como invitado aunque siga con visibleCatalogo=true.
+     */
+    static void validarComprable(Producto producto) {
+        if (!com.hotclick.service.payment.StockReservationService.esPublicableEnMemoria(producto)
+                || Boolean.TRUE.equals(producto.getVendido())) {
+            throw new IllegalStateException("Producto no disponible: " + producto.getNombreProducto());
+        }
+    }
+
     static PedidoItem crearPedidoItem(Producto producto, int cantidad, Pedido pedido) {
         PedidoItem pedidoItem = new PedidoItem();
         int precioUnitario = com.hotclick.service.payment.OrderPricingService.precioEfectivo(producto);
@@ -161,13 +164,16 @@ public class StorefrontGuestOrderService {
         try {
             n8nWebhookService.notificarPedidoNuevo(guardado);
         } catch (Exception ex) {
-            log.warn("Webhook admin falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
+            // Sin getMessage(): el proveedor puede devolver el correo del cliente en el texto del error.
+            log.warn("Webhook admin falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getClass().getSimpleName(),
+                TelegramTexto.paraLog(ex));
         }
         try {
             // Nace PENDIENTE y se paga al recibir: nunca el correo de pago confirmado («Total pagado»).
             notificacionEmailService.enviarPedidoRecibido(guardado);
         } catch (Exception ex) {
-            log.warn("Email pedido recibido falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
+            log.warn("Email pedido recibido falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getClass().getSimpleName(),
+                TelegramTexto.paraLog(ex));
         }
     }
 
@@ -214,25 +220,5 @@ public class StorefrontGuestOrderService {
         }
         List<Bodega> bodegas = bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO);
         return bodegas.isEmpty() ? null : bodegas.get(0);
-    }
-
-    private static String digitosTelefono(String telefono) {
-        return telefono == null ? "" : telefono.replaceAll("[^0-9]", "");
-    }
-
-    private Usuario crearInvitado(String correo, String telefono) {
-        Usuario usuario = new Usuario();
-        String uid = UUID.randomUUID().toString().replace("-", "");
-        usuario.setIdentificacion("GUEST-" + uid.substring(0, 13));
-        usuario.setNombre("Invitado");
-        usuario.setApellidoPaterno("Guest");
-        usuario.setCorreo(correo);
-        usuario.setTelefono(digitosTelefono(telefono));
-        usuario.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        usuario.setEstado(Constants.ESTADO_ACTIVO);
-        rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL)
-            .ifPresent(rol -> usuario.setRoles(List.of(rol)));
-        return usuarioRepository.save(usuario);
     }
 }

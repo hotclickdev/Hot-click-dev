@@ -6,10 +6,13 @@ import { esUsuarioSistema } from '@/utils/sistemaUser'
 import { isTokenAlive } from '@/utils/authToken'
 import EmprendeHub from './emprende/EmprendeHub'
 import EmprendeLanding from './emprende/EmprendeLanding'
+import useCupoEmprende from './emprende/useCupoEmprende'
+import { primerosNegocios } from './emprende/primerosNegocios'
 
 /** Visitante ve la landing; dueño ya logueado ve el checklist de Sistema. */
 export default function EmprendePage() {
   const { t } = useTranslation()
+  const { cupo } = useCupoEmprende()
   const userRole = useAuthStore((s) => s.userRole)
   const token = useAuthStore((s) => s.token)
   // Sin sesión viva se ve la landing pública: nunca atajos al panel.
@@ -19,7 +22,7 @@ export default function EmprendePage() {
     <MainLayout>
       <Helmet>
         <title>{t('emprende.metaTitle')}</title>
-        <meta name="description" content={t('emprende.metaDescription')} />
+        <meta name="description" content={t('emprende.metaDescription', { primeros: primerosNegocios(cupo, t) })} />
       </Helmet>
       {yaEsDuenio ? <EmprendeHub /> : <EmprendeLanding />}
     </MainLayout>

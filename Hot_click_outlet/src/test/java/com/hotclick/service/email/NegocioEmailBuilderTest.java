@@ -43,4 +43,21 @@ class NegocioEmailBuilderTest {
             .doesNotContain("30 días");
         assertThat(builder.asuntoCuponBienvenida()).isEqualTo("Tu 13% de descuento para la primera compra");
     }
+
+    @Test
+    @DisplayName("Alta de emprendimiento (admin): «3 meses gratis» derivado de la config, sin «cupo gratis»")
+    void altaEmprendedorAdminDiceTresMesesGratis() {
+        String periodo = new com.hotclick.service.suscripcion.TrialEmprendedorConfig(70, 90).periodoGratis();
+        String conCupo = builder.buildAltaEmprendedorAdmin("Café Luz", "luz@correo.com", true,
+            com.hotclick.dto.CupoEmprendedorEstado.of(3, 70, periodo));
+        String ultimo = builder.buildAltaEmprendedorAdmin("Café Luz", "luz@correo.com", true,
+            com.hotclick.dto.CupoEmprendedorEstado.of(70, 70, periodo));
+        String sinCupo = builder.buildAltaEmprendedorAdmin("Café Luz", "luz@correo.com", false,
+            com.hotclick.dto.CupoEmprendedorEstado.of(70, 70, periodo));
+
+        assertThat(conCupo).contains("Entró con 3 meses gratis.");
+        assertThat(ultimo).contains("último cupo de 3 meses gratis");
+        assertThat(sinCupo).contains("Sin cupo de 3 meses gratis");
+        assertThat(conCupo + ultimo + sinCupo).doesNotContain("cupo gratis");
+    }
 }

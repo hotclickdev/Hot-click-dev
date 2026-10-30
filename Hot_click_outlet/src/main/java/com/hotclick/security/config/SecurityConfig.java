@@ -112,7 +112,7 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of(
             "Authorization", "Content-Type", "Accept", "Origin",
-            "X-Requested-With", "X-Internal-Secret", "X-Turnstile-Token",
+            "X-Requested-With", "X-Internal-Secret", "X-Turnstile-Token", "X-Pedido-Token",
             "Access-Control-Request-Method", "Access-Control-Request-Headers"
         ));
         config.setAllowCredentials(false);

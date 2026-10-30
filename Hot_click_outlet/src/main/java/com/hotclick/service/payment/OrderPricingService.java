@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 
 @Service
 public class OrderPricingService {
@@ -71,6 +72,16 @@ public class OrderPricingService {
 
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
                                               String metodoEnvio, int gcSaldoRestante) {
+        return calcularPaquete(req, bodega, subtotal, metodoEnvio, gcSaldoRestante, java.util.List.of());
+    }
+
+    /**
+     * @param lineasIva líneas del paquete; el IVA (M4: solo factura en régimen simplificado) se calcula
+     *                  con CalculadoraIva sobre el neto después de descuentos, igual que el XML.
+     */
+    public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
+                                              String metodoEnvio, int gcSaldoRestante,
+                                              java.util.List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva) {
         int costoEnvio = calcularCostoEnvio(metodoEnvio);
         Long empresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
 
@@ -80,17 +91,19 @@ public class OrderPricingService {
         if (codigoCupon != null && !codigoCupon.isBlank()) {
             var cuponOpt = cuponService.validarParaEmpresa(codigoCupon, empresaId);
             if (cuponOpt.isPresent()) {
-                descuento = (int) Math.round(subtotal * cuponOpt.get().getDescuentoPorcentaje() / 100.0);
+                descuento = com.hotclick.service.hacienda.MontoExacto.aInt(Math.round(subtotal * cuponOpt.get().getDescuentoPorcentaje() / 100.0));
                 codigoCuponAplicado = cuponOpt.get().getCodigo();
             }
         }
 
         int base = subtotal - descuento + costoEnvio;
         descuento += descuentoSinpeSiAplica(req.getProvider(), bodega, base);
-        int total = Math.max(0, subtotal - descuento + costoEnvio);
+        int impuesto = com.hotclick.service.hacienda.MontoExacto.aInt(com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(
+            bodega.getEmpresa(), req.isFacturaElectronica(), lineasIva, descuento));
+        int total = Math.max(0, subtotal - descuento + costoEnvio) + impuesto;
 
         int    gcMonto  = 0;
-        String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase() : null;
+        String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase(java.util.Locale.ROOT) : null;
         if (gcCodigo != null && !gcCodigo.isBlank() && empresaId != null && gcSaldoRestante > 0) {
             var gcOpt = giftCardService.validar(gcCodigo, empresaId);
             if (gcOpt.isPresent()) {
@@ -101,20 +114,20 @@ public class OrderPricingService {
         boolean pagoGC  = gcMonto > 0 && totalConGC == 0;
 
         return new OrderPricingResult(
-            costoEnvio, descuento, codigoCuponAplicado, gcMonto, gcCodigo, total, totalConGC, pagoGC);
+            costoEnvio, descuento, codigoCuponAplicado, gcMonto, gcCodigo, total, totalConGC, pagoGC, Math.max(0, impuesto));
     }
 
     private int descuentoSinpeSiAplica(String provider, Bodega bodega, int base) {
         if (provider == null || bodega == null || bodega.getEmpresa() == null) {
             return 0;
         }
-        String p = provider.toUpperCase();
+        String p = provider.toUpperCase(Locale.ROOT);
         if (!Constants.PROVEEDOR_SINPE.equals(p) && !"EFECTIVO".equals(p)) {
             return 0;
         }
         Empresa empresa = bodega.getEmpresa();
         BigDecimal pct = empresa.getPctDescuentoSinpe();
-        return (int) ComisionPrecioMath.descuentoSinpe(base, pct);
+        return com.hotclick.service.hacienda.MontoExacto.aInt(ComisionPrecioMath.descuentoSinpe(base, pct));
     }
 
     /** La encomienda la cobra la empresa de transporte al retirar en la terminal: no se cobra en el checkout. */

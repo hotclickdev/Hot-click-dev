@@ -2,6 +2,7 @@ package com.hotclick.service;
 
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.producto.BodegaTenantGuard;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
@@ -27,6 +28,7 @@ public class VentaService {
     @Autowired private StockService                stockService;
     @Autowired private ProductoRepository          productoRepository;
     @Autowired private BodegaRepository            bodegaRepository;
+    @Autowired private BodegaTenantGuard           bodegaTenantGuard;
     @Autowired private UsuarioRepository           usuarioRepository;
     @Autowired private CarritoRepository           carritoRepository;
     @Autowired private MovimientoStockRepository   movimientoStockRepository;
@@ -47,7 +49,7 @@ public class VentaService {
             throw new IllegalStateException("No se pudo determinar la empresa del usuario actual");
         }
         Empresa empresa = empresaRepository.findById(empresaId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada: id=" + empresaId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
         boolean desdeCarrito = dto.getCarritoId() != null;
         Usuario usuario      = resolverUsuario(dto, correoOperador);
@@ -75,11 +77,10 @@ public class VentaService {
         for (VentaRequestDTO.ItemVentaDTO itemDto : dto.getItems()) {
             // SELECT FOR UPDATE: bloquea la fila en PostgreSQL hasta el COMMIT.
             // Si otra transacción concurrente intenta modificar el mismo producto, espera aquí.
-            Producto producto = productoRepository.findByIdForUpdate(itemDto.getProductoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", itemDto.getProductoId()));
-
-            // IDOR-11: no se vende (ni se descuenta stock de) un producto de otro negocio
-            com.hotclick.service.pos.PosProductoDeEmpresa.exigirMismoNegocio(producto.getEmpresaId(), empresaId);
+            // IDOR-11 + MEDIO-2/BAJO-1 (#428): el dueño se valida SIN lock y con el mismo 404 de texto fijo para
+            // inexistente y ajeno; solo entonces se bloquea la fila. Nunca se vende (ni descuenta stock de) un producto ajeno.
+            Producto producto = com.hotclick.service.pos.PosProductoDeEmpresa.bloqueandoSoloSiEsDelNegocio(
+                productoRepository, itemDto.getProductoId(), empresaId);
             int cantidad = itemDto.getCantidad() != null ? itemDto.getCantidad() : 1;
 
             validarProductoParaVenta(producto, cantidad, desdeCarrito);
@@ -236,10 +237,10 @@ public class VentaService {
     private Usuario resolverUsuario(VentaRequestDTO dto, String correoOperador) {
         if (dto.getClienteId() != null) {
             return usuarioRepository.findById(dto.getClienteId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado: id=" + dto.getClienteId()));
+                .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Cliente no encontrado", "clienteId=" + dto.getClienteId()));
         }
         return usuarioRepository.findByCorreo(correoOperador)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario operador no encontrado: " + correoOperador));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Usuario operador no encontrado", "usuario del token sin cuenta (correo omitido)"));
     }
 
     private String resolverMetodoEnvio(VentaRequestDTO dto) {
@@ -250,13 +251,8 @@ public class VentaService {
 
     private Bodega resolverBodega(VentaRequestDTO dto, Long empresaId) {
         if (dto.getBodegaId() != null) {
-            Bodega bodega = bodegaRepository.findById(dto.getBodegaId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega no encontrada: id=" + dto.getBodegaId()));
-            // Evita que una empresa registre una venta contra la bodega de otra empresa.
-            if (bodega.getEmpresa() != null && !empresaId.equals(bodega.getEmpresa().getId())) {
-                throw new IllegalArgumentException("La bodega indicada no pertenece a tu empresa");
-            }
-            return bodega;
+            // Una bodega ajena responde igual que una inexistente (404 con el mismo mensaje): no revela que existe.
+            return bodegaTenantGuard.exigirDeLaEmpresa(dto.getBodegaId(), empresaId);
         }
         // Antes caía a la PRIMERA bodega activa de TODO el sistema (fuga entre empresas).
         // Ahora se limita a las bodegas de la empresa actual.

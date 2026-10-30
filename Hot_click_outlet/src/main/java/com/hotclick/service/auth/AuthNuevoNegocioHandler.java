@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -92,7 +93,7 @@ public class AuthNuevoNegocioHandler {
         if (dto.getCorreoEmpresa() == null || dto.getCorreoEmpresa().isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El correo oficial del negocio es requerido"));
         }
-        String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase();
+        String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase(Locale.ROOT);
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa)) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Ese correo de negocio ya está en uso"));
         }
@@ -105,7 +106,7 @@ public class AuthNuevoNegocioHandler {
         String base = slug;
         while (empresaRepository.existsBySlug(slug)) { slug = base + "-" + i++; }
 
-        String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase();
+        String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase(Locale.ROOT);
         Empresa empresa = new Empresa();
         empresa.setNombreEmpresa(dto.getNombreEmpresa().trim());
         empresa.setNombreComercial(dto.getNombreComercial() != null && !dto.getNombreComercial().isBlank()

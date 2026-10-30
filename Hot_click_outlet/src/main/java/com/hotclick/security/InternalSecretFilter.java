@@ -12,6 +12,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -47,7 +48,7 @@ public class InternalSecretFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
 
-        String key = request.getMethod().toUpperCase() + " " + request.getServletPath();
+        String key = request.getMethod().toUpperCase(Locale.ROOT) + " " + request.getServletPath();
 
         if (PROTECTED.contains(key)) {
             // Si el secret no está configurado en producción, bloquear todo acceso

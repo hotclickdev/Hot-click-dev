@@ -1,5 +1,6 @@
 package com.hotclick.service.auth;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.dto.AuthResponse;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
@@ -64,7 +65,7 @@ public class AuthTenantSwitchHandler {
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("[cambiar-negocio] {}", e.getMessage(), e);
+            log.error("[cambiar-negocio] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
             return ResponseEntity.status(500).body(ResponseDTO.error("Error al cambiar de negocio"));
         }
     }
@@ -107,6 +108,8 @@ public class AuthTenantSwitchHandler {
             Long empresaId = Long.parseLong(empresaIdRaw.toString());
             Usuario usuario = usuarioService.buscarPorId(userId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+            // Cuenta que dejó de estar activa entre la contraseña y la selección: sin tokens y sin revelar el estado.
+            authSupport.exigirCuentaActiva(usuario);
             MiembroEmpresa membresia = miembroEmpresaRepository
                 .findByUsuarioIdAndEmpresaIdAndEstado(userId, empresaId, 1)
                 .orElse(null);
@@ -125,8 +128,10 @@ public class AuthTenantSwitchHandler {
             resp.setEmpresaSlug(empresa.getSlug());
             resp.setEmpresaNombre(empresa.getNombreEmpresa());
             return ResponseEntity.ok(resp);
+        } catch (CuentaNoActivaException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         } catch (Exception e) {
-            log.error("[seleccionar-empresa] {}", e.getMessage(), e);
+            log.error("[seleccionar-empresa] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         }
     }

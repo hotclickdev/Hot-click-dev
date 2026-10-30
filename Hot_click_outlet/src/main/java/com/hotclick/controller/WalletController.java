@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -39,6 +40,7 @@ public class WalletController {
     @PreAuthorize("hasAnyRole('EMPRENDEDOR','ADMIN')")
     public ResponseEntity<Wallet> saldo() {
         Long empresaId = companyScope.getCurrentEmpresaId();
+        propietarioGuard.exigirGestionEmpresa(empresaId); // QA2-área2
         return ResponseEntity.ok(walletService.obtenerWallet(empresaId));
     }
 
@@ -48,6 +50,7 @@ public class WalletController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
         Long empresaId = companyScope.getCurrentEmpresaId();
+        propietarioGuard.exigirGestionEmpresa(empresaId); // QA2-área2
         PageRequest pr = PageRequest.of(page, size, Sort.by("fechaCreacion").descending());
         return ResponseEntity.ok(walletService.historial(empresaId, pr));
     }
@@ -58,6 +61,7 @@ public class WalletController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
         Long empresaId = companyScope.getCurrentEmpresaId();
+        propietarioGuard.exigirGestionEmpresa(empresaId); // QA2-área2
         PageRequest pr = PageRequest.of(page, size);
         return ResponseEntity.ok(walletService.payoutsByEmpresa(empresaId, pr));
     }
@@ -125,7 +129,7 @@ public class WalletController {
     private void validate(PayoutRequestDTO dto) {
         if (dto.monto() <= 0) throw new IllegalArgumentException("El monto debe ser mayor a 0");
 
-        String metodo = dto.metodo() != null ? dto.metodo().toUpperCase() : "SINPE";
+        String metodo = dto.metodo() != null ? dto.metodo().toUpperCase(Locale.ROOT) : "SINPE";
         if ("SINPE".equals(metodo)) {
             if (dto.destinoSinpe() == null || !dto.destinoSinpe().matches("\\d{8}")) {
                 throw new IllegalArgumentException("El número SINPE debe tener exactamente 8 dígitos");

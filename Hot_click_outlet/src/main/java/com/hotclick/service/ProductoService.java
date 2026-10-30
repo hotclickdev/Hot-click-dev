@@ -32,7 +32,7 @@ public class ProductoService {
     }
 
     @CacheEvict(value = "dashboard-metricas",
-        key = "#empresa != null ? #empresa.id.toString() : 'global'")
+        key = "#empresa != null && #empresa.id != null ? #empresa.id.toString() : 'global'")
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
         return writeOperations.crearProducto(this, dto, adminCorreo, empresa);

@@ -32,6 +32,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -97,6 +98,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ResponseDTO> handleReactivacionSinPago(com.hotclick.exception.ReactivacionSinPagoException ex) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage(),
             java.util.Map.of("codigo", com.hotclick.exception.ReactivacionSinPagoException.CODIGO)));
+    }
+
+    /** Aprobar un Emprendedor cuyo propietario no verificó su correo: 409, sin consumir puesto de trial. */
+    @ExceptionHandler(com.hotclick.exception.CupoEmprendedorCorreoNoVerificadoException.class)
+    public ResponseEntity<ResponseDTO> handleCupoCorreoNoVerificado(com.hotclick.exception.CupoEmprendedorCorreoNoVerificadoException ex) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage(),
+            java.util.Map.of("codigo", com.hotclick.exception.CupoEmprendedorCorreoNoVerificadoException.CODIGO)));
+    }
+
+    /** Falló la BD al reservar el puesto Emprendedor: 409 con código, aprobación revertida, sin detalles de la causa. */
+    @ExceptionHandler(com.hotclick.exception.CupoEmprendedorNoDisponibleException.class)
+    public ResponseEntity<ResponseDTO> handleCupoNoDisponible(com.hotclick.exception.CupoEmprendedorNoDisponibleException ex) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage(),
+            java.util.Map.of("codigo", com.hotclick.exception.CupoEmprendedorNoDisponibleException.CODIGO)));
     }
 
     @ExceptionHandler(com.hotclick.exception.EnlaceNoVigenteException.class)
@@ -244,7 +259,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(org.springframework.web.multipart.MultipartException.class)
     public ResponseEntity<ResponseDTO> handleMultipart(org.springframework.web.multipart.MultipartException ex) {
-        String msg = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("size") ?
+        String msg = ex.getMessage() != null && ex.getMessage().toLowerCase(Locale.ROOT).contains("size") ?
                 "La imagen no puede superar 10 MB" : "Error procesando el archivo";
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(ResponseDTO.error(msg));
     }

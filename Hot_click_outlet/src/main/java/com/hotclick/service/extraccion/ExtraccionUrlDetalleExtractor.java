@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -53,7 +54,7 @@ class ExtraccionUrlDetalleExtractor {
                 for (Element b : bullets) {
                     String t = b.text().trim();
                     if (t.isBlank() || t.length() < 15) continue;
-                    String tl = t.toLowerCase();
+                    String tl = t.toLowerCase(Locale.ROOT);
                     if (tl.contains("make sure") || tl.contains("click here") ||
                         tl.contains("warranty") || tl.contains("garantía") ||
                         tl.contains("customer service") || tl.contains("free return")) continue;
@@ -69,7 +70,7 @@ class ExtraccionUrlDetalleExtractor {
                 if (meta != null) {
                     String content = meta.attr("content").trim();
                     if (!content.isBlank() && content.length() > 20) {
-                        String cl = content.toLowerCase();
+                        String cl = content.toLowerCase(Locale.ROOT);
                         if (!cl.startsWith("search ") && !cl.startsWith("shop ") && !cl.contains("fast shipping"))
                             d.descripcionCorta = content;
                     }
@@ -116,7 +117,7 @@ class ExtraccionUrlDetalleExtractor {
             if (d.comoUsar == null) {
                 for (Element el : doc.select("p, li")) {
                     String text = el.ownText().trim();
-                    String lower = text.toLowerCase();
+                    String lower = text.toLowerCase(Locale.ROOT);
                     if (text.length() > 20 && text.length() < 400 &&
                         (lower.startsWith("directions:") || lower.startsWith("how to use:") ||
                          lower.startsWith("modo de uso:") || lower.startsWith("instrucciones:") ||

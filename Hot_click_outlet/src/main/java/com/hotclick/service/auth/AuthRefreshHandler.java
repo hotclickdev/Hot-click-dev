@@ -9,6 +9,7 @@ import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.TokenRevocadoService;
 import com.hotclick.service.UsuarioService;
+import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -46,10 +47,17 @@ public class AuthRefreshHandler {
         }
         try {
             RefreshToken rt = refreshTokenService.rotar(tokenStr, request);
+            Usuario usuario = rt.getUsuario();
+            // Solo una cuenta activa (estado 1) renueva sesión: eliminado, suspendido, inactivo o pendiente con un
+            // refresh token vivo no obtiene access token; se revoca toda su familia y se limpia la cookie.
+            if (!Integer.valueOf(Constants.ESTADO_ACTIVO).equals(usuario.getEstado())) {
+                refreshTokenService.revocarTodosDeUsuario(usuario);
+                refreshTokenService.clearCookie(response);
+                return ResponseEntity.status(401).body(ResponseDTO.error("Sesión expirada. Iniciá sesión de nuevo."));
+            }
             if (rt.getRawToken() != null) {
                 refreshTokenService.writeCookie(response, rt.getRawToken());
             }
-            Usuario usuario = rt.getUsuario();
             String rol = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
             Long empresaId = usuario.getEmpresaId();
             String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug() : null;

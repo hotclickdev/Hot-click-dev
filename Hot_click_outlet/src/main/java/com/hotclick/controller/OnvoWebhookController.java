@@ -45,6 +45,11 @@ public class OnvoWebhookController {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hotclick.service.sinpe.SinpeOnvoMarketplaceService sinpeMarketplace;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.monitoreo.OnvoWebhookSecretInvalidoAlerta alertaSecretInvalido;
+
+    void setAlertaSecretInvalidoParaTest(com.hotclick.monitoreo.OnvoWebhookSecretInvalidoAlerta a) { this.alertaSecretInvalido = a; }
+
     void setSinpeMarketplaceParaTest(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService s) { this.sinpeMarketplace = s; }
 
     /** Tope de cuerpo y de intentos con secret inválido por minuto (un secret válido nunca se limita). */
@@ -77,7 +82,9 @@ public class OnvoWebhookController {
             if (!dentroDelLimite()) {
                 return ResponseEntity.status(429).body(Map.of("error", "too many requests"));
             }
-            log.warn("[onvo-webhook] Secret inválido o no configurado");
+            // INF-03: nivel error para que llegue a Sentry; sin el secret recibido ni datos del cuerpo.
+            log.error("[onvo-webhook] 401: secret inválido o no configurado");
+            if (alertaSecretInvalido != null) alertaSecretInvalido.registrarFallo();
             return ResponseEntity.status(401).body(Map.of("error", "unauthorized"));
         }
 
@@ -166,7 +173,7 @@ public class OnvoWebhookController {
             case NO_ENCONTRADO -> null;
             case CONFIRMADO -> ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "sinpe"));
             case DUPLICADO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
-            case COBRADO_SOBRE_CANCELADO -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
+            case COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
             case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));
             case EN_ESPERA, NO_VERIFICADO -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
         };
@@ -179,7 +186,7 @@ public class OnvoWebhookController {
             case OK -> null;
             case DUPLICADO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
             // Procesado: queda para reembolso del admin; reintentar no cambia nada.
-            case COBRADO_SOBRE_CANCELADO -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
+            case COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA -> ResponseEntity.ok(Map.of("status", "refund_pending", "type", type));
             case NO_ENCONTRADO -> ResponseEntity.status(404).body(Map.of("error", "not found"));
             // Sin llave no se pudo verificar: error temporal para que ONVO reintente cuando vuelva la llave.
             case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));

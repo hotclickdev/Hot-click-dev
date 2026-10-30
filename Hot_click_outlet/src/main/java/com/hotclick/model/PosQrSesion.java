@@ -37,6 +37,14 @@ public class PosQrSesion {
     @Column(name = "total", nullable = false)
     private Integer total;
 
+    /** M4: el cliente pidió factura electrónica; en régimen simplificado el total ya incluye el IVA. */
+    @Column(name = "factura_electronica", nullable = false)
+    private boolean facturaElectronica = false;
+
+    /** M4: IVA incluido en {@code total} (0 si es tiquete o régimen tradicional). */
+    @Column(name = "monto_impuesto", nullable = false)
+    private Integer montoImpuesto = 0;
+
     @Column(name = "metodo_pago", nullable = false, length = 20)
     private String metodoPago;
 
@@ -131,4 +139,9 @@ public class PosQrSesion {
     public void setFechaPago(LocalDateTime fechaPago) { this.fechaPago = fechaPago; }
     public String getOnvoEventoId() { return onvoEventoId; }
     public void setOnvoEventoId(String onvoEventoId) { this.onvoEventoId = onvoEventoId; }
+
+    public boolean isFacturaElectronica() { return facturaElectronica; }
+    public void setFacturaElectronica(boolean v) { this.facturaElectronica = v; }
+    public Integer getMontoImpuesto() { return montoImpuesto != null ? montoImpuesto : 0; }
+    public void setMontoImpuesto(Integer v) { this.montoImpuesto = v; }
 }

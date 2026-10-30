@@ -29,7 +29,9 @@ public class OnvoPaymentProvider implements PaymentProvider {
         /** Sin llave utilizable (borrada, o de prueba fuera de dev/test): no se pudo preguntar a ONVO. */
         NO_CONSULTABLE,
         /** ONVO cobró un pedido ya cancelado: no se vende, el pago queda REEMBOLSO_PENDIENTE. */
-        COBRADO_SOBRE_CANCELADO
+        COBRADO_SOBRE_CANCELADO,
+        /** M-08: cobrado sin stock; pedido en revisión y reembolso pendiente. */
+        COBRADO_SOBREVENTA
     }
 
     @Value("${app.url:http://localhost:3000}")
@@ -127,6 +129,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
                     case CAPTURADO -> Verificacion.OK;
                     case DUPLICADO -> Verificacion.DUPLICADO;
                     case COBRADO_SOBRE_CANCELADO -> Verificacion.COBRADO_SOBRE_CANCELADO;
+                    case COBRADO_SOBREVENTA -> Verificacion.COBRADO_SOBREVENTA;
                 };
             }
             case RECHAZAR_MONTO -> {

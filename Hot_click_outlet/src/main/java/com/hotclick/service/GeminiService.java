@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -156,7 +157,7 @@ public class GeminiService {
         if (!arr.isArray() || arr.isEmpty()) return java.util.List.of();
         java.util.List<String> out = new java.util.ArrayList<>();
         for (JsonNode n : arr) {
-            String v = n.asText("").trim().toLowerCase();
+            String v = n.asText("").trim().toLowerCase(Locale.ROOT);
             if (!v.isBlank() && out.size() < 2) out.add(v);
         }
         return out;

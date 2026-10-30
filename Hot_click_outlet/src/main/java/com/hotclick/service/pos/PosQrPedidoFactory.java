@@ -2,7 +2,6 @@ package com.hotclick.service.pos;
 
 import com.hotclick.model.OrigenPedido;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -63,14 +62,17 @@ public class PosQrPedidoFactory {
             // ALTO 2: la reserva propia se devuelve y se vuelve a validar con bloqueo. Si no alcanza, se cobró
             // sin poder entregar: no se crea pedido y la sesión queda marcada para reembolso.
             stockReserva.liberar(sesion, items);
-            if (!hayStock(items)) {
+            if (!hayStock(empresa == null ? null : empresa.getId(), items)) {
                 marcarReembolsoPendiente(sesion);
                 return;
             }
 
             Pedido pedido = armarPedido(sesion, metodoPago, empresa, cliente, bodega, cajero);
             TotalesQr totales = totalesCobrados(cargarItems(items, pedido, correoCajero(cajero)),
-                sesion.getTotal(), sesion.getToken());
+                sesion.getTotal(), sesion.getMontoImpuesto(), sesion.getToken());
+            // M4: el IVA que se cobró en el QR (factura en régimen simplificado) queda en el pedido.
+            pedido.setMontoImpuesto(totales.impuesto());
+            pedido.setAplicaImpuesto(totales.impuesto() > 0);
             aplicarTotales(pedido, totales);
 
             Pedido saved = pedidoRepo.save(pedido);
@@ -103,10 +105,9 @@ public class PosQrPedidoFactory {
 
     Bodega resolverBodega(Long bodegaId, Long empresaId) {
         if (bodegaId != null) {
-            Bodega bodega = bodegaRepo.findById(bodegaId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", bodegaId));
-            PosProductoDeEmpresa.exigirMismoNegocio(bodega.getEmpresaId(), empresaId);
-            return bodega;
+            // MEDIO-2 (#428): inexistente y ajena dan el mismo 404 de texto fijo (antes: 404 con id vs 400).
+            return PosProductoDeEmpresa.ocultandoExistenciaBodega(
+                bodegaRepo.findById(bodegaId).orElse(null), bodegaId, empresaId);
         }
         return bodegaRepo.findByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO).stream().findFirst()
             .orElseThrow(() -> new IllegalStateException("No hay bodega configurada"));
@@ -176,8 +177,9 @@ public class PosQrPedidoFactory {
         Long productoId = PosQrSessionService.productoIdDe(itemMap);
         int cantidad    = PosQrSessionService.cantidadDe(itemMap);
 
-        Producto producto = productoRepo.findByIdForUpdate(productoId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+        // MEDIO-2/BAJO-1 (#428): 404 de texto fijo (sin id) igual para inexistente y ajeno; dueño validado antes del lock.
+        Producto producto = PosProductoDeEmpresa.bloqueandoSoloSiEsDelNegocio(
+            productoRepo, productoId, pedido.getEmpresa().getId());
         // MEDIO 4: se registra el precio que se cobró (snapshot de la sesión), no el precio actual del producto.
         int precio = precioCobrado(itemMap, productoId);
         if (producto.getStockDisponible() < cantidad) {
@@ -208,16 +210,21 @@ public class PosQrPedidoFactory {
 
     /** MEDIO 4: el total del pedido es lo cobrado (total de la sesión); si las líneas no cuadran, alerta. */
     static TotalesQr totalesCobrados(TotalesQr lineas, Integer totalSesion, String token) {
+        return totalesCobrados(lineas, totalSesion, 0, token);
+    }
+
+    /** @param impuesto IVA incluido en {@code totalSesion} (M4); el subtotal del pedido es lo cobrado sin IVA. */
+    static TotalesQr totalesCobrados(TotalesQr lineas, Integer totalSesion, int impuesto, String token) {
         if (totalSesion == null) throw new IllegalStateException("Sesión POS sin total cobrado");
-        if (lineas.subtotal() != totalSesion) {
-            log.error("[ALERTA-PAGO] POS QR {}: líneas suman {} y se cobró {}; el pedido registra lo cobrado",
-                PosQrVentaService.mascararToken(token), lineas.subtotal(), totalSesion);
+        if (lineas.subtotal() + impuesto != totalSesion) {
+            log.error("[ALERTA-PAGO] POS QR {}: líneas suman {} (+IVA {}) y se cobró {}; el pedido registra lo cobrado",
+                PosQrVentaService.mascararToken(token), lineas.subtotal(), impuesto, totalSesion);
         }
-        return new TotalesQr(totalSesion, lineas.costoTotal());
+        return new TotalesQr(totalSesion - impuesto, lineas.costoTotal(), impuesto);
     }
 
     private void aplicarTotales(Pedido pedido, TotalesQr totales) {
-        int utilidad = totales.totalPedido() - totales.costoTotal();
+        int utilidad = totales.subtotal() - totales.costoTotal(); // el IVA no es utilidad
         pedido.setSubtotal(totales.subtotal());
         pedido.setTotalPedido(totales.totalPedido());
         pedido.setCostoTotalProductos(totales.costoTotal());
@@ -229,9 +236,9 @@ public class PosQrPedidoFactory {
     }
 
     /** ALTO 2: revalida con bloqueo en lote (mismo orden de ids que la reserva) contra el stock disponible. */
-    private boolean hayStock(List<Map<String, Object>> items) {
+    private boolean hayStock(Long empresaId, List<Map<String, Object>> items) {
         Map<Long, Integer> pedidas = PosQrStockReserva.cantidadesPorProducto(items);
-        Map<Long, Producto> productos = stockReserva.bloquear(pedidas.keySet());
+        Map<Long, Producto> productos = stockReserva.bloquear(empresaId, pedidas.keySet());
         return pedidas.entrySet().stream().allMatch(e -> {
             Producto p = productos.get(e.getKey());
             return p != null && p.getStockDisponible() >= e.getValue();
@@ -254,8 +261,9 @@ public class PosQrPedidoFactory {
         }
     }
 
-    record TotalesQr(int subtotal, int costoTotal) {
-        int totalPedido() { return subtotal; }
+    record TotalesQr(int subtotal, int costoTotal, int impuesto) {
+        TotalesQr(int subtotal, int costoTotal) { this(subtotal, costoTotal, 0); }
+        int totalPedido() { return subtotal + impuesto; }
     }
 
     private void marcarReembolsoPendiente(PosQrSesion sesion) {

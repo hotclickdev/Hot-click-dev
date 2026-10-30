@@ -12,7 +12,6 @@ on:
       - '.github/workflows/a11y-pos-keyboard.yml'
       - '.github/workflows/runtime-endpoint-issue.yml'
       - '.github/workflows/ola7-selftest.yml'
-      - '.github/workflows/keep-alive.yml'
       - 'docs/AGENTES_OLA7.md'
       - 'docs/AGENTES_ENG_GATES.md'
 
@@ -46,7 +45,6 @@ jobs:
             'a11y-pos-keyboard.yml',
             'runtime-endpoint-issue.yml',
             'ola7-selftest.yml',
-            'keep-alive.yml',
           ]
           for name in files:
             yaml.safe_load((root / name).read_text())

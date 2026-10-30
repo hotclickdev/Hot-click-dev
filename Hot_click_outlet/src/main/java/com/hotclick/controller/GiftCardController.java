@@ -1,16 +1,22 @@
 package com.hotclick.controller;
 
 import com.hotclick.model.GiftCard;
+import com.hotclick.security.CompanyScope;
+import com.hotclick.security.RateLimiter;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.GiftCardService;
 import com.hotclick.service.tenant.TenantLimitChecker;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -21,6 +27,24 @@ public class GiftCardController {
 
     @Autowired private GiftCardService giftCardService;
     @Autowired private TenantLimitChecker tenantLimitChecker;
+    @Autowired private RateLimiter rateLimiter;
+    @Autowired private CompanyScope companyScope;
+
+    // Tope por usuario de GET /gift-cards/validar (un código con saldo vale dinero: sin tope se prueban códigos).
+    @Value("${hotclick.ratelimit.giftcard-validar.max:10}")    private int validarMax = 10;
+    @Value("${hotclick.ratelimit.giftcard-validar.window:60}") private int validarWindow = 60;
+
+    // Tope por usuario de POST /admin/gift-cards: el rechazo por «código ya usado» es global (UNIQUE entre negocios),
+    // así que sin tope serviría para probar si un código existe en otro negocio.
+    @Value("${hotclick.ratelimit.giftcard-crear.max:10}")    private int crearMax = 10;
+    @Value("${hotclick.ratelimit.giftcard-crear.window:60}") private int crearWindow = 60;
+
+    // Presupuesto de COLISIONES por usuario: aunque el 409 ya no se distingue (se responde el 400 genérico), crear
+    // con un código que existe sigue fallando y uno libre sigue creando; esa diferencia solo se puede acotar, no
+    // borrar, mientras el código sea único en toda la plataforma (el comprador del marketplace lo canjea sin
+    // negocio). Con {max} colisiones por ventana, el usuario queda en 429 para TODO código manual, exista o no.
+    @Value("${hotclick.ratelimit.giftcard-colision.max:5}")      private int colisionMax = 5;
+    @Value("${hotclick.ratelimit.giftcard-colision.window:3600}") private int colisionWindow = 3600;
 
     // ── Admin: listar gift cards de la empresa ────────────────────────────────
     @GetMapping("/admin/gift-cards")
@@ -45,17 +69,61 @@ public class GiftCardController {
             if (empresaId == null) {
                 return ResponseEntity.status(403).build();
             }
+            // Por usuario y FAIL-CLOSED (BD del limitador caída → se niega): antes de leer el cuerpo y de tocar la BD.
+            Long usuarioId = companyScope.getCurrentUserId();
+            if (usuarioId == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Autenticación requerida"));
+            }
+            if (!rateLimiter.tryAcquireEstricto("user:" + usuarioId + ":gift-cards:crear", crearMax, crearWindow)) {
+                return ResponseEntity.status(429).body(Map.of("error",
+                    "Demasiados intentos. Esperá un momento antes de volver a intentar."));
+            }
             tenantLimitChecker.verificarFeature(empresaId, "giftCards");
-            Integer monto = ((Number) body.get("monto")).intValue();
-            String vencimientoStr = (String) body.get("fechaVencimiento");
-            String codigoManual   = (String) body.get("codigo");
+            Integer monto = montoDe(body.get("monto"));
+            String vencimientoStr = textoOpcional(body.get("fechaVencimiento"), "fechaVencimiento");
+            String codigoManual   = textoOpcional(body.get("codigo"), "codigo");
             LocalDate vencimiento = (vencimientoStr != null && !vencimientoStr.isBlank())
                 ? LocalDate.parse(vencimientoStr) : null;
-            GiftCard gc = giftCardService.crear(empresaId, monto, vencimiento, codigoManual);
+            String claveColision = "user:" + usuarioId + ":gift-cards:colision";
+            boolean manual = codigoManual != null && !codigoManual.isBlank();
+            if (manual && rateLimiter.alcanzoLimite(claveColision, colisionMax, colisionWindow)) {
+                // Sin mirar si el código existe: agotado el presupuesto, existir o no da la misma respuesta.
+                return ResponseEntity.status(429).body(Map.of("error",
+                    "Demasiados intentos. Esperá un momento antes de volver a intentar."));
+            }
+            GiftCard gc;
+            try {
+                gc = giftCardService.crear(empresaId, monto, vencimiento, codigoManual);
+            } catch (GiftCardService.CodigoGiftCardDuplicadoException e) {
+                rateLimiter.registrar(claveColision, colisionWindow);
+                // 400 genérico, igual que cualquier otra validación: no es un 409 que delate que el código existe.
+                return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            }
             return ResponseEntity.ok(giftCardService.toMap(gc));
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "La fechaVencimiento debe tener formato AAAA-MM-DD."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /** Monto entero en colones: ausente, texto, decimal o fuera del rango de Integer → 400 (antes NPE/ClassCast → 500). */
+    static Integer montoDe(Object raw) {
+        String mensaje = "El monto es obligatorio y debe ser un número entero.";
+        if (!(raw instanceof Number n)) {
+            throw new IllegalArgumentException(mensaje);
+        }
+        try {
+            return new BigDecimal(n.toString()).intValueExact();
+        } catch (ArithmeticException | NumberFormatException e) {
+            throw new IllegalArgumentException(mensaje);
+        }
+    }
+
+    private static String textoOpcional(Object raw, String campo) {
+        if (raw == null) return null;
+        if (raw instanceof String s) return s;
+        throw new IllegalArgumentException("El campo " + campo + " debe ser texto.");
     }
 
     // ── Admin: cancelar gift card ─────────────────────────────────────────────
@@ -81,7 +149,16 @@ public class GiftCardController {
         if (empresaId == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Autenticación requerida"));
         }
-        Optional<GiftCard> opt = giftCardService.validar(codigo.trim().toUpperCase(), empresaId);
+        // Por usuario y FAIL-CLOSED: si la BD del limitador falla, se niega (es dinero, no disponibilidad).
+        Long usuarioId = companyScope.getCurrentUserId();
+        if (usuarioId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Autenticación requerida"));
+        }
+        if (!rateLimiter.tryAcquireEstricto("user:" + usuarioId + ":gift-cards:validar", validarMax, validarWindow)) {
+            return ResponseEntity.status(429).body(Map.of("error",
+                "Demasiados intentos. Esperá un momento antes de volver a intentar."));
+        }
+        Optional<GiftCard> opt = giftCardService.validar(codigo.trim().toUpperCase(Locale.ROOT), empresaId);
         if (opt.isEmpty()) {
             return ResponseEntity.ok(Map.of("valida", false, "mensaje", "Código inválido, vencido o sin saldo"));
         }

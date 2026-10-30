@@ -1,7 +1,6 @@
 package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
-import com.hotclick.model.Usuario;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.EquipoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,18 +40,19 @@ public class EquipoController {
     public ResponseEntity<ResponseDTO> invitar(@RequestBody Map<String, String> body) {
         ResponseEntity<ResponseDTO> denegado = denegarSiNoEmprendedor("Solo el emprendedor puede agregar miembros");
         if (denegado != null) return denegado;
-        Usuario currentUser = companyScope.getCurrentUser();
-        if (currentUser == null || currentUser.getEmpresa() == null) {
+        // Empresa destino: UNA sola vez (la del token activo, multi-negocio). El service la bloquea, cuenta el cupo
+        // y da de alta al miembro sobre esa misma empresa; antes el alta usaba usuario.empresa (otro negocio).
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        if (empresaId == null || !propietarioGuard.puedeGestionarEmpresa(empresaId)) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         }
         ResponseEntity<ResponseDTO> invalido = validarInvitacion(body);
         if (invalido != null) return invalido;
         String rolEnEmpresa = body.getOrDefault("rolEnEmpresa", "EDITOR");
         equipoService.invitar(
-            currentUser.getEmpresa(),
-            companyScope.getCurrentEmpresaIdOrOwn(),
+            empresaId,
             body.get("nombre"),
-            body.get("correo").trim().toLowerCase(),
+            body.get("correo").trim().toLowerCase(java.util.Locale.ROOT),
             body.get("password"),
             body.getOrDefault("telefono", "00000000"),
             rolEnEmpresa);

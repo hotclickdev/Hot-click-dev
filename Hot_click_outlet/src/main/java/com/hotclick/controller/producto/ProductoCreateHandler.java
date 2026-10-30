@@ -6,13 +6,10 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
 import com.hotclick.service.AuditoriaAdminRegistroService;
-import com.hotclick.service.ProductoService;
 import com.hotclick.service.TenantService;
 import com.hotclick.service.producto.EmpresaDestinoAlta;
-import com.hotclick.service.producto.ProductoAccessGuard;
-import com.hotclick.service.producto.ProductoApprovalService;
 import com.hotclick.service.producto.ProductoIdempotencyService;
-import com.hotclick.service.producto.ProductoModerationFacade;
+import com.hotclick.service.producto.ProductoAltaService;
 import com.hotclick.service.producto.ProductoRequestSanitizer;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +25,9 @@ import static com.hotclick.controller.producto.ProductoControllerSupport.current
 @Component
 public class ProductoCreateHandler {
 
-    @Autowired private ProductoService    productoService;
+    @Autowired private ProductoAltaService productoAltaService;
     @Autowired private TenantService      tenantService;
-    @Autowired private ProductoAccessGuard productoAccessGuard;
-    @Autowired private ProductoModerationFacade productoModerationFacade;
     @Autowired private ProductoRequestSanitizer productoRequestSanitizer;
-    @Autowired private ProductoApprovalService productoApprovalService;
     @Autowired private ProductoIdempotencyService productoIdempotencyService;
     @Autowired private EmpresaDestinoAlta empresaDestinoAlta;
     @Autowired private AuditoriaAdminRegistroService auditoriaAdminRegistroService;
@@ -48,9 +42,9 @@ public class ProductoCreateHandler {
         try {
             empresa = empresaDestinoAlta.resolver(empresaId);
         } catch (TenantAccessDeniedException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (IllegalArgumentException | RecursoNoEncontradoException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
         tenantService.verificarLimiteProductos(empresa.getId());
         return persistirAlta(dto, idempotencyKey, empresa);
@@ -58,18 +52,25 @@ public class ProductoCreateHandler {
 
     private ResponseEntity<ResponseDTO> persistirAlta(
             ProductoRequestDTO dto, String idempotencyKey, Empresa empresa) {
-        productoRequestSanitizer.restringirCamposSoloAdmin(dto, productoAccessGuard.hasRole("ADMIN"));
         try {
-            if (!productoModerationFacade.isTextoPermitido(dto)) {
-                return ResponseEntity.badRequest()
-                    .body(ResponseDTO.error("El contenido del producto no está permitido en la plataforma"));
-            }
-            var producto = productoService.crearProducto(dto, currentUserName(), empresa);
+            var creationResult = productoAltaService.crearYPublicar(dto, currentUserName(), empresa);
+            var producto = creationResult.producto();
             productoIdempotencyService.remember(idempotencyKey);
-            var creationResult = productoApprovalService.aplicarReglasPublicacion(producto, empresa);
-            auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
-                producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
-            return ResponseEntity.ok(ResponseDTO.success(creationResult.mensaje(), creationResult.producto()));
+            String mensaje = creationResult.mensaje();
+            // El producto ya está confirmado: si solo falla la auditoría la respuesta sigue siendo de éxito
+            // (un 400 haría que el cliente reintente y duplique el producto), con un aviso en el mensaje.
+            try {
+                auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_CREADO", "PRODUCTO",
+                    producto.getId(), empresa.getId(), "Producto creado: " + producto.getNombreProducto());
+            } catch (Exception posterior) {
+                org.slf4j.LoggerFactory.getLogger(ProductoCreateHandler.class).error(
+                    "[producto-alta] producto {} creado pero falló la auditoría: {}",
+                    producto.getId(), posterior.getMessage(), posterior);
+                mensaje += " (no se pudo registrar la auditoría; el producto sí quedó creado, no lo vuelvas a crear)";
+            }
+            return ResponseEntity.ok(ResponseDTO.success(mensaje, creationResult.producto()));
+        } catch (ProductoAltaService.ContenidoNoPermitidoException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(productoRequestSanitizer.mensajeAmigable(e)));
         }

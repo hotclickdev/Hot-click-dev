@@ -4,9 +4,14 @@ import { billingService, type CambiarPlanResultado } from '@/services/billingSer
 import useTenantStore from '@/store/tenantStore'
 import type { Id } from '@/types/api'
 
-function mensajeErrorPlan(err: unknown, fallback: string): string {
+/** QA8: el negocio aún no está aprobado; no puede elegir ni pagar plan (409 del backend). */
+export const MSG_EMPRESA_PENDIENTE_APROBACION = 'Tu negocio está en revisión; podrás elegir plan cuando lo aprobemos.'
+
+export function mensajeErrorPlan(err: unknown, fallback: string): string {
   if (typeof err !== 'object' || err === null || !('response' in err)) return fallback
-  const error = (err as { response?: { data?: { error?: unknown } } }).response?.data?.error
+  const data = (err as { response?: { data?: { error?: unknown; codigo?: unknown } } }).response?.data
+  if (data?.codigo === 'EMPRESA_PENDIENTE_APROBACION') return MSG_EMPRESA_PENDIENTE_APROBACION
+  const error = data?.error
   return typeof error === 'string' && error ? error : fallback
 }
 

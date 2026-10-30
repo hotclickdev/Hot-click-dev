@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -102,7 +103,7 @@ public class TurnoCajaService {
         if (metodoPago == null || metodoPago.isBlank() || monto == null || monto <= 0) return;
         TurnoCaja turno = bloquearTurno(turnoId);
 
-        switch (metodoPago.toUpperCase()) {
+        switch (metodoPago.toUpperCase(Locale.ROOT)) {
             case "EFECTIVO"      -> turno.setTotalEfectivo(turno.getTotalEfectivo() + monto);
             case "SINPE"         -> turno.setTotalSinpe(turno.getTotalSinpe() + monto);
             case "TARJETA"       -> turno.setTotalTarjeta(turno.getTotalTarjeta() + monto);
@@ -118,7 +119,7 @@ public class TurnoCajaService {
         if (turnoId == null || metodoPago == null || metodoPago.isBlank() || monto == null || monto <= 0) return;
         TurnoCaja turno = bloquearTurno(turnoId);
         if (!"ABIERTO".equals(turno.getEstado())) return;
-        switch (metodoPago.toUpperCase()) {
+        switch (metodoPago.toUpperCase(Locale.ROOT)) {
             case "EFECTIVO"      -> turno.setTotalEfectivo(Math.max(0, turno.getTotalEfectivo() - monto));
             case "SINPE"         -> turno.setTotalSinpe(Math.max(0, turno.getTotalSinpe() - monto));
             case "TARJETA"       -> turno.setTotalTarjeta(Math.max(0, turno.getTotalTarjeta() - monto));
