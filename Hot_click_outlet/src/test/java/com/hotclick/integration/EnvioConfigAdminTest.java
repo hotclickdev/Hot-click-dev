@@ -114,7 +114,6 @@ class EnvioConfigAdminTest extends BaseIntegrationTest {
     void tiendaClasificaZona() throws Exception {
         Producto p = preparar("envio-zona");
         assertThat(pedir("envio-zona", p, "Limón", "Siquirres", 1)).isEqualTo(5500);
-        assertThat(pedir("envio-zona", p, null, null, 2)).isEqualTo(5500);
         assertThat(pedir("envio-zona", p, "Heredia", "Belén", 3)).isEqualTo(4000);
     }
 
@@ -142,7 +141,8 @@ class EnvioConfigAdminTest extends BaseIntegrationTest {
     @DisplayName("MED-5: cantón que no es de la provincia (o solo uno) = 400 genérico y no crea pedido")
     void tiendaCantonAjeno400() throws Exception {
         Producto p = preparar("envio-ajeno");
-        for (String[] d : new String[][]{{"Heredia", "Siquirres"}, {"Heredia", null}, {"Narnia", "Belén"}}) {
+        // BAJO #447: con envío a domicilio, sin destino también es 400 (antes se cobraba fuera del GAM sin cantón).
+        for (String[] d : new String[][]{{"Heredia", "Siquirres"}, {"Heredia", null}, {"Narnia", "Belén"}, {null, null}}) {
             mockMvc.perform(post("/api/tienda/envio-ajeno/pedidos").contentType(MediaType.APPLICATION_JSON)
                     .content(cuerpo("envio-ajeno", p, "Del parque 100 m norte", d[0], d[1])))
                 .andExpect(status().isBadRequest())

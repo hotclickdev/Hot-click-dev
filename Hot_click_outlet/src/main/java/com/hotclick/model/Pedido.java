@@ -150,7 +150,11 @@ public class Pedido extends BaseEntity {
     @Column(name = "envio_zona", length = 12)
     private String envioZona;
 
-    /** Tarifa de esa zona al momento del cobro (el envío del negocio; un subpedido extra del mismo negocio va en ₡0). */
+    /**
+     * B-3 Auditor 3: tarifa de la zona ({@link #envioZona}) al momento del cobro, la que se le aplicó al negocio.
+     * NO es lo cobrado a este subpedido: eso es {@code costoEnvio}, que en un paquete extra del mismo negocio es ₡0
+     * y lleva aquí igualmente la tarifa (p. ej. 5500 con costoEnvio 0).
+     */
     @Column(name = "envio_monto_zona")
     private Integer envioMontoZona;
 

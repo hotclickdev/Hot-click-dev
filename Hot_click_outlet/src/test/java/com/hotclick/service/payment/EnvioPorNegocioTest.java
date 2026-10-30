@@ -143,11 +143,13 @@ class EnvioPorNegocioTest {
     }
 
     @Test
-    @DisplayName("Sin provincia/cantón: fuera del GAM; cantón inventado: 400 (MED-5)")
+    @DisplayName("Sin provincia/cantón o cantón inventado con envío: 400 (MED-5, BAJO #447)")
     void zonaDesconocidaFueraGam() {
         Empresa a = empresa(78L);
         producto(a, bodega(781L, a));
-        assertThat(envioTotal(crear(req(GAM, null, null)))).isEqualTo(5500);
+        // BAJO #447: con envío, sin destino ya no se cobra fuera del GAM a ciegas: 400.
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> crear(req(GAM, null, null)))
+            .isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> crear(req(GAM, "San José", "Atlantis")))
             .isInstanceOf(IllegalArgumentException.class);
     }

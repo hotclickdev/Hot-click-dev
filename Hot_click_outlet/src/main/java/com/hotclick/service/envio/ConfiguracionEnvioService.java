@@ -40,8 +40,9 @@ public class ConfiguracionEnvioService {
             return v.isEmpty() ? DEFAULTS : v.get(0);
         } catch (DataAccessException e) {
             // BAJO Auditor 3: sin PII ni SQL; solo la clase del error. Se cobran los defaults.
-            log.warn("config de envío no disponible ({}); se usan los montos por defecto", e.getClass().getSimpleName());
-            return DEFAULTS;
+            // BAJO #447: fail-closed. Sin config no se cobra un monto supuesto; el log solo lleva la clase.
+            log.warn("config de envío no disponible ({}); se rechaza el cobro con 503", e.getClass().getSimpleName());
+            throw new com.hotclick.exception.EnvioNoDisponibleException();
         }
     }
 

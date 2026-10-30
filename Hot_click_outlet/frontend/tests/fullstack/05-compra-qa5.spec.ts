@@ -40,7 +40,7 @@ test.describe.serial('Compra — QA5', () => {
 
   test('QA5-002: envío normal desde tienda != empresa 1 no choca con la bodega default (bodegaId=1)', async ({ request }) => {
     // Mismo payload que arma el front hoy: ya no manda bodegaId=1 por defecto (P-08), solo la bodega real por envío.
-    const res = await guestCheckout(request, invitado({ metodoEnvio: 'ENVIO_NORMAL_GAM', envios: [{ bodegaId: tienda.bodegaId, metodoEnvio: 'ENVIO_NORMAL_GAM' }] }))
+    const res = await guestCheckout(request, invitado({ metodoEnvio: 'ENVIO_NORMAL_GAM', provincia: 'San José', canton: 'San José', envios: [{ bodegaId: tienda.bodegaId, metodoEnvio: 'ENVIO_NORMAL_GAM' }] }))
     const body = await res.json()
     expect(body.message ?? '').not.toMatch(/La bodega elegida no es de la tienda/)
     expect(res.status()).not.toBe(500)
@@ -49,7 +49,7 @@ test.describe.serial('Compra — QA5', () => {
   })
 
   test('QA5-003: checkout con bodega propia devuelve 200, sin 500 de FK del pago', async ({ request }) => {
-    const res = await guestCheckout(request, invitado({ bodegaId: tienda.bodegaId, metodoEnvio: 'ENVIO_NORMAL_GAM', envios: [{ bodegaId: tienda.bodegaId, metodoEnvio: 'ENVIO_NORMAL_GAM' }] }))
+    const res = await guestCheckout(request, invitado({ bodegaId: tienda.bodegaId, metodoEnvio: 'ENVIO_NORMAL_GAM', provincia: 'San José', canton: 'San José', envios: [{ bodegaId: tienda.bodegaId, metodoEnvio: 'ENVIO_NORMAL_GAM' }] }))
     const body = await res.json()
     expect(res.status(), body.message).not.toBe(500)
     expect(JSON.stringify(body)).not.toMatch(/fkey|foreign key|HOT_CLICK_PEDIDO_TB/i)
