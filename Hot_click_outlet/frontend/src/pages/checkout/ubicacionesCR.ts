@@ -40,6 +40,11 @@ export function esDestinoGAM(provincia: string, canton: string): boolean {
   return CANTONES_GAM[nombre].some((item) => sinTildes(item) === claveCanton)
 }
 
+/** Igual que `ZonaEnvio` del servidor: sin destino o desconocido = fuera del GAM. */
+export function esDestinoGAMEstricto(provincia: string | null | undefined, canton: string | null | undefined): boolean {
+  return Boolean(provincia?.trim() && canton?.trim()) && esDestinoGAM(provincia!.trim(), canton!.trim())
+}
+
 export const PROVINCIAS_CR = Object.keys(UBICACIONES_CR)
 
 export function cantonesDeProvincia(provincia: string): string[] {

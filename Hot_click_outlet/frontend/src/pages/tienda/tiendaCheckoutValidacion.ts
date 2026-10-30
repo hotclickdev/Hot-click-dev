@@ -1,4 +1,5 @@
 import { SHIPPING_COSTS } from '@/pages/checkout/checkoutHelpers'
+import { esDestinoGAMEstricto } from '@/pages/checkout/ubicacionesCR'
 export const METODO_ENVIO_DOMICILIO = 'DOMICILIO'
 export const METODO_ENVIO_RETIRO = 'RETIRO'
 
@@ -32,7 +33,8 @@ export function mensajeErrorCheckout(form: FormCheckoutTienda): string | null {
   return null
 }
 
-/** Envío a domicilio = Envío Normal GAM de la misma tabla que usa el servidor (`OrderPricingService`). */
-export function costoEnvioTienda(metodoEnvio: string): number {
-  return metodoEnvio === METODO_ENVIO_DOMICILIO ? SHIPPING_COSTS.ENVIO_NORMAL_GAM : 0
+/** MED-3 (c): domicilio cobra GAM o fuera del GAM según el destino, igual que el servidor (desconocido = fuera). */
+export function costoEnvioTienda(metodoEnvio: string, provincia?: string, canton?: string): number {
+  if (metodoEnvio !== METODO_ENVIO_DOMICILIO) return 0
+  return esDestinoGAMEstricto(provincia, canton) ? SHIPPING_COSTS.ENVIO_NORMAL_GAM : SHIPPING_COSTS.ENVIO_NORMAL_FUERA_GAM
 }
