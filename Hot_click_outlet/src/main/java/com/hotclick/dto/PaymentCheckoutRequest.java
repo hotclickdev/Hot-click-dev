@@ -61,6 +61,16 @@ public class PaymentCheckoutRequest {
     public Boolean getFacturaElectronica() { return facturaElectronica; }
     public void setFacturaElectronica(Boolean v) { this.facturaElectronica = v; }
 
+    /** A-2: provincia y cantón del destino; con ellos el servidor decide GAM o fuera del GAM. */
+    @jakarta.validation.constraints.Size(max = 60, message = "La provincia es demasiado larga")
+    private String provincia;
+    @jakarta.validation.constraints.Size(max = 80, message = "El cantón es demasiado largo")
+    private String canton;
+    public String getProvincia() { return provincia; }
+    public void setProvincia(String v) { this.provincia = v; }
+    public String getCanton() { return canton; }
+    public void setCanton(String v) { this.canton = v; }
+
     public String getDireccionEntrega() { return direccionEntrega; }
     public void setDireccionEntrega(String direccionEntrega) { this.direccionEntrega = direccionEntrega; }
 

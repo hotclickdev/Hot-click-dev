@@ -109,7 +109,7 @@ public class StorefrontGuestOrderService {
         pedido.setMetodoPago(dto.getMetodoPago());
         pedido.setMetodoEnvio(dto.getMetodoEnvio());
         pedido.setSubtotal(subtotal);
-        int costoEnvio = costoEnvioTienda(dto.getMetodoEnvio(), orderPricingService);
+        int costoEnvio = costoEnvioTienda(dto, orderPricingService);
         pedido.setTotalPedido(subtotal + costoEnvio);
         pedido.setCostoTotalProductos(costoTotal);
         pedido.setUtilidadBruta(subtotal - costoTotal);
@@ -183,10 +183,16 @@ public class StorefrontGuestOrderService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hotclick.service.payment.OrderPricingService orderPricingService;
 
-    /** (a) Envío a domicilio = Envío Normal de HotClick: el costo sale de la misma tabla del marketplace. */
-    static int costoEnvioTienda(String metodoEnvio, com.hotclick.service.payment.OrderPricingService pricing) {
-        if (pricing == null || !StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(metodoEnvio)) return 0;
-        return pricing.calcularCostoEnvio("ENVIO_NORMAL_GAM");
+    /**
+     * (a) Envío a domicilio = Envío Normal de HotClick: el costo sale de la misma tabla del marketplace.
+     * MED-3 (c) Auditor 3: GAM o fuera del GAM con el mismo clasificador del checkout (destino desconocido = fuera).
+     * El pedido de tienda es de un solo negocio (cada ítem se valida contra la empresa del slug), así que es un
+     * solo envío por negocio aunque despache desde la bodega de la plataforma.
+     */
+    static int costoEnvioTienda(StorefrontPedidoDTO dto, com.hotclick.service.payment.OrderPricingService pricing) {
+        if (pricing == null || dto == null || !StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio())) return 0;
+        return pricing.calcularCostoEnvio(com.hotclick.service.payment.OrderPricingService.metodoNormalPorDestino(
+            "ENVIO_NORMAL_GAM", dto.getProvincia(), dto.getCanton()));
     }
 
     static void exigirEfectivoAceptado(String metodoPago, Bodega bodega) {
