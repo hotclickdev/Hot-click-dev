@@ -228,6 +228,8 @@ class PaymentServiceTest {
         setupCheckoutMocks();
 
         PaymentCheckoutRequest req = buildRequest(1);
+        req.setProvincia("San José");
+        req.setCanton("San José");
         req.setMetodoEnvio("ENVIO_NORMAL_GAM");
         req.setDireccionEntrega("Barrio Escalante, casa 12");
 

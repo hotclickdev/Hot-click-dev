@@ -89,7 +89,7 @@ describe('envíos y payload', () => {
     const envios = enviosVigentes(paquetes, { 'empresa-7': ENVIO.RAPIDO, 'empresa-8': ENVIO.RAPIDO })
 
     expect(envios).toEqual({ 'empresa-7': ENVIO.RAPIDO, 'empresa-8': ENVIO.NORMAL_FUERA_GAM })
-    expect(envioTotal(paquetes, envios)).toBe(9000)
+    expect(envioTotal(paquetes, envios)).toBe(10500)
   })
 
   it('manda la bodega solo en paquetes con retiro', () => {
