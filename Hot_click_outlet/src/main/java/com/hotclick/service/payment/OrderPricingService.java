@@ -18,6 +18,8 @@ public class OrderPricingService {
 
     @Autowired private CuponService    cuponService;
     @Autowired private GiftCardService giftCardService;
+    /** A-2: montos de envío fijados por ADMIN; sin bean (tests unitarios) valen los defaults (4.000 / 5.500 / 5.000). */
+    @Autowired(required = false) private com.hotclick.service.envio.ConfiguracionEnvioService configuracionEnvio;
 
     /**
      * M-07: regla única de precio efectivo (catálogo, carrito, checkout y POS).
@@ -82,7 +84,17 @@ public class OrderPricingService {
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
                                               String metodoEnvio, int gcSaldoRestante,
                                               java.util.List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva) {
-        int costoEnvio = calcularCostoEnvio(metodoEnvio);
+        return calcularPaquete(req, bodega, subtotal, metodoEnvio, gcSaldoRestante, lineasIva, calcularCostoEnvio(metodoEnvio));
+    }
+
+    /**
+     * A-2: {@code costoEnvio} ya resuelto por negocio (lo calcula {@code CheckoutGrupoFactory}): el envío se cobra
+     * una vez por empresa, no por bodega; los demás paquetes del mismo negocio llegan con 0.
+     */
+    public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
+                                              String metodoEnvio, int gcSaldoRestante,
+                                              java.util.List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva,
+                                              int costoEnvio) {
         Long empresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
 
         int descuento = 0;
@@ -133,14 +145,30 @@ public class OrderPricingService {
     /** La encomienda la cobra la empresa de transporte al retirar en la terminal: no se cobra en el checkout. */
     public int calcularCostoEnvio(String metodoEnvio) {
         if (metodoEnvio == null) return 0;
+        com.hotclick.service.envio.ConfiguracionEnvioService.Montos m = montos();
         return switch (metodoEnvio) {
-            case "ENVIO_RAPIDO"            -> 5000;
-            case "ENVIO_NORMAL_GAM"        -> 4000;
-            case "ENVIO_NORMAL_FUERA_GAM"  -> 4000;
+            // A-2: los tres montos los configura ADMIN; GAM o fuera lo decide el servidor (metodoNormalPorDestino).
+            case "ENVIO_RAPIDO"            -> m.rapido();
+            case "ENVIO_NORMAL_GAM"        -> m.gam();
+            case "ENVIO_NORMAL_FUERA_GAM"  -> m.fueraGam();
             case "ENVIO_A_DOMICILIO"       -> 2000;
             // Encomienda ₡2.000 (12-oct-2026); lo que cobre la encomienda lo paga el comprador aparte.
             case "ENCOMIENDA_PROPIA"       -> 2000;
             default                        -> 0;
         };
+    }
+
+    private com.hotclick.service.envio.ConfiguracionEnvioService.Montos montos() {
+        return configuracionEnvio != null ? configuracionEnvio.montos()
+            : com.hotclick.service.envio.ConfiguracionEnvioService.DEFAULTS;
+    }
+
+    /**
+     * A-2: el envío normal GAM o fuera del GAM lo decide el servidor con el destino (provincia y cantón);
+     * lo que eligió el cliente se ignora. Destino ausente o desconocido: fuera del GAM. Otros métodos, igual.
+     */
+    public static String metodoNormalPorDestino(String metodoEnvio, String provincia, String canton) {
+        if (!"ENVIO_NORMAL_GAM".equals(metodoEnvio) && !"ENVIO_NORMAL_FUERA_GAM".equals(metodoEnvio)) return metodoEnvio;
+        return com.hotclick.service.envio.ZonaEnvio.esGam(provincia, canton) ? "ENVIO_NORMAL_GAM" : "ENVIO_NORMAL_FUERA_GAM";
     }
 }

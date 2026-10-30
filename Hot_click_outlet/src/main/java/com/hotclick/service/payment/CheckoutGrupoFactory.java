@@ -94,9 +94,11 @@ public class CheckoutGrupoFactory {
         int gcRestante = saldoGiftCard(req);
         int totalCobro = 0;
         List<Subpedido> subpedidos = new ArrayList<>();
-        for (CheckoutPaquetesPlanner.Paquete paquete : paquetes) {
+        int[] envios = enviosPorNegocio(paquetes);
+        for (int i = 0; i < paquetes.size(); i++) {
+            CheckoutPaquetesPlanner.Paquete paquete = paquetes.get(i);
             OrderPricingResult pricing = orderPricingService.calcularPaquete(
-                req, paquete.bodega(), paquete.subtotal(), paquete.metodoEnvio(), gcRestante, paquete.lineasIva());
+                req, paquete.bodega(), paquete.subtotal(), paquete.metodoEnvio(), gcRestante, paquete.lineasIva(), envios[i]);
             gcRestante -= pricing.gcMonto();
             Pedido pedido = checkoutOrderFactory.crearSubpedido(pricing, paquete.subtotal(), paquete.costoTotal(),
                 provider, usuario, paquete.bodega(), paquete.metodoEnvio(), paquete.notas(), grupoPago, estadoInicial);
@@ -106,6 +108,34 @@ public class CheckoutGrupoFactory {
             totalCobro += pricing.totalConGC();
         }
         return new Grupo(subpedidos, totalCobro);
+    }
+
+    /**
+     * A-2: el envío se cobra por negocio (empresa), no por bodega. Si un negocio despacha desde varias bodegas,
+     * paga un solo envío: el más caro de sus paquetes, cargado al primero; los demás van en ₡0. Así el total,
+     * el cobro ONVO (suma del grupo) y la billetera (cada subpedido acredita a su empresa) cuadran.
+     * Un paquete sin empresa se trata solo (clave por bodega).
+     */
+    int[] enviosPorNegocio(List<CheckoutPaquetesPlanner.Paquete> paquetes) {
+        int[] envios = new int[paquetes.size()];
+        java.util.Map<String, Integer> primero = new java.util.HashMap<>();
+        for (int i = 0; i < paquetes.size(); i++) {
+            CheckoutPaquetesPlanner.Paquete p = paquetes.get(i);
+            int costo = orderPricingService.calcularCostoEnvio(p.metodoEnvio());
+            Integer j = primero.putIfAbsent(claveNegocio(p.bodega(), i), i);
+            if (j == null) {
+                envios[i] = costo;
+            } else {
+                envios[j] = Math.max(envios[j], costo);
+            }
+        }
+        return envios;
+    }
+
+    private static String claveNegocio(Bodega b, int indice) {
+        if (b != null && b.getEmpresa() != null && b.getEmpresa().getId() != null) return "E" + b.getEmpresa().getId();
+        if (b != null && b.getId() != null) return "B" + b.getId();
+        return "P" + indice;
     }
 
     private int saldoGiftCard(PaymentCheckoutRequest req) {

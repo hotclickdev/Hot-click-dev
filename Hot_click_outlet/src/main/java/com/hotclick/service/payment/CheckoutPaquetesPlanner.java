@@ -60,7 +60,9 @@ public class CheckoutPaquetesPlanner {
                     + " no tiene bodega de despacho configurada. Escribinos para coordinar tu pedido.");
             }
             bodegas.putIfAbsent(origen.getId(), origen);
-            if (!propia) sinBodegaPropia.add(origen.getId());
+            // MED-3 (a) Auditor 3: un producto sin bodega propia que despacha desde la bodega de venta online de su
+            // tienda llega del front como "sin-bodega" (bodegaId ausente): también toma ese envío.
+            if (!propia || p.getBodega() == null) sinBodegaPropia.add(origen.getId());
             itemsPorBodega.computeIfAbsent(origen.getId(), k -> new ArrayList<>()).add(item);
         }
 
@@ -80,8 +82,9 @@ public class CheckoutPaquetesPlanner {
             }
             Bodega bodegaPaquete = bodegas.get(e.getKey());
             PaymentCheckoutRequest.EnvioPaqueteDTO envio = envioDe(req, e.getKey(), sinBodegaPropia.contains(e.getKey()));
-            String metodo = envio != null ? envio.getMetodoEnvio()
-                : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO;
+            String metodo = OrderPricingService.metodoNormalPorDestino(envio != null ? envio.getMetodoEnvio()
+                : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO,
+                req.getProvincia(), req.getCanton());
             String notas = envio != null && envio.getNotas() != null && !envio.getNotas().isBlank()
                 ? envio.getNotas() : req.getNotas();
             paquetes.add(new Paquete(bodegaPaquete, e.getValue(), subtotal, costoTotal, metodo, notas, List.copyOf(lineasIva)));
