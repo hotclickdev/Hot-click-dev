@@ -93,6 +93,11 @@ public class CheckoutPaquetesPlanner {
                 ? envio.getNotas() : req.getNotas();
             paquetes.add(new Paquete(bodegaPaquete, e.getValue(), subtotal, costoTotal, metodo, notas, List.copyOf(lineasIva)));
         }
+        // NO APTO #448: el método top-level puede ser retiro/null y algún paquete de envios[] ir a domicilio;
+        // si CUALQUIER paquete planificado no es retiro, el destino es obligatorio (no se guarda FUERA_GAM sin cantón).
+        if (paquetes.stream().anyMatch(pq -> !CheckoutOrderFactory.esRetiro(pq.metodoEnvio()))) {
+            com.hotclick.service.envio.DestinoEnvio.exigir(req.getProvincia(), req.getCanton(), true);
+        }
         return paquetes;
     }
 

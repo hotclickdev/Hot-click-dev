@@ -36,6 +36,41 @@ class DestinoPedidoTest {
         return r;
     }
 
+    /** Request con un producto de la bodega 7 y el método del paquete en envios[] (top-level aparte). */
+    private static PaymentCheckoutRequest reqConPaquete(String metodoTop, String metodoPaquete) {
+        PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
+        item.setProductoId(10L); item.setCantidad(1);
+        PaymentCheckoutRequest.EnvioPaqueteDTO env = new PaymentCheckoutRequest.EnvioPaqueteDTO();
+        env.setBodegaId(7L); env.setMetodoEnvio(metodoPaquete);
+        PaymentCheckoutRequest r = new PaymentCheckoutRequest();
+        r.setItems(List.of(item)); r.setMetodoEnvio(metodoTop); r.setEnvios(List.of(env));
+        return r;
+    }
+
+    private static Map<Long, com.hotclick.model.Producto> productoEnBodega7() {
+        com.hotclick.model.Bodega b = new com.hotclick.model.Bodega();
+        b.setId(7L);
+        com.hotclick.model.Producto p = new com.hotclick.model.Producto();
+        p.setId(10L); p.setBodega(b); p.setPrecioVenta(1000);
+        return Map.of(10L, p);
+    }
+
+    @Test
+    @DisplayName("NO APTO #448: top-level retiro/null pero un paquete de envios[] a domicilio sin destino = 400")
+    void paqueteADomicilioSinDestinoRechaza() {
+        CheckoutPaquetesPlanner planner = new CheckoutPaquetesPlanner();
+        for (String top : new String[]{null, "RETIRO_EN_TIENDA"}) {
+            assertThatThrownBy(() -> planner.planificar(reqConPaquete(top, "ENVIO_NORMAL_GAM"), productoEnBodega7(), null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage(DestinoEnvio.DESTINO_INVALIDO);
+        }
+        // Todos los paquetes son retiro: no pide destino.
+        assertThat(planner.planificar(reqConPaquete(null, "RETIRO_EN_TIENDA"), productoEnBodega7(), null)).hasSize(1);
+        // Con destino válido el paquete a domicilio pasa.
+        PaymentCheckoutRequest ok = reqConPaquete("RETIRO_EN_TIENDA", "ENVIO_NORMAL_GAM");
+        ok.setProvincia("Heredia"); ok.setCanton("Belén");
+        assertThat(planner.planificar(ok, productoEnBodega7(), null)).hasSize(1);
+    }
+
     private static CheckoutOrderFactory factory() {
         CheckoutOrderFactory f = new CheckoutOrderFactory();
         PedidoRepository repo = mock(PedidoRepository.class);
