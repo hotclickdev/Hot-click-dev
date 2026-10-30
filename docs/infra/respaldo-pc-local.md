@@ -62,7 +62,7 @@ Así esa llave solo puede producir el dump. Para correr `docker exec` el usuario
 ```bash
 export RESPALDO_SSH_DESTINO="respaldo@<SERVIDOR>"      # placeholder; no lo pongás en el repo
 export RESPALDO_SSH_LLAVE=~/.ssh/hotclick_respaldo
-export RESPALDO_GPG_RECIPIENT="<FINGERPRINT>"
+export RESPALDO_GPG_RECIPIENT="<FINGERPRINT>"   # 40 hex sin espacios; si no, el script se niega
 export RESPALDO_GPG_PUBKEY=~/hotclick-backups.pub.asc
 export RESPALDO_DIR=~/hotclick-respaldos
 ./scripts/backup/respaldo-pc-pull.sh
@@ -104,14 +104,18 @@ createdb hotclick_drill
 ./scripts/backup/restaurar-respaldo.sh --archivo <archivo> --destino hotclick_drill --ejecutar
 ```
 
-- Si el destino parece producción (contiene `prod`, `hotclick.lat` o es exactamente `hotclick`; se ajusta con `RESPALDO_PROD_PATRON`), **se niega** salvo que le pasés `--permitir-prod`.
+Contraseña: nunca en la URL (queda en el historial y en `ps`). Usá `PGPASSFILE` (por defecto `~/.pgpass`, `chmod 600`, línea `localhost:55432:hotclick_drill:postgres:<temporal>`).
+
+- **Allowlist de destino**: solo acepta host `localhost`, `127.0.0.1`, `::1` o socket unix local (sin host o ruta `/…`; también se mira `PGHOST`/`PGHOSTADDR`), y una base cuyo nombre contenga `restore`, `drill` o `test`. Entiende nombre simple, `postgresql://…` y DSN `key=value`. Todo lo demás (IP o host interno, `hotclick` a secas, varios hosts, `service=`) **se rechaza**.
+- `--permitir-prod` es la única excepción y es **PELIGROSA**: saltea la allowlist y `pg_restore --clean` borra y reemplaza los objetos del destino. Solo ante un desastre real y con OK explícito de Andrés.
+- El dump descifrado no se escribe a disco: se descifra en streaming (una pasada para `--list`, otra para restaurar). Solo el TOC (sin filas) va a un tmp `700` que borra el trap (también con Ctrl-C/TERM). Si el proceso muere con `kill -9` (SIGKILL) ese tmp puede quedar: borrá tus `/tmp/tmp.*`.
 - Si el checksum no coincide o el archivo no se puede descifrar, para con error.
 
 ## 6. Simulacro de restauración (mensual)
 
 1. Traé la privada offline e importala: `gpg --import`.
 2. Levantá un Postgres desechable en tu PC: `docker run --rm -d --name drill -e POSTGRES_PASSWORD=<temporal> -p 55432:5432 postgres:<misma versión>`.
-3. Corré `restaurar-respaldo.sh --destino "postgresql://postgres:<temporal>@localhost:55432/postgres" --ejecutar` con el respaldo más reciente.
+3. Corré ``createdb -h localhost -p 55432 -U postgres hotclick_drill` y `restaurar-respaldo.sh --destino "postgresql://postgres@localhost:55432/hotclick_drill" --ejecutar` (contraseña por `PGPASSFILE`)` con el respaldo más reciente.
 4. Revisá conteos básicos (usuarios, pedidos, productos) **sin copiar datos a otro lado** (Ley 8968).
 5. Bajá el contenedor, borrá la privada del llavero (`gpg --delete-secret-keys`) y anotá fecha y resultado en el checklist de lanzamiento.
 
@@ -121,7 +125,8 @@ createdb hotclick_drill
 - ida y vuelta de cifrado y descifrado;
 - rechazo de un dump inválido;
 - retención de 14 diarios más 8 semanales;
-- negativa a restaurar sobre prod;
+- allowlist de destino (URLs y DSN remotos o sin base de restore se rechazan);
+- `pg_restore --list` que cierra temprano (simulado leyendo 5 bytes) sin SIGPIPE, y fingerprint inválido;
 - archivo corrupto, tanto por checksum como por descifrado.
 
 ## Requiere OK de Andrés (no ejecutado)

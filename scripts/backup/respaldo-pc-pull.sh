@@ -51,7 +51,8 @@ fuente() {
     "${ssh[@]}" "$RESPALDO_SSH_DESTINO" "${RESPALDO_REMOTE_CMD:-docker exec hotclick-postgres sh -c 'pg_dump -U \"\$POSTGRES_USER\" -d hotclick -Fc'}"
   else
     local rdir="${RESPALDO_REMOTE_DIR:-/var/backups/hotclick}"
-    "${ssh[@]}" "$RESPALDO_SSH_DESTINO" "f=\$(ls -1 $rdir/hotclick-*.dump.gz.gpg | sort | tail -n1) && cat \"\$f\""
+    local rdir_q; rdir_q="$(printf '%q' "$rdir")"
+    "${ssh[@]}" "$RESPALDO_SSH_DESTINO" "f=\$(ls -1 $rdir_q/hotclick-*.dump.gz.gpg | sort | tail -n1) && cat \"\$f\""
   fi
 }
 
@@ -67,6 +68,7 @@ PARTIAL="$FINAL.partial"
 
 if [[ "$MODO" == dump ]]; then
   [[ -n "$RECIPIENT" ]] || die "falta RESPALDO_GPG_RECIPIENT"
+  [[ "$RECIPIENT" =~ ^[0-9A-Fa-f]{40}$ ]] || die "RESPALDO_GPG_RECIPIENT debe ser el fingerprint completo (40 hex, sin espacios)"
   if [[ -n "${RESPALDO_GPG_PUBKEY:-}" ]]; then
     grep -q "PRIVATE KEY" "$RESPALDO_GPG_PUBKEY" && die "RESPALDO_GPG_PUBKEY parece PRIVADA; usá solo la pública"
     TMP_GNUPG="$(mktemp -d)"
@@ -76,7 +78,9 @@ if [[ "$MODO" == dump ]]; then
   "${GPG[@]}" --list-keys "$RECIPIENT" >/dev/null 2>&1 || die "no encuentro la llave pública"
   LISTA="$(mktemp)"
   # tee valida el formato custom con pg_restore --list sin escribir el dump en claro a disco.
-  if ! fuente | tee >("$PG_RESTORE_CMD" --list >"$LISTA" 2>/dev/null; echo $? >"$LISTA.rc") \
+  # pg_restore --list lee solo el TOC y cierra: el `cat >/dev/null` drena el resto para que
+  # tee no reciba SIGPIPE (rc=141) y pipefail no tumbe el respaldo. El rc real queda en .rc.
+  if ! fuente | tee >("$PG_RESTORE_CMD" --list >"$LISTA" 2>/dev/null; echo $? >"$LISTA.rc"; cat >/dev/null) \
        | gzip -c | "${GPG[@]}" --encrypt --recipient "$RECIPIENT" --output "$PARTIAL"; then
     rm -f "$LISTA" "$LISTA.rc"; die "falló el dump remoto o el cifrado; no se guardó nada"
   fi
