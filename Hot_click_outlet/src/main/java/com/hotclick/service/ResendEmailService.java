@@ -31,8 +31,9 @@ import java.util.Locale;
  *   <li>{@code mail.provider=smtp}: JavaMailSender; exige {@code spring.mail.host}.</li>
  *   <li>{@code mail.provider=noop}: no envía nada; solo loguea destinatario enmascarado y asunto (dev/local).</li>
  * </ul>
- * SendGrid con {@code sendgrid.api-key} vacía: en prod/production falla al arrancar; en otros perfiles
- * cae a noop con un warning (evita 401 de SendGrid en dev).
+ * SendGrid con {@code sendgrid.api-key} vacía: solo cae a noop (con warning) si hay un perfil activo
+ * dev, test o local y ninguno prod/production. En cualquier otro caso (prod, staging, sin perfil…)
+ * falla al arrancar. {@code mail.provider=noop} explícito con perfil prod/production también falla.
  * Fail closed: valor desconocido o smtp sin host lanzan IllegalStateException al arrancar
  * (y también en send()). Nunca cae al otro proveedor.
  */
@@ -74,14 +75,18 @@ public class ResendEmailService {
     Provider resolverProveedor() {
         String v = providerRaw == null ? "" : providerRaw.trim().toLowerCase(Locale.ROOT);
         if (v.equals("noop")) {
+            if (esProduccion()) {
+                throw new IllegalStateException("mail.provider=noop no está permitido en producción");
+            }
             return Provider.NOOP;
         }
         if (v.isEmpty() || v.equals("sendgrid")) {
             if (apiKey == null || apiKey.isBlank()) {
-                if (esProduccion()) {
-                    throw new IllegalStateException("mail.provider=sendgrid requiere sendgrid.api-key en producción");
+                if (!perfilNoopPermitido()) {
+                    throw new IllegalStateException(
+                        "mail.provider=sendgrid requiere sendgrid.api-key fuera de los perfiles dev, test o local");
                 }
-                log.warn("sendgrid.api-key vacía fuera de producción: se usa mail.provider=noop (no se envían correos)");
+                log.warn("sendgrid.api-key vacía en perfil dev/test/local: se usa mail.provider=noop (no se envían correos)");
                 return Provider.NOOP;
             }
             return Provider.SENDGRID;
@@ -96,6 +101,18 @@ public class ResendEmailService {
             return Provider.SMTP;
         }
         throw new IllegalStateException("mail.provider desconocido: " + providerRaw);
+    }
+
+    private static final java.util.Set<String> PERFILES_NOOP = java.util.Set.of("dev", "test", "local");
+
+    /** Fail-closed: hace falta un perfil dev|test|local activo y ninguno prod/production. Sin perfil: false. */
+    private boolean perfilNoopPermitido() {
+        if (environment == null || esProduccion()) return false;
+        for (String p : environment.getActiveProfiles()) {
+            String n = p == null ? "" : p.trim().toLowerCase(Locale.ROOT);
+            if (PERFILES_NOOP.contains(n)) return true;
+        }
+        return false;
     }
 
     private boolean esProduccion() {
