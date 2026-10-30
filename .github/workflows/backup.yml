@@ -1,8 +1,8 @@
 name: Daily DB Backup
 
 on:
-  schedule:
-    - cron: '0 6 * * *'  # 6 AM UTC = medianoche Costa Rica (UTC-6)
+  # INF-01: el respaldo diario corre en la PC local de Andrés
+  # (scripts/backup/respaldo-pc-pull.sh). Este workflow queda solo manual.
   workflow_dispatch:      # trigger manual desde GitHub Actions
 
 jobs:

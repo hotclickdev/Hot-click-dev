@@ -67,6 +67,16 @@ public class StorefrontPedidoDTO {
     public String getTelefonoCliente() { return telefonoCliente; }
     public void setTelefonoCliente(String v) { this.telefonoCliente = v; }
 
+    /** A-2: provincia y cantón del destino; con ellos el servidor decide GAM o fuera del GAM. */
+    @Size(max = 60, message = "La provincia es demasiado larga")
+    private String provincia;
+    @Size(max = 80, message = "El cantón es demasiado largo")
+    private String canton;
+    public String getProvincia() { return provincia; }
+    public void setProvincia(String v) { this.provincia = v; }
+    public String getCanton() { return canton; }
+    public void setCanton(String v) { this.canton = v; }
+
     public String getDireccionEntrega() { return direccionEntrega; }
     public void setDireccionEntrega(String v) { this.direccionEntrega = v; }
 
