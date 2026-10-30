@@ -78,6 +78,9 @@ type PagarCheckoutDeps = {
   direccion: string
   /** Dirección completa (señas, cantón, provincia) que viaja en las notas del pedido. */
   direccionPedido?: string
+  /** Destino para que el servidor clasifique GAM o fuera del GAM (A-2). */
+  provincia?: string
+  canton?: string
   sinpeEmail: string
   totalFinal: number
   items: ItemCheckout[]
@@ -122,6 +125,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     notas,
     direccion,
     direccionPedido,
+    provincia,
+    canton,
     sinpeEmail,
     totalFinal,
     items,
@@ -217,6 +222,9 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       notas: notasFull || null,
       // B17: la dirección también viaja aparte para que el pedido la guarde y los correos digan «Enviamos a …».
       direccionEntrega: necesitaDireccion && direccion ? (direccionPedido || direccion).slice(0, 500) : null,
+      // A-2: el servidor decide GAM o fuera del GAM con esto; sin destino cobra fuera del GAM.
+      provincia: provincia?.trim() || undefined,
+      canton: canton?.trim() || undefined,
       provider,
       ...(sinpeOnvo
         ? {
