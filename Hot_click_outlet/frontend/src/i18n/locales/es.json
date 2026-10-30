@@ -2863,6 +2863,8 @@
     "guiaInputPh": "Número de guía Correos CR",
     "costInputPh": "Costo envío (4000–20000)",
     "shippingDisplay": "Envío: {{amount}}",
+    "envioZonaDisplay": "Zona {{zona}} · {{destino}} · tarifa {{amount}}",
+    "envioZona": {"GAM": "GAM", "FUERA_GAM": "fuera del GAM", "EXPRESS": "express"},
     "guiaSection": "Guía:",
     "orderDelivered": "Pedido entregado",
     "orderCancelled": "Pedido cancelado",

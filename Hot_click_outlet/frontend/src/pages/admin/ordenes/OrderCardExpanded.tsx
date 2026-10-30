@@ -210,6 +210,15 @@ export default function OrderCardExpanded({
         {(order.costoEnvio as number) > 0 && (
           <span className="flex items-center text-xs text-[var(--hc-muted)] px-2">{t('adminOrders.shippingDisplay', { amount: formatPrice(order.costoEnvio) })}</span>
         )}
+        {order.envioZona && (
+          <span className="flex items-center text-xs text-[var(--hc-muted)] px-2" data-testid="envio-zona">
+            {t('adminOrders.envioZonaDisplay', {
+              zona: t(`adminOrders.envioZona.${order.envioZona}`),
+              destino: [order.destinoCanton, order.destinoProvincia].filter(Boolean).join(', ') || '—',
+              amount: formatPrice(order.envioMontoZona ?? 0),
+            })}
+          </span>
+        )}
         {order.notas && (
           <span className="flex items-center gap-1 text-xs text-[var(--hc-muted)] px-2">
             <NotaIcon />

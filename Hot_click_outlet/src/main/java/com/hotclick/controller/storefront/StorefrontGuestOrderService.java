@@ -121,7 +121,19 @@ public class StorefrontGuestOrderService {
         pedido.setClienteNombre(dto.getNombreCliente());
         pedido.setClienteTel(dto.getTelefonoCliente());
         pedido.setNotas(construirNotas(dto));
-        pedido.setDireccionEntrega(dto.getDireccionEntrega()); // NP-18: el vendedor ve a dónde enviar
+        // NP-18: el vendedor ve a dónde enviar. MED-5: con destino estructurado, cantón y provincia los pone el servidor.
+        com.hotclick.service.envio.DestinoEnvio.Destino destino =
+            com.hotclick.service.envio.DestinoEnvio.resolver(dto.getProvincia(), dto.getCanton());
+        pedido.setDireccionEntrega(com.hotclick.service.envio.DestinoEnvio.direccionFinal(dto.getDireccionEntrega(), destino));
+        if (destino != null) {
+            pedido.setDestinoProvincia(destino.provincia());
+            pedido.setDestinoCanton(destino.canton());
+        }
+        if (StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio())) {
+            pedido.setEnvioZona(com.hotclick.service.envio.ZonaEnvio.esGam(
+                destino != null ? destino.provincia() : null, destino != null ? destino.canton() : null) ? "GAM" : "FUERA_GAM");
+            pedido.setEnvioMontoZona(costoEnvio);
+        }
         return pedido;
     }
 
