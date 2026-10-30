@@ -10,8 +10,6 @@ import java.util.regex.Pattern;
 public final class HaciendaLogSanitizer {
 
     private static final Pattern DIGITOS_LARGOS = Pattern.compile("\\d{9,}");
-    /** Cédulas o teléfonos con guiones o espacios: 1-2345-6789, 3-101-123456, 3 101 123456. */
-    private static final Pattern DIGITOS_CON_GUIONES = Pattern.compile("\\d+(?:[- ]\\d+)+");
     private static final Pattern CONTROL = Pattern.compile("[\\r\\n\\t\\p{Cntrl}]+");
     static final int MAX = 500;
 
@@ -33,15 +31,35 @@ public final class HaciendaLogSanitizer {
         return s.length() > MAX ? s.substring(0, MAX) + "…" : s;
     }
 
-    /** Enmascara grupos de dígitos unidos por guion/espacio que sumen 8+ dígitos (cédulas, teléfonos). */
+    /**
+     * Enmascara grupos de dígitos unidos por un guion o espacio (1-2345-6789, 3-101-123456) que sumen
+     * 8+ dígitos. Recorrido lineal sin regex para evitar backtracking.
+     */
     private static String enmascararConGuiones(String s) {
-        var m = DIGITOS_CON_GUIONES.matcher(s);
-        StringBuilder out = new StringBuilder();
-        while (m.find()) {
-            long digitos = m.group().chars().filter(Character::isDigit).count();
-            m.appendReplacement(out, digitos >= 8 ? "[num]" : java.util.regex.Matcher.quoteReplacement(m.group()));
+        StringBuilder out = new StringBuilder(s.length());
+        int i = 0;
+        int n = s.length();
+        while (i < n) {
+            if (!Character.isDigit(s.charAt(i))) {
+                out.append(s.charAt(i++));
+                continue;
+            }
+            int inicio = i;
+            int fin = i;
+            int digitos = 0;
+            int grupos = 0;
+            while (i < n && Character.isDigit(s.charAt(i))) {
+                while (i < n && Character.isDigit(s.charAt(i))) { i++; digitos++; }
+                fin = i;
+                grupos++;
+                boolean sigue = i + 1 < n && (s.charAt(i) == '-' || s.charAt(i) == ' ')
+                    && Character.isDigit(s.charAt(i + 1));
+                if (!sigue) break;
+                i++;
+            }
+            i = fin;
+            out.append(grupos > 1 && digitos >= 8 ? "[num]" : s.substring(inicio, fin));
         }
-        m.appendTail(out);
         return out.toString();
     }
 
