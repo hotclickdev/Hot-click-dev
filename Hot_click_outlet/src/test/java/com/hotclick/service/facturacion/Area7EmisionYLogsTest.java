@@ -270,4 +270,15 @@ class Area7EmisionYLogsTest {
             .isInstanceOf(HaciendaConfiguracionException.class);
         assertThat(FacturacionEmisionSupport.exigirCedulaEmisor(hotclick)).isEqualTo(CEDULA_FICTICIA);
     }
+
+    @Test
+    @DisplayName("BAJO: la cédula del emisor con guiones se normaliza antes de reservar consecutivo")
+    void cedulaEmisorConGuionesSeNormaliza() {
+        Empresa e = new Empresa();
+        e.setCedulaJuridica("3-101-999999");
+        assertThat(FacturacionEmisionSupport.exigirCedulaEmisor(e)).isEqualTo(CEDULA_FICTICIA);
+        e.setCedulaJuridica("3-101-99A999");
+        assertThatThrownBy(() -> FacturacionEmisionSupport.exigirCedulaEmisor(e))
+            .isInstanceOf(HaciendaConfiguracionException.class);
+    }
 }
