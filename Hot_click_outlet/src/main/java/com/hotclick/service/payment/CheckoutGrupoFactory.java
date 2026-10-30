@@ -95,6 +95,8 @@ public class CheckoutGrupoFactory {
         int totalCobro = 0;
         List<Subpedido> subpedidos = new ArrayList<>();
         int[] envios = enviosPorNegocio(paquetes);
+        com.hotclick.service.envio.DestinoEnvio.Destino destino =
+            com.hotclick.service.envio.DestinoEnvio.resolver(req.getProvincia(), req.getCanton());
         for (int i = 0; i < paquetes.size(); i++) {
             CheckoutPaquetesPlanner.Paquete paquete = paquetes.get(i);
             OrderPricingResult pricing = orderPricingService.calcularPaquete(
@@ -102,7 +104,8 @@ public class CheckoutGrupoFactory {
             gcRestante -= pricing.gcMonto();
             Pedido pedido = checkoutOrderFactory.crearSubpedido(pricing, paquete.subtotal(), paquete.costoTotal(),
                 provider, usuario, paquete.bodega(), paquete.metodoEnvio(), paquete.notas(), grupoPago, estadoInicial);
-            checkoutOrderFactory.aplicarDireccion(pedido, req.getDireccionEntrega());
+            checkoutOrderFactory.aplicarDestino(pedido, req.getDireccionEntrega(), destino,
+                orderPricingService.calcularCostoEnvio(paquete.metodoEnvio()));
             checkoutOrderFactory.addItemSnapshots(pedido, paquete.items(), reservation.productosMap());
             subpedidos.add(new Subpedido(pedido, pricing));
             totalCobro += pricing.totalConGC();

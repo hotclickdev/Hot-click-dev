@@ -31,6 +31,7 @@ class EnvioConfigAdminTest extends BaseIntegrationTest {
     @Autowired private BodegaRepository    bodegaRepository;
     @Autowired private PedidoRepository    pedidoRepository;
     @Autowired private OrderPricingService orderPricingService;
+    @Autowired private com.hotclick.service.PedidoService pedidoService;
 
     @AfterEach
     void tearDown() {
@@ -115,6 +116,49 @@ class EnvioConfigAdminTest extends BaseIntegrationTest {
         assertThat(pedir("envio-zona", p, "Limón", "Siquirres", 1)).isEqualTo(5500);
         assertThat(pedir("envio-zona", p, null, null, 2)).isEqualTo(5500);
         assertThat(pedir("envio-zona", p, "Heredia", "Belén", 3)).isEqualTo(4000);
+    }
+
+    @Test
+    @DisplayName("MED-5: texto que dice Limón con cantón GAM declarado: el pedido guarda destino, zona y dirección armada por el servidor; el negocio los ve")
+    void tiendaGuardaDestinoYZona() throws Exception {
+        Producto p = preparar("envio-destino");
+        mockMvc.perform(post("/api/tienda/envio-destino/pedidos").contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo("envio-destino", p, "Frente a la plaza, Siquirres, Limón", "heredia", "BELEN")))
+            .andExpect(status().isOk());
+        Pedido ultimo = pedidoRepository.findAll().stream().max(Comparator.comparing(Pedido::getId)).orElseThrow();
+        assertThat(ultimo.getCostoEnvio()).isEqualTo(4000);
+        assertThat(ultimo.getDestinoProvincia()).isEqualTo("Heredia");
+        assertThat(ultimo.getDestinoCanton()).isEqualTo("Belén");
+        assertThat(ultimo.getEnvioZona()).isEqualTo("GAM");
+        assertThat(ultimo.getEnvioMontoZona()).isEqualTo(4000);
+        assertThat(ultimo.getDireccionEntrega()).isEqualTo("Frente a la plaza, Belén, Heredia");
+        var vista = pedidoService.listarTodosConDetallesByEmpresa(p.getEmpresa().getId()).get(0);
+        assertThat(vista).containsEntry("destinoProvincia", "Heredia").containsEntry("destinoCanton", "Belén")
+            .containsEntry("envioZona", "GAM").containsEntry("envioMontoZona", 4000)
+            .containsEntry("direccionEntrega", "Frente a la plaza, Belén, Heredia");
+    }
+
+    @Test
+    @DisplayName("MED-5: cantón que no es de la provincia (o solo uno) = 400 genérico y no crea pedido")
+    void tiendaCantonAjeno400() throws Exception {
+        Producto p = preparar("envio-ajeno");
+        for (String[] d : new String[][]{{"Heredia", "Siquirres"}, {"Heredia", null}, {"Narnia", "Belén"}}) {
+            mockMvc.perform(post("/api/tienda/envio-ajeno/pedidos").contentType(MediaType.APPLICATION_JSON)
+                    .content(cuerpo("envio-ajeno", p, "Del parque 100 m norte", d[0], d[1])))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(com.hotclick.service.envio.DestinoEnvio.DESTINO_INVALIDO));
+        }
+        assertThat(pedidoRepository.count()).isZero();
+    }
+
+    private static String cuerpo(String slug, Producto p, String direccion, String provincia, String canton) {
+        String zona = (provincia != null ? ",\"provincia\":\"" + provincia + "\"" : "")
+            + (canton != null ? ",\"canton\":\"" + canton + "\"" : "");
+        return """
+            {"nombreCliente":"Ana QA","correoCliente":"ana-%s@test.cr","telefonoCliente":"88887777",
+             "direccionEntrega":"%s","metodoPago":"SINPE_MOVIL","metodoEnvio":"DOMICILIO"%s,
+             "items":[{"productoId":%d,"cantidad":1}]}
+            """.formatted(slug, direccion, zona, p.getId());
     }
 
     private int pedir(String slug, Producto p, String provincia, String canton, int n) throws Exception {

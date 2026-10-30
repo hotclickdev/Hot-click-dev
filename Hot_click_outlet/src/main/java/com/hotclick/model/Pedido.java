@@ -139,6 +139,21 @@ public class Pedido extends BaseEntity {
     @Column(name = "direccion_entrega", length = 500)
     private String direccionEntrega;
 
+    /** MED-5 Auditor 3: destino estructurado con el que se cobró el envío (V213). */
+    @Column(name = "destino_provincia", length = 40)
+    private String destinoProvincia;
+
+    @Column(name = "destino_canton", length = 60)
+    private String destinoCanton;
+
+    /** GAM, FUERA_GAM o EXPRESS: la tarifa que decidió el servidor. */
+    @Column(name = "envio_zona", length = 12)
+    private String envioZona;
+
+    /** Tarifa de esa zona al momento del cobro (el envío del negocio; un subpedido extra del mismo negocio va en ₡0). */
+    @Column(name = "envio_monto_zona")
+    private Integer envioMontoZona;
+
     /** REEMBOLSO o CAMBIO anotado por el operador. No mueve plata. */
     @Column(name = "resolucion_operador", length = 20)
     private String resolucionOperador;
@@ -336,6 +351,14 @@ public class Pedido extends BaseEntity {
     public void setClienteTel(String v) { this.clienteTel = v; }
     public String getDireccionEntrega() { return direccionEntrega; }
     public void setDireccionEntrega(String v) { this.direccionEntrega = v; }
+    public String getDestinoProvincia() { return destinoProvincia; }
+    public void setDestinoProvincia(String v) { this.destinoProvincia = v; }
+    public String getDestinoCanton() { return destinoCanton; }
+    public void setDestinoCanton(String v) { this.destinoCanton = v; }
+    public String getEnvioZona() { return envioZona; }
+    public void setEnvioZona(String v) { this.envioZona = v; }
+    public Integer getEnvioMontoZona() { return envioMontoZona; }
+    public void setEnvioMontoZona(Integer v) { this.envioMontoZona = v; }
     public String getResolucionOperador() { return resolucionOperador; }
     public void setResolucionOperador(String v) { this.resolucionOperador = v; }
     public String getResolucionNota() { return resolucionNota; }
