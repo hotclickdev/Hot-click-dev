@@ -1,0 +1,15 @@
+# PARCHE PROPUESTO — NO APLICADO (requiere OK de Andrés y un token con scope `workflow`).
+# Objetivo: que backup.yml deje de subir el dump en claro como artifact de GitHub
+# (hoy: pg_dump | gzip → upload-artifact, sin cifrar). Con INF-01 el respaldo
+# diario vive cifrado en la PC de Andrés; el workflow queda solo como verificación manual.
+--- a/.github/workflows/backup.yml
++++ b/.github/workflows/backup.yml
+@@ -1,7 +1,8 @@
+ name: Daily DB Backup
+ 
+ on:
+-  schedule:
+-    - cron: '0 6 * * *'  # 6 AM UTC = medianoche Costa Rica (UTC-6)
++  # INF-01: el respaldo diario corre en la PC local de Andrés
++  # (scripts/backup/respaldo-pc-pull.sh). Este workflow queda solo manual.
+   workflow_dispatch:      # trigger manual desde GitHub Actions
