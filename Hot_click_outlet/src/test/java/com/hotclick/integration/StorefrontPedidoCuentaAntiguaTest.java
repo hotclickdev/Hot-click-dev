@@ -47,7 +47,7 @@ class StorefrontPedidoCuentaAntiguaTest extends BaseIntegrationTest {
     private void pedir(String slug, Producto p, String correo) throws Exception {
         String body = """
             {"nombreCliente":"Juan QA","correoCliente":"%s","telefonoCliente":"88887777",
-             "direccionEntrega":"San José, centro","metodoPago":"SINPE_MOVIL","metodoEnvio":"DOMICILIO",
+             "direccionEntrega":"San José, centro","metodoPago":"SINPE_MOVIL","metodoEnvio":"DOMICILIO","provincia":"San José","canton":"San José",
              "items":[{"productoId":%d,"cantidad":1}]}
             """.formatted(correo, p.getId());
         mockMvc.perform(post("/api/tienda/" + slug + "/pedidos")

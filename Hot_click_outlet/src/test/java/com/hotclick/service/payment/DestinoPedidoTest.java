@@ -53,7 +53,12 @@ class DestinoPedidoTest {
                 .isInstanceOf(IllegalArgumentException.class).hasMessage(DestinoEnvio.DESTINO_INVALIDO);
         }
         assertThat(planner.planificar(req("heredia", "BELEN"), Map.of(), null)).isEmpty();
-        assertThat(planner.planificar(req(null, null), Map.of(), null)).isEmpty();
+        // BAJO #447: con envío el destino es obligatorio; retiro no lo pide.
+        assertThatThrownBy(() -> planner.planificar(req(null, null), Map.of(), null))
+            .isInstanceOf(IllegalArgumentException.class).hasMessage(DestinoEnvio.DESTINO_INVALIDO);
+        PaymentCheckoutRequest retiro = req(null, null);
+        retiro.setMetodoEnvio("RETIRO_EN_TIENDA");
+        assertThat(planner.planificar(retiro, Map.of(), null)).isEmpty();
     }
 
     @Test
@@ -81,6 +86,27 @@ class DestinoPedidoTest {
     }
 
     @Test
+    @DisplayName("B-2: solo se limpian nombres de zona al final; «Limón centro» en las señas queda, pero cantón/provincia/zona validados mandan")
+    void senasConOtraZonaQuedanPeroMandaElDestino() {
+        Pedido p = new Pedido(); p.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        factory().aplicarDestino(p, "Limón centro, frente al parque", DestinoEnvio.resolver("Heredia", "Belén"), 4000);
+        assertThat(p.getDireccionEntrega()).isEqualTo("Limón centro, frente al parque, Belén, Heredia");
+        assertThat(p.getDestinoCanton()).isEqualTo("Belén");
+        assertThat(p.getEnvioZona()).isEqualTo("GAM");
+        assertThat(DestinoEnvio.direccionFinal("Calle Limón 4, Limón", DestinoEnvio.resolver("Heredia", "Belén")))
+            .isEqualTo("Calle Limón 4, Belén, Heredia");
+    }
+
+    @Test
+    @DisplayName("B-3: envioMontoZona es la tarifa de la zona; lo cobrado al subpedido extra (₡0) queda en costoEnvio")
+    void montoZonaEsTarifaNoCobro() {
+        Pedido extra = new Pedido(); extra.setMetodoEnvio("ENVIO_NORMAL_FUERA_GAM"); extra.setCostoEnvio(0);
+        factory().aplicarDestino(extra, "Casa 4", DestinoEnvio.resolver("Alajuela", "San Carlos"), 5500);
+        assertThat(extra.getEnvioMontoZona()).isEqualTo(5500);
+        assertThat(extra.getCostoEnvio()).isZero();
+    }
+
+    @Test
     @DisplayName("Retiro: no guarda zona ni dirección")
     void retiroSinZona() {
         Pedido p = new Pedido(); p.setMetodoEnvio("RETIRO_EN_TIENDA");
@@ -90,7 +116,7 @@ class DestinoPedidoTest {
     }
 
     @Test
-    @DisplayName("BAJO: si falla leer la config de envío, log warn solo con la clase del error y se usan los defaults")
+    @DisplayName("BAJO #447: si falla leer la config de envío, 503 genérico (no se cobran defaults) y warn solo con la clase")
     @SuppressWarnings("unchecked")
     void configCaidaLogueaSinPii() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
@@ -101,7 +127,9 @@ class DestinoPedidoTest {
         app.start();
         logger.addAppender(app);
         try {
-            assertThat(new ConfiguracionEnvioService(jdbc).montos()).isEqualTo(ConfiguracionEnvioService.DEFAULTS);
+            assertThatThrownBy(() -> new ConfiguracionEnvioService(jdbc).montos())
+                .isInstanceOf(com.hotclick.exception.EnvioNoDisponibleException.class)
+                .hasMessage(com.hotclick.exception.EnvioNoDisponibleException.MENSAJE);
         } finally {
             logger.detachAppender(app);
         }
@@ -111,5 +139,9 @@ class DestinoPedidoTest {
         assertThat(ev.getFormattedMessage()).contains("DataAccessResourceFailureException")
             .doesNotContain("ana@test.cr").doesNotContain("host=db");
         assertThat(ev.getThrowableProxy()).isNull();
+        var r = new com.hotclick.config.GlobalExceptionHandler()
+            .handleEnvioNoDisponible(new com.hotclick.exception.EnvioNoDisponibleException());
+        assertThat(r.getStatusCode().value()).isEqualTo(503);
+        assertThat(r.getBody().toString()).contains(com.hotclick.exception.EnvioNoDisponibleException.MENSAJE);
     }
 }

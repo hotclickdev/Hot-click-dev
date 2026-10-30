@@ -46,7 +46,9 @@ public class CheckoutPaquetesPlanner {
 
     public List<Paquete> planificar(PaymentCheckoutRequest req, Map<Long, Producto> productos, Bodega bodegaDefault) {
         // MED-5: cantón que no es de la provincia (o solo uno de los dos) = 400 antes de cobrar nada.
-        com.hotclick.service.envio.DestinoEnvio.resolver(req.getProvincia(), req.getCanton());
+        // BAJO #447: con envío (no retiro) el destino es obligatorio.
+        com.hotclick.service.envio.DestinoEnvio.exigir(req.getProvincia(), req.getCanton(),
+            !CheckoutOrderFactory.esRetiro(req.getMetodoEnvio()));
         Map<Long, Bodega> bodegas = new LinkedHashMap<>();
         Map<Long, List<PaymentCheckoutRequest.ItemDTO>> itemsPorBodega = new LinkedHashMap<>();
         // Paquetes cuyo origen no es una bodega propia del producto ni de su tienda (la resolvió el backend).

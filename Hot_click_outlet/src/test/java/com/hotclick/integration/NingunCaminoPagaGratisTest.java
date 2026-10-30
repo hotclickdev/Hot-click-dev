@@ -173,7 +173,7 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
     void tiendaPropiaEfectivo() throws Exception {
         String body = """
             {"nombreCliente":"Ana QA","correoCliente":"ana-sg@test.cr","telefonoCliente":"00000000",
-             "direccionEntrega":"San José, centro","metodoPago":"EFECTIVO","metodoEnvio":"DOMICILIO",
+             "direccionEntrega":"San José, centro","metodoPago":"EFECTIVO","metodoEnvio":"DOMICILIO","provincia":"San José","canton":"San José",
              "items":[{"productoId":%d,"cantidad":1}]}
             """.formatted(producto.getId());
         mockMvc.perform(post("/api/tienda/" + empresa.getSlug() + "/pedidos")

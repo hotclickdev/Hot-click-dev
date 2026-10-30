@@ -55,6 +55,10 @@ public class StorefrontGuestOrderService {
 
     @org.springframework.transaction.annotation.Transactional
     public Pedido crearPedido(Empresa empresa, StorefrontPedidoDTO dto) {
+        // BAJO #447: destino (400) y costo del envío (503 si no hay config) antes de reservar stock.
+        com.hotclick.service.envio.DestinoEnvio.Destino destino = com.hotclick.service.envio.DestinoEnvio.exigir(
+            dto.getProvincia(), dto.getCanton(), StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio()));
+        int costoEnvio = costoEnvioTienda(dto, orderPricingService);
         Bodega bodega = resolverBodega(empresa);
         if (bodega == null) {
             return null;
@@ -68,13 +72,14 @@ public class StorefrontGuestOrderService {
         // guardada con mayúsculas («Juan@X.com»), esa cuenta; solo si no existe se crea el invitado (sin duplicados).
         Usuario usuario = guestUserResolver.resolve(dto.getCorreoCliente(), dto.getTelefonoCliente());
 
-        Pedido pedido = construirPedido(empresa, dto, bodega, usuario);
+        Pedido pedido = construirPedido(empresa, dto, bodega, usuario, destino, costoEnvio);
         Pedido guardado = pedidoRepository.save(pedido);
         notificarPedidoNuevo(guardado);
         return guardado;
     }
 
-    private Pedido construirPedido(Empresa empresa, StorefrontPedidoDTO dto, Bodega bodega, Usuario usuario) {
+    private Pedido construirPedido(Empresa empresa, StorefrontPedidoDTO dto, Bodega bodega, Usuario usuario,
+                                   com.hotclick.service.envio.DestinoEnvio.Destino destino, int costoEnvio) {
         int subtotal = 0;
         int costoTotal = 0;
         Pedido pedido = new Pedido();
@@ -109,7 +114,6 @@ public class StorefrontGuestOrderService {
         pedido.setMetodoPago(dto.getMetodoPago());
         pedido.setMetodoEnvio(dto.getMetodoEnvio());
         pedido.setSubtotal(subtotal);
-        int costoEnvio = costoEnvioTienda(dto, orderPricingService);
         pedido.setTotalPedido(subtotal + costoEnvio);
         pedido.setCostoTotalProductos(costoTotal);
         pedido.setUtilidadBruta(subtotal - costoTotal);
@@ -122,8 +126,6 @@ public class StorefrontGuestOrderService {
         pedido.setClienteTel(dto.getTelefonoCliente());
         pedido.setNotas(construirNotas(dto));
         // NP-18: el vendedor ve a dónde enviar. MED-5: con destino estructurado, cantón y provincia los pone el servidor.
-        com.hotclick.service.envio.DestinoEnvio.Destino destino =
-            com.hotclick.service.envio.DestinoEnvio.resolver(dto.getProvincia(), dto.getCanton());
         pedido.setDireccionEntrega(com.hotclick.service.envio.DestinoEnvio.direccionFinal(dto.getDireccionEntrega(), destino));
         if (destino != null) {
             pedido.setDestinoProvincia(destino.provincia());

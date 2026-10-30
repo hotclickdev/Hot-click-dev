@@ -36,6 +36,16 @@ public final class DestinoEnvio {
         CANTONES.put("Limón", List.of("Limón", "Pococí", "Siquirres", "Talamanca", "Matina", "Guácimo"));
     }
 
+    /**
+     * BAJO #447: con envío a domicilio el destino es obligatorio (400). Sin cantón no hay zona verificable y el
+     * negocio no sabría a dónde despachar; retiro no lo pide.
+     */
+    public static Destino exigir(String provincia, String canton, boolean conEnvio) {
+        Destino d = resolver(provincia, canton);
+        if (d == null && conEnvio) throw new IllegalArgumentException(DESTINO_INVALIDO);
+        return d;
+    }
+
     private static final java.util.Set<String> NOMBRES = new java.util.HashSet<>();
     static {
         CANTONES.forEach((prov, cantones) -> {
@@ -78,6 +88,10 @@ public final class DestinoEnvio {
     /**
      * Dirección final que ve el negocio: «señas, [distrito], cantón, provincia». Las señas son el texto libre sin
      * los cantones o provincias que traiga al final (el front ya los agrega); el servidor pone siempre los declarados.
+     * Limitación (B-2 Auditor 3): solo se limpian los segmentos finales que son exactamente un nombre de zona; un
+     * texto como «Limón centro, frente al parque» queda en las señas (quitarlo rompería señas legítimas como
+     * «Calle Limón»). La fuente de verdad para despachar es {@code destinoProvincia}/{@code destinoCanton}/
+     * {@code envioZona}, validados en el servidor, no el texto libre.
      */
     public static String direccionFinal(String texto, Destino d) {
         if (d == null) return texto;
