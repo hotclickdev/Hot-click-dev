@@ -4,17 +4,20 @@ import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Borra productos, tiendas y usuarios registrados.
@@ -119,7 +122,10 @@ public class ResetPlataformaKeepQaService {
 
     private void intentarSinForeignKeys() {
         try {
-            jdbc.execute("SET LOCAL session_replication_role = replica");
+            aislado(() -> {
+                jdbc.execute("SET LOCAL session_replication_role = replica");
+                return null;
+            });
         } catch (DataAccessException e) {
             LOG.warn("Sin permiso para session_replication_role; se borra por FKs. {}", rootMessage(e));
         }
@@ -196,7 +202,7 @@ public class ResetPlataformaKeepQaService {
 
     private List<String> tablasQueReferencian(String tabla) {
         try {
-            return jdbc.query("""
+            return aislado(() -> jdbc.query("""
                 SELECT DISTINCT quote_ident(n.nspname) || '.' || quote_ident(rel.relname) AS tbl
                   FROM pg_constraint con
                   JOIN pg_class rel ON rel.oid = con.conrelid
@@ -205,7 +211,7 @@ public class ResetPlataformaKeepQaService {
                    AND con.confrelid = to_regclass(?)
                    AND n.nspname NOT IN ('pg_catalog', 'information_schema')
                    AND rel.relname NOT LIKE 'hot_click_wipe_keep%'
-                """, (rs, i) -> rs.getString("tbl"), tabla);
+                """, (rs, i) -> rs.getString("tbl"), tabla));
         } catch (DataAccessException e) {
             if (ignorable(e)) return List.of();
             throw e;
@@ -249,7 +255,7 @@ public class ResetPlataformaKeepQaService {
 
     private long count(String from) {
         try {
-            Long n = jdbc.queryForObject("SELECT COUNT(*) FROM " + from, Long.class);
+            Long n = aislado(() -> jdbc.queryForObject("SELECT COUNT(*) FROM " + from, Long.class));
             return n == null ? 0 : n;
         } catch (DataAccessException e) {
             if (ignorable(e)) return 0;
@@ -259,7 +265,10 @@ public class ResetPlataformaKeepQaService {
 
     private void exec(String sql) {
         try {
-            jdbc.execute(sql);
+            aislado(() -> {
+                jdbc.execute(sql);
+                return null;
+            });
         } catch (DataAccessException e) {
             if (ignorable(e)) {
                 LOG.debug("Reset skip {}: {}", sql, rootMessage(e));
@@ -268,6 +277,30 @@ public class ResetPlataformaKeepQaService {
             LOG.error("Reset falló: {} — {}", sql, rootMessage(e));
             throw e;
         }
+    }
+
+    /**
+     * Corre un paso dentro de un SAVEPOINT. En Postgres cualquier error (tabla que no existe en una BD
+     * vacía, falta de permiso para session_replication_role...) deja la transacción abortada y todo lo
+     * que sigue falla con 25P02 "transaction is aborted". Con el savepoint, un error esperado se deshace
+     * solo para ese paso; el error se relanza siempre y quien llama decide si es ignorable o no.
+     */
+    private <T> T aislado(Supplier<T> paso) {
+        return jdbc.execute((ConnectionCallback<T>) con -> {
+            if (con.getAutoCommit()) {
+                return paso.get();
+            }
+            Savepoint sp = con.setSavepoint();
+            T r;
+            try {
+                r = paso.get();
+            } catch (RuntimeException e) {
+                con.rollback(sp);
+                throw e;
+            }
+            con.releaseSavepoint(sp);
+            return r;
+        });
     }
 
     private boolean ignorable(DataAccessException e) {
