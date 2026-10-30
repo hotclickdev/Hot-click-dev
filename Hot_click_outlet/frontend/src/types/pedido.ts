@@ -80,6 +80,11 @@ export type Pedido = {
   metodoEnvio?: string
   origen?: string
   costoEnvio?: number | null
+  /** MED-5: destino validado por el servidor y zona/tarifa cobradas. */
+  destinoProvincia?: string | null
+  destinoCanton?: string | null
+  envioZona?: 'GAM' | 'FUERA_GAM' | 'EXPRESS' | null
+  envioMontoZona?: number | null
   numeroGuia?: string | null
   /** Compras con productos de varios vendedores comparten este código — un pago, un paquete por vendedor. */
   grupoPago?: string | null

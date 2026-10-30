@@ -1,5 +1,7 @@
 package com.hotclick.service.envio;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,8 @@ public class ConfiguracionEnvioService {
 
     public static final Montos DEFAULTS = new Montos(DEFAULT_GAM, DEFAULT_FUERA_GAM, DEFAULT_RAPIDO);
 
+    private static final Logger log = LoggerFactory.getLogger(ConfiguracionEnvioService.class);
+
     private final JdbcTemplate jdbc;
 
     public ConfiguracionEnvioService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
@@ -35,6 +39,8 @@ public class ConfiguracionEnvioService {
                 (rs, i) -> new Montos(rs.getInt(1), rs.getInt(2), rs.getInt(3)));
             return v.isEmpty() ? DEFAULTS : v.get(0);
         } catch (DataAccessException e) {
+            // BAJO Auditor 3: sin PII ni SQL; solo la clase del error. Se cobran los defaults.
+            log.warn("config de envío no disponible ({}); se usan los montos por defecto", e.getClass().getSimpleName());
             return DEFAULTS;
         }
     }
