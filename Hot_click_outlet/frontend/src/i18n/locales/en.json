@@ -2863,6 +2863,8 @@
     "guiaInputPh": "Correos CR tracking number",
     "costInputPh": "Shipping cost (4000–20000)",
     "shippingDisplay": "Shipping: {{amount}}",
+    "envioZonaDisplay": "{{zona}} zone · {{destino}} · rate {{amount}}",
+    "envioZona": {"GAM": "GAM", "FUERA_GAM": "outside GAM", "EXPRESS": "express"},
     "guiaSection": "Tracking:",
     "orderDelivered": "Order delivered",
     "orderCancelled": "Order cancelled",
