@@ -1,9 +1,12 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -36,10 +39,51 @@ public class ResetPlataformaKeepQaService {
     private static final String KEEP_USUARIO = "hot_click_wipe_keep_usuario";
     private static final String KEEP_EMPRESA = "hot_click_wipe_keep_empresa";
 
-    private final JdbcTemplate jdbc;
+    /** Flag que además de un perfil permitido habilita el vaciado. Nunca en application-prod ni en el default. */
+    public static final String PROPIEDAD_HABILITADO = "hotclick.reset-plataforma.enabled";
+    /** Únicos perfiles con los que puede correr. Cualquier otro perfil activo (prod incluido) lo bloquea. */
+    public static final Set<String> PERFILES_PERMITIDOS = Set.of("dev", "test", "local");
 
-    public ResetPlataformaKeepQaService(JdbcTemplate jdbc) {
+    private final JdbcTemplate jdbc;
+    private final Environment env;
+
+    public ResetPlataformaKeepQaService(JdbcTemplate jdbc, Environment env) {
         this.jdbc = jdbc;
+        this.env = env;
+    }
+
+    /** El vaciado está prohibido: se responde como si el recurso no existiera (404). */
+    public static final class NoHabilitadoException extends RecursoNoEncontradoException {
+        private static final long serialVersionUID = 1L;
+
+        public NoHabilitadoException() {
+            super("Recurso no encontrado");
+        }
+    }
+
+    /**
+     * true solo si hay perfiles activos, TODOS están en {@link #PERFILES_PERMITIDOS} (dev+prod se rechaza)
+     * y {@link #PROPIEDAD_HABILITADO} es true. Sin perfiles activos (solo "default") se rechaza.
+     */
+    public boolean habilitado() {
+        if (env == null) return false;
+        String[] activos = env.getActiveProfiles();
+        if (activos.length == 0) return false;
+        for (String perfil : activos) {
+            if (perfil == null || !PERFILES_PERMITIDOS.contains(perfil.trim().toLowerCase(Locale.ROOT))) {
+                return false;
+            }
+        }
+        return Boolean.TRUE.equals(env.getProperty(PROPIEDAD_HABILITADO, Boolean.class, Boolean.FALSE));
+    }
+
+    private void exigirHabilitado() {
+        if (!habilitado()) {
+            LOG.warn("[reset-plataforma] bloqueado: perfiles={} {}={}",
+                env == null ? List.of() : List.of(env.getActiveProfiles()), PROPIEDAD_HABILITADO,
+                env == null ? null : env.getProperty(PROPIEDAD_HABILITADO));
+            throw new NoHabilitadoException();
+        }
     }
 
     public static List<String> correosConservados() {
@@ -69,6 +113,7 @@ public class ResetPlataformaKeepQaService {
 
     @Transactional
     public Map<String, Object> ejecutarSiPendiente() {
+        exigirHabilitado();
         jdbc.execute("""
             CREATE TABLE IF NOT EXISTS hot_click_one_shot_tb (
                 clave VARCHAR(80) PRIMARY KEY,
@@ -97,6 +142,7 @@ public class ResetPlataformaKeepQaService {
 
     @Transactional
     public Map<String, Object> ejecutar() {
+        exigirHabilitado();
         prepararKeep();
         intentarSinForeignKeys();
         borrarTodasLasFilasQueApuntanA("hot_click_producto_tb");
@@ -321,6 +367,6 @@ public class ResetPlataformaKeepQaService {
 
     private String rootMessage(DataAccessException e) {
         Throwable c = e.getMostSpecificCause();
-        return c.getMessage() == null ? e.getMessage() : c.getMessage();
+        return TelegramTexto.paraLog(c.getMessage() == null ? e.getMessage() : c.getMessage());
     }
 }

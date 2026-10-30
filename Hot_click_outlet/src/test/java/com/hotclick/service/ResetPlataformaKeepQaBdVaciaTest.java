@@ -7,6 +7,7 @@ import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -96,12 +97,18 @@ class ResetPlataformaKeepQaBdVaciaTest {
         }
     }
 
+    static MockEnvironment devConFlag() {
+        MockEnvironment env = new MockEnvironment().withProperty(ResetPlataformaKeepQaService.PROPIEDAD_HABILITADO, "true");
+        env.setActiveProfiles("dev");
+        return env;
+    }
+
     @Test
     @DisplayName("BD vacía, sin permiso para session_replication_role y tablas opcionales ausentes: termina sin 25P02")
     void bdVaciaNoAbortaLaTransaccion() {
         PostgresFalso pg = new PostgresFalso(
             Set.of("hot_click_wa_log_tb", "hot_click_webauthn_credential_tb"), null);
-        ResetPlataformaKeepQaService service = new ResetPlataformaKeepQaService(pg);
+        ResetPlataformaKeepQaService service = new ResetPlataformaKeepQaService(pg, devConFlag());
 
         Map<String, Object> resultado = service.ejecutarSiPendiente();
 
@@ -114,7 +121,7 @@ class ResetPlataformaKeepQaBdVaciaTest {
     @DisplayName("Un error real (FK al borrar productos) se propaga con su SQLState, no se traga ni se disfraza de 25P02")
     void errorRealSePropaga() {
         PostgresFalso pg = new PostgresFalso(Set.of(), "DELETE FROM hot_click_producto_tb");
-        ResetPlataformaKeepQaService service = new ResetPlataformaKeepQaService(pg);
+        ResetPlataformaKeepQaService service = new ResetPlataformaKeepQaService(pg, devConFlag());
 
         assertThatThrownBy(service::ejecutar)
             .isInstanceOf(DataAccessException.class)
