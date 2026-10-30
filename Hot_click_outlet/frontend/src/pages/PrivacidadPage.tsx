@@ -54,8 +54,8 @@ const secciones = [
         </ul>
         <p>Adicionalmente, HotClick utiliza los siguientes proveedores que actúan como encargados del tratamiento:</p>
         <ul>
-          <li><strong>Tilopay y ONVO:</strong> cobro con tarjeta y de mensualidades. HotClick no guarda el número de tarjeta ni el código de seguridad.</li>
-          <li><strong>SINPE Móvil:</strong> el comprobante que sube el cliente puede incluir nombre, teléfono y cédula del remitente, solo para verificar el pago.</li>
+          <li><strong>ONVO:</strong> único procesador de pagos; recibe los datos de pago para el cobro con tarjeta y de mensualidades. HotClick no guarda el número de tarjeta ni el código de seguridad.</li>
+          <li><strong>SINPE Móvil:</strong> el pago se confirma únicamente mediante el webhook de ONVO; no recopilamos datos adicionales del remitente para verificarlo.</li>
           <li><strong>SendGrid:</strong> correos transaccionales del pedido.</li>
           <li><strong>Clerk:</strong> inicio de sesión con Google, Microsoft o Apple.</li>
           <li><strong>Correos de Costa Rica:</strong> entrega de envíos en el país.</li>

@@ -4,12 +4,11 @@ import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.UsuarioRepository;
-import com.hotclick.service.RefreshTokenService;
+import com.hotclick.service.SesionesUsuarioService;
 import com.hotclick.utils.Constants;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,14 +22,14 @@ public class CuentaTitularService {
 
     private final UsuarioRepository usuarioRepository;
     private final PedidoRepository pedidoRepository;
-    private final RefreshTokenService refreshTokenService;
+    private final SesionesUsuarioService sesionesUsuarioService;
 
     public CuentaTitularService(UsuarioRepository usuarioRepository,
                                 PedidoRepository pedidoRepository,
-                                RefreshTokenService refreshTokenService) {
+                                SesionesUsuarioService sesionesUsuarioService) {
         this.usuarioRepository = usuarioRepository;
         this.pedidoRepository = pedidoRepository;
-        this.refreshTokenService = refreshTokenService;
+        this.sesionesUsuarioService = sesionesUsuarioService;
     }
 
     public Map<String, Object> exportar(Usuario usuario) {
@@ -53,6 +52,9 @@ public class CuentaTitularService {
             return;
         }
         Long id = usuario.getId();
+        // La caché de UserDetails del filtro JWT está indexada por el correo con el que se emitió el token: hay que
+        // invalidarla con el correo de antes del cierre, que se renombra enseguida.
+        String correoPrevio = usuario.getCorreo();
         usuario.setCorreo("cerrada." + id + "@invalid.hotclick.lat");
         usuario.setTelefono("00000000");
         usuario.setTelefonoAlterno(null);
@@ -62,9 +64,9 @@ public class CuentaTitularService {
         usuario.setFotoPerfilUrl(null);
         usuario.setClerkUserId(null);
         usuario.setEstado(Constants.ESTADO_ELIMINADO);
-        usuario.setSesionesInvalidadasEn(LocalDateTime.now(Constants.ZONA_CR));
         usuarioRepository.save(usuario);
-        refreshTokenService.revocarTodosDeUsuario(usuario);
+        // Marca sesionesInvalidadasEn, revoca los refresh tokens e invalida la caché (correo previo y nuevo).
+        sesionesUsuarioService.cortarSesiones(usuario, correoPrevio);
     }
 
     private List<Map<String, Object>> resumenPedidos(Long usuarioId) {

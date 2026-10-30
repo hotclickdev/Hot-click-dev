@@ -1,0 +1,168 @@
+package com.hotclick.service;
+
+import com.hotclick.model.ColaFacturacionOffline;
+import com.hotclick.model.ComprobanteFiscal;
+import com.hotclick.model.Empresa;
+import com.hotclick.repository.ComprobanteFiscalRepository;
+import com.hotclick.service.facturacion.ComprobanteXmlPreparer;
+import com.hotclick.service.hacienda.ResultadoEnvioHacienda;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@DisplayName("#428 MEDIO-1 / BAJO-2 | reenvío de filas recuperadas y renovación del inicio por fila")
+class FacturacionContingenciaReintento428Test {
+
+    private static final String CLAVE = "50601012600310123456700100001010000000001100000001";
+
+    private final ColaFacturacionOfflineTxOps txOps = mock(ColaFacturacionOfflineTxOps.class);
+    private final ComprobanteFiscalRepository comprobanteRepo = mock(ComprobanteFiscalRepository.class);
+    private final ComprobanteXmlPreparer preparer = mock(ComprobanteXmlPreparer.class);
+    private final HaciendaApiClient hacienda = mock(HaciendaApiClient.class);
+    private final FacturacionContingenciaService service =
+        new FacturacionContingenciaService(txOps, comprobanteRepo, preparer, hacienda);
+    private final Empresa empresa = new Empresa();
+
+    @BeforeEach
+    void setUp() {
+        empresa.setId(1L);
+        when(txOps.renovarInicioProceso(anyLong())).thenReturn(true);
+        when(comprobanteRepo.findById(5L)).thenReturn(Optional.of(new ComprobanteFiscal()));
+        when(preparer.preparar(5L)).thenReturn(new ComprobanteXmlPreparer.Preparado(5L, CLAVE, "<xml/>", empresa));
+        when(hacienda.enviar(any(), eq(CLAVE), eq(empresa)))
+            .thenReturn(ResultadoEnvioHacienda.rechazoRecepcion(400, "clave duplicada"));
+    }
+
+    private void procesar(int intentos) {
+        ColaFacturacionOffline c = new ColaFacturacionOffline();
+        c.setId(77L);
+        c.setEmpresaId(1L);
+        c.setComprobanteId(5L);
+        c.setIntentos(intentos);
+        when(txOps.reclamarLote(anyInt())).thenReturn(List.of(c));
+        service.procesarPendientes();
+    }
+
+    @Test
+    @DisplayName("Fila recuperada + 4xx al reenviar + Hacienda ya tiene la clave → COMPLETADA, no AGOTADA")
+    void recuperadaYaRecibidaSeCompleta() {
+        when(hacienda.consultarEstado(CLAVE, empresa)).thenReturn("procesando");
+        procesar(1);
+        verify(txOps).marcarCompletado(77L, 5L);
+        verify(txOps, never()).marcarAgotado(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("Fila recuperada + 4xx y Hacienda no conoce la clave (404) → AGOTADA como antes")
+    void recuperadaNoRecibidaSeAgota() {
+        when(hacienda.consultarEstado(CLAVE, empresa)).thenThrow(HttpClientErrorException.create(
+            HttpStatus.NOT_FOUND, "nf", null, null, null));
+        procesar(1);
+        verify(txOps).marcarAgotado(77L, "clave duplicada");
+        verify(txOps, never()).marcarCompletado(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("Primer envío (intentos=0) con 4xx → AGOTADA sin consultar a Hacienda")
+    void primerEnvioNoConsulta() {
+        procesar(0);
+        verify(txOps).marcarAgotado(77L, "clave duplicada");
+        verify(hacienda, never()).consultarEstado(any(), any());
+    }
+
+    @Test
+    @DisplayName("La consulta responde 429 → fallo transitorio (reintento), ni completada ni agotada")
+    void consultaLimitadaReintenta() {
+        when(hacienda.consultarEstado(CLAVE, empresa)).thenThrow(HttpClientErrorException.create(
+            HttpStatus.TOO_MANY_REQUESTS, "rl", null, null, null));
+        procesar(2);
+        verify(txOps).marcarFallo(eq(77L), any());
+        verify(txOps, never()).marcarAgotado(anyLong(), any());
+        verify(txOps, never()).marcarCompletado(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("BAJO-2: si la fila ya no está PROCESANDO al llegarle el turno, no se reenvía")
+    void filaRecuperadaPorOtraCorridaNoSeEnvia() {
+        when(txOps.renovarInicioProceso(77L)).thenReturn(false);
+        procesar(0);
+        verify(hacienda, never()).enviar(any(), any(), any());
+        verifyNoMoreInteractions(preparer);
+        verify(txOps, never()).marcarFallo(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("BAJO-B (#429): 2xx sin cuerpo / sin ind-estado NO prueba recepción → fallo (reintento), no COMPLETADA")
+    void consultaSinIndEstadoEsFallo() {
+        when(hacienda.consultarEstado(CLAVE, empresa)).thenReturn("en_procesamiento"); // lo que el cliente da sin cuerpo
+        procesar(1);
+        verify(txOps).marcarFallo(77L, "IllegalStateException");
+        verify(txOps, never()).marcarCompletado(anyLong(), any());
+        verify(txOps, never()).marcarAgotado(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("BAJO-B (#429): solo recibido/procesando/aceptado prueban recepción")
+    void estadosQueProbanRecepcion() {
+        for (String e : new String[]{"recibido", "PROCESANDO", "aceptado"}) {
+            reset(txOps);
+            when(txOps.renovarInicioProceso(anyLong())).thenReturn(true);
+            when(hacienda.consultarEstado(CLAVE, empresa)).thenReturn(e);
+            procesar(1);
+            verify(txOps).marcarCompletado(77L, 5L);
+        }
+        for (String e : new String[]{"rechazado", "error", ""}) {
+            reset(txOps);
+            when(txOps.renovarInicioProceso(anyLong())).thenReturn(true);
+            when(hacienda.consultarEstado(CLAVE, empresa)).thenReturn(e);
+            procesar(1);
+            verify(txOps, never()).marcarCompletado(anyLong(), any());
+            verify(txOps).marcarFallo(eq(77L), any());
+        }
+    }
+
+    @Test
+    @DisplayName("BAJO-C (#429): el catch general no registra e.getMessage() crudo, solo simpleName y status")
+    void catchGeneralNoFiltraMensaje() {
+        when(hacienda.enviar(any(), eq(CLAVE), eq(empresa)))
+            .thenThrow(new IllegalStateException("cedula 1-1111-1111 <xml>secreto</xml>"));
+        procesar(0);
+        verify(txOps).marcarFallo(77L, "IllegalStateException");
+        org.assertj.core.api.Assertions.assertThat(FacturacionContingenciaService.resumenSeguro(
+                HttpClientErrorException.create(HttpStatus.TOO_MANY_REQUESTS, "cuerpo sensible", null, null, null)))
+            .endsWith("status=429").doesNotContain("sensible");
+    }
+
+    @Test
+    @DisplayName("BAJO (#429): el XSD inválido no deja el XML citado ni en el log ni en ultimoError")
+    void xsdInvalidoNoFiltraXml() {
+        String fragmento = "<Receptor><Nombre>Juan Perez</Nombre><Identificacion>112345678</Identificacion></Receptor>";
+        when(preparer.preparar(5L)).thenThrow(new com.hotclick.service.hacienda.ComprobanteInvalidoException(
+            "cvc-complex-type.2.4.a: contenido invalido en " + fragmento, null));
+        ch.qos.logback.classic.Logger logger =
+            (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(FacturacionContingenciaService.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> app = new ch.qos.logback.core.read.ListAppender<>();
+        app.start();
+        logger.addAppender(app);
+        try {
+            procesar(0);
+        } finally {
+            logger.detachAppender(app);
+        }
+        org.mockito.ArgumentCaptor<String> error = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(txOps).marcarAgotado(eq(77L), error.capture());
+        org.assertj.core.api.Assertions.assertThat(error.getValue()).isEqualTo("ComprobanteInvalidoException")
+            .doesNotContain("<").doesNotContain("Juan").doesNotContain("112345678");
+        org.assertj.core.api.Assertions.assertThat(app.list).isNotEmpty().allSatisfy(ev ->
+            org.assertj.core.api.Assertions.assertThat(ev.getFormattedMessage())
+                .doesNotContain("Receptor").doesNotContain("Juan").doesNotContain("112345678"));
+    }
+}

@@ -4,7 +4,8 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, existsSync } from 'node:fs';
+import { appendFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 
 export const SKIP_LABELS = {
   flyway: 'skip-flyway-gate',
@@ -90,6 +91,44 @@ export function isFrontendSrcPath(filePath) {
 
 export function isStaticPath(filePath) {
   return filePath.replaceAll('\\', '/').includes('Hot_click_outlet/src/main/resources/static/');
+}
+
+/**
+ * Cadenas que solo existen como VITE_* de relleno en CI (ci.yml). Si aparecen en
+ * static/ el bundle servido en prod rompe Clerk/Google: static/ se commitea de un
+ * build limpio, sin VITE_* (ver commit "reconstruir static/ sin VITE_*").
+ */
+export const SPA_PLACEHOLDER_MARKERS = ['pk_test_placeholder', 'ci-spa-gate'];
+
+const SPA_TEXT_EXTENSIONS = new Set([
+  '.js', '.mjs', '.cjs', '.css', '.html', '.json', '.map', '.webmanifest', '.txt', '.xml', '.svg',
+]);
+
+/** Devuelve los marcadores de placeholder presentes en `text` (sin duplicados). */
+export function scanSpaPlaceholders(text) {
+  return SPA_PLACEHOLDER_MARKERS.filter((marker) => text.includes(marker));
+}
+
+/**
+ * Recorre `dir` (static/) y lista los archivos de texto con placeholders.
+ * Devuelve [{ file, markers }] con rutas relativas a `dir`.
+ */
+export function findSpaPlaceholdersInDir(dir) {
+  const hits = [];
+  if (!existsSync(dir)) return hits;
+  const walk = (current) => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile() && SPA_TEXT_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+        const markers = scanSpaPlaceholders(readFileSync(full, 'utf8'));
+        if (markers.length > 0) hits.push({ file: path.relative(dir, full).replaceAll('\\', '/'), markers });
+      }
+    }
+  };
+  walk(dir);
+  return hits.sort((a, b) => a.file.localeCompare(b.file));
 }
 
 export function isTenantScanPath(filePath) {

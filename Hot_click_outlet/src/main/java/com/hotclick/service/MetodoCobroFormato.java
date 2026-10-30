@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import java.util.Locale;
 import com.hotclick.model.MetodoCobro;
 
 /**
@@ -13,7 +14,7 @@ public final class MetodoCobroFormato {
         if (tipoRaw == null) {
             throw new IllegalArgumentException("El tipo es requerido");
         }
-        String t = tipoRaw.trim().toUpperCase();
+        String t = tipoRaw.trim().toUpperCase(Locale.ROOT);
         return switch (t) {
             case "SINPE" -> MetodoCobro.TIPO_SINPE;
             case "IBAN" -> MetodoCobro.TIPO_IBAN;
@@ -92,7 +93,7 @@ public final class MetodoCobroFormato {
     /** API / FE: sinpe | iban | tarjeta. */
     public static String tipoApi(String tipoDb) {
         if (tipoDb == null) return "";
-        return tipoDb.trim().toLowerCase();
+        return tipoDb.trim().toLowerCase(Locale.ROOT);
     }
 
     private static String limpiarSinpe(String raw) {
@@ -104,7 +105,7 @@ public final class MetodoCobroFormato {
     }
 
     private static String limpiarIban(String raw) {
-        String limpio = raw.replaceAll("\\s+", "").toUpperCase();
+        String limpio = raw.replaceAll("\\s+", "").toUpperCase(Locale.ROOT);
         if (limpio.length() < 10) {
             throw new IllegalArgumentException("Indicá un IBAN válido (mínimo 10 caracteres).");
         }

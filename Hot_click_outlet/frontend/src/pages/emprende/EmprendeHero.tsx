@@ -2,10 +2,14 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { PLAN_EMPRENDEDOR } from './emprendePrecios'
+import useCupoEmprende from './useCupoEmprende'
+import { primerosNegocios } from './primerosNegocios'
 
 /** Hero de /emprende. Visitante ve la propuesta completa; dueño ya logueado ve una versión corta. */
 export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
   const { t } = useTranslation()
+  const { cupo } = useCupoEmprende()
+  const primeros = primerosNegocios(cupo, t)
 
   if (yaEsDuenio) {
     return (
@@ -50,7 +54,7 @@ export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
         className="text-lg leading-relaxed mb-4 max-w-xl"
         style={{ color: 'var(--hc-muted)' }}
       >
-        {t('emprende.sub')}
+        {t('emprende.sub', { primeros })}
       </motion.p>
       <motion.p
         initial={{ opacity: 0 }}
@@ -61,6 +65,7 @@ export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
       >
         {t('emprende.heroPrecioLinea', {
           comision: PLAN_EMPRENDEDOR.comisionPct,
+          primeros,
         })}
       </motion.p>
       <motion.div

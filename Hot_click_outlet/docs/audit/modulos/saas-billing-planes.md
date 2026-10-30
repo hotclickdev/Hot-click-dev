@@ -11,7 +11,7 @@ Fuente canónica: filas en `hot_click_plan_tb` (seed V89/V105) + ajustes V114/V1
 | | EMPRENDEDOR | PYME | NEGOCIO_PLUS |
 |---|---|---|---|
 | Precio/mes | ₡0 | ₡9.900 | ₡24.900 |
-| Comisión venta | 8% (mín. ₡400) | 4% | 4% |
+| Comisión venta | 9% (sin mínimo, V185) | 7,5% | 6% |
 | Usuarios | 2 | 5 | -1 (ilimitado) |
 | Productos | 50 | 500 | -1 |
 | Bodegas / cajas | 1 / 1 | 2 / 2 | -1 / -1 |

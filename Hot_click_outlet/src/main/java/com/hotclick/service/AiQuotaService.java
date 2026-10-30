@@ -1,4 +1,5 @@
 package com.hotclick.service;
+import com.hotclick.service.ai.UsoTokens;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.model.AiUso;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -78,17 +80,33 @@ public class AiQuotaService {
     /** Incrementa contadores completos (llamadas + tokens). Usar cuando NO se usó verificarYReservar(). */
     @Transactional
     public void registrarUso(Long empresaId, int tokensEntrada, int tokensSalida) {
+        registrarUso(empresaId, UsoTokens.de(tokensEntrada, tokensSalida));
+    }
+
+    /** Igual que {@link #registrarUso(Long, int, int)} pero con los tokens de caché. */
+    @Transactional
+    public void registrarUso(Long empresaId, UsoTokens uso) {
         LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         aiUsoRepository.upsertIncrement(empresaId, hoy.getYear(), hoy.getMonthValue(),
-            1, tokensEntrada, tokensSalida);
+            1, uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
     }
 
     /** Actualiza solo tokens IN/OUT después del call a Claude. Llamadas ya fue incrementado por verificarYReservar(). */
     @Transactional
     public void actualizarTokens(Long empresaId, int tokensEntrada, int tokensSalida) {
+        actualizarTokens(empresaId, UsoTokens.de(tokensEntrada, tokensSalida));
+    }
+
+    /**
+     * Suma los tokens de una llamada a Claude (entrada, salida y caché) al mes de la empresa
+     * sin tocar {@code llamadas}. UPSERT: persiste aunque aún no exista fila del mes.
+     */
+    @Transactional
+    public void actualizarTokens(Long empresaId, UsoTokens uso) {
+        if (uso == null || uso.esVacio()) return;
         LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
         aiUsoRepository.actualizarTokens(empresaId, hoy.getYear(), hoy.getMonthValue(),
-            tokensEntrada, tokensSalida);
+            uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
     }
 
     /** Resumen del consumo del mes actual para el dashboard. */
@@ -102,8 +120,8 @@ public class AiQuotaService {
         int limite   = empresa != null ? resolverLimite(empresa) : 0;
         String plan  = nombrePlanAi(empresa);
         int llamadas = (uso != null) ? uso.getLlamadas() : 0;
-        int teInput  = (uso != null) ? uso.getTokensEntrada() : 0;
-        int tsOutput = (uso != null) ? uso.getTokensSalida() : 0;
+        long teInput  = (uso != null) ? uso.getTokensEntrada() : 0L;
+        long tsOutput = (uso != null) ? uso.getTokensSalida() : 0L;
 
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("plan",          plan);
@@ -143,7 +161,7 @@ public class AiQuotaService {
         }
 
         // Fallback para empresas que aún no tienen plan FK asignado
-        return switch (empresa.getPlanSaas().toUpperCase()) {
+        return switch (empresa.getPlanSaas().toUpperCase(Locale.ROOT)) {
             case "ENTERPRISE" -> 500;
             case "PRO"        -> 50;
             default           -> 0;

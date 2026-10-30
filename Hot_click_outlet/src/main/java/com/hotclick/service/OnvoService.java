@@ -158,7 +158,7 @@ public class OnvoService {
             Map<?, ?> body = getOnvo("/mobile-transfers/list?status=received&limit=100");
             return sinpeRefDeLista(body, intentId);
         } catch (RuntimeException e) {
-            log.info("[onvo] SINPERefNumber no disponible para intent {}: {}", intentId, e.getClass().getSimpleName());
+            log.debug("[onvo] SINPERefNumber no disponible para intent {}: {}", intentId, e.getClass().getSimpleName());
             return null;
         }
     }

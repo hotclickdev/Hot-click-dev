@@ -55,6 +55,8 @@ public class Producto extends BaseEntity {
     private Integer stockActual = 0;
 
     /** Unidades actualmente en carritos activos, no vendidas todavía. */
+    // Re-QA área 3: dato interno; no sale en el JSON público (el front usa 'stock' = disponible).
+    @JsonIgnore
     @Column(name = "stock_reservado", columnDefinition = "INTEGER NOT NULL DEFAULT 0")
     private Integer stockReservado = 0;
 

@@ -15,7 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Token OAuth2 de Hacienda CR (ATV), grant_type=password.
- * Si la empresa no tiene usuario y clave cifrados, devuelve cadena vacía y no llama al IdP.
+ * Si la empresa no tiene usuario y clave cifrados, lanza HaciendaConfiguracionException y no llama al IdP.
+ * Si el IdP falla, lanza la excepción (nunca devuelve un token vacío).
  * El token no se escribe en el log.
  *
  * URLs:
@@ -52,12 +53,15 @@ public class HaciendaTokenService {
      * Retorna el Bearer token para la empresa dada.
      * Usa el cache y renueva automáticamente si está por expirar.
      *
-     * @return token, o cadena vacía si la empresa no tiene usuario y clave de ATV
+     * @return token no vacío
+     * @throws HaciendaConfiguracionException si faltan credenciales o el IdP no entrega token
+     * @throws HaciendaTransitoriaException si el IdP no responde
      */
     public String getToken(Empresa empresa) {
         if (!tieneCredenciales(empresa)) {
             log.warn("[hacienda-token] empresa={} sin credenciales de ATV", empresa.getId());
-            return "";
+            throw new com.hotclick.service.hacienda.HaciendaConfiguracionException(
+                "Falta configurar el usuario y la clave de ATV de la empresa.");
         }
 
         CachedToken cached = tokenCache.get(empresa.getId());
@@ -104,25 +108,34 @@ public class HaciendaTokenService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
+        ResponseEntity<Map> resp;
         try {
-            ResponseEntity<Map> resp = restTemplate.exchange(
+            resp = restTemplate.exchange(
                 url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
-
-            if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
-                String token      = (String) resp.getBody().get("access_token");
-                int    expiresIn  = (Integer) resp.getBody().getOrDefault("expires_in", 1800);
-                Instant expiry    = Instant.now().plusSeconds(expiresIn);
-
-                tokenCache.put(empresa.getId(), new CachedToken(token, expiry));
-                log.info("[hacienda-token] Token renovado para empresa={} ambiente={}",
-                    empresa.getId(), empresa.getAmbienteHacienda());
-                return token;
-            }
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.error("[hacienda-token] ATV rechazó las credenciales de empresa={}: {}",
+                empresa.getId(), com.hotclick.service.hacienda.HaciendaLogSanitizer.error(e));
+            throw new com.hotclick.service.hacienda.HaciendaConfiguracionException(
+                "Hacienda rechazó el usuario o la clave de ATV.");
         } catch (Exception e) {
             log.error("[hacienda-token] Error obteniendo token para empresa={}: {}",
-                empresa.getId(), e.getMessage());
+                empresa.getId(), com.hotclick.service.hacienda.HaciendaLogSanitizer.error(e));
+            throw new com.hotclick.service.hacienda.HaciendaTransitoriaException(
+                "Hacienda no entregó el token de ATV: " + com.hotclick.service.hacienda.HaciendaLogSanitizer.error(e), e);
         }
-        return "";
+        Map<?, ?> cuerpo = resp != null && resp.getStatusCode().is2xxSuccessful() ? resp.getBody() : null;
+        if (cuerpo != null && cuerpo.get("access_token") instanceof String token && !token.isBlank()) {
+            int    expiresIn  = cuerpo.get("expires_in") instanceof Number n ? n.intValue() : 1800;
+            Instant expiry    = Instant.now().plusSeconds(expiresIn);
+
+            tokenCache.put(empresa.getId(), new CachedToken(token, expiry));
+            log.info("[hacienda-token] Token renovado para empresa={} ambiente={}",
+                empresa.getId(), empresa.getAmbienteHacienda());
+            return token;
+        }
+        log.error("[hacienda-token] ATV no entregó token para empresa={}", empresa.getId());
+        throw new com.hotclick.service.hacienda.HaciendaConfiguracionException(
+            "Hacienda no entregó el token de ATV. Revisá el usuario y la clave de ATV.");
     }
 
     private record CachedToken(String token, Instant expiry) {}

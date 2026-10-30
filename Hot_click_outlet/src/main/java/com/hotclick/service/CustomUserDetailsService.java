@@ -7,7 +7,9 @@ import com.hotclick.security.HotclickUserDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.hotclick.utils.Constants;
 import org.springframework.dao.DataAccessException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,6 +33,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String correo) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + correo));
+
+        // Solo cuentas activas (estado 1): eliminado, suspendido, inactivo o pendiente no se autentican con un JWT vivo.
+        if (!Integer.valueOf(Constants.ESTADO_ACTIVO).equals(usuario.getEstado())) {
+            throw new DisabledException("Cuenta no activa");
+        }
 
         List<GrantedAuthority> authorities = new ArrayList<>();
 

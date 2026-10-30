@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,7 +41,7 @@ public class StorageUploadHelper {
         if (file.getSize() > 5 * 1024 * 1024) throw new IllegalArgumentException("El certificado no puede superar 5 MB");
 
         String fn = file.getOriginalFilename();
-        String original = fn != null ? fn.toLowerCase() : "";
+        String original = fn != null ? fn.toLowerCase(Locale.ROOT) : "";
         if (!original.endsWith(".p12") && !original.endsWith(".pfx"))
             throw new IllegalArgumentException("Solo se permiten archivos .p12 o .pfx");
 

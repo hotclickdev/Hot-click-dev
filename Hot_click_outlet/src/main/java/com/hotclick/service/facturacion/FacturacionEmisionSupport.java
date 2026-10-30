@@ -13,6 +13,9 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.ClaveNumericaService;
 import com.hotclick.service.ConsecutivoFiscalService;
 import com.hotclick.service.hacienda.CodigoCabys;
+import com.hotclick.service.hacienda.CalculadoraIva;
+import com.hotclick.service.hacienda.HaciendaConfiguracionException;
+import com.hotclick.service.hacienda.HaciendaLogSanitizer;
 import com.hotclick.service.hacienda.ImpuestoLinea;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
@@ -65,24 +68,28 @@ public class FacturacionEmisionSupport {
     @Transactional
     public ComprobanteFiscal emitir(Pedido pedido, String tipo) {
         com.hotclick.service.FacturacionService.exigirNoPrueba(pedido);
-        Empresa empresa = pedido.getEmpresa();
-        if (empresa == null) {
+        // Área 7 N1: solo el admin de HotClick emite, siempre a nombre de HotClick.
+        if (!companyScope.isAdminIT()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                "Solo el admin de HotClick puede emitir comprobantes.");
+        }
+        if (pedido.getEmpresa() == null) {
             throw new IllegalStateException("El pedido no tiene empresa asociada");
         }
-        companyScope.assertCanAccess(empresa.getId());
 
         Long pedidoId = pedido.getId();
         if (comprobanteRepo.existsByPedidoIdAndEstadoIn(pedidoId, ESTADOS_ACTIVOS)) {
             throw new IllegalStateException("Ya existe un comprobante activo para el pedido " + pedidoId);
         }
 
+        Empresa empresa = empresaPlataforma();
         String tipoFinal = (tipo != null && !tipo.isBlank()) ? tipo : ComprobanteFiscal.TIPO_TIQUETE;
+        exigirTipoCoherenteConCobro(pedido, empresa, tipoFinal);
+        String cedulaEmisor = exigirCedulaEmisor(empresa);
 
         long numSeq = consecutivoService.siguienteNumero(empresa.getId(), tipoFinal);
         String numConsecutivo = ClaveNumericaService.buildNumeroConsecutivo(tipoFinal, numSeq);
 
-        String cedulaEmisor = empresa.getCedulaJuridica() != null
-            ? empresa.getCedulaJuridica() : "000000000000";
         String clave = claveService.generar(cedulaEmisor, numConsecutivo, LocalDateTime.now(Constants.ZONA_CR));
 
         ComprobanteFiscal cf = new ComprobanteFiscal();
@@ -93,11 +100,12 @@ public class FacturacionEmisionSupport {
         cf.setNumeroConsecutivo(numConsecutivo);
         cf.setEstado(ComprobanteFiscal.ESTADO_PENDIENTE);
         cf.setAmbiente(empresa.getAmbienteHacienda());
-        cf.setTotalFactura(pedido.getTotalPedido());
+        // M4: el total sale de la misma regla que arma el XML (CalculadoraIva), no de totalPedido.
+        aplicarTotales(cf, List.of(pedido), empresa, ComprobanteFiscal.TIPO_FACTURA.equals(tipoFinal));
         cf = comprobanteRepo.save(cf);
 
         log.info("[facturacion] Comprobante creado id={} clave={} tipo={} empresa={} ambiente={}",
-            cf.getId(), clave, tipoFinal, empresa.getId(), empresa.getAmbienteHacienda());
+            cf.getId(), HaciendaLogSanitizer.clave(clave), tipoFinal, empresa.getId(), empresa.getAmbienteHacienda());
 
         return cf;
     }
@@ -116,19 +124,23 @@ public class FacturacionEmisionSupport {
         }
 
         List<Pedido> pedidos = pedidoRepository.findByCompra_IdOrderByNumeroPaqueteAsc(compraId);
+        // Área 7 N2: un pedido cobrado en modo prueba nunca se factura ante Hacienda.
+        if (pedidos != null && pedidos.stream().anyMatch(Pedido::isEsPrueba)) {
+            log.info("[facturacion] compra={} es de prueba — no se emite el tiquete", compraId);
+            return null;
+        }
+
         if (pedidos == null || pedidos.isEmpty() || !lineasListas(pedidos)) {
             log.warn("[facturacion] compra={} sin líneas con CAByS — no se emite el tiquete", compraId);
             return null;
         }
 
-        Empresa emisor = empresaRepository.findById(Constants.EMPRESA_PLATAFORMA_ID)
-            .orElseThrow(() -> new IllegalStateException(
-                "No existe la empresa plataforma para emitir el tiquete"));
+        Empresa emisor = empresaPlataforma();
+        String cedulaEmisor = exigirCedulaEmisor(emisor);
 
         long numSeq = consecutivoService.siguienteNumero(emisor.getId(), ComprobanteFiscal.TIPO_TIQUETE);
         String numConsecutivo = ClaveNumericaService.buildNumeroConsecutivo(
             ComprobanteFiscal.TIPO_TIQUETE, numSeq);
-        String cedulaEmisor = emisor.getCedulaJuridica() != null ? emisor.getCedulaJuridica() : "000000000000";
         String clave = claveService.generar(cedulaEmisor, numConsecutivo, LocalDateTime.now(Constants.ZONA_CR));
 
         ComprobanteFiscal cf = new ComprobanteFiscal();
@@ -144,8 +156,24 @@ public class FacturacionEmisionSupport {
         cf = comprobanteRepo.save(cf);
 
         log.info("[facturacion] Tiquete de compra creado id={} compra={} clave={}",
-            cf.getId(), compraId, clave);
+            cf.getId(), compraId, HaciendaLogSanitizer.clave(clave));
         return cf;
+    }
+
+    private Empresa empresaPlataforma() {
+        return empresaRepository.findById(Constants.EMPRESA_PLATAFORMA_ID)
+            .orElseThrow(() -> new IllegalStateException(
+                "No existe la empresa plataforma para emitir el comprobante"));
+    }
+
+    /** Área 7 BAJO: sin cédula del emisor no se reserva consecutivo ni se arma una clave de relleno. */
+    static String exigirCedulaEmisor(Empresa emisor) {
+        String cedula = emisor.getCedulaJuridica();
+        if (cedula == null || cedula.isBlank()) {
+            throw new HaciendaConfiguracionException(
+                "Falta la cédula jurídica de HotClick en la configuración fiscal; no se emitió el comprobante.");
+        }
+        return cedula.strip();
     }
 
     private boolean lineasListas(List<Pedido> pedidos) {
@@ -163,21 +191,35 @@ public class FacturacionEmisionSupport {
         return alguna;
     }
 
-    private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos) {
-        long base = 0;
-        long impuesto = 0;
-        for (Pedido pedido : pedidos) {
-            for (PedidoItem item : pedido.getItems()) {
-                long precio = item.getPrecioUnitarioMomento() != null ? item.getPrecioUnitarioMomento() : 0L;
-                ImpuestoLinea.Montos montos = ImpuestoLinea.de(
-                    precio, item.getCantidad(), item.getProducto().getPorcentajeIva());
-                base += montos.base();
-                impuesto += montos.impuesto();
-            }
+    /**
+     * M4: en régimen simplificado la factura cobra precio + IVA y el tiquete cobra el precio tal cual.
+     * Si el tipo pedido no coincide con lo que se le cobró al cliente, el XML no cuadraría con el cobro.
+     */
+    static void exigirTipoCoherenteConCobro(Pedido pedido, Empresa empresa, String tipo) {
+        if (!CalculadoraIva.SIMPLIFICADO.equals(CalculadoraIva.regimen(empresa))) return;
+        long ivaCobrado = pedido.getMontoImpuesto() != null ? pedido.getMontoImpuesto() : 0;
+        boolean esFactura = ComprobanteFiscal.TIPO_FACTURA.equals(tipo);
+        long ivaFactura = CalculadoraIva.ivaACobrar(empresa, true,
+            CalculadoraIva.lineasDe(pedido), CalculadoraIva.descuentoDe(pedido));
+        if (esFactura && ivaCobrado != ivaFactura) {
+            throw new IllegalStateException(
+                "Esta venta se cobró sin el IVA de la factura. En régimen simplificado solo podés emitirle tiquete electrónico.");
         }
-        cf.setTotalNeto(Math.toIntExact(base));
-        cf.setTotalImpuesto(Math.toIntExact(impuesto));
-        cf.setTotalFactura(Math.toIntExact(base + impuesto));
+        if (!esFactura && ivaCobrado > 0) {
+            throw new IllegalStateException(
+                "Esta venta se cobró con IVA para factura electrónica. Emití la factura (tipo 01), no un tiquete.");
+        }
+    }
+
+    private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos) {
+        aplicarTotales(cf, pedidos, cf.getEmpresa(), ComprobanteFiscal.TIPO_FACTURA.equals(cf.getTipo()));
+    }
+
+    private static void aplicarTotales(ComprobanteFiscal cf, List<Pedido> pedidos, Empresa empresa, boolean esFactura) {
+        CalculadoraIva.Resumen r = CalculadoraIva.resumen(empresa, esFactura, pedidos);
+        cf.setTotalNeto(Math.toIntExact(r.ventaNeta()));
+        cf.setTotalImpuesto(Math.toIntExact(r.impuesto()));
+        cf.setTotalFactura(Math.toIntExact(r.totalComprobante()));
     }
 
     static void copiarReceptor(ComprobanteFiscal cf, Usuario usuario) {

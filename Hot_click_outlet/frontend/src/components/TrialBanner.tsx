@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useTenantStore from '@/store/tenantStore'
 import useAuthStore from '@/store/authStore'
+import { useTranslation } from 'react-i18next'
 import api from '@/services/api'
+import { esperandoCupo } from '@/services/emprendeCupoService'
+import { useTrialTarjeta } from '@/features/billing/useTrialTarjeta'
+import { mostrarBotonAgregarTarjeta, vistaTarjetaTrial } from '@/features/billing/trialTarjeta'
 
 const BANNER_ROLES = new Set(['EMPRENDEDOR', 'ADMIN'])
 const PLAN_PRUEBA_CERRADA = 'PRUEBA_CERRADA'
@@ -13,6 +17,8 @@ const PLAN_PRUEBA_CERRADA = 'PRUEBA_CERRADA'
  *   - estadoPlan === 'TRIAL' y quedan ≤ 7 días
  *   - estadoPlan === 'VENCIDO' o 'PAST_DUE'
  *   - estadoPlan === 'PRUEBA_CERRADA' (pide autorización)
+ *   - estadoPlan === 'PENDIENTE_CUPO' (esperando que aprueben el cupo Emprendedor)
+ * En TRIAL con pocos días ofrece «Agregar tarjeta» mientras no haya tarjeta guardada.
  * Solo visible para roles EMPRENDEDOR y ADMIN.
  */
 export default function TrialBanner() {
@@ -21,6 +27,16 @@ export default function TrialBanner() {
   const navigate = useNavigate()
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState('')
+  const { t } = useTranslation()
+  const esDueno = !!userRole && BANNER_ROLES.has(userRole)
+  // Solo consulta la tarjeta cuando el banner de trial puede mostrarse (TRIAL con ≤ 7 días).
+  const tarjeta = useTrialTarjeta({
+    activo: esDueno && estadoPlan === 'TRIAL' && trialDias >= 0 && trialDias <= 7,
+    textos: { errorGenerico: t('trialTarjeta.errorGenerico'), errorIniciar: t('trialTarjeta.errorIniciar') },
+  })
+  const vistaTarjeta = vistaTarjetaTrial({
+    estadoPlan, trialDias, estado: tarjeta.estado, cargando: tarjeta.cargando, errorVerificacion: tarjeta.errorVerificacion,
+  })
 
   if (!userRole || !BANNER_ROLES.has(userRole)) return null
 
@@ -31,12 +47,14 @@ export default function TrialBanner() {
   const pruebaCerrada = estadoPlan === PLAN_PRUEBA_CERRADA
   const autorizacionPedida = pruebaCerrada && estadoEmpresa === 'PENDIENTE_APROBACION'
 
-  if (!esVencido && !pocosTrial && !requiereMembresia && !pruebaCerrada) return null
+  const esperaCupo = esperandoCupo(estadoPlan)
+
+  if (!esVencido && !pocosTrial && !requiereMembresia && !pruebaCerrada && !esperaCupo) return null
 
   const bg      = esVencido || pruebaCerrada ? '#7f1d1d' : '#78350f'
   const border  = esVencido || pruebaCerrada ? '#b91c1c' : '#d97706'
   const accent  = esVencido || pruebaCerrada ? '#fca5a5' : '#fde68a'
-  const mensaje = textoBanner({
+  const mensaje = esperaCupo ? t('trialTarjeta.banner.esperaCupo') : textoBanner({
     requiereMembresia, estadoPlan, esVencido, pruebaCerrada, autorizacionPedida, planNombre, trialDias,
   })
 
@@ -76,13 +94,23 @@ export default function TrialBanner() {
         >
           {autorizacionPedida ? 'Autorización pedida' : 'Pedir autorización'}
         </button>
+      ) : esperaCupo ? (
+        <button type="button"
+          onClick={() => navigate('/admin/billing/planes')}
+          className="shrink-0 px-3 py-1 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+          style={{ backgroundColor: accent, color: '#1a1a1a' }}
+        >
+          {t('trialTarjeta.banner.verEstado')}
+        </button>
       ) : (
         <button type="button"
           onClick={() => navigate('/admin/billing/planes')}
           className="shrink-0 px-3 py-1 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
           style={{ backgroundColor: accent, color: '#1a1a1a' }}
         >
-          {estadoPlan === 'PAST_DUE' ? 'Actualizar pago' : 'Ver planes'}
+          {estadoPlan === 'PAST_DUE'
+            ? 'Actualizar pago'
+            : mostrarBotonAgregarTarjeta(vistaTarjeta) ? t('trialTarjeta.agregar') : 'Ver planes'}
         </button>
       )}
     </div>
@@ -105,7 +133,7 @@ function textoBanner(args: {
     return 'La prueba de un mes cerró. Pedí autorización para seguir usando el negocio.'
   }
   if (args.requiereMembresia) {
-    return 'Los cupos gratis se agotaron. Activá PYME o Negocio Plus para publicar en el catálogo.'
+    return 'Se agotaron los cupos del período gratis. Activá PYME o Negocio Plus para publicar en el catálogo.'
   }
   if (args.estadoPlan === 'PAST_DUE') {
     return 'Pago pendiente — actualiza tu método de pago para continuar usando el plan'

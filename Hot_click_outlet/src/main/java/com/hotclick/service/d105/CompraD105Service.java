@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Service
 public class CompraD105Service {
@@ -96,7 +97,7 @@ public class CompraD105Service {
 
     @Transactional(readOnly = true)
     public ReporteD105 reporte(int anio, String trimestre) {
-        String q = trimestre == null ? "" : trimestre.trim().toUpperCase();
+        String q = trimestre == null ? "" : trimestre.trim().toUpperCase(Locale.ROOT);
         if (!q.matches("Q[1-4]")) {
             throw new IllegalArgumentException("El trimestre debe ser Q1, Q2, Q3 o Q4");
         }

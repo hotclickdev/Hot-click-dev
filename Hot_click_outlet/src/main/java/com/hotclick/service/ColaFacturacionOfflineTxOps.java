@@ -5,8 +5,11 @@ import com.hotclick.model.ColaFacturacionOffline;
 import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.repository.ColaFacturacionOfflineRepository;
 import com.hotclick.repository.ComprobanteFiscalRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,12 +35,20 @@ public class ColaFacturacionOfflineTxOps {
 
     private final ColaFacturacionOfflineRepository colaRepo;
     private final ComprobanteFiscalRepository comprobanteRepo;
+    private final Counter filasRecuperadas;
 
     public ColaFacturacionOfflineTxOps(ColaFacturacionOfflineRepository colaRepo,
-                                        ComprobanteFiscalRepository comprobanteRepo) {
+                                        ComprobanteFiscalRepository comprobanteRepo,
+                                        MeterRegistry registry) {
         this.colaRepo        = colaRepo;
         this.comprobanteRepo = comprobanteRepo;
+        // BAJO-3 (#428): cuántas filas rescata L4 de PROCESANDO (una subida sostenida indica pods que caen o Hacienda lenta).
+        this.filasRecuperadas = Counter.builder(METRICA_FILAS_RECUPERADAS)
+            .description("Filas de la cola de contingencia recuperadas de PROCESANDO tras superar el timeout")
+            .register(registry);
     }
+
+    public static final String METRICA_FILAS_RECUPERADAS = "hotclick.contingencia.filas.recuperadas";
 
     /** Encola un comprobante agotado. Idempotente vía constraint UNIQUE(fk_id_comprobante). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -58,10 +69,60 @@ public class ColaFacturacionOfflineTxOps {
             comprobanteId, cf.getEmpresa().getId());
     }
 
-    /** Reclama y marca PROCESANDO en un único statement (ver ColaFacturacionOfflineRepository). */
+    /**
+     * Reclama y marca PROCESANDO en una sola transacción: las filas quedan bloqueadas (SKIP LOCKED)
+     * hasta el commit, así que otra ejecución concurrente no puede tomarlas (ver ColaFacturacionOfflineRepository).
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<ColaFacturacionOffline> reclamarLote(int limite) {
-        return colaRepo.reclamarPendientes(limite);
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        List<ColaFacturacionOffline> lote = colaRepo.bloquearPendientesListas(ahora, PageRequest.of(0, limite));
+        return colaRepo.saveAll(marcarProcesando(lote, ahora));
+    }
+
+    /**
+     * L4 (#406): devuelve a PENDIENTE las filas que llevan más de {@code timeout} en PROCESANDO (el proceso que las
+     * reclamó cayó antes de cerrarlas). Cuenta como un intento (si ya agotó {@code maxIntentos} pasa a AGOTADO, para
+     * que un comprobante que tumba el proceso no cicle para siempre). Idempotente: una fila recuperada deja de estar
+     * PROCESANDO, así que una segunda corrida no la toca; las que están siendo procesadas con un lock vivo se saltan.
+     *
+     * @return cuántas filas se recuperaron
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int recuperarTrabadas(java.time.Duration timeout, int limite) {
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        List<ColaFacturacionOffline> trabadas =
+            colaRepo.bloquearProcesandoTrabadas(ahora.minus(timeout), PageRequest.of(0, limite));
+        for (ColaFacturacionOffline c : trabadas) {
+            int intentos = c.getIntentos() + 1;
+            c.setIntentos(intentos);
+            c.setUltimoError("Recuperada de PROCESANDO tras superar el tiempo máximo de proceso");
+            c.setFechaInicioProceso(null);
+            if (intentos >= c.getMaxIntentos()) {
+                c.setEstado(ColaFacturacionOffline.ESTADO_AGOTADO);
+                log.warn("[contingencia] cola_offline={} agotó {} intentos al recuperarla de PROCESANDO — revisión manual",
+                    c.getId(), intentos);
+            } else {
+                c.setEstado(ColaFacturacionOffline.ESTADO_PENDIENTE);
+                c.setFechaProximoIntento(ahora);
+            }
+        }
+        colaRepo.saveAll(trabadas);
+        if (!trabadas.isEmpty()) {
+            filasRecuperadas.increment(trabadas.size());
+            log.warn("[contingencia] {} fila(s) trabada(s) en PROCESANDO recuperada(s)", trabadas.size());
+        }
+        return trabadas.size();
+    }
+
+    /**
+     * BAJO-2 (#428): reinicia el reloj de PROCESANDO de esta fila justo antes de procesarla.
+     *
+     * @return false si la fila ya no está PROCESANDO (otra corrida la recuperó): no hay que enviarla
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean renovarInicioProceso(Long colaId) {
+        return colaRepo.renovarInicioProceso(colaId, LocalDateTime.now(Constants.ZONA_CR)) == 1;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -112,5 +173,14 @@ public class ColaFacturacionOfflineTxOps {
     private String truncar(String texto) {
         if (texto == null) return null;
         return texto.length() > 2000 ? texto.substring(0, 2000) : texto;
+    }
+
+    /** Solo cambia el estado en memoria (sin tocar la DB); el guardado lo hace el llamador. */
+    private static List<ColaFacturacionOffline> marcarProcesando(List<ColaFacturacionOffline> lote, LocalDateTime ahora) {
+        for (ColaFacturacionOffline c : lote) {
+            c.setEstado(ColaFacturacionOffline.ESTADO_PROCESANDO);
+            c.setFechaInicioProceso(ahora);
+        }
+        return lote;
     }
 }

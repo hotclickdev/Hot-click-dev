@@ -42,6 +42,7 @@ class OnvoBillingClientTest {
         client = new OnvoBillingClient(restTemplate);
         ReflectionTestUtils.setField(client, "priceIdPyme", "price_pyme");
         ReflectionTestUtils.setField(client, "priceIdNegocioPlus", " ");
+        ReflectionTestUtils.setField(client, "priceIdEmprendedor", "price_emprendedor");
     }
 
     /** Cliente con perfiles activos simulados (sin llave salvo que se fije). */
@@ -285,6 +286,57 @@ class OnvoBillingClientTest {
     }
 
     @Test
+    @DisplayName("Trial Emprendedor: manda trialPeriodDays a ONVO (sin tarjeta, allow_incomplete)")
+    void crearSuscripcion_conTrial_enviaTrialPeriodDays() {
+        conLlave();
+        server.expect(requestTo(BASE + "/subscriptions"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(jsonPath("$.paymentBehavior").value("allow_incomplete"))
+            .andExpect(jsonPath("$.trialPeriodDays").value(90))
+            .andExpect(jsonPath("$.items[0].priceId").value("price_emprendedor"))
+            .andRespond(withSuccess("{\"id\":\"sub_t\",\"status\":\"trialing\",\"items\":[{\"id\":\"si_t\"}]}",
+                MediaType.APPLICATION_JSON));
+        OnvoBillingClient.OnvoSubscription sub =
+            client.crearSuscripcionIncompleta("cus_1", "price_emprendedor", null, 90);
+        assertThat(sub.id()).isEqualTo("sub_t");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("Sin trial (0 días) no se envía trialPeriodDays: cobro inmediato")
+    void crearSuscripcion_sinTrial_noEnviaTrialPeriodDays() {
+        conLlave();
+        server.expect(requestTo(BASE + "/subscriptions"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(jsonPath("$.trialPeriodDays").doesNotExist())
+            .andRespond(withSuccess("{\"id\":\"sub_p\",\"items\":[{\"id\":\"si_p\"}]}", MediaType.APPLICATION_JSON));
+        client.crearSuscripcionIncompleta("cus_1", "price_emprendedor", null, 0);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("Trial: sin llave y sin perfil dev/test falla cerrado (no hay mock en producción)")
+    void crearSuscripcion_conTrial_sinLlaveFallaCerrado() {
+        server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
+        for (String[] perfiles : new String[][]{{}, {"prod"}, {"production"}, {"dev", "prod"}, {"staging"}}) {
+            OnvoBillingClient c = clienteConPerfiles(perfiles);
+            assertThatThrownBy(() -> c.crearSuscripcionIncompleta("cus_1", "price_emprendedor", null, 90))
+                .as("perfiles %s", String.join(",", perfiles)).isInstanceOf(IllegalStateException.class);
+        }
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("El price de Emprendedor se resuelve en ambos sentidos; sin configurar no hay price (fail-closed)")
+    void priceIdEmprendedor() {
+        assertThat(client.getPriceIdForPlan("EMPRENDEDOR")).isEqualTo("price_emprendedor");
+        assertThat(client.planParaPriceId("price_emprendedor")).isEqualTo("EMPRENDEDOR");
+        ReflectionTestUtils.setField(client, "priceIdEmprendedor", "");
+        assertThat(client.getPriceIdForPlan("EMPRENDEDOR")).isNull();
+        assertThat(client.planParaPriceId("price_emprendedor")).isNull();
+    }
+
+    @Test
     @DisplayName("HTTP 401 de ONVO (llave inválida) se propaga; no se inventa un id")
     void http401_sePropaga() {
         conLlave();
@@ -518,5 +570,40 @@ class OnvoBillingClientTest {
         ReflectionTestUtils.setField(c, "secretKey", "onvo_test_ficticia");
         assertThatThrownBy(c::validarLlaveAlArrancar)
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("arranque abortado");
+    }
+
+    @Test
+    @DisplayName("M1: cancelarInmediato hace DELETE /subscriptions/{id} (reconciliar una suscripción duplicada)")
+    void cancelarInmediato_hacedelete() {
+        OnvoBillingClient c = clienteConPerfiles("test");
+        ReflectionTestUtils.setField(c, "secretKey", "onvo_test_ficticia");
+        server.expect(requestTo(BASE + "/subscriptions/sub_dup1"))
+            .andExpect(method(HttpMethod.DELETE))
+            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        c.cancelarInmediato("sub_dup1");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("M1: cancelarInmediato falla cerrado sin llave en producción y rechaza ids con forma inválida")
+    void cancelarInmediato_failClosed() {
+        server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
+        assertThatThrownBy(() -> clienteConPerfiles("production").cancelarInmediato("sub_1"))
+            .isInstanceOf(IllegalStateException.class);
+        OnvoBillingClient c = clienteConPerfiles("test");
+        ReflectionTestUtils.setField(c, "secretKey", "onvo_test_ficticia");
+        assertThatThrownBy(() -> c.cancelarInmediato("../customers/cus_1")).isInstanceOf(IllegalArgumentException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("M1: crear suscripción NO se reintenta automáticamente (POST sin llave de idempotencia en ONVO)")
+    void crearSuscripcion_sinRetry() throws Exception {
+        for (var m : OnvoBillingClient.class.getDeclaredMethods()) {
+            if (m.getName().equals("crearSuscripcionIncompleta")) {
+                assertThat(m.isAnnotationPresent(io.github.resilience4j.retry.annotation.Retry.class))
+                    .as("@Retry en " + m).isFalse();
+            }
+        }
     }
 }

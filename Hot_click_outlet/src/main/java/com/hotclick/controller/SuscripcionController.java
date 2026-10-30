@@ -87,6 +87,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> getSuscripcion() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return ResponseEntity.ok(suscripcionService.getSuscripcionInfo(empresaId));
     }
 
@@ -97,6 +98,7 @@ public class SuscripcionController {
             @RequestParam(defaultValue = "0") int pagina) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return ResponseEntity.ok(suscripcionService.getFacturas(empresaId, pagina));
     }
 
@@ -160,6 +162,16 @@ public class SuscripcionController {
     }
 
     /**
+     * Correo verificado obligatorio: planes de pago y también Emprendedor, cuyo trial y mensualidad por ONVO ocupan un
+     * puesto del cupo (antes solo se exigía si el precio en colones era > 0 y Emprendedor se colaba sin verificar).
+     */
+    static boolean exigeCorreoVerificado(Plan plan) {
+        if (plan == null) return false;
+        boolean planPago = plan.getPrecioMensual() != null && plan.getPrecioMensual() > 0;
+        return planPago || "EMPRENDEDOR".equalsIgnoreCase(plan.getNombre());
+    }
+
+    /**
      * Cambia el plan SaaS vía ONVO (self-service).
      * No activa el plan local hasta el webhook (salvo mock).
      */
@@ -174,8 +186,7 @@ public class SuscripcionController {
         try {
             Plan plan = planRepo.findById(planId).orElse(null);
             if (plan != null) preciosPlanes.requerir(plan.getNombre());
-            boolean planPago = plan != null && plan.getPrecioMensual() != null && plan.getPrecioMensual() > 0;
-            if (planPago) {
+            if (exigeCorreoVerificado(plan)) {
                 Usuario usuario = authSupport.usuarioFromRequest(request);
                 if (!Boolean.TRUE.equals(usuario.getCorreoVerificado())) {
                     return ResponseEntity.badRequest().body(Map.of("error", "Verificá tu correo antes de activar un plan de pago"));
@@ -186,10 +197,18 @@ public class SuscripcionController {
             Map<String, Object> out = new java.util.LinkedHashMap<>(suscripcionService.cambiarPlanOnvo(empresaId, planId));
             out.putIfAbsent("proveedor", "ONVO");
             return ResponseEntity.ok(out);
+        } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
+                "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
         } catch (com.hotclick.exception.PlanSinPrecioException e) {
             return planSinPrecio(e);
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
             return cobroNoDisponible();
+        } catch (com.hotclick.exception.AltaOnvoEnCursoException e) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE,
+                "codigo", com.hotclick.exception.AltaOnvoEnCursoException.CODIGO));
         } catch (com.hotclick.exception.PlanNoDisponibleException e) {
             return ResponseEntity.status(409).body(Map.of("error", com.hotclick.exception.PlanNoDisponibleException.MENSAJE, "codigo", "PLAN_SIN_PRECIO"));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
@@ -208,6 +227,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> confirmarTilopay(@PathVariable String orderNumber) {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         try {
             return ResponseEntity.ok(suscripcionTilopayService.confirmar(empresaId, orderNumber));
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
@@ -225,6 +245,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> cobroPendiente() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         try {
             return suscripcionTilopayService.pendiente(empresaId)
                 .map(ResponseEntity::ok)
@@ -240,6 +261,7 @@ public class SuscripcionController {
     public ResponseEntity<Map<String, Object>> planPendiente() {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return suscripcionTilopayService.planNuevoPendiente(empresaId)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
@@ -263,7 +285,9 @@ public class SuscripcionController {
         return ResponseEntity.status(409).body(body);
     }
 
-    private ResponseEntity<Map<String, Object>> soloPropietario() {
-        return ResponseEntity.status(403).body(Map.of("error", com.hotclick.security.PropietarioGuard.MSG));
+    private static <T> ResponseEntity<T> soloPropietario() {
+        @SuppressWarnings("unchecked")
+        T body = (T) Map.of("error", com.hotclick.security.PropietarioGuard.MSG);
+        return ResponseEntity.status(403).body(body);
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.Map;
 
 /** Cierra las pruebas QA al mes y registra el pedido de autorización. */
@@ -58,7 +59,7 @@ public class PruebaPlanService {
     static boolean esQa(Empresa empresa) {
         String correo = empresa.getCorreoEmpresa();
         if (correo == null) return false;
-        String normalizado = correo.toLowerCase();
+        String normalizado = correo.toLowerCase(Locale.ROOT);
         return Constants.CORREO_QA_EMPRENDEDOR.equals(normalizado)
             || Constants.CORREO_QA_PYME.equals(normalizado)
             || Constants.CORREO_QA_NEGOCIO_PLUS.equals(normalizado);

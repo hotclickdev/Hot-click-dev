@@ -6,7 +6,18 @@ import type { Id } from '@/types/api'
 import { SOPORTE_WA } from '@/config/soporteTelefono'
 
 export const WHATSAPP = SOPORTE_WA
-export const BODEGA_DEFAULT = 1
+/**
+ * Clave local del paquete cuyos productos no traen bodega. Nunca viaja al backend como bodegaId:
+ * el backend resuelve la bodega de origen (P-07) y un id fijo rompía el checkout de tiendas sin bodega 1.
+ */
+export const PAQUETE_SIN_BODEGA = 'sin-bodega'
+
+/** Id de bodega real (entero > 0) o undefined; nunca un valor por defecto. */
+export function bodegaIdReal(id: unknown): number | undefined {
+  if (id === null || id === undefined || id === '') return undefined
+  const n = Number(id)
+  return Number.isInteger(n) && n > 0 ? n : undefined
+}
 
 /** Copia el número SINPE (solo dígitos) al portapapeles. */
 export async function copiarTexto(texto: string): Promise<boolean> {
@@ -117,7 +128,7 @@ export function paquetesDesdeItems(items: ItemCheckout[]): PaqueteCheckout[] {
   for (const item of items) {
     const key = item.bodegaId !== null && item.bodegaId !== undefined && item.bodegaId !== ''
       ? String(item.bodegaId)
-      : String(BODEGA_DEFAULT)
+      : PAQUETE_SIN_BODEGA
     let grupo = grupos.get(key)
     if (!grupo) {
       grupo = {

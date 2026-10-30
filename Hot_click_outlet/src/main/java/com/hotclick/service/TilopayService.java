@@ -15,6 +15,7 @@ import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -170,7 +171,7 @@ public class TilopayService {
             return new ConsultaResultado(false, "0", "Pagos con tarjeta no están disponibles", null);
         }
         if (mockMode) {
-            boolean ok = !orderNumber.toUpperCase().contains("-FAIL");
+            boolean ok = !orderNumber.toUpperCase(Locale.ROOT).contains("-FAIL");
             return ConsultaResultado.simulada(ok, orderNumber);
         }
 

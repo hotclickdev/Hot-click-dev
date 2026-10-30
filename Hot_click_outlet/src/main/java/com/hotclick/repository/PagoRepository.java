@@ -50,7 +50,7 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
      * no debe cancelarse por TTL aunque el pedido ya tenga empresa).
      */
     @Query("SELECT p FROM Pago p WHERE p.estadoPago = 'PENDIENTE' AND p.fechaCreacion < :corte "
-        + "AND p.pedido.empresa.id = :empresaId AND (p.proveedor IS NULL OR p.proveedor <> 'SINPE')")
+        + "AND p.pedido.empresa.id = :empresaId AND (p.proveedor IS NULL OR p.proveedor <> 'SINPE') ORDER BY p.id")
     List<Pago> findExpiradosPendientesByEmpresa(@Param("corte") LocalDateTime corte, @Param("empresaId") Long empresaId);
 
     @Query("SELECT p FROM Pago p WHERE (:proveedor IS NULL OR p.proveedor = :proveedor) AND (:estadoPago IS NULL OR p.estadoPago = :estadoPago) ORDER BY p.fechaCreacion DESC")

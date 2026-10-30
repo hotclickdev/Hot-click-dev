@@ -47,9 +47,9 @@ public class TilopayConfirmacionService {
     @Transactional
     public PaymentStatusResponse confirmar(String numeroPedido, Map<String, String> queryParams) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
         Pago pago = pagoRepository.findTopByPedidoIdForUpdate(pedido.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
             throw new IllegalStateException("El pedido no es Tilopay: " + pago.getProveedor());
@@ -140,9 +140,9 @@ public class TilopayConfirmacionService {
     @Transactional
     public PaymentSession reintentar(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
             throw new IllegalStateException("Solo se puede reintentar pagos Tilopay");
@@ -182,7 +182,11 @@ public class TilopayConfirmacionService {
      * Usado por cleanup: si Tilopay ya aprobó, confirma en vez de cancelar.
      */
     @Transactional
-    public boolean intentarConfirmarSiAprobado(Pago pago) {
+    public boolean intentarConfirmarSiAprobado(Pago entrada) {
+        // QA5 ALTO: el cleanup ya no tiene transacción; el pago llega desprendido. Se recarga acá
+        // para que pedido/ítems sean perezosos dentro de esta transacción.
+        Pago pago = entrada.getId() == null ? entrada
+            : pagoRepository.findById(entrada.getId()).orElse(entrada);
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
             return false;
         }

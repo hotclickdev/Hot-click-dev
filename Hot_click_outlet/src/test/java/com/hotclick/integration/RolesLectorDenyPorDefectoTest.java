@@ -131,7 +131,8 @@ class RolesLectorDenyPorDefectoTest extends BaseIntegrationTest {
     void lectorLeeYUsaEndpointsPersonalesYPublicos() throws Exception {
         assertThat(status(get("/api/categorias"), tokenLector)).isNotEqualTo(403);
         assertThat(status(get("/api/bodegas"), tokenLector)).isNotEqualTo(403);
-        assertThat(status(get("/api/metodos-cobro"), tokenLector)).isEqualTo(200);
+        // QA3 área 2 (#348): métodos de cobro son solo del dueño.
+        assertThat(status(get("/api/metodos-cobro"), tokenLector)).isEqualTo(403);
         // opt-in @PermiteLector (acción personal) y ruta pública sin negocio
         assertThat(status(json(post("/api/contacto"), "{}"), tokenLector)).isNotEqualTo(403);
         int login = mockMvc.perform(json(post("/api/auth/login"), "{\"correo\":\"x@y.cr\",\"password\":\"bad\"}"))

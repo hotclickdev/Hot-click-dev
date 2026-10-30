@@ -35,7 +35,7 @@ import java.util.UUID;
  * La sesión y los mensajes se manejan con JdbcTemplate para evitar mapear
  * el tipo JSONB y UUID de las tablas RAG con JPA/Hibernate.
  *
- * ALTO-1: la cuota ({@link ShoppingAssistantCuota}) se reserva ANTES de crear la sesión y de
+ * ALTO-1: la cuota ({@link AsistenteCuotaDiaria}) se reserva ANTES de crear la sesión y de
  * llamar al LLM. Se registran los tokens vía {@link AiQuotaService#actualizarTokens}.
  */
 @Service
@@ -54,7 +54,7 @@ public class ShoppingAssistantService {
     private final ShoppingAssistantSessionHelper sessionHelper;
     private final ShoppingAssistantPersistence   persistence;
     private final ShoppingAssistantFeedbackHandler feedbackHandler;
-    private final ShoppingAssistantCuota         cuota;
+    private final AsistenteCuotaDiaria            cuota;
     private final ShoppingAssistantSesionFirma   firma;
 
     public ShoppingAssistantService(RagPipeline ragPipeline,
@@ -66,7 +66,7 @@ public class ShoppingAssistantService {
                                     ShoppingAssistantSessionHelper sessionHelper,
                                     ShoppingAssistantPersistence persistence,
                                     ShoppingAssistantFeedbackHandler feedbackHandler,
-                                    ShoppingAssistantCuota cuota,
+                                    AsistenteCuotaDiaria cuota,
                                     ShoppingAssistantSesionFirma firma) {
         this.ragPipeline           = ragPipeline;
         this.aiQuotaService        = aiQuotaService;
@@ -149,9 +149,10 @@ public class ShoppingAssistantService {
         UUID sesionPrevia = firma.verificar(sesionIdStr, empresaId);
 
         // ALTO-1: tope de costo ANTES de crear sesión y de cualquier llamada al LLM → 200 degradado.
-        if (!cuota.reservar(empresaId, marketplace)) {
-            return new ChatResponse(ShoppingAssistantCuota.RESPUESTA_AGOTADA,
-                sesionPrevia == null ? null : sesionIdStr.trim(), List.of(), List.of(), List.of());
+        AsistenteCuotaDiaria.Reserva reserva = cuota.reservar(empresaId, marketplace, visitorId);
+        if (!reserva.permitida()) {
+            return new ChatResponse(reserva.mensaje(),
+                sesionPrevia == null ? null : sesionIdStr.trim(), reserva.acciones());
         }
 
         // 3. Resolver o crear sesión
@@ -163,7 +164,7 @@ public class ShoppingAssistantService {
         List<Map<String, Object>> historial = sessionHelper.loadHistory(sesionId);
 
         // 5. Cargar memoria del visitante (best-effort, nunca falla el request)
-        CustomerMemoryDto memoria = customerMemoryService.getOrCreate(visitorId);
+        CustomerMemoryDto memoria = customerMemoryService.getOrCreate(empresaId, visitorId);
 
         // 6. Ejecutar el pipeline RAG con memoria del cliente inyectada en el prompt
         String contextoSeguro = ChatContextoPermitido.normalizar(contexto);
@@ -182,9 +183,8 @@ public class ShoppingAssistantService {
 
         // 8. Registrar tokens para billing/analytics (best-effort)
         try {
-            if (resultado.tokensEntrada() > 0 || resultado.tokensSalida() > 0) {
-                aiQuotaService.actualizarTokens(
-                    empresaId, resultado.tokensEntrada(), resultado.tokensSalida());
+            if (!resultado.uso().esVacio()) {
+                aiQuotaService.actualizarTokens(empresaId, resultado.uso());
             }
         } catch (Exception e) {
             // C2: sin mensaje (puede traer SQL/datos del visitante), solo la clase.
@@ -193,7 +193,7 @@ public class ShoppingAssistantService {
 
         // 9. Actualizar memoria del visitante de forma asíncrona (no bloquea el response)
         try {
-            customerMemoryService.updateMemoryAsync(visitorId, mensaje, resultado.respuesta());
+            customerMemoryService.updateMemoryAsync(empresaId, visitorId, mensaje, resultado.respuesta());
         } catch (RuntimeException e) {
             log.warn("[rag] No se pudo programar memoria visitante: {}", e.getClass().getSimpleName());
         }

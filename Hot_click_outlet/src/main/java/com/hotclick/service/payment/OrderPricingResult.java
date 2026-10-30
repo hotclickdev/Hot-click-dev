@@ -8,5 +8,6 @@ public record OrderPricingResult(
     String gcCodigo,
     int total,
     int totalConGC,
-    boolean pagoGC
+    boolean pagoGC,
+    int impuesto
 ) {}

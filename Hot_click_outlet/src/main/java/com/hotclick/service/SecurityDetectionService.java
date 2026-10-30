@@ -7,6 +7,7 @@ import com.hotclick.service.security.SecurityRateWindowTracker;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Queue;
 import java.util.Set;
 
@@ -89,7 +90,7 @@ public class SecurityDetectionService {
         // Password spray tracking (distinct targets per IP)
         if (targetEmail != null) {
             Set<String> targets = tracker.sprayTargetsForIp(ip, now, SPRAY_WINDOW_MS);
-            targets.add(targetEmail.toLowerCase());
+            targets.add(targetEmail.toLowerCase(Locale.ROOT));
 
             if (targets.size() >= SPRAY_THRESHOLD) {
                 generateAlert("PASSWORD_SPRAY", SecurityEventSeverity.HIGH,
