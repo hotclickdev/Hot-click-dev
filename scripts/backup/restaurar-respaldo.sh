@@ -9,9 +9,12 @@
 #
 # Allowlist de destino (todo lo demás se rechaza):
 #   - host: localhost, 127.0.0.1, ::1 o socket unix local (sin host o ruta /...)
-#   - base: el nombre debe contener restore, drill o test
-#   Acepta nombre simple, postgresql://… / postgres://… y DSN key=value.
-#   Con nombre simple o sin host se mira también PGHOST/PGHOSTADDR.
+#   - base: ^([a-z0-9_]*_)?(restore|drill|test)$ (ej. hotclick_drill, restore)
+#   Acepta nombre simple, postgresql://… / postgres://… y DSN key=value, solo con
+#   las claves host, port, dbname, user, connect_timeout, application_name, sslmode
+#   (hostaddr, service y cualquier otra se rechazan; host vacío también).
+#   Sin host se usa PGHOST, que debe ser local. Cualquier otra variable PG* que
+#   desvíe libpq (PGHOSTADDR, PGSERVICE, PGSERVICEFILE, PGDATABASE, ...) aborta.
 # --permitir-prod: ÚNICA excepción explícita. PELIGROSO: saltea la allowlist y
 #   pg_restore --clean BORRA y reemplaza los objetos del destino. Solo para un
 #   desastre real con OK explícito de Andrés.
@@ -40,42 +43,67 @@ done
 [[ -n "$ARCHIVO" && -n "$DESTINO" ]] || die "uso: --archivo <f> --destino <base> [--ejecutar] [--permitir-prod]"
 [[ -r "$ARCHIVO" ]] || die "no se puede leer el archivo"
 
+# Entorno libpq fail-closed: cualquier variable PG* que pueda desviar el destino
+# (PGHOSTADDR, PGSERVICE, PGSERVICEFILE, PGDATABASE, PGREQUIREAUTH, PGOPTIONS,
+# PGSYSCONFDIR, PGTARGETSESSIONATTRS...) se rechaza. Solo se permiten estas, y
+# PGHOST únicamente si es local. Aplica también con --permitir-prod.
+ENV_PG_OK="PGPASSFILE PGUSER PGPORT PGHOST PGCONNECT_TIMEOUT PGAPPNAME PGSSLMODE"
+while IFS='=' read -r k _; do
+  [[ "$k" =~ ^PG[A-Z] ]] || continue
+  [[ " $ENV_PG_OK " == *" $k "* ]] || die "variable de entorno $k definida: puede desviar el destino de libpq. Hacé unset $k y reintentá"
+done < <(env)
+if [[ -n "${PGHOST+x}" ]]; then
+  [[ -n "$PGHOST" ]] || die "PGHOST vacío: hacé unset PGHOST"
+  case "$PGHOST" in localhost|127.0.0.1|::1|/*) [[ "$PGHOST" != *,* ]] || die "PGHOST con varios hosts";;
+    *) die "PGHOST no es local: hacé unset PGHOST";; esac
+fi
+
 # Devuelve 0 si DESTINO cumple la allowlist. Setea D_HOST y D_DB.
+# Claves permitidas en URL/DSN; todo lo demás (hostaddr, service, passfile,
+# options, target_session_attrs, ...) se rechaza.
+CLAVES_OK=" host port dbname user connect_timeout application_name sslmode "
 D_HOST=""; D_DB=""
 destino_permitido() {
-  local d="$1" resto hp q kv k v
+  local d="$1" resto hp q kv k v ck hosts=()
+  D_HOST=""; D_DB=""
   if [[ "$d" =~ ^postgres(ql)?:// ]]; then
     resto="${d#*://}"
     q=""; [[ "$resto" == *\?* ]] && { q="${resto#*\?}"; resto="${resto%%\?*}"; }
-    hp="${resto%%/*}"; D_DB=""; [[ "$resto" == */* ]] && D_DB="${resto#*/}"
+    hp="${resto%%/*}"; [[ "$resto" == */* ]] && D_DB="${resto#*/}"
     hp="${hp##*@}"
-    if [[ "$hp" =~ ^\[([^]]*)\](:[0-9]+)?$ ]]; then D_HOST="${BASH_REMATCH[1]}"
+    if [[ "$hp" =~ ^\[([^]]*)\](:[0-9]+)?$ ]]; then D_HOST="${BASH_REMATCH[1]}"; [[ -n "$D_HOST" ]] || return 1
     else [[ "$hp" == *,* || "$hp" == *:*:* ]] && return 1; D_HOST="${hp%%:*}"; fi
-    IFS='&' read -ra kv <<<"$q"
-    for k in "${kv[@]}"; do
-      v="${k#*=}"; v="${v//%2F//}"; v="${v//%2f//}"
-      case "${k%%=*}" in host|hostaddr) [[ -n "$D_HOST" && "$D_HOST" != "$v" ]] && return 1; D_HOST="$v";; dbname) D_DB="$v";; esac
-    done
-    [[ -z "$D_HOST" ]] && D_HOST="${PGHOSTADDR:-${PGHOST:-}}"
+    if [[ -n "$q" ]]; then
+      IFS='&' read -ra kv <<<"$q"
+      for k in "${kv[@]}"; do
+        [[ "$k" == *=* ]] || return 1
+        ck="${k%%=*}"; v="${k#*=}"
+        [[ "$CLAVES_OK" == *" $ck "* ]] || return 1
+        v="${v//%2F//}"; v="${v//%2f//}"
+        case "$ck" in
+          host) [[ -n "$v" && -z "$D_HOST" ]] || return 1; D_HOST="$v";;
+          dbname) D_DB="$v";;
+        esac
+      done
+    fi
+    [[ -z "$D_HOST" ]] && D_HOST="${PGHOST:-}"
   elif [[ "$d" == *=* ]]; then
     [[ "$d" == *[\'\"\\]* ]] && return 1
-    D_HOST=""; D_DB=""; local hosts=()
     read -ra kv <<<"$d"
     for k in "${kv[@]}"; do
       [[ "$k" == *=* ]] || return 1
-      v="${k#*=}"
-      case "${k%%=*}" in host|hostaddr) hosts+=("$v");; dbname) D_DB="$v";; service) return 1;; esac
+      ck="${k%%=*}"; v="${k#*=}"
+      [[ "$CLAVES_OK" == *" $ck "* ]] || return 1
+      case "$ck" in host) [[ -n "$v" ]] || return 1; hosts+=("$v");; dbname) D_DB="$v";; esac
     done
-    [[ ${#hosts[@]} -eq 0 ]] && hosts=("${PGHOSTADDR:-${PGHOST:-}}")
-    for v in "${hosts[@]}"; do [[ "$v" == *,* ]] && return 1; done
-    for v in "${hosts[@]}"; do host_local "$v" || return 1; done
-    D_HOST="${hosts[0]}"
+    [[ ${#hosts[@]} -le 1 ]] || return 1
+    D_HOST="${hosts[0]:-${PGHOST:-}}"
   else
-    D_DB="$d"; D_HOST="${PGHOSTADDR:-${PGHOST:-}}"
-    [[ -n "${PGHOSTADDR:-}" && -n "${PGHOST:-}" ]] && { host_local "$PGHOST" || return 1; }
+    D_DB="$d"; D_HOST="${PGHOST:-}"
   fi
+  [[ "$D_HOST" == *,* ]] && return 1
   host_local "$D_HOST" || return 1
-  [[ "$D_DB" =~ [Rr][Ee][Ss][Tt][Oo][Rr][Ee]|[Dd][Rr][Ii][Ll][Ll]|[Tt][Ee][Ss][Tt] ]] || return 1
+  [[ "$D_DB" =~ ^([a-z0-9_]*_)?(restore|drill|test)$ ]] || return 1
   return 0
 }
 host_local() { case "$1" in ""|localhost|127.0.0.1|::1|/*) return 0;; *) return 1;; esac; }

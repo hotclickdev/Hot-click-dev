@@ -49,7 +49,7 @@ const respaldar = (dir, extra = {}) => spawnSync('bash', [pull], {
   env: envBase({ RESPALDO_DIR: dir, RESPALDO_GPG_RECIPIENT: fpr, RESPALDO_GPG_PUBKEY: pub,
     RESPALDO_FUENTE_CMD: `printf '%s\\n' "${MARCA}"; for i in $(seq 1 40000); do echo "INSERT INTO t VALUES ($i);"; done`, ...extra }),
 })
-const restaurarCon = (args) => spawnSync('bash', [restaurar, ...args], { encoding: 'utf8', env: envBase({ GNUPGHOME: gnupg }) })
+const restaurarCon = (args, extra = {}) => spawnSync('bash', [restaurar, ...args], { encoding: 'utf8', env: envBase({ GNUPGHOME: gnupg, ...extra }) })
 const gpgs = (dir) => readdirSync(dir).filter((n) => n.endsWith('.gpg')).sort()
 
 test('ida y vuelta: cifra sin texto plano, sha256, y restaura en simulacro', () => {
@@ -128,6 +128,64 @@ test('allowlist de destino: rechaza todo lo que no sea host local + base restore
   const ok = restaurarCon(['--archivo', full, '--destino', 'hotclick', '--permitir-prod'])
   assert.equal(ok.status, 0, ok.stderr)
   assert.match(ok.stdout, /PELIGROSO/)
+})
+
+test('entorno libpq y claves que desvían el destino: fail-closed', () => {
+  const dir = path.join(tmp, 'r8')
+  respaldar(dir)
+  const full = path.join(dir, gpgs(dir)[0])
+  const casos = [
+    [{ PGHOSTADDR: '10.0.0.5' }, 'postgresql://localhost/test', /PGHOSTADDR/],
+    [{ PGHOSTADDR: '10.0.0.5' }, 'host=localhost dbname=test', /PGHOSTADDR/],
+    [{ PGHOSTADDR: '10.0.0.5' }, 'hotclick_test', /PGHOSTADDR/],
+    [{ PGHOSTADDR: '10.0.0.5' }, 'hotclick_test', /PGHOSTADDR/, ['--permitir-prod']],
+    [{ PGSERVICE: 'prod' }, 'hotclick_test', /PGSERVICE/],
+    [{ PGSERVICEFILE: '/tmp/x' }, 'hotclick_test', /PGSERVICEFILE/],
+    [{ PGDATABASE: 'hotclick' }, 'host=localhost dbname=test', /PGDATABASE/],
+    [{ PGREQUIREAUTH: 'none' }, 'hotclick_test', /PGREQUIREAUTH/],
+    [{ PGOPTIONS: '-c x=y' }, 'hotclick_test', /PGOPTIONS/],
+    [{ PGHOST: '10.0.0.5' }, 'hotclick_test', /PGHOST/],
+    [{ PGHOST: '10.0.0.5' }, 'hostaddr= dbname=test', /PGHOST/],
+    [{ PGHOST: '' }, 'hotclick_test', /PGHOST/],
+    [{ PGHOST: 'localhost,10.0.0.5' }, 'hotclick_test', /PGHOST/],
+  ]
+  for (const [env, destino, re, extra = []] of casos) {
+    const s = restaurarCon(['--archivo', full, '--destino', destino, '--ejecutar', ...extra], env)
+    assert.notEqual(s.status, 0, `${JSON.stringify(env)} ${destino}`)
+    assert.match(s.stderr, re, `${JSON.stringify(env)} ${destino}`)
+  }
+  const rechazados = [
+    'hostaddr= dbname=test',
+    'hostaddr=10.0.0.5 dbname=test',
+    'host=localhost hostaddr=10.0.0.5 dbname=test',
+    'host= dbname=test',
+    'service=prod dbname=test',
+    'passfile=/tmp/x host=localhost dbname=test',
+    'host=localhost host=10.0.0.5 dbname=test',
+    'host = localhost dbname=test',
+    'postgresql:///test?service=prod',
+    'postgresql://localhost/test?hostaddr=10.0.0.5',
+    'postgresql://localhost/test?serv%69ce=prod',
+    'postgresql:///test?host=',
+    'postgresql://[]/test',
+    'hotclick_test_prod',
+    'postgresql://localhost/hotclick_test_prod',
+    'host=localhost dbname=hotclick_restore_x',
+    'testing',
+    'HOTCLICK_TEST',
+  ]
+  for (const destino of rechazados) {
+    const s = restaurarCon(['--archivo', full, '--destino', destino, '--ejecutar'])
+    assert.notEqual(s.status, 0, destino)
+    assert.match(s.stderr, /allowlist/, destino)
+  }
+  for (const [env, destino] of [[{}, 'restore'], [{}, 'test'], [{ PGHOST: 'localhost' }, 'hotclick_drill'],
+    [{ PGHOST: '/var/run/postgresql', PGPORT: '5432', PGUSER: 'postgres' }, 'postgresql:///hc_test'],
+    [{}, 'postgresql://localhost/x?dbname=hc_restore&sslmode=disable']]) {
+    const s = restaurarCon(['--archivo', full, '--destino', destino], env)
+    assert.equal(s.status, 0, `${destino}: ${s.stderr}`)
+  }
+  assert.ok(!existsSync(restoreLog) || !readFileSync(restoreLog, 'utf8').includes('10.0.0.5'))
 })
 
 test('pull: --list que cierra temprano no tumba el respaldo (SIGPIPE) y rechaza recipient no-fingerprint', () => {

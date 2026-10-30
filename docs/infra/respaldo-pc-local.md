@@ -106,7 +106,8 @@ createdb hotclick_drill
 
 Contraseña: nunca en la URL (queda en el historial y en `ps`). Usá `PGPASSFILE` (por defecto `~/.pgpass`, `chmod 600`, línea `localhost:55432:hotclick_drill:postgres:<temporal>`).
 
-- **Allowlist de destino**: solo acepta host `localhost`, `127.0.0.1`, `::1` o socket unix local (sin host o ruta `/…`; también se mira `PGHOST`/`PGHOSTADDR`), y una base cuyo nombre contenga `restore`, `drill` o `test`. Entiende nombre simple, `postgresql://…` y DSN `key=value`. Todo lo demás (IP o host interno, `hotclick` a secas, varios hosts, `service=`) **se rechaza**.
+- **Allowlist de destino**: solo acepta host `localhost`, `127.0.0.1`, `::1` o socket unix local (sin host o ruta `/…`), y una base que cumpla `^([a-z0-9_]*_)?(restore|drill|test)$` (ej. `hotclick_drill`, `restore`; `hotclick_test_prod` se rechaza). Entiende nombre simple, `postgresql://…` y DSN `key=value`, solo con las claves `host`, `port`, `dbname`, `user`, `connect_timeout`, `application_name` y `sslmode`: `hostaddr`, `service`, `passfile` o cualquier otra **se rechaza**, igual que un `host` vacío o varios hosts.
+- **Entorno libpq fail-closed**: si está definida cualquier variable `PG*` fuera de `PGPASSFILE`, `PGUSER`, `PGPORT`, `PGHOST`, `PGCONNECT_TIMEOUT`, `PGAPPNAME` y `PGSSLMODE` (por ejemplo `PGHOSTADDR`, `PGSERVICE`, `PGSERVICEFILE`, `PGDATABASE`, `PGREQUIREAUTH`, `PGOPTIONS`), el script aborta con un error que dice qué hacer `unset`. `PGHOST` solo se acepta si es local y no está vacío. Esto aplica también con `--permitir-prod`.
 - `--permitir-prod` es la única excepción y es **PELIGROSA**: saltea la allowlist y `pg_restore --clean` borra y reemplaza los objetos del destino. Solo ante un desastre real y con OK explícito de Andrés.
 - El dump descifrado no se escribe a disco: se descifra en streaming (una pasada para `--list`, otra para restaurar). Solo el TOC (sin filas) va a un tmp `700` que borra el trap (también con Ctrl-C/TERM). Si el proceso muere con `kill -9` (SIGKILL) ese tmp puede quedar: borrá tus `/tmp/tmp.*`.
 - Si el checksum no coincide o el archivo no se puede descifrar, para con error.
@@ -125,7 +126,8 @@ Contraseña: nunca en la URL (queda en el historial y en `ps`). Usá `PGPASSFILE
 - ida y vuelta de cifrado y descifrado;
 - rechazo de un dump inválido;
 - retención de 14 diarios más 8 semanales;
-- allowlist de destino (URLs y DSN remotos o sin base de restore se rechazan);
+- allowlist de destino (URLs y DSN remotos o sin base de restore se rechazan; `hostaddr`, `service`, host vacío y nombres no anclados como `hotclick_test_prod` también);
+- entorno libpq que desvía el destino (`PGHOSTADDR`, `PGSERVICE`, `PGSERVICEFILE`, `PGDATABASE`, `PGREQUIREAUTH`, `PGHOST` remoto o vacío) se rechaza;
 - `pg_restore --list` que cierra temprano (simulado leyendo 5 bytes) sin SIGPIPE, y fingerprint inválido;
 - archivo corrupto, tanto por checksum como por descifrado.
 
