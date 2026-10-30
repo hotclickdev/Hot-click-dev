@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 public final class HaciendaLogSanitizer {
 
     private static final Pattern DIGITOS_LARGOS = Pattern.compile("\\d{9,}");
+    /** Cédulas o teléfonos con guiones o espacios: 1-2345-6789, 3-101-123456, 3 101 123456. */
+    private static final Pattern DIGITOS_CON_GUIONES = Pattern.compile("\\d+(?:[- ]\\d+)+");
     private static final Pattern CONTROL = Pattern.compile("[\\r\\n\\t\\p{Cntrl}]+");
     static final int MAX = 500;
 
@@ -26,8 +28,21 @@ public final class HaciendaLogSanitizer {
     public static String mensaje(String texto) {
         if (texto == null || texto.isBlank()) return "sin detalle";
         String s = CONTROL.matcher(texto).replaceAll(" ");
+        s = enmascararConGuiones(s);
         s = DIGITOS_LARGOS.matcher(s).replaceAll("[num]").strip();
         return s.length() > MAX ? s.substring(0, MAX) + "…" : s;
+    }
+
+    /** Enmascara grupos de dígitos unidos por guion/espacio que sumen 8+ dígitos (cédulas, teléfonos). */
+    private static String enmascararConGuiones(String s) {
+        var m = DIGITOS_CON_GUIONES.matcher(s);
+        StringBuilder out = new StringBuilder();
+        while (m.find()) {
+            long digitos = m.group().chars().filter(Character::isDigit).count();
+            m.appendReplacement(out, digitos >= 8 ? "[num]" : java.util.regex.Matcher.quoteReplacement(m.group()));
+        }
+        m.appendTail(out);
+        return out.toString();
     }
 
     /** Tipo de la excepción + mensaje sanitizado; nunca el getMessage() crudo. */
