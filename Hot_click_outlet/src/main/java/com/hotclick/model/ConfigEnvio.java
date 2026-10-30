@@ -6,7 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Fila única (id=1) con los montos de envío de la plataforma (V211). Se lee y escribe con
+ * Fila única (id=1) con los montos de envío de la plataforma (V212). Se lee y escribe con
  * {@code ConfiguracionEnvioService}; el mapeo existe para que el esquema de pruebas (ddl-auto) la cree.
  */
 @Entity

@@ -17,7 +17,7 @@ public class ConfiguracionEnvioService {
     public static final int DEFAULT_GAM = 4000;
     public static final int DEFAULT_FUERA_GAM = 5500;
     public static final int DEFAULT_RAPIDO = 5000;
-    /** Tope razonable para que un error de tipeo no cobre de más; coincide con los CHECK de V211. */
+    /** Tope razonable para que un error de tipeo no cobre de más; coincide con los CHECK de V212. */
     public static final int MONTO_MAX = 50_000;
 
     public record Montos(int gam, int fueraGam, int rapido) {}

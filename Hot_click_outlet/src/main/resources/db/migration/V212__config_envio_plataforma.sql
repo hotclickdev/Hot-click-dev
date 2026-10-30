@@ -1,4 +1,4 @@
--- V211 (A-2, MED-3 Auditor 3): montos de envío de la plataforma configurables por ADMIN; antes fijos en
+-- V212 (A-2, MED-3 Auditor 3): montos de envío de la plataforma configurables por ADMIN; antes fijos en
 -- OrderPricingService. Fila única id=1. Aditiva: no toca tablas existentes.
 CREATE TABLE IF NOT EXISTS hot_click_config_envio_tb (
     id BIGINT PRIMARY KEY,
