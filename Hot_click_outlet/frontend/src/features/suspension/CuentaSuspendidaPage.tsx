@@ -5,6 +5,7 @@ import { billingService } from '@/services/billingService'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { pagoPendienteDe, type PagoPlanPendiente } from '@/features/billing/useCambiarPlan'
 import { nombrePlanVisible } from '@/components/ui/planPendiente'
+import { formatMontoMoneda } from '@/utils/format'
 import PedidosDeGracia from './PedidosDeGracia'
 import { useSuspensionStore, type EstadoImpago } from './suspensionImpaga'
 
@@ -60,10 +61,7 @@ export default function CuentaSuspendidaPage() {
     }
   }
 
-  const monto = estado?.montoPendiente != null
-    ? new Intl.NumberFormat(i18n.language, { style: 'currency', currency: estado.moneda || 'CRC', maximumFractionDigits: 0 })
-        .format(estado.montoPendiente)
-    : null
+  const monto = estado?.montoPendiente != null ? formatMontoMoneda(estado.montoPendiente, estado.moneda, i18n.language) : null
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-5 p-6">
@@ -108,3 +106,4 @@ export default function CuentaSuspendidaPage() {
     </main>
   )
 }
+

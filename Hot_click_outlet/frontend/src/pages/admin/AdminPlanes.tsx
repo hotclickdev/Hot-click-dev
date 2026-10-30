@@ -8,6 +8,7 @@ import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
+import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import type { Id } from '@/types/api'
 import { useCerrarSesion } from '@/hooks/useCerrarSesion'
@@ -180,6 +181,8 @@ export default function AdminPlanes() {
         </button>
       </div>
 
+      <TarjetaTrialCard />
+
       {error && (
         <div className="p-3 rounded-xl text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
           {error}
@@ -219,7 +222,7 @@ export default function AdminPlanes() {
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        Los precios están en colones (CRC). El cobro mensual se procesa con Tilopay.
+        Los precios están en colones (CRC). El cobro mensual se procesa con ONVO.
         Podés cancelar en cualquier momento desde la sección de suscripción.
       </p>
 

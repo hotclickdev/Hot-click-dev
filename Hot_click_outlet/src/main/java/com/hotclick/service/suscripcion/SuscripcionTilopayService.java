@@ -92,7 +92,7 @@ public class SuscripcionTilopayService {
             ? ProrrateoSuscripcion.montoAlta(prorrateo, precio, c.getFechaCreacion().toLocalDate(), dia)
             : precio);
         c.setMotivo(motivo);
-        c.setOrderNumber("SUB-" + empresaId + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase());
+        c.setOrderNumber("SUB-" + empresaId + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase(Locale.ROOT));
         return c;
     }
 

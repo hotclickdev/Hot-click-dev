@@ -5,20 +5,25 @@ import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.IpBloqueadaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
-import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.security.SecurityEventSeverity;
+import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.service.TelegramService;
 import com.hotclick.service.security.SecurityAlertNotifier;
 import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Service
 public class TelegramAbusoService {
+
+    private static final Logger log = LoggerFactory.getLogger(TelegramAbusoService.class);
 
     static final int PAUSA_MINUTOS = 30;
     static final int BLOQUEO_DIAS = 365;
@@ -30,8 +35,11 @@ public class TelegramAbusoService {
     @Autowired private TelegramService telegramService;
     @Autowired private SecurityAlertNotifier alertNotifier;
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
-    @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private IpBloqueadaRepository ipBloqueadaRepository;
+    @Autowired private AuditoriaAdminRegistroService auditoria;
+
+    /** Resultado de {@link #desbloquear(Long)}. */
+    public enum Desbloqueo { NO_ENCONTRADA, SIN_BLOQUEO, DESBLOQUEADA }
 
     public boolean rechazarSiPausadoOBloqueado(TelegramVinculacion v) {
         if (cuentaBloqueada(v.getUsuario())) {
@@ -54,15 +62,26 @@ public class TelegramAbusoService {
         return true;
     }
 
+    /**
+     * TG3 (A8-C2): una ráfaga (&gt;3 msg/s) solo pausa el chat {@value #PAUSA_MINUTOS} min; nunca escala
+     * al bloqueo de {@value #BLOQUEO_DIAS} días (que además ya solo afecta a Telegram).
+     */
     public void registrarRafaga(long chatId) {
-        registrarExceso(chatId, "Ráfaga de mensajes en el bot de clientes");
+        if (!rateLimiter.tryAcquire("tg:" + chatId + ":abuso-aviso", 1, 30)) return;
+        pausar(chatId);
+        alertNotifier.generateAlert("TELEGRAM_ABUSO", SecurityEventSeverity.MEDIUM, null, usuarioId(chatId),
+            "Ráfaga de mensajes en el bot de clientes", "chat=" + chatEnmascarado(chatId));
     }
 
-    public void avisarErrorDeUsuario(long chatId, String resumen) {
+    /**
+     * Alerta interna de un fallo del bot. Auditor 8 M-C: solo el TIPO de la excepción; el mensaje
+     * puede traer datos del negocio (SQL, nombres, ids), tokens o URLs, y el chat de alertas no es
+     * un lugar para eso. El detalle completo queda en el stacktrace del log del servidor.
+     */
+    public void avisarErrorDeUsuario(long chatId, Throwable error) {
         if (!rateLimiter.tryAcquire("tg:err:" + chatId, 1, 300)) return;
-        String corto = resumen == null ? "" : TelegramTexto.sinToken(resumen);
-        if (corto.length() > 300) corto = corto.substring(0, 300);
-        telegramService.enviar("Error en el bot de clientes. Chat " + chatId + ". " + corto);
+        String tipo = error == null ? "desconocido" : error.getClass().getSimpleName();
+        telegramService.enviar("Error en el bot de clientes. Chat " + chatEnmascarado(chatId) + ". Tipo: " + tipo);
     }
 
     public void secretoInvalido(String ip) {
@@ -79,7 +98,7 @@ public class TelegramAbusoService {
         if (primera) pausar(chatId);
         else bloquearCuenta(chatId);
         alertNotifier.generateAlert("TELEGRAM_ABUSO", SecurityEventSeverity.HIGH, null, usuarioId(chatId),
-            motivo, "chat=" + chatId);
+            motivo, "chat=" + chatEnmascarado(chatId));
     }
 
     private void pausar(long chatId) {
@@ -90,16 +109,45 @@ public class TelegramAbusoService {
         bot.enviarMensaje(chatId, "Pausé este chat 30 minutos por actividad sospechosa.");
     }
 
+    /** Seguridad INFO: el chat_id no va completo a avisos ni logs; solo los últimos 4 dígitos. */
+    static String chatEnmascarado(long chatId) {
+        return TelegramTexto.chatEnmascarado(chatId);
+    }
+
+    /**
+     * TG3: el bloqueo por abuso repetido corta SOLO Telegram: la vinculación queda en pausa
+     * {@value #BLOQUEO_DIAS} días. No toca Usuario.estado ni bloqueadoHasta (login web intacto).
+     */
     private void bloquearCuenta(long chatId) {
-        vinculacionRepository.findByChatIdAndEstado(chatId, TelegramVinculacion.ACTIVA).ifPresent(v -> {
-            Usuario usuario = v.getUsuario();
-            if (usuario == null || usuario.getId() == null) return;
-            usuario.setBloqueadoHasta(LocalDateTime.now(Constants.ZONA_CR).plusDays(BLOQUEO_DIAS));
-            usuario.setEstado(Constants.ESTADO_SUSPENDIDO);
-            usuarioRepository.save(usuario);
-        });
+        TelegramVinculacion v = vinculacionRepository
+            .findByChatIdAndEstado(chatId, TelegramVinculacion.ACTIVA).orElse(null);
+        if (v != null) {
+            v.setPausadoHasta(LocalDateTime.now(Constants.ZONA_CR).plusDays(BLOQUEO_DIAS));
+            vinculacionRepository.save(v);
+        }
         bot.enviarMensaje(chatId,
-            "Bloqueé la cuenta por actividad sospechosa repetida. Un administrador tiene que habilitarla.");
+            "Bloqueé el acceso por Telegram por actividad sospechosa repetida. Un administrador tiene que habilitarlo.");
+    }
+
+    /**
+     * Auditor 8 M-A: salida administrativa del bloqueo por abuso ({@link #bloquearCuenta}, pausa de hasta
+     * {@value #BLOQUEO_DIAS} días). Solo limpia {@code pausadoHasta} de la vinculación del usuario; no
+     * reactiva una vinculación revocada ni toca la cuenta web. La autorización (admin de plataforma) la
+     * exige el controlador. Cada desbloqueo real queda en hot_click_auditoria_admin_tb.
+     */
+    @Transactional
+    public Desbloqueo desbloquear(Long usuarioId) {
+        TelegramVinculacion v = vinculacionRepository.findByUsuarioId(usuarioId).orElse(null);
+        if (v == null) return Desbloqueo.NO_ENCONTRADA;
+        LocalDateTime hasta = v.getPausadoHasta();
+        if (hasta == null || !LocalDateTime.now(Constants.ZONA_CR).isBefore(hasta)) return Desbloqueo.SIN_BLOQUEO;
+        v.setPausadoHasta(null);
+        vinculacionRepository.save(v);
+        Long empresaId = v.getUsuario() != null ? v.getUsuario().getEmpresaId() : null;
+        auditoria.registrar("TELEGRAM_DESBLOQUEO", "TELEGRAM_VINCULACION", v.getId(), empresaId,
+            "Desbloqueo del bot de Telegram del usuario " + usuarioId + " (pausa vigente hasta " + hasta + ")");
+        log.info("[telegram] admin desbloqueó la vinculación del usuario {}", usuarioId);
+        return Desbloqueo.DESBLOQUEADA;
     }
 
     private void bloquearIp(String ip) {

@@ -63,7 +63,7 @@ class PosQrControllerPagoTest {
         t.setId(55L);
         when(turnoCajaService.getTurnoActivo(7L)).thenReturn(Optional.of(t));
         controller.crearSesion(Map.of("metodoPago", "SINPE", "items", List.of()), request);
-        verify(posQrService).crearSesion(eq(7L), eq(9L), eq(55L), any(), any(), any(), any(), any(), any());
+        verify(posQrService).crearSesion(eq(7L), eq(9L), eq(55L), any(), any(), any(), any(), any(), any(), eq(false));
     }
 
     @Test
@@ -74,7 +74,7 @@ class PosQrControllerPagoTest {
         assertThat(controller.iniciarTilopay("tokinexistente1").getStatusCode().value()).isEqualTo(404);
         assertThat(controller.iniciarTilopay("tokcualquiera01").getStatusCode().value()).isEqualTo(410);
         assertThat(controller.confirmarTilopay("tokcualquiera01").getStatusCode().value()).isEqualTo(410);
-        verify(posQrService, never()).crearSesion(any(), any(), any(), any(), any(), any(), any(), any(), any());
+        verify(posQrService, never()).crearSesion(any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
     }
 
     @Test

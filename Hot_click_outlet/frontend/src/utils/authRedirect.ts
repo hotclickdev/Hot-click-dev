@@ -20,7 +20,20 @@ export function destinoPostLogin(from: unknown): string {
  * Login con retorno. Query sobrevive un refresh; `destinoPostLogin` evita open redirect.
  */
 export function rutaLoginConRetorno(from: unknown): string {
-  const dest = destinoPostLogin(from)
+  const dest = desanidarLogin(destinoPostLogin(from))
   if (dest === '/' || dest === '/login') return '/login'
   return `/login?redirect=${encodeURIComponent(dest)}`
+}
+
+/** Un destino que ya es /login (con o sin ?redirect=) no se anida: se usa su redirect interno. */
+function desanidarLogin(dest: string): string {
+  let actual = dest
+  for (let i = 0; i < 5; i++) {
+    const [ruta, query = ''] = actual.split('#')[0].split('?')
+    if (ruta !== '/login' && ruta !== '/login/') return actual
+    const interno = new URLSearchParams(query).get('redirect')
+    actual = interno ? destinoPostLogin(interno) : '/login'
+    if (!interno) return actual
+  }
+  return '/'
 }

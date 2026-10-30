@@ -2,8 +2,8 @@ package com.hotclick.service.producto;
 
 import com.hotclick.dto.ProductoRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.model.Bodega;
 import com.hotclick.model.Producto;
-import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.CategoriaRepository;
 import com.hotclick.repository.ProductoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ public class ProductoUpdater {
 
     @Autowired private ProductoRepository productoRepository;
     @Autowired private CategoriaRepository categoriaRepository;
-    @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private BodegaTenantGuard bodegaTenantGuard;
     @Autowired private ProductoDtoMapper dtoMapper;
     @Autowired private ProductoCacheEvictor cacheEvictor;
     @Autowired private ProductoGuardadoNotifier guardadoNotifier;
@@ -30,6 +30,9 @@ public class ProductoUpdater {
             try {
                 Producto p = productoRepository.findById(id)
                     .orElseThrow(() -> new RecursoNoEncontradoException("Producto", id));
+                // La bodega se valida antes de tocar la entidad: una bodega de otro negocio no se asigna (ni se lee).
+                Bodega bodegaNueva = dto.getBodegaId() != null
+                    ? bodegaTenantGuard.exigirDeLaEmpresa(dto.getBodegaId(), empresaId) : null;
                 String nombreAntes = p.getNombreProducto();
                 Integer precioAntes = p.getPrecioVenta();
                 Integer stockAntes = p.getStockActual();
@@ -41,9 +44,8 @@ public class ProductoUpdater {
                     p.setCategoria(categoriaRepository.findById(dto.getCategoriaId())
                         .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
                 }
-                if (dto.getBodegaId() != null) {
-                    p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-                        .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));
+                if (bodegaNueva != null) {
+                    p.setBodega(bodegaNueva);
                 }
                 Producto saved = productoRepository.save(p);
                 cambioAuditoria.anotar(saved, empresaId, nombreAntes, precioAntes, stockAntes);

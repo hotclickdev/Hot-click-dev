@@ -1,5 +1,6 @@
 package com.hotclick.service.auth;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
@@ -59,9 +60,20 @@ public class AuthTotpVerifyHandler {
 
             Usuario usuario = opt.get();
 
+            var limitado = authSupport.limite2faLoginUsuario(usuario.getId(), httpRequest);
+            if (limitado != null) return limitado;
+            var porFallos = authSupport.bloqueoPorFallos(usuario.getId(), httpRequest);
+            if (porFallos != null) return porFallos;
+
             if (usuario.getBloqueadoHasta() != null && LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
                 return ResponseEntity.status(403).body(ResponseDTO.error(
                     "Cuenta temporalmente bloqueada. Intentá más tarde."));
+            }
+
+            // Cuenta que dejó de estar activa entre la contraseña y el 2FA: respuesta genérica, sin gastar el
+            // código de recuperación ni contar un intento fallido.
+            if (!AuthSupport.estaActiva(usuario)) {
+                return ResponseEntity.status(401).body(ResponseDTO.error(CuentaNoActivaException.MENSAJE));
             }
 
             // ── Códigos de recuperación (method-agnostic) ─────────────────────
@@ -73,7 +85,7 @@ public class AuthTotpVerifyHandler {
                     if (passwordEncoder.matches(normalized, stored.get(i))) { matchIdx = i; break; }
                 }
                 if (matchIdx < 0) {
-                    usuarioService.incrementarIntentosFallidos(usuario.getId());
+                    authSupport.registrarFalloCredencial(usuario.getId(), httpRequest);
                     log.warn("[2FA] Código de recuperación inválido para userId={}", usuario.getId());
                     AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"));
                     return ResponseEntity.status(401).body(ResponseDTO.error("Código de recuperación inválido"));
@@ -81,7 +93,7 @@ public class AuthTotpVerifyHandler {
                 stored.remove(matchIdx);
                 usuario.setRecoveryCodes(twoFactorService.codesToJson(stored));
                 usuarioService.guardar(usuario);
-                usuarioService.resetearIntentosFallidos(usuario.getId());
+                usuarioService.resetearIntentosFallidos(usuario.getId(), authSupport.ipCliente(httpRequest));
                 log.info("[2FA] Login por recovery code userId={}. Restantes: {}", usuario.getId(), stored.size());
                 AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "RECOVERY_CODE"));
                 return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
@@ -98,12 +110,12 @@ public class AuthTotpVerifyHandler {
                     CodigoOtp otp = otpService.verificarOtp(
                         usuario, Constants.OTP_TIPO_2FA_LOGIN, code);
                     otpService.marcarUsado(otp);
-                    usuarioService.resetearIntentosFallidos(usuario.getId());
+                    usuarioService.resetearIntentosFallidos(usuario.getId(), authSupport.ipCliente(httpRequest));
                     log.info("[2FA] Login por EMAIL_OTP exitoso userId={}", usuario.getId());
                     AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"));
                     return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
                 } catch (RuntimeException e) {
-                    usuarioService.incrementarIntentosFallidos(usuario.getId());
+                    authSupport.registrarFalloCredencial(usuario.getId(), httpRequest);
                     AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "EMAIL_OTP"));
                     return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
                 }
@@ -111,19 +123,19 @@ public class AuthTotpVerifyHandler {
 
             // Default: TOTP with replay protection
             if (!twoFactorService.verifyCodeWithReplayProtection(usuario, code)) {
-                usuarioService.incrementarIntentosFallidos(usuario.getId());
+                authSupport.registrarFalloCredencial(usuario.getId(), httpRequest);
                 log.warn("[2FA] TOTP incorrecto o replay para userId={}", usuario.getId());
                 AuthAuditSupport.run(log, () -> securityAuditService.log2FAFailed(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"));
                 return ResponseEntity.status(401).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
 
-            usuarioService.resetearIntentosFallidos(usuario.getId());
+            usuarioService.resetearIntentosFallidos(usuario.getId(), authSupport.ipCliente(httpRequest));
             log.info("[2FA] TOTP login exitoso userId={}", usuario.getId());
             AuthAuditSupport.run(log, () -> securityAuditService.log2FASuccess(usuario.getId(), usuario.getCorreo(), httpRequest, "TOTP"));
             return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
 
         } catch (Exception e) {
-            log.error("[2FA] verify error: {}", e.getMessage());
+            log.error("[2FA] verify error: {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
         }
     }

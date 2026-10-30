@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -36,6 +37,10 @@ public class OnvoBillingClient {
      * pero billing queda deshabilitado (toda llamada falla cerrada). Default false = abortar como siempre. */
     @Value("${payments.onvo.permitir-llave-test:false}")
     private boolean permitirLlaveTest;
+
+    /** Price ONVO recurrente del plan Emprendedor (US$9/mes). Vacío = el cobro de Emprendedor no está disponible. */
+    @Value("${onvo.price-id.emprendedor:}")
+    private String priceIdEmprendedor;
 
     @Value("${onvo.price-id.pyme:}")
     private String priceIdPyme;
@@ -139,7 +144,8 @@ public class OnvoBillingClient {
 
     public String getPriceIdForPlan(String planNombre) {
         if (planNombre == null) return null;
-        return switch (planNombre.toUpperCase()) {
+        return switch (planNombre.toUpperCase(Locale.ROOT)) {
+            case "EMPRENDEDOR" -> blankToNull(priceIdEmprendedor);
             case "PYME" -> blankToNull(priceIdPyme);
             case "NEGOCIO_PLUS" -> blankToNull(priceIdNegocioPlus);
             default -> null;
@@ -168,9 +174,13 @@ public class OnvoBillingClient {
 
     /**
      * Crea suscripción incompleta para cobrar con el Web SDK (paymentType=subscription).
+     *
+     * <p>SIN {@code @Retry} a propósito: ONVO no documenta una llave de idempotencia para {@code POST /subscriptions}, así
+     * que reintentar tras un timeout (la suscripción pudo haberse creado) fabrica una segunda suscripción huérfana que
+     * cobraría al terminar el trial. Un fallo transitorio sube al llamador, que lo reintenta bajo el lock del negocio
+     * (ver {@code SuscripcionOnvoChangeService}); el único alta por negocio lo garantiza ese lock.
      */
     @CircuitBreaker(name = "onvo", fallbackMethod = "crearSuscripcionFallback")
-    @Retry(name = "onvo")
     public OnvoSubscription crearSuscripcionIncompleta(String customerId, String priceId,
                                                        Map<String, String> metadata) {
         if (sinLlave()) {
@@ -188,6 +198,53 @@ public class OnvoBillingClient {
         String subId = requireId(resp, "subscription");
         String itemId = extraerPrimerItemId(resp);
         return new OnvoSubscription(subId, itemId);
+    }
+
+    /**
+     * Igual que {@link #crearSuscripcionIncompleta(String, String, Map)} pero con período de prueba:
+     * ONVO crea la suscripción en {@code trialing} (verificado en modo TEST, sin tarjeta con allow_incomplete),
+     * no cobra durante {@code trialPeriodDays} y al terminar cobra el price cada mes. {@code trialDias <= 0}
+     * equivale a la versión sin trial.
+     */
+    @CircuitBreaker(name = "onvo", fallbackMethod = "crearSuscripcionTrialFallback")
+    public OnvoSubscription crearSuscripcionIncompleta(String customerId, String priceId,
+                                                       Map<String, String> metadata, int trialDias) {
+        if (sinLlave()) {
+            exigirSimulacionPermitida("crearSuscripcion");
+            return new OnvoSubscription("sub_mock_" + System.currentTimeMillis(), "item_mock");
+        }
+        Map<String, Object> body = new HashMap<>();
+        body.put("customerId", customerId);
+        body.put("paymentBehavior", "allow_incomplete");
+        body.put("items", List.of(Map.of("priceId", priceId, "quantity", 1)));
+        if (trialDias > 0) {
+            body.put("trialPeriodDays", trialDias);
+        }
+        if (metadata != null && !metadata.isEmpty()) {
+            body.put("metadata", metadata);
+        }
+        Map<?, ?> resp = post("/subscriptions", body);
+        return new OnvoSubscription(requireId(resp, "subscription"), extraerPrimerItemId(resp));
+    }
+
+    /**
+     * Cancela de inmediato una suscripción que NO debía existir (alta duplicada u huérfana): {@code DELETE
+     * /v1/subscriptions/{id}} (cancela ya, sin esperar al fin del período). Solo para reconciliar; el id tiene que
+     * tener forma válida y en dev/test sin llave un id simulado no llama a ONVO. Idempotente, por eso sí lleva {@code @Retry}.
+     */
+    @Retry(name = "onvo")
+    public void cancelarInmediato(String subscriptionId) {
+        boolean idMock = subscriptionId != null && subscriptionId.startsWith("sub_mock");
+        if (sinLlave() || idMock) exigirSimulacionPermitida("cancelarInmediato");
+        if (sinLlave() || idMock) {
+            log.info("[onvo-mock] cancelarInmediato({})", subscriptionId);
+            return;
+        }
+        if (!idValido(subscriptionId)) {
+            throw new IllegalArgumentException("Id de suscripción ONVO inválido");
+        }
+        delete("/subscriptions/" + subscriptionId);
+        log.warn("[onvo] Suscripción cancelada de inmediato (reconciliación) sub={}", subscriptionId);
     }
 
     @CircuitBreaker(name = "onvo", fallbackMethod = "cambiarPrecioFallback")
@@ -229,10 +286,83 @@ public class OnvoBillingClient {
             return ResultadoCancelacion.CANCELADA;
         }
         if (!Boolean.TRUE.equals(resp.get("cancelAtPeriodEnd"))) {
-            throw new IllegalStateException("ONVO no confirmó cancelAtPeriodEnd para " + subscriptionId);
+            log.error("[ALERTA-PAGO] ONVO no confirmó cancelAtPeriodEnd: sub={}", subscriptionId);
+            throw new IllegalStateException("ONVO no confirmó la cancelación al final del período");
         }
         log.info("[onvo] Suscripción marcada cancelAtPeriodEnd: {}", subscriptionId);
         return ResultadoCancelacion.PROGRAMADA;
+    }
+
+    /** «live» o «test» según la llave de billing. Sin llave (o billing deshabilitado) no hay modo: null. */
+    public String modoEsperado() {
+        if (sinLlave() || isBillingDeshabilitado()) return null;
+        return esLlaveDePrueba(secretKey) ? "test" : "live";
+    }
+
+    /** Inverso de getPriceIdForPlan: el plan sale del priceId que confirma ONVO, nunca de metadata. */
+    public String planParaPriceId(String priceId) {
+        if (priceId == null || priceId.isBlank()) return null;
+        if (priceId.equals(blankToNull(priceIdEmprendedor))) return "EMPRENDEDOR";
+        if (priceId.equals(blankToNull(priceIdPyme))) return "PYME";
+        if (priceId.equals(blankToNull(priceIdNegocioPlus))) return "NEGOCIO_PLUS";
+        return null;
+    }
+
+    /** true si falta alguno de los price ids de planes (ONVO_PRICE_ID_*): sin ellos no se puede clasificar un price. */
+    public boolean faltanPriceIds() {
+        return blankToNull(priceIdPyme) == null || blankToNull(priceIdNegocioPlus) == null;
+    }
+
+    /** GET /v1/subscriptions/{id}. Fail-closed: sin llave real no se inventa nada. */
+    public Map<?, ?> obtenerSuscripcion(String subscriptionId) {
+        return leerReal("/subscriptions/", subscriptionId);
+    }
+
+    /** GET /v1/invoices/{id} (renovación de ONVO). */
+    public Map<?, ?> obtenerRenovacion(String invoiceId) {
+        return leerReal("/invoices/", invoiceId);
+    }
+
+    /** GET /v1/prices/{id}: moneda y monto (unidad menor) que ONVO cobra por ese price. */
+    public Map<?, ?> obtenerPrecio(String priceId) {
+        return leerReal("/prices/", priceId);
+    }
+
+    /** GET /v1/payment-intents/{id}. */
+    public Map<?, ?> obtenerPaymentIntent(String intentId) {
+        return leerReal("/payment-intents/", intentId);
+    }
+
+    /** priceId del único item de la suscripción; null si no hay exactamente uno. */
+    public static String primerPriceId(Map<?, ?> sub) {
+        Object items = sub == null ? null : sub.get("items");
+        if (items instanceof List<?> list && list.size() == 1 && list.get(0) instanceof Map<?, ?> item) {
+            Object p = item.get("priceId");
+            if (p == null && item.get("price") instanceof Map<?, ?> price) p = price.get("id");
+            return p == null ? null : String.valueOf(p);
+        }
+        return null;
+    }
+
+    private static final java.util.regex.Pattern ID_ONVO = java.util.regex.Pattern.compile("^[A-Za-z0-9_-]{1,64}$");
+
+    /** Forma válida de un id de ONVO; los ids vienen de webhooks (no confiables) y van dentro de la URL del GET. */
+    public static boolean idValido(String id) {
+        return id != null && ID_ONVO.matcher(id).matches();
+    }
+
+    private Map<?, ?> leerReal(String base, String id) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalStateException("ONVO: id requerido para consultar " + base);
+        }
+        if (!idValido(id)) {
+            throw new IllegalArgumentException("ONVO: id con formato inválido para consultar " + base);
+        }
+        if (sinLlave() || isBillingDeshabilitado()) {
+            log.error("[ALERTA-PAGO] ONVO billing sin llave válida; no se puede verificar {}", base);
+            throw new IllegalStateException("ONVO no está configurado. No se verificó el evento.");
+        }
+        return get(base + id);
     }
 
     /** Resultado confirmado por ONVO al pedir la cancelación al vencer. */
@@ -258,6 +388,11 @@ public class OnvoBillingClient {
         ResponseEntity<Map> resp = restTemplate.exchange(
             API_BASE + path, HttpMethod.POST, new HttpEntity<>(body, authHeaders()), Map.class);
         return resp.getBody() != null ? resp.getBody() : Map.of();
+    }
+
+    private void delete(String path) {
+        restTemplate.exchange(
+            API_BASE + path, HttpMethod.DELETE, new HttpEntity<>(authHeaders()), Map.class);
     }
 
     private void patch(String path, Map<String, Object> body) {
@@ -313,6 +448,12 @@ public class OnvoBillingClient {
         throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
     }
 
+    private OnvoSubscription crearSuscripcionTrialFallback(String customerId, String priceId,
+                                                           Map<String, String> metadata, int trialDias, Throwable t) {
+        log.error("[onvo-circuit] OPEN crearSuscripcionTrial: {} status={}", t.getClass().getSimpleName(), statusDe(t));
+        throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
+    }
+
     private void cambiarPrecioFallback(String subscriptionId, String itemId,
                                        String nuevoPriceId, Throwable t) {
         log.error("[onvo-circuit] OPEN cambiarPrecio: {} status={}", t.getClass().getSimpleName(), statusDe(t));
@@ -325,7 +466,7 @@ public class OnvoBillingClient {
     }
 
     /** Para logs de fallback: status HTTP si lo hay, nunca el mensaje (puede traer cuerpo de ONVO o datos). */
-    static String statusDe(Throwable t) {
+    public static String statusDe(Throwable t) {
         if (t instanceof org.springframework.web.client.RestClientResponseException r) {
             return String.valueOf(r.getStatusCode().value());
         }

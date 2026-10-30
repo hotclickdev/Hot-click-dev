@@ -54,6 +54,6 @@ public class EmbudoController {
 
     private boolean permitido(HttpServletRequest request) {
         String ip = clientIpResolver.resolve(request);
-        return rateLimiter.tryAcquire("embudo:ip:" + ip + ":hora", maxPorHora, VENTANA_HORA);
+        return rateLimiter.tryAcquire("embudo:ip:" + com.hotclick.security.IpParaLlave.clave(ip) + ":hora", maxPorHora, VENTANA_HORA);
     }
 }

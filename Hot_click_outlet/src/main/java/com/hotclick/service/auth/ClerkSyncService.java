@@ -7,6 +7,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.CorreoNormalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,12 @@ public class ClerkSyncService {
      */
     public AuthResponse sync(String clerkUserId, String email,
                              String nombre, String apellido, String fotoUrl, boolean declaraMayoriaEdad) {
+        email = CorreoNormalizer.normalizar(email); // MED-5: igual que el registro y el login
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Correo verificado requerido");
+        }
         Usuario usuario = resolveUser(clerkUserId, email, nombre, apellido, fotoUrl, declaraMayoriaEdad);
+        authSupport.exigirCuentaActiva(usuario); // antes de tocar ultimoAcceso: una cuenta no activa no entra
         usuarioRepository.updateUltimoAcceso(usuario.getId(), LocalDateTime.now(Constants.ZONA_CR));
         usuario = usuarioRepository.findByCorreo(usuario.getCorreo())
             .orElseThrow(() -> new IllegalStateException("Error al cargar usuario tras sync"));
@@ -51,7 +57,7 @@ public class ClerkSyncService {
                                  boolean declaraMayoriaEdad) {
         Optional<Usuario> byClerk = usuarioRepository.findByClerkUserId(clerkUserId);
         if (byClerk.isPresent()) {
-            Usuario u = rechazarSiCerrada(byClerk.get());
+            Usuario u = exigirActiva(byClerk.get());
             if (u.getCorreo() != null && !u.getCorreo().equalsIgnoreCase(email)) {
                 log.warn("[clerk-sync] clerkId={} ya vinculado a otra cuenta (id={}); correo del token distinto",
                     clerkUserId, u.getId());
@@ -60,16 +66,18 @@ public class ClerkSyncService {
         }
         Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email);
         if (byEmail.isPresent()) {
-            return vincularCuentaExistente(rechazarSiCerrada(byEmail.get()), clerkUserId, email, fotoUrl);
+            return vincularCuentaExistente(exigirActiva(byEmail.get()), clerkUserId, email, fotoUrl);
         }
         MayoriaEdad.exigir(declaraMayoriaEdad);
         return createOAuthUser(clerkUserId, email, nombre, apellido, fotoUrl);
     }
 
-    private Usuario rechazarSiCerrada(Usuario u) {
-        if (u.getEstado() != null && u.getEstado() == Constants.ESTADO_ELIMINADO) {
-            throw new SecurityException("Esta cuenta fue cerrada.");
-        }
+    /**
+     * Antes de vincular o persistir nada: una cuenta con estado distinto de 1 (eliminada, suspendida, inactiva,
+     * pendiente o sin estado) se rechaza con el mensaje genérico, sin distinguir el estado.
+     */
+    private Usuario exigirActiva(Usuario u) {
+        authSupport.exigirCuentaActiva(u);
         return u;
     }
 

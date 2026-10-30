@@ -3,6 +3,7 @@ package com.hotclick.service.shoppingassistant;
 import com.hotclick.rag.classifier.AssistantMetricsService;
 import com.hotclick.rag.classifier.QueryClassification;
 import com.hotclick.rag.classifier.QueryClassifier;
+import com.hotclick.rag.dto.AccionChat;
 import com.hotclick.rag.dto.ChatResponse;
 import com.hotclick.rag.pipeline.RagPipeline;
 import com.hotclick.rag.pipeline.RagResult;
@@ -11,15 +12,11 @@ import com.hotclick.service.customermemory.CustomerMemoryService;
 import com.hotclick.utils.InputSanitizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -36,37 +33,16 @@ class ShoppingAssistantCuotaTest {
         return f;
     }
 
-    static ShoppingAssistantCuota cuotaLibre() {
-        ShoppingAssistantCuota c = mock(ShoppingAssistantCuota.class);
-        when(c.reservar(any(), anyBoolean())).thenReturn(true);
+    static AsistenteCuotaDiaria cuotaLibre() {
+        AsistenteCuotaDiaria c = mock(AsistenteCuotaDiaria.class);
+        when(c.reservar(any(), anyBoolean(), any())).thenReturn(AsistenteCuotaDiaria.Reserva.OK);
         return c;
-    }
-
-    static JdbcTemplate h2Real() {
-        DriverManagerDataSource ds = new DriverManagerDataSource(
-            "jdbc:h2:mem:cuota" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "sa", "");
-        JdbcTemplate j = new JdbcTemplate(ds);
-        j.execute("CREATE TABLE hot_click_rate_limit_tb (bucket_key VARCHAR(255) PRIMARY KEY, "
-            + "count INT NOT NULL, window_start BIGINT NOT NULL, expires_at BIGINT NOT NULL)");
-        return j;
-    }
-
-    private final JdbcTemplate jdbc = h2Real();
-
-    private ShoppingAssistantCuota cuota(int porTienda, int global) {
-        return new ShoppingAssistantCuota(jdbc, porTienda, global);
-    }
-
-    private int contador(String clave) {
-        List<Integer> c = jdbc.queryForList(
-            "SELECT count FROM hot_click_rate_limit_tb WHERE bucket_key = ?", Integer.class, clave);
-        return c.isEmpty() ? 0 : c.get(0);
     }
 
     // ── Servicio: la cuota se verifica ANTES de crear sesión y del LLM ────────
     private final RagPipeline pipeline = mock(RagPipeline.class);
     private final ShoppingAssistantSessionHelper sesiones = mock(ShoppingAssistantSessionHelper.class);
-    private final ShoppingAssistantCuota cuotaMock = mock(ShoppingAssistantCuota.class);
+    private final AsistenteCuotaDiaria cuotaMock = mock(AsistenteCuotaDiaria.class);
     private final ShoppingAssistantSesionFirma firma = firmaTest();
     private final UUID sesion = UUID.randomUUID();
     private ShoppingAssistantService service;
@@ -78,7 +54,7 @@ class ShoppingAssistantCuotaTest {
         QueryClassifier cls = mock(QueryClassifier.class);
         when(cls.classify(anyString(), any())).thenReturn(QueryClassification.PRODUCTO);
         CustomerMemoryService mem = mock(CustomerMemoryService.class);
-        when(mem.getOrCreate(any())).thenReturn(CustomerMemoryDto.empty(null));
+        when(mem.getOrCreate(any(), any())).thenReturn(CustomerMemoryDto.empty(null));
         when(sesiones.resolveSession(any(), anyLong())).thenReturn(sesion);
         when(sesiones.loadHistory(any())).thenReturn(List.of());
         when(pipeline.ejecutar(anyString(), anyLong(), any(), any(), any(), any(), anyBoolean(), any()))
@@ -93,9 +69,12 @@ class ShoppingAssistantCuotaTest {
     }
 
     @Test void sinCupo_noCreaSesion_niLlamaAlLlm_y_responde200Degradado() {
-        when(cuotaMock.reservar(7L, false)).thenReturn(false);
+        var acciones = List.of(new AccionChat(AccionChat.BUSCAR, "Buscar productos", "/tienda/casa-luna"));
+        when(cuotaMock.reservar(eq(7L), eq(false), any())).thenReturn(new AsistenteCuotaDiaria.Reserva(
+            false, AsistenteCuotaDiaria.Motivo.CLIENTE, "Llegaste al límite", acciones));
         ChatResponse r = chat(null, false);
-        assertThat(r.getRespuesta()).isEqualTo(ShoppingAssistantCuota.RESPUESTA_AGOTADA);
+        assertThat(r.getRespuesta()).isEqualTo("Llegaste al límite");
+        assertThat(r.getAcciones()).isEqualTo(acciones);
         assertThat(r.getSesionId()).isNull();
         verifyNoInteractions(pipeline, sesiones);
         // con token válido se devuelve el mismo token, sin crear nada
@@ -105,7 +84,7 @@ class ShoppingAssistantCuotaTest {
     }
 
     @Test void conCupo_llamaAlLlm_y_devuelveSesionFirmada() {
-        when(cuotaMock.reservar(7L, false)).thenReturn(true);
+        when(cuotaMock.reservar(eq(7L), eq(false), any())).thenReturn(AsistenteCuotaDiaria.Reserva.OK);
         ChatResponse r = chat(null, false);
         assertThat(r.getRespuesta()).isEqualTo("ok");
         assertThat(r.getSesionId()).isEqualTo(firma.firmar(7L, sesion)).isNotEqualTo(sesion.toString());
@@ -113,7 +92,7 @@ class ShoppingAssistantCuotaTest {
     }
 
     @Test void sesionSinFirma_forjada_oDeOtraTienda_seTrataComoNueva() {
-        when(cuotaMock.reservar(anyLong(), anyBoolean())).thenReturn(true);
+        when(cuotaMock.reservar(anyLong(), anyBoolean(), any())).thenReturn(AsistenteCuotaDiaria.Reserva.OK);
         UUID otra = UUID.randomUUID();
         chat(otra.toString(), false);
         chat(otra + ".00000000000000000000000000000000", false);
@@ -154,77 +133,6 @@ class ShoppingAssistantCuotaTest {
         assertThat(service.getSessionHistory(s.toString())).containsEntry("sesionId", "");
         service.expireSession(s.toString());
         verifyNoInteractions(sesiones);
-    }
-
-    // ── Cuota con JdbcTemplate REAL (H2) ─────────────────────────────────────
-    @Test void limitePorTienda_niega_y_noConsumeGlobal() {
-        ShoppingAssistantCuota c = cuota(2, 100);
-        assertThat(c.reservar(7L, false)).isTrue();
-        assertThat(c.reservar(7L, false)).isTrue();
-        assertThat(c.reservar(7L, false)).isFalse();
-        assertThat(contador("asistente:global")).isEqualTo(2);
-        assertThat(c.reservar(8L, false)).isTrue();   // otra tienda no se ve afectada
-    }
-
-    @Test void topeGlobal_niega_y_devuelveElCupoDeTienda() {
-        ShoppingAssistantCuota c = cuota(100, 1);
-        assertThat(c.reservar(7L, false)).isTrue();
-        assertThat(c.reservar(8L, false)).isFalse();
-        assertThat(contador("asistente:empresa:8")).isZero();
-        assertThat(contador("asistente:global")).isEqualTo(1);
-    }
-
-    @Test void noConsumeCreditosDelPlan_tenantYMarketplacePasanConCupo() {
-        // Decisión de Andrés (opción B): el asistente no usa créditos IA del plan.
-        // Un tenant sin créditos igual pasa mientras haya cupo por tienda y global.
-        ShoppingAssistantCuota c = cuota(100, 100);
-        assertThat(c.reservar(7L, false)).isTrue();
-        assertThat(contador("asistente:empresa:7")).isEqualTo(1);
-        assertThat(c.reservar(null, true)).isTrue();
-        assertThat(contador("asistente:empresa:marketplace")).isEqualTo(1);
-        assertThat(contador("asistente:global")).isEqualTo(2);
-        assertThat(c.reservar(null, false)).isFalse();  // tenant sin empresa → niega
-        assertThat(contador("asistente:global")).isEqualTo(2);
-    }
-
-    @Test void ventanaVencida_seReiniciaAtomicamente() {
-        long viejo = System.currentTimeMillis() / 1000 - ShoppingAssistantCuota.DIA_SEGUNDOS - 5;
-        jdbc.update("INSERT INTO hot_click_rate_limit_tb VALUES ('asistente:empresa:7', 2, ?, ?)", viejo, viejo);
-        jdbc.update("INSERT INTO hot_click_rate_limit_tb VALUES ('asistente:global', 2, ?, ?)", viejo, viejo);
-        ShoppingAssistantCuota c = cuota(2, 2);
-        assertThat(c.reservar(7L, false)).isTrue();
-        assertThat(contador("asistente:empresa:7")).isEqualTo(1);
-        Long ws = jdbc.queryForObject(
-            "SELECT window_start FROM hot_click_rate_limit_tb WHERE bucket_key='asistente:global'", Long.class);
-        assertThat(ws).isGreaterThan(viejo);
-    }
-
-    @Test void concurrencia_noSuperaElLimite() throws Exception {
-        ShoppingAssistantCuota c = cuota(10, 1000);
-        ExecutorService ex = Executors.newFixedThreadPool(8);
-        CountDownLatch go = new CountDownLatch(1);
-        AtomicInteger ok = new AtomicInteger();
-        List<Future<?>> fs = new java.util.ArrayList<>();
-        for (int i = 0; i < 40; i++) {
-            fs.add(ex.submit(() -> { go.await(); if (c.reservar(null, true)) ok.incrementAndGet(); return null; }));
-        }
-        go.countDown();
-        for (Future<?> f : fs) f.get(20, TimeUnit.SECONDS);
-        ex.shutdown();
-        assertThat(ok.get()).isLessThanOrEqualTo(10);
-        assertThat(contador("asistente:empresa:marketplace")).isLessThanOrEqualTo(10);
-    }
-
-    @Test void errorDeBdReal_failClosed_sinTabla() {
-        jdbc.execute("DROP TABLE hot_click_rate_limit_tb");
-        assertThat(cuota(300, 3000).reservar(7L, false)).isFalse();
-        assertThat(cuota(300, 3000).reservar(null, true)).isFalse();
-    }
-
-    @Test void errorDeBdReal_failClosed_conexionCaida() {
-        JdbcTemplate caido = new JdbcTemplate(new DriverManagerDataSource(
-            "jdbc:h2:tcp://127.0.0.1:1/noexiste", "sa", ""));
-        assertThat(new ShoppingAssistantCuota(caido, 300, 3000).reservar(null, true)).isFalse();
     }
 
     // ── Firma ────────────────────────────────────────────────────────────────

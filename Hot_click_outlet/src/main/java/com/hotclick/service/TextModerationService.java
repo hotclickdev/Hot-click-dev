@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -130,7 +131,7 @@ public class TextModerationService {
 
     private String normalizar(String texto) {
         // 1. Minúsculas
-        String s = texto.toLowerCase();
+        String s = texto.toLowerCase(Locale.ROOT);
 
         // 2. Eliminar tildes y diacríticos
         s = Normalizer.normalize(s, Normalizer.Form.NFD)

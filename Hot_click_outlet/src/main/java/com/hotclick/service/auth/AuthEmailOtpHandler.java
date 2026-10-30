@@ -1,5 +1,6 @@
 package com.hotclick.service.auth;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
@@ -20,6 +21,10 @@ import java.util.Map;
 @Service
 public class AuthEmailOtpHandler {
 
+    /** Respuesta genérica del envío de código: el texto de la excepción puede traer el correo u otros datos. */
+    static final String MENSAJE_ENVIO_FALLIDO = "No se pudo enviar el código. Intentá de nuevo en unos minutos.";
+
+
     private static final Logger log = LoggerFactory.getLogger(AuthEmailOtpHandler.class);
 
     @Autowired private UsuarioService              usuarioService;
@@ -28,7 +33,7 @@ public class AuthEmailOtpHandler {
     @Autowired private OtpService                  otpService;
     @Autowired private AuthSupport                 authSupport;
 
-    public ResponseEntity<ResponseDTO> sendLoginEmailOtp(Map<String, String> body) {
+    public ResponseEntity<ResponseDTO> sendLoginEmailOtp(Map<String, String> body, HttpServletRequest request) {
         String tempToken = body.get("tempToken");
         if (tempToken == null || tempToken.isBlank())
             return ResponseEntity.badRequest().body(ResponseDTO.error("tempToken requerido"));
@@ -38,27 +43,37 @@ public class AuthEmailOtpHandler {
             Long userId = jwtUtil.extractUserId(tempToken);
             Usuario usuario = usuarioService.buscarPorId(userId)
                 .orElseThrow(() -> new SecurityException("Usuario no encontrado"));
+            var limitado = authSupport.limite2faLoginUsuario(usuario.getId(), request);
+            if (limitado != null) return limitado;
+            // Cuenta que dejó de estar activa: no se envía el código y la respuesta es la genérica de 2FA.
+            if (!AuthSupport.estaActiva(usuario))
+                return ResponseEntity.status(401).body(ResponseDTO.error(CuentaNoActivaException.MENSAJE));
             if (!usuario.hasEmailOtpEnabled())
                 return ResponseEntity.status(400).body(ResponseDTO.error("EMAIL_OTP no habilitado para esta cuenta"));
             otpService.enviarOtp2Fa(usuario);
             return ResponseEntity.ok(ResponseDTO.success("Código enviado a " + usuario.getCorreo(), null));
         } catch (RuntimeException e) {
-            log.warn("[2FA/email/send] {}", e.getMessage());
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            // Sin stack en warn (B3): solo la clase y la de la causa raíz, sin mensajes. El stack saneado va a debug.
+            Throwable saneada = TelegramTexto.paraLog(e);
+            log.warn("[2FA/email/send] {}", saneada.getMessage());
+            log.debug("[2FA/email/send] stack saneado", saneada);
+            return ResponseEntity.badRequest().body(ResponseDTO.error(MENSAJE_ENVIO_FALLIDO));
         }
     }
 
     public ResponseEntity<ResponseDTO> enableEmailOtp(HttpServletRequest request) {
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            var limitado = authSupport.limite2faUsuario(usuario.getId());
+            if (limitado != null) return limitado;
             otpService.enviarOtp2Fa(usuario);
             return ResponseEntity.ok(ResponseDTO.success(
                 "Código enviado a " + usuario.getCorreo() + ". Ingresalo para activar Email OTP.", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            log.error("[2FA/email/enable] {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            log.error("[2FA/email/enable] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(MENSAJE_ENVIO_FALLIDO));
         }
     }
 
@@ -68,6 +83,8 @@ public class AuthEmailOtpHandler {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Código requerido"));
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            var limitado = authSupport.limite2faUsuario(usuario.getId());
+            if (limitado != null) return limitado;
             CodigoOtp otp = otpService.verificarOtp(
                 usuario, Constants.OTP_TIPO_2FA_LOGIN, code.trim());
             otpService.marcarUsado(otp);
@@ -91,8 +108,14 @@ public class AuthEmailOtpHandler {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Contraseña requerida para desactivar Email OTP"));
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
-            if (!passwordEncoder.matches(contrasena, usuario.getContrasenaHash()))
+            var limitado = authSupport.limite2faUsuario(usuario.getId());
+            if (limitado != null) return limitado;
+            var porFallos = authSupport.bloqueoPorFallos(usuario.getId(), request);
+            if (porFallos != null) return porFallos;
+            if (!passwordEncoder.matches(contrasena, usuario.getContrasenaHash())) {
+                authSupport.registrarFalloCredencial(usuario.getId(), request);
                 return ResponseEntity.status(401).body(ResponseDTO.error("Contraseña incorrecta"));
+            }
             usuario.removeMethod(Constants.METODO_2FA_EMAIL_OTP);
             usuarioService.guardar(usuario);
             log.info("[2FA] EMAIL_OTP desactivado para userId={}", usuario.getId());

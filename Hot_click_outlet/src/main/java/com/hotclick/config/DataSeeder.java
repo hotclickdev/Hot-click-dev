@@ -2,6 +2,7 @@ package com.hotclick.config;
 
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
+import com.hotclick.service.suscripcion.TrialEmprendedorConfig;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
@@ -38,6 +40,8 @@ public class DataSeeder implements ApplicationRunner {
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired(required = false) private Environment environment;
+    /** Fuente del cupo gratis (hotclick.trial-emprendedor.cupo). Opcional: sin él, la descripción no lleva cifra. */
+    @Autowired(required = false) private TrialEmprendedorConfig trialConfig;
 
     @Value("${app.url:http://localhost:3000}")
     private String appUrl;
@@ -72,8 +76,17 @@ public class DataSeeder implements ApplicationRunner {
     @Value("${hotclick.planes.negocio-plus.comision-pct}") private BigDecimal plusPct;
     @Value("${hotclick.planes.negocio-plus.precio-mensual-usd:#{null}}") private BigDecimal plusUsd; // null = sin precio (la API da 409)
 
+    /**
+     * Descripción del plan Emprendedor. La cifra del cupo sale de la configuración ({@code hotclick.trial-emprendedor.cupo}),
+     * nunca de un literal; sin un cupo válido (> 0) se usa una frase sin número.
+     */
+    static String descripcionEmprendedor(Integer cupo) {
+        String primeros = (cupo != null && cupo > 0) ? "los primeros " + cupo + " negocios" : "los primeros negocios";
+        return "Gratis para " + primeros + "; después, mensualidad en dólares + 9% por venta.";
+    }
+
     private void seedPlanesSaas() {
-        seedPlan("EMPRENDEDOR", "Gratis para los primeros 70 negocios; después, mensualidad en dólares + 9% por venta.",
+        seedPlan("EMPRENDEDOR", descripcionEmprendedor(trialConfig != null ? trialConfig.cupo() : null),
             empUsd, empPct, 0, empPrecio,
             2, 50, 1, 1,
             true /*pos (V174)*/, false, false, true, false, false, 0, false);
@@ -277,7 +290,7 @@ public class DataSeeder implements ApplicationRunner {
     private void asegurarAdminSecundario() {
         String correoExtra = entorno.apply("ADMIN_EMAIL");
         if (correoExtra == null || correoExtra.isBlank()) return;
-        usuarioRepository.findByCorreo(correoExtra.trim().toLowerCase()).ifPresent(u -> {
+        usuarioRepository.findByCorreo(correoExtra.trim().toLowerCase(Locale.ROOT)).ifPresent(u -> {
             u.setEstado(Constants.ESTADO_ACTIVO);
             u.setIntentosFallidos(0);
             u.setBloqueadoHasta(null);

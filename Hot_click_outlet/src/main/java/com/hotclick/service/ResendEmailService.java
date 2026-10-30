@@ -11,9 +11,12 @@ import com.sendgrid.helpers.mail.objects.Email;
 import jakarta.annotation.PostConstruct;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -26,14 +29,19 @@ import java.util.Locale;
  * <ul>
  *   <li>{@code mail.provider} ausente o {@code sendgrid}: SendGrid (comportamiento histórico).</li>
  *   <li>{@code mail.provider=smtp}: JavaMailSender; exige {@code spring.mail.host}.</li>
+ *   <li>{@code mail.provider=noop}: no envía nada; solo loguea destinatario enmascarado y asunto (dev/local).</li>
  * </ul>
+ * SendGrid con {@code sendgrid.api-key} vacía: en prod/production falla al arrancar; en otros perfiles
+ * cae a noop con un warning (evita 401 de SendGrid en dev).
  * Fail closed: valor desconocido o smtp sin host lanzan IllegalStateException al arrancar
  * (y también en send()). Nunca cae al otro proveedor.
  */
 @Service
 public class ResendEmailService {
 
-    public enum Provider { SENDGRID, SMTP }
+    private static final Logger log = LoggerFactory.getLogger(ResendEmailService.class);
+
+    public enum Provider { SENDGRID, SMTP, NOOP }
 
     @Value("${sendgrid.api-key}")
     private String apiKey;
@@ -53,6 +61,9 @@ public class ResendEmailService {
     @Autowired(required = false)
     private ObjectProvider<JavaMailSender> mailSenderProvider;
 
+    @Autowired(required = false)
+    private Environment environment;
+
     private volatile Provider provider;
 
     @PostConstruct
@@ -62,7 +73,17 @@ public class ResendEmailService {
 
     Provider resolverProveedor() {
         String v = providerRaw == null ? "" : providerRaw.trim().toLowerCase(Locale.ROOT);
+        if (v.equals("noop")) {
+            return Provider.NOOP;
+        }
         if (v.isEmpty() || v.equals("sendgrid")) {
+            if (apiKey == null || apiKey.isBlank()) {
+                if (esProduccion()) {
+                    throw new IllegalStateException("mail.provider=sendgrid requiere sendgrid.api-key en producción");
+                }
+                log.warn("sendgrid.api-key vacía fuera de producción: se usa mail.provider=noop (no se envían correos)");
+                return Provider.NOOP;
+            }
             return Provider.SENDGRID;
         }
         if (v.equals("smtp")) {
@@ -77,6 +98,15 @@ public class ResendEmailService {
         throw new IllegalStateException("mail.provider desconocido: " + providerRaw);
     }
 
+    private boolean esProduccion() {
+        if (environment == null) return false;
+        for (String p : environment.getActiveProfiles()) {
+            String n = p == null ? "" : p.trim().toLowerCase(Locale.ROOT);
+            if (n.equals("prod") || n.equals("production")) return true;
+        }
+        return false;
+    }
+
     public Provider getProvider() {
         if (provider == null) {
             provider = resolverProveedor();
@@ -85,7 +115,10 @@ public class ResendEmailService {
     }
 
     public void send(String to, String subject, String html) {
-        if (getProvider() == Provider.SMTP) {
+        Provider p = getProvider();
+        if (p == Provider.NOOP) {
+            log.info("mail.provider=noop: correo no enviado a={} asunto={}", enmascararCorreo(to), subject);
+        } else if (p == Provider.SMTP) {
             sendSmtp(to, subject, html);
         } else {
             sendSendGrid(to, subject, html);
@@ -128,7 +161,7 @@ public class ResendEmailService {
             Response response = sg.api(request);
             if (response.getStatusCode() < 200 || response.getStatusCode() >= 300) {
                 throw new IntegracionExternaException("sendgrid", IntegracionExternaException.Tipo.IO_ERROR,
-                    "SendGrid respondió " + response.getStatusCode() + ": " + response.getBody());
+                    "SendGrid respondió " + response.getStatusCode());
             }
         } catch (IntegracionExternaException e) {
             throw e;
@@ -136,6 +169,13 @@ public class ResendEmailService {
             throw new IntegracionExternaException("sendgrid", IntegracionExternaException.Tipo.IO_ERROR,
                 "Error al enviar el correo. Intentá de nuevo en unos minutos.", e);
         }
+    }
+
+    static String enmascararCorreo(String correo) {
+        if (correo == null || correo.isBlank()) return "";
+        int at = correo.indexOf('@');
+        if (at <= 0) return "***";
+        return correo.charAt(0) + "***" + correo.substring(at);
     }
 
     /** Punto de extensión para tests. */

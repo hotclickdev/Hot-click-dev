@@ -3,6 +3,7 @@ package com.hotclick.service.payment;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.service.AggregatorService;
+import com.hotclick.service.GiftCardService;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.VentaAvisoService;
@@ -46,7 +47,7 @@ public class PaymentNotificationsFacade {
         ventaAvisoService.avisarVentaConfirmada(pedido);
         n8nWebhookService.notificarPedidoNuevo(pedido);
         capturarPedidoPagado(pedido, null);
-        log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), gcCodigo);
+        log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), GiftCardService.enmascarar(gcCodigo));
     }
 
     public void onPedidoConfirmado(Pedido pedido, Pago pago) {

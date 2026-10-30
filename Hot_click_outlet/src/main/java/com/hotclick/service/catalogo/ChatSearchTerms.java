@@ -3,6 +3,7 @@ package com.hotclick.service.catalogo;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 
 /** Términos de búsqueda del chat: parseo de tsquery e ILIKE seguro. */
 public final class ChatSearchTerms {
@@ -29,14 +30,14 @@ public final class ChatSearchTerms {
         if (userTerms != null) terms.addAll(userTerms);
         if (synonymBoost != null) {
             for (String s : synonymBoost) {
-                if (s != null && !s.isBlank()) terms.add(s.toLowerCase());
+                if (s != null && !s.isBlank()) terms.add(s.toLowerCase(Locale.ROOT));
             }
         }
         return List.copyOf(terms);
     }
 
     public static String sanitizarLike(String termino) {
-        return quitarComodinesLike(termino).toLowerCase();
+        return quitarComodinesLike(termino).toLowerCase(Locale.ROOT);
     }
 
     /** Quita % y _ para que el usuario no amplíe un LIKE parametrizado. */

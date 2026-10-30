@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Component
@@ -27,6 +28,7 @@ public class ProductoWriteOperations {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private BodegaTenantGuard bodegaTenantGuard;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private ProductoDtoMapper dtoMapper;
     @Autowired private ProductoCacheEvictor cacheEvictor;
@@ -55,8 +57,8 @@ public class ProductoWriteOperations {
             .orElseThrow(() -> new RecursoNoEncontradoException("Categoría", dto.getCategoriaId())));
 
         if (dto.getBodegaId() != null) {
-            p.setBodega(bodegaRepository.findById(dto.getBodegaId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Bodega", dto.getBodegaId())));
+            p.setBodega(bodegaTenantGuard.exigirDeLaEmpresa(dto.getBodegaId(),
+                empresa != null ? empresa.getId() : null));
         } else if (empresa != null) {
             List<Bodega> bodsEmpresa = bodegaRepository
                 .findByEmpresaIdAndEstadoOrderByFechaCreacionAsc(empresa.getId(), Constants.ESTADO_ACTIVO);
@@ -71,7 +73,7 @@ public class ProductoWriteOperations {
         if (empresa != null) {
             skuAsignador.asignarSiguiente(p, empresa);
         } else if (p.getSku() == null) {
-            p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            p.setSku("HC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT));
         }
         Producto saved = productoRepository.save(p);
         guardadoNotifier.publish(source, saved, empresa != null ? empresa.getId() : null);

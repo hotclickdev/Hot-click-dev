@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Escribe eventos al ledger de billing de plataforma.
- * Idempotente por (referenciaExterna, tipo) cuando hay referencia.
+ * Idempotente por (referenciaExterna, tipo) cuando hay referencia. La moneda es obligatoria: es la real del cobro.
  */
 @Service
 public class BillingLedgerWriter {
@@ -37,6 +37,11 @@ public class BillingLedgerWriter {
             log.debug("[billing-ledger] Ya registrado tipo={} ref={}", tipo, referenciaExterna);
             return;
         }
+        if (moneda == null || moneda.isBlank()) {
+            // Fail-closed: el ledger registra la moneda real del cobro; sin ella no se escribe (no hay "crc" por defecto).
+            log.error("[ALERTA-PAGO] [billing-ledger] Sin moneda, no se registra tipo={} proveedor={}", tipo, proveedor);
+            throw new IllegalArgumentException("Ledger sin moneda");
+        }
         BillingLedger entry = new BillingLedger();
         entry.setEmpresa(empresa);
         entry.setSuscripcion(sub);
@@ -44,9 +49,7 @@ public class BillingLedgerWriter {
         entry.setProveedor(proveedor);
         entry.setReferenciaExterna(blankToNull(referenciaExterna));
         entry.setMontoCentavos(montoCentavos);
-        if (moneda != null && !moneda.isBlank()) {
-            entry.setMoneda(moneda.toLowerCase());
-        }
+        entry.setMoneda(moneda.trim().toLowerCase(java.util.Locale.ROOT));
         entry.setDetalle(truncar(detalle));
         ledgerRepo.save(entry);
     }

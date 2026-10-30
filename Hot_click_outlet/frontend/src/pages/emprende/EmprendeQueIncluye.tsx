@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import useCupoEmprende from './useCupoEmprende'
+import { periodoGratis } from './periodoGratis'
 import { PLAN_EMPRENDEDOR } from './emprendePrecios'
 
 const INCLUIDOS = [
@@ -37,9 +38,11 @@ export default function EmprendeQueIncluye() {
           </ul>
           <p className="text-center text-[11px] mt-4" style={{ color: 'rgba(20,23,28,0.5)' }}>
             {error
-              ? t('emprende.cupoError')
+              ? t('emprende.cupoError', { periodo: periodoGratis(null, t) })
               : cupo
-                ? t(lleno ? 'emprende.cupoLlenoTitle' : 'emprende.cupoTitle', { quedan: cupo.cuposGratisDisponibles, limite: cupo.limite })
+                ? t(lleno ? 'emprende.cupoLlenoTitle' : 'emprende.cupoTitle', {
+                  quedan: cupo.cuposGratisDisponibles, limite: cupo.limite, periodo: periodoGratis(cupo, t),
+                })
                 : t('emprende.cupoCargando')}
           </p>
         </div>

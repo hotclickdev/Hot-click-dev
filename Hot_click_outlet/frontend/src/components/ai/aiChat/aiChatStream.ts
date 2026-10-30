@@ -1,12 +1,15 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { getOrCreateVisitorId } from '@/utils/visitorId'
 import { normalizeProduct } from './aiChatHelpers'
-import type { AiChatMensaje, AiChatProducto, AiProductPayload } from './aiChatHelpers'
+import type { AiChatAccion, AiChatMensaje, AiChatProducto, AiProductPayload } from './aiChatHelpers'
 
 type ChatSsePayload = {
   productos?: AiProductPayload[]
   text?: string
   opts?: string[]
   error?: string
+  limite?: boolean
+  acciones?: AiChatAccion[]
 }
 
 type StreamState = {
@@ -61,6 +64,14 @@ function applySseEvent(
     })
     return { assembled, productos }
   }
+  if (eventName === 'error' && parsed.limite) {
+    // Cupo diario agotado: aviso amable con botones, no es una falla para reintentar.
+    setMensajes(prev => [...prev.slice(0, -1), {
+      rol: 'assistant', texto: parsed.error || 'Llegaste al límite de consultas de hoy.',
+      productos: [], categorias: [], acciones: parsed.acciones ?? [],
+    }])
+    return { assembled, productos }
+  }
   if (eventName === 'error') {
     setMensajes(prev => [...prev.slice(0, -1), {
       rol: 'assistant', failed: true, texto: parsed.error || 'Error al buscar productos',
@@ -76,6 +87,7 @@ export async function streamChat({ empresaSlug, msg, history, context, focusIds 
   let assembled = ''
   let productos: AiChatProducto[] = []
   try {
+    const visitorId = getOrCreateVisitorId()
     const response = await fetch(`/api/public/chat?slug=${encodeURIComponent(empresaSlug)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -86,6 +98,7 @@ export async function streamChat({ empresaSlug, msg, history, context, focusIds 
         context,
         focusIds,
         ...(productoId ? { productoId } : {}),
+        ...(visitorId ? { visitorId } : {}),
       }),
     })
     if (!response.ok) throw new Error(response.status === 429 ? '429' : 'err')

@@ -59,15 +59,11 @@ public class EmpresaAdminService {
     public Map<String, Object> detalle(Long id) {
         Empresa e = empresa(id);
         Map<String, Object> data = toMap(e);
-        data.put("totalUsuarios", usuarioRepository.countActivosByEmpresaId(id));
+        data.put("totalUsuarios", usuarioRepository.countMiembrosActivosByEmpresaId(id));
         data.put("totalProductos", productoRepository.countProductosActivosByEmpresaId(id));
         data.put("totalPedidos", pedidoRepository.countTotalPedidosByEmpresaId(id));
         data.put("totalVentas", pedidoRepository.sumTotalVentasByEmpresaId(id));
         return data;
-    }
-
-    public void cambiarEstado(Long id, String nuevoEstado) {
-        cambiarEstado(id, nuevoEstado, null);
     }
 
     @Transactional
@@ -105,6 +101,7 @@ public class EmpresaAdminService {
             "EMPRESA_CAMBIO_ESTADO", "EMPRESA", id, id, detalle);
     }
 
+    @Transactional
     @CacheEvict(value = "tenantInfo", key = "#id")
     public String cambiarPlan(Long id, String nombrePlan) {
         if (nombrePlan == null || !PLANES_VALIDOS.contains(nombrePlan)) {
@@ -112,7 +109,9 @@ public class EmpresaAdminService {
         }
         Plan plan = planRepository.findByNombre(nombrePlan)
             .orElseThrow(() -> new IllegalStateException("Plan " + nombrePlan + " no configurado en hot_click_plan_tb"));
-        Empresa empresa = empresa(id);
+        Empresa empresa = empresaBloqueada(id);
+        // Igual que #333: una tienda en impago no cambia de plan (ni por convenio); solo paga lo pendiente.
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) throw new com.hotclick.exception.ReactivacionSinPagoException();
         empresa.setPlan(plan);
         empresa.setPlanSaas(nombrePlan);
         empresaRepository.save(empresa);
@@ -186,10 +185,10 @@ public class EmpresaAdminService {
         if (rolEnEmpresa == null || !ROLES_EQUIPO_VALIDOS.contains(rolEnEmpresa)) {
             throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR");
         }
-        Empresa empresa = empresa(id);
-        String correoNorm = correo.trim().toLowerCase();
+        empresa(id);   // 404 si no existe
+        String correoNorm = correo.trim().toLowerCase(java.util.Locale.ROOT);
         String telefonoNorm = (telefono != null && !telefono.isBlank()) ? telefono : "00000000";
-        equipoService.invitar(empresa, id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
+        equipoService.invitar(id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
         auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_INVITAR", "MIEMBRO_EMPRESA", null, id,
             "Invitación a " + correoNorm + " como " + rolEnEmpresa);
     }

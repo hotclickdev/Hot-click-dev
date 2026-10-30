@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.service.ai.UsoTokens;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.AiProductoGeneradoDTO;
@@ -100,11 +101,12 @@ public class AiGenerationService {
             ResponseEntity<String> response = callClaude(requestBody);
 
             JsonNode root        = mapper.readTree(response.getBody());
-            int     inputTokens  = root.path("usage").path("input_tokens").asInt(0);
-            int     outputTokens = root.path("usage").path("output_tokens").asInt(0);
+            UsoTokens uso        = UsoTokens.desdeUsage(root.path("usage"));
+            int     inputTokens  = uso.entrada();
+            int     outputTokens = uso.salida();
 
             // Registra tokens reales; las llamadas ya fueron incrementadas por verificarYReservar
-            aiQuotaService.actualizarTokens(empresaId, inputTokens, outputTokens);
+            aiQuotaService.actualizarTokens(empresaId, uso);
 
             String rawText = root.path("content").get(0).path("text").asText("");
             AiProductoGeneradoDTO dto = AiGenerationResponseParser.parsearRespuesta(

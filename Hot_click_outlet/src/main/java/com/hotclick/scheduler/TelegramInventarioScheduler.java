@@ -63,7 +63,7 @@ public class TelegramInventarioScheduler {
                 if (!chats.add(v.getChatId())) continue;
                 if (enviarChequeoA(v)) enviados++;
             } catch (Exception e) {
-                log.error("[telegram-chequeo] fallo con chat {} — {}", v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+                log.error("[telegram-chequeo] fallo con chat {} — {}", com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), e.getClass().getSimpleName());
             }
         }
         log.info("[telegram-chequeo] {} chequeos enviados en {} ms", enviados, System.currentTimeMillis() - inicio);

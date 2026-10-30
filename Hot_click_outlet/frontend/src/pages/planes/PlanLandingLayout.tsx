@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import EmprendeCupoBanner from '../emprende/EmprendeCupoBanner'
 import EmprendeSeccion from '../emprende/EmprendeSeccion'
-import { PLAN_LANDING_COPY, type LandingPlanId } from './planLandingCopy'
+import { copyLanding, type LandingPlanId } from './planLandingCopy'
+import { limiteCupo } from '../emprende/primerosNegocios'
 import useCupoEmprende from '../emprende/useCupoEmprende'
 import { PLAN_PRECIOS, textoComision, textoMensualidadEmprendedor } from '@/config/planesPrecios'
 
@@ -58,10 +59,11 @@ type Props = {
 /** Layout compartido por las 3 landings de plan; el tono cambia solo la paleta local. */
 export default function PlanLandingLayout({ planId, mostrarCupo = false }: Props) {
   const { t } = useTranslation()
-  const copy = PLAN_LANDING_COPY[planId]
-  const destino = `/registro-empresa?plan=${copy.query}`
   // «Sin mensualidad» solo si el backend confirma cupo gratis; si no, US$/mes desde config.
   const { cupo } = useCupoEmprende()
+  // El número de negocios del cupo sale del backend (cupo.limite); sin dato, el texto queda sin cifra.
+  const copy = copyLanding(planId, limiteCupo(cupo))
+  const destino = `/registro-empresa?plan=${copy.query}`
   const hayCupoGratis = cupo != null && cupo.cuposGratisDisponibles > 0
   const precio = planId === 'emprendedor' && cupo != null
     ? `${textoMensualidadEmprendedor(cupo)} · ${textoComision(PLAN_PRECIOS.EMPRENDEDOR.comisionPct)}`

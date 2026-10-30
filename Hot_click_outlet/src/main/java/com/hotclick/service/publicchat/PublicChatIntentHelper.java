@@ -31,7 +31,7 @@ public class PublicChatIntentHelper {
     }
 
     private Set<String> tokensNormalizados(String message) {
-        String[] words = message.toLowerCase()
+        String[] words = message.toLowerCase(Locale.ROOT)
             .replaceAll("[^a-záéíóúüñ\\s]", " ")
             .split("\\s+");
         Set<String> tokens = new LinkedHashSet<>();
@@ -43,7 +43,7 @@ public class PublicChatIntentHelper {
     }
 
     public String normalize(String s) {
-        String n = java.text.Normalizer.normalize(s.toLowerCase(), java.text.Normalizer.Form.NFD);
+        String n = java.text.Normalizer.normalize(s.toLowerCase(Locale.ROOT), java.text.Normalizer.Form.NFD);
         return n.replaceAll("\\p{M}", "");
     }
 
@@ -92,7 +92,7 @@ public class PublicChatIntentHelper {
     }
 
     public boolean isEnglish(String msg) {
-        String lower = msg.toLowerCase();
+        String lower = msg.toLowerCase(Locale.ROOT);
         long count = Arrays.stream(new String[]{
             " the "," a "," an "," is "," are "," what "," how "," where ",
             " i "," i'm "," i need "," looking "," want "," show "," find ",
@@ -112,7 +112,7 @@ public class PublicChatIntentHelper {
     }
 
     public boolean isGiftIntent(String msg) {
-        String lower = msg.toLowerCase();
+        String lower = msg.toLowerCase(Locale.ROOT);
         return lower.contains("regalar") || lower.contains("regalo") || lower.contains("obsequio")
             || lower.contains("gift") || lower.contains("present")
             || lower.contains("cumpleaños") || lower.contains("aniversario")
@@ -130,7 +130,7 @@ public class PublicChatIntentHelper {
         Pattern p = Pattern.compile(
             "(?:sin|no sea|no quiero|que no|sin que sea)\\s+(?:de\\s+)?([a-záéíóúüñ]+)"
         );
-        Matcher m = p.matcher(msg.toLowerCase());
+        Matcher m = p.matcher(msg.toLowerCase(Locale.ROOT));
         while (m.find()) negated.add(m.group(1));
         return negated;
     }
@@ -144,7 +144,7 @@ public class PublicChatIntentHelper {
         if (isPersonalizedIntent(msg)) return "PERSONALIZADO";
         if (isGift) return "REGALO";
         if (budget != null) return "PRESUPUESTO";
-        String lower = msg.toLowerCase();
+        String lower = msg.toLowerCase(Locale.ROOT);
         if (lower.contains("huele") || lower.contains("feo") || lower.contains("frío")
             || lower.contains("calor") || lower.contains("oscuro") || lower.contains("humedad")
             || lower.contains("sucio") || lower.contains("ruido") || lower.contains("organizar")
@@ -158,7 +158,7 @@ public class PublicChatIntentHelper {
      */
     public List<String> userTerms(String message) {
         if (message == null || message.isBlank()) return List.of();
-        String[] words = message.toLowerCase()
+        String[] words = message.toLowerCase(Locale.ROOT)
             .replaceAll("[^a-záéíóúüñ\\s]", " ")
             .split("\\s+");
         return Arrays.stream(words)

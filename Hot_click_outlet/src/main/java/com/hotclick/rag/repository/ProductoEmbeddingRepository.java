@@ -1,9 +1,13 @@
 package com.hotclick.rag.repository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.function.LongSupplier;
 
 /**
  * Acceso a datos para hot_click_producto_embedding_tb.
@@ -19,10 +23,71 @@ public class ProductoEmbeddingRepository {
     /** Versión del modelo activa. Usada en upsert y en la query de detección de embeddings obsoletos. */
     public static final String CURRENT_MODEL = "voyage-3-lite";
 
+    private static final Logger log = LoggerFactory.getLogger(ProductoEmbeddingRepository.class);
+
+    static final String TABLA = "hot_click_producto_embedding_tb";
+
+    /** Si la tabla no existe se vuelve a preguntar cada tanto (por si se instala pgvector y se migra). */
+    static final Duration REINTENTO_SI_NO_EXISTE = Duration.ofMinutes(5);
+    /** Si existe se confía en el resultado un buen rato: la tabla no desaparece sola. */
+    static final Duration REVALIDAR_SI_EXISTE = Duration.ofMinutes(30);
+
     private final JdbcTemplate jdbc;
+
+    private LongSupplier relojNanos = System::nanoTime;
+    private volatile Boolean tablaExiste;
+    private volatile long verificadaEnNanos;
 
     public ProductoEmbeddingRepository(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
+    }
+
+    /** Solo para tests: reloj controlable. */
+    void setRelojNanos(LongSupplier relojNanos) {
+        this.relojNanos = relojNanos;
+    }
+
+    // ── Disponibilidad de la tabla ────────────────────────────────────────────
+
+    /**
+     * Indica si {@value #TABLA} existe. Sin la tabla (típico en dev con una imagen de Postgres
+     * sin pgvector) no tiene sentido llamar a Voyage: la consulta o el upsert fallarían igual.
+     *
+     * <p>El resultado se cachea ({@link #REINTENTO_SI_NO_EXISTE} si falta,
+     * {@link #REVALIDAR_SI_EXISTE} si existe). La verificación usa information_schema, que
+     * funciona igual en Postgres y en H2. Si la verificación misma falla (BD caída) se asume
+     * que existe y no se cachea: el comportamiento es el de siempre. El log no lleva PII.
+     */
+    public boolean tablaDisponible() {
+        Boolean cache = tablaExiste;
+        long ahora = relojNanos.getAsLong();
+        if (cache != null) {
+            Duration ttl = cache ? REVALIDAR_SI_EXISTE : REINTENTO_SI_NO_EXISTE;
+            if (ahora - verificadaEnNanos < ttl.toNanos()) return cache;
+        }
+        boolean existe;
+        try {
+            Integer n = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE LOWER(table_name) = ?",
+                Integer.class, TABLA);
+            existe = n != null && n > 0;
+        } catch (RuntimeException e) {
+            log.debug("[embedding] No se pudo verificar la tabla ({}) — se asume disponible",
+                e.getClass().getSimpleName());
+            return true;
+        }
+        if (cache == null || cache != existe) {
+            if (existe) {
+                log.info("[embedding] Tabla {} disponible — búsqueda semántica e indexación activas", TABLA);
+            } else {
+                log.info("[embedding] Tabla {} no existe (¿falta pgvector o la migración V62?) — "
+                    + "búsqueda semántica e indexación desactivadas, se reintenta en {} min",
+                    TABLA, REINTENTO_SI_NO_EXISTE.toMinutes());
+            }
+        }
+        tablaExiste = existe;
+        verificadaEnNanos = ahora;
+        return existe;
     }
 
     // ── Escritura ─────────────────────────────────────────────────────────────

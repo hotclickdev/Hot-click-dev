@@ -163,6 +163,22 @@ public class Empresa {
     @Column(name = "trial_hasta")
     private LocalDate trialHasta;
 
+    /** Último día del trial del plan Emprendedor (V206). NULL si el negocio no recibió ese trial. */
+    @Column(name = "trial_emprendedor_hasta")
+    private LocalDate trialEmprendedorHasta;
+
+    /** Puesto (1..cupo) que ocupó en el trial Emprendedor (V206). UNIQUE: dos negocios nunca comparten puesto. */
+    @Column(name = "trial_emprendedor_pos", unique = true)
+    private Integer trialEmprendedorPos;
+
+    /** Titular del puesto (V207): usuario propietario que lo reclamó al aprobarse. UNIQUE = una persona, un puesto. */
+    @Column(name = "trial_emprendedor_titular_usuario", unique = true)
+    private Long trialEmprendedorTitularUsuario;
+
+    /** Titular del puesto (V207): correo verificado normalizado (sin alias +tag ni puntos de Gmail). UNIQUE. */
+    @Column(name = "trial_emprendedor_titular_correo", length = 160, unique = true)
+    private String trialEmprendedorTitularCorreo;
+
     @Column(name = "timezone", length = 50)
     private String timezone = "America/Costa_Rica";
 
@@ -205,6 +221,9 @@ public class Empresa {
     @Column(name = "regimen_tributario", length = 60)
     private String regimenTributario;
 
+    /** M4: SIMPLIFICADO (precio sin IVA; la factura suma el 13 %) o TRADICIONAL (precio con IVA incluido). */
+    @Column(name = "regimen_iva", length = 20, nullable = false)
+    private String regimenIva = "SIMPLIFICADO";
     /** Ubicación del emisor para el XML 4.4 (códigos de Hacienda). Obligatoria para emitir. */
     @Column(name = "ubicacion_provincia", length = 1)
     private String ubicacionProvincia;
@@ -379,6 +398,14 @@ public class Empresa {
 
     public LocalDate getTrialHasta() { return trialHasta; }
     public void setTrialHasta(LocalDate trialHasta) { this.trialHasta = trialHasta; }
+    public LocalDate getTrialEmprendedorHasta() { return trialEmprendedorHasta; }
+    public void setTrialEmprendedorHasta(LocalDate v) { this.trialEmprendedorHasta = v; }
+    public Integer getTrialEmprendedorPos() { return trialEmprendedorPos; }
+    public void setTrialEmprendedorPos(Integer v) { this.trialEmprendedorPos = v; }
+    public Long getTrialEmprendedorTitularUsuario() { return trialEmprendedorTitularUsuario; }
+    public void setTrialEmprendedorTitularUsuario(Long v) { this.trialEmprendedorTitularUsuario = v; }
+    public String getTrialEmprendedorTitularCorreo() { return trialEmprendedorTitularCorreo; }
+    public void setTrialEmprendedorTitularCorreo(String v) { this.trialEmprendedorTitularCorreo = v; }
 
     public String getTimezone() { return timezone != null ? timezone : "America/Costa_Rica"; }
     public void setTimezone(String timezone) { this.timezone = timezone; }
@@ -410,6 +437,8 @@ public class Empresa {
     public String getRegimenTributario() { return regimenTributario; }
     public void setRegimenTributario(String v) { this.regimenTributario = v; }
 
+    public String getRegimenIva() { return regimenIva != null ? regimenIva : "SIMPLIFICADO"; }
+    public void setRegimenIva(String v) { this.regimenIva = v; }
     public String getUbicacionProvincia() { return ubicacionProvincia; }
     public void setUbicacionProvincia(String v) { this.ubicacionProvincia = v; }
     public String getUbicacionCanton() { return ubicacionCanton; }

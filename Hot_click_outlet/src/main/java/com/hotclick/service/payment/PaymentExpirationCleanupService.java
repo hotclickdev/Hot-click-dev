@@ -2,22 +2,19 @@ package com.hotclick.service.payment;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pago;
-import com.hotclick.model.Pedido;
 import com.hotclick.payment.OnvoPaymentProvider;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PagoRepository;
-import com.hotclick.repository.PedidoRepository;
 import com.hotclick.utils.Constants;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,43 +24,45 @@ public class PaymentExpirationCleanupService {
 
     @Autowired private EmpresaRepository          empresaRepository;
     @Autowired private PagoRepository             pagoRepository;
-    @Autowired private PedidoRepository           pedidoRepository;
-    @Autowired private StockReservationService    stockReservationService;
     @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
     @Autowired private OnvoPaymentProvider        onvoPaymentProvider;
-    @Autowired private PedidoGrupoService         pedidoGrupoService;
+    @Autowired private PagoExpiradoCancelador     pagoExpiradoCancelador;
     @Autowired private ReservaAntiBotService      reservaAntiBot;
     @Autowired private ReservaSospechosaLiberador reservaSospechosaLiberador;
 
-    @Scheduled(fixedRate = 5 * 60 * 1000)
+    /** Minutos sin pagar tras los que un pago pendiente se reconsulta y, si corresponde, se cancela. */
+    @Value("${hotclick.pagos.onvo.vencimiento-minutos:30}")
+    private long vencimientoMinutos = 30;
+
+    @Scheduled(fixedRateString = "${hotclick.pagos.onvo.cleanup-intervalo-ms:300000}")
     @SchedulerLock(name = "payment_expiration_cleanup", lockAtMostFor = "PT3M", lockAtLeastFor = "PT30S")
-    @Transactional
+    // Sin @Transactional (QA5 ALTO): ver PagoExpiradoCancelador.
     public void cancelarExpirados() {
         ejecutar();
     }
 
     /** Cuerpo del scheduler, sin ShedLock (lo usan los tests con reloj controlado). */
-    @Transactional
     public void ejecutar() {
         LocalDateTime ahora = reservaAntiBot.ahora();
-        LocalDateTime corte = ahora.minusMinutes(30);
+        LocalDateTime corte = ahora.minusMinutes(Math.max(1, vencimientoMinutos));
         for (Empresa empresa : empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")) {
             try {
                 cancelarExpiradosDeEmpresa(empresa.getId(), corte);
                 // Regla anti-bot (QA-CONC-4): reservas marcadas cuya liberación ya venció.
                 reservaSospechosaLiberador.liberarVencidas(empresa.getId(), ahora);
             } catch (Exception e) {
-                log.error("[payment-cleanup] Error empresa={}: {}", empresa.getId(), e.getMessage());
+                log.error("[payment-cleanup] Error empresa={}: {}", empresa.getId(), e.getClass().getSimpleName());
             }
         }
     }
 
     private void cancelarExpiradosDeEmpresa(Long empresaId, LocalDateTime corte) {
         List<Pago> expirados = pagoRepository.findExpiradosPendientesByEmpresa(corte, empresaId);
-        List<Pago> pagosActualizados = new ArrayList<>();
-        List<Pedido> pedidosActualizados = new ArrayList<>();
+        int cancelados = 0;
 
         for (Pago pago : expirados) {
+            // Las reconsultas a Tilopay/ONVO corren SIN transacción abierta acá: si confirman, su
+            // captura toma los locks de producto en su propia transacción y no espera a nadie nuestro.
             if (Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
                 try {
                     if (tilopayConfirmacionService.intentarConfirmarSiAprobado(pago)) {
@@ -73,7 +72,7 @@ public class PaymentExpirationCleanupService {
                     }
                 } catch (Exception e) {
                     log.warn("[payment-cleanup] Reconsulta Tilopay falló token={}: {}",
-                        pago.getMerchantToken(), e.getMessage());
+                        pago.getMerchantToken(), e.getClass().getSimpleName());
                 }
             }
 
@@ -81,21 +80,18 @@ public class PaymentExpirationCleanupService {
                 continue;
             }
 
-            pago.setEstadoPago(Constants.PAGO_CANCELADO);
-            pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-            pagosActualizados.add(pago);
-
-            for (Pedido pedido : pedidoGrupoService.delGrupo(pago.getPedido())) {
-                if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-                    pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-                    pedidosActualizados.add(pedido);
-                    stockReservationService.liberarReservas(pedido);
-                    log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
-                }
+            try {
+                // QA5 ALTO: cada pago en su transacción; al volver, sus locks ya se soltaron.
+                if (pagoExpiradoCancelador.cancelar(pago.getId())) cancelados++;
+            } catch (Exception e) {
+                log.error("[payment-cleanup] No se pudo cancelar pago id={}: {}", pago.getId(),
+                    e.getClass().getSimpleName());
             }
         }
 
-        guardarCancelados(empresaId, pagosActualizados, pedidosActualizados);
+        if (cancelados > 0) {
+            log.info("Cleanup TTL empresa={}: {} pagos expirados cancelados", empresaId, cancelados);
+        }
     }
 
     /**
@@ -109,7 +105,7 @@ public class PaymentExpirationCleanupService {
             OnvoPaymentProvider.Verificacion v = onvoPaymentProvider.procesarPagoVerificado(
                 pago.getMerchantToken(), "cleanup");
             switch (v) {
-                case OK, DUPLICADO, COBRADO_SOBRE_CANCELADO -> {
+                case OK, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA -> {
                     log.info("[payment-cleanup] ONVO ya cobrado — confirmado: {}", pago.getMerchantToken());
                     return false;
                 }
@@ -124,17 +120,8 @@ public class PaymentExpirationCleanupService {
                 }
             }
         } catch (Exception e) {
-            log.warn("[payment-cleanup] Reconsulta ONVO falló token={}: {}", pago.getMerchantToken(), e.getMessage());
+            log.warn("[payment-cleanup] Reconsulta ONVO falló token={}: {}", pago.getMerchantToken(), e.getClass().getSimpleName());
             return false;
-        }
-    }
-
-    private void guardarCancelados(Long empresaId, List<Pago> pagosActualizados, List<Pedido> pedidosActualizados) {
-        if (!pagosActualizados.isEmpty()) {
-            pagoRepository.saveAll(pagosActualizados);
-            pedidoRepository.saveAll(pedidosActualizados);
-            log.info("Cleanup TTL empresa={}: {} pagos expirados cancelados",
-                empresaId, pagosActualizados.size());
         }
     }
 }

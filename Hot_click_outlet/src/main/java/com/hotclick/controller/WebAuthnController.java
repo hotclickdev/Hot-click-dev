@@ -6,6 +6,7 @@ import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.JwtUtil;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.WebAuthnService;
+import com.hotclick.service.auth.AuthSupport;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,17 +23,20 @@ public class WebAuthnController {
     private final JwtUtil             jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final PermisoRepository   permisoRepository;
+    private final AuthSupport         authSupport;
 
     public WebAuthnController(WebAuthnService webAuthnService,
                               UsuarioRepository usuarioRepo,
                               JwtUtil jwtUtil,
                               RefreshTokenService refreshTokenService,
-                              PermisoRepository permisoRepository) {
+                              PermisoRepository permisoRepository,
+                              AuthSupport authSupport) {
         this.webAuthnService     = webAuthnService;
         this.usuarioRepo         = usuarioRepo;
         this.jwtUtil             = jwtUtil;
         this.refreshTokenService = refreshTokenService;
         this.permisoRepository   = permisoRepository;
+        this.authSupport         = authSupport;
     }
 
     // ── Registro (requiere estar autenticado como ADMIN) ─────────────────
@@ -80,7 +84,8 @@ public class WebAuthnController {
     }
 
     @PostMapping("/login/finish")
-    public ResponseEntity<?> loginFinish(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> loginFinish(@RequestBody Map<String, String> body,
+                                         jakarta.servlet.http.HttpServletRequest httpRequest) {
         try {
             String email    = body.get("email");
             String response = body.get("response");
@@ -89,6 +94,12 @@ public class WebAuthnController {
 
             var usuario = usuarioRepo.findByCorreo(email)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+            // Solo cuentas activas reciben token; el catch devuelve el mismo 401 genérico de una huella inválida.
+            authSupport.exigirCuentaActiva(usuario);
+
+            // Login completo con llave de seguridad: los tropiezos previos ya no cuentan (igual que un login completo).
+            // Antes de emitir cualquier token: si esto falla, no queda un refresh token huérfano.
+            authSupport.autenticacionCompleta(usuario.getId(), httpRequest);
 
             String rol         = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
             String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug()          : null;

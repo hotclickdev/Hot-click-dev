@@ -31,7 +31,7 @@ public class SinpeComprobantePersistenceService {
     public void guardar(String numeroPedido, String url, String nombreRemitente,
                          String cedulaRemitente, String telefonoRemitente, String correoUsuario) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         // Revalidado aca: el estado pudo cambiar mientras se subia el archivo a S3.
         if (!Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(pedido.getEstadoPedido())) {
