@@ -13,7 +13,7 @@ Reglas: push y PRs propios (máx. 3 abiertos), sin force, sin `--no-verify`, sin
 | #431 área 7 (emisión solo admin a nombre de HotClick, `hacienda.emision-automatica` default false, logs sanitizados, `getToken` lanza excepciones tipadas, `exigirCedulaEmisor`) | MERGEADO `07592b27`. Auditor 7 y QA: área 7 ✅ |
 | E2E ONVO TEST (tarjeta trial, 4242 aprobada, 0002 rechazada, formulario hospedado, 3DS 4000000000003220, polling sin webhook, expiración a CANCELADO con stock liberado, fail-closed 401/409/404) | ✅ sin bugs |
 | #436 vencimiento configurable y `GET /api/payments/status/{n}` con reconsulta a ONVO (dueño o `X-Pedido-Token`, rate limit por orden, fail-closed; SINPERefNumber a DEBUG) | MERGEADO `270236e3` |
-| #438 `fix/cedula-guiones`: `CedulaEmisor.normalizar` (quita guiones/espacios, solo dígitos, largo 9–12) en `exigirCedulaEmisor` y `XmlFacturaBuilder` (Numero y ProveedorSistemas); `HaciendaLogSanitizer` enmascara números con guiones | ABIERTO — https://github.com/hotclickdev/Hot-click-dev/pull/438, head `5ea8a611` (merge de master `8ee8ada8`, árbol `36b55940`; APTO de contenido de Seguridad sobre `8f6c29ce`), diff sha `35df832d…`. Falta CI verde + APTO de Seguridad |
+| #438 `fix/cedula-guiones`: `CedulaEmisor.normalizar` (quita guiones/espacios, solo dígitos, largo 9–12) en `exigirCedulaEmisor` y `XmlFacturaBuilder` (Numero y ProveedorSistemas); `HaciendaLogSanitizer` enmascara números con guiones | ABIERTO — https://github.com/hotclickdev/Hot-click-dev/pull/438, head `7f759a22` (merge de master `a735f395`, árbol `a1bf8040`; APTO de contenido de Seguridad sobre `8f6c29ce`), diff sha `35df832d…`. Falta CI verde + APTO de Seguridad |
 
 Flag IVA `hotclick.iva.cambio-regimen.enabled` se queda en **false**.
 
