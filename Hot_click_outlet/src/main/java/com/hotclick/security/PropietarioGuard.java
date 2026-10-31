@@ -46,11 +46,20 @@ public class PropietarioGuard {
 
     /** Miembro activo con rol LECTOR en esa empresa (no aplica a ADMIN de plataforma). */
     public boolean esLector(Long empresaId) {
+        return tieneRolEquipo(empresaId, "LECTOR");
+    }
+
+    /** Miembro activo con rol CAJERO en esa empresa (solo opera el POS; no aplica a ADMIN de plataforma). */
+    public boolean esCajero(Long empresaId) {
+        return tieneRolEquipo(empresaId, "CAJERO");
+    }
+
+    private boolean tieneRolEquipo(Long empresaId, String rol) {
         if (empresaId == null || companyScope.isAdminIT()) return false;
         Usuario u = companyScope.getCurrentUser();
         if (u == null) return false;
         return miembros.findByUsuarioIdAndEmpresaId(u.getId(), empresaId)
-            .map(f -> Integer.valueOf(1).equals(f.getEstado()) && "LECTOR".equals(f.getRolEnEmpresa()))
+            .map(f -> Integer.valueOf(1).equals(f.getEstado()) && rol.equals(f.getRolEnEmpresa()))
             .orElse(false);
     }
 
