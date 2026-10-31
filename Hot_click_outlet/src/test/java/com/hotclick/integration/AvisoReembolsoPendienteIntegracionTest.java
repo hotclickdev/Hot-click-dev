@@ -15,6 +15,7 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.TilopayService;
 import com.hotclick.service.payment.AvisoReembolsoPendienteService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.AfterEach;
@@ -57,7 +58,11 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
     private static final String INTENT = "pi_aviso_cancelado";
     private final String cabeceraWebhook = java.util.UUID.randomUUID().toString();
 
+    // Mismo set de @MockitoBean que OnvoSobreventaPostCobroTest: reutiliza ese contexto de Spring en vez de crear
+    // uno nuevo. Un contexto extra empuja el cache (máx. 32) a desalojar otro, y su create-drop borra el esquema del
+    // H2 compartido (testdb) a tests que vienen después (#466, HOT_CLICK_REFRESH_TOKEN_TB not found).
     @MockitoBean private OnvoService onvoService;
+    @MockitoBean private TilopayService tilopayService;
 
     @Autowired private AvisoReembolsoPendienteService aviso;
     @Autowired private EmpresaRepository empresaRepository;
