@@ -225,7 +225,11 @@ class CobroSobreGrupoCanceladoTest {
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PAGADO);
         verify(pedidoRepository).marcarRevisionSiCancelado(List.of(2L));
-        verify(paymentNotificationsFacade, times(1)).onSobreventa(eq(pago), anyString());
+        // PR #460 (M2): el monto del paquete sin venta (total − gift card) queda registrado para reembolso.
+        assertThat(pago.getMontoReembolsoPendiente()).isEqualTo(3000);
+        assertThat(hermano.getEstadoPedido()).isEqualTo(Constants.PEDIDO_REVISION_SOBREVENTA);
+        verify(pagoRepository).saveAndFlush(pago);
+        verify(paymentNotificationsFacade, times(1)).onSobreventa(eq(pago), eq("ORD-HER"));
         verify(paymentNotificationsFacade, times(1)).onPedidoConfirmado(eq(pedido), eq(pago));
         verify(paymentNotificationsFacade, never()).onPedidoConfirmado(eq(hermano), any());
     }
@@ -242,6 +246,7 @@ class CobroSobreGrupoCanceladoTest {
         assertThat(confirmacion.confirmarPedido(pago, paymentService, eventPublisher))
             .isEqualTo(PaymentOrderConfirmationService.Resultado.CONFIRMADO);
         verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
+        assertThat(pago.getMontoReembolsoPendiente()).isNull();
     }
 
     private Pedido hermanoPendiente() {
@@ -249,6 +254,8 @@ class CobroSobreGrupoCanceladoTest {
         Pedido hermano = new Pedido();
         hermano.setId(2L);
         hermano.setNumeroPedido("ORD-HER");
+        hermano.setTotalPedido(4000);
+        hermano.setGiftCardMonto(1000);
         hermano.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         hermano.setItems(new ArrayList<>());
         when(pedidoGrupoService.delGrupo(pedido)).thenAnswer(inv -> List.of(pedido, hermano));

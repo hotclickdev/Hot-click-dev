@@ -139,7 +139,7 @@ public class PaymentOrderConfirmationService {
             // Carrera: el grupo se canceló entre la lectura y el UPDATE condicional (ninguno se reclamó).
             return cobroSobreCancelado(pago, principal);
         }
-        revisarCanceladosEnCobroParcial(pago, perdidos);
+        revisarCanceladosEnCobroParcial(pago, porConfirmar, perdidos);
         publicarCompraPagada(principal, eventPublisher);
         return Resultado.CONFIRMADO;
     }
@@ -240,25 +240,54 @@ public class PaymentOrderConfirmationService {
 
     /**
      * Cancelación parcial concurrente: parte del grupo se confirmó y otro paquete se canceló entre la lectura
-     * y el UPDATE condicional. Esa parte del cobro no tiene venta: el paquete pasa a REVISION_SOBREVENTA y se
-     * alerta a plataforma. El pago sigue CAPTURADO para que se despache lo confirmado. Solo marca los que
-     * siguen CANCELADO en la base (un perdido por otra confirmación no se toca).
+     * y el UPDATE condicional. Esa parte del cobro no tiene venta: el paquete pasa a REVISION_SOBREVENTA, su
+     * monto queda en {@code montoReembolsoPendiente} del pago y se alerta a plataforma. El pago sigue CAPTURADO
+     * para que se despache lo confirmado. Solo cuenta los que siguen CANCELADO en la base (un perdido por otra
+     * confirmación no se toca ni se suma).
      */
-    private void revisarCanceladosEnCobroParcial(Pago pago, List<Long> perdidos) {
+    private void revisarCanceladosEnCobroParcial(Pago pago, List<Pedido> porConfirmar, List<Long> perdidos) {
         if (perdidos.isEmpty()) return;
-        int marcados = pedidoRepository.marcarRevisionSiCancelado(perdidos);
-        if (marcados == 0) return;
-        log.error("[ALERTA-PAGO] Cobro parcial con paquete cancelado en paralelo: pago={} paquetes={}; en revisión",
-            pago.getId(), perdidos);
-        paymentNotificationsFacade.onSobreventa(pago, String.valueOf(perdidos));
+        int montoSinVenta = 0;
+        StringBuilder numeros = new StringBuilder();
+        // SCALE1: el grupo es acotado; un UPDATE condicional por paquete para saber cuáles se marcaron.
+        for (Pedido pedido : porConfirmar) {
+            if (!perdidos.contains(pedido.getId())
+                    || pedidoRepository.marcarRevisionSiCancelado(List.of(pedido.getId())) == 0) continue;
+            pedido.setEstadoPedido(Constants.PEDIDO_REVISION_SOBREVENTA);
+            montoSinVenta += montoCobrado(pedido);
+            if (numeros.length() > 0) numeros.append(',');
+            numeros.append(pedido.getNumeroPedido());
+        }
+        if (numeros.length() == 0) return;
+        int previo = pago.getMontoReembolsoPendiente() == null ? 0 : pago.getMontoReembolsoPendiente();
+        pago.setMontoReembolsoPendiente(previo + montoSinVenta);
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        pagoRepository.saveAndFlush(pago);
+        log.error("[ALERTA-PAGO] Cobro parcial con paquete cancelado en paralelo: pago={} paquetes={}; reembolso parcial pendiente",
+            pago.getId(), numeros);
+        paymentNotificationsFacade.onSobreventa(pago, numeros.toString());
+    }
+
+    /** Lo que el proveedor cobró por el paquete: total menos la parte pagada con gift card. */
+    private static int montoCobrado(Pedido pedido) {
+        int total = pedido.getTotalPedido() == null ? 0 : pedido.getTotalPedido();
+        int gift = pedido.getGiftCardMonto() == null ? 0 : pedido.getGiftCardMonto();
+        return Math.max(0, total - gift);
+    }
+
+    /**
+     * true si el estado es REEMBOLSO_PENDIENTE o REEMBOLSADO. Los proveedores lo miran sobre la fila recién
+     * bloqueada, antes de poner CAPTURADO, para que la protección del reintento no dependa del flush.
+     */
+    public static boolean enReembolso(String estado) {
+        return Constants.PAGO_REEMBOLSO_PENDIENTE.equals(estado) || Constants.PAGO_REEMBOLSADO.equals(estado);
     }
 
     /** Estado REEMBOLSO_PENDIENTE/REEMBOLSADO del pago en la base (sin flush), o null si no está para reembolso. */
     private String estadoReembolsoEnBase(Pago pago) {
         if (pago.getId() == null) return null;
         String estado = pagoRepository.estadoPagoEnBase(pago.getId());
-        boolean enReembolso = Constants.PAGO_REEMBOLSO_PENDIENTE.equals(estado) || Constants.PAGO_REEMBOLSADO.equals(estado);
-        return enReembolso ? estado : null;
+        return enReembolso(estado) ? estado : null;
     }
 
     /** El pago ya estaba para reembolso (o reembolsado) en la base: se conserva ese estado y no se re-alerta. */
