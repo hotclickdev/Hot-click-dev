@@ -209,4 +209,21 @@ class AsistenteCuotaDiariaRedTest {
         assertThat(c.huella("203.0.113.9")).hasSize(32).isNotEqualTo(c.huella("203.0.113.10"));
         assertThat(AsistenteCuotaDiaria.redes("10.1.2.3", 16, 64, 48)[1]).isEqualTo("0a010000/16");
     }
+
+    @Test
+    @DisplayName("Sal de IPs: usa la propia, deriva de jwt.secret sin usarlo en crudo y falla si no hay ninguna")
+    void salDeIps() {
+        assertThat(AsistenteCuotaDiaria.resolverSal("sal-propia", "jwt")).isEqualTo("sal-propia");
+        String derivada = AsistenteCuotaDiaria.resolverSal("", "secreto-jwt");
+        assertThat(derivada).hasSize(64).isNotEqualTo("secreto-jwt").doesNotContain("secreto-jwt")
+            .isEqualTo(AsistenteCuotaDiaria.resolverSal(null, "secreto-jwt"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> AsistenteCuotaDiaria.resolverSal(" ", ""))
+            .isInstanceOf(IllegalStateException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> new AsistenteCuotaDiaria.TopesRed(1, 1, 1, true, 1, 24, 64, 48, 80, ""))
+            .isInstanceOf(IllegalStateException.class);
+        AsistenteCuotaDiaria a = cuota(20, 100, 100, new AsistenteCuotaDiaria.TopesRed(1, 1, 1, true, 1, 24, 64, 48, 80, "a"));
+        AsistenteCuotaDiaria b = cuota(20, 100, 100, new AsistenteCuotaDiaria.TopesRed(1, 1, 1, true, 1, 24, 64, 48, 80, "b"));
+        assertThat(a.huella("203.0.113.9")).isNotEqualTo(b.huella("203.0.113.9"));
+    }
 }

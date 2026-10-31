@@ -109,7 +109,7 @@ public class AsistenteCuotaDiaria {
         static final TopesRed DESACTIVADOS = new TopesRed(0, 0, 0, true);
 
         TopesRed(int porIp, int porSubred, int porSubredNegocio, boolean alertaGlobal) {
-            this(porIp, porSubred, porSubredNegocio, alertaGlobal, 0, 24, 64, 48, 0, "");
+            this(porIp, porSubred, porSubredNegocio, alertaGlobal, 0, 24, 64, 48, 0, "sal-solo-para-pruebas");
         }
 
         TopesRed {
@@ -117,7 +117,9 @@ public class AsistenteCuotaDiaria {
             prefijoV6Ip = Math.max(16, Math.min(128, prefijoV6Ip));
             prefijoV6Subred = Math.max(16, Math.min(prefijoV6Ip, prefijoV6Subred));
             alertaPorcentaje = Math.max(0, Math.min(99, alertaPorcentaje));
-            sal = sal == null ? "" : sal;
+            if (sal == null || sal.isBlank()) {
+                throw new IllegalStateException("asistente.cuota.sal-ip vacía: configurar ASISTENTE_CUOTA_SAL_IP o JWT_SECRET");
+            }
         }
 
         @Override
@@ -145,7 +147,8 @@ public class AsistenteCuotaDiaria {
             @Value("${asistente.cuota.prefijo-v6-ip:64}") int prefijoV6Ip,
             @Value("${asistente.cuota.prefijo-v6-subred:48}") int prefijoV6Subred,
             @Value("${asistente.cuota.alerta-global-porcentaje:80}") int alertaPorcentaje,
-            @Value("${asistente.cuota.sal-ip:${jwt.secret:}}") String salIp,
+            @Value("${asistente.cuota.sal-ip:}") String salIp,
+            @Value("${jwt.secret:}") String jwtSecret,
             @Value("${hotclick.soporte.telefono:}") String telefonoSoporte,
             @Value("${asistente.cuota.mensaje-cliente:Llegaste al límite de consultas con el asistente por hoy. "
                 + "Mañana, desde la medianoche, podés seguir conversando con él. Mientras tanto, podés buscar productos "
@@ -156,7 +159,33 @@ public class AsistenteCuotaDiaria {
         this(jdbc, empresas, ips, Clock.system(zonaSegura(zona)), porCliente, emprendedor, pyme, negocioPlus,
             marketplace, global, new AsistenteLimiteMensaje(empresas, telefonoSoporte, mensajeCliente, mensajeAgotado),
             new TopesRed(porIp, porSubred, porSubredNegocio, alertaGlobal,
-                porIpDesconocida, prefijoV4Subred, prefijoV6Ip, prefijoV6Subred, alertaPorcentaje, salIp));
+                porIpDesconocida, prefijoV4Subred, prefijoV6Ip, prefijoV6Subred, alertaPorcentaje, resolverSal(salIp, jwtSecret)));
+    }
+
+    /** Etiqueta fija para derivar la subclave de IPs desde jwt.secret (no cambiar: invalidaría las llaves del día). */
+    static final String ETIQUETA_SAL = "hotclick/asistente-cuota/sal-ip/v1";
+
+    /**
+     * Sal del HMAC de IPs: {@code asistente.cuota.sal-ip} (env ASISTENTE_CUOTA_SAL_IP) si viene; si no, una
+     * subclave HMAC-SHA256(jwt.secret, etiqueta fija), nunca el secreto JWT en crudo. Si ambas faltan el
+     * arranque falla (sin fallback a SHA-256 sin llave).
+     */
+    static String resolverSal(String propia, String jwtSecret) {
+        if (propia != null && !propia.isBlank()) return propia;
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("asistente.cuota.sal-ip vacía: configurar ASISTENTE_CUOTA_SAL_IP o JWT_SECRET");
+        }
+        return HexFormat.of().formatHex(hmac(jwtSecret, ETIQUETA_SAL));
+    }
+
+    private static byte[] hmac(String llave, String valor) {
+        try {
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(new javax.crypto.spec.SecretKeySpec(llave.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return mac.doFinal(valor.getBytes(StandardCharsets.UTF_8));
+        } catch (java.security.GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     AsistenteCuotaDiaria(JdbcTemplate jdbc, EmpresaRepository empresas, ClientIpResolver ips, Clock reloj,
@@ -329,18 +358,10 @@ public class AsistenteCuotaDiaria {
 
     /**
      * Huella de una IP o red para las llaves: HMAC-SHA256 con {@code asistente.cuota.sal-ip}
-     * (por defecto el secreto JWT), 32 hex. Sin sal, SHA-256 con etiqueta (solo tests).
+     * (o la subclave derivada de jwt.secret), 32 hex. Siempre con llave.
      */
     String huella(String valor) {
-        String etiqueta = "asistente-cuota|" + valor;
-        if (red.sal().isEmpty()) return sha256(etiqueta).substring(0, 32);
-        try {
-            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
-            mac.init(new javax.crypto.spec.SecretKeySpec(red.sal().getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            return HexFormat.of().formatHex(mac.doFinal(etiqueta.getBytes(StandardCharsets.UTF_8))).substring(0, 32);
-        } catch (java.security.GeneralSecurityException e) {
-            throw new IllegalStateException(e);
-        }
+        return HexFormat.of().formatHex(hmac(red.sal(), "asistente-cuota|" + valor)).substring(0, 32);
     }
 
     /** IP del pedido HTTP en curso (ClientIpResolver: solo confía en proxies conocidos) o null. */
