@@ -188,6 +188,12 @@ public class NotificacionNegocioEmailSender {
     /** Aviso individual con asunto y texto según el origen del REEMBOLSO_PENDIENTE. Sin PII. Lanza si falla el envío. */
     public void enviarAvisoReembolsoPendienteAdmin(String correoAdmin, Long pagoId, String estado, String linkAdmin,
                                                    ReembolsoPendienteResumenItem.Origen origen) {
+        enviarAvisoReembolsoPendienteAdmin(correoAdmin, pagoId, estado, linkAdmin, origen, null);
+    }
+
+    /** Con detalle (pedidos, monto, proveedor): reemplaza la alerta de sobreventa en los caminos que crean REEMBOLSO_PENDIENTE. */
+    public void enviarAvisoReembolsoPendienteAdmin(String correoAdmin, Long pagoId, String estado, String linkAdmin,
+                                                   ReembolsoPendienteResumenItem.Origen origen, AvisoReembolsoDetalle detalle) {
         String est = emailLayoutHelper.esc(String.valueOf(estado));
         String link = emailLayoutHelper.esc(String.valueOf(linkAdmin));
         ReembolsoPendienteResumenItem.Origen o = origen == null ? ReembolsoPendienteResumenItem.Origen.OTRO : origen;
@@ -206,8 +212,19 @@ public class NotificacionNegocioEmailSender {
         resendEmailService.send(correoAdmin,
             "[ALERTA] " + asunto + " — pago #" + pagoId + " en " + est,
             "<p>" + texto + "</p>"
-                + "<ul><li>Pago #" + pagoId + "</li><li>Estado: " + est + "</li></ul>"
+                + "<ul><li>Pago #" + pagoId + "</li><li>Estado: " + est + "</li>" + detalleHtml(detalle) + "</ul>"
                 + "<p>Gestioná el reembolso desde <a href=\"" + link + "\">" + link + "</a>.</p>");
+    }
+
+    private String detalleHtml(AvisoReembolsoDetalle d) {
+        if (d == null) return "";
+        StringBuilder sb = new StringBuilder();
+        if (d.pedidos() != null && !d.pedidos().isBlank()) {
+            sb.append("<li>Pedidos: ").append(emailLayoutHelper.esc(d.pedidos())).append("</li>");
+        }
+        if (d.monto() != null) sb.append("<li>Monto: ₡").append(d.monto()).append("</li>");
+        if (d.proveedor() != null) sb.append("<li>Proveedor: ").append(emailLayoutHelper.esc(d.proveedor())).append("</li>");
+        return sb.toString();
     }
 
     /** Resumen único de REEMBOLSO_PENDIENTE anteriores a V217 sin avisar: id, monto y fecha. Sin datos del cliente. */

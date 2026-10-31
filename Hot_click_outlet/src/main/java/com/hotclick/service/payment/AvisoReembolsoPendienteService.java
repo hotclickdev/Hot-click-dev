@@ -59,12 +59,12 @@ public class AvisoReembolsoPendienteService {
     private long maxSegundos = 300;
 
     /** Lease del claim: un claim sin envío confirmado más viejo que esto lo reintenta el barrido. */
+    @Value("${hotclick.aviso-reembolso.lease-minutos:15}")
+    private long leaseMinutos = 15;
+
     /** Tope de pagos por correo resumen (punto 4 #477); el resto va en el próximo barrido. */
     @Value("${hotclick.aviso-reembolso.resumen.lote:200}")
     private int resumenLote = 200;
-
-    @Value("${hotclick.aviso-reembolso.lease-minutos:15}")
-    private long leaseMinutos = 15;
 
     /** Tope de intentos (claims) por pago; después queda solo el log de ALERTA. */
     @Value("${hotclick.aviso-reembolso.max-intentos:5}")
@@ -157,14 +157,16 @@ public class AvisoReembolsoPendienteService {
         if (!reclamado) return false;
         try {
             notificacionEmailService.enviarAvisoReembolsoPendienteAAdminIT(
-                pagoId, Constants.PAGO_REEMBOLSO_PENDIENTE, linkAdmin(), origenDe(pagoId));
+                pagoId, Constants.PAGO_REEMBOLSO_PENDIENTE, linkAdmin(), origenDe(pagoId), detalleDe(pagoId));
         } catch (com.hotclick.service.email.AdminItSinCorreoException e) {
             log.error("[ALERTA-PAGO] Aviso de reembolso pendiente sin destinatario (adminit.email vacío); no se marca enviado: pagoId={}", pagoId);
+            alertarSiAgotado(List.of(pagoId));
             return false;
         } catch (RuntimeException e) {
             Throwable causa = e.getCause() != null ? e.getCause() : e;
             log.error("[ALERTA-PAGO] Falló o no se confirmó el correo al admin por reembolso pendiente: pagoId={} error={}"
                 + " (se reintenta por barrido al vencer el lease de {} min)", pagoId, causa.getClass().getSimpleName(), leaseMinutos);
+            alertarSiAgotado(List.of(pagoId));
             return false;
         }
         marcarEnviado(pagoId);
@@ -282,12 +284,14 @@ public class AvisoReembolsoPendienteService {
             log.error("[ALERTA-PAGO] Resumen de reembolsos pendientes viejos sin destinatario (adminit.email vacío); "
                 + "no se marcan avisados: pagos={}", ids.size());
             liberarResumen(ids);
+            alertarSiAgotado(ids);
             return false;
         } catch (RuntimeException e) {
             Throwable causa = e.getCause() != null ? e.getCause() : e;
             log.error("[ALERTA-PAGO] Falló el resumen de reembolsos pendientes viejos; se reintenta en el próximo barrido: pagos={} error={}",
                 ids.size(), causa.getClass().getSimpleName());
             liberarResumen(ids);
+            alertarSiAgotado(ids);
             return false;
         }
         try {
@@ -328,6 +332,22 @@ public class AvisoReembolsoPendienteService {
             }
             return ganados;
         });
+    }
+
+    /** BAJO #479: con el último intento fallido el aviso ya no se reintenta; queda una alerta con solo el id. */
+    void alertarSiAgotado(List<Long> ids) {
+        try {
+            TransactionTemplate tx = new TransactionTemplate(txManager);
+            tx.setReadOnly(true);
+            List<Long> agotados = tx.execute(st -> em.createQuery("SELECT p.id FROM Pago p WHERE p.id IN :ids "
+                    + "AND p.avisoReembolsoAdminEnviadoEn IS NULL AND p.avisoReembolsoAdminIntentos >= :max", Long.class)
+                .setParameter("ids", ids).setParameter("max", maxIntentos).getResultList());
+            if (agotados != null) {
+                agotados.forEach(id -> log.error("[ALERTA-PAGO] Aviso de reembolso pendiente: intentos agotados: pagoId={}", id));
+            }
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] No se pudo verificar intentos agotados: error={}", e.getClass().getSimpleName());
+        }
     }
 
     /** Envío del resumen fallido: suelta el claim para que el próximo barrido los incluya (el intento queda contado). */
@@ -400,6 +420,38 @@ public class AvisoReembolsoPendienteService {
         } catch (RuntimeException e) {
             log.error("[ALERTA-PAGO] Aviso descartado y sin marca para el barrido: pagoId={} error={}",
                 pagoId, e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Detalle operativo del aviso (antes en la alerta de sobreventa): números de pedido del grupo en revisión o
+     * cancelados, monto y proveedor. Sin PII. Si la lectura falla, null: el aviso sale igual sin detalle.
+     */
+    com.hotclick.service.email.AvisoReembolsoDetalle detalleDe(Long pagoId) {
+        try {
+            TransactionTemplate tx = new TransactionTemplate(txManager);
+            tx.setReadOnly(true);
+            return tx.execute(st -> {
+                List<Object[]> f = em.createQuery(
+                        "SELECT p.monto, p.proveedor, ped.numeroPedido, ped.grupoPago FROM Pago p "
+                            + "LEFT JOIN p.pedido ped WHERE p.id = :id", Object[].class)
+                    .setParameter("id", pagoId).getResultList();
+                if (f.isEmpty()) return null;
+                Object[] r = f.get(0);
+                String pedidos = (String) r[2];
+                String grupo = (String) r[3];
+                if (grupo != null && !grupo.isBlank()) {
+                    List<String> nums = em.createQuery("SELECT x.numeroPedido FROM Pedido x WHERE x.grupoPago = :g "
+                            + "AND x.estadoPedido IN :est ORDER BY x.id", String.class)
+                        .setParameter("g", grupo)
+                        .setParameter("est", List.of(Constants.PEDIDO_REVISION_SOBREVENTA, Constants.PEDIDO_CANCELADO))
+                        .getResultList();
+                    if (!nums.isEmpty()) pedidos = String.join(",", nums);
+                }
+                return new com.hotclick.service.email.AvisoReembolsoDetalle(pedidos, (Integer) r[0], (String) r[1]);
+            });
+        } catch (RuntimeException e) {
+            return null;
         }
     }
 

@@ -106,7 +106,8 @@ class CobroSobreGrupoCanceladoTest {
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(paymentNotificationsFacade).onSobreventa(eq(pago), eq("ORD-CAN"));
+        verify(avisoReembolso).registrarPendiente(pago);
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any()); // #479: un solo correo (el aviso)
         verify(paymentNotificationsFacade, never()).onPedidoConfirmado(any(), any());
         verify(stockReservationService, never()).confirmAndConsumeStock(any(), any(), any());
         verify(eventPublisher, never()).publishEvent(any());
@@ -125,7 +126,8 @@ class CobroSobreGrupoCanceladoTest {
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         verify(pagoRepository, times(1)).saveAndFlush(pago);
-        verify(paymentNotificationsFacade, times(1)).onSobreventa(any(), any());
+        verify(avisoReembolso, times(1)).registrarPendiente(any());
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
     }
 
     @Test
@@ -154,7 +156,8 @@ class CobroSobreGrupoCanceladoTest {
 
         assertThat(r).isEqualTo(PaymentOrderConfirmationService.Resultado.SOBREVENTA);
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        verify(paymentNotificationsFacade).onSobreventa(eq(pago), eq("ORD-CAN"));
+        verify(avisoReembolso).registrarPendiente(pago);
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
         verify(stockReservationService, never()).confirmAndConsumeStock(any(), any(), any());
         verify(eventPublisher, never()).publishEvent(any());
     }

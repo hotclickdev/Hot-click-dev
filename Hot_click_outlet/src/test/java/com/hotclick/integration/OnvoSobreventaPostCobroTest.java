@@ -15,6 +15,8 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.OnvoService;
+import com.hotclick.service.email.ReembolsoPendienteResumenItem;
+import com.hotclick.service.sinpe.SinpeOnvoMarketplaceService;
 import com.hotclick.service.TilopayService;
 import com.hotclick.service.payment.PaymentExpirationCleanupService;
 import com.hotclick.utils.Constants;
@@ -32,7 +34,16 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -67,12 +78,15 @@ class OnvoSobreventaPostCobroTest extends BaseIntegrationTest {
     @Autowired private PagoRepository pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
 
+    @Autowired private SinpeOnvoMarketplaceService sinpe;
+
     private Empresa empresa;
     private Bodega bodega;
     private Categoria categoria;
 
     @BeforeEach
     void armar() {
+        reset(notificacionEmailService);
         when(onvoService.getWebhookSecret()).thenReturn(SECRET);
         when(onvoService.isPagosDisponibles()).thenReturn(true);
         when(onvoService.modoEsperado()).thenReturn("live");
@@ -287,5 +301,46 @@ class OnvoSobreventaPostCobroTest extends BaseIntegrationTest {
         Pago b = pago(SESION_B);
         assertThat(b.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(b.getAvisoReembolsoAdminEn()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("#479 Sobreventa ONVO: exactamente 1 correo al admin IT (el aviso con pedidos/monto/proveedor), sin alerta extra")
+    void sobreventaUnSoloCorreo() throws Exception {
+        Producto producto = producto(1, 2, false);
+        pedidoConPago(SESION_A, producto, "ORD-M08A");
+        Pedido pb = pedidoConPago(SESION_B, producto, "ORD-M08B");
+        webhook(SESION_A, "ok");
+        webhook(SESION_B, "refund_pending");
+
+        Long id = pago(SESION_B).getId();
+        verify(notificacionEmailService, timeout(10_000).times(1)).enviarAvisoReembolsoPendienteAAdminIT(eq(id),
+            anyString(), anyString(), eq(ReembolsoPendienteResumenItem.Origen.SOBREVENTA),
+            argThat(d -> d != null && d.pedidos().contains(pb.getNumeroPedido()) && d.monto() == 10000));
+        verify(notificacionEmailService, after(500).never()).enviarAlertaSobreventaAAdminIT(any(), any(), any(), any());
+        verify(notificacionEmailService, times(1)).enviarAvisoReembolsoPendienteAAdminIT(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("#479 Sobreventa SINPE (webhook real → confirmarPedido): exactamente 1 correo al admin IT")
+    void sobreventaSinpeUnSoloCorreo() throws Exception {
+        Producto producto = producto(1, 2, false);
+        pedidoConPago(SESION_A, producto, "ORD-M08A");
+        webhook(SESION_A, "ok");
+        String intent = "pi_sinpe_" + System.nanoTime();
+        String token = SinpeOnvoMarketplaceService.PREFIJO + intent;
+        pedidoConPago(token, producto, "ORD-SINPE");
+        Pago sp = pago(token);
+        sp.setProveedor(Constants.PROVEEDOR_SINPE);
+        pagoRepository.saveAndFlush(sp);
+        doReturn(Map.of("id", intent, "status", "succeeded", "amount", 1_000_000, "currency", "CRC", "mode", "live"))
+            .when(onvoService).obtenerPaymentIntent(intent);
+
+        sinpe.confirmarPorWebhook("payment-intent.succeeded", intent);
+
+        assertThat(pago(token).getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        verify(notificacionEmailService, timeout(10_000).times(1)).enviarAvisoReembolsoPendienteAAdminIT(
+            eq(sp.getId()), anyString(), anyString(), any(), any());
+        verify(notificacionEmailService, after(500).never()).enviarAlertaSobreventaAAdminIT(any(), any(), any(), any());
+        verify(notificacionEmailService, times(1)).enviarAvisoReembolsoPendienteAAdminIT(any(), any(), any(), any(), any());
     }
 }

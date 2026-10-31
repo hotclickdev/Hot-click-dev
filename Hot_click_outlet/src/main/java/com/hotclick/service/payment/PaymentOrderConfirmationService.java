@@ -178,8 +178,9 @@ public class PaymentOrderConfirmationService {
         pagoRepository.save(pago);
         log.error("[ALERTA-PAGO] Cobro sin stock (sobreventa): pago={} pedidos={}; en revisión, reembolso pendiente",
             pago.getId(), numeros);
-        // MED-2: alerta a plataforma (cola: pagos REEMBOLSO_PENDIENTE en Admin → Pagos).
-        paymentNotificationsFacade.onSobreventa(pago, numeros.toString());
+        // MED-2 / #479: la alerta al admin IT es el aviso individual (origen SOBREVENTA, con pedidos/monto/proveedor,
+        // claim y dedupe). onSobreventa solo si ese aviso no está disponible, para no mandar dos correos.
+        if (avisoReembolso == null) paymentNotificationsFacade.onSobreventa(pago, numeros.toString());
     }
 
     /**
@@ -238,7 +239,8 @@ public class PaymentOrderConfirmationService {
         pagoRepository.saveAndFlush(pago);
         log.error("[ALERTA-PAGO] Cobro sobre grupo cancelado: pago={} pedido={}; reembolso pendiente",
             pago.getId(), principal.getNumeroPedido());
-        paymentNotificationsFacade.onSobreventa(pago, principal.getNumeroPedido());
+        // #479: el aviso individual (registrarPendiente) ya cubre la alerta al admin IT; sin duplicar.
+        if (avisoReembolso == null) paymentNotificationsFacade.onSobreventa(pago, principal.getNumeroPedido());
         return Resultado.SOBREVENTA;
     }
 

@@ -57,7 +57,7 @@ class AvisoReembolsoPendienteUnidadTest {
         NotificacionNegocioEmailSender sender = mock(NotificacionNegocioEmailSender.class);
         ReflectionTestUtils.setField(n, "negocioEmailSender", sender);
         ReflectionTestUtils.setField(n, "adminItEmail", " ");
-        assertThatThrownBy(() -> n.enviarAvisoReembolsoPendienteAAdminIT(1L, "REEMBOLSO_PENDIENTE", "x", null))
+        assertThatThrownBy(() -> n.enviarAvisoReembolsoPendienteAAdminIT(1L, "REEMBOLSO_PENDIENTE", "x", null, null))
             .isInstanceOf(AdminItSinCorreoException.class);
         assertThatThrownBy(() -> n.enviarResumenReembolsosPendientesAAdminIT(List.of(), "x"))
             .isInstanceOf(AdminItSinCorreoException.class);
