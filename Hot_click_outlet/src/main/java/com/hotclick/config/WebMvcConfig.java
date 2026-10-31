@@ -54,10 +54,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/auth/**", "/api/public/**", "/api/tienda/**", "/api/webhooks/**",
                                      "/api/payments/**", "/api/sinpe/**", "/api/pos/qr/pago/**");
-        // CAJERO de equipo (rol Spring EMPRENDEDOR): ninguna escritura de catálogo, stock, categorías ni inventario.
+        // CAJERO de equipo (rol Spring EMPRENDEDOR): ninguna escritura de catálogo, stock, categorías, inventario ni bodegas.
         registry.addInterceptor(cajeroSinCatalogoInterceptor)
                 .addPathPatterns("/api/productos", "/api/productos/**", "/api/stock/**", "/api/categorias",
-                                 "/api/categorias/**", "/api/inventario/**", "/api/admin/inventario/**");
+                                 "/api/categorias/**", "/api/inventario/**", "/api/admin/inventario/**",
+                                 "/api/bodegas", "/api/bodegas/**");
         // Área 2: pantallas de gestión del negocio (finanzas, métricas, ads, clientes, mesas, importación, borrado
         // de datos) solo para el PROPIETARIO o el ADMIN; EDITOR y LECTOR (rol Spring EMPRENDEDOR) reciben 403.
         registry.addInterceptor(soloPropietarioNegocioInterceptor)
