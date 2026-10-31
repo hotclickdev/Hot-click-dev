@@ -4423,3 +4423,10 @@ $fn$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_cupo_emprendedor_liberar_al_borrar
     AFTER DELETE ON hot_click_empresa_tb
     FOR EACH ROW EXECUTE FUNCTION fn_cupo_emprendedor_liberar_al_borrar();
+
+-- ====================================================
+-- V215 Pago con reembolso parcial (PR #460, 31-oct-2026). Cobro parcial con un paquete cancelado en paralelo:
+-- el pago sigue CAPTURADO y acá queda el monto que se debe devolver y el ya devuelto.
+-- Aditiva: columnas nuevas nullables, no toca filas existentes.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS monto_reembolso_pendiente INTEGER;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS monto_reembolsado INTEGER;
