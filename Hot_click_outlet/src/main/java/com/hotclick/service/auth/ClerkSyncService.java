@@ -64,12 +64,23 @@ public class ClerkSyncService {
             }
             return u;
         }
-        Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email);
+        // BAJO correo-normalizado: una cuenta antigua guardada con mayúsculas se vincula (la más antigua) en vez de
+        // crear un duplicado que además chocaría con el índice único lower(correo) de V214.
+        Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email)
+            .or(() -> masAntiguaIgnorandoMayusculas(email));
         if (byEmail.isPresent()) {
             return vincularCuentaExistente(exigirActiva(byEmail.get()), clerkUserId, email, fotoUrl);
         }
         MayoriaEdad.exigir(declaraMayoriaEdad);
         return createOAuthUser(clerkUserId, email, nombre, apellido, fotoUrl);
+    }
+
+    private Optional<Usuario> masAntiguaIgnorandoMayusculas(String email) {
+        java.util.List<Usuario> variantes = usuarioRepository.findAllByCorreoIgnoreCase(email);
+        if (variantes == null) return Optional.empty();
+        return variantes.stream()
+            .filter(u -> u.getId() != null)
+            .min(java.util.Comparator.comparing(Usuario::getId));
     }
 
     /**

@@ -188,11 +188,11 @@ public class TiendaRapidaService {
         String mail = TiendaRapidaReglas.correo(correo);
         String cel = TiendaRapidaReglas.telefono(telefono);
         Usuario usuario = fila.getUsuario();
-        if (usuarios.existsByCorreo(mail) && !mail.equalsIgnoreCase(usuario.getCorreo())) {
+        if (!usuarios.findAllByCorreoIgnoreCase(mail).isEmpty() && !mail.equalsIgnoreCase(usuario.getCorreo())) {
             throw new IllegalArgumentException("Ese correo ya tiene una cuenta.");
         }
         Empresa empresa = fila.getEmpresa();
-        if (empresas.existsByCorreoEmpresa(mail) && !mail.equalsIgnoreCase(empresa.getCorreoEmpresa())) {
+        if (empresas.existsByCorreoEmpresaIgnoreCase(mail) && !mail.equalsIgnoreCase(empresa.getCorreoEmpresa())) {
             throw new IllegalArgumentException("Ese correo ya tiene una tienda.");
         }
         if (usuarios.existsByIdentificacion(id) && !id.equals(usuario.getIdentificacion())) {

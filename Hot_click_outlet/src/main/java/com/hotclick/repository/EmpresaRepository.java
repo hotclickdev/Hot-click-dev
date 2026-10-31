@@ -89,6 +89,9 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     boolean existsByCorreoEmpresa(String correoEmpresa);
 
+    /** BAJO correo-normalizado: detecta tiendas antiguas guardadas con mayúsculas. */
+    boolean existsByCorreoEmpresaIgnoreCase(String correoEmpresa);
+
     long countByEstadoEmpresa(String estadoEmpresa);
 
     List<Empresa> findByEstadoEmpresaOrderByFechaRegistroDesc(String estadoEmpresa);
