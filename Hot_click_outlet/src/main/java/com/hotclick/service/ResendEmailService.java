@@ -197,6 +197,35 @@ public class ResendEmailService {
 
     /** Punto de extensión para tests. */
     SendGrid newSendGrid(String key) {
-        return new SendGrid(key);
+        return new SendGrid(key, new com.sendgrid.Client(httpClientSendGrid()));
+    }
+
+    /** BAJO #477: timeouts de conexión y lectura (configurables) para que un SendGrid colgado no retenga hilos. */
+    @Value("${sendgrid.connect-timeout-ms:10000}")
+    private int sendGridConnectTimeoutMs = 10_000;
+    @Value("${sendgrid.read-timeout-ms:10000}")
+    private int sendGridReadTimeoutMs = 10_000;
+    private volatile org.apache.http.impl.client.CloseableHttpClient httpClientSendGrid;
+
+    org.apache.http.client.config.RequestConfig requestConfigSendGrid() {
+        return org.apache.http.client.config.RequestConfig.custom()
+            .setConnectTimeout(sendGridConnectTimeoutMs)
+            .setConnectionRequestTimeout(sendGridConnectTimeoutMs)
+            .setSocketTimeout(sendGridReadTimeoutMs)
+            .build();
+    }
+
+    private org.apache.http.impl.client.CloseableHttpClient httpClientSendGrid() {
+        org.apache.http.impl.client.CloseableHttpClient c = httpClientSendGrid;
+        if (c == null) {
+            synchronized (this) {
+                if (httpClientSendGrid == null) {
+                    httpClientSendGrid = org.apache.http.impl.client.HttpClients.custom()
+                        .setDefaultRequestConfig(requestConfigSendGrid()).build();
+                }
+                c = httpClientSendGrid;
+            }
+        }
+        return c;
     }
 }

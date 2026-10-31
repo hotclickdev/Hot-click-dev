@@ -84,6 +84,25 @@ public class Pago extends BaseEntity {
     public LocalDateTime getAvisoReembolsoAdminEn() { return avisoReembolsoAdminEn; }
     public void setAvisoReembolsoAdminEn(LocalDateTime v) { this.avisoReembolsoAdminEn = v; }
 
+    /** V217: cuándo se confirmó el envío del aviso (NULL = no confirmado; el barrido reintenta). */
+    @Column(name = "aviso_reembolso_admin_enviado_en")
+    private LocalDateTime avisoReembolsoAdminEnviadoEn;
+
+    /** V217: intentos de envío del aviso (tope del barrido). */
+    @Column(name = "aviso_reembolso_admin_intentos", nullable = false)
+    private int avisoReembolsoAdminIntentos = 0;
+
+    /** V217: REEMBOLSO_PENDIENTE previo a V217 sin avisar; va en el correo resumen del primer barrido. */
+    @Column(name = "aviso_reembolso_resumen_pendiente", nullable = false)
+    private boolean avisoReembolsoResumenPendiente = false;
+
+    public boolean isAvisoReembolsoResumenPendiente() { return avisoReembolsoResumenPendiente; }
+    public void setAvisoReembolsoResumenPendiente(boolean v) { this.avisoReembolsoResumenPendiente = v; }
+    public LocalDateTime getAvisoReembolsoAdminEnviadoEn() { return avisoReembolsoAdminEnviadoEn; }
+    public void setAvisoReembolsoAdminEnviadoEn(LocalDateTime v) { this.avisoReembolsoAdminEnviadoEn = v; }
+    public int getAvisoReembolsoAdminIntentos() { return avisoReembolsoAdminIntentos; }
+    public void setAvisoReembolsoAdminIntentos(int v) { this.avisoReembolsoAdminIntentos = v; }
+
     public String getSinpeRefNumber() { return sinpeRefNumber; }
     public LocalDateTime getPlazoInternoSinpe() { return plazoInternoSinpe; }
     public void setPlazoInternoSinpe(LocalDateTime plazoInternoSinpe) { this.plazoInternoSinpe = plazoInternoSinpe; }

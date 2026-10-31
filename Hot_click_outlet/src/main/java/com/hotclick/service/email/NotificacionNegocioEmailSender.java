@@ -191,4 +191,35 @@ public class NotificacionNegocioEmailSender {
                 + "<p>Gestioná el reembolso desde <a href=\"" + link + "\">" + link + "</a>.</p>");
     }
 
+    /** Resumen único de REEMBOLSO_PENDIENTE anteriores a V217 sin avisar: id, monto y fecha. Sin datos del cliente. */
+    public void enviarResumenReembolsosPendientesAdmin(String correoAdmin,
+            java.util.List<ReembolsoPendienteResumenItem> pagos, String linkAdmin) {
+        String link = emailLayoutHelper.esc(String.valueOf(linkAdmin));
+        java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        java.util.Map<ReembolsoPendienteResumenItem.Origen, java.util.List<ReembolsoPendienteResumenItem>> porOrigen =
+            new java.util.EnumMap<>(ReembolsoPendienteResumenItem.Origen.class);
+        for (ReembolsoPendienteResumenItem p : pagos) {
+            ReembolsoPendienteResumenItem.Origen o = p.origen() == null ? ReembolsoPendienteResumenItem.Origen.OTRO : p.origen();
+            porOrigen.computeIfAbsent(o, k -> new java.util.ArrayList<>()).add(p);
+        }
+        StringBuilder filas = new StringBuilder();
+        for (var grupo : porOrigen.entrySet()) {
+            filas.append("<h3>").append(emailLayoutHelper.esc(grupo.getKey().titulo())).append(" (")
+                .append(grupo.getValue().size()).append(")</h3>")
+                .append("<table><tr><th>Pago</th><th>Monto</th><th>Fecha</th></tr>");
+            for (ReembolsoPendienteResumenItem p : grupo.getValue()) {
+                filas.append("<tr><td>#").append(p.pagoId()).append("</td><td>")
+                    .append(p.monto() == null ? "-" : String.valueOf(p.monto())).append(' ')
+                    .append(emailLayoutHelper.esc(p.moneda() == null ? "" : p.moneda())).append("</td><td>")
+                    .append(p.fecha() == null ? "-" : p.fecha().format(f)).append("</td></tr>");
+            }
+            filas.append("</table>");
+        }
+        resendEmailService.send(correoAdmin,
+            "[ALERTA] " + pagos.size() + " cobros pendientes de reembolso sin avisar (anteriores al aviso automático)",
+            "<p>Estos pagos quedaron REEMBOLSO_PENDIENTE antes de que existiera el aviso automático y nunca se avisaron.</p>"
+                + filas
+                + "<p>Gestioná los reembolsos desde <a href=\"" + link + "\">" + link + "</a>.</p>");
+    }
+
 }
