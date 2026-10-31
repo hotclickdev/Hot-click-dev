@@ -55,7 +55,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
 
     private static final String SESION = "cs_aviso_cancelado";
     private static final String INTENT = "pi_aviso_cancelado";
-    private static final String SECRET = "aviso-prueba";
+    private final String cabeceraWebhook = java.util.UUID.randomUUID().toString();
 
     @MockitoBean private OnvoService onvoService;
 
@@ -72,7 +72,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
     @BeforeEach
     void armar() {
         reset(notificacionEmailService);
-        when(onvoService.getWebhookSecret()).thenReturn(SECRET);
+        when(onvoService.getWebhookSecret()).thenReturn(cabeceraWebhook);
         when(onvoService.isPagosDisponibles()).thenReturn(true);
         when(onvoService.modoEsperado()).thenReturn("live");
         doReturn(Map.of("paymentStatus", "paid", "status", "complete", "paymentIntentId", INTENT, "mode", "live"))
@@ -149,7 +149,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
 
     private void webhook() throws Exception {
         mockMvc.perform(post("/api/webhooks/onvo")
-                .header("X-Webhook-Secret", SECRET)
+                .header("X-Webhook-Secret", cabeceraWebhook)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"type\":\"checkout-session.succeeded\",\"data\":{\"id\":\"" + SESION + "\"}}"))
             .andExpect(status().isOk());
