@@ -64,6 +64,19 @@ public class Pago extends BaseEntity {
     @Column(name = "plazo_interno_sinpe")
     private LocalDateTime plazoInternoSinpe;
 
+    /** V215 (PR #460): parte del cobro que se debe devolver (paquetes cancelados en un cobro parcial). */
+    @Column(name = "monto_reembolso_pendiente")
+    private Integer montoReembolsoPendiente;
+
+    /** V215 (PR #460): parte del cobro ya devuelta fuera de la plataforma (resolución del ADMIN). */
+    @Column(name = "monto_reembolsado")
+    private Integer montoReembolsado;
+
+    public Integer getMontoReembolsoPendiente() { return montoReembolsoPendiente; }
+    public void setMontoReembolsoPendiente(Integer v) { this.montoReembolsoPendiente = v; }
+    public Integer getMontoReembolsado() { return montoReembolsado; }
+    public void setMontoReembolsado(Integer v) { this.montoReembolsado = v; }
+
     public String getSinpeRefNumber() { return sinpeRefNumber; }
     public LocalDateTime getPlazoInternoSinpe() { return plazoInternoSinpe; }
     public void setPlazoInternoSinpe(LocalDateTime plazoInternoSinpe) { this.plazoInternoSinpe = plazoInternoSinpe; }

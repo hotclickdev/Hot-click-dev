@@ -28,6 +28,9 @@ import java.util.regex.Pattern;
  *   <li>{@code REEMBOLSO_PROCESADO}: el reembolso ya se hizo fuera; el pago pasa a REEMBOLSADO y el grupo
  *       a CANCELADO.</li>
  * </ul>
+ * Cobro parcial (PR #460): si el pago es compartido y sigue CAPTURADO por los paquetes confirmados, nunca se
+ * pasa entero a REEMBOLSO_PENDIENTE ni REEMBOLSADO. CANCELAR deja el monto en {@code montoReembolsoPendiente};
+ * REEMBOLSO_PROCESADO lo pasa a {@code montoReembolsado}. El pago sigue CAPTURADO.
  * Las reservas ya se liberaron al entrar a revisión y el stock nunca se consumió, así que no se toca stock.
  */
 @Service
@@ -76,9 +79,16 @@ public class SobreventaResolucionService {
             throw new IllegalArgumentException(MENSAJE_NO_EN_REVISION);
         }
         if (ACCION_REEMBOLSO_PROCESADO.equals(accion)) {
-            Pago pago = pagoOpt.filter(p -> Constants.PAGO_REEMBOLSO_PENDIENTE.equals(p.getEstadoPago()))
+            Pago pago = pagoOpt.filter(p -> Constants.PAGO_REEMBOLSO_PENDIENTE.equals(p.getEstadoPago())
+                    || esReembolsoParcial(p))
                 .orElseThrow(() -> new IllegalArgumentException(MENSAJE_PAGO_NO_PENDIENTE));
-            pago.setEstadoPago(Constants.PAGO_REEMBOLSADO);
+            if (esReembolsoParcial(pago)) {
+                int previo = pago.getMontoReembolsado() == null ? 0 : pago.getMontoReembolsado();
+                pago.setMontoReembolsado(previo + pago.getMontoReembolsoPendiente());
+                pago.setMontoReembolsoPendiente(0);
+            } else {
+                pago.setEstadoPago(Constants.PAGO_REEMBOLSADO);
+            }
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             pagoRepository.save(pago);
         }
@@ -94,10 +104,24 @@ public class SobreventaResolucionService {
             numeros.append(p.getNumeroPedido());
         }
         pedidoRepository.saveAll(grupo);
-        String estadoPago = pagoOpt.isPresent() ? pagoOpt.get().getEstadoPago() : "sin pago";
+        String estadoPago = pagoOpt.map(SobreventaResolucionService::describirPago).orElse("sin pago");
         auditoria.registrar("SOBREVENTA_" + accion, "PEDIDO", pedido.getId(), pedido.getEmpresaId(),
             String.format("Pedidos %s: %s → %s · pago %s · motivo: %s", numeros,
                 Constants.PEDIDO_REVISION_SOBREVENTA, Constants.PEDIDO_CANCELADO, estadoPago, motivo));
         return pedido;
+    }
+
+    /** Pago compartido que sigue CAPTURADO con una parte (paquete cancelado) pendiente de devolver. */
+    static boolean esReembolsoParcial(Pago pago) {
+        return Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())
+            && pago.getMontoReembolsoPendiente() != null && pago.getMontoReembolsoPendiente() > 0;
+    }
+
+    private static String describirPago(Pago pago) {
+        if (!Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return pago.getEstadoPago();
+        int pendiente = pago.getMontoReembolsoPendiente() == null ? 0 : pago.getMontoReembolsoPendiente();
+        int devuelto = pago.getMontoReembolsado() == null ? 0 : pago.getMontoReembolsado();
+        return String.format("%s (reembolso parcial pendiente %d, devuelto %d %s)", pago.getEstadoPago(),
+            pendiente, devuelto, pago.getMoneda());
     }
 }
