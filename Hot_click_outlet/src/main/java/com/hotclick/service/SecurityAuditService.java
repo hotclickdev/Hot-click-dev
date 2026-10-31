@@ -69,7 +69,7 @@ public class SecurityAuditService {
         // Structured log — always committed even if DB save fails
         // Correo enmascarado en el log [SEC]; la tabla de auditoría conserva el correo para el panel admin.
         log.info("[SEC] type={} severity={} userId={} email={} ip={} endpoint={} meta={}",
-            evt, sev, userId, com.hotclick.controller.crm.CrmClienteMapper.enmascararCorreo(email), ip, endpoint, meta);
+            evt, sev, userId, com.hotclick.utils.CorreoEnmascarado.enmascarar(email), ip, endpoint, meta);
 
         try {
             SecurityAuditLog record = new SecurityAuditLog();
