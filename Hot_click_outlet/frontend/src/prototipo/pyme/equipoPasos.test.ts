@@ -10,6 +10,10 @@ describe('validarPasoInvitarEquipo — clave mínima', () => {
   it('rechaza 7 caracteres', () => {
     expect(validarPasoInvitarEquipo(1, form('Abcdef1'))).toMatch(/8 caracteres/)
   })
+  it('rechaza sin mayúscula o sin número (misma política que el registro)', () => {
+    expect(validarPasoInvitarEquipo(1, form('abcdefg1'))).toMatch(/mayúscula/)
+    expect(validarPasoInvitarEquipo(1, form('Abcdefgh'))).toMatch(/número/)
+  })
   it('acepta 8 caracteres', () => {
     expect(validarPasoInvitarEquipo(1, form('Abcdefg1'))).toBeNull()
   })

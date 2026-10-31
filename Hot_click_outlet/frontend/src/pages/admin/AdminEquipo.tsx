@@ -15,6 +15,7 @@ import {
   type MiembroEquipo,
 } from './equipo/equipoHelpers'
 import type { Id } from '@/types/api'
+import { cumplePoliticaContrasena } from '@/utils/politicaContrasena'
 
 export default function AdminEquipo() {
   const toast = useToast()
@@ -56,7 +57,7 @@ export default function AdminEquipo() {
     const e: Record<string, string> = {}
     if (!form.nombre.trim()) e.nombre = 'Nombre requerido'
     if (!isValidEmail(form.correo)) e.correo = 'Correo inválido'
-    if (form.password.length < 8) e.password = 'Mínimo 8 caracteres'
+    if (!cumplePoliticaContrasena(form.password)) e.password = 'Mínimo 8 caracteres, una mayúscula y un número'
     return e
   }
 

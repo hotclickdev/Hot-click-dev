@@ -173,6 +173,15 @@ public class AuthSupport {
 
     /** Minimum 8 chars, at least one uppercase letter and one digit. */
     public boolean esContrasenaValida(String pwd) {
+        return cumplePoliticaContrasena(pwd);
+    }
+
+    /** Mensaje único de la política de {@link #esContrasenaValida}. */
+    public static final String MENSAJE_POLITICA_CONTRASENA =
+            "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
+
+    /** Versión estática de {@link #esContrasenaValida} para altas fuera del flujo de auth. */
+    public static boolean cumplePoliticaContrasena(String pwd) {
         if (pwd == null || pwd.length() < 8) return false;
         boolean hasUpper = false, hasDigit = false;
         for (char c : pwd.toCharArray()) {
