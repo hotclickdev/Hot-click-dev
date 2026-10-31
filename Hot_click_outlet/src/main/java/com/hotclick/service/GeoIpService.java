@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
+import com.hotclick.utils.CorreoEnmascarado;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -129,7 +130,7 @@ public class GeoIpService {
             String details  = "Ubicación: " + location
                 + " | ISP: " + node.path("isp").asText()
                 + " | Org: " + node.path("org").asText()
-                + (email != null ? " | Usuario: " + email : "");
+                + (email != null ? " | Usuario: " + CorreoEnmascarado.enmascarar(email) : "");
 
             detectionService.generateAlert("PRISON_IP_DETECTED",
                 SecurityEventSeverity.CRITICAL, ip, userId, message, details);
@@ -137,7 +138,7 @@ public class GeoIpService {
                 SecurityEventSeverity.CRITICAL, ip, userId, details);
 
             log.warn("[GEOIP] Prison IP ip={} isp={} org={} location={} userId={} email={}",
-                ip, isp, org, location, userId, email);
+                ip, isp, org, location, userId, CorreoEnmascarado.enmascarar(email));
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -192,7 +193,7 @@ public class GeoIpService {
                 + " | ISP: " + isp
                 + " | Tipo de uso: " + usageType
                 + " | País: " + country
-                + (email != null ? " | Usuario: " + email : "");
+                + (email != null ? " | Usuario: " + CorreoEnmascarado.enmascarar(email) : "");
 
             detectionService.generateAlert("ABUSIVE_IP_DETECTED",
                 sev, ip, userId, message, details);
@@ -200,7 +201,7 @@ public class GeoIpService {
                 sev, ip, userId, details);
 
             log.warn("[ABUSEIPDB] Abusive IP ip={} score={} isp={} userId={} email={}",
-                ip, score, isp, userId, email);
+                ip, score, isp, userId, CorreoEnmascarado.enmascarar(email));
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
