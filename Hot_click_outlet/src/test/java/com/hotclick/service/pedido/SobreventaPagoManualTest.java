@@ -139,4 +139,38 @@ class SobreventaPagoManualTest {
 
         verify(email).enviarAlertaSobreventaAAdminIT(10L, "HC-MED2-1", 15000, Constants.PROVEEDOR_MANUAL);
     }
+
+    @Test
+    @DisplayName("pendiente sin fila de Pago: el pago manual nuevo también chequea sobreventa → revisión")
+    void sinPago_sobreventa_quedaEnRevision() {
+        when(pedidoGrupoService.pagoDelGrupo(pedido)).thenReturn(Optional.empty());
+        com.hotclick.model.Usuario cliente = new com.hotclick.model.Usuario();
+        pedido.setUsuarioFinal(cliente);
+        pedido.setTotalPedido(5000);
+        when(paymentService.revisarSobreventa(any())).thenAnswer(inv -> {
+            Pago nuevo = inv.getArgument(0);
+            nuevo.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+            pedido.setEstadoPedido(Constants.PEDIDO_REVISION_SOBREVENTA);
+            return true;
+        });
+
+        boolean sobreventa = service.confirmar(pedido, Constants.PEDIDO_PENDIENTE, "REF-1");
+
+        assertThat(sobreventa).isTrue();
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_REVISION_SOBREVENTA);
+        verify(pagoRepository).save(org.mockito.ArgumentMatchers.argThat(p ->
+            Constants.PROVEEDOR_MANUAL.equals(p.getProveedor())));
+        verify(paymentService, never()).confirmarPedido(any());
+    }
+
+    @Test
+    @DisplayName("pendiente sin fila de Pago y con stock → sigue quedando PAGADO")
+    void sinPago_conStock_quedaPagado() {
+        when(pedidoGrupoService.pagoDelGrupo(pedido)).thenReturn(Optional.empty());
+        pedido.setUsuarioFinal(new com.hotclick.model.Usuario());
+        when(paymentService.revisarSobreventa(any())).thenReturn(false);
+
+        assertThat(service.confirmar(pedido, Constants.PEDIDO_PENDIENTE, "REF-1")).isFalse();
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PAGADO);
+    }
 }
