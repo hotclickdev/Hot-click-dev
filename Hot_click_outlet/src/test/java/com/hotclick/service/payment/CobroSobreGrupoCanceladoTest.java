@@ -64,6 +64,7 @@ class CobroSobreGrupoCanceladoTest {
     @Mock private TilopayService tilopayService;
     @Mock private TilopayPaymentProviderAccess providerAccess;
     @Mock private PaymentService paymentService;
+    @Mock private AvisoReembolsoPendienteService avisoReembolso;
 
     @InjectMocks private PaymentOrderConfirmationService confirmacion;
     @InjectMocks private TilopayConfirmacionService tilopay;
@@ -105,7 +106,8 @@ class CobroSobreGrupoCanceladoTest {
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(paymentNotificationsFacade).onSobreventa(eq(pago), eq("ORD-CAN"));
+        verify(avisoReembolso).registrarPendiente(pago);
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any()); // #479: un solo correo (el aviso)
         verify(paymentNotificationsFacade, never()).onPedidoConfirmado(any(), any());
         verify(stockReservationService, never()).confirmAndConsumeStock(any(), any(), any());
         verify(eventPublisher, never()).publishEvent(any());
@@ -124,7 +126,8 @@ class CobroSobreGrupoCanceladoTest {
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         verify(pagoRepository, times(1)).saveAndFlush(pago);
-        verify(paymentNotificationsFacade, times(1)).onSobreventa(any(), any());
+        verify(avisoReembolso, times(1)).registrarPendiente(any());
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
     }
 
     @Test
@@ -153,7 +156,8 @@ class CobroSobreGrupoCanceladoTest {
 
         assertThat(r).isEqualTo(PaymentOrderConfirmationService.Resultado.SOBREVENTA);
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        verify(paymentNotificationsFacade).onSobreventa(eq(pago), eq("ORD-CAN"));
+        verify(avisoReembolso).registrarPendiente(pago);
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
         verify(stockReservationService, never()).confirmAndConsumeStock(any(), any(), any());
         verify(eventPublisher, never()).publishEvent(any());
     }
@@ -261,5 +265,20 @@ class CobroSobreGrupoCanceladoTest {
         when(pedidoGrupoService.delGrupo(pedido)).thenAnswer(inv -> List.of(pedido, hermano));
         when(stockReservationService.productosSinStock(any())).thenReturn(List.of());
         return hermano;
+    }
+
+    @Test
+    @DisplayName("Aviso al admin IT: cobro sobre grupo cancelado registra el aviso antes del save, una sola vez")
+    void cobroSobreCancelado_registraAviso() {
+        pago.setProveedor(Constants.PROVEEDOR_STRIPE);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        org.mockito.InOrder orden = org.mockito.Mockito.inOrder(avisoReembolso, pagoRepository);
+
+        confirmacion.confirmarPedido(pago, paymentService, eventPublisher);
+        confirmacion.confirmarPedido(pago, paymentService, eventPublisher);
+
+        orden.verify(avisoReembolso).registrarPendiente(pago);
+        orden.verify(pagoRepository).saveAndFlush(pago);
+        verify(avisoReembolso, times(1)).registrarPendiente(any());
     }
 }
