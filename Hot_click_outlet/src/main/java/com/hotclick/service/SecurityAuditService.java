@@ -67,8 +67,9 @@ public class SecurityAuditService {
         endpoint = com.hotclick.security.RutaLogSegura.enmascarar(endpoint); // QA-122-2: sin token de enlace en log ni tabla
 
         // Structured log — always committed even if DB save fails
+        // Correo enmascarado en el log [SEC]; la tabla de auditoría conserva el correo para el panel admin.
         log.info("[SEC] type={} severity={} userId={} email={} ip={} endpoint={} meta={}",
-            evt, sev, userId, email, ip, endpoint, meta);
+            evt, sev, userId, com.hotclick.utils.CorreoEnmascarado.enmascarar(email), ip, endpoint, meta);
 
         try {
             SecurityAuditLog record = new SecurityAuditLog();
