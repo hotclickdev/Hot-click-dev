@@ -111,6 +111,22 @@ public class PaymentOrderConfirmationService {
         return Resultado.CONFIRMADO;
     }
 
+    /**
+     * Pago manual registrado sin fila de Pago previa: mismo chequeo de sobreventa que {@link #confirmarPedido}
+     * pero sin confirmar (ese camino no consume stock acá). true si el grupo quedó en revisión.
+     */
+    @Transactional
+    public boolean revisarSobreventa(Pago pago) {
+        Pedido principal = pago.getPedido();
+        if (principal == null) return false;
+        List<Pedido> porConfirmar = pedidoGrupoService.delGrupo(principal).stream()
+            .filter(p -> !Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido())).toList();
+        porConfirmar.forEach(p -> Hibernate.initialize(p.getItems()));
+        if (stockReservationService.productosSinStock(porConfirmar).isEmpty()) return false;
+        pasarARevisionPorSobreventa(pago, porConfirmar);
+        return true;
+    }
+
     /** M-08: grupo a revisión, reservas liberadas (sin stock negativo), pago para reembolso. Sin PII en el log. */
     private void pasarARevisionPorSobreventa(Pago pago, List<Pedido> grupo) {
         StringBuilder numeros = new StringBuilder();

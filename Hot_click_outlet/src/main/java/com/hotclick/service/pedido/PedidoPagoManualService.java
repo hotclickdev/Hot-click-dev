@@ -120,7 +120,7 @@ public class PedidoPagoManualService {
         boolean sobreventa = capturarPago(pedido, pagoOpt);
         Usuario actor = companyScope.getCurrentUser();
         if (pagoOpt.isEmpty()) {
-            registrarPagoManual(pedido, metodo, actor);
+            sobreventa = paymentService.revisarSobreventa(registrarPagoManual(pedido, metodo, actor));
         }
         if (sobreventa) {
             // MED-2: cobro sin stock. El punto común ya dejó el grupo en revisión y el pago en
@@ -162,7 +162,8 @@ public class PedidoPagoManualService {
         pagoOpt.ifPresent(p -> p.setMetodoPagoTipo(METODO_EFECTIVO));
         boolean sobreventa = capturarPago(pedido, pagoOpt);
         if (pagoOpt.isEmpty()) {
-            registrarPagoManual(pedido, METODO_EFECTIVO, companyScope.getCurrentUser());
+            sobreventa = paymentService.revisarSobreventa(
+                registrarPagoManual(pedido, METODO_EFECTIVO, companyScope.getCurrentUser()));
         }
         if (sobreventa) {
             auditarSobreventa(pedido, estadoAnterior, METODO_EFECTIVO);
@@ -247,7 +248,7 @@ public class PedidoPagoManualService {
     }
 
     /** Pago registrado a mano: proveedor MANUAL, CAPTURADO, mismo monto que el pedido (no cambia montos). */
-    private void registrarPagoManual(Pedido pedido, String metodo, Usuario actor) {
+    private Pago registrarPagoManual(Pedido pedido, String metodo, Usuario actor) {
         Usuario titular = pedido.getUsuarioFinal() != null ? pedido.getUsuarioFinal() : actor;
         if (titular == null) {
             throw new IllegalStateException("No se pudo registrar el pago: el pedido no tiene cliente.");
@@ -266,6 +267,7 @@ public class PedidoPagoManualService {
         pago.setUsuario(titular);
         pago.setEstado(Constants.ESTADO_ACTIVO);
         pagoRepository.save(pago);
+        return pago;
     }
 
     /**

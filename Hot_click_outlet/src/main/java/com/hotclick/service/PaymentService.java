@@ -137,6 +137,11 @@ public class PaymentService {
         return orderConfirmationService.confirmarPedido(pago, this, eventPublisher);
     }
 
+    /** Chequeo de sobreventa para un pago manual registrado sin Pago previo (no confirma). */
+    public boolean revisarSobreventa(Pago pago) {
+        return orderConfirmationService.revisarSobreventa(pago);
+    }
+
     @Transactional
     public void liberarReservas(Pedido pedido) {
         stockReservationService.liberarReservas(pedido);
