@@ -101,7 +101,10 @@ public class PaymentOrderConfirmationService {
         boolean cuponMarcado = false;
         boolean algunoReclamado = false;
         java.util.List<Long> perdidos = new java.util.ArrayList<>();
-        for (Pedido pedido : porConfirmar) {
+        // SCALE1: el grupo de pago es acotado (paquetes de una compra); un UPDATE condicional por paquete.
+        java.util.Iterator<Pedido> paquetes = porConfirmar.iterator();
+        while (paquetes.hasNext()) {
+            Pedido pedido = paquetes.next();
             // Idempotencia atómica: retorno de Tilopay, webhook, cleanup o admin pueden llegar a la vez
             // con una copia vieja del pedido; solo quien gana el UPDATE condicional aplica los efectos.
             if (pedidoRepository.reclamarParaConfirmar(pedido.getId(), NO_RECLAMABLES) == 0) {
