@@ -33,6 +33,7 @@ public class OnvoCapturaService {
     @Autowired private PedidoGrupoService     pedidoGrupoService;
     @Autowired(required = false) private com.hotclick.service.OnvoService onvoService;
     @Autowired private com.hotclick.repository.PedidoRepository pedidoRepository;
+    @Autowired(required = false) private com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
 
     /** Resultado de escribir un cobro que ONVO ya confirmó. */
     public enum Captura { CAPTURADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA }
@@ -76,6 +77,8 @@ public class OnvoCapturaService {
             webhookEventRepository.save(evento);
             log.error("[ALERTA-PAGO] ONVO cobró un pedido ya cancelado; queda para reembolso del admin: sessionId={}",
                 checkoutSessionId);
+            // Aviso al admin después del commit, con dedupe por pago; si falla, el pago sigue REEMBOLSO_PENDIENTE.
+            if (avisoReembolso != null) avisoReembolso.avisarDespuesDelCommit(pago.getId());
             return Captura.COBRADO_SOBRE_CANCELADO;
         }
 
