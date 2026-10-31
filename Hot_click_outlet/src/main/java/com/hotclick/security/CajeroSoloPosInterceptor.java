@@ -34,7 +34,7 @@ public class CajeroSoloPosInterceptor implements HandlerInterceptor {
      * soporte. Solo POST exacto; ambos controllers toman la empresa del token (nunca del body). PUT/PATCH/DELETE de
      * clientes, fotos de tickets y listados siguen en 403.
      */
-    private static final List<String> SOLO_POST = List.of("/api/crm/clientes", "/api/soporte/tickets");
+    private static final List<String> SOLO_POST = List.of("/api/crm/clientes", "/api/soporte/tickets", "/api/soporte/tickets/fotos");
 
     private final PropietarioGuard propietarioGuard;
     private final CompanyScope companyScope;

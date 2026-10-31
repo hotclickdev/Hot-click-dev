@@ -71,8 +71,7 @@ public class CrmController {
     public ResponseEntity<?> buscar(@RequestParam String q) {
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         boolean cajero = propietarioGuard.esCajero(empresaId);
-        // Seguridad #475: pasa por el guard del plan CRM salvo el CAJERO de equipo, que lo usa desde el POS.
-        if (!cajero && crmAccessGuard.sinAccesoCrm()) return sinCrm();
+        // Decisión 16/10 (ratificada en #475): buscar queda abierto en todo plan para el POS; sin sinAccesoCrm.
         if (!cajero) return ResponseEntity.ok(ResponseDTO.success("OK", crmClientesService.buscar(q, empresaId)));
         // CAJERO: mínimo 3 caracteres y correo/teléfono enmascarados (solo identifica al cliente de la venta).
         if (q == null || q.trim().length() < 3) return ResponseEntity.ok(ResponseDTO.success("OK", java.util.List.of()));

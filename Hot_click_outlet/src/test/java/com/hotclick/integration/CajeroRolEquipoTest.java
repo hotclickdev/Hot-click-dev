@@ -241,4 +241,55 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
         assertThat(json(get("/api/crm/clientes/buscar").param("q", "Zoila"), tCajeroB, st).read("$.data.length()", Integer.class))
             .isZero();
     }
+
+    @Test
+    void duenoSinPlanCrmSigueBuscandoYCajeroRecibeEnmascarado() throws Exception {
+        int[] st = new int[1];
+        json(postJson("/api/crm/clientes", "{\"nombre\":\"Paula Plan\",\"telefono\":\"88765432\",\"correo\":\"paula.plan@test.cr\"}"),
+            tDuenoA, st);
+        // el negocio de prueba no tiene plan CRM: el listado completo sí queda bloqueado
+        assertThat(st(get("/api/crm/clientes"), tDuenoA)).isEqualTo(403);
+        var dueno = json(get("/api/crm/clientes/buscar").param("q", "Paula"), tDuenoA, st);
+        assertThat(st[0]).isEqualTo(200);
+        assertThat((String) dueno.read("$.data[0].correo")).isEqualTo("paula.plan@test.cr");
+        var cajero = json(get("/api/crm/clientes/buscar").param("q", "Paula"), tCajeroA, st);
+        assertThat(st[0]).isEqualTo(200);
+        assertThat((String) cajero.read("$.data[0].correo")).doesNotContain("paula.plan");
+        assertThat((String) cajero.read("$.data[0].telefono")).isNotEqualTo("88765432");
+    }
+
+    private static final byte[] PNG = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0x0D};
+
+    private int foto(org.springframework.mock.web.MockMultipartFile f, String token) throws Exception {
+        return st(multipart("/api/soporte/tickets/fotos").file(f), token);
+    }
+
+    @Test
+    void cajeroSubeFotoDeTicketSoloEnSuNegocioYSoloImagenes() throws Exception {
+        org.mockito.Mockito.when(supabaseStorageService.subirImagen(org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.anyString())).thenReturn("https://cdn.test/foto.png");
+        var ok = new org.springframework.mock.web.MockMultipartFile("file", "f.png", "image/png", PNG);
+        // propio negocio: la carpeta sale del token
+        assertThat(foto(ok, tCajeroA)).isEqualTo(200);
+        org.mockito.Mockito.verify(supabaseStorageService).subirImagen(org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq("Soporte/Tickets/empresa-" + empA.getId()));
+        // pedir otro negocio por query no cambia nada: queda en el del token
+        assertThat(st(multipart("/api/soporte/tickets/fotos").file(ok).param("empresaId", String.valueOf(empA.getId())),
+            tCajeroB)).isEqualTo(200);
+        org.mockito.Mockito.verify(supabaseStorageService).subirImagen(org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq("Soporte/Tickets/empresa-" + empB.getId()));
+        org.mockito.Mockito.verify(supabaseStorageService, org.mockito.Mockito.times(2))
+            .subirImagen(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString());
+        // no es imagen (texto con content-type falso y con extensión png) -> 400, sin tocar storage
+        assertThat(foto(new org.springframework.mock.web.MockMultipartFile("file", "x.txt", "text/plain",
+            "hola".getBytes()), tCajeroA)).isEqualTo(400);
+        assertThat(foto(new org.springframework.mock.web.MockMultipartFile("file", "x.png", "image/png",
+            "no soy png, solo texto".getBytes()), tCajeroA)).isEqualTo(400);
+        // demasiado grande (>10 MB) -> 400
+        byte[] grande = java.util.Arrays.copyOf(PNG, 10 * 1024 * 1024 + 1);
+        assertThat(foto(new org.springframework.mock.web.MockMultipartFile("file", "g.png", "image/png", grande),
+            tCajeroA)).isEqualTo(400);
+        org.mockito.Mockito.verify(supabaseStorageService, org.mockito.Mockito.times(2))
+            .subirImagen(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString());
+    }
 }
