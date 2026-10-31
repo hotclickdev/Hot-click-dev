@@ -45,6 +45,7 @@ public class TicketSoporteController {
             // #475: tipo (content-type + magic bytes) y tamaño (10 MB) se validan antes de tocar el storage
             IMAGEN.validarArchivo(file);
             // aislado por negocio: la carpeta sale del token, nunca del request
+            // tenant-global-ok: empresa nula = comprador sin negocio; se aísla por su propio usuario, nunca global
             Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
             String carpeta = empresaId != null ? "Soporte/Tickets/empresa-" + empresaId
                 : "Soporte/Tickets/usuario-" + companyScope.getCurrentUserId();
