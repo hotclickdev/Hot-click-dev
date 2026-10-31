@@ -126,6 +126,8 @@ public class PaymentOrderConfirmationService {
         pagoRepository.save(pago);
         log.error("[ALERTA-PAGO] Cobro sin stock (sobreventa): pago={} pedidos={}; en revisión, reembolso pendiente",
             pago.getId(), numeros);
+        // MED-2: alerta a plataforma (cola: pagos REEMBOLSO_PENDIENTE en Admin → Pagos).
+        paymentNotificationsFacade.onSobreventa(pago, numeros.toString());
     }
 
     /**
