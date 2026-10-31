@@ -44,6 +44,20 @@ public class PropietarioGuard {
         return !companyScope.isImpersonating() && esPropietario(companyScope.getCurrentUser(), empresaId);
     }
 
+    /**
+     * Visibilidad pública de la tienda: además del PROPIETARIO y del ADMIN de plataforma, la puede cambiar el
+     * ADMIN de equipo activo (sin sesión de soporte). EDITOR, LECTOR y CAJERO, no.
+     */
+    public boolean puedeCambiarVisibilidad(Long empresaId) {
+        if (puedeGestionarEmpresa(empresaId)) return true;
+        if (empresaId == null || companyScope.isImpersonating()) return false;
+        Usuario u = companyScope.getCurrentUser();
+        if (u == null) return false;
+        return miembros.findByUsuarioIdAndEmpresaId(u.getId(), empresaId)
+            .map(f -> Integer.valueOf(1).equals(f.getEstado()) && "ADMIN".equals(f.getRolEnEmpresa()))
+            .orElse(false);
+    }
+
     /** Miembro activo con rol LECTOR en esa empresa (no aplica a ADMIN de plataforma). */
     public boolean esLector(Long empresaId) {
         if (empresaId == null || companyScope.isAdminIT()) return false;

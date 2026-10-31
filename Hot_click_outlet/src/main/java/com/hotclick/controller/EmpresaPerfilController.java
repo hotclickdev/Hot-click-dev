@@ -72,7 +72,7 @@ public class EmpresaPerfilController {
     public ResponseEntity<ResponseDTO> toggleVisibilidad(@RequestBody Map<String, Object> body) {
         Long empresaId = empresaIdO403();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
-        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-019
+        if (!propietarioGuard.puedeCambiarVisibilidad(empresaId)) return soloPropietario(); // QA3-019 + ADMIN de equipo
         Map<String, Object> data = empresaPerfilService.toggleVisibilidad(empresaId, body.get("visibilidadPublica"));
         String msg = Boolean.TRUE.equals(data.get("visibilidadPublica"))
             ? "Tu negocio ahora es visible al público" : "Tu negocio está en modo invisible";
