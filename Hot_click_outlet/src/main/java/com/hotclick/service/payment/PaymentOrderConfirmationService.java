@@ -139,34 +139,6 @@ public class PaymentOrderConfirmationService {
         return Resultado.CONFIRMADO;
     }
 
-    /** true si los paquetes no reclamados están cancelados en la base y ninguno fue confirmado por otro. */
-    private boolean canceladoEntreLecturaYReclamo(List<Long> perdidos) {
-        if (perdidos.isEmpty()) return false;
-        List<String> estados = pedidoRepository.estadosDe(perdidos);
-        return estados != null && estados.contains(Constants.PEDIDO_CANCELADO)
-            && estados.stream().noneMatch(YA_CONFIRMADOS::contains);
-    }
-
-    /**
-     * Cobro sobre un grupo cancelado (cualquier proveedor): el pedido no se revive (su stock ya se liberó),
-     * el pago queda REEMBOLSO_PENDIENTE y se alerta a plataforma. Idempotente: si el pago ya está en
-     * reembolso pendiente o reembolsado no se vuelve a alertar. Devuelve SOBREVENTA (cobro sin venta).
-     */
-    private Resultado cobroSobreCancelado(Pago pago, Pedido principal) {
-        String estado = pago.getEstadoPago();
-        if (Constants.PAGO_REEMBOLSO_PENDIENTE.equals(estado) || Constants.PAGO_REEMBOLSADO.equals(estado)) {
-            log.info("confirmarPedido ignorado — pago {} de grupo cancelado ya está en reembolso", pago.getId());
-            return Resultado.SOBREVENTA;
-        }
-        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-        pagoRepository.save(pago);
-        log.error("[ALERTA-PAGO] Cobro sobre grupo cancelado: pago={} pedido={}; reembolso pendiente",
-            pago.getId(), principal.getNumeroPedido());
-        paymentNotificationsFacade.onSobreventa(pago, principal.getNumeroPedido());
-        return Resultado.SOBREVENTA;
-    }
-
     /**
      * Pago manual registrado sin fila de Pago previa: mismo chequeo de sobreventa que {@link #confirmarPedido}
      * pero sin confirmar (ese camino no consume stock acá). true si el grupo quedó en revisión.
@@ -230,5 +202,33 @@ public class PaymentOrderConfirmationService {
             }
             return;
         }
+    }
+
+    /** true si los paquetes no reclamados están cancelados en la base y ninguno fue confirmado por otro. */
+    private boolean canceladoEntreLecturaYReclamo(List<Long> perdidos) {
+        if (perdidos.isEmpty()) return false;
+        List<String> estados = pedidoRepository.estadosDe(perdidos);
+        return estados != null && estados.contains(Constants.PEDIDO_CANCELADO)
+            && estados.stream().noneMatch(YA_CONFIRMADOS::contains);
+    }
+
+    /**
+     * Cobro sobre un grupo cancelado (cualquier proveedor): el pedido no se revive (su stock ya se liberó),
+     * el pago queda REEMBOLSO_PENDIENTE y se alerta a plataforma. Idempotente: si el pago ya está en
+     * reembolso pendiente o reembolsado no se vuelve a alertar. Devuelve SOBREVENTA (cobro sin venta).
+     */
+    private Resultado cobroSobreCancelado(Pago pago, Pedido principal) {
+        String estado = pago.getEstadoPago();
+        if (Constants.PAGO_REEMBOLSO_PENDIENTE.equals(estado) || Constants.PAGO_REEMBOLSADO.equals(estado)) {
+            log.info("confirmarPedido ignorado — pago {} de grupo cancelado ya está en reembolso", pago.getId());
+            return Resultado.SOBREVENTA;
+        }
+        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        pagoRepository.save(pago);
+        log.error("[ALERTA-PAGO] Cobro sobre grupo cancelado: pago={} pedido={}; reembolso pendiente",
+            pago.getId(), principal.getNumeroPedido());
+        paymentNotificationsFacade.onSobreventa(pago, principal.getNumeroPedido());
+        return Resultado.SOBREVENTA;
     }
 }
