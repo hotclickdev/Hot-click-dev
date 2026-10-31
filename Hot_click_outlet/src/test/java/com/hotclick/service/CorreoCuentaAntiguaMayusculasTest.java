@@ -81,7 +81,7 @@ class CorreoCuentaAntiguaMayusculasTest {
 
         assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(svc, "aplicarDatos", fila,
                 "Cliente Antiguo", "1-2345-6789", ENTRADA, "8888-0000"))
-            .hasMessageContaining("Ese correo ya tiene una cuenta");
+            .hasMessage("Ese correo no está disponible. Usá otro.");
     }
 
     @Test
@@ -104,6 +104,53 @@ class CorreoCuentaAntiguaMayusculasTest {
 
         assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(svc, "aplicarDatos", fila,
                 "Cliente Antiguo", "1-2345-6789", ENTRADA, "8888-0000"))
-            .hasMessageContaining("Ese correo ya tiene una tienda");
+            .hasMessage("Ese correo no está disponible. Usá otro.");
+    }
+
+    @Test
+    @DisplayName("Seguridad #469: con una eliminada más vieja y una activa (distintas mayúsculas), vincula la activa")
+    void clerkVinculaLaActivaNoLaEliminadaMasVieja() {
+        UsuarioRepository repo = mock(UsuarioRepository.class);
+        Usuario eliminada = antigua();
+        eliminada.setId(3L);
+        eliminada.setEstado(3);
+        eliminada.setCorreo("CLIENTE.ANTIGUO@test.cr");
+        Usuario activa = antigua();
+        activa.setId(9L);
+        activa.setCorreo("cliente.antiguo@test.cr");
+        when(repo.findByClerkUserId(anyString())).thenReturn(Optional.empty());
+        when(repo.findByCorreo(anyString())).thenReturn(Optional.empty());
+        when(repo.findByCorreo("CLIENTE.ANTIGUO@test.cr")).thenReturn(Optional.of(eliminada));
+        when(repo.findByCorreo("cliente.antiguo@test.cr")).thenReturn(Optional.of(activa));
+        when(repo.findAllByCorreoIgnoreCase("cliente.antiguo@test.cr")).thenReturn(List.of(eliminada, activa));
+        when(repo.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+        ClerkSyncService s = new ClerkSyncService();
+        ReflectionTestUtils.setField(s, "usuarioRepository", repo);
+        ReflectionTestUtils.setField(s, "rolRepository", mock(RolRepository.class));
+        ReflectionTestUtils.setField(s, "passwordEncoder", mock(PasswordEncoder.class));
+        ReflectionTestUtils.setField(s, "authSupport", mock(AuthSupport.class));
+
+        s.sync("user_fict777", ENTRADA, "Cliente", "Antiguo", "", true);
+
+        assertThat(activa.getClerkUserId()).isEqualTo("user_fict777");
+        assertThat(eliminada.getClerkUserId()).isNull();
+        verify(repo, never()).save(argThat(u -> u.getId() == null));
+    }
+
+    @Test
+    @DisplayName("Seguridad #469: un token sin email_verified no da correo (se rechaza el login social)")
+    void tokenSinEmailVerificadoSeRechaza() throws Exception {
+        java.lang.reflect.Method m = com.hotclick.controller.ClerkSyncController.class
+            .getDeclaredMethod("emailVerificado", org.springframework.security.oauth2.jwt.Jwt.class);
+        m.setAccessible(true);
+        var sinClaim = org.springframework.security.oauth2.jwt.Jwt.withTokenValue("t").header("alg", "none")
+            .claim("sub", "user_fict1").claim("email", "Cliente.Antiguo@Test.CR").build();
+        var falso = org.springframework.security.oauth2.jwt.Jwt.withTokenValue("t").header("alg", "none")
+            .claim("sub", "user_fict1").claim("email", "Cliente.Antiguo@Test.CR").claim("email_verified", false).build();
+        var verificado = org.springframework.security.oauth2.jwt.Jwt.withTokenValue("t").header("alg", "none")
+            .claim("sub", "user_fict1").claim("email", "Cliente.Antiguo@Test.CR").claim("email_verified", true).build();
+        assertThat(m.invoke(null, sinClaim)).isNull();
+        assertThat(m.invoke(null, falso)).isNull();
+        assertThat(m.invoke(null, verificado)).isEqualTo("cliente.antiguo@test.cr");
     }
 }

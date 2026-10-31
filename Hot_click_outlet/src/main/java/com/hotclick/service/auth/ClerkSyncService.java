@@ -66,8 +66,12 @@ public class ClerkSyncService {
         }
         // BAJO correo-normalizado: una cuenta antigua guardada con mayúsculas se vincula (la más antigua) en vez de
         // crear un duplicado que además chocaría con el índice único lower(correo) de V214.
-        Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email)
-            .or(() -> masAntiguaIgnorandoMayusculas(email));
+        // Seguridad #469: primero las cuentas no eliminadas (estado != 3), luego el id más bajo; una eliminada más
+        // vieja no puede tapar a la activa. Si todas están eliminadas, se toma la más vieja y exigirActiva la rechaza.
+        // Se recarga por su correo exacto: findByCorreo trae los roles (findAll... no, y daría LazyInitialization).
+        Optional<Usuario> byEmail = masAntiguaIgnorandoMayusculas(email)
+            .map(u -> usuarioRepository.findByCorreo(u.getCorreo()).orElse(u))
+            .or(() -> usuarioRepository.findByCorreo(email));
         if (byEmail.isPresent()) {
             return vincularCuentaExistente(exigirActiva(byEmail.get()), clerkUserId, email, fotoUrl);
         }
@@ -78,9 +82,12 @@ public class ClerkSyncService {
     private Optional<Usuario> masAntiguaIgnorandoMayusculas(String email) {
         java.util.List<Usuario> variantes = usuarioRepository.findAllByCorreoIgnoreCase(email);
         if (variantes == null) return Optional.empty();
-        return variantes.stream()
+        java.util.Comparator<Usuario> porId = java.util.Comparator.comparing(Usuario::getId);
+        Optional<Usuario> activa = variantes.stream()
             .filter(u -> u.getId() != null)
-            .min(java.util.Comparator.comparing(Usuario::getId));
+            .filter(u -> !Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(u.getEstado()))
+            .min(porId);
+        return activa.or(() -> variantes.stream().filter(u -> u.getId() != null).min(porId));
     }
 
     /**
