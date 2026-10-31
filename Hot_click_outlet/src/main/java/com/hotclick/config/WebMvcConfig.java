@@ -1,6 +1,7 @@
 package com.hotclick.config;
 
 import com.hotclick.security.CajeroSinCatalogoInterceptor;
+import com.hotclick.security.CajeroSoloPosInterceptor;
 import com.hotclick.security.LectorSoloLecturaInterceptor;
 import com.hotclick.security.SlugTenantInterceptor;
 import com.hotclick.security.SoloPropietarioNegocioInterceptor;
@@ -19,17 +20,20 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private final @NonNull HandlerInterceptor suspensionImpagoInterceptor;
     private final @NonNull HandlerInterceptor soloPropietarioNegocioInterceptor;
     private final @NonNull HandlerInterceptor cajeroSinCatalogoInterceptor;
+    private final @NonNull HandlerInterceptor cajeroSoloPosInterceptor;
 
     public WebMvcConfig(@NonNull SlugTenantInterceptor slugTenantInterceptor,
                         @NonNull LectorSoloLecturaInterceptor lectorSoloLecturaInterceptor,
                         @NonNull SuspensionImpagoInterceptor suspensionImpagoInterceptor,
                         @NonNull SoloPropietarioNegocioInterceptor soloPropietarioNegocioInterceptor,
-                        @NonNull CajeroSinCatalogoInterceptor cajeroSinCatalogoInterceptor) {
+                        @NonNull CajeroSinCatalogoInterceptor cajeroSinCatalogoInterceptor,
+                        @NonNull CajeroSoloPosInterceptor cajeroSoloPosInterceptor) {
         this.slugTenantInterceptor = slugTenantInterceptor;
         this.lectorSoloLecturaInterceptor = lectorSoloLecturaInterceptor;
         this.suspensionImpagoInterceptor = suspensionImpagoInterceptor;
         this.soloPropietarioNegocioInterceptor = soloPropietarioNegocioInterceptor;
         this.cajeroSinCatalogoInterceptor = cajeroSinCatalogoInterceptor;
+        this.cajeroSoloPosInterceptor = cajeroSoloPosInterceptor;
     }
 
     @Override
@@ -44,6 +48,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
                                      "/api/payments/**", "/api/sinpe/**",
                                      // pago público POS-QR del comprador (no es escritura del negocio actual)
                                      "/api/pos/qr/pago/**");
+        // CAJERO de equipo: deny por defecto fuera del POS (allowlist en el interceptor). Mismas exclusiones
+        // sin negocio que el LECTOR.
+        registry.addInterceptor(cajeroSoloPosInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/auth/**", "/api/public/**", "/api/tienda/**", "/api/webhooks/**",
+                                     "/api/payments/**", "/api/sinpe/**", "/api/pos/qr/pago/**");
         // CAJERO de equipo (rol Spring EMPRENDEDOR): ninguna escritura de catálogo, stock, categorías ni inventario.
         registry.addInterceptor(cajeroSinCatalogoInterceptor)
                 .addPathPatterns("/api/productos", "/api/productos/**", "/api/stock/**", "/api/categorias",

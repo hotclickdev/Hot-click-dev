@@ -21,7 +21,9 @@ import java.util.Set;
 @RequestMapping("/api/empresa/equipo")
 public class EquipoController {
 
-    private static final Set<String> ROLES_PERMITIDOS = Set.of("EDITOR", "LECTOR", "ADMIN");
+    private static final Set<String> ROLES_PERMITIDOS = Set.of("EDITOR", "LECTOR", "ADMIN", "CAJERO");
+    private static final String CAJERO = "CAJERO";
+    private static final String MSG_ROL_INVALIDO = "Rol inválido. Valores aceptados: EDITOR, LECTOR, ADMIN, CAJERO";
 
     @Autowired private CompanyScope companyScope;
     @Autowired private EquipoService equipoService;
@@ -38,6 +40,7 @@ public class EquipoController {
 
     @PostMapping
     public ResponseEntity<ResponseDTO> invitar(@RequestBody Map<String, String> body) {
+        if (CAJERO.equals(body.get("rolEnEmpresa"))) return invitarCajero(body);
         ResponseEntity<ResponseDTO> denegado = denegarSiNoEmprendedor("Solo el emprendedor puede agregar miembros");
         if (denegado != null) return denegado;
         // Empresa destino: UNA sola vez (la del token activo, multi-negocio). El service la bloquea, cuenta el cupo
@@ -61,6 +64,7 @@ public class EquipoController {
 
     @PutMapping("/{id}/rol")
     public ResponseEntity<ResponseDTO> cambiarRol(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        if (CAJERO.equals(body.get("rolEnEmpresa"))) return asignarCajero(id);
         ResponseEntity<ResponseDTO> denegado = denegarSiNoEmprendedor("Solo el emprendedor puede cambiar roles");
         if (denegado != null) return denegado;
         Long empresaId = companyScope.getCurrentEmpresaId();
@@ -69,7 +73,7 @@ public class EquipoController {
         }
         String nuevoRol = body.get("rolEnEmpresa");
         if (nuevoRol == null || !ROLES_PERMITIDOS.contains(nuevoRol)) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR"));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(MSG_ROL_INVALIDO));
         }
         return ResponseEntity.ok(ResponseDTO.success("Rol actualizado a " + nuevoRol,
             equipoService.cambiarRol(id, empresaId, nuevoRol)));
@@ -85,6 +89,33 @@ public class EquipoController {
         }
         equipoService.eliminar(id, empresaId, companyScope.getCurrentUserId());
         return ResponseEntity.ok(ResponseDTO.success("Miembro eliminado del equipo", null));
+    }
+
+    /** CAJERO: lo invita el PROPIETARIO o el ADMIN de equipo, siempre sobre la empresa del token. */
+    private ResponseEntity<ResponseDTO> invitarCajero(Map<String, String> body) {
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        if (!companyScope.isEmprendedor() || empresaId == null || !propietarioGuard.puedeAsignarCajero(empresaId)) {
+            return ResponseEntity.status(403).body(ResponseDTO.error("Solo el propietario o un admin del equipo puede agregar cajeros"));
+        }
+        ResponseEntity<ResponseDTO> invalido = validarInvitacion(body);
+        if (invalido != null) return invalido;
+        equipoService.invitar(empresaId, body.get("nombre"),
+            body.get("correo").trim().toLowerCase(java.util.Locale.ROOT), body.get("password"),
+            body.getOrDefault("telefono", "00000000"), CAJERO);
+        return ResponseEntity.ok(ResponseDTO.success("Miembro agregado al equipo como " + CAJERO, null));
+    }
+
+    /** Pasar a CAJERO: PROPIETARIO o ADMIN de equipo; el ADMIN no puede degradar a otro ADMIN ni al propietario. */
+    private ResponseEntity<ResponseDTO> asignarCajero(Long id) {
+        Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+        if (!companyScope.isEmprendedor() || empresaId == null || !propietarioGuard.puedeAsignarCajero(empresaId)) {
+            return ResponseEntity.status(403).body(ResponseDTO.error("Solo el propietario o un admin del equipo puede asignar cajeros"));
+        }
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId) && equipoService.esAdminOPropietario(id, empresaId)) {
+            return ResponseEntity.status(403).body(ResponseDTO.error("Un admin del equipo no puede cambiar el rol de otro admin"));
+        }
+        return ResponseEntity.ok(ResponseDTO.success("Rol actualizado a " + CAJERO,
+            equipoService.cambiarRol(id, empresaId, CAJERO)));
     }
 
     private ResponseEntity<ResponseDTO> denegarSiNoEmprendedor(String mensaje) {
@@ -109,7 +140,7 @@ public class EquipoController {
         }
         String rolEnEmpresa = body.getOrDefault("rolEnEmpresa", "EDITOR");
         if (!ROLES_PERMITIDOS.contains(rolEnEmpresa)) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error("Rol inválido. Valores aceptados: EDITOR, LECTOR"));
+            return ResponseEntity.badRequest().body(ResponseDTO.error(MSG_ROL_INVALIDO));
         }
         return null;
     }
