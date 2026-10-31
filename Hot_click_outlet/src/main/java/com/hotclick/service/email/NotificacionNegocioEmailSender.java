@@ -191,4 +191,23 @@ public class NotificacionNegocioEmailSender {
                 + "<p>Gestioná el reembolso desde <a href=\"" + link + "\">" + link + "</a>.</p>");
     }
 
+    /** Resumen único de REEMBOLSO_PENDIENTE anteriores a V217 sin avisar: id, monto y fecha. Sin datos del cliente. */
+    public void enviarResumenReembolsosPendientesAdmin(String correoAdmin,
+            java.util.List<ReembolsoPendienteResumenItem> pagos, String linkAdmin) {
+        String link = emailLayoutHelper.esc(String.valueOf(linkAdmin));
+        java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        StringBuilder filas = new StringBuilder();
+        for (ReembolsoPendienteResumenItem p : pagos) {
+            filas.append("<tr><td>#").append(p.pagoId()).append("</td><td>")
+                .append(p.monto() == null ? "-" : String.valueOf(p.monto())).append(' ')
+                .append(emailLayoutHelper.esc(p.moneda() == null ? "" : p.moneda())).append("</td><td>")
+                .append(p.fecha() == null ? "-" : p.fecha().format(f)).append("</td></tr>");
+        }
+        resendEmailService.send(correoAdmin,
+            "[ALERTA] " + pagos.size() + " cobros pendientes de reembolso sin avisar (anteriores al aviso automático)",
+            "<p>Estos pagos quedaron REEMBOLSO_PENDIENTE antes de que existiera el aviso automático y nunca se avisaron.</p>"
+                + "<table><tr><th>Pago</th><th>Monto</th><th>Fecha</th></tr>" + filas + "</table>"
+                + "<p>Gestioná los reembolsos desde <a href=\"" + link + "\">" + link + "</a>.</p>");
+    }
+
 }

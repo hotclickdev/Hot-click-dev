@@ -248,9 +248,17 @@ public class NotificacionEmailService {
     }
 
     /** Aviso sin PII al admin IT: cobro de ONVO sobre un grupo cancelado (pago en REEMBOLSO_PENDIENTE). */
+    /** Lanza {@link com.hotclick.service.email.AdminItSinCorreoException} si no hay adminit.email (BAJO 3 #477). */
     public void enviarAvisoReembolsoPendienteAAdminIT(Long pagoId, String estado, String linkAdmin) {
-        if (adminItEmail == null || adminItEmail.isBlank()) return;
+        if (adminItEmail == null || adminItEmail.isBlank()) throw new com.hotclick.service.email.AdminItSinCorreoException();
         negocioEmailSender.enviarAvisoReembolsoPendienteAdmin(adminItEmail, pagoId, estado, linkAdmin);
+    }
+
+    /** Correo resumen de REEMBOLSO_PENDIENTE viejos (punto 4 #477). Mismo contrato: lanza si no hay adminit.email. */
+    public void enviarResumenReembolsosPendientesAAdminIT(
+            java.util.List<com.hotclick.service.email.ReembolsoPendienteResumenItem> pagos, String linkAdmin) {
+        if (adminItEmail == null || adminItEmail.isBlank()) throw new com.hotclick.service.email.AdminItSinCorreoException();
+        negocioEmailSender.enviarResumenReembolsosPendientesAdmin(adminItEmail, pagos, linkAdmin);
     }
 
 }

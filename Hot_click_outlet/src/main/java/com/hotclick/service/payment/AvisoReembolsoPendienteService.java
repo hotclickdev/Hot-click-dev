@@ -46,8 +46,17 @@ public class AvisoReembolsoPendienteService {
     @Autowired private PlatformTransactionManager txManager;
     @Autowired private NotificacionEmailService notificacionEmailService;
 
-    /** Executor @Async existente (AsyncConfig.taskExecutor, propaga TenantContext): el envío corre fuera del hilo del webhook. */
-    @Autowired @Qualifier("taskExecutor") private Executor taskExecutor;
+    /**
+     * Executor propio (AsyncConfig.avisoReembolsoExecutor): el envío corre fuera del hilo del webhook y, con la cola
+     * llena, se rechaza en vez de correr en el hilo que encola (BAJO 1 #477).
+     */
+    @Autowired @Qualifier("avisoReembolsoExecutor") private Executor taskExecutor;
+
+    /** Tope por pasada del barrido: no más de {@code lote} pagos ni de {@code maxSegundos} (lockAtMostFor = PT9M). */
+    @Value("${hotclick.aviso-reembolso.barrido.lote:20}")
+    private int lote = 20;
+    @Value("${hotclick.aviso-reembolso.barrido.max-segundos:300}")
+    private long maxSegundos = 300;
 
     /** Lease del claim: un claim sin envío confirmado más viejo que esto lo reintenta el barrido. */
     @Value("${hotclick.aviso-reembolso.lease-minutos:15}")
@@ -86,6 +95,9 @@ public class AvisoReembolsoPendienteService {
     private void despachar(Long pagoId) {
         try {
             taskExecutor.execute(() -> avisar(pagoId));
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            log.warn("[pago] Aviso de reembolso pendiente descartado por cola llena; lo reintenta el barrido: pagoId={}", pagoId);
+            marcarParaBarrido(pagoId);
         } catch (RuntimeException e) {
             // Si ni siquiera se pudo encolar, el barrido lo levanta (no hay claim todavía).
             log.error("[ALERTA-PAGO] No se pudo encolar el aviso de reembolso pendiente: pagoId={} error={}",
@@ -111,6 +123,9 @@ public class AvisoReembolsoPendienteService {
         try {
             notificacionEmailService.enviarAvisoReembolsoPendienteAAdminIT(
                 pagoId, Constants.PAGO_REEMBOLSO_PENDIENTE, linkAdmin());
+        } catch (com.hotclick.service.email.AdminItSinCorreoException e) {
+            log.error("[ALERTA-PAGO] Aviso de reembolso pendiente sin destinatario (adminit.email vacío); no se marca enviado: pagoId={}", pagoId);
+            return false;
         } catch (RuntimeException e) {
             Throwable causa = e.getCause() != null ? e.getCause() : e;
             log.error("[ALERTA-PAGO] Falló o no se confirmó el correo al admin por reembolso pendiente: pagoId={} error={}"
@@ -124,7 +139,7 @@ public class AvisoReembolsoPendienteService {
 
     /**
      * BAJO #466 (marca huérfana): reintenta los REEMBOLSO_PENDIENTE sin envío confirmado cuyo claim venció el lease
-     * (o que nunca se reclamaron, p. ej. si el proceso murió entre commit y encolado), con tope de intentos.
+     * (incluye los descartados por cola llena), con tope de intentos. Antes manda el resumen de los viejos (punto 4).
      */
     @Scheduled(fixedDelay = 600_000, initialDelay = 300_000)
     @SchedulerLock(name = "aviso_reembolso_barrido", lockAtMostFor = "PT9M", lockAtLeastFor = "PT1M")
@@ -132,29 +147,97 @@ public class AvisoReembolsoPendienteService {
         if (barridoHabilitado) barrer();
     }
 
-    /** Devuelve cuántos avisos se confirmaron en esta pasada. Nunca lanza. */
+    /** Devuelve cuántos avisos individuales se confirmaron en esta pasada (el resumen no cuenta). Nunca lanza. */
     public int barrer() {
+        long limite = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(Math.max(0, maxSegundos));
+        enviarResumenViejos();
         List<Long> ids;
         try {
             TransactionTemplate tx = new TransactionTemplate(txManager);
             tx.setReadOnly(true);
             ids = tx.execute(st -> em.createQuery(
                     "SELECT p.id FROM Pago p WHERE p.estadoPago = :estado AND p.avisoReembolsoAdminEnviadoEn IS NULL "
-                        + "AND p.avisoReembolsoAdminIntentos < :max "
-                        + "AND (p.avisoReembolsoAdminEn IS NULL OR p.avisoReembolsoAdminEn < :vence) ORDER BY p.id", Long.class)
+                        + "AND p.avisoReembolsoResumenPendiente = false AND p.avisoReembolsoAdminIntentos < :max "
+                        + "AND p.avisoReembolsoAdminEn IS NOT NULL AND p.avisoReembolsoAdminEn < :vence ORDER BY p.id", Long.class)
                 .setParameter("estado", Constants.PAGO_REEMBOLSO_PENDIENTE)
                 .setParameter("max", maxIntentos)
                 .setParameter("vence", venceLease())
-                .setMaxResults(50)
+                .setMaxResults(Math.max(1, lote))
                 .getResultList());
         } catch (RuntimeException e) {
             log.error("[ALERTA-PAGO] Barrido de avisos de reembolso falló: error={}", e.getClass().getSimpleName());
             return 0;
         }
         int enviados = 0;
-        for (Long id : ids) if (avisar(id)) enviados++;
+        int procesados = 0;
+        for (Long id : ids) {
+            if (System.nanoTime() >= limite) {
+                log.warn("[pago] Barrido de avisos de reembolso cortado por tiempo: procesados={} pendientes={}",
+                    procesados, ids.size() - procesados);
+                break;
+            }
+            procesados++;
+            if (avisar(id)) enviados++;
+        }
         if (!ids.isEmpty()) log.info("[pago] Barrido de avisos de reembolso: candidatos={} enviados={}", ids.size(), enviados);
         return enviados;
+    }
+
+    /**
+     * Punto 4 de #477 (decisión del Mentor): los REEMBOLSO_PENDIENTE anteriores a V217 que nunca se avisaron van en
+     * UN correo resumen (id, monto, fecha). Solo si sale se marcan todos como avisados; si falla o falta
+     * adminit.email quedan pendientes para el próximo barrido. Devuelve true si se envió. Nunca lanza.
+     */
+    public boolean enviarResumenViejos() {
+        List<Object[]> filas;
+        try {
+            TransactionTemplate tx = new TransactionTemplate(txManager);
+            tx.setReadOnly(true);
+            filas = tx.execute(st -> em.createQuery(
+                    "SELECT p.id, p.monto, p.moneda, p.fechaCreacion FROM Pago p WHERE p.avisoReembolsoResumenPendiente = true "
+                        + "AND p.estadoPago = :estado AND p.avisoReembolsoAdminEnviadoEn IS NULL ORDER BY p.id", Object[].class)
+                .setParameter("estado", Constants.PAGO_REEMBOLSO_PENDIENTE)
+                .getResultList());
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] No se pudieron leer los reembolsos pendientes viejos: error={}", e.getClass().getSimpleName());
+            return false;
+        }
+        if (filas == null || filas.isEmpty()) return false;
+        List<com.hotclick.service.email.ReembolsoPendienteResumenItem> items = new java.util.ArrayList<>();
+        List<Long> ids = new java.util.ArrayList<>();
+        for (Object[] f : filas) {
+            ids.add((Long) f[0]);
+            items.add(new com.hotclick.service.email.ReembolsoPendienteResumenItem(
+                (Long) f[0], (Integer) f[1], (String) f[2], (LocalDateTime) f[3]));
+        }
+        try {
+            notificacionEmailService.enviarResumenReembolsosPendientesAAdminIT(items, linkAdmin());
+        } catch (com.hotclick.service.email.AdminItSinCorreoException e) {
+            log.error("[ALERTA-PAGO] Resumen de reembolsos pendientes viejos sin destinatario (adminit.email vacío); "
+                + "no se marcan avisados: pagos={}", ids.size());
+            return false;
+        } catch (RuntimeException e) {
+            Throwable causa = e.getCause() != null ? e.getCause() : e;
+            log.error("[ALERTA-PAGO] Falló el resumen de reembolsos pendientes viejos; se reintenta en el próximo barrido: pagos={} error={}",
+                ids.size(), causa.getClass().getSimpleName());
+            return false;
+        }
+        try {
+            LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+            TransactionTemplate tx = new TransactionTemplate(txManager);
+            tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            tx.execute(st -> em.createQuery(
+                    "UPDATE Pago p SET p.avisoReembolsoResumenPendiente = false, p.avisoReembolsoAdminEn = :ahora, "
+                        + "p.avisoReembolsoAdminEnviadoEn = :ahora WHERE p.id IN :ids")
+                .setParameter("ahora", ahora)
+                .setParameter("ids", ids)
+                .executeUpdate());
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] Resumen enviado pero sin marcar en BD (puede repetirse): pagos={} error={}",
+                ids.size(), e.getClass().getSimpleName());
+        }
+        log.info("[pago] Resumen de reembolsos pendientes viejos enviado al admin: pagos={}", ids.size());
+        return true;
     }
 
     /**
@@ -169,6 +252,7 @@ public class AvisoReembolsoPendienteService {
                     + "p.avisoReembolsoAdminIntentos = p.avisoReembolsoAdminIntentos + 1 WHERE p.id = :id "
                     + "AND (p.avisoReembolsoAdminEn IS NULL OR p.avisoReembolsoAdminEn < :vence) "
                     + "AND p.avisoReembolsoAdminEnviadoEn IS NULL AND p.avisoReembolsoAdminIntentos < :max "
+                    + "AND p.avisoReembolsoResumenPendiente = false "
                     + "AND p.estadoPago = :estado")
             .setParameter("ahora", LocalDateTime.now(Constants.ZONA_CR))
             .setParameter("vence", venceLease())
@@ -191,6 +275,27 @@ public class AvisoReembolsoPendienteService {
                 .executeUpdate());
         } catch (RuntimeException e) {
             log.error("[ALERTA-PAGO] Aviso enviado pero sin confirmar en BD: pagoId={} error={}",
+                pagoId, e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Cola llena: deja un claim ya vencido (sin intento) para que el próximo barrido lo tome. El barrido solo mira
+     * pagos con claim, así no avisa REEMBOLSO_PENDIENTE de otros orígenes (SINPE, sobreventa) que no usan este aviso.
+     */
+    public void marcarParaBarrido(Long pagoId) {
+        try {
+            TransactionTemplate tx = new TransactionTemplate(txManager);
+            tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            tx.execute(st -> em.createQuery(
+                    "UPDATE Pago p SET p.avisoReembolsoAdminEn = :vencido WHERE p.id = :id AND p.avisoReembolsoAdminEn IS NULL "
+                        + "AND p.estadoPago = :estado")
+                .setParameter("vencido", venceLease().minusMinutes(1))
+                .setParameter("id", pagoId)
+                .setParameter("estado", Constants.PAGO_REEMBOLSO_PENDIENTE)
+                .executeUpdate());
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] Aviso descartado y sin marca para el barrido: pagoId={} error={}",
                 pagoId, e.getClass().getSimpleName());
         }
     }

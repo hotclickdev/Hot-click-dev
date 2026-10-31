@@ -54,4 +54,27 @@ class AvisoReembolsoPendienteCorreoTest {
             "admin@hotclick.test", 1L, "REEMBOLSO_PENDIENTE", "https://hotclick.lat/plataforma/dinero/cobros"))
             .isInstanceOf(RuntimeException.class);
     }
+
+    @Test
+    @DisplayName("Punto 4 #477: el resumen de pagos viejos lleva id, monto y fecha; sin correo, teléfono ni nombre del cliente")
+    void resumenSinPii() {
+        sender.enviarResumenReembolsosPendientesAdmin("admin@hotclick.test", java.util.List.of(
+                new ReembolsoPendienteResumenItem(11L, 10000, "CRC", java.time.LocalDateTime.of(2026, 10, 1, 9, 30)),
+                new ReembolsoPendienteResumenItem(12L, 2500, "USD", java.time.LocalDateTime.of(2026, 10, 2, 18, 5))),
+            "https://hotclick.lat/plataforma/dinero/cobros");
+
+        ArgumentCaptor<String> asunto = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
+        verify(resendEmailService).send(eq("admin@hotclick.test"), asunto.capture(), html.capture());
+        String todo = asunto.getValue() + "\n" + html.getValue();
+
+        assertThat(asunto.getValue()).contains("2 cobros");
+        assertThat(html.getValue()).contains("#11").contains("10000 CRC").contains("2026-10-01 09:30")
+            .contains("#12").contains("2500 USD").contains("2026-10-02 18:05")
+            .contains("https://hotclick.lat/plataforma/dinero/cobros");
+        assertThat(html.getValue()).doesNotContainPattern("[\\w.+-]+@[\\w-]+\\.[\\w.]+");
+        assertThat(todo).doesNotContainPattern("\\b\\d{4}-\\d{4}\\b")
+            .doesNotContainIgnoringCase("cliente:").doesNotContainIgnoringCase("tel")
+            .doesNotContainIgnoringCase("nombre").doesNotContainIgnoringCase("cédula");
+    }
 }

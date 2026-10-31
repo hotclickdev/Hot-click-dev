@@ -92,6 +92,12 @@ public class Pago extends BaseEntity {
     @Column(name = "aviso_reembolso_admin_intentos", nullable = false)
     private int avisoReembolsoAdminIntentos = 0;
 
+    /** V217: REEMBOLSO_PENDIENTE previo a V217 sin avisar; va en el correo resumen del primer barrido. */
+    @Column(name = "aviso_reembolso_resumen_pendiente", nullable = false)
+    private boolean avisoReembolsoResumenPendiente = false;
+
+    public boolean isAvisoReembolsoResumenPendiente() { return avisoReembolsoResumenPendiente; }
+    public void setAvisoReembolsoResumenPendiente(boolean v) { this.avisoReembolsoResumenPendiente = v; }
     public LocalDateTime getAvisoReembolsoAdminEnviadoEn() { return avisoReembolsoAdminEnviadoEn; }
     public void setAvisoReembolsoAdminEnviadoEn(LocalDateTime v) { this.avisoReembolsoAdminEnviadoEn = v; }
     public int getAvisoReembolsoAdminIntentos() { return avisoReembolsoAdminIntentos; }
