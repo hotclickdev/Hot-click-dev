@@ -30,6 +30,7 @@ import static org.mockito.Mockito.*;
 class CompraPagadaEventTest {
 
     @Mock private PedidoRepository pedidoRepository;
+    @Mock private com.hotclick.repository.PagoRepository pagoRepository;
     @Mock private CuponService cuponService;
     @Mock private GiftCardService giftCardService;
     @Mock private StockReservationService stockReservationService;
