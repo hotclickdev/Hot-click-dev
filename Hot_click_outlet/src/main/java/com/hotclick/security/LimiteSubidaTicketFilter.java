@@ -14,7 +14,9 @@ import java.io.IOException;
 /**
  * Seguridad (BAJO 3): {@code POST /api/soporte/tickets/fotos} acepta hasta 10 MB, pero el multipart global es 30 MB.
  * Rechaza por Content-Length antes de que Tomcat lea y guarde el cuerpo; el resto de subidas no cambia.
- * Sin Content-Length (chunked) sigue el tope global de 30 MB y el validador de 10 MB.
+ * Cuerpo de largo desconocido (Transfer-Encoding chunked, o HTTP/2 sin Content-Length) también da 413: Tomcat parsea el multipart leyendo su propio
+ * stream interno (no el de un wrapper), así que un contador sobre getInputStream no cortaría nada, y
+ * max-request-size es global al servlet. Los navegadores siempre mandan Content-Length en un FormData.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 5)
@@ -44,6 +46,11 @@ public class LimiteSubidaTicketFilter extends OncePerRequestFilter {
     }
 
     static long largo(HttpServletRequest req) {
+        String te = req.getHeader("Transfer-Encoding");
+        if (te != null && !te.isBlank() && !"identity".equalsIgnoreCase(te.trim())) return Long.MAX_VALUE;
+        // HTTP/2 puede mandar cuerpo sin Content-Length; en HTTP/1.1 sin CL ni TE el cuerpo es vacío.
+        boolean sinLargo = req.getHeader("Content-Length") == null && req.getContentLengthLong() < 0;
+        if (sinLargo && req.getProtocol() != null && req.getProtocol().startsWith("HTTP/2")) return Long.MAX_VALUE;
         long l = req.getContentLengthLong();
         String h = req.getHeader("Content-Length");
         if (h != null) {
