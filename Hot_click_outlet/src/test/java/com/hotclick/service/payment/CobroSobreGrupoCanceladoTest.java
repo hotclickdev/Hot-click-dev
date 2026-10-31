@@ -64,6 +64,7 @@ class CobroSobreGrupoCanceladoTest {
     @Mock private TilopayService tilopayService;
     @Mock private TilopayPaymentProviderAccess providerAccess;
     @Mock private PaymentService paymentService;
+    @Mock private AvisoReembolsoPendienteService avisoReembolso;
 
     @InjectMocks private PaymentOrderConfirmationService confirmacion;
     @InjectMocks private TilopayConfirmacionService tilopay;
@@ -261,5 +262,20 @@ class CobroSobreGrupoCanceladoTest {
         when(pedidoGrupoService.delGrupo(pedido)).thenAnswer(inv -> List.of(pedido, hermano));
         when(stockReservationService.productosSinStock(any())).thenReturn(List.of());
         return hermano;
+    }
+
+    @Test
+    @DisplayName("Aviso al admin IT: cobro sobre grupo cancelado registra el aviso antes del save, una sola vez")
+    void cobroSobreCancelado_registraAviso() {
+        pago.setProveedor(Constants.PROVEEDOR_STRIPE);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        org.mockito.InOrder orden = org.mockito.Mockito.inOrder(avisoReembolso, pagoRepository);
+
+        confirmacion.confirmarPedido(pago, paymentService, eventPublisher);
+        confirmacion.confirmarPedido(pago, paymentService, eventPublisher);
+
+        orden.verify(avisoReembolso).registrarPendiente(pago);
+        orden.verify(pagoRepository).saveAndFlush(pago);
+        verify(avisoReembolso, times(1)).registrarPendiente(any());
     }
 }

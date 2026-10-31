@@ -61,6 +61,8 @@ public class PaymentOrderConfirmationService {
     @Autowired private PosQrVentaService          posQrVentaService;
     @Autowired private PedidoGrupoService         pedidoGrupoService;
     @Autowired @Lazy private EncargoService       encargoService;
+    /** Aviso individual al admin IT de todo REEMBOLSO_PENDIENTE nuevo (sobreventa y cobro sobre cancelado). */
+    @Autowired(required = false) @Lazy private AvisoReembolsoPendienteService avisoReembolso;
 
     /**
      * M-08: si entre el cobro y la confirmación el stock se agotó (segundo pago sobre la última unidad), el
@@ -172,6 +174,7 @@ public class PaymentOrderConfirmationService {
         pedidoRepository.saveAll(grupo);
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        if (avisoReembolso != null) avisoReembolso.registrarPendiente(pago);
         pagoRepository.save(pago);
         log.error("[ALERTA-PAGO] Cobro sin stock (sobreventa): pago={} pedidos={}; en revisión, reembolso pendiente",
             pago.getId(), numeros);
@@ -230,6 +233,7 @@ public class PaymentOrderConfirmationService {
         }
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        if (avisoReembolso != null) avisoReembolso.registrarPendiente(pago);
         // Escritura inmediata: la marca de reembolso queda en la base antes de la alerta (cola de Admin → Pagos).
         pagoRepository.saveAndFlush(pago);
         log.error("[ALERTA-PAGO] Cobro sobre grupo cancelado: pago={} pedido={}; reembolso pendiente",

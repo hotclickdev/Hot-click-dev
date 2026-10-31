@@ -182,11 +182,30 @@ public class NotificacionNegocioEmailSender {
      * quien llama la registre (el pago ya quedó REEMBOLSO_PENDIENTE antes de este punto).
      */
     public void enviarAvisoReembolsoPendienteAdmin(String correoAdmin, Long pagoId, String estado, String linkAdmin) {
+        enviarAvisoReembolsoPendienteAdmin(correoAdmin, pagoId, estado, linkAdmin, ReembolsoPendienteResumenItem.Origen.ONVO_CANCELADO);
+    }
+
+    /** Aviso individual con asunto y texto según el origen del REEMBOLSO_PENDIENTE. Sin PII. Lanza si falla el envío. */
+    public void enviarAvisoReembolsoPendienteAdmin(String correoAdmin, Long pagoId, String estado, String linkAdmin,
+                                                   ReembolsoPendienteResumenItem.Origen origen) {
         String est = emailLayoutHelper.esc(String.valueOf(estado));
         String link = emailLayoutHelper.esc(String.valueOf(linkAdmin));
+        ReembolsoPendienteResumenItem.Origen o = origen == null ? ReembolsoPendienteResumenItem.Origen.OTRO : origen;
+        String asunto;
+        String texto;
+        switch (o) {
+            case ONVO_CANCELADO -> { asunto = "Cobro sobre pedido cancelado";
+                texto = "ONVO cobró un pedido que ya estaba cancelado. No se reactivó el pedido ni se tocó el stock."; }
+            case SINPE -> { asunto = "Cobro SINPE sobre pedido cancelado";
+                texto = "Se confirmó un cobro SINPE (vía ONVO) de un pedido que ya estaba cancelado. No se reactivó el pedido ni se tocó el stock."; }
+            case SOBREVENTA -> { asunto = "Cobro sin stock (sobreventa)";
+                texto = "Se cobró un pedido sin stock para entregar. El pedido quedó en revisión por sobreventa y no se despacha."; }
+            default -> { asunto = "Cobro sin venta";
+                texto = "Se registró un cobro sin venta asociada (origen no determinable)."; }
+        }
         resendEmailService.send(correoAdmin,
-            "[ALERTA] Cobro sobre pedido cancelado — pago #" + pagoId + " en " + est,
-            "<p>ONVO cobró un pedido que ya estaba cancelado. No se reactivó el pedido ni se tocó el stock.</p>"
+            "[ALERTA] " + asunto + " — pago #" + pagoId + " en " + est,
+            "<p>" + texto + "</p>"
                 + "<ul><li>Pago #" + pagoId + "</li><li>Estado: " + est + "</li></ul>"
                 + "<p>Gestioná el reembolso desde <a href=\"" + link + "\">" + link + "</a>.</p>");
     }

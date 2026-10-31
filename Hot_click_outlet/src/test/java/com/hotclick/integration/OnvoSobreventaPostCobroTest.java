@@ -272,4 +272,20 @@ class OnvoSobreventaPostCobroTest extends BaseIntegrationTest {
         assertThat(tras.getStockActual()).isZero();
         assertThat(tras.getStockReservado()).isZero();
     }
+
+    @Test
+    @DisplayName("Aviso al admin IT: la sobreventa deja la marca de aviso en la misma transacción que el REEMBOLSO_PENDIENTE")
+    void sobreventaDejaMarcaDeAviso() throws Exception {
+        Producto producto = producto(1, 2, false);
+        pedidoConPago(SESION_A, producto, "ORD-M08A");
+        pedidoConPago(SESION_B, producto, "ORD-M08B");
+        webhook(SESION_A, "ok");
+        assertThat(pago(SESION_A).getAvisoReembolsoAdminEn()).isNull();
+
+        webhook(SESION_B, "refund_pending");
+
+        Pago b = pago(SESION_B);
+        assertThat(b.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(b.getAvisoReembolsoAdminEn()).isNotNull();
+    }
 }

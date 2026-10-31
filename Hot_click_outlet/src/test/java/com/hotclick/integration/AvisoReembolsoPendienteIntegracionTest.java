@@ -68,6 +68,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
     @MockitoBean private TilopayService tilopayService;
 
     @Autowired private AvisoReembolsoPendienteService aviso;
+    @Autowired private org.springframework.transaction.PlatformTransactionManager txManager;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private PedidoRepository pedidoRepository;
@@ -199,7 +200,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
 
         assertThat(enBase(pago).getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         verify(notificacionEmailService, ASYNC.times(1)).enviarAvisoReembolsoPendienteAAdminIT(
-            eq(pago.getId()), eq(Constants.PAGO_REEMBOLSO_PENDIENTE), org.mockito.ArgumentMatchers.endsWith("/plataforma/dinero/cobros"));
+            eq(pago.getId()), eq(Constants.PAGO_REEMBOLSO_PENDIENTE), org.mockito.ArgumentMatchers.endsWith("/plataforma/dinero/cobros"), any());
         esperar(() -> enBase(pago).getAvisoReembolsoAdminEnviadoEn() != null, "envío confirmado");
         assertThat(enBase(pago).getAvisoReembolsoAdminEn()).isNotNull();
         assertThat(enBase(pago).getAvisoReembolsoAdminIntentos()).isEqualTo(1);
@@ -218,7 +219,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         assertThat(aviso.barrer()).as("enviado: el barrido no reenvía aunque venza el lease").isZero();
 
         verify(notificacionEmailService, after(300).times(1))
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
         assertThat(enBase(pago).getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
     }
 
@@ -227,7 +228,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
     void webhookNoBloqueadoPorElEnvio() throws Exception {
         java.util.concurrent.CountDownLatch soltar = new java.util.concurrent.CountDownLatch(1);
         org.mockito.Mockito.doAnswer(inv -> { soltar.await(20, java.util.concurrent.TimeUnit.SECONDS); return null; })
-            .when(notificacionEmailService).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .when(notificacionEmailService).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
         Pago pago = pagoSobreCancelado();
         try {
             long t0 = System.nanoTime();
@@ -245,13 +246,13 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
     @DisplayName("Fail-safe: si el envío falla, ONVO recibe 200, el pago sigue REEMBOLSO_PENDIENTE y la marca NO se libera")
     void falloDelEnvioNoRompeElFlujo() throws Exception {
         doThrow(new RuntimeException("smtp caído")).when(notificacionEmailService)
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
         Pago pago = pagoSobreCancelado();
 
         webhook();
 
         verify(notificacionEmailService, ASYNC.times(1))
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
         esperar(() -> enBase(pago).getAvisoReembolsoAdminEn() != null, "claim registrado");
         assertThat(enBase(pago).getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(enBase(pago).getAvisoReembolsoAdminEnviadoEn()).isNull();
@@ -264,12 +265,12 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         doThrow(new com.hotclick.exception.IntegracionExternaException("sendgrid",
                 com.hotclick.exception.IntegracionExternaException.Tipo.IO_ERROR, "x", new java.net.SocketTimeoutException("read")))
             .doNothing().when(notificacionEmailService)
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
         Pago pago = pagoSobreCancelado();
 
         webhook();
         verify(notificacionEmailService, ASYNC.times(1))
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
         esperar(() -> enBase(pago).getAvisoReembolsoAdminEn() != null, "claim registrado");
 
         webhook();
@@ -283,7 +284,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         vencerLease(pago);
         assertThat(aviso.barrer()).isZero();
         verify(notificacionEmailService, after(300).times(2))
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -302,7 +303,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         assertThat(enBase(sinClaim).getAvisoReembolsoAdminEnviadoEn())
             .as("REEMBOLSO_PENDIENTE de SINPE/sobreventa no usa este aviso").isNull();
         assertThat(enBase(vigente).getAvisoReembolsoAdminEnviadoEn()).isNull();
-        verify(notificacionEmailService, never()).enviarAvisoReembolsoPendienteAAdminIT(eq(vigente.getId()), anyString(), anyString());
+        verify(notificacionEmailService, never()).enviarAvisoReembolsoPendienteAAdminIT(eq(vigente.getId()), anyString(), anyString(), any());
     }
 
     @Test
@@ -315,7 +316,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         pagoRepository.saveAndFlush(p);
 
         assertThat(aviso.barrer()).isZero();
-        verify(notificacionEmailService, never()).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+        verify(notificacionEmailService, never()).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -338,7 +339,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
             hilos.shutdownNow();
         }
         verify(notificacionEmailService, times(1))
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -347,7 +348,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         Pago pago = pagoSobreCancelado();
         assertThat(aviso.avisar(pago.getId())).isFalse();
         verify(notificacionEmailService, never())
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
     }
 
     private Pago viejo() {
@@ -376,12 +377,12 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
             assertThat(enBase(p).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
         }
         // Los viejos no reciben aviso individual; el de V217 en adelante sí.
-        verify(notificacionEmailService, times(1)).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
-        verify(notificacionEmailService).enviarAvisoReembolsoPendienteAAdminIT(eq(nuevo.getId()), anyString(), anyString());
+        verify(notificacionEmailService, times(1)).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
+        verify(notificacionEmailService).enviarAvisoReembolsoPendienteAAdminIT(eq(nuevo.getId()), anyString(), anyString(), any());
 
         aviso.barrer();
         verify(notificacionEmailService, times(1)).enviarResumenReembolsosPendientesAAdminIT(any(), anyString());
-        verify(notificacionEmailService, times(1)).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+        verify(notificacionEmailService, times(1)).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
     }
 
     @Test
@@ -409,7 +410,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
     @DisplayName("BAJO 3 #477: sin adminit.email el aviso individual NO se marca enviado")
     void sinAdminItNoMarcaEnviado() {
         doThrow(new com.hotclick.service.email.AdminItSinCorreoException()).when(notificacionEmailService)
-            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
         Pago pago = reembolsoPendiente();
 
         assertThat(aviso.avisar(pago.getId())).isFalse();
@@ -498,7 +499,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
 
         assertThat(resumenesEnviados(1)).extracting(com.hotclick.service.email.ReembolsoPendienteResumenItem::pagoId)
             .containsExactlyInAnyOrder(sinpe.getId(), sobre.getId());
-        verify(notificacionEmailService, never()).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+        verify(notificacionEmailService, never()).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString(), any());
         assertThat(enBase(sinpe).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
         assertThat(enBase(sobre).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
     }
@@ -521,5 +522,117 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         assertThat(resumenesEnviados(2)).extracting(com.hotclick.service.email.ReembolsoPendienteResumenItem::pagoId)
             .containsExactlyInAnyOrder(onvo.getId(), sinpe.getId(), sobre.getId());
         for (Pago p : List.of(onvo, sinpe, sobre)) assertThat(enBase(p).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
+    }
+
+    // ── PR siguiente a #477: aviso individual de todo REEMBOLSO_PENDIENTE nuevo + BAJOs de Seguridad ──
+
+    /** REEMBOLSO_PENDIENTE nuevo (sin marca de resumen ni claim) con el estado que deja cada origen. */
+    private Pago nuevoDe(String origen) {
+        Pago p = enBase(viejoDe(origen));
+        p.setAvisoReembolsoResumenPendiente(false);
+        p.setAvisoReembolsoAdminEn(null);
+        return pagoRepository.saveAndFlush(p);
+    }
+
+    private com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen origenEsperado(String o) {
+        return switch (o) {
+            case "SINPE" -> com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen.SINPE;
+            case "SOBREVENTA" -> com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen.SOBREVENTA;
+            default -> com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen.ONVO_CANCELADO;
+        };
+    }
+
+    /** Corre en una transacción como lo hacen OnvoCapturaService, SinpeOnvoMarketplaceService y PaymentOrderConfirmationService. */
+    private void enTransaccion(java.util.function.Consumer<Pago> paso, Pago p) {
+        new org.springframework.transaction.support.TransactionTemplate(txManager).executeWithoutResult(st -> {
+            Pago gestionado = pagoRepository.findById(p.getId()).orElseThrow();
+            paso.accept(gestionado);
+            pagoRepository.save(gestionado);
+        });
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"ONVO", "SINPE", "SOBREVENTA"})
+    @DisplayName("Todo REEMBOLSO_PENDIENTE nuevo avisa al admin IT una sola vez, con el texto de su origen")
+    void avisoIndividualPorOrigen(String origen) throws Exception {
+        Pago p = nuevoDe(origen);
+
+        enTransaccion(aviso::registrarPendiente, p);
+        enTransaccion(aviso::registrarPendiente, p); // reintento del webhook: dedupe
+
+        verify(notificacionEmailService, ASYNC.times(1)).enviarAvisoReembolsoPendienteAAdminIT(
+            eq(p.getId()), eq(Constants.PAGO_REEMBOLSO_PENDIENTE), anyString(), eq(origenEsperado(origen)));
+        esperar(() -> enBase(p).getAvisoReembolsoAdminEnviadoEn() != null, "envío confirmado");
+        verify(notificacionEmailService, after(500).times(1)).enviarAvisoReembolsoPendienteAAdminIT(
+            eq(p.getId()), anyString(), anyString(), any());
+        assertThat(enBase(p).getAvisoReembolsoAdminIntentos()).isEqualTo(1);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"ONVO", "SINPE", "SOBREVENTA"})
+    @DisplayName("BAJO 1: si el proceso cae antes del despacho, la marca ya está en la base y el barrido lo avisa")
+    void caidaAntesDelDespachoLoTomaElBarrido(String origen) {
+        Pago p = nuevoDe(origen);
+
+        // Solo el commit de la transacción del cambio de estado (sin afterCommit = proceso caído).
+        enTransaccion(aviso::marcarPendienteEnTransaccion, p);
+        assertThat(enBase(p).getAvisoReembolsoAdminEn()).isNotNull();
+        assertThat(enBase(p).getAvisoReembolsoAdminEnviadoEn()).isNull();
+
+        aviso.barrer();
+
+        verify(notificacionEmailService, times(1)).enviarAvisoReembolsoPendienteAAdminIT(
+            eq(p.getId()), eq(Constants.PAGO_REEMBOLSO_PENDIENTE), anyString(), eq(origenEsperado(origen)));
+        assertThat(enBase(p).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("BAJO 2: el resumen respeta el tope de lote y no arranca si el barrido ya no tiene tiempo")
+    void resumenRespetaTopes() {
+        org.springframework.test.util.ReflectionTestUtils.setField(
+            (Object) org.springframework.test.util.AopTestUtils.<Object>getTargetObject(aviso), "resumenLote", 2);
+        try {
+            Pago a = viejo(), b = viejo(), c = viejo();
+
+            assertThat(aviso.enviarResumenViejos(System.nanoTime() - 1)).isFalse();
+            verify(notificacionEmailService, never()).enviarResumenReembolsosPendientesAAdminIT(any(), anyString());
+
+            assertThat(aviso.enviarResumenViejos()).isTrue();
+            assertThat(resumenesEnviados(1)).extracting(com.hotclick.service.email.ReembolsoPendienteResumenItem::pagoId)
+                .containsExactly(a.getId(), b.getId());
+            assertThat(enBase(c).getAvisoReembolsoAdminEnviadoEn()).isNull();
+
+            assertThat(aviso.enviarResumenViejos()).isTrue();
+            assertThat(resumenesEnviados(2)).extracting(com.hotclick.service.email.ReembolsoPendienteResumenItem::pagoId)
+                .containsExactly(c.getId());
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(
+                (Object) org.springframework.test.util.AopTestUtils.<Object>getTargetObject(aviso), "resumenLote", 200);
+        }
+    }
+
+    @Test
+    @DisplayName("BAJO 3: envío OK y marcado fallido → el claim previo evita repetir en el lease; repite acotado por intentos")
+    void resumenEnviadoSinMarcarNoSeRepite() {
+        Pago a = viejo();
+        // Estado exacto que deja "correo salió y el UPDATE de marcado falló": claim vigente + intento, sin enviado_en.
+        assertThat(aviso.reclamarResumen(List.of(a.getId()))).containsExactly(a.getId());
+
+        aviso.barrer();
+        aviso.barrer();
+        verify(notificacionEmailService, never()).enviarResumenReembolsosPendientesAAdminIT(any(), anyString());
+
+        // Al vencer el lease se repite una vez (acotado)...
+        vencerLease(a);
+        aviso.barrer();
+        verify(notificacionEmailService, times(1)).enviarResumenReembolsosPendientesAAdminIT(any(), anyString());
+
+        // ...y con el tope de intentos agotado no se repite más.
+        Pago b = viejo();
+        Pago enBd = enBase(b);
+        enBd.setAvisoReembolsoAdminIntentos(5);
+        pagoRepository.saveAndFlush(enBd);
+        aviso.barrer();
+        verify(notificacionEmailService, times(1)).enviarResumenReembolsosPendientesAAdminIT(any(), anyString());
     }
 }
