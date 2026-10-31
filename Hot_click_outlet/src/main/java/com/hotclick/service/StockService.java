@@ -41,6 +41,11 @@ public class StockService {
 
     // ── Operaciones públicas ─────────────────────────────────────────────────────
 
+    /** Personalizado o bajo pedido: se vende sin stock, no se exige ni se reserva/libera. */
+    static boolean sinControlDeStock(Producto producto) {
+        return Boolean.TRUE.equals(producto.getEsPersonalizado());
+    }
+
     /**
      * Incrementa stockReservado al agregar ítem al carrito.
      * Valida contra stockDisponible = stockActual − stockReservado.
@@ -50,6 +55,9 @@ public class StockService {
         if (cantidad <= 0) {
             throw new IllegalArgumentException("La cantidad tiene que ser 1 o más.");
         }
+        // MED-1 (Auditor 3): personalizado o bajo pedido se vende sin stock (política del mentor, igual que
+        // StockReservationService en el checkout). Carrito de servidor y pedido de invitado no lo exigen ni lo reservan.
+        if (sinControlDeStock(producto)) return;
         int disponible = producto.getStockDisponible();
         if (disponible < cantidad) {
             throw new StockInsuficienteException(producto.getNombreProducto(), disponible, cantidad);
@@ -75,6 +83,7 @@ public class StockService {
      */
     @Transactional
     public void liberarReserva(Producto producto, int cantidad, String referencia, String operadorCorreo) {
+        if (sinControlDeStock(producto)) return; // MED-1: nunca reservó
         int resAntes   = producto.getStockReservado();
         int resDespues = Math.max(0, resAntes - cantidad);
         producto.setStockReservado(resDespues);
