@@ -247,4 +247,10 @@ public class NotificacionEmailService {
         negocioEmailSender.enviarAlertaSobreventaAdmin(adminItEmail, pagoId, numerosPedidos, monto, proveedor);
     }
 
+    /** Aviso sin PII al admin IT: cobro de ONVO sobre un grupo cancelado (pago en REEMBOLSO_PENDIENTE). */
+    public void enviarAvisoReembolsoPendienteAAdminIT(Long pagoId, String estado, String linkAdmin) {
+        if (adminItEmail == null || adminItEmail.isBlank()) return;
+        negocioEmailSender.enviarAvisoReembolsoPendienteAdmin(adminItEmail, pagoId, estado, linkAdmin);
+    }
+
 }
