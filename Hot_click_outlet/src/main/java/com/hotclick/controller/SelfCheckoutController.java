@@ -69,6 +69,10 @@ public class SelfCheckoutController {
             return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (ArithmeticException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Total del pedido fuera de rango"));
         } catch (Exception e) {
             log.error("[self-checkout] Error creando pedido token={}: {}", token, e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Error al procesar el pedido"));

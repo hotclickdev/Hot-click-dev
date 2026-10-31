@@ -89,6 +89,23 @@ public class SelfCheckoutService {
     }
 
     /**
+     * Tope de unidades por línea en un pedido de autoservicio. El cuerpo llega de un cliente
+     * anónimo (solo el token QR de la mesa), así que la cantidad se acota a 1..100: cubre
+     * cualquier pedido real de mesa y evita cantidades negativas (totales/utilidad negativos)
+     * o gigantes (desborde del int de los totales). Cualquier valor fuera de rango → 400.
+     */
+    public static final int MAX_CANTIDAD_POR_LINEA = 100;
+
+    static int cantidadValida(Object raw) {
+        if (!(raw instanceof Integer || raw instanceof Long || raw instanceof Short || raw instanceof Byte))
+            throw new IllegalArgumentException("Cantidad inválida");
+        long c = ((Number) raw).longValue();
+        if (c < 1 || c > MAX_CANTIDAD_POR_LINEA)
+            throw new IllegalArgumentException("Cantidad inválida: debe estar entre 1 y " + MAX_CANTIDAD_POR_LINEA);
+        return (int) c;
+    }
+
+    /**
      * Crea un pedido desde el terminal de autoservicio.
      * No requiere autenticación — el usuarioFinal es el primer usuario activo de la empresa
      * (referencia interna; el cliente real se registra en clienteNombre/clienteTel).
@@ -136,8 +153,10 @@ public class SelfCheckoutService {
         List<PedidoItem> pedidoItems = new ArrayList<>();
 
         for (Map<String, Object> item : items) {
-            Long productoId = ((Number) item.get("productoId")).longValue();
-            int cantidad    = ((Number) item.get("cantidad")).intValue();
+            if (item == null || !(item.get("productoId") instanceof Number pid))
+                throw new IllegalArgumentException("Producto inválido");
+            Long productoId = pid.longValue();
+            int cantidad    = cantidadValida(item.get("cantidad"));
 
             Producto producto = productoRepo.findById(productoId)
                 .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Producto no encontrado", "productoId=" + productoId));
@@ -154,14 +173,14 @@ public class SelfCheckoutService {
             pi.setCantidad(cantidad);
             pi.setPrecioUnitarioMomento(precio);
             pi.setCostoUnitarioMomento(costo);
-            pi.setSubtotalItem(precio * cantidad);
-            pi.setUtilidadItem((precio - costo) * cantidad);
+            pi.setSubtotalItem(Math.multiplyExact(precio, cantidad));
+            pi.setUtilidadItem(Math.multiplyExact(Math.subtractExact(precio, costo), cantidad));
             pi.setDescuentoAplicado(0);
             pi.setEstado(Constants.ESTADO_ACTIVO);
             pedidoItems.add(pi);
 
-            subtotal   += precio * cantidad;
-            costoTotal += costo  * cantidad;
+            subtotal   = Math.addExact(subtotal, Math.multiplyExact(precio, cantidad));
+            costoTotal = Math.addExact(costoTotal, Math.multiplyExact(costo, cantidad));
         }
 
         if (pedidoItems.isEmpty())
@@ -171,7 +190,7 @@ public class SelfCheckoutService {
         pedido.setSubtotal(subtotal);
         pedido.setTotalPedido(subtotal);
         pedido.setCostoTotalProductos(costoTotal);
-        pedido.setUtilidadBruta(subtotal - costoTotal);
+        pedido.setUtilidadBruta(Math.subtractExact(subtotal, costoTotal));
 
         Pedido saved = pedidoRepo.save(pedido);
         evictDashboard(empresa.getId());
