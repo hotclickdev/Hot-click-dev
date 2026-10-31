@@ -173,4 +173,60 @@ class SobreventaResolucionServiceTest {
         verify(pagoRepository, never()).save(any());
         verifyNoInteractions(auditoria);
     }
+
+    // PR #460 (M2): pago compartido que sigue CAPTURADO por los paquetes confirmados.
+    private Pedido confirmadoDelMismoPago() {
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        pago.setMoneda("CRC");
+        pago.setMontoReembolsoPendiente(3000);
+        Pedido confirmado = new Pedido();
+        confirmado.setId(8L);
+        confirmado.setNumeroPedido("HC-SV-8");
+        confirmado.setEstadoPedido(Constants.PEDIDO_PAGADO);
+        when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido, confirmado));
+        return confirmado;
+    }
+
+    @Test
+    @DisplayName("cobro parcial + CANCELAR: el paquete se cancela, el pago sigue CAPTURADO y el parcial sigue pendiente")
+    void cobroParcial_cancelar_noTocaPagoEntero() {
+        Pedido confirmado = confirmadoDelMismoPago();
+
+        service.resolver(7L, "CANCELAR", "sin stock");
+
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
+        assertThat(confirmado.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PAGADO);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        assertThat(pago.getMontoReembolsoPendiente()).isEqualTo(3000);
+        verify(pagoRepository, never()).save(any());
+        verify(auditoria).registrar(eq("SOBREVENTA_CANCELAR"), any(), any(), any(),
+            contains("reembolso parcial pendiente 3000"));
+    }
+
+    @Test
+    @DisplayName("cobro parcial + REEMBOLSO_PROCESADO: el parcial pasa a devuelto, el pago NO queda REEMBOLSADO entero")
+    void cobroParcial_reembolsoProcesado_soloParcial() {
+        Pedido confirmado = confirmadoDelMismoPago();
+
+        service.resolver(7L, "REEMBOLSO_PROCESADO", "transferencia parcial");
+
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        assertThat(pago.getMontoReembolsoPendiente()).isZero();
+        assertThat(pago.getMontoReembolsado()).isEqualTo(3000);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
+        assertThat(confirmado.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PAGADO);
+        verify(pagoRepository).save(pago);
+    }
+
+    @Test
+    @DisplayName("pago CAPTURADO sin parcial pendiente + REEMBOLSO_PROCESADO → 400, nada cambia")
+    void capturadoSinParcial_reembolsoProcesado_400() {
+        confirmadoDelMismoPago();
+        pago.setMontoReembolsoPendiente(0);
+        assertThatThrownBy(() -> service.resolver(7L, "REEMBOLSO_PROCESADO", "x"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage(SobreventaResolucionService.MENSAJE_PAGO_NO_PENDIENTE);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        verify(pagoRepository, never()).save(any());
+    }
 }
