@@ -75,6 +75,12 @@ public class PaymentOrderConfirmationService {
             log.warn("confirmarPedido ignorado — pago {} sin pedido asociado", pago.getId());
             return Resultado.YA_CONFIRMADO;
         }
+        // Reintento sobre un cobro ya marcado para reembolso: antes de cualquier consulta (que vaciaría la
+        // sesión) se lee el estado en la base; el proveedor puede haber puesto la copia en CAPTURADO.
+        String estadoEnBase = pago.getId() == null ? null : pagoRepository.estadoPagoEnBase(pago.getId());
+        if (Constants.PAGO_REEMBOLSO_PENDIENTE.equals(estadoEnBase) || Constants.PAGO_REEMBOLSADO.equals(estadoEnBase)) {
+            return reintentoSobreReembolso(pago, estadoEnBase);
+        }
         List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
 
         // Idempotencia rápida: si el principal ya figura confirmado, el grupo entero ya se procesó.
@@ -135,6 +141,7 @@ public class PaymentOrderConfirmationService {
             // Carrera: el grupo se canceló entre la lectura y el UPDATE condicional (ninguno se reclamó).
             return cobroSobreCancelado(pago, principal);
         }
+        if (algunoReclamado) revisarCanceladosEnCobroParcial(pago, perdidos);
         publicarCompraPagada(principal, eventPublisher);
         return Resultado.CONFIRMADO;
     }
@@ -230,6 +237,30 @@ public class PaymentOrderConfirmationService {
         log.error("[ALERTA-PAGO] Cobro sobre grupo cancelado: pago={} pedido={}; reembolso pendiente",
             pago.getId(), principal.getNumeroPedido());
         paymentNotificationsFacade.onSobreventa(pago, principal.getNumeroPedido());
+        return Resultado.SOBREVENTA;
+    }
+
+    /**
+     * Cancelación parcial concurrente: parte del grupo se confirmó y otro paquete se canceló entre la lectura
+     * y el UPDATE condicional. Esa parte del cobro no tiene venta: el paquete pasa a REVISION_SOBREVENTA y se
+     * alerta a plataforma. El pago sigue CAPTURADO para que se despache lo confirmado.
+     */
+    private void revisarCanceladosEnCobroParcial(Pago pago, List<Long> perdidos) {
+        if (perdidos.isEmpty()) return;
+        int marcados = pedidoRepository.marcarRevisionSiCancelado(perdidos);
+        if (marcados == 0) return;
+        log.error("[ALERTA-PAGO] Cobro parcial con paquete cancelado en paralelo: pago={} paquetes={}; en revisión",
+            pago.getId(), perdidos);
+        paymentNotificationsFacade.onSobreventa(pago, String.valueOf(perdidos));
+    }
+
+    /** El pago ya estaba para reembolso (o reembolsado) en la base: se conserva ese estado y no se re-alerta. */
+    private Resultado reintentoSobreReembolso(Pago pago, String estadoEnBase) {
+        if (!estadoEnBase.equals(pago.getEstadoPago())) {
+            pago.setEstadoPago(estadoEnBase);
+            pagoRepository.saveAndFlush(pago);
+        }
+        log.info("confirmarPedido ignorado — pago {} ya está en {}", pago.getId(), estadoEnBase);
         return Resultado.SOBREVENTA;
     }
 }

@@ -172,4 +172,87 @@ class CobroSobreGrupoCanceladoTest {
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
         verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
     }
+
+    // ── LOWs de Seguridad (post-#459) ────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("reintento Tilopay sobre pago REEMBOLSO_PENDIENTE: no vuelve a CAPTURADO ni re-alerta")
+    void reintentoTilopay_sobreReembolsoPendiente_noRecaptura() {
+        pago.setProveedor(Constants.PROVEEDOR_TILOPAY);
+        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        when(pagoRepository.estadoPagoEnBase(10L)).thenReturn(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        when(pedidoRepository.findByNumeroPedido("ORD-CAN")).thenReturn(Optional.of(pedido));
+        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
+        when(tilopayService.consultarTransaccion("ORD-CAN")).thenReturn(new TilopayService.ConsultaResultado(
+            true, "1", "ok", "AUTH", BigDecimal.valueOf(10000), "CRC", "ORD-CAN", false));
+        when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
+
+        tilopay.confirmar("ORD-CAN", Map.of("code", "1"));
+
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
+        verify(paymentNotificationsFacade, never()).onPedidoConfirmado(any(), any());
+    }
+
+    @Test
+    @DisplayName("proveedor pone la copia en CAPTURADO pero la base dice REEMBOLSADO: se conserva, sin alerta")
+    void copiaCapturada_baseReembolsada_seConserva() {
+        pago.setProveedor(Constants.PROVEEDOR_STRIPE);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        when(pagoRepository.estadoPagoEnBase(10L)).thenReturn(Constants.PAGO_REEMBOLSADO);
+
+        assertThat(confirmacion.confirmarPedido(pago, paymentService, eventPublisher))
+            .isEqualTo(PaymentOrderConfirmationService.Resultado.SOBREVENTA);
+
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
+        verify(pagoRepository).saveAndFlush(pago);
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
+        verify(pedidoGrupoService, never()).delGrupo(any());
+    }
+
+    @Test
+    @DisplayName("cancelación parcial concurrente: un paquete confirma, otro se cancela → revisión + alerta")
+    void cancelacionParcialConcurrente_marcaRevisionYAlerta() {
+        Pedido hermano = hermanoPendiente();
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        when(pedidoRepository.reclamarParaConfirmar(eq(1L), any())).thenReturn(1);
+        when(pedidoRepository.reclamarParaConfirmar(eq(2L), any())).thenReturn(0);
+        when(pedidoRepository.marcarRevisionSiCancelado(List.of(2L))).thenReturn(1);
+
+        assertThat(confirmacion.confirmarPedido(pago, paymentService, eventPublisher))
+            .isEqualTo(PaymentOrderConfirmationService.Resultado.CONFIRMADO);
+
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PAGADO);
+        verify(pedidoRepository).marcarRevisionSiCancelado(List.of(2L));
+        verify(paymentNotificationsFacade, times(1)).onSobreventa(eq(pago), anyString());
+        verify(paymentNotificationsFacade, times(1)).onPedidoConfirmado(eq(pedido), eq(pago));
+        verify(paymentNotificationsFacade, never()).onPedidoConfirmado(eq(hermano), any());
+    }
+
+    @Test
+    @DisplayName("cobro parcial donde el perdido lo confirmó otro proceso: sin revisión ni alerta")
+    void cobroParcial_perdidoPorOtraConfirmacion_sinAlerta() {
+        hermanoPendiente();
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        when(pedidoRepository.reclamarParaConfirmar(eq(1L), any())).thenReturn(1);
+        when(pedidoRepository.reclamarParaConfirmar(eq(2L), any())).thenReturn(0);
+        when(pedidoRepository.marcarRevisionSiCancelado(any())).thenReturn(0);
+
+        assertThat(confirmacion.confirmarPedido(pago, paymentService, eventPublisher))
+            .isEqualTo(PaymentOrderConfirmationService.Resultado.CONFIRMADO);
+        verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
+    }
+
+    private Pedido hermanoPendiente() {
+        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        Pedido hermano = new Pedido();
+        hermano.setId(2L);
+        hermano.setNumeroPedido("ORD-HER");
+        hermano.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        hermano.setItems(new ArrayList<>());
+        when(pedidoGrupoService.delGrupo(pedido)).thenAnswer(inv -> List.of(pedido, hermano));
+        when(stockReservationService.productosSinStock(any())).thenReturn(List.of());
+        return hermano;
+    }
 }
