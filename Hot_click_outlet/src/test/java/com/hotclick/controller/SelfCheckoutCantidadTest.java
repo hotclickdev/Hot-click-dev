@@ -84,4 +84,48 @@ class SelfCheckoutCantidadTest {
         assertThat(st).isEqualTo(400);
         verify(pedidos, never()).save(any());
     }
+
+    private int statusItems(Object items) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("items", items);
+        return controller().crearPedido("tok", body).getStatusCode().value();
+    }
+
+    private static Map<String, Object> linea(Object productoId) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("productoId", productoId);
+        m.put("cantidad", 1);
+        return m;
+    }
+
+    @Test
+    @DisplayName("BAJO: máximo 50 líneas por pedido; 51 → 400")
+    void topeDeLineas() {
+        assertThat(statusItems(java.util.Collections.nCopies(50, linea(3L))))
+            .isEqualTo(200);
+        clearInvocations(pedidos);
+        assertThat(statusItems(java.util.Collections.nCopies(51, linea(3L)))).isEqualTo(400);
+        verify(pedidos, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("BAJO: ítem que no es objeto, items que no es lista o productoId decimal → 400 (no 500)")
+    void formasInvalidas400() {
+        assertThat(statusItems(List.of("x"))).isEqualTo(400);
+        assertThat(statusItems(List.of(7))).isEqualTo(400);
+        assertThat(statusItems(java.util.Arrays.asList((Object) null))).isEqualTo(400);
+        assertThat(statusItems("x")).isEqualTo(400);
+        assertThat(statusItems(List.of(linea(3.0)))).isEqualTo(400);
+        assertThat(statusItems(List.of(linea(3.7)))).isEqualTo(400);
+        assertThat(statusItems(List.of(linea("3")))).isEqualTo(400);
+        verify(pedidos, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("BAJO: el token QR se enmascara en el log del 500")
+    void tokenEnmascarado() {
+        assertThat(SelfCheckoutController.tokenEnmascarado("abcdef123456")).isEqualTo("****3456").doesNotContain("abcdef");
+        assertThat(SelfCheckoutController.tokenEnmascarado("abc")).isEqualTo("****");
+        assertThat(SelfCheckoutController.tokenEnmascarado(null)).isEqualTo("****");
+    }
 }

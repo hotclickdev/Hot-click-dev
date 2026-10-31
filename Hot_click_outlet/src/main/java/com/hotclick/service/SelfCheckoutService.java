@@ -96,13 +96,25 @@ public class SelfCheckoutService {
      */
     public static final int MAX_CANTIDAD_POR_LINEA = 100;
 
+    /**
+     * Tope de líneas (productos distintos) por pedido de autoservicio. Un pedido real de mesa
+     * no pasa de unas pocas decenas; 50 frena cuerpos anónimos enormes (N consultas a BD por
+     * línea). Más líneas → 400.
+     */
+    public static final int MAX_LINEAS_POR_PEDIDO = 50;
+
+    /** Entero JSON (Integer/Long/Short/Byte); decimales, texto o null → null. */
+    private static Long enteroJson(Object raw) {
+        return (raw instanceof Integer || raw instanceof Long || raw instanceof Short || raw instanceof Byte)
+            ? ((Number) raw).longValue() : null;
+    }
+
     static int cantidadValida(Object raw) {
-        if (!(raw instanceof Integer || raw instanceof Long || raw instanceof Short || raw instanceof Byte))
-            throw new IllegalArgumentException("Cantidad inválida");
-        long c = ((Number) raw).longValue();
+        Long c = enteroJson(raw);
+        if (c == null) throw new IllegalArgumentException("Cantidad inválida");
         if (c < 1 || c > MAX_CANTIDAD_POR_LINEA)
             throw new IllegalArgumentException("Cantidad inválida: debe estar entre 1 y " + MAX_CANTIDAD_POR_LINEA);
-        return (int) c;
+        return c.intValue();
     }
 
     /**
@@ -152,10 +164,15 @@ public class SelfCheckoutService {
         int subtotal = 0, costoTotal = 0;
         List<PedidoItem> pedidoItems = new ArrayList<>();
 
-        for (Map<String, Object> item : items) {
-            if (item == null || !(item.get("productoId") instanceof Number pid))
+        if (items.size() > MAX_LINEAS_POR_PEDIDO)
+            throw new IllegalArgumentException("El pedido admite máximo " + MAX_LINEAS_POR_PEDIDO + " productos");
+        for (Object raw : items) {
+            if (!(raw instanceof Map<?, ?> rawItem))
                 throw new IllegalArgumentException("Producto inválido");
-            Long productoId = pid.longValue();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> item = (Map<String, Object>) rawItem;
+            Long productoId = enteroJson(item.get("productoId"));
+            if (productoId == null) throw new IllegalArgumentException("Producto inválido");
             int cantidad    = cantidadValida(item.get("cantidad"));
 
             Producto producto = productoRepo.findById(productoId)

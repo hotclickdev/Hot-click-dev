@@ -56,10 +56,12 @@ public class SelfCheckoutController {
             String clienteNombre = (String) body.get("clienteNombre");
             String clienteTel    = (String) body.get("clienteTel");
             String notas         = (String) body.get("notas");
+            if (!(body.get("items") instanceof List<?> rawItems) || rawItems.isEmpty())
+                return ResponseEntity.badRequest().body(Map.of("error", "El pedido debe tener al menos un producto"));
             @SuppressWarnings("unchecked")
-            List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
+            List<Map<String, Object>> items = (List<Map<String, Object>>) rawItems;
 
-            if (items == null || items.isEmpty())
+            if (items.isEmpty())
                 return ResponseEntity.badRequest().body(Map.of("error", "El pedido debe tener al menos un producto"));
 
             Map<String, Object> result = selfCheckoutService.crearPedido(
@@ -74,8 +76,14 @@ public class SelfCheckoutController {
         } catch (ArithmeticException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Total del pedido fuera de rango"));
         } catch (Exception e) {
-            log.error("[self-checkout] Error creando pedido token={}: {}", token, e.getMessage(), e);
+            log.error("[self-checkout] Error creando pedido token={}: {}", tokenEnmascarado(token), e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Error al procesar el pedido"));
         }
+    }
+
+    /** El token QR es la única credencial de la mesa: en logs solo sus últimos 4 caracteres. */
+    static String tokenEnmascarado(String token) {
+        if (token == null || token.length() <= 4) return "****";
+        return "****" + token.substring(token.length() - 4);
     }
 }
