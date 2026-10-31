@@ -56,7 +56,7 @@ export default function AdminEquipo() {
     const e: Record<string, string> = {}
     if (!form.nombre.trim()) e.nombre = 'Nombre requerido'
     if (!isValidEmail(form.correo)) e.correo = 'Correo inválido'
-    if (form.password.length < 6) e.password = 'Mínimo 6 caracteres'
+    if (form.password.length < 8) e.password = 'Mínimo 8 caracteres'
     return e
   }
 
