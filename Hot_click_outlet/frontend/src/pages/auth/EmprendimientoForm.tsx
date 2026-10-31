@@ -6,6 +6,7 @@ import { authService } from '@/services/authService'
 import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import { mensajeErrorAuth } from './authHelpers'
+import { cumplePoliticaContrasena, MENSAJE_POLITICA_CONTRASENA } from '@/utils/politicaContrasena'
 import EmprendimientoHeader from './emprendimiento/EmprendimientoHeader'
 import EmprendimientoProgreso from './emprendimiento/EmprendimientoProgreso'
 import EmprendimientoPasoNegocio from './emprendimiento/EmprendimientoPasoNegocio'
@@ -70,7 +71,7 @@ export default function EmprendimientoForm({ onVolver }: { onVolver: () => void 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault(); setError('')
     if (!form.correoAdmin.trim()) { setError('El correo es requerido'); return }
-    if (form.passwordAdmin.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
+    if (!cumplePoliticaContrasena(form.passwordAdmin)) { setError(MENSAJE_POLITICA_CONTRASENA); return }
     if (!aceptaTerminos || !declaraMayoriaEdad) { setError('Debe aceptar los términos y declarar que es mayor de 18 años'); return }
     setLoading(true)
     authService.registrarConsentimiento('REGISTRO')

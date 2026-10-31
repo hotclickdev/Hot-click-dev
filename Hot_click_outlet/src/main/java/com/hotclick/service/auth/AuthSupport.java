@@ -173,6 +173,32 @@ public class AuthSupport {
 
     /** Minimum 8 chars, at least one uppercase letter and one digit. */
     public boolean esContrasenaValida(String pwd) {
+        return cumplePoliticaContrasena(pwd);
+    }
+
+    /** Mensaje único de la política de {@link #esContrasenaValida}. */
+    public static final String MENSAJE_POLITICA_CONTRASENA =
+            "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
+
+    /**
+     * Qué le falta a la contraseña para cumplir la política, en voseo
+     * (p. ej. "Te falta una mayúscula", "Te falta una mayúscula y un número").
+     * Devuelve null si cumple.
+     */
+    public static String faltantePoliticaContrasena(String pwd) {
+        String p = pwd == null ? "" : pwd;
+        java.util.List<String> faltan = new java.util.ArrayList<>();
+        if (p.length() < 8) faltan.add("llegar a 8 caracteres");
+        if (p.chars().noneMatch(Character::isUpperCase)) faltan.add("una mayúscula");
+        if (p.chars().noneMatch(Character::isDigit)) faltan.add("un número");
+        if (faltan.isEmpty()) return null;
+        String lista = faltan.size() == 1 ? faltan.get(0)
+                : String.join(", ", faltan.subList(0, faltan.size() - 1)) + " y " + faltan.get(faltan.size() - 1);
+        return "Te falta " + lista;
+    }
+
+    /** Versión estática de {@link #esContrasenaValida} para altas fuera del flujo de auth. */
+    public static boolean cumplePoliticaContrasena(String pwd) {
         if (pwd == null || pwd.length() < 8) return false;
         boolean hasUpper = false, hasDigit = false;
         for (char c : pwd.toCharArray()) {
@@ -188,10 +214,11 @@ public class AuthSupport {
 
     /**
      * Política de la nueva contraseña al recuperarla (Figma "Recuperar contraseña · 3 nueva"):
-     * entre 8 y 128 caracteres y distinta del correo. Es la misma regla de largo que el registro.
+     * misma política que el registro (8+, una mayúscula y un número), hasta 128 caracteres
+     * y distinta del correo.
      */
     public static boolean esContrasenaRecuperacionValida(String pwd, String correo) {
-        if (pwd == null || pwd.length() < CONTRASENA_MIN || pwd.length() > CONTRASENA_MAX) return false;
+        if (pwd == null || pwd.length() > CONTRASENA_MAX || !cumplePoliticaContrasena(pwd)) return false;
         return correo == null || !pwd.trim().equalsIgnoreCase(correo.trim());
     }
 

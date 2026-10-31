@@ -18,7 +18,7 @@ class AuthVerificationMensajeTest {
     @org.mockito.InjectMocks AuthVerificationHandler handler;
 
     @Test
-    @DisplayName("contraseña '123' → 400 con mensaje de largo, sin llegar al INSERT")
+    @DisplayName("contraseña '123' → 400 diciendo qué falta, sin llegar al INSERT")
     void contrasenaCorta() {
         org.mockito.Mockito.when(turnstileService.verify(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
         com.hotclick.model.Usuario u = new com.hotclick.model.Usuario();
@@ -26,7 +26,7 @@ class AuthVerificationMensajeTest {
         u.setContrasenaHash("123");
         var res = handler.sendVerification(u, null, new org.springframework.mock.web.MockHttpServletRequest());
         assertThat(res.getStatusCode().value()).isEqualTo(400);
-        assertThat(res.getBody().getMessage()).isEqualTo(AuthVerificationHandler.MSG_CONTRASENA);
+        assertThat(res.getBody().getMessage()).isEqualTo("Te falta llegar a 8 caracteres y una mayúscula");
         org.mockito.Mockito.verifyNoInteractions(emailVerificationService);
     }
 
