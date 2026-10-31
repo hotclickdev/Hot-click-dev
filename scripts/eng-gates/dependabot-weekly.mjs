@@ -65,7 +65,7 @@ export function buildPrComment(row) {
   if (row.safeNote) {
     lines.push(
       'CI del rollup está **verde**. Label `automerge-candidate` (nota segura).',
-      'E6 sigue mandando: **no** se mergea solo. Un humano puede agregar `safe-to-automerge`.',
+      'E6 sigue mandando: **no** se mergea solo. El merge es manual con CI verde + APTO de Seguridad.',
     );
   } else if (row.criticalMajor) {
     lines.push(
