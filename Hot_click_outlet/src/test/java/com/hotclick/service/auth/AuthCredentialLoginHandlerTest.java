@@ -25,6 +25,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -156,6 +162,26 @@ class AuthCredentialLoginHandlerTest {
 
         assertThat(resp.getStatusCode().value()).isEqualTo(200);
         verify(usuarioService).buscarPorCorreo(CORREO);
+    }
+
+    @Test
+    @DisplayName("B2: cuenta bloqueada → 403 y el log no trae el correo en claro")
+    void bloqueadoLogEnmascarado() {
+        Usuario u = usuarioActivo();
+        u.setBloqueadoHasta(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
+        when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
+        Logger logger = (Logger) LoggerFactory.getLogger(AuthCredentialLoginHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            ResponseEntity<?> resp = handler.login(request(), httpRequest);
+            assertThat(resp.getStatusCode().value()).isEqualTo(403);
+        } finally {
+            logger.detachAppender(appender);
+        }
+        assertThat(appender.list).anyMatch(e -> e.getFormattedMessage().contains("Login bloqueado para u***@example.com"));
+        assertThat(appender.list).noneMatch(e -> e.getFormattedMessage().contains(CORREO));
     }
 
     private static void assertCredencialesInvalidas(ResponseEntity<?> resp) {

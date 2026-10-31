@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import com.hotclick.controller.crm.CrmClienteMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -107,7 +108,7 @@ public class AuthCredentialLoginHandler {
         if (usuario.getBloqueadoHasta() == null || !LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
             return null;
         }
-        log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", request.getCorreo(), usuario.getBloqueadoHasta());
+        log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", CrmClienteMapper.enmascararCorreo(request.getCorreo()), usuario.getBloqueadoHasta());
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest));
         return ResponseEntity.status(403).body(ResponseDTO.error(
             "Cuenta temporalmente bloqueada por múltiples intentos fallidos. Revisá tu correo para recuperar el acceso."));
@@ -152,7 +153,7 @@ public class AuthCredentialLoginHandler {
             otpService.enviarOtp(usuario, Constants.OTP_TIPO_REGISTRO);
         } catch (Exception e) {
             log.error("[login] No se pudo reenviar verificación a {}: {}",
-                usuario.getCorreo(), e.getMessage(), e);
+                CrmClienteMapper.enmascararCorreo(usuario.getCorreo()), e.getMessage(), e);
         }
     }
 
