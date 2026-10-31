@@ -76,9 +76,9 @@ public class CrmController {
         if (!cajero) return ResponseEntity.ok(ResponseDTO.success("OK", crmClientesService.buscar(q, empresaId)));
         // CAJERO: mínimo 3 caracteres y correo/teléfono enmascarados (solo identifica al cliente de la venta).
         if (q == null || q.trim().length() < 3) return ResponseEntity.ok(ResponseDTO.success("OK", java.util.List.of()));
-        java.util.List<Map<String, Object>> enmascarados = crmClientesService.buscar(q, empresaId).stream()
-            .map(CrmController::enmascararParaCajero).toList();
-        return ResponseEntity.ok(ResponseDTO.success("OK", enmascarados));
+        // acotado: el servicio ya corta en 20; limit explícito por SCALE1
+        return ResponseEntity.ok(ResponseDTO.success("OK", crmClientesService.buscar(q, empresaId).stream()
+            .limit(20).map(CrmController::enmascararParaCajero).toList()));
     }
 
     static Map<String, Object> enmascararParaCajero(Map<String, Object> c) {
