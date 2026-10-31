@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: No-op (no es PR hotfix/*)
         if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'hotfix/')
-        run: echo "E14 PASS — no es PR hotfix/*. Job presente para no romper auto-merge de ci.yml."
+        run: echo "E14 PASS — no es PR hotfix/*. Job presente para mantener el check E14."
 
       - name: Checkout
         if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'hotfix/')
