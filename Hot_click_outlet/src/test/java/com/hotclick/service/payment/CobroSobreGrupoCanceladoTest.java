@@ -65,6 +65,7 @@ class CobroSobreGrupoCanceladoTest {
     @Mock private TilopayPaymentProviderAccess providerAccess;
     @Mock private PaymentService paymentService;
     @Mock private AvisoReembolsoPendienteService avisoReembolso;
+    @Mock private org.springframework.beans.factory.ObjectProvider<AvisoReembolsoPendienteService> avisoReembolsoProvider;
 
     @InjectMocks private PaymentOrderConfirmationService confirmacion;
     @InjectMocks private TilopayConfirmacionService tilopay;
@@ -84,6 +85,7 @@ class CobroSobreGrupoCanceladoTest {
         pago.setPedido(pedido);
         pago.setMerchantToken("ORD-CAN");
         pago.setMonto(10000);
+        when(avisoReembolsoProvider.getIfAvailable()).thenReturn(avisoReembolso);
         when(pedidoGrupoService.delGrupo(pedido)).thenAnswer(inv -> List.of(pedido));
         // PaymentService real delega en el punto común; acá se cablea igual.
         when(paymentService.confirmarPedido(any())).thenAnswer(
@@ -111,6 +113,26 @@ class CobroSobreGrupoCanceladoTest {
         verify(paymentNotificationsFacade, never()).onPedidoConfirmado(any(), any());
         verify(stockReservationService, never()).confirmAndConsumeStock(any(), any(), any());
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("#479 BAJO 1: sin bean de aviso (provider → null) el fallback onSobreventa sí avisa al admin")
+    void sinBeanDeAviso_fallbackOnSobreventa() {
+        when(avisoReembolsoProvider.getIfAvailable()).thenReturn(null);
+        pago.setProveedor(Constants.PROVEEDOR_TILOPAY);
+        pago.setEstadoPago(Constants.PAGO_PENDIENTE);
+        when(pedidoRepository.findByNumeroPedido("ORD-CAN")).thenReturn(Optional.of(pedido));
+        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
+        when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString())).thenReturn(false);
+        when(tilopayService.consultarTransaccion("ORD-CAN")).thenReturn(new TilopayService.ConsultaResultado(
+            true, "1", "ok", "AUTH", BigDecimal.valueOf(10000), "CRC", "ORD-CAN", false));
+        when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
+
+        tilopay.confirmar("ORD-CAN", Map.of("code", "1"));
+
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        verify(avisoReembolso, never()).registrarPendiente(any());
+        verify(paymentNotificationsFacade, times(1)).onSobreventa(eq(pago), eq("ORD-CAN"));
     }
 
     @Test
