@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -74,15 +75,18 @@ public class SobreventaResolucionService {
             pagoRepository.save(pago);
         }
         List<Pedido> grupo = pedidoGrupoService.delGrupo(pedido);
+        // Una sola escritura por lote (saveAll), sin consultas por pedido.
         StringBuilder numeros = new StringBuilder();
-        for (Pedido p : grupo) {
+        Iterator<Pedido> it = grupo.iterator();
+        while (it.hasNext()) {
+            Pedido p = it.next();
             if (!Constants.PEDIDO_REVISION_SOBREVENTA.equals(p.getEstadoPedido())) continue;
             p.setEstadoPedido(Constants.PEDIDO_CANCELADO);
             if (numeros.length() > 0) numeros.append(',');
             numeros.append(p.getNumeroPedido());
         }
         pedidoRepository.saveAll(grupo);
-        String estadoPago = pagoOpt.map(Pago::getEstadoPago).orElse("sin pago");
+        String estadoPago = pagoOpt.isPresent() ? pagoOpt.get().getEstadoPago() : "sin pago";
         auditoria.registrar("SOBREVENTA_" + accion, "PEDIDO", pedido.getId(), pedido.getEmpresaId(),
             String.format("Pedidos %s: %s → %s · pago %s · motivo: %s", numeros,
                 Constants.PEDIDO_REVISION_SOBREVENTA, Constants.PEDIDO_CANCELADO, estadoPago, motivo));
