@@ -194,6 +194,47 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         webhook();
 
         assertThat(enBase(pago).getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(enBase(pago).getAvisoReembolsoAdminEn()).as("marca liberada para reintento").isNull();
+        verify(notificacionEmailService, times(1))
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Reintento: tras un envío fallido la marca vuelve a NULL y el siguiente intento sí avisa (una vez)")
+    void reintentoTrasFallo() throws Exception {
+        doThrow(new RuntimeException("resend caído")).doNothing().when(notificacionEmailService)
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+        Pago pago = pagoSobreCancelado();
+
+        webhook();
+        assertThat(enBase(pago).getAvisoReembolsoAdminEn()).isNull();
+
+        assertThat(aviso.avisar(pago.getId())).isTrue();
+        assertThat(enBase(pago).getAvisoReembolsoAdminEn()).isNotNull();
+        assertThat(aviso.avisar(pago.getId())).isFalse();
+        verify(notificacionEmailService, times(2))
+            .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Concurrencia: dos claims simultáneos sobre el mismo pago → un solo correo")
+    void dosClaimsSimultaneos() throws Exception {
+        Pago pago = pagoSobreCancelado();
+        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        pagoRepository.saveAndFlush(pago);
+
+        java.util.concurrent.CyclicBarrier barrera = new java.util.concurrent.CyclicBarrier(2);
+        java.util.concurrent.ExecutorService hilos = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            java.util.concurrent.Callable<Boolean> intento = () -> { barrera.await(); return aviso.avisar(pago.getId()); };
+            var f1 = hilos.submit(intento);
+            var f2 = hilos.submit(intento);
+            boolean r1 = f1.get(30, java.util.concurrent.TimeUnit.SECONDS);
+            boolean r2 = f2.get(30, java.util.concurrent.TimeUnit.SECONDS);
+            assertThat(r1 ^ r2).as("exactamente uno gana el claim").isTrue();
+        } finally {
+            hilos.shutdownNow();
+        }
         verify(notificacionEmailService, times(1))
             .enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
     }

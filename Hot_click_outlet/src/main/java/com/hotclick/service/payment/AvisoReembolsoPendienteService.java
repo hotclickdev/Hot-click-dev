@@ -16,6 +16,10 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * MEDIO área 1 (4610d4748): ONVO cobró un grupo ya CANCELADO y el pago quedó REEMBOLSO_PENDIENTE.
@@ -38,6 +42,13 @@ public class AvisoReembolsoPendienteService {
     @PersistenceContext private EntityManager em;
     @Autowired private PlatformTransactionManager txManager;
     @Autowired private NotificacionEmailService notificacionEmailService;
+
+    /** Executor @Async existente (AsyncConfig.taskExecutor): el envío no bloquea sin límite al hilo del webhook. */
+    @Autowired @Qualifier("taskExecutor") private Executor taskExecutor;
+
+    /** Timeout del envío; configurable en application.properties (hotclick.aviso-reembolso.timeout-ms). */
+    @Value("${hotclick.aviso-reembolso.timeout-ms}")
+    private long timeoutMs;
 
     @Value("${app.url:https://hotclick.lat}")
     private String appUrl = "https://hotclick.lat";
@@ -71,14 +82,34 @@ public class AvisoReembolsoPendienteService {
         }
         if (!reclamado) return false;
         try {
-            notificacionEmailService.enviarAvisoReembolsoPendienteAAdminIT(
-                pagoId, Constants.PAGO_REEMBOLSO_PENDIENTE, linkAdmin());
+            String link = linkAdmin();
+            CompletableFuture.runAsync(() -> notificacionEmailService.enviarAvisoReembolsoPendienteAAdminIT(
+                    pagoId, Constants.PAGO_REEMBOLSO_PENDIENTE, link), taskExecutor)
+                .get(timeoutMs, TimeUnit.MILLISECONDS);
             log.info("[pago] Aviso de reembolso pendiente enviado al admin: pagoId={}", pagoId);
             return true;
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            Throwable causa = e instanceof java.util.concurrent.ExecutionException && e.getCause() != null ? e.getCause() : e;
             log.error("[ALERTA-PAGO] Falló el correo al admin por reembolso pendiente: pagoId={} error={}",
-                pagoId, e.getClass().getSimpleName());
+                pagoId, causa.getClass().getSimpleName());
+            liberar(pagoId);
             return false;
+        }
+    }
+
+    /** Si el envío falló o venció el timeout, vuelve la marca a NULL (transacción propia) para que un reintento avise. Nunca lanza. */
+    void liberar(Long pagoId) {
+        try {
+            TransactionTemplate tx = new TransactionTemplate(txManager);
+            tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            tx.execute(st -> em.createQuery(
+                    "UPDATE Pago p SET p.avisoReembolsoAdminEn = NULL WHERE p.id = :id AND p.avisoReembolsoAdminEn IS NOT NULL")
+                .setParameter("id", pagoId)
+                .executeUpdate());
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] No se pudo liberar el aviso de reembolso pendiente: pagoId={} error={}",
+                pagoId, e.getClass().getSimpleName());
         }
     }
 
