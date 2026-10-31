@@ -210,12 +210,34 @@ public class EmpresaAdminService {
         auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_ELIMINAR", "MIEMBRO_EMPRESA", miembroId, id, null);
     }
 
-    private String generarPasswordTemporal() {
-        StringBuilder sb = new StringBuilder(12);
-        for (int i = 0; i < 12; i++) {
-            sb.append(ALFABETO_PASSWORD_TEMPORAL.charAt(RNG.nextInt(ALFABETO_PASSWORD_TEMPORAL.length())));
+    private static final String LETRAS_MAYUSCULAS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    private static final String LETRAS_MINUSCULAS = "abcdefghijkmnpqrstuvwxyz";
+    private static final String DIGITOS_SIN_AMBIGUOS = "23456789";
+    static final int LARGO_PASSWORD_TEMPORAL = 12;
+
+    /**
+     * Clave temporal de 12 caracteres con SecureRandom que siempre cumple
+     * {@link com.hotclick.service.auth.AuthSupport#cumplePoliticaContrasena}: garantiza al menos
+     * una mayúscula, una minúscula y un dígito y mezcla las posiciones (Fisher-Yates).
+     * Nunca se loguea.
+     */
+    static String generarPasswordTemporal() {
+        char[] c = new char[LARGO_PASSWORD_TEMPORAL];
+        c[0] = elegir(LETRAS_MAYUSCULAS);
+        c[1] = elegir(LETRAS_MINUSCULAS);
+        c[2] = elegir(DIGITOS_SIN_AMBIGUOS);
+        for (int i = 3; i < c.length; i++) {
+            c[i] = elegir(ALFABETO_PASSWORD_TEMPORAL);
         }
-        return sb.toString();
+        for (int i = c.length - 1; i > 0; i--) {
+            int j = RNG.nextInt(i + 1);
+            char t = c[i]; c[i] = c[j]; c[j] = t;
+        }
+        return new String(c);
+    }
+
+    private static char elegir(String alfabeto) {
+        return alfabeto.charAt(RNG.nextInt(alfabeto.length()));
     }
 
     /** Lectura con PESSIMISTIC_WRITE (requiere transacción): estado fresco y sin carrera con el job de impago. */
