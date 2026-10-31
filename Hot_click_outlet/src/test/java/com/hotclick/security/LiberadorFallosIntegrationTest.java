@@ -154,4 +154,28 @@ class LiberadorFallosIntegrationTest extends BaseIntegrationTest {
         assertThat(existe(ClavesFallos.claveGlobal(100L))).isTrue();
         assertThat(existe(ClavesFallos.claveIp(100L, "203.0.113.5"))).isTrue();
     }
+
+    @Autowired private io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
+    private double fallosMetrica() {
+        var c = meterRegistry.find(LiberadorFallos.METRICA_FALLOS).counter();
+        return c == null ? 0 : c.count();
+    }
+
+    @Test
+    void limpiezaFallidaSumaLaMetrica() {
+        double antes = fallosMetrica();
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("caida")).when(rateLimiter).liberar(anyString());
+        liberador.liberarGlobal(testUser.getId());
+        assertThat(fallosMetrica()).isEqualTo(antes + 1);
+        liberador.liberarGlobalEIp(testUser.getId(), "203.0.113.9");
+        assertThat(fallosMetrica()).isEqualTo(antes + 2);
+    }
+
+    @Test
+    void limpiezaExitosaNoSumaLaMetrica() {
+        double antes = fallosMetrica();
+        liberador.liberarGlobal(testUser.getId());
+        assertThat(fallosMetrica()).isEqualTo(antes);
+    }
 }

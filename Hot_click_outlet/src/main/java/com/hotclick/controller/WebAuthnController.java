@@ -97,8 +97,9 @@ public class WebAuthnController {
             // Solo cuentas activas reciben token; el catch devuelve el mismo 401 genérico de una huella inválida.
             authSupport.exigirCuentaActiva(usuario);
 
-            // Login completo con llave de seguridad: los tropiezos previos ya no cuentan (igual que un login completo).
-            // Antes de emitir cualquier token: si esto falla, no queda un refresh token huérfano.
+            // Login completo con llave de seguridad: pone en 0 los intentos fallidos (igual que un login completo).
+            // Va antes de emitir tokens: si ese UPDATE falla, el catch responde 401 y no queda refresh token huérfano.
+            // La limpieza de los buckets del rate limit (LiberadorFallos) corre tras el commit y no propaga errores.
             authSupport.autenticacionCompleta(usuario.getId(), httpRequest);
 
             String rol         = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
