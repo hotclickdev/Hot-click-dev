@@ -448,4 +448,78 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
         assertThat(aviso.barrer()).isEqualTo(1);
         assertThat(enBase(pago).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
     }
+
+    /** Pago viejo (pre-V217, sin claim) con el estado que deja cada origen. */
+    private Pago viejoDe(String origen) {
+        Pago p = viejo();
+        switch (origen) {
+            case "SINPE" -> p.setMerchantToken("ONVOPI:pi_" + System.nanoTime());
+            case "SOBREVENTA" -> {
+                Pedido ped = pedidoRepository.findById(p.getPedido().getId()).orElseThrow();
+                ped.setEstadoPedido(Constants.PEDIDO_REVISION_SOBREVENTA);
+                pedidoRepository.saveAndFlush(ped);
+            }
+            case "OTRO" -> p.setProveedor(Constants.PROVEEDOR_TILOPAY);
+            default -> { }
+        }
+        return pagoRepository.saveAndFlush(p);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<com.hotclick.service.email.ReembolsoPendienteResumenItem> resumenesEnviados(int veces) {
+        org.mockito.ArgumentCaptor<List<com.hotclick.service.email.ReembolsoPendienteResumenItem>> c =
+            org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(notificacionEmailService, times(veces)).enviarResumenReembolsosPendientesAAdminIT(c.capture(), anyString());
+        return c.getValue();
+    }
+
+    @Test
+    @DisplayName("Resumen #477: agrupa por origen (ONVO sobre cancelado, SINPE, sobreventa, otro)")
+    void resumenAgrupaPorOrigen() {
+        Pago onvo = viejoDe("ONVO"), sinpe = viejoDe("SINPE"), sobre = viejoDe("SOBREVENTA"), otro = viejoDe("OTRO");
+
+        assertThat(aviso.enviarResumenViejos()).isTrue();
+
+        var porId = new java.util.HashMap<Long, com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen>();
+        resumenesEnviados(1).forEach(i -> porId.put(i.pagoId(), i.origen()));
+        assertThat(porId).containsEntry(onvo.getId(), com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen.ONVO_CANCELADO)
+            .containsEntry(sinpe.getId(), com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen.SINPE)
+            .containsEntry(sobre.getId(), com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen.SOBREVENTA)
+            .containsEntry(otro.getId(), com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen.OTRO)
+            .hasSize(4);
+    }
+
+    @Test
+    @DisplayName("Resumen #477: los viejos de SINPE y sobreventa sin claim siempre entran en el resumen (y no en el barrido individual)")
+    void sinpeYSobreventaViejosEntranEnResumen() {
+        Pago sinpe = viejoDe("SINPE"), sobre = viejoDe("SOBREVENTA");
+
+        aviso.barrer();
+
+        assertThat(resumenesEnviados(1)).extracting(com.hotclick.service.email.ReembolsoPendienteResumenItem::pagoId)
+            .containsExactlyInAnyOrder(sinpe.getId(), sobre.getId());
+        verify(notificacionEmailService, never()).enviarAvisoReembolsoPendienteAAdminIT(anyLong(), anyString(), anyString());
+        assertThat(enBase(sinpe).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
+        assertThat(enBase(sobre).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Resumen #477: si el envío falla ninguno queda marcado y el siguiente barrido vuelve a incluirlos todos")
+    void resumenFallidoSeReincluyeEnteroEnElSiguienteBarrido() {
+        doThrow(new RuntimeException("smtp caído")).doNothing()
+            .when(notificacionEmailService).enviarResumenReembolsosPendientesAAdminIT(any(), anyString());
+        Pago onvo = viejoDe("ONVO"), sinpe = viejoDe("SINPE"), sobre = viejoDe("SOBREVENTA");
+
+        aviso.barrer();
+        for (Pago p : List.of(onvo, sinpe, sobre)) {
+            assertThat(enBase(p).isAvisoReembolsoResumenPendiente()).isTrue();
+            assertThat(enBase(p).getAvisoReembolsoAdminEnviadoEn()).isNull();
+            assertThat(enBase(p).getAvisoReembolsoAdminEn()).isNull();
+        }
+
+        aviso.barrer();
+        assertThat(resumenesEnviados(2)).extracting(com.hotclick.service.email.ReembolsoPendienteResumenItem::pagoId)
+            .containsExactlyInAnyOrder(onvo.getId(), sinpe.getId(), sobre.getId());
+        for (Pago p : List.of(onvo, sinpe, sobre)) assertThat(enBase(p).getAvisoReembolsoAdminEnviadoEn()).isNotNull();
+    }
 }

@@ -194,7 +194,8 @@ public class AvisoReembolsoPendienteService {
             TransactionTemplate tx = new TransactionTemplate(txManager);
             tx.setReadOnly(true);
             filas = tx.execute(st -> em.createQuery(
-                    "SELECT p.id, p.monto, p.moneda, p.fechaCreacion FROM Pago p WHERE p.avisoReembolsoResumenPendiente = true "
+                    "SELECT p.id, p.monto, p.moneda, p.fechaCreacion, p.proveedor, p.metodoPagoTipo, p.merchantToken, ped.estadoPedido "
+                        + "FROM Pago p LEFT JOIN p.pedido ped WHERE p.avisoReembolsoResumenPendiente = true "
                         + "AND p.estadoPago = :estado AND p.avisoReembolsoAdminEnviadoEn IS NULL ORDER BY p.id", Object[].class)
                 .setParameter("estado", Constants.PAGO_REEMBOLSO_PENDIENTE)
                 .getResultList());
@@ -208,7 +209,8 @@ public class AvisoReembolsoPendienteService {
         for (Object[] f : filas) {
             ids.add((Long) f[0]);
             items.add(new com.hotclick.service.email.ReembolsoPendienteResumenItem(
-                (Long) f[0], (Integer) f[1], (String) f[2], (LocalDateTime) f[3]));
+                (Long) f[0], (Integer) f[1], (String) f[2], (LocalDateTime) f[3],
+                origen((String) f[4], (String) f[5], (String) f[6], (String) f[7])));
         }
         try {
             notificacionEmailService.enviarResumenReembolsosPendientesAAdminIT(items, linkAdmin());
@@ -298,6 +300,26 @@ public class AvisoReembolsoPendienteService {
             log.error("[ALERTA-PAGO] Aviso descartado y sin marca para el barrido: pagoId={} error={}",
                 pagoId, e.getClass().getSimpleName());
         }
+    }
+
+    /**
+     * Origen del REEMBOLSO_PENDIENTE según lo que dejó cada camino (no hay columna de origen):
+     * sobreventa = grupo en REVISION_SOBREVENTA (PaymentOrderConfirmationService M-08); SINPE = intent SINPE de ONVO
+     * ({@code ONVOPI:}) o proveedor/método SINPE; ONVO sobre cancelado = proveedor ONVO con pedido CANCELADO
+     * (OnvoCapturaService); el resto (p. ej. otro proveedor sobre grupo cancelado) = OTRO.
+     */
+    static com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen origen(
+            String proveedor, String metodoPagoTipo, String merchantToken, String estadoPedido) {
+        var O = com.hotclick.service.email.ReembolsoPendienteResumenItem.Origen.class;
+        if (Constants.PEDIDO_REVISION_SOBREVENTA.equals(estadoPedido)) return Enum.valueOf(O, "SOBREVENTA");
+        if ((merchantToken != null && merchantToken.startsWith(com.hotclick.service.pos.PosSinpeOnvoService.PREFIJO_ONVO_PI))
+                || Constants.PROVEEDOR_SINPE.equals(proveedor) || Constants.PROVEEDOR_SINPE.equals(metodoPagoTipo)) {
+            return Enum.valueOf(O, "SINPE");
+        }
+        if (Constants.PROVEEDOR_ONVO.equals(proveedor) && Constants.PEDIDO_CANCELADO.equals(estadoPedido)) {
+            return Enum.valueOf(O, "ONVO_CANCELADO");
+        }
+        return Enum.valueOf(O, "OTRO");
     }
 
     private LocalDateTime venceLease() {
