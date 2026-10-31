@@ -21,7 +21,7 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
 
     private Empresa empA, empB;
-    private Usuario editorA, miembroB, adminA2;
+    private Usuario editorA, miembroB, adminA2, duenoA, adminA, lectorA;
     private String tDuenoA, tAdminA, tEditorA, tLectorA, tCajeroA;
 
     @BeforeEach
@@ -29,11 +29,14 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
         empA = empresa("cre-a");
         empB = empresa("cre-b");
         Rol rolEmp = obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5);
-        tDuenoA = token(miembro("cre-dueno@test.cr", "PROPIETARIO", rolEmp, empA), empA);
-        tAdminA = token(miembro("cre-admin@test.cr", "ADMIN", rolEmp, empA), empA);
+        duenoA = miembro("cre-dueno@test.cr", "PROPIETARIO", rolEmp, empA);
+        tDuenoA = token(duenoA, empA);
+        adminA = miembro("cre-admin@test.cr", "ADMIN", rolEmp, empA);
+        tAdminA = token(adminA, empA);
         editorA = miembro("cre-editor@test.cr", "EDITOR", rolEmp, empA);
         tEditorA = token(editorA, empA);
-        tLectorA = token(miembro("cre-lector@test.cr", "LECTOR", rolEmp, empA), empA);
+        lectorA = miembro("cre-lector@test.cr", "LECTOR", rolEmp, empA);
+        tLectorA = token(lectorA, empA);
         tCajeroA = token(miembro("cre-cajero@test.cr", "CAJERO", rolEmp, empA), empA);
         adminA2 = miembro("cre-admin2@test.cr", "ADMIN", rolEmp, empA);
         miembro("cre-dueno-b@test.cr", "PROPIETARIO", rolEmp, empB);
@@ -86,9 +89,8 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
 
     @Test
     void propietarioYAdminAsignanCajero() throws Exception {
-        assertThat(st(aCajero(editorA.getId()), tAdminA)).isEqualTo(200);
-        assertThat(rol(editorA, empA)).isEqualTo("CAJERO");
         assertThat(st(aCajero(editorA.getId()), tDuenoA)).isEqualTo(200);
+        assertThat(rol(editorA, empA)).isEqualTo("CAJERO");
         assertThat(st(invitarCajero("cre-nuevo1@test.cr"), tDuenoA)).isNotEqualTo(403);
         assertThat(st(invitarCajero("cre-nuevo2@test.cr"), tAdminA)).isNotEqualTo(403);
     }
@@ -100,6 +102,29 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
             assertThat(st(invitarCajero("cre-x@test.cr"), t)).isEqualTo(403);
         }
         assertThat(rol(editorA, empA)).isEqualTo("EDITOR");
+    }
+
+    @Test
+    void lowAdminDeEquipoNoConvierteMiembrosExistentesNiSeAutoasigna() throws Exception {
+        assertThat(st(aCajero(editorA.getId()), tAdminA)).isEqualTo(403);
+        assertThat(st(aCajero(lectorA.getId()), tAdminA)).isEqualTo(403);
+        assertThat(st(aCajero(adminA.getId()), tAdminA)).isEqualTo(403);
+        assertThat(rol(editorA, empA)).isEqualTo("EDITOR");
+        assertThat(rol(lectorA, empA)).isEqualTo("LECTOR");
+        assertThat(rol(adminA, empA)).isEqualTo("ADMIN");
+        // el propietario tampoco se pasa a sí mismo a CAJERO
+        assertThat(st(aCajero(duenoA.getId()), tDuenoA)).isEqualTo(403);
+        assertThat(rol(duenoA, empA)).isEqualTo("PROPIETARIO");
+        // el propietario sí convierte a un LECTOR existente
+        assertThat(st(aCajero(lectorA.getId()), tDuenoA)).isEqualTo(200);
+    }
+
+    @Test
+    void lowCajeroLeeBusquedaDeClientesPeroNoCreaNiListaClientes() throws Exception {
+        assertThat(st(get("/api/crm/clientes/buscar").param("q", "ana"), tCajeroA)).isNotEqualTo(403);
+        assertThat(st(post("/api/crm/clientes").contentType(MediaType.APPLICATION_JSON).content("{}"), tCajeroA))
+            .isEqualTo(403);
+        assertThat(st(get("/api/crm/clientes/1"), tCajeroA)).isEqualTo(403);
     }
 
     @Test
