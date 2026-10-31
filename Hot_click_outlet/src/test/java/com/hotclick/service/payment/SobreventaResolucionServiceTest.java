@@ -59,7 +59,9 @@ class SobreventaResolucionServiceTest {
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         when(companyScope.isAdminIT()).thenReturn(true);
         when(companyScope.isImpersonating()).thenReturn(false);
+        when(pedidoRepository.findById(7L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.estadosDe(any())).thenAnswer(inv -> List.of(pedido.getEstadoPedido()));
         when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido));
         when(pedidoGrupoService.pagoDelGrupo(pedido)).thenReturn(Optional.of(pago));
         when(pagoRepository.findByIdForUpdate(70L)).thenReturn(Optional.of(pago));
@@ -140,12 +142,24 @@ class SobreventaResolucionServiceTest {
     }
 
     @Test
-    @DisplayName("lee pedido y pago con lock (FOR UPDATE), no con findById")
+    @DisplayName("bloquea pago y luego pedido (mismo orden que el webhook) y relee el estado ya con lock")
     void leeConLock() {
         service.resolver(7L, "REEMBOLSO_PROCESADO", "transferencia");
-        verify(pedidoRepository).findByIdForUpdate(7L);
-        verify(pedidoRepository, never()).findById(any());
-        verify(pagoRepository).findByIdForUpdate(70L);
+        org.mockito.InOrder orden = org.mockito.Mockito.inOrder(pagoRepository, pedidoRepository);
+        orden.verify(pagoRepository).findByIdForUpdate(70L);
+        orden.verify(pedidoRepository).findByIdForUpdate(7L);
+        orden.verify(pedidoRepository).estadosDe(List.of(7L));
+    }
+
+    @Test
+    @DisplayName("la copia sin lock dice REVISION pero la base ya cambió (otro admin): 400 sin tocar el pago")
+    void estadoReleidoConLock_mandaSobreLaCopia() {
+        when(pedidoRepository.estadosDe(any())).thenReturn(List.of(Constants.PEDIDO_CANCELADO));
+        assertThatThrownBy(() -> service.resolver(7L, "REEMBOLSO_PROCESADO", "transferencia"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage(SobreventaResolucionService.MENSAJE_NO_EN_REVISION);
+        verify(pagoRepository, never()).save(any());
+        verifyNoInteractions(auditoria);
     }
 
     @Test

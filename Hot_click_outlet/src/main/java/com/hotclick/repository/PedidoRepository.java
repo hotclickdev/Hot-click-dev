@@ -31,6 +31,10 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("UPDATE Pedido p SET p.estadoPedido = 'PAGADO' WHERE p.id = :id AND p.estadoPedido NOT IN :yaConfirmados")
     int reclamarParaConfirmar(@Param("id") Long id, @Param("yaConfirmados") Collection<String> yaConfirmados);
 
+    /** Estado actual en la base (no el de la copia en memoria) de los paquetes dados. */
+    @Query("SELECT p.estadoPedido FROM Pedido p WHERE p.id IN :ids")
+    List<String> estadosDe(@Param("ids") Collection<Long> ids);
+
     List<Pedido> findByGrupoPagoOrderByIdAsc(String grupoPago);
 
     List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);
