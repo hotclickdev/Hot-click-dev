@@ -90,4 +90,18 @@ class CajeroRutaNormalizadaTest {
         assertThat(sinCatalogo.preHandle(req("GET", "/api/productos"), new MockHttpServletResponse(),
             new Object())).isTrue();
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/crm/clientes", "/api/soporte/tickets", "/api//crm/clientes;jsessionid=1"})
+    void soloPosPermitePostDeClienteYTicket(String uri) throws Exception {
+        assertThat(soloPos.preHandle(req("POST", uri), new MockHttpServletResponse(), new Object())).as(uri).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"PUT,/api/crm/clientes/5", "PATCH,/api/crm/clientes/5", "DELETE,/api/crm/clientes/5",
+        "POST,/api/crm/clientes/5/puntos", "POST,/api/soporte/tickets/fotos", "GET,/api/soporte/tickets",
+        "POST,/api/soporte/tickets/%2e%2e/../pedidos", "PUT,/api/soporte/tickets"})
+    void soloPosNiegaElRestoDeClientesYTickets(String metodo, String uri) throws Exception {
+        assertThat(soloPos.preHandle(req(metodo, uri), new MockHttpServletResponse(), new Object())).as(uri).isFalse();
+    }
 }

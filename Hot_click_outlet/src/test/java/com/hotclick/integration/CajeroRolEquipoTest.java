@@ -19,10 +19,12 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired private TicketSoporteRepository ticketSoporteRepository;
+    @Autowired private ClienteEmpresaRepository clienteEmpresaRepository;
 
     private Empresa empA, empB;
     private Usuario editorA, miembroB, adminA2, duenoA, adminA, lectorA;
-    private String tDuenoA, tAdminA, tEditorA, tLectorA, tCajeroA;
+    private String tDuenoA, tAdminA, tEditorA, tLectorA, tCajeroA, tCajeroB;
 
     @BeforeEach
     void setUp() {
@@ -41,12 +43,15 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
         adminA2 = miembro("cre-admin2@test.cr", "ADMIN", rolEmp, empA);
         miembro("cre-dueno-b@test.cr", "PROPIETARIO", rolEmp, empB);
         miembroB = miembro("cre-editor-b@test.cr", "EDITOR", rolEmp, empB);
+        tCajeroB = token(miembro("cre-cajero-b@test.cr", "CAJERO", rolEmp, empB), empB);
     }
 
     @AfterEach
     void tearDown() {
+        ticketSoporteRepository.deleteAll();
+        clienteEmpresaRepository.deleteAll();
         miembroEmpresaRepository.deleteAll();
-        usuarioRepository.findAll().forEach(u -> { u.setEmpresa(null); usuarioRepository.save(u); });
+        usuarioRepository.findAll().forEach(u -> { u.setEmpresa(null); u.setEmpresaRegistro(null); usuarioRepository.save(u); });
         empresaRepository.deleteAll();
     }
 
@@ -123,7 +128,7 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
     void lowCajeroLeeBusquedaDeClientesPeroNoCreaNiListaClientes() throws Exception {
         assertThat(st(get("/api/crm/clientes/buscar").param("q", "ana"), tCajeroA)).isNotEqualTo(403);
         assertThat(st(post("/api/crm/clientes").contentType(MediaType.APPLICATION_JSON).content("{}"), tCajeroA))
-            .isEqualTo(403);
+            .isNotEqualTo(403); // POST exacto permitido por decisión del Mentor; {} vacío falla validación
         assertThat(st(get("/api/crm/clientes/1"), tCajeroA)).isEqualTo(403);
     }
 
@@ -153,5 +158,87 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
         assertThat(rol(miembroB, empB)).isEqualTo("EDITOR");
         // CAJERO de A pidiendo datos de B fuera del POS: 403.
         assertThat(st(get("/api/pedidos").param("empresaId", String.valueOf(empB.getId())), tCajeroA)).isEqualTo(403);
+    }
+
+    private com.jayway.jsonpath.DocumentContext json(MockHttpServletRequestBuilder b, String token, int[] status)
+            throws Exception {
+        var r = mockMvc.perform(b.header("Authorization", token)).andReturn().getResponse();
+        status[0] = r.getStatus();
+        return com.jayway.jsonpath.JsonPath.parse(r.getContentAsString());
+    }
+
+    private static MockHttpServletRequestBuilder postJson(String ruta, String body) {
+        return post(ruta).contentType(MediaType.APPLICATION_JSON).content(body);
+    }
+
+    @Test
+    void cajeroCreaClienteYTicketEnSuNegocioAunqueMandeOtraEmpresa() throws Exception {
+        int[] st = new int[1];
+        // en su negocio
+        Long cli = Long.valueOf(json(postJson("/api/crm/clientes", "{\"nombre\":\"Ana Caja\",\"telefono\":\"88880001\"}"),
+            tCajeroA, st).read("$.data.id").toString());
+        assertThat(st[0]).isBetween(200, 201);
+        assertThat(clienteEmpresaRepository.findByEmpresaIdAndUsuarioId(empA.getId(), cli)).isPresent();
+        Long tic = Long.valueOf(json(postJson("/api/soporte/tickets", "{\"titulo\":\"Caja\",\"descripcion\":\"No imprime\"}"),
+            tCajeroA, st).read("$.data.id").toString());
+        assertThat(st[0]).isBetween(200, 201);
+        assertThat(ticketSoporteRepository.findById(tic).orElseThrow().getEmpresa().getId()).isEqualTo(empA.getId());
+
+        // cajero de B mandando la empresa de A en el body: queda en B (la empresa sale del token)
+        String otra = "\"empresaId\":\"" + empA.getId() + "\",\"rol\":\"ADMIN\",\"rolEnEmpresa\":\"PROPIETARIO\",\"estado\":\"0\"";
+        Long cliB = Long.valueOf(json(postJson("/api/crm/clientes", "{\"nombre\":\"Beto\",\"telefono\":\"88880002\"," + otra + "}"),
+            tCajeroB, st).read("$.data.id").toString());
+        assertThat(st[0]).isBetween(200, 201);
+        assertThat(clienteEmpresaRepository.findByEmpresaIdAndUsuarioId(empB.getId(), cliB)).isPresent();
+        assertThat(clienteEmpresaRepository.findByEmpresaIdAndUsuarioId(empA.getId(), cliB)).isEmpty();
+        // rol/rolEnEmpresa/estado del body se ignoran: no queda como miembro de equipo de ningún negocio
+        assertThat(miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(cliB, empB.getId())).isEmpty();
+        assertThat(miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(cliB, empA.getId())).isEmpty();
+        Long ticB = Long.valueOf(json(postJson("/api/soporte/tickets", "{\"titulo\":\"B\",\"descripcion\":\"x\"," + otra + "}"),
+            tCajeroB, st).read("$.data.id").toString());
+        assertThat(st[0]).isBetween(200, 201);
+        assertThat(ticketSoporteRepository.findById(ticB).orElseThrow().getEmpresa().getId()).isEqualTo(empB.getId());
+        // ?empresaId de A tampoco cambia el negocio
+        assertThat(st(postJson("/api/soporte/tickets", "{\"titulo\":\"B2\",\"descripcion\":\"y\"}")
+            .param("empresaId", String.valueOf(empA.getId())), tCajeroB)).isBetween(200, 201);
+        assertThat(ticketSoporteRepository.findByEmpresaIdOrderByFechaCreacionDesc(empA.getId())).hasSize(1);
+    }
+
+    @Test
+    void cajeroNoEditaNiBorraClientesNiVeTickets() throws Exception {
+        int[] st = new int[1];
+        String id = json(postJson("/api/crm/clientes", "{\"nombre\":\"Cora\",\"telefono\":\"88880003\"}"),
+            tDuenoA, st).read("$.data.id").toString();
+        assertThat(st(put("/api/crm/clientes/" + id).contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"X\"}"),
+            tCajeroA)).isEqualTo(403);
+        assertThat(st(patch("/api/crm/clientes/" + id).contentType(MediaType.APPLICATION_JSON).content("{}"),
+            tCajeroA)).isIn(403, 405); // PATCH/DELETE no tienen endpoint: 405 para todos
+        assertThat(st(delete("/api/crm/clientes/" + id), tCajeroA)).isIn(403, 405);
+        assertThat(st(postJson("/api/crm/clientes/" + id + "/puntos", "{\"delta\":5}"), tCajeroA)).isEqualTo(403);
+        // no existe listado GET de tickets para negocios (405 antes del interceptor)
+        assertThat(st(get("/api/soporte/tickets"), tCajeroA)).isIn(403, 404, 405);
+        assertThat(st(get("/api/soporte/tickets/1"), tCajeroA)).isIn(403, 404, 405);
+        assertThat(st(get("/api/admin/soporte/tickets"), tCajeroA)).isEqualTo(403);
+        assertThat(st(get("/api/admin/soporte/tickets").param("empresaId", String.valueOf(empB.getId())), tCajeroA))
+            .isEqualTo(403);
+        assertThat(st(put("/api/admin/soporte/tickets/1").contentType(MediaType.APPLICATION_JSON).content("{}"),
+            tCajeroA)).isEqualTo(403);
+    }
+
+    @Test
+    void cajeroBuscaClientesEnmascaradosYConMinimoDeTresCaracteres() throws Exception {
+        int[] st = new int[1];
+        json(postJson("/api/crm/clientes", "{\"nombre\":\"Zoila Mask\",\"telefono\":\"88123456\",\"correo\":\"zoila.mask@test.cr\"}"),
+            tDuenoA, st);
+        var cajero = json(get("/api/crm/clientes/buscar").param("q", "Zoila"), tCajeroA, st);
+        assertThat(st[0]).isEqualTo(200);
+        String correo = cajero.read("$.data[0].correo"), tel = cajero.read("$.data[0].telefono");
+        assertThat(correo).isNotEqualTo("zoila.mask@test.cr").doesNotContain("zoila.mask");
+        assertThat(tel).isNotEqualTo("88123456");
+        assertThat(json(get("/api/crm/clientes/buscar").param("q", "Zo"), tCajeroA, st).read("$.data.length()", Integer.class))
+            .isZero();
+        // el cajero de otro negocio no lo encuentra
+        assertThat(json(get("/api/crm/clientes/buscar").param("q", "Zoila"), tCajeroB, st).read("$.data.length()", Integer.class))
+            .isZero();
     }
 }
