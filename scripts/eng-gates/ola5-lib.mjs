@@ -634,7 +634,7 @@ export function evaluateHotfixGate({
   gitleaks = 'success',
 }) {
   if (!isHotfix) {
-    return { ok: true, skipped: true, reason: 'No es hotfix/* — PASS no-op (no rompe auto-merge de ci.yml).' };
+    return { ok: true, skipped: true, reason: 'No es hotfix/* — PASS no-op.' };
   }
   if (skip) {
     return { ok: true, skipped: true, reason: `Label ${SKIP_LABELS.hotfix} presente` };

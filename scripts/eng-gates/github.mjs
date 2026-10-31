@@ -76,21 +76,6 @@ export function disableAutoMerge() {
   }
 }
 
-export function enableSquashAutoMerge() {
-  if (!ghAvailable()) return false;
-  try {
-    gh([
-      'pr', 'merge', process.env.PR_NUMBER,
-      '--repo', process.env.GITHUB_REPOSITORY,
-      '--squash', '--auto',
-    ]);
-    return true;
-  } catch (error) {
-    console.warn(`[eng-gates] no se pudo habilitar auto-merge: ${error.message}`);
-    return false;
-  }
-}
-
 export function upsertIssue({ title, marker, body }) {
   const repo = process.env.GITHUB_REPOSITORY;
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;

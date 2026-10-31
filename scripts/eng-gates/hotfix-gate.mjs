@@ -2,8 +2,8 @@
 /**
  * E14 — Stricter hotfix branch gate.
  * Exige Issue ligado con outage/prod-errors (o label) + gitleaks verde.
- * Bloquea labels de auto-merge si falta. No-op fuera de hotfix/* para no
- * romper en silencio el job auto-merge de ci.yml.
+ * Quita labels de auto-merge si falta. No-op (PASS) fuera de hotfix/*.
+ * Desde INF-08 ci.yml ya no tiene job auto-merge: los hotfix se mergean a mano con APTO.
  */
 
 import {
@@ -41,7 +41,7 @@ export function buildHotfixComment(verdict) {
     '- gitleaks verde',
     '',
     'Si falta: se quitan `safe-to-automerge` / `automerge-candidate` y se deshabilita auto-merge.',
-    'Coordina con `ci.yml` job `auto-merge` (hotfix): este check extra debe pasar; no se salta el job en PRs normales (no-op PASS).',
+    'Ya no hay auto-merge de hotfix en `ci.yml` (INF-08): el merge es manual con CI verde + APTO de Seguridad; en PRs normales es no-op PASS.',
   ];
   return lines.join('\n');
 }

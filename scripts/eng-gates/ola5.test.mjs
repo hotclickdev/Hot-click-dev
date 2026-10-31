@@ -309,7 +309,7 @@ pathname.startsWith('/admin/pos')
 });
 
 describe('E14 hotfix gate', () => {
-  it('no-op fuera de hotfix para no romper auto-merge', () => {
+  it('no-op PASS fuera de hotfix/*', () => {
     const v = evaluateHotfixGate({ isHotfix: false, gitleaks: 'failure' });
     assert.equal(v.ok, true);
     assert.equal(v.skipped, true);
