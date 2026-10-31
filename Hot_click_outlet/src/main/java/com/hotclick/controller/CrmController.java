@@ -29,6 +29,7 @@ public class CrmController {
     @Autowired private CompanyScope companyScope;
     @Autowired private CrmAccessGuard crmAccessGuard;
     @Autowired private CrmClientesService crmClientesService;
+    @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
 
     /**
      * SEG-E / P8-03: el módulo CRM (lista, ficha, edición, puntos, WhatsApp) solo con plan que lo incluya.
@@ -68,8 +69,22 @@ public class CrmController {
     @GetMapping("/buscar")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> buscar(@RequestParam String q) {
-        return ResponseEntity.ok(ResponseDTO.success("OK",
-            crmClientesService.buscar(q, companyScope.requireEmpresaIdOrAdmin())));
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin();
+        boolean cajero = propietarioGuard.esCajero(empresaId);
+        // Decisión 16/10 (ratificada en #475): buscar queda abierto en todo plan para el POS; sin sinAccesoCrm.
+        if (!cajero) return ResponseEntity.ok(ResponseDTO.success("OK", crmClientesService.buscar(q, empresaId)));
+        // CAJERO: mínimo 3 caracteres y correo/teléfono enmascarados (solo identifica al cliente de la venta).
+        if (q == null || q.trim().length() < 3) return ResponseEntity.ok(ResponseDTO.success("OK", java.util.List.of()));
+        // acotado: el servicio ya corta en 20; limit explícito por SCALE1
+        return ResponseEntity.ok(ResponseDTO.success("OK", crmClientesService.buscar(q, empresaId).stream()
+            .limit(20).map(CrmController::enmascararParaCajero).toList()));
+    }
+
+    static Map<String, Object> enmascararParaCajero(Map<String, Object> c) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>(c);
+        m.put("correo", com.hotclick.controller.crm.CrmClienteMapper.enmascararCorreo((String) c.get("correo")));
+        m.put("telefono", com.hotclick.controller.crm.CrmClienteMapper.enmascararTelefono((String) c.get("telefono")));
+        return m;
     }
 
     @GetMapping("/{id}")

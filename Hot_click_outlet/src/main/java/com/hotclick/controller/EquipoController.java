@@ -94,7 +94,7 @@ public class EquipoController {
     /** CAJERO: lo invita el PROPIETARIO o el ADMIN de equipo, siempre sobre la empresa del token. */
     private ResponseEntity<ResponseDTO> invitarCajero(Map<String, String> body) {
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
-        if (!companyScope.isEmprendedor() || empresaId == null || !propietarioGuard.puedeAsignarCajero(empresaId)) {
+        if (!companyScope.isEmprendedor() || empresaId == null || !propietarioGuard.puedeAsignarCajero(empresaId, null)) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Solo el propietario o un admin del equipo puede agregar cajeros"));
         }
         ResponseEntity<ResponseDTO> invalido = validarInvitacion(body);
@@ -105,13 +105,13 @@ public class EquipoController {
         return ResponseEntity.ok(ResponseDTO.success("Miembro agregado al equipo como " + CAJERO, null));
     }
 
-    /** Pasar a CAJERO: PROPIETARIO o ADMIN de equipo; el ADMIN no puede degradar a otro ADMIN ni al propietario. */
+    /** Pasar a CAJERO a un miembro existente: solo el PROPIETARIO y nunca sobre sí mismo (ni al propietario/ADMIN). */
     private ResponseEntity<ResponseDTO> asignarCajero(Long id) {
         Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
-        if (!companyScope.isEmprendedor() || empresaId == null || !propietarioGuard.puedeAsignarCajero(empresaId)) {
-            return ResponseEntity.status(403).body(ResponseDTO.error("Solo el propietario o un admin del equipo puede asignar cajeros"));
+        if (!companyScope.isEmprendedor() || empresaId == null || !propietarioGuard.puedeAsignarCajero(empresaId, id)) {
+            return ResponseEntity.status(403).body(ResponseDTO.error("Solo el propietario puede pasar a cajero a un miembro existente"));
         }
-        if (!propietarioGuard.puedeGestionarEmpresa(empresaId) && equipoService.esAdminOPropietario(id, empresaId)) {
+        if (equipoService.esAdminOPropietario(id, empresaId) && !propietarioGuard.puedeGestionarEmpresa(empresaId)) {
             return ResponseEntity.status(403).body(ResponseDTO.error("Un admin del equipo no puede cambiar el rol de otro admin"));
         }
         return ResponseEntity.ok(ResponseDTO.success("Rol actualizado a " + CAJERO,

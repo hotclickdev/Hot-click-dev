@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.List;
@@ -27,8 +26,15 @@ public class CajeroSoloPosInterceptor implements HandlerInterceptor {
     private static final List<String> SIEMPRE = List.of("/api/pos", "/api/pos/**", "/api/cuenta", "/api/cuenta/**",
         "/api/consentimiento", "/api/consentimiento/**");
     private static final List<String> SOLO_LECTURA = List.of("/api/productos", "/api/productos/**",
-        "/api/categorias", "/api/categorias/**", "/api/bodegas", "/api/bodegas/**");
-    private static final AntPathMatcher MATCHER = new AntPathMatcher();
+        "/api/categorias", "/api/categorias/**", "/api/bodegas", "/api/bodegas/**",
+        // ClienteSelector / POSPaymentPanel buscan al cliente de la venta (solo lectura; crear cliente no)
+        "/api/crm/clientes/buscar");
+    /**
+     * Escrituras del POS fuera de /api/pos (decisión del Mentor, #475): alta rápida de cliente de la venta y ticket de
+     * soporte. Solo POST exacto; ambos controllers toman la empresa del token (nunca del body). PUT/PATCH/DELETE de
+     * clientes, fotos de tickets y listados siguen en 403.
+     */
+    private static final List<String> SOLO_POST = List.of("/api/crm/clientes", "/api/soporte/tickets", "/api/soporte/tickets/fotos");
 
     private final PropietarioGuard propietarioGuard;
     private final CompanyScope companyScope;
@@ -46,18 +52,14 @@ public class CajeroSoloPosInterceptor implements HandlerInterceptor {
             throws Exception {
         if ("OPTIONS".equals(req.getMethod())) return true;
         if (!propietarioGuard.esCajero(companyScope.getCurrentEmpresaIdOrOwn())) return true;
-        String ruta = req.getRequestURI().substring(req.getContextPath().length());
-        if (coincide(SIEMPRE, ruta)) return true;
-        if (LECTURAS.contains(req.getMethod()) && coincide(SOLO_LECTURA, ruta)) return true;
+        String ruta = RutaCajero.normalizar(req);
+        if (RutaCajero.coincide(SIEMPRE, ruta)) return true;
+        if (LECTURAS.contains(req.getMethod()) && RutaCajero.coincide(SOLO_LECTURA, ruta)) return true;
+        if ("POST".equals(req.getMethod()) && RutaCajero.coincide(SOLO_POST, ruta)) return true;
         res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         res.setCharacterEncoding("UTF-8");
         objectMapper.writeValue(res.getWriter(), ResponseDTO.error(MSG));
-        return false;
-    }
-
-    private static boolean coincide(List<String> patrones, String ruta) {
-        for (String p : patrones) if (MATCHER.match(p, ruta)) return true;
         return false;
     }
 }

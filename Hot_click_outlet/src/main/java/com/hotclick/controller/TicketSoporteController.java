@@ -24,6 +24,10 @@ public class TicketSoporteController {
 
     private final TicketSoporteService ticketSoporteService;
     private final SupabaseStorageService supabaseStorageService;
+    private static final com.hotclick.service.storage.StorageImageValidator IMAGEN =
+        new com.hotclick.service.storage.StorageImageValidator();
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.hotclick.security.CompanyScope companyScope;
 
     public TicketSoporteController(
             TicketSoporteService ticketSoporteService,
@@ -38,7 +42,14 @@ public class TicketSoporteController {
             return ResponseEntity.badRequest().body(ResponseDTO.error("No se recibió ningún archivo"));
         }
         try {
-            String url = supabaseStorageService.subirImagen(file, "Soporte/Tickets");
+            // #475: tipo (content-type + magic bytes) y tamaño (10 MB) se validan antes de tocar el storage
+            IMAGEN.validarArchivo(file);
+            // aislado por negocio: la carpeta sale del token, nunca del request
+            // tenant-global-ok: empresa nula = comprador sin negocio; se aísla por su propio usuario, nunca global
+            Long empresaId = companyScope.getCurrentEmpresaIdOrOwn();
+            String carpeta = empresaId != null ? "Soporte/Tickets/empresa-" + empresaId
+                : "Soporte/Tickets/usuario-" + companyScope.getCurrentUserId();
+            String url = supabaseStorageService.subirImagen(file, carpeta);
             return ResponseEntity.ok(ResponseDTO.success("Foto subida", Map.of("url", url)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

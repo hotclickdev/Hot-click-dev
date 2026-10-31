@@ -9,6 +9,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -22,6 +23,10 @@ public class CajeroSinCatalogoInterceptor implements HandlerInterceptor {
 
     static final String MSG = "Tu rol de Cajero solo opera el punto de venta; no podés modificar el catálogo.";
     private static final Set<String> LECTURAS = Set.of("GET", "HEAD", "OPTIONS");
+    /** Registrado en /api/** (WebMvcConfig); decide sobre la ruta normalizada para que %2e, ; o // no la esquiven. */
+    static final List<String> CATALOGO = List.of("/api/productos", "/api/productos/**", "/api/stock/**",
+        "/api/categorias", "/api/categorias/**", "/api/inventario/**", "/api/admin/inventario/**",
+        "/api/bodegas", "/api/bodegas/**");
 
     private final PropietarioGuard propietarioGuard;
     private final CompanyScope companyScope;
@@ -38,6 +43,8 @@ public class CajeroSinCatalogoInterceptor implements HandlerInterceptor {
     public boolean preHandle(@NonNull HttpServletRequest req, @NonNull HttpServletResponse res, @NonNull Object handler)
             throws Exception {
         if (LECTURAS.contains(req.getMethod())) return true;
+        String ruta = RutaCajero.normalizar(req);
+        if (ruta != null && !RutaCajero.coincide(CATALOGO, ruta)) return true;
         if (!propietarioGuard.esCajero(companyScope.getCurrentEmpresaIdOrOwn())) return true;
         res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
