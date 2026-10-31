@@ -78,6 +78,13 @@ public class EquipoService {
         return Map.of("rolEnEmpresa", nuevoRol);
     }
 
+    /** true si el miembro activo de esa empresa es ADMIN o PROPIETARIO (si no existe, cambiarRol responde 404). */
+    public boolean esAdminOPropietario(Long usuarioId, Long empresaId) {
+        return miembroEmpresaRepository.findByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1)
+            .map(m -> "ADMIN".equals(m.getRolEnEmpresa()) || "PROPIETARIO".equals(m.getRolEnEmpresa()))
+            .orElse(false);
+    }
+
     public void eliminar(Long usuarioId, Long empresaId, Long currentUserId) {
         if (usuarioId.equals(currentUserId)) {
             throw new IllegalArgumentException("No puedes eliminarte a ti mismo");

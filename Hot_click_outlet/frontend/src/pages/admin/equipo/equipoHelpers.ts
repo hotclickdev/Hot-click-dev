@@ -40,9 +40,14 @@ export const ROL_CONFIG: Record<string, RolEquipoConfig> = {
   ADMIN: { label: 'Admin', color: 'bg-[var(--hc-blue-500)]/15 text-[var(--hc-blue-400)]', desc: 'Acceso completo' },
   EDITOR: { label: 'Editor', color: 'bg-blue-500/15 text-blue-400', desc: 'Edita productos y pedidos' },
   LECTOR: { label: 'Lector', color: 'bg-gray-500/15 text-gray-400', desc: 'Solo lectura' },
+  CAJERO: {
+    label: 'Cajero',
+    color: 'bg-[var(--hc-success-bg)] text-[var(--hc-success-text)]',
+    desc: 'Solo cobra en el punto de venta',
+  },
 }
 
-export const ROLES_ASIGNABLES = ['EDITOR', 'LECTOR']
+export const ROLES_ASIGNABLES = ['EDITOR', 'LECTOR', 'CAJERO']
 
 export const FORMULARIO_EQUIPO_VACIO: FormularioEquipo = {
   nombre: '',
