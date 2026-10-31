@@ -191,10 +191,7 @@ public class PaymentOrderConfirmationService {
      * paquetes (cupón de plataforma) — evita consumir el límite de usos N veces.
      */
     private void marcarCuponUsadoUnaVez(List<Pedido> grupo) {
-        // SCALE1: sale en el primer paquete con cupón; a lo sumo una marca por checkout.
-        java.util.Iterator<Pedido> paquetes = grupo.iterator();
-        while (paquetes.hasNext()) {
-            Pedido pedido = paquetes.next();
+        for (Pedido pedido : grupo) {
             String codigo = pedido.getCuponCodigo();
             if (codigo == null) continue;
             Long empresaId = pedido.getEmpresaId();
