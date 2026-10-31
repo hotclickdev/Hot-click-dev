@@ -77,6 +77,13 @@ public class Pago extends BaseEntity {
     public Integer getMontoReembolsado() { return montoReembolsado; }
     public void setMontoReembolsado(Integer v) { this.montoReembolsado = v; }
 
+    /** V216: cuándo se avisó al admin de un REEMBOLSO_PENDIENTE (dedupe del aviso; NULL = sin avisar). */
+    @Column(name = "aviso_reembolso_admin_en")
+    private LocalDateTime avisoReembolsoAdminEn;
+
+    public LocalDateTime getAvisoReembolsoAdminEn() { return avisoReembolsoAdminEn; }
+    public void setAvisoReembolsoAdminEn(LocalDateTime v) { this.avisoReembolsoAdminEn = v; }
+
     public String getSinpeRefNumber() { return sinpeRefNumber; }
     public LocalDateTime getPlazoInternoSinpe() { return plazoInternoSinpe; }
     public void setPlazoInternoSinpe(LocalDateTime plazoInternoSinpe) { this.plazoInternoSinpe = plazoInternoSinpe; }

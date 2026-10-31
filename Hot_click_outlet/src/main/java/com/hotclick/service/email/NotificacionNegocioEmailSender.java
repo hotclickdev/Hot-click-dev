@@ -177,4 +177,18 @@ public class NotificacionNegocioEmailSender {
         }
     }
 
+    /**
+     * Aviso sin PII: solo id interno del pago, estado y link al admin. Lanza la excepción del envío para que
+     * quien llama la registre (el pago ya quedó REEMBOLSO_PENDIENTE antes de este punto).
+     */
+    public void enviarAvisoReembolsoPendienteAdmin(String correoAdmin, Long pagoId, String estado, String linkAdmin) {
+        String est = emailLayoutHelper.esc(String.valueOf(estado));
+        String link = emailLayoutHelper.esc(String.valueOf(linkAdmin));
+        resendEmailService.send(correoAdmin,
+            "[ALERTA] Cobro sobre pedido cancelado — pago #" + pagoId + " en " + est,
+            "<p>ONVO cobró un pedido que ya estaba cancelado. No se reactivó el pedido ni se tocó el stock.</p>"
+                + "<ul><li>Pago #" + pagoId + "</li><li>Estado: " + est + "</li></ul>"
+                + "<p>Gestioná el reembolso desde <a href=\"" + link + "\">" + link + "</a>.</p>");
+    }
+
 }
