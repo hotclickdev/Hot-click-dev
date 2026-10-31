@@ -62,7 +62,13 @@ public class PaymentOrderConfirmationService {
     @Autowired private PedidoGrupoService         pedidoGrupoService;
     @Autowired @Lazy private EncargoService       encargoService;
     /** Aviso individual al admin IT de todo REEMBOLSO_PENDIENTE nuevo (sobreventa y cobro sobre cancelado). */
-    @Autowired(required = false) @Lazy private AvisoReembolsoPendienteService avisoReembolso;
+    // #479 BAJO 1: ObjectProvider en vez de @Autowired(required=false) @Lazy (que inyecta un proxy nunca null y
+    // dejaba muerto el fallback onSobreventa). getIfAvailable() devuelve null de verdad si el bean no existe.
+    @Autowired private org.springframework.beans.factory.ObjectProvider<AvisoReembolsoPendienteService> avisoReembolsoProvider;
+
+    private AvisoReembolsoPendienteService avisoReembolso() {
+        return avisoReembolsoProvider == null ? null : avisoReembolsoProvider.getIfAvailable();
+    }
 
     /**
      * M-08: si entre el cobro y la confirmación el stock se agotó (segundo pago sobre la última unidad), el
@@ -174,6 +180,7 @@ public class PaymentOrderConfirmationService {
         pedidoRepository.saveAll(grupo);
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        AvisoReembolsoPendienteService avisoReembolso = avisoReembolso();
         if (avisoReembolso != null) avisoReembolso.registrarPendiente(pago);
         pagoRepository.save(pago);
         log.error("[ALERTA-PAGO] Cobro sin stock (sobreventa): pago={} pedidos={}; en revisión, reembolso pendiente",
@@ -234,6 +241,7 @@ public class PaymentOrderConfirmationService {
         }
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        AvisoReembolsoPendienteService avisoReembolso = avisoReembolso();
         if (avisoReembolso != null) avisoReembolso.registrarPendiente(pago);
         // Escritura inmediata: la marca de reembolso queda en la base antes de la alerta (cola de Admin → Pagos).
         pagoRepository.saveAndFlush(pago);

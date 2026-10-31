@@ -673,4 +673,29 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
             lg.detachAppender(ap);
         }
     }
+
+    @Test
+    @DisplayName("#479 BAJO 2: pago multi-pedido → el detalle lista todos los pedidos del grupo, sin PII")
+    void detalleMultiPedidoListaTodos() {
+        Pago pago = pagoSobreCancelado();
+        Pedido principal = pedidoRepository.findById(pago.getPedido().getId()).orElseThrow();
+        String grupo = "GRP-" + System.nanoTime();
+        principal.setGrupoPago(grupo);
+        principal.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedidoRepository.saveAndFlush(principal);
+        Pago enBd = enBase(pago);
+        enBd.setMerchantToken(SESION + "-1");
+        pagoRepository.saveAndFlush(enBd);
+        Pedido segundo = pagoSobreCancelado().getPedido();
+        Pedido s2 = pedidoRepository.findById(segundo.getId()).orElseThrow();
+        s2.setGrupoPago(grupo);
+        s2.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedidoRepository.saveAndFlush(s2);
+
+        com.hotclick.service.email.AvisoReembolsoDetalle d = aviso.detalleDe(pago.getId());
+
+        assertThat(d).isNotNull();
+        assertThat(d.pedidos()).isEqualTo(principal.getNumeroPedido() + "," + s2.getNumeroPedido());
+        assertThat(d.pedidos()).doesNotContain("@");
+    }
 }

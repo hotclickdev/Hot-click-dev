@@ -52,7 +52,11 @@ class SinpeOnvoMarketplaceServiceTest {
         ReflectionTestUtils.setField(s, "pedidoGrupoService", grupo);
         ReflectionTestUtils.setField(s, "paymentFailureHandler", fallos);
         ReflectionTestUtils.setField(s, "paymentService", paymentService);
-        ReflectionTestUtils.setField(s, "avisoReembolso", aviso);
+        @SuppressWarnings("unchecked")
+        org.springframework.beans.factory.ObjectProvider<com.hotclick.service.payment.AvisoReembolsoPendienteService> prov =
+            org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class);
+        when(prov.getIfAvailable()).thenReturn(aviso);
+        ReflectionTestUtils.setField(s, "avisoReembolsoProvider", prov);
         s.setOnvoServiceParaTest(onvo);
         s.setTimeoutMinutosParaTest("15");
         s.setClock(Clock.fixed(Instant.parse("2026-10-25T18:00:00Z"), Constants.ZONA_CR));

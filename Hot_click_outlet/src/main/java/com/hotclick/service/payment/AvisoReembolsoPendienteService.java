@@ -427,32 +427,50 @@ public class AvisoReembolsoPendienteService {
      * Detalle operativo del aviso (antes en la alerta de sobreventa): números de pedido del grupo en revisión o
      * cancelados, monto y proveedor. Sin PII. Si la lectura falla, null: el aviso sale igual sin detalle.
      */
-    com.hotclick.service.email.AvisoReembolsoDetalle detalleDe(Long pagoId) {
+    public com.hotclick.service.email.AvisoReembolsoDetalle detalleDe(Long pagoId) {
         try {
             TransactionTemplate tx = new TransactionTemplate(txManager);
             tx.setReadOnly(true);
             return tx.execute(st -> {
                 List<Object[]> f = em.createQuery(
-                        "SELECT p.monto, p.proveedor, ped.numeroPedido, ped.grupoPago FROM Pago p "
-                            + "LEFT JOIN p.pedido ped WHERE p.id = :id", Object[].class)
+                        "SELECT p.monto, p.proveedor, ped.numeroPedido, ped.grupoPago, c.id FROM Pago p "
+                            + "LEFT JOIN p.pedido ped LEFT JOIN p.compra c WHERE p.id = :id", Object[].class)
                     .setParameter("id", pagoId).getResultList();
                 if (f.isEmpty()) return null;
                 Object[] r = f.get(0);
-                String pedidos = (String) r[2];
                 String grupo = (String) r[3];
-                if (grupo != null && !grupo.isBlank()) {
-                    List<String> nums = em.createQuery("SELECT x.numeroPedido FROM Pedido x WHERE x.grupoPago = :g "
-                            + "AND x.estadoPedido IN :est ORDER BY x.id", String.class)
-                        .setParameter("g", grupo)
-                        .setParameter("est", List.of(Constants.PEDIDO_REVISION_SOBREVENTA, Constants.PEDIDO_CANCELADO))
-                        .getResultList();
-                    if (!nums.isEmpty()) pedidos = String.join(",", nums);
-                }
+                Long compraId = (Long) r[4];
+                String pedidos = pedidosDelPago((String) r[2], grupo, compraId);
                 return new com.hotclick.service.email.AvisoReembolsoDetalle(pedidos, (Integer) r[0], (String) r[1]);
             });
         } catch (RuntimeException e) {
             return null;
         }
+    }
+
+    /**
+     * #479 BAJO 2: números de pedido del pago. Primero los del grupo en revisión/cancelados; si no hay, todos los del
+     * grupo de pago; si no hay grupo, todos los paquetes de la compra; por último el pedido principal. Solo números.
+     */
+    private String pedidosDelPago(String principal, String grupo, Long compraId) {
+        if (grupo != null && !grupo.isBlank()) {
+            List<String> nums = em.createQuery("SELECT x.numeroPedido FROM Pedido x WHERE x.grupoPago = :g "
+                    + "AND x.estadoPedido IN :est ORDER BY x.id", String.class)
+                .setParameter("g", grupo)
+                .setParameter("est", List.of(Constants.PEDIDO_REVISION_SOBREVENTA, Constants.PEDIDO_CANCELADO))
+                .getResultList();
+            if (nums.isEmpty()) {
+                nums = em.createQuery("SELECT x.numeroPedido FROM Pedido x WHERE x.grupoPago = :g ORDER BY x.id",
+                        String.class).setParameter("g", grupo).getResultList();
+            }
+            if (!nums.isEmpty()) return String.join(",", nums);
+        }
+        if (compraId != null) {
+            List<String> nums = em.createQuery("SELECT x.numeroPedido FROM Pedido x WHERE x.compra.id = :c ORDER BY x.id",
+                    String.class).setParameter("c", compraId).getResultList();
+            if (!nums.isEmpty()) return String.join(",", nums);
+        }
+        return principal;
     }
 
     /** Origen de un pago (lectura propia). Si la lectura falla, OTRO: el aviso sale igual. */
