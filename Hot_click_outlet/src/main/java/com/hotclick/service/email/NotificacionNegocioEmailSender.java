@@ -159,4 +159,22 @@ public class NotificacionNegocioEmailSender {
             log.error("No se pudo enviar email de cambio de cobro: {}", e.getClass().getSimpleName());
         }
     }
+    public void enviarAlertaSobreventaAdmin(String correoAdmin, Long pagoId, String numerosPedidos,
+                                            Integer monto, String proveedor) {
+        try {
+            String pedidos = emailLayoutHelper.esc(String.valueOf(numerosPedidos));
+            resendEmailService.send(correoAdmin,
+                "[ALERTA] Cobro sin stock — reembolso pendiente (pedidos " + pedidos + ")",
+                "<p>Se registró un cobro sin stock para entregar (sobreventa).</p>"
+                    + "<ul><li>Pago #" + pagoId + " · " + emailLayoutHelper.esc(String.valueOf(proveedor)) + "</li>"
+                    + "<li>Monto: ₡" + (monto != null ? monto : 0) + "</li>"
+                    + "<li>Pedidos: " + pedidos + " (en revisión por sobreventa, no se despachan)</li></ul>"
+                    + "<p>El pago quedó en REEMBOLSO_PENDIENTE: gestioná el reembolso o la reposición desde "
+                    + "Admin → Pagos (estado REEMBOLSO_PENDIENTE).</p>");
+            log.info("Email alerta sobreventa enviado");
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de alerta de sobreventa: {}", e.getClass().getSimpleName());
+        }
+    }
+
 }

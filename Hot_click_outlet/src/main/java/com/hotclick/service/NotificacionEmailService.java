@@ -240,5 +240,11 @@ public class NotificacionEmailService {
         negocioEmailSender.enviarAltaEmprendedorPendienteAdmin(adminItEmail, nombreEmpresa, correo, estado);
     }
 
-}
+    /** MED-2: cobro sin stock, pago en reembolso pendiente y pedido en revisión. */
+    @Async
+    public void enviarAlertaSobreventaAAdminIT(Long pagoId, String numerosPedidos, Integer monto, String proveedor) {
+        if (adminItEmail == null || adminItEmail.isBlank()) return;
+        negocioEmailSender.enviarAlertaSobreventaAdmin(adminItEmail, pagoId, numerosPedidos, monto, proveedor);
+    }
 
+}
