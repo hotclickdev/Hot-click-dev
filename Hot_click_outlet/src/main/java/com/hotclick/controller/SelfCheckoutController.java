@@ -53,9 +53,9 @@ public class SelfCheckoutController {
             @PathVariable String token,
             @RequestBody Map<String, Object> body) {
         try {
-            String clienteNombre = (String) body.get("clienteNombre");
-            String clienteTel    = (String) body.get("clienteTel");
-            String notas         = (String) body.get("notas");
+            String clienteNombre = textoOpcional(body, "clienteNombre");
+            String clienteTel    = textoOpcional(body, "clienteTel");
+            String notas         = textoOpcional(body, "notas");
             if (!(body.get("items") instanceof List<?> rawItems) || rawItems.isEmpty())
                 return ResponseEntity.badRequest().body(Map.of("error", "El pedido debe tener al menos un producto"));
             if (rawItems.size() > SelfCheckoutService.MAX_LINEAS_POR_PEDIDO)
@@ -82,6 +82,13 @@ public class SelfCheckoutController {
             log.error("[self-checkout] Error creando pedido token={}: {}", tokenEnmascarado(token), e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("error", "Error al procesar el pedido"));
         }
+    }
+
+    /** Campo de texto opcional del cuerpo público: otro tipo (número, lista, objeto) es 400, no un 500 por cast. */
+    static String textoOpcional(Map<String, Object> body, String campo) {
+        Object valor = body.get(campo);
+        if (valor == null || valor instanceof String) return (String) valor;
+        throw new IllegalArgumentException("El campo " + campo + " debe ser texto");
     }
 
     /** El token QR es la única credencial de la mesa: en logs solo sus últimos 4 caracteres. */

@@ -61,12 +61,15 @@ public class SobreventaResolucionService {
         if (motivo.isEmpty() || motivo.length() > LARGO_MAXIMO_MOTIVO) {
             throw new IllegalArgumentException(MENSAJE_MOTIVO);
         }
-        Pedido pedido = pedidoRepository.findById(pedidoId)
+        Pedido pedido = pedidoRepository.findByIdForUpdate(pedidoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         if (!Constants.PEDIDO_REVISION_SOBREVENTA.equals(pedido.getEstadoPedido())) {
             throw new IllegalArgumentException(MENSAJE_NO_EN_REVISION);
         }
-        Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(pedido);
+        // Pedido y pago releídos con lock (FOR UPDATE): dos ADMIN a la vez o un webhook tardío se serializan y el
+        // segundo ve el estado ya resuelto (400), sin doble marca ni pisar otro estado.
+        Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(pedido)
+            .flatMap(p -> pagoRepository.findByIdForUpdate(p.getId()));
         if (ACCION_REEMBOLSO_PROCESADO.equals(accion)) {
             Pago pago = pagoOpt.filter(p -> Constants.PAGO_REEMBOLSO_PENDIENTE.equals(p.getEstadoPago()))
                 .orElseThrow(() -> new IllegalArgumentException(MENSAJE_PAGO_NO_PENDIENTE));

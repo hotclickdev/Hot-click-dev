@@ -36,6 +36,16 @@ public class PaymentOrderConfirmationService {
         Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
         Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
 
+    /**
+     * Estados que el UPDATE condicional nunca pasa a PAGADO: los ya confirmados más CANCELADO y REVISION_SOBREVENTA.
+     * Un webhook, retorno o cleanup tardío no revive un pedido que el ADMIN (o el cliente) ya canceló, ni aunque la
+     * cancelación ocurra entre la lectura y el UPDATE (seguimiento de #458).
+     */
+    static final Set<String> NO_RECLAMABLES = Set.of(
+        Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
+        Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO,
+        Constants.PEDIDO_CANCELADO, Constants.PEDIDO_REVISION_SOBREVENTA);
+
     /** CONFIRMADO: el grupo quedó PAGADO. YA_CONFIRMADO: no hizo nada (idempotente). SOBREVENTA: ver M-08. */
     public enum Resultado { CONFIRMADO, YA_CONFIRMADO, SOBREVENTA }
 
@@ -75,6 +85,10 @@ public class PaymentOrderConfirmationService {
         }
         List<Pedido> porConfirmar = grupo.stream()
             .filter(p -> !Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido())).toList();
+        if (porConfirmar.isEmpty()) {
+            log.info("confirmarPedido ignorado — grupo de {} cancelado; no se revive", principal.getNumeroPedido());
+            return Resultado.YA_CONFIRMADO;
+        }
         porConfirmar.forEach(p -> Hibernate.initialize(p.getItems()));
         if (!stockReservationService.productosSinStock(porConfirmar).isEmpty()) {
             pasarARevisionPorSobreventa(pago, porConfirmar);
@@ -82,10 +96,10 @@ public class PaymentOrderConfirmationService {
         }
 
         boolean cuponMarcado = false;
-        for (Pedido pedido : grupo) {
+        for (Pedido pedido : porConfirmar) {
             // Idempotencia atómica: retorno de Tilopay, webhook, cleanup o admin pueden llegar a la vez
             // con una copia vieja del pedido; solo quien gana el UPDATE condicional aplica los efectos.
-            if (pedidoRepository.reclamarParaConfirmar(pedido.getId(), YA_CONFIRMADOS) == 0) {
+            if (pedidoRepository.reclamarParaConfirmar(pedido.getId(), NO_RECLAMABLES) == 0) {
                 log.info("confirmarPedido ignorado — pedido {} ya fue confirmado por otro proceso",
                     pedido.getNumeroPedido());
                 continue;

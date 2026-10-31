@@ -59,9 +59,10 @@ class SobreventaResolucionServiceTest {
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         when(companyScope.isAdminIT()).thenReturn(true);
         when(companyScope.isImpersonating()).thenReturn(false);
-        when(pedidoRepository.findById(7L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(pedido));
         when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido));
         when(pedidoGrupoService.pagoDelGrupo(pedido)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findByIdForUpdate(70L)).thenReturn(Optional.of(pago));
     }
 
     @Test
@@ -136,5 +137,26 @@ class SobreventaResolucionServiceTest {
         assertThatThrownBy(() -> service.resolver(7L, "REEMBOLSO_PROCESADO", "x"))
             .isInstanceOf(IllegalArgumentException.class);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_REVISION_SOBREVENTA);
+    }
+
+    @Test
+    @DisplayName("lee pedido y pago con lock (FOR UPDATE), no con findById")
+    void leeConLock() {
+        service.resolver(7L, "REEMBOLSO_PROCESADO", "transferencia");
+        verify(pedidoRepository).findByIdForUpdate(7L);
+        verify(pedidoRepository, never()).findById(any());
+        verify(pagoRepository).findByIdForUpdate(70L);
+    }
+
+    @Test
+    @DisplayName("segundo ADMIN que espera el lock ve el pedido ya CANCELADO → 400, sin doble marca")
+    void segundoAdmin_veResuelto() {
+        service.resolver(7L, "REEMBOLSO_PROCESADO", "transferencia");
+        org.mockito.Mockito.clearInvocations(pagoRepository, auditoria);
+        assertThatThrownBy(() -> service.resolver(7L, "REEMBOLSO_PROCESADO", "otra vez"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage(SobreventaResolucionService.MENSAJE_NO_EN_REVISION);
+        verify(pagoRepository, never()).save(any());
+        verifyNoInteractions(auditoria);
     }
 }
