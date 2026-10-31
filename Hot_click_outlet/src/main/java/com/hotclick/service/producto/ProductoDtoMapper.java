@@ -64,6 +64,10 @@ public class ProductoDtoMapper {
         aplicarBarcode(dto, p);
         aplicarCabys(dto, p);
         if (dto.getGarantiaDias()       != null) p.setGarantiaDias(dto.getGarantiaDias());
+        // LOW #456: un personalizado no usa reservas; al pasar a personalizado se limpian las que quedaron.
+        if (Boolean.TRUE.equals(dto.getEsPersonalizado()) && !Boolean.TRUE.equals(p.getEsPersonalizado())) {
+            p.setStockReservado(0);
+        }
         if (dto.getEsPersonalizado()    != null) p.setEsPersonalizado(dto.getEsPersonalizado());
         if (Boolean.TRUE.equals(dto.getEsPersonalizado())) {
             if (dto.getModoPrecioPersonalizado() != null) {
