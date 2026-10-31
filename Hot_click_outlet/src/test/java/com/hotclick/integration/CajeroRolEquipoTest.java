@@ -292,4 +292,51 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
         org.mockito.Mockito.verify(supabaseStorageService, org.mockito.Mockito.times(2))
             .subirImagen(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString());
     }
+
+    @org.springframework.beans.factory.annotation.Value("${aws.s3.public-url}")
+    private String storagePublicUrl;
+    @Autowired private com.hotclick.controller.CrmController crmController;
+
+    private int ticket(String fotoUrl, String token) throws Exception {
+        return st(postJson("/api/soporte/tickets", "{\"titulo\":\"Falla POS\",\"descripcion\":\"No imprime\",\"fotoUrl\":\""
+            + fotoUrl + "\"}"), token);
+    }
+
+    @Test
+    void fotoUrlDelTicketSoloDelStorageYDeLaCarpetaDelNegocio() throws Exception {
+        String base = storagePublicUrl.replaceAll("/+$", "") + "/Soporte/Tickets/empresa-";
+        String uuid = "123e4567-e89b-12d3-a456-426614174000";
+        assertThat(ticket(base + empA.getId() + "/" + uuid + ".png", tCajeroA)).isEqualTo(200);
+        // otra carpeta de negocio, otro host, otra carpeta, traversal, query o nombre arbitrario → 400
+        assertThat(ticket(base + empB.getId() + "/" + uuid + ".png", tCajeroA)).isEqualTo(400);
+        assertThat(ticket("https://evil.test/Soporte/Tickets/empresa-" + empA.getId() + "/" + uuid + ".png", tCajeroA))
+            .isEqualTo(400);
+        assertThat(ticket(storagePublicUrl + "/productos/" + uuid + ".png", tCajeroA)).isEqualTo(400);
+        assertThat(ticket(base + empA.getId() + "/../empresa-" + empB.getId() + "/" + uuid + ".png", tCajeroA))
+            .isEqualTo(400);
+        assertThat(ticket(base + empA.getId() + "/" + uuid + ".png?x=1", tCajeroA)).isEqualTo(400);
+        assertThat(ticket(base + empA.getId() + "/foto.svg", tCajeroA)).isEqualTo(400);
+        assertThat(ticket(storagePublicUrl + ".evil.test/Soporte/Tickets/empresa-" + empA.getId() + "/" + uuid + ".png",
+            tCajeroA)).isEqualTo(400);
+        assertThat(ticketSoporteRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void crearClienteTieneTopePorUsuarioContraElOraculoDe409() throws Exception {
+        Object ctrl = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(crmController);
+        Object previo = org.springframework.test.util.ReflectionTestUtils.getField(ctrl, "crearMax");
+        org.springframework.test.util.ReflectionTestUtils.setField(ctrl, "crearMax", 3);
+        try {
+            for (int i = 0; i < 3; i++) {
+                assertThat(st(postJson("/api/crm/clientes", "{\"nombre\":\"Rata " + i + "\",\"correo\":\"rata" + i
+                    + "@test.cr\"}"), tCajeroA)).isIn(200, 409);
+            }
+            assertThat(st(postJson("/api/crm/clientes", "{\"nombre\":\"Rata X\",\"correo\":\"rata0@test.cr\"}"),
+                tCajeroA)).isEqualTo(429);
+            // el tope es por usuario: otro usuario del mismo negocio sigue pudiendo
+            assertThat(st(postJson("/api/crm/clientes", "{\"nombre\":\"Rata Y\"}"), tDuenoA)).isEqualTo(200);
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(ctrl, "crearMax", previo);
+        }
+    }
 }

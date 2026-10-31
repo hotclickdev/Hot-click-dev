@@ -51,6 +51,12 @@ public class CrmController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> crear(@RequestBody Map<String, String> body) {
+        // Seguridad (BAJO 2): el 409 de correo existente es un oráculo; tope por usuario.
+        // Fail-open a propósito: si la BD del rate limit cae, el POS sigue registrando clientes.
+        if (!rateLimiter.tryAcquire("user:" + companyScope.getCurrentUserId() + ":crm:clientes:crear",
+                crearMax, crearVentanaSeg)) {
+            return ResponseEntity.status(429).body(ResponseDTO.error("Demasiados registros seguidos. Probá en un minuto."));
+        }
         String nombre = body.get("nombre");
         if (nombre == null || nombre.isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es requerido"));
@@ -65,6 +71,13 @@ public class CrmController {
                 .body(ResponseDTO.error(e.getMessage()));
         }
     }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.hotclick.security.RateLimiter rateLimiter;
+    @org.springframework.beans.factory.annotation.Value("${crm.clientes.crear.max:20}")
+    int crearMax = 20;
+    @org.springframework.beans.factory.annotation.Value("${crm.clientes.crear.ventana-seg:60}")
+    int crearVentanaSeg = 60;
 
     @GetMapping("/buscar")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
