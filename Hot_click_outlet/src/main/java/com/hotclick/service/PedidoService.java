@@ -126,12 +126,13 @@ public class PedidoService {
         if (Constants.PEDIDO_ENVIADO.equals(nuevoEstado) && !mismoEstado) {
             despachoVerificador.verificarDespachable(pedido);
         }
+        boolean sobreventa = false;
         boolean cobroAlRetirar = Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)
             && Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(estadoActual)
             && PedidoPagoManualService.esEfectivoConRetiro(pedido);
         if (cobroAlRetirar) {
             // Efectivo + retiro en tienda: el cliente paga al retirar (registra el cobro y lo audita).
-            pedidoPagoManualService.confirmarCobroAlRetirar(pedido, estadoActual, referenciaPago);
+            sobreventa = pedidoPagoManualService.confirmarCobroAlRetirar(pedido, estadoActual, referenciaPago);
         } else {
             PedidoEstadoMaquina.verificarTransicion(estadoActual, nuevoEstado);
             if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado) && !mismoEstado
@@ -140,9 +141,11 @@ public class PedidoService {
             }
             if (Constants.PEDIDO_PAGADO.equals(nuevoEstado)
                     && (!mismoEstado || !despachoVerificador.pagoVerificado(pedido))) {
-                pedidoPagoManualService.confirmar(pedido, estadoActual, referenciaPago);
+                sobreventa = pedidoPagoManualService.confirmar(pedido, estadoActual, referenciaPago);
             }
         }
+        // MED-2: cobro manual sin stock → el pedido queda en revisión (no se despacha ni se entrega).
+        if (sobreventa) nuevoEstado = Constants.PEDIDO_REVISION_SOBREVENTA;
         // CMP-1: cancelar un pedido que todavía no pagó devuelve sus unidades reservadas.
         // (Un pedido PAGADO ya consumió stockActual; su reposición es otra decisión.)
         boolean liberarReserva = Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado
