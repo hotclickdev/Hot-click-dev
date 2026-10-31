@@ -21,7 +21,7 @@ public class RegisterRequest {
     // de contraseñas; el prefijo de 72 bytes ya es inviable de romper. El tope real
     // desaparece al migrar a Argon2id (docs/plan-argon2id-hashing-contrasenas.md).
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, max = 128, message = "La contraseña debe tener entre 8 y 128 caracteres")
+    @Size(max = 128, message = "La contraseña no puede superar 128 caracteres")
     private String contrasena;
 
     @Pattern(regexp = "^[0-9+\\-\\s()]{7,20}$", message = "Teléfono inválido")

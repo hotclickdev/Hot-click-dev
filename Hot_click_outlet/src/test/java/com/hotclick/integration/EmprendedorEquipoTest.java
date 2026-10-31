@@ -272,6 +272,20 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
             .andExpect(status().isBadRequest());
     }
 
+    // ── BAJO: invitar exige la política del registro (8 + mayúscula + número) ──
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"Abcdef1", "abcdefg1", "Abcdefgh"})
+    void invitar_claveFueraDePolitica_400(String clave) throws Exception {
+        String body = "{\"nombre\":\"Pol\",\"correo\":\"pol@test.cr\",\"password\":\"" + clave + "\"}";
+        mockMvc.perform(post("/api/empresa/equipo")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message")
+                .value(com.hotclick.service.auth.AuthSupport.MENSAJE_POLITICA_CONTRASENA));
+    }
+
     // ── T-EQ-012: Invitar correo ya registrado → 400 ─────────────────────────
     @Test
     @DisplayName("T-EQ-012 | BÁSICO — Invitar correo ya registrado → 400")

@@ -22,7 +22,10 @@ class ClaveMinimaPoliticaTest {
 
     @Test
     void alta_rechaza7_acepta8() {
-        assertThat(altaTieneErrorDeClave("Abcdef1")).isTrue();
+        // El largo y la composición los valida AuthRegistrationService (mensaje "Te falta …"); el DTO solo pone el tope.
+        assertThat(AuthSupport.faltantePoliticaContrasena("Abcdef1")).isNotNull();
+        assertThat(AuthSupport.faltantePoliticaContrasena("Abcdefg1")).isNull();
+        assertThat(altaTieneErrorDeClave("A1" + "a".repeat(127))).isTrue();
         assertThat(altaTieneErrorDeClave("Abcdefg1")).isFalse();
     }
 

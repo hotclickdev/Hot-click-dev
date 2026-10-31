@@ -9,7 +9,6 @@ import useAuthStore from '@/store/authStore'
 import Seo from '@/components/seo/Seo'
 import {
   authDataRegistroEmpresa,
-  MIN_PASSWORD,
   type RegistroEmpresaForm,
   telefonoOpcional,
   errorRegistroLegible,
@@ -21,6 +20,7 @@ import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
+import { cumplePoliticaContrasena, MENSAJE_POLITICA_CONTRASENA } from '@/utils/politicaContrasena'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
 import { leerPlanQuery, esPlanPago } from './registro-empresa/planQueryParam'
@@ -131,8 +131,8 @@ export default function RegistroEmpresaPage() {
       setError('El correo es requerido')
       return
     }
-    if (form.passwordAdmin.length < MIN_PASSWORD) {
-      setError(`La contraseña debe tener al menos ${MIN_PASSWORD} caracteres`)
+    if (!cumplePoliticaContrasena(form.passwordAdmin)) {
+      setError(MENSAJE_POLITICA_CONTRASENA)
       return
     }
     setLoading(true)

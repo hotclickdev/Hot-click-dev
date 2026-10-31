@@ -77,7 +77,7 @@ class AuthPasswordRecoveryHandlerTest {
     @DisplayName("reset-password sin código se rechaza sin tocar la contraseña")
     void resetSinCodigo() {
         ResponseEntity<ResponseDTO> r = handler.resetPassword(
-            Map.of("correo", "ana@correo.com", "nuevaContrasena", "otraclave123"), request);
+            Map.of("correo", "ana@correo.com", "nuevaContrasena", "Otraclave123"), request);
 
         assertThat(r.getStatusCode().value()).isEqualTo(400);
         verify(passwordResetService, never()).cambiarContrasena(anyString(), anyString(), anyString());
@@ -87,7 +87,7 @@ class AuthPasswordRecoveryHandlerTest {
     @DisplayName("reset-password rechaza una contraseña igual al correo")
     void resetIgualAlCorreo() {
         ResponseEntity<ResponseDTO> r = handler.resetPassword(
-            Map.of("correo", "ana.solis@gmail.com", "codigo", "123456", "nuevaContrasena", "ANA.SOLIS@gmail.com"), request);
+            Map.of("correo", "ana.solis1@gmail.com", "codigo", "123456", "nuevaContrasena", "ANA.SOLIS1@gmail.com"), request);
 
         assertThat(r.getStatusCode().value()).isEqualTo(400);
         assertThat(mensaje(r)).isEqualTo(AuthPasswordRecoveryHandler.MSG_CONTRASENA);
@@ -98,22 +98,26 @@ class AuthPasswordRecoveryHandlerTest {
     void resetOk() {
         Usuario u = new Usuario();
         u.setCorreo("ana@correo.com");
-        when(passwordResetService.cambiarContrasena("ana@correo.com", "123456", "otraclave123")).thenReturn(Optional.of(u));
+        when(passwordResetService.cambiarContrasena("ana@correo.com", "123456", "Otraclave123")).thenReturn(Optional.of(u));
 
         ResponseEntity<ResponseDTO> r = handler.resetPassword(
-            Map.of("correo", "ana@correo.com", "codigo", "123456", "nuevaContrasena", "otraclave123"), request);
+            Map.of("correo", "ana@correo.com", "codigo", "123456", "nuevaContrasena", "Otraclave123"), request);
 
         assertThat(r.getStatusCode().value()).isEqualTo(200);
         verify(securityAuditService).logPasswordResetSuccess(u.getId(), "ana@correo.com", request);
     }
 
     @Test
-    @DisplayName("Política: entre 8 y 128 caracteres y distinta del correo")
+    @DisplayName("Política: la del registro (8, mayúscula y número), hasta 128 y distinta del correo")
     void politica() {
         assertThat(AuthSupport.esContrasenaRecuperacionValida("corta", "a@b.com")).isFalse();
-        assertThat(AuthSupport.esContrasenaRecuperacionValida("x".repeat(129), "a@b.com")).isFalse();
-        assertThat(AuthSupport.esContrasenaRecuperacionValida("x".repeat(128), "a@b.com")).isTrue();
-        assertThat(AuthSupport.esContrasenaRecuperacionValida("frase larga segura", "a@b.com")).isTrue();
-        assertThat(AuthSupport.esContrasenaRecuperacionValida("ana@correo.com", "ANA@correo.com")).isFalse();
+        assertThat(AuthSupport.esContrasenaRecuperacionValida("abcdefgh", "a@b.com")).isFalse();
+        assertThat(AuthSupport.esContrasenaRecuperacionValida("abcdefg1", "a@b.com")).isFalse();
+        assertThat(AuthSupport.esContrasenaRecuperacionValida("Abcdefgh", "a@b.com")).isFalse();
+        assertThat(AuthSupport.esContrasenaRecuperacionValida("frase larga segura", "a@b.com")).isFalse();
+        assertThat(AuthSupport.esContrasenaRecuperacionValida("A1" + "x".repeat(127), "a@b.com")).isFalse();
+        assertThat(AuthSupport.esContrasenaRecuperacionValida("A1" + "x".repeat(126), "a@b.com")).isTrue();
+        assertThat(AuthSupport.esContrasenaRecuperacionValida("Abcdefg1", "a@b.com")).isTrue();
+        assertThat(AuthSupport.esContrasenaRecuperacionValida("Ana@correo1.com", "ANA@correo1.com")).isFalse();
     }
 }

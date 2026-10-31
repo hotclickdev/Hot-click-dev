@@ -49,6 +49,10 @@ public class AuthRegistrationService {
         if (!turnstileService.verify(req.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
+        String faltaEnClave = AuthSupport.faltantePoliticaContrasena(req.getContrasena());
+        if (faltaEnClave != null) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(faltaEnClave));
+        }
         try {
             MayoriaEdad.exigir(req.getDeclaraMayoriaEdad());
             Usuario usuario = new Usuario();
