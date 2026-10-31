@@ -1,6 +1,7 @@
 package com.hotclick.service.pedido;
 
 import com.hotclick.model.ComprobanteSinpe;
+import com.hotclick.service.payment.PaymentOrderConfirmationService;
 import com.hotclick.model.OrigenPedido;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
@@ -102,7 +103,7 @@ public class PedidoPagoManualService {
      * en PAGADO o lanza {@link IllegalArgumentException}/{@link IllegalStateException} (400) sin tocar nada.
      */
     @Transactional
-    public void confirmar(Pedido pedido, String estadoAnterior, String referenciaCruda) {
+    public boolean confirmar(Pedido pedido, String estadoAnterior, String referenciaCruda) {
         exigirCompradorAjeno(pedido);
         String metodo = normalizarMetodo(pedido.getMetodoPago());
         Optional<Pago> pagoOpt = pagoSinPasarela(pedido);
@@ -116,10 +117,16 @@ public class PedidoPagoManualService {
             comprobante = comprobantePendiente(pedido).orElseThrow(
                 () -> new IllegalArgumentException(MENSAJE_REFERENCIA_REQUERIDA));
         }
-        capturarPago(pedido, pagoOpt);
+        boolean sobreventa = capturarPago(pedido, pagoOpt);
         Usuario actor = companyScope.getCurrentUser();
         if (pagoOpt.isEmpty()) {
             registrarPagoManual(pedido, metodo, actor);
+        }
+        if (sobreventa) {
+            // MED-2: cobro sin stock. El punto común ya dejó el grupo en revisión y el pago en
+            // reembolso pendiente; no se aprueba el comprobante ni se pisa la revisión con PAGADO.
+            auditarSobreventa(pedido, estadoAnterior, metodo);
+            return true;
         }
 
         if (comprobante != null) {
@@ -133,6 +140,7 @@ public class PedidoPagoManualService {
         pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
         String evidencia = referencia != null ? "ref: " + referencia : "comprobante SINPE #" + comprobante.getId();
         auditar(pedido, estadoAnterior, Constants.PEDIDO_PAGADO, metodo, evidencia);
+        return false;
     }
 
     /**
@@ -143,7 +151,7 @@ public class PedidoPagoManualService {
      * queda auditado. La referencia es opcional.
      */
     @Transactional
-    public void confirmarCobroAlRetirar(Pedido pedido, String estadoAnterior, String referenciaCruda) {
+    public boolean confirmarCobroAlRetirar(Pedido pedido, String estadoAnterior, String referenciaCruda) {
         exigirCompradorAjeno(pedido);
         if (!esEfectivoConRetiro(pedido)) {
             throw new IllegalArgumentException(String.format(PedidoEstadoMaquina.MENSAJE_PRIMERO_PAGO,
@@ -152,13 +160,18 @@ public class PedidoPagoManualService {
         String referencia = limpiarReferencia(referenciaCruda);
         Optional<Pago> pagoOpt = pagoSinPasarela(pedido);
         pagoOpt.ifPresent(p -> p.setMetodoPagoTipo(METODO_EFECTIVO));
-        capturarPago(pedido, pagoOpt);
+        boolean sobreventa = capturarPago(pedido, pagoOpt);
         if (pagoOpt.isEmpty()) {
             registrarPagoManual(pedido, METODO_EFECTIVO, companyScope.getCurrentUser());
+        }
+        if (sobreventa) {
+            auditarSobreventa(pedido, estadoAnterior, METODO_EFECTIVO);
+            return true;
         }
         pedido.setEstadoPedido(Constants.PEDIDO_ENTREGADO);
         auditar(pedido, estadoAnterior, Constants.PEDIDO_ENTREGADO, normalizarMetodo(pedido.getMetodoPago()),
             "cobro en efectivo al retirar" + (referencia != null ? " · ref: " + referencia : ""));
+        return false;
     }
 
     /**
@@ -189,11 +202,11 @@ public class PedidoPagoManualService {
     }
 
     /** Captura el Pago manual pendiente y confirma el grupo (PAGADO, reservas, billetera). */
-    private void capturarPago(Pedido pedido, Optional<Pago> pagoOpt) {
-        if (pagoOpt.isEmpty()) return;
+    private boolean capturarPago(Pedido pedido, Optional<Pago> pagoOpt) {
+        if (pagoOpt.isEmpty()) return false;
         Pago pago = pagoOpt.get();
         verificarGrupoPropio(pedido);
-        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return;
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return false;
         verificarSinContraEntregaNormal(pedido);
         if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
             throw new IllegalStateException(String.format(MENSAJE_PAGO_CERRADO,
@@ -202,7 +215,13 @@ public class PedidoPagoManualService {
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
-        paymentService.confirmarPedido(pago);
+        return paymentService.confirmarPedido(pago) == PaymentOrderConfirmationService.Resultado.SOBREVENTA;
+    }
+
+    private void auditarSobreventa(Pedido pedido, String anterior, String metodo) {
+        pedido.setEstadoPedido(Constants.PEDIDO_REVISION_SOBREVENTA);
+        auditar(pedido, anterior, Constants.PEDIDO_REVISION_SOBREVENTA, metodo,
+            "cobro registrado sin stock: en revisión, reembolso pendiente");
     }
 
     private void auditar(Pedido pedido, String anterior, String nuevo, String metodo, String evidencia) {
