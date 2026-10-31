@@ -41,6 +41,9 @@ public class TicketSoporteService {
     private final ResendEmailService emailService;
     private final EmailLayoutHelper layout;
 
+    @Value("${aws.s3.public-url:}")
+    private String storagePublicUrl;
+
     @Value("${soporte.tickets.email:hotclick.cr@gmail.com}")
     private String soporteTicketsEmail;
 
@@ -57,6 +60,23 @@ public class TicketSoporteService {
         this.sanitizer = sanitizer;
         this.emailService = emailService;
         this.layout = layout;
+    }
+
+    /** Nombre que genera StorageUploadHelper: UUID + extensión de imagen; nada de subcarpetas ni query. */
+    private static final java.util.regex.Pattern NOMBRE_FOTO =
+        java.util.regex.Pattern.compile("[0-9a-fA-F-]{36}\\.(jpg|jpeg|png|gif|webp|avif)");
+
+    /**
+     * Seguridad (BAJO 1): la foto solo puede ser una subida por {@code POST /fotos} de este mismo negocio:
+     * {@code <publicUrl>/Soporte/Tickets/empresa-<token>/<uuid>.<ext>}. Cualquier otra URL → 400.
+     */
+    void validarFotoUrl(String url, Long empresaId) {
+        String prefijo = (storagePublicUrl == null ? "" : storagePublicUrl.replaceAll("/+$", ""))
+            + "/Soporte/Tickets/empresa-" + empresaId + "/";
+        if (storagePublicUrl == null || storagePublicUrl.isBlank() || !url.startsWith(prefijo)
+                || !NOMBRE_FOTO.matcher(url.substring(prefijo.length())).matches()) {
+            throw new IllegalArgumentException("La foto del ticket no es válida");
+        }
     }
 
     @Transactional
@@ -82,6 +102,7 @@ public class TicketSoporteService {
         t.setDescripcion(sanitizer.cleanWithLimit(descripcion.trim(), 4000));
         t.setPrioridad(TicketSoporte.PRIORIDAD_BAJA);
         if (fotoUrl != null && !fotoUrl.isBlank()) {
+            validarFotoUrl(fotoUrl.trim(), empresaId);
             t.setFotoUrl(sanitizer.cleanWithLimit(fotoUrl.trim(), 500));
         }
         TicketSoporte guardado = ticketRepo.save(t);
