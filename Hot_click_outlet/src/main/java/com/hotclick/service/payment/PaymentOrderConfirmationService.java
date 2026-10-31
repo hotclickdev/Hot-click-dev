@@ -225,7 +225,8 @@ public class PaymentOrderConfirmationService {
         }
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
-        pagoRepository.save(pago);
+        // Escritura inmediata: la marca de reembolso queda en la base antes de la alerta (cola de Admin → Pagos).
+        pagoRepository.saveAndFlush(pago);
         log.error("[ALERTA-PAGO] Cobro sobre grupo cancelado: pago={} pedido={}; reembolso pendiente",
             pago.getId(), principal.getNumeroPedido());
         paymentNotificationsFacade.onSobreventa(pago, principal.getNumeroPedido());

@@ -123,7 +123,7 @@ class CobroSobreGrupoCanceladoTest {
             .isEqualTo(PaymentOrderConfirmationService.Resultado.SOBREVENTA);
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        verify(pagoRepository, times(1)).save(pago);
+        verify(pagoRepository, times(1)).saveAndFlush(pago);
         verify(paymentNotificationsFacade, times(1)).onSobreventa(any(), any());
     }
 
@@ -134,6 +134,7 @@ class CobroSobreGrupoCanceladoTest {
         confirmacion.confirmarPedido(pago, paymentService, eventPublisher);
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
         verify(pagoRepository, never()).save(any());
+        verify(pagoRepository, never()).saveAndFlush(any());
         verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());
     }
 
