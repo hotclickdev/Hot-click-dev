@@ -29,7 +29,7 @@ jobs:
           node-version: '22'
 
       - name: Restaurar estado previo (racha)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: /tmp/health-pager-state.json
           key: health-pager-state-${{ github.run_id }}
