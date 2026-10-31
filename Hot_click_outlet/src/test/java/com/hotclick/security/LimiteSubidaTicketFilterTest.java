@@ -48,4 +48,31 @@ class LimiteSubidaTicketFilterTest {
         filtro.doFilter(req, res, new MockFilterChain());
         assertThat(res.getStatus()).isEqualTo(413);
     }
+
+    @Test
+    void fotoDeTicketChunkedOSinContentLengthSeCortaCon413() throws Exception {
+        MockHttpServletRequest chunked = new MockHttpServletRequest("POST", "/api/soporte/tickets/fotos");
+        chunked.addHeader("Transfer-Encoding", "chunked");
+        chunked.setContent(new byte[16]);
+        MockHttpServletResponse r1 = new MockHttpServletResponse();
+        MockFilterChain c1 = new MockFilterChain();
+        filtro.doFilter(chunked, r1, c1);
+        assertThat(c1.getRequest()).isNull();
+        assertThat(r1.getStatus()).isEqualTo(413);
+
+        MockHttpServletRequest sinLargo = new MockHttpServletRequest("POST", "/api/soporte/tickets/fotos");
+        sinLargo.setProtocol("HTTP/2.0");
+        MockHttpServletResponse r2 = new MockHttpServletResponse();
+        MockFilterChain c2 = new MockFilterChain();
+        filtro.doFilter(sinLargo, r2, c2);
+        assertThat(c2.getRequest()).isNull();
+        assertThat(r2.getStatus()).isEqualTo(413);
+
+        // otras rutas chunked no cambian
+        MockHttpServletRequest otra = new MockHttpServletRequest("POST", "/api/productos/imagen");
+        otra.addHeader("Transfer-Encoding", "chunked");
+        MockFilterChain c3 = new MockFilterChain();
+        filtro.doFilter(otra, new MockHttpServletResponse(), c3);
+        assertThat(c3.getRequest()).isNotNull();
+    }
 }

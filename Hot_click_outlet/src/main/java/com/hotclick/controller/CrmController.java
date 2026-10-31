@@ -53,7 +53,7 @@ public class CrmController {
     public ResponseEntity<?> crear(@RequestBody Map<String, String> body) {
         // Seguridad (BAJO 2): el 409 de correo existente es un oráculo; tope por usuario.
         // Fail-open a propósito: si la BD del rate limit cae, el POS sigue registrando clientes.
-        if (!rateLimiter.tryAcquire("user:" + companyScope.getCurrentUserId() + ":crm:clientes:crear",
+        if (!rateLimiter.tryAcquireEstricto("user:" + companyScope.getCurrentUserId() + ":crm:clientes:crear",
                 crearMax, crearVentanaSeg)) {
             return ResponseEntity.status(429).body(ResponseDTO.error("Demasiados registros seguidos. Probá en un minuto."));
         }

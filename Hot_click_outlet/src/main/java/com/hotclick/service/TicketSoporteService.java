@@ -62,9 +62,9 @@ public class TicketSoporteService {
         this.layout = layout;
     }
 
-    /** Nombre que genera StorageUploadHelper: UUID + extensión de imagen; nada de subcarpetas ni query. */
+    /** Nombre que genera StorageUploadHelper: UUID canónico 8-4-4-4-12 en hex + extensión de imagen; nada de subcarpetas ni query. */
     private static final java.util.regex.Pattern NOMBRE_FOTO =
-        java.util.regex.Pattern.compile("[0-9a-fA-F-]{36}\\.(jpg|jpeg|png|gif|webp|avif)");
+        java.util.regex.Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.(jpg|jpeg|png|gif|webp|avif)");
 
     /**
      * Seguridad (BAJO 1): la foto solo puede ser una subida por {@code POST /fotos} de este mismo negocio:

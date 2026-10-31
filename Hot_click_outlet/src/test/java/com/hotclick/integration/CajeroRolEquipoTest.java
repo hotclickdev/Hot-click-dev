@@ -318,7 +318,32 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
         assertThat(ticket(base + empA.getId() + "/foto.svg", tCajeroA)).isEqualTo(400);
         assertThat(ticket(storagePublicUrl + ".evil.test/Soporte/Tickets/empresa-" + empA.getId() + "/" + uuid + ".png",
             tCajeroA)).isEqualTo(400);
+        // UUID no canónico: 36 caracteres hex/guiones pero sin la forma 8-4-4-4-12 → 400
+        assertThat(ticket(base + empA.getId() + "/" + "------------------------------------" + ".png", tCajeroA))
+            .isEqualTo(400);
+        assertThat(ticket(base + empA.getId() + "/" + "123e4567e89b12d3a456426614174000----" + ".png", tCajeroA))
+            .isEqualTo(400);
+        assertThat(ticket(base + empA.getId() + "/" + "123e4567-e89b-12d3-a456-42661417400g" + ".png", tCajeroA))
+            .isEqualTo(400);
         assertThat(ticketSoporteRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void crearClienteFallaCerradoSiElRateLimiterNoTieneBd() throws Exception {
+        Object ctrl = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(crmController);
+        Object previo = org.springframework.test.util.ReflectionTestUtils.getField(ctrl, "rateLimiter");
+        com.hotclick.security.RateLimiter caido = org.mockito.Mockito.mock(com.hotclick.security.RateLimiter.class);
+        // fail-open devolvería true; el estricto devuelve false cuando la BD cae
+        org.mockito.Mockito.when(caido.tryAcquire(org.mockito.ArgumentMatchers.anyString(),
+            org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt())).thenReturn(true);
+        org.mockito.Mockito.when(caido.tryAcquireEstricto(org.mockito.ArgumentMatchers.anyString(),
+            org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt())).thenReturn(false);
+        org.springframework.test.util.ReflectionTestUtils.setField(ctrl, "rateLimiter", caido);
+        try {
+            assertThat(st(postJson("/api/crm/clientes", "{\"nombre\":\"Sin BD\"}"), tCajeroA)).isEqualTo(429);
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(ctrl, "rateLimiter", previo);
+        }
     }
 
     @Test
