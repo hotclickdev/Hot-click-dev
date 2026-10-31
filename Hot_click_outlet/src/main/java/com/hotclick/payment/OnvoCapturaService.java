@@ -80,6 +80,8 @@ public class OnvoCapturaService {
         if (algunoCancelado(pago)) {
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+            // Marca de aviso pendiente en esta misma transacción; el envío sale después del commit.
+            if (avisoReembolso != null) avisoReembolso.registrarPendiente(pago);
             pagoRepository.save(pago);
             evento.setProcesado(true);
             evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
@@ -88,7 +90,6 @@ public class OnvoCapturaService {
             log.error("[ALERTA-PAGO] ONVO cobró un pedido ya cancelado; queda para reembolso del admin: sessionId={}",
                 checkoutSessionId);
             // Aviso al admin después del commit, con dedupe por pago; si falla, el pago sigue REEMBOLSO_PENDIENTE.
-            if (avisoReembolso != null) avisoReembolso.avisarDespuesDelCommit(pago.getId());
             return Captura.COBRADO_SOBRE_CANCELADO;
         }
 

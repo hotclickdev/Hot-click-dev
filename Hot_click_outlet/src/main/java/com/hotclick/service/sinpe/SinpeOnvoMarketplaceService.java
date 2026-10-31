@@ -54,6 +54,8 @@ public class SinpeOnvoMarketplaceService {
 
     public enum Resultado { CONFIRMADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA, EN_ESPERA, NO_VERIFICADO, NO_ENCONTRADO, NO_CONSULTABLE }
 
+    @Autowired(required = false) @org.springframework.context.annotation.Lazy
+    private com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
     @Autowired private PagoRepository pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
     @Autowired private PedidoGrupoService pedidoGrupoService;
@@ -160,6 +162,8 @@ public class SinpeOnvoMarketplaceService {
         if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago()) || algunoCancelado(pedidosGrupo)) {
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
             pago.setFechaActualizacion(ahora);
+            // Aviso al admin IT: marca pendiente en esta transacción (sale por dirty checking), envío post-commit.
+            if (avisoReembolso != null) avisoReembolso.registrarPendiente(pago);
             registrarProcesado(token, tipo, "Cobro SINPE de ONVO sobre pedido cancelado: reembolso pendiente");
             log.error("[ALERTA-PAGO] ONVO cobró SINPE de un pedido ya cancelado; reembolso pendiente: pago={}", pago.getId());
             return Resultado.COBRADO_SOBRE_CANCELADO;
