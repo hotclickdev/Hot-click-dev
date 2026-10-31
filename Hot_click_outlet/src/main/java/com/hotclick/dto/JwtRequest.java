@@ -12,7 +12,8 @@ public class JwtRequest {
     private String correo;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, max = 128, message = "La contraseña debe tener entre 6 y 128 caracteres")
+    /** B1: el login no valida largo mínimo (solo compara el hash); el mínimo de 8 aplica al crear o cambiar la clave. */
+    @Size(min = 1, max = 128, message = "La contraseña debe tener entre 1 y 128 caracteres")
     private String contrasena;
 
     public String getCorreo() { return correo; }

@@ -1306,7 +1306,7 @@
     "loggedOut": "Sesión cerrada",
     "twoFAActive": "2FA activo",
     "passwordMismatch": "Las contraseñas no coinciden",
-    "passwordTooShort": "La nueva contraseña debe tener al menos 6 caracteres",
+    "passwordTooShort": "La nueva contraseña debe tener al menos 8 caracteres",
     "passwordUpdated": "Contraseña actualizada. Iniciá sesión de nuevo.",
     "passwordError": "Error al cambiar la contraseña",
     "confirmPassword": "Confirmar nueva contraseña",

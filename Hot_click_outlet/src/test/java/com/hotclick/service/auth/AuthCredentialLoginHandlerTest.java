@@ -129,6 +129,22 @@ class AuthCredentialLoginHandlerTest {
         assertCuentaBloqueada(resp, "Verificá tu correo para activar la cuenta.");
     }
 
+    @Test
+    @DisplayName("B1: cuenta antigua con clave de 6 caracteres entra igual (el login solo compara el hash)")
+    void cuentaAntiguaClaveDe6EntraIgual() {
+        Usuario u = usuarioActivo();
+        when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("abc123", HASH_REAL)).thenReturn(true);
+        when(authSupport.buildAuthResponse(u)).thenReturn(null);
+        JwtRequest req = request();
+        req.setContrasena("abc123");
+
+        assertThat(jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator().validate(req)).isEmpty();
+        ResponseEntity<?> resp = handler.login(req, httpRequest);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(200);
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {
         Constants.ESTADO_INACTIVO,

@@ -1306,7 +1306,7 @@
     "loggedOut": "Signed out",
     "twoFAActive": "2FA active",
     "passwordMismatch": "Passwords do not match",
-    "passwordTooShort": "New password must be at least 6 characters",
+    "passwordTooShort": "New password must be at least 8 characters",
     "passwordUpdated": "Password updated. Please sign in again.",
     "passwordError": "Error changing password",
     "confirmPassword": "Confirm new password",
