@@ -17,7 +17,7 @@ export function validarPasoInvitarEquipo(paso: number, form: FormularioEquipo): 
   if (id === 'persona' && !form.nombre.trim()) return 'Ingresá el nombre.'
   if (id === 'contacto') {
     if (!isValidEmail(form.correo)) return 'Correo inválido.'
-    if (form.password.length < 6) return 'La contraseña temporal debe tener al menos 6 caracteres.'
+    if (form.password.length < 8) return 'La contraseña temporal debe tener al menos 8 caracteres.'
   }
   if (id === 'rol' && !ROLES_ASIGNABLES.includes(form.rolEnEmpresa)) return 'Elegí un rol.'
   return null
