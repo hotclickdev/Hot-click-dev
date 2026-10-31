@@ -16,7 +16,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -83,9 +83,18 @@ public class AvisoReembolsoPendienteService {
         if (!reclamado) return false;
         try {
             String link = linkAdmin();
-            CompletableFuture.runAsync(() -> notificacionEmailService.enviarAvisoReembolsoPendienteAAdminIT(
-                    pagoId, Constants.PAGO_REEMBOLSO_PENDIENTE, link), taskExecutor)
-                .get(timeoutMs, TimeUnit.MILLISECONDS);
+            // taskExecutor ya propaga TenantContext (TenantAwareTaskDecorator); espera acotada por timeout.
+            FutureTask<Void> envio = new FutureTask<>(() -> {
+                notificacionEmailService.enviarAvisoReembolsoPendienteAAdminIT(
+                    pagoId, Constants.PAGO_REEMBOLSO_PENDIENTE, link);
+                return null;
+            });
+            taskExecutor.execute(envio);
+            try {
+                envio.get(timeoutMs, TimeUnit.MILLISECONDS);
+            } finally {
+                if (!envio.isDone()) envio.cancel(true);
+            }
             log.info("[pago] Aviso de reembolso pendiente enviado al admin: pagoId={}", pagoId);
             return true;
         } catch (Exception e) {
