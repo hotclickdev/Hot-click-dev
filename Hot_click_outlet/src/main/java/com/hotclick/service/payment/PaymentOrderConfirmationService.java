@@ -77,10 +77,8 @@ public class PaymentOrderConfirmationService {
         }
         // Reintento sobre un cobro ya marcado para reembolso: antes de cualquier consulta (que vaciaría la
         // sesión) se lee el estado en la base; el proveedor puede haber puesto la copia en CAPTURADO.
-        String estadoEnBase = pago.getId() == null ? null : pagoRepository.estadoPagoEnBase(pago.getId());
-        if (Constants.PAGO_REEMBOLSO_PENDIENTE.equals(estadoEnBase) || Constants.PAGO_REEMBOLSADO.equals(estadoEnBase)) {
-            return reintentoSobreReembolso(pago, estadoEnBase);
-        }
+        String reembolsoEnBase = estadoReembolsoEnBase(pago);
+        if (reembolsoEnBase != null) return reintentoSobreReembolso(pago, reembolsoEnBase);
         List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
 
         // Idempotencia rápida: si el principal ya figura confirmado, el grupo entero ya se procesó.
@@ -141,7 +139,7 @@ public class PaymentOrderConfirmationService {
             // Carrera: el grupo se canceló entre la lectura y el UPDATE condicional (ninguno se reclamó).
             return cobroSobreCancelado(pago, principal);
         }
-        if (algunoReclamado) revisarCanceladosEnCobroParcial(pago, perdidos);
+        revisarCanceladosEnCobroParcial(pago, perdidos);
         publicarCompraPagada(principal, eventPublisher);
         return Resultado.CONFIRMADO;
     }
@@ -243,7 +241,8 @@ public class PaymentOrderConfirmationService {
     /**
      * Cancelación parcial concurrente: parte del grupo se confirmó y otro paquete se canceló entre la lectura
      * y el UPDATE condicional. Esa parte del cobro no tiene venta: el paquete pasa a REVISION_SOBREVENTA y se
-     * alerta a plataforma. El pago sigue CAPTURADO para que se despache lo confirmado.
+     * alerta a plataforma. El pago sigue CAPTURADO para que se despache lo confirmado. Solo marca los que
+     * siguen CANCELADO en la base (un perdido por otra confirmación no se toca).
      */
     private void revisarCanceladosEnCobroParcial(Pago pago, List<Long> perdidos) {
         if (perdidos.isEmpty()) return;
@@ -254,9 +253,17 @@ public class PaymentOrderConfirmationService {
         paymentNotificationsFacade.onSobreventa(pago, String.valueOf(perdidos));
     }
 
+    /** Estado REEMBOLSO_PENDIENTE/REEMBOLSADO del pago en la base (sin flush), o null si no está para reembolso. */
+    private String estadoReembolsoEnBase(Pago pago) {
+        if (pago.getId() == null) return null;
+        String estado = pagoRepository.estadoPagoEnBase(pago.getId());
+        boolean enReembolso = Constants.PAGO_REEMBOLSO_PENDIENTE.equals(estado) || Constants.PAGO_REEMBOLSADO.equals(estado);
+        return enReembolso ? estado : null;
+    }
+
     /** El pago ya estaba para reembolso (o reembolsado) en la base: se conserva ese estado y no se re-alerta. */
     private Resultado reintentoSobreReembolso(Pago pago, String estadoEnBase) {
-        if (!estadoEnBase.equals(pago.getEstadoPago())) {
+        if (!java.util.Objects.equals(estadoEnBase, pago.getEstadoPago())) {
             pago.setEstadoPago(estadoEnBase);
             pagoRepository.saveAndFlush(pago);
         }
