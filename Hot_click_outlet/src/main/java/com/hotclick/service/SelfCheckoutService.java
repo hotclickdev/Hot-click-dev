@@ -79,7 +79,7 @@ public class SelfCheckoutService {
                 m.put("id",             p.getId());
                 m.put("nombre",         filtra ? ContactoTextoFiltro.ocultar(p.getNombreProducto()) : p.getNombreProducto());
                 m.put("descripcion",    filtra ? ContactoTextoFiltro.ocultar(p.getDescripcionCorta()) : p.getDescripcionCorta());
-                m.put("precio",         p.getPrecioVenta());
+                m.put("precio",         com.hotclick.service.payment.OrderPricingService.precioEfectivo(p)); // MED-4: oferta
                 m.put("imagenUrl",      p.getImagenPrincipalUrl());
                 m.put("stock",          p.getStockActual());
                 m.put("sku",            p.getSku());
@@ -164,7 +164,8 @@ public class SelfCheckoutService {
             if (!producto.getEmpresa().getId().equals(empresa.getId()))
                 throw new SecurityException("Producto no pertenece a esta empresa");
 
-            int precio = producto.getPrecioVenta();
+            // MED-4 Auditor 3: mismo precio efectivo (oferta) que checkout, carrito y storefront.
+            int precio = com.hotclick.service.payment.OrderPricingService.precioEfectivo(producto);
             int costo  = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
 
             PedidoItem pi = new PedidoItem();
