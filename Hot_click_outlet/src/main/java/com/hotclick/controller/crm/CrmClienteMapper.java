@@ -26,10 +26,7 @@ public class CrmClienteMapper {
 
     /** P8-01 residual: en ficha compartida el contacto va enmascarado ("j***@gmail.com"). */
     public static String enmascararCorreo(String correo) {
-        if (correo == null || correo.isBlank()) return "";
-        int at = correo.indexOf('@');
-        if (at <= 0) return "***";
-        return correo.charAt(0) + "***" + correo.substring(at);
+        return com.hotclick.utils.CorreoEnmascarado.enmascarar(correo);
     }
 
     /** "****5678": deja los últimos 4 dígitos. */
