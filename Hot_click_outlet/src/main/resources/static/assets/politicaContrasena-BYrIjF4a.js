@@ -1,1 +1,0 @@
-var e=`La contraseña debe tener al menos 8 caracteres, una mayúscula y un número`;function t(e){return!e||e.length<8?!1:/\p{Lu}/u.test(e)&&/\p{Nd}/u.test(e)}export{t as n,e as t};
