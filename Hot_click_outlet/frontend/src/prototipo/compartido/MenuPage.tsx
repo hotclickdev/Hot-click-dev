@@ -6,6 +6,7 @@ import useAuthStore from '@/store/authStore'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import { Boton } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
+import { verSucursales } from './menuRoles'
 import OnboardingPrimeraVez from './OnboardingPrimeraVez'
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
@@ -35,8 +36,9 @@ export default function MenuPage() {
   const ruta = useSellerRuta()
   const userName = useAuthStore((s) => s.userName) ?? plan.usuario
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
+  const userRole = useAuthStore((s) => s.userRole)
   const esPlus = plan.id === 'negocioPlus'
-  const acciones: AccionMenu[] = esPlus
+  const acciones: AccionMenu[] = esPlus && verSucursales(userRole)
     ? [
         ...ACCIONES.slice(0, 3),
         { segmento: 'sucursales', titulo: 'MIS SUCURSALES', detalle: 'Ventas e inventario del grupo' },

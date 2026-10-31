@@ -150,6 +150,9 @@ public class TilopayConfirmacionService {
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             throw new IllegalStateException("El pago ya está capturado");
         }
+        if (PaymentOrderConfirmationService.enReembolso(pago.getEstadoPago())) {
+            throw new IllegalStateException("El pago está para reembolso");
+        }
         if (Constants.PEDIDO_CANCELADO.equals(pedido.getEstadoPedido())) {
             throw new IllegalStateException("El pedido está cancelado");
         }
@@ -227,6 +230,11 @@ public class TilopayConfirmacionService {
     }
 
     private void aplicarAprobado(Pago pago, String orderNumber) {
+        // PR #460 (M1): un reintento sobre un cobro ya marcado para reembolso no lo vuelve a capturar.
+        if (PaymentOrderConfirmationService.enReembolso(pago.getEstadoPago())) {
+            log.info("[tilopay] Aprobación ignorada: pago {} ya está en {}", pago.getId(), pago.getEstadoPago());
+            return;
+        }
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setMetodoPagoTipo(Constants.PROVEEDOR_TILOPAY);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));

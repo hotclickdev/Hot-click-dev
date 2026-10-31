@@ -111,7 +111,8 @@ public class StripePaymentProvider implements PaymentProvider {
         evento.setEstado(Constants.ESTADO_ACTIVO);
         webhookEventRepository.save(evento);
 
-        Pago pago = pagoRepository.findByMerchantToken(sessionId).orElse(null);
+        // Lock de la fila: serializa con la resolución del ADMIN y con otra entrega del mismo evento.
+        Pago pago = pagoRepository.findByMerchantTokenForUpdate(sessionId).orElse(null);
         if (pago == null) {
             String msg = "Pago no encontrado para Stripe sessionId=" + sessionId
                 + (numeroPedido != null ? " numeroPedido=" + numeroPedido : "");
@@ -133,6 +134,16 @@ public class StripePaymentProvider implements PaymentProvider {
             log.info("[stripe] Checkout ya confirmado: sessionId={}", sessionId);
             evento.setProcesado(true);
             evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
+            webhookEventRepository.save(evento);
+            return;
+        }
+
+        if (com.hotclick.service.payment.PaymentOrderConfirmationService.enReembolso(pago.getEstadoPago())) {
+            // PR #460 (M1): reintento sobre un cobro ya marcado para reembolso: no se recaptura.
+            log.info("[stripe] Checkout ignorado: pago {} ya está en {}", pago.getId(), pago.getEstadoPago());
+            evento.setProcesado(true);
+            evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
+            evento.setErrorProcesamiento("Pago ya en reembolso");
             webhookEventRepository.save(evento);
             return;
         }

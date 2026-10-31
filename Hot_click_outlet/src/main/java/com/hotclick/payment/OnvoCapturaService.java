@@ -67,6 +67,16 @@ public class OnvoCapturaService {
 
         WebhookEvent evento = registrar(checkoutSessionId, OnvoPaymentProvider.EVENTO_SESION, resumen, origen);
 
+        if (com.hotclick.service.payment.PaymentOrderConfirmationService.enReembolso(pago.getEstadoPago())) {
+            // PR #460 (M1): reintento sobre un cobro ya marcado para reembolso: no se recaptura ni se re-alerta.
+            evento.setProcesado(true);
+            evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
+            evento.setErrorProcesamiento("Pago ya en reembolso");
+            webhookEventRepository.save(evento);
+            log.info("[onvo] Captura ignorada: pago {} ya está en {}", pago.getId(), pago.getEstadoPago());
+            return Captura.DUPLICADO;
+        }
+
         if (algunoCancelado(pago)) {
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
