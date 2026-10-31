@@ -58,6 +58,9 @@ public class SelfCheckoutController {
             String notas         = (String) body.get("notas");
             if (!(body.get("items") instanceof List<?> rawItems) || rawItems.isEmpty())
                 return ResponseEntity.badRequest().body(Map.of("error", "El pedido debe tener al menos un producto"));
+            if (rawItems.size() > SelfCheckoutService.MAX_LINEAS_POR_PEDIDO)
+                return ResponseEntity.badRequest().body(Map.of("error",
+                    "El pedido admite máximo " + SelfCheckoutService.MAX_LINEAS_POR_PEDIDO + " productos"));
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> items = (List<Map<String, Object>>) rawItems;
 
