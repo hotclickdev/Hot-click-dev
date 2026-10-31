@@ -406,7 +406,7 @@ public class AsistenteCuotaDiaria {
         for (int i = 0; i < m.length; i++) {
             int resto = bits - i * 8;
             if (resto >= 8) continue;
-            m[i] = resto <= 0 ? 0 : (byte) (m[i] & (0xff << (8 - resto)));
+            m[i] = resto <= 0 ? 0 : (byte) ((m[i] & 0xff) & ((0xff << (8 - resto)) & 0xff));
         }
         return HexFormat.of().formatHex(m);
     }
