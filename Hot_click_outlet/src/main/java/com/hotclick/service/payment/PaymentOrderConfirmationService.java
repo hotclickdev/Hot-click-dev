@@ -36,7 +36,20 @@ public class PaymentOrderConfirmationService {
         Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
         Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
 
-    /** CONFIRMADO: el grupo quedó PAGADO. YA_CONFIRMADO: no hizo nada (idempotente). SOBREVENTA: ver M-08. */
+    /**
+     * Estados que el UPDATE condicional nunca pasa a PAGADO: los ya confirmados más CANCELADO y REVISION_SOBREVENTA.
+     * Un webhook, retorno o cleanup tardío no revive un pedido que el ADMIN (o el cliente) ya canceló, ni aunque la
+     * cancelación ocurra entre la lectura y el UPDATE (seguimiento de #458).
+     */
+    static final Set<String> NO_RECLAMABLES = Set.of(
+        Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
+        Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO,
+        Constants.PEDIDO_CANCELADO, Constants.PEDIDO_REVISION_SOBREVENTA);
+
+    /**
+     * CONFIRMADO: el grupo quedó PAGADO. YA_CONFIRMADO: no hizo nada (idempotente). SOBREVENTA: cobro sin venta
+     * (M-08 sin stock, o grupo cancelado): el pago queda REEMBOLSO_PENDIENTE.
+     */
     public enum Resultado { CONFIRMADO, YA_CONFIRMADO, SOBREVENTA }
 
     @Autowired private PedidoRepository           pedidoRepository;
@@ -75,6 +88,10 @@ public class PaymentOrderConfirmationService {
         }
         List<Pedido> porConfirmar = grupo.stream()
             .filter(p -> !Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido())).toList();
+        if (porConfirmar.isEmpty()) {
+            // Grupo cancelado: no se revive, pero si el proveedor ya cobró la plata queda para reembolso.
+            return cobroSobreCancelado(pago, principal);
+        }
         porConfirmar.forEach(p -> Hibernate.initialize(p.getItems()));
         if (!stockReservationService.productosSinStock(porConfirmar).isEmpty()) {
             pasarARevisionPorSobreventa(pago, porConfirmar);
@@ -82,14 +99,21 @@ public class PaymentOrderConfirmationService {
         }
 
         boolean cuponMarcado = false;
-        for (Pedido pedido : grupo) {
+        boolean algunoReclamado = false;
+        java.util.List<Long> perdidos = new java.util.ArrayList<>();
+        // SCALE1: el grupo de pago es acotado (paquetes de una compra); un UPDATE condicional por paquete.
+        java.util.Iterator<Pedido> paquetes = porConfirmar.iterator();
+        while (paquetes.hasNext()) {
+            Pedido pedido = paquetes.next();
             // Idempotencia atómica: retorno de Tilopay, webhook, cleanup o admin pueden llegar a la vez
             // con una copia vieja del pedido; solo quien gana el UPDATE condicional aplica los efectos.
-            if (pedidoRepository.reclamarParaConfirmar(pedido.getId(), YA_CONFIRMADOS) == 0) {
+            if (pedidoRepository.reclamarParaConfirmar(pedido.getId(), NO_RECLAMABLES) == 0) {
                 log.info("confirmarPedido ignorado — pedido {} ya fue confirmado por otro proceso",
                     pedido.getNumeroPedido());
+                perdidos.add(pedido.getId());
                 continue;
             }
+            algunoReclamado = true;
             if (!cuponMarcado) {
                 marcarCuponUsadoUnaVez(grupo);
                 cuponMarcado = true;
@@ -106,6 +130,10 @@ public class PaymentOrderConfirmationService {
             encargoService.marcarPagadosPorPedido(pedido.getId());
             paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
             posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
+        }
+        if (!algunoReclamado && canceladoEntreLecturaYReclamo(perdidos)) {
+            // Carrera: el grupo se canceló entre la lectura y el UPDATE condicional (ninguno se reclamó).
+            return cobroSobreCancelado(pago, principal);
         }
         publicarCompraPagada(principal, eventPublisher);
         return Resultado.CONFIRMADO;
@@ -174,5 +202,34 @@ public class PaymentOrderConfirmationService {
             }
             return;
         }
+    }
+
+    /** true si los paquetes no reclamados están cancelados en la base y ninguno fue confirmado por otro. */
+    private boolean canceladoEntreLecturaYReclamo(List<Long> perdidos) {
+        if (perdidos.isEmpty()) return false;
+        List<String> estados = pedidoRepository.estadosDe(perdidos);
+        return estados != null && estados.contains(Constants.PEDIDO_CANCELADO)
+            && estados.stream().noneMatch(YA_CONFIRMADOS::contains);
+    }
+
+    /**
+     * Cobro sobre un grupo cancelado (cualquier proveedor): el pedido no se revive (su stock ya se liberó),
+     * el pago queda REEMBOLSO_PENDIENTE y se alerta a plataforma. Idempotente: si el pago ya está en
+     * reembolso pendiente o reembolsado no se vuelve a alertar. Devuelve SOBREVENTA (cobro sin venta).
+     */
+    private Resultado cobroSobreCancelado(Pago pago, Pedido principal) {
+        String estado = pago.getEstadoPago();
+        if (Constants.PAGO_REEMBOLSO_PENDIENTE.equals(estado) || Constants.PAGO_REEMBOLSADO.equals(estado)) {
+            log.info("confirmarPedido ignorado — pago {} de grupo cancelado ya está en reembolso", pago.getId());
+            return Resultado.SOBREVENTA;
+        }
+        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        // Escritura inmediata: la marca de reembolso queda en la base antes de la alerta (cola de Admin → Pagos).
+        pagoRepository.saveAndFlush(pago);
+        log.error("[ALERTA-PAGO] Cobro sobre grupo cancelado: pago={} pedido={}; reembolso pendiente",
+            pago.getId(), principal.getNumeroPedido());
+        paymentNotificationsFacade.onSobreventa(pago, principal.getNumeroPedido());
+        return Resultado.SOBREVENTA;
     }
 }

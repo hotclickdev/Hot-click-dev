@@ -61,7 +61,7 @@ class RutasConfirmacionPagoTest {
     @Test
     void laConfirmacionReclamaCadaPaquete_yElFalloEsCondicional() throws IOException {
         assertThat(leer("service/payment/PaymentOrderConfirmationService.java"))
-            .contains("pedidoRepository.reclamarParaConfirmar(pedido.getId(), YA_CONFIRMADOS) == 0");
+            .contains("pedidoRepository.reclamarParaConfirmar(pedido.getId(), NO_RECLAMABLES) == 0");
         assertThat(leer("service/payment/PaymentFailureHandler.java"))
             .contains("pagoRepository.marcarFallidoSiPendiente(");
     }

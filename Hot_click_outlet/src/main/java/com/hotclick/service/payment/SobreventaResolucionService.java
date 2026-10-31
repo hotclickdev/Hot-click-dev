@@ -61,12 +61,20 @@ public class SobreventaResolucionService {
         if (motivo.isEmpty() || motivo.length() > LARGO_MAXIMO_MOTIVO) {
             throw new IllegalArgumentException(MENSAJE_MOTIVO);
         }
-        Pedido pedido = pedidoRepository.findById(pedidoId)
+        // Orden de locks único con el webhook (pago y luego pedido) para no cruzarse en deadlock: se ubica el
+        // pago del grupo, se bloquea (FOR UPDATE), después se bloquea el pedido y su estado se relee en la base
+        // ya con ambos locks. Dos ADMIN a la vez o un webhook tardío se serializan y el segundo ve el estado ya
+        // resuelto (400), sin doble marca ni pisar otro estado.
+        Pedido lectura = pedidoRepository.findById(pedidoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
-        if (!Constants.PEDIDO_REVISION_SOBREVENTA.equals(pedido.getEstadoPedido())) {
+        Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(lectura)
+            .flatMap(p -> pagoRepository.findByIdForUpdate(p.getId()));
+        Pedido pedido = pedidoRepository.findByIdForUpdate(pedidoId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        List<String> estadoActual = pedidoRepository.estadosDe(List.of(pedidoId));
+        if (estadoActual == null || !estadoActual.contains(Constants.PEDIDO_REVISION_SOBREVENTA)) {
             throw new IllegalArgumentException(MENSAJE_NO_EN_REVISION);
         }
-        Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(pedido);
         if (ACCION_REEMBOLSO_PROCESADO.equals(accion)) {
             Pago pago = pagoOpt.filter(p -> Constants.PAGO_REEMBOLSO_PENDIENTE.equals(p.getEstadoPago()))
                 .orElseThrow(() -> new IllegalArgumentException(MENSAJE_PAGO_NO_PENDIENTE));
