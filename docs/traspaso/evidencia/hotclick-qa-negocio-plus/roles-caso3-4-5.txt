@@ -1,0 +1,13 @@
+QA3-017 EDITOR PUT rol ADMIN 403 {"success":false,"message":"Solo el emprendedor puede cambiar roles","data":null,"timestamp":"2026-10-26T12:49:40.926493195"}
+rol tras intento EDITOR
+EDITOR write POST /api/productos 400 {"success":false,"message":"precioCompra: El precio de compra es obligatorio; nombreProducto: El nombre del producto es obligatorio; precioV
+EDITOR write POST /api/empresa/equipo 403 {"success":false,"message":"Solo el emprendedor puede agregar miembros","data":null,"timestamp":"2026-10-26T12:49:41.041612135"}
+EDITOR write PUT /api/empresa/equipo/1023/rol 403 {"success":false,"message":"Solo el emprendedor puede cambiar roles","data":null,"timestamp":"2026-10-26T12:49:41.090070266"}
+EDITOR DELETE equipo 403 {"success":false,"message":"Solo el emprendedor puede eliminar miembros","data":null,"timestamp":"2026-10-26T12:49:53.686823628"}
+login upper 200 EMPRENDEDOR None
+login spaces 400 None correo: Correo inválido
+login mixed 200 EMPRENDEDOR None
+invite dup case 403 {"error":"LIMIT_REACHED","message":"Has alcanzado el límite de usuarios del equipo de tu plan (2/2).","upgrade":"Plan actual: «EMPRENDEDOR». Ve a Configuración → Suscripción para ampliar tu capacidad.
+roles_equipo ['PROPIETARIO', 'EDITOR'] False
+OWNER PUT preferencias 200 {"success":true,"message":"Preferencias guardadas","data":{"diaCobro":28,"frecuenciaPayout":"QUINCENAL","contraEntrega":"DIA_SIGUIENTE","con
+OWNER POST metodos-cobro 400 {"success":false,"message":"dato: El dato de la cuenta es requerido; tipo: El tipo es requerido","data":null,"timestamp":"2026-10-26T12:49:5

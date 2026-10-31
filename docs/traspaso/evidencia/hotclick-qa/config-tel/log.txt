@@ -1,0 +1,17 @@
+Rama chore/sinpe-telefono-config (local, sin push) — worktree /workspace/hc-qa-config
+HEAD ecb53285a94ae08c626a55325584c9e473c8406a
+git diff 43188186..HEAD | sha256sum = 752676e24910eab5716d87142c9dbfeb7bf08cdc30f37b109b90eb84eb8f5b77
+Backend: unset ONVO_*; cd Hot_click_outlet && MAVEN_OPTS=-Xmx2g flock /workspace/.mvn-suite.lock mvn -B test -DforkCount=1
+  -> Tests run: 2291, Failures: 0, Errors: 0, Skipped: 20 — BUILD SUCCESS (11:16 min)
+Frontend: npx vitest run -> 187 archivos, 1065 tests, 0 fallos; npx tsc -b --noEmit -> OK
+  vite build (VITE_ ficticios, outDir /tmp/hc-config-build para no tocar static/) -> OK
+Staging local: vite dev :3417 + Playwright (Chrome) con VITE_HOTCLICK_SINPE_NUMERO=88888888, API mockeada
+  tests/sinpe-numero-config.spec.ts -> 1 passed; evidencia checkout-sinpe.png / checkout-sinpe.html ("Número SINPE 8888-8888")
+  Comando: staging-cmd.txt; salida: staging-out.txt
+checkout-cta.spec.ts: 3 fallos por textos ya desactualizados ("Tarjeta de crédito o débito"), probablemente preexistentes (no verificado contra 43188186).
+Escaneo del diff: 0 apariciones de los números reales (comparación por hash, sin imprimirlos).
+
+== Re-trabajo tras NO APTO (2026-10-23) ==
+HEAD=393b0816f86e9b31f9ef12258dee87c23faab562 (reemplaza ecb53285)
+sha256(git diff 43188186..HEAD)=37c48f0d82c85c7a24e472d3aacf6aadf8098adc1d15d35d8152cb05f0c0b21b
+HASHES_PROHIBIDOS=0, hex64 añadidos=0, 8777 añadidos=0. Detalle de la compuerta en gate-env.txt

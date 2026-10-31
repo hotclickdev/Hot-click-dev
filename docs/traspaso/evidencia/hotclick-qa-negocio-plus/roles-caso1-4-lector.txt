@@ -1,0 +1,15 @@
+CASO1 login LECTOR 200 rolJWT EMPRENDEDOR empresaId 4 verificado True
+rolEnEmpresa LECTOR id 1067 <u>@example.com
+LECTOR POST /api/productos 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:02.426571358"}
+LECTOR POST /api/empresa/equipo 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:02.452685495"}
+LECTOR PUT /api/empresa/equipo/1067/rol 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:02.481712197"}
+LECTOR DELETE /api/empresa/equipo/1067 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:08.853625164"}
+LECTOR POST /api/billing/checkout/999999 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:08.883223827"}
+LECTOR POST /api/billing/portal 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:08.910037398"}
+LECTOR PUT /api/billing/preferencias 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:08.934683573"}
+LECTOR POST /api/wallet/payout 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:08.959971804"}
+LECTOR POST /api/metodos-cobro 403 {"success":false,"message":"Tu rol de Lector es solo de visualización.","data":null,"timestamp":"2026-10-26T13:04:08.999192418"}
+LECTOR GET /api/billing/suscripcion 200 {"estado":"SIN_SUSCRIPCION","planNombre":"FREE"}
+LECTOR GET /api/billing/facturas 200 []
+LECTOR GET /api/wallet/saldo 200 {"empresaId":4,"saldoDisponible":0,"saldoRetenido":0,"totalAcreditado":0,"totalRetirado":0,"ultimaActualizacion":"2026-10-26T13:04
+LECTOR GET /api/metodos-cobro 200 {"success":true,"message":"Métodos de cobro","data":[],"timestamp":"2026-10-26T13:04:09.084390395"}

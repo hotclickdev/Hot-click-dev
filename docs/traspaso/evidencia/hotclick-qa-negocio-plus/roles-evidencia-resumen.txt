@@ -1,0 +1,3 @@
+commit: f9f0e506 (staging local :8081 / :3000)
+backend: localhost:8081  front: localhost:3000
+cuentas: dueño qa3 + EDITOR id=1023 empresaId=4; LECTOR: no existe en equipo
