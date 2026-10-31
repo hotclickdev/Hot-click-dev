@@ -26,6 +26,7 @@ public class UsuarioController {
     @Autowired private PasswordEncoder   passwordEncoder;
     @Autowired private InputSanitizer    sanitizer;
     @Autowired private CompanyScope      companyScope;
+    @Autowired private com.hotclick.service.auth.AuthSupport authSupport;
 
     private void assertSelfOrAdmin(Long id) {
         if (companyScope.isAdminIT()) return;
@@ -70,6 +71,10 @@ public class UsuarioController {
             String actual = datos.getOrDefault("contrasenaActual", "");
             if (!passwordEncoder.matches(actual, usuario.getContrasenaHash())) {
                 return ResponseEntity.status(400).body(ResponseDTO.error("La contraseña actual es incorrecta"));
+            }
+            // B1: mismo mínimo que AuthPasswordChangeHandler (8, mayúscula y número)
+            if (!authSupport.esContrasenaValida(datos.get("nuevaContrasena"))) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error("La contraseña debe tener al menos 8 caracteres, una mayúscula y un número"));
             }
             usuario.setContrasenaHash(passwordEncoder.encode(datos.get("nuevaContrasena")));
         }
