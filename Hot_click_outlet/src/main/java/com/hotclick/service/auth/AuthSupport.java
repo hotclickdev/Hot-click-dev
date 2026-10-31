@@ -180,6 +180,23 @@ public class AuthSupport {
     public static final String MENSAJE_POLITICA_CONTRASENA =
             "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
 
+    /**
+     * Qué le falta a la contraseña para cumplir la política, en voseo
+     * (p. ej. "Te falta una mayúscula", "Te falta una mayúscula y un número").
+     * Devuelve null si cumple.
+     */
+    public static String faltantePoliticaContrasena(String pwd) {
+        String p = pwd == null ? "" : pwd;
+        java.util.List<String> faltan = new java.util.ArrayList<>();
+        if (p.length() < 8) faltan.add("llegar a 8 caracteres");
+        if (p.chars().noneMatch(Character::isUpperCase)) faltan.add("una mayúscula");
+        if (p.chars().noneMatch(Character::isDigit)) faltan.add("un número");
+        if (faltan.isEmpty()) return null;
+        String lista = faltan.size() == 1 ? faltan.get(0)
+                : String.join(", ", faltan.subList(0, faltan.size() - 1)) + " y " + faltan.get(faltan.size() - 1);
+        return "Te falta " + lista;
+    }
+
     /** Versión estática de {@link #esContrasenaValida} para altas fuera del flujo de auth. */
     public static boolean cumplePoliticaContrasena(String pwd) {
         if (pwd == null || pwd.length() < 8) return false;
