@@ -1225,6 +1225,7 @@
     "hidePassword": "Ocultar contraseña",
     "reqLength": "Entre 8 y 128 caracteres",
     "reqNotEmail": "No es igual a tu correo",
+    "reqUpperDigit": "Tiene una mayúscula y un número",
     "reqMix": "Mejor si combina letras, números y símbolos",
     "mismatch": "Las contraseñas no coinciden",
     "save": "Guardar y entrar",

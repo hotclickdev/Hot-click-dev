@@ -1225,6 +1225,7 @@
     "hidePassword": "Hide password",
     "reqLength": "Between 8 and 128 characters",
     "reqNotEmail": "Not the same as your email",
+    "reqUpperDigit": "Has an uppercase letter and a number",
     "reqMix": "Better if it mixes letters, numbers and symbols",
     "mismatch": "Passwords don't match",
     "save": "Save and sign in",

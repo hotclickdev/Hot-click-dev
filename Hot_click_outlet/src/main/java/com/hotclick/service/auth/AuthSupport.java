@@ -214,10 +214,11 @@ public class AuthSupport {
 
     /**
      * Política de la nueva contraseña al recuperarla (Figma "Recuperar contraseña · 3 nueva"):
-     * entre 8 y 128 caracteres y distinta del correo. Es la misma regla de largo que el registro.
+     * misma política que el registro (8+, una mayúscula y un número), hasta 128 caracteres
+     * y distinta del correo.
      */
     public static boolean esContrasenaRecuperacionValida(String pwd, String correo) {
-        if (pwd == null || pwd.length() < CONTRASENA_MIN || pwd.length() > CONTRASENA_MAX) return false;
+        if (pwd == null || pwd.length() > CONTRASENA_MAX || !cumplePoliticaContrasena(pwd)) return false;
         return correo == null || !pwd.trim().equalsIgnoreCase(correo.trim());
     }
 

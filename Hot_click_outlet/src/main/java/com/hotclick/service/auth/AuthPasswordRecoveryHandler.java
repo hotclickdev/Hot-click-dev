@@ -28,7 +28,7 @@ public class AuthPasswordRecoveryHandler {
 
     static final String MSG_CODIGO_ENVIADO    = "Si el correo está registrado, recibirás un código de verificación";
     static final String MSG_CODIGO_INVALIDO   = "Código incorrecto o vencido. Revisalo o pedí uno nuevo.";
-    static final String MSG_CONTRASENA        = "La contraseña debe tener entre 8 y 128 caracteres y no puede ser igual a tu correo";
+    static final String MSG_CONTRASENA        = "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número, hasta 128 caracteres, y no puede ser igual a tu correo";
     static final String MSG_SESION_INVALIDA   = "La recuperación venció o el código no es válido. Pedí un código nuevo.";
     private static final Pattern CODIGO_6_DIGITOS = Pattern.compile("^\\d{6}$");
 

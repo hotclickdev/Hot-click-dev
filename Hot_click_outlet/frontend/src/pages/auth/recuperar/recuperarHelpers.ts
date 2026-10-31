@@ -18,22 +18,24 @@ export const PASOS: Paso[] = ['correo', 'codigo', 'nueva']
 export type RequisitosContrasena = {
   largo: boolean
   distintaDelCorreo: boolean
+  mayusculaNumero: boolean
   combinada: boolean
 }
 
-/** Requisitos que muestra el Figma 44:1614. Los dos primeros son obligatorios; el tercero es sugerencia. */
+/** Requisitos que muestra el Figma 44:1614. Largo, distinta del correo y mayúscula + número son obligatorios (misma política que el registro); combinada es sugerencia. */
 export function requisitosContrasena(contrasena: string, correo: string): RequisitosContrasena {
   return {
     largo: contrasena.length >= CONTRASENA_MIN && contrasena.length <= CONTRASENA_MAX,
     distintaDelCorreo: contrasena.length > 0
       && contrasena.trim().toLowerCase() !== correo.trim().toLowerCase(),
+    mayusculaNumero: /\p{Lu}/u.test(contrasena) && /\p{Nd}/u.test(contrasena),
     combinada: /\p{L}/u.test(contrasena) && /\d/.test(contrasena) && /[^\p{L}\d\s]/u.test(contrasena),
   }
 }
 
 export function contrasenaAceptable(contrasena: string, correo: string): boolean {
   const r = requisitosContrasena(contrasena, correo)
-  return r.largo && r.distintaDelCorreo
+  return r.largo && r.distintaDelCorreo && r.mayusculaNumero
 }
 
 /** Solo dígitos, hasta 6 (sirve para pegar "482 913" o "Código: 482913"). */
