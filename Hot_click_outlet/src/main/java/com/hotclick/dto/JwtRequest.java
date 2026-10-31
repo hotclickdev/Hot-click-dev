@@ -12,7 +12,7 @@ public class JwtRequest {
     private String correo;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, max = 128, message = "La contraseña debe tener entre 6 y 128 caracteres")
+    @Size(min = 8, max = 128, message = "La contraseña debe tener entre 8 y 128 caracteres")
     private String contrasena;
 
     public String getCorreo() { return correo; }
