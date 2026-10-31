@@ -49,7 +49,19 @@ public class PropietarioGuard {
      * ADMIN de equipo activo (sin sesión de soporte). EDITOR, LECTOR y CAJERO, no.
      */
     public boolean puedeCambiarVisibilidad(Long empresaId) {
-        if (puedeGestionarEmpresa(empresaId)) return true;
+        return puedeGestionarEmpresa(empresaId) || esAdminEquipo(empresaId);
+    }
+
+    /**
+     * Rol CAJERO asignable: lo asigna el PROPIETARIO (o ADMIN de plataforma) o el ADMIN de equipo activo sin
+     * sesión de soporte. EDITOR, LECTOR y CAJERO, no.
+     */
+    public boolean puedeAsignarCajero(Long empresaId) {
+        return puedeGestionarEmpresa(empresaId) || esAdminEquipo(empresaId);
+    }
+
+    /** ADMIN de equipo activo en esa empresa, sin sesión de soporte (no es el ADMIN de plataforma). */
+    public boolean esAdminEquipo(Long empresaId) {
         if (empresaId == null || companyScope.isImpersonating()) return false;
         Usuario u = companyScope.getCurrentUser();
         if (u == null) return false;

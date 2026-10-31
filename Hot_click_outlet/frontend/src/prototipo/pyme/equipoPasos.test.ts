@@ -18,3 +18,15 @@ describe('validarPasoInvitarEquipo — clave mínima', () => {
     expect(validarPasoInvitarEquipo(1, form('Abcdefg1'))).toBeNull()
   })
 })
+
+describe('validarPasoInvitarEquipo — rol CAJERO', () => {
+  const form = (rolEnEmpresa: string) =>
+    ({ nombre: 'Ana', correo: 'ana@example.com', password: 'Abcdefg1', rolEnEmpresa } as unknown as FormularioEquipo)
+
+  it('acepta CAJERO como rol asignable', () => {
+    expect(validarPasoInvitarEquipo(2, form('CAJERO'))).toBeNull()
+  })
+  it('rechaza un rol fuera de la lista', () => {
+    expect(validarPasoInvitarEquipo(2, form('GERENTE'))).toBe('Elegí un rol.')
+  })
+})
