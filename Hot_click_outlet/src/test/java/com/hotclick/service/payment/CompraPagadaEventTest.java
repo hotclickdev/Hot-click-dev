@@ -3,6 +3,7 @@ package com.hotclick.service.payment;
 import com.hotclick.model.Compra;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
+import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.*;
 class CompraPagadaEventTest {
 
     @Mock private PedidoRepository pedidoRepository;
+    @Mock private PagoRepository pagoRepository;
     @Mock private CuponService cuponService;
     @Mock private GiftCardService giftCardService;
     @Mock private StockReservationService stockReservationService;
