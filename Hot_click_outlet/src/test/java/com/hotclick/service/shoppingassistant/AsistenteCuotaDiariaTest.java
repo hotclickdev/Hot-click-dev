@@ -245,9 +245,9 @@ class AsistenteCuotaDiariaTest {
 
         assertThat(c.claveCliente(VISITOR_A)).isEqualTo("v:" + VISITOR_A);
         assertThat(c.claveCliente(VISITOR_A.toUpperCase())).isEqualTo("v:" + VISITOR_A);
-        assertThat(c.claveCliente("no-es-uuid")).isEqualTo("ip:203.0.113.9");
-        assertThat(c.claveCliente(null)).isEqualTo("ip:203.0.113.9");
-        assertThat(c.claveCliente("0b5f2c1e-3f0a-4d0e-9a52-1d6f0c9a7b11-x")).isEqualTo("ip:203.0.113.9");
+        assertThat(c.claveCliente("no-es-uuid")).isEqualTo("ip:" + c.huella("203.0.113.9"));
+        assertThat(c.claveCliente(null)).isEqualTo("ip:" + c.huella("203.0.113.9"));
+        assertThat(c.claveCliente("0b5f2c1e-3f0a-4d0e-9a52-1d6f0c9a7b11-x")).isEqualTo("ip:" + c.huella("203.0.113.9"));
 
         SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken("ana@correo.test", "x", "ROLE_USER"));
         String usuario = c.claveCliente(VISITOR_A);
