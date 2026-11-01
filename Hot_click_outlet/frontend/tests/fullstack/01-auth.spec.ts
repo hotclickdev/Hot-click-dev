@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { QA, claveQa, login, sufijo } from './api'
+import { QA, claveQa, login, sufijo, sql } from './api'
 
 /**
  * Flujo 1: registro y login.
@@ -35,13 +35,22 @@ test.describe('Flujo 1 — auth', () => {
   })
 
   test('registro local y login con la cuenta nueva', async ({ request }) => {
-    // E2E-REG-01 arreglado: el registro asigna identificacion interna y telefono '' (columnas NOT NULL).
+    // E2E-REG-01: el registro asigna identificacion interna y telefono '' (NOT NULL); la cuenta queda PENDIENTE hasta aprobación.
     const correo = `e2e.${sufijo()}@example.test`
     const contrasena = `E2e-${sufijo()}-Aa1!`
     const reg = await request.post('/api/auth/register', {
       data: { nombre: 'Comprador E2E', correo, contrasena, declaraMayoriaEdad: true },
     })
     expect(reg.ok(), await reg.text()).toBeTruthy()
+    // La cuenta nace PENDIENTE (estado 5): el login la rechaza con 403 hasta que un admin la aprueba.
+    const pendiente = await request.post('/api/auth/login', { data: { correo, contrasena } })
+    expect(pendiente.status(), 'cuenta pendiente no recibe tokens').toBe(403)
+    // Emula PUT /api/admin/usuarios/{id}/aprobar (rol USUARIO_FINAL) sobre la BD de E2E; producción no cambia.
+    sql(`UPDATE hot_click_usuario_tb SET fk_id_estado = 1, correo_verificado = true WHERE correo = :'correo';
+      DELETE FROM hot_click_usuario_rol_tb WHERE fk_id_usuario = (SELECT id_usuario FROM hot_click_usuario_tb WHERE correo = :'correo');
+      INSERT INTO hot_click_usuario_rol_tb (fk_id_usuario, fk_id_rol)
+        SELECT u.id_usuario, r.id_rol FROM hot_click_usuario_tb u, hot_click_rol_tb r
+        WHERE u.correo = :'correo' AND r.nombre_rol = 'USUARIO_FINAL'`, { correo })
     await login(request, correo, contrasena)
   })
 
