@@ -1,6 +1,8 @@
 import { AnimatePresence } from 'framer-motion'
 import WebAuthnStep from '@/components/auth/WebAuthnStep'
 import LoginFormStep from './auth/LoginFormStep'
+import RegisterVerifyStep from './auth/RegisterVerifyStep'
+import { PASO_VERIFICAR_CORREO } from './auth/reenvioVerificacion'
 import TwoFaPickerStep from './auth/TwoFaPickerStep'
 import TwoFaEmailOtpStep from './auth/TwoFaEmailOtpStep'
 import TwoFaTotpStep from './auth/TwoFaTotpStep'
@@ -19,6 +21,7 @@ export default function LoginPage() {
     navigate, error, setError, needsVerification, needsPasswordReset,
     resendLoading, verifCooldown, refs2FA, turnstileRef, turnstileToken, setTurnstileToken,
     twoFaMethods, resendCooldown, handleLogin, handleResendVerification,
+    codigoVerif, setCodigoVerif, abrirVerificacion, handleVerifyEmail, addItem, t,
     sendEmailOtp, handlePickMethod, handle2FA, handleEmailOtp, handleLoginSuccess,
   } = flow
 
@@ -39,7 +42,24 @@ export default function LoginPage() {
             setTurnstileToken={setTurnstileToken}
             onSubmit={handleLogin}
             onResendVerification={handleResendVerification}
+            onIngresarCodigo={abrirVerificacion}
             onForgot={() => navigate('/recuperar-contrasena', { state: { correo } })}
+          />
+        )}
+
+        {/* QA4-004: mismo paso de código que /registro; el código solo se manda con «Reenviar». */}
+        {step === PASO_VERIFICAR_CORREO && (
+          <RegisterVerifyStep
+            key="verificar-correo"
+            t={t}
+            codigo={codigoVerif} setCodigo={setCodigoVerif}
+            correoRegistro={correo.trim()}
+            error={error} loading={loading || resendLoading}
+            onVerify={handleVerifyEmail}
+            onReenviar={() => { void handleResendVerification() }}
+            onBack={() => { setError(''); setStep('login') }}
+            showCartRecovery={false} recoveryCart={null} addItem={addItem}
+            onCloseCart={() => {}} onDoneCart={() => {}}
           />
         )}
 
