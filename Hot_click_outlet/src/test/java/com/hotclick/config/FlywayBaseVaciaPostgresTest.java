@@ -197,4 +197,85 @@ class FlywayBaseVaciaPostgresTest {
             "SELECT COUNT(*) FROM flyway_schema_history WHERE type = 'BASELINE'", Integer.class));
         assertEquals(0, flywayComoApp(ds).info().pending().length);
     }
+
+    private static final List<String> FKS_V221 = List.of(
+        "hot_click_pago_tb_fk_id_pedido_fkey", "hot_click_pago_tb_fk_id_usuario_fkey",
+        "hot_click_pago_tb_fk_id_estado_fkey", "hot_click_payment_log_tb_fk_id_usuario_fkey",
+        "hot_click_transaccion_pago_tb_fk_id_estado_fkey", "hot_click_webhook_event_tb_fk_id_estado_fkey");
+
+    private static String referenciaDe(JdbcTemplate jdbc, String fk) {
+        return jdbc.queryForObject("SELECT c.confrelid::regclass::text FROM pg_constraint c WHERE c.contype = 'f' AND c.conname = ?",
+            String.class, fk);
+    }
+
+    /** ALTO QA5 (1e181f7e): las 6 FK de pagos apuntaban a tablas viejas en MAYÚSCULAS y el checkout daba 500. */
+    @Test
+    void v221_fkDePagosApuntanATablasMinusculas_yElPagoSeCrea() throws Exception {
+        DataSource ds = baseNueva();
+        MockEnvironment env = new MockEnvironment().withProperty(FlywayRepairConfig.PROP_BASE_VACIA, "true");
+        env.setActiveProfiles("prod");
+        arrancarComo(ds, env);
+        JdbcTemplate jdbc = new JdbcTemplate(ds);
+
+        for (String fk : FKS_V221) {
+            String ref = referenciaDe(jdbc, fk);
+            assertEquals(ref.toLowerCase(), ref, fk + " sigue hacia " + ref);
+            assertFalse(ref.contains("\""), fk + " sigue hacia " + ref);
+        }
+        assertEquals(0, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM pg_constraint c JOIN pg_class s ON s.oid = c.conrelid JOIN pg_class t ON t.oid = c.confrelid "
+                + "WHERE c.contype = 'f' AND s.relname = lower(s.relname) AND t.relname <> lower(t.relname) "
+                + "AND to_regclass(lower(t.relname)) IS NOT NULL", Integer.class),
+            "ninguna tabla JPA debe referenciar la tabla vieja en mayúsculas si existe la nueva");
+
+        // Idempotente: re-ejecutar V221 (caso dev ya corregido a mano) no cambia nada ni falla.
+        String v221 = java.nio.file.Files.readString(java.nio.file.Path.of(
+            "src/main/resources/db/migration/V221__fk_pagos_a_tablas_minusculas.sql"));
+        jdbc.execute(v221);
+        for (String fk : FKS_V221) {
+            assertEquals(referenciaDe(jdbc, fk).toLowerCase(), referenciaDe(jdbc, fk));
+        }
+    }
+
+    /**
+     * Mismo bug sin la cadena completa (corre sin pgvector): esquema base de master con las FK viejas,
+     * V221, y el insert del pago que antes daba 500. V221 dos veces = sin cambios (caso dev corregido a mano).
+     */
+    @Test
+    void v221_sobreEsquemaConFkViejas_reapuntaLas6_yElPagoSeCrea() throws Exception {
+        DataSource ds = baseNueva();
+        JdbcTemplate jdbc = new JdbcTemplate(ds);
+        String base = java.nio.file.Files.readString(java.nio.file.Path.of(
+            "src/main/resources/db/base-vacia/V1__esquema_base_vacia.sql"));
+        jdbc.execute(base);
+        // Reproduce las FK de bases creadas antes del arreglo (V1 aplicada / base-vacia vieja).
+        jdbc.execute("CREATE TABLE IF NOT EXISTS hot_click_estado_tb (id_estado INT PRIMARY KEY)");
+        jdbc.execute("INSERT INTO hot_click_estado_tb VALUES (1) ON CONFLICT DO NOTHING");
+        String[][] viejas = {
+            {"hot_click_pago_tb", "hot_click_pago_tb_fk_id_pedido_fkey", "fk_id_pedido", "HOT_CLICK_PEDIDO_TB", "ID_PEDIDO"},
+            {"hot_click_pago_tb", "hot_click_pago_tb_fk_id_usuario_fkey", "fk_id_usuario", "HOT_CLICK_USUARIO_TB", "ID_USUARIO"},
+            {"hot_click_payment_log_tb", "hot_click_payment_log_tb_fk_id_usuario_fkey", "fk_id_usuario", "HOT_CLICK_USUARIO_TB", "ID_USUARIO"}};
+        for (String[] v : viejas) {
+            jdbc.execute("ALTER TABLE " + v[0] + " DROP CONSTRAINT " + v[1]);
+            jdbc.execute("ALTER TABLE " + v[0] + " ADD CONSTRAINT " + v[1] + " FOREIGN KEY (" + v[2]
+                + ") REFERENCES \"" + v[3] + "\" (\"" + v[4] + "\")");
+        }
+        for (String fk : FKS_V221) {
+            assertTrue(referenciaDe(jdbc, fk).startsWith("\"HOT_CLICK_"), fk + " debería arrancar con la FK vieja");
+        }
+
+        String v221 = java.nio.file.Files.readString(java.nio.file.Path.of(
+            "src/main/resources/db/migration/V221__fk_pagos_a_tablas_minusculas.sql"));
+        jdbc.execute(v221);
+        jdbc.execute(v221);
+        for (String fk : FKS_V221) {
+            String ref = referenciaDe(jdbc, fk);
+            assertEquals(ref.toLowerCase(), ref, fk + " sigue hacia " + ref);
+            assertFalse(ref.contains("\""), fk + " sigue hacia " + ref);
+            assertTrue(jdbc.queryForObject("SELECT convalidated FROM pg_constraint WHERE conname = ?", Boolean.class, fk));
+        }
+
+        jdbc.execute(new String(FlywayBaseVaciaPostgresTest.class.getResourceAsStream("/fk-pago-checkout.sql").readAllBytes()));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM hot_click_pago_tb", Integer.class));
+    }
 }
