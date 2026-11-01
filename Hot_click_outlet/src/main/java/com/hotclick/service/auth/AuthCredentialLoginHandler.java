@@ -6,7 +6,6 @@ import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.security.JwtUtil;
-import com.hotclick.service.OtpService;
 import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.SecurityDetectionService;
 import com.hotclick.service.TurnstileService;
@@ -54,7 +53,6 @@ public class AuthCredentialLoginHandler {
     @Autowired private SecurityDetectionService    securityDetectionService;
     @Autowired private TurnstileService            turnstileService;
     @Autowired private AuthSupport                 authSupport;
-    @Autowired private OtpService                  otpService;
 
     public ResponseEntity<?> login(JwtRequest request, HttpServletRequest httpRequest) {
         if (!turnstileService.verify(request.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
@@ -136,7 +134,8 @@ public class AuthCredentialLoginHandler {
     private ResponseEntity<?> rechazarSiEstadoInvalido(Usuario usuario) {
         int estado = usuario.getEstado() == null ? 0 : usuario.getEstado();
         if (estado == Constants.ESTADO_PENDIENTE) {
-            avisarVerificacionPorEmail(usuario);
+            // QA4-004: el login ya no manda código. Solo se envía cuando la persona lo pide
+            // (POST /api/auth/reenviar-verificacion); antes cada login gastaba un código del tope.
             return respuestaCuentaBloqueada("Verificá tu correo para activar la cuenta.");
         }
         if (estado == Constants.ESTADO_INACTIVO
@@ -147,15 +146,6 @@ public class AuthCredentialLoginHandler {
         }
         // Cualquier otro valor (p. ej. sin estado) tampoco entra: solo el estado 1 recibe tokens.
         return estado == Constants.ESTADO_ACTIVO ? null : respuestaCredencialesInvalidas();
-    }
-
-    private void avisarVerificacionPorEmail(Usuario usuario) {
-        try {
-            otpService.enviarOtp(usuario, Constants.OTP_TIPO_REGISTRO);
-        } catch (Exception e) {
-            log.error("[login] No se pudo reenviar verificación a {}: {}",
-                CrmClienteMapper.enmascararCorreo(usuario.getCorreo()), e.getMessage(), e);
-        }
     }
 
     private static ResponseEntity<?> respuestaCredencialesInvalidas() {

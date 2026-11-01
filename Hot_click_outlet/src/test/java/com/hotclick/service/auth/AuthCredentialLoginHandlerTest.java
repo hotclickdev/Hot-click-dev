@@ -102,31 +102,18 @@ class AuthCredentialLoginHandlerTest {
     }
 
     @Test
-    @DisplayName("pendiente + clave ok → 403 y reenvía OTP de registro")
-    void pendienteReenviaVerificacion() {
+    @DisplayName("QA4-004: pendiente + clave ok → 403 y NO manda código (solo con reenvío explícito)")
+    void pendienteNoEnviaCodigoAlLoguear() {
         Usuario u = usuarioConEstado(Constants.ESTADO_PENDIENTE);
         when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
         when(passwordEncoder.matches(CLAVE, HASH_REAL)).thenReturn(true);
 
         ResponseEntity<?> resp = handler.login(request(), httpRequest);
+        handler.login(request(), httpRequest);
 
         assertCuentaBloqueada(resp, "Verificá tu correo para activar la cuenta.");
-        verify(otpService).enviarOtp(u, Constants.OTP_TIPO_REGISTRO);
+        verify(otpService, never()).enviarOtp(any(), anyString());
         verify(securityAuditService, never()).logLoginFailed(anyString(), any(), anyString());
-    }
-
-    @Test
-    @DisplayName("pendiente + fallo de mail → igual 403, no rompe login")
-    void pendienteMailFallaNoRompe() {
-        Usuario u = usuarioConEstado(Constants.ESTADO_PENDIENTE);
-        when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
-        when(passwordEncoder.matches(CLAVE, HASH_REAL)).thenReturn(true);
-        org.mockito.Mockito.doThrow(new RuntimeException("smtp down"))
-            .when(otpService).enviarOtp(u, Constants.OTP_TIPO_REGISTRO);
-
-        ResponseEntity<?> resp = handler.login(request(), httpRequest);
-
-        assertCuentaBloqueada(resp, "Verificá tu correo para activar la cuenta.");
     }
 
     @Test
