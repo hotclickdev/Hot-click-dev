@@ -7,10 +7,14 @@ import type { Id } from '@/types/api'
 /** QA8: el negocio aún no está aprobado; no puede elegir ni pagar plan (409 del backend). */
 export const MSG_EMPRESA_PENDIENTE_APROBACION = 'Tu negocio está en revisión; podrás elegir plan cuando lo aprobemos.'
 
+/** QA3-022: checkout al plan que ya está activo (409 PLAN_YA_ACTIVO). */
+export const MSG_PLAN_YA_ACTIVO = 'Ya tenés este plan activo. No hace falta volver a contratarlo.'
+
 export function mensajeErrorPlan(err: unknown, fallback: string): string {
   if (typeof err !== 'object' || err === null || !('response' in err)) return fallback
   const data = (err as { response?: { data?: { error?: unknown; codigo?: unknown } } }).response?.data
   if (data?.codigo === 'EMPRESA_PENDIENTE_APROBACION') return MSG_EMPRESA_PENDIENTE_APROBACION
+  if (data?.codigo === 'PLAN_YA_ACTIVO') return MSG_PLAN_YA_ACTIVO
   const error = data?.error
   return typeof error === 'string' && error ? error : fallback
 }

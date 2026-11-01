@@ -20,6 +20,8 @@ public class SuscripcionQueryService {
 
     @Autowired private SuscripcionRepository suscripcionRepo;
     @Autowired private FacturaSaasRepository facturaRepo;
+    @Autowired(required = false) private com.hotclick.repository.EmpresaRepository empresaRepo;
+    @Autowired(required = false) private com.hotclick.repository.PlanRepository planRepo;
 
     @Transactional(readOnly = true)
     public Map<String, Object> getSuscripcionInfo(Long empresaId) {
@@ -28,7 +30,11 @@ public class SuscripcionQueryService {
 
         if (subOpt.isEmpty()) {
             info.put("estado", "SIN_SUSCRIPCION");
-            info.put("planNombre", "FREE");
+            // QA3-P01: sin fila de suscripción se muestra el plan real del negocio (p. ej. NEGOCIO_PLUS asignado),
+            // no un FREE fijo. Solo si el negocio no tiene plan se cae a FREE.
+            Plan real = planRealEmpresa(empresaId);
+            info.put("planNombre", real != null ? real.getNombre() : "FREE");
+            if (real != null) info.put("planId", real.getId());
             return info;
         }
 
@@ -43,7 +49,22 @@ public class SuscripcionQueryService {
         info.put("trialEnd", sub.getTrialEnd());
         info.put("cancelarAlVencer", sub.getCancelarAlVencer());
         info.put("tieneStripe", sub.getStripeSubscriptionId() != null);
+        // QA3-023: plan elegido que espera la confirmación de ONVO (el vigente sigue en planNombre).
+        Plan pendiente = sub.getPlanPendiente();
+        if (pendiente != null) {
+            info.put("planPendienteNombre", pendiente.getNombre());
+            info.put("planPendienteId", pendiente.getId());
+        }
         return info;
+    }
+
+    private Plan planRealEmpresa(Long empresaId) {
+        if (empresaRepo == null) return null;
+        var empresa = empresaRepo.findById(empresaId).orElse(null);
+        if (empresa == null) return null;
+        if (empresa.getPlan() != null) return empresa.getPlan();
+        if (empresa.getPlanSaas() != null && planRepo != null) return planRepo.findByNombre(empresa.getPlanSaas()).orElse(null);
+        return null;
     }
 
     @Transactional(readOnly = true)
