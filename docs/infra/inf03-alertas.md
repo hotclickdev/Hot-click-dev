@@ -20,5 +20,18 @@ Referencias: `application.properties` (bloques SENTRY y TELEGRAM — Alertas ope
 
 ## Activar
 1. Cargar `SENTRY_DSN`, `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en el entorno del servicio.
-2. Opcional: `ONVO_WEBHOOK_401_UMBRAL` (propuesta: `5` con ventana `10`).
+2. Cargar `ONVO_WEBHOOK_401_UMBRAL=5` y `ONVO_WEBHOOK_401_VENTANA_MIN=10` (ver abajo).
 3. Reiniciar el servicio. Para apagar, vaciar la variable y reiniciar.
+
+## Valor aprobado para la alerta de 401 del webhook ONVO
+Cargar en staging y producción: `ONVO_WEBHOOK_401_UMBRAL=5` y `ONVO_WEBHOOK_401_VENTANA_MIN=10`.
+El default en código sigue en `0` (apagado); este valor se aplica solo vía variable de entorno.
+
+Razón: con el secret bien configurado hay 0 de estos 401. Más de 5 en 10 minutos indica un secret mal
+cargado (por ejemplo tras un deploy) o alguien probando el endpoint. La alerta salta con 6 o más dentro de
+la ventana deslizante y no se repite hasta que pase una ventana completa.
+
+## Pendientes
+- **BAJO** — `security.alert.email` en `application.properties` tiene por defecto un correo real del proyecto.
+  No es un secreto y se acepta por ahora, pero es el único destino de alertas que no queda vacío por defecto
+  (se sobreescribe con `SECURITY_ALERT_EMAIL`).
