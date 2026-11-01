@@ -42,8 +42,7 @@ public class CarritoController {
             }
             Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
-            Carrito carrito = carritoService.obtenerCarritoActivo(usuario);
-            return ResponseEntity.ok(ResponseDTO.success("Carrito obtenido", carrito));
+            return ResponseEntity.ok(ResponseDTO.success("Carrito obtenido", carritoService.obtenerCarritoActivoDto(usuario)));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
@@ -64,8 +63,8 @@ public class CarritoController {
             if (!carrito.getUsuarioFinal().getId().equals(userId)) {
                 return ResponseEntity.status(403).body(ResponseDTO.error("Acceso denegado"));
             }
-            Carrito actualizado = carritoService.agregarItem(carritoId, productoId, cantidad);
-            return ResponseEntity.ok(ResponseDTO.success("Item agregado al carrito", actualizado));
+            return ResponseEntity.ok(ResponseDTO.success("Item agregado al carrito",
+                carritoService.agregarItemDto(carritoId, productoId, cantidad)));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
