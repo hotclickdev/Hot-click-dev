@@ -108,6 +108,31 @@ class FlywayRepairConfigTest {
     }
 
     @Test
+    void propiedades_porDefecto_mantienenComportamientoHistorico() {
+        FlywayRepairConfig cfg = new FlywayRepairConfig(new MockEnvironment());
+        assertTrue(cfg.devBootstrapHabilitado(), "dev-bootstrap encendido por defecto");
+        org.junit.jupiter.api.Assertions.assertFalse(cfg.baseVaciaHabilitada(), "base-vacia apagado por defecto");
+    }
+
+    @Test
+    void propiedades_seApaganYEncienden() {
+        FlywayRepairConfig cfg = new FlywayRepairConfig(new MockEnvironment()
+            .withProperty("hotclick.flyway.dev-bootstrap", "false")
+            .withProperty("hotclick.flyway.base-vacia.enabled", "true"));
+        org.junit.jupiter.api.Assertions.assertFalse(cfg.devBootstrapHabilitado());
+        assertTrue(cfg.baseVaciaHabilitada());
+    }
+
+    @Test
+    void esquemaBaseVacia_yHook_existenFueraDeDbMigration() {
+        assertTrue(new org.springframework.core.io.ClassPathResource(
+            "db/base-vacia/V1__esquema_base_vacia.sql").exists());
+        assertTrue(new org.springframework.core.io.ClassPathResource(
+            "db/base-vacia/hooks/V2__antes_de_V71.sql").exists());
+        assertEquals("70", FlywayRepairConfig.VERSION_ANTES_HOOK);
+    }
+
+    @Test
     void abortarProdVacio_mensajeClaro() {
         IllegalStateException ex = org.junit.jupiter.api.Assertions.assertThrows(
             IllegalStateException.class, FlywayRepairConfig::abortarProdVacio);
