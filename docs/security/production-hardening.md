@@ -94,6 +94,7 @@ spring.datasource.hikari.maximum-pool-size=3  # Límite Supabase free tier
 - [ ] `APP_URL` apunta al dominio de producción
 - [ ] `SENDGRID_API_KEY` configurado (para emails de 2FA y notificaciones)
 - [ ] `PAYPAL_WEBHOOK_ID` configurado (para verificación de webhooks)
+- [ ] Antes de migrar en un servidor o base nueva: la extensión `vector` (pgvector) tiene que existir. Verificá que pgvector esté instalado en el servidor Postgres y pedile a un superusuario que corra `CREATE EXTENSION IF NOT EXISTS vector;`. El rol de la app no puede crearla y V62 falla con `permission denied to create extension "vector"`. Ver [docs/infra/prerrequisitos-bd.md](../infra/prerrequisitos-bd.md).
 
 ### Después del primer deploy
 
