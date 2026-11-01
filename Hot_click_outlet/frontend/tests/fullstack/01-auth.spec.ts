@@ -4,7 +4,7 @@ import { QA, claveQa, login, sufijo } from './api'
 /**
  * Flujo 1: registro y login.
  * - Login local (correo + contraseña) contra el backend real: siempre corre.
- * - Registro local: hoy falla en BD nueva (ver nota abajo) → test.fail documentado.
+ * - Registro local: E2E-REG-01 arreglado (sin test.fail).
  * - Clerk modo prueba: necesita CLERK_SECRET_KEY de una instancia de desarrollo (@clerk/testing);
  *   sin ese secreto se salta de forma explícita.
  */
@@ -35,11 +35,7 @@ test.describe('Flujo 1 — auth', () => {
   })
 
   test('registro local y login con la cuenta nueva', async ({ request }) => {
-    // BUG conocido (E2E-REG-01): en BD creada por el perfil dev (baseline 136 + ddl-auto) la columna
-    // hot_click_usuario_tb.identificacion queda NOT NULL (Usuario.identificacion nullable=false) y
-    // /api/auth/register no la manda → "No se pudo completar el registro". Cuando se arregle, este
-    // test pasa y Playwright lo marca como fallo: quitar test.fail() en el mismo PR del fix.
-    test.fail(true, 'E2E-REG-01: registro local falla con identificacion NOT NULL en BD nueva')
+    // E2E-REG-01 arreglado: el registro asigna identificacion interna y telefono '' (columnas NOT NULL).
     const correo = `e2e.${sufijo()}@example.test`
     const contrasena = `E2e-${sufijo()}-Aa1!`
     const reg = await request.post('/api/auth/register', {
