@@ -61,13 +61,14 @@ public class AuthRegistrationService {
             usuario.setCorreo(com.hotclick.utils.CorreoNormalizer.normalizar(req.getCorreo()));
             usuario.setIdentificacion(identificacionInterna()); // E2E-REG-01: columna NOT NULL, el registro no la pide
             usuario.setContrasenaHash(passwordEncoder.encode(req.getContrasena()));
-            if (req.getTelefono() != null) usuario.setTelefono(req.getTelefono().trim());
+            // E2E-REG-01: telefono también es NOT NULL (V1) y el registro no lo pide → "" como apellidoPaterno
+            usuario.setTelefono(req.getTelefono() != null ? req.getTelefono().trim() : "");
             Usuario nuevo = usuarioService.registrarSolicitud(usuario);
             telegramService.enviar(String.format(
                 "👤 *NUEVO REGISTRO*\n\n*Nombre:* %s\n*Correo:* %s\n*Teléfono:* %s",
                 nuevo.getNombre(),
                 nuevo.getCorreo(),
-                nuevo.getTelefono() != null ? nuevo.getTelefono() : "—"));
+                nuevo.getTelefono() != null && !nuevo.getTelefono().isBlank() ? nuevo.getTelefono() : "—"));
             return ResponseEntity.ok(ResponseDTO.success(
                 "Solicitud enviada. Un administrador revisará y activará tu cuenta pronto.", nuevo));
         } catch (Exception e) {
