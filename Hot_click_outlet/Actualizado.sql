@@ -4469,6 +4469,19 @@ BEGIN
 END
 $$;
 
+-- El seed de V1 vive en la tabla legada entre comillas "HOT_CLICK_USUARIO_TB" (puede no existir).
+DO $$
+BEGIN
+    IF to_regclass('public."HOT_CLICK_USUARIO_TB"') IS NOT NULL THEN
+        UPDATE "HOT_CLICK_USUARIO_TB"
+           SET "CORREO" = 'admin@hotclick.lat'
+         WHERE lower("CORREO") = 'admin@hotclick.com'
+           AND NOT EXISTS (SELECT 1 FROM "HOT_CLICK_USUARIO_TB" u2 WHERE lower(u2."CORREO") = 'admin@hotclick.lat');
+    END IF;
+END
+$$;
+
+-- Admin de plataforma (JPA / DataSeeder): Constants.CORREO_ADMIN pasa a admin@hotclick.lat.
 UPDATE hot_click_usuario_tb
    SET correo = 'admin@hotclick.lat'
  WHERE lower(correo) = 'admin@hotclick.com'

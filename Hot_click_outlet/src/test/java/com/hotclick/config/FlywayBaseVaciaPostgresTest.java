@@ -126,9 +126,12 @@ class FlywayBaseVaciaPostgresTest {
                 String.class, fn);
             assertTrue(config.contains("search_path=pg_catalog, public, pg_temp"), fn + " sin search_path: " + config);
         }
+        // El seed legado de V1 vive en la tabla entre comillas "HOT_CLICK_USUARIO_TB".
         String correoSeed = jdbc.queryForObject(
-            "SELECT correo FROM hot_click_usuario_tb WHERE id_usuario = 1", String.class);
+            "SELECT \"CORREO\" FROM \"HOT_CLICK_USUARIO_TB\" WHERE \"ID_USUARIO\" = 1", String.class);
         assertTrue(correoSeed.endsWith("@hotclick.lat"), "seed admin fuera de hotclick.lat: " + correoSeed);
+        assertEquals(0, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM \"HOT_CLICK_USUARIO_TB\" WHERE lower(\"CORREO\") LIKE '%@hotclick.com'", Integer.class));
         assertEquals(0, jdbc.queryForObject(
             "SELECT COUNT(*) FROM hot_click_usuario_tb WHERE lower(correo) LIKE '%@hotclick.com'", Integer.class));
 

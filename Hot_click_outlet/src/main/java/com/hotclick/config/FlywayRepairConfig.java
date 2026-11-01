@@ -169,14 +169,17 @@ public class FlywayRepairConfig {
 
     /**
      * Dos instancias arrancando a la vez sobre una base vacía: sin serializar, la segunda
-     * llegaba a baseline() con el historial ya creado y fallaba. Se toma un advisory lock de
-     * sesión en una conexión propia y DENTRO del lock se vuelve a mirar si public sigue vacío:
-     * la segunda instancia lo ve con tablas y sigue por el migrate() normal.
+     * llegaba a baseline() con el historial ya creado y fallaba. Se abre una transacción en una
+     * conexión propia con pg_advisory_xact_lock (sobrevive a PgBouncer en modo transacción: el
+     * backend queda fijo hasta el commit) y DENTRO del lock se vuelve a mirar si public sigue
+     * vacío: la segunda instancia lo ve con tablas y sigue por el migrate() normal.
      */
     static void bootstrapBaseVaciaSerializado(Flyway flyway) {
         try (Connection c = flyway.getConfiguration().getDataSource().getConnection()) {
+            boolean autoCommit = c.getAutoCommit();
+            c.setAutoCommit(false);
             try (Statement st = c.createStatement()) {
-                st.execute("SELECT pg_advisory_lock(" + BASE_VACIA_LOCK_KEY + ")");
+                st.execute("SELECT pg_advisory_xact_lock(" + BASE_VACIA_LOCK_KEY + ")");
             }
             try {
                 if (esquemaPublicoVacio(flyway)) {
@@ -187,9 +190,8 @@ public class FlywayRepairConfig {
                         PROP_BASE_VACIA);
                 }
             } finally {
-                try (Statement st = c.createStatement()) {
-                    st.execute("SELECT pg_advisory_unlock(" + BASE_VACIA_LOCK_KEY + ")");
-                }
+                c.rollback(); // libera el xact lock; la transacción no escribió nada
+                c.setAutoCommit(autoCommit);
             }
         } catch (SQLException e) {
             throw new IllegalStateException("[flyway] No se pudo tomar el lock del camino base-vacía", e);

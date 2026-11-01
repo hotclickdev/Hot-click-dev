@@ -11,7 +11,7 @@ Sirve solo para crear una base Postgres **vacía** desde cero (DR, staging nuevo
    `[flyway] hotclick.flyway.base-vacia.enabled=true ... quitá la variable del entorno`.
 
 Notas:
-- Dos instancias arrancando a la vez sobre la base vacía se serializan con `pg_advisory_lock`
+- Dos instancias arrancando a la vez sobre la base vacía se serializan con `pg_advisory_xact_lock` (transacción en conexión propia)
   (`FlywayRepairConfig.BASE_VACIA_LOCK_KEY`): la segunda espera y sigue por el `migrate()` normal.
 - Con perfil `dev` y `hotclick.flyway.dev-bootstrap=true` (default) manda el atajo dev; para rejugar la cadena real en dev poner `HOTCLICK_FLYWAY_DEV_BOOTSTRAP=false`.
 - Después de crearla, V218 deja el seed admin legado como `admin@hotclick.lat` y fija el `search_path` de `fn_crear_pago` / `fn_obtener_pago_por_token`.
