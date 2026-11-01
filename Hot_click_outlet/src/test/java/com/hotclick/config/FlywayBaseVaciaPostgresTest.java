@@ -118,6 +118,23 @@ class FlywayBaseVaciaPostgresTest {
         assertEquals(1, jdbc.queryForObject(
             "SELECT COUNT(*) FROM hot_click_rol_tb WHERE nombre_rol = 'SUPPORT'", Integer.class));
 
+        // V218: las SECURITY DEFINER de pagos con search_path fijo y el seed admin en un dominio nuestro.
+        for (String fn : List.of("fn_crear_pago", "fn_obtener_pago_por_token")) {
+            String config = jdbc.queryForObject(
+                "SELECT COALESCE(array_to_string(p.proconfig, ','), '') FROM pg_proc p "
+                    + "JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = ?",
+                String.class, fn);
+            assertTrue(config.contains("search_path=pg_catalog, public, pg_temp"), fn + " sin search_path: " + config);
+        }
+        // El seed legado de V1 vive en la tabla entre comillas "HOT_CLICK_USUARIO_TB".
+        String correoSeed = jdbc.queryForObject(
+            "SELECT \"CORREO\" FROM \"HOT_CLICK_USUARIO_TB\" WHERE \"ID_USUARIO\" = 1", String.class);
+        assertTrue(correoSeed.endsWith("@hotclick.lat"), "seed admin fuera de hotclick.lat: " + correoSeed);
+        assertEquals(0, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM \"HOT_CLICK_USUARIO_TB\" WHERE lower(\"CORREO\") LIKE '%@hotclick.com'", Integer.class));
+        assertEquals(0, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_usuario_tb WHERE lower(correo) LIKE '%@hotclick.com'", Integer.class));
+
         // Segundo arranque sobre la base ya creada: no repite el esquema base y no falla.
         arrancarComo(ds, env);
         assertEquals(aplicada, jdbc.queryForObject(
@@ -146,5 +163,38 @@ class FlywayBaseVaciaPostgresTest {
         assertFalse(jdbc.queryForObject(
             "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' "
                 + "AND table_name = 'hot_click_categoria_tb'", Integer.class) > 0);
+    }
+    @Test
+    void dosInstanciasEnParalelo_sobreBaseVacia_ambasArrancan() throws Exception {
+        DataSource ds = baseNueva();
+        MockEnvironment env = new MockEnvironment()
+            .withProperty(FlywayRepairConfig.PROP_BASE_VACIA, "true");
+        env.setActiveProfiles("prod");
+
+        java.util.concurrent.CountDownLatch largada = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            List<java.util.concurrent.Future<?>> arranques = new java.util.ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                arranques.add(pool.submit(() -> {
+                    largada.await();
+                    arrancarComo(ds, env);
+                    return null;
+                }));
+            }
+            largada.countDown();
+            for (java.util.concurrent.Future<?> f : arranques) {
+                f.get(10, java.util.concurrent.TimeUnit.MINUTES); // relanza si una instancia falló
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        JdbcTemplate jdbc = new JdbcTemplate(ds);
+        assertEquals(0, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM flyway_schema_history WHERE NOT success", Integer.class));
+        assertEquals(1, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM flyway_schema_history WHERE type = 'BASELINE'", Integer.class));
+        assertEquals(0, flywayComoApp(ds).info().pending().length);
     }
 }
