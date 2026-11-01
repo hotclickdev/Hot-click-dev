@@ -105,6 +105,9 @@ class OnvoWebhookVerificadoTest {
         when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.COBRADO_SOBRE_CANCELADO);
         assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(200);
 
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.COBRADO_SOBREVENTA);
+        assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(200);
+
         when(onvoPaymentProvider.procesarPagoVerificado("cs_1", "webhook")).thenReturn(Verificacion.NO_CONSULTABLE);
         assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(503);
 
@@ -145,5 +148,17 @@ class OnvoWebhookVerificadoTest {
         assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(200);
         verify(onvoPaymentProvider, org.mockito.Mockito.times(2)).procesarPagoVerificado("cs_1", "webhook");
         verify(onvoPaymentProvider, never()).procesarPagoVerificado(org.mockito.ArgumentMatchers.eq("pi_1"), any());
+    }
+
+    @Test
+    @DisplayName("INF-03: cada 401 por secret inválido se cuenta para la alerta; el secret válido no")
+    void secretInvalidoCuentaParaAlerta() {
+        var alerta = org.mockito.Mockito.mock(com.hotclick.monitoreo.OnvoWebhookSecretInvalidoAlerta.class);
+        controller.setAlertaSecretInvalidoParaTest(alerta);
+        assertThat(estado(SESION_OK, "otro")).isEqualTo(401);
+        assertThat(estado(SESION_OK, null)).isEqualTo(401);
+        verify(alerta, org.mockito.Mockito.times(2)).registrarFallo();
+        estado(SESION_OK, "webhook_secret_prueba");
+        verify(alerta, org.mockito.Mockito.times(2)).registrarFallo();
     }
 }

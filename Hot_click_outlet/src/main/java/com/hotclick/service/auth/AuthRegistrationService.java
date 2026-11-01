@@ -49,6 +49,10 @@ public class AuthRegistrationService {
         if (!turnstileService.verify(req.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Verificación anti-bot fallida. Intentá de nuevo."));
         }
+        String faltaEnClave = AuthSupport.faltantePoliticaContrasena(req.getContrasena());
+        if (faltaEnClave != null) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(faltaEnClave));
+        }
         try {
             MayoriaEdad.exigir(req.getDeclaraMayoriaEdad());
             Usuario usuario = new Usuario();
@@ -127,7 +131,7 @@ public class AuthRegistrationService {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Correo y código son requeridos"));
         }
         try {
-            Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase())
+            Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase(java.util.Locale.ROOT))
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
             CodigoOtp otp = otpService.verificarOtp(usuario, Constants.OTP_TIPO_REGISTRO, codigo.trim());
             otpService.marcarUsado(otp);

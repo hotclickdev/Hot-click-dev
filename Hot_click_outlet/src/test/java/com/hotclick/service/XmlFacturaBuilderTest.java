@@ -52,6 +52,30 @@ class XmlFacturaBuilderTest {
     }
 
     @Test
+    @DisplayName("cédula del emisor con guiones se normaliza en Numero y ProveedorSistemas")
+    void cedulaEmisorConGuionesSeNormaliza() {
+        Empresa e = empresa();
+        e.setCedulaJuridica(" 3-101-123456 ");
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedidoConIva());
+        assertThat(xml).contains("<Numero>3101123456</Numero>")
+            .contains("<ProveedorSistemas>3101123456</ProveedorSistemas>")
+            .doesNotContain("3-101-123456");
+        validarOficial(xml, true);
+    }
+
+    @Test
+    @DisplayName("cédula del emisor con letras o largo inválido no arma XML")
+    void cedulaEmisorInvalidaFalla() {
+        Empresa e = empresa();
+        e.setCedulaJuridica("3-101-ABC456");
+        assertThatThrownBy(() -> builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedidoConIva()))
+            .isInstanceOf(HaciendaConfiguracionException.class);
+        e.setCedulaJuridica("1-234");
+        assertThatThrownBy(() -> builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedidoConIva()))
+            .isInstanceOf(HaciendaConfiguracionException.class);
+    }
+
+    @Test
     @DisplayName("tiquete sin cédula no inventa receptor")
     void tiqueteSinReceptor() {
         ComprobanteFiscal cf = comprobante(ComprobanteFiscal.TIPO_TIQUETE);
@@ -67,11 +91,11 @@ class XmlFacturaBuilderTest {
     }
 
     @Test
-    @DisplayName("línea de 1000 colones al 13% suma 130 de IVA")
+    @DisplayName("M4 simplificado: factura de una línea de 1000 al 13% suma 130 de IVA")
     void ivaTrecePorCientoPorLinea() {
         Producto producto = producto("Cable", new BigDecimal("13"), "08");
         Pedido pedido = pedidoCon(producto, 1000, 1);
-        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_TIQUETE), empresa(), pedido);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedido);
         assertThat(xml).contains("<Monto>130</Monto>");
         assertThat(xml).contains("<TotalImpuesto>130</TotalImpuesto>");
         assertThat(xml).contains("<TotalComprobante>1130</TotalComprobante>");
@@ -79,7 +103,7 @@ class XmlFacturaBuilderTest {
         assertThat(xml).contains("<BaseImponible>1000</BaseImponible>");
         assertThat(xml).contains("<TotalVentaNeta>1000</TotalVentaNeta>");
         assertThat(xml).contains("<TotalMedioPago>1130</TotalMedioPago>");
-        validarOficial(xml, false);
+        validarOficial(xml, true);
     }
 
     @Test
@@ -113,6 +137,28 @@ class XmlFacturaBuilderTest {
         assertThatThrownBy(() -> VALIDADOR.validar(xml, true))
             .isInstanceOf(ComprobanteInvalidoException.class)
             .hasMessageContaining("Signature");
+    }
+
+    @Test
+    @DisplayName("M4 simplificado: el tiquete declara el precio cobrado tal cual (IVA desglosado dentro)")
+    void tiqueteSimplificadoTotalIgualPrecio() {
+        Pedido pedido = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1130, 1);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_TIQUETE), empresa(), pedido);
+        assertThat(xml).contains("<TotalComprobante>1130</TotalComprobante>");
+        assertThat(xml).contains("<TotalGravado>1000</TotalGravado>");
+        assertThat(xml).contains("<TotalImpuesto>130</TotalImpuesto>");
+    }
+
+    @Test
+    @DisplayName("M4 tradicional: la factura no suma IVA al precio (ya lo incluye)")
+    void facturaTradicionalPrecioIncluyeIva() {
+        Empresa e = empresa();
+        e.setRegimenIva("TRADICIONAL");
+        Pedido pedido = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1130, 2);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedido);
+        assertThat(xml).contains("<TotalComprobante>2260</TotalComprobante>");
+        assertThat(xml).contains("<TotalImpuesto>260</TotalImpuesto>");
+        assertThat(xml).contains("<PrecioUnitario>1000.00000</PrecioUnitario>");
     }
 
     @Test

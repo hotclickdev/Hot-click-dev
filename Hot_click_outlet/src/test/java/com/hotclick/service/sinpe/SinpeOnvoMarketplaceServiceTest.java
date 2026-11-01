@@ -38,6 +38,7 @@ class SinpeOnvoMarketplaceServiceTest {
     PaymentFailureHandler fallos = mock(PaymentFailureHandler.class);
     PaymentService paymentService = mock(PaymentService.class);
     OnvoService onvo = mock(OnvoService.class);
+    com.hotclick.service.payment.AvisoReembolsoPendienteService aviso = mock(com.hotclick.service.payment.AvisoReembolsoPendienteService.class);
     SinpeOnvoMarketplaceService s = new SinpeOnvoMarketplaceService();
     Pago pago;
     Pedido pedido;
@@ -51,6 +52,11 @@ class SinpeOnvoMarketplaceServiceTest {
         ReflectionTestUtils.setField(s, "pedidoGrupoService", grupo);
         ReflectionTestUtils.setField(s, "paymentFailureHandler", fallos);
         ReflectionTestUtils.setField(s, "paymentService", paymentService);
+        @SuppressWarnings("unchecked")
+        org.springframework.beans.factory.ObjectProvider<com.hotclick.service.payment.AvisoReembolsoPendienteService> prov =
+            org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class);
+        when(prov.getIfAvailable()).thenReturn(aviso);
+        ReflectionTestUtils.setField(s, "avisoReembolsoProvider", prov);
         s.setOnvoServiceParaTest(onvo);
         s.setTimeoutMinutosParaTest("15");
         s.setClock(Clock.fixed(Instant.parse("2026-10-25T18:00:00Z"), Constants.ZONA_CR));
@@ -169,6 +175,17 @@ class SinpeOnvoMarketplaceServiceTest {
     }
 
     @Test
+    @DisplayName("M-08: succeeded sin stock → COBRADO_SOBREVENTA, el evento queda registrado (sin excepción ni reintento)")
+    void succeededSinStock() {
+        get("succeeded", 1_250_000L);
+        when(paymentService.confirmarPedido(pago)).thenReturn(
+            com.hotclick.service.payment.PaymentOrderConfirmationService.Resultado.SOBREVENTA);
+        assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(
+            com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.Resultado.COBRADO_SOBREVENTA);
+        verify(eventos).save(any());
+    }
+
+    @Test
     @DisplayName("Ya CAPTURADO: un evento posterior no revierte")
     void capturadoNoRevierte() {
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
@@ -232,5 +249,27 @@ class SinpeOnvoMarketplaceServiceTest {
         assertThat(s.destinoDisponible()).isEmpty();
         assertThatThrownBy(() -> s.iniciar(pago, "01-1234-5678", 0, "80000000")).isInstanceOf(IllegalStateException.class);
         verify(onvo, never()).crearPaymentIntent(anyInt(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Aviso al admin IT: SINPE vía ONVO sobre pedido cancelado registra el aviso (marca en la transacción) una vez")
+    void sinpeSobreCanceladoRegistraAviso() {
+        pago.setEstadoPago(Constants.PAGO_FALLIDO);
+        get("succeeded", 1_250_000L);
+        assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(COBRADO_SOBRE_CANCELADO);
+        verify(aviso, times(1)).registrarPendiente(pago);
+        // El reintento del webhook es DUPLICADO: no vuelve a registrar.
+        assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(DUPLICADO);
+        verify(aviso, times(1)).registrarPendiente(any());
+    }
+
+    @Test
+    @DisplayName("Aviso al admin IT: un cobro SINPE confirmado no registra aviso de reembolso")
+    void sinpeConfirmadoNoAvisa() {
+        get("succeeded", 1_250_000L);
+        when(paymentService.confirmarPedido(pago)).thenReturn(
+            com.hotclick.service.payment.PaymentOrderConfirmationService.Resultado.CONFIRMADO);
+        s.confirmarPorWebhook(TIPO, "pi_1");
+        verify(aviso, never()).registrarPendiente(any());
     }
 }

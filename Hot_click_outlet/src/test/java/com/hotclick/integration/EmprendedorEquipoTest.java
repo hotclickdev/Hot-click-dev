@@ -272,6 +272,20 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
             .andExpect(status().isBadRequest());
     }
 
+    // ── BAJO: invitar exige la política del registro (8 + mayúscula + número) ──
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"Abcdef1", "abcdefg1", "Abcdefgh"})
+    void invitar_claveFueraDePolitica_400(String clave) throws Exception {
+        String body = "{\"nombre\":\"Pol\",\"correo\":\"pol@test.cr\",\"password\":\"" + clave + "\"}";
+        mockMvc.perform(post("/api/empresa/equipo")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isBadRequest())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message")
+                .value(com.hotclick.service.auth.AuthSupport.MENSAJE_POLITICA_CONTRASENA));
+    }
+
     // ── T-EQ-012: Invitar correo ya registrado → 400 ─────────────────────────
     @Test
     @DisplayName("T-EQ-012 | BÁSICO — Invitar correo ya registrado → 400")
@@ -440,13 +454,17 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
         org.junit.jupiter.api.Assertions.assertEquals("Miembro", solo.getApellidoPaterno());
     }
 
-    // ── T-EQ-025: Miembro eliminado (soft-delete) puede reactivarse re-invitando ──
+    // ── T-EQ-025: Miembro eliminado (soft-delete) NO se reactiva al re-invitarlo ──
+    // Antes (#384) un ELIMINADO con membresía previa reingresaba; quedaba sin poder iniciar sesión (el login rechaza el
+    // estado 3) y además se le añadían rol y empresa. La reactivación de eliminados queda para post-lanzamiento.
     @Test
-    @DisplayName("T-EQ-025 | BÁSICO — Re-invitar correo de miembro eliminado reactiva su membresía → 200")
-    void eliminado_seReactivaAlReinvitar() throws Exception {
+    @DisplayName("T-EQ-025 | BÁSICO — Re-invitar correo de miembro eliminado se rechaza (400) y no lo reactiva")
+    void eliminado_noSeReactivaAlReinvitar() throws Exception {
         mockMvc.perform(delete("/api/empresa/equipo/" + adminCliente.getId())
                 .header("Authorization", tokenEmp))
             .andExpect(status().isOk());
+        org.junit.jupiter.api.Assertions.assertEquals(Constants.ESTADO_ELIMINADO,
+            usuarioRepository.findById(adminCliente.getId()).orElseThrow().getEstado());
 
         String bodyReinvite = "{\"nombre\":\"Re-invite\",\"correo\":\"" + adminCliente.getCorreo() + "\","
             + "\"password\":\"Pass1234!\",\"telefono\":\"88001122\"}";
@@ -454,8 +472,29 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bodyReinvite))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true));
+            .andExpect(status().isBadRequest());
+
+        org.junit.jupiter.api.Assertions.assertEquals(Constants.ESTADO_ELIMINADO,
+            usuarioRepository.findById(adminCliente.getId()).orElseThrow().getEstado());
+    }
+
+    // ── ADMIN en ROLES_PERMITIDOS es rol de equipo del negocio, NO el rol de plataforma ──
+    @Test
+    @DisplayName("Invitar con rolEnEmpresa=ADMIN da rol de equipo; el usuario NO recibe ROLE_ADMIN de plataforma")
+    void invitarConRolEquipoAdmin_noEscalaAPlataforma() throws Exception {
+        String correo = "equipo-admin@test.cr";
+        String body = "{\"nombre\":\"Equipo Admin\",\"correo\":\"" + correo + "\","
+            + "\"password\":\"Pass1234!\",\"telefono\":\"88330055\",\"rolEnEmpresa\":\"ADMIN\"}";
+        mockMvc.perform(post("/api/empresa/equipo")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isOk());
+
+        Usuario nuevo = usuarioRepository.findByCorreo(correo).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(nuevo.getRoles())
+            .extracting(r -> r.getNombreRol())
+            .containsExactly(Constants.ROL_EMPRENDEDOR);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

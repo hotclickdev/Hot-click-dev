@@ -4,6 +4,7 @@ import com.hotclick.service.contacto.ContactoPublicoPolicy;
 import com.hotclick.service.contacto.ContactoTextoFiltro;
 import com.hotclick.service.contacto.ContactoTextoPublico;
 import com.hotclick.rag.dto.ProductoContexto;
+import com.hotclick.rag.repository.ProductoEmbeddingRepository;
 import com.hotclick.service.catalogo.CatalogoChatSql;
 import com.hotclick.service.catalogo.ChatKeywordRankSql;
 import com.hotclick.service.catalogo.ChatPrecioPersonalizado;
@@ -72,12 +73,15 @@ public class VectorSearchService {
     private final EmbeddingService embeddingService;
     private final JdbcTemplate jdbc;
     private final PublicChatIntentHelper intentHelper;
+    private final ProductoEmbeddingRepository embeddingRepo;
 
     public VectorSearchService(EmbeddingService embeddingService, JdbcTemplate jdbc,
-                               PublicChatIntentHelper intentHelper) {
+                               PublicChatIntentHelper intentHelper,
+                               ProductoEmbeddingRepository embeddingRepo) {
         this.embeddingService = embeddingService;
         this.jdbc = jdbc;
         this.intentHelper = intentHelper;
+        this.embeddingRepo = embeddingRepo;
     }
 
     public List<ProductoContexto> buscarSimilares(Long empresaId, String query, int limit) {
@@ -101,6 +105,8 @@ public class VectorSearchService {
     private List<ProductoContexto> buscarPorEmbedding(Long empresaId, String query, int limit,
                                                       boolean marketplace,
                                                       boolean preferirPersonalizado) {
+        // Sin la tabla de embeddings (dev sin pgvector) no se llama a Voyage: va directo a keywords.
+        if (!embeddingRepo.tablaDisponible()) return List.of();
         try {
             float[] vector = embeddingService.generarEmbedding(query);
             String vectorStr = toVectorString(vector);

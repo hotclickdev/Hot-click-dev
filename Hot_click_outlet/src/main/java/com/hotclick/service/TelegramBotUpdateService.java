@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import java.util.Locale;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotclick.service.telegram.TelegramDatosQueryService;
 import com.hotclick.service.telegram.TelegramMenuBuilder;
@@ -71,7 +72,7 @@ public class TelegramBotUpdateService {
                 return;
             }
 
-            String lower = texto.toLowerCase();
+            String lower = texto.toLowerCase(Locale.ROOT);
             String datos = null;
             if (contieneAlguna(lower, "vend", "venta", "ingres", "cobr", "pedido")) {
                 datos = datosQueryService.mensajeVentasHoy(empresaId);
@@ -88,9 +89,10 @@ public class TelegramBotUpdateService {
                 vinculacionService.vinculacionActiva(chatId).ifPresent(menuBuilder::mostrarMenu);
             }
         } catch (Exception e) {
-            log.error("[telegram-bot] fallo respondiendo texto libre en chat {} — {}", chatId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram-bot] fallo respondiendo texto libre en chat "
+                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(chatId), com.hotclick.service.telegram.TelegramTexto.paraLog(e));
             bot.enviarMensaje(chatId, "No pude procesar tu mensaje. Intentá de nuevo en unos minutos o escribí /menu.");
-            abuso.avisarErrorDeUsuario(chatId, com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+            abuso.avisarErrorDeUsuario(chatId, e);
         }
     }
 

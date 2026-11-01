@@ -20,7 +20,7 @@ import CuentaResumen from './perfil/cuenta/CuentaResumen'
 import CuentaOpiniones from './perfil/cuenta/CuentaOpiniones'
 import CuentaSeguridad from './perfil/cuenta/CuentaSeguridad'
 import MenuLateralCuenta, { type SeccionCuenta } from './perfil/cuenta/MenuLateralCuenta'
-import { construirEventos, pedidoEnCurso, type OpinionEnviada, type ProductoPorOpinar } from './perfil/cuenta/cuentaHelpers'
+import { construirEventos, pedidoEnCurso, puedeCambiar2FA, type OpinionEnviada, type ProductoPorOpinar } from './perfil/cuenta/cuentaHelpers'
 import { listaPedidosDesdeRespuesta, flagCampoApi } from './perfil/perfilHelpers'
 import type { SolicitudBusqueda } from './servicios/serviciosHelpers'
 import type { PedidoCliente } from './pedidos/pedidoHelpers'
@@ -155,7 +155,7 @@ export default function ProfilePage() {
           correo={userEmail}
           telefono={telefono}
           twoFAActiva={twoFAEnabled}
-          puedeCambiar2FA={isAdmin()}
+          puedeCambiar2FA={puedeCambiar2FA(userRole)}
           onCambiarContrasena={() => setShowChangePassword(true)}
           onCambiar2FA={() => setShow2FASetup(true)}
           onCerrarSesion={handleLogout}

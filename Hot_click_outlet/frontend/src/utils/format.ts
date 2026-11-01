@@ -58,13 +58,24 @@ export const conditionVariant = (cond: string) =>
 
 /**
  * Único formato de dólares del front: `US$9`, `US$9,50`, `US$1.234,50` (coma decimal, punto de miles).
- * Recibe dólares (no centavos).
+ * Recibe dólares (no centavos). `decimales` (2 por defecto) sirve para costos chicos de IA (`US$0,0123`).
  */
-export function formatUSD(dolares: number | string | null | undefined): string {
-  const n = Number(dolares) || 0
-  const centavos = Math.round(Math.abs(n) * 100)
-  const signo = n < 0 && centavos > 0 ? '-' : ''
-  const enteros = formatMiles(Math.floor(centavos / 100))
-  const resto = centavos % 100
-  return `${signo}US$${enteros}${resto === 0 ? '' : ',' + String(resto).padStart(2, '0')}`
+export function formatUSD(dolares: number | string | null | undefined, decimales = 2): string {
+  const n = Number(dolares)
+  const valor = Number.isFinite(n) ? n : 0
+  const d = Math.max(0, Math.min(6, Math.trunc(decimales)))
+  const escala = 10 ** d
+  const unidades = Math.round(Math.abs(valor) * escala)
+  const signo = valor < 0 && unidades > 0 ? '-' : ''
+  const enteros = formatMiles(Math.floor(unidades / escala))
+  const resto = unidades % escala
+  return `${signo}US$${enteros}${resto === 0 ? '' : ',' + String(resto).padStart(d, '0')}`
+}
+
+/** US$ y ₡ con el formato único de utils/format (C3/C4); otra moneda, Intl con su código. */
+export function formatMontoMoneda(monto: number, moneda: string | null | undefined, idioma: string): string {
+  const m = (moneda || 'CRC').toUpperCase()
+  if (m === 'USD') return formatUSD(monto)
+  if (m === 'CRC') return formatPrice(monto)
+  return new Intl.NumberFormat(idioma, { style: 'currency', currency: m, maximumFractionDigits: 0 }).format(monto)
 }

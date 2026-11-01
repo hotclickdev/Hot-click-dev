@@ -96,6 +96,17 @@ class GiftCardServiceTest {
         verify(giftCardRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("canje de código inexistente no filtra el código completo en la excepción")
+    void canjeInexistenteEnmascaraElCodigo() {
+        when(giftCardRepository.findByCodigoForUpdate(CODIGO)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.canjear(CODIGO, pedidoDe(empresa(1L)), 1000))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining(GiftCardService.enmascarar(CODIGO))
+            .hasMessageNotContaining(CODIGO);
+    }
+
     private static Empresa empresa(Long id) {
         Empresa e = new Empresa();
         e.setId(id);

@@ -55,7 +55,7 @@ public final class TiendaRapidaReglas {
     }
 
     public static String correo(String valor) {
-        String limpio = valor == null ? "" : valor.trim().toLowerCase();
+        String limpio = valor == null ? "" : valor.trim().toLowerCase(java.util.Locale.ROOT);
         if (limpio.length() > 100 || !limpio.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
             throw new IllegalArgumentException("El correo no parece válido.");
         }

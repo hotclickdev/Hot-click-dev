@@ -39,6 +39,9 @@ class PosQrStockReservaTest {
         p.setNombreProducto("Mouse");
         p.setStockActual(actual);
         p.setStockReservado(reservado);
+        com.hotclick.model.Empresa e = new com.hotclick.model.Empresa();
+        e.setId(7L); // mismo negocio que sesionEmpresa(): MEDIO-2 (#428) valida el dueño al reservar
+        p.setEmpresa(e);
         return p;
     }
 
@@ -52,7 +55,7 @@ class PosQrStockReservaTest {
         reserva.setReservaMinutosParaTest("15");
         reserva.setMaxPendientesParaTest("3");
         Producto p = producto(5, 1);
-        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(p));
+        when(productoRepo.findAllByIdsAndEmpresaForUpdate(List.of(10L), 7L)).thenReturn(List.of(p));
         PosQrSesion s = sesionEmpresa();
         reserva.reservar(s, items(2), AHORA);
         assertThat(p.getStockReservado()).isEqualTo(3);
@@ -65,7 +68,7 @@ class PosQrStockReservaTest {
     void sinStockNoReserva() {
         reserva.setReservaMinutosParaTest("15");
         reserva.setMaxPendientesParaTest("3");
-        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(producto(3, 2)));
+        when(productoRepo.findAllByIdsAndEmpresaForUpdate(List.of(10L), 7L)).thenReturn(List.of(producto(3, 2)));
         PosQrSesion s = sesionEmpresa();
         assertThatThrownBy(() -> reserva.reservar(s, items(2), AHORA)).isInstanceOf(StockInsuficienteException.class);
         assertThat(s.isStockReservado()).isFalse();
@@ -79,7 +82,7 @@ class PosQrStockReservaTest {
             assertThatThrownBy(() -> reserva.reservar(new PosQrSesion(), items(1), AHORA))
                 .isInstanceOf(IllegalStateException.class).hasMessage(PosQrStockReserva.MSG_NO_CONFIGURADA);
         }
-        verify(productoRepo, never()).findAllByIdsForUpdate(any());
+        verify(productoRepo, never()).findAllByIdsAndEmpresaForUpdate(any(), any());
     }
 
     @Test
@@ -90,7 +93,7 @@ class PosQrStockReservaTest {
         s.setId(7L);
         s.setStockReservado(true);
         when(posQrRepo.soltarReserva(7L)).thenReturn(1, 0);
-        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(p));
+        when(productoRepo.findAllByIdsAndEmpresaForUpdate(List.of(10L), 7L)).thenReturn(List.of(p));
         assertThat(reserva.liberar(s, items(2))).isTrue();
         assertThat(p.getStockReservado()).isZero();
         assertThat(s.isStockReservado()).isFalse();
@@ -108,7 +111,7 @@ class PosQrStockReservaTest {
         Producto p = producto(5, 2);
         when(posQrRepo.reservasALiberar(AHORA)).thenReturn(List.of(s));
         when(posQrRepo.soltarReserva(8L)).thenReturn(1);
-        when(productoRepo.findAllByIdsForUpdate(List.of(10L))).thenReturn(List.of(p));
+        when(productoRepo.findAllByIdsAndEmpresaForUpdate(List.of(10L), 7L)).thenReturn(List.of(p));
         assertThat(reserva.barrerVencidas(AHORA)).isEqualTo(1);
         assertThat(p.getStockReservado()).isZero();
     }
@@ -131,7 +134,7 @@ class PosQrStockReservaTest {
         assertThatThrownBy(() -> reserva.reservar(s, items(1), AHORA))
             .isInstanceOf(IllegalStateException.class).hasMessage(PosQrStockReserva.MSG_TOPE_PENDIENTES);
         assertThat(s.isStockReservado()).isFalse();
-        verify(productoRepo, never()).findAllByIdsForUpdate(any());
+        verify(productoRepo, never()).findAllByIdsAndEmpresaForUpdate(any(), any());
     }
 
     @Test
@@ -146,6 +149,39 @@ class PosQrStockReservaTest {
         reserva.setMaxPendientesParaTest("3");
         assertThatThrownBy(() -> reserva.reservar(new PosQrSesion(), items(1), AHORA))
             .isInstanceOf(IllegalStateException.class).hasMessage(PosQrStockReserva.MSG_TOPE_PENDIENTES);
+        verify(productoRepo, never()).findAllByIdsAndEmpresaForUpdate(any(), any());
+    }
+
+    @Test
+    @DisplayName("MEDIO-2 (#428): reservar un producto de otro negocio o inexistente da el mismo 404 de texto fijo, sin id")
+    void reservarNoRevelaAjenoNiInexistente() {
+        reserva.setReservaMinutosParaTest("15");
+        reserva.setMaxPendientesParaTest("3");
+        Producto ajeno = producto(5, 0);
+        ajeno.getEmpresa().setId(99L);
+        // Defensa en profundidad: aunque la consulta devolviera un ajeno, se oculta igual.
+        when(productoRepo.findAllByIdsAndEmpresaForUpdate(List.of(10L), 7L)).thenReturn(List.of(ajeno));
+        Throwable a = org.assertj.core.api.Assertions.catchThrowable(() -> reserva.reservar(sesionEmpresa(), items(1), AHORA));
+        when(productoRepo.findAllByIdsAndEmpresaForUpdate(List.of(10L), 7L)).thenReturn(List.of());
+        Throwable n = org.assertj.core.api.Assertions.catchThrowable(() -> reserva.reservar(sesionEmpresa(), items(1), AHORA));
+        assertThat(a).isInstanceOf(com.hotclick.exception.RecursoNoEncontradoException.class).hasMessage("Producto no encontrado");
+        assertThat(n).isInstanceOf(a.getClass()).hasMessage(a.getMessage());
+        assertThat(a.getMessage()).doesNotContain("10");
+        assertThat(ajeno.getStockReservado()).isZero();
+    }
+
+    @Test
+    @DisplayName("BAJO-A (#429): el lock filtra por empresa en la propia consulta; nunca se usa el FOR UPDATE sin dueño")
+    void bloqueoFiltraPorEmpresaEnLaConsulta() {
+        reserva.setReservaMinutosParaTest("15");
+        reserva.setMaxPendientesParaTest("3");
+        when(productoRepo.findAllByIdsAndEmpresaForUpdate(List.of(10L), 7L)).thenReturn(List.of());
+        assertThatThrownBy(() -> reserva.reservar(sesionEmpresa(), items(1), AHORA))
+            .isInstanceOf(com.hotclick.exception.RecursoNoEncontradoException.class).hasMessage("Producto no encontrado");
+        verify(productoRepo).findAllByIdsAndEmpresaForUpdate(List.of(10L), 7L);
         verify(productoRepo, never()).findAllByIdsForUpdate(any());
+        // Sin negocio: no se bloquea nada (fail-closed).
+        assertThat(reserva.bloquear(null, List.of(10L))).isEmpty();
+        verify(productoRepo, never()).findAllByIdsAndEmpresaForUpdate(any(), org.mockito.ArgumentMatchers.isNull());
     }
 }

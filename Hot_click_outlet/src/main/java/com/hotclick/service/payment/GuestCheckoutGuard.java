@@ -166,7 +166,7 @@ public class GuestCheckoutGuard {
             return ResponseEntity.status(429).body(ResponseDTO.error(String.format(MSG_TOPE_PRODUCTO, maxPorProducto)));
         }
         List<String> claves = new ArrayList<>(2);
-        if (ip != null && !ip.isBlank()) claves.add("ip:" + ip);
+        if (ip != null && !ip.isBlank()) claves.add("ip:" + com.hotclick.security.IpParaLlave.reducir(ip)); // /64 en IPv6 (B2)
         if (!correo.isBlank()) claves.add("mail:" + correo);
         for (String k : claves) {
             if (unidadesPendientes(k) + unidades > maxPendientes) {

@@ -28,6 +28,9 @@ public class PaymentController {
     private TilopayConfirmacionService tilopayConfirmacionService;
 
     @Autowired
+    private com.hotclick.service.payment.PagoEstadoConsultaService pagoEstadoConsultaService;
+
+    @Autowired
     private com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard;
 
     @PostMapping("/checkout")
@@ -48,6 +51,8 @@ public class PaymentController {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.EnvioNoDisponibleException e) {
+            throw e; // BAJO #448: GlobalExceptionHandler responde 503 genérico, no 500.
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));
@@ -68,9 +73,12 @@ public class PaymentController {
     }
 
     @GetMapping("/status/{numeroPedido}")
-    public ResponseEntity<ResponseDTO> consultarEstado(@PathVariable String numeroPedido) {
+    public ResponseEntity<ResponseDTO> consultarEstado(@PathVariable String numeroPedido,
+            @RequestHeader(value = "X-Pedido-Token", required = false) String tokenPedido) {
         try {
-            PaymentStatusResponse response = paymentService.consultarEstado(numeroPedido);
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            String correo = auth != null ? auth.getName() : null;
+            PaymentStatusResponse response = pagoEstadoConsultaService.consultar(numeroPedido, correo, tokenPedido);
             return ResponseEntity.ok(ResponseDTO.success("Estado del pago", response));
         } catch (Exception e) {
             return ResponseEntity.status(404).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
@@ -108,6 +116,8 @@ public class PaymentController {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.EnvioNoDisponibleException e) {
+            throw e; // BAJO #448: GlobalExceptionHandler responde 503 genérico, no 500.
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(getClass()).error("[checkout] {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("No se pudo procesar el pedido. Intentá de nuevo."));

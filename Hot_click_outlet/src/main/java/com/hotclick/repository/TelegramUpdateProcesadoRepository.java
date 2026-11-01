@@ -17,4 +17,9 @@ public interface TelegramUpdateProcesadoRepository extends JpaRepository<Telegra
     @Query(value = "INSERT INTO hot_click_telegram_update_procesado_tb (update_id, creado) VALUES (:id, :creado)",
            nativeQuery = true)
     int insertar(@Param("id") long updateId, @Param("creado") LocalDateTime creado);
+
+    /** Auditor 8: purga de la tabla de dedup (V199); Telegram no reintenta más allá de 24 h. */
+    @Modifying
+    @Query(value = "DELETE FROM hot_click_telegram_update_procesado_tb WHERE creado < :limite", nativeQuery = true)
+    int borrarAnteriores(@Param("limite") LocalDateTime limite);
 }

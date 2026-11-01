@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -177,6 +178,6 @@ public class TwoFactorService {
 
     /** Normalizes a recovery code to uppercase, stripped of separators. */
     public String normalizeRecoveryCode(String code) {
-        return code.toUpperCase().replaceAll("[^A-Z0-9]", "");
+        return code.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
     }
 }

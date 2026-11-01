@@ -10,6 +10,7 @@ import { consolaService } from '@/pages/plataforma/consola'
 import { RUTA_ONBOARDING_RAPIDO, onboardingPendiente } from '@/pages/plataforma/tiendaRapida'
 import NegocioPertenenciaChip from '@/prototipo/compartido/NegocioPertenenciaChip'
 import OnboardingPrimeraVez from '@/prototipo/compartido/OnboardingPrimeraVez'
+import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
 import EntradaPagina from '@/prototipo/compartido/motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from '@/prototipo/compartido/motion/ListaStagger'
@@ -46,6 +47,7 @@ export default function MenuPage() {
         <HeroMarca />
         <AvisoFaltaUbicacion className="mb-2" />
         <OnboardingPrimeraVez rol="emprendedor" />
+        <div className="mb-2 w-full empty:hidden"><TarjetaTrialCard /></div>
         <ListaStagger className="flex w-full flex-col gap-2">
           {armarTienda && (
             <ItemMenu>

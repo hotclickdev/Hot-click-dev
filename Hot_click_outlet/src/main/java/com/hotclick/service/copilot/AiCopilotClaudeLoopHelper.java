@@ -1,5 +1,6 @@
 package com.hotclick.service.copilot;
 
+import com.hotclick.service.ai.UsoTokens;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.dto.AccionPropuestaTelegram;
@@ -86,10 +87,7 @@ class AiCopilotClaudeLoopHelper {
         return textoSb.toString();
     }
 
-    int[] leerTokens(JsonNode node) {
-        return new int[] {
-            node.path("usage").path("input_tokens").asInt(0),
-            node.path("usage").path("output_tokens").asInt(0)
-        };
+    UsoTokens leerUso(JsonNode node) {
+        return UsoTokens.desdeUsage(node.path("usage"));
     }
 }

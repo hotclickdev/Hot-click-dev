@@ -25,10 +25,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
 public class TiendaRapidaService {
+    /** Seguridad #469: mismo mensaje si el correo es de una cuenta o de una tienda (no revela cuál). */
+    static final String CORREO_NO_DISPONIBLE = "Ese correo no está disponible. Usá otro.";
+
 
     private final TiendaRapidaRepository rapidas;
     private final EmpresaRepository empresas;
@@ -187,12 +191,12 @@ public class TiendaRapidaService {
         String mail = TiendaRapidaReglas.correo(correo);
         String cel = TiendaRapidaReglas.telefono(telefono);
         Usuario usuario = fila.getUsuario();
-        if (usuarios.existsByCorreo(mail) && !mail.equalsIgnoreCase(usuario.getCorreo())) {
-            throw new IllegalArgumentException("Ese correo ya tiene una cuenta.");
+        if (!usuarios.findAllByCorreoIgnoreCase(mail).isEmpty() && !mail.equalsIgnoreCase(usuario.getCorreo())) {
+            throw new IllegalArgumentException(CORREO_NO_DISPONIBLE);
         }
         Empresa empresa = fila.getEmpresa();
-        if (empresas.existsByCorreoEmpresa(mail) && !mail.equalsIgnoreCase(empresa.getCorreoEmpresa())) {
-            throw new IllegalArgumentException("Ese correo ya tiene una tienda.");
+        if (empresas.existsByCorreoEmpresaIgnoreCase(mail) && !mail.equalsIgnoreCase(empresa.getCorreoEmpresa())) {
+            throw new IllegalArgumentException(CORREO_NO_DISPONIBLE);
         }
         if (usuarios.existsByIdentificacion(id) && !id.equals(usuario.getIdentificacion())) {
             throw new IllegalArgumentException("Esa cédula ya está registrada.");
@@ -345,7 +349,7 @@ public class TiendaRapidaService {
     }
 
     private String slugDe(String nombre) {
-        String base = Normalizer.normalize(nombre.toLowerCase(), Normalizer.Form.NFD)
+        String base = Normalizer.normalize(nombre.toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
             .replaceAll("[^\\p{ASCII}]", "")
             .replaceAll("[^a-z0-9\\s-]", "")
             .replaceAll("\\s+", "-")
@@ -369,7 +373,7 @@ public class TiendaRapidaService {
     }
 
     private static String correoInterno(String token) {
-        String semilla = token.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+        String semilla = token.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
         return "rapida-" + semilla.substring(0, Math.min(12, semilla.length())) + "@temporal.hotclick.local";
     }
 

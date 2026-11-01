@@ -215,3 +215,8 @@ export function fechaConAnio(iso: string | null | undefined, idioma: string): st
   const mes = base === 'es' && corto === 'sep' ? 'set' : corto
   return base === 'en' ? `${mes} ${fecha.getDate()}, ${fecha.getFullYear()}` : `${fecha.getDate()} ${mes}. ${fecha.getFullYear()}`
 }
+
+/** QA4-010: cualquier usuario con sesión (comprador incluido) puede activar o desactivar su 2FA (criterio C1). */
+export function puedeCambiar2FA(rol: string | null | undefined): boolean {
+  return typeof rol === 'string' && rol.length > 0
+}

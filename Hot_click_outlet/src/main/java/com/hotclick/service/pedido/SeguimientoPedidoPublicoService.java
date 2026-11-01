@@ -17,6 +17,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -94,7 +95,7 @@ public class SeguimientoPedidoPublicoService {
 
     /** Solo enlaces https: un urlTracking cargado a mano nunca llega como javascript: o http plano. */
     static String urlRastreo(String urlTracking, String guia) {
-        if (urlTracking != null && urlTracking.trim().toLowerCase().startsWith("https://")) return urlTracking.trim();
+        if (urlTracking != null && urlTracking.trim().toLowerCase(Locale.ROOT).startsWith("https://")) return urlTracking.trim();
         if (urlTracking == null || urlTracking.isBlank()) {
             return URL_RASTREO_CORREOS + URLEncoder.encode(guia, StandardCharsets.UTF_8);
         }

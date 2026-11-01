@@ -1,6 +1,7 @@
 package com.hotclick.utils;
 
 import java.time.ZoneId;
+import java.util.Locale;
 
 public class Constants {
 
@@ -28,7 +29,7 @@ public class Constants {
      */
     public static String generarNumeroPedido(String prefijo) {
         return prefijo + java.util.UUID.randomUUID().toString()
-                .replace("-", "").substring(0, 12).toUpperCase();
+                .replace("-", "").substring(0, 12).toUpperCase(Locale.ROOT);
     }
 
 
@@ -87,6 +88,8 @@ public class Constants {
 
     // Estados de pedido extendidos
     public static final String PEDIDO_PAGADO        = "PAGADO";
+    /** M-08: cobrado sin stock (segundo pago sobre la última unidad). No se despacha; el reembolso queda pendiente. */
+    public static final String PEDIDO_REVISION_SOBREVENTA = "REVISION_SOBREVENTA";
     public static final String PEDIDO_EN_PREPARACION = "EN_PREPARACION";
     public static final String PEDIDO_LISTO_RETIRO   = "LISTO_RETIRO";
 
@@ -153,6 +156,9 @@ public class Constants {
     public static final String ESTADO_EMPRESA_EXTENSION_IMPAGO = "EXTENSION_IMPAGO";
     public static final String ESTADO_PLAN_REQUIERE_MEMBRESIA = "REQUIERE_MEMBRESIA";
 
+    /** Emprendedor aprobado o por aprobar sin puesto de trial asignado: el puesto se asigna al aprobar el negocio. */
+    public static final String ESTADO_PLAN_PENDIENTE_CUPO = "PENDIENTE_CUPO";
+
     /** Prueba QA abierta. Cabe en estado_plan (varchar 20). */
     public static final String ESTADO_PLAN_TRIAL = "TRIAL";
 
@@ -164,7 +170,7 @@ public class Constants {
 
     public static final String CORREO_DEMO_EMPRESA_SUFIJO = "@hotclick.test";
 
-    public static final String CORREO_ADMIN = "admin@hotclick.com";
+    public static final String CORREO_ADMIN = "admin@hotclick.lat";
     public static final String CORREO_QA_EMPRENDEDOR = "qa.emprendedor.demo@hotclick.test";
     public static final String CORREO_QA_PYME = "qa.pyme.demo@hotclick.test";
     public static final String CORREO_QA_NEGOCIO_PLUS = "qa.negocioplus.demo@hotclick.test";

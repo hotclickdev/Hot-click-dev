@@ -1,4 +1,5 @@
 import useTenantStore from '@/store/tenantStore'
+import { esperandoCupo } from '@/services/emprendeCupoService'
 
 /**
  * Hook de conveniencia para consultar el plan activo del tenant.
@@ -23,6 +24,8 @@ export function usePlan() {
   const isEnterprise = planNombre === 'ENTERPRISE'
   const isTrial      = estadoPlan === 'TRIAL'
   const isVencido    = estadoPlan === 'VENCIDO'
+  /** Pidió cupo Emprendedor y espera aprobación: sin trial (trialDias = -1) ni cobro. */
+  const isPendienteCupo = esperandoCupo(estadoPlan)
 
   return {
     plan: planNombre,
@@ -33,6 +36,7 @@ export function usePlan() {
     isEnterprise,
     isTrial,
     isVencido,
+    isPendienteCupo,
     hasFeature,
     isAtLimit,
     usoPorcentaje,

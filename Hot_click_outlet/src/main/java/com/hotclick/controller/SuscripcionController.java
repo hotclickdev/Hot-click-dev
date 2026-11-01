@@ -162,6 +162,16 @@ public class SuscripcionController {
     }
 
     /**
+     * Correo verificado obligatorio: planes de pago y también Emprendedor, cuyo trial y mensualidad por ONVO ocupan un
+     * puesto del cupo (antes solo se exigía si el precio en colones era > 0 y Emprendedor se colaba sin verificar).
+     */
+    static boolean exigeCorreoVerificado(Plan plan) {
+        if (plan == null) return false;
+        boolean planPago = plan.getPrecioMensual() != null && plan.getPrecioMensual() > 0;
+        return planPago || "EMPRENDEDOR".equalsIgnoreCase(plan.getNombre());
+    }
+
+    /**
      * Cambia el plan SaaS vía ONVO (self-service).
      * No activa el plan local hasta el webhook (salvo mock).
      */
@@ -176,8 +186,7 @@ public class SuscripcionController {
         try {
             Plan plan = planRepo.findById(planId).orElse(null);
             if (plan != null) preciosPlanes.requerir(plan.getNombre());
-            boolean planPago = plan != null && plan.getPrecioMensual() != null && plan.getPrecioMensual() > 0;
-            if (planPago) {
+            if (exigeCorreoVerificado(plan)) {
                 Usuario usuario = authSupport.usuarioFromRequest(request);
                 if (!Boolean.TRUE.equals(usuario.getCorreoVerificado())) {
                     return ResponseEntity.badRequest().body(Map.of("error", "Verificá tu correo antes de activar un plan de pago"));
@@ -196,6 +205,10 @@ public class SuscripcionController {
             return planSinPrecio(e);
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
             return cobroNoDisponible();
+        } catch (com.hotclick.exception.AltaOnvoEnCursoException e) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE,
+                "codigo", com.hotclick.exception.AltaOnvoEnCursoException.CODIGO));
         } catch (com.hotclick.exception.PlanNoDisponibleException e) {
             return ResponseEntity.status(409).body(Map.of("error", com.hotclick.exception.PlanNoDisponibleException.MENSAJE, "codigo", "PLAN_SIN_PRECIO"));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {

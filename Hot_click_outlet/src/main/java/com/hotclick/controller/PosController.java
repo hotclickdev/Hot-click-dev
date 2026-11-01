@@ -52,6 +52,24 @@ public class PosController {
         }
     }
 
+    /** M4: total con IVA (factura en régimen simplificado) antes de cobrar; no reserva stock. */
+    @PostMapping("/venta/cotizar")
+    @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
+    public ResponseEntity<?> cotizarVenta(@RequestBody PosVentaDTO dto, HttpServletRequest request) {
+        if (dto.getItems() == null || dto.getItems().isEmpty()) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("El carrito no puede estar vacío"));
+        }
+        try {
+            return ResponseEntity.ok(ResponseDTO.success("OK", posVentaService.cotizarCobro(dto, extractEmpresaId(request))));
+        } catch (TenantAccessDeniedException | SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ResponseDTO.error(e.getMessage()));
+        }
+    }
+
     @GetMapping("/historial")
     @PreAuthorize("hasAuthority('pos.usar') or hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> historialVentas(HttpServletRequest request) {

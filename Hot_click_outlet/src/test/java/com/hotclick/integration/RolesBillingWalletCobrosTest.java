@@ -66,7 +66,7 @@ class RolesBillingWalletCobrosTest extends BaseIntegrationTest {
     @ParameterizedTest(name = "EDITOR → 403 en GET {0}")
     @ValueSource(strings = {
         "/api/billing/suscripcion", "/api/billing/facturas", "/api/billing/plan-pendiente",
-        "/api/billing/preferencias", "/api/billing/tilopay/pendiente",
+        "/api/billing/preferencias", "/api/billing/tilopay/pendiente", "/api/billing/trial/tarjeta",
         "/api/metodos-cobro", "/api/wallet/payouts", "/api/wallet/saldo", "/api/wallet/transacciones",
         "/api/facturas", "/api/admin/pagos", "/api/admin/pagos/kpis"})
     void editor403(String ruta) throws Exception {
@@ -76,7 +76,7 @@ class RolesBillingWalletCobrosTest extends BaseIntegrationTest {
     @ParameterizedTest(name = "LECTOR → 403 en GET {0}")
     @ValueSource(strings = {
         "/api/billing/suscripcion", "/api/billing/facturas", "/api/billing/plan-pendiente",
-        "/api/billing/preferencias", "/api/billing/tilopay/pendiente",
+        "/api/billing/preferencias", "/api/billing/tilopay/pendiente", "/api/billing/trial/tarjeta",
         "/api/metodos-cobro", "/api/wallet/payouts", "/api/wallet/saldo", "/api/wallet/transacciones",
         "/api/facturas", "/api/admin/pagos", "/api/admin/pagos/kpis"})
     void lector403(String ruta) throws Exception {
@@ -86,7 +86,7 @@ class RolesBillingWalletCobrosTest extends BaseIntegrationTest {
     @ParameterizedTest(name = "PROPIETARIO → 2xx en GET {0}")
     @ValueSource(strings = {
         "/api/billing/suscripcion", "/api/billing/facturas", "/api/billing/plan-pendiente",
-        "/api/billing/preferencias", "/api/billing/tilopay/pendiente",
+        "/api/billing/preferencias", "/api/billing/tilopay/pendiente", "/api/billing/trial/tarjeta",
         "/api/metodos-cobro", "/api/wallet/payouts", "/api/wallet/saldo", "/api/wallet/transacciones",
         "/api/facturas"})
     void propietario2xx(String ruta) throws Exception {
@@ -105,6 +105,16 @@ class RolesBillingWalletCobrosTest extends BaseIntegrationTest {
     @ValueSource(strings = {"/api/admin/pagos", "/api/admin/pagos/kpis"})
     void admin200(String ruta) throws Exception {
         mockMvc.perform(get(ruta).header("Authorization", adminToken)).andExpect(status().isOk());
+    }
+
+    @Test @DisplayName("Trial Emprendedor: EDITOR y LECTOR → 403 en POST /api/billing/trial/tarjeta; el dueño sin trial recibe 409 uniforme")
+    void trialTarjetaSoloDueno() throws Exception {
+        for (String t : new String[]{tokenEditor, tokenLector}) {
+            mockMvc.perform(post("/api/billing/trial/tarjeta").header("Authorization", t))
+                .andExpect(status().isForbidden());
+        }
+        mockMvc.perform(post("/api/billing/trial/tarjeta").header("Authorization", tokenDueno))
+            .andExpect(status().isConflict());
     }
 
     @Test @DisplayName("BAJO: EDITOR y LECTOR → 403 en POST /api/billing/tilopay/confirmar/{orderNumber}")

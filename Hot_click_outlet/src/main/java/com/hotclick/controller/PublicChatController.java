@@ -10,6 +10,7 @@ import com.hotclick.service.PublicChatService;
 import com.hotclick.service.TextModerationService;
 import com.hotclick.service.catalogo.MarketplaceCatalogo;
 import com.hotclick.service.publicchat.PublicChatRequestParser;
+import com.hotclick.service.shoppingassistant.AsistenteCuotaDiaria;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -62,6 +63,7 @@ public class PublicChatController {
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
     @Autowired private TextModerationService textModerationService;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private AsistenteCuotaDiaria asistenteCuota;
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(
@@ -89,9 +91,15 @@ public class PublicChatController {
             return errorEmitter(emitter, "Tienda no encontrada");
         }
 
-        String visitanteKey = "public_chat:ip:" + clientIpResolver.resolve(request) + ":day";
+        String visitanteKey = "public_chat:ip:" + com.hotclick.security.IpParaLlave.clave(clientIpResolver.resolve(request)) + ":day";
         if (!rateLimiter.tryAcquire(visitanteKey, maxDiarioVisitante, DAILY_WINDOW)) {
             return errorEmitter(emitter, "Llegaste al límite de mensajes de hoy. Podés seguir buscando en el catálogo.");
+        }
+
+        AsistenteCuotaDiaria.Reserva cupo = asistenteCuota.reservar(
+            empresaId, MarketplaceCatalogo.esMarketplace(slug), body.getVisitorId());
+        if (!cupo.permitida()) {
+            return limiteEmitter(emitter, cupo);
         }
 
         String empresaKey = "empresa:" + empresaId + ":public_chat:day";
@@ -139,6 +147,21 @@ public class PublicChatController {
     private SseEmitter doneEmitter(SseEmitter emitter) {
         try {
             emitter.send(SseEmitter.event().name("done").data("{}"));
+            emitter.complete();
+        } catch (Exception e) {
+            log.debug("SSE error: {}", e.getMessage());
+        }
+        return emitter;
+    }
+
+    /** Cupo diario agotado: evento {@code error} con el aviso y los botones (el front no lo trata como falla). */
+    private SseEmitter limiteEmitter(SseEmitter emitter, AsistenteCuotaDiaria.Reserva cupo) {
+        try {
+            Map<String, Object> data = new java.util.LinkedHashMap<>();
+            data.put("error", cupo.mensaje());
+            data.put("limite", true);
+            data.put("acciones", cupo.acciones());
+            emitter.send(SseEmitter.event().name("error").data(objectMapper.writeValueAsString(data)));
             emitter.complete();
         } catch (Exception e) {
             log.debug("SSE error: {}", e.getMessage());

@@ -69,7 +69,7 @@ class StorefrontPedidoEfectivoTest extends BaseIntegrationTest {
     private org.springframework.test.web.servlet.ResultActions pedir(String slug, Producto p, String metodo) throws Exception {
         String body = """
             {"nombreCliente":"Ana QA","correoCliente":"ana-%s@test.cr","telefonoCliente":"88887777",
-             "direccionEntrega":"San José, centro","metodoPago":"%s","metodoEnvio":"DOMICILIO",
+             "direccionEntrega":"San José, centro","metodoPago":"%s","metodoEnvio":"DOMICILIO","provincia":"San José","canton":"San José",
              "items":[{"productoId":%d,"cantidad":1}]}
             """.formatted(slug, metodo, p.getId());
         return mockMvc.perform(post("/api/tienda/" + slug + "/pedidos")

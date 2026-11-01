@@ -1,5 +1,6 @@
 package com.hotclick.service.stripe;
 
+import java.util.Locale;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Subscription;
@@ -29,7 +30,7 @@ public class StripeSubscriptionClient {
     private String appUrl;
 
     public String getPriceIdForPlan(String planNombre) {
-        return switch (planNombre.toUpperCase()) {
+        return switch (planNombre.toUpperCase(Locale.ROOT)) {
             case "PRO"        -> priceIdPro;
             case "ENTERPRISE" -> priceIdEnterprise;
             default           -> null;

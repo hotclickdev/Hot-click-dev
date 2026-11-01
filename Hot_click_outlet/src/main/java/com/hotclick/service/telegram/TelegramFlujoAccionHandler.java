@@ -94,8 +94,11 @@ public class TelegramFlujoAccionHandler {
             // el usuario solo tiene que volver a tocar Confirmar para reintentar.
             bot.enviarMensaje(v.getChatId(), "El registro cambió justo ahora. Tocá *Confirmar* de nuevo para reintentar, o *Cancelar*.");
         } catch (Exception ex) {
-            log.error("[telegram-flujo] fallo confirmando acción en chat {} — {}", v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
-            bot.enviarMensaje(v.getChatId(), "No pude aplicar el cambio: " + esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage())) + "\nReintentá o tocá *Cancelar*.");
+            // Auditor 8 M-C: el mensaje de la excepción puede traer datos del negocio (SQL, nombres, ids):
+            // nunca al usuario (texto genérico). Al log del servidor va la excepción completa, con el chat enmascarado.
+            log.error("[telegram-flujo] fallo confirmando acción en chat "
+                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), com.hotclick.service.telegram.TelegramTexto.paraLog(ex));
+            bot.enviarMensaje(v.getChatId(), "No pude aplicar el cambio. Reintentá en unos minutos o tocá *Cancelar*.");
         }
     }
 

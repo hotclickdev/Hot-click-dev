@@ -37,7 +37,7 @@ public class PaymentUserCancellationService {
         }
 
         Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         // Si el webhook ya confirmó o capturó el pago, no cancelar
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
@@ -55,14 +55,14 @@ public class PaymentUserCancellationService {
         }
 
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         if (!cancelablePorComprador(pedido.getEstadoPedido())) {
             throw new IllegalStateException("El pedido ya fue procesado y no puede cancelarse");
         }
 
         Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");

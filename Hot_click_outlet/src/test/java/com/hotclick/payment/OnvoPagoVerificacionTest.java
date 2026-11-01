@@ -119,6 +119,15 @@ class OnvoPagoVerificacionTest {
     }
 
     @Test
+    @DisplayName("M-08: cobro sin stock: la captura lo informa como COBRADO_SOBREVENTA, no como OK")
+    void cobroSinStock() {
+        onvoResponde("paid", "succeeded", 1_250_000);
+        when(onvoCapturaService.capturarVerificado(anyString(), anyString(), anyString()))
+            .thenReturn(OnvoCapturaService.Captura.COBRADO_SOBREVENTA);
+        assertThat(provider.procesarPagoVerificado("cs_1", "webhook")).isEqualTo(Verificacion.COBRADO_SOBREVENTA);
+    }
+
+    @Test
     @DisplayName("Pedido ya cancelado: la captura lo informa y no se da por OK")
     void cobroSobreCancelado() {
         onvoResponde("paid", "succeeded", 1_250_000);

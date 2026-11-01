@@ -1,5 +1,6 @@
 package com.hotclick.rag.pipeline;
 
+import com.hotclick.service.ai.UsoTokens;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.exception.IntegracionExternaException;
@@ -66,15 +67,14 @@ final class RagClaudeCaller {
 
             JsonNode json    = objectMapper.readTree(response.body());
             String   texto   = json.path("content").path(0).path("text").asText("").trim();
-            int      tokIn   = json.path("usage").path("input_tokens").asInt(0);
-            int      tokOut  = json.path("usage").path("output_tokens").asInt(0);
+            UsoTokens uso    = UsoTokens.desdeUsage(json.path("usage"));
 
             if (texto.isBlank()) {
                 log.warn("[rag] Claude devolvió respuesta vacía");
                 return RagResult.fallback();
             }
 
-            return RagPipelineSupport.parseClaudeText(texto, productos, tokIn, tokOut);
+            return RagPipelineSupport.parseClaudeText(texto, productos, uso);
 
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();

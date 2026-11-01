@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -73,7 +74,7 @@ public class SancionPlataformaService {
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         SancionPlataforma fila = new SancionPlataforma();
         fila.setEmpresaId(empresa.getId());
-        fila.setNivelSolicitado(solicitado.trim().toUpperCase());
+        fila.setNivelSolicitado(solicitado.trim().toUpperCase(Locale.ROOT));
         fila.setNivelAplicado(aplicado);
         fila.setMotivo(motivo);
         fila.setPolitica(politica);

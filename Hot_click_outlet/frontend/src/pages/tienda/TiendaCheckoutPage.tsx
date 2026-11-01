@@ -10,6 +10,7 @@ import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
 import { formatPrice } from '@/utils/format'
 import { efectivoDisponible } from '@/pages/checkout/pagoPrincipal'
+import { cargarMontosEnvio } from '@/config/montosEnvio'
 import TiendaCheckoutDireccion from './TiendaCheckoutDireccion'
 import {
   METODO_ENVIO_DOMICILIO,
@@ -75,7 +76,9 @@ export default function TiendaCheckoutPage() {
   const [encomienda, setEncomienda] = useState('')
   const set = (key: keyof FormCheckout, val: string) => setForm((f) => ({ ...f, [key]: val }))
   const hayRetiro = Boolean(empresa?.retiro)
-  const costoEnvio = costoEnvioTienda(form.metodoEnvio)
+  const [destino, setDestino] = useState({ provincia: '', canton: '' })
+  useEffect(() => { void cargarMontosEnvio().then(() => setDestino((d) => ({ ...d }))) }, [])
+  const costoEnvio = costoEnvioTienda(form.metodoEnvio, destino.provincia, destino.canton)
   const metodosEnvio = hayRetiro ? [ENVIO_DOMICILIO, ENVIO_RETIRO] : [ENVIO_DOMICILIO]
   const metodosPago = efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_PRINCIPAL, PAGO_EFECTIVO] : [PAGO_PRINCIPAL]
 
@@ -91,7 +94,7 @@ export default function TiendaCheckoutPage() {
     setError(null)
     try {
       const notas = [form.notas.trim(), encomienda.trim() ? `Encomienda: ${encomienda.trim()}` : ''].filter(Boolean).join(' | ')
-      const resultado = await tiendaService.crearPedido(slug as string, { ...form, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
+      const resultado = await tiendaService.crearPedido(slug as string, { ...form, ...destino, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
       vaciarCarrito()
       const qs = new URLSearchParams({ orden: resultado.numeroPedido ?? '' })
       navigate(`/tienda/${slug}/checkout/exito?${qs}`, { replace: true, state: { total: resultado.total } })
@@ -148,7 +151,8 @@ export default function TiendaCheckoutPage() {
             <GrupoOpciones label="Método de envío" name="metodoEnvio" opciones={metodosEnvio} valor={form.metodoEnvio} onChange={(v) => set('metodoEnvio', v)} />
             {!hayRetiro && <p className="text-[12px] leading-4 text-hc-n-600">Este negocio no hace entrega local.</p>}
             {form.metodoEnvio === METODO_ENVIO_DOMICILIO && (
-              <TiendaCheckoutDireccion value={form.direccionEntrega} onChange={(valor) => set('direccionEntrega', valor)} />
+              <TiendaCheckoutDireccion value={form.direccionEntrega} onChange={(valor) => set('direccionEntrega', valor)}
+                onDestino={(provincia, canton) => setDestino({ provincia, canton })} />
             )}
             {form.metodoEnvio === METODO_ENVIO_DOMICILIO && (
               <Campo etiqueta="¿Por cuál encomienda? (opcional)" ayuda="Ej.: Correos de Costa Rica. La tienda despacha ahí.">

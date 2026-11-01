@@ -1,5 +1,6 @@
 package com.hotclick.service.publicchat;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,7 +13,7 @@ final class PublicChatBudgetExtractor {
     private PublicChatBudgetExtractor() {}
 
     static Long extractMaxBudget(String msg) {
-        String lower = msg.toLowerCase();
+        String lower = msg.toLowerCase(Locale.ROOT);
         Pattern p = Pattern.compile(
             "(?:menos de|hasta|máximo|presupuesto de|no más de|no pase de|bajo de)[\\s₡$]*([\\d][\\d.,]*)\\s*(mil|k)?",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE

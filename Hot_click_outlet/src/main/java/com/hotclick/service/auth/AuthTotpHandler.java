@@ -19,8 +19,8 @@ public class AuthTotpHandler {
         return verifyHandler.verify2FA(body, httpRequest);
     }
 
-    public ResponseEntity<ResponseDTO> setup2FA(HttpServletRequest request) {
-        return setupHandler.setup2FA(request);
+    public ResponseEntity<ResponseDTO> setup2FA(Map<String, String> body, HttpServletRequest request) {
+        return setupHandler.setup2FA(body, request);
     }
 
     public ResponseEntity<ResponseDTO> activate2FA(Map<String, String> body, HttpServletRequest request) {

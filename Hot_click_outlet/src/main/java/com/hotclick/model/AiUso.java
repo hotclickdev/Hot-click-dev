@@ -26,10 +26,18 @@ public class AiUso {
     private Integer llamadas = 0;
 
     @Column(name = "tokens_entrada", nullable = false)
-    private Integer tokensEntrada = 0;
+    private Long tokensEntrada = 0L;
 
     @Column(name = "tokens_salida", nullable = false)
-    private Integer tokensSalida = 0;
+    private Long tokensSalida = 0L;
+
+    /** Tokens leídos de la caché de prompts (cache_read_input_tokens), facturados aparte. */
+    @Column(name = "tokens_cache_lectura", nullable = false)
+    private Long tokensCacheLectura = 0L;
+
+    /** Tokens escritos a la caché de prompts (cache_creation_input_tokens), facturados aparte. */
+    @Column(name = "tokens_cache_escritura", nullable = false)
+    private Long tokensCacheEscritura = 0L;
 
     public Long getId() { return id; }
 
@@ -45,9 +53,15 @@ public class AiUso {
     public Integer getLlamadas() { return llamadas; }
     public void setLlamadas(Integer llamadas) { this.llamadas = llamadas; }
 
-    public Integer getTokensEntrada() { return tokensEntrada; }
-    public void setTokensEntrada(Integer tokensEntrada) { this.tokensEntrada = tokensEntrada; }
+    public Long getTokensEntrada() { return tokensEntrada; }
+    public void setTokensEntrada(Long tokensEntrada) { this.tokensEntrada = tokensEntrada; }
 
-    public Integer getTokensSalida() { return tokensSalida; }
-    public void setTokensSalida(Integer tokensSalida) { this.tokensSalida = tokensSalida; }
+    public Long getTokensSalida() { return tokensSalida; }
+    public void setTokensSalida(Long tokensSalida) { this.tokensSalida = tokensSalida; }
+
+    public Long getTokensCacheLectura() { return tokensCacheLectura; }
+    public void setTokensCacheLectura(Long tokensCacheLectura) { this.tokensCacheLectura = tokensCacheLectura; }
+
+    public Long getTokensCacheEscritura() { return tokensCacheEscritura; }
+    public void setTokensCacheEscritura(Long tokensCacheEscritura) { this.tokensCacheEscritura = tokensCacheEscritura; }
 }

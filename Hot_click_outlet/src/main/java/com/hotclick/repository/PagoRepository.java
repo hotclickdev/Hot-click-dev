@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -19,6 +21,15 @@ import java.util.Optional;
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     Optional<Pago> findByMerchantToken(String merchantToken);
+
+    /**
+     * Estado del pago en la base, sin vaciar antes los cambios pendientes de la sesión (flush COMMIT): un
+     * proveedor que ya puso la copia en memoria en CAPTURADO todavía no lo escribió, así que acá se ve el
+     * estado previo (p. ej. REEMBOLSO_PENDIENTE de un reintento).
+     */
+    @QueryHints(@QueryHint(name = "org.hibernate.flushMode", value = "COMMIT"))
+    @Query("SELECT p.estadoPago FROM Pago p WHERE p.id = :id")
+    String estadoPagoEnBase(@Param("id") Long id);
 
     /** Serializa confirmación y webhook del mismo cobro. El lock dura la transacción. */
     /** Pasa a FALLIDO solo si sigue PENDIENTE: un segundo aviso de fallo no libera reservas otra vez. */

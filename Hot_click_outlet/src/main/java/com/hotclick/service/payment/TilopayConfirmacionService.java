@@ -47,9 +47,9 @@ public class TilopayConfirmacionService {
     @Transactional
     public PaymentStatusResponse confirmar(String numeroPedido, Map<String, String> queryParams) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
         Pago pago = pagoRepository.findTopByPedidoIdForUpdate(pedido.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
             throw new IllegalStateException("El pedido no es Tilopay: " + pago.getProveedor());
@@ -140,15 +140,18 @@ public class TilopayConfirmacionService {
     @Transactional
     public PaymentSession reintentar(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
         Pago pago = pagoRepository.findTopByPedidoId(pedido.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
 
         if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
             throw new IllegalStateException("Solo se puede reintentar pagos Tilopay");
         }
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             throw new IllegalStateException("El pago ya está capturado");
+        }
+        if (PaymentOrderConfirmationService.enReembolso(pago.getEstadoPago())) {
+            throw new IllegalStateException("El pago está para reembolso");
         }
         if (Constants.PEDIDO_CANCELADO.equals(pedido.getEstadoPedido())) {
             throw new IllegalStateException("El pedido está cancelado");
@@ -227,6 +230,11 @@ public class TilopayConfirmacionService {
     }
 
     private void aplicarAprobado(Pago pago, String orderNumber) {
+        // PR #460 (M1): un reintento sobre un cobro ya marcado para reembolso no lo vuelve a capturar.
+        if (PaymentOrderConfirmationService.enReembolso(pago.getEstadoPago())) {
+            log.info("[tilopay] Aprobación ignorada: pago {} ya está en {}", pago.getId(), pago.getEstadoPago());
+            return;
+        }
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setMetodoPagoTipo(Constants.PROVEEDOR_TILOPAY);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));

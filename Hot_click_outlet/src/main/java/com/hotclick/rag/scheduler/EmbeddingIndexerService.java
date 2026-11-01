@@ -76,6 +76,12 @@ public class EmbeddingIndexerService {
             BATCH_SIZE, batchDelayMs);
         long inicio = System.currentTimeMillis();
 
+        // Sin la tabla (dev sin pgvector) se corta antes de cualquier consulta o llamada a Voyage.
+        if (!embeddingRepo.tablaDisponible()) {
+            log.info("[embedding] Batch omitido — la tabla de embeddings no existe en esta base");
+            return;
+        }
+
         List<ProductoIndexRow> lote = embeddingRepo.findProductosSinEmbedding(BATCH_SIZE);
 
         if (lote.isEmpty()) {
@@ -137,6 +143,11 @@ public class EmbeddingIndexerService {
     public void onProductoGuardado(ProductoGuardadoEvent event) {
         if (event.getEmpresaId() == null) {
             log.debug("[embedding] Producto id={} sin empresa — omitido del indexador",
+                event.getProductoId());
+            return;
+        }
+        if (!embeddingRepo.tablaDisponible()) {
+            log.debug("[embedding] Tabla de embeddings ausente — producto id={} no se indexa",
                 event.getProductoId());
             return;
         }

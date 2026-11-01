@@ -8,6 +8,15 @@ import { esErrorSuscripcionImpaga, useSuspensionStore } from '@/features/suspens
 
 type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
+/**
+ * Un 401 de /auth/2fa/* es de credenciales (contraseña o código incorrecto), no de un access token vencido:
+ * reintentar con refresh cuenta el intento dos veces contra el tope del backend y, si el refresh falla,
+ * cierra la sesión por un simple error de tipeo.
+ */
+export function esRutaDosFactores(url?: string): boolean {
+  return /\/auth\/2fa(\/|$|\?)/.test(url ?? '')
+}
+
 const api = axios.create({
   baseURL: '/api',
   timeout: 15000,
@@ -49,7 +58,7 @@ api.interceptors.response.use(
     const original = error.config as RetryConfig | undefined
 
     // Renueva el access token con la cookie HttpOnly (no localStorage)
-    if (status === 401 && original && !original._retry) {
+    if (status === 401 && original && !original._retry && !esRutaDosFactores(original.url)) {
       original._retry = true
       const stored = getStored()
       const hadSession = !!stored.token

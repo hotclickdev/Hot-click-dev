@@ -89,7 +89,7 @@ public class TelegramCallbackHandler {
                 bot.enviarMensaje(v.getChatId(), "Perfecto, inventario confirmado. ¡Gracias!",
                     TelegramTeclado.soloMenu());
             }
-            default -> log.warn("[telegram-bot] callback desconocido '{}' de chat {}", data, chatId);
+            default -> log.warn("[telegram-bot] callback desconocido de chat {} (no se registra el callback_data)", TelegramTexto.chatEnmascarado(chatId));
         }
     }
 

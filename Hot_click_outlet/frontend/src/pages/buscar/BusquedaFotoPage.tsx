@@ -1,3 +1,4 @@
+import { getOrCreateVisitorId } from '@/utils/visitorId'
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -9,12 +10,12 @@ import { shoppingAssistantService } from '@/services/shoppingAssistantService'
 import useAuthStore from '@/store/authStore'
 import { formatPrice } from '@/utils/format'
 import { ICONOS_CATALOGO } from '@/pages/catalogo/iconosCatalogo'
-import { etiquetaParecido, leerRespuestaFoto, validarFoto, type RespuestaFoto } from './busquedaFoto'
+import { etiquetaParecido, leerRespuestaFoto, validarFoto, type LimiteFoto, type RespuestaFoto } from './busquedaFoto'
 import PreguntaResultadoFoto, { type PasoResultadoFoto } from './PreguntaResultadoFoto'
 import { descripcionSolicitudFoto } from './solicitudDesdeFoto'
 import { SLUG_MARKETPLACE } from './rutasBuscar'
 
-type Estado = 'inicio' | 'buscando' | 'listo' | 'error' | 'formato' | 'pesada'
+type Estado = 'inicio' | 'buscando' | 'listo' | 'limite' | 'error' | 'formato' | 'pesada'
 
 const BOTON = 'flex h-12 flex-1 items-center justify-center gap-2 rounded-[12px] px-4 text-[14px] font-semibold leading-[normal] transition-colors focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_var(--hc-blue-100)]'
 const BOTON_PRIMARIO = `${BOTON} bg-hc-red-500 text-hc-n-0 hover:bg-hc-red-600`
@@ -35,7 +36,7 @@ export default function BusquedaFotoPage() {
   const [vista, setVista] = useState<string | null>(null)
   const [estado, setEstado] = useState<Estado>('inicio')
   const [arrastrando, setArrastrando] = useState(false)
-  const [respuesta, setRespuesta] = useState<RespuestaFoto>({ categoriaDetectada: '', etiquetas: [], productos: [] })
+  const [respuesta, setRespuesta] = useState<RespuestaFoto>({ categoriaDetectada: '', etiquetas: [], productos: [], limite: null })
   const [descartadas, setDescartadas] = useState<Set<string>>(new Set())
   const [paso, setPaso] = useState<PasoResultadoFoto>('cerrada')
 
@@ -50,13 +51,17 @@ export default function BusquedaFotoPage() {
     archivoRef.current = archivo
     setVista(URL.createObjectURL(archivo))
     setDescartadas(new Set())
-    setRespuesta({ categoriaDetectada: '', etiquetas: [], productos: [] })
+    setRespuesta({ categoriaDetectada: '', etiquetas: [], productos: [], limite: null })
     setPaso('cerrada')
     setEstado('buscando')
     try {
-      const data = await shoppingAssistantService.searchByImage({ empresaSlug: SLUG_MARKETPLACE, imageFile: archivo })
+      const data = await shoppingAssistantService.searchByImage({ empresaSlug: SLUG_MARKETPLACE, imageFile: archivo, visitorId: getOrCreateVisitorId() ?? undefined })
       const leida = leerRespuestaFoto(data)
       setRespuesta(leida)
+      if (leida.limite) {
+        setEstado('limite')
+        return
+      }
       setPaso(leida.productos.length > 0 ? 'producto' : 'solicitud')
       setEstado('listo')
     } catch {
@@ -191,6 +196,7 @@ export default function BusquedaFotoPage() {
                 ))}
               </>
             )}
+            {estado === 'limite' && respuesta.limite && <AvisoLimiteFoto limite={respuesta.limite} />}
             {estado === 'error' && <p className="rounded-[12px] bg-hc-danger-bg px-3 py-[10px] text-[13px] text-hc-danger">{t('search.photoError')}</p>}
             {(estado === 'listo' || estado === 'error') && (
               <>
@@ -238,6 +244,28 @@ export default function BusquedaFotoPage() {
         )}
       </div>
     </MainLayout>
+  )
+}
+
+/** Cupo diario agotado: mismo aviso y botones que el chat del asistente (Buscar productos y WhatsApp). */
+function AvisoLimiteFoto({ limite }: { limite: LimiteFoto }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4" data-testid="foto-limite">
+      <p className="text-[14px] leading-[1.45] text-hc-n-900">{limite.mensaje}</p>
+      {limite.acciones.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {limite.acciones.map((a) => (a.tipo === 'buscar' ? (
+            <Link key={a.url} to={a.url} className="rounded-full bg-hc-red-500 px-4 py-2 text-[13px] font-semibold text-hc-n-0 hover:bg-hc-red-600">
+              {a.label}
+            </Link>
+          ) : (
+            <a key={a.url} href={a.url} target="_blank" rel="noopener noreferrer" className="rounded-full border border-hc-n-200 bg-hc-n-0 px-4 py-2 text-[13px] font-semibold text-hc-n-900 hover:border-hc-n-400">
+              {a.label}
+            </a>
+          )))}
+        </div>
+      )}
+    </div>
   )
 }
 

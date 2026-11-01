@@ -1,5 +1,6 @@
 package com.hotclick.controller.observabilidad;
 
+import com.hotclick.service.ai.ClaudePrecios;
 import com.hotclick.repository.AiUsoRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PagoRepository;
@@ -90,30 +91,32 @@ class ObservabilityNegocioMetrics {
         int anio = LocalDate.now(Constants.ZONA_CR).getYear();
         int mes  = LocalDate.now(Constants.ZONA_CR).getMonthValue();
         Map<String, Object> ia = new LinkedHashMap<>();
-        // Claude Haiku 3.5: $0.80/M input · $4.00/M output (https://www.anthropic.com/pricing)
-        final double PRECIO_INPUT  = 0.80;
-        final double PRECIO_OUTPUT = 4.00;
+        // Precio único del modelo (Claude Haiku 4.5 por defecto; configurable con ia.precio.*).
+        final ClaudePrecios precios = ClaudePrecios.actual();
 
         long tokensEntrada = aiUsoRepository.sumTokensEntradaGlobales(anio, mes);
         long tokensSalida  = aiUsoRepository.sumTokensSalidaGlobales(anio, mes);
+        long cacheLectura  = aiUsoRepository.sumTokensCacheLecturaGlobales(anio, mes);
+        long cacheEscritura = aiUsoRepository.sumTokensCacheEscrituraGlobales(anio, mes);
         long llamadasMes   = aiUsoRepository.sumLlamadasGlobales(anio, mes);
-        double costoMes    = (tokensEntrada / 1_000_000.0 * PRECIO_INPUT)
-                           + (tokensSalida  / 1_000_000.0 * PRECIO_OUTPUT);
+        double costoMes    = precios.costoUsd(tokensEntrada, tokensSalida, cacheLectura, cacheEscritura);
 
         ia.put("anio",             anio);
         ia.put("mes",              mes);
         ia.put("llamadasMes",      llamadasMes);
         ia.put("tokensEntradaMes", tokensEntrada);
         ia.put("tokensSalidaMes",  tokensSalida);
-        ia.put("tokensMes",        tokensEntrada + tokensSalida);
+        ia.put("tokensCacheLecturaMes",   cacheLectura);
+        ia.put("tokensCacheEscrituraMes", cacheEscritura);
+        ia.put("tokensMes",        tokensEntrada + tokensSalida + cacheLectura + cacheEscritura);
         ia.put("costoEstimadoUSD", String.format("$%.4f", costoMes));
 
         int diaActual = LocalDate.now(Constants.ZONA_CR).getDayOfMonth();
         double costoDiario = diaActual > 0 ? costoMes / diaActual : 0;
         ia.put("costoDiarioPromedioUSD", String.format("$%.4f", costoDiario));
 
-        agregarCostoAcumulado(ia, PRECIO_INPUT, PRECIO_OUTPUT);
-        agregarTopEmpresas(ia, anio, mes, PRECIO_INPUT, PRECIO_OUTPUT);
+        agregarCostoAcumulado(ia, precios);
+        agregarTopEmpresas(ia, anio, mes, precios);
         return ia;
     }
 
@@ -129,32 +132,34 @@ class ObservabilityNegocioMetrics {
         return productos;
     }
 
-    private void agregarCostoAcumulado(Map<String, Object> ia, double precioInput, double precioOutput) {
+    private void agregarCostoAcumulado(Map<String, Object> ia, ClaudePrecios precios) {
         try {
             long acumEntrada = aiUsoRepository.sumTokensEntradaAcumulados();
             long acumSalida  = aiUsoRepository.sumTokensSalidaAcumulados();
-            double costoAcum = (acumEntrada / 1_000_000.0 * precioInput)
-                             + (acumSalida  / 1_000_000.0 * precioOutput);
+            long acumCacheL  = aiUsoRepository.sumTokensCacheLecturaAcumulados();
+            long acumCacheE  = aiUsoRepository.sumTokensCacheEscrituraAcumulados();
+            double costoAcum = precios.costoUsd(acumEntrada, acumSalida, acumCacheL, acumCacheE);
             ia.put("costoAcumuladoUSD",    String.format("$%.2f", costoAcum));
-            ia.put("tokensAcumulados",      acumEntrada + acumSalida);
+            ia.put("tokensAcumulados",      acumEntrada + acumSalida + acumCacheL + acumCacheE);
         } catch (Exception e) {
             log.warn("[observabilidad] No se pudo calcular costo acumulado IA: {}", e.getMessage());
         }
     }
 
-    private void agregarTopEmpresas(Map<String, Object> ia, int anio, int mes,
-                                    double precioInput, double precioOutput) {
+    private void agregarTopEmpresas(Map<String, Object> ia, int anio, int mes, ClaudePrecios precios) {
         try {
             List<Object[]> top = aiUsoRepository.findTopConsumoMes(anio, mes);
             List<Map<String, Object>> topList = new ArrayList<>();
             for (Object[] row : top) {
                 long te = ((Number) row[2]).longValue();
                 long ts = ((Number) row[3]).longValue();
-                double cEmp = (te / 1_000_000.0 * precioInput) + (ts / 1_000_000.0 * precioOutput);
+                long tcl = ((Number) row[4]).longValue();
+                long tce = ((Number) row[5]).longValue();
+                double cEmp = precios.costoUsd(te, ts, tcl, tce);
                 Map<String, Object> emp = new LinkedHashMap<>();
                 emp.put("empresa",       row[0]);
                 emp.put("llamadas",      ((Number) row[1]).longValue());
-                emp.put("tokens",        te + ts);
+                emp.put("tokens",        te + ts + tcl + tce);
                 emp.put("costoUSD",      String.format("$%.4f", cEmp));
                 topList.add(emp);
             }

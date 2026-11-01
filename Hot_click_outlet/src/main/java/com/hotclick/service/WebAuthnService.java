@@ -86,7 +86,7 @@ public class WebAuthnService {
             throws IOException, RegistrationFailedException {
 
         var pending = pendingRegistrations.remove(email);
-        if (pending == null) throw new IllegalStateException("No hay registro pendiente para: " + email);
+        if (pending == null) throw new IllegalStateException("No hay un registro de passkey pendiente. Iniciá el registro de nuevo.");
 
         var user = usuarioRepo.findByCorreo(email)
             .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));

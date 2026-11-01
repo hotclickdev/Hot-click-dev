@@ -31,6 +31,18 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("UPDATE Pedido p SET p.estadoPedido = 'PAGADO' WHERE p.id = :id AND p.estadoPedido NOT IN :yaConfirmados")
     int reclamarParaConfirmar(@Param("id") Long id, @Param("yaConfirmados") Collection<String> yaConfirmados);
 
+    /** Estado actual en la base (no el de la copia en memoria) de los paquetes dados. */
+    @Query("SELECT p.estadoPedido FROM Pedido p WHERE p.id IN :ids")
+    List<String> estadosDe(@Param("ids") Collection<Long> ids);
+
+    /**
+     * Paquetes cancelados en paralelo a un cobro parcial del grupo: pasan a REVISION_SOBREVENTA (no se
+     * despachan; un ADMIN los resuelve) solo si siguen CANCELADO. Devuelve cuántos se marcaron.
+     */
+    @Modifying
+    @Query("UPDATE Pedido p SET p.estadoPedido = 'REVISION_SOBREVENTA' WHERE p.id IN :ids AND p.estadoPedido = 'CANCELADO'")
+    int marcarRevisionSiCancelado(@Param("ids") Collection<Long> ids);
+
     List<Pedido> findByGrupoPagoOrderByIdAsc(String grupoPago);
 
     List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);
@@ -206,8 +218,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         "FROM hot_click_pedido_tb p " +
         "WHERE p.fk_id_empresa = :empresaId " +
         "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') AND p.es_prueba = false " +
-        "AND (:desde IS NULL OR DATE(p.fecha_pedido) >= CAST(:desde AS date)) " +
-        "AND (:hasta IS NULL OR DATE(p.fecha_pedido) <= CAST(:hasta AS date))",
+        "AND (:desde IS NULL OR CAST(p.fecha_pedido AS date) >= CAST(:desde AS date)) " +
+        "AND (:hasta IS NULL OR CAST(p.fecha_pedido AS date) <= CAST(:hasta AS date))",
         nativeQuery = true)
     List<Object[]> reporteIvaKpis(@Param("empresaId") Long empresaId,
                                  @Param("desde") String desde,
@@ -218,7 +230,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
      * Orden de columnas: fecha, documento, cliente, subtotal, iva, total, metodoPago, origen.
      */
     @Query(value =
-        "SELECT DATE(p.fecha_pedido), " +
+        "SELECT CAST(p.fecha_pedido AS date), " +
         "p.numero_pedido, " +
         "COALESCE(u.nombre, p.cliente_nombre, 'Consumidor Final'), " +
         "p.subtotal, " +
@@ -230,8 +242,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         "LEFT JOIN hot_click_usuario_tb u ON u.id_usuario = p.fk_id_usuario_final " +
         "WHERE p.fk_id_empresa = :empresaId " +
         "AND p.estado_pedido IN ('ENTREGADO','COMPLETADO') AND p.es_prueba = false " +
-        "AND (:desde IS NULL OR DATE(p.fecha_pedido) >= CAST(:desde AS date)) " +
-        "AND (:hasta IS NULL OR DATE(p.fecha_pedido) <= CAST(:hasta AS date)) " +
+        "AND (:desde IS NULL OR CAST(p.fecha_pedido AS date) >= CAST(:desde AS date)) " +
+        "AND (:hasta IS NULL OR CAST(p.fecha_pedido AS date) <= CAST(:hasta AS date)) " +
         "ORDER BY p.fecha_pedido DESC",
         nativeQuery = true)
     List<Object[]> reporteIvaDetalle(@Param("empresaId") Long empresaId,

@@ -33,6 +33,7 @@ public class EmpresaAprobacionService {
     @Autowired private SolicitudAprobacionRepository solicitudAprobacionRepository;
     @Autowired private ProductoService               productoService;
     @Autowired private UbicacionDespachoService      ubicacionDespachoService;
+    @Autowired private CupoEmprendedorAprobacionService cupoEmprendedorAprobacionService;
 
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
@@ -45,9 +46,12 @@ public class EmpresaAprobacionService {
             throw new com.hotclick.exception.ReactivacionSinPagoException();
         }
         ubicacionDespachoService.exigirParaPublicar(empresaId);
+        // Puesto y trial Emprendedor cuentan desde acá (correo verificado, un puesto por persona). Si el propietario no
+        // verificó su correo lanza y se revierte toda la aprobación sin consumir puesto.
+        var cupo = cupoEmprendedorAprobacionService.resolverAlAprobar(e);
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         e.setEstadoEmpresa("ACTIVO");
-        e.setVisibilidadPublica(true);
+        e.setVisibilidadPublica(cupo != CupoEmprendedorAprobacionService.Resultado.REQUIERE_MEMBRESIA);
         if (Constants.ESTADO_PLAN_PRUEBA_CERRADA.equals(e.getEstadoPlan())) {
             e.setEstadoPlan("ACTIVO");
             e.setFechaVencPlan(null);
@@ -61,5 +65,19 @@ public class EmpresaAprobacionService {
         // evict, los productos recién publicados tardarían en aparecer.
         productoService.evictProductosPublicos();
         return e;
+    }
+
+    /**
+     * Rechazo de un negocio. Marca RECHAZADO y libera su puesto de trial si lo tenía, en la misma transacción y bajo el
+     * lock de la empresa (con el contador atómico, sin doble liberación). Devuelve null si la empresa no existe.
+     */
+    @Transactional
+    @CacheEvict(value = "tenantInfo", key = "#empresaId")
+    public Empresa rechazar(Long empresaId) {
+        Empresa e = empresaRepository.findByIdForUpdate(empresaId).orElse(null);
+        if (e == null) return null;
+        cupoEmprendedorAprobacionService.liberarAlRechazar(e);
+        e.setEstadoEmpresa("RECHAZADO");
+        return empresaRepository.save(e);
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -128,7 +129,7 @@ public class WalletController {
     private void validate(PayoutRequestDTO dto) {
         if (dto.monto() <= 0) throw new IllegalArgumentException("El monto debe ser mayor a 0");
 
-        String metodo = dto.metodo() != null ? dto.metodo().toUpperCase() : "SINPE";
+        String metodo = dto.metodo() != null ? dto.metodo().toUpperCase(Locale.ROOT) : "SINPE";
         if ("SINPE".equals(metodo)) {
             if (dto.destinoSinpe() == null || !dto.destinoSinpe().matches("\\d{8}")) {
                 throw new IllegalArgumentException("El número SINPE debe tener exactamente 8 dígitos");

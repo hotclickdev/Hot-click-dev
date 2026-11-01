@@ -78,6 +78,11 @@ public class Usuario extends BaseEntity {
     @Column(name = "two_factor_secret", length = 200)
     private String twoFactorSecret;
 
+    /** Secreto TOTP nuevo (cifrado) a la espera de /2fa/activate; no reemplaza al vigente hasta validar un código. */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "two_factor_pending_secret", length = 200)
+    private String twoFactorPendingSecret;
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "recovery_codes", columnDefinition = "TEXT")
     private String recoveryCodes;
@@ -230,6 +235,9 @@ public class Usuario extends BaseEntity {
 
     public String getTwoFactorSecret() { return twoFactorSecret; }
     public void setTwoFactorSecret(String twoFactorSecret) { this.twoFactorSecret = twoFactorSecret; }
+
+    public String getTwoFactorPendingSecret() { return twoFactorPendingSecret; }
+    public void setTwoFactorPendingSecret(String twoFactorPendingSecret) { this.twoFactorPendingSecret = twoFactorPendingSecret; }
 
     public String getRecoveryCodes() { return recoveryCodes; }
     public void setRecoveryCodes(String recoveryCodes) { this.recoveryCodes = recoveryCodes; }

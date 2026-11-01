@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -157,6 +158,39 @@ public class ShoppingAssistantController {
     public ResponseEntity<Map<String, Long>> metrics() {
         return ResponseEntity.ok(metricsService.getSummary());
     }
+
+    /**
+     * BAJO (área 6): el 404 de {@code requireEmpresaActiva} (y los 400 de la búsqueda por foto)
+     * no deben caer en el catch genérico {@code Exception} de GlobalExceptionHandler, que los
+     * convertía en 500. Se responde el estado real, sin detalles internos.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> estadoDeTenant(ResponseStatusException ex) {
+        return ResponseEntity.status(ex.getStatusCode())
+            .body(Map.of("success", false, "message", motivoPublico(ex)));
+    }
+
+    static final String MOTIVO_404 = "Tienda no encontrada o inactiva";
+    static final String MOTIVO_GENERICO = "Solicitud no válida";
+    static final String MOTIVO_5XX = "No pudimos procesar la solicitud";
+
+    /**
+     * Seguimiento BAJO de #434: el reason del 404/5xx nunca sale al cliente (podría traer slug,
+     * ids o detalles internos). Solo los 400 de validación de la foto, que son textos fijos
+     * del handler, se devuelven tal cual.
+     */
+    static String motivoPublico(ResponseStatusException ex) {
+        int estado = ex.getStatusCode().value();
+        if (estado == 404) return MOTIVO_404;
+        if (estado >= 500) return MOTIVO_5XX;
+        String reason = ex.getReason();
+        return estado == 400 && reason != null && MOTIVOS_400.contains(reason) ? reason : MOTIVO_GENERICO;
+    }
+
+    private static final java.util.Set<String> MOTIVOS_400 = java.util.Set.of(
+        "La imagen está vacía", "La imagen no puede superar 5 MB",
+        "Formato no permitido. Usá JPG, PNG o WebP", "No se pudo procesar la imagen",
+        "El archivo no es una imagen válida");
 
     /** ALTO-1: empresa del tenant de la request; null si el cliente (legado) no envía slug. */
     private Long empresaActual(String empresaSlug) {

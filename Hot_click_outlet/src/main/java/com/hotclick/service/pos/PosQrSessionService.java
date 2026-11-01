@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -65,6 +66,15 @@ public class PosQrSessionService {
     public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
                             String metodoPago, Object metodosPago, List<Map<String, Object>> items,
                             String notas, Long clienteId, Long bodegaId) {
+        return crearSesion(usuarioId, empresaId, turnoId, metodoPago, metodosPago, items, notas, clienteId, bodegaId, false);
+    }
+
+    /** @param facturaElectronica M4: en régimen simplificado el QR cobra precio + IVA. */
+    @Transactional
+    @SuppressWarnings("java:S107")
+    public PosQrSesion crearSesion(Long usuarioId, Long empresaId, Long turnoId,
+                            String metodoPago, Object metodosPago, List<Map<String, Object>> items,
+                            String notas, Long clienteId, Long bodegaId, boolean facturaElectronica) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío");
         }
@@ -81,11 +91,12 @@ public class PosQrSessionService {
         exigirNegocioAprobado(empresa);
 
         int total = 0;
+        List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new java.util.ArrayList<>();
         for (Map<String, Object> item : items) {
             Long productoId = productoIdDe(item);
             int cantidad = cantidadDe(item);
-            var producto = productoRepo.findById(productoId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
+            var producto = PosProductoDeEmpresa.ocultandoExistencia(
+                productoRepo.findById(productoId).orElse(null), productoId, empresaId);
             PosVentaService.exigirVendiblePorPos(producto);
             Integer precioObj = producto.getPrecioEfectivo();
             if (precioObj == null) {
@@ -94,7 +105,11 @@ public class PosQrSessionService {
             int precio = precioObj;
             item.put("precioUnitario", precio);
             total = Math.addExact(total, Math.multiplyExact(precio, cantidad));
+            lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(precio, cantidad, producto.getPorcentajeIva()));
         }
+        int impuesto = com.hotclick.service.hacienda.MontoExacto.aInt(
+            com.hotclick.service.hacienda.CalculadoraIva.ivaACobrar(empresa, facturaElectronica, lineasIva, 0));
+        total = Math.addExact(total, impuesto);
 
         PosQrSesion sesion = new PosQrSesion();
         sesion.setToken(UUID.randomUUID().toString().replace("-", ""));
@@ -103,6 +118,8 @@ public class PosQrSessionService {
         sesion.setClienteId(clienteId);
         sesion.setBodegaId(bodegaId);
         sesion.setTotal(total);
+        sesion.setFacturaElectronica(facturaElectronica);
+        sesion.setMontoImpuesto(impuesto);
         sesion.setMetodoPago(metodoPago);
         sesion.setMetodosHabilitados(PosQrMetodos.aCsv(habilitados));
         sesion.setEstado("PENDIENTE");
@@ -193,7 +210,7 @@ public class PosQrSessionService {
         r.put("items",         itemsDe(sesion));
         LocalDateTime fecha = sesion.getFechaPago() != null ? sesion.getFechaPago() : sesion.getFechaCreacion();
         r.put("fechaPago",     fecha != null ? fecha.toString() : null);
-        r.put("referencia",    sesion.getToken().substring(0, 8).toUpperCase());
+        r.put("referencia",    sesion.getToken().substring(0, 8).toUpperCase(Locale.ROOT));
         return r;
     }
 
@@ -248,9 +265,9 @@ public class PosQrSessionService {
     private void exigirItemsDelNegocio(Long empresaId, List<Map<String, Object>> items) {
         for (Map<String, Object> item : items) {
             Long productoId = productoIdDe(item);
-            Long empresaDueno = productoRepo.findEmpresaIdById(productoId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
-            PosProductoDeEmpresa.exigirMismoNegocio(empresaDueno, empresaId);
+            // MEDIO-2 (#428): inexistente y de otro negocio dan el mismo 404 de texto fijo (antes: 404 con id vs 400).
+            PosProductoDeEmpresa.ocultandoExistenciaDeDueno(
+                productoRepo.findEmpresaIdById(productoId).orElse(null), productoId, empresaId);
         }
     }
 

@@ -37,6 +37,8 @@ export type CheckoutPayload = {
   notas?: string | null
   /** Dirección de entrega (señas, cantón, provincia); el pedido la guarda para los correos. */
   direccionEntrega?: string | null
+  provincia?: string
+  canton?: string
   provider?: string
   /** SINPE por ONVO: identificación (formato según tipo), tipo ONVO 0-5/9 y SINPE del comprador (+506########). */
   sinpeIdentificacion?: string
@@ -45,6 +47,8 @@ export type CheckoutPayload = {
   guestEmail?: string
   /** Token del QR del POS — al pagar, marca la sesión del cajero como PAGADO. */
   posQrToken?: string
+  /** M4: el comprador pidió factura electrónica (sin la bandera es tiquete). */
+  facturaElectronica?: boolean
   [key: string]: unknown
 }
 
@@ -76,6 +80,11 @@ export type Pedido = {
   metodoEnvio?: string
   origen?: string
   costoEnvio?: number | null
+  /** MED-5: destino validado por el servidor y zona/tarifa cobradas. */
+  destinoProvincia?: string | null
+  destinoCanton?: string | null
+  envioZona?: 'GAM' | 'FUERA_GAM' | 'EXPRESS' | null
+  envioMontoZona?: number | null
   numeroGuia?: string | null
   /** Compras con productos de varios vendedores comparten este código — un pago, un paquete por vendedor. */
   grupoPago?: string | null

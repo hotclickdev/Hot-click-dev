@@ -120,8 +120,10 @@ public class SuscripcionService {
         return onvoChangeService.cambiarPlan(empresaId, planId);
     }
 
-    public void procesarPagoOnvoExitoso(Long empresaId, String onvoSubId, Long planId) {
-        onvoChangeService.procesarPagoOnvoExitoso(empresaId, onvoSubId, planId);
+
+    /** S-02/B2: activa/renueva con lo que ONVO confirmó por GET; {@code facturaId} (obligatorio) es la referencia del ledger. */
+    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin, String facturaId) {
+        onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin, facturaId);
     }
 
     public void procesarRenovacionOnvoFallida(String onvoSubId) {

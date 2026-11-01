@@ -69,8 +69,8 @@ test.describe('STORE — perfil del negocio', () => {
     await expect(page.getByRole('heading', { name: 'Cómo comprarle' })).toBeVisible()
     await expect(page.getByText('Retiro en tienda · San José')).toBeVisible()
     await expect(page.getByText('9:00 a 18:00')).toBeVisible()
-    // La portada ocupa el lugar del header en el perfil móvil.
-    await expect(page.getByRole('banner')).toBeHidden()
+    // Desde 86c0b86d el header (logo de HotClick y migas) se mantiene también en el perfil móvil.
+    await expect(page.getByRole('banner')).toBeVisible()
   })
 
   test('emprendedor: sin WhatsApp ni Instagram del vendedor, solo Compartir (la venta queda en HotClick)', async ({ page }) => {

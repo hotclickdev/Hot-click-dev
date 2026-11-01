@@ -1,5 +1,6 @@
 package com.hotclick.service.tenant;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
@@ -10,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 @Component
 public class TenantInfoBuilder {
@@ -27,7 +27,7 @@ public class TenantInfoBuilder {
     @Transactional(readOnly = true)
     public Map<String, Object> getTenantInfo(Long empresaId) {
         Empresa empresa = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
         Plan plan = empresa.getPlan();
         Map<String, Object> info = new HashMap<>();

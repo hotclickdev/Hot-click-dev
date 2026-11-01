@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import com.hotclick.controller.crm.CrmClienteMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -68,12 +69,16 @@ public class AuthCredentialLoginHandler {
         Usuario usuario = usuarioOpt.get();
         ResponseEntity<?> bloqueo = rechazarSiBloqueado(usuario, request, httpRequest);
         if (bloqueo != null) return bloqueo;
+        ResponseEntity<?> ipAgotada = rechazarSiIpAgotada(usuario, request, httpRequest);
+        if (ipAgotada != null) return ipAgotada;
         ResponseEntity<?> clave = rechazarSiClaveIncorrecta(usuario, request, httpRequest);
         if (clave != null) return clave;
         ResponseEntity<?> estado = rechazarSiEstadoInvalido(usuario);
         if (estado != null) return estado;
 
-        usuarioService.resetearIntentosFallidos(usuario.getId());
+        // La contraseña correcta NO limpia los contadores de fallos: con 2FA/WebAuthn la autenticación aún no terminó
+        // y quien solo tiene la contraseña no debe poder borrar el tope global. Se limpian al completar el login
+        // (sin 2FA, abajo; con 2FA, en AuthTotpVerifyHandler tras verificar el código).
         usuarioService.actualizarUltimoAcceso(usuario.getId());
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginSuccess(usuario.getId(), usuario.getCorreo(), httpRequest));
 
@@ -85,6 +90,8 @@ public class AuthCredentialLoginHandler {
         if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
             return respuesta2fa(usuario);
         }
+        // Sin 2FA, la autenticación terminó acá: los tropiezos previos ya no cuentan.
+        usuarioService.resetearIntentosFallidos(usuario.getId(), authSupport.ipCliente(httpRequest));
         ResponseEntity<?> multi = respuestaMultiEmpresa(usuario);
         if (multi != null) return multi;
         return ResponseEntity.ok(authSupport.buildAuthResponse(usuario));
@@ -101,15 +108,26 @@ public class AuthCredentialLoginHandler {
         if (usuario.getBloqueadoHasta() == null || !LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
             return null;
         }
-        log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", request.getCorreo(), usuario.getBloqueadoHasta());
+        log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", CrmClienteMapper.enmascararCorreo(request.getCorreo()), usuario.getBloqueadoHasta());
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest));
         return ResponseEntity.status(403).body(ResponseDTO.error(
             "Cuenta temporalmente bloqueada por múltiples intentos fallidos. Revisá tu correo para recuperar el acceso."));
     }
 
+    /**
+     * Esta IP ya falló {@code ip-max} veces contra este usuario: se rechaza igual que una contraseña mala (mismo
+     * 401, mismo costo de hash) para que el bloqueo no sirva para saber que el correo existe. Solo afecta a esa IP.
+     */
+    private ResponseEntity<?> rechazarSiIpAgotada(Usuario usuario, JwtRequest request, HttpServletRequest httpRequest) {
+        if (!usuarioService.ipBloqueadaParaUsuario(usuario.getId(), authSupport.ipCliente(httpRequest))) return null;
+        passwordEncoder.matches(request.getContrasena(), HASH_TIMING_DESCONOCIDO);
+        AuthAuditSupport.run(log, () -> securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest));
+        return respuestaCredencialesInvalidas();
+    }
+
     private ResponseEntity<?> rechazarSiClaveIncorrecta(Usuario usuario, JwtRequest request, HttpServletRequest httpRequest) {
         if (passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash())) return null;
-        usuarioService.incrementarIntentosFallidos(usuario.getId());
+        authSupport.registrarFalloCredencial(usuario.getId(), httpRequest);
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginFailed(request.getCorreo(), httpRequest, "wrong_password"));
         AuthAuditSupport.run(log, () -> securityDetectionService.recordFailedLogin(securityAuditService.getIp(httpRequest), request.getCorreo()));
         return respuestaCredencialesInvalidas();
@@ -126,7 +144,8 @@ public class AuthCredentialLoginHandler {
                 || estado == Constants.ESTADO_ELIMINADO) {
             return respuestaCuentaBloqueada(MSG_CREDENCIALES);
         }
-        return null;
+        // Cualquier otro valor (p. ej. sin estado) tampoco entra: solo el estado 1 recibe tokens.
+        return estado == Constants.ESTADO_ACTIVO ? null : respuestaCuentaBloqueada(MSG_CREDENCIALES);
     }
 
     private void avisarVerificacionPorEmail(Usuario usuario) {
@@ -134,7 +153,7 @@ public class AuthCredentialLoginHandler {
             otpService.enviarOtp(usuario, Constants.OTP_TIPO_REGISTRO);
         } catch (Exception e) {
             log.error("[login] No se pudo reenviar verificación a {}: {}",
-                usuario.getCorreo(), e.getMessage(), e);
+                CrmClienteMapper.enmascararCorreo(usuario.getCorreo()), e.getMessage(), e);
         }
     }
 

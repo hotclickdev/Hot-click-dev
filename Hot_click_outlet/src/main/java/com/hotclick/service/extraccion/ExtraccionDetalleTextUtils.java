@@ -1,5 +1,7 @@
 package com.hotclick.service.extraccion;
 
+import java.util.Locale;
+
 /** Utilidades de texto compartidas por los extractores de detalle de producto. */
 final class ExtraccionDetalleTextUtils {
 
@@ -11,7 +13,7 @@ final class ExtraccionDetalleTextUtils {
     /** Detecta URLs de páginas de resultados de búsqueda (no páginas de producto). */
     static boolean esPaginaDeResultados(String url) {
         if (url == null) return true;
-        String lower = url.toLowerCase();
+        String lower = url.toLowerCase(Locale.ROOT);
         return lower.contains("/s?") || lower.contains("/search") || lower.contains("?q=") ||
                lower.contains("?k=") || lower.contains("?st=") || lower.contains("_nkw=") ||
                lower.contains("/pl?") || lower.contains("?d=") || lower.contains("/sch/");
@@ -20,7 +22,7 @@ final class ExtraccionDetalleTextUtils {
     /** Filtra texto genérico de ecommerce que no describe el producto. */
     static String limpiarDescripcion(String desc) {
         if (desc == null || desc.isBlank()) return null;
-        String lower = desc.toLowerCase();
+        String lower = desc.toLowerCase(Locale.ROOT);
         if (lower.startsWith("search ") || lower.startsWith("shop ") ||
             lower.contains("fast shipping") || lower.contains("free returns") ||
             lower.contains("top-rated customer") || lower.contains("great prices") ||

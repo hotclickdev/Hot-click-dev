@@ -36,20 +36,37 @@ public class CheckoutPaquetesPlanner {
     }
 
     public record Paquete(Bodega bodega, List<PaymentCheckoutRequest.ItemDTO> items,
-                          int subtotal, int costoTotal, String metodoEnvio, String notas) {}
+                          int subtotal, int costoTotal, String metodoEnvio, String notas,
+                          List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva) {
+        public Paquete(Bodega bodega, List<PaymentCheckoutRequest.ItemDTO> items,
+                       int subtotal, int costoTotal, String metodoEnvio, String notas) {
+            this(bodega, items, subtotal, costoTotal, metodoEnvio, notas, List.of());
+        }
+    }
 
     public List<Paquete> planificar(PaymentCheckoutRequest req, Map<Long, Producto> productos, Bodega bodegaDefault) {
+        // MED-5: cantón que no es de la provincia (o solo uno de los dos) = 400 antes de cobrar nada.
+        // BAJO #447: con envío (no retiro) el destino es obligatorio.
+        com.hotclick.service.envio.DestinoEnvio.exigir(req.getProvincia(), req.getCanton(),
+            !CheckoutOrderFactory.esRetiro(req.getMetodoEnvio()));
         Map<Long, Bodega> bodegas = new LinkedHashMap<>();
         Map<Long, List<PaymentCheckoutRequest.ItemDTO>> itemsPorBodega = new LinkedHashMap<>();
+        // Paquetes cuyo origen no es una bodega propia del producto ni de su tienda (la resolvió el backend).
+        java.util.Set<Long> sinBodegaPropia = new java.util.HashSet<>();
         for (PaymentCheckoutRequest.ItemDTO item : req.getItems()) {
             Producto p = productos.get(item.getProductoId());
             Bodega origen = bodegaDeOrigen(p, bodegaDefault);
+            boolean propia = origen != null && (p.getBodega() != null
+                || (p.getEmpresa() != null && p.getEmpresa().getBodegaVentaOnline() != null));
             if (origen == null) origen = primeraBodegaActivaDeSuTienda(p);
             if (origen == null) {
                 throw new IllegalStateException("El producto " + (p.getNombreProducto() != null ? p.getNombreProducto() : p.getId())
                     + " no tiene bodega de despacho configurada. Escribinos para coordinar tu pedido.");
             }
             bodegas.putIfAbsent(origen.getId(), origen);
+            // MED-3 (a) Auditor 3: un producto sin bodega propia que despacha desde la bodega de venta online de su
+            // tienda llega del front como "sin-bodega" (bodegaId ausente): también toma ese envío.
+            if (!propia || p.getBodega() == null) sinBodegaPropia.add(origen.getId());
             itemsPorBodega.computeIfAbsent(origen.getId(), k -> new ArrayList<>()).add(item);
         }
 
@@ -57,19 +74,29 @@ public class CheckoutPaquetesPlanner {
         for (Map.Entry<Long, List<PaymentCheckoutRequest.ItemDTO>> e : itemsPorBodega.entrySet()) {
             int subtotal = 0;
             int costoTotal = 0;
+            List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
             for (PaymentCheckoutRequest.ItemDTO item : e.getValue()) {
                 Producto p = productos.get(item.getProductoId());
                 int precio = item.getPrecioUnitarioOverride() != null ? item.getPrecioUnitarioOverride() : OrderPricingService.precioEfectivo(p);
                 int costo = p.getPrecioCompra() != null ? p.getPrecioCompra() : 0;
                 subtotal += precio * item.getCantidad();
                 costoTotal += costo * item.getCantidad();
+                lineasIva.add(new com.hotclick.service.hacienda.CalculadoraIva.Linea(
+                    precio, item.getCantidad(), p.getPorcentajeIva()));
             }
-            PaymentCheckoutRequest.EnvioPaqueteDTO envio = envioDe(req, e.getKey());
-            String metodo = envio != null ? envio.getMetodoEnvio()
-                : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO;
+            Bodega bodegaPaquete = bodegas.get(e.getKey());
+            PaymentCheckoutRequest.EnvioPaqueteDTO envio = envioDe(req, e.getKey(), sinBodegaPropia.contains(e.getKey()));
+            String metodo = OrderPricingService.metodoNormalPorDestino(envio != null ? envio.getMetodoEnvio()
+                : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO,
+                req.getProvincia(), req.getCanton());
             String notas = envio != null && envio.getNotas() != null && !envio.getNotas().isBlank()
                 ? envio.getNotas() : req.getNotas();
-            paquetes.add(new Paquete(bodegas.get(e.getKey()), e.getValue(), subtotal, costoTotal, metodo, notas));
+            paquetes.add(new Paquete(bodegaPaquete, e.getValue(), subtotal, costoTotal, metodo, notas, List.copyOf(lineasIva)));
+        }
+        // NO APTO #448: el método top-level puede ser retiro/null y algún paquete de envios[] ir a domicilio;
+        // si CUALQUIER paquete planificado no es retiro, el destino es obligatorio (no se guarda FUERA_GAM sin cantón).
+        if (paquetes.stream().anyMatch(pq -> !CheckoutOrderFactory.esRetiro(pq.metodoEnvio()))) {
+            com.hotclick.service.envio.DestinoEnvio.exigir(req.getProvincia(), req.getCanton(), true);
         }
         return paquetes;
     }
@@ -83,10 +110,20 @@ public class CheckoutPaquetesPlanner {
         return bodegaDefault;
     }
 
-    private static PaymentCheckoutRequest.EnvioPaqueteDTO envioDe(PaymentCheckoutRequest req, Long bodegaId) {
+    /**
+     * Envío del paquete: primero el que trae el id de su bodega. Si el paquete no tiene bodega propia (el front lo
+     * manda como "sin-bodega", {@code bodegaId} ausente) se usa el envío sin {@code bodegaId}. Un paquete con
+     * bodega real nunca toma el envío sin id.
+     */
+    private static PaymentCheckoutRequest.EnvioPaqueteDTO envioDe(PaymentCheckoutRequest req, Long bodegaId,
+                                                                 boolean sinBodegaPropia) {
         if (req.getEnvios() == null) return null;
+        PaymentCheckoutRequest.EnvioPaqueteDTO porId = req.getEnvios().stream()
+            .filter(en -> en != null && bodegaId.equals(en.getBodegaId()))
+            .findFirst().orElse(null);
+        if (porId != null || !sinBodegaPropia) return porId;
         return req.getEnvios().stream()
-            .filter(en -> bodegaId.equals(en.getBodegaId()))
+            .filter(en -> en != null && en.getBodegaId() == null)
             .findFirst().orElse(null);
     }
 }

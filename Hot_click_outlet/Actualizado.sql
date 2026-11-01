@@ -1359,7 +1359,7 @@ ON CONFLICT ("ID_METODO_PAGO_CONFIG") DO UPDATE SET
     "NOMBRE" = EXCLUDED."NOMBRE", "ACTIVO" = EXCLUDED."ACTIVO", "ORDEN" = EXCLUDED."ORDEN";
 
 INSERT INTO "HOT_CLICK_USUARIO_TB" ("ID_USUARIO", "IDENTIFICACION", "NOMBRE", "APELLIDO_PATERNO", "CORREO", "TELEFONO", "CONTRASENA_HASH") VALUES
-  (1, '999999999', 'Admin', 'Sistema', 'admin@hotclick.com', '88888888', '$2b$10$placeholder')
+  (1, '999999999', 'Admin', 'Sistema', 'admin@hotclick.lat', '88888888', '$2b$10$placeholder')
 ON CONFLICT ("ID_USUARIO") DO NOTHING;
 
 INSERT INTO "HOT_CLICK_USUARIO_ROL_TB" ("FK_ID_USUARIO", "FK_ID_ROL") VALUES (1, 1)
@@ -2858,7 +2858,8 @@ CREATE TABLE IF NOT EXISTS customer_memory (
     last_visit       TIMESTAMPTZ,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_customer_memory_visitor UNIQUE (visitor_id)
+    empresa_id       BIGINT,
+    CONSTRAINT uq_customer_memory_visitor_empresa UNIQUE NULLS NOT DISTINCT (visitor_id, empresa_id)
 );
 CREATE INDEX IF NOT EXISTS idx_customer_memory_visitor ON customer_memory (visitor_id);
 
@@ -4384,3 +4385,109 @@ CREATE TABLE IF NOT EXISTS hot_click_suspension_extension_tb (
     CONSTRAINT uq_suspension_extension_ciclo UNIQUE (suscripcion_id)
 );
 CREATE INDEX IF NOT EXISTS idx_suspension_extension_empresa ON hot_click_suspension_extension_tb (fk_id_empresa, vence_en);
+
+-- ====================================================
+-- V206 Trial del plan Emprendedor (27-oct-2026). Aditiva: columnas NULL e índices, no toca filas existentes.
+-- Primeros N negocios (cupo configurable, 70 por defecto) con trial de M días (90 por defecto); luego US$9/mes por ONVO.
+-- trial_emprendedor_pos UNIQUE = defensa extra contra puestos duplicados.
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_hasta DATE;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_pos INTEGER;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_trial_emprendedor_pos
+    ON hot_click_empresa_tb (trial_emprendedor_pos);
+CREATE INDEX IF NOT EXISTS idx_empresa_trial_emprendedor_hasta
+    ON hot_click_empresa_tb (trial_emprendedor_hasta) WHERE trial_emprendedor_hasta IS NOT NULL;
+
+-- ====================================================
+-- V207 Cupo Emprendedor: un puesto por persona (27-oct-2026). Aditiva: dos columnas NULL, dos índices únicos y un trigger.
+-- El puesto del trial se asigna al APROBAR el negocio (no al registrarlo) y es de UNA persona: el titular del puesto
+-- (usuario propietario y correo verificado, normalizado) queda en la propia fila de la empresa con UNIQUE, así que la BD
+-- rechaza un segundo puesto para la misma persona aunque el código falle. Los NULL no chocan entre sí en PostgreSQL.
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_titular_usuario BIGINT;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_titular_correo VARCHAR(160);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_trial_emprendedor_titular_usuario
+    ON hot_click_empresa_tb (trial_emprendedor_titular_usuario);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_trial_emprendedor_titular_correo
+    ON hot_click_empresa_tb (trial_emprendedor_titular_correo);
+
+-- Si se borra un negocio que aún estaba en trial, su puesto vuelve al cupo (atómico, nunca bajo 0).
+-- El rechazo desde la app libera por su lado con un UPDATE condicionado (sin doble liberación).
+CREATE OR REPLACE FUNCTION fn_cupo_emprendedor_liberar_al_borrar() RETURNS trigger AS $fn$
+BEGIN
+    IF OLD.trial_emprendedor_pos IS NOT NULL AND OLD.estado_plan = 'TRIAL' THEN
+        UPDATE hot_click_cupo_emprendedor_tb SET usados = usados - 1 WHERE id = 1 AND usados > 0;
+    END IF;
+    RETURN OLD;
+END;
+$fn$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_cupo_emprendedor_liberar_al_borrar
+    AFTER DELETE ON hot_click_empresa_tb
+    FOR EACH ROW EXECUTE FUNCTION fn_cupo_emprendedor_liberar_al_borrar();
+
+-- ====================================================
+-- V215 Pago con reembolso parcial (PR #460, 31-oct-2026). Cobro parcial con un paquete cancelado en paralelo:
+-- el pago sigue CAPTURADO y acá queda el monto que se debe devolver y el ya devuelto.
+-- Aditiva: columnas nuevas nullables, no toca filas existentes.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS monto_reembolso_pendiente INTEGER;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS monto_reembolsado INTEGER;
+
+-- V216 (31-oct-2026): dedupe del aviso al admin por cobro de ONVO sobre grupo cancelado (REEMBOLSO_PENDIENTE).
+-- Aditiva: una columna NULL. NULL = aún sin avisar; el UPDATE condicional sobre NULL deja un solo correo por pago.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS aviso_reembolso_admin_en TIMESTAMP;
+
+-- V217 (31-oct-2026): BAJOs de #466 sobre el aviso al admin por REEMBOLSO_PENDIENTE.
+-- aviso_reembolso_admin_en pasa a ser la marca del claim (lease); el envío confirmado queda en
+-- aviso_reembolso_admin_enviado_en y los intentos en aviso_reembolso_admin_intentos (tope del barrido).
+-- aviso_reembolso_resumen_pendiente: REEMBOLSO_PENDIENTE anteriores a V217 que nunca se avisaron; van en UN
+-- correo resumen en el primer barrido (decisión del Mentor, punto 4 de #477), no en avisos individuales.
+-- Aditiva. Backfill: lo que ya tenía marca se considera enviado, así el barrido no reenvía avisos viejos.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS aviso_reembolso_admin_enviado_en TIMESTAMP;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS aviso_reembolso_admin_intentos INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS aviso_reembolso_resumen_pendiente BOOLEAN NOT NULL DEFAULT FALSE;
+UPDATE hot_click_pago_tb
+   SET aviso_reembolso_admin_enviado_en = aviso_reembolso_admin_en
+ WHERE aviso_reembolso_admin_en IS NOT NULL AND aviso_reembolso_admin_enviado_en IS NULL;
+UPDATE hot_click_pago_tb
+   SET aviso_reembolso_resumen_pendiente = TRUE
+ WHERE estado_pago = 'REEMBOLSO_PENDIENTE' AND aviso_reembolso_admin_en IS NULL
+   AND aviso_reembolso_admin_enviado_en IS NULL;
+
+-- V218 (31-oct-2026): search_path fijo en las SECURITY DEFINER de pagos y seed admin a @hotclick.lat (BAJOs de #484).
+DO $$
+DECLARE
+    f RECORD;
+BEGIN
+    FOR f IN
+        SELECT p.oid::regprocedure AS firma
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid = p.pronamespace
+         WHERE n.nspname = 'public'
+           AND p.proname IN ('fn_crear_pago', 'fn_obtener_pago_por_token')
+    LOOP
+        EXECUTE format('ALTER FUNCTION %s SET search_path = pg_catalog, public, pg_temp', f.firma);
+    END LOOP;
+END
+$$;
+
+-- El seed de V1 vive en la tabla legada entre comillas "HOT_CLICK_USUARIO_TB" (puede no existir).
+DO $$
+BEGIN
+    IF to_regclass('public."HOT_CLICK_USUARIO_TB"') IS NOT NULL THEN
+        UPDATE "HOT_CLICK_USUARIO_TB"
+           SET "CORREO" = 'admin@hotclick.lat'
+         WHERE lower("CORREO") = 'admin@hotclick.com'
+           AND NOT EXISTS (SELECT 1 FROM "HOT_CLICK_USUARIO_TB" u2 WHERE lower(u2."CORREO") = 'admin@hotclick.lat');
+    END IF;
+END
+$$;
+
+-- Admin de plataforma (JPA / DataSeeder): Constants.CORREO_ADMIN pasa a admin@hotclick.lat.
+UPDATE hot_click_usuario_tb
+   SET correo = 'admin@hotclick.lat'
+ WHERE lower(correo) = 'admin@hotclick.com'
+   AND NOT EXISTS (SELECT 1 FROM hot_click_usuario_tb u2 WHERE lower(u2.correo) = 'admin@hotclick.lat');
+
+UPDATE hot_click_empresa_tb
+   SET correo_empresa = 'admin@hotclick.lat'
+ WHERE lower(correo_empresa) = 'admin@hotclick.com'
+   AND NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e2 WHERE lower(e2.correo_empresa) = 'admin@hotclick.lat');

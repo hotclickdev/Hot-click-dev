@@ -64,6 +64,45 @@ public class Pago extends BaseEntity {
     @Column(name = "plazo_interno_sinpe")
     private LocalDateTime plazoInternoSinpe;
 
+    /** V215 (PR #460): parte del cobro que se debe devolver (paquetes cancelados en un cobro parcial). */
+    @Column(name = "monto_reembolso_pendiente")
+    private Integer montoReembolsoPendiente;
+
+    /** V215 (PR #460): parte del cobro ya devuelta fuera de la plataforma (resolución del ADMIN). */
+    @Column(name = "monto_reembolsado")
+    private Integer montoReembolsado;
+
+    public Integer getMontoReembolsoPendiente() { return montoReembolsoPendiente; }
+    public void setMontoReembolsoPendiente(Integer v) { this.montoReembolsoPendiente = v; }
+    public Integer getMontoReembolsado() { return montoReembolsado; }
+    public void setMontoReembolsado(Integer v) { this.montoReembolsado = v; }
+
+    /** V216: cuándo se avisó al admin de un REEMBOLSO_PENDIENTE (dedupe del aviso; NULL = sin avisar). */
+    @Column(name = "aviso_reembolso_admin_en")
+    private LocalDateTime avisoReembolsoAdminEn;
+
+    public LocalDateTime getAvisoReembolsoAdminEn() { return avisoReembolsoAdminEn; }
+    public void setAvisoReembolsoAdminEn(LocalDateTime v) { this.avisoReembolsoAdminEn = v; }
+
+    /** V217: cuándo se confirmó el envío del aviso (NULL = no confirmado; el barrido reintenta). */
+    @Column(name = "aviso_reembolso_admin_enviado_en")
+    private LocalDateTime avisoReembolsoAdminEnviadoEn;
+
+    /** V217: intentos de envío del aviso (tope del barrido). */
+    @Column(name = "aviso_reembolso_admin_intentos", nullable = false)
+    private int avisoReembolsoAdminIntentos = 0;
+
+    /** V217: REEMBOLSO_PENDIENTE previo a V217 sin avisar; va en el correo resumen del primer barrido. */
+    @Column(name = "aviso_reembolso_resumen_pendiente", nullable = false)
+    private boolean avisoReembolsoResumenPendiente = false;
+
+    public boolean isAvisoReembolsoResumenPendiente() { return avisoReembolsoResumenPendiente; }
+    public void setAvisoReembolsoResumenPendiente(boolean v) { this.avisoReembolsoResumenPendiente = v; }
+    public LocalDateTime getAvisoReembolsoAdminEnviadoEn() { return avisoReembolsoAdminEnviadoEn; }
+    public void setAvisoReembolsoAdminEnviadoEn(LocalDateTime v) { this.avisoReembolsoAdminEnviadoEn = v; }
+    public int getAvisoReembolsoAdminIntentos() { return avisoReembolsoAdminIntentos; }
+    public void setAvisoReembolsoAdminIntentos(int v) { this.avisoReembolsoAdminIntentos = v; }
+
     public String getSinpeRefNumber() { return sinpeRefNumber; }
     public LocalDateTime getPlazoInternoSinpe() { return plazoInternoSinpe; }
     public void setPlazoInternoSinpe(LocalDateTime plazoInternoSinpe) { this.plazoInternoSinpe = plazoInternoSinpe; }

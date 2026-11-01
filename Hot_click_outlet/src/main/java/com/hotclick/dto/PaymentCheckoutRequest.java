@@ -55,6 +55,22 @@ public class PaymentCheckoutRequest {
     @jakarta.validation.constraints.Size(max = 500, message = "La dirección es demasiado larga")
     private String direccionEntrega;
 
+    /** M4: el comprador pide factura electrónica (en régimen simplificado suma el IVA al cobro). */
+    private Boolean facturaElectronica;
+    public boolean isFacturaElectronica() { return Boolean.TRUE.equals(facturaElectronica); }
+    public Boolean getFacturaElectronica() { return facturaElectronica; }
+    public void setFacturaElectronica(Boolean v) { this.facturaElectronica = v; }
+
+    /** A-2: provincia y cantón del destino; con ellos el servidor decide GAM o fuera del GAM. */
+    @jakarta.validation.constraints.Size(max = 60, message = "La provincia es demasiado larga")
+    private String provincia;
+    @jakarta.validation.constraints.Size(max = 80, message = "El cantón es demasiado largo")
+    private String canton;
+    public String getProvincia() { return provincia; }
+    public void setProvincia(String v) { this.provincia = v; }
+    public String getCanton() { return canton; }
+    public void setCanton(String v) { this.canton = v; }
+
     public String getDireccionEntrega() { return direccionEntrega; }
     public void setDireccionEntrega(String direccionEntrega) { this.direccionEntrega = direccionEntrega; }
 
@@ -75,7 +91,10 @@ public class PaymentCheckoutRequest {
     public void setEnvios(List<EnvioPaqueteDTO> envios) { this.envios = envios; }
 
     public static class EnvioPaqueteDTO {
-        @NotNull(message = "La bodega del paquete es requerida")
+        /**
+         * Bodega del paquete. Opcional: ausente = paquete "sin-bodega" (productos sin bodega propia, la resuelve el
+         * backend). Si viene, {@code CheckoutValidator.assertBodegaTenant} sigue exigiendo que sea de esta tienda.
+         */
         private Long bodegaId;
 
         @NotBlank(message = "El método de envío del paquete es requerido")

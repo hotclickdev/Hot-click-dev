@@ -5,22 +5,31 @@ import { flagService } from '@/services/flagService'
 import { filasDe, texto, type Fila } from './normalizar'
 import { Aviso, Carga, Chip, Encabezado, MarcoIcono, Segmento, TARJETA } from './piezas'
 import { formatPrice } from '@/utils/format'
+import useAuthStore from '@/store/authStore'
+import EnviosReglas from './EnviosReglas'
 
 type CargaEstado = 'carga' | 'listo' | 'error'
 
 export default function ReglasPlataforma() {
-  const [vista, setVista] = useState<'planes' | 'accesos' | 'tecnico'>('planes')
+  type Vista = 'planes' | 'accesos' | 'tecnico' | 'envios'
+  const [vista, setVista] = useState<Vista>('planes')
+  // A-2: los montos de envío los edita solo ADMIN (el backend también lo exige).
+  const esAdmin = useAuthStore((s) => s.userRole) === 'ADMIN'
   return (
     <div className="flex flex-col gap-4">
-      <Encabezado titulo="Reglas" detalle="Planes, operadores e interruptores." />
+      <Encabezado titulo="Reglas" detalle="Planes, operadores, interruptores y envíos." />
       <Segmento
-        opciones={[{ id: 'planes', label: 'Planes' }, { id: 'accesos', label: 'Accesos' }, { id: 'tecnico', label: 'Técnico' }]}
+        opciones={[
+          { id: 'planes', label: 'Planes' }, { id: 'accesos', label: 'Accesos' }, { id: 'tecnico', label: 'Técnico' },
+          ...(esAdmin ? [{ id: 'envios', label: 'Envíos' }] : []),
+        ]}
         valor={vista}
-        onChange={(id) => setVista(id as 'planes' | 'accesos' | 'tecnico')}
+        onChange={(id) => setVista(id as Vista)}
       />
       {vista === 'planes' && <Planes />}
       {vista === 'accesos' && <Accesos />}
       {vista === 'tecnico' && <Tecnico />}
+      {vista === 'envios' && esAdmin && <EnviosReglas />}
       <p className="text-xs text-hc-n-600">La comisión del plan se lee aquí. Dinero no la edita.</p>
     </div>
   )

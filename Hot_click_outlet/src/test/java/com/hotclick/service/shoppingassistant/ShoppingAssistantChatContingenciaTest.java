@@ -61,7 +61,7 @@ class ShoppingAssistantChatContingenciaTest {
         when(classifier.classify(anyString(), any())).thenReturn(QueryClassification.PRODUCTO);
         when(sesiones.resolveSession(any(), anyLong())).thenReturn(sesion);
         when(sesiones.loadHistory(any())).thenReturn(List.of());
-        when(memoria.getOrCreate(any())).thenReturn(CustomerMemoryDto.empty(null));
+        when(memoria.getOrCreate(any(), any())).thenReturn(CustomerMemoryDto.empty(null));
         when(pipeline.ejecutar(anyString(), anyLong(), any(), any(), any(), any(), anyBoolean(), any())).thenReturn(ok);
         service = new ShoppingAssistantService(pipeline, mock(AiQuotaService.class), sanitizer, memoria,
             classifier, mock(AssistantMetricsService.class), sesiones, persistencia,
@@ -87,7 +87,7 @@ class ShoppingAssistantChatContingenciaTest {
     }
 
     @Test void memoriaFalla_contingencia() {
-        when(memoria.getOrCreate(any())).thenThrow(new IllegalStateException("x", new RuntimeException()));
+        when(memoria.getOrCreate(any(), any())).thenThrow(new IllegalStateException("x", new RuntimeException()));
         assertContingencia(chat());
     }
 

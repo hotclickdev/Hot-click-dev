@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import java.util.Locale;
 import com.hotclick.model.CodigoOtp;
 import com.hotclick.model.Usuario;
 import com.hotclick.exception.RecursoNoEncontradoException;
@@ -28,7 +29,7 @@ public class EmailVerificationService {
             throw new IllegalArgumentException("El correo es requerido");
         }
 
-        Usuario pendiente = usuarioService.buscarPorCorreo(usuario.getCorreo().trim().toLowerCase())
+        Usuario pendiente = usuarioService.buscarPorCorreo(usuario.getCorreo().trim().toLowerCase(Locale.ROOT))
                 .orElse(null);
 
         if (pendiente != null) {
@@ -52,7 +53,7 @@ public class EmailVerificationService {
      */
     @Transactional
     public Usuario verificarYRegistrar(String correo, String codigoPlano) {
-        Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase())
+        Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase(Locale.ROOT))
                 .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró una cuenta para ese correo"));
 
         if (usuario.getEstado() != null && usuario.getEstado() == Constants.ESTADO_ACTIVO) {

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -182,7 +183,7 @@ public class CatalogoUrlExtractor {
         boolean tieneNombre = false;
         Iterator<String> nombresCampo = obj.fieldNames();
         while (nombresCampo.hasNext()) {
-            String campo = nombresCampo.next().toLowerCase();
+            String campo = nombresCampo.next().toLowerCase(Locale.ROOT);
             if (campo.contains("price") || campo.contains("precio") || campo.contains("sku") || campo.contains("reference")) {
                 tienePrecioOSku = true;
             }

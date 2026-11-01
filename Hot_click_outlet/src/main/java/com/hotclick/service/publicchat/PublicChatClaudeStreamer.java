@@ -1,5 +1,7 @@
 package com.hotclick.service.publicchat;
 
+import com.hotclick.service.ai.UsoTokens;
+import com.hotclick.service.ai.ClaudeUsoRegistrador;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -35,16 +37,19 @@ class PublicChatClaudeStreamer {
     private final ObjectMapper objectMapper;
     private final PublicChatPromptBuilder promptBuilder;
     private final PublicChatMockResponses mockResponses;
+    private final ClaudeUsoRegistrador usoRegistrador;
 
     PublicChatClaudeStreamer(ObjectMapper objectMapper,
                              PublicChatPromptBuilder promptBuilder,
-                             PublicChatMockResponses mockResponses) {
+                             PublicChatMockResponses mockResponses,
+                             ClaudeUsoRegistrador usoRegistrador) {
         this.objectMapper = objectMapper;
         this.promptBuilder = promptBuilder;
         this.mockResponses = mockResponses;
+        this.usoRegistrador = usoRegistrador;
     }
 
-    public void streamClaudeResponse(Logger log, SseEmitter emitter, String userMessage,
+    public void streamClaudeResponse(Logger log, SseEmitter emitter, Long empresaId, String userMessage,
                                      List<Map<String, Object>> productos,
                                      List<Map<String, Object>> history,
                                      String wa, String nombreTienda, boolean marketplace, String context,
@@ -54,20 +59,20 @@ class PublicChatClaudeStreamer {
         String systemPrompt = promptBuilder.buildSalesSystemPrompt(wa, nombreTienda, marketplace, context, productos,
             isEnglish, isGift, maxBudget, negations, afterHours, mostrarFichas);
         String fallback = mockResponses.generarRespuestaMock(productos, history, isEnglish);
-        streamWithSystemPrompt(log, emitter, userMessage, history, systemPrompt, fallback, smartOpts);
+        streamWithSystemPrompt(log, emitter, empresaId, userMessage, history, systemPrompt, fallback, smartOpts);
     }
 
-    public void streamAdvisor(Logger log, SseEmitter emitter, String userMessage,
+    public void streamAdvisor(Logger log, SseEmitter emitter, Long empresaId, String userMessage,
                               Map<String, Object> ficha, List<Map<String, Object>> history,
                               String wa, String nombreTienda, boolean marketplace,
                               boolean isEnglish, boolean afterHours, List<String> smartOpts) {
         String systemPrompt = promptBuilder.buildAdvisorSystemPrompt(
             wa, nombreTienda, marketplace, ficha, isEnglish, afterHours);
         String fallback = mockResponses.generarRespuestaAsesor(ficha, userMessage, isEnglish);
-        streamWithSystemPrompt(log, emitter, userMessage, history, systemPrompt, fallback, smartOpts);
+        streamWithSystemPrompt(log, emitter, empresaId, userMessage, history, systemPrompt, fallback, smartOpts);
     }
 
-    void streamWithSystemPrompt(Logger log, SseEmitter emitter, String userMessage,
+    void streamWithSystemPrompt(Logger log, SseEmitter emitter, Long empresaId, String userMessage,
                                 List<Map<String, Object>> history, String systemPrompt,
                                 String fallback, List<String> smartOpts) {
         try {
@@ -89,7 +94,7 @@ class PublicChatClaudeStreamer {
                 .build();
 
             HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
-                .thenAccept(response -> enviarDeltas(log, emitter, response, smartOpts, fallback))
+                .thenAccept(response -> enviarDeltas(log, emitter, empresaId, response, smartOpts, fallback))
                 .exceptionally(ex -> {
                     enviarFallback(log, emitter, fallback, smartOpts, ex);
                     return null;
@@ -119,13 +124,17 @@ class PublicChatClaudeStreamer {
         return messages;
     }
 
-    private void enviarDeltas(Logger log, SseEmitter emitter, HttpResponse<Stream<String>> response,
+    private void enviarDeltas(Logger log, SseEmitter emitter, Long empresaId,
+                              HttpResponse<Stream<String>> response,
                               List<String> smartOpts, String fallback) {
         try {
             boolean[] huboDelta = { false };
+            long[] uso = new long[4];
             response.body().forEach(line -> {
+                acumularUso(line, uso);
                 if (enviarDeltaSiHay(log, emitter, line)) huboDelta[0] = true;
             });
+            registrarUsoStream(log, empresaId, uso);
             if (!huboDelta[0] && fallback != null && !fallback.isBlank()) {
                 emitter.send(SseEmitter.event().name("delta")
                     .data(objectMapper.writeValueAsString(Map.of("text", fallback))));
@@ -136,6 +145,43 @@ class PublicChatClaudeStreamer {
         } catch (Exception e) {
             log.error("[Chat] Stream processing error: {}", e.getMessage());
             try { emitter.complete(); } catch (Exception ae) { log.debug("SSE complete error: {}", ae.getMessage()); }
+        }
+    }
+
+    /**
+     * Acumula el {@code usage} del stream de Claude: {@code message_start} trae input y caché
+     * (y un output inicial) y {@code message_delta} trae el output acumulado final.
+     * uso = [entrada, salida, cacheLectura, cacheEscritura].
+     */
+    void acumularUso(String line, long[] uso) {
+        if (!line.startsWith("data: ") || !line.contains("usage")) return;
+        try {
+            JsonNode node = objectMapper.readTree(line.substring(6).trim());
+            String type = node.path("type").asText();
+            if ("message_start".equals(type)) {
+                JsonNode u = node.path("message").path("usage");
+                uso[0] = u.path("input_tokens").asLong(0);
+                uso[1] = u.path("output_tokens").asLong(0);
+                uso[2] = u.path("cache_read_input_tokens").asLong(0);
+                uso[3] = u.path("cache_creation_input_tokens").asLong(0);
+            } else if ("message_delta".equals(type)) {
+                JsonNode u = node.path("usage");
+                if (u.has("output_tokens")) uso[1] = u.path("output_tokens").asLong(0);
+                if (u.has("input_tokens")) uso[0] = u.path("input_tokens").asLong(uso[0]);
+                if (u.has("cache_read_input_tokens")) uso[2] = u.path("cache_read_input_tokens").asLong(uso[2]);
+                if (u.has("cache_creation_input_tokens")) uso[3] = u.path("cache_creation_input_tokens").asLong(uso[3]);
+            }
+        } catch (Exception e) {
+            // best-effort: un evento ilegible no debe cortar el stream
+        }
+    }
+
+    private void registrarUsoStream(Logger log, Long empresaId, long[] uso) {
+        try {
+            usoRegistrador.registrar(empresaId, new UsoTokens(
+                (int) Math.min(Integer.MAX_VALUE, uso[0]), (int) Math.min(Integer.MAX_VALUE, uso[1]), uso[2], uso[3]));
+        } catch (RuntimeException e) {
+            log.warn("[Chat] No se pudieron registrar tokens: {}", e.getClass().getSimpleName());
         }
     }
 

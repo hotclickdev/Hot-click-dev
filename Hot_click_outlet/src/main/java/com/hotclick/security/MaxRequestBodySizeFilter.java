@@ -11,6 +11,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Locale;
 
 /**
  * Rechaza bodies no-multipart (JSON, form) por encima de un tope. Los uploads
@@ -29,7 +30,7 @@ public class MaxRequestBodySizeFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain chain) throws ServletException, IOException {
         String contentType = request.getContentType();
         boolean isMultipart = contentType != null
-            && contentType.toLowerCase().startsWith(MediaType.MULTIPART_FORM_DATA_VALUE);
+            && contentType.toLowerCase(Locale.ROOT).startsWith(MediaType.MULTIPART_FORM_DATA_VALUE);
 
         if (!isMultipart && request.getContentLengthLong() > MAX_BODY_BYTES) {
             log.warn("[BODY-TOO-LARGE] ip={} path={} length={}",

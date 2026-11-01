@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,17 +46,21 @@ public class AdminAsignarController {
 
     /** Busca clientes de la empresa por nombre, correo o teléfono (mínimo 3 caracteres, máximo 20). */
     @GetMapping("/buscar-cliente")
-    public ResponseDTO buscarCliente(@RequestParam String q) {
+    public ResponseEntity<ResponseDTO> buscarCliente(@RequestParam(required = false) String q) {
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
-        if (q == null || q.trim().length() < MIN_CARACTERES_Q) {
-            return ResponseDTO.success("Resultados", List.of());
+        if (q == null) { // sin el parámetro: error del cliente (400), no 500
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Falta el texto a buscar (q)."));
+        }
+        if (q.trim().length() < MIN_CARACTERES_Q) {
+            return ResponseEntity.ok(ResponseDTO.success("Resultados", List.of()));
         }
         String texto = q.trim();
         org.springframework.data.domain.Pageable top = org.springframework.data.domain.PageRequest.of(0, MAX_RESULTADOS);
         List<Usuario> encontrados = empresaId == null // tenant-global-ok: requireEmpresaIdOrAdmin, null solo ADMIN
             ? usuarioRepository.buscarClientes(texto, top)
             : usuarioRepository.buscarClientesByEmpresa(texto, empresaId, top);
-        return ResponseDTO.success("Resultados", encontrados.stream().map(AdminAsignarController::resumen).toList());
+        return ResponseEntity.ok(ResponseDTO.success("Resultados",
+            encontrados.stream().map(AdminAsignarController::resumen).toList()));
     }
 
     /** DTO mínimo: lo que muestra BuscarCliente.tsx. Nada de cédula, Clerk ID, notas ni crédito. */
@@ -92,21 +97,21 @@ public class AdminAsignarController {
 
             String correoFinal = correo.isBlank()
                 ? "tel_" + telefono.replaceAll("[^0-9]", "") + "_" + UUID.randomUUID().toString().substring(0, 6) + "@hotclick.noemail"
-                : correo;
+                : com.hotclick.utils.CorreoNormalizer.normalizar(correo); // MED-5: igual que el registro y el login
 
             // P9-02: no se crea ni se reclama una cuenta existente; el vendedor usa la búsqueda de clientes.
-            if (usuarioRepository.existsByCorreo(correoFinal.toLowerCase(java.util.Locale.ROOT))
-                    || usuarioRepository.existsByCorreo(correoFinal)) {
+            // Sin distinguir mayúsculas: cubre también las cuentas antiguas guardadas con mayúsculas.
+            if (!usuarioRepository.findAllByCorreoIgnoreCase(correoFinal).isEmpty()) {
                 return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(
                     "No se pudo crear el cliente con ese correo. Búscalo en tus clientes existentes."));
             }
 
             String ident = telefono.isBlank()
-                ? "HC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase()
+                ? "HC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase(Locale.ROOT)
                 : telefono.substring(0, Math.min(telefono.length(), 20));
 
             if (usuarioRepository.existsByIdentificacion(ident)) {
-                ident = "HC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase();
+                ident = "HC-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase(Locale.ROOT);
             }
 
             Usuario usuario = new Usuario();

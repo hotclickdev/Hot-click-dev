@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -145,7 +146,7 @@ public class PublicChatProductSearch {
             .filter(p -> {
                 String text = (String.valueOf(p.getOrDefault("nombre_producto", ""))
                     + " " + String.valueOf(p.getOrDefault("descripcion_corta", ""))
-                    + " " + String.valueOf(p.getOrDefault("tags", ""))).toLowerCase();
+                    + " " + String.valueOf(p.getOrDefault("tags", ""))).toLowerCase(Locale.ROOT);
                 return negations.stream().noneMatch(text::contains);
             })
             .toList();

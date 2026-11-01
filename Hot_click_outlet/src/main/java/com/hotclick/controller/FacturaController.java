@@ -44,13 +44,20 @@ public class FacturaController {
      *
      * Body opcional: { "tipo": "01" | "04" }
      * Default: "04" (Tiquete Electrónico — no requiere datos del receptor)
+     *
+     * Área 7 N1: solo el admin de HotClick emite, y siempre a nombre de HotClick
+     * (docs/traspaso/plan-scrum.md:21). Cualquier otro rol recibe 403 sin reservar consecutivo.
      */
     @PostMapping("/emitir/{pedidoId}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ComprobanteFiscal> emitir(
             @PathVariable Long pedidoId,
             @RequestBody(required = false) Map<String, String> body) {
 
+        if (!companyScope.isAdminIT()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                "Solo el admin de HotClick puede emitir comprobantes.");
+        }
         String tipo = (body != null) ? body.get("tipo") : null;
         ComprobanteFiscal cf = facturacionService.emitir(pedidoId, tipo);
         return ResponseEntity.accepted().body(cf);

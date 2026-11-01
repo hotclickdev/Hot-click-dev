@@ -31,6 +31,7 @@ class DiasGraciaTest {
     @Mock SuscripcionPlanSupport planSupport;
     @Mock EmpresaRepository empresaRepo;
     @Mock com.hotclick.service.onvo.OnvoBillingClient onvoBilling; // sin llave=false → hay cobro
+    @Mock OnvoRenovacionReconsulta reconsulta; // B1: el job reinicia el conteo de INCIERTAS al empezar
     @InjectMocks SuscripcionRenewalService service;
 
     private static LocalDate hoy() { return LocalDate.now(Constants.ZONA_CR); }

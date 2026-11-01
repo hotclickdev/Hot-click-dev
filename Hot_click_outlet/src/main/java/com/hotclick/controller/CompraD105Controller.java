@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/admin/d105")
@@ -44,7 +45,7 @@ public class CompraD105Controller {
         if (archivo.getSize() > CompraXmlD105Parser.MAX_XML_BYTES) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El XML no puede superar 2 MB"));
         }
-        String nombre = archivo.getOriginalFilename() == null ? "" : archivo.getOriginalFilename().toLowerCase();
+        String nombre = archivo.getOriginalFilename() == null ? "" : archivo.getOriginalFilename().toLowerCase(Locale.ROOT);
         if (!nombre.endsWith(".xml")) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El archivo debe ser XML"));
         }

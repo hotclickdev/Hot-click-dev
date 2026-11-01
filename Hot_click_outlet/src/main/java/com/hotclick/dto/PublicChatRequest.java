@@ -33,6 +33,10 @@ public class PublicChatRequest {
 
     private Long productoId;
 
+    /** UUID v4 del visitante anónimo (cookie); solo sirve para el cupo diario. */
+    @Size(max = 36)
+    private String visitorId;
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class HistoryItem {
         private String rol;
@@ -44,6 +48,9 @@ public class PublicChatRequest {
         public String getTexto() { return texto; }
         public void setTexto(String texto) { this.texto = texto; }
     }
+
+    public String getVisitorId() { return visitorId; }
+    public void setVisitorId(String visitorId) { this.visitorId = visitorId; }
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }

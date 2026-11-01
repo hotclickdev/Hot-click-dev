@@ -21,15 +21,26 @@ export type PlanLandingCopy = {
   faq: { pregunta: string; respuesta: string }[]
 }
 
-export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
-  emprendedor: {
+/**
+ * «los primeros N negocios». N es el `limite` que publica el backend (hotclick.trial-emprendedor.cupo); aquí no hay
+ * ninguna cifra. Sin dato (cargando, error o límite inválido) queda «los primeros negocios», sin inventar un número.
+ */
+export function textoPrimerosNegocios(limite?: number | null): string {
+  return typeof limite === 'number' && Number.isInteger(limite) && limite > 0
+    ? `los primeros ${limite} negocios`
+    : 'los primeros negocios'
+}
+
+function copyEmprendedor(limite?: number | null): PlanLandingCopy {
+  const primeros = textoPrimerosNegocios(limite)
+  return {
     planId: 'emprendedor',
     tono: 'artesanal',
     query: 'emprendedor',
     eyebrow: 'Para empezar',
     headline: 'Publicá y cobrá en HotClick',
     // Gratis o US$/mes depende del cupo: PlanLandingLayout lo arma con datos del backend.
-    subheadline: 'Gratis para los primeros 70 negocios; después, mensualidad en dólares.',
+    subheadline: `Gratis para ${primeros}; después, mensualidad en dólares.`,
     precio: `${textoMensualidad()} · ${textoComision(EMP.comisionPct)}`,
     ctaLabel: 'Crear mi negocio',
     paraQuienSi: [
@@ -42,9 +53,13 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     ],
     faq: [
       { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: `Mientras haya cupo gratis, no. Pagás ${textoComision(EMP.comisionPct)}, sin mínimo. Si el cupo ya se llenó, la mensualidad es en dólares y la ves acá antes de pagar.` },
-      { pregunta: '¿Hay cupo limitado?', respuesta: 'Sí, los primeros 70 negocios entran gratis. Después, Emprendedor tiene mensualidad en dólares.' },
+      { pregunta: '¿Hay cupo limitado?', respuesta: `Sí, ${primeros} entran gratis. Después, Emprendedor tiene mensualidad en dólares.` },
     ],
-  },
+  }
+}
+
+export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
+  emprendedor: copyEmprendedor(),
   pyme: {
     planId: 'pyme',
     tono: 'estandar',
@@ -89,4 +104,12 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       { pregunta: '¿Cuándo se activa mi suscripción?', respuesta: 'Al confirmar el pago con la pasarela, tu plan Negocio Plus queda activo de inmediato.' },
     ],
   },
+}
+
+/**
+ * Copy de una landing con el cupo real del backend. Solo Emprendedor menciona el cupo; las demás salen tal cual.
+ * Sin `limite` devuelve el texto de respaldo (sin número).
+ */
+export function copyLanding(planId: LandingPlanId, limite?: number | null): PlanLandingCopy {
+  return planId === 'emprendedor' ? copyEmprendedor(limite) : PLAN_LANDING_COPY[planId]
 }

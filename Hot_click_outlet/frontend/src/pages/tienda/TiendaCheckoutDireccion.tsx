@@ -11,7 +11,12 @@ const CLASE_AREA = 'hc-input-libre w-full resize-none rounded-[12px] border bord
  * Dirección de entrega con el mismo selector provincia / cantón / distrito del marketplace (QA-114-3).
  * El pedido sigue recibiendo un solo texto: se compone con componerDireccion.
  */
-export default function TiendaCheckoutDireccion({ onChange }: { value: string; onChange: (v: string) => void }) {
+export default function TiendaCheckoutDireccion({ onChange, onDestino }: {
+  value: string
+  onChange: (v: string) => void
+  /** Provincia y cantón para que el servidor clasifique GAM o fuera del GAM. */
+  onDestino?: (provincia: string, canton: string) => void
+}) {
   const { t } = useTranslation()
   const territorio = useDivisionTerritorial()
   const [partes, setPartes] = useState<PartesDireccion>({ provincia: '', canton: '', distrito: '', senas: '' })
@@ -20,6 +25,7 @@ export default function TiendaCheckoutDireccion({ onChange }: { value: string; o
     const siguiente = { ...partes, ...nuevo }
     setPartes(siguiente)
     onChange(componerDireccion(siguiente))
+    onDestino?.(siguiente.provincia, siguiente.canton)
   }
 
   const cantones = partes.provincia ? territorio.cantonesDe(partes.provincia) : []

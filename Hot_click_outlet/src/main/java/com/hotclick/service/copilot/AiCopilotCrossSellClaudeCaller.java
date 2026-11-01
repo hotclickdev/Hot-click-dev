@@ -1,5 +1,6 @@
 package com.hotclick.service.copilot;
 
+import com.hotclick.service.ai.ClaudeUsoRegistrador;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ class AiCopilotCrossSellClaudeCaller {
     private String claudeModel;
 
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private ClaudeUsoRegistrador usoRegistrador;
 
     String solicitarSugerencia(Long empresaId, Long clienteId, String datosPrompt) {
         String systemPrompt = """
@@ -72,6 +74,7 @@ class AiCopilotCrossSellClaudeCaller {
                 return null;
             }
             JsonNode node = objectMapper.readTree(response.body());
+            usoRegistrador.registrar(empresaId, node.path("usage"));
             StringBuilder textoSb = new StringBuilder();
             for (JsonNode block : node.path("content")) {
                 if ("text".equals(block.path("type").asText())) textoSb.append(block.path("text").asText(""));

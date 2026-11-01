@@ -25,6 +25,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,7 +97,7 @@ class AuthCredentialLoginHandlerTest {
         assertCredencialesInvalidas(resp);
         verify(securityAuditService).logLoginFailed(CORREO, httpRequest, "wrong_password");
         verify(securityDetectionService).recordFailedLogin("127.0.0.1", CORREO);
-        verify(usuarioService).incrementarIntentosFallidos(u.getId());
+        verify(authSupport).registrarFalloCredencial(u.getId(), httpRequest);
         verify(otpService, never()).enviarOtp(any(), anyString());
     }
 
@@ -121,6 +127,22 @@ class AuthCredentialLoginHandlerTest {
         ResponseEntity<?> resp = handler.login(request(), httpRequest);
 
         assertCuentaBloqueada(resp, "Verificá tu correo para activar la cuenta.");
+    }
+
+    @Test
+    @DisplayName("B1: cuenta antigua con clave de 6 caracteres entra igual (el login solo compara el hash)")
+    void cuentaAntiguaClaveDe6EntraIgual() {
+        Usuario u = usuarioActivo();
+        when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("abc123", HASH_REAL)).thenReturn(true);
+        when(authSupport.buildAuthResponse(u)).thenReturn(null);
+        JwtRequest req = request();
+        req.setContrasena("abc123");
+
+        assertThat(jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator().validate(req)).isEmpty();
+        ResponseEntity<?> resp = handler.login(req, httpRequest);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(200);
     }
 
     @ParameterizedTest
@@ -156,6 +178,26 @@ class AuthCredentialLoginHandlerTest {
 
         assertThat(resp.getStatusCode().value()).isEqualTo(200);
         verify(usuarioService).buscarPorCorreo(CORREO);
+    }
+
+    @Test
+    @DisplayName("B2: cuenta bloqueada → 403 y el log no trae el correo en claro")
+    void bloqueadoLogEnmascarado() {
+        Usuario u = usuarioActivo();
+        u.setBloqueadoHasta(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(10));
+        when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
+        Logger logger = (Logger) LoggerFactory.getLogger(AuthCredentialLoginHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            ResponseEntity<?> resp = handler.login(request(), httpRequest);
+            assertThat(resp.getStatusCode().value()).isEqualTo(403);
+        } finally {
+            logger.detachAppender(appender);
+        }
+        assertThat(appender.list).anyMatch(e -> e.getFormattedMessage().contains("Login bloqueado para u***@example.com"));
+        assertThat(appender.list).noneMatch(e -> e.getFormattedMessage().contains(CORREO));
     }
 
     private static void assertCredencialesInvalidas(ResponseEntity<?> resp) {

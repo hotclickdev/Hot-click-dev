@@ -5,11 +5,18 @@ import { HotClickMark } from '@/components/ui/BrandLogo'
 import TextoFlecha from '@/components/ui/TextoFlecha'
 import { METODOS, formatMontoPos, sugerirMontos, descomponer, type ItemCarritoPos, type PayloadCobroPos } from './posHelpers'
 import { MetodoPagoIcon } from './posIcons'
+import FacturaElectronicaCheck from '@/components/facturacion/FacturaElectronicaCheck'
 
-export default function StepCobro({ total, cartItems, descuento, onBack, onConfirmar, loading }: {
+export default function StepCobro({ total, impuesto = 0, cotizacionPendiente = false, cartItems, descuento, facturaElectronica = false, onFacturaElectronica, onBack, onConfirmar, loading }: {
   total: number
+  /** IVA que suma el backend (factura en régimen simplificado). */
+  impuesto?: number
+  /** Falta la cotización con factura: no se puede cobrar todavía. */
+  cotizacionPendiente?: boolean
   cartItems: ItemCarritoPos[]
   descuento: number
+  facturaElectronica?: boolean
+  onFacturaElectronica?: (valor: boolean) => void
   onBack: () => void
   onConfirmar: (payload: PayloadCobroPos) => void
   loading: boolean
@@ -24,13 +31,17 @@ export default function StepCobro({ total, cartItems, descuento, onBack, onConfi
   const recibidoNum = Number.parseInt(String(recibido).replace(/\D/g, '') || '0')
   const vuelto = metodo === 'EFECTIVO' && recibidoNum > total ? recibidoNum - total : 0
   const faltante = metodo === 'EFECTIVO' && recibidoNum > 0 && recibidoNum < total
-  const puedeConfirmar = metodo !== 'EFECTIVO' || (recibidoNum >= total && recibidoNum > 0)
+  const puedeConfirmar = !cotizacionPendiente && (metodo !== 'EFECTIVO' || (recibidoNum >= total && recibidoNum > 0))
 
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="mx-auto max-w-lg space-y-5 px-5 py-6">
         <CabeceraCobro onBack={onBack} />
-        <LineasTicket items={cartItems} descuento={descuento} total={total} />
+        <LineasTicket items={cartItems} descuento={descuento} impuesto={impuesto} total={total} />
+        {cotizacionPendiente && <p role="status" className="text-xs text-hc-muted">{t('pos.cobro.calculandoIva')}</p>}
+        {onFacturaElectronica && (
+          <FacturaElectronicaCheck marcado={facturaElectronica} onCambiar={onFacturaElectronica} contexto="pos" />
+        )}
         <p className="text-xs font-medium text-hc-muted">{t('pos.cobro.metodoPago')}</p>
         <ChipsMetodo metodo={metodo} onChange={setMetodo} />
         {metodo === 'EFECTIVO' && (
@@ -75,7 +86,7 @@ function CabeceraCobro({ onBack }: { onBack: () => void }) {
   )
 }
 
-function LineasTicket({ items, descuento, total }: { items: ItemCarritoPos[]; descuento: number; total: number }) {
+export function LineasTicket({ items, descuento, impuesto = 0, total }: { items: ItemCarritoPos[]; descuento: number; impuesto?: number; total: number }) {
   const { t } = useTranslation()
   return (
     <div className="space-y-4">
@@ -89,6 +100,12 @@ function LineasTicket({ items, descuento, total }: { items: ItemCarritoPos[]; de
         <div className="flex justify-between text-[13px] text-hc-danger">
           <span>{t('pos.cobro.descuento')}</span>
           <span>-₡{formatMontoPos(descuento)}</span>
+        </div>
+      )}
+      {impuesto > 0 && (
+        <div className="flex justify-between text-[13px]">
+          <span>{t('pos.cobro.iva')}</span>
+          <span>+₡{formatMontoPos(impuesto)}</span>
         </div>
       )}
       <div className="h-px bg-hc-border" />

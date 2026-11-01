@@ -1,5 +1,6 @@
 package com.hotclick.controller.storefront;
 
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.model.OrigenPedido;
 import com.hotclick.dto.StorefrontPedidoDTO;
 import com.hotclick.model.Bodega;
@@ -11,20 +12,17 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
-import com.hotclick.repository.RolRepository;
-import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.StockService;
+import com.hotclick.service.payment.GuestUserResolver;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class StorefrontGuestOrderService {
@@ -34,35 +32,33 @@ public class StorefrontGuestOrderService {
     private final BodegaRepository bodegaRepository;
     private final PedidoRepository pedidoRepository;
     private final ProductoRepository productoRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final RolRepository rolRepository;
+    private final GuestUserResolver guestUserResolver;
     private final StockService stockService;
-    private final PasswordEncoder passwordEncoder;
     private final N8nWebhookService n8nWebhookService;
     private final NotificacionEmailService notificacionEmailService;
 
     public StorefrontGuestOrderService(BodegaRepository bodegaRepository,
                                        PedidoRepository pedidoRepository,
                                        ProductoRepository productoRepository,
-                                       UsuarioRepository usuarioRepository,
-                                       RolRepository rolRepository,
+                                       GuestUserResolver guestUserResolver,
                                        StockService stockService,
-                                       PasswordEncoder passwordEncoder,
                                        N8nWebhookService n8nWebhookService,
                                        NotificacionEmailService notificacionEmailService) {
         this.bodegaRepository = bodegaRepository;
         this.pedidoRepository = pedidoRepository;
         this.productoRepository = productoRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.rolRepository = rolRepository;
+        this.guestUserResolver = guestUserResolver;
         this.stockService = stockService;
-        this.passwordEncoder = passwordEncoder;
         this.n8nWebhookService = n8nWebhookService;
         this.notificacionEmailService = notificacionEmailService;
     }
 
     @org.springframework.transaction.annotation.Transactional
     public Pedido crearPedido(Empresa empresa, StorefrontPedidoDTO dto) {
+        // BAJO #447: destino (400) y costo del envío (503 si no hay config) antes de reservar stock.
+        com.hotclick.service.envio.DestinoEnvio.Destino destino = com.hotclick.service.envio.DestinoEnvio.exigir(
+            dto.getProvincia(), dto.getCanton(), StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio()));
+        int costoEnvio = costoEnvioTienda(dto, orderPricingService);
         Bodega bodega = resolverBodega(empresa);
         if (bodega == null) {
             return null;
@@ -72,16 +68,18 @@ public class StorefrontGuestOrderService {
         exigirRetiroDisponible(dto.getMetodoEnvio(),
             bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO));
 
-        Usuario usuario = usuarioRepository.findByCorreo(dto.getCorreoCliente())
-            .orElseGet(() -> crearInvitado(dto.getCorreoCliente(), dto.getTelefonoCliente()));
+        // M2b (#399): mismo resolvedor que el checkout y SINPE: correo exacto, normalizado o, si hay una cuenta antigua
+        // guardada con mayúsculas («Juan@X.com»), esa cuenta; solo si no existe se crea el invitado (sin duplicados).
+        Usuario usuario = guestUserResolver.resolve(dto.getCorreoCliente(), dto.getTelefonoCliente());
 
-        Pedido pedido = construirPedido(empresa, dto, bodega, usuario);
+        Pedido pedido = construirPedido(empresa, dto, bodega, usuario, destino, costoEnvio);
         Pedido guardado = pedidoRepository.save(pedido);
         notificarPedidoNuevo(guardado);
         return guardado;
     }
 
-    private Pedido construirPedido(Empresa empresa, StorefrontPedidoDTO dto, Bodega bodega, Usuario usuario) {
+    private Pedido construirPedido(Empresa empresa, StorefrontPedidoDTO dto, Bodega bodega, Usuario usuario,
+                                   com.hotclick.service.envio.DestinoEnvio.Destino destino, int costoEnvio) {
         int subtotal = 0;
         int costoTotal = 0;
         Pedido pedido = new Pedido();
@@ -116,7 +114,6 @@ public class StorefrontGuestOrderService {
         pedido.setMetodoPago(dto.getMetodoPago());
         pedido.setMetodoEnvio(dto.getMetodoEnvio());
         pedido.setSubtotal(subtotal);
-        int costoEnvio = costoEnvioTienda(dto.getMetodoEnvio(), orderPricingService);
         pedido.setTotalPedido(subtotal + costoEnvio);
         pedido.setCostoTotalProductos(costoTotal);
         pedido.setUtilidadBruta(subtotal - costoTotal);
@@ -128,7 +125,17 @@ public class StorefrontGuestOrderService {
         pedido.setClienteNombre(dto.getNombreCliente());
         pedido.setClienteTel(dto.getTelefonoCliente());
         pedido.setNotas(construirNotas(dto));
-        pedido.setDireccionEntrega(dto.getDireccionEntrega()); // NP-18: el vendedor ve a dónde enviar
+        // NP-18: el vendedor ve a dónde enviar. MED-5: con destino estructurado, cantón y provincia los pone el servidor.
+        pedido.setDireccionEntrega(com.hotclick.service.envio.DestinoEnvio.direccionFinal(dto.getDireccionEntrega(), destino));
+        if (destino != null) {
+            pedido.setDestinoProvincia(destino.provincia());
+            pedido.setDestinoCanton(destino.canton());
+        }
+        if (StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio())) {
+            pedido.setEnvioZona(com.hotclick.service.envio.ZonaEnvio.esGam(
+                destino != null ? destino.provincia() : null, destino != null ? destino.canton() : null) ? "GAM" : "FUERA_GAM");
+            pedido.setEnvioMontoZona(costoEnvio);
+        }
         return pedido;
     }
 
@@ -171,13 +178,16 @@ public class StorefrontGuestOrderService {
         try {
             n8nWebhookService.notificarPedidoNuevo(guardado);
         } catch (Exception ex) {
-            log.warn("Webhook admin falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
+            // Sin getMessage(): el proveedor puede devolver el correo del cliente en el texto del error.
+            log.warn("Webhook admin falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getClass().getSimpleName(),
+                TelegramTexto.paraLog(ex));
         }
         try {
             // Nace PENDIENTE y se paga al recibir: nunca el correo de pago confirmado («Total pagado»).
             notificacionEmailService.enviarPedidoRecibido(guardado);
         } catch (Exception ex) {
-            log.warn("Email pedido recibido falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getMessage());
+            log.warn("Email pedido recibido falló para pedido {}: {}", guardado.getNumeroPedido(), ex.getClass().getSimpleName(),
+                TelegramTexto.paraLog(ex));
         }
     }
 
@@ -187,10 +197,16 @@ public class StorefrontGuestOrderService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hotclick.service.payment.OrderPricingService orderPricingService;
 
-    /** (a) Envío a domicilio = Envío Normal de HotClick: el costo sale de la misma tabla del marketplace. */
-    static int costoEnvioTienda(String metodoEnvio, com.hotclick.service.payment.OrderPricingService pricing) {
-        if (pricing == null || !StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(metodoEnvio)) return 0;
-        return pricing.calcularCostoEnvio("ENVIO_NORMAL_GAM");
+    /**
+     * (a) Envío a domicilio = Envío Normal de HotClick: el costo sale de la misma tabla del marketplace.
+     * MED-3 (c) Auditor 3: GAM o fuera del GAM con el mismo clasificador del checkout (destino desconocido = fuera).
+     * El pedido de tienda es de un solo negocio (cada ítem se valida contra la empresa del slug), así que es un
+     * solo envío por negocio aunque despache desde la bodega de la plataforma.
+     */
+    static int costoEnvioTienda(StorefrontPedidoDTO dto, com.hotclick.service.payment.OrderPricingService pricing) {
+        if (pricing == null || dto == null || !StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio())) return 0;
+        return pricing.calcularCostoEnvio(com.hotclick.service.payment.OrderPricingService.metodoNormalPorDestino(
+            "ENVIO_NORMAL_GAM", dto.getProvincia(), dto.getCanton()));
     }
 
     static void exigirEfectivoAceptado(String metodoPago, Bodega bodega) {
@@ -224,25 +240,5 @@ public class StorefrontGuestOrderService {
         }
         List<Bodega> bodegas = bodegaRepository.findByEmpresaIdAndEstado(empresa.getId(), Constants.ESTADO_ACTIVO);
         return bodegas.isEmpty() ? null : bodegas.get(0);
-    }
-
-    private static String digitosTelefono(String telefono) {
-        return telefono == null ? "" : telefono.replaceAll("[^0-9]", "");
-    }
-
-    private Usuario crearInvitado(String correo, String telefono) {
-        Usuario usuario = new Usuario();
-        String uid = UUID.randomUUID().toString().replace("-", "");
-        usuario.setIdentificacion("GUEST-" + uid.substring(0, 13));
-        usuario.setNombre("Invitado");
-        usuario.setApellidoPaterno("Guest");
-        usuario.setCorreo(correo);
-        usuario.setTelefono(digitosTelefono(telefono));
-        usuario.setContrasenaHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        usuario.setEstado(Constants.ESTADO_ACTIVO);
-        rolRepository.findByNombreRol(Constants.ROL_USUARIO_FINAL)
-            .ifPresent(rol -> usuario.setRoles(List.of(rol)));
-        return usuarioRepository.save(usuario);
     }
 }

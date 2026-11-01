@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.repository.FeatureFlagRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,7 +128,7 @@ public class FeatureFlagService {
 
     private Long getFlagId(String nombre) {
         return flagRepo.findByNombre(nombre)
-            .orElseThrow(() -> new NoSuchElementException("Feature flag no encontrado: " + nombre))
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Recurso no encontrado", "feature flag=" + nombre))
             .getId();
     }
 }

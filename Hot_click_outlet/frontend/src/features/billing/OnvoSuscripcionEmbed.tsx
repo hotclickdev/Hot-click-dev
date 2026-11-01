@@ -12,6 +12,8 @@ type Props = {
   publishableKey?: string
   onSuccess: () => void
   onError?: (mensaje: string) => void
+  /** Texto del botón; por defecto «Confirmar pago». */
+  etiquetaConfirmar?: string
 }
 
 /**
@@ -23,6 +25,7 @@ export default function OnvoSuscripcionEmbed({
   publishableKey,
   onSuccess,
   onError,
+  etiquetaConfirmar = 'Confirmar pago',
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [listo, setListo] = useState(false)
@@ -70,31 +73,32 @@ export default function OnvoSuscripcionEmbed({
     return () => { activo = false }
   }, [subscriptionId, customerId, publishableKey, onSuccess, onError])
 
-  if (cargando) {
-    return <p className="text-sm text-center py-4" style={{ color: 'var(--hc-muted)' }}>Cargando pasarela…</p>
-  }
-
-  if (!listo) return null
-
+  // El contenedor tiene que estar montado desde el primer render: el SDK lo busca en cuanto carga (si se
+  // montara recién al terminar de cargar, `containerRef` seguiría en null y el SDK nunca se inicializaría).
   return (
     <div className="w-full max-w-md mx-auto space-y-3">
+      {cargando ? (
+        <p className="text-sm text-center py-4" style={{ color: 'var(--hc-muted)' }}>Cargando pasarela…</p>
+      ) : null}
       <div
         id="onvo-billing-sub-container"
         ref={containerRef}
         className="min-h-[120px] rounded-2xl border p-3"
         style={ESTILO_PAD_ONVO}
       />
-      {error ? (
+      {listo && error ? (
         <p className="text-sm text-center text-red-500">{error}</p>
       ) : null}
-      <button
-        type="button"
-        onClick={() => instanciaRef.current?.submitPayment()}
-        className="w-full min-h-11 rounded-xl font-semibold text-sm"
-        style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
-      >
-        Confirmar pago
-      </button>
+      {listo ? (
+        <button
+          type="button"
+          onClick={() => instanciaRef.current?.submitPayment()}
+          className="w-full min-h-11 rounded-xl font-semibold text-sm"
+          style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
+        >
+          {etiquetaConfirmar}
+        </button>
+      ) : null}
     </div>
   )
 }

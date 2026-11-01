@@ -1,5 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import {
   classifySemver,
   evaluateDependabot,
@@ -7,6 +10,7 @@ import {
   evaluateSensitive,
   evaluateSpa,
   evaluateTenant,
+  findSpaPlaceholdersInDir,
   isCriticalPackage,
   isEntityPath,
   isMigrationPath,
@@ -15,6 +19,7 @@ import {
   parseDependabotTitle,
   parseLabels,
   parseUnifiedDiff,
+  scanSpaPlaceholders,
   scanTenantDiff,
 } from './lib.mjs';
 
@@ -178,6 +183,33 @@ test('E3 asks for build when src changed and static did not', () => {
 test('E3 passes when static artifacts are in the PR', () => {
   const verdict = evaluateSpa({ frontendSrcChanged: true, staticChanged: true, skip: false });
   assert.equal(verdict.action, 'pass');
+});
+
+test('E3 detecta VITE_* de relleno de CI en el texto de static/', () => {
+  assert.deepEqual(scanSpaPlaceholders('const k="pk_test_placeholder";'), ['pk_test_placeholder']);
+  assert.deepEqual(scanSpaPlaceholders('{release:"ci-spa-gate"}'), ['ci-spa-gate']);
+  assert.deepEqual(scanSpaPlaceholders('pk_test_placeholder ci-spa-gate'), ['pk_test_placeholder', 'ci-spa-gate']);
+  assert.deepEqual(scanSpaPlaceholders('const k="";'), []);
+});
+
+test('E3 falla si static/ contiene placeholders y pasa si esta limpio', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'e3-static-'));
+  try {
+    mkdirSync(path.join(dir, 'assets'));
+    writeFileSync(path.join(dir, 'index.html'), '<html></html>');
+    writeFileSync(path.join(dir, 'assets', 'index-abc.js'), 'const a="";');
+    writeFileSync(path.join(dir, 'logo.png'), Buffer.from('pk_test_placeholder'));
+    assert.deepEqual(findSpaPlaceholdersInDir(dir), []);
+
+    writeFileSync(path.join(dir, 'assets', 'index-abc.js'), 'Clerk("pk_test_placeholder");release="ci-spa-gate"');
+    const hits = findSpaPlaceholdersInDir(dir);
+    assert.equal(hits.length, 1);
+    assert.equal(hits[0].file, 'assets/index-abc.js');
+    assert.deepEqual(hits[0].markers, ['pk_test_placeholder', 'ci-spa-gate']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  assert.deepEqual(findSpaPlaceholdersInDir(path.join(tmpdir(), 'e3-no-existe-xyz')), []);
 });
 
 test('E11 requires named tests per family', () => {

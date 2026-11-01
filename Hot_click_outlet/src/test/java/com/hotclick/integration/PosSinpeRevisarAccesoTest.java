@@ -110,4 +110,20 @@ class PosSinpeRevisarAccesoTest extends BaseIntegrationTest {
           + "AND r.nombre_rol NOT IN ('ADMIN','EMPRENDEDOR','CAJERO','VENDEDOR')", String.class,
             AdminPosSinpeController.PERMISO));
     }
+
+    @Test
+    @DisplayName("La respuesta es un DTO mínimo: solo los campos de revisión, sin datos de pago ni de contacto")
+    void respuestaEsDtoMinimo() throws Exception {
+        String cuerpo = mockMvc.perform(get(RUTA).header("Authorization", token(Constants.ROL_EMPRENDEDOR, propia)))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        com.fasterxml.jackson.databind.JsonNode item = new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(cuerpo).path("data").path("items").get(0);
+        java.util.Set<String> campos = new java.util.TreeSet<>();
+        item.fieldNames().forEachRemaining(campos::add);
+        Assertions.assertEquals(new java.util.TreeSet<>(java.util.List.of("id", "empresaId", "sesionId", "pedidoId",
+            "referencia", "total", "generadoPorId", "confirmadoPorId", "fechaConfirmacion")), campos);
+        org.assertj.core.api.Assertions.assertThat(cuerpo.toLowerCase())
+            .doesNotContain("iban", "telefono", "celular", "sinpe\":", "cuenta", "correo");
+    }
 }

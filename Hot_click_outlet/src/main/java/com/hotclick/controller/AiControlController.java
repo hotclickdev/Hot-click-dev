@@ -1,4 +1,5 @@
 package com.hotclick.controller;
+import com.hotclick.service.ai.ClaudePrecios;
 import com.hotclick.utils.Constants;
 
 import com.hotclick.service.FeatureFlagService;
@@ -24,9 +25,6 @@ public class AiControlController {
     @Autowired private JdbcTemplate       jdbc;
     @Autowired private FeatureFlagService flagService;
 
-    private static final double PRECIO_INPUT_POR_TOKEN  = 0.0000008;  // $0.80 / M
-    private static final double PRECIO_OUTPUT_POR_TOKEN = 0.000004;   // $4.00 / M
-
     @GetMapping("/dashboard")
     public ResponseEntity<?> dashboard(
             @RequestParam(required = false) Integer anio,
@@ -46,7 +44,9 @@ public class AiControlController {
               pl.max_creditos_ai,
               COALESCE(u.llamadas,       0) AS llamadas,
               COALESCE(u.tokens_entrada, 0) AS tokens_entrada,
-              COALESCE(u.tokens_salida,  0) AS tokens_salida
+              COALESCE(u.tokens_salida,  0) AS tokens_salida,
+              COALESCE(u.tokens_cache_lectura,   0) AS tokens_cache_lectura,
+              COALESCE(u.tokens_cache_escritura, 0) AS tokens_cache_escritura
             FROM hot_click_empresa_tb e
             LEFT JOIN hot_click_plan_tb pl ON pl.id_plan = e.fk_id_plan
             LEFT JOIN hot_click_ai_uso_tb u
@@ -73,8 +73,10 @@ public class AiControlController {
             String  plan          = (String) row.get("plan_nombre");
             Number  maxCreditosAi = (Number) row.get("max_creditos_ai");
             int     llamadas      = ((Number) row.get("llamadas")).intValue();
-            int     te            = ((Number) row.get("tokens_entrada")).intValue();
-            int     ts            = ((Number) row.get("tokens_salida")).intValue();
+            long    te            = ((Number) row.get("tokens_entrada")).longValue();
+            long    ts            = ((Number) row.get("tokens_salida")).longValue();
+            long    tcl           = ((Number) row.get("tokens_cache_lectura")).longValue();
+            long    tce           = ((Number) row.get("tokens_cache_escritura")).longValue();
 
             int limite;
             if ("ADMIN".equalsIgnoreCase(planSaas)) {
@@ -82,10 +84,11 @@ public class AiControlController {
             } else if (maxCreditosAi != null) {
                 limite = maxCreditosAi.intValue();
             } else {
-                limite = limitesLegacy.getOrDefault(plan != null ? plan.toUpperCase() : "", 0);
+                limite = limitesLegacy.getOrDefault(plan != null ? plan.toUpperCase(Locale.ROOT) : "", 0);
             }
 
-            double costoUsd = te * PRECIO_INPUT_POR_TOKEN + ts * PRECIO_OUTPUT_POR_TOKEN;
+            // Precio único del modelo (Haiku 4.5 por defecto, configurable con ia.precio.*).
+            double costoUsd = ClaudePrecios.actual().costoUsd(te, ts, tcl, tce);
             costoTotalUsd  += costoUsd;
             totalLlamadas  += llamadas;
 
@@ -105,6 +108,8 @@ public class AiControlController {
             m.put("pct",           pct);
             m.put("tokensEntrada", te);
             m.put("tokensSalida",  ts);
+            m.put("tokensCacheLectura",   tcl);
+            m.put("tokensCacheEscritura", tce);
             m.put("costoUsd",      Math.round(costoUsd * 10000.0) / 10000.0);
             m.put("chatActivo",    chatActivo);
             m.put("copilotActivo", copilotActivo || aiCopilot);
@@ -129,6 +134,12 @@ public class AiControlController {
         result.put("alertas",      alertas);
         result.put("costoTotal",   Math.round(costoTotalUsd * 10000.0) / 10000.0);
         result.put("totalLlamadas", totalLlamadas);
+        // Tarifas vigentes (configurables con ia.precio.* e ia.precio.sonnet.*) para que el panel muestre con qué se calcula.
+        ClaudePrecios precios = ClaudePrecios.actual();
+        Map<String, Object> tarifas = new LinkedHashMap<>();
+        tarifas.put("principal", precios.comoMapa());
+        tarifas.put("sonnet46",  precios.sonnet().comoMapa());
+        result.put("tarifasUsdPorMillon", tarifas);
         result.put("mes",          LocalDate.now(Constants.ZONA_CR).toString().substring(0, 7));
         return ResponseEntity.ok(result);
     }

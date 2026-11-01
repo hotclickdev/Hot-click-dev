@@ -133,8 +133,13 @@ public class PaymentService {
     }
 
     @Transactional
-    public void confirmarPedido(Pago pago) {
-        orderConfirmationService.confirmarPedido(pago, this, eventPublisher);
+    public PaymentOrderConfirmationService.Resultado confirmarPedido(Pago pago) {
+        return orderConfirmationService.confirmarPedido(pago, this, eventPublisher);
+    }
+
+    /** Chequeo de sobreventa para un pago manual registrado sin Pago previo (no confirma). */
+    public boolean revisarSobreventa(Pago pago) {
+        return orderConfirmationService.revisarSobreventa(pago);
     }
 
     @Transactional
@@ -150,9 +155,9 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentStatusResponse consultarEstado(String numeroPedido) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
         Pago pago = pedidoGrupoService.pagoDelGrupo(pedido)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado para pedido: " + numeroPedido));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pago no encontrado", "pago del pedido=" + RecursoNoEncontradoException.enmascarar(numeroPedido)));
         return buildStatusResponse(pago);
     }
 

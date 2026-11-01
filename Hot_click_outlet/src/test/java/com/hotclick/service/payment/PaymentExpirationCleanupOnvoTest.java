@@ -93,6 +93,14 @@ class PaymentExpirationCleanupOnvoTest {
     }
 
     @Test
+    @DisplayName("M-08: la reconsulta halla un cobro sin stock → pedido en revisión, el barrido no lo cancela")
+    void onvoCobradoSinStock_noCancela() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.COBRADO_SOBREVENTA);
+        service.ejecutar();
+        noCancela();
+    }
+
+    @Test
     @DisplayName("ONVO no responde → queda pendiente para la próxima vuelta (no se cancela algo que pudo cobrarse)")
     void onvoCaido_noCancela() {
         when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup"))

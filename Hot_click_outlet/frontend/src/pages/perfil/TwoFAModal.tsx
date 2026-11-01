@@ -37,7 +37,8 @@ export default function TwoFAModal({
   const handleSetup = async () => {
     setLoading(true); setError('')
     try {
-      const { data } = await authService.setup2FA()
+      if (!contrasena) { setError(t('profile.twoFASetupPwdRequired')); setLoading(false); return }
+      const { data } = await authService.setup2FA(contrasena)
       setQrUri(textoCampoApi(data, 'qrUri') ?? '')
       setStep('qr')
     } catch (err: unknown) {
@@ -51,7 +52,7 @@ export default function TwoFAModal({
     if (code.length !== 6) { setError(t('profile.twoFACodeInvalid')); return }
     setLoading(true); setError('')
     try {
-      await authService.activate2FA(code)
+      await authService.activate2FA(code, contrasena)
       toast({ message: t('profile.twoFAActivated'), type: 'success' })
       onToggle(true); onClose()
     } catch (err: unknown) {
@@ -84,9 +85,13 @@ export default function TwoFAModal({
       <AnimatePresence mode="wait">
         {step === 'info' && (
           <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={pila}>
-            <TextoModalCuenta figma={figma}>{t('profile.twoFASetupInfo')}</TextoModalCuenta>
-            {errorPaso}
-            <BotonModalCuenta figma={figma} loading={loading} onClick={handleSetup}>{t('profile.twoFASetupBtn')}</BotonModalCuenta>
+            <form onSubmit={(e) => { e.preventDefault(); void handleSetup() }} className={pila}>
+              <TextoModalCuenta figma={figma}>{t('profile.twoFASetupInfo')}</TextoModalCuenta>
+              <CampoModalCuenta figma={figma} etiqueta={t('profile.passwordLabel')} type="password" value={contrasena}
+                onChange={(e) => setCont(e.target.value)} required autoComplete="current-password" />
+              {errorPaso}
+              <BotonModalCuenta figma={figma} type="submit" loading={loading}>{t('profile.twoFASetupBtn')}</BotonModalCuenta>
+            </form>
           </motion.div>
         )}
         {step === 'qr' && (

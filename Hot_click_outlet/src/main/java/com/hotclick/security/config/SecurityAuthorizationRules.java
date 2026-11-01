@@ -102,6 +102,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/gift-cards/**").authenticated()
             // White label branding y chat público — sin auth
             .requestMatchers(GET,  "/api/public/branding").permitAll()
+            // A-2: montos de envío, solo lectura (la escritura es /api/admin/configuracion/envio, ADMIN)
+            .requestMatchers(GET,  "/api/public/envio/montos").permitAll()
             .requestMatchers(POST, "/api/public/chat").permitAll()
             .requestMatchers(POST, "/api/public/embudo").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/chat").permitAll()

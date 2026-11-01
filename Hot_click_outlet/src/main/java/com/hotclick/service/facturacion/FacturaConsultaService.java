@@ -1,5 +1,6 @@
 package com.hotclick.service.facturacion;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.dto.ComprobanteEmitido;
 import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.repository.ComprobanteFiscalRepository;
@@ -13,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.NoSuchElementException;
 
 @Service
 public class FacturaConsultaService {
@@ -49,7 +49,7 @@ public class FacturaConsultaService {
 
     private ComprobanteFiscal cargar(Long id) {
         ComprobanteFiscal comprobante = comprobanteRepo.findById(id)
-            .orElseThrow(() -> new NoSuchElementException("Comprobante no encontrado: " + id));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Comprobante no encontrado", "id=" + id));
         companyScope.assertCanAccess(comprobante.getEmpresa().getId());
         return comprobante;
     }

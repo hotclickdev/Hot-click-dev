@@ -31,6 +31,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE p.id IN :ids ORDER BY p.id")
     List<Producto> findAllByIdsForUpdate(@Param("ids") List<Long> ids);
 
+    /** BAJO-A (#429): como {@link #findAllByIdsForUpdate}, pero el dueño se filtra en la propia consulta:
+     *  nunca se bloquean filas de otro negocio. Mismo ORDER BY id (sin deadlocks). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Producto p WHERE p.id IN :ids AND p.empresa.id = :empresaId ORDER BY p.id")
+    List<Producto> findAllByIdsAndEmpresaForUpdate(@Param("ids") List<Long> ids, @Param("empresaId") Long empresaId);
+
     Optional<Producto> findBySku(String sku);
 
     @Query("SELECT COALESCE(MAX(p.numeroLocal), 0) FROM Producto p WHERE p.empresa.id = :empresaId")

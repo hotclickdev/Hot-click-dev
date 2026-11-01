@@ -9,6 +9,8 @@ import com.hotclick.repository.MarcaRepository;
 import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.service.TenantService;
 import com.hotclick.utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +24,8 @@ import static com.hotclick.service.telegram.TelegramFlujoSupport.*;
  */
 @Component
 class TelegramFlujoProductoCallbackHelper {
+
+    private static final Logger log = LoggerFactory.getLogger(TelegramFlujoProductoCallbackHelper.class);
 
     @Autowired private TelegramFlujoSupport              support;
     @Autowired private TelegramClienteBotService          bot;
@@ -51,8 +55,14 @@ class TelegramFlujoProductoCallbackHelper {
         }
         try {
             tenantService.verificarLimiteProductos(empresaId);
-        } catch (RuntimeException ex) {
+        } catch (com.hotclick.exception.PlanLimitException ex) {
+            // Excepción de dominio controlada: su mensaje es el límite del plan, pensado para el usuario.
             bot.enviarMensaje(v.getChatId(), esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage())), TelegramTeclado.soloMenu());
+            return true;
+        } catch (RuntimeException ex) {
+            log.error("[telegram-flujo] fallo verificando el límite de productos en chat "
+                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), com.hotclick.service.telegram.TelegramTexto.paraLog(ex));
+            bot.enviarMensaje(v.getChatId(), "No pude verificar el límite de productos de tu plan. Probá de nuevo en unos minutos.", TelegramTeclado.soloMenu());
             return true;
         }
         support.guardar(v, TelegramFlujoEstado.nuevoProducto(support.ahora(), personalizado));

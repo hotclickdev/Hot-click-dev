@@ -59,7 +59,7 @@ public class EmpresaAdminService {
     public Map<String, Object> detalle(Long id) {
         Empresa e = empresa(id);
         Map<String, Object> data = toMap(e);
-        data.put("totalUsuarios", usuarioRepository.countActivosByEmpresaId(id));
+        data.put("totalUsuarios", usuarioRepository.countMiembrosActivosByEmpresaId(id));
         data.put("totalProductos", productoRepository.countProductosActivosByEmpresaId(id));
         data.put("totalPedidos", pedidoRepository.countTotalPedidosByEmpresaId(id));
         data.put("totalVentas", pedidoRepository.sumTotalVentasByEmpresaId(id));
@@ -185,10 +185,10 @@ public class EmpresaAdminService {
         if (rolEnEmpresa == null || !ROLES_EQUIPO_VALIDOS.contains(rolEnEmpresa)) {
             throw new IllegalArgumentException("Rol inválido. Valores aceptados: EDITOR, LECTOR");
         }
-        Empresa empresa = empresa(id);
-        String correoNorm = correo.trim().toLowerCase();
+        empresa(id);   // 404 si no existe
+        String correoNorm = correo.trim().toLowerCase(java.util.Locale.ROOT);
         String telefonoNorm = (telefono != null && !telefono.isBlank()) ? telefono : "00000000";
-        equipoService.invitar(empresa, id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
+        equipoService.invitar(id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
         auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_INVITAR", "MIEMBRO_EMPRESA", null, id,
             "Invitación a " + correoNorm + " como " + rolEnEmpresa);
     }
@@ -210,12 +210,34 @@ public class EmpresaAdminService {
         auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_ELIMINAR", "MIEMBRO_EMPRESA", miembroId, id, null);
     }
 
-    private String generarPasswordTemporal() {
-        StringBuilder sb = new StringBuilder(12);
-        for (int i = 0; i < 12; i++) {
-            sb.append(ALFABETO_PASSWORD_TEMPORAL.charAt(RNG.nextInt(ALFABETO_PASSWORD_TEMPORAL.length())));
+    private static final String LETRAS_MAYUSCULAS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    private static final String LETRAS_MINUSCULAS = "abcdefghijkmnpqrstuvwxyz";
+    private static final String DIGITOS_SIN_AMBIGUOS = "23456789";
+    static final int LARGO_PASSWORD_TEMPORAL = 12;
+
+    /**
+     * Clave temporal de 12 caracteres con SecureRandom que siempre cumple
+     * {@link com.hotclick.service.auth.AuthSupport#cumplePoliticaContrasena}: garantiza al menos
+     * una mayúscula, una minúscula y un dígito y mezcla las posiciones (Fisher-Yates).
+     * Nunca se loguea.
+     */
+    static String generarPasswordTemporal() {
+        char[] c = new char[LARGO_PASSWORD_TEMPORAL];
+        c[0] = elegir(LETRAS_MAYUSCULAS);
+        c[1] = elegir(LETRAS_MINUSCULAS);
+        c[2] = elegir(DIGITOS_SIN_AMBIGUOS);
+        for (int i = 3; i < c.length; i++) {
+            c[i] = elegir(ALFABETO_PASSWORD_TEMPORAL);
         }
-        return sb.toString();
+        for (int i = c.length - 1; i > 0; i--) {
+            int j = RNG.nextInt(i + 1);
+            char t = c[i]; c[i] = c[j]; c[j] = t;
+        }
+        return new String(c);
+    }
+
+    private static char elegir(String alfabeto) {
+        return alfabeto.charAt(RNG.nextInt(alfabeto.length()));
     }
 
     /** Lectura con PESSIMISTIC_WRITE (requiere transacción): estado fresco y sin carrera con el job de impago. */

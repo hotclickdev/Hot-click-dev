@@ -2,6 +2,7 @@ package com.hotclick.service.aigeneration;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -30,7 +31,7 @@ public final class AiGenerationValidator {
             throw new IllegalArgumentException("La imagen no puede superar 10 MB.");
         }
         String ct = imagen.getContentType();
-        if (ct == null || !ALLOWED_MEDIA_TYPES.contains(ct.toLowerCase())) {
+        if (ct == null || !ALLOWED_MEDIA_TYPES.contains(ct.toLowerCase(Locale.ROOT))) {
             throw new IllegalArgumentException(
                 "Formato de imagen no soportado. Usá JPG, PNG o WebP.");
         }
@@ -50,6 +51,6 @@ public final class AiGenerationValidator {
     public static String normalizeMediaType(String contentType) {
         if (contentType == null) return "image/jpeg";
         // La API de Claude no acepta "image/jpg"; requiere "image/jpeg"
-        return contentType.equalsIgnoreCase("image/jpg") ? "image/jpeg" : contentType.toLowerCase();
+        return contentType.equalsIgnoreCase("image/jpg") ? "image/jpeg" : contentType.toLowerCase(Locale.ROOT);
     }
 }
