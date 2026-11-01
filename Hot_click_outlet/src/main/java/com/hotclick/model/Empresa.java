@@ -150,7 +150,8 @@ public class Empresa {
     private String estadoPlan = "ACTIVO";
 
     /** Día de cobro de la mensualidad: 28 (por defecto) o 13 (V168). */
-    @Column(name = "dia_cobro", nullable = false)
+    // columnDefinition solo describe el tipo real que dejan las migraciones (DDL/validate); no cambia binding ni runtime.
+    @Column(name = "dia_cobro", nullable = false, columnDefinition = "int2")
     private Integer diaCobro = 28;
 
     /** Pago periódico de ventas con tarjeta: QUINCENAL o MENSUAL (V168). */

@@ -10,15 +10,17 @@ public class Testimonio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // columnDefinition solo describe el tipo real que dejan las migraciones (DDL/validate); no cambia binding ni runtime.
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER) // PK SERIAL (int4) en BD
     @Column(name = "id_testimonio")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fk_id_usuario")
+    @JoinColumn(name = "fk_id_usuario", columnDefinition = "int4")
     private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fk_id_producto")
+    @JoinColumn(name = "fk_id_producto", columnDefinition = "int4")
     private Producto producto;
 
     @Column(name = "comentario", columnDefinition = "TEXT", nullable = false)
