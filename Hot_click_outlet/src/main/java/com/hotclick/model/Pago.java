@@ -47,7 +47,8 @@ public class Pago extends BaseEntity {
     private Pedido pedido;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fk_id_usuario", nullable = false)
+    // columnDefinition solo describe el tipo real que dejan las migraciones (DDL/validate); no cambia binding ni runtime.
+    @JoinColumn(name = "fk_id_usuario", nullable = false, columnDefinition = "int4")
     private Usuario usuario;
 
     /** Compra cobrada por este pago; {@link #pedido} es el paquete 1 de esa compra. */

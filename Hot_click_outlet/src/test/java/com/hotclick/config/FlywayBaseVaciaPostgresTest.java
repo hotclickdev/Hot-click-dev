@@ -249,12 +249,13 @@ class FlywayBaseVaciaPostgresTest {
             "src/main/resources/db/base-vacia/V1__esquema_base_vacia.sql"));
         jdbc.execute(base);
         // Reproduce las FK de bases creadas antes del arreglo (V1 aplicada / base-vacia vieja).
-        jdbc.execute("CREATE TABLE IF NOT EXISTS hot_click_estado_tb (id_estado INT PRIMARY KEY)");
-        jdbc.execute("INSERT INTO hot_click_estado_tb VALUES (1) ON CONFLICT DO NOTHING");
         String[][] viejas = {
             {"hot_click_pago_tb", "hot_click_pago_tb_fk_id_pedido_fkey", "fk_id_pedido", "HOT_CLICK_PEDIDO_TB", "ID_PEDIDO"},
             {"hot_click_pago_tb", "hot_click_pago_tb_fk_id_usuario_fkey", "fk_id_usuario", "HOT_CLICK_USUARIO_TB", "ID_USUARIO"},
-            {"hot_click_payment_log_tb", "hot_click_payment_log_tb_fk_id_usuario_fkey", "fk_id_usuario", "HOT_CLICK_USUARIO_TB", "ID_USUARIO"}};
+            {"hot_click_payment_log_tb", "hot_click_payment_log_tb_fk_id_usuario_fkey", "fk_id_usuario", "HOT_CLICK_USUARIO_TB", "ID_USUARIO"},
+            {"hot_click_pago_tb", "hot_click_pago_tb_fk_id_estado_fkey", "fk_id_estado", "HOT_CLICK_ESTADO_TB", "ID_ESTADO"},
+            {"hot_click_transaccion_pago_tb", "hot_click_transaccion_pago_tb_fk_id_estado_fkey", "fk_id_estado", "HOT_CLICK_ESTADO_TB", "ID_ESTADO"},
+            {"hot_click_webhook_event_tb", "hot_click_webhook_event_tb_fk_id_estado_fkey", "fk_id_estado", "HOT_CLICK_ESTADO_TB", "ID_ESTADO"}};
         for (String[] v : viejas) {
             jdbc.execute("ALTER TABLE " + v[0] + " DROP CONSTRAINT " + v[1]);
             jdbc.execute("ALTER TABLE " + v[0] + " ADD CONSTRAINT " + v[1] + " FOREIGN KEY (" + v[2]
