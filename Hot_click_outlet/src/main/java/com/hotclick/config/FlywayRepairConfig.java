@@ -78,8 +78,8 @@ public class FlywayRepairConfig {
             boolean vacio = esquemaPublicoVacio(flyway);
             if (esPerfilDev() && devBootstrapHabilitado() && vacio) {
                 bootstrapDevVacio(flyway);
-            } else if (baseVaciaHabilitada() && vacio && esPostgres(flyway)) {
-                bootstrapBaseVacia(flyway);
+            } else if (baseVaciaHabilitada() && esPostgres(flyway)) {
+                bootstrapBaseVaciaSerializado(flyway);
             } else if (esPerfilProd() && vacio && esPostgres(flyway)) {
                 abortarProdVacio();
             }
@@ -162,6 +162,38 @@ public class FlywayRepairConfig {
             .load()
             .migrate();
         log.info("[flyway] Base vacía lista hasta V{}; sigue migrate() normal.", VERSION_ANTES_HOOK);
+    }
+
+    /** Clave de pg_advisory_lock del camino base-vacía (distinta de la que usa Flyway). */
+    static final long BASE_VACIA_LOCK_KEY = 0x48435F4241534556L; // "HC_BASEV"
+
+    /**
+     * Dos instancias arrancando a la vez sobre una base vacía: sin serializar, la segunda
+     * llegaba a baseline() con el historial ya creado y fallaba. Se toma un advisory lock de
+     * sesión en una conexión propia y DENTRO del lock se vuelve a mirar si public sigue vacío:
+     * la segunda instancia lo ve con tablas y sigue por el migrate() normal.
+     */
+    static void bootstrapBaseVaciaSerializado(Flyway flyway) {
+        try (Connection c = flyway.getConfiguration().getDataSource().getConnection()) {
+            try (Statement st = c.createStatement()) {
+                st.execute("SELECT pg_advisory_lock(" + BASE_VACIA_LOCK_KEY + ")");
+            }
+            try {
+                if (esquemaPublicoVacio(flyway)) {
+                    bootstrapBaseVacia(flyway);
+                } else {
+                    log.warn("[flyway] {}=true (HOTCLICK_FLYWAY_BASE_VACIA) con una base que NO está vacía: "
+                        + "no hace nada, pero quitá la variable del entorno; solo sirve para crear una base nueva.",
+                        PROP_BASE_VACIA);
+                }
+            } finally {
+                try (Statement st = c.createStatement()) {
+                    st.execute("SELECT pg_advisory_unlock(" + BASE_VACIA_LOCK_KEY + ")");
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("[flyway] No se pudo tomar el lock del camino base-vacía", e);
+        }
     }
 
     private boolean esPerfilDev() {
