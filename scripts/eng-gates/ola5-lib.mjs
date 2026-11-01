@@ -671,6 +671,8 @@ export function lineIsSessionSet(line) {
   if (/\b(update|insert)\b/i.test(t) && /\bset\b/i.test(t)) return false;
   if (/\bset\s+(not\s+null|default|storage|statistics|tablespace)\b/i.test(t)) return false;
   if (/\balter\s+column\b/i.test(t) && /\bset\b/i.test(t)) return false;
+  // ALTER FUNCTION/PROCEDURE ... SET x = y queda en pg_proc.proconfig (persistente), no es de sesión.
+  if (/\balter\s+(function|procedure)\b/i.test(t) && /\bset\b/i.test(t)) return false;
   if (/\bset\s+search_path\b/i.test(t)) return true;
   if (/^\s*set\s+(session|local)\b/i.test(t)) return true;
   if (/^\s*set\s+[a-z_][a-z0-9_.]*\s*=/i.test(t)) return true;
