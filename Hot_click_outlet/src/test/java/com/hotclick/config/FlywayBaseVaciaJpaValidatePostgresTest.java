@@ -1,25 +1,18 @@
 package com.hotclick.config;
 
-import com.hotclick.service.BccrService;
-import com.hotclick.service.GeminiService;
-import com.hotclick.service.NotificacionEmailService;
-import com.hotclick.service.ResendEmailService;
-import com.hotclick.service.SupabaseStorageService;
-import com.hotclick.service.analytics.PostHogCaptureService;
-import org.junit.jupiter.api.AfterAll;
+import com.hotclick.HotclickApplication;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,27 +27,19 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * levanta y el test falla (lo que vio CI/CD en staging con hot_click_carrito_item_tb).
  * En CI (CI=true) exige Docker. Local sin Docker: se salta, salvo
  * {@code -Dhotclick.it.pg.url=jdbc:postgresql://...} (servidor desechable; crea su propia base).
+ *
+ * El contexto se arranca con {@link SpringApplicationBuilder} y se cierra al terminar, FUERA del
+ * cache de contextos de Spring Test: así no desaloja (ni dispara el create-drop de) los contextos
+ * H2 compartidos (jdbc:h2:mem:testdb) que reutilizan los BaseIntegrationTest.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles("test")
 class FlywayBaseVaciaJpaValidatePostgresTest {
 
-    private static PostgreSQLContainer<?> pg;
-
-    @MockitoBean ResendEmailService resendEmailService;
-    @MockitoBean NotificacionEmailService notificacionEmailService;
-    @MockitoBean SupabaseStorageService supabaseStorageService;
-    @MockitoBean BccrService bccrService;
-    @MockitoBean GeminiService geminiService;
-    @MockitoBean PostHogCaptureService postHogCaptureService;
-
-    @Autowired JdbcTemplate jdbc;
-
-    @DynamicPropertySource
-    static void postgresVacio(DynamicPropertyRegistry r) {
+    @Test
+    void contexto_arranca_con_ddl_validate_sobre_base_creada_desde_V1() {
         String adminUrl;
         String user;
         String pass;
+        PostgreSQLContainer<?> pg = null;
         String externo = System.getProperty("hotclick.it.pg.url");
         if (externo != null && !externo.isBlank()) {
             adminUrl = externo;
@@ -73,44 +58,50 @@ class FlywayBaseVaciaJpaValidatePostgresTest {
             user = pg.getUsername();
             pass = pg.getPassword();
         }
-        String nombre = "hc_validate_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-        new JdbcTemplate(new DriverManagerDataSource(adminUrl, user, pass)).execute("CREATE DATABASE " + nombre);
-        String url = adminUrl.replaceFirst("/[^/?]+(\\?|$)", "/" + nombre + "$1");
-        // Prerrequisito documentado: la extensión vector la crea un superusuario ANTES (V62).
-        new JdbcTemplate(new DriverManagerDataSource(url, user, pass)).execute("CREATE EXTENSION IF NOT EXISTS vector");
+        try {
+            String nombre = "hc_validate_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+            new JdbcTemplate(new DriverManagerDataSource(adminUrl, user, pass)).execute("CREATE DATABASE " + nombre);
+            String url = adminUrl.replaceFirst("/[^/?]+(\\?|$)", "/" + nombre + "$1");
+            // Prerrequisito documentado: la extensión vector la crea un superusuario ANTES (V62).
+            new JdbcTemplate(new DriverManagerDataSource(url, user, pass)).execute("CREATE EXTENSION IF NOT EXISTS vector");
 
-        r.add("spring.datasource.url", () -> url);
-        r.add("spring.datasource.username", () -> user);
-        r.add("spring.datasource.password", () -> pass);
-        r.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-        r.add("spring.flyway.enabled", () -> "true");
-        r.add(FlywayRepairConfig.PROP_BASE_VACIA, () -> "true");
-        r.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
-        r.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
-        r.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
-        r.add("spring.jpa.defer-datasource-initialization", () -> "false");
-        r.add("spring.sql.init.mode", () -> "never");
-    }
+            Map<String, Object> props = new HashMap<>();
+            props.put("spring.datasource.url", url);
+            props.put("spring.datasource.username", user);
+            props.put("spring.datasource.password", pass);
+            props.put("spring.datasource.driver-class-name", "org.postgresql.Driver");
+            props.put("spring.flyway.enabled", "true");
+            props.put(FlywayRepairConfig.PROP_BASE_VACIA, "true");
+            props.put("spring.jpa.hibernate.ddl-auto", "validate");
+            props.put("spring.jpa.database-platform", "org.hibernate.dialect.PostgreSQLDialect");
+            props.put("spring.jpa.properties.hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+            props.put("spring.jpa.defer-datasource-initialization", "false");
+            props.put("spring.sql.init.mode", "never");
 
-    @AfterAll
-    static void parar() {
-        if (pg != null) {
-            pg.stop();
+            // Si run() vuelve, Hibernate validó todas las entidades contra el esquema de Flyway.
+            try (ConfigurableApplicationContext ctx = new SpringApplicationBuilder(HotclickApplication.class)
+                    .profiles("test")
+                    .web(WebApplicationType.NONE)
+                    // Como argumentos: ganan sobre application-test.properties (H2, flyway off).
+                    .run(props.entrySet().stream().map(e -> "--" + e.getKey() + "=" + e.getValue())
+                        .toArray(String[]::new))) {
+                JdbcTemplate jdbc = ctx.getBean(JdbcTemplate.class);
+                assertEquals(0, jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM flyway_schema_history WHERE NOT success", Integer.class));
+                for (String t : new String[] {"hot_click_carrito_item_tb", "hot_click_estado_tb",
+                    "hot_click_giro_ruleta_tb", "hot_click_premio_tb", "hot_click_referido_tb",
+                    "hot_click_resultado_ruleta_tb"}) {
+                    assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables "
+                        + "WHERE table_schema = 'public' AND table_name = ?", Integer.class, t), t);
+                }
+                assertTrue(jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM hot_click_estado_tb WHERE id_estado IN (1, 2, 5)", Integer.class) == 3,
+                    "estados base sembrados en la tabla JPA");
+            }
+        } finally {
+            if (pg != null) {
+                pg.stop();
+            }
         }
-    }
-
-    @Test
-    void contexto_arranca_con_ddl_validate_sobre_base_creada_desde_V1() {
-        // Si llegamos acá, Hibernate validó todas las entidades contra el esquema de Flyway.
-        assertEquals(0, jdbc.queryForObject(
-            "SELECT COUNT(*) FROM flyway_schema_history WHERE NOT success", Integer.class));
-        for (String t : new String[] {"hot_click_carrito_item_tb", "hot_click_estado_tb", "hot_click_giro_ruleta_tb",
-            "hot_click_premio_tb", "hot_click_referido_tb", "hot_click_resultado_ruleta_tb"}) {
-            assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables "
-                + "WHERE table_schema = 'public' AND table_name = ?", Integer.class, t), t);
-        }
-        assertTrue(jdbc.queryForObject(
-            "SELECT COUNT(*) FROM hot_click_estado_tb WHERE id_estado IN (1, 2, 5)", Integer.class) == 3,
-            "estados base sembrados en la tabla JPA");
     }
 }
