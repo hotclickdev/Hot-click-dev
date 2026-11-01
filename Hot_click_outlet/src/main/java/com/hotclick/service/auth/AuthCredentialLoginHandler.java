@@ -141,10 +141,11 @@ public class AuthCredentialLoginHandler {
         if (estado == Constants.ESTADO_INACTIVO
                 || estado == Constants.ESTADO_SUSPENDIDO
                 || estado == Constants.ESTADO_ELIMINADO) {
-            return respuestaCuentaBloqueada(MSG_CREDENCIALES);
+            // BAJO área 2: mismo 401 genérico que clave mala (un 403 revelaba que la cuenta existe).
+            return respuestaCredencialesInvalidas();
         }
         // Cualquier otro valor (p. ej. sin estado) tampoco entra: solo el estado 1 recibe tokens.
-        return estado == Constants.ESTADO_ACTIVO ? null : respuestaCuentaBloqueada(MSG_CREDENCIALES);
+        return estado == Constants.ESTADO_ACTIVO ? null : respuestaCredencialesInvalidas();
     }
 
     private static ResponseEntity<?> respuestaCredencialesInvalidas() {

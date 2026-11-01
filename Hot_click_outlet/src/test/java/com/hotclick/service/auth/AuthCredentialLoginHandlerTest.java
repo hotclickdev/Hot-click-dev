@@ -138,7 +138,7 @@ class AuthCredentialLoginHandlerTest {
         Constants.ESTADO_SUSPENDIDO,
         Constants.ESTADO_ELIMINADO
     })
-    @DisplayName("inactivo/suspendido/eliminado + clave ok → 403 con mensaje genérico (sin distinguir el motivo)")
+    @DisplayName("BAJO área 2: inactivo/suspendido/eliminado + clave ok → mismo 401 genérico que clave mala")
     void estadosRechazadosSinEnumeracion(int estado) {
         Usuario u = usuarioConEstado(estado);
         when(usuarioService.buscarPorCorreo(CORREO)).thenReturn(Optional.of(u));
@@ -146,7 +146,8 @@ class AuthCredentialLoginHandlerTest {
 
         ResponseEntity<?> resp = handler.login(request(), httpRequest);
 
-        assertCuentaBloqueada(resp, "Credenciales inválidas");
+        assertThat(resp.getStatusCode().value()).isEqualTo(401);
+        assertThat(((ResponseDTO) resp.getBody()).getMessage()).isEqualTo("Credenciales inválidas");
         verify(otpService, never()).enviarOtp(any(), anyString());
     }
 

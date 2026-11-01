@@ -133,7 +133,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
 
     // ── T-SEC-006: EmprendedorA no puede actualizar producto de EmpresaB ─────
     @Test
-    @DisplayName("T-SEC-006 | CRÍTICO — EmprendedorA no puede actualizar producto de EmpresaB → 400/403")
+    @DisplayName("T-SEC-006 | CRÍTICO — EmprendedorA no puede actualizar producto de EmpresaB → 404 (BAJO área 2)")
     void emprendedorA_cannotUpdate_productoB() throws Exception {
         String body = "{\"nombreProducto\":\"Hack\",\"precioVenta\":100,\"precioCompra\":50,"
             + "\"stockActual\":5,\"stockMinimo\":1,\"categoriaId\":" + categoria.getId() + "}";
@@ -141,16 +141,16 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
                 .header("Authorization", tokenA)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
-            .andExpect(status().is4xxClientError());
+            .andExpect(status().isNotFound());
     }
 
     // ── T-SEC-007: EmprendedorA no puede eliminar producto de EmpresaB ───────
     @Test
-    @DisplayName("T-SEC-007 | CRÍTICO — EmprendedorA no puede eliminar producto de EmpresaB → 400/403")
+    @DisplayName("T-SEC-007 | CRÍTICO — EmprendedorA no puede eliminar producto de EmpresaB → 404 (BAJO área 2)")
     void emprendedorA_cannotDelete_productoB() throws Exception {
         mockMvc.perform(delete("/api/productos/" + productoB.getId())
                 .header("Authorization", tokenA))
-            .andExpect(status().is4xxClientError());
+            .andExpect(status().isNotFound());
     }
 
     // ── T-SEC-008: EmprendedorA no puede poner en carrusel producto de EmpresaB
@@ -166,7 +166,7 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
 
     // ── T-SEC-009: EmprendedorA no puede destacar producto de EmpresaB ───────
     @Test
-    @DisplayName("T-SEC-009 | CRÍTICO — EmprendedorA no puede destacar producto de EmpresaB → 403")
+    @DisplayName("T-SEC-009 | CRÍTICO — EmprendedorA no puede destacar producto de EmpresaB → 403 (destacado es solo ADMIN)")
     void emprendedorA_cannotToggleDestacado_productoB() throws Exception {
         mockMvc.perform(patch("/api/productos/" + productoB.getId() + "/destacado")
                 .header("Authorization", tokenA)
@@ -432,5 +432,12 @@ class EmprendedorTenantSecurityTest extends BaseIntegrationTest {
         pago.setUsuario(pedido.getUsuarioFinal());
         pago.setFechaCreacion(LocalDateTime.now());
         pagoRepository.saveAndFlush(pago);
+    }
+
+    @Test
+    @DisplayName("BAJO área 2 — producto inexistente da el mismo 404 que uno de otra empresa (DELETE)")
+    void productoInexistente_mismo404() throws Exception {
+        mockMvc.perform(delete("/api/productos/999999999").header("Authorization", tokenA))
+            .andExpect(status().isNotFound());
     }
 }
