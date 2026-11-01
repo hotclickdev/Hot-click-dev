@@ -80,6 +80,19 @@ public class UsuarioController {
         }
 
         usuarioRepository.save(usuario);
-        return ResponseEntity.ok(ResponseDTO.success("Datos actualizados correctamente", usuario));
+        // MEDIO área 2: no serializar la entidad (Usuario.roles es LAZY fuera de la transacción → 500).
+        return ResponseEntity.ok(ResponseDTO.success("Datos actualizados correctamente", vistaActualizada(usuario)));
+    }
+
+    static Map<String, Object> vistaActualizada(Usuario u) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", u.getId());
+        m.put("nombre", u.getNombre());
+        m.put("apellidoPaterno", u.getApellidoPaterno());
+        m.put("apellidoMaterno", u.getApellidoMaterno());
+        m.put("correo", u.getCorreo());
+        m.put("telefono", u.getTelefono());
+        m.put("telefonoAlterno", u.getTelefonoAlterno());
+        return m;
     }
 }

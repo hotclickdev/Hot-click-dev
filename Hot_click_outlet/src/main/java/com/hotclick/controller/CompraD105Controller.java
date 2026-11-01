@@ -77,7 +77,12 @@ public class CompraD105Controller {
     }
 
     @GetMapping("/reporte")
-    public ResponseEntity<ResponseDTO> reporte(@RequestParam int anio, @RequestParam String trimestre) {
+    public ResponseEntity<ResponseDTO> reporte(@RequestParam(required = false) Integer anio,
+                                               @RequestParam(required = false) String trimestre) {
+        if (anio == null || trimestre == null || trimestre.isBlank()) {
+            // A7-1: sin parámetros → 400, no 500.
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Parámetros requeridos: anio y trimestre"));
+        }
         try {
             ReporteD105 reporte = service.reporte(anio, trimestre);
             return ResponseEntity.ok(ResponseDTO.success("Compras netas del trimestre", reporte));

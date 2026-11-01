@@ -137,6 +137,7 @@ public class FlywayRepairConfig {
      */
     static void bootstrapBaseVacia(Flyway flyway) {
         log.warn("[flyway] Base vacía + {}=true: esquema base V1 + baseline V1 + migrate V2..VN", PROP_BASE_VACIA);
+        verificarExtensionVector(flyway);
         Flyway base = Flyway.configure()
             .configuration(flyway.getConfiguration())
             .locations(BASE_VACIA_LOCATION)
@@ -366,6 +367,32 @@ public class FlywayRepairConfig {
             return uri.getHost();
         } catch (IllegalArgumentException | NullPointerException e) {
             return null;
+        }
+    }
+    /**
+     * V62 hace CREATE EXTENSION IF NOT EXISTS vector: con un rol sin superusuario falla a
+     * mitad de cadena ("permission denied to create extension vector"). Prerrequisito de la
+     * base vacía: un superusuario corre antes CREATE EXTENSION vector en esa base. Se valida
+     * aquí, antes de tocar el esquema, para cortar con un mensaje claro.
+     */
+    static void verificarExtensionVector(Flyway flyway) {
+        try (Connection c = flyway.getConfiguration().getDataSource().getConnection();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery(
+                 "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector'),"
+                     + " EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'vector'),"
+                     + " (SELECT rolsuper FROM pg_roles WHERE rolname = current_user)")) {
+            rs.next();
+            if (rs.getBoolean(1) || rs.getBoolean(3)) {
+                return;
+            }
+            throw new IllegalStateException(rs.getBoolean(2)
+                ? "[flyway] Base vacía: falta la extensión vector (V62) y este rol no puede crearla. "
+                    + "Un superusuario debe correr antes en esta base: CREATE EXTENSION vector;"
+                : "[flyway] Base vacía: pgvector no está instalado en el servidor (V62 lo exige). "
+                    + "Instalá pgvector y luego, como superusuario: CREATE EXTENSION vector;");
+        } catch (SQLException e) {
+            throw new IllegalStateException("[flyway] No se pudo verificar la extensión vector", e);
         }
     }
 }

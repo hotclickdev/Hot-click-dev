@@ -2,6 +2,7 @@ package com.hotclick.config;
 
 import com.hotclick.service.ResetPlataformaKeepQaService;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,5 +42,30 @@ class ResetPlataformaKeepQaRunnerGuardaTest {
             runner(p, PROP + "=true").run(ctx ->
                     assertThat(ctx).as(p).doesNotHaveBean(ResetPlataformaKeepQaRunner.class));
         }
+    }
+
+    /** Con el perfil dev y la configuración real del classpath (application-dev.properties) el runner no se crea. */
+    @Test
+    void noCargaConPerfilDevYConfiguracionPorDefecto() {
+        new ApplicationContextRunner()
+                .withInitializer(new ConfigDataApplicationContextInitializer())
+                .withBean(ResetPlataformaKeepQaService.class, () -> mock(ResetPlataformaKeepQaService.class))
+                .withUserConfiguration(ResetPlataformaKeepQaRunner.class)
+                .withPropertyValues("spring.profiles.active=dev")
+                .run(ctx -> {
+                    assertThat(ctx.getEnvironment().getProperty(PROP, Boolean.class)).isFalse();
+                    assertThat(ctx).doesNotHaveBean(ResetPlataformaKeepQaRunner.class);
+                });
+    }
+
+    /** El opt-in explícito por variable de entorno (relaxed binding) sigue habilitándolo en dev. */
+    @Test
+    void cargaConPerfilDevSoloConOptInExplicito() {
+        new ApplicationContextRunner()
+                .withInitializer(new ConfigDataApplicationContextInitializer())
+                .withBean(ResetPlataformaKeepQaService.class, () -> mock(ResetPlataformaKeepQaService.class))
+                .withUserConfiguration(ResetPlataformaKeepQaRunner.class)
+                .withPropertyValues("spring.profiles.active=dev", PROP + "=true")
+                .run(ctx -> assertThat(ctx).hasSingleBean(ResetPlataformaKeepQaRunner.class));
     }
 }

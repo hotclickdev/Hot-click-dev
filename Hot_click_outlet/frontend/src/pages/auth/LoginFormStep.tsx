@@ -29,6 +29,7 @@ type LoginFormStepProps = {
   setTurnstileToken: Dispatch<SetStateAction<string>>
   onSubmit: (e: FormEvent) => void
   onResendVerification: () => void
+  onIngresarCodigo: () => void
   onForgot: () => void
 }
 
@@ -49,7 +50,7 @@ export default function LoginFormStep({
   error, needsVerification, needsPasswordReset,
   resendLoading, verifCooldown = 0, loading, turnstileToken,
   turnstileRef, turnstileSiteKey, clerkEnabled,
-  setTurnstileToken, onSubmit, onResendVerification, onForgot,
+  setTurnstileToken, onSubmit, onResendVerification, onIngresarCodigo, onForgot,
 }: LoginFormStepProps) {
   const { t } = useTranslation()
   const [paso, setPaso] = useState<PasoLogin>('correo')
@@ -137,6 +138,11 @@ export default function LoginFormStep({
         {mensaje && (
           <div role="alert" className="flex flex-col gap-2 rounded-[10px] bg-[color-mix(in_srgb,var(--hc-danger)_7%,transparent)] px-3 py-[10px] text-[13px] leading-[18px] text-hc-danger">
             {mensaje}
+            {paso === 'contrasena' && needsVerification && (
+              <button type="button" onClick={onIngresarCodigo} className="self-start text-[12px] font-semibold text-hc-blue-600">
+                {t('login.ingresarCodigo')}
+              </button>
+            )}
             {paso === 'contrasena' && needsVerification && (
               <button type="button" onClick={onResendVerification} disabled={resendLoading || verifCooldown > 0} className="self-start text-[12px] font-semibold text-hc-blue-600 disabled:opacity-60">
                 {resendLoading ? t('login.sending') : verifCooldown > 0 ? t('login.reenviarEn', { s: verifCooldown }) : t('login.resendVerification')}
