@@ -9,6 +9,8 @@ public class Marca extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // columnDefinition solo describe el tipo real que dejan las migraciones (DDL/validate); no cambia binding ni runtime.
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER) // PK SERIAL (int4) en BD
     @Column(name = "id_marca")
     private Long id;
 
@@ -20,7 +22,7 @@ public class Marca extends BaseEntity {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fk_id_admin_cliente", nullable = false)
+    @JoinColumn(name = "fk_id_admin_cliente", nullable = false, columnDefinition = "int4")
     private Usuario adminCliente;
 
     @JsonIgnore

@@ -33,6 +33,7 @@ class UsuarioControllerClaveMinimaTest {
     @Mock UsuarioService usuarioService;
     @Mock PasswordEncoder passwordEncoder;
     @Mock CompanyScope companyScope;
+    @Mock com.hotclick.utils.InputSanitizer sanitizer;
     @Spy  AuthSupport authSupport = new AuthSupport();
     @InjectMocks UsuarioController controller;
 
@@ -58,5 +59,21 @@ class UsuarioControllerClaveMinimaTest {
         var resp = controller.actualizarUsuario(1L, Map.of("contrasenaActual", "vieja", "nuevaContrasena", "Abcdefg1"));
         assertThat(resp.getStatusCode().value()).isEqualTo(200);
         verify(usuarioRepository).save(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void actualizaNombre_200_sinSerializarEntidadNiRoles() {
+        when(companyScope.isAdminIT()).thenReturn(true);
+        when(usuarioService.buscarPorId(1L)).thenReturn(Optional.of(new Usuario()));
+        when(sanitizer.cleanWithLimit(anyString(), anyInt())).thenAnswer(i -> i.getArgument(0));
+        var resp = controller.actualizarUsuario(1L, Map.of("nombre", "Nuevo"));
+        assertThat(resp.getStatusCode().value()).isEqualTo(200);
+        var captor = org.mockito.ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(captor.capture());
+        assertThat(captor.getValue().getNombre()).isEqualTo("Nuevo");
+        Object data = resp.getBody().getData();
+        assertThat(data).isInstanceOf(Map.class).isNotInstanceOf(Usuario.class);
+        assertThat((Map<String, Object>) data).containsEntry("nombre", "Nuevo").doesNotContainKey("roles");
     }
 }
