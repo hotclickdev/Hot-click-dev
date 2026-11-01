@@ -1359,7 +1359,7 @@ ON CONFLICT ("ID_METODO_PAGO_CONFIG") DO UPDATE SET
     "NOMBRE" = EXCLUDED."NOMBRE", "ACTIVO" = EXCLUDED."ACTIVO", "ORDEN" = EXCLUDED."ORDEN";
 
 INSERT INTO "HOT_CLICK_USUARIO_TB" ("ID_USUARIO", "IDENTIFICACION", "NOMBRE", "APELLIDO_PATERNO", "CORREO", "TELEFONO", "CONTRASENA_HASH") VALUES
-  (1, '999999999', 'Admin', 'Sistema', 'admin@hotclick.com', '88888888', '$2b$10$placeholder')
+  (1, '999999999', 'Admin', 'Sistema', 'admin@hotclick.lat', '88888888', '$2b$10$placeholder')
 ON CONFLICT ("ID_USUARIO") DO NOTHING;
 
 INSERT INTO "HOT_CLICK_USUARIO_ROL_TB" ("FK_ID_USUARIO", "FK_ID_ROL") VALUES (1, 1)
@@ -4451,3 +4451,30 @@ UPDATE hot_click_pago_tb
    SET aviso_reembolso_resumen_pendiente = TRUE
  WHERE estado_pago = 'REEMBOLSO_PENDIENTE' AND aviso_reembolso_admin_en IS NULL
    AND aviso_reembolso_admin_enviado_en IS NULL;
+
+-- V218 (31-oct-2026): search_path fijo en las SECURITY DEFINER de pagos y seed admin a @hotclick.lat (BAJOs de #484).
+DO $$
+DECLARE
+    f RECORD;
+BEGIN
+    FOR f IN
+        SELECT p.oid::regprocedure AS firma
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid = p.pronamespace
+         WHERE n.nspname = 'public'
+           AND p.proname IN ('fn_crear_pago', 'fn_obtener_pago_por_token')
+    LOOP
+        EXECUTE format('ALTER FUNCTION %s SET search_path = pg_catalog, public, pg_temp', f.firma);
+    END LOOP;
+END
+$$;
+
+UPDATE hot_click_usuario_tb
+   SET correo = 'admin@hotclick.lat'
+ WHERE lower(correo) = 'admin@hotclick.com'
+   AND NOT EXISTS (SELECT 1 FROM hot_click_usuario_tb u2 WHERE lower(u2.correo) = 'admin@hotclick.lat');
+
+UPDATE hot_click_empresa_tb
+   SET correo_empresa = 'admin@hotclick.lat'
+ WHERE lower(correo_empresa) = 'admin@hotclick.com'
+   AND NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e2 WHERE lower(e2.correo_empresa) = 'admin@hotclick.lat');
