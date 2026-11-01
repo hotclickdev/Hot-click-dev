@@ -68,8 +68,9 @@ public class ProductoWriteHandler {
             companyScope.assertCanAccessNullable(existente.getEmpresaId());
             var producto = productoService.toggleDestacado(id, valor);
             return ResponseEntity.ok(ResponseDTO.success("Destacado actualizado", producto));
-        } catch (com.hotclick.exception.TenantAccessDeniedException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
+        } catch (com.hotclick.exception.TenantAccessDeniedException | com.hotclick.exception.RecursoNoEncontradoException e) {
+            // BAJO área 2: producto de otra empresa = mismo 404 que inexistente (no confirma que el id existe).
+            return ResponseEntity.status(404).body(ResponseDTO.error("Producto no encontrado"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
