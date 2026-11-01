@@ -4,8 +4,10 @@ import com.hotclick.model.MetodoCobro;
 import com.hotclick.repository.MetodoCobroRepository;
 import com.hotclick.service.consola.QuincenaCalculo;
 import com.hotclick.utils.Constants;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -20,13 +22,21 @@ public class CuentaCobroVerificada {
         "Registra tu cuenta SINPE Móvil o IBAN y espera su verificación para recibir pagos.";
 
     private final MetodoCobroRepository metodoRepo;
+    private final Clock reloj;
 
+    @Autowired
     public CuentaCobroVerificada(MetodoCobroRepository metodoRepo) {
+        this(metodoRepo, Clock.system(Constants.ZONA_CR));
+    }
+
+    /** Solo para tests: fija el "hoy" (en hora de Costa Rica) con un reloj. */
+    public CuentaCobroVerificada(MetodoCobroRepository metodoRepo, Clock reloj) {
         this.metodoRepo = metodoRepo;
+        this.reloj = reloj;
     }
 
     public Optional<MetodoCobro> buscar(Long empresaId) {
-        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
+        LocalDate hoy = LocalDate.now(reloj.withZone(Constants.ZONA_CR));
         return metodoRepo.findActivosByEmpresaId(empresaId).stream()
             .filter(m -> !m.isEnRevision())
             .filter(m -> MetodoCobro.TIPO_SINPE.equals(m.getTipo()) || MetodoCobro.TIPO_IBAN.equals(m.getTipo()))
