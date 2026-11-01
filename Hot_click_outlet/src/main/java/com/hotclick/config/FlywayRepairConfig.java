@@ -54,6 +54,12 @@ public class FlywayRepairConfig {
     /** Tablas sin @Entity que el arranque necesita antes de Hibernate. */
     private static final String NATIVAS_DEV = "db/dev-bootstrap/nativas.sql";
 
+    static final String PROP_DEV_BOOTSTRAP = "hotclick.flyway.dev-bootstrap";
+    static final String PROP_BASE_VACIA = "hotclick.flyway.base-vacia.enabled";
+    static final String BASE_VACIA_LOCATION = "classpath:db/base-vacia";
+    static final String BASE_VACIA_HISTORIAL = "flyway_base_vacia_history";
+    static final String VERSION_ANTES_HOOK = "70";
+
     private static final String MIGRACIONES_GLOB = "classpath*:db/migration/V*.sql";
 
     private static final Pattern NOMBRE_MIGRACION =
@@ -69,9 +75,12 @@ public class FlywayRepairConfig {
     public FlywayMigrationStrategy repairThenMigrate() {
         return flyway -> {
             assertDevHostIsLocal();
-            if (esPerfilDev() && esquemaPublicoVacio(flyway)) {
+            boolean vacio = esquemaPublicoVacio(flyway);
+            if (esPerfilDev() && devBootstrapHabilitado() && vacio) {
                 bootstrapDevVacio(flyway);
-            } else if (esPerfilProd() && esPostgres(flyway) && esquemaPublicoVacio(flyway)) {
+            } else if (baseVaciaHabilitada() && vacio && esPostgres(flyway)) {
+                bootstrapBaseVacia(flyway);
+            } else if (esPerfilProd() && vacio && esPostgres(flyway)) {
                 abortarProdVacio();
             }
             log.info("[flyway] Ejecutando repair() para sincronizar checksums de migraciones fallidas...");
@@ -102,6 +111,59 @@ public class FlywayRepairConfig {
         log.info("[flyway] Guardrail dev OK — host JDBC local: {}", host);
     }
 
+    /**
+     * {@code hotclick.flyway.dev-bootstrap} (default {@code true} = comportamiento histórico):
+     * con perfil dev y base vacía hace baseline en la última V + Hibernate update.
+     * En {@code false} el perfil dev ya no toma ese atajo (útil para rejugar la cadena real).
+     */
+    boolean devBootstrapHabilitado() {
+        return environment.getProperty(PROP_DEV_BOOTSTRAP, Boolean.class, Boolean.TRUE);
+    }
+
+    /**
+     * {@code hotclick.flyway.base-vacia.enabled} (default {@code false}): con el esquema public
+     * VACÍO aplica db/base-vacia (equivalente a V1 tal como quedó en prod), baseline V1 y
+     * migrate() normal V2..VN. Una base con tablas nunca entra por aquí.
+     */
+    boolean baseVaciaHabilitada() {
+        return environment.getProperty(PROP_BASE_VACIA, Boolean.class, Boolean.FALSE);
+    }
+
+    /**
+     * Base vacía: el historial principal no puede rejugar V1 (dump legacy), así que se
+     * aplica el esquema base con su propio historial y luego la cadena real V2..VN.
+     * El hook entre V{@value #VERSION_ANTES_HOOK} y la siguiente reproduce un estado de prod
+     * que no sale de ninguna migración (ver hooks/V2__antes_de_V71.sql).
+     */
+    static void bootstrapBaseVacia(Flyway flyway) {
+        log.warn("[flyway] Base vacía + {}=true: esquema base V1 + baseline V1 + migrate V2..VN", PROP_BASE_VACIA);
+        Flyway base = Flyway.configure()
+            .configuration(flyway.getConfiguration())
+            .locations(BASE_VACIA_LOCATION)
+            .table(BASE_VACIA_HISTORIAL)
+            .baselineOnMigrate(false)
+            .target("1")
+            .load();
+        base.migrate();
+        Flyway.configure()
+            .configuration(flyway.getConfiguration())
+            .baselineVersion("1")
+            .baselineDescription("Esquema base vacía (db/base-vacia, equivalente a V1 en prod)")
+            .load()
+            .baseline();
+        Flyway.configure()
+            .configuration(flyway.getConfiguration())
+            .target(VERSION_ANTES_HOOK)
+            .load()
+            .migrate();
+        Flyway.configure()
+            .configuration(base.getConfiguration())
+            .target("latest")
+            .load()
+            .migrate();
+        log.info("[flyway] Base vacía lista hasta V{}; sigue migrate() normal.", VERSION_ANTES_HOOK);
+    }
+
     private boolean esPerfilDev() {
         return Arrays.asList(environment.getActiveProfiles()).contains("dev");
     }
@@ -130,8 +192,8 @@ public class FlywayRepairConfig {
         throw new IllegalStateException(
             "[flyway] Perfil prod contra una base VACÍA: V1..VN no se pueden rejugar en cadena "
                 + "(V1 es el dump legacy baselinado en prod). No se migra. Para una base nueva, "
-                + "restaurá un respaldo de producción o usá el perfil dev (baseline + Hibernate) "
-                + "en un entorno local. Ver docs del hallazgo Flyway V1.");
+                + "restaurá un respaldo de producción, activá hotclick.flyway.base-vacia.enabled=true "
+                + "(esquema base + V2..VN) o usá el perfil dev en un entorno local.");
     }
 
     private static boolean esquemaPublicoVacio(Flyway flyway) {
