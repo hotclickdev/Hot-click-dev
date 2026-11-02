@@ -1217,14 +1217,9 @@ ALTER TABLE "HOT_CLICK_GARANTIA_PRODUCTO_TB" ADD FOREIGN KEY ("FK_ID_PRODUCTO") 
 ALTER TABLE "HOT_CLICK_GARANTIA_PRODUCTO_TB" ADD FOREIGN KEY ("FK_ID_GARANTIA") REFERENCES "HOT_CLICK_GARANTIA_TB" ("ID_GARANTIA");
 
 -- FOREIGN KEYS - Pagos PayXpert
-ALTER TABLE "hot_click_pago_tb" ADD FOREIGN KEY ("fk_id_pedido") REFERENCES "HOT_CLICK_PEDIDO_TB" ("ID_PEDIDO");
-ALTER TABLE "hot_click_pago_tb" ADD FOREIGN KEY ("fk_id_usuario") REFERENCES "HOT_CLICK_USUARIO_TB" ("ID_USUARIO");
-ALTER TABLE "hot_click_pago_tb" ADD FOREIGN KEY ("fk_id_estado") REFERENCES "HOT_CLICK_ESTADO_TB" ("ID_ESTADO");
+-- FK de pagos (pedido/usuario/estado): al final del archivo, hacia las tablas JPA en minúsculas (ALTO QA5).
 ALTER TABLE "hot_click_transaccion_pago_tb" ADD FOREIGN KEY ("fk_id_pago") REFERENCES "hot_click_pago_tb" ("id_pago") ON DELETE CASCADE;
-ALTER TABLE "hot_click_transaccion_pago_tb" ADD FOREIGN KEY ("fk_id_estado") REFERENCES "HOT_CLICK_ESTADO_TB" ("ID_ESTADO");
-ALTER TABLE "hot_click_webhook_event_tb" ADD FOREIGN KEY ("fk_id_estado") REFERENCES "HOT_CLICK_ESTADO_TB" ("ID_ESTADO");
 ALTER TABLE "hot_click_payment_log_tb" ADD FOREIGN KEY ("fk_id_pago") REFERENCES "hot_click_pago_tb" ("id_pago");
-ALTER TABLE "hot_click_payment_log_tb" ADD FOREIGN KEY ("fk_id_usuario") REFERENCES "HOT_CLICK_USUARIO_TB" ("ID_USUARIO");
 
 -- ============================================================
 -- INDICES
@@ -2065,3 +2060,12 @@ ALTER TABLE hot_click_usuario_rol_tb ADD COLUMN IF NOT EXISTS fk_id_estado INTEG
 INSERT INTO hot_click_estado_tb (id_estado, nombre_estado, descripcion, codigo_color)
 SELECT "ID_ESTADO", "NOMBRE_ESTADO", "DESCRIPCION", "CODIGO_COLOR" FROM "HOT_CLICK_ESTADO_TB"
 ON CONFLICT (id_estado) DO NOTHING;
+
+-- FK de pagos hacia las tablas JPA en minúsculas (antes apuntaban a "HOT_CLICK_PEDIDO_TB"/"HOT_CLICK_USUARIO_TB"/"HOT_CLICK_ESTADO_TB",
+-- vacías, y todo checkout daba 500). Mismos nombres de constraint que antes; V221 corrige bases ya creadas.
+ALTER TABLE "hot_click_pago_tb" ADD FOREIGN KEY ("fk_id_pedido") REFERENCES "hot_click_pedido_tb" ("id_pedido");
+ALTER TABLE "hot_click_pago_tb" ADD FOREIGN KEY ("fk_id_usuario") REFERENCES "hot_click_usuario_tb" ("id_usuario");
+ALTER TABLE "hot_click_payment_log_tb" ADD FOREIGN KEY ("fk_id_usuario") REFERENCES "hot_click_usuario_tb" ("id_usuario");
+ALTER TABLE "hot_click_pago_tb" ADD FOREIGN KEY ("fk_id_estado") REFERENCES "hot_click_estado_tb" ("id_estado");
+ALTER TABLE "hot_click_transaccion_pago_tb" ADD FOREIGN KEY ("fk_id_estado") REFERENCES "hot_click_estado_tb" ("id_estado");
+ALTER TABLE "hot_click_webhook_event_tb" ADD FOREIGN KEY ("fk_id_estado") REFERENCES "hot_click_estado_tb" ("id_estado");
