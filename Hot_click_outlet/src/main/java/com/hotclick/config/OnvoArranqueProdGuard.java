@@ -60,6 +60,7 @@ public class OnvoArranqueProdGuard {
             return;
         }
         verificarLlave();
+        verificarUrlRetorno();
         verificarConfigBilling();
     }
 
@@ -73,6 +74,34 @@ public class OnvoArranqueProdGuard {
         }
         throw new IllegalStateException("[ALERTA-PAGO] Producción requiere ONVO_SECRET_KEY con prefijo " + PREFIJO_LIVE
             + " (o llave de prueba con PAYMENTS_ONVO_PERMITIR_LLAVE_TEST=true). La app no arranca.");
+    }
+
+    /**
+     * QA5 MEDIO: la URL de retorno de ONVO sale de {@code app.url}, cuyo default ({@code ${APP_URL:...}} o el
+     * localhost de dev) se usaría en silencio si APP_URL no está definida. En prod exige la variable APP_URL
+     * explícita, https y no local. El mensaje nombra solo la variable, nunca su valor. Dev/test no cambian.
+     */
+    private void verificarUrlRetorno() {
+        String appUrl = valor("APP_URL");
+        if (urlPublicaValida(appUrl)) {
+            return;
+        }
+        log.error("[ALERTA-PAGO] Producción sin APP_URL válida: la URL de retorno de ONVO caería a un default");
+        throw new IllegalStateException("[ALERTA-PAGO] Producción requiere APP_URL definida (https, no localhost) para la"
+            + " URL de retorno de ONVO. La app no arranca.");
+    }
+
+    static boolean urlPublicaValida(String url) {
+        if (url == null || url.isBlank()) return false;
+        try {
+            java.net.URI u = java.net.URI.create(url.trim());
+            String host = u.getHost() == null ? "" : u.getHost().toLowerCase(Locale.ROOT);
+            return "https".equalsIgnoreCase(u.getScheme()) && !host.isEmpty()
+                && !host.equals("localhost") && !host.startsWith("127.") && !host.equals("0.0.0.0")
+                && !host.equals("[::1]") && !host.endsWith(".local");
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     /** Sin moneda, precios o price ids el billing ONVO no puede cobrar ni verificar: la app no arranca (fail-closed). */

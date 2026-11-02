@@ -99,7 +99,7 @@ public final class OnvoCobroVerificador {
 
     public static String mensajeAlerta(Pago pago, Map<?, ?> intent) {
         // El merchantToken (sessionId) es columna del pago: no inicializa el pedido lazy fuera de transacción.
-        String sesion = pago != null ? pago.getMerchantToken() : "?";
+        String sesion = pago != null ? com.hotclick.utils.IdEnmascarado.de(pago.getMerchantToken()) : "?";
         String esperado = pago != null && pago.getMonto() != null
             ? String.valueOf(pago.getMonto().longValue() * CENTIMOS_POR_COLON) : "?";
         String cobrado = intent != null && intent.get("amount") != null ? String.valueOf(intent.get("amount")) : "sin-monto";

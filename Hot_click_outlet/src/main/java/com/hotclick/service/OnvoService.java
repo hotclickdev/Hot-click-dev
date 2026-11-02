@@ -158,7 +158,7 @@ public class OnvoService {
             Map<?, ?> body = getOnvo("/mobile-transfers/list?status=received&limit=100");
             return sinpeRefDeLista(body, intentId);
         } catch (RuntimeException e) {
-            log.debug("[onvo] SINPERefNumber no disponible para intent {}: {}", intentId, e.getClass().getSimpleName());
+            log.debug("[onvo] SINPERefNumber no disponible para intent {}: {}", com.hotclick.utils.IdEnmascarado.de(intentId), e.getClass().getSimpleName());
             return null;
         }
     }
@@ -420,7 +420,7 @@ public class OnvoService {
             Map<?, ?> body = postOnvo("/payment-intents/" + intentId + "/cancel", Map.of());
             return body == null || body.get("status") == null ? "" : String.valueOf(body.get("status"));
         } catch (RuntimeException e) {
-            log.warn("[onvo] No se pudo cancelar el payment intent {}: {}", intentId, e.getMessage());
+            log.warn("[onvo] No se pudo cancelar el payment intent {}: {}", com.hotclick.utils.IdEnmascarado.de(intentId), e.getMessage());
             return "";
         }
     }
@@ -457,7 +457,7 @@ public class OnvoService {
                 ? "" : String.valueOf(body.get("status"));
             return status;
         } catch (HttpClientErrorException e) {
-            log.warn("[onvo] No se pudo leer payment intent {}: {}", intentId, e.getStatusCode());
+            log.warn("[onvo] No se pudo leer payment intent {}: {}", com.hotclick.utils.IdEnmascarado.de(intentId), e.getStatusCode());
             return "";
         }
     }
@@ -489,7 +489,7 @@ public class OnvoService {
             Map<?, ?> body = getOnvo(ruta + id);
             return body == null ? Map.of() : body;
         } catch (HttpClientErrorException.NotFound e) {
-            log.warn("[onvo] ONVO no tiene {}{}", ruta, id);
+            log.warn("[onvo] ONVO no tiene {}{}", ruta, com.hotclick.utils.IdEnmascarado.de(id));
             return Map.of();
         }
     }
@@ -506,7 +506,7 @@ public class OnvoService {
             Map<?, ?> body = postOnvo("/checkout/sessions/" + sessionId + "/expire", Map.of());
             return body == null ? Map.of() : body;
         } catch (HttpClientErrorException.NotFound e) {
-            log.warn("[onvo] ONVO no tiene la sesión {} para expirar", sessionId);
+            log.warn("[onvo] ONVO no tiene la sesión {} para expirar", com.hotclick.utils.IdEnmascarado.de(sessionId));
             return Map.of();
         }
     }
@@ -540,7 +540,7 @@ public class OnvoService {
             throw new IllegalStateException("Respuesta inválida de ONVO al crear checkout session");
         }
         String id = String.valueOf(respBody.get("id"));
-        log.info("[onvo] Checkout session creada: {}", id);
+        log.info("[onvo] Checkout session creada: {}", com.hotclick.utils.IdEnmascarado.de(id));
         return new OnvoCheckoutSession(id, String.valueOf(respBody.get("url")));
     }
 
@@ -549,7 +549,7 @@ public class OnvoService {
             throw new IllegalStateException("Respuesta inválida de ONVO al crear payment intent");
         }
         String id = String.valueOf(respBody.get("id"));
-        log.info("[onvo] Payment intent creado: {}", id);
+        log.info("[onvo] Payment intent creado: {}", com.hotclick.utils.IdEnmascarado.de(id));
         return new OnvoPaymentIntent(id);
     }
 

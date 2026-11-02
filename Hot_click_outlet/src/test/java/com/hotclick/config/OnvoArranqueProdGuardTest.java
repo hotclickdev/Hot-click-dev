@@ -165,4 +165,32 @@ class OnvoArranqueProdGuardTest {
         dev.setActiveProfiles("dev");
         assertThatCode(() -> new OnvoArranqueProdGuard(dev, "", false).verificar()).doesNotThrowAnyException();
     }
+
+    @Test
+    @DisplayName("QA5 MEDIO | prod sin APP_URL (o vacía, http, localhost) no arranca y nombra solo la variable")
+    void prodSinAppUrlNoArranca() {
+        for (String v : new String[] {null, "", "  ", "http://hotclick.lat", "https://localhost:8080",
+                "http://localhost:3000", "https://127.0.0.1", "no es url"}) {
+            MockEnvironment e = new MockEnvironment();
+            e.setActiveProfiles("prod");
+            OnvoArranqueProdGuardAcceso.conConfigBillingExcepto(e, "APP_URL");
+            if (v != null) e.setProperty("APP_URL", v);
+            e.setProperty("app.url", "https://hotclick.lat"); // el default resuelto no alcanza: se exige la variable
+            assertThatThrownBy(() -> new OnvoArranqueProdGuard(e, "onvo_live_k", false).verificar())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("APP_URL")
+                .satisfies(ex -> { if (v != null && !v.isBlank()) assertThat(ex.getMessage()).doesNotContain(v.trim()); });
+        }
+    }
+
+    @Test
+    @DisplayName("QA5 MEDIO | prod con APP_URL https pública arranca; dev/test sin APP_URL siguen arrancando")
+    void appUrlValidaYDevSinExigir() {
+        assertThatCode(() -> new OnvoArranqueProdGuard(env("prod"), "onvo_live_k", false).verificar()).doesNotThrowAnyException();
+        for (String perfil : new String[] {"dev", "test"}) {
+            MockEnvironment e = new MockEnvironment();
+            e.setActiveProfiles(perfil);
+            assertThatCode(() -> new OnvoArranqueProdGuard(e, "", false).verificar()).doesNotThrowAnyException();
+        }
+    }
 }

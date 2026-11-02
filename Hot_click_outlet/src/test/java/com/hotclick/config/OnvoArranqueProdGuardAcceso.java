@@ -13,6 +13,7 @@ public final class OnvoArranqueProdGuardAcceso {
         {"hotclick.planes.negocio-plus.precio-mensual-usd", "49"},
         {"onvo.price-id.pyme", "price_pyme_test"},
         {"onvo.price-id.negocio-plus", "price_plus_test"},
+        {"APP_URL", "https://hotclick.lat"},
     };
 
     /** Entorno con toda la configuración de billing que el guard exige en prod (valores de prueba). */

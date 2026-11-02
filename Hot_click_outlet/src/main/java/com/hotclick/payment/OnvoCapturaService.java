@@ -34,6 +34,7 @@ public class OnvoCapturaService {
     @Autowired(required = false) private com.hotclick.service.OnvoService onvoService;
     @Autowired private com.hotclick.repository.PedidoRepository pedidoRepository;
     @Autowired(required = false) private com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
+    @Autowired(required = false) private com.hotclick.service.payment.OnvoTarjetaService onvoTarjeta;
 
     /** Resultado de escribir un cobro que ONVO ya confirmó. */
     public enum Captura { CAPTURADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA }
@@ -88,7 +89,7 @@ public class OnvoCapturaService {
             evento.setErrorProcesamiento("Cobro de ONVO sobre pedido cancelado: reembolso pendiente");
             webhookEventRepository.save(evento);
             log.error("[ALERTA-PAGO] ONVO cobró un pedido ya cancelado; queda para reembolso del admin: sessionId={}",
-                checkoutSessionId);
+                com.hotclick.utils.IdEnmascarado.de(checkoutSessionId));
             // Aviso al admin después del commit, con dedupe por pago; si falla, el pago sigue REEMBOLSO_PENDIENTE.
             return Captura.COBRADO_SOBRE_CANCELADO;
         }
@@ -111,11 +112,12 @@ public class OnvoCapturaService {
         webhookEventRepository.save(evento);
         if (sobreventa) {
             log.error("[ALERTA-PAGO] ONVO cobró un pedido sin stock; en revisión, reembolso pendiente: sessionId={}",
-                checkoutSessionId);
+                com.hotclick.utils.IdEnmascarado.de(checkoutSessionId));
             return Captura.COBRADO_SOBREVENTA;
         }
 
-        log.info("[onvo] Checkout confirmado: sessionId={}", checkoutSessionId);
+        log.info("[onvo] Checkout confirmado: sessionId={}", com.hotclick.utils.IdEnmascarado.de(checkoutSessionId));
+        if (onvoTarjeta != null) onvoTarjeta.despuesDeCaptura(checkoutSessionId); // QA5 BAJO: marca/last4 tras el commit
         return Captura.CAPTURADO;
     }
 
@@ -132,7 +134,7 @@ public class OnvoCapturaService {
         for (com.hotclick.model.Pedido p : pedidoGrupoService.delGrupo(pago.getPedido())) {
             p.setEsPrueba(true);
         }
-        log.warn("[ALERTA-PAGO] Cobro ONVO en modo prueba: pedido marcado es_prueba. sessionId={}", sessionId);
+        log.warn("[ALERTA-PAGO] Cobro ONVO en modo prueba: pedido marcado es_prueba. sessionId={}", com.hotclick.utils.IdEnmascarado.de(sessionId));
     }
 
     private boolean algunoCancelado(Pago pago) {
