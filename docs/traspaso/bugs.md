@@ -4,7 +4,7 @@ Fecha: 2026-10-30 (hora de Costa Rica). Autor: HotClick Bugs. Sin secretos ni da
 
 Registro de riesgos y deuda técnica: [hotclick-bugs.md](hotclick-bugs.md) (tabla de filas 1-7 y actualización 2026-10-30 con filas 8-17).
 
-Filas 18-29 (2026-10-30/31 y 2026-11-02): sobreventa fuera de ONVO/pago manual tras PR #457 (MED-2), idempotencia de fondo en la creación de pedidos y BAJO opcionales de Seguridad del PR #482 (`2a889235`); prioridad post-lanzamiento salvo que se active Stripe o Tilopay. Fila 27: BAJO de QA, login con un solo negocio sin empresa en el token (403 `EMPRESA_REQUERIDA` en `/api/pedidos`). Filas 28-29: riesgos de QA C1 (SMTP de staging falla; webhook de ONVO sin prueba de punta a punta por falta de URL pública).
+Filas 18-30 (2026-10-30/31 y 2026-11-02): sobreventa fuera de ONVO/pago manual tras PR #457 (MED-2), idempotencia de fondo en la creación de pedidos y BAJO opcionales de Seguridad del PR #482 (`2a889235`); prioridad post-lanzamiento salvo que se active Stripe o Tilopay. Fila 27: BAJO de QA, login con un solo negocio sin empresa en el token (403 `EMPRESA_REQUERIDA` en `/api/pedidos`). Filas 28-29: riesgos de QA C1 (SMTP de staging falla; webhook de ONVO sin prueba de punta a punta por falta de URL pública). Fila 30: BAJO de Seguridad del PR #500, `repair()` de Flyway con perfiles dev+prod activos.
 
 ## Rol
 Bugs puntuales en `hotclickdev/Hot-click-dev` (Spring Boot 3 / Java 21, React 19 / Vite / pnpm, Postgres / Flyway), cada uno con su test de regresión que falla con el código viejo y pasa con el nuevo. Además, llevar el registro de riesgos y deuda técnica. El Mentor habla por Andrés: sus asignaciones valen como de Andrés.
