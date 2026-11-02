@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import MainLayout from '@/layouts/MainLayout'
 import useAuthStore from '@/store/authStore'
+import { cerrarSesionCompleta } from '@/services/cerrarSesion'
 import useWishlistStore from '@/store/wishlistStore'
 import { useToast } from '@/components/ui/Toast'
 import { orderService, adminService } from '@/services/orderService'
@@ -118,10 +119,14 @@ export default function ProfilePage() {
   useEffect(() => () => { if (cerrandoSesion.current) logout() }, [logout])
 
   const handleLogout = () => {
-    authService.logout().catch(() => { /* ok */ })
-    toast({ message: t('profile.loggedOut'), type: 'info' })
-    cerrandoSesion.current = true
-    navigate('/', { replace: true })
+    // Revoca con el Bearer capturado y espera; el logout local corre al desmontar (cerrandoSesion), tras navegar.
+    void cerrarSesionCompleta({
+      token: useAuthStore.getState().token,
+      cerrarLocal: () => { cerrandoSesion.current = true },
+      avisar: () => toast({ message: t('profile.loggedOut'), type: 'info' }),
+      navegar: (d) => navigate(d, { replace: true }),
+      destino: '/',
+    })
   }
 
   const enCurso = useMemo(() => pedidoEnCurso(orders), [orders])
@@ -132,10 +137,13 @@ export default function ProfilePage() {
   }
 
   const cerrarCuenta = () => {
-    authService.logout().catch(() => { /* ok */ })
-    logout()
-    toast({ message: t('profile.arcoCloseOk'), type: 'info' })
-    navigate('/')
+    void cerrarSesionCompleta({
+      token: useAuthStore.getState().token,
+      cerrarLocal: logout,
+      avisar: () => toast({ message: t('profile.arcoCloseOk'), type: 'info' }),
+      navegar: (d) => navigate(d),
+      destino: '/',
+    })
   }
 
   const extraResumen = userRole === 'EMPRENDEDOR' && empresaNombre

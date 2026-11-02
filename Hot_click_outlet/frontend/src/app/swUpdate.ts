@@ -77,3 +77,46 @@ export function crearLimitadorChequeo(intervalo = INTERVALO_MIN_CHEQUEO_MS): (ah
     return true
   }
 }
+
+/**
+ * Versión nueva en espera tras login: con sesión nunca se auto-aplica (prompt), así que quien entra con un
+ * precache viejo seguía viendo el bundle anterior. Justo después de un login exitoso (la sesión ya quedó
+ * persistida en localStorage) se aplica una sola vez; la marca en sessionStorage evita bucles de recarga.
+ */
+let actualizacionEnEspera = false
+const CLAVE_APLICADO_TRAS_LOGIN = 'hc-sw-aplicado-tras-login'
+/** Ventana anti-bucle: dentro de este lapso no se vuelve a recargar por login en esta pestaña. */
+export const VENTANA_ANTIBUCLE_MS = 5 * 60 * 1000
+/** Espera para que la navegación post-login termine y el saludo se vea antes de recargar. */
+export const DEMORA_TRAS_LOGIN_MS = 1200
+
+export function marcarActualizacionEnEspera(valor = true) {
+  actualizacionEnEspera = valor
+}
+
+/** Decisión pura: hay versión en espera y no se aplicó ya por login hace poco en esta pestaña. */
+export function debeAplicarTrasLogin(enEspera: boolean, ultimoAplicado: string | null, ahora = Date.now()): boolean {
+  if (!enEspera) return false
+  const previo = Number(ultimoAplicado)
+  return !(Number.isFinite(previo) && previo > 0 && ahora - previo < VENTANA_ANTIBUCLE_MS)
+}
+
+function almacenSesion(): Almacen | null {
+  try { return globalThis.sessionStorage ?? null } catch { return null }
+}
+
+/** Llamar tras `login(data)`: aplica la versión en espera (recarga una vez) sin perder la sesión persistida. */
+export function aplicarSwTrasLogin(
+  ahora = Date.now(),
+  store: Almacen | null = almacenSesion(),
+  aplicar: (recargar?: boolean) => Promise<void> = aplicarSwUpdate,
+): boolean {
+  let previo: string | null
+  try { previo = store?.getItem(CLAVE_APLICADO_TRAS_LOGIN) ?? null } catch { previo = null }
+  if (!debeAplicarTrasLogin(actualizacionEnEspera, previo, ahora)) return false
+  // Sin storage no hay marca anti-bucle: no se arriesga una recarga en cadena.
+  try { if (!store) return false; store.setItem(CLAVE_APLICADO_TRAS_LOGIN, String(ahora)) } catch { return false }
+  actualizacionEnEspera = false
+  void aplicar(true)
+  return true
+}

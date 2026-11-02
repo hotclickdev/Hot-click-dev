@@ -14,6 +14,7 @@ import { esCuentaSinVerificar, COOLDOWN_REENVIO_SEG, PASO_VERIFICAR_CORREO, reen
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
+import { aplicarSwTrasLogin, DEMORA_TRAS_LOGIN_MS } from '@/app/swUpdate'
 
 type LoginApiData = AuthResponse & {
   requiresWebauthn?: boolean
@@ -244,6 +245,12 @@ export function useLoginFlow() {
 
   const handleLoginSuccess = async (data: LoginApiData) => {
     login(data)
+    // Versión nueva del SW en espera: se aplica una vez tras navegar (la sesión ya quedó persistida).
+    // No se aplica con el modal de recuperar carrito abierto, para no perderlo.
+    const irTrasLogin = (destino: string) => {
+      navigate(destino, { replace: true })
+      setTimeout(() => { aplicarSwTrasLogin() }, DEMORA_TRAS_LOGIN_MS)
+    }
     if (data.empresaId) {
       await useTenantStore.getState().loadTenantInfo()
     }
@@ -264,19 +271,19 @@ export function useLoginFlow() {
           setRecoveryCart(cart); setRecoveryDest(dest); setShowCartRecovery(true); return
         }
       } catch { /* no cart */ }
-      navigate(dest, { replace: true })
+      irTrasLogin(dest)
       return
     }
 
     // (d) Vendedor/staff con ?redirect= explícito (p. ej. desde un enlace del panel): respetarlo.
     if (debeRespetarRedirect(params.get('redirect'), from)) {
-      navigate(from, { replace: true })
+      irTrasLogin(from)
       return
     }
 
     // Un solo modo disponible → redirigir directo
     if (modes.length === 1) {
-      navigate(modes[0].path, { replace: true })
+      irTrasLogin(modes[0].path)
       return
     }
 
@@ -289,12 +296,12 @@ export function useLoginFlow() {
       const savedPref = localStorage.getItem(MODE_PREF_KEY)
       if (savedPref) {
         const saved = modes.find(m => m.id === savedPref)
-        if (saved) { navigate(saved.path, { replace: true }); return }
+        if (saved) { irTrasLogin(saved.path); return }
       }
     }
 
     // Mostrar selector de modo
-    navigate('/mode-select', { replace: true })
+    irTrasLogin('/mode-select')
   }
 
   return {
