@@ -28,15 +28,20 @@ public class FacturaConsultaService {
         this.companyScope = companyScope;
     }
 
+    static final LocalDateTime FECHA_MIN = LocalDateTime.of(2000, 1, 1, 0, 0);
+    static final LocalDateTime FECHA_MAX = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+
     @Transactional(readOnly = true)
+
     public Page<ComprobanteEmitido> listar(int page, int size, String estado,
                                             LocalDate fechaDesde, LocalDate fechaHasta) {
         Long empresaId = companyScope.requireEmpresaIdOrAdmin();
         if (empresaId == null) { // solo IT Admin / staff: comprobantes de la plataforma
             empresaId = Constants.EMPRESA_PLATAFORMA_ID;
         }
-        LocalDateTime desde = fechaDesde != null ? fechaDesde.atStartOfDay() : null;
-        LocalDateTime hasta = fechaHasta != null ? fechaHasta.atTime(23, 59, 59) : null;
+        // GET /api/facturas 500: nunca mandar fechas null al query (Postgres no infiere el tipo).
+        LocalDateTime desde = fechaDesde != null ? fechaDesde.atStartOfDay() : FECHA_MIN;
+        LocalDateTime hasta = fechaHasta != null ? fechaHasta.atTime(23, 59, 59) : FECHA_MAX;
         return comprobanteRepo.findByEmpresaIdConFiltros(
             empresaId, estado, desde, hasta, pagina(page, size)
         ).map(ComprobanteEmitido::de);

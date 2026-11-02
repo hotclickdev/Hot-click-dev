@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { debeRespetarRedirect, destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
 import { correoDesdeEstado } from './recuperar/recuperarHelpers'
-import { esCuentaSinVerificar, COOLDOWN_REENVIO_SEG } from './reenvioVerificacion'
+import { esCuentaSinVerificar, COOLDOWN_REENVIO_SEG, PASO_VERIFICAR_CORREO, reenviarCodigo, verificarCodigoCuenta } from './reenvioVerificacion'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
@@ -137,17 +137,41 @@ export function useLoginFlow() {
     } finally { setLoading(false) }
   }
 
+  // QA4-013: el toast refleja el resultado real (fail-closed); el cooldown solo arranca si se envió.
   const handleResendVerification = async () => {
+    if (verifCooldown > 0) { toast({ message: t('login.reenviarEn', { s: verifCooldown }), type: 'info' }); return }
     setResendLoading(true)
     try {
-      await authService.reenviarVerificacion(correo.trim().toLowerCase())
-      toast({ message: t('login.reenvioGenerico'), type: 'success' })
-    } catch (err: unknown) {
-      toast({ message: mensajeErrorAuth(err, t('login.resendError')), type: 'error' })
+      const r = await reenviarCodigo(authService.reenviarVerificacion, correo, t('login.resendError'))
+      if (r.ok) {
+        toast({ message: t('login.reenvioGenerico'), type: 'success' })
+        startVerifCooldown()
+      } else {
+        toast({ message: r.mensaje, type: 'error' })
+      }
     } finally {
       setResendLoading(false)
-      startVerifCooldown()
     }
+  }
+
+  // QA4-004: código de verificación desde /login (por si se cerró la pestaña de /registro).
+  const [codigoVerif, setCodigoVerif] = useState('')
+  const abrirVerificacion = () => { setError(''); setCodigoVerif(''); setStep(PASO_VERIFICAR_CORREO) }
+  const handleVerifyEmail = async (e: FormEvent) => {
+    e.preventDefault(); setError(''); setLoading(true)
+    try {
+      const r = await verificarCodigoCuenta<AuthResponse>(
+        authService.verifyRegistration, correo, codigoVerif,
+        t('login.code6digits'), t('login.verifyError'))
+      if (!r.ok) { setError(r.mensaje); return }
+      setNeedsVerification(false)
+      if (r.data?.accessToken) {
+        await handleLoginSuccess(r.data as LoginApiData)
+      } else {
+        toast({ message: t('login.cuentaVerificada'), type: 'success' })
+        setStep('login')
+      }
+    } finally { setLoading(false) }
   }
 
   const [verifCooldown, setVerifCooldown] = useState(0)
@@ -275,6 +299,7 @@ export function useLoginFlow() {
 
   return {
     navigate,
+    codigoVerif, setCodigoVerif, abrirVerificacion, handleVerifyEmail,
     t,
     step, setStep,
     loading,
