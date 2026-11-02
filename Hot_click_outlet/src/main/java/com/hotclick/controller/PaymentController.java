@@ -87,20 +87,32 @@ public class PaymentController {
 
     @PostMapping("/cancel/{numeroPedido}")
     public ResponseEntity<ResponseDTO> cancelarPedido(@PathVariable String numeroPedido) {
+        return ejecutarCancelacion(() -> paymentService.cancelarPorUsuario(numeroPedido,
+                SecurityContextHolder.getContext().getAuthentication().getName()));
+    }
+
+    /** Acción de cancelación que puede lanzar excepciones de dominio. */
+    @FunctionalInterface
+    interface AccionCancelacion {
+        void ejecutar() throws Exception;
+    }
+
+    /**
+     * QA5 ALTO: mapeo único de errores de cancelación (usuario e invitado).
+     * 403 SecurityException, 404 inexistente, 409 conflicto de estado o error inesperado; nunca 500.
+     */
+    static ResponseEntity<ResponseDTO> ejecutarCancelacion(AccionCancelacion accion) {
         try {
-            String correoUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
-            paymentService.cancelarPorUsuario(numeroPedido, correoUsuario);
+            accion.ejecutar();
             return ResponseEntity.ok(ResponseDTO.success("Pedido cancelado", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
-            // QA5 ALTO: pedido o pago inexistente = 404, nunca 500.
             return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
-            // QA5 ALTO: pedido ya procesado o pago capturado = 409 (conflicto de estado).
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("[cancel] {}", e.getClass().getSimpleName());
+            org.slf4j.LoggerFactory.getLogger(PaymentController.class).warn("[cancel] {}", e.getClass().getSimpleName());
             return ResponseEntity.status(409).body(ResponseDTO.error("No se pudo cancelar el pedido."));
         }
     }
@@ -133,22 +145,8 @@ public class PaymentController {
     public ResponseEntity<ResponseDTO> guestCancelarPedido(
             @PathVariable String numeroPedido,
             @RequestBody(required = false) Map<String, String> body) {
-        try {
-            String cancelToken = body != null ? body.get("cancelToken") : null;
-            paymentService.cancelarAnon(numeroPedido, cancelToken);
-            return ResponseEntity.ok(ResponseDTO.success("Pedido cancelado", null));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
-        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
-            // QA5 ALTO: pedido o pago inexistente = 404, nunca 500.
-            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
-        } catch (IllegalStateException e) {
-            // QA5 ALTO: pedido ya procesado o pago capturado = 409 (conflicto de estado).
-            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(getClass()).warn("[cancel] {}", e.getClass().getSimpleName());
-            return ResponseEntity.status(409).body(ResponseDTO.error("No se pudo cancelar el pedido."));
-        }
+        String cancelToken = body != null ? body.get("cancelToken") : null;
+        return ejecutarCancelacion(() -> paymentService.cancelarAnon(numeroPedido, cancelToken));
     }
 
     @PostMapping("/tilopay/confirmar/{numeroPedido}")
