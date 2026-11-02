@@ -103,17 +103,19 @@ public class WebAuthnController {
             authSupport.autenticacionCompleta(usuario.getId(), httpRequest);
 
             String rol         = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
-            String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug()          : null;
-            String empresaNom  = usuario.getEmpresa() != null ? usuario.getEmpresa().getNombreEmpresa()  : null;
+            AuthSupport.EmpresaActiva activa = AuthSupport.EmpresaActiva.oPrincipal(authSupport.empresaActiva(usuario, rol), usuario, rol);
+            rol = activa.rol();
+            String empresaSlug = activa.slug();
+            String empresaNom  = activa.nombre();
             List<String> perms = permisoRepository.findPermisosByUsuarioId(usuario.getId());
 
             String accessToken = jwtUtil.generateTokenFull(
-                usuario.getCorreo(), usuario.getId(), rol, usuario.getEmpresaId(), empresaSlug, perms);
+                usuario.getCorreo(), usuario.getId(), rol, activa.id(), empresaSlug, perms);
             refreshTokenService.crear(usuario);
 
             String nombre = usuario.getNombre() != null ? usuario.getNombre() : email.split("@")[0];
             AuthResponse auth = new AuthResponse(accessToken, null, usuario.getId(), email, rol, nombre);
-            auth.setEmpresaId(usuario.getEmpresaId());
+            auth.setEmpresaId(activa.id());
             auth.setEmpresaSlug(empresaSlug);
             auth.setEmpresaNombre(empresaNom);
             auth.setPermisos(perms);
