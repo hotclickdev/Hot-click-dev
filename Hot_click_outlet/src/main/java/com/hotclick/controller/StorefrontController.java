@@ -150,6 +150,11 @@ public class StorefrontController {
             @Valid @RequestBody StorefrontPedidoDTO dto) {
 
         Empresa empresa = empresa(request);
+        // QA5 ALTO: SINPE/Tarjeta de la tienda pagan por /api/payments/checkout (ONVO). Este alta sin pago queda
+        // solo para efectivo al recibir; SINPE con comprobante solo si hotclick.checkout.sinpe-manual.habilitado.
+        if (!metodoSinPasarelaPermitido(dto.getMetodoPago(), sinpeManualHabilitado)) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(MSG_PAGO_POR_ONVO));
+        }
         // H1 (S1-56): topes de invitado e idempotencia fuera de la transacción del pedido.
         java.util.concurrent.atomic.AtomicReference<Long> creado = new java.util.concurrent.atomic.AtomicReference<>();
         return guestCheckoutGuard.ejecutarTienda(empresa.getId(), dto, request, () -> {
@@ -166,6 +171,17 @@ public class StorefrontController {
             );
             return ResponseEntity.ok(ResponseDTO.success("Pedido creado correctamente", resp));
         }, creado::get);
+    }
+
+    static final String MSG_PAGO_POR_ONVO = "Este método se paga en línea. Volvé al checkout para pagar con SINPE / Tarjeta.";
+
+    @org.springframework.beans.factory.annotation.Value("${hotclick.checkout.sinpe-manual.habilitado:false}")
+    private boolean sinpeManualHabilitado = false;
+
+    /** Solo efectivo (o SINPE manual habilitado por config) crea pedido sin pasar por ONVO. */
+    static boolean metodoSinPasarelaPermitido(String metodoPago, boolean sinpeManual) {
+        if ("EFECTIVO".equalsIgnoreCase(metodoPago)) return true;
+        return sinpeManual && "SINPE_MOVIL".equalsIgnoreCase(metodoPago);
     }
 
     // ── Helpers privados ─────────────────────────────────────────────────────

@@ -93,10 +93,15 @@ public class PaymentController {
             return ResponseEntity.ok(ResponseDTO.success("Pedido cancelado", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            // QA5 ALTO: pedido o pago inexistente = 404, nunca 500.
+            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            // QA5 ALTO: pedido ya procesado o pago capturado = 409 (conflicto de estado).
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("[cancel] {}", e.getClass().getSimpleName());
+            return ResponseEntity.status(409).body(ResponseDTO.error("No se pudo cancelar el pedido."));
         }
     }
 
@@ -134,10 +139,15 @@ public class PaymentController {
             return ResponseEntity.ok(ResponseDTO.success("Pedido cancelado", null));
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            // QA5 ALTO: pedido o pago inexistente = 404, nunca 500.
+            return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+            // QA5 ALTO: pedido ya procesado o pago capturado = 409 (conflicto de estado).
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
+            org.slf4j.LoggerFactory.getLogger(getClass()).warn("[cancel] {}", e.getClass().getSimpleName());
+            return ResponseEntity.status(409).body(ResponseDTO.error("No se pudo cancelar el pedido."));
         }
     }
 
