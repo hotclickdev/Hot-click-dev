@@ -138,6 +138,7 @@ class OnvoArranqueProdGuardTest {
         e.setActiveProfiles("prod");
         e.setProperty("hotclick.planes.pyme.precio-mensual-usd", "24.50");
         e.setProperty("onvo.price-id.pyme", "price_secreto_123");
+        e.setProperty("APP_URL", "https://hotclick.lat"); // QA5: el guard de APP_URL corre antes que el de billing
         Logger logger = (Logger) LoggerFactory.getLogger(OnvoArranqueProdGuard.class);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
         appender.start();

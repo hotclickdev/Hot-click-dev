@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     "payments.onvo.permitir-llave-test=true",
     // En prod la URL pública no puede ser localhost (UrlPublicaArranqueGuard); application-test.properties usa localhost.
     "app.url=https://hotclick.lat",
+    "APP_URL=https://hotclick.lat", // QA5 MEDIO: prod exige la variable APP_URL, no solo app.url
     // El guard de prod exige la config de billing (valores ficticios).
     "hotclick.planes.moneda=usd",
     "hotclick.planes.emprendedor.precio-mensual-usd=9",
