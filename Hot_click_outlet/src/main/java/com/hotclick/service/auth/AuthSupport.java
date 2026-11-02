@@ -36,6 +36,49 @@ public class AuthSupport {
     @Autowired private PermisoRepository   permisoRepository;
     @Autowired private RateLimiter         rateLimiter;
     @Autowired private ClientIpResolver    clientIpResolver;
+    @Autowired private com.hotclick.repository.MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired private com.hotclick.repository.EmpresaRepository        empresaRepository;
+
+    /** Negocio que va en el JWT al iniciar sesión, con el rol que corresponde a ese negocio. */
+    public record EmpresaActiva(Long id, String slug, String nombre, String rol) {
+        static EmpresaActiva ninguna(String rol) { return new EmpresaActiva(null, null, null, rol); }
+
+        /** Negocio principal del usuario (comportamiento previo); también respaldo si no hay resolución. */
+        public static EmpresaActiva principal(Usuario usuario, String rol) {
+            if (PlatformStaff.esSinTenant(rol) || usuario.getEmpresaId() == null) return ninguna(rol);
+            var e = usuario.getEmpresa();
+            return new EmpresaActiva(usuario.getEmpresaId(), e != null ? e.getSlug() : null,
+                e != null ? e.getNombreEmpresa() : null, rol);
+        }
+
+        public static EmpresaActiva oPrincipal(EmpresaActiva resuelta, Usuario usuario, String rol) {
+            return resuelta != null ? resuelta : principal(usuario, rol);
+        }
+    }
+
+    /**
+     * QA5 área 2 fila 27: un dueño sin {@code usuario.empresa_id} pero con UNA membresía activa salía sin negocio en
+     * el token y el panel lo mandaba a crear otro. Orden: staff de plataforma sin tenant; negocio principal del usuario;
+     * si no tiene, su única membresía activa (rol de la membresía, igual que cambiar-negocio). Con varias membresías
+     * no se elige ninguna: el login por contraseña pide la selección y el panel muestra el selector (cambiar-negocio).
+     */
+    public EmpresaActiva empresaActiva(Usuario usuario, String rolBase) {
+        if (PlatformStaff.esSinTenant(rolBase) || usuario.getEmpresaId() != null || miembroEmpresaRepository == null) {
+            return EmpresaActiva.principal(usuario, rolBase);
+        }
+        List<com.hotclick.model.MiembroEmpresa> activas;
+        try {
+            activas = miembroEmpresaRepository.findByUsuarioIdAndEstado(usuario.getId(), 1);
+        } catch (DataAccessException ex) {
+            log.warn("No se pudieron leer membresías userId={}: {}", usuario.getId(), ex.getClass().getSimpleName());
+            return EmpresaActiva.ninguna(rolBase);
+        }
+        if (activas.size() != 1 || activas.get(0).getEmpresa() == null) return EmpresaActiva.ninguna(rolBase);
+        var m = activas.get(0);
+        var empresa = empresaRepository == null ? null : empresaRepository.findById(m.getEmpresa().getId()).orElse(null);
+        if (empresa == null) return EmpresaActiva.ninguna(rolBase);
+        return new EmpresaActiva(empresa.getId(), empresa.getSlug(), empresa.getNombreEmpresa(), RolMembresia.paraJwt(m, usuario));
+    }
 
     // Tope por usuario (no por IP) en /2fa/*: un atacante con varias IP no multiplica los intentos.
     // Gestión (sesión): setup, activate, disable, recovery-codes/regenerate, email/enable|activate|disable.
@@ -123,13 +166,12 @@ public class AuthSupport {
         exigirCuentaActiva(usuario);
         String rol = PlatformStaff.rolPrincipal(
             usuario.getRoles().stream().map(r -> r.getNombreRol()).toList());
-        // ADMIN y staff de plataforma: JWT y response sin tenant (V119 + V126).
-        boolean sinTenant = PlatformStaff.esSinTenant(rol);
-        Long empresaId = sinTenant ? null : usuario.getEmpresaId();
-        String empresaSlug = (!sinTenant && usuario.getEmpresa() != null)
-            ? usuario.getEmpresa().getSlug() : null;
-        String empresaNombre = (!sinTenant && usuario.getEmpresa() != null)
-            ? usuario.getEmpresa().getNombreEmpresa() : null;
+        // ADMIN y staff de plataforma: JWT y response sin tenant (V119 + V126). Dueño con una sola membresía: esa.
+        EmpresaActiva activa = empresaActiva(usuario, rol);
+        rol = activa.rol();
+        Long empresaId = activa.id();
+        String empresaSlug = activa.slug();
+        String empresaNombre = activa.nombre();
         List<String> permisos = permisosDe(usuario.getId());
         String accessToken  = jwtUtil.generateTokenFull(
             usuario.getCorreo(), usuario.getId(), rol,
