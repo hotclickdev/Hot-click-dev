@@ -48,6 +48,7 @@ const BusquedaFotoPage = lazy(() => import('@/pages/buscar/BusquedaFotoPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
 const CartPage = lazy(() => import('@/pages/CartPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const LogoutPage = lazy(() => import('@/pages/LogoutPage'))
 const MisPedidosPage = lazy(() => import('@/pages/MisPedidosPage'))
 const DetallePedidoPage = lazy(() => import('@/pages/DetallePedidoPage'))
 const WishlistPage = lazy(() => import('@/pages/WishlistPage'))
@@ -126,6 +127,8 @@ export default function AppRoutes() {
       <Route path="/buscar/foto" element={<BusquedaFotoPage />} />
       <Route path="/productos/:id" element={<ProductDetailPage />} />
       <Route path="/carrito" element={<CartPage />} />
+      {/* /logout por URL: antes caía en el 404. Fuera de ProtectedRoute: sin sesión solo redirige. */}
+      <Route path="/logout" element={<LogoutPage />} />
       <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/mis-pedidos" element={<ProtectedRoute><MisPedidosPage /></ProtectedRoute>} />
       <Route path="/mis-pedidos/:id" element={<ProtectedRoute><DetallePedidoPage /></ProtectedRoute>} />
