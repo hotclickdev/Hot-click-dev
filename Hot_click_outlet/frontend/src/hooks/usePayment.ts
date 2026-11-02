@@ -11,6 +11,15 @@ const POLL_MAX_ATTEMPTS = 60
 
 const GUEST_KEY = 'hc-guest-checkout'
 
+/** Texto que ve el comprador si el status responde 404 (sin sesión ni token válido). */
+export const MENSAJE_LOGIN_PEDIDO = 'Iniciá sesión para ver tu pedido'
+
+/** 404 del status = el backend no lo reconoce como dueño: no tiene sentido seguir consultando. */
+export function esNoEncontrado(err: unknown): boolean {
+  return Boolean(err && typeof err === 'object' && 'response' in err
+    && (err as { response?: { status?: number } }).response?.status === 404)
+}
+
 function payloadConPosQr(checkoutPayload: CheckoutPayload): CheckoutPayload {
   const posQrToken = sessionStorage.getItem(POS_QR_TOKEN_KEY)
   if (!posQrToken) return checkoutPayload
@@ -160,7 +169,7 @@ export function usePayment() {
     }
   }, [])
 
-  const iniciarPolling = useCallback((numeroPedido: string) => {
+  const iniciarPolling = useCallback((numeroPedido: string, tokenEstado?: string | null) => {
     stopPolling()
     let attempts = 0
     setEstado('polling')
@@ -169,13 +178,19 @@ export function usePayment() {
     const tick = async () => {
       attempts++
       try {
-        const { data } = await paymentService.consultarEstado(numeroPedido)
+        const { data } = await paymentService.consultarEstado(numeroPedido, tokenEstado)
         setPagoData(data)
         const e = data.estadoPago
         if (e === 'CAPTURADO') { setEstado('success'); return }
         if (e === 'CANCELADO') { setEstado('cancelled'); return }
         if (e === 'FALLIDO') { setEstado('failed'); return }
-      } catch {
+      } catch (err: unknown) {
+        if (esNoEncontrado(err)) {
+          // Sin sesión ni token válido: no esperar 3 minutos en «Verificando…».
+          setError(MENSAJE_LOGIN_PEDIDO)
+          setEstado('login_required')
+          return
+        }
         // red lenta o error transitorio: seguir intentando
       }
 
