@@ -39,4 +39,15 @@ test('checkout de tienda paga por ONVO y no usa el alta sin pago', async ({ page
   await expect(page.getByRole('heading', { name: 'ONVO mock' })).toBeVisible()
   expect(altaSinPago).toBe(false)
   expect(cuerpo).toMatchObject({ provider: 'ONVO', guestEmail: 'ana@example.com' })
+
+  // Retorno de ONVO (#501): /pago/exito?order=…&st=… y el estado se consulta con X-Pedido-Token = st.
+  let tokenEnviado: string | undefined
+  await page.route('**/api/payments/status/ORD-1', async (route) => {
+    tokenEnviado = route.request().headers()['x-pedido-token']
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: {
+      numeroPedido: 'ORD-1', estadoPago: 'CAPTURADO', estadoPedido: 'PAGADO', total: 5000,
+    } }) })
+  })
+  await page.goto('/pago/exito?order=ORD-1&st=st-de-prueba', { waitUntil: 'domcontentloaded' })
+  await expect.poll(() => tokenEnviado).toBe('st-de-prueba')
 })
