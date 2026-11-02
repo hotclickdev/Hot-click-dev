@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const get = vi.fn()
-vi.mock('@/services/api', () => ({ default: { get }, api: { get } }))
+vi.mock('@/services/api', () => {
+  // defaults.baseURL: posService.ts hace axios.create({ baseURL: api.defaults.baseURL }) al importarse.
+  const api = { get, defaults: { baseURL: '' } }
+  return { default: api, api }
+})
 
 describe('/pago/exito sin sesión', () => {
   beforeEach(() => {
