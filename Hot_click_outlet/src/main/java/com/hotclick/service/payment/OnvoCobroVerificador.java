@@ -81,6 +81,23 @@ public final class OnvoCobroVerificador {
         return modo != null && modo.equalsIgnoreCase(modoEsperado);
     }
 
+    /**
+     * QA5 MEDIO: cobro rechazado según la doc de ONVO (Payment intents, «Common states»): si la confirmación falla
+     * (p. ej. tarjeta declinada) el intent vuelve a {@code requires_payment_method} y deja el detalle en
+     * {@code lastPaymentError}. ONVO no usa un status «failed». Sin {@code lastPaymentError} es el estado inicial
+     * (todavía no se intentó cobrar) y no cuenta como rechazo. Fail-closed: intent nulo o de otro modo no cuenta.
+     */
+    public static boolean intentRechazado(Map<?, ?> intent, String modoEsperado) {
+        if (intent == null || intent.isEmpty() || !modoCoincide(intent, modoEsperado)) {
+            return false;
+        }
+        Object error = intent.get("lastPaymentError");
+        return INTENT_REQUIERE_METODO.equalsIgnoreCase(texto(intent, "status"))
+            && error != null && !(error instanceof Map<?, ?> m && m.isEmpty());
+    }
+
+    static final String INTENT_REQUIERE_METODO = "requires_payment_method";
+
     public static String paymentIntentId(Map<?, ?> sesion) {
         return texto(sesion, "paymentIntentId");
     }

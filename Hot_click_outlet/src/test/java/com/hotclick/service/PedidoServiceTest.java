@@ -201,7 +201,7 @@ class PedidoServiceTest {
     @DisplayName("cambiarEstado → actualiza estadoPedido, sin email si no hay nota")
     void cambiarEstado_sinNota_noEnviaEmail() {
         Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
 
         Pedido result = service.cambiarEstado(1L, Constants.PEDIDO_ENVIADO, null);
@@ -215,7 +215,7 @@ class PedidoServiceTest {
     @DisplayName("cambiarEstado ENTREGADO notifica n8n; otro estado no")
     void cambiarEstadoEntregadoNotificaN8n() {
         Pedido pedido = buildPedido(Constants.PEDIDO_ENVIADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
 
         service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null);
@@ -228,7 +228,7 @@ class PedidoServiceTest {
     @SuppressWarnings("unchecked")
     void cambiarEstado_conNota_enviaEmail() throws Exception {
         Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
         when(objectMapper.readValue(anyString(), any(TypeReference.class)))
             .thenReturn(new ArrayList<>());
@@ -243,7 +243,7 @@ class PedidoServiceTest {
     @Test
     @DisplayName("cambiarEstado → lanza excepción si pedido no existe")
     void cambiarEstado_pedidoNoExiste_throws() {
-        when(pedidoRepository.findById(999L)).thenReturn(Optional.empty());
+        when(pedidoRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.cambiarEstado(999L, Constants.PEDIDO_CANCELADO, null))
             .isInstanceOf(RuntimeException.class)
@@ -434,7 +434,7 @@ class PedidoServiceTest {
     void cambiarEstado_aEnviadoSinPago_rechaza(String nuevoEstado) {
         Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
         sinPagoCapturado();
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
 
         assertThatThrownBy(() -> service.cambiarEstado(1L, nuevoEstado, null))
             .isInstanceOf(PedidoNoDespachableException.class);
@@ -446,7 +446,7 @@ class PedidoServiceTest {
     @DisplayName("cambiarEstado → PAGADO desde pendiente delega en la confirmación manual con la referencia (SEC-05)")
     void cambiarEstado_confirmarPago_delegaConReferencia() {
         Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
 
         assertThat(service.cambiarEstado(1L, " pagado ", null, "SINPE 123456").getEstadoPedido())
@@ -458,7 +458,7 @@ class PedidoServiceTest {
     @DisplayName("cambiarEstado → si la confirmación manual rechaza, el pedido no cambia ni se guarda")
     void cambiarEstado_confirmarPagoRechazado_sinCambios() {
         Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         doThrow(new IllegalArgumentException(PedidoPagoManualService.MENSAJE_REFERENCIA_REQUERIDA))
             .when(pedidoPagoManualService).confirmar(any(), any(), any());
 
@@ -473,7 +473,7 @@ class PedidoServiceTest {
     @DisplayName("cambiarEstado → PAGADO cuando ya está PAGADO es idempotente y no vuelve a confirmar")
     void cambiarEstado_pagadoIdempotente() {
         Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
 
         service.cambiarEstado(1L, Constants.PEDIDO_PAGADO, null);
@@ -487,7 +487,7 @@ class PedidoServiceTest {
         Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         pedido.setMetodoPago(metodo);
         pedido.setMetodoEnvio(envio);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
 
         assertThatThrownBy(() -> service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null))
             .isInstanceOf(IllegalArgumentException.class)
@@ -504,7 +504,7 @@ class PedidoServiceTest {
         Pedido pedido = buildPedido(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         pedido.setMetodoPago("EFECTIVO");
         pedido.setMetodoEnvio(Constants.ENVIO_RETIRO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
 
         assertThat(service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null).getEstadoPedido())
@@ -538,7 +538,7 @@ class PedidoServiceTest {
     @DisplayName("SEC-09: ENTREGADO desde PAGADO sin Pago capturado → 409")
     void sec09_entregadoSinPagoCapturado() {
         Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         sinPagoCapturado();
 
         assertThatThrownBy(() -> service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null))
@@ -571,7 +571,7 @@ class PedidoServiceTest {
     @DisplayName("SEC-09: PAGADO → PAGADO sin pago verificado (dato viejo) pide confirmar con referencia")
     void sec09_pagadoSinVerificar_confirma() {
         Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenReturn(pedido);
         when(pedidoGrupoService.pagoDelGrupo(any())).thenReturn(Optional.empty());
 
@@ -636,7 +636,7 @@ class PedidoServiceTest {
     @DisplayName("CMP-1 | cancelar un pedido sin pagar libera su reserva de stock")
     void cancelarSinPagarLiberaReserva(String estado) {
         Pedido pedido = buildPedido(estado);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, null);
         verify(stockReservationService).liberarReservas(pedido);
@@ -646,9 +646,43 @@ class PedidoServiceTest {
     @DisplayName("CMP-1 | cancelar un pedido ya cancelado no libera dos veces")
     void cancelarDosVecesNoLibera() {
         Pedido pedido = buildPedido(Constants.PEDIDO_CANCELADO);
-        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         lenient().when(pedidoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         try { service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, null); } catch (RuntimeException ignored) { }
         verify(stockReservationService, never()).liberarReservas(any());
+    }
+
+    @Test
+    @DisplayName("QA5 MEDIO | mismo estado con nota: sin transición, sin guardar, sin correo ni nota")
+    void mismoEstadoConNotaNoRepiteEfectos() {
+        Pedido pedido = buildPedido("PREPARANDO");
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
+        Pedido r = service.cambiarEstado(1L, "PREPARANDO", "Tu pedido se está preparando");
+        assertThat(r.getEstadoPedido()).isEqualTo("PREPARANDO");
+        verify(pedidoRepository, never()).save(any());
+        verify(notificacionEmailService, never()).enviarSeguimientoEstado(any(), any());
+        verify(stockReservationService, never()).liberarReservas(any());
+    }
+
+    @Test
+    @DisplayName("QA5 MEDIO | cancelar un cancelado con nota: ni stock, ni correo, ni n8n")
+    void cancelarCanceladoConNotaNoRepiteEfectos() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_CANCELADO);
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
+        service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, "Cancelado por la tienda");
+        verify(pedidoRepository, never()).save(any());
+        verify(stockReservationService, never()).liberarReservas(any());
+        verify(notificacionEmailService, never()).enviarSeguimientoEstado(any(), any());
+        verifyNoInteractions(n8nWebhookService);
+    }
+
+    @Test
+    @DisplayName("QA5 MEDIO | el cambio de estado bloquea la fila (FOR UPDATE), no lee sin lock")
+    void cambiarEstadoUsaLock() {
+        Pedido pedido = buildPedido("PREPARANDO");
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
+        service.cambiarEstado(1L, "PREPARANDO", null);
+        verify(pedidoRepository).findByIdForUpdate(1L);
+        verify(pedidoRepository, never()).findById(any());
     }
 }
