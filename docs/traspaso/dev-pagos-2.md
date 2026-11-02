@@ -15,7 +15,7 @@ Reglas: push y PRs propios (máx. 3 abiertos), sin force, sin `--no-verify`, sin
 | #436 vencimiento configurable y `GET /api/payments/status/{n}` con reconsulta a ONVO (dueño o `X-Pedido-Token`, rate limit por orden, fail-closed; SINPERefNumber a DEBUG) | MERGEADO `270236e3` |
 | #438 `fix/cedula-guiones`: `CedulaEmisor.normalizar` (quita guiones/espacios, solo dígitos, largo 9–12) en `exigirCedulaEmisor` y `XmlFacturaBuilder` (Numero y ProveedorSistemas); `HaciendaLogSanitizer` enmascara números con guiones | MERGEADO `98b70413` (APTO de Seguridad sobre el head `7f759a22`) |
 | #460 `fix/pago-lows-seguridad` (autor HotClick CI/CD; MEDIO 1 y 2 de la pre-revisión corregidos por Dev Pagos 2): test de integración Spring + H2 con los flujos reales de ONVO, Tilopay y Stripe sobre un pago REEMBOLSO_PENDIENTE (el reintento queda bloqueado; guard en cada proveedor antes de CAPTURADO, Stripe con FOR UPDATE); cobro parcial con paquete cancelado registra `monto_reembolso_pendiente` (V215, aditiva) y la resolución del ADMIN no pasa el pago compartido entero a REEMBOLSADO | MERGEADO `dc1fabd5` (CI verde, APTO de Seguridad sobre el head `2d4ef8e0`) |
-| #473 `fix/actualizado-sql-v215`: duplica la V215 `pago_reembolso_parcial` en `Actualizado.sql` + `PagoReembolsoParcialMigrationTest` | EN CURSO — https://github.com/hotclickdev/Hot-click-dev/pull/473, head `2030a541`. Falta CI verde + APTO de Seguridad |
+| #473 `fix/actualizado-sql-v215`: duplica la V215 `pago_reembolso_parcial` en `Actualizado.sql` + `PagoReembolsoParcialMigrationTest` | MERGEADO `d2fabf55` |
 
 Flag IVA `hotclick.iva.cambio-regimen.enabled` se queda en **false**.
 
