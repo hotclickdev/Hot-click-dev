@@ -1053,6 +1053,7 @@
     "error": "Error signing in",
     "welcome": "Welcome!",
     "welcomeAdmin": "Welcome, Admin!",
+    "welcomeNombre": "Hi, {{nombre}}!",
     "adminModal": "Select access mode",
     "adminModalSub": "You have admin permissions. How would you like to sign in?",
     "enterAdmin": "Enter as Administrator",
@@ -4744,7 +4745,13 @@
     "titulo": "Complete your business details",
     "texto": "Your account doesn't have a business yet. Finish signing up to manage your products, sales and warehouses.",
     "cta": "Complete my business",
-    "volver": "Back to the store"
+    "volver": "Back to the store",
+    "cargando": "Looking for your businesses…",
+    "elegirTitulo": "Choose your business",
+    "elegirTexto": "Your account has access to these businesses. Choose the one you want to work with.",
+    "entrar": "Enter",
+    "activando": "Entering…",
+    "errorActivar": "We could not open that business. Please try again."
   },
   "billing": {
     "tilopayConfirmando": "Confirming your plan payment…",
