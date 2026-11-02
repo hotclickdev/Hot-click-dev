@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-7_DRCyKs.js";function t(){return e()}export{t};
