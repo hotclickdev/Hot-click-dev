@@ -48,9 +48,14 @@ public class OnvoPendientesReconsultaService {
                                            OnvoRechazoService onvoRechazoService,
                                            PlatformTransactionManager txManager,
                                            @Value("${hotclick.pagos.onvo.respaldo.lote}") int lote,
-                                           @Value("${hotclick.pagos.onvo.respaldo.antiguedad-min-minutos}") int antiguedadMinMinutos) {
+                                           @Value("${hotclick.pagos.onvo.respaldo.antiguedad-min-minutos}") int antiguedadMinMinutos,
+                                           @Value("${hotclick.pagos.onvo.respaldo.lote-max}") int loteMax) {
         if (lote <= 0 || antiguedadMinMinutos < 0) {
             throw new IllegalStateException("hotclick.pagos.onvo.respaldo.lote debe ser > 0 y antiguedad-min-minutos >= 0");
+        }
+        // BAJO Seguridad: tope validado del lote (cuántas filas se bloquean y cuántas llamadas a ONVO por corrida).
+        if (loteMax <= 0 || lote > loteMax) {
+            throw new IllegalStateException("hotclick.pagos.onvo.respaldo.lote debe ser <= lote-max (y lote-max > 0)");
         }
         this.pagoRepository = pagoRepository;
         this.onvoService = onvoService;

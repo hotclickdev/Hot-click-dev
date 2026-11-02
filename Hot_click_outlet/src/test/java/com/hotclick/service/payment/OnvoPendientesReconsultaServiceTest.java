@@ -40,7 +40,7 @@ class OnvoPendientesReconsultaServiceTest {
     }
 
     private OnvoPendientesReconsultaService servicio(int lote, int antiguedad) {
-        return new OnvoPendientesReconsultaService(repo, onvo, provider, rechazo, tm, lote, antiguedad);
+        return new OnvoPendientesReconsultaService(repo, onvo, provider, rechazo, tm, lote, antiguedad, 200);
     }
 
     private static Pago pago(long id) {
@@ -112,5 +112,19 @@ class OnvoPendientesReconsultaServiceTest {
 
         when(onvo.isPagosDisponibles()).thenReturn(false);
         assertThat(servicio(20, 5).ejecutar().revisados()).isZero();
+    }
+
+    @Test
+    @DisplayName("BAJO Seguridad: lote por encima de lote-max o tope inválido → no arranca")
+    void topeDeLote() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                new OnvoPendientesReconsultaService(repo, onvo, provider, rechazo, tm, 201, 5, 200))
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining("lote-max");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                new OnvoPendientesReconsultaService(repo, onvo, provider, rechazo, tm, 1, 5, 0))
+            .isInstanceOf(IllegalStateException.class);
+        org.assertj.core.api.Assertions.assertThatCode(() ->
+                new OnvoPendientesReconsultaService(repo, onvo, provider, rechazo, tm, 200, 5, 200))
+            .doesNotThrowAnyException();
     }
 }
