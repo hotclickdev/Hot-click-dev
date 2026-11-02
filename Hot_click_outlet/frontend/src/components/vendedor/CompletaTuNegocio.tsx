@@ -94,7 +94,7 @@ export default function CompletaTuNegocio() {
               </li>
             ))}
           </ul>
-          {error && <p role="alert" className="text-center text-[14px] text-hc-red-500">{error}</p>}
+          {error && <p role="alert" className="text-center text-[14px] text-hc-red-600">{error}</p>}
         </section>
       </main>
     )
