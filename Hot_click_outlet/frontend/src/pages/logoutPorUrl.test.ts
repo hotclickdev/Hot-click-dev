@@ -1,37 +1,27 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import api from '@/services/api'
 import { cerrarSesionPorUrl, DESTINO_TRAS_LOGOUT } from './logoutPorUrl'
 
-const acciones = (haySesion: boolean) => ({
-  haySesion,
-  revocar: vi.fn(() => Promise.resolve()),
-  cerrarLocal: vi.fn(),
-  avisar: vi.fn(),
-  navegar: vi.fn(),
-})
-
 describe('/logout por URL (regresión: daba 404)', () => {
-  it('con sesión: revoca en el servidor, limpia la sesión local, avisa y redirige', () => {
-    const a = acciones(true)
-    cerrarSesionPorUrl(a)
-    expect(a.revocar).toHaveBeenCalledOnce()
+  afterEach(() => { delete api.defaults.adapter })
+
+  it('con sesión: limpia la sesión local, avisa y redirige a /', async () => {
+    api.defaults.adapter = async (config) => ({ data: {}, status: 200, statusText: 'OK', headers: {}, config })
+    const a = { token: 'tok', cerrarLocal: vi.fn(), avisar: vi.fn(), navegar: vi.fn() }
+    await cerrarSesionPorUrl(a)
     expect(a.cerrarLocal).toHaveBeenCalledOnce()
     expect(a.avisar).toHaveBeenCalledOnce()
     expect(a.navegar).toHaveBeenCalledWith(DESTINO_TRAS_LOGOUT)
   })
 
-  it('si el servidor falla, la sesión local se cierra igual', () => {
-    const a = { ...acciones(true), revocar: vi.fn(() => Promise.reject(new Error('red'))) }
-    cerrarSesionPorUrl(a)
-    expect(a.cerrarLocal).toHaveBeenCalledOnce()
-    expect(a.navegar).toHaveBeenCalledWith('/')
-  })
-
-  it('sin sesión solo redirige', () => {
-    const a = acciones(false)
-    cerrarSesionPorUrl(a)
-    expect(a.revocar).not.toHaveBeenCalled()
+  it('sin sesión solo redirige y no llama al servidor', async () => {
+    const adaptador = vi.fn()
+    api.defaults.adapter = adaptador
+    const a = { token: null, cerrarLocal: vi.fn(), avisar: vi.fn(), navegar: vi.fn() }
+    await cerrarSesionPorUrl(a)
+    expect(adaptador).not.toHaveBeenCalled()
     expect(a.cerrarLocal).not.toHaveBeenCalled()
     expect(a.navegar).toHaveBeenCalledWith('/')
   })
@@ -40,7 +30,7 @@ describe('/logout por URL (regresión: daba 404)', () => {
     const rutas = readFileSync(resolve(__dirname, '../app/AppRoutes.tsx'), 'utf8')
     expect(rutas).toContain('<Route path="/logout" element={<LogoutPage />} />')
     const perfil = readFileSync(resolve(__dirname, 'ProfilePage.tsx'), 'utf8')
-    expect(perfil).toMatch(/navigate\('\/', \{ replace: true \}\)/)
+    expect(perfil).toMatch(/navegar: \(d\) => navigate\(d, \{ replace: true \}\),\s*destino: '\/'/)
     expect(perfil).toContain("t('profile.loggedOut')")
   })
 })
