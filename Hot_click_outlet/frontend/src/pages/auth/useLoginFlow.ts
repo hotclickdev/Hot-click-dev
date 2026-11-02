@@ -8,7 +8,7 @@ import useCartStore from '@/store/cartStore'
 import useTenantStore from '@/store/tenantStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
-import { debeRespetarRedirect, destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
+import { debeRespetarRedirect, destinoPostLogin, mensajeErrorAuth, saludoLogin, statusErrorAuth } from './authHelpers'
 import { correoDesdeEstado } from './recuperar/recuperarHelpers'
 import { esCuentaSinVerificar, COOLDOWN_REENVIO_SEG, PASO_VERIFICAR_CORREO, reenviarCodigo, verificarCodigoCuenta } from './reenvioVerificacion'
 import type { AuthResponse } from '@/types/auth'
@@ -252,7 +252,7 @@ export function useLoginFlow() {
       planNombre: useTenantStore.getState().planNombre,
     })
     const isInternal = data.rol !== 'USUARIO_FINAL'
-    toast({ message: isInternal ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })
+    toast({ message: saludoLogin(data.rol, data.nombre, t), type: 'success' })
 
     // Usuario final: flujo habitual con recuperación de carrito
     if (!isInternal) {
