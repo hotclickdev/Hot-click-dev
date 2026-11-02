@@ -23,6 +23,18 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     Optional<Pago> findByMerchantToken(String merchantToken);
 
     /**
+     * QA5 MEDIO: lote de pagos ONVO PENDIENTE con antigüedad mínima para el job de respaldo del webhook.
+     * SELECT ... FOR UPDATE SKIP LOCKED (PESSIMISTIC_WRITE + lock.timeout=-2, mismo patrón que la cola de
+     * facturación y la renovación): dos instancias no toman las mismas filas. El tamaño sale del Pageable.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor AND p.estadoPago = 'PENDIENTE' "
+        + "AND p.merchantToken IS NOT NULL AND p.fechaCreacion <= :limite ORDER BY p.fechaCreacion ASC")
+    List<Pago> reclamarPendientesParaReconsulta(@Param("proveedor") String proveedor,
+                                               @Param("limite") LocalDateTime limite, Pageable pagina);
+
+    /**
      * Estado del pago en la base, sin vaciar antes los cambios pendientes de la sesión (flush COMMIT): un
      * proveedor que ya puso la copia en memoria en CAPTURADO todavía no lo escribió, así que acá se ve el
      * estado previo (p. ej. REEMBOLSO_PENDIENTE de un reintento).
