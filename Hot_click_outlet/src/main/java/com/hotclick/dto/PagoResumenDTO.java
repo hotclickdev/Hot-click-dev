@@ -7,6 +7,8 @@ import java.time.format.DateTimeFormatter;
 public class PagoResumenDTO {
 
     private Long    id;
+    /** C1 QA: id del pedido del pago (el admin ya lo ve por empresa); antes no venía y salía null. */
+    private Long    pedidoId;
     private String  numeroPedido;
     private String  proveedor;
     private String  estadoPago;
@@ -23,6 +25,7 @@ public class PagoResumenDTO {
     public static PagoResumenDTO from(Pago p) {
         PagoResumenDTO d = new PagoResumenDTO();
         d.id                = p.getId();
+        d.pedidoId          = p.getPedido() != null ? p.getPedido().getId() : null;
         d.numeroPedido      = p.getPedido() != null ? p.getPedido().getNumeroPedido() : null;
         d.proveedor         = p.getProveedor();
         d.estadoPago        = p.getEstadoPago();
@@ -35,6 +38,7 @@ public class PagoResumenDTO {
     }
 
     public Long    getId()                { return id; }
+    public Long    getPedidoId()          { return pedidoId; }
     public String  getNumeroPedido()      { return numeroPedido; }
     public String  getProveedor()         { return proveedor; }
     public String  getEstadoPago()        { return estadoPago; }
