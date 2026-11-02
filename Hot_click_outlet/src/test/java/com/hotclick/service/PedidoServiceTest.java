@@ -474,10 +474,10 @@ class PedidoServiceTest {
     void cambiarEstado_pagadoIdempotente() {
         Pedido pedido = buildPedido(Constants.PEDIDO_PAGADO);
         when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
-        when(pedidoRepository.save(any())).thenReturn(pedido);
 
         service.cambiarEstado(1L, Constants.PEDIDO_PAGADO, null);
         verifyNoInteractions(pedidoPagoManualService);
+        verify(pedidoRepository, never()).save(any());
     }
 
     @ParameterizedTest(name = "cambiarEstado → ENTREGADO sin pago se rechaza: {0} + {1} (SEC-06 / QA-B02-2)")
@@ -520,6 +520,7 @@ class PedidoServiceTest {
     void sec09_estadoForzadoSinPagoCapturado_noDespacha(String estado, String estadoPago) {
         Pedido pedido = buildPedido(estado);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoGrupoService.pagoDelGrupo(any()))
             .thenReturn(estadoPago == null ? Optional.empty() : Optional.of(pago(estadoPago)));
 

@@ -91,10 +91,16 @@ public final class OnvoCobroVerificador {
         if (intent == null || intent.isEmpty() || !modoCoincide(intent, modoEsperado)) {
             return false;
         }
+        String estado = texto(intent, "status");
+        if (INTENT_CANCELADO.equalsIgnoreCase(estado)) {
+            return true; // doc ONVO «Estados comunes»: canceled = intención cancelada, no se reutiliza.
+        }
         Object error = intent.get("lastPaymentError");
-        return INTENT_REQUIERE_METODO.equalsIgnoreCase(texto(intent, "status"))
-            && error != null && !(error instanceof Map<?, ?> m && m.isEmpty());
+        return INTENT_REQUIERE_METODO.equalsIgnoreCase(estado)
+            && error != null && !(error instanceof Map<?, ?> m && m.isEmpty()) && !String.valueOf(error).isBlank();
     }
+
+    static final String INTENT_CANCELADO = "canceled";
 
     static final String INTENT_REQUIERE_METODO = "requires_payment_method";
 
