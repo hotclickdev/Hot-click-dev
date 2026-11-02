@@ -38,6 +38,7 @@ class OnvoOnBehalfOfTest {
         OnvoPaymentProvider p = new OnvoPaymentProvider();
         ReflectionTestUtils.setField(p, "onvoService", onvo);
         ReflectionTestUtils.setField(p, "cuentaOnvoService", cuentas);
+        ReflectionTestUtils.setField(p, "pedidoStatusTokenService", com.hotclick.service.payment.PedidoStatusTokenServiceTest.servicio());
         ReflectionTestUtils.setField(p, "appUrl", "https://hotclick.lat");
         return p;
     }

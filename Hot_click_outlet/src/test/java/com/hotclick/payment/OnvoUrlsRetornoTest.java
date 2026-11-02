@@ -32,6 +32,7 @@ class OnvoUrlsRetornoTest {
                 .thenReturn(new OnvoService.OnvoCheckoutSession("cs_1", "https://checkout"));
             OnvoPaymentProvider p = new OnvoPaymentProvider();
             ReflectionTestUtils.setField(p, "onvoService", onvo);
+            ReflectionTestUtils.setField(p, "pedidoStatusTokenService", com.hotclick.service.payment.PedidoStatusTokenServiceTest.servicio());
             ReflectionTestUtils.setField(p, "appUrl", base);
             Pedido pedido = new Pedido();
             pedido.setId(1L);
@@ -44,7 +45,14 @@ class OnvoUrlsRetornoTest {
             ArgumentCaptor<String> ok = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> ko = ArgumentCaptor.forClass(String.class);
             verify(onvo).crearCheckoutSession(eq(1000), anyString(), ok.capture(), ko.capture(), any(), anyMap());
-            assertThat(ok.getValue()).isEqualTo(base + "/pago/exito?order=HC-1").doesNotContain("localhost");
+            assertThat(ok.getValue()).startsWith(base + "/pago/exito?order=HC-1&st=").doesNotContain("localhost");
+            String st = java.net.URLDecoder.decode(ok.getValue().substring(ok.getValue().indexOf("&st=") + 4),
+                java.nio.charset.StandardCharsets.UTF_8);
+            // Regresión: el retorno lleva un token de estado válido solo para ESTE pedido.
+            var tokens = (com.hotclick.service.payment.PedidoStatusTokenService)
+                ReflectionTestUtils.getField(p, "pedidoStatusTokenService");
+            assertThat(tokens.esValido("HC-1", st)).isTrue();
+            assertThat(tokens.esValido("HC-2", st)).isFalse();
             assertThat(ko.getValue()).isEqualTo(base + "/pago/cancelado?order=HC-1").doesNotContain("localhost");
         }
     }
