@@ -80,7 +80,7 @@ class OnvoCancelacionSesionTest {
         assertThatThrownBy(() -> service.cancelarAnon("ORD-B1", "ok"))
             .isInstanceOf(IllegalStateException.class);
         verify(paymentFailureHandler, never()).marcarFallido(any(), any());
-        verify(onvoPaymentProvider, never()).expirarSesionSinCobro(any());
+        verify(onvoPaymentProvider, never()).expirarSesionParaCancelar(any());
     }
 
     @Test
@@ -110,19 +110,19 @@ class OnvoCancelacionSesionTest {
     @Test
     @DisplayName("cancelar un pago ONVO expira la sesión en ONVO antes de marcarlo FALLIDO")
     void cancelarExpiraSesion() {
-        when(onvoPaymentProvider.expirarSesionSinCobro("cs_test_b1")).thenReturn(true);
+        when(onvoPaymentProvider.expirarSesionParaCancelar("cs_test_b1")).thenReturn(true);
 
         service.cancelarAnon("ORD-B1", "ok");
 
         var orden = inOrder(onvoPaymentProvider, paymentFailureHandler);
-        orden.verify(onvoPaymentProvider).expirarSesionSinCobro("cs_test_b1");
+        orden.verify(onvoPaymentProvider).expirarSesionParaCancelar("cs_test_b1");
         orden.verify(paymentFailureHandler).marcarFallido(pago, "Cancelado por el usuario");
     }
 
     @Test
     @DisplayName("si ONVO no confirma la expiración (ya pagada u otro estado) no se cancela")
     void onvoNoExpiraNoCancela() {
-        when(onvoPaymentProvider.expirarSesionSinCobro("cs_test_b1")).thenReturn(false);
+        when(onvoPaymentProvider.expirarSesionParaCancelar("cs_test_b1")).thenReturn(false);
 
         assertThatThrownBy(() -> service.cancelarAnon("ORD-B1", "ok"))
             .isInstanceOf(IllegalStateException.class);
@@ -132,7 +132,7 @@ class OnvoCancelacionSesionTest {
     @Test
     @DisplayName("si ONVO falla (timeout/5xx/circuito abierto) no se cancela: fail-closed")
     void onvoFallaNoCancela() {
-        when(onvoPaymentProvider.expirarSesionSinCobro("cs_test_b1")).thenThrow(new RuntimeException("timeout"));
+        when(onvoPaymentProvider.expirarSesionParaCancelar("cs_test_b1")).thenThrow(new RuntimeException("timeout"));
 
         assertThatThrownBy(() -> service.cancelarAnon("ORD-B1", "ok"))
             .isInstanceOf(IllegalStateException.class);
@@ -189,6 +189,9 @@ class OnvoCancelacionSesionTest {
         assertThat(desde.getValue()).isBetween(antes.minusSeconds(5), antes.plusSeconds(5));
         assertThat(pag.getValue().getPageSize()).isEqualTo(20);
         verifyNoInteractions(rechazo);
+        // BAJO QA7-B1 (b): cada pago reclamado queda marcado para rotar en la próxima pasada.
+        assertThat(List.of(cobrado, noPagado, error)).allSatisfy(p ->
+            assertThat(p.getReconsultaCerradoEn()).isAfterOrEqualTo(antes.plusHours(24).minusSeconds(5)));
     }
 
     @Test
@@ -198,6 +201,9 @@ class OnvoCancelacionSesionTest {
         String jpql = m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
         assertThat(jpql).contains("'FALLIDO'", "'CANCELADO'", "merchantToken IS NOT NULL", "fechaCreacion >= :desde");
         assertThat(jpql).doesNotContain("PENDIENTE");
+        // BAJO QA7-B1 (b): sin starvation: nunca revisados primero, después el revisado hace más tiempo.
+        assertThat(jpql).contains("ORDER BY p.reconsultaCerradoEn ASC NULLS FIRST, p.fechaCreacion ASC")
+            .doesNotContain("DESC");
         assertThat(m.getAnnotation(org.springframework.data.jpa.repository.Lock.class).value())
             .isEqualTo(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         assertThat(m.getAnnotation(org.springframework.data.jpa.repository.QueryHints.class).value()[0].value()).isEqualTo("-2");

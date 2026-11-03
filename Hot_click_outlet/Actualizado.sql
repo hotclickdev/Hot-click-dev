@@ -4566,3 +4566,8 @@ INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codig
 SELECT v.nombre, v.seg, v.longitud, v.estado
   FROM (VALUES ('REGISTRO', 300, 6, 1), ('RESET_PASSWORD', 300, 6, 1)) AS v(nombre, seg, longitud, estado)
  WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb t WHERE t.nombre = v.nombre);
+
+-- V223 (03-nov-2026) BAJO QA7-B1 (b): marca de la última reconsulta en ONVO de un pago cerrado (FALLIDO/CANCELADO).
+-- El respaldo ordenaba por fecha_creacion DESC con un lote y los más viejos de la ventana podían no revisarse nunca;
+-- ahora rota por esta marca (NULL primero). Aditiva: una columna nullable, sin backfill ni cambios de datos.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS reconsulta_cerrado_en TIMESTAMP;
