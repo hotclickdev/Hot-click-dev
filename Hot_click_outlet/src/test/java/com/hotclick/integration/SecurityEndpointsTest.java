@@ -25,6 +25,29 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("QA5-PC-01: GET /api/marketplace/buscar → público, sin token (y page/size fuera de rango no rompen)")
+    void marketplaceBuscar_public_noAuth() throws Exception {
+        // La consulta nativa usa funciones de Postgres que H2 no tiene: acá solo importa que no pida sesión.
+        mockMvc.perform(get("/api/marketplace/buscar").param("q", "cafe"))
+            .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
+                .isNotIn(401, 403));
+        mockMvc.perform(get("/api/marketplace/buscar").param("page", "-1").param("size", "0"))
+            .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
+                .isNotIn(401, 403, 500));
+    }
+
+    @Test
+    @DisplayName("QA5-PC-01: GET /api/marketplace/productos/{id} sin token no da 401; el POST admin sigue protegido")
+    void marketplaceDetalle_public_noAuth_adminProtegido() throws Exception {
+        mockMvc.perform(get("/api/marketplace/productos/999999"))
+            .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
+                .isNotIn(401, 403));
+        mockMvc.perform(post("/api/admin/marketplace/catalogo").contentType("application/json").content("{}"))
+            .andExpect(result -> org.assertj.core.api.Assertions.assertThat(result.getResponse().getStatus())
+                .isIn(401, 403));
+    }
+
+    @Test
     @DisplayName("GET /api/productos → público, sin token")
     void productos_public_noAuth() throws Exception {
         mockMvc.perform(get("/api/productos"))

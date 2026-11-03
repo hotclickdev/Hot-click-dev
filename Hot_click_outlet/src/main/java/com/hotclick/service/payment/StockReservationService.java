@@ -177,6 +177,8 @@ public class StockReservationService {
             eventPublisher.publishEvent(new StockCambioEvent(
                 eventSource, producto.getId(), producto.getEmpresaId(), nuevoStock));
         }
+        // P-07: marca que este pedido ya consumió stock (la entrega manual no vuelve a descontar).
+        if (pedido.getStockDescontadoEn() == null) pedido.setStockDescontadoEn(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
     }
 
     /**

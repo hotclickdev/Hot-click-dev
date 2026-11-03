@@ -26,6 +26,13 @@ public class StockAjusteOperations {
      */
     @Transactional
     public void ajustarEntrada(Object source, Long productoId, int cantidad, String notas, String operadorCorreo) {
+        ajustarEntrada(source, productoId, cantidad, notas, "ajuste-manual", operadorCorreo);
+    }
+
+    /** Igual que el ajuste manual, pero con la referencia del documento de origen (p. ej. la venta POS anulada). */
+    @Transactional
+    public void ajustarEntrada(Object source, Long productoId, int cantidad, String notas, String referencia,
+                               String operadorCorreo) {
         Producto producto = productoRepository.findByIdForUpdate(productoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
         if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
@@ -46,7 +53,7 @@ public class StockAjusteOperations {
 
         MovimientoStock m = movimientoSupport.buildMovimiento(producto, MovimientoStock.AJUSTE_ENTRADA, cantidad,
             actAntes, actDespues, producto.getStockReservado(), producto.getStockReservado(),
-            "ajuste-manual", operadorCorreo);
+            referencia, operadorCorreo);
         m.setNotas(notas);
         movimientoStockRepository.save(m);
 

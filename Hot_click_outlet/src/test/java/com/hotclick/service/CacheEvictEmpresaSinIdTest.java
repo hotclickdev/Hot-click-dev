@@ -60,6 +60,7 @@ class CacheEvictEmpresaSinIdTest {
     @MockitoBean TelegramService telegramService;
     @MockitoBean TelegramNotificacionClienteService telegramNotificacionClienteService;
     @MockitoBean PedidoManualFactory pedidoManualFactory;
+    @MockitoBean com.hotclick.service.pedido.PedidoManualEntregaStockService manualEntregaStock;
     @MockitoBean PedidoNotificacionAppender pedidoNotificacionAppender;
     @MockitoBean PedidoDetailMapper pedidoDetailMapper;
     @MockitoBean PedidoPagoManualService pedidoPagoManualService;
