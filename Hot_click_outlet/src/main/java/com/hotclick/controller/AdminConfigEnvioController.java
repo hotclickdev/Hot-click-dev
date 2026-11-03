@@ -47,6 +47,25 @@ public class AdminConfigEnvioController {
         return ResponseEntity.ok(ResponseDTO.success("Envío", datos(config.montos(), false)));
     }
 
+    /**
+     * QA7-D1: cotización del envío normal para un destino, con la misma regla con la que el servidor cobra
+     * ({@link com.hotclick.service.payment.OrderPricingService#metodoNormalPorDestino}). El checkout muestra
+     * este monto para que el total previo al pago coincida con el cobro. Destino ausente o desconocido: fuera del GAM.
+     */
+    @GetMapping("/api/public/envio/cotizar")
+    public ResponseEntity<ResponseDTO> cotizar(@RequestParam(required = false) String provincia,
+                                               @RequestParam(required = false) String canton) {
+        String metodo = com.hotclick.service.payment.OrderPricingService
+            .metodoNormalPorDestino("ENVIO_NORMAL_GAM", provincia, canton);
+        boolean gam = "ENVIO_NORMAL_GAM".equals(metodo);
+        ConfiguracionEnvioService.Montos m = config.montos();
+        Map<String, Object> d = new LinkedHashMap<>();
+        d.put("zona", gam ? "GAM" : "FUERA_GAM");
+        d.put("metodoEnvio", metodo);
+        d.put("montoCrc", gam ? m.gam() : m.fueraGam());
+        return ResponseEntity.ok(ResponseDTO.success("Envío", d));
+    }
+
     private static int entero(Object raw) {
         if (raw == null) throw new IllegalArgumentException("falta");
         return Integer.parseInt(raw.toString().trim());

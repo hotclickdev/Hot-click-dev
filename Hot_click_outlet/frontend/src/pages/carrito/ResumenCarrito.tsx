@@ -133,14 +133,14 @@ export default function ResumenCarrito({
           {t('cart.envioLinea', { count: paquetes.length })}
           <IconoFigma src={ICONOS_CHECKOUT.resumenChevron} size={14} className={`text-hc-blue-600 transition-transform ${detalleAbierto ? '' : 'rotate-180'}`} />
         </button>
-        <p className="text-[14px] font-semibold text-hc-n-900">{formatPrice(envio)}</p>
+        <p className="text-[14px] font-semibold text-hc-n-900">{envioVaria && envio === 0 ? t('checkout.f.varia') : formatPrice(envio)}</p>
       </div>
       {detalleAbierto && (
         <div className="flex flex-col gap-1 border-l-2 border-hc-n-200 pl-3 text-[12px] text-hc-n-600">
           {paquetes.map((paquete) => (
             <div key={paquete.clave} className="flex items-center justify-between">
               <p>{paquete.negocio}</p>
-              <p>{formatPrice(paquete.envio)}</p>
+              <p>{paquete.envioVaria && paquete.envio === 0 ? t('checkout.f.varia') : formatPrice(paquete.envio)}</p>
             </div>
           ))}
         </div>

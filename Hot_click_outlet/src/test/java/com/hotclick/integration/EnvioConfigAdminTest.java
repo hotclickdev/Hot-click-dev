@@ -226,4 +226,26 @@ class EnvioConfigAdminTest extends BaseIntegrationTest {
         p.setFechaCreacion(LocalDateTime.now());
         return productoRepository.saveAndFlush(p);
     }
+
+    @Test
+    @DisplayName("QA7-D1 | cotizar: Acosta es fuera del GAM (₡5.500), San José GAM (₡4.000), sin destino fuera, sin sesión")
+    void cotizarZonaComoElCobro() throws Exception {
+        mockMvc.perform(get("/api/public/envio/cotizar").param("provincia", "San José").param("canton", "Acosta"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.zona").value("FUERA_GAM"))
+            .andExpect(jsonPath("$.data.metodoEnvio").value("ENVIO_NORMAL_FUERA_GAM"))
+            .andExpect(jsonPath("$.data.montoCrc").value(5500));
+        mockMvc.perform(get("/api/public/envio/cotizar").param("provincia", "San José").param("canton", "Escazú"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.zona").value("GAM"))
+            .andExpect(jsonPath("$.data.montoCrc").value(4000));
+        mockMvc.perform(get("/api/public/envio/cotizar"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.zona").value("FUERA_GAM"))
+            .andExpect(jsonPath("$.data.montoCrc").value(5500));
+        // Misma regla que el cobro: el método que cotiza es el que el servidor cobra para Acosta.
+        assertThat(OrderPricingService.metodoNormalPorDestino("ENVIO_NORMAL_GAM", "San José", "Acosta"))
+            .isEqualTo("ENVIO_NORMAL_FUERA_GAM");
+        assertThat(orderPricingService.calcularCostoEnvio("ENVIO_NORMAL_FUERA_GAM")).isEqualTo(5500);
+    }
 }

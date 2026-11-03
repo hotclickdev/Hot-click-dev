@@ -60,7 +60,7 @@ export default function PaqueteCarritoTarjeta({
         <div className="flex items-center gap-2 border-t border-hc-n-200 px-[18px] py-3 leading-[normal]">
           <IconoFigma src={ICONOS_CHECKOUT.envioPaquete} size={16} className="text-hc-n-600" />
           <p className="flex-1 text-[13px] text-hc-n-600">{t('cart.envioNormal')}</p>
-          <p className="text-[14px] font-semibold text-hc-n-900">{formatPrice(paquete.envio)}</p>
+          <p className="text-[14px] font-semibold text-hc-n-900">{paquete.envioVaria && paquete.envio === 0 ? t('checkout.f.varia') : formatPrice(paquete.envio)}</p>
         </div>
         {sugerencia && <SumaMismaTienda producto={sugerencia} negocio={paquete.negocio} escritorio onAgregar={onAgregarSugerencia} />}
       </section>
@@ -79,7 +79,7 @@ export default function PaqueteCarritoTarjeta({
         <div className="flex items-center gap-2 border-t border-hc-n-200 pt-[10px] leading-[normal]">
           <IconoFigma src={ICONOS_CHECKOUT.envioPaquete} size={16} className="text-hc-n-600" />
           <p className="flex-1 text-[12px] text-hc-n-600">{t('cart.envioNormal')}</p>
-          <p className="text-[13px] font-semibold text-hc-n-900">{formatPrice(paquete.envio)}</p>
+          <p className="text-[13px] font-semibold text-hc-n-900">{paquete.envioVaria && paquete.envio === 0 ? t('checkout.f.varia') : formatPrice(paquete.envio)}</p>
         </div>
       </section>
       {sugerencia && <SumaMismaTienda producto={sugerencia} negocio={paquete.negocio} escritorio={false} onAgregar={onAgregarSugerencia} />}
