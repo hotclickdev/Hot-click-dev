@@ -1,3 +1,5 @@
+> **Nota principal:** [`docs/traspaso/hotclick-qa-negocio-plus.md`](hotclick-qa-negocio-plus.md). Esta nota quedó integrada allá.
+
 # Traspaso — QA Negocio Plus: re-QA de las áreas 2 y 5
 
 Contexto previo: `docs/traspaso/hotclick-qa-negocio-plus.md` (QA 3, se mantiene). Esta nota cubre el re-QA sobre master. Sin secretos ni datos reales.
