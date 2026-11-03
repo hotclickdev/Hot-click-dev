@@ -1,19 +1,26 @@
 package com.hotclick.service.telegram;
 
 import com.hotclick.model.MiembroEmpresa;
+import com.hotclick.model.TelegramBloqueoEmpresa;
 import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.repository.MiembroEmpresaRepository;
+import com.hotclick.repository.TelegramBloqueoEmpresaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
+import com.hotclick.service.AuditoriaAdminRegistroService;
+import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 /**
- * TG3: el gestor desactiva SOLO la membresía del usuario en su empresa. El acceso por Telegram a esa
- * empresa muere porque {@code empresaValidada} revalida la membresía; las demás empresas siguen.
- * El propietario no se revoca. Un usuario por llamada: 3-4 consultas puntuales, ninguna en bucle.
+ * N1 (área 8): «Revocar» en el Telegram del equipo corta SOLO el bot para esa empresa. Guarda un
+ * bloqueo (usuario, empresa) que respeta {@code TelegramEmpresaContextService}; la membresía web
+ * ({@code miembro_empresa}) y las otras empresas no se tocan. El propietario no se revoca. Queda en
+ * la bitácora de admin. Un usuario por llamada: consultas puntuales, ninguna en bucle.
  */
 @Component
 public class TelegramRevocacionMiembro {
@@ -22,32 +29,28 @@ public class TelegramRevocacionMiembro {
 
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired private TelegramBloqueoEmpresaRepository bloqueoRepository;
+    @Autowired private AuditoriaAdminRegistroService auditoria;
 
     @Transactional
     public boolean revocar(Long usuarioId, Long empresaId) {
         MiembroEmpresa m = miembroEmpresaRepository
             .findByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1).orElse(null);
         if (m == null || "PROPIETARIO".equals(m.getRolEnEmpresa())) return false;
-        m.setEstado(0);
-        miembroEmpresaRepository.save(m);
+        if (bloqueoRepository.existsByUsuarioIdAndEmpresaId(usuarioId, empresaId)) return true; // idempotente
+        bloqueoRepository.save(new TelegramBloqueoEmpresa(usuarioId, empresaId,
+            LocalDateTime.now(Constants.ZONA_CR), null));
         TelegramVinculacion v = vinculacionRepository.findByUsuarioId(usuarioId).orElse(null);
-        if (v != null) {
-            // empresaValidada también acepta usuario.empresa → fail-closed. Sin otras membresías, se revoca entero.
-            boolean empresaPropia = v.getUsuario() != null && empresaId.equals(v.getUsuario().getEmpresaId());
-            if (empresaPropia || !miembroEmpresaRepository.existsByUsuarioIdAndEstado(usuarioId, 1)) {
-                v.setEstado(TelegramVinculacion.REVOCADA);
-                v.setChatId(null);
-                v.setContexto(null);
-                v.setCodigo(null);
-                v.setCodigoExpira(null);
-                vinculacionRepository.save(v);
-            } else if (empresaId.equals(v.getEmpresaActivaId())) {
-                v.setEmpresaActivaId(null);
-                v.setContexto(null);
-                vinculacionRepository.save(v);
-            }
+        if (v != null && empresaId.equals(v.getEmpresaActivaId())) {
+            v.setEmpresaActivaId(null);
+            v.setContexto(null);
+            vinculacionRepository.save(v);
         }
-        log.info("[telegram] membresía de usuario {} en empresa {} desactivada por gestor", usuarioId, empresaId);
+        auditoria.registrar("TELEGRAM_REVOCAR_MIEMBRO", "USUARIO", usuarioId, empresaId,
+            "Acceso por Telegram del usuario " + usuarioId + " a la empresa " + empresaId
+                + " revocado; la membresía web no cambia");
+        log.info("[telegram] bot de usuario {} bloqueado para empresa {} por gestor (membresía web intacta)",
+            usuarioId, empresaId);
         return true;
     }
 }

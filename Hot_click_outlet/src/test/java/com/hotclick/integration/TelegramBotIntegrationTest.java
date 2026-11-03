@@ -55,6 +55,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     protected AiCopilotService aiCopilotService;
 
     @Autowired TelegramVinculacionRepository vinculacionRepository;
+    @Autowired com.hotclick.repository.TelegramBloqueoEmpresaRepository telegramBloqueoEmpresaRepository;
     @Autowired EmpresaRepository            empresaRepository;
     @Autowired ProductoRepository           productoRepository;
     @Autowired CategoriaRepository          categoriaRepository;
@@ -611,8 +612,11 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
                 .header("Authorization", tokenDuenno))
             .andExpect(status().isOk());
 
-        assertThat(vinculacionRepository.findByUsuarioId(empleado.getId()).orElseThrow().getEstado())
-            .isEqualTo(TelegramVinculacion.REVOCADA);
+        // MEDIO N1 área 8: solo bloquea el bot para esa empresa; la membresía web y la vinculación quedan intactas.
+        assertThat(telegramBloqueoEmpresaRepository.existsByUsuarioIdAndEmpresaId(empleado.getId(), empresa.getId()))
+            .isTrue();
+        assertThat(miembroEmpresaRepository.findByUsuarioIdAndEmpresaIdAndEstado(empleado.getId(), empresa.getId(), 1))
+            .isPresent();
     }
 
     @Test
