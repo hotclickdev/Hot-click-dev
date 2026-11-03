@@ -73,6 +73,10 @@ public class Pedido extends BaseEntity {
     @Column(name = "margen_ganancia_pedido", precision = 8, scale = 2)
     private BigDecimal margenGananciaPedido;
 
+    /** P-07 (V225): cuándo el pedido consumió stock_actual; no nulo = no se vuelve a descontar. */
+    @Column(name = "stock_descontado_en")
+    private java.time.LocalDateTime stockDescontadoEn;
+
     @Column(name = "origen", length = 20)
     private String origen = OrigenPedido.ONLINE.codigo();
 
@@ -234,6 +238,9 @@ public class Pedido extends BaseEntity {
 
     public BigDecimal getMargenGananciaPedido() { return margenGananciaPedido; }
     public void setMargenGananciaPedido(BigDecimal margenGananciaPedido) { this.margenGananciaPedido = margenGananciaPedido; }
+
+    public java.time.LocalDateTime getStockDescontadoEn() { return stockDescontadoEn; }
+    public void setStockDescontadoEn(java.time.LocalDateTime stockDescontadoEn) { this.stockDescontadoEn = stockDescontadoEn; }
 
     public String getOrigen() { return origen; }
     public void setOrigen(String origen) { this.origen = origen; }

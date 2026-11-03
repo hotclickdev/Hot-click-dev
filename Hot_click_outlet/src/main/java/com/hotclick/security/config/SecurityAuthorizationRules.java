@@ -70,6 +70,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, API_PRODUCTO_POR_ID).permitAll()
             // Stock en tiempo real (SSE) — público; el tenant se infiere del producto, no del caller
             .requestMatchers(GET, "/api/marketplace/productos/*/stock-stream").permitAll()
+            // QA5-PC-01: búsqueda y detalle del marketplace son de comprador (públicos, solo productos visibles con stock)
+            .requestMatchers(GET, "/api/marketplace/buscar").permitAll()
+            .requestMatchers(GET, "/api/marketplace/productos/*").permitAll()
             // Avisame cuando vuelva — público, cualquiera (con cuenta o no) puede suscribirse
             .requestMatchers(POST, "/api/productos/*/avisar-reposicion").permitAll()
             // Gestión de productos — roles de empresa + API keys con scope write:productos

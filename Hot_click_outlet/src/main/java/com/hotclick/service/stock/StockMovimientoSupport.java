@@ -36,6 +36,12 @@ public class StockMovimientoSupport {
                 referencia, operadorCorreo));
     }
 
+    /** Guarda varios movimientos en un solo saveAll (P-07: evita un INSERT suelto por ítem). */
+    public void guardarLote(java.util.List<MovimientoStock> movimientos) {
+        if (movimientos == null || movimientos.isEmpty()) return;
+        movimientoStockRepository.saveAll(movimientos);
+    }
+
     public MovimientoStock buildMovimiento(Producto producto, String tipo, int cantidad,
                                             int actAntes, int actDespues,
                                             int resAntes, int resDespues,
