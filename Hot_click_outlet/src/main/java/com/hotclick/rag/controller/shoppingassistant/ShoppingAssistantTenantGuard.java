@@ -51,7 +51,23 @@ public class ShoppingAssistantTenantGuard {
             log.error("[rag-ctrl] Slug duplicado ref={} paso=tenant '{}': {}",
                 java.util.UUID.randomUUID().toString().substring(0, 8), empresaSlug, e.getClass().getName());
             return java.util.Optional.empty();
+        } catch (org.springframework.dao.DataAccessException e) {
+            // MEDIO-A (área 6): pool agotado, timeout, columna faltante... no debe ser 500.
+            // B1: sin mensaje ni stacktrace (puede traer el slug o SQL).
+            String ref = java.util.UUID.randomUUID().toString().substring(0, 8);
+            log.error("[rag-ctrl] BD no disponible ref={} paso=tenant: {}", ref, e.getClass().getName());
+            throw new TenantNoDisponibleException(ref);
         }
+    }
+
+    /** La BD falló al resolver el tenant; el controller responde la contingencia (200/204). */
+    public static class TenantNoDisponibleException extends RuntimeException {
+        private final String ref;
+        public TenantNoDisponibleException(String ref) {
+            super("Tenant no disponible ref=" + ref, null, false, false);
+            this.ref = ref;
+        }
+        public String getRef() { return ref; }
     }
 
     public static String nombreComercial(Empresa empresa) {
