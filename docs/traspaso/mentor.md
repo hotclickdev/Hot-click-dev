@@ -777,3 +777,14 @@ Deploy **solo** con el OK explícito de Andrés escrito en el chat de CI/CD.
 | 4 | Archivos cifrados a copiar al PC de Andrés (cuentas QA y backups .gpg) | Andrés | [PENDIENTE] | resumen del Mentor |
 
 Totales: o.1 = 21, o.2 = 15, o.3 = 39, o.4 = 6, o.5 = 10, o.6 = 4 (95 items).
+
+## (p) Verificación: todo el trabajo está en GitHub
+
+Revisión del 2-nov-2026 23:08 (hora CR): 126 checkouts escaneados. Todo el trabajo quedó en GitHub, excepto 2 commits de Preparación Fase 2 (918470d27 y 2257d3d7e), que esperan el OK de Andrés en el chat de ese bot. Detalle en /workspace/hotclick/trabajo-sin-subir-2026-11-02.md.
+
+Ramas [INCOMPLETO] o rescatadas (continuar desde aquí; ninguna está mergeada):
+- wip/feat-trial-emprendedor-traspaso (divergía de origin/feat/trial-emprendedor; hay que reconciliarla)
+- wip/fix-checkout-bodega-default-front-traspaso (divergía de origin)
+- wip/qa-pos-traspaso-nota (nota de QA POS; hay que integrarla en docs/traspaso-cuenta-nueva si falta)
+- wip/qa-a1-62646e4-traspaso, wip/qa-a1-9fb6504-traspaso, wip/wt-bajos-old-traspaso, wip/wt-med-old-traspaso (tests sin terminar)
+- Ramas nuevas o actualizadas con su mismo nombre: fix/pago-lows-seguridad-dp2, fix/s02-s04-billing-onvo, fix/billing-config-faltante-transitoria
