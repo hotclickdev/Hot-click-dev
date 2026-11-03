@@ -153,6 +153,30 @@ class OnvoPagoVerificacionTest {
     }
 
     @Test
+    @DisplayName("BAJO QA7-B1 (a): al cancelar, solo un 404 explícito o expirada sin cobro cuentan; vacío, null o no consultable no")
+    void expirarParaCancelarSoloCon404Explicito() {
+        doReturn(new OnvoService.ResultadoExpirar(OnvoService.TipoExpirar.NO_EXISTE, Map.of()))
+            .when(onvoService).expirarCheckoutSessionTipado("cs_1");
+        assertThat(provider.expirarSesionParaCancelar("cs_1")).isTrue();
+
+        doReturn(new OnvoService.ResultadoExpirar(OnvoService.TipoExpirar.RESPUESTA, Map.of("status", "expired", "paymentStatus", "unpaid")))
+            .when(onvoService).expirarCheckoutSessionTipado("cs_1");
+        assertThat(provider.expirarSesionParaCancelar("cs_1")).isTrue();
+
+        doReturn(new OnvoService.ResultadoExpirar(OnvoService.TipoExpirar.RESPUESTA, Map.of("status", "complete", "paymentStatus", "paid")))
+            .when(onvoService).expirarCheckoutSessionTipado("cs_1");
+        assertThat(provider.expirarSesionParaCancelar("cs_1")).isFalse();
+
+        doReturn(new OnvoService.ResultadoExpirar(OnvoService.TipoExpirar.SIN_CUERPO, Map.of()))
+            .when(onvoService).expirarCheckoutSessionTipado("cs_1");
+        assertThat(provider.expirarSesionParaCancelar("cs_1")).isFalse();
+
+        doReturn(new OnvoService.ResultadoExpirar(OnvoService.TipoExpirar.NO_CONSULTABLE, Map.of()))
+            .when(onvoService).expirarCheckoutSessionTipado("cs_1");
+        assertThat(provider.expirarSesionParaCancelar("cs_1")).isFalse();
+    }
+
+    @Test
     @DisplayName("ONVO no tiene la sesión (o no hay llave: lectura vacía) → no se captura")
     void sesionVaciaNoSeCaptura() {
         doReturn(Map.of()).when(onvoService).obtenerCheckoutSession("cs_1");
