@@ -136,10 +136,7 @@ public class OnvoPendientesReconsultaService {
         List<Pago> reclamados = tx.execute(s -> {
             List<Pago> filas = pagoRepository
                 .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, desde, PageRequest.of(0, lote));
-            if (filas != null) {
-                filas.forEach(p -> p.setReconsultaCerradoEn(ahora));
-                pagoRepository.saveAll(filas);
-            }
+            marcarRevision(filas, ahora);
             return filas;
         });
         List<Pago> pagos = reclamados == null ? List.of() : reclamados;
@@ -182,5 +179,11 @@ public class OnvoPendientesReconsultaService {
                 e.getClass().getSimpleName());
             return Efecto.NADA;
         }
+    }
+
+    /** Entidades gestionadas dentro del reclamo: el dirty checking escribe la marca al cerrar la transacción. */
+    private static void marcarRevision(List<Pago> filas, LocalDateTime ahora) {
+        if (filas == null) return;
+        for (Pago p : filas) p.setReconsultaCerradoEn(ahora);
     }
 }
