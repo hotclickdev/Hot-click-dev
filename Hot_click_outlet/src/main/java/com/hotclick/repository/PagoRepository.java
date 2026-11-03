@@ -146,4 +146,18 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     /** P-01: pagos SINPE marketplace por ONVO pendientes con el plazo interno cumplido. */
     List<Pago> findByProveedorAndEstadoPagoAndMerchantTokenStartingWithAndPlazoInternoSinpeBefore(
         String proveedor, String estadoPago, String prefijo, LocalDateTime corte);
+
+    /**
+     * N-01: pagos SINPE marketplace (token ONVOPI:) ya cerrados (FALLIDO/CANCELADO) y recientes, para reconsultar el
+     * intent en ONVO. Rota por fechaActualizacion (el reclamo la marca): primero el revisado hace más tiempo, así
+     * ninguno de la ventana queda sin revisar aunque haya más que el lote. Mismo lock que los cerrados ONVO.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
+        + "AND p.merchantToken LIKE CONCAT(:prefijo, '%') AND p.fechaCreacion >= :desde "
+        + "ORDER BY p.fechaActualizacion ASC NULLS FIRST, p.fechaCreacion ASC")
+    List<Pago> reclamarSinpeOnvoCerrados(@Param("proveedor") String proveedor, @Param("prefijo") String prefijo,
+                                         @Param("desde") LocalDateTime desde,
+                                         org.springframework.data.domain.Pageable pagina);
 }

@@ -272,4 +272,94 @@ class SinpeOnvoMarketplaceServiceTest {
         s.confirmarPorWebhook(TIPO, "pi_1");
         verify(aviso, never()).registrarPendiente(any());
     }
+
+    // ---- N-01 / N-02 (pagos-checkout-b862c6e2) ----
+
+    @Test
+    @DisplayName("N-01: cancelar del comprador: POST cancel + GET canceled → CANCELADO; sin confirmar → NO_CONFIRMADO")
+    void compradorCancelaIntent() {
+        doReturn(Map.<String, Object>of("id", "pi_1", "status", "requires_action"),
+            Map.<String, Object>of("id", "pi_1", "status", "canceled")).when(onvo).obtenerPaymentIntent("pi_1");
+        assertThat(s.cerrarIntentParaComprador(pago)).isEqualTo(SinpeOnvoMarketplaceService.CierreComprador.CANCELADO);
+        verify(onvo).cancelarPaymentIntent("pi_1");
+
+        clearInvocations(onvo);
+        doReturn(Map.<String, Object>of("id", "pi_1", "status", "processing")).when(onvo).obtenerPaymentIntent("pi_1");
+        assertThat(s.cerrarIntentParaComprador(pago)).isEqualTo(SinpeOnvoMarketplaceService.CierreComprador.NO_CONFIRMADO);
+
+        doThrow(new RuntimeException("timeout")).when(onvo).obtenerPaymentIntent("pi_1");
+        assertThat(s.cerrarIntentParaComprador(pago)).isEqualTo(SinpeOnvoMarketplaceService.CierreComprador.NO_CONFIRMADO);
+        verify(fallos, never()).marcarFallido(any(), any());
+    }
+
+    @Test
+    @DisplayName("N-01: ya succeeded en ONVO → PAGADO y no se cancela el intent; mock → SIMULADO; sin llave → NO_CONFIRMADO")
+    void compradorPagadoMockSinLlave() {
+        get("succeeded", 1_250_000L);
+        assertThat(s.cerrarIntentParaComprador(pago)).isEqualTo(SinpeOnvoMarketplaceService.CierreComprador.PAGADO);
+        verify(onvo, never()).cancelarPaymentIntent(any());
+
+        when(onvo.isMockMode()).thenReturn(true);
+        assertThat(s.cerrarIntentParaComprador(pago)).isEqualTo(SinpeOnvoMarketplaceService.CierreComprador.SIMULADO);
+
+        when(onvo.isMockMode()).thenReturn(false);
+        when(onvo.isPagosDisponibles()).thenReturn(false);
+        assertThat(s.cerrarIntentParaComprador(pago)).isEqualTo(SinpeOnvoMarketplaceService.CierreComprador.NO_CONFIRMADO);
+        verify(onvo, never()).cancelarPaymentIntent(any());
+    }
+
+    @Test
+    @DisplayName("N-02: plazo vencido y ONVO dice succeeded (webhook perdido) → se confirma con la función del webhook")
+    void vencidoSucceededConfirmaPorRespaldo() {
+        get("succeeded", 1_250_000L);
+        assertThat(s.cancelarVencido(pago)).isFalse();
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        verify(paymentService).confirmarPedido(pago);
+        verify(onvo, never()).cancelarPaymentIntent(any());
+        verify(fallos, never()).marcarFallido(any(), any());
+        // El webhook tardío sale DUPLICADO (idempotente).
+        assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(DUPLICADO);
+    }
+
+    @Test
+    @DisplayName("N-01: barrido de cerrados: cobrado sobre cancelado → REEMBOLSO_PENDIENTE sin revivir; abierto → cancel en ONVO")
+    void revisarCerradoCobradoYAbierto() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setEstadoPago(Constants.PAGO_FALLIDO);
+        get("succeeded", 1_250_000L);
+        assertThat(s.revisarCerrado(pago)).isEqualTo(COBRADO_SOBRE_CANCELADO);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
+        verify(paymentService, never()).confirmarPedido(any());
+        verify(aviso).registrarPendiente(pago);
+
+        Pago otro = new Pago();
+        otro.setId(8L);
+        otro.setMonto(12500);
+        otro.setProveedor(Constants.PROVEEDOR_SINPE);
+        otro.setEstadoPago(Constants.PAGO_FALLIDO);
+        otro.setMerchantToken("ONVOPI:pi_2");
+        otro.setPedido(pedido);
+        when(pagoRepo.findByMerchantTokenForUpdate("ONVOPI:pi_2")).thenReturn(Optional.of(otro));
+        doReturn(Map.<String, Object>of("id", "pi_2", "status", "requires_action", "amount", 1_250_000L, "currency", "CRC", "mode", "live"))
+            .when(onvo).obtenerPaymentIntent("pi_2");
+        assertThat(s.revisarCerrado(otro)).isEqualTo(EN_ESPERA);
+        verify(onvo).cancelarPaymentIntent("pi_2");
+        assertThat(otro.getEstadoPago()).isEqualTo(Constants.PAGO_FALLIDO);
+    }
+
+    @Test
+    @DisplayName("N-01: el reclamo de cerrados rota (marca fechaActualizacion) y la consulta ordena el más viejo primero")
+    void reclamoRota() throws Exception {
+        Pago a = new Pago();
+        when(pagoRepo.reclamarSinpeOnvoCerrados(eq(Constants.PROVEEDOR_SINPE), eq("ONVOPI:"), any(), any()))
+            .thenReturn(List.of(a));
+        assertThat(s.reclamarCerradosRecientes()).containsExactly(a);
+        assertThat(a.getFechaActualizacion()).isNotNull();
+        String jpql = PagoRepository.class.getMethod("reclamarSinpeOnvoCerrados", String.class, String.class,
+                LocalDateTime.class, org.springframework.data.domain.Pageable.class)
+            .getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        assertThat(jpql).contains("'FALLIDO', 'CANCELADO'").contains("CONCAT(:prefijo, '%')")
+            .contains("ORDER BY p.fechaActualizacion ASC NULLS FIRST");
+    }
 }

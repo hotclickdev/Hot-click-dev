@@ -28,5 +28,19 @@ public class SinpeOnvoMarketplaceBarrido {
             }
         }
         if (liberados > 0) log.info("[SINPE-ONVO] Barrido: {} pagos vencidos liberados", liberados);
+        revisarCerrados();
+    }
+
+    /** N-01: cerrados recientes con intent ONVO: si ONVO los cobró quedan REEMBOLSO_PENDIENTE. */
+    void revisarCerrados() {
+        int cobrados = 0;
+        for (Pago p : service.reclamarCerradosRecientes()) {
+            try {
+                if (service.revisarCerrado(p) == SinpeOnvoMarketplaceService.Resultado.COBRADO_SOBRE_CANCELADO) cobrados++;
+            } catch (RuntimeException e) {
+                log.warn("[SINPE-ONVO] Revisión de cerrado pago {}: {}", p.getId(), e.getClass().getSimpleName());
+            }
+        }
+        if (cobrados > 0) log.error("[ALERTA-PAGO] Barrido SINPE-ONVO: {} cobros sobre pedidos cancelados", cobrados);
     }
 }
