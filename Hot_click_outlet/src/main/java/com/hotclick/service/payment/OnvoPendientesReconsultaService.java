@@ -7,6 +7,7 @@ import com.hotclick.service.OnvoService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +29,10 @@ import java.util.List;
  *   <li>cualquier otra respuesta o fallo de ONVO → no se toca (fail-closed).</li>
  * </ul>
  * Idempotente: el cierre re-bloquea el pago y exige PENDIENTE, así una segunda corrida no repite efectos.
+ * <p>QA7-B1 ALTO: también reconsulta los pagos ONVO FALLIDO/CANCELADO recientes (ventana
+ * {@code hotclick.pagos.onvo.respaldo.cerrados-ventana-horas}). Si ONVO los cobró igual (webhook perdido),
+ * el mismo camino verificado los deja REEMBOLSO_PENDIENTE con el aviso de reembolso al admin. No reembolsa
+ * solo ni resucita el pedido; un NO_PAGADO o un fallo de ONVO no cambia nada.
  */
 @Service
 public class OnvoPendientesReconsultaService {
@@ -42,14 +47,31 @@ public class OnvoPendientesReconsultaService {
     private final TransactionTemplate tx;
     private final int lote;
     private final int antiguedadMinMinutos;
+    private final int cerradosVentanaHoras;
 
+    /** Sin ventana explícita: 24 h (tests y llamadas existentes). */
+    public OnvoPendientesReconsultaService(PagoRepository pagoRepository, OnvoService onvoService,
+                                           OnvoPaymentProvider onvoPaymentProvider,
+                                           OnvoRechazoService onvoRechazoService,
+                                           PlatformTransactionManager txManager,
+                                           int lote, int antiguedadMinMinutos, int loteMax) {
+        this(pagoRepository, onvoService, onvoPaymentProvider, onvoRechazoService, txManager,
+            lote, antiguedadMinMinutos, loteMax, 24);
+    }
+
+    @Autowired
     public OnvoPendientesReconsultaService(PagoRepository pagoRepository, OnvoService onvoService,
                                            @Lazy OnvoPaymentProvider onvoPaymentProvider,
                                            OnvoRechazoService onvoRechazoService,
                                            PlatformTransactionManager txManager,
                                            @Value("${hotclick.pagos.onvo.respaldo.lote}") int lote,
                                            @Value("${hotclick.pagos.onvo.respaldo.antiguedad-min-minutos}") int antiguedadMinMinutos,
-                                           @Value("${hotclick.pagos.onvo.respaldo.lote-max}") int loteMax) {
+                                           @Value("${hotclick.pagos.onvo.respaldo.lote-max}") int loteMax,
+                                           @Value("${hotclick.pagos.onvo.respaldo.cerrados-ventana-horas:24}") int cerradosVentanaHoras) {
+        if (cerradosVentanaHoras < 0) {
+            throw new IllegalStateException("hotclick.pagos.onvo.respaldo.cerrados-ventana-horas debe ser >= 0");
+        }
+        this.cerradosVentanaHoras = cerradosVentanaHoras;
         if (lote <= 0 || antiguedadMinMinutos < 0) {
             throw new IllegalStateException("hotclick.pagos.onvo.respaldo.lote debe ser > 0 y antiguedad-min-minutos >= 0");
         }
@@ -91,7 +113,43 @@ public class OnvoPendientesReconsultaService {
             log.info("[onvo] Respaldo webhook: revisados={} capturados={} fallidos={} sinCambio={}",
                 pagos.size(), capturados, fallidos, sinCambio);
         }
+        revisarCerrados();
         return new Resumen(pagos.size(), capturados, fallidos, sinCambio);
+    }
+
+    /** Resultado de la pasada sobre FALLIDO/CANCELADO (QA7-B1). */
+    public record ResumenCerrados(int revisados, int reembolsoPendiente) { }
+
+    /**
+     * QA7-B1: pagos ONVO ya cerrados localmente que ONVO pudo cobrar igual (pedido cancelado y webhook perdido).
+     * Solo cuenta como hallazgo COBRADO_SOBRE_CANCELADO (el pago queda REEMBOLSO_PENDIENTE con aviso al admin).
+     * Nunca llama a {@link OnvoRechazoService}: el pago ya está cerrado.
+     */
+    public ResumenCerrados revisarCerrados() {
+        if (cerradosVentanaHoras == 0 || !onvoService.isPagosDisponibles()) {
+            return new ResumenCerrados(0, 0);
+        }
+        LocalDateTime desde = LocalDateTime.now(Constants.ZONA_CR).minusHours(cerradosVentanaHoras);
+        List<Pago> reclamados = tx.execute(s -> pagoRepository
+            .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, desde, PageRequest.of(0, lote)));
+        List<Pago> pagos = reclamados == null ? List.of() : reclamados;
+        int reembolso = 0;
+        for (Pago pago : pagos) {
+            try {
+                OnvoPaymentProvider.Verificacion v = onvoPaymentProvider.procesarPagoVerificado(pago.getMerchantToken(), ORIGEN);
+                if (v == OnvoPaymentProvider.Verificacion.COBRADO_SOBRE_CANCELADO) {
+                    reembolso++;
+                    log.error("[ALERTA-PAGO] Respaldo: ONVO cobró el pago cerrado id={}; queda REEMBOLSO_PENDIENTE", pago.getId());
+                }
+            } catch (RuntimeException e) {
+                log.warn("[onvo] Respaldo cerrados: no se pudo reconsultar pago id={} ({})", pago.getId(),
+                    e.getClass().getSimpleName());
+            }
+        }
+        if (reembolso > 0) {
+            log.info("[onvo] Respaldo cerrados: revisados={} reembolsoPendiente={}", pagos.size(), reembolso);
+        }
+        return new ResumenCerrados(pagos.size(), reembolso);
     }
 
     private enum Efecto { CAPTURADO, FALLIDO, NADA }
