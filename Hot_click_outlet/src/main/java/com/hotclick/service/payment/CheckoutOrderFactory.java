@@ -26,7 +26,27 @@ public class CheckoutOrderFactory {
                                      Usuario usuario, Bodega bodega) {
         Pedido pedido = crearSubpedido(pricing, subtotal, costoTotal, provider, usuario, bodega,
             req.getMetodoEnvio(), req.getNotas(), null, Constants.PEDIDO_PENDIENTE);
-        return aplicarDireccion(pedido, req.getDireccionEntrega());
+        com.hotclick.service.envio.DestinoEnvio.Destino d =
+            com.hotclick.service.envio.DestinoEnvio.resolver(req.getProvincia(), req.getCanton());
+        return aplicarDestino(pedido, req.getDireccionEntrega(), d, pricing.costoEnvio());
+    }
+
+    /**
+     * MED-5 Auditor 3: guarda el destino estructurado, la zona cobrada y su tarifa, y arma la dirección con
+     * el cantón y la provincia declarados al final (el texto libre no puede contradecir la zona).
+     */
+    public Pedido aplicarDestino(Pedido pedido, String direccion,
+                                 com.hotclick.service.envio.DestinoEnvio.Destino destino, int montoZona) {
+        if (esRetiro(pedido.getMetodoEnvio())) return aplicarDireccion(pedido, direccion);
+        String zona = com.hotclick.service.envio.DestinoEnvio.zona(pedido.getMetodoEnvio());
+        if (destino != null) {
+            pedido.setDestinoProvincia(destino.provincia());
+            pedido.setDestinoCanton(destino.canton());
+        }
+        pedido.setEnvioZona(zona);
+        pedido.setEnvioMontoZona(zona != null ? montoZona : null);
+        Pedido conDir = aplicarDireccion(pedido, com.hotclick.service.envio.DestinoEnvio.direccionFinal(direccion, destino));
+        return conDir.getDireccionEntrega() == null && (destino != null || zona != null) ? pedidoRepository.save(pedido) : conDir;
     }
 
     /**

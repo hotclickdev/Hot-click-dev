@@ -26,6 +26,7 @@ public class UsuarioController {
     @Autowired private PasswordEncoder   passwordEncoder;
     @Autowired private InputSanitizer    sanitizer;
     @Autowired private CompanyScope      companyScope;
+    @Autowired private com.hotclick.service.auth.AuthSupport authSupport;
 
     private void assertSelfOrAdmin(Long id) {
         if (companyScope.isAdminIT()) return;
@@ -71,10 +72,27 @@ public class UsuarioController {
             if (!passwordEncoder.matches(actual, usuario.getContrasenaHash())) {
                 return ResponseEntity.status(400).body(ResponseDTO.error("La contraseña actual es incorrecta"));
             }
+            // B1: mismo mínimo que AuthPasswordChangeHandler (8, mayúscula y número)
+            if (!authSupport.esContrasenaValida(datos.get("nuevaContrasena"))) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error("La contraseña debe tener al menos 8 caracteres, una mayúscula y un número"));
+            }
             usuario.setContrasenaHash(passwordEncoder.encode(datos.get("nuevaContrasena")));
         }
 
         usuarioRepository.save(usuario);
-        return ResponseEntity.ok(ResponseDTO.success("Datos actualizados correctamente", usuario));
+        // MEDIO área 2: no serializar la entidad (Usuario.roles es LAZY fuera de la transacción → 500).
+        return ResponseEntity.ok(ResponseDTO.success("Datos actualizados correctamente", vistaActualizada(usuario)));
+    }
+
+    static Map<String, Object> vistaActualizada(Usuario u) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", u.getId());
+        m.put("nombre", u.getNombre());
+        m.put("apellidoPaterno", u.getApellidoPaterno());
+        m.put("apellidoMaterno", u.getApellidoMaterno());
+        m.put("correo", u.getCorreo());
+        m.put("telefono", u.getTelefono());
+        m.put("telefonoAlterno", u.getTelefonoAlterno());
+        return m;
     }
 }

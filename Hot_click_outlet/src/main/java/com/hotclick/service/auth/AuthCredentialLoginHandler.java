@@ -6,7 +6,6 @@ import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.security.JwtUtil;
-import com.hotclick.service.OtpService;
 import com.hotclick.service.SecurityAuditService;
 import com.hotclick.service.SecurityDetectionService;
 import com.hotclick.service.TurnstileService;
@@ -25,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import com.hotclick.controller.crm.CrmClienteMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,7 +53,6 @@ public class AuthCredentialLoginHandler {
     @Autowired private SecurityDetectionService    securityDetectionService;
     @Autowired private TurnstileService            turnstileService;
     @Autowired private AuthSupport                 authSupport;
-    @Autowired private OtpService                  otpService;
 
     public ResponseEntity<?> login(JwtRequest request, HttpServletRequest httpRequest) {
         if (!turnstileService.verify(request.getTurnstileToken(), securityAuditService.getIp(httpRequest))) {
@@ -107,7 +106,7 @@ public class AuthCredentialLoginHandler {
         if (usuario.getBloqueadoHasta() == null || !LocalDateTime.now(Constants.ZONA_CR).isBefore(usuario.getBloqueadoHasta())) {
             return null;
         }
-        log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", request.getCorreo(), usuario.getBloqueadoHasta());
+        log.warn("Login bloqueado para {}: cuenta bloqueada hasta {}", CrmClienteMapper.enmascararCorreo(request.getCorreo()), usuario.getBloqueadoHasta());
         AuthAuditSupport.run(log, () -> securityAuditService.logLoginBlocked(request.getCorreo(), httpRequest));
         return ResponseEntity.status(403).body(ResponseDTO.error(
             "Cuenta temporalmente bloqueada por múltiples intentos fallidos. Revisá tu correo para recuperar el acceso."));
@@ -135,25 +134,18 @@ public class AuthCredentialLoginHandler {
     private ResponseEntity<?> rechazarSiEstadoInvalido(Usuario usuario) {
         int estado = usuario.getEstado() == null ? 0 : usuario.getEstado();
         if (estado == Constants.ESTADO_PENDIENTE) {
-            avisarVerificacionPorEmail(usuario);
+            // QA4-004: el login ya no manda código. Solo se envía cuando la persona lo pide
+            // (POST /api/auth/reenviar-verificacion); antes cada login gastaba un código del tope.
             return respuestaCuentaBloqueada("Verificá tu correo para activar la cuenta.");
         }
         if (estado == Constants.ESTADO_INACTIVO
                 || estado == Constants.ESTADO_SUSPENDIDO
                 || estado == Constants.ESTADO_ELIMINADO) {
-            return respuestaCuentaBloqueada(MSG_CREDENCIALES);
+            // BAJO área 2: mismo 401 genérico que clave mala (un 403 revelaba que la cuenta existe).
+            return respuestaCredencialesInvalidas();
         }
         // Cualquier otro valor (p. ej. sin estado) tampoco entra: solo el estado 1 recibe tokens.
-        return estado == Constants.ESTADO_ACTIVO ? null : respuestaCuentaBloqueada(MSG_CREDENCIALES);
-    }
-
-    private void avisarVerificacionPorEmail(Usuario usuario) {
-        try {
-            otpService.enviarOtp(usuario, Constants.OTP_TIPO_REGISTRO);
-        } catch (Exception e) {
-            log.error("[login] No se pudo reenviar verificación a {}: {}",
-                usuario.getCorreo(), e.getMessage(), e);
-        }
+        return estado == Constants.ESTADO_ACTIVO ? null : respuestaCredencialesInvalidas();
     }
 
     private static ResponseEntity<?> respuestaCredencialesInvalidas() {

@@ -34,8 +34,14 @@ public class OnvoPedidosPendientesJob {
         this.clock = clock;
     }
 
+    /** Entrada programada: ShedLock solo envuelve métodos void (QA5-SL-01). */
     @Scheduled(fixedDelayString = "PT10M", initialDelayString = "PT5M")
     @SchedulerLock(name = "onvo-pedidos-pendientes", lockAtMostFor = "PT9M", lockAtLeastFor = "PT1M")
+    public void revisarProgramado() {
+        revisar();
+    }
+
+    /** Cuenta y avisa; sin lock propio (lo pone revisarProgramado). */
     public long revisar() {
         LocalDateTime corte = LocalDateTime.now(clock).minusMinutes(minutos);
         long n = pagos.countByProveedorIgnoreCaseAndEstadoPagoAndFechaCreacionBefore("ONVO", "PENDIENTE", corte);

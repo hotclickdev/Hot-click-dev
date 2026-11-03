@@ -21,3 +21,6 @@ f5030362b43a0b9fa2498ae1318544c5d7d62824:scripts/eng-gates/ola3.test.mjs:stripe-
 7628431baeebd305c4535f913d4321639003345a:Hot_click_outlet/docs/landing-pages.md:generic-api-key:25
 # ALTO-1: literal de separación de dominio HKDF/HMAC en un Javadoc (público, no es un secreto)
 24741770460f7db403b1889b4cb25bee2d352492:Hot_click_outlet/src/main/java/com/hotclick/service/shoppingassistant/ShoppingAssistantSesionFirma.java:generic-api-key:22
+# RedaccionLogTest: literales token= falsos usados como entrada del enmascarado (revisado por Seguridad, no rotar)
+796dc64f7d40c6f8de7f26b1eb6d41cb7eb70c65:Hot_click_outlet/src/test/java/com/hotclick/logging/RedaccionLogTest.java:generic-api-key:66
+ebe143e4cc7b5e6a8a6b1da3baec150b98255ebc:Hot_click_outlet/src/test/java/com/hotclick/logging/RedaccionLogTest.java:generic-api-key:44

@@ -33,6 +33,7 @@ public class OnvoCapturaService {
     @Autowired private PedidoGrupoService     pedidoGrupoService;
     @Autowired(required = false) private com.hotclick.service.OnvoService onvoService;
     @Autowired private com.hotclick.repository.PedidoRepository pedidoRepository;
+    @Autowired(required = false) private com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
 
     /** Resultado de escribir un cobro que ONVO ya confirmó. */
     public enum Captura { CAPTURADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA }
@@ -66,9 +67,21 @@ public class OnvoCapturaService {
 
         WebhookEvent evento = registrar(checkoutSessionId, OnvoPaymentProvider.EVENTO_SESION, resumen, origen);
 
+        if (com.hotclick.service.payment.PaymentOrderConfirmationService.enReembolso(pago.getEstadoPago())) {
+            // PR #460 (M1): reintento sobre un cobro ya marcado para reembolso: no se recaptura ni se re-alerta.
+            evento.setProcesado(true);
+            evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
+            evento.setErrorProcesamiento("Pago ya en reembolso");
+            webhookEventRepository.save(evento);
+            log.info("[onvo] Captura ignorada: pago {} ya está en {}", pago.getId(), pago.getEstadoPago());
+            return Captura.DUPLICADO;
+        }
+
         if (algunoCancelado(pago)) {
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+            // Marca de aviso pendiente en esta misma transacción; el envío sale después del commit.
+            if (avisoReembolso != null) avisoReembolso.registrarPendiente(pago);
             pagoRepository.save(pago);
             evento.setProcesado(true);
             evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
@@ -76,6 +89,7 @@ public class OnvoCapturaService {
             webhookEventRepository.save(evento);
             log.error("[ALERTA-PAGO] ONVO cobró un pedido ya cancelado; queda para reembolso del admin: sessionId={}",
                 checkoutSessionId);
+            // Aviso al admin después del commit, con dedupe por pago; si falla, el pago sigue REEMBOLSO_PENDIENTE.
             return Captura.COBRADO_SOBRE_CANCELADO;
         }
 

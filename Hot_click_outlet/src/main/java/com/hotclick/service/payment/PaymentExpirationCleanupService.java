@@ -29,6 +29,7 @@ public class PaymentExpirationCleanupService {
     @Autowired private PagoExpiradoCancelador     pagoExpiradoCancelador;
     @Autowired private ReservaAntiBotService      reservaAntiBot;
     @Autowired private ReservaSospechosaLiberador reservaSospechosaLiberador;
+    @Autowired private OnvoRechazoService         onvoRechazoService;
 
     /** Minutos sin pagar tras los que un pago pendiente se reconsulta y, si corresponde, se cancela. */
     @Value("${hotclick.pagos.onvo.vencimiento-minutos:30}")
@@ -113,6 +114,11 @@ public class PaymentExpirationCleanupService {
                     return true;
                 }
                 case NO_PAGADO -> {
+                    // QA5 MEDIO: si ONVO lo rechazó, queda FALLIDO (no CANCELADO) y ya liberó el stock.
+                    if (onvoRechazoService != null
+                            && onvoRechazoService.cerrarSiRechazado(pago.getId(), pago.getMerchantToken())) {
+                        return false;
+                    }
                     return onvoPaymentProvider.expirarSesionSinCobro(pago.getMerchantToken());
                 }
                 default -> {

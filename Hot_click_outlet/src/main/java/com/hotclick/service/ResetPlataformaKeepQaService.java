@@ -1,20 +1,26 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.telegram.TelegramTexto;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Borra productos, tiendas y usuarios registrados.
@@ -33,10 +39,53 @@ public class ResetPlataformaKeepQaService {
     private static final String KEEP_USUARIO = "hot_click_wipe_keep_usuario";
     private static final String KEEP_EMPRESA = "hot_click_wipe_keep_empresa";
 
-    private final JdbcTemplate jdbc;
+    /** Flag que además de un perfil permitido habilita el vaciado. Nunca en application-prod ni en el default. */
+    public static final String PROPIEDAD_HABILITADO = "hotclick.reset-plataforma.enabled";
+    /** Únicos perfiles con los que puede correr. Cualquier otro perfil activo (prod incluido) lo bloquea. */
+    public static final Set<String> PERFILES_PERMITIDOS = Set.of("dev", "test", "local");
 
-    public ResetPlataformaKeepQaService(JdbcTemplate jdbc) {
+    private static final String SQL_TABLAS_QUE_REFERENCIAN = """
+                SELECT DISTINCT quote_ident(n.nspname) || '.' || quote_ident(rel.relname) AS tbl
+                  FROM pg_constraint con
+                  JOIN pg_class rel ON rel.oid = con.conrelid
+                  JOIN pg_namespace n ON n.oid = rel.relnamespace
+                 WHERE con.contype = 'f'
+                   AND con.confrelid = to_regclass(?)
+                   AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+                   AND rel.relname NOT LIKE 'hot_click_wipe_keep%'
+                """;
+
+    private final JdbcTemplate jdbc;
+    private final Environment env;
+
+    public ResetPlataformaKeepQaService(JdbcTemplate jdbc, Environment env) {
         this.jdbc = jdbc;
+        this.env = env;
+    }
+
+    /**
+     * true solo si hay perfiles activos, cada uno está en {@link #PERFILES_PERMITIDOS} (dev+prod se rechaza)
+     * y {@link #PROPIEDAD_HABILITADO} es true. Sin perfiles activos (solo "default") se rechaza.
+     */
+    public boolean habilitado() {
+        if (env == null) return false;
+        String[] activos = env.getActiveProfiles();
+        if (activos.length == 0) return false;
+        for (String perfil : activos) {
+            if (perfil == null || !PERFILES_PERMITIDOS.contains(perfil.trim().toLowerCase(Locale.ROOT))) {
+                return false;
+            }
+        }
+        return Boolean.TRUE.equals(env.getProperty(PROPIEDAD_HABILITADO, Boolean.class, Boolean.FALSE));
+    }
+
+    private void exigirHabilitado() {
+        if (!habilitado()) {
+            LOG.warn("[reset-plataforma] bloqueado: perfiles={} {}={}",
+                env == null ? List.of() : List.of(env.getActiveProfiles()), PROPIEDAD_HABILITADO,
+                env == null ? null : env.getProperty(PROPIEDAD_HABILITADO));
+            throw new RecursoNoEncontradoException("Recurso no encontrado");
+        }
     }
 
     public static List<String> correosConservados() {
@@ -66,6 +115,7 @@ public class ResetPlataformaKeepQaService {
 
     @Transactional
     public Map<String, Object> ejecutarSiPendiente() {
+        exigirHabilitado();
         jdbc.execute("""
             CREATE TABLE IF NOT EXISTS hot_click_one_shot_tb (
                 clave VARCHAR(80) PRIMARY KEY,
@@ -94,6 +144,7 @@ public class ResetPlataformaKeepQaService {
 
     @Transactional
     public Map<String, Object> ejecutar() {
+        exigirHabilitado();
         prepararKeep();
         intentarSinForeignKeys();
         borrarTodasLasFilasQueApuntanA("hot_click_producto_tb");
@@ -119,7 +170,10 @@ public class ResetPlataformaKeepQaService {
 
     private void intentarSinForeignKeys() {
         try {
-            jdbc.execute("SET LOCAL session_replication_role = replica");
+            aislado(() -> {
+                jdbc.execute("SET LOCAL session_replication_role = replica");
+                return null;
+            });
         } catch (DataAccessException e) {
             LOG.warn("Sin permiso para session_replication_role; se borra por FKs. {}", rootMessage(e));
         }
@@ -196,16 +250,7 @@ public class ResetPlataformaKeepQaService {
 
     private List<String> tablasQueReferencian(String tabla) {
         try {
-            return jdbc.query("""
-                SELECT DISTINCT quote_ident(n.nspname) || '.' || quote_ident(rel.relname) AS tbl
-                  FROM pg_constraint con
-                  JOIN pg_class rel ON rel.oid = con.conrelid
-                  JOIN pg_namespace n ON n.oid = rel.relnamespace
-                 WHERE con.contype = 'f'
-                   AND con.confrelid = to_regclass(?)
-                   AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-                   AND rel.relname NOT LIKE 'hot_click_wipe_keep%'
-                """, (rs, i) -> rs.getString("tbl"), tabla);
+            return aislado(() -> jdbc.query(SQL_TABLAS_QUE_REFERENCIAN, (rs, i) -> rs.getString("tbl"), tabla));
         } catch (DataAccessException e) {
             if (ignorable(e)) return List.of();
             throw e;
@@ -249,7 +294,7 @@ public class ResetPlataformaKeepQaService {
 
     private long count(String from) {
         try {
-            Long n = jdbc.queryForObject("SELECT COUNT(*) FROM " + from, Long.class);
+            Long n = aislado(() -> jdbc.queryForObject("SELECT COUNT(*) FROM " + from, Long.class));
             return n == null ? 0 : n;
         } catch (DataAccessException e) {
             if (ignorable(e)) return 0;
@@ -259,7 +304,10 @@ public class ResetPlataformaKeepQaService {
 
     private void exec(String sql) {
         try {
-            jdbc.execute(sql);
+            aislado(() -> {
+                jdbc.execute(sql);
+                return null;
+            });
         } catch (DataAccessException e) {
             if (ignorable(e)) {
                 LOG.debug("Reset skip {}: {}", sql, rootMessage(e));
@@ -268,6 +316,30 @@ public class ResetPlataformaKeepQaService {
             LOG.error("Reset falló: {} — {}", sql, rootMessage(e));
             throw e;
         }
+    }
+
+    /**
+     * Corre un paso dentro de un SAVEPOINT. En Postgres cualquier error (tabla que no existe en una BD
+     * vacía, falta de permiso para session_replication_role...) deja la transacción abortada y lo
+     * que sigue falla con 25P02 "transaction is aborted". Con el savepoint, un error esperado se deshace
+     * solo para ese paso; el error se relanza siempre y quien llama decide si es ignorable o no.
+     */
+    private <T> T aislado(Supplier<T> paso) {
+        return jdbc.execute((ConnectionCallback<T>) con -> {
+            if (con.getAutoCommit()) {
+                return paso.get();
+            }
+            Savepoint sp = con.setSavepoint();
+            T r;
+            try {
+                r = paso.get();
+            } catch (RuntimeException e) {
+                con.rollback(sp);
+                throw e;
+            }
+            con.releaseSavepoint(sp);
+            return r;
+        });
     }
 
     private boolean ignorable(DataAccessException e) {
@@ -288,6 +360,6 @@ public class ResetPlataformaKeepQaService {
 
     private String rootMessage(DataAccessException e) {
         Throwable c = e.getMostSpecificCause();
-        return c.getMessage() == null ? e.getMessage() : c.getMessage();
+        return TelegramTexto.paraLog(c.getMessage() == null ? e.getMessage() : c.getMessage());
     }
 }

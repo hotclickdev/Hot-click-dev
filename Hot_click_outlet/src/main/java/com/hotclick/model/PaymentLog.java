@@ -48,7 +48,8 @@ public class PaymentLog extends BaseEntity {
     private Pago pago;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fk_id_usuario")
+    // columnDefinition solo describe el tipo real que dejan las migraciones (DDL/validate); no cambia binding ni runtime.
+    @JoinColumn(name = "fk_id_usuario", columnDefinition = "int4")
     private Usuario usuario;
 
     public Long getId() { return id; }

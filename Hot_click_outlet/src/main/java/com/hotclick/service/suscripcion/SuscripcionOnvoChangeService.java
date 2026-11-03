@@ -173,7 +173,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         String planActual = nombrePlanActual(empresa);
         // Auditor 5 S-01: con PAST_DUE/VENCIDO/TRIAL el mismo plan se puede pagar (reactivar).
         if (planDestino.getNombre().equalsIgnoreCase(planActual) && !puedeRepagarMismoPlan(empresa)) {
-            throw new IllegalArgumentException("Ya tenés el plan " + planDestino.getNombre());
+            throw new com.hotclick.exception.PlanYaActivoException(planDestino.getNombre());
         }
 
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
@@ -524,8 +524,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             sub.setEmpresa(empresa);
             sub.setEstado("TRIAL");
             sub.setFechaInicio(LocalDate.now(Constants.ZONA_CR));
+            // QA3-023: la fila nueva arranca con el plan vigente del negocio, no con el elegido sin pagar.
+            sub.setPlan(planVigente(empresa, plan));
         }
-        sub.setPlan(plan);
+        registrarPlanPendiente(sub, plan);
         sub.setOnvoCustomerId(customerId);
         sub.setOnvoSubscriptionId(subscriptionId);
         sub.setOnvoPriceId(priceId);
@@ -542,7 +544,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     public void guardarOnvoPricePendiente(Long empresaId, Plan plan, String priceId) {
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción activa", empresaId));
-        sub.setPlan(plan);
+        // QA3-023: el plan vigente no cambia hasta el webhook ONVO verificado; el nuevo queda pendiente.
+        registrarPlanPendiente(sub, plan);
         sub.setOnvoPriceId(priceId);
         sub.setCancelarAlVencer(false);
         suscripcionRepo.save(sub);
@@ -585,6 +588,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             return s;
         });
         sub.setPlan(plan);
+        sub.setPlanPendiente(null);
         sub.setEstado("ACTIVO");
         if (onvoPriceId != null) sub.setOnvoPriceId(onvoPriceId);
         sub.setCancelarAlVencer(false);
@@ -621,6 +625,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw new IllegalStateException("Sin fin de período ONVO para la suscripción");
         }
         sub.setPlan(plan);
+        sub.setPlanPendiente(null);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
@@ -714,6 +719,28 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             if (nombre != null) return nombre;
         }
         return empresa.getPlanSaas() != null ? empresa.getPlanSaas() : PLAN_GRATIS;
+    }
+
+    /** QA3-023: pendiente solo si difiere del vigente (repagar el mismo plan no deja nada pendiente). */
+    static void registrarPlanPendiente(Suscripcion sub, Plan elegido) {
+        Plan vigente = sub.getPlan();
+        boolean mismo = vigente != null && elegido != null && vigente.getId() != null
+            && vigente.getId().equals(elegido.getId());
+        sub.setPlanPendiente(mismo ? null : elegido);
+    }
+
+    /** Plan vigente del negocio (por repo, sin inicializar el proxy LAZY); si no hay, el elegido (fila NOT NULL). */
+    private Plan planVigente(Empresa empresa, Plan elegido) {
+        Plan actual = empresa.getPlan();
+        if (actual != null && actual.getId() != null) {
+            Plan p = planRepo.findById(actual.getId()).orElse(null);
+            if (p != null) return p;
+        }
+        if (empresa.getPlanSaas() != null) {
+            Plan p = planRepo.findByNombre(empresa.getPlanSaas()).orElse(null);
+            if (p != null) return p;
+        }
+        return planRepo.findByNombre(PLAN_GRATIS).orElse(elegido);
     }
 
     static boolean puedeRepagarMismoPlan(Empresa empresa) {

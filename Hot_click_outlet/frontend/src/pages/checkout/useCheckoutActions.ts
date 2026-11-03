@@ -26,6 +26,8 @@ type CheckoutActionsDeps = {
   telefono: string
   direccion: string
   direccionPedido?: string
+  provincia?: string
+  canton?: string
   guestEmail: string
   guestPhone: string
   sinpeNombre: string
@@ -86,6 +88,8 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     telefono,
     direccion,
     direccionPedido,
+    provincia,
+    canton,
     guestEmail,
     guestPhone,
     sinpeNombre,
@@ -174,7 +178,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
       metodoPago, sinpeNombre, sinpeCedula,
       setSinpeNombreErr, setSinpeCedulaErr, telefono,
       metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
-      notas, direccion, direccionPedido, sinpeEmail, totalFinal, items, bodegaRetiro,
+      notas, direccion, direccionPedido, provincia, canton, sinpeEmail, totalFinal, items, bodegaRetiro,
       cuponCodigo, gcCodigo, sinpeTelefono, sinpeTipoIdentificacion, iniciarPago, sinpeManualHabilitado, tarjetaOnvoHabilitada,
       avisarSinMetodo: () => showToast(t('checkout.f.sinMetodoPago'), 'error'),
     })
@@ -203,6 +207,8 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     notas,
     direccion,
     direccionPedido,
+    provincia,
+    canton,
     sinpeEmail,
     totalFinal,
     items,

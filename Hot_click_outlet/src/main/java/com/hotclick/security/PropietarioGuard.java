@@ -44,13 +44,52 @@ public class PropietarioGuard {
         return !companyScope.isImpersonating() && esPropietario(companyScope.getCurrentUser(), empresaId);
     }
 
+    /**
+     * Visibilidad pública de la tienda: además del PROPIETARIO y del ADMIN de plataforma, la puede cambiar el
+     * ADMIN de equipo activo (sin sesión de soporte). EDITOR, LECTOR y CAJERO, no.
+     */
+    public boolean puedeCambiarVisibilidad(Long empresaId) {
+        return puedeGestionarEmpresa(empresaId) || esAdminEquipo(empresaId);
+    }
+
+    /**
+     * Rol CAJERO asignable. Miembro nuevo ({@code usuarioObjetivoId == null}, invitación): PROPIETARIO (o ADMIN de
+     * plataforma) o ADMIN de equipo activo sin sesión de soporte. Miembro existente (cambio de rol): solo el
+     * PROPIETARIO, y nunca sobre sí mismo; el ADMIN de equipo no se asigna CAJERO ni convierte a EDITOR/LECTOR.
+     */
+    public boolean puedeAsignarCajero(Long empresaId, Long usuarioObjetivoId) {
+        if (usuarioObjetivoId == null) return puedeGestionarEmpresa(empresaId) || esAdminEquipo(empresaId);
+        Usuario u = companyScope.getCurrentUser();
+        if (u != null && usuarioObjetivoId.equals(u.getId())) return false;
+        return puedeGestionarEmpresa(empresaId);
+    }
+
+    /** ADMIN de equipo activo en esa empresa, sin sesión de soporte (no es el ADMIN de plataforma). */
+    public boolean esAdminEquipo(Long empresaId) {
+        if (empresaId == null || companyScope.isImpersonating()) return false;
+        Usuario u = companyScope.getCurrentUser();
+        if (u == null) return false;
+        return miembros.findByUsuarioIdAndEmpresaId(u.getId(), empresaId)
+            .map(f -> Integer.valueOf(1).equals(f.getEstado()) && "ADMIN".equals(f.getRolEnEmpresa()))
+            .orElse(false);
+    }
+
     /** Miembro activo con rol LECTOR en esa empresa (no aplica a ADMIN de plataforma). */
     public boolean esLector(Long empresaId) {
+        return tieneRolEquipo(empresaId, "LECTOR");
+    }
+
+    /** Miembro activo con rol CAJERO en esa empresa (solo opera el POS; no aplica a ADMIN de plataforma). */
+    public boolean esCajero(Long empresaId) {
+        return tieneRolEquipo(empresaId, "CAJERO");
+    }
+
+    private boolean tieneRolEquipo(Long empresaId, String rol) {
         if (empresaId == null || companyScope.isAdminIT()) return false;
         Usuario u = companyScope.getCurrentUser();
         if (u == null) return false;
         return miembros.findByUsuarioIdAndEmpresaId(u.getId(), empresaId)
-            .map(f -> Integer.valueOf(1).equals(f.getEstado()) && "LECTOR".equals(f.getRolEnEmpresa()))
+            .map(f -> Integer.valueOf(1).equals(f.getEstado()) && rol.equals(f.getRolEnEmpresa()))
             .orElse(false);
     }
 

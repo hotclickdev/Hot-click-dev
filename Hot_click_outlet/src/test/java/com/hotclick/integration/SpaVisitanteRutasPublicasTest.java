@@ -25,6 +25,8 @@ class SpaVisitanteRutasPublicasTest extends BaseIntegrationTest {
     @ValueSource(strings = {
         "/privacidad", "/terminos", "/cookies", "/envios", "/devoluciones", "/acuerdo-vendedores",
         "/encargo/tok123", "/cotizacion/tok123", "/sin-conexion",
+        // /logout por URL daba 404 (regresión): ahora sirve el SPA y la ruta cierra la sesión.
+        "/logout",
     })
     void paginaDeVisitante_sinSesion_sirveSpa(String ruta) throws Exception {
         mockMvc.perform(get(ruta).accept(MediaType.TEXT_HTML))

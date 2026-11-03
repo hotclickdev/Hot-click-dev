@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
   issues: write
 
@@ -20,21 +20,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: No aplica (no es Dependabot)
-        if: github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')
-        run: echo "E6 solo corre en PRs dependabot/* — PASS."
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        run: echo "E6 solo corre en PRs cuyo autor es dependabot[bot] — PASS."
 
       - name: Checkout
-        if: github.actor == 'dependabot[bot]' || startsWith(github.head_ref, 'dependabot/')
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup Node 22
-        if: github.actor == 'dependabot[bot]' || startsWith(github.head_ref, 'dependabot/')
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
         uses: actions/setup-node@v6
         with:
           node-version: '22'
 
       - name: Triage
-        if: github.actor == 'dependabot[bot]' || startsWith(github.head_ref, 'dependabot/')
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

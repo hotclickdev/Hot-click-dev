@@ -41,12 +41,13 @@ export function destinoSinpeVisible(destino: string | null | undefined): string 
   return d ? formatTelefonoCR(d.replace(/^\+506/, '')) : ''
 }
 
+/** Defaults; `config/montosEnvio` los reemplaza con lo que configuró el ADMIN. */
 export const SHIPPING_COSTS: Record<string, number> = {
   RETIRO_EN_TIENDA:       0,
   // ₡2.000 de HotClick; lo que cobre la encomienda lo paga el cliente aparte al retirar.
   ENCOMIENDA_PROPIA:   2000,
   ENVIO_NORMAL_GAM:    4000,
-  ENVIO_NORMAL_FUERA_GAM: 4000,
+  ENVIO_NORMAL_FUERA_GAM: 5500,
   ENVIO_RAPIDO:        5000,
 }
 
