@@ -31,7 +31,7 @@ export default function ChangePasswordModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (nueva !== confirm) { setError(t('profile.passwordMismatch')); return }
-    if (nueva.length < 6)  { setError(t('profile.passwordTooShort')); return }
+    if (nueva.length < 8)  { setError(t('profile.passwordTooShort')); return }
     setError('')
     setLoading(true)
     try {
@@ -53,7 +53,7 @@ export default function ChangePasswordModal({
         <CampoModalCuenta figma={figma} etiqueta={t('profile.currentPassword')} type="password" value={actual}
           onChange={(e) => setActual(e.target.value)} required autoFocus autoComplete="current-password" />
         <CampoModalCuenta figma={figma} etiqueta={t('profile.newPassword')} type="password" value={nueva}
-          onChange={(e) => setNueva(e.target.value)} required minLength={6} autoComplete="new-password" />
+          onChange={(e) => setNueva(e.target.value)} required minLength={8} autoComplete="new-password" />
         <CampoModalCuenta figma={figma} etiqueta={t('profile.confirmPassword')} type="password" value={confirm}
           onChange={(e) => setConfirm(e.target.value)} required autoComplete="new-password" />
         <ErrorModalCuenta figma={figma} texto={error} />

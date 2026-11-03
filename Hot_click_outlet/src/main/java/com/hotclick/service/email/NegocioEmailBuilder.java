@@ -89,6 +89,7 @@ public class NegocioEmailBuilder {
             case "EDITOR" -> "Editor — puede editar productos y pedidos";
             case "LECTOR" -> "Lector — solo visualización";
             case "ADMIN"  -> "Admin — acceso completo";
+            case "CAJERO" -> "Cajero — solo opera el punto de venta";
             default -> rolEnEmpresa;
         };
 

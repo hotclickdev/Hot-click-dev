@@ -105,6 +105,20 @@ public class PaymentNotificationsFacade {
         }
     }
 
+    /**
+     * MED-2: cobro sin stock (sobreventa). Avisa a la plataforma (admin IT) después del COMMIT para que
+     * gestione el reembolso; la cola está en {@code GET /api/admin/pagos?estadoPago=REEMBOLSO_PENDIENTE}.
+     * Sin PII: solo id de pago, números de pedido, monto y proveedor.
+     */
+    public void onSobreventa(Pago pago, String numerosPedidos) {
+        if (pago == null) return;
+        Long pagoId = pago.getId();
+        Integer monto = pago.getMonto();
+        String proveedor = pago.getProveedor();
+        despuesDelCommit(() -> notificacionEmailService.enviarAlertaSobreventaAAdminIT(
+            pagoId, numerosPedidos, monto, proveedor));
+    }
+
     public void onPagoFallido(Pedido pedido, String motivo) {
         if (pedido == null) return;
         touchUsuarioFinalForAsync(pedido);

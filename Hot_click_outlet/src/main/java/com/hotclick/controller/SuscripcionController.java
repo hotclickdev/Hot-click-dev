@@ -211,6 +211,11 @@ public class SuscripcionController {
                 "codigo", com.hotclick.exception.AltaOnvoEnCursoException.CODIGO));
         } catch (com.hotclick.exception.PlanNoDisponibleException e) {
             return ResponseEntity.status(409).body(Map.of("error", com.hotclick.exception.PlanNoDisponibleException.MENSAJE, "codigo", "PLAN_SIN_PRECIO"));
+        } catch (com.hotclick.exception.PlanYaActivoException e) {
+            // QA3-022: mismo plan activo → 409 con código claro (antes 400 genérico).
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.PlanYaActivoException.MENSAJE,
+                "codigo", com.hotclick.exception.PlanYaActivoException.CODIGO));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
             return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
         } catch (SecurityException e) {
@@ -263,8 +268,20 @@ public class SuscripcionController {
         if (empresaId == null) return ResponseEntity.status(401).build();
         if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
         return suscripcionTilopayService.planNuevoPendiente(empresaId)
+            .or(() -> planPendienteOnvo(empresaId))
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /** QA3-023: plan elegido por ONVO que espera el webhook confirmado (registrado en la suscripción). */
+    private java.util.Optional<Map<String, Object>> planPendienteOnvo(Long empresaId) {
+        Object nombre = suscripcionService.getSuscripcionInfo(empresaId).get("planPendienteNombre");
+        if (!(nombre instanceof String n)) return java.util.Optional.empty();
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("plan", n);
+        m.put("motivo", "CAMBIO_PLAN");
+        m.put("proveedor", "ONVO");
+        return java.util.Optional.of(m);
     }
 
     /** Mensajes genéricos: las respuestas 4xx nunca exponen e.getMessage(). */

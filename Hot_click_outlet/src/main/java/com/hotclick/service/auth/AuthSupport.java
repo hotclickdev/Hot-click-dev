@@ -36,6 +36,49 @@ public class AuthSupport {
     @Autowired private PermisoRepository   permisoRepository;
     @Autowired private RateLimiter         rateLimiter;
     @Autowired private ClientIpResolver    clientIpResolver;
+    @Autowired private com.hotclick.repository.MiembroEmpresaRepository miembroEmpresaRepository;
+    @Autowired private com.hotclick.repository.EmpresaRepository        empresaRepository;
+
+    /** Negocio que va en el JWT al iniciar sesión, con el rol que corresponde a ese negocio. */
+    public record EmpresaActiva(Long id, String slug, String nombre, String rol) {
+        static EmpresaActiva ninguna(String rol) { return new EmpresaActiva(null, null, null, rol); }
+
+        /** Negocio principal del usuario (comportamiento previo); también respaldo si no hay resolución. */
+        public static EmpresaActiva principal(Usuario usuario, String rol) {
+            if (PlatformStaff.esSinTenant(rol) || usuario.getEmpresaId() == null) return ninguna(rol);
+            var e = usuario.getEmpresa();
+            return new EmpresaActiva(usuario.getEmpresaId(), e != null ? e.getSlug() : null,
+                e != null ? e.getNombreEmpresa() : null, rol);
+        }
+
+        public static EmpresaActiva oPrincipal(EmpresaActiva resuelta, Usuario usuario, String rol) {
+            return resuelta != null ? resuelta : principal(usuario, rol);
+        }
+    }
+
+    /**
+     * QA5 área 2 fila 27: un dueño sin {@code usuario.empresa_id} pero con UNA membresía activa salía sin negocio en
+     * el token y el panel lo mandaba a crear otro. Orden: staff de plataforma sin tenant; negocio principal del usuario;
+     * si no tiene, su única membresía activa (rol de la membresía, igual que cambiar-negocio). Con varias membresías
+     * no se elige ninguna: el login por contraseña pide la selección y el panel muestra el selector (cambiar-negocio).
+     */
+    public EmpresaActiva empresaActiva(Usuario usuario, String rolBase) {
+        if (PlatformStaff.esSinTenant(rolBase) || usuario.getEmpresaId() != null || miembroEmpresaRepository == null) {
+            return EmpresaActiva.principal(usuario, rolBase);
+        }
+        List<com.hotclick.model.MiembroEmpresa> activas;
+        try {
+            activas = miembroEmpresaRepository.findByUsuarioIdAndEstado(usuario.getId(), 1);
+        } catch (DataAccessException ex) {
+            log.warn("No se pudieron leer membresías userId={}: {}", usuario.getId(), ex.getClass().getSimpleName());
+            return EmpresaActiva.ninguna(rolBase);
+        }
+        if (activas.size() != 1 || activas.get(0).getEmpresa() == null) return EmpresaActiva.ninguna(rolBase);
+        var m = activas.get(0);
+        var empresa = empresaRepository == null ? null : empresaRepository.findById(m.getEmpresa().getId()).orElse(null);
+        if (empresa == null) return EmpresaActiva.ninguna(rolBase);
+        return new EmpresaActiva(empresa.getId(), empresa.getSlug(), empresa.getNombreEmpresa(), RolMembresia.paraJwt(m, usuario));
+    }
 
     // Tope por usuario (no por IP) en /2fa/*: un atacante con varias IP no multiplica los intentos.
     // Gestión (sesión): setup, activate, disable, recovery-codes/regenerate, email/enable|activate|disable.
@@ -123,13 +166,12 @@ public class AuthSupport {
         exigirCuentaActiva(usuario);
         String rol = PlatformStaff.rolPrincipal(
             usuario.getRoles().stream().map(r -> r.getNombreRol()).toList());
-        // ADMIN y staff de plataforma: JWT y response sin tenant (V119 + V126).
-        boolean sinTenant = PlatformStaff.esSinTenant(rol);
-        Long empresaId = sinTenant ? null : usuario.getEmpresaId();
-        String empresaSlug = (!sinTenant && usuario.getEmpresa() != null)
-            ? usuario.getEmpresa().getSlug() : null;
-        String empresaNombre = (!sinTenant && usuario.getEmpresa() != null)
-            ? usuario.getEmpresa().getNombreEmpresa() : null;
+        // ADMIN y staff de plataforma: JWT y response sin tenant (V119 + V126). Dueño con una sola membresía: esa.
+        EmpresaActiva activa = empresaActiva(usuario, rol);
+        rol = activa.rol();
+        Long empresaId = activa.id();
+        String empresaSlug = activa.slug();
+        String empresaNombre = activa.nombre();
         List<String> permisos = permisosDe(usuario.getId());
         String accessToken  = jwtUtil.generateTokenFull(
             usuario.getCorreo(), usuario.getId(), rol,
@@ -173,6 +215,32 @@ public class AuthSupport {
 
     /** Minimum 8 chars, at least one uppercase letter and one digit. */
     public boolean esContrasenaValida(String pwd) {
+        return cumplePoliticaContrasena(pwd);
+    }
+
+    /** Mensaje único de la política de {@link #esContrasenaValida}. */
+    public static final String MENSAJE_POLITICA_CONTRASENA =
+            "La contraseña debe tener al menos 8 caracteres, una mayúscula y un número";
+
+    /**
+     * Qué le falta a la contraseña para cumplir la política, en voseo
+     * (p. ej. "Te falta una mayúscula", "Te falta una mayúscula y un número").
+     * Devuelve null si cumple.
+     */
+    public static String faltantePoliticaContrasena(String pwd) {
+        String p = pwd == null ? "" : pwd;
+        java.util.List<String> faltan = new java.util.ArrayList<>();
+        if (p.length() < 8) faltan.add("llegar a 8 caracteres");
+        if (p.chars().noneMatch(Character::isUpperCase)) faltan.add("una mayúscula");
+        if (p.chars().noneMatch(Character::isDigit)) faltan.add("un número");
+        if (faltan.isEmpty()) return null;
+        String lista = faltan.size() == 1 ? faltan.get(0)
+                : String.join(", ", faltan.subList(0, faltan.size() - 1)) + " y " + faltan.get(faltan.size() - 1);
+        return "Te falta " + lista;
+    }
+
+    /** Versión estática de {@link #esContrasenaValida} para altas fuera del flujo de auth. */
+    public static boolean cumplePoliticaContrasena(String pwd) {
         if (pwd == null || pwd.length() < 8) return false;
         boolean hasUpper = false, hasDigit = false;
         for (char c : pwd.toCharArray()) {
@@ -188,10 +256,11 @@ public class AuthSupport {
 
     /**
      * Política de la nueva contraseña al recuperarla (Figma "Recuperar contraseña · 3 nueva"):
-     * entre 8 y 128 caracteres y distinta del correo. Es la misma regla de largo que el registro.
+     * misma política que el registro (8+, una mayúscula y un número), hasta 128 caracteres
+     * y distinta del correo.
      */
     public static boolean esContrasenaRecuperacionValida(String pwd, String correo) {
-        if (pwd == null || pwd.length() < CONTRASENA_MIN || pwd.length() > CONTRASENA_MAX) return false;
+        if (pwd == null || pwd.length() > CONTRASENA_MAX || !cumplePoliticaContrasena(pwd)) return false;
         return correo == null || !pwd.trim().equalsIgnoreCase(correo.trim());
     }
 

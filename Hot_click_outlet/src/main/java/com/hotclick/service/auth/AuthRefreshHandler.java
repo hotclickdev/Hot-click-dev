@@ -59,8 +59,11 @@ public class AuthRefreshHandler {
                 refreshTokenService.writeCookie(response, rt.getRawToken());
             }
             String rol = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
-            Long empresaId = usuario.getEmpresaId();
-            String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug() : null;
+            // Sin negocio elegido: mismo criterio que el login (principal o única membresía activa; QA5 fila 27).
+            AuthSupport.EmpresaActiva base = AuthSupport.EmpresaActiva.oPrincipal(authSupport.empresaActiva(usuario, rol), usuario, rol);
+            rol = base.rol();
+            Long empresaId = base.id();
+            String empresaSlug = base.slug();
             // P1-03: si el usuario eligió otro negocio, se mantiene ese negocio y el rol de su
             // membresía, siempre que siga activa. Si ya no lo está, vuelve al negocio principal.
             if (rt.getEmpresaActivaId() != null) {

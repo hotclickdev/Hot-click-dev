@@ -45,8 +45,12 @@ import java.util.UUID;
  *   <li><b>Subred</b> (200): /24 en IPv4, /48 en IPv6, contra la rotación de IPs vecinas.</li>
  *   <li><b>Subred × negocio</b> (40): una sola subred no puede agotar el cupo de un negocio por su slug.</li>
  * </ul>
- * Un tope de red en 0 o negativo lo desactiva; sin IP conocida no se aplican. Al llegar al tope
- * global se registra una ALERTA (log ERROR, una vez por día; Sentry la levanta).
+ * Un tope de red en 0 o negativo lo desactiva. Sin IP conocida (o no literal) todo ese tráfico
+ * comparte un solo tope ({@code ip-desconocida-dia}, MEDIO-2), para que no esquive los topes de red.
+ * Las llaves de red y de cliente por IP ({@code r:}, {@code s:}, {@code rn:}, {@code c:ip:}) guardan
+ * un HMAC-SHA256 de la red, nunca la IP en claro. Los prefijos (/24 IPv4; /64 y /48 IPv6) se configuran.
+ * Al llegar al tope global se registra una ALERTA (log ERROR, una vez por día; Sentry la levanta) y
+ * otra al pasar {@code alerta-global-porcentaje} del tope; ninguna lleva IP ni visitorId.
  * Atómico (un UPDATE condicional por tope, sin pasarse del límite), fail-closed (cualquier error niega)
  * y, si un tope posterior rechaza, devuelve los cupos ya tomados. Todo se configura con
  * {@code asistente.cuota.*}. No consume créditos IA del plan.
@@ -65,7 +69,6 @@ public class AsistenteCuotaDiaria {
 
     static final String CLAVE_GLOBAL = "g";
     static final String PLAN_EMPRENDEDOR = "EMPRENDEDOR";
-    private static final int MAX_CLAVE = 120;
 
     private static final String TOMAR =
         "UPDATE hot_click_asistente_cuota_dia_tb SET usos = usos + 1 WHERE clave = ? AND dia = ? AND usos < ?";
@@ -73,6 +76,8 @@ public class AsistenteCuotaDiaria {
         "INSERT INTO hot_click_asistente_cuota_dia_tb (clave, dia, usos) VALUES (?, ?, 1)";
     private static final String DEVOLVER =
         "UPDATE hot_click_asistente_cuota_dia_tb SET usos = usos - 1 WHERE clave = ? AND dia = ? AND usos > 0";
+    private static final String USOS =
+        "SELECT usos FROM hot_click_asistente_cuota_dia_tb WHERE clave = ? AND dia = ?";
     private static final String PURGAR =
         "DELETE FROM hot_click_asistente_cuota_dia_tb WHERE dia < ?";
 
@@ -91,9 +96,37 @@ public class AsistenteCuotaDiaria {
     private final java.util.concurrent.atomic.AtomicReference<LocalDate> alertaGlobalEnviada =
         new java.util.concurrent.atomic.AtomicReference<>();
 
-    /** Topes por red; un valor &lt;= 0 desactiva ese tope. */
-    record TopesRed(int porIp, int porSubred, int porSubredNegocio, boolean alertaGlobal) {
+    private final java.util.concurrent.atomic.AtomicReference<LocalDate> alertaPorcentajeEnviada =
+        new java.util.concurrent.atomic.AtomicReference<>();
+
+    /**
+     * Topes por red; un valor &lt;= 0 desactiva ese tope. {@code sal} es la clave del HMAC de las IPs
+     * (no se imprime en toString).
+     */
+    record TopesRed(int porIp, int porSubred, int porSubredNegocio, boolean alertaGlobal,
+                    int porIpDesconocida, int prefijoV4Subred, int prefijoV6Ip, int prefijoV6Subred,
+                    int alertaPorcentaje, String sal) {
         static final TopesRed DESACTIVADOS = new TopesRed(0, 0, 0, true);
+
+        TopesRed(int porIp, int porSubred, int porSubredNegocio, boolean alertaGlobal) {
+            this(porIp, porSubred, porSubredNegocio, alertaGlobal, 0, 24, 64, 48, 0, "sal-solo-para-pruebas");
+        }
+
+        TopesRed {
+            prefijoV4Subred = Math.max(8, Math.min(32, prefijoV4Subred));
+            prefijoV6Ip = Math.max(16, Math.min(128, prefijoV6Ip));
+            prefijoV6Subred = Math.max(16, Math.min(prefijoV6Ip, prefijoV6Subred));
+            alertaPorcentaje = Math.max(0, Math.min(99, alertaPorcentaje));
+            if (sal == null || sal.isBlank()) {
+                throw new IllegalStateException("asistente.cuota.sal-ip vacía: configurar ASISTENTE_CUOTA_SAL_IP o JWT_SECRET");
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "TopesRed[ip=" + porIp + ", subred=" + porSubred + ", subredNegocio=" + porSubredNegocio
+                + ", ipDesconocida=" + porIpDesconocida + "]";
+        }
     }
 
     @Autowired
@@ -109,6 +142,13 @@ public class AsistenteCuotaDiaria {
             @Value("${asistente.cuota.subred-dia:200}") int porSubred,
             @Value("${asistente.cuota.subred-negocio-dia:40}") int porSubredNegocio,
             @Value("${asistente.cuota.alerta-global:true}") boolean alertaGlobal,
+            @Value("${asistente.cuota.ip-desconocida-dia:100}") int porIpDesconocida,
+            @Value("${asistente.cuota.prefijo-v4-subred:24}") int prefijoV4Subred,
+            @Value("${asistente.cuota.prefijo-v6-ip:64}") int prefijoV6Ip,
+            @Value("${asistente.cuota.prefijo-v6-subred:48}") int prefijoV6Subred,
+            @Value("${asistente.cuota.alerta-global-porcentaje:80}") int alertaPorcentaje,
+            @Value("${asistente.cuota.sal-ip:}") String salIp,
+            @Value("${jwt.secret:}") String jwtSecret,
             @Value("${hotclick.soporte.telefono:}") String telefonoSoporte,
             @Value("${asistente.cuota.mensaje-cliente:Llegaste al límite de consultas con el asistente por hoy. "
                 + "Mañana, desde la medianoche, podés seguir conversando con él. Mientras tanto, podés buscar productos "
@@ -118,7 +158,34 @@ public class AsistenteCuotaDiaria {
             String mensajeAgotado) {
         this(jdbc, empresas, ips, Clock.system(zonaSegura(zona)), porCliente, emprendedor, pyme, negocioPlus,
             marketplace, global, new AsistenteLimiteMensaje(empresas, telefonoSoporte, mensajeCliente, mensajeAgotado),
-            new TopesRed(porIp, porSubred, porSubredNegocio, alertaGlobal));
+            new TopesRed(porIp, porSubred, porSubredNegocio, alertaGlobal,
+                porIpDesconocida, prefijoV4Subred, prefijoV6Ip, prefijoV6Subred, alertaPorcentaje, resolverSal(salIp, jwtSecret)));
+    }
+
+    /** Etiqueta fija para derivar la subclave de IPs desde jwt.secret (no cambiar: invalidaría las llaves del día). */
+    static final String ETIQUETA_SAL = "hotclick/asistente-cuota/sal-ip/v1";
+
+    /**
+     * Sal del HMAC de IPs: {@code asistente.cuota.sal-ip} (env ASISTENTE_CUOTA_SAL_IP) si viene; si no, una
+     * subclave HMAC-SHA256(jwt.secret, etiqueta fija), nunca el secreto JWT en crudo. Si ambas faltan el
+     * arranque falla (sin fallback a SHA-256 sin llave).
+     */
+    static String resolverSal(String propia, String jwtSecret) {
+        if (propia != null && !propia.isBlank()) return propia;
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("asistente.cuota.sal-ip vacía: configurar ASISTENTE_CUOTA_SAL_IP o JWT_SECRET");
+        }
+        return HexFormat.of().formatHex(hmac(jwtSecret, ETIQUETA_SAL));
+    }
+
+    private static byte[] hmac(String llave, String valor) {
+        try {
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(new javax.crypto.spec.SecretKeySpec(llave.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return mac.doFinal(valor.getBytes(StandardCharsets.UTF_8));
+        } catch (java.security.GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     AsistenteCuotaDiaria(JdbcTemplate jdbc, EmpresaRepository empresas, ClientIpResolver ips, Clock reloj,
@@ -169,13 +236,14 @@ public class AsistenteCuotaDiaria {
                 if (!tomar(t.clave(), dia, t.limite())) {
                     tomados.forEach(c -> devolver(c, dia));
                     if (t.motivo() == Motivo.GLOBAL) alertarGlobal(dia);
-                    else if (t.clave().startsWith("r") || t.clave().startsWith("s:")) {
+                    else if (t.clave().startsWith("r") || t.clave().startsWith("s:") || t.clave().startsWith("x:")) {
                         log.info("[asistente-cuota] Tope de red alcanzado ({}) empresa={}", t.clave().substring(0, t.clave().indexOf(':')), empresaId);
                     }
                     return negar(t.motivo(), empresaId, esMarketplace);
                 }
                 tomados.push(t.clave());
             }
+            alertarPorcentaje(dia);
             return Reserva.OK;
         } catch (RuntimeException e) {
             log.warn("[asistente-cuota] Error verificando cupo empresa={} → fail-closed: {}",
@@ -192,13 +260,16 @@ public class AsistenteCuotaDiaria {
         List<Tope> topes = new java.util.ArrayList<>();
         String ip = ipDelPedido();
         topes.add(new Tope("c:" + claveCliente(visitorId, ip), porCliente, Motivo.CLIENTE));
-        String[] redes = redes(ip);
+        String[] redes = redes(ip, red.prefijoV4Subred(), red.prefijoV6Ip(), red.prefijoV6Subred());
         if (redes != null) {
-            if (red.porIp() > 0) topes.add(new Tope("r:" + redes[0], red.porIp(), Motivo.CLIENTE));
-            if (red.porSubred() > 0) topes.add(new Tope("s:" + redes[1], red.porSubred(), Motivo.CLIENTE));
+            if (red.porIp() > 0) topes.add(new Tope("r:" + huella(redes[0]), red.porIp(), Motivo.CLIENTE));
+            if (red.porSubred() > 0) topes.add(new Tope("s:" + huella(redes[1]), red.porSubred(), Motivo.CLIENTE));
             if (red.porSubredNegocio() > 0) {
-                topes.add(new Tope(acotar("rn:" + redes[1] + "|" + negocio), red.porSubredNegocio(), Motivo.CLIENTE));
+                topes.add(new Tope("rn:" + huella(redes[1] + "|" + negocio), red.porSubredNegocio(), Motivo.CLIENTE));
             }
+        } else if (red.porIpDesconocida() > 0) {
+            // MEDIO-2: sin IP utilizable, todo ese tráfico comparte un solo cupo (no esquiva los topes de red).
+            topes.add(new Tope("x:desconocida", red.porIpDesconocida(), Motivo.CLIENTE));
         }
         topes.add(new Tope(negocio, topeNegocio, Motivo.NEGOCIO));
         topes.add(new Tope(CLAVE_GLOBAL, global, Motivo.GLOBAL));
@@ -214,6 +285,27 @@ public class AsistenteCuotaDiaria {
         } else {
             log.warn("[asistente-cuota] Tope GLOBAL diario alcanzado ({}).", global);
         }
+    }
+
+    /** Aviso temprano (log WARN, una vez por día) al pasar el porcentaje configurado del tope global. */
+    private void alertarPorcentaje(LocalDate dia) {
+        int pct = red.alertaPorcentaje();
+        if (pct <= 0 || global <= 0 || dia.equals(alertaPorcentajeEnviada.get())) return;
+        try {
+            List<Integer> r = jdbc.queryForList(USOS, Integer.class, CLAVE_GLOBAL, dia);
+            int usos = r.isEmpty() || r.get(0) == null ? 0 : r.get(0);
+            if ((long) usos * 100 >= (long) global * pct && !dia.equals(alertaPorcentajeEnviada.getAndSet(dia))) {
+                log.error("[ALERTA][asistente-cuota] El asistente ya usó {}% del tope GLOBAL diario ({} de {}) el {}. "
+                    + "Revisar el panel de IA por posible abuso.", pct, usos, global, dia);
+            }
+        } catch (RuntimeException e) {
+            log.debug("[asistente-cuota] No se pudo leer el uso global: {}", e.getClass().getName());
+        }
+    }
+
+    /** true si ya se alertó el porcentaje del tope global hoy (tests). */
+    boolean alertaPorcentajeEnviadaHoy() {
+        return LocalDate.now(reloj).equals(alertaPorcentajeEnviada.get());
     }
 
     /** true si ya se alertó el tope global hoy (tests). */
@@ -261,8 +353,15 @@ public class AsistenteCuotaDiaria {
         String uuid = uuidValido(visitorId);
         if (uuid != null) return "v:" + uuid;
         String ip = ipPedido != null ? ipPedido : "desconocida";
-        String clave = "ip:" + ip;
-        return clave.length() <= MAX_CLAVE - 2 ? clave : "ip:" + sha256(ip).substring(0, 32);
+        return "ip:" + huella(ip);
+    }
+
+    /**
+     * Huella de una IP o red para las llaves: HMAC-SHA256 con {@code asistente.cuota.sal-ip}
+     * (o la subclave derivada de jwt.secret), 32 hex. Siempre con llave.
+     */
+    String huella(String valor) {
+        return HexFormat.of().formatHex(hmac(red.sal(), "asistente-cuota|" + valor)).substring(0, 32);
     }
 
     /** IP del pedido HTTP en curso (ClientIpResolver: solo confía en proxies conocidos) o null. */
@@ -289,6 +388,11 @@ public class AsistenteCuotaDiaria {
      * porque un solo cliente IPv6 suele tener un /64 entero para rotar.
      */
     static String[] redes(String ip) {
+        return redes(ip, 24, 64, 48);
+    }
+
+    /** Igual que {@link #redes(String)} con prefijos configurables (subred IPv4; IP y subred IPv6). */
+    static String[] redes(String ip, int v4Subred, int v6Ip, int v6Subred) {
         if (ip == null) return null;
         String limpia = ip.trim();
         java.util.regex.Matcher m4 = IPV4.matcher(limpia);
@@ -299,17 +403,33 @@ public class AsistenteCuotaDiaria {
                 if (o[i] > 255) return null;
             }
             String ip4 = o[0] + "." + o[1] + "." + o[2] + "." + o[3];
-            return new String[] { ip4, o[0] + "." + o[1] + "." + o[2] + ".0/24" };
+            if (v4Subred == 24) return new String[] { ip4, o[0] + "." + o[1] + "." + o[2] + ".0/24" };
+            byte[] b4 = { (byte) o[0], (byte) o[1], (byte) o[2], (byte) o[3] };
+            return new String[] { ip4, enmascarar(b4, v4Subred) + "/" + v4Subred };
         }
         if (!limpia.contains(":") || !IPV6.matcher(limpia).matches()) return null;
         try {
             // Literal ya validado (solo hex, ':' y '.'): getByName no resuelve DNS.
             byte[] b = java.net.InetAddress.getByName(limpia).getAddress();
-            if (b.length == 4) return redes((b[0] & 0xff) + "." + (b[1] & 0xff) + "." + (b[2] & 0xff) + "." + (b[3] & 0xff));
-            return new String[] { prefijoV6(b, 4) + "::/64", prefijoV6(b, 3) + "::/48" };
+            if (b.length == 4) {
+                return redes((b[0] & 0xff) + "." + (b[1] & 0xff) + "." + (b[2] & 0xff) + "." + (b[3] & 0xff), v4Subred, v6Ip, v6Subred);
+            }
+            if (v6Ip == 64 && v6Subred == 48) return new String[] { prefijoV6(b, 4) + "::/64", prefijoV6(b, 3) + "::/48" };
+            return new String[] { enmascarar(b, v6Ip) + "/" + v6Ip, enmascarar(b, v6Subred) + "/" + v6Subred };
         } catch (java.net.UnknownHostException | RuntimeException e) {
             return null;
         }
+    }
+
+    /** Representación hex de la dirección con solo los primeros {@code bits} (para llaves, no para mostrar). */
+    private static String enmascarar(byte[] b, int bits) {
+        byte[] m = b.clone();
+        for (int i = 0; i < m.length; i++) {
+            int resto = bits - i * 8;
+            if (resto >= 8) continue;
+            m[i] = resto <= 0 ? 0 : (byte) ((m[i] & 0xff) & ((0xff << (8 - resto)) & 0xff));
+        }
+        return HexFormat.of().formatHex(m);
     }
 
     private static String prefijoV6(byte[] b, int grupos) {
@@ -319,10 +439,6 @@ public class AsistenteCuotaDiaria {
             sb.append(Integer.toHexString(((b[2 * g] & 0xff) << 8) | (b[2 * g + 1] & 0xff)));
         }
         return sb.toString();
-    }
-
-    private static String acotar(String clave) {
-        return clave.length() <= MAX_CLAVE ? clave : clave.substring(0, 3) + sha256(clave).substring(0, 40);
     }
 
     static String uuidValido(String visitorId) {

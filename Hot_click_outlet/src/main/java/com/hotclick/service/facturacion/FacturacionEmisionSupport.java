@@ -168,12 +168,7 @@ public class FacturacionEmisionSupport {
 
     /** Área 7 BAJO: sin cédula del emisor no se reserva consecutivo ni se arma una clave de relleno. */
     static String exigirCedulaEmisor(Empresa emisor) {
-        String cedula = emisor.getCedulaJuridica();
-        if (cedula == null || cedula.isBlank()) {
-            throw new HaciendaConfiguracionException(
-                "Falta la cédula jurídica de HotClick en la configuración fiscal; no se emitió el comprobante.");
-        }
-        return cedula.strip();
+        return com.hotclick.service.hacienda.CedulaEmisor.normalizar(emisor.getCedulaJuridica());
     }
 
     private boolean lineasListas(List<Pedido> pedidos) {

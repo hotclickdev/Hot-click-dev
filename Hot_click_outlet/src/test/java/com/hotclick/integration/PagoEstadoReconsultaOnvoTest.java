@@ -40,6 +40,7 @@ class PagoEstadoReconsultaOnvoTest extends BaseIntegrationTest {
     private Object relojOriginal;
     @Autowired private PagoEstadoConsultaService servicio;
     @Autowired private GuestCancelTokenService tokens;
+    @Autowired private com.hotclick.service.payment.PedidoStatusTokenService tokensEstado;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private PedidoRepository pedidoRepository;
@@ -190,6 +191,27 @@ class PagoEstadoReconsultaOnvoTest extends BaseIntegrationTest {
         MvcResult r = estado(null, tokens.emitir(numero));
         assertThat(r.getResponse().getStatus()).isEqualTo(200);
         assertThat(r.getResponse().getContentAsString()).contains("PENDIENTE");
+    }
+
+    @Test
+    @DisplayName("retorno ONVO sin sesión: el token de estado (st) del pedido permite leer el status")
+    void invitadoConTokenDeEstado() throws Exception {
+        when(onvo.procesarPagoVerificado(anyString(), anyString())).thenReturn(OnvoPaymentProvider.Verificacion.EN_PROCESO);
+        MvcResult r = estado(null, tokensEstado.emitir(numero));
+        assertThat(r.getResponse().getStatus()).isEqualTo(200);
+        assertThat(r.getResponse().getContentAsString()).contains("PENDIENTE");
+    }
+
+    @Test
+    @DisplayName("token de estado de otro pedido o adulterado → mismo 404, sin tocar ONVO")
+    void tokenDeEstadoAjenoOAdulterado() throws Exception {
+        String ajeno = tokensEstado.emitir("ORD-OTRO-PEDIDO");
+        String propio = tokensEstado.emitir(numero);
+        String adulterado = (Long.parseLong(propio.substring(0, propio.indexOf('.'))) + 99_999) + propio.substring(propio.indexOf('.'));
+        for (String t : new String[] {ajeno, adulterado, "basura", "123.abc"}) {
+            assertThat(estado(null, t).getResponse().getStatus()).isEqualTo(404);
+        }
+        verify(onvo, never()).procesarPagoVerificado(anyString(), anyString());
     }
 
     @Test

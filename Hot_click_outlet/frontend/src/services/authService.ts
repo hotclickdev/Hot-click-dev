@@ -8,8 +8,13 @@ export const authService = {
   refresh: () =>
     api.post('/auth/refresh', {}),
 
-  logout: (refreshToken?: string | null) =>
-    api.post('/auth/logout', refreshToken ? { refreshToken } : {}),
+  /**
+   * `accessToken` explícito: quien cierra sesión lo captura ANTES de limpiar el store; si no, el interceptor
+   * leía localStorage ya vacío y el POST salía sin Bearer (no se revocaba nada).
+   */
+  logout: (refreshToken?: string | null, accessToken?: string | null) =>
+    api.post('/auth/logout', refreshToken ? { refreshToken } : {},
+      accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : undefined),
 
   verify2FA: (tempToken: string, code: string | undefined, recoveryCode: string | undefined, method = 'TOTP') => {
     const body: Record<string, string> = { tempToken, method }

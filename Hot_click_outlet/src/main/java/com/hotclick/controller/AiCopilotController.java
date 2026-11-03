@@ -82,7 +82,12 @@ public class AiCopilotController {
     /** Current month usage + quota for the empresa. */
     @GetMapping("/uso")
     public ResponseEntity<?> uso() {
-        return ResponseEntity.ok(aiQuotaService.getUsoMes(TenantContext.get()));
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) {
+            // A6-1: ADMIN de plataforma sin empresa → 400, no 500.
+            return ResponseEntity.badRequest().body(Map.of("error", "El uso de IA requiere una empresa en contexto"));
+        }
+        return ResponseEntity.ok(aiQuotaService.getUsoMes(empresaId));
     }
 
     /** Conversation history. */

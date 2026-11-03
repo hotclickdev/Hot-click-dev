@@ -132,6 +132,9 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
+            // El LogoutFilter por defecto de Spring capturaba GET /logout (302 a /login?logout) y el SPA terminaba
+            // en 404. La sesión se cierra por POST /api/auth/logout; /logout es solo la página del SPA.
+            .logout(logout -> logout.disable())
             .authorizeHttpRequests(SecurityAuthorizationRules.configure())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .headers(headers -> headers

@@ -44,11 +44,25 @@ public class PagoExpiradoCancelador {
     /** true si lo canceló; false si ya no estaba PENDIENTE (otra entrega lo capturó mientras tanto). */
     @Transactional
     public boolean cancelar(Long pagoId) {
+        return cerrar(pagoId, Constants.PAGO_CANCELADO, "por expiración de pago TTL");
+    }
+
+    /**
+     * QA5 MEDIO (pago rechazado): ONVO confirmó por GET que el cobro fue rechazado y la sesión quedó expirada
+     * y sin cobro. El pago pasa a FALLIDO, el pedido a CANCELADO y su stock reservado se libera.
+     * Idempotente: con la fila del pago bloqueada solo el primero que lo ve PENDIENTE libera; el resto devuelve false.
+     */
+    @Transactional
+    public boolean marcarFallido(Long pagoId) {
+        return cerrar(pagoId, Constants.PAGO_FALLIDO, "por pago rechazado en ONVO");
+    }
+
+    private boolean cerrar(Long pagoId, String estadoPago, String motivo) {
         Pago pago = pagoRepository.findByIdForUpdate(pagoId).orElse(null);
         if (pago == null || !Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
             return false;
         }
-        pago.setEstadoPago(Constants.PAGO_CANCELADO);
+        pago.setEstadoPago(estadoPago);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
 
         List<Pedido> pedidosActualizados = new ArrayList<>();
@@ -57,7 +71,7 @@ public class PagoExpiradoCancelador {
                 pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
                 pedidosActualizados.add(pedido);
                 stockReservationService.liberarReservas(pedido);
-                log.info("Pedido {} cancelado por expiración de pago TTL", pedido.getNumeroPedido());
+                log.info("Pedido {} cancelado {}", pedido.getNumeroPedido(), motivo);
             }
         }
         pagoRepository.saveAll(List.of(pago));

@@ -8,7 +8,6 @@ import com.hotclick.service.UsuarioService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -16,14 +15,18 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.Locale;
-import java.util.concurrent.Executor;
 
 /**
  * QA4-004: reenvío público del código de verificación desde /login.
  *
- * Anti-enumeración: la respuesta es siempre la misma (200 + mensaje genérico), exista o no
- * la cuenta y esté o no verificada. La búsqueda y el envío corren en el executor async, así
- * que el tiempo de respuesta no depende del estado de la cuenta.
+ * Anti-enumeración: si la cuenta no existe o ya está verificada la respuesta es la misma
+ * (200 + mensaje genérico).
+ *
+ * QA4-013 (fail-closed): el envío es síncrono y la respuesta refleja el resultado real. Antes el
+ * envío corría en el executor async y cualquier fallo (p. ej. el tope de OtpService, que lanza
+ * IllegalStateException) solo quedaba en un WARN mientras la UI decía "te enviamos un correo".
+ * Ahora: tope alcanzado → 429 con el mismo texto que el tope por correo; fallo del proveedor
+ * de correo → 503.
  *
  * Rate limit: por IP en RateLimitingFilter y por correo aquí (clave con hash, sin PII en la tabla).
  * Además OtpService limita a {@link Constants#OTP_MAX_REENVIOS} códigos por ventana y usuario.
@@ -36,21 +39,20 @@ public class ReenvioVerificacionService {
     public static final String MSG_GENERICO =
         "Si la cuenta existe y falta verificarla, te enviamos un correo con el código.";
     public static final String MSG_LIMITE = "Demasiadas solicitudes. Esperá unos minutos e intentá de nuevo.";
+    public static final String MSG_FALLO_ENVIO =
+        "No pudimos enviar el correo con el código. Intentá de nuevo en unos minutos.";
     static final int MAX_POR_CORREO = 3;
     static final int VENTANA_CORREO_SEG = 900;
 
     private final UsuarioService usuarioService;
     private final OtpService otpService;
     private final RateLimiter rateLimiter;
-    private final Executor executor;
 
     public ReenvioVerificacionService(UsuarioService usuarioService, OtpService otpService,
-                                      RateLimiter rateLimiter,
-                                      @Qualifier("taskExecutor") Executor executor) {
+                                      RateLimiter rateLimiter) {
         this.usuarioService = usuarioService;
         this.otpService = otpService;
         this.rateLimiter = rateLimiter;
-        this.executor = executor;
     }
 
     public ResponseEntity<ResponseDTO> reenviar(String correoCrudo) {
@@ -61,22 +63,21 @@ public class ReenvioVerificacionService {
         if (!rateLimiter.tryAcquire("reenvio-verif:correo:" + hash(correo), MAX_POR_CORREO, VENTANA_CORREO_SEG)) {
             return ResponseEntity.status(429).body(ResponseDTO.error(MSG_LIMITE));
         }
-        try {
-            executor.execute(() -> enviarSiPendiente(correo));
-        } catch (Exception e) {
-            log.warn("[reenvio-verificacion] no se pudo encolar: {}", e.getClass().getSimpleName());
+        Usuario u = usuarioService.buscarPorCorreo(correo).orElse(null);
+        if (u == null || u.getEstado() == null || u.getEstado() != Constants.ESTADO_PENDIENTE) {
+            return generico();
         }
-        return generico();
-    }
-
-    void enviarSiPendiente(String correo) {
         try {
-            Usuario u = usuarioService.buscarPorCorreo(correo).orElse(null);
-            if (u == null || u.getEstado() == null || u.getEstado() != Constants.ESTADO_PENDIENTE) return;
             otpService.enviarOtp(u, Constants.OTP_TIPO_REGISTRO);
+        } catch (IllegalStateException e) {
+            // Tope de OtpService (OTP_MAX_REENVIOS por ventana): no se envió nada.
+            log.warn("[reenvio-verificacion] tope de códigos alcanzado");
+            return ResponseEntity.status(429).body(ResponseDTO.error(MSG_LIMITE));
         } catch (Exception e) {
             log.warn("[reenvio-verificacion] envío fallido: {}", e.getClass().getSimpleName());
+            return ResponseEntity.status(503).body(ResponseDTO.error(MSG_FALLO_ENVIO));
         }
+        return generico();
     }
 
     private static ResponseEntity<ResponseDTO> generico() {
