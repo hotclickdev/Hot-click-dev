@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DisplayName("P7-02 | pedido manual acotado al negocio del vendedor")
@@ -25,6 +27,7 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private TestimonioRepository testimonioRepository;
     @Autowired private com.hotclick.repository.MovimientoStockRepository movimientoStockRepository;
+    @Autowired private com.hotclick.repository.PagoRepository pagoRepository;
 
     private Empresa empA, empB;
     private Bodega bodA;
@@ -61,6 +64,7 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
     @AfterEach
     void tearDown() {
         movimientoStockRepository.deleteAll(); // P-07: la compra ENTREGADO deja movimiento de stock
+        pagoRepository.deleteAll(); // P-07: el pedido manual PAGADO en efectivo registra su Pago
         pedidoRepository.deleteAll();
         productoRepository.deleteAll();
         bodegaRepository.deleteAll();
@@ -192,6 +196,38 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
         // Comprador del marketplace sin relación con A (solo registrado/comprando en B): 403 por diseño (P9-01, 12-oct).
         assertThat(asignarCompra(tokenA, cliB.getId())).isEqualTo(403);
         assertThat(pedidoRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("P-07 (QA, pedido 37) | /manual sin origen nace MANUAL y al marcarlo ENTREGADO descuenta stock una sola vez")
+    void p07ManualSinOrigenEntregadoDescuentaUnaVez() throws Exception {
+        int antes = productoRepository.findById(prodA.getId()).orElseThrow().getStockActual();
+        // Mismo cuerpo que manda useCrearPedido.ts: sin "origen". Un "origen":"ONLINE" del request también se ignora.
+        String b = body(cliA.getId(), prodA.getId(), "PAGADO", 1000).replace("{\"usuarioId\"", "{\"origen\":\"ONLINE\",\"usuarioId\"");
+        enviar(body(cliA.getId(), prodA.getId(), "PAGADO", 1000)).andExpect(status().isOk());
+        enviar(b).andExpect(status().isOk());
+        var pedidos = pedidoRepository.findAll();
+        assertThat(pedidos).hasSize(2).allSatisfy(p -> assertThat(p.getOrigen()).isEqualTo(OrigenPedido.MANUAL.codigo()));
+        Pedido p = pedidos.get(0);
+        int trasCrear = productoRepository.findById(prodA.getId()).orElseThrow().getStockActual();
+        for (int i = 0; i < 2; i++) { // el segundo ENTREGADO es idempotente
+            mockMvc.perform(put("/api/pedidos/" + p.getId() + "/estado").header("Authorization", tokenA)
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"ENTREGADO\"}"))
+                .andExpect(status().isOk());
+        }
+        assertThat(productoRepository.findById(prodA.getId()).orElseThrow().getStockActual()).isEqualTo(trasCrear - 1);
+        assertThat(pedidoRepository.findById(p.getId()).orElseThrow().getStockDescontadoEn()).isNotNull();
+        var movs = movimientoStockRepository.findByProductoIdOrderByFechaMovimientoDesc(prodA.getId()).stream()
+            .filter(m -> p.getId().equals(m.getReferenciaId())).toList();
+        assertThat(movs).hasSize(1);
+        assertThat(movs.get(0).getReferenciaTipo()).isEqualTo("PEDIDO");
+        assertThat(trasCrear).isLessThanOrEqualTo(antes);
+    }
+
+    @Test
+    @DisplayName("QA BAJO | GET /api/marketplace/productos/{id} inexistente → 404, no 500")
+    void marketplaceDetalleInexistente404() throws Exception {
+        mockMvc.perform(get("/api/marketplace/productos/999999")).andExpect(status().isNotFound());
     }
 
     private Empresa empresa(String nombre, String slug) {

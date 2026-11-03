@@ -131,6 +131,14 @@ public class StockService {
         ajusteOperations.ajustarEntrada(this, productoId, cantidad, notas, referencia, operadorCorreo);
     }
 
+    /** Igual, con referencia_tipo/referencia_id del documento de origen (QA: anulación POS sin referencia_tipo). */
+    @Transactional
+    public void ajustarEntradaConReferencia(Long productoId, int cantidad, String notas, String referencia,
+                                            String referenciaTipo, Long referenciaId, String operadorCorreo) {
+        ajusteOperations.ajustarEntrada(this, productoId, cantidad, notas, referencia, referenciaTipo, referenciaId,
+            operadorCorreo);
+    }
+
     @Transactional
     public void ajustarAExistencia(Long productoId, int cantidadReal, String referencia, String operadorCorreo) {
         ajusteOperations.ajustarAExistencia(this, productoId, cantidadReal, referencia, operadorCorreo);
