@@ -64,6 +64,17 @@ public class SinpeOnvoMarketplaceService {
     @Lazy @Autowired private PaymentService paymentService;
     @Autowired(required = false) private OnvoService onvoService;
 
+    /** Proxy propio: confirmarPorWebhook y el reclamo abren su transacción aunque se llamen desde este bean. */
+    @Lazy @Autowired(required = false) private SinpeOnvoMarketplaceService self;
+
+    @Value("${sinpe.onvo.cerrados-ventana-horas:24}")
+    private int ventanaCerradosHoras = 24;
+    @Value("${sinpe.onvo.cerrados-lote:20}")
+    private int loteCerrados = 20;
+
+    /** N-01: resultado de cerrar el intent cuando el comprador cancela. */
+    public enum CierreComprador { CANCELADO, SIMULADO, PAGADO, NO_CONFIRMADO }
+
     @Value("${sinpe.onvo.timeout-minutos:}")
     private String timeoutMinutosCrudo;
 
@@ -214,7 +225,10 @@ public class SinpeOnvoMarketplaceService {
         if (onvo == null || onvo.isMockMode() || !onvo.isPagosDisponibles()) return false;
         String statusPrevio = estadoPorGet(onvo, intentId);
         if ("succeeded".equalsIgnoreCase(statusPrevio)) {
-            log.info("[SINPE-ONVO] Pago {} vencido pero succeeded en ONVO; se espera el webhook", pago.getId());
+            // N-02: webhook perdido. Se confirma con la misma función idempotente del webhook (relee por GET,
+            // dedupe por evento, monto/moneda/modo exactos); si el webhook llega después, sale DUPLICADO.
+            Resultado r = proxy().confirmarPorWebhook("payment-intent.succeeded", intentId);
+            log.info("[SINPE-ONVO] Pago {} vencido pero succeeded en ONVO; confirmado por respaldo: {}", pago.getId(), r);
             return false;
         }
         if (!"canceled".equalsIgnoreCase(statusPrevio)) onvo.cancelarPaymentIntent(intentId);
@@ -225,6 +239,63 @@ public class SinpeOnvoMarketplaceService {
         }
         paymentFailureHandler.marcarFallido(pago, "Plazo interno de pago SINPE vencido");
         return true;
+    }
+
+    private SinpeOnvoMarketplaceService proxy() {
+        return self != null ? self : this;
+    }
+
+    /**
+     * N-01: el comprador cancela un pedido SINPE marketplace. POST /v1/payment-intents/{id}/cancel y GET: solo
+     * {@code CANCELADO} (GET canceled) deja cancelar el pedido. Si ONVO ya lo cobró ({@code PAGADO}) o no se pudo
+     * confirmar, no se cancela (fail-closed). Modo simulado explícito (dev/test sin llave): no hay intent real.
+     */
+    public CierreComprador cerrarIntentParaComprador(Pago pago) {
+        String token = pago.getMerchantToken();
+        if (token == null || !token.startsWith(PREFIJO)) return CierreComprador.NO_CONFIRMADO;
+        String intentId = token.substring(PREFIJO.length());
+        OnvoService onvo = onvoService;
+        if (onvo != null && onvo.isMockMode()) return CierreComprador.SIMULADO;
+        if (onvo == null || !onvo.isPagosDisponibles()) return CierreComprador.NO_CONFIRMADO;
+        String previo = estadoPorGet(onvo, intentId);
+        if ("succeeded".equalsIgnoreCase(previo)) return CierreComprador.PAGADO;
+        if (!"canceled".equalsIgnoreCase(previo)) onvo.cancelarPaymentIntent(intentId);
+        String status = estadoPorGet(onvo, intentId);
+        if ("canceled".equalsIgnoreCase(status)) return CierreComprador.CANCELADO;
+        if ("succeeded".equalsIgnoreCase(status)) return CierreComprador.PAGADO;
+        log.warn("[SINPE-ONVO] Intent del pago {} sin cancelar por GET (status={}); no se cancela el pedido",
+            pago.getId(), status);
+        return CierreComprador.NO_CONFIRMADO;
+    }
+
+    /** N-01: reclama un lote de cerrados recientes con lock y marca la revisión (rota en la próxima pasada). */
+    @Transactional
+    public List<Pago> reclamarCerradosRecientes() {
+        LocalDateTime ahora = LocalDateTime.now(clock);
+        List<Pago> filas = pagoRepository.reclamarSinpeOnvoCerrados(Constants.PROVEEDOR_SINPE, PREFIJO,
+            ahora.minusHours(Math.max(1, ventanaCerradosHoras)),
+            org.springframework.data.domain.PageRequest.of(0, Math.max(1, loteCerrados)));
+        marcarRevision(filas, ahora);
+        return filas == null ? List.of() : filas;
+    }
+
+    private static void marcarRevision(List<Pago> filas, LocalDateTime ahora) {
+        if (filas == null) return;
+        for (Pago p : filas) p.setFechaActualizacion(ahora);
+    }
+
+    /**
+     * N-01: pago SINPE cerrado (pedido cancelado). Si ONVO lo cobró, la función del webhook lo deja
+     * REEMBOLSO_PENDIENTE (sin reembolso automático ni revivir el pedido) y avisa al admin; si el intent sigue
+     * abierto, se cancela en ONVO. Devuelve el resultado de la reconsulta.
+     */
+    public Resultado revisarCerrado(Pago pago) {
+        String token = pago.getMerchantToken();
+        if (token == null || !token.startsWith(PREFIJO)) return Resultado.NO_ENCONTRADO;
+        String intentId = token.substring(PREFIJO.length());
+        Resultado r = proxy().confirmarPorWebhook("payment-intent.succeeded", intentId);
+        if (r == Resultado.EN_ESPERA && onvoService != null) onvoService.cancelarPaymentIntent(intentId);
+        return r;
     }
 
     private static String estadoPorGet(OnvoService onvo, String intentId) {
