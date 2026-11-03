@@ -8,7 +8,7 @@ Actualizado el 2-nov-2026, 23:00 (hora CR). No hay secretos: ninguna llave, toke
   - **6:** chatbots, asistente de compras (`service/shoppingassistant`, `rag`), copilot e IA.
   - **9:** frontend y UX.
 - **Idioma:** español de Costa Rica (voseo) en PRs, commits y docs.
-- **Reporta solo al Mentor** (`e221623d...`, habla por Andrés). Coordina con HotClick Dev Marketplace, dueño de las áreas 2 y 3. No toca las áreas ajenas.
+- **Reporta solo al Mentor** (`e221623d-00c2-4fcd-9bed-fbd2758bc67d`, habla por Andrés). Coordina con HotClick Dev Marketplace, dueño de las áreas 2 y 3. No toca las áreas ajenas.
 - **Skills:** cargar `hot-click-dev-workflow` siempre, y `hot-click-diseno-figma` antes de cualquier cambio de UI.
 - **Checkout en el box:** `/workspace/hotclick-dev2`, con la identidad git configurada solo en local. Todos los bots usan la misma cuenta de `gh`.
 
