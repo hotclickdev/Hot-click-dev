@@ -16,8 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -46,8 +50,18 @@ public class PedidoManualEntregaStockService {
                 && i.getCantidad() != null && i.getCantidad() > 0)
             .sorted(Comparator.comparing(i -> i.getProducto().getId())) // orden fijo de locks (P-05)
             .toList();
+        if (items.isEmpty()) {
+            pedido.setStockDescontadoEn(LocalDateTime.now(Constants.ZONA_CR));
+            return true;
+        }
+        // Un solo SELECT FOR UPDATE ordenado por id (P-05) en vez de un lock por ítem (SCALE1, sin N+1).
+        Map<Long, Producto> porId = new HashMap<>();
+        productoRepository.findAllByIdsForUpdate(items.stream().map(i -> i.getProducto().getId()).distinct().toList())
+            .forEach(p -> porId.put(p.getId(), p));
+        Map<Long, Producto> tocados = new LinkedHashMap<>();
+        List<MovimientoStock> movimientos = new ArrayList<>();
         for (PedidoItem item : items) {
-            Producto producto = productoRepository.findByIdForUpdate(item.getProducto().getId()).orElse(null);
+            Producto producto = porId.get(item.getProducto().getId());
             if (producto == null) continue;
             int antes = producto.getStockActual() != null ? producto.getStockActual() : 0;
             int cantidad = Math.min(item.getCantidad(), Math.max(0, antes)); // nunca deja stock negativo
@@ -59,7 +73,7 @@ public class PedidoManualEntregaStockService {
             producto.setStockActual(despues);
             if (Boolean.TRUE.equals(producto.getEsUnico()) && cantidad > 0) producto.setVendido(true);
             if (despues <= 0) producto.setVisibleCatalogo(false);
-            productoRepository.save(producto);
+            tocados.put(producto.getId(), producto);
 
             int res = producto.getStockReservado() != null ? producto.getStockReservado() : 0;
             MovimientoStock m = movimientoSupport.buildMovimiento(producto, MovimientoStock.VENTA, cantidad,
@@ -67,10 +81,18 @@ public class PedidoManualEntregaStockService {
             m.setReferenciaTipo(REFERENCIA_TIPO);
             m.setReferenciaId(pedido.getId());
             m.setNotas("Entrega de pedido manual " + Objects.toString(pedido.getNumeroPedido(), ""));
-            movimientoStockRepository.save(m);
-            movimientoSupport.publicarCambioStock(source, producto, despues);
+            movimientos.add(m);
         }
+        persistir(source, tocados.values(), movimientos);
         pedido.setStockDescontadoEn(LocalDateTime.now(Constants.ZONA_CR));
         return true;
+    }
+
+    /** Guarda en lote, fuera del recorrido de ítems. */
+    private void persistir(Object source, java.util.Collection<Producto> productos, List<MovimientoStock> movimientos) {
+        if (productos.isEmpty()) return;
+        productoRepository.saveAll(productos);
+        movimientoStockRepository.saveAll(movimientos);
+        productos.forEach(p -> movimientoSupport.publicarCambioStock(source, p, p.getStockActual() != null ? p.getStockActual() : 0));
     }
 }

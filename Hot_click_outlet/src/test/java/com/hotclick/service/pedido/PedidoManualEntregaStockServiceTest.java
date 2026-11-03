@@ -18,7 +18,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,7 +44,7 @@ class PedidoManualEntregaStockServiceTest {
         producto = new Producto();
         producto.setId(4L);
         producto.setStockActual(5);
-        when(productoRepo.findByIdForUpdate(4L)).thenReturn(Optional.of(producto));
+        when(productoRepo.findAllByIdsForUpdate(List.of(4L))).thenReturn(List.of(producto));
     }
 
     private Pedido pedido(String origen, String estado) {
@@ -71,9 +70,12 @@ class PedidoManualEntregaStockServiceTest {
 
         assertThat(producto.getStockActual()).isEqualTo(3);
         assertThat(p.getStockDescontadoEn()).isNotNull();
-        ArgumentCaptor<MovimientoStock> cap = ArgumentCaptor.forClass(MovimientoStock.class);
-        verify(movRepo, times(1)).save(cap.capture());
-        MovimientoStock m = cap.getValue();
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<MovimientoStock>> cap = ArgumentCaptor.forClass(List.class);
+        verify(movRepo, times(1)).saveAll(cap.capture());
+        assertThat(cap.getValue()).hasSize(1);
+        MovimientoStock m = cap.getValue().get(0);
+        verify(productoRepo, never()).findByIdForUpdate(any());
         assertThat(m.getTipoMovimiento()).isEqualTo(MovimientoStock.VENTA);
         assertThat(m.getCantidad()).isEqualTo(2);
         assertThat(m.getReferencia()).isEqualTo("HC-19");
@@ -88,7 +90,7 @@ class PedidoManualEntregaStockServiceTest {
         p.setStockDescontadoEn(LocalDateTime.now());
         assertThat(svc.descontarSiCorresponde(this, p, "x")).isFalse();
         assertThat(producto.getStockActual()).isEqualTo(5);
-        verify(movRepo, never()).save(any());
+        verify(movRepo, never()).saveAll(any());
     }
 
     @Test
