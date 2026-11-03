@@ -638,3 +638,11 @@ Deploy **solo** con el OK explícito de Andrés escrito en el chat de CI/CD.
 9. Protección de rama en master.
 10. Montos de cada plan en ONVO.
 11. Revisión de Términos y Privacidad por abogado colegiado.
+
+## (i-bis) Texto literal de la rutina del Mentor (copiado de la cuenta vieja)
+- Nombre: Seguimiento lanzamiento HotClick
+- Horario: `CRON_TZ=America/Costa_Rica 0 8,18 * * *` (flexible, ±15 min)
+- Prompt:
+> Revisá el avance del lanzamiento de HotClick (repo hotclickdev/Hot-click-dev): PRs, CI, APTO de Seguridad, QA, y actualizá estado-lanzamiento.md por área. Coordiná bots vía Grok Bot si algo está trabado. Solo avisale a Andrés (en español de CR, simple) si un área ganó ✅, hay un error grave, o hace falta una decisión suya; si no, quedate callado. Nunca deploy, gasto ni acciones prohibidas sin OK explícito de Andrés.
+
+[PENDIENTE] Cuando recreen esta rutina en la cuenta nueva, cambien "vía Grok Bot" por "vía el Mentor". El texto literal de la rutina de CI/CD lo tiene que pasar ese mismo bot.
