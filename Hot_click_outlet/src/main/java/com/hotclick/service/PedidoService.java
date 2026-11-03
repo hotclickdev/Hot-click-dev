@@ -47,6 +47,7 @@ public class PedidoService {
     @Autowired private PedidoPagoManualService pedidoPagoManualService;
     @Autowired private PedidoDespachoVerificador despachoVerificador;
     @Autowired private com.hotclick.service.payment.StockReservationService stockReservationService;
+    @Autowired private com.hotclick.service.pedido.PedidoManualEntregaStockService manualEntregaStock;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -159,6 +160,10 @@ public class PedidoService {
         if (liberarReserva) {
             stockReservationService.liberarReservas(pedido);
         }
+        // P-07: pedido manual entregado → descuenta stock una sola vez (idempotente por stockDescontadoEn).
+        if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado) && !mismoEstado) {
+            manualEntregaStock.descontarSiCorresponde(this, pedido, operadorActual());
+        }
         if (nota != null && !nota.isBlank()) {
             pedidoNotificacionAppender.appendNotificacion(pedido, nuevoEstado, nota);
         }
@@ -174,6 +179,11 @@ public class PedidoService {
             n8nWebhookService.notificarPedidoEntregado(pedido);
         }
         return pedido;
+    }
+
+    private static String operadorActual() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : null;
     }
 
     private static Pedido sinCambios(Pedido pedido) {

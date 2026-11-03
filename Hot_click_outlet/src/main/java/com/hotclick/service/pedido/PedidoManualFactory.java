@@ -34,6 +34,7 @@ public class PedidoManualFactory {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private N8nWebhookService n8nWebhookService;
     @Autowired private PedidoPagoManualService pedidoPagoManualService;
+    @Autowired private PedidoManualEntregaStockService manualEntregaStock;
     @Autowired private com.hotclick.security.CompanyScope companyScope;
 
     /** P7-02: estados con los que un pedido manual de /api/pedidos/manual puede nacer (los de la UI). */
@@ -130,6 +131,11 @@ public class PedidoManualFactory {
         Hibernate.initialize(saved.getItems());
         // SEC-09: si nace ya pagada (método manual), deja el Pago manual que habilita el despacho.
         pedidoPagoManualService.registrarPagoAlCrear(saved);
+        // P-07: nace ENTREGADO (compra externa del admin) → descuenta stock con referencia al pedido.
+        Usuario operador = companyScope.getCurrentUser();
+        if (manualEntregaStock.descontarSiCorresponde(this, saved, operador != null ? operador.getCorreo() : null)) {
+            saved = pedidoRepository.save(saved);
+        }
         if (Constants.PEDIDO_PAGADO.equals(saved.getEstadoPedido())) {
             n8nWebhookService.notificarPedidoNuevo(saved);
         }

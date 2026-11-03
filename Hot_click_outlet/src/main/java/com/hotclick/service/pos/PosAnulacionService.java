@@ -247,8 +247,8 @@ public class PosAnulacionService {
         for (PedidoItem item : items) {
             if (item.getProducto() == null || item.getCantidad() == null || item.getCantidad() <= 0) continue;
             try {
-                stockService.ajustarEntrada(item.getProducto().getId(), item.getCantidad(),
-                    tipo + " " + pedido.getNumeroPedido(), actor.getCorreo());
+                stockService.ajustarEntradaConReferencia(item.getProducto().getId(), item.getCantidad(),
+                    tipo + " " + pedido.getNumeroPedido(), pedido.getNumeroPedido(), actor.getCorreo());
             } catch (RuntimeException e) {
                 log.warn("[POS] {} de venta {}: no se repuso stock del producto {} ({})", tipo, pedido.getId(),
                     item.getProducto().getId(), e.getClass().getSimpleName());

@@ -35,7 +35,8 @@ public class MarketplaceController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        size = Math.min(size, 100); // cap por seguridad
+        size = Math.max(1, Math.min(size, 100)); // cap por seguridad (es público: sin size 0 ni negativo)
+        page = Math.max(0, page);
         return ResponseEntity.ok(marketplaceService.buscar(q, provincia, canton, page, size));
     }
 
