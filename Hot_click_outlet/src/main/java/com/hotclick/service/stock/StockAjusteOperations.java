@@ -33,6 +33,13 @@ public class StockAjusteOperations {
     @Transactional
     public void ajustarEntrada(Object source, Long productoId, int cantidad, String notas, String referencia,
                                String operadorCorreo) {
+        ajustarEntrada(source, productoId, cantidad, notas, referencia, null, null, operadorCorreo);
+    }
+
+    /** QA P-07: reposición que además deja referencia_tipo/referencia_id (p. ej. anulación POS → pedido). */
+    @Transactional
+    public void ajustarEntrada(Object source, Long productoId, int cantidad, String notas, String referencia,
+                               String referenciaTipo, Long referenciaId, String operadorCorreo) {
         Producto producto = productoRepository.findByIdForUpdate(productoId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Producto", productoId));
         if (producto.getEstado() != Constants.ESTADO_ACTIVO) {
@@ -55,6 +62,8 @@ public class StockAjusteOperations {
             actAntes, actDespues, producto.getStockReservado(), producto.getStockReservado(),
             referencia, operadorCorreo);
         m.setNotas(notas);
+        if (referenciaTipo != null) m.setReferenciaTipo(referenciaTipo);
+        if (referenciaId != null) m.setReferenciaId(referenciaId);
         movimientoStockRepository.save(m);
 
         movimientoSupport.publicarCambioStock(source, producto, actDespues);

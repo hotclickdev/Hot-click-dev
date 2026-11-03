@@ -109,7 +109,7 @@ class PosAnulacionServiceTest {
         assertThat(venta.getEstadoPedido()).isEqualTo("ANULADO");
         verify(turnoCajaService).revertirTotales(77L, "EFECTIVO", 3000);
         // QA: la reposición referencia la venta POS, no "ajuste-manual".
-        verify(stockService).ajustarEntradaConReferencia(eq(10L), eq(2), contains("POS-1"), eq("POS-1"), eq("caja@test.cr"));
+        verify(stockService).ajustarEntradaConReferencia(eq(10L), eq(2), contains("POS-1"), eq("POS-1"), eq("PEDIDO"), any(), eq("caja@test.cr"));
         verify(stockService, never()).ajustarEntrada(any(), anyInt(), any(), any());
     }
 
@@ -283,7 +283,7 @@ class PosAnulacionServiceTest {
         venta.setEstadoPedido("ANULADO");
         assertThatThrownBy(() -> service.devolver(PEDIDO, EMP, "x")).isInstanceOf(IllegalStateException.class);
         verify(anulacionRepository, never()).saveAndFlush(any());
-        verify(stockService, never()).ajustarEntradaConReferencia(any(), anyInt(), any(), any(), any());
+        verify(stockService, never()).ajustarEntradaConReferencia(any(), anyInt(), any(), any(), any(), any(), any());
         assertThat(venta.getEstadoPedido()).isEqualTo("ANULADO");
     }
 
@@ -340,7 +340,7 @@ class PosAnulacionServiceTest {
     void stockFalla_todoSeRevierte() {
         comoPropietario();
         doThrow(new IllegalArgumentException("Producto 10 inactivo (detalle interno)"))
-            .when(stockService).ajustarEntradaConReferencia(any(), anyInt(), any(), any(), any());
+            .when(stockService).ajustarEntradaConReferencia(any(), anyInt(), any(), any(), any(), any(), any());
         assertThatThrownBy(() -> service.anular(PEDIDO, EMP, "x"))
             .isInstanceOf(IllegalStateException.class).hasMessage(PosAnulacionService.MSG_STOCK);
         verify(anulacionRepository, never()).saveAndFlush(any());
@@ -357,7 +357,7 @@ class PosAnulacionServiceTest {
 
     private void verifySinEfectos() {
         verify(anulacionRepository, never()).saveAndFlush(any());
-        verify(stockService, never()).ajustarEntradaConReferencia(any(), anyInt(), any(), any(), any());
+        verify(stockService, never()).ajustarEntradaConReferencia(any(), anyInt(), any(), any(), any(), any(), any());
         verify(turnoCajaService, never()).revertirTotales(any(), any(), any());
         assertThat(venta.getEstadoPedido()).isNotIn("ANULADO", "DEVUELTO");
     }
