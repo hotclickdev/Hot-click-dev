@@ -24,10 +24,10 @@ class PromptBuilderAmbienteTest {
 
         assertThat(prompt).contains("mostralos YA en este mismo turno");
         assertThat(prompt).contains("[PRODS:");
-        assertThat(prompt).contains("<tags>sala,mueble</tags>");
+        assertThat(prompt).contains("[[DATOS_VENDEDOR]]sala,mueble[[/DATOS_VENDEDOR]]</tags>");
         assertThat(prompt).contains("<categoria>Sala y Comedor</categoria>");
-        assertThat(prompt).contains("<especificaciones>Tela lino</especificaciones>");
-        assertThat(prompt).contains("<como_usar>Armar patas</como_usar>");
+        assertThat(prompt).contains("[[DATOS_VENDEDOR]]Tela lino[[/DATOS_VENDEDOR]]</especificaciones>");
+        assertThat(prompt).contains("[[DATOS_VENDEDOR]]Armar patas[[/DATOS_VENDEDOR]]</como_usar>");
         assertThat(prompt).doesNotContain("antes de mostrar productos");
     }
 }
