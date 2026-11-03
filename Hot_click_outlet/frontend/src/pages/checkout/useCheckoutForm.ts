@@ -17,8 +17,8 @@ import {
   validateGuestEmail as mensajeEmailInvitado,
   validatePhone as mensajeTelefono,
 } from './checkoutHelpers'
-import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
-import { cargarMontosEnvio } from '@/config/montosEnvio'
+import { direccionCompleta, esDestinoGAMEstricto } from './ubicacionesCR'
+import { cargarMontosEnvio, cotizarZonaEnvio, type ZonaEnvio } from '@/config/montosEnvio'
 import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
 import { metodoPagoPrincipal, sinpeDestinoDesdeConfig, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig } from './pagoPrincipal'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
@@ -159,7 +159,19 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [provincia, setProvinciaState] = useState('')
   const [canton, setCantonState] = useState('')
   const [distrito, setDistrito] = useState('')
-  const destinoGAM = esDestinoGAM(provincia, canton)
+  // QA7-D1: la zona la decide el servidor (misma regla que el cobro); mientras responde, la regla estricta
+  // local (sin destino = fuera del GAM), nunca un GAM supuesto que después se cobra como fuera del GAM.
+  const [zonaServidor, setZonaServidor] = useState<{ clave: string; zona: ZonaEnvio } | null>(null)
+  const claveDestino = `${provincia}|${canton}`
+  useEffect(() => {
+    if (!provincia || !canton) return
+    let vivo = true
+    void cotizarZonaEnvio(provincia, canton).then((zona) => {
+      if (vivo && zona) setZonaServidor({ clave: `${provincia}|${canton}`, zona })
+    })
+    return () => { vivo = false }
+  }, [provincia, canton])
+  const destinoGAM = zonaServidor?.clave === claveDestino ? zonaServidor.zona === 'GAM' : esDestinoGAMEstricto(provincia, canton)
   // A-2: montos que configuró el ADMIN; el re-render muestra los nuevos apenas llegan.
   const [, setMontosListos] = useState(0)
   useEffect(() => { void cargarMontosEnvio().then(() => setMontosListos((n) => n + 1)) }, [])

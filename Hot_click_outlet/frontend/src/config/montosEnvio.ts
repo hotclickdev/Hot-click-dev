@@ -20,6 +20,21 @@ function esMonto(v: unknown): v is number {
   return Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 50_000
 }
 
+export type ZonaEnvio = 'GAM' | 'FUERA_GAM'
+
+/**
+ * QA7-D1: zona del envío normal según el servidor (`/public/envio/cotizar`), la misma regla con la que cobra.
+ * `null` si no respondió: quien llama usa la regla estricta local (sin destino = fuera del GAM, igual que el cobro).
+ */
+export function cotizarZonaEnvio(provincia: string, canton: string): Promise<ZonaEnvio | null> {
+  return api.get('/public/envio/cotizar', { params: { provincia, canton } })
+    .then(({ data }) => {
+      const zona = (data as { data?: { zona?: unknown } })?.data?.zona
+      return zona === 'GAM' || zona === 'FUERA_GAM' ? zona : null
+    })
+    .catch(() => null)
+}
+
 /** Lee `/public/envio/montos` una vez; si falla quedan los defaults (₡4.000 / ₡5.500 / ₡5.000). */
 export function cargarMontosEnvio(): Promise<void> {
   carga ??= api.get('/public/envio/montos')

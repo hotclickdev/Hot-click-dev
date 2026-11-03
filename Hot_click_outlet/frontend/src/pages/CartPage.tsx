@@ -91,6 +91,8 @@ export default function CartPage() {
   const unidades = items.reduce((suma, item) => suma + item.cantidad, 0)
   const subtotal = total()
   const envio = totalEnvioEstimado(paquetes)
+  // QA7-D1: sin destino el carrito no promete un envío; el checkout lo cotiza con el servidor.
+  const envioPendiente = paquetes.some((p) => p.envioVaria)
   const { descuento, giftCard, total: totalEstimado } = totalesConCodigos(subtotal, envio, codigos.cuponDescuento, codigos.gcSaldo)
 
   async function guardarCorreo() {
@@ -205,6 +207,7 @@ export default function CartPage() {
               subtotal={subtotal}
               envio={envio}
               total={totalEstimado}
+              envioVaria={envioPendiente}
               escritorio
               onContinuar={continuar}
               onWhatsApp={abrirWhatsAppPedido}
@@ -240,6 +243,7 @@ export default function CartPage() {
           subtotal={subtotal}
           envio={envio}
           total={totalEstimado}
+          envioVaria={envioPendiente}
           escritorio={false}
           onContinuar={continuar}
           descuento={descuento}
