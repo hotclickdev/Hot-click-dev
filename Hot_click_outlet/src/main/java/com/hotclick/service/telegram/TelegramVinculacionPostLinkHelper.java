@@ -3,6 +3,7 @@ package com.hotclick.service.telegram;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.repository.MiembroEmpresaRepository;
+import com.hotclick.repository.TelegramBloqueoEmpresaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
 import com.hotclick.service.TelegramClienteBotService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ class TelegramVinculacionPostLinkHelper {
     @Autowired private MiembroEmpresaRepository      miembroEmpresaRepository;
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private TelegramClienteBotService     bot;
+    @Autowired(required = false) private TelegramBloqueoEmpresaRepository bloqueoRepository;
     @Autowired private TelegramDatosQueryService     datosQuery;
     @Autowired @Lazy private TelegramEmpresaContextService empresaContext;
     @Autowired @Lazy private TelegramMenuBuilder     menuBuilder;
@@ -41,10 +43,11 @@ class TelegramVinculacionPostLinkHelper {
     }
 
     void asignarEmpresaActiva(TelegramVinculacion v) {
-        List<MiembroEmpresa> membresias = miembroEmpresaRepository
-            .findByUsuarioIdAndEstado(v.getUsuario().getId(), 1);
+        List<MiembroEmpresa> membresias = membresiasActivas(v);
 
-        if (membresias.isEmpty() && v.getUsuario().getEmpresaId() != null) {
+        if (membresias.isEmpty() && v.getUsuario().getEmpresaId() != null
+                && !(bloqueoRepository != null && bloqueoRepository.existsByUsuarioIdAndEmpresaId(
+                    v.getUsuario().getId(), v.getUsuario().getEmpresaId()))) {
             v.setEmpresaActivaId(v.getUsuario().getEmpresaId());
         } else if (membresias.size() == 1) {
             v.setEmpresaActivaId(membresias.get(0).getEmpresa().getId());
@@ -67,6 +70,16 @@ class TelegramVinculacionPostLinkHelper {
     }
 
     List<MiembroEmpresa> membresiasActivas(TelegramVinculacion v) {
-        return miembroEmpresaRepository.findByUsuarioIdAndEstado(v.getUsuario().getId(), 1);
+        List<MiembroEmpresa> todas = miembroEmpresaRepository.findByUsuarioIdAndEstado(v.getUsuario().getId(), 1);
+        if (bloqueoRepository == null || todas.isEmpty()) return todas;
+        java.util.Set<Long> bloqueadas = new java.util.HashSet<>(
+            bloqueoRepository.findEmpresaIdsByUsuarioId(v.getUsuario().getId()));
+        return sinBloqueadas(todas, bloqueadas);
+    }
+
+    /** N1 área 8: al vincular no se asigna ni se ofrece una empresa donde el bot fue revocado. */
+    static List<MiembroEmpresa> sinBloqueadas(List<MiembroEmpresa> todas, java.util.Set<Long> bloqueadas) {
+        if (bloqueadas.isEmpty()) return todas;
+        return todas.stream().filter(m -> !bloqueadas.contains(m.getEmpresa().getId())).toList();
     }
 }

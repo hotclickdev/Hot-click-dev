@@ -40,10 +40,19 @@ public interface TelegramVinculacionRepository extends JpaRepository<TelegramVin
         WHERE v.estado = 'ACTIVA' AND v.chatId IS NOT NULL AND EXISTS (
             SELECT 1 FROM MiembroEmpresa m
             WHERE m.usuario.id = v.usuario.id AND m.empresa.id = :empresaId AND m.estado = 1)
+          AND NOT EXISTS (
+            SELECT 1 FROM TelegramBloqueoEmpresa b
+            WHERE b.usuarioId = v.usuario.id AND b.empresaId = :empresaId)
         """)
     List<TelegramVinculacion> findActivasPorEmpresa(@Param("empresaId") Long empresaId);
 
     /** Todas las vinculaciones activas con chat — para el chequeo semanal de inventario. */
     @EntityGraph(attributePaths = {"usuario"})
-    List<TelegramVinculacion> findByEstadoAndChatIdIsNotNull(String estado);
+    @Query("""
+        SELECT v FROM TelegramVinculacion v
+        WHERE v.estado = :estado AND v.chatId IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM TelegramBloqueoEmpresa b
+            WHERE b.usuarioId = v.usuario.id AND b.empresaId = v.empresaActivaId)
+        """)
+    List<TelegramVinculacion> findByEstadoAndChatIdIsNotNull(@Param("estado") String estado);
 }

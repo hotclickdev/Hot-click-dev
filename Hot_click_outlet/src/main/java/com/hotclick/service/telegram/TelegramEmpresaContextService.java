@@ -3,6 +3,7 @@ package com.hotclick.service.telegram;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.repository.MiembroEmpresaRepository;
+import com.hotclick.repository.TelegramBloqueoEmpresaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
 import com.hotclick.service.TelegramClienteBotService;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class TelegramEmpresaContextService {
@@ -22,12 +24,14 @@ public class TelegramEmpresaContextService {
 
     @Autowired private MiembroEmpresaRepository      miembroEmpresaRepository;
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
+    @Autowired private TelegramBloqueoEmpresaRepository bloqueoRepository;
     @Autowired private TelegramClienteBotService     bot;
     @Autowired @Lazy private TelegramMenuBuilder     menuBuilder;
 
     public void mostrarSelectorEmpresa(TelegramVinculacion v) {
-        List<MiembroEmpresa> membresias = miembroEmpresaRepository
-            .findByUsuarioIdAndEstado(v.getUsuario().getId(), 1);
+        List<MiembroEmpresa> membresias = sinBloqueadas(
+            miembroEmpresaRepository.findByUsuarioIdAndEstado(v.getUsuario().getId(), 1),
+            bloqueadas(v.getUsuario().getId()));
         if (membresias.isEmpty()) {
             bot.enviarMensaje(v.getChatId(), "No tenés negocios asociados a tu cuenta.");
             return;
@@ -49,7 +53,8 @@ public class TelegramEmpresaContextService {
             return;
         }
         // Seguridad: solo empresas donde el usuario es miembro ACTIVO
-        if (!miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(v.getUsuario().getId(), empresaId, 1)) {
+        if (!miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(v.getUsuario().getId(), empresaId, 1)
+                || bloqueoRepository.existsByUsuarioIdAndEmpresaId(v.getUsuario().getId(), empresaId)) {
             log.warn("[telegram-bot] usuario {} intentó activar empresa {} sin membresía", v.getUsuario().getId(), empresaId);
             bot.enviarMensaje(v.getChatId(), "No tenés acceso a ese negocio.");
             return;
@@ -68,14 +73,16 @@ public class TelegramEmpresaContextService {
         Long empresaId = v.getEmpresaActivaId();
         Long usuarioId = v.getUsuario().getId();
         if (empresaId != null) {
-            boolean esMiembro = miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1)
-                || empresaId.equals(v.getUsuario().getEmpresaId());
+            boolean esMiembro = (miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1)
+                || empresaId.equals(v.getUsuario().getEmpresaId()))
+                && !bloqueoRepository.existsByUsuarioIdAndEmpresaId(usuarioId, empresaId);
             if (esMiembro) return empresaId;
             v.setEmpresaActivaId(null);
             v.setContexto(null);
             vinculacionRepository.save(v);
         }
-        List<MiembroEmpresa> membresias = miembroEmpresaRepository.findByUsuarioIdAndEstado(usuarioId, 1);
+        List<MiembroEmpresa> membresias = sinBloqueadas(
+            miembroEmpresaRepository.findByUsuarioIdAndEstado(usuarioId, 1), bloqueadas(usuarioId));
         if (membresias.size() == 1) {
             v.setEmpresaActivaId(membresias.get(0).getEmpresa().getId());
             vinculacionRepository.save(v);
@@ -87,5 +94,15 @@ public class TelegramEmpresaContextService {
             mostrarSelectorEmpresa(v);
         }
         return null;
+    }
+
+    /** N1 (área 8): empresas donde un gestor cortó el bot a este usuario (una consulta). */
+    private Set<Long> bloqueadas(Long usuarioId) {
+        return Set.copyOf(bloqueoRepository.findEmpresaIdsByUsuarioId(usuarioId));
+    }
+
+    static List<MiembroEmpresa> sinBloqueadas(List<MiembroEmpresa> membresias, Set<Long> bloqueadas) {
+        if (bloqueadas.isEmpty()) return membresias;
+        return membresias.stream().filter(m -> !bloqueadas.contains(m.getEmpresa().getId())).toList();
     }
 }

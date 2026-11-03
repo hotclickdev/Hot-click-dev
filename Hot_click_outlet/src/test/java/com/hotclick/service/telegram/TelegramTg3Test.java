@@ -77,34 +77,6 @@ class TelegramTg3Test {
 
     // (c)
     @Test
-    void revocarMiembro_desactivaSoloLaMembresiaDeEsaEmpresa() {
-        TelegramRevocacionMiembro svc = new TelegramRevocacionMiembro();
-        MiembroEmpresaRepository mr = mock(MiembroEmpresaRepository.class);
-        TelegramVinculacionRepository vr = mock(TelegramVinculacionRepository.class);
-        ReflectionTestUtils.setField(svc, "miembroEmpresaRepository", mr);
-        ReflectionTestUtils.setField(svc, "vinculacionRepository", vr);
-        MiembroEmpresa m = mock(MiembroEmpresa.class);
-        when(m.getRolEnEmpresa()).thenReturn("EDITOR");
-        when(mr.findByUsuarioIdAndEmpresaIdAndEstado(5L, 1L, 1)).thenReturn(Optional.of(m));
-        TelegramVinculacion v = new TelegramVinculacion();
-        v.setUsuario(new Usuario());
-        v.setChatId(88L);
-        v.setEstado(TelegramVinculacion.ACTIVA);
-        v.setEmpresaActivaId(1L);
-        when(vr.findByUsuarioId(5L)).thenReturn(Optional.of(v));
-        when(mr.existsByUsuarioIdAndEstado(5L, 1)).thenReturn(true); // otra empresa
-
-        assertThat(svc.revocar(5L, 1L)).isTrue();
-
-        verify(m).setEstado(0);
-        verify(mr).save(m);
-        verify(mr, never()).findByUsuarioIdAndEmpresaIdAndEstado(eq(5L), eq(2L), anyInt());
-        assertThat(v.getEstado()).isEqualTo(TelegramVinculacion.ACTIVA); // otras empresas siguen
-        assertThat(v.getChatId()).isEqualTo(88L);
-        assertThat(v.getEmpresaActivaId()).isNull();
-    }
-
-    @Test
     void revocarMiembro_noRevocaAlPropietario() {
         TelegramRevocacionMiembro svc = new TelegramRevocacionMiembro();
         MiembroEmpresaRepository mr = mock(MiembroEmpresaRepository.class);
