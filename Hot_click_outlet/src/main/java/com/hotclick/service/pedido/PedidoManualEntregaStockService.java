@@ -5,7 +5,6 @@ import com.hotclick.model.OrigenPedido;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
-import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.utils.Constants;
@@ -36,7 +35,6 @@ public class PedidoManualEntregaStockService {
     public static final String REFERENCIA_TIPO = "PEDIDO";
 
     @Autowired private ProductoRepository productoRepository;
-    @Autowired private MovimientoStockRepository movimientoStockRepository;
     @Autowired private StockMovimientoSupport movimientoSupport;
 
     /** @return true si descontó en esta llamada. */
@@ -88,11 +86,13 @@ public class PedidoManualEntregaStockService {
         return true;
     }
 
-    /** Guarda en lote, fuera del recorrido de ítems. */
+    /**
+     * Los productos vienen del SELECT FOR UPDATE dentro de esta transacción: quedan gestionados y JPA
+     * los escribe al commit (dirty checking). Los movimientos se guardan en lote.
+     */
     private void persistir(Object source, java.util.Collection<Producto> productos, List<MovimientoStock> movimientos) {
         if (productos.isEmpty()) return;
-        productoRepository.saveAll(productos);
-        movimientoStockRepository.saveAll(movimientos);
+        movimientoSupport.guardarLote(movimientos);
         productos.forEach(p -> movimientoSupport.publicarCambioStock(source, p, p.getStockActual() != null ? p.getStockActual() : 0));
     }
 }

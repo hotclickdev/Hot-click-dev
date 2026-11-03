@@ -39,7 +39,7 @@ class PedidoManualEntregaStockServiceTest {
         StockMovimientoSupport support = new StockMovimientoSupport();
         ReflectionTestUtils.setField(support, "eventPublisher", mock(ApplicationEventPublisher.class));
         ReflectionTestUtils.setField(svc, "productoRepository", productoRepo);
-        ReflectionTestUtils.setField(svc, "movimientoStockRepository", movRepo);
+        ReflectionTestUtils.setField(support, "movimientoStockRepository", movRepo);
         ReflectionTestUtils.setField(svc, "movimientoSupport", support);
         producto = new Producto();
         producto.setId(4L);
