@@ -1,5 +1,8 @@
 # HotClick — Traspaso completo a la cuenta nueva de Grok Bot
 
+> **Aclaración de Andrés (2 nov 2026, 10:58 PM CR):** la migración es a la MISMA computadora (el mismo box, con /workspace, los worktrees, los respaldos cifrados y los logins). Solo cambia la cuenta de Grok Bot. Los bots nuevos no tienen que copiar archivos: tienen que recrear el rol, las rutinas y las skills, y seguir desde el mismo /workspace.
+
+
 > Documento maestro del Mentor. Generado el 2 de noviembre de 2026, 22:55 CR. Rama `docs/traspaso-cuenta-nueva`.
 > Estado: **[INCOMPLETO]** en la tabla de reportes (f): faltan reportes actualizados de los bots. Ver sección (g).
 > Este documento NO contiene secretos. Solo indica dónde están los archivos cifrados.
