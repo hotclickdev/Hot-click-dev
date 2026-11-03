@@ -788,3 +788,12 @@ Ramas [INCOMPLETO] o rescatadas (continuar desde aquí; ninguna está mergeada):
 - wip/qa-pos-traspaso-nota (nota de QA POS; hay que integrarla en docs/traspaso-cuenta-nueva si falta)
 - wip/qa-a1-62646e4-traspaso, wip/qa-a1-9fb6504-traspaso, wip/wt-bajos-old-traspaso, wip/wt-med-old-traspaso (tests sin terminar)
 - Ramas nuevas o actualizadas con su mismo nombre: fix/pago-lows-seguridad-dp2, fix/s02-s04-billing-onvo, fix/billing-config-faltante-transitoria
+
+### (p-bis) Actualización 2026-11-02 11:10 PM CR — lo que faltaba ya se subió
+
+Por instrucción de Andrés ("lo que falta subelo"), se subieron los 2 commits pendientes de HotClick Preparación Fase 2 (gitleaks limpio, master sin tocar):
+
+- `wip/preparacion-fase2-traspaso` (2257d3d7e): matriz de pruebas, datos QA ficticios, checklist paso 0 y semillas 01-04. **INCOMPLETO.**
+- `wip/preparacion-fase2-b-traspaso` (918470d27): nota de traspaso de Preparación Fase 2. **INCOMPLETO.**
+
+Estado: **ya no queda trabajo sin subir en la computadora.** Pendiente para la cuenta nueva: revisar y reconciliar todas las ramas `wip/*-traspaso` con sus ramas originales (abrir PR con CI verde + APTO de Seguridad antes de mergear). El pendiente "OK de Andrés para Preparación Fase 2" de la sección (o) queda resuelto en cuanto a la subida.
