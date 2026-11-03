@@ -46,6 +46,7 @@ public class PagoEstadoConsultaService {
     @Autowired private PaymentService          paymentService;
     @Autowired private OnvoPaymentProvider     onvoPaymentProvider;
     @Autowired private GuestCancelTokenService guestCancelTokenService;
+    @Autowired private PedidoStatusTokenService pedidoStatusTokenService;
     @Autowired private PlatformTransactionManager transactionManager;
 
     @Value("${hotclick.pagos.onvo.estado-reconsulta-segundos:10}")
@@ -89,8 +90,10 @@ public class PagoEstadoConsultaService {
     }
 
     private boolean esDueno(Pedido pedido, String numeroPedido, String correoUsuario, String tokenPedido) {
-        if (tokenPedido != null && !tokenPedido.isBlank() && guestCancelTokenService.esValido(numeroPedido, tokenPedido)) {
-            return true;
+        if (tokenPedido != null && !tokenPedido.isBlank()
+            && (guestCancelTokenService.esValido(numeroPedido, tokenPedido)
+                || pedidoStatusTokenService.esValido(numeroPedido, tokenPedido))) {
+            return true; // cancelToken del checkout o token de estado (solo lectura) de la URL de retorno ONVO
         }
         if (correoUsuario == null || "anonymousUser".equals(correoUsuario)) return false;
         String dueno = pedido.getUsuarioFinal() == null ? null : pedido.getUsuarioFinal().getCorreo();

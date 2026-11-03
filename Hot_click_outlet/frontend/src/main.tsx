@@ -7,7 +7,7 @@ import { registerSW } from 'virtual:pwa-register'
 import { PostHogProvider } from '@posthog/react'
 import { initSentry, syncSentryUser } from '@/utils/sentryClient'
 import useAuthStore from '@/store/authStore'
-import { crearLimitadorChequeo, debeAutoActualizar, debeMostrarAvisoSw, registrarAplicarSwUpdate } from '@/app/swUpdate'
+import { crearLimitadorChequeo, debeAutoActualizar, debeMostrarAvisoSw, marcarActualizacionEnEspera, registrarAplicarSwUpdate } from '@/app/swUpdate'
 
 initSentry()
 const sesion = useAuthStore.getState()
@@ -32,6 +32,8 @@ if ('serviceWorker' in navigator) {
         void updateSW(true)
         return
       }
+      // Queda en espera: si después hay un login exitoso se aplica ahí (aplicarSwTrasLogin).
+      marcarActualizacionEnEspera()
       // Si el usuario dijo «Ahora no», no se vuelve a anunciar en cada recarga o foco.
       if (debeMostrarAvisoSw()) globalThis.dispatchEvent(new CustomEvent('sw-update-available'))
     },

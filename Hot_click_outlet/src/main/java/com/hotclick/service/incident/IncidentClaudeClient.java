@@ -31,9 +31,12 @@ public class IncidentClaudeClient {
     private String model;
 
     private final ObjectMapper objectMapper;
+    private final com.hotclick.service.ai.ClaudeUsoRegistrador usoRegistrador;
 
-    public IncidentClaudeClient(ObjectMapper objectMapper) {
+    public IncidentClaudeClient(ObjectMapper objectMapper,
+                                com.hotclick.service.ai.ClaudeUsoRegistrador usoRegistrador) {
         this.objectMapper = objectMapper;
+        this.usoRegistrador = usoRegistrador;
     }
 
     public boolean hasApiKey() {
@@ -139,13 +142,17 @@ public class IncidentClaudeClient {
     }
 
     /**
-     * Costo estimado con la tarifa del modelo realmente usado (Sonnet 4.6 si {@code anthropic.model}
-     * no está fijado; {@code ia.precio.sonnet.*}). Solo log: no se suma a hot_click_ai_uso_tb porque
-     * esa tabla se valoriza con la tarifa principal y mezclaría modelos.
+     * Registra los tokens (entrada, salida, caché lectura y escritura) en hot_click_ai_uso_tb vía
+     * {@link com.hotclick.service.ai.ClaudeUsoRegistrador}, a nombre de la empresa plataforma
+     * (incidentes no tienen tenant). Best-effort: el registrador nunca lanza.
+     * El log usa la tarifa del modelo realmente usado (Sonnet 4.6 si {@code anthropic.model} no
+     * está fijado; {@code ia.precio.sonnet.*}); ojo: el panel valoriza ai_uso con la tarifa principal.
      */
     double registrarCosto(JsonNode usage) {
         com.hotclick.service.ai.UsoTokens uso = com.hotclick.service.ai.UsoTokens.desdeUsage(usage);
         if (uso == null || uso.esVacio()) return 0;
+        // tenant-global-ok: incidentes son de plataforma; sin empresa el registrador usa EMPRESA_PLATAFORMA_ID y solo escribe consumo
+        usoRegistrador.registrar(null, uso);
         double costo = com.hotclick.service.ai.ClaudePrecios.actual().paraModelo(model)
             .costoUsd(uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
         log.info("[incident-ai] modelo={} tokens in={} out={} costoEstimadoUsd={}",

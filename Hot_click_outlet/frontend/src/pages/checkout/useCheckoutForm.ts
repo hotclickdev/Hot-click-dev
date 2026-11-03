@@ -18,6 +18,7 @@ import {
   validatePhone as mensajeTelefono,
 } from './checkoutHelpers'
 import { direccionCompleta, esDestinoGAM } from './ubicacionesCR'
+import { cargarMontosEnvio } from '@/config/montosEnvio'
 import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
 import { metodoPagoPrincipal, sinpeDestinoDesdeConfig, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig } from './pagoPrincipal'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
@@ -159,6 +160,9 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const [canton, setCantonState] = useState('')
   const [distrito, setDistrito] = useState('')
   const destinoGAM = esDestinoGAM(provincia, canton)
+  // A-2: montos que configuró el ADMIN; el re-render muestra los nuevos apenas llegan.
+  const [, setMontosListos] = useState(0)
+  useEffect(() => { void cargarMontosEnvio().then(() => setMontosListos((n) => n + 1)) }, [])
   function setProvincia(value: string) {
     setProvinciaState(value)
     setCantonState('')
@@ -321,7 +325,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
 
   const [aceptaDatos, setAceptaDatos] = useState(false)
 
-  const costoEnvio = paquetes.reduce((sum, p) => sum + (SHIPPING_COSTS[metodoEnvioPorPaquete[p.bodegaId]] ?? 0), 0)
+  // MED-3 Auditor 3 (b): un envío por negocio (el más caro de sus bodegas), igual que `CheckoutGrupoFactory`.
+  const costoEnvio = envioPorNegocio(paquetes, metodoEnvioPorPaquete)
   const subtotalCart = total()
   const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0
   const baseConCupon = subtotalCart - descuentoMonto + costoEnvio
@@ -434,4 +439,18 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     gcAplicado,
     totalFinal,
   }
+}
+
+type PaqueteConNegocio = { bodegaId: string; items: object[] }
+
+/** Suma un envío por negocio: dentro de cada uno cobra solo el monto mayor de sus paquetes. */
+export function envioPorNegocio(paquetes: PaqueteConNegocio[], metodos: Record<string, string>): number {
+  const porNegocio = new Map<string, number>()
+  paquetes.forEach((p, i) => {
+    const empresaId = (p.items[0] as { empresaId?: unknown } | undefined)?.empresaId
+    const clave = empresaId != null ? `E${String(empresaId)}` : `B${p.bodegaId}-${i}`
+    const monto = SHIPPING_COSTS[metodos[p.bodegaId]] ?? 0
+    porNegocio.set(clave, Math.max(porNegocio.get(clave) ?? 0, monto))
+  })
+  return [...porNegocio.values()].reduce((a, b) => a + b, 0)
 }

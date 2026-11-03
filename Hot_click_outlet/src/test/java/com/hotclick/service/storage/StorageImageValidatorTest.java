@@ -102,4 +102,26 @@ class StorageImageValidatorTest {
         assertThat(StorageImageValidator.DECODIFICACIONES.availablePermits())
             .isEqualTo(StorageImageValidator.PERMISOS_DECODIFICACION);
     }
+
+    private static byte[] ftyp(String major, String... compat) {
+        int n = 16 + 4 * compat.length;
+        byte[] b = new byte[n + 8];
+        b[3] = (byte) n;
+        System.arraycopy("ftyp".getBytes(), 0, b, 4, 4);
+        System.arraycopy(major.getBytes(), 0, b, 8, 4);
+        for (int i = 0; i < compat.length; i++) System.arraycopy(compat[i].getBytes(), 0, b, 16 + 4 * i, 4);
+        return b;
+    }
+
+    @Test
+    @DisplayName("BAJO 4: AVIF exige ftyp + avif/avis; texto con .avif se rechaza")
+    void avifPorMagicBytes() {
+        assertThat(validator.tienesMagicBytesValidos("avif", ftyp("avif", "mif1"))).isTrue();
+        assertThat(validator.tienesMagicBytesValidos("avif", ftyp("avis"))).isTrue();
+        assertThat(validator.tienesMagicBytesValidos("avif", ftyp("mif1", "miaf", "avif"))).isTrue();
+        assertThat(validator.tienesMagicBytesValidos("avif", ftyp("heic", "mif1"))).isFalse();
+        assertThat(validator.tienesMagicBytesValidos("avif", ftyp("isom", "mp42"))).isFalse();
+        assertThat(validator.tienesMagicBytesValidos("avif", "no soy una imagen avif".getBytes())).isFalse();
+        assertThat(validator.tienesMagicBytesValidos("avif", new byte[] {0, 0, 0, 0})).isFalse();
+    }
 }

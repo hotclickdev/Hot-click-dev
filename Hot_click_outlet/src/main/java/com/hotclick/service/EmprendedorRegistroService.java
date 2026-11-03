@@ -52,8 +52,8 @@ public class EmprendedorRegistroService {
             throw new IllegalArgumentException("El nombre de la empresa es requerido");
         if (dto.getCorreoAdmin() == null || dto.getCorreoAdmin().isBlank())
             throw new IllegalArgumentException("El correo del administrador es requerido");
-        if (dto.getPasswordAdmin() == null || dto.getPasswordAdmin().length() < 8)
-            throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres");
+        if (!com.hotclick.service.auth.AuthSupport.cumplePoliticaContrasena(dto.getPasswordAdmin()))
+            throw new IllegalArgumentException(com.hotclick.service.auth.AuthSupport.MENSAJE_POLITICA_CONTRASENA);
 
         // Correo del admin ya registrado
         if (usuarioRepository.existsByCorreo(dto.getCorreoAdmin().trim().toLowerCase(java.util.Locale.ROOT)))

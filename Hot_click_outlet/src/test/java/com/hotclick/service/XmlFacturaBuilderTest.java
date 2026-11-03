@@ -52,6 +52,30 @@ class XmlFacturaBuilderTest {
     }
 
     @Test
+    @DisplayName("cédula del emisor con guiones se normaliza en Numero y ProveedorSistemas")
+    void cedulaEmisorConGuionesSeNormaliza() {
+        Empresa e = empresa();
+        e.setCedulaJuridica(" 3-101-123456 ");
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedidoConIva());
+        assertThat(xml).contains("<Numero>3101123456</Numero>")
+            .contains("<ProveedorSistemas>3101123456</ProveedorSistemas>")
+            .doesNotContain("3-101-123456");
+        validarOficial(xml, true);
+    }
+
+    @Test
+    @DisplayName("cédula del emisor con letras o largo inválido no arma XML")
+    void cedulaEmisorInvalidaFalla() {
+        Empresa e = empresa();
+        e.setCedulaJuridica("3-101-ABC456");
+        assertThatThrownBy(() -> builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedidoConIva()))
+            .isInstanceOf(HaciendaConfiguracionException.class);
+        e.setCedulaJuridica("1-234");
+        assertThatThrownBy(() -> builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), e, pedidoConIva()))
+            .isInstanceOf(HaciendaConfiguracionException.class);
+    }
+
+    @Test
     @DisplayName("tiquete sin cédula no inventa receptor")
     void tiqueteSinReceptor() {
         ComprobanteFiscal cf = comprobante(ComprobanteFiscal.TIPO_TIQUETE);

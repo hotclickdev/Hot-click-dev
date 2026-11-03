@@ -1,85 +1,72 @@
-# Traspaso — HotClick CI/CD
+# Traspaso: HotClick CI/CD (área 10)
 
-> **Nota vigente (30-oct-2026): [ci-cd.md](ci-cd.md).** Este archivo es la historia del 26-oct; para reglas, PRs abiertos y pendientes actuales leé `ci-cd.md`.
+Actualizado 2026-11-02, ~23:00 hora CR. Master al escribir esto: `61b36a382007154363403ca85946e204704ee6d9`.
 
-Fecha: 26-oct-2026, ~14:50 (hora de Costa Rica, UTC-6). Repo: hotclickdev/Hot-click-dev.
+## 1. Rol y descripción (para recrearte)
 
-## Rol
-Preparo, verifico y mergeo PRs a master y mantengo el staging LOCAL del box. Solo hablo con Grok Bot (nunca directamente con humanos).
+Nombre del bot: **HotClick CI/CD**
 
-## Reglas vigentes (decisiones de Andrés)
-- Merge solo con **CI verde + APTO de Seguridad sobre el hash exacto**, con `gh pr merge N --merge --match-head-commit <sha>`, **de a uno**, **sin deploy**.
-- Requieren OK explícito de Andrés: deploy, gastar dinero, cuentas nuevas, borrar datos de prod, llave live, piloto.
-- **Sin servidores** (ni staging ni backup, ni AWS ni otro proveedor): orden del 26-oct 12:17. Backups solo locales y cifrados.
-- Prohibido `--no-verify`, force push y rebase en ramas compartidas. Las ramas se actualizan con **merge de master**.
-- Maven: `MAVEN_OPTS=-Xmx2g flock /workspace/.mvn-suite.lock mvn -B test -DforkCount=1`.
-- Antes de mergear una migración: reconfirmar que su número `V` sigue libre en master.
-- Tope de 2–3 PRs abiertos por bot; cada fix con su test de regresión.
-- Etiqueta `skip-scale-gate` (falsos positivos SCALE1): solo surte efecto con un push nuevo.
-- Conflictos en `static/`: tomar la versión de master y reconstruir el front.
-- Sin secretos ni IPs en el repo; gitleaks antes de cada push.
+> Responsable de CI/CD de HotClick (área 10): GitHub Actions, gitleaks, E2E con Playwright, automerge, backup local cifrado y Sentry opcional. Repo hotclickdev/Hot-click-dev. Reportás solo a Grok Bot; nunca hablás con Andrés ni con humanos. Mergeas con gh pr merge --match-head-commit solo cuando hay CI verde y APTO de HotClick Seguridad sobre ese hash exacto. Verificá gh auth status antes de contar con el scope workflow. Reglas: sin force, sin --no-verify, sin rebase; nunca deploy, gastos, cuentas ni servidores nuevos (un PR que crea servidores es NO APTO); staging y Sentry solo en código y apagados por defecto; respaldos solo locales y cifrados; nada de secretos ni IPs en chat o repo; worktree propio, sin git stash ni pkill. Reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso.
 
-## PRs mergeados hoy (26-oct)
-#333, #341, #339, #340, #342, #325, #337, #346, #334, #345 (master tras #345: 1b1fece8; tras #346: 7e9e2b27).
+Identidad git: `git -c user.name="HotClick CI/CD" -c user.email=ci@hotclick.lat ...`
 
-## Cola de merges (estado al cierre)
-Scripts en el box: `/workspace/automerge7.sh` (en ejecución), luego `am8.sh`, `am9.sh` y `am10.sh`; logs en `/workspace/automerge*.log`. Plantilla saneada: `evidencia/hotclick-ci-cd/automerge.sh`.
-Ojo: no encadenar con `pgrep -f` (se matchea a sí mismo); esperar por un PID concreto.
+## 2. Reglas que seguís
 
-| Orden | PR | Head con APTO | Estado |
-|---|---|---|---|
-| 1 | #344 fix/visibilidad-impago | 0372c25f | APTO; esperando CI (automerge7) |
-| 2 | #332 fix/comisiones-por-plan | 3abfc68d | APTO; esperando CI (automerge7) |
-| 3 | #338 fix/telegram-antiabuso-dedup | c710d9b3 | APTO; verificar V199 libre en master (am8.sh) |
-| 4 | #347 fix/login-reenviar-verificacion | 3f7e8f05 | APTO (am9.sh) |
-| — | #343 fix/checkout-lock-expiracion-pedido-manual | 75f93a25 | APTO + `skip-scale-gate`, **HOLD**: Andrés debe decidir la excepción ENTREGADO con pago externo. No mergear. |
-| — | #348 fix/roles-admin-billing-wallet | 45534a84 | Tests Java en rojo; con Bugs. Prioridad alta cuando vuelva. |
-| — | #349 fix/marketplace-reqa-area3 | e05c0824 | Espera APTO (el anterior fue NO APTO por sobreventa: el webhook ONVO hace rollback tras capturar el pago, devuelve 500 y el pedido queda colgado). am10.sh está preparado: NO correrlo sin APTO. |
-| — | #336 fix/checkout-bodega-default-front | f6e655e6 | Espera CI y APTO. |
-| — | #329 feat/sentry-opcional | 3e1c837d | Actualizado con master (worktree /workspace/infra-sentry, rama local merge-329); necesita APTO nuevo. |
+- Merge solo con: `gh pr merge <n> --merge --match-head-commit <sha>`.
+- Condiciones de merge (todas):
+  - CI completo en verde. **Tests Java tiene que correr de verdad y pasar**; un rojo de infraestructura (p. ej. Maven que no resuelve surefire) NO cuenta como verde: re-corré el job (`gh run rerun --failed`), no mergeés.
+  - APTO de HotClick Seguridad sobre ese hash exacto.
+  - PR 0 atrás de master (`gh api repos/hotclickdev/Hot-click-dev/compare/master...<sha> --jq .behind_by` = 0).
+  - Si hacés merge puro de master en la rama, el hash cambia: hace falta re-APTO.
+- Seguridad propuso dar APTO a hashes atrasados si el merge-tree sale limpio. **No lo adoptaste** sin OK del Mentor; seguí exigiendo 0 atrás hasta que el Mentor diga otra cosa.
+- El Mentor habla por el usuario en asignaciones de CI/CD. Deploys y gastos necesitan el OK del usuario mismo. Las preguntas para Andrés pasan por el Mentor; nunca le escribís directo.
+- En el box solo tests puntuales; la suite completa corre bajo `flock /workspace/hotclick/.suite-completa.lock`.
+- Nada de túneles ni URLs públicas (p. ej. para webhooks ONVO) sin OK de Andrés.
+- Worktree propio para cada tarea (`/workspace/wt-area10-*` o `ci/*`), nunca push a master.
 
-## Pendientes
-- PR E2E (`feat/e2e-playwright-ci`) e **INF-04** (health-pager.yml, real-health.yml y keep-alive.yml todavía caen a onrender si falta HEALTH_URL): necesitan un token con scope `workflow`. El push del E2E fue rechazado por eso; el workflow está copiado en `evidencia/hotclick-ci-cd/e2e-workflow.md`.
-- La CSP todavía incluye tilopay y clerk.
-- BAJOs de Seguridad abiertos sobre #345 (y el BAJO de #329: el patrón BASIC redacta de más).
-- Avisar a Dev Pagos y QA 8 (vía Grok Bot) para la prueba rápida de suscripción ONVO en modo test en el staging (#346 ya está en master), y a QA Cliente que el staging usa Mailpit.
+## 3. Rutina a recrear
 
-## Staging local (en el box, NO es un servidor)
-- Carpeta: `/workspace/staging-43188186` (worktree en master).
-- Backend :8081 → `run-backend.sh` (jar `target/hot-click-outlet-1.0.0.jar`, JDK 21 en `/workspace/tools/jdk21`, perfil dev, `.env` local no versionado; `MAIL_PROVIDER=smtp`, `SPRING_MAIL_HOST=localhost`, `SPRING_MAIL_PORT=1025`).
-- Front :3000 → `run-front.sh` (Vite con `VITE_API_PROXY=http://localhost:8081` y `CHOKIDAR_USEPOLLING=1`). PIDs en `backend.pid` y `front.pid`. Reiniciar con los scripts; **nunca con `pkill -n`**.
-- Node 22: `/workspace/tools/node22/bin/node` (el Node del sistema es v20 y corepack está roto). pnpm 11.1.2 en `~/.local/pnpm11` (requiere Node 22 o más).
-- Postgres en Docker (contenedor `stg-pg-43188186`); Mailpit en Docker (`stg-mailpit`, SMTP 1025, UI 8025).
-- Para pararlo: `stop-staging.sh`. El puerto **8080 es de otro bot**: no tocarlo.
-- Los inodos del box andan en ~89%: limpiezas ajenas ya borraron `node_modules`; reinstalar con pnpm 11 + Node 22.
-- Copias saneadas: `docs/traspaso/evidencia/hotclick-ci-cd/run-*.sh` y `stop-staging.sh`.
+**"Merge PR HotClick con CI verde y APTO"**, cada 30 min: revisa PRs abiertos, mergea los que cumplen todas las condiciones de arriba (con `--match-head-commit`) y limpia los worktrees `ci/*` de PRs ya mergeados. Hay que recrearla en la cuenta nueva.
 
-## Mis ramas
-- `feat/e2e-playwright-ci` (head 550e54181): solo local; push rechazado por falta del scope workflow.
-- `fix/mail-provider-selector`: ya en origin, mergeada como #345.
-- `merge-329` (local) = `feat/sentry-opcional` en origin (3e1c837d), sin commits pendientes.
+## 4. Lo hecho
 
-## Evidencia
-`docs/traspaso/evidencia/hotclick-ci-cd/`: scripts saneados, `e2e-workflow.md` y `cola-merges-logs.md`. Los logs completos quedan en `/workspace/automerge*.log` del box.
+2026-11-02 (hora CR):
+- #494 mergeado por mí → `53138281`.
+- #498 (docs APP_URL) mergeado por hotclickdev.
+- #499 (tipos OTP, cierra HC-CICD-002) → `3f9046df`.
+- #501 mergeado por mí sobre `e3296487` (master quedó `e643c314`). Incluí un rebuild de static/ (`92ae758c`).
+- #503 mergeado por mí sobre `50d0b162`.
+- #502 (`8662106e`, master `4905cd5f`), #504, #505 (`895ed1e2`) y #506 (`8719bf50`) los mergearon otros.
+- Staging local levantado en master `64212015` con backup cifrado previo, para re-QA de #503/#504.
 
-## Correcciones al README
-(a) Errores o datos viejos (estado verificado con `gh pr view` y `git ls-remote` el 26-oct 15:38 CR):
-- master ya no está en 1f54e30f: va en c48cb9ea o más nuevo.
-- Hoy se mergearon #333, #341, #339, #340, #342, #325, #337, #346, #334, #345, #344, #338, #347, #349 y además #353 (15:26 CR, a96c77f7), #352 (15:29 CR, d985cba7), #348 (15:30 CR, d8f239be) y #343 (15:36 CR, 7c9ea22c). El paso 4 de "PARA EL BOT" los lista como abiertos: sacarlos; #343 ya no está en rojo.
-- Siguen abiertos con APTO, en cola: #329 (3e1c837d), #332 (3abfc68d), #336 (fb1818da), #351 (E2E Playwright, 788e02e9) y #350 (e68039dc).
-- Mi fila: la columna de estado dice que #351/#352 "ya pueden ir"; #352 ya entró y #351 está pusheado con APTO en cola. En "Mis ramas", `feat/e2e-playwright-ci` ya está en origin (head 788e02e9), no solo local. Inodos: ahora ~92 %, no ~89 %.
-- Mis instrucciones dicen que nunca ejecuto merge/push: en la práctica corro la cola automerge y los push con OK de Andrés vía Grok Bot por cada PR (CI verde + APTO sobre el head exacto, sin deploy).
+Antes: #483, #487 (docs extensión vector, `docs/infra/prerrequisitos-bd.md`).
 
-(b) Lo que le falta al reemplazo:
-- Flyway en master quedó con `baseline-on-migrate` y `out-of-order` en false: confirmar `flyway_schema_history` en prod antes de cualquier deploy (lo hace Andrés).
-- `HOTCLICK_NUMEROS_PROHIBIDOS` ya se pasa en ci.yml (#353), pero el test se omite hasta que el dueño cree el secret.
-- La etiqueta `skip-scale-gate` solo aplica con un push nuevo al PR.
-- El merge script usa `gh pr merge --match-head-commit <sha>`; al encadenar corridas, esperar por PID (`wait`/`kill -0`), no con `pgrep -f`, que se matchea a sí mismo.
-- Conflictos en `static/`: tomar la versión de master y recompilar.
-- pnpm 11 necesita Node 22 (`/workspace/tools/node22`); corepack está roto.
-- Box con load alto: no lanzar builds pesados en paralelo. Puerto 8080 de otro bot.
-- GitHub a veces da timeout de TLS: reintentar el merge (con el mismo `--match-head-commit`).
+Worktree `/workspace/wt-area10-pr501` (rama `area10-pr501` → `fix/pago-exito-token-status`): sin trabajo pendiente, #501 ya está en master.
 
-(c) Mejoras (le tocan a Andrés):
-- Fijar por SHA las actions de los demás workflows (en #351 ya está pnpm/action-setup).
-- Hacer obligatorio el check E2E en la protección de master cuando entre #351.
+## 5. Staging local y rutas
+
+- Staging: `/workspace/hotclick/staging`, código en `64212015`, jar `jars/app-64212015.jar`. Arranque: `start-64212015-onvotest.sh`. ONVO en modo test (live=false), `APP_URL=http://localhost:8081`. Mailpit local (binario en `tools/`) escuchando solo en loopback. Al 2026-11-02 23:00 CR la app (PID 3879041) y Mailpit (PID 3695673) seguían vivos; los PIDs no sobreviven a la migración.
+- Herramientas: `login-check.py` (prueba las 18 cuentas QA, maneja 429). Evidencia en `evid/` (`staging-64212015.md`).
+- Backups cifrados (gpg): `/workspace/hotclick/staging-backups`, el último `hc_staging-20261102-1212-pre-64212015.sql.gpg`.
+- Cuentas QA cifradas: `/workspace/hotclick/fase2/cuentas-qa-staging.tsv.gpg` (cabecera `usuario\tclave` + 18 cuentas).
+- Semillas: `/workspace/hotclick/fase2/semilla/` (01 a 04, ver `LEEME.md`).
+- Hallazgos: `/workspace/qa/registro/hallazgos-riesgos.md`.
+- Smoke: `/workspace/qa/paso0/smoke-skip-locked.md` (fecha futura + ROLLBACK).
+- Secretos: las passphrases gpg y las llaves ONVO de test NO están en el repo; viven en las variables de entorno/archivos locales que referencia el script de arranque y en el vault del usuario. Nunca las copies a chat ni al repo.
+
+## 6. Pendientes
+
+- [PENDIENTE] (a) PR #507 de Dev Pagos (prod no arranca sin APP_URL): en espera hasta que el Mentor/Andrés confirme `APP_URL=https://hotclick.lat` en Render prod (`render.yaml` no la declara).
+- [PENDIENTE] (b) HC-CICD-001 (BAJO): no hay propiedad para pausar el scheduler.
+- [PENDIENTE] (c) En staging, FlywayRepairConfig sigue corriendo repair() con el perfil dev.
+- [PENDIENTE] (d) SINPE vía ONVO apagado en staging: falta ONVO_SINPE_DESTINO. El webhook ONVO necesita endpoint público + OK de Andrés.
+- [PENDIENTE] (e) Dependabot #309–#317 en rojo (SonarCloud). Drafts #440 y #363 (#363 con conflictos).
+- [PENDIENTE] (f) Semilla 03 y smoke sobre staging con Flyway real: no hay registro de que se corrieran sobre `64212015`; verificalo.
+
+## 7. Próximos pasos exactos
+
+1. `gh auth status` (confirmá scope `workflow`) y recreá la rutina de la sección 3.
+2. `gh pr list --state open`; para cada PR con APTO, aplicá las condiciones de la sección 2 y mergeá con `--match-head-commit`.
+3. Esperá respuesta del Mentor sobre APP_URL en Render antes de tocar #507.
+4. Si el staging no está vivo, restaurá desde el último `.gpg`, levantalo con `start-64212015-onvotest.sh` (o un script nuevo para el master actual, con backup previo), corré `login-check.py` y dejá evidencia en `evid/`.
+5. Cerrá el pendiente (f) y actualizá `hallazgos-riesgos.md`.

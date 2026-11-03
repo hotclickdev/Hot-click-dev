@@ -126,7 +126,7 @@ class ProductoBodegaAjenaIdorTest extends BaseIntegrationTest {
             .header("Authorization", token).contentType(MediaType.APPLICATION_JSON)
             .content(cuerpo("Taza Idor Edicion", bodegaAjena)));
 
-        r.andExpect(status().isBadRequest());
+        r.andExpect(status().isNotFound());
         sinFuga(r);
         assertEquals(bodegaPropia.getId(), productoPorNombre("Taza Idor Edicion").getBodega().getId(),
             "la bodega del producto no se cambia a una ajena");

@@ -30,6 +30,9 @@ import java.util.Map;
 
 @Service
 public class TiendaRapidaService {
+    /** Seguridad #469: mismo mensaje si el correo es de una cuenta o de una tienda (no revela cuál). */
+    static final String CORREO_NO_DISPONIBLE = "Ese correo no está disponible. Usá otro.";
+
 
     private final TiendaRapidaRepository rapidas;
     private final EmpresaRepository empresas;
@@ -188,12 +191,12 @@ public class TiendaRapidaService {
         String mail = TiendaRapidaReglas.correo(correo);
         String cel = TiendaRapidaReglas.telefono(telefono);
         Usuario usuario = fila.getUsuario();
-        if (usuarios.existsByCorreo(mail) && !mail.equalsIgnoreCase(usuario.getCorreo())) {
-            throw new IllegalArgumentException("Ese correo ya tiene una cuenta.");
+        if (!usuarios.findAllByCorreoIgnoreCase(mail).isEmpty() && !mail.equalsIgnoreCase(usuario.getCorreo())) {
+            throw new IllegalArgumentException(CORREO_NO_DISPONIBLE);
         }
         Empresa empresa = fila.getEmpresa();
-        if (empresas.existsByCorreoEmpresa(mail) && !mail.equalsIgnoreCase(empresa.getCorreoEmpresa())) {
-            throw new IllegalArgumentException("Ese correo ya tiene una tienda.");
+        if (empresas.existsByCorreoEmpresaIgnoreCase(mail) && !mail.equalsIgnoreCase(empresa.getCorreoEmpresa())) {
+            throw new IllegalArgumentException(CORREO_NO_DISPONIBLE);
         }
         if (usuarios.existsByIdentificacion(id) && !id.equals(usuario.getIdentificacion())) {
             throw new IllegalArgumentException("Esa cédula ya está registrada.");

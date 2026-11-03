@@ -8,12 +8,13 @@ import useCartStore from '@/store/cartStore'
 import useTenantStore from '@/store/tenantStore'
 import { useToast } from '@/components/ui/Toast'
 import { abandonedCartService } from '@/services/abandonedCartService'
-import { debeRespetarRedirect, destinoPostLogin, mensajeErrorAuth, statusErrorAuth } from './authHelpers'
+import { debeRespetarRedirect, destinoPostLogin, mensajeErrorAuth, saludoLogin, statusErrorAuth } from './authHelpers'
 import { correoDesdeEstado } from './recuperar/recuperarHelpers'
-import { esCuentaSinVerificar, COOLDOWN_REENVIO_SEG } from './reenvioVerificacion'
+import { esCuentaSinVerificar, COOLDOWN_REENVIO_SEG, PASO_VERIFICAR_CORREO, reenviarCodigo, verificarCodigoCuenta } from './reenvioVerificacion'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
+import { aplicarSwTrasLogin, DEMORA_TRAS_LOGIN_MS } from '@/app/swUpdate'
 
 type LoginApiData = AuthResponse & {
   requiresWebauthn?: boolean
@@ -137,17 +138,41 @@ export function useLoginFlow() {
     } finally { setLoading(false) }
   }
 
+  // QA4-013: el toast refleja el resultado real (fail-closed); el cooldown solo arranca si se envió.
   const handleResendVerification = async () => {
+    if (verifCooldown > 0) { toast({ message: t('login.reenviarEn', { s: verifCooldown }), type: 'info' }); return }
     setResendLoading(true)
     try {
-      await authService.reenviarVerificacion(correo.trim().toLowerCase())
-      toast({ message: t('login.reenvioGenerico'), type: 'success' })
-    } catch (err: unknown) {
-      toast({ message: mensajeErrorAuth(err, t('login.resendError')), type: 'error' })
+      const r = await reenviarCodigo(authService.reenviarVerificacion, correo, t('login.resendError'))
+      if (r.ok) {
+        toast({ message: t('login.reenvioGenerico'), type: 'success' })
+        startVerifCooldown()
+      } else {
+        toast({ message: r.mensaje, type: 'error' })
+      }
     } finally {
       setResendLoading(false)
-      startVerifCooldown()
     }
+  }
+
+  // QA4-004: código de verificación desde /login (por si se cerró la pestaña de /registro).
+  const [codigoVerif, setCodigoVerif] = useState('')
+  const abrirVerificacion = () => { setError(''); setCodigoVerif(''); setStep(PASO_VERIFICAR_CORREO) }
+  const handleVerifyEmail = async (e: FormEvent) => {
+    e.preventDefault(); setError(''); setLoading(true)
+    try {
+      const r = await verificarCodigoCuenta<AuthResponse>(
+        authService.verifyRegistration, correo, codigoVerif,
+        t('login.code6digits'), t('login.verifyError'))
+      if (!r.ok) { setError(r.mensaje); return }
+      setNeedsVerification(false)
+      if (r.data?.accessToken) {
+        await handleLoginSuccess(r.data as LoginApiData)
+      } else {
+        toast({ message: t('login.cuentaVerificada'), type: 'success' })
+        setStep('login')
+      }
+    } finally { setLoading(false) }
   }
 
   const [verifCooldown, setVerifCooldown] = useState(0)
@@ -220,6 +245,12 @@ export function useLoginFlow() {
 
   const handleLoginSuccess = async (data: LoginApiData) => {
     login(data)
+    // Versión nueva del SW en espera: se aplica una vez tras navegar (la sesión ya quedó persistida).
+    // No se aplica con el modal de recuperar carrito abierto, para no perderlo.
+    const irTrasLogin = (destino: string) => {
+      navigate(destino, { replace: true })
+      setTimeout(() => { aplicarSwTrasLogin() }, DEMORA_TRAS_LOGIN_MS)
+    }
     if (data.empresaId) {
       await useTenantStore.getState().loadTenantInfo()
     }
@@ -228,7 +259,7 @@ export function useLoginFlow() {
       planNombre: useTenantStore.getState().planNombre,
     })
     const isInternal = data.rol !== 'USUARIO_FINAL'
-    toast({ message: isInternal ? t('login.welcomeAdmin') : t('login.welcome'), type: 'success' })
+    toast({ message: saludoLogin(data.rol, data.nombre, t), type: 'success' })
 
     // Usuario final: flujo habitual con recuperación de carrito
     if (!isInternal) {
@@ -240,19 +271,19 @@ export function useLoginFlow() {
           setRecoveryCart(cart); setRecoveryDest(dest); setShowCartRecovery(true); return
         }
       } catch { /* no cart */ }
-      navigate(dest, { replace: true })
+      irTrasLogin(dest)
       return
     }
 
     // (d) Vendedor/staff con ?redirect= explícito (p. ej. desde un enlace del panel): respetarlo.
     if (debeRespetarRedirect(params.get('redirect'), from)) {
-      navigate(from, { replace: true })
+      irTrasLogin(from)
       return
     }
 
     // Un solo modo disponible → redirigir directo
     if (modes.length === 1) {
-      navigate(modes[0].path, { replace: true })
+      irTrasLogin(modes[0].path)
       return
     }
 
@@ -265,16 +296,17 @@ export function useLoginFlow() {
       const savedPref = localStorage.getItem(MODE_PREF_KEY)
       if (savedPref) {
         const saved = modes.find(m => m.id === savedPref)
-        if (saved) { navigate(saved.path, { replace: true }); return }
+        if (saved) { irTrasLogin(saved.path); return }
       }
     }
 
     // Mostrar selector de modo
-    navigate('/mode-select', { replace: true })
+    irTrasLogin('/mode-select')
   }
 
   return {
     navigate,
+    codigoVerif, setCodigoVerif, abrirVerificacion, handleVerifyEmail,
     t,
     step, setStep,
     loading,

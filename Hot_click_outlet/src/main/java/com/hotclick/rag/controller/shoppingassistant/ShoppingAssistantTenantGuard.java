@@ -27,7 +27,7 @@ public class ShoppingAssistantTenantGuard {
         return buscarPorSlug(empresaSlug)
             .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()))
             .orElseThrow(() -> {
-                log.warn("[rag-ctrl] Slug no encontrado o inactivo: '{}'", empresaSlug);
+                log.warn("[rag-ctrl] Slug no encontrado o inactivo (len={})", empresaSlug == null ? 0 : empresaSlug.length());
                 return new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Tienda no encontrada o inactiva");
             });

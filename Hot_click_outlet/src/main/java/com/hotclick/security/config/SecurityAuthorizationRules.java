@@ -102,6 +102,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/gift-cards/**").authenticated()
             // White label branding y chat público — sin auth
             .requestMatchers(GET,  "/api/public/branding").permitAll()
+            // A-2: montos de envío, solo lectura (la escritura es /api/admin/configuracion/envio, ADMIN)
+            .requestMatchers(GET,  "/api/public/envio/montos").permitAll()
             .requestMatchers(POST, "/api/public/chat").permitAll()
             .requestMatchers(POST, "/api/public/embudo").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/chat").permitAll()
@@ -294,7 +296,7 @@ final class SecurityAuthorizationRules {
                 // Páginas del panel de plataforma (solo HTML del SPA): los datos van por /api/admin/**, que sigue ADMIN.
                 "/plataforma", "/plataforma/**",
                 "/nosotros", "/productos", "/productos/**", "/descubri", "/categorias", "/buscar/foto", "/informacion", "/contacto",
-                "/carrito", "/login", "/recuperar-contrasena", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
+                "/carrito", "/login", "/logout", "/recuperar-contrasena", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan", "/planes", "/vender",
                 "/emprendimientos", "/emprendimientos/*", "/negocios",

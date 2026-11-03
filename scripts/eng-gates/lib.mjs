@@ -561,7 +561,7 @@ export function evaluateDependabot({ title, skip }) {
   } else if (bump === 'patch' || bump === 'minor') {
     labels.push('automerge-candidate');
     comment +=
-      '\n\nPatch/minor no crítico. Podés agregar el label `safe-to-automerge` (squash) **después** de que CI pase. No se aprueba solo.';
+      '\n\nPatch/minor no crítico. No hay auto-merge: se mergea a mano con CI verde + APTO de Seguridad.';
   } else {
     labels.push('needs-human');
   }
