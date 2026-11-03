@@ -36,9 +36,9 @@ Actualizado: 2-nov-2026, 11:00 p. m. hora CR. Estado general: [INCOMPLETO] (trab
 
 ## 4. Pendientes
 - [PENDIENTE] Confirmar el prefijo de ruta en `CarritoController`, `EmpresaController`, `FeatureFlagController`, `CuentaTitularController` antes de correr esos casos.
-- [PENDIENTE] Respuesta/APTO de Seguridad al #460. Como se mergeó con head `2d4ef8e0` (no `75ce0566`), avisar al Mentor y pedir a Seguridad revisar el delta `75ce0566..2d4ef8e0` (sobre todo `2a64974e`), y si los 2 MEDIO quedaron cerrados.
-- [PENDIENTE] Re-verificar estado del #460 con el conector GitHub en la cuenta nueva.
-- [PENDIENTE] Pre-revisar PRs abiertos nuevos; al 2-nov-2026 el más relevante es **#507** (`fix(pagos): APP_URL fail-closed en prod, sessionId enmascarado, tarjeta ONVO`, marcado NO MERGE hasta confirmar APP_URL en Render prod). También #440 (docs) y #363 (propuesta de esquema); los #311–#317 son bumps de dependencias (stripe-java 26→34 y shedlock 5→7 merecen mirada).
+- [CERRADO] #460: según el Mentor (2-nov-2026), HotClick Seguridad confirmó APTO sobre el head final 2d4ef8e0; cerrado.
+- [EN CURSO] Pre-revisión del **#507** (`fix(pagos): APP_URL fail-closed en prod, sessionId enmascarado, tarjeta ONVO`, NO MERGE hasta confirmar APP_URL en Render prod); evidencia en `/workspace/hotclick/fase2/prerevision-PR507.md`.
+- [PENDIENTE] Pre-revisar otros PRs abiertos: #440 (docs), #363 (propuesta de esquema), bumps #311–#317 (stripe-java 26→34 y shedlock 5→7 merecen mirada).
 - [PENDIENTE] Ejecutar los 52 casos P0 solo en staging con ONVO test.
 
 ## 5. Rutas y evidencias
@@ -50,6 +50,6 @@ Actualizado: 2-nov-2026, 11:00 p. m. hora CR. Estado general: [INCOMPLETO] (trab
 1. Cargar skill `hot-click-dev-workflow`; leer este archivo y las dos evidencias.
 2. `gh pr view 460 --json state,headRefOid,mergedAt` y `gh pr list --state open`.
 3. Pre-revisar #507 sobre su head exacto: `gh pr diff 507`, `gh pr view 507 --json headRefOid,statusCheckRollup`; resumen ALTO/MEDIO/BAJO con archivo:línea → HotClick Seguridad; avisar al Mentor.
-4. Revisar delta `75ce0566..2d4ef8e0` del #460 y mandarlo a Seguridad.
+4. (#460 cerrado con APTO sobre 2d4ef8e0; nada más que hacer.)
 5. Confirmar con `git grep -n '@RequestMapping' -- '*Carrito*Controller.java' '*Empresa*Controller.java' '*FeatureFlag*Controller.java' '*CuentaTitular*Controller.java'` y actualizar `seguridad-P0.md`.
 6. Cuando el Mentor autorice la etapa B, ejecutar P0 en staging (ONVO test) registrando hash, rol y evidencia por caso.
