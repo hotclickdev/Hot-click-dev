@@ -501,13 +501,29 @@ public class OnvoService {
      */
     @CircuitBreaker(name = "onvo", fallbackMethod = "lecturaFallback")
     public Map<?, ?> expirarCheckoutSession(String sessionId) {
-        if (!consultable(sessionId)) return Map.of();
+        ResultadoExpirar r = expirarCheckoutSessionTipado(sessionId);
+        return r.tipo() == TipoExpirar.RESPUESTA ? r.sesion() : Map.of();
+    }
+
+    /** BAJO QA7-B1 (a): cómo terminó el expire. Solo {@code NO_EXISTE} es un 404 explícito de ONVO. */
+    public enum TipoExpirar { RESPUESTA, NO_EXISTE, SIN_CUERPO, NO_CONSULTABLE }
+
+    public record ResultadoExpirar(TipoExpirar tipo, Map<?, ?> sesion) {}
+
+    /**
+     * Igual que {@link #expirarCheckoutSession} pero sin mezclar los casos: un 2xx con cuerpo, un 404 explícito,
+     * un 2xx sin cuerpo o un id que no se consulta (mock, sin llave o sin forma de ONVO). Los demás errores se relanzan.
+     */
+    public ResultadoExpirar expirarCheckoutSessionTipado(String sessionId) {
+        if (!consultable(sessionId)) return new ResultadoExpirar(TipoExpirar.NO_CONSULTABLE, Map.of());
         try {
             Map<?, ?> body = postOnvo("/checkout/sessions/" + sessionId + "/expire", Map.of());
-            return body == null ? Map.of() : body;
+            return body == null || body.isEmpty()
+                ? new ResultadoExpirar(TipoExpirar.SIN_CUERPO, Map.of())
+                : new ResultadoExpirar(TipoExpirar.RESPUESTA, body);
         } catch (HttpClientErrorException.NotFound e) {
             log.warn("[onvo] ONVO no tiene la sesión {} para expirar", sessionId);
-            return Map.of();
+            return new ResultadoExpirar(TipoExpirar.NO_EXISTE, Map.of());
         }
     }
 

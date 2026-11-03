@@ -85,6 +85,13 @@ public class Pago extends BaseEntity {
     public LocalDateTime getAvisoReembolsoAdminEn() { return avisoReembolsoAdminEn; }
     public void setAvisoReembolsoAdminEn(LocalDateTime v) { this.avisoReembolsoAdminEn = v; }
 
+    /** V223 (BAJO QA7-B1 b): última vez que el respaldo reconsultó este pago cerrado en ONVO (NULL = nunca). */
+    @Column(name = "reconsulta_cerrado_en")
+    private LocalDateTime reconsultaCerradoEn;
+
+    public LocalDateTime getReconsultaCerradoEn() { return reconsultaCerradoEn; }
+    public void setReconsultaCerradoEn(LocalDateTime v) { this.reconsultaCerradoEn = v; }
+
     /** V217: cuándo se confirmó el envío del aviso (NULL = no confirmado; el barrido reintenta). */
     @Column(name = "aviso_reembolso_admin_enviado_en")
     private LocalDateTime avisoReembolsoAdminEnviadoEn;

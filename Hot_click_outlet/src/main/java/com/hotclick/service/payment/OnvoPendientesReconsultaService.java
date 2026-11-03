@@ -130,8 +130,15 @@ public class OnvoPendientesReconsultaService {
             return new ResumenCerrados(0, 0);
         }
         LocalDateTime desde = LocalDateTime.now(Constants.ZONA_CR).minusHours(cerradosVentanaHoras);
-        List<Pago> reclamados = tx.execute(s -> pagoRepository
-            .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, desde, PageRequest.of(0, lote)));
+        // BAJO QA7-B1 (b): se marca la revisión dentro del mismo reclamo (filas bloqueadas), así la próxima
+        // pasada toma los que llevan más tiempo sin revisar y los viejos de la ventana no se quedan afuera.
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        List<Pago> reclamados = tx.execute(s -> {
+            List<Pago> filas = pagoRepository
+                .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, desde, PageRequest.of(0, lote));
+            marcarRevision(filas, ahora);
+            return filas;
+        });
         List<Pago> pagos = reclamados == null ? List.of() : reclamados;
         int reembolso = 0;
         for (Pago pago : pagos) {
@@ -172,5 +179,11 @@ public class OnvoPendientesReconsultaService {
                 e.getClass().getSimpleName());
             return Efecto.NADA;
         }
+    }
+
+    /** Entidades gestionadas dentro del reclamo: el dirty checking escribe la marca al cerrar la transacción. */
+    private static void marcarRevision(List<Pago> filas, LocalDateTime ahora) {
+        if (filas == null) return;
+        for (Pago p : filas) p.setReconsultaCerradoEn(ahora);
     }
 }
