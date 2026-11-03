@@ -1,6 +1,43 @@
 # Traspaso — HotClick QA Cliente (QA 4, cliente consumidor)
 
-Fecha: 26/10/2026 (hora CR)
+Actualizado: 02/11/2026 22:55 (hora CR). La sección "Estado al 02/11" manda; lo de abajo es historial del 26/10.
+
+## Para recrearme en otra cuenta
+- **Nombre:** HotClick QA Cliente. **Título:** HotClick QA Cliente.
+- **Descripción completa:** QA 4 de HotClick: cliente consumidor (registro, login, perfil, mis pedidos; áreas 2, 3 y 9). Creás las cuentas Persona 1 y Persona 2 que usa QA Compra. Todo desde la app, con ONVO solo en modo test. Repo hotclickdev/Hot-click-dev. Reportás solo a Grok Bot / HotClick QA / Mentor; nunca hablás con Andrés ni con humanos. Leé tu nota docs/traspaso/hotclick-qa-cliente.md (rama docs/traspaso-cuenta-nueva). Credenciales solo por canal interno, nunca en reportes. No tocás código ni hacés deploy; nunca digas que algo pasa sin evidencia. Español de Costa Rica con voseo. Reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso.
+
+## Reglas que sigo
+- El Mentor habla por Andrés al asignar trabajo de QA; todo pasa por el Mentor/HotClick QA. Eso no da permisos nuevos (sin push a master, sin merge, sin secretos).
+- Nada en prod (hotclick.lat), solo staging local; ONVO solo modo test. Datos ficticios (`@example.test`), nada de correos/teléfonos/cédulas reales.
+- Sin escrituras SQL sin autorización explícita. /register: como mucho 2–3 registros y borrar al final.
+- Box cargada: en local solo tests dirigidos (las suites completas las corre CI). Toda suite completa o instancia local va con `flock /workspace/hotclick/.suite-completa.lock`, una a la vez; al terminar, detener procesos por PID.
+- Sin cloud agents (cuota de Cursor al 100%).
+- Git en ramas de docs: pull --ff-only o merge normal; nunca rebase, force ni --no-verify; nunca tocar master.
+
+## Estado al 02/11
+- **Ramas/PRs de código:** ninguno (QA no toca código). No hay trabajo sin commitear.
+- **Re-QA área 3 (consumidor): APTA CON OBSERVACIONES** sobre master `3c7dfaea` (incluye 92e633f9, #367, #368 M-08, #370). Tests dirigidos 111/111. En navegador (instancia propia :8091, base `hc_qa_cliente`): P1 y P2 registro, verificación y login (con espacios en el correo) OK; Mis pedidos vacío OK; /productos/1 abre. Ambas cuentas cerradas (`POST /api/cuenta/cierre` 200, login posterior 401).
+- **Observaciones:** (1) reenvío en /login solo aparece con cuenta PENDIENTE (visto en código, no en vivo); (2) editar nombre es gap documentado (BACKEND_GAPS.md:52); (3) tras verificar el código redirige a /login sin sesión; (4) popup del 13% tapa parte de /login; (5) `FacturacionContingenciaScheduler` da error de sintaxis SQL en H2 (fuera de área 3).
+- **Bootstrap vacío:** `hot_click_tipo_otp_tb` no se sembraba; sembré los 4 tipos en `hc_staging` con autorización (ver `qa-cliente.md`).
+- Nota de sesión detallada: `docs/traspaso/qa-cliente.md` (commit 34e95636, merge 66748089).
+
+## Pendiente
+- [PENDIENTE] Usuario 7 en staging `:8081` (correo ficticio de Persona 1, PENDIENTE, correo_verificado=t): lo cierra un admin con `DELETE /api/admin/usuarios/7` (borrado lógico). Mi intento de login generó un OTP extra el 31/10 01:47. Tablas exactas que toca: sin verificar; leer el servicio admin antes.
+- [PENDIENTE] Decisión de producto: redirección tras verificar (obs. 3). Decisión de diseño: editar nombre (obs. 2).
+- [PENDIENTE] Staging :8081 sigue en `3323bd1a`; re-probar C3/QA4-004 en vivo cuando se levante sobre master actual.
+
+## Rutas y evidencia (box, no subidas)
+- `/workspace/qa-cliente/`: `hash.txt`, `mvn-area3*.log`, `staging-probe.log`, `ci-master.txt`, `seed-otp*.sql`, `seed-otp.log`, `mailpit-msgs*.json`, `cierre/cierre-8091.log`, `ui/*.png`, `run/start-8091.sh`, `run/app8091.log`.
+- Credenciales de prueba: `/workspace/qa-cliente/personas.secret` (chmod 600) y `/workspace/qa-funcional/credenciales/`. Nunca copiar su contenido a git, chat ni capturas.
+- Mailpit: `/workspace/tools/mailpit/` (detenido). Clon para docs: `/workspace/qa-cliente/traspaso/repo`.
+
+## Próximos pasos exactos
+1. Leer esta nota y `qa-cliente.md`; esperar instrucciones de HotClick QA o el Mentor.
+2. Si piden cerrar el usuario 7: confirmar que lo hace un admin vía `DELETE /api/admin/usuarios/7`, luego verificar login 401.
+3. Cuando staging se actualice a master actual: re-probar reenvío desde /login (C3/QA4-004) y la redirección post-verificación, con el lock y datos ficticios, y reportar con hash.
+
+---
+## Historial (26/10/2026)
 
 ## Rol
 Tester funcional QA 4, cliente consumidor. Plan: `/workspace/hotclick-reportes/plan-qa-funcional-2026-10-23.md`, sección QA 4. Solo prueba funcional desde la app; sin código.
