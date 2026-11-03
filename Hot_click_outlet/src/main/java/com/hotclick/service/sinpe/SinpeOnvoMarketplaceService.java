@@ -54,6 +54,9 @@ public class SinpeOnvoMarketplaceService {
 
     public enum Resultado { CONFIRMADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA, EN_ESPERA, NO_VERIFICADO, NO_ENCONTRADO, NO_CONSULTABLE }
 
+    /** #479 BAJO 1: ObjectProvider; getIfAvailable() es null de verdad si el bean no existe (un @Lazy era proxy). */
+    @Autowired
+    private org.springframework.beans.factory.ObjectProvider<com.hotclick.service.payment.AvisoReembolsoPendienteService> avisoReembolsoProvider;
     @Autowired private PagoRepository pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
     @Autowired private PedidoGrupoService pedidoGrupoService;
@@ -160,6 +163,9 @@ public class SinpeOnvoMarketplaceService {
         if (!Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago()) || algunoCancelado(pedidosGrupo)) {
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
             pago.setFechaActualizacion(ahora);
+            // Aviso al admin IT: marca pendiente en esta transacción (sale por dirty checking), envío post-commit.
+            var avisoReembolso = avisoReembolsoProvider == null ? null : avisoReembolsoProvider.getIfAvailable();
+            if (avisoReembolso != null) avisoReembolso.registrarPendiente(pago);
             registrarProcesado(token, tipo, "Cobro SINPE de ONVO sobre pedido cancelado: reembolso pendiente");
             log.error("[ALERTA-PAGO] ONVO cobró SINPE de un pedido ya cancelado; reembolso pendiente: pago={}", pago.getId());
             return Resultado.COBRADO_SOBRE_CANCELADO;

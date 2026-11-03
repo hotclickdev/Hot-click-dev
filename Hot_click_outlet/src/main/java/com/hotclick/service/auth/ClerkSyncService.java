@@ -7,6 +7,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.CorreoEnmascarado;
 import com.hotclick.utils.CorreoNormalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,7 @@ public class ClerkSyncService {
         usuario = usuarioRepository.findByCorreo(usuario.getCorreo())
             .orElseThrow(() -> new IllegalStateException("Error al cargar usuario tras sync"));
         AuthResponse resp = authSupport.buildAuthResponse(usuario);
-        log.info("[clerk-sync] Login social exitoso: {} ({})", email, clerkUserId);
+        log.info("[clerk-sync] Login social exitoso: {} ({})", CorreoEnmascarado.enmascarar(email), clerkUserId);
         return resp;
     }
 
@@ -64,12 +65,30 @@ public class ClerkSyncService {
             }
             return u;
         }
-        Optional<Usuario> byEmail = usuarioRepository.findByCorreo(email);
+        // BAJO correo-normalizado: una cuenta antigua guardada con mayúsculas se vincula (la más antigua) en vez de
+        // crear un duplicado que además chocaría con el índice único lower(correo) de V214.
+        // Seguridad #469: primero las cuentas no eliminadas (estado != 3), luego el id más bajo; una eliminada más
+        // vieja no puede tapar a la activa. Si todas están eliminadas, se toma la más vieja y exigirActiva la rechaza.
+        // Se recarga por su correo exacto: findByCorreo trae los roles (findAll... no, y daría LazyInitialization).
+        Optional<Usuario> byEmail = masAntiguaIgnorandoMayusculas(email)
+            .map(u -> usuarioRepository.findByCorreo(u.getCorreo()).orElse(u))
+            .or(() -> usuarioRepository.findByCorreo(email));
         if (byEmail.isPresent()) {
             return vincularCuentaExistente(exigirActiva(byEmail.get()), clerkUserId, email, fotoUrl);
         }
         MayoriaEdad.exigir(declaraMayoriaEdad);
         return createOAuthUser(clerkUserId, email, nombre, apellido, fotoUrl);
+    }
+
+    private Optional<Usuario> masAntiguaIgnorandoMayusculas(String email) {
+        java.util.List<Usuario> variantes = usuarioRepository.findAllByCorreoIgnoreCase(email);
+        if (variantes == null) return Optional.empty();
+        java.util.Comparator<Usuario> porId = java.util.Comparator.comparing(Usuario::getId);
+        Optional<Usuario> activa = variantes.stream()
+            .filter(u -> u.getId() != null)
+            .filter(u -> !Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(u.getEstado()))
+            .min(porId);
+        return activa.or(() -> variantes.stream().filter(u -> u.getId() != null).min(porId));
     }
 
     /**
@@ -92,7 +111,7 @@ public class ClerkSyncService {
                 "Esta cuenta ya está vinculada a otro inicio de sesión social. Ingresá con tu método habitual.");
         }
         if (hasElevatedRole && u.getClerkUserId() == null) {
-            log.warn("[clerk-sync] Blocked Clerk merge for elevated account email={} clerkId={}", email, clerkUserId);
+            log.warn("[clerk-sync] Blocked Clerk merge for elevated account email={} clerkId={}", CorreoEnmascarado.enmascarar(email), clerkUserId);
             throw new SecurityException("Esta cuenta requiere verificación adicional para vincular login social. Usá tu contraseña.");
         }
         u.setClerkUserId(clerkUserId);
@@ -122,7 +141,7 @@ public class ClerkSyncService {
         rolRepository.findByNombreRol("USUARIO_FINAL")
             .ifPresent(rol -> u.getRoles().add(rol));
         Usuario saved = usuarioRepository.save(u);
-        log.info("[clerk-sync] Nuevo usuario OAuth creado: {} clerkId={}", email, clerkUserId);
+        log.info("[clerk-sync] Nuevo usuario OAuth creado: {} clerkId={}", CorreoEnmascarado.enmascarar(email), clerkUserId);
         return saved;
     }
 }

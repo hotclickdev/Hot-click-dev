@@ -136,6 +136,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
+    /** BAJO #447: config de envío no disponible → 503 genérico (no se cobra un monto por defecto). */
+    @ExceptionHandler(com.hotclick.exception.EnvioNoDisponibleException.class)
+    public ResponseEntity<Object> handleEnvioNoDisponible(com.hotclick.exception.EnvioNoDisponibleException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error",   "ENVIO_NO_DISPONIBLE");
+        body.put("message", com.hotclick.exception.EnvioNoDisponibleException.MENSAJE);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).header("Retry-After", "60").body(body);
+    }
+
     /** FULL-01 / R1: tope global de decodificaciones de imagen ocupado → 503 con Retry-After. */
     @ExceptionHandler(ImagenOcupadaException.class)
     public ResponseEntity<Object> handleImagenOcupada(ImagenOcupadaException ex) {

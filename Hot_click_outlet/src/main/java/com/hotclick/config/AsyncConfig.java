@@ -43,6 +43,24 @@ public class AsyncConfig {
      * CallerRunsPolicy aplica backpressure cuando el pool está lleno en lugar de
      * lanzar RejectedExecutionException.
      */
+    /**
+     * BAJO #477: executor propio del aviso de reembolso. Con la cola llena RECHAZA (AbortPolicy): el que encola
+     * registra un warn y el barrido lo reintenta. Nunca corre el envío en el hilo del webhook (sin CallerRunsPolicy).
+     */
+    @Bean(name = "avisoReembolsoExecutor")
+    public Executor avisoReembolsoExecutor(
+            @org.springframework.beans.factory.annotation.Value("${hotclick.aviso-reembolso.cola:50}") int cola) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(cola);
+        executor.setThreadNamePrefix("aviso-reembolso-");
+        executor.setTaskDecorator(new TenantAwareTaskDecorator());
+        executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.AbortPolicy());
+        executor.initialize();
+        return executor;
+    }
+
     @Bean(name = "sseExecutor")
     public Executor sseExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

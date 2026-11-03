@@ -57,6 +57,8 @@ export default function CheckoutPage() {
     telefono: form.telefono,
     direccion: form.direccion,
     direccionPedido: form.direccionPedido,
+    provincia: form.provincia,
+    canton: form.canton,
     guestEmail: form.guestEmail,
     guestPhone: form.guestPhone,
     sinpeNombre: form.sinpeNombre,

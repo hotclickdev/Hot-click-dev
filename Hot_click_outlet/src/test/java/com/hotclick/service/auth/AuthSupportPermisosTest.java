@@ -44,7 +44,7 @@ class AuthSupportPermisosTest {
     void adminSinEmpresaEnAuthResponse() {
         Usuario usuario = new Usuario();
         usuario.setId(1L);
-        usuario.setCorreo("admin@hotclick.com");
+        usuario.setCorreo("admin@hotclick.lat");
         usuario.setNombre("Admin");
         Rol rol = new Rol();
         rol.setNombreRol("ADMIN");
@@ -108,7 +108,7 @@ class AuthSupportPermisosTest {
     void loginSinTablaDePermisosEmiteTokens() {
         Usuario usuario = new Usuario();
         usuario.setId(1L);
-        usuario.setCorreo("admin@hotclick.com");
+        usuario.setCorreo("admin@hotclick.lat");
         usuario.setNombre("Admin");
 
         when(permisoRepository.findPermisosByUsuarioId(1L))

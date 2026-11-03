@@ -1,5 +1,7 @@
 package com.hotclick.security;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -14,7 +16,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * transacción del desbloqueo: en PostgreSQL un SQL fallido dentro de la transacción la aborta aunque se capture la excepción.
  * Si hay transacción activa, la limpieza corre DESPUÉS del commit (si el desbloqueo se revierte, los contadores se conservan)
  * y en una transacción NUEVA e independiente; sin transacción activa corre de inmediato también en una nueva.
- * Nunca propaga errores: si falla, los buckets vencen solos (ventana de 30 min).
+ * Nunca propaga errores: si falla, los buckets vencen solos (ventana de 30 min) y suma {@link #METRICA_FALLOS}.
  */
 @Component
 public class LiberadorFallos {
@@ -23,9 +25,16 @@ public class LiberadorFallos {
 
     private final RateLimiter rateLimiter;
     private final TransactionTemplate txNueva;
+    private final Counter fallos;
 
-    public LiberadorFallos(RateLimiter rateLimiter, PlatformTransactionManager txManager) {
+    /** Limpiezas de contadores de fallos que no se pudieron completar (BD caída, SQL fallido). */
+    public static final String METRICA_FALLOS = "hotclick.ratelimit.liberar.fallos";
+
+    public LiberadorFallos(RateLimiter rateLimiter, PlatformTransactionManager txManager, MeterRegistry registry) {
         this.rateLimiter = rateLimiter;
+        this.fallos = Counter.builder(METRICA_FALLOS)
+            .description("Limpiezas de contadores de fallos de login que fallaron (los buckets vencen solos)")
+            .register(registry);
         this.txNueva = new TransactionTemplate(txManager);
         this.txNueva.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -68,6 +77,7 @@ public class LiberadorFallos {
         try {
             txNueva.executeWithoutResult(s -> limpieza.run());
         } catch (Exception e) {
+            fallos.increment();
             log.warn("[RATE-LIMIT] no se pudieron limpiar los contadores: {}", e.getClass().getName());
         }
     }
