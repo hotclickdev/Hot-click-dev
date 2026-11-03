@@ -62,8 +62,8 @@ public class MarketplaceService {
     public ProductoMarketplaceDTO detalle(Long catalogoId, String provincia, String canton) {
         CatalogoMaestro cm = catalogoRepo.findById(Objects.requireNonNull(catalogoId))
                 .filter(c -> Boolean.TRUE.equals(c.getActivo()))
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
-                        "Catálogo no encontrado: " + catalogoId));
+                .orElseThrow(() -> new com.hotclick.exception.RecursoNoEncontradoException(
+                        "Catálogo no encontrado: " + catalogoId)); // QA: id inexistente → 404, no 500
 
         String prov = sanitizer.normalizeGeo(provincia);
         String cant = sanitizer.normalizeGeo(canton);
