@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/Toast'
 import { authService } from '@/services/authService'
 import { leoDeclaraMayoriaEdad } from '@/utils/mayoriaEdad'
 import type { AuthResponse } from '@/types/auth'
+import { saludoLogin } from './auth/authHelpers'
 import { obtenerTokenSesion } from './sso/tokenSesionClerk'
 import { sincronizarClerk, type SsoClerkPayload, type SsoClerkResultado } from './sso/ssoClerkSync'
 
@@ -32,10 +33,10 @@ export default function SSOComplete() {
   const [error, setError] = useState('')
   const [pendiente, setPendiente] = useState<{ token: string; payload: SsoClerkPayload; email: string } | null>(null)
 
-  const terminarOk = async (data: AuthResponse, email: string) => {
+  const terminarOk = async (data: AuthResponse) => {
     login(data)
     try { await signOut() } catch { /* ignore */ }
-    toast({ message: `¡Bienvenido, ${data.nombre || email}!`, type: 'success' })
+    toast({ message: saludoLogin(data.rol, data.nombre, t), type: 'success' })
     const isNewUser = !data.empresaId && data.rol === 'USUARIO_FINAL'
     navigate(isNewUser ? '/registrar-negocio' : '/', { replace: true })
   }
@@ -75,7 +76,7 @@ export default function SSOComplete() {
         const yaDeclaro = leoDeclaraMayoriaEdad()
         const resultado = await sincronizarClerk(clerkToken, payload, yaDeclaro)
         if (resultado.ok) {
-          await terminarOk(resultado.data, email)
+          await terminarOk(resultado.data)
           return
         }
         if (resultado.requiereEdad) {
@@ -97,7 +98,7 @@ export default function SSOComplete() {
     authService.registrarConsentimiento('MAYORIA_EDAD')
     const resultado = await sincronizarClerk(pendiente.token, pendiente.payload, true)
     if (resultado.ok) {
-      await terminarOk(resultado.data, pendiente.email)
+      await terminarOk(resultado.data)
       return
     }
     if (resultado.requiereEdad) {

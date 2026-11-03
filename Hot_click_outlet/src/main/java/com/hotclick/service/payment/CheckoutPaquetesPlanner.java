@@ -45,6 +45,10 @@ public class CheckoutPaquetesPlanner {
     }
 
     public List<Paquete> planificar(PaymentCheckoutRequest req, Map<Long, Producto> productos, Bodega bodegaDefault) {
+        // MED-5: cantón que no es de la provincia (o solo uno de los dos) = 400 antes de cobrar nada.
+        // BAJO #447: con envío (no retiro) el destino es obligatorio.
+        com.hotclick.service.envio.DestinoEnvio.exigir(req.getProvincia(), req.getCanton(),
+            !CheckoutOrderFactory.esRetiro(req.getMetodoEnvio()));
         Map<Long, Bodega> bodegas = new LinkedHashMap<>();
         Map<Long, List<PaymentCheckoutRequest.ItemDTO>> itemsPorBodega = new LinkedHashMap<>();
         // Paquetes cuyo origen no es una bodega propia del producto ni de su tienda (la resolvió el backend).
@@ -60,7 +64,9 @@ public class CheckoutPaquetesPlanner {
                     + " no tiene bodega de despacho configurada. Escribinos para coordinar tu pedido.");
             }
             bodegas.putIfAbsent(origen.getId(), origen);
-            if (!propia) sinBodegaPropia.add(origen.getId());
+            // MED-3 (a) Auditor 3: un producto sin bodega propia que despacha desde la bodega de venta online de su
+            // tienda llega del front como "sin-bodega" (bodegaId ausente): también toma ese envío.
+            if (!propia || p.getBodega() == null) sinBodegaPropia.add(origen.getId());
             itemsPorBodega.computeIfAbsent(origen.getId(), k -> new ArrayList<>()).add(item);
         }
 
@@ -80,11 +86,17 @@ public class CheckoutPaquetesPlanner {
             }
             Bodega bodegaPaquete = bodegas.get(e.getKey());
             PaymentCheckoutRequest.EnvioPaqueteDTO envio = envioDe(req, e.getKey(), sinBodegaPropia.contains(e.getKey()));
-            String metodo = envio != null ? envio.getMetodoEnvio()
-                : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO;
+            String metodo = OrderPricingService.metodoNormalPorDestino(envio != null ? envio.getMetodoEnvio()
+                : req.getMetodoEnvio() != null ? req.getMetodoEnvio() : Constants.ENVIO_RETIRO,
+                req.getProvincia(), req.getCanton());
             String notas = envio != null && envio.getNotas() != null && !envio.getNotas().isBlank()
                 ? envio.getNotas() : req.getNotas();
             paquetes.add(new Paquete(bodegaPaquete, e.getValue(), subtotal, costoTotal, metodo, notas, List.copyOf(lineasIva)));
+        }
+        // NO APTO #448: el método top-level puede ser retiro/null y algún paquete de envios[] ir a domicilio;
+        // si CUALQUIER paquete planificado no es retiro, el destino es obligatorio (no se guarda FUERA_GAM sin cantón).
+        if (paquetes.stream().anyMatch(pq -> !CheckoutOrderFactory.esRetiro(pq.metodoEnvio()))) {
+            com.hotclick.service.envio.DestinoEnvio.exigir(req.getProvincia(), req.getCanton(), true);
         }
         return paquetes;
     }

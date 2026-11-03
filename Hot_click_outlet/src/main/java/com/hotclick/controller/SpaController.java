@@ -141,6 +141,7 @@ public class SpaController {
         "/buscar/foto",
         "/carrito",
         "/login",
+        "/logout",
         "/recuperar-contrasena",
         "/registrar-negocio",
         "/sso-callback",

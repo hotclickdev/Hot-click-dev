@@ -1,86 +1,103 @@
-# Traspaso: HotClick QA 2
+# Traspaso: HotClick QA 2 (área 2: plan Pyme y sus roles)
 
-Fecha: 26-oct-2026 (hora Costa Rica, UTC-6). Autorizado por Andrés vía Grok Bot (26-oct 14:35 CR).
+Actualizado el 2-nov-2026, 22:55 hora Costa Rica (UTC-6), para la migración de cuenta. Es la nota principal de QA 2 y reemplaza a la versión del 26-oct (commit `3b712b96`). `qa-2.md` solo apunta acá.
 
-## Rol
-Segundo QA de HotClick: suite y casos negativos, ONVO en sandbox (solo llaves de prueba), QA funcional del plan PYME (área 2: cuentas y roles). No escribe código de producto, no hace merge ni deploy.
+## 1. Rol y descripción para recrearme (texto literal)
+> QA 2 de HotClick: plan Pyme y sus roles (área 2), coordinado con HotClick QA. Probás desde la propia app, con ONVO solo en modo test. Repo hotclickdev/Hot-click-dev. No tocás código ni hacés deploy; nunca borrás datos de producción; nada de secretos, teléfonos, SINPE ni cédulas reales en reportes; nunca digas que algo pasa sin evidencia. Español de Costa Rica con voseo. Formato de reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso.
 
-## En qué quedé
-- Roles PYME sobre master `f9f0e506` (staging local, backend :8081): terminado el 26-oct 12:48 CR. Reporte: `evidencia/hotclick-qa-2/roles-pyme-master.md`.
-- Cancelación de suscripción ONVO en sandbox: OK en master `f93bd51e` (después del #256). Log: `evidencia/hotclick-qa-2/logs/onvo-sub-sandbox-master-f93bd51e.log`. Quedaron 0 suscripciones activas en sandbox.
-- QA funcional PYME fase 1 en staging: parcial (registro de empresa bloqueado por el 500 de QA1-004). Reporte: `evidencia/hotclick-qa-2/reporte-fase1-parcial.md`.
+## 2. Reglas vigentes
+- **Asignación:** las tareas llegan del Mentor y de HotClick QA, el QA líder. Los resultados se le reportan a HotClick QA con el hash exacto y el veredicto APTA, NO APTA o PENDIENTE.
+- **Tests:** en local se corren solo tests dirigidos: `mvn -B test -Dtest=<Clases> -Dsurefire.failIfNoSpecifiedTests=false` con `MAVEN_OPTS=-Xmx1g`, desde `Hot_click_outlet/`.
+  - Variables de CI para H2, solo con valores ficticios: `DB_URL=jdbc:h2:mem:testdb`, `DB_USERNAME=sa`, `DB_PASSWORD=` vacío, `JWT_SECRET=test-secret-for-ci-only-not-production`, `SENTRY_DSN=` vacío, `STRIPE_SECRET_KEY=ci-mock-not-a-stripe-key`, `STRIPE_WEBHOOK_SECRET=whsec_placeholder`.
+  - La suite completa corre solo bajo `flock /workspace/hotclick/.suite-completa.lock`. El box es compartido y se satura.
+- **Procesos:** detener solo los propios y por PID. Nada de `pkill`. No tocar staging ni los procesos de otros bots.
+- **Staging local** (backend `:8081`, front `:3000`):
+  - Solo con cuentas ficticias (dueño, EDITOR, LECTOR), creadas después de avisar al QA líder y borradas al terminar.
+  - Nunca producción: ni pruebas, ni datos, ni deploy.
+- **ONVO:** solo en modo test, con llaves `onvo_test_`.
+- **Código y git:**
+  - QA no commitea código de producto ni de test.
+  - Nada de push a master, merge de PRs, rebase ni force push.
+  - Los docs de traspaso se suben a `docs/traspaso-cuenta-nueva`. Si el push choca, `pull --ff-only` o un merge normal.
+  - Trabajar en un clon o worktree aparte.
+- **Credenciales:** van en archivos `.cred` del box y se cargan sin imprimirlas. Nunca van al repo ni a los reportes.
+- **Evidencia:** nada se da por bueno sin ella. Anotar siempre el hash exacto.
 
-## Ramas y PRs
-No tengo commits propios sin subir ni PRs abiertos míos. Había tres ramas locales con cambios sin commitear sobre una base vieja (`eb7564c24`, 273 commits atrás de master). Las subí como WIP, sin PR, porque la base está atrasada y no están verificadas sobre master:
-- `wip/qa2-xss-hardening`: endurecimiento XSS en el front (usePayment, EncargoPublicPage y otros). WIP.
-- `wip/qa2-xss-opcionales`: variante con los opcionales del mismo endurecimiento. WIP.
-- `wip/qa2-flaky-aviso-reposicion`: arreglo del test inestable AvisoReposicionCorreoTest. WIP.
-Antes de usarlas hay que comparar con master: parte de esto pudo haber entrado ya por otros PRs.
+## 3. Lo hecho (con hashes)
+- **Re-QA del área 2 sobre master `649387e7945832d7f7027ca4bf6d4ab34b892013`** (26-oct). Veredicto: **PENDIENTE**.
+  - PRs revisados, los cinco en master (verificado con `git merge-base --is-ancestor`):
+    - [#348](https://github.com/hotclickdev/Hot-click-dev/pull/348): EDITOR y LECTOR reciben 403 en billing, wallet, cobros, facturas y admin/pagos.
+    - [#347](https://github.com/hotclickdev/Hot-click-dev/pull/347): trim del correo en el login y reenvío de verificación.
+    - [#354](https://github.com/hotclickdev/Hot-click-dev/pull/354): plan con negocio pendiente de aprobación.
+    - [#344](https://github.com/hotclickdev/Hot-click-dev/pull/344): visibilidad por impago.
+    - [#342](https://github.com/hotclickdev/Hot-click-dev/pull/342): reactivación por impago solo con pago ONVO.
+  - 111 tests dirigidos en H2, 0 fallos y BUILD SUCCESS:
+    - `RolesBillingWalletCobrosTest` (39)
+    - `RolesLectorDenyPorDefectoTest` (7)
+    - `RolesLectorSoloLecturaTest` (3)
+    - `RolesEquipoEscrituraTest` (2)
+    - `EmprendedorEquipoTest` (32)
+    - `PropietarioWalletGuardTest` (2)
+    - `SinpeRevisionAuthorizationTest` (6)
+    - `AdminRutasRolTest` (9)
+    - `IdorVendedorHotfixTest` (11)
+  - Revisión de código: `PropietarioGuard.exigirGestionEmpresa` solo deja pasar al PROPIETARIO sin impersonación o al ADMIN de plataforma. `/api/admin/pagos/**` exige `ROLE_ADMIN` o `global.metrics`.
+- **Matriz de rutas `/api/admin/*` abiertas a ROL_EMPRENDEDOR** (H2, sobre 649387e7):
 
-Los demás worktrees de `/workspace/qa2-wt/` (tgt-*, qa-fix*, wallet-fix-full, walog, perfil-estricto, registro-planes, fe-registro, pos-sinpe, roles-master) eran copias de verificación de PRs de otros bots (sus ramas ya están en origin, por ejemplo fix/wa-mensaje-log-retencion, fix/wallet-*, fix/perfil-*, fix/registro-planes). No se subieron para no duplicarlas.
+| Método y ruta | PROPIETARIO | EDITOR | LECTOR | Lectura |
+|---|---|---|---|---|
+| GET dashboard | 200 | 200 | 200 | MEDIO |
+| GET ads/metricas, ads/gastos | 200 | 200 | 200 | MEDIO |
+| GET mesas | 200 | 200 | 200 | MEDIO |
+| GET asignar/buscar-cliente?q=… | 200 | 200 | 200 | MEDIO (H2 vacía, falta probar con datos) |
+| GET finanzas/reporte-iva | 500 | 500 | 500 | Sin probar: los tres pasan el filtro de rol y plan, luego la H2 no tiene la función `DATE` |
+| POST ads/gastos, asignar/crear-cliente, mesas, importar/confirmar | 400 | 400 | 403 | El LECTOR queda bloqueado |
+| POST importar/csv | 413 | 413 | 403 | Para el EDITOR no concluye |
+| POST asignar/compra | 403 | 403 | 403 | Cliente ajeno o LECTOR |
+| POST reset-datos | 400 (pide contraseña) | 403 | 403 | OK |
 
-## Bugs abiertos que encontré
-- **QA2-014 y QA2-015** (chatbot): ALTO.
-- **QA2-007**: ALTO.
-- Medios y bajos: en `/workspace/hotclick-reportes/bugs-pendientes-media-baja-2026-10-23.md` (box de la cuenta vieja).
-- Roles PYME en `f9f0e506`:
-  - El EDITOR puede LEER billing (suscripción, facturas, preferencias), métodos de cobro, payouts y `/api/admin/pagos`: **MEDIO, posible ALTO**. Las escrituras sí dan 403. Causa probable: los miembros llevan el rol EMPRENDEDOR y esos GET no pasan por PropietarioGuard (mismo patrón que QA3-012).
-  - `GET /api/facturas` como EDITOR da 500 en vez de 403: BAJO.
-  - Login con espacios alrededor del correo da 400 "correo inválido" (las mayúsculas sí funcionan): BAJO.
-- Prueba en producción del 24-oct: la tienda pública `/prueba-andres-pyme` da 404.
+  - Hallazgos:
+    - MEDIO: dashboard, ads, mesas y buscar-cliente están abiertas en lectura para EDITOR y LECTOR.
+    - BAJO: buscar-cliente sin `q` da 500 en vez de 400.
+    - BAJO o MEDIO: `EquipoService.crearNuevo` no pone `correoVerificado=false`.
+- **Nota de traspaso intermedia:** `docs/traspaso/qa-2.md`, commit `80185b9fddf2285d660d4fa277b391914a97b216`.
 
-## Pendientes
-- Limpiar en producción lo creado en la prueba del 24-oct: productos 666 y 667, la bodega "PRUEBA Bodega 2", el invitado `andres.prueba+qa3editor@example.com` y la posible cuenta huérfana `qa2+prod-equipo@example.com`. Necesita OK de Andrés.
-- Caso LECTOR de roles PYME: no cubierto (no había cuenta y no se crean cuentas).
-- Crear o editar métodos de cobro como EDITOR: no concluyente (400 por validación antes de la autorización).
-- Cancelar suscripción y portal de billing como EDITOR: no probado, para no poner en riesgo la suscripción.
+### Rama propia
+**No tengo rama de código propia, a propósito.** El test de la matriz, `QA2RolesAdminRutasMatrizTest.java`, vive fuera del repo, en `/workspace/qa2-artefactos/`, porque QA no commitea código. Para repetir la matriz: copialo a `Hot_click_outlet/src/test/java/com/hotclick/integration/` en un clon aparte, corré solo esa clase y volvé a sacarlo. `git status` tiene que quedar limpio. El test escribe su resultado en `/workspace/qa2-matriz-roles-admin-final.txt`.
 
-## Próximos pasos
-1. Repetir roles PYME sobre el master actual, con una cuenta LECTOR creada por quien esté autorizado.
-2. Revisar el arreglo de las lecturas de billing para el EDITOR (PropietarioGuard en los GET) y revalidar.
-3. Comparar las ramas `wip/qa2-*` con master y decidir si se cierran o se rehacen sobre master.
+Las ramas `wip/qa2-*` de la nota anterior (XSS y test inestable) están sobre una base vieja (`eb7564c24`), sin PR. Hay que compararlas con master y decidir con el Mentor si se cierran.
 
-## Decisiones de Andrés que conozco
-- ONVO es fail-closed.
-- Las migraciones Flyway son solo aditivas.
-- El cobro de planes pagos está postergado (409 `COBRO_PLAN_NO_DISPONIBLE`).
-- Merge a master solo con CI verde y APTO sobre el hash exacto.
-- Nada de deploy sin OK.
-- Las decisiones de SINPE del POS siguen pendientes.
+### Bugs heredados (nota del 26-oct)
+- QA2-007, QA2-014 y QA2-015 (chatbot): ALTO, abiertos.
+- Limpieza en producción de la prueba del 24-oct (productos de prueba, bodega de prueba e invitados de prueba): **solo la hace quien Andrés autorice. QA 2 no borra nada en producción.**
 
-## Evidencia
-`docs/traspaso/evidencia/hotclick-qa-2/`: reportes `.md` y logs cortos (ONVO sandbox, tests dirigidos de XSS, cobertura, aviso de reposición y POS SINPE). Sin capturas, secretos, teléfonos, SINPE ni cédulas; solo nombres de variables.
+## 4. Evidencia (box compartido)
+- `/workspace/qa2-artefactos/`:
+  - `QA2RolesAdminRutasMatrizTest.java`
+  - `qa2-matriz-roles-admin-final.txt`: matriz final.
+  - `qa2-mvn6.log`: log de la corrida final.
+  - Corridas intermedias: `qa2-mvn3.log`, `qa2-mvn4.log` y `qa2-mvn5.log` (la 5 es la de reporte-iva con `reportes`), y las matrices intermedias.
+- `/workspace/qa2-mvn2.log`: los 111 tests dirigidos.
+- `/workspace/qa2-reqa`: clon de solo lectura en 649387e7, limpio.
+- `/workspace/qa2-traspaso`: clon de la rama de docs.
 
-## Correcciones al README
-(Sobre `docs/traspaso/README.md` en b9f241d8: fila de QA 2, sección "HotClick QA 2" y lista "PARA EL BOT DE LA CUENTA NUEVA".)
+## 5. Pendiente
+- [PENDIENTE] Re-QA sobre el master vigente. Al 2-nov-2026, 22:55 CR, master es `61b36a382007154363403ca85946e204704ee6d9`; verificalo con `git ls-remote origin refs/heads/master`. Después de 649387e7 cambiaron `AdminAsignarController.java` y `EquipoService.java`.
+- [PENDIENTE] Frontend: `vitest` y `tsc` de roles y plan Pyme.
+- [PENDIENTE] reporte-iva en Postgres, como EDITOR y LECTOR, con el feature `reportes`.
+- [PENDIENTE] QA en staging local `:8081`:
+  - Cuentas ficticias dueño, EDITOR y LECTOR, creadas después de avisar al QA líder y borradas al terminar.
+  - 403 en billing, wallet, cobros, facturas y admin/pagos.
+  - La UI oculta esas secciones.
+  - Login con espacios alrededor del correo.
+  - buscar-cliente con datos.
+- [PENDIENTE] Veredicto del área 2 (APTA o NO APTA) sobre el hash exacto, reportado a HotClick QA.
 
-### a) Errores o datos viejos
-- La fila de QA 2 omite los hallazgos de roles PYME en f9f0e506: el EDITOR lee billing, métodos de cobro, payouts y `/api/admin/pagos` (MEDIO, posible ALTO), `/api/facturas` da 500 y el correo con espacios da 400. También omite los bugs ALTO QA2-007, QA2-014 y QA2-015.
-- La limpieza de producción de la fila está incompleta: además de los productos 666/667 y la bodega "PRUEBA Bodega 2", faltan el invitado `andres.prueba+qa3editor@example.com`, la posible cuenta huérfana `qa2+prod-equipo@example.com` y el 404 de `/prueba-andres-pyme`.
-- La fila no lista las ramas WIP de QA 2: `wip/qa2-xss-hardening`, `wip/qa2-xss-opcionales` y `wip/qa2-flaky-aviso-reposicion`. Están sobre la base vieja eb7564c24, sin PR.
-- El prompt de QA 2 en la sección 7 dice "nada de commit, push…", pero el traspaso del 26-oct sí autorizó push de ramas y docs. Para la cuenta nueva conviene aclarar que el push vuelve a requerir OK de Andrés vía Grok Bot.
-- En "Herramientas", Clerk figura como autenticación, pero las pruebas de QA 2 usaron el login propio `POST /api/auth/login {correo, contrasena}` con JWT. Hay que verificar si Clerk sigue en uso.
-
-### b) Lo que le falta a mi reemplazo
-- Variables, solo por nombre:
-  - ONVO test: `ONVO_SECRET_KEY`, `ONVO_PUBLISHABLE_KEY`, `ONVO_WEBHOOK_SECRET`, `ONVO_PRICE_ID_PYME`, `ONVO_PRICE_ID_NEGOCIO_PLUS`, `PAYMENTS_ONVO_ENABLED` y `PAYMENTS_ONVO_PERMITIR_LLAVE_TEST`. Las llaves de prueba empiezan con `onvo_test_`.
-  - Admin de staging: `HOTCLICK_ADMIN_INITIAL_PASSWORD`, `ADMIN_RESET_PASSWORD`, `ADMIN_DEFAULT_PASSWORD` y `ADMINIT_EMAIL`.
-- Comandos:
-  - Suite completa: `/workspace/mvn-suite.sh`.
-  - Test dirigido: `mvn -B -Dtest=<Clase> test` en `Hot_click_outlet/`, con el JDK 21 y el Maven de `/workspace/tools/`.
-  - Staging local: el front corre en `:3000` y el backend en `:8081` (no en :8080), con los procesos `hotclick-staging-backend` y `hotclick-staging-front`.
-  - Mailpit sirve para ver los correos de verificación.
-- Accesos: gh con `repo` y `workflow` sobre `hotclickdev/Hot-click-dev`, y las cuentas PYME de prueba (dueño y EDITOR), cuyas credenciales van en archivos `.cred` del box y nunca en el repo.
-- Trampas:
-  - El registro tiene un límite de 5 por hora; el segundo intento seguido da 429.
-  - El teléfono es obligatorio en el registro: sin él, el error es un 400 o 500 genérico.
-  - El login tiene un límite de intentos compartido entre bots y da 429. Hay que esperar unos 90 s.
-  - Las cuentas de equipo (EDITOR o LECTOR) llevan el rol de Spring EMPRENDEDOR, así que los permisos se prueban por endpoint y no por rol.
-  - No usar `pkill`. Lo propio se para por PID. No se tocan los procesos de staging ni `frontend/node_modules` del worktree de staging, ni `/workspace/tools/node22`.
-  - Con el disco y los inodos casi llenos, hay que borrar solo worktrees propios ya subidos.
-  - Los `.cred` se cargan en variables (`source` o `read`) sin imprimirlos, y los temporales con tokens se borran al terminar.
-
-### c) Mejoras
-- Crear una cuenta LECTOR de staging, con OK, para cerrar el caso pendiente.
-- Agregar al README una tabla de puertos y procesos de staging y una lista central de las cuentas de prueba (solo nombres y roles).
-- Agregar a CI un test que pruebe los GET de billing como EDITOR (debe dar 403).
+## 6. Próximos pasos exactos
+1. `git ls-remote https://github.com/hotclickdev/Hot-click-dev refs/heads/master`: anotá el hash.
+2. `git clone` en `/workspace/qa2-reqa-<hash8>`, sin tocar los clones de otros.
+3. Revisá `git diff 649387e7..<hash> -- Hot_click_outlet/src/main/java/com/hotclick/{controller/AdminAsignarController.java,service/EquipoService.java,security/}`.
+4. Corré los 9 tests dirigidos de la sección 3 y después la matriz, copiando el test y retirándolo al terminar. Guardá los logs en `/workspace/qa2-artefactos/<hash8>/`.
+5. En `Hot_click_outlet/frontend`: `npx tsc --noEmit -p tsconfig.json` y `npx vitest run` con los specs de roles y planes. No hagas `pnpm build` sin `--outDir` temporal.
+6. Avisale al QA líder antes de crear cuentas ficticias en staging `:8081`. Probá desde la app con ONVO test y borrá las cuentas al terminar.
+7. Reportá con el formato de la sección 1, el hash y el veredicto.

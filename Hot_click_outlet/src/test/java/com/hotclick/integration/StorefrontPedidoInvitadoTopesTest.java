@@ -108,7 +108,7 @@ class StorefrontPedidoInvitadoTopesTest extends BaseIntegrationTest {
     private MockHttpServletRequestBuilder pedido(String slug, String correo, String ip, String items) {
         String body = """
             {"nombreCliente":"Ana QA","correoCliente":"%s","telefonoCliente":"88887777",
-             "direccionEntrega":"San José, centro","metodoPago":"SINPE_MOVIL","metodoEnvio":"DOMICILIO",
+             "direccionEntrega":"San José, centro","metodoPago":"SINPE_MOVIL","metodoEnvio":"DOMICILIO","provincia":"San José","canton":"San José",
              "items":%s}
             """.formatted(correo, items);
         return post("/api/tienda/" + slug + "/pedidos")

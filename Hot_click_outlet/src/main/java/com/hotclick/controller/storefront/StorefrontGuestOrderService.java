@@ -55,6 +55,10 @@ public class StorefrontGuestOrderService {
 
     @org.springframework.transaction.annotation.Transactional
     public Pedido crearPedido(Empresa empresa, StorefrontPedidoDTO dto) {
+        // BAJO #447: destino (400) y costo del envío (503 si no hay config) antes de reservar stock.
+        com.hotclick.service.envio.DestinoEnvio.Destino destino = com.hotclick.service.envio.DestinoEnvio.exigir(
+            dto.getProvincia(), dto.getCanton(), StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio()));
+        int costoEnvio = costoEnvioTienda(dto, orderPricingService);
         Bodega bodega = resolverBodega(empresa);
         if (bodega == null) {
             return null;
@@ -68,13 +72,14 @@ public class StorefrontGuestOrderService {
         // guardada con mayúsculas («Juan@X.com»), esa cuenta; solo si no existe se crea el invitado (sin duplicados).
         Usuario usuario = guestUserResolver.resolve(dto.getCorreoCliente(), dto.getTelefonoCliente());
 
-        Pedido pedido = construirPedido(empresa, dto, bodega, usuario);
+        Pedido pedido = construirPedido(empresa, dto, bodega, usuario, destino, costoEnvio);
         Pedido guardado = pedidoRepository.save(pedido);
         notificarPedidoNuevo(guardado);
         return guardado;
     }
 
-    private Pedido construirPedido(Empresa empresa, StorefrontPedidoDTO dto, Bodega bodega, Usuario usuario) {
+    private Pedido construirPedido(Empresa empresa, StorefrontPedidoDTO dto, Bodega bodega, Usuario usuario,
+                                   com.hotclick.service.envio.DestinoEnvio.Destino destino, int costoEnvio) {
         int subtotal = 0;
         int costoTotal = 0;
         Pedido pedido = new Pedido();
@@ -109,7 +114,6 @@ public class StorefrontGuestOrderService {
         pedido.setMetodoPago(dto.getMetodoPago());
         pedido.setMetodoEnvio(dto.getMetodoEnvio());
         pedido.setSubtotal(subtotal);
-        int costoEnvio = costoEnvioTienda(dto.getMetodoEnvio(), orderPricingService);
         pedido.setTotalPedido(subtotal + costoEnvio);
         pedido.setCostoTotalProductos(costoTotal);
         pedido.setUtilidadBruta(subtotal - costoTotal);
@@ -121,7 +125,17 @@ public class StorefrontGuestOrderService {
         pedido.setClienteNombre(dto.getNombreCliente());
         pedido.setClienteTel(dto.getTelefonoCliente());
         pedido.setNotas(construirNotas(dto));
-        pedido.setDireccionEntrega(dto.getDireccionEntrega()); // NP-18: el vendedor ve a dónde enviar
+        // NP-18: el vendedor ve a dónde enviar. MED-5: con destino estructurado, cantón y provincia los pone el servidor.
+        pedido.setDireccionEntrega(com.hotclick.service.envio.DestinoEnvio.direccionFinal(dto.getDireccionEntrega(), destino));
+        if (destino != null) {
+            pedido.setDestinoProvincia(destino.provincia());
+            pedido.setDestinoCanton(destino.canton());
+        }
+        if (StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio())) {
+            pedido.setEnvioZona(com.hotclick.service.envio.ZonaEnvio.esGam(
+                destino != null ? destino.provincia() : null, destino != null ? destino.canton() : null) ? "GAM" : "FUERA_GAM");
+            pedido.setEnvioMontoZona(costoEnvio);
+        }
         return pedido;
     }
 
@@ -183,10 +197,16 @@ public class StorefrontGuestOrderService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hotclick.service.payment.OrderPricingService orderPricingService;
 
-    /** (a) Envío a domicilio = Envío Normal de HotClick: el costo sale de la misma tabla del marketplace. */
-    static int costoEnvioTienda(String metodoEnvio, com.hotclick.service.payment.OrderPricingService pricing) {
-        if (pricing == null || !StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(metodoEnvio)) return 0;
-        return pricing.calcularCostoEnvio("ENVIO_NORMAL_GAM");
+    /**
+     * (a) Envío a domicilio = Envío Normal de HotClick: el costo sale de la misma tabla del marketplace.
+     * MED-3 (c) Auditor 3: GAM o fuera del GAM con el mismo clasificador del checkout (destino desconocido = fuera).
+     * El pedido de tienda es de un solo negocio (cada ítem se valida contra la empresa del slug), así que es un
+     * solo envío por negocio aunque despache desde la bodega de la plataforma.
+     */
+    static int costoEnvioTienda(StorefrontPedidoDTO dto, com.hotclick.service.payment.OrderPricingService pricing) {
+        if (pricing == null || dto == null || !StorefrontPedidoDTO.ENVIO_DOMICILIO.equalsIgnoreCase(dto.getMetodoEnvio())) return 0;
+        return pricing.calcularCostoEnvio(com.hotclick.service.payment.OrderPricingService.metodoNormalPorDestino(
+            "ENVIO_NORMAL_GAM", dto.getProvincia(), dto.getCanton()));
     }
 
     static void exigirEfectivoAceptado(String metodoPago, Bodega bodega) {

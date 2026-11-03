@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { Navigate, useSearchParams, useLocation } from 'react-router-dom'
-import { usePayment } from '@/hooks/usePayment'
+import { Link, Navigate, useSearchParams, useLocation } from 'react-router-dom'
+import { usePayment, MENSAJE_LOGIN_PEDIDO } from '@/hooks/usePayment'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
 import PagoLoading from './pago/PagoLoading'
@@ -20,6 +20,8 @@ export default function PaymentStatusPage() {
   const destinoVisitante = destinoVisitanteDesdePago(pathname, search)
   const { stripeApproved, esCancelacion } = leerParamsPago(params, pathname)
   const numeroPedido = pedidoDesdeBusqueda(search)
+  // Token de estado firmado que agrega el backend a la URL de retorno de ONVO (solo lectura).
+  const tokenEstado = params.get('st')
 
   const { clearCart } = useCartStore()
   const { token } = useAuthStore()
@@ -61,8 +63,8 @@ export default function PaymentStatusPage() {
       return
     }
 
-    iniciarPolling(numeroPedido)
-  }, [numeroPedido, destinoVisitante, esCancelacion, cancelarPedido, iniciarPolling])
+    iniciarPolling(numeroPedido, tokenEstado)
+  }, [numeroPedido, tokenEstado, destinoVisitante, esCancelacion, cancelarPedido, iniciarPolling])
 
   if (destinoVisitante) {
     return <Navigate to={destinoVisitante} replace />
@@ -82,6 +84,15 @@ export default function PaymentStatusPage() {
 
   if (estado === 'cancelled') {
     return <PagoCancelado />
+  }
+
+  if (estado === 'login_required') {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center" role="status">
+        <p className="text-lg font-semibold">{MENSAJE_LOGIN_PEDIDO}</p>
+        <Link to="/login" className="mt-4 inline-block underline">Iniciar sesión</Link>
+      </div>
+    )
   }
 
   if (estado === 'timeout') {

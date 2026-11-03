@@ -86,6 +86,11 @@ public class PedidoDetailMapper {
         m.put("numeroGuia",    p.getNumeroGuia());
         m.put("notas",         p.getNotas());
         m.put("direccionEntrega", p.getDireccionEntrega());
+        // MED-5: el negocio ve la zona que se cobró y el destino declarado.
+        m.put("destinoProvincia", p.getDestinoProvincia());
+        m.put("destinoCanton",    p.getDestinoCanton());
+        m.put("envioZona",        p.getEnvioZona());
+        m.put("envioMontoZona",   p.getEnvioMontoZona());
         try {
             String rawN = p.getNotificaciones();
             m.put("notificaciones", objectMapper.readValue(

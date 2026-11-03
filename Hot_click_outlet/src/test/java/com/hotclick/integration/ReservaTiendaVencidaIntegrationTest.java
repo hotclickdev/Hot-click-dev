@@ -51,13 +51,14 @@ class ReservaTiendaVencidaIntegrationTest extends BaseIntegrationTest {
         Assertions.assertEquals(0, productoRepository.findById(p.getId()).orElseThrow().getStockReservado());
         Pedido pedido = pedidoRepository.findAll().get(0);
         Assertions.assertEquals(Constants.PEDIDO_CANCELADO, pedido.getEstadoPedido());
-        Assertions.assertEquals("San José, centro", pedido.getDireccionEntrega()); // NP-18
+        Assertions.assertEquals("San José, centro, San José, San José", // MED-5: cantón y provincia canónicos al final
+             pedido.getDireccionEntrega()); // NP-18
     }
 
     private org.springframework.test.web.servlet.ResultActions pedir(String slug, Producto p, String metodo) throws Exception {
         String body = """
             {"nombreCliente":"Ana QA","correoCliente":"ana-%s@test.cr","telefonoCliente":"88887777",
-             "direccionEntrega":"San José, centro","metodoPago":"%s","metodoEnvio":"DOMICILIO",
+             "direccionEntrega":"San José, centro","metodoPago":"%s","metodoEnvio":"DOMICILIO","provincia":"San José","canton":"San José",
              "items":[{"productoId":%d,"cantidad":1}]}
             """.formatted(slug, metodo, p.getId());
         return mockMvc.perform(post("/api/tienda/" + slug + "/pedidos")

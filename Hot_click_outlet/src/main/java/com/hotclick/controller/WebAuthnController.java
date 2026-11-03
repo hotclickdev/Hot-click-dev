@@ -97,22 +97,25 @@ public class WebAuthnController {
             // Solo cuentas activas reciben token; el catch devuelve el mismo 401 genérico de una huella inválida.
             authSupport.exigirCuentaActiva(usuario);
 
-            // Login completo con llave de seguridad: los tropiezos previos ya no cuentan (igual que un login completo).
-            // Antes de emitir cualquier token: si esto falla, no queda un refresh token huérfano.
+            // Login completo con llave de seguridad: pone en 0 los intentos fallidos (igual que un login completo).
+            // Va antes de emitir tokens: si ese UPDATE falla, el catch responde 401 y no queda refresh token huérfano.
+            // La limpieza de los buckets del rate limit (LiberadorFallos) corre tras el commit y no propaga errores.
             authSupport.autenticacionCompleta(usuario.getId(), httpRequest);
 
             String rol         = usuario.getRoles().isEmpty() ? "USUARIO_FINAL" : usuario.getRoles().get(0).getNombreRol();
-            String empresaSlug = usuario.getEmpresa() != null ? usuario.getEmpresa().getSlug()          : null;
-            String empresaNom  = usuario.getEmpresa() != null ? usuario.getEmpresa().getNombreEmpresa()  : null;
+            AuthSupport.EmpresaActiva activa = AuthSupport.EmpresaActiva.oPrincipal(authSupport.empresaActiva(usuario, rol), usuario, rol);
+            rol = activa.rol();
+            String empresaSlug = activa.slug();
+            String empresaNom  = activa.nombre();
             List<String> perms = permisoRepository.findPermisosByUsuarioId(usuario.getId());
 
             String accessToken = jwtUtil.generateTokenFull(
-                usuario.getCorreo(), usuario.getId(), rol, usuario.getEmpresaId(), empresaSlug, perms);
+                usuario.getCorreo(), usuario.getId(), rol, activa.id(), empresaSlug, perms);
             refreshTokenService.crear(usuario);
 
             String nombre = usuario.getNombre() != null ? usuario.getNombre() : email.split("@")[0];
             AuthResponse auth = new AuthResponse(accessToken, null, usuario.getId(), email, rol, nombre);
-            auth.setEmpresaId(usuario.getEmpresaId());
+            auth.setEmpresaId(activa.id());
             auth.setEmpresaSlug(empresaSlug);
             auth.setEmpresaNombre(empresaNom);
             auth.setPermisos(perms);

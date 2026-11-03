@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * quedaron tiendas/productos de una corrida anterior incompleta.
  * NUNCA activar fuera de dev — vacía datos reales de tiendas/productos.
  * Doble guarda: perfil dev sin prod/production/staging Y propiedad explícita
- * hotclick.reset-plataforma.enabled=true (solo en application-dev.properties).
+ * hotclick.reset-plataforma.enabled=true (opt-in explícito; application-dev.properties lo deja en false).
  */
 @Component
 @Profile("dev & !prod & !production & !staging")

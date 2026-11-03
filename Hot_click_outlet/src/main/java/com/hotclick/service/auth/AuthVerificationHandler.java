@@ -55,7 +55,7 @@ public class AuthVerificationHandler {
     }
 
     static final String MSG_GENERICO = "No se pudo enviar el código. Revisá tus datos e intentá de nuevo.";
-    static final String MSG_CONTRASENA = "La contraseña debe tener entre 8 y 128 caracteres";
+    static final String MSG_CONTRASENA = "La contraseña puede tener como máximo 128 caracteres";
 
     /**
      * ESC-3: solo los mensajes de validación propios llegan al cliente. Errores de base de datos,
@@ -75,8 +75,12 @@ public class AuthVerificationHandler {
         if (clave == null || clave.isBlank()) {
             return;
         }
-        if (clave.length() < AuthSupport.CONTRASENA_MIN || clave.length() > AuthSupport.CONTRASENA_MAX) {
+        if (clave.length() > AuthSupport.CONTRASENA_MAX) {
             throw new IllegalArgumentException(MSG_CONTRASENA);
+        }
+        String falta = AuthSupport.faltantePoliticaContrasena(clave);
+        if (falta != null) {
+            throw new IllegalArgumentException(falta);
         }
         MayoriaEdad.exigir(usuario.getDeclaraMayoriaEdad());
         usuario.setContrasenaHash(passwordEncoder.encode(clave));

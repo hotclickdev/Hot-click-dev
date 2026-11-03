@@ -36,7 +36,7 @@ public class CatalogoLocalSeeder implements ApplicationRunner {
 
     public static final String SKU_DEMO = "HC-LOCAL-CAFE-250";
     public static final String NOMBRE_DEMO = "Café de especialidad 250g";
-    public static final String CORREO_ADMIN = "admin@hotclick.com";
+    public static final String CORREO_ADMIN = "admin@hotclick.lat";
 
     private static final Logger LOG = LoggerFactory.getLogger(CatalogoLocalSeeder.class);
     private static final String SLUG_EMPRESA = "cafe-especialidad-local";

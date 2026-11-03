@@ -47,7 +47,7 @@ class SinpeAprobacionGuardTest {
         Pedido pedido = pedido(5L, 9L, "comprador@test.com");
 
         assertDoesNotThrow(() -> SinpeAprobacionGuard.assertReglas(
-                pedido, "admin@hotclick.com", 1L, true, null));
+                pedido, "admin@hotclick.lat", 1L, true, null));
     }
 
     private static Pedido pedido(Long empresaId, Long compradorId, String correo) {

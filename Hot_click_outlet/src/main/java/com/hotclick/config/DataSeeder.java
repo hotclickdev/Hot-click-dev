@@ -311,7 +311,7 @@ public class DataSeeder implements ApplicationRunner {
 
     private void seedBodegaDefault() {
         if (bodegaRepository.count() == 0) {
-            Usuario admin = usuarioRepository.findByCorreo("admin@hotclick.com").orElse(null);
+            Usuario admin = usuarioRepository.findByCorreo(Constants.CORREO_ADMIN).orElse(null);
             if (admin == null) return;
             Bodega bodega = new Bodega();
             bodega.setNombreBodega("Bodega Principal");
@@ -325,7 +325,7 @@ public class DataSeeder implements ApplicationRunner {
 
     private void seedCategoriasDefault() {
         if (categoriaRepository.count() == 0) {
-            Usuario admin = usuarioRepository.findByCorreo("admin@hotclick.com").orElse(null);
+            Usuario admin = usuarioRepository.findByCorreo(Constants.CORREO_ADMIN).orElse(null);
             if (admin == null) return;
             String[] nombres = { "Electrónica", "Computación", "Hogar", "Accesorios", "Gaming", "Oficina" };
             for (String nombre : nombres) {

@@ -26,6 +26,14 @@ class HaciendaLogSanitizerTest {
     }
 
     @Test
+    void mensajeEnmascaraNumerosConGuiones() {
+        assertThat(HaciendaLogSanitizer.mensaje("cédula 1-2345-6789 rechazada")).isEqualTo("cédula [num] rechazada");
+        assertThat(HaciendaLogSanitizer.mensaje("emisor 3-101-123456 sin permiso")).isEqualTo("emisor [num] sin permiso");
+        assertThat(HaciendaLogSanitizer.mensaje("emisor 3 101 123456")).isEqualTo("emisor [num]");
+        assertThat(HaciendaLogSanitizer.mensaje("versión 4-4 línea 12-8")).isEqualTo("versión 4-4 línea 12-8");
+    }
+
+    @Test
     void errorIncluyeTipoYNoElMensajeCrudo() {
         String s = HaciendaLogSanitizer.error(new IllegalStateException("clave 50626102600310100000000100001010000000001199991234"));
         assertThat(s).startsWith("IllegalStateException: ").doesNotContain("506261026");

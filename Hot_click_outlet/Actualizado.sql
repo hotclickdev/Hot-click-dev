@@ -1359,7 +1359,7 @@ ON CONFLICT ("ID_METODO_PAGO_CONFIG") DO UPDATE SET
     "NOMBRE" = EXCLUDED."NOMBRE", "ACTIVO" = EXCLUDED."ACTIVO", "ORDEN" = EXCLUDED."ORDEN";
 
 INSERT INTO "HOT_CLICK_USUARIO_TB" ("ID_USUARIO", "IDENTIFICACION", "NOMBRE", "APELLIDO_PATERNO", "CORREO", "TELEFONO", "CONTRASENA_HASH") VALUES
-  (1, '999999999', 'Admin', 'Sistema', 'admin@hotclick.com', '88888888', '$2b$10$placeholder')
+  (1, '999999999', 'Admin', 'Sistema', 'admin@hotclick.lat', '88888888', '$2b$10$placeholder')
 ON CONFLICT ("ID_USUARIO") DO NOTHING;
 
 INSERT INTO "HOT_CLICK_USUARIO_ROL_TB" ("FK_ID_USUARIO", "FK_ID_ROL") VALUES (1, 1)
@@ -4423,3 +4423,146 @@ $fn$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_cupo_emprendedor_liberar_al_borrar
     AFTER DELETE ON hot_click_empresa_tb
     FOR EACH ROW EXECUTE FUNCTION fn_cupo_emprendedor_liberar_al_borrar();
+
+-- ====================================================
+-- V215 Pago con reembolso parcial (PR #460, 31-oct-2026). Cobro parcial con un paquete cancelado en paralelo:
+-- el pago sigue CAPTURADO y acá queda el monto que se debe devolver y el ya devuelto.
+-- Aditiva: columnas nuevas nullables, no toca filas existentes.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS monto_reembolso_pendiente INTEGER;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS monto_reembolsado INTEGER;
+
+-- V216 (31-oct-2026): dedupe del aviso al admin por cobro de ONVO sobre grupo cancelado (REEMBOLSO_PENDIENTE).
+-- Aditiva: una columna NULL. NULL = aún sin avisar; el UPDATE condicional sobre NULL deja un solo correo por pago.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS aviso_reembolso_admin_en TIMESTAMP;
+
+-- V217 (31-oct-2026): BAJOs de #466 sobre el aviso al admin por REEMBOLSO_PENDIENTE.
+-- aviso_reembolso_admin_en pasa a ser la marca del claim (lease); el envío confirmado queda en
+-- aviso_reembolso_admin_enviado_en y los intentos en aviso_reembolso_admin_intentos (tope del barrido).
+-- aviso_reembolso_resumen_pendiente: REEMBOLSO_PENDIENTE anteriores a V217 que nunca se avisaron; van en UN
+-- correo resumen en el primer barrido (decisión del Mentor, punto 4 de #477), no en avisos individuales.
+-- Aditiva. Backfill: lo que ya tenía marca se considera enviado, así el barrido no reenvía avisos viejos.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS aviso_reembolso_admin_enviado_en TIMESTAMP;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS aviso_reembolso_admin_intentos INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS aviso_reembolso_resumen_pendiente BOOLEAN NOT NULL DEFAULT FALSE;
+UPDATE hot_click_pago_tb
+   SET aviso_reembolso_admin_enviado_en = aviso_reembolso_admin_en
+ WHERE aviso_reembolso_admin_en IS NOT NULL AND aviso_reembolso_admin_enviado_en IS NULL;
+UPDATE hot_click_pago_tb
+   SET aviso_reembolso_resumen_pendiente = TRUE
+ WHERE estado_pago = 'REEMBOLSO_PENDIENTE' AND aviso_reembolso_admin_en IS NULL
+   AND aviso_reembolso_admin_enviado_en IS NULL;
+
+-- V218 (31-oct-2026): search_path fijo en las SECURITY DEFINER de pagos y seed admin a @hotclick.lat (BAJOs de #484).
+DO $$
+DECLARE
+    f RECORD;
+BEGIN
+    FOR f IN
+        SELECT p.oid::regprocedure AS firma
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid = p.pronamespace
+         WHERE n.nspname = 'public'
+           AND p.proname IN ('fn_crear_pago', 'fn_obtener_pago_por_token')
+    LOOP
+        EXECUTE format('ALTER FUNCTION %s SET search_path = pg_catalog, public, pg_temp', f.firma);
+    END LOOP;
+END
+$$;
+
+-- El seed de V1 vive en la tabla legada entre comillas "HOT_CLICK_USUARIO_TB" (puede no existir).
+DO $$
+BEGIN
+    IF to_regclass('public."HOT_CLICK_USUARIO_TB"') IS NOT NULL THEN
+        UPDATE "HOT_CLICK_USUARIO_TB"
+           SET "CORREO" = 'admin@hotclick.lat'
+         WHERE lower("CORREO") = 'admin@hotclick.com'
+           AND NOT EXISTS (SELECT 1 FROM "HOT_CLICK_USUARIO_TB" u2 WHERE lower(u2."CORREO") = 'admin@hotclick.lat');
+    END IF;
+END
+$$;
+
+-- Admin de plataforma (JPA / DataSeeder): Constants.CORREO_ADMIN pasa a admin@hotclick.lat.
+UPDATE hot_click_usuario_tb
+   SET correo = 'admin@hotclick.lat'
+ WHERE lower(correo) = 'admin@hotclick.com'
+   AND NOT EXISTS (SELECT 1 FROM hot_click_usuario_tb u2 WHERE lower(u2.correo) = 'admin@hotclick.lat');
+
+UPDATE hot_click_empresa_tb
+   SET correo_empresa = 'admin@hotclick.lat'
+ WHERE lower(correo_empresa) = 'admin@hotclick.com'
+   AND NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e2 WHERE lower(e2.correo_empresa) = 'admin@hotclick.lat');
+
+-- V220 (01-nov-2026) QA3-023: plan elegido sin pago confirmado. La suscripción conserva el plan vigente en
+-- fk_id_plan y el nuevo queda acá hasta que el webhook ONVO verificado lo aplica. Aditiva.
+ALTER TABLE hot_click_suscripcion_tb ADD COLUMN IF NOT EXISTS fk_id_plan_pendiente BIGINT
+    REFERENCES hot_click_plan_tb(id_plan);
+
+-- V221 (01-nov-2026): FK de pagos hacia las tablas viejas en MAYÚSCULAS -> tablas JPA en minúsculas (ALTO QA5, checkout 500).
+-- V221: reapunta las FK de pagos que quedaron hacia las tablas viejas en mayúsculas
+-- ("HOT_CLICK_PEDIDO_TB", "HOT_CLICK_USUARIO_TB", "HOT_CLICK_ESTADO_TB"), vacías en uso real,
+-- hacia las tablas que usa JPA (hot_click_pedido_tb, hot_click_usuario_tb, hot_click_estado_tb).
+-- Con la FK vieja todo checkout que crea el pago falla (violación de FK -> 500).
+-- Idempotente y solo aditiva: cada FK se toca solo si hoy referencia la tabla en mayúsculas y
+-- la tabla en minúsculas existe. Si ya apunta bien (p. ej. corregida a mano), no hace nada.
+-- No borra tablas ni datos. Se agrega NOT VALID y luego se intenta VALIDATE; si hay filas
+-- huérfanas queda NOT VALID (igual se aplica a filas nuevas) y se avisa con WARNING.
+DO $$
+DECLARE
+    r RECORD;
+    v_ref_actual TEXT;
+BEGIN
+    FOR r IN
+        SELECT * FROM (VALUES
+            ('hot_click_pago_tb',             'hot_click_pago_tb_fk_id_pedido_fkey',             'fk_id_pedido',  'HOT_CLICK_PEDIDO_TB',  'hot_click_pedido_tb',  'id_pedido'),
+            ('hot_click_pago_tb',             'hot_click_pago_tb_fk_id_usuario_fkey',            'fk_id_usuario', 'HOT_CLICK_USUARIO_TB', 'hot_click_usuario_tb', 'id_usuario'),
+            ('hot_click_pago_tb',             'hot_click_pago_tb_fk_id_estado_fkey',             'fk_id_estado',  'HOT_CLICK_ESTADO_TB',  'hot_click_estado_tb',  'id_estado'),
+            ('hot_click_payment_log_tb',      'hot_click_payment_log_tb_fk_id_usuario_fkey',     'fk_id_usuario', 'HOT_CLICK_USUARIO_TB', 'hot_click_usuario_tb', 'id_usuario'),
+            ('hot_click_transaccion_pago_tb', 'hot_click_transaccion_pago_tb_fk_id_estado_fkey', 'fk_id_estado',  'HOT_CLICK_ESTADO_TB',  'hot_click_estado_tb',  'id_estado'),
+            ('hot_click_webhook_event_tb',    'hot_click_webhook_event_tb_fk_id_estado_fkey',    'fk_id_estado',  'HOT_CLICK_ESTADO_TB',  'hot_click_estado_tb',  'id_estado')
+        ) AS t(tabla, fk, col, ref_vieja, ref_nueva, ref_col)
+    LOOP
+        SELECT rt.relname INTO v_ref_actual
+          FROM pg_constraint c
+          JOIN pg_class st ON st.oid = c.conrelid
+          JOIN pg_namespace n ON n.oid = st.relnamespace
+          JOIN pg_class rt ON rt.oid = c.confrelid
+         WHERE c.contype = 'f' AND c.conname = r.fk AND st.relname = r.tabla
+           AND n.nspname = current_schema();
+
+        IF v_ref_actual IS DISTINCT FROM r.ref_vieja THEN
+            CONTINUE; -- no existe o ya apunta a otra tabla: nada que hacer
+        END IF;
+        IF to_regclass(format('%I.%I', current_schema(), r.ref_nueva)) IS NULL THEN
+            RAISE WARNING 'V221: % sigue hacia "%": no existe %', r.fk, r.ref_vieja, r.ref_nueva;
+            CONTINUE;
+        END IF;
+
+        EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', r.tabla, r.fk);
+        EXECUTE format('ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES %I (%I) NOT VALID',
+                       r.tabla, r.fk, r.col, r.ref_nueva, r.ref_col);
+        BEGIN
+            EXECUTE format('ALTER TABLE %I VALIDATE CONSTRAINT %I', r.tabla, r.fk);
+        EXCEPTION WHEN foreign_key_violation THEN
+            RAISE WARNING 'V221: % queda NOT VALID (filas huérfanas previas)', r.fk;
+        END;
+    END LOOP;
+END $$;
+
+-- V222 (02-nov-2026) HC-CICD-002: tipos de OTP REGISTRO y RESET_PASSWORD en la tabla JPA (forgot-password y registro sin correo en base desde V1).
+-- V222 (HC-CICD-002): siembra los tipos de OTP REGISTRO y RESET_PASSWORD en la tabla que lee JPA
+-- (hot_click_tipo_otp_tb). V1 los insertó solo en la tabla vieja "HOT_CLICK_TIPO_OTP_TB" (mayúsculas),
+-- así que en una base creada desde V1 forgot-password y el registro fallaban con
+-- "tipo de OTP no configurado". Valores copiados de V1: 300 s, 6 dígitos, estado 1 (ACTIVO).
+-- Idempotente: si la fila ya existe (prod) no hace nada; no edita filas existentes.
+CREATE TABLE IF NOT EXISTS hot_click_tipo_otp_tb (
+    id_tipo_otp           SERIAL PRIMARY KEY,
+    nombre                VARCHAR(30)  NOT NULL UNIQUE,
+    tiempo_expiracion_seg INTEGER      NOT NULL DEFAULT 300,
+    longitud_codigo       INTEGER      NOT NULL DEFAULT 6,
+    fk_id_estado          INTEGER      NOT NULL DEFAULT 1
+);
+
+INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado)
+SELECT v.nombre, v.seg, v.longitud, v.estado
+  FROM (VALUES ('REGISTRO', 300, 6, 1), ('RESET_PASSWORD', 300, 6, 1)) AS v(nombre, seg, longitud, estado)
+ WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb t WHERE t.nombre = v.nombre);

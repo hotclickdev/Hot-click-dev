@@ -183,4 +183,43 @@ class MailProviderSelectorTest {
         }
         assertThat(p.getProperty("mail.provider")).isEqualTo("${MAIL_PROVIDER:noop}");
     }
+
+    @Test
+    void sendgridSinKeyCaeANoopSoloEnAllowlistDevTestLocal() throws Exception {
+        for (String perfil : new String[] {"dev", "test", "local", " DEV ", "Local"}) {
+            ResendEmailService s = conPerfilYKey("sendgrid", "", perfil);
+            s.validarConfiguracion();
+            assertThat(s.getProvider()).isEqualTo(ResendEmailService.Provider.NOOP);
+        }
+    }
+
+    @Test
+    void sendgridSinKeyFueraDeAllowlistFallaCerrado() throws Exception {
+        for (String perfil : new String[] {"staging", "qa", "devx", ""}) {
+            ResendEmailService s = conPerfilYKey("sendgrid", "", perfil);
+            assertThatThrownBy(s::validarConfiguracion).isInstanceOf(IllegalStateException.class);
+        }
+        // sin ningún perfil activo
+        assertThatThrownBy(conPerfilYKey("sendgrid", "")::validarConfiguracion)
+            .isInstanceOf(IllegalStateException.class);
+        // sin Environment
+        ResendEmailService sinEnv = build("sendgrid", "", false);
+        ReflectionTestUtils.setField(sinEnv, "apiKey", "");
+        assertThatThrownBy(sinEnv::validarConfiguracion).isInstanceOf(IllegalStateException.class);
+        // dev junto con prod no habilita noop
+        assertThatThrownBy(conPerfilYKey(null, "", "dev", "prod")::validarConfiguracion)
+            .isInstanceOf(IllegalStateException.class);
+        verify(sg, never()).api(any(Request.class));
+    }
+
+    @Test
+    void noopExplicitoEnProdFallaAlArrancar() throws Exception {
+        for (String[] perfiles : new String[][] {{"prod"}, {"production"}, {" PROD "}, {"dev", "prod"}}) {
+            ResendEmailService s = conPerfilYKey("noop", "SG.test-not-real", perfiles);
+            assertThatThrownBy(s::validarConfiguracion).isInstanceOf(IllegalStateException.class);
+        }
+        ResendEmailService dev = conPerfilYKey("NoOp", "", "dev");
+        dev.validarConfiguracion();
+        assertThat(dev.getProvider()).isEqualTo(ResendEmailService.Provider.NOOP);
+    }
 }

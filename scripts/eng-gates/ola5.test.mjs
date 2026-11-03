@@ -309,7 +309,7 @@ pathname.startsWith('/admin/pos')
 });
 
 describe('E14 hotfix gate', () => {
-  it('no-op fuera de hotfix para no romper auto-merge', () => {
+  it('no-op PASS fuera de hotfix/*', () => {
     const v = evaluateHotfixGate({ isHotfix: false, gitleaks: 'failure' });
     assert.equal(v.ok, true);
     assert.equal(v.skipped, true);
@@ -356,6 +356,8 @@ describe('E18 PgBouncer migrations', () => {
     assert.equal(lineIsSessionSet('SET app.tenant_id = 1'), true);
     assert.equal(lineIsSessionSet('UPDATE t SET n = n + 1'), false);
     assert.equal(lineIsSessionSet('ALTER COLUMN foo SET NOT NULL'), false);
+    assert.equal(lineIsSessionSet('ALTER FUNCTION fn_x(bigint) SET search_path = pg_catalog, public'), false);
+    assert.equal(lineIsSessionSet("EXECUTE format('ALTER FUNCTION %s SET search_path = pg_catalog', f)"), false);
     const sql = `
 CREATE TABLE hot_click_x_tb (id int);
 SELECT pg_advisory_lock(1);

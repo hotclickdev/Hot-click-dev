@@ -108,6 +108,7 @@ public class StorageImageValidator {
             case "png" -> esPng(bytes);
             case "gif" -> esGif(bytes);
             case "webp" -> esWebp(bytes);
+            case "avif" -> esAvif(bytes);
             default -> true;
         };
     }
@@ -115,6 +116,22 @@ public class StorageImageValidator {
     /** True si el contenido es JPEG, PNG, GIF o WebP, sin confiar en el Content-Type. */
     public boolean esImagenPorContenido(byte[] bytes) {
         return bytes != null && (esJpeg(bytes) || esPng(bytes) || esGif(bytes) || esWebp(bytes));
+    }
+
+    /**
+     * ISO-BMFF: bytes 4..7 = "ftyp" y la marca "avif"/"avis" como major brand (8..11) o entre las
+     * compatibles del mismo box ftyp (algunos encoders ponen "mif1" como major).
+     */
+    static boolean esAvif(byte[] b) {
+        if (b == null || b.length < 12) return false;
+        if (b[4] != 'f' || b[5] != 't' || b[6] != 'y' || b[7] != 'p') return false;
+        long tam = ((b[0] & 0xFFL) << 24) | ((b[1] & 0xFFL) << 16) | ((b[2] & 0xFFL) << 8) | (b[3] & 0xFFL);
+        int fin = (int) Math.min(Math.max(tam, 12), Math.min(b.length, 256));
+        for (int i = 8; i + 4 <= fin; i += 4) {
+            if (i == 12) continue; // minor_version
+            if (b[i] == 'a' && b[i + 1] == 'v' && b[i + 2] == 'i' && (b[i + 3] == 'f' || b[i + 3] == 's')) return true;
+        }
+        return false;
     }
 
     private static boolean esJpeg(byte[] bytes) {

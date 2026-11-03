@@ -5,6 +5,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
+import com.hotclick.service.hacienda.CedulaEmisor;
 import com.hotclick.service.hacienda.CodigoCabys;
 import com.hotclick.service.hacienda.CalculadoraIva;
 import com.hotclick.service.hacienda.ImpuestoLinea;
@@ -84,7 +85,7 @@ public class XmlFacturaBuilder {
     private void appendEncabezado(StringBuilder xml, ComprobanteFiscal comprobante,
                                   Empresa empresa, boolean esFactura) {
         xml.append("  <Clave>").append(esc(comprobante.getClaveNumerica())).append("</Clave>\n");
-        xml.append("  <ProveedorSistemas>").append(digitos(empresa.getCedulaJuridica())).append("</ProveedorSistemas>\n");
+        xml.append("  <ProveedorSistemas>").append(CedulaEmisor.normalizar(empresa.getCedulaJuridica())).append("</ProveedorSistemas>\n");
         xml.append("  <CodigoActividadEmisor>").append(esc(empresa.getActividadEconomica())).append("</CodigoActividadEmisor>\n");
         xml.append("  <NumeroConsecutivo>").append(esc(comprobante.getNumeroConsecutivo())).append("</NumeroConsecutivo>\n");
         xml.append("  <FechaEmision>").append(comprobante.getFechaEmision().format(DT_FMT)).append("</FechaEmision>\n");
@@ -100,7 +101,7 @@ public class XmlFacturaBuilder {
         xml.append("    <Nombre>").append(esc(empresa.getNombreComercialFe())).append("</Nombre>\n");
         xml.append("    <Identificacion>\n");
         xml.append("      <Tipo>").append(esc(empresa.getTipoCedula())).append("</Tipo>\n");
-        xml.append("      <Numero>").append(esc(empresa.getCedulaJuridica())).append("</Numero>\n");
+        xml.append("      <Numero>").append(CedulaEmisor.normalizar(empresa.getCedulaJuridica())).append("</Numero>\n");
         xml.append("    </Identificacion>\n");
         xml.append("    <Ubicacion>\n");
         xml.append("      <Provincia>").append(esc(empresa.getUbicacionProvincia())).append("</Provincia>\n");
@@ -251,10 +252,6 @@ public class XmlFacturaBuilder {
 
     private static boolean vacio(String s) {
         return s == null || s.isBlank();
-    }
-
-    private static String digitos(String cedula) {
-        return cedula.replaceAll("[^0-9]", "");
     }
 
     private static String esc(String s) {

@@ -20,11 +20,14 @@ public interface ComprobanteFiscalRepository extends JpaRepository<ComprobanteFi
 
     Optional<ComprobanteFiscal> findByPedidoId(Long pedidoId);
 
-    /** Listado admin con filtros opcionales por estado y rango de fecha de emisión. */
+    /**
+     * Listado con filtro opcional por estado y rango de fecha de emisión OBLIGATORIO (no null):
+     * en Postgres "? IS NULL" con un LocalDateTime null da "could not determine data type" (500).
+     */
     @Query("SELECT c FROM ComprobanteFiscal c WHERE c.empresa.id = :empresaId " +
            "AND (:estado IS NULL OR c.estado = :estado) " +
-           "AND (:desde IS NULL OR c.fechaEmision >= :desde) " +
-           "AND (:hasta IS NULL OR c.fechaEmision <= :hasta)")
+           "AND c.fechaEmision >= :desde " +
+           "AND c.fechaEmision <= :hasta")
     Page<ComprobanteFiscal> findByEmpresaIdConFiltros(
         @Param("empresaId") Long empresaId,
         @Param("estado") String estado,
