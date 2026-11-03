@@ -1,5 +1,65 @@
 # Traspaso — HotClick Bugs
 
+Actualizado: 2026-11-02 (hora de Costa Rica). Autor: HotClick Bugs. Rama: `docs/traspaso-cuenta-nueva`.
+
+## Rol y descripción completa (copiada de profile.json, para recrearme)
+- Nombre: **HotClick Bugs**
+- Descripción: "Corrige bugs puntuales de HotClick con su test de regresión y lleva el registro de riesgos y deuda técnica. Repo hotclickdev/Hot-click-dev (Spring Boot 3/Java 21, React 19/Vite/pnpm, Postgres/Flyway). Reportás solo a Grok Bot; nunca hablás con Andrés ni con humanos. Antes de empezar leé tu nota de traspaso docs/traspaso/hotclick-bugs.md (rama docs/traspaso-cuenta-nueva). Reglas: push y PRs propios (máx 3 abiertos, sin force, sin --no-verify, sin rebase); merge solo con CI verde y APTO de HotClick Seguridad sobre el hash exacto; nunca deploy, gastos, cuentas ni servidores nuevos; ONVO fail-closed y único procesador; Flyway solo aditivo y numerado después de V200; issues sin datos sensibles; nada de secretos, cédulas, IBAN, SINPE ni teléfonos en chat o repo; worktree propio, sin git stash ni pkill; nunca digas que funciona sin ejecutarlo. Español de Costa Rica con voseo. Reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso."
+- Skill a cargar: `hot-click-dev-workflow`.
+
+## Reglas que sigo
+1. Todas las del perfil (arriba).
+2. El Mentor (id `e221623d-00c2-4fcd-9bed-fbd2758bc67d`) habla por Andrés. Nunca le escribo a Andrés en privado.
+3. Solo tests dirigidos: `-Dtest=Clase1,Clase2 -Dsurefire.failIfNoSpecifiedTests=false`.
+4. Suite completa solo con `flock /workspace/hotclick/.suite-completa.lock ...`.
+5. `mvn test-compile` completo con EXIT 0 antes de cada push de Java (también bajo el flock).
+6. Apago mis propios procesos por PID (nunca `pkill`).
+7. Merge: `gh pr merge N -R hotclickdev/Hot-click-dev --merge --match-head-commit <hash>`, solo con CI verde y APTO de Seguridad sobre ese hash. Tras un merge puro de master, pedir re-APTO.
+8. Un test de regresión por fix. Sin `git stash`, sin force, sin `--no-verify`, sin rebase; `git add -- <rutas>`.
+9. Formato de reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso. Voseo de Costa Rica.
+
+## Lo hecho (PRs mergeados)
+| PR | Merge | Resumen |
+|---|---|---|
+| #382 | `e89e61ca` | Área 8: M-A, M-B, M-C |
+| #393 | `50061fbc` | BAJOS: cuentas no activas sin tokens, caché al cerrar cuenta, logs Telegram |
+| #395 y #398 | `41602031` | RateLimitingFilter con ruta canónica; HEAD y ruta inválida con cupo |
+| #399 y #413 | `090b9a3c` | MEDIOS área 2 (roles solo propietario, correo normalizado), `Locale.ROOT`, cuenta antigua |
+| #403 | `b97029dd` | BAJOS de #393 (seleccionar-empresa, OTP, Clerk); MEDIO CallbackHelper y BAJO webhook:89 |
+| #418 | `3e45749e` | Limitador: IP nula fail-closed, IPv6 /64, avisos muestreados |
+| #421 | `d1902073` | 404 sin datos internos + guarda |
+| #427 | `264f4edb` | LOWs de #418/#421 |
+| #441 | `e9f95b0c` | reset-keepqa: `ResetPlataformaKeepQaService` con BD vacía (fila 17) |
+| #500 | `899a6bac` | Flyway repair-on-start con flag (`HOTCLICK_FLYWAY_REPAIR_ON_START`, default false); runbook `docs/operaciones/flyway-repair.md` |
+| #497 | `82bf85d3` | `pedidoId` en `/api/admin/pagos` (`PagoResumenDTO`) |
+
+Auditor 8 re-auditó sobre `4b34d578`: área 8 sin ALTO ni MEDIO abierto.
+
+## Pendiente
+- [PENDIENTE] Fila 30: `FlywayRepairConfig.repairHabilitado()` debe exigir que `prod` no esté activo en el camino de dev. PR aparte con test, solo si el Mentor lo asigna.
+- reset-keepqa: **cerrado** (PR #441 mergeado, `e9f95b0c`). Nada pendiente.
+- [PENDIENTE] BAJOS del registro sin asignar: filas 1-9, 11, 13-16, 18-26, 28, 29 (ver tabla abajo). Esperan asignación del Mentor.
+- Rechazo de ONVO → FALLIDO: **lo lleva Dev Pagos en su PR B**. Base: `/workspace/onvo-rechazo-descartado.patch` (box, borrador descartado). Nota: ONVO no tiene estado "failed"; un intent rechazado queda en `requires_payment_method` con `lastPaymentError`.
+- Área 2 (B1, B2, B9, MIS SUCURSALES): la lleva Bugs 2. B9 requiere normalizar correos y revisar duplicados antes, migración V204 o posterior (fila 6).
+
+## Rutas y evidencias (box, fuera del repo salvo indicación)
+- Worktrees míos ya mergeados y limpios: `/workspace/wt-admin-pedidoid` (#497), `/workspace/wt-bajos3` (#403), `/workspace/wt-bajos` (#393). Detached de baseline rojo para tests: `/workspace/wt-bajos-old`, `/workspace/wt-med-old` (los tests sin commit ahí ya están en master; no hay trabajo perdido).
+- Worktree de esta nota: `/workspace/wt-bugs-traspaso`.
+- Evidencia fila 27: `/workspace/hotclick-reportes/qa5/staging-64212015-20261102/`.
+- Patch ONVO: `/workspace/onvo-rechazo-descartado.patch`.
+- Runbook Flyway (repo): `docs/operaciones/flyway-repair.md`; amenazas: `docs/security/amenazas-activas.md`.
+- Herramientas: Maven `/workspace/tools/apache-maven-3.9.9`, JDK `/workspace/tools/jdk21`, Node `/workspace/tools/node22`, gitleaks `/workspace/tools/gitleaks`; tests dirigidos con `/workspace/mvn-suite.sh -o -Dtest=...`.
+- Secretos: ninguno propio; el token de gh es el del clon. Nunca copiarlos.
+
+## Próximos pasos exactos
+1. Leer esta nota y el registro (filas 1-30). Cargar `hot-click-dev-workflow`.
+2. Esperar asignación del Mentor. Si asigna la fila 30: worktree nuevo desde `origin/master`, test que active `dev`+`prod` y espere `repairHabilitado()==false`, fix, `mvn test-compile` EXIT 0 bajo flock, push, PR, APTO de Seguridad sobre el hash, merge con `--match-head-commit`.
+3. Contar PRs abiertos antes de abrir uno (`gh pr list -R hotclickdev/Hot-click-dev --author @me`): hoy hay 3 abiertos en la cuenta (#507 draft, #440 draft, #363 draft), así que no hay cupo sin cerrar uno.
+4. Al cerrar cada fila, actualizar este registro en `docs/traspaso-cuenta-nueva` (pull + merge puro, sin force).
+
+## Histórico (traspaso del 2026-10-26)
+### Nota original
+
 Fecha: 2026-10-26 (CR). Autor: HotClick Bugs.
 
 ## Rol
@@ -126,7 +186,7 @@ Verificado contra `origin/master` el 2026-10-30. Las filas 1 a 7 siguen abiertas
 | 14 | Sin métrica/alerta para la llave IP `desconocida` | Si muchas peticiones caen en `IpParaLlave.DESCONOCIDA` comparten un cupo y nadie se entera. | `security/IpParaLlave`, `RateLimitingFilter:237` | Deuda, sin PR |
 | 15 | Llaves del RateLimiter en texto plano | Las llaves guardan la IP (o /64) legible en la tabla. Pasar a HMAC si la tabla se expone o se exporta. | `security/RateLimiter.java` | Deuda, sin PR |
 | 16 | FQN de `IpParaLlave` | Se usa `com.hotclick.security.IpParaLlave.clave(...)` completo en vez de import. Cosmético. | `EmbudoController:57`, `PublicChatController:94`, `AuthSupport:70`, `GuestCheckoutGuard:169`, `ReservaAntiBotService:175` | Deuda menor |
-| 17 | `ResetPlataformaKeepQaService` falla con BD vacía | Asignado por el Mentor el 2026-10-30. | `service/ResetPlataformaKeepQaService.java`, rama `fix/reset-keepqa-bd-vacia` | En curso (HotClick Bugs), sin PR todavía |
+| 17 | `ResetPlataformaKeepQaService` falla con BD vacía | Asignado por el Mentor el 2026-10-30. | `service/ResetPlataformaKeepQaService.java`, test `ResetPlataformaKeepQaBdVaciaTest` | Cerrado: PR #441 mergeado (`e9f95b0c`, rama `fix/reset-keepqa-bd-vacia`); luego `69e2082f` deja el runner apagado por defecto en dev |
 | 18 | Stripe ignora el resultado de `confirmarPedido` | Origen: MED-2 sobreventa, PR #457 (solo ONVO y pago manual por orden del Mentor). Si hay sobreventa, el pago queda confirmado sin manejarla. | `StripePaymentProvider.java:145` | Deuda, sin PR. Post-lanzamiento salvo que se active ese procesador |
 | 19 | Tilopay ignora el resultado de `confirmarPedido` | Origen: MED-2 sobreventa, PR #457 (solo ONVO y pago manual por orden del Mentor). Mismo problema que la fila 18. | `TilopayConfirmacionService.java` ~234 | Deuda, sin PR. Post-lanzamiento salvo que se active ese procesador |
 | 20 | Sin `MovimientoStock` tipo `OVERSELL` | Origen: MED-2 sobreventa, PR #457 (solo ONVO y pago manual por orden del Mentor). Ningún flujo registra la sobreventa en el kardex; no queda traza auditable. | `MovimientoStock` y flujos de confirmación | Deuda, sin PR. Post-lanzamiento |
@@ -136,10 +196,10 @@ Verificado contra `origin/master` el 2026-10-30. Las filas 1 a 7 siguen abiertas
 | 24 | Sin idempotencia de fondo al crear pedidos | Complementa la fila 1: además del caché en memoria, una excepción después del commit seguida de un reintento duplica el pedido. Falta llave de idempotencia persistida (restricción única). | creación de pedidos (checkout invitado y autenticado) | Riesgo abierto, sin PR |
 | 25 | `getIfAvailable()` de `AvisoReembolsoPendienteService` sin protección | Origen: BAJO opcional de Seguridad en PR #482 (merge `2a889235`), pedido por el Mentor. Envolver `ObjectProvider.getIfAvailable()` en try/catch de `BeansException` que devuelva null. | `PaymentOrderConfirmationService`, `SinpeOnvoMarketplaceService` | Deuda, sin PR. Post-lanzamiento |
 | 26 | Lista de números de pedido sin tope | Origen: BAJO opcional de Seguridad en PR #482 (merge `2a889235`), pedido por el Mentor. Poner un tope a la lista de números de pedido en el detalle del aviso. | `AvisoReembolsoPendienteService.detalleDe` | Deuda, sin PR. Post-lanzamiento |
-| 27 | Login con un solo negocio no pone la empresa en el token | Origen: BAJO de HotClick QA, pedido por el Mentor, en staging `ca9bb6da` (2026-11-02). Una cuenta con un único negocio entra sin empresa en el token y `/api/pedidos` responde 403 `EMPRESA_REQUERIDA` hasta llamar a `cambiar-negocio`. Esperado: si la cuenta tiene un único negocio, el login lo pone en el token. No bloquea. Evidencia: archivo de QA `p447-pedidos-semilla04.txt` en el box (fuera del repo). | login / emisión de token, `/api/pedidos` | Deuda, sin PR. No bloquea |
+| 27 | Login con un solo negocio no pone la empresa en el token | Una cuenta con un único negocio entraba sin empresa en el token y `/api/pedidos` daba 403 `EMPRESA_REQUERIDA`. | login / emisión de token, `/api/pedidos` | Cerrado en #503 (Dev Marketplace). Evidencia (box, fuera del repo): `/workspace/hotclick-reportes/qa5/staging-64212015-20261102/` (`reqa-503.txt`, capturas `*-pyme.png`) |
 | 28 | SMTP de staging falla | Origen: QA C1 2026-11-02 vía Mentor. En staging los correos de confirmación de compra y de nueva venta dan ERROR de SMTP. Riesgo: los correos transaccionales no están verificados de punta a punta antes del lanzamiento. | Envío de correo (confirmación de pedido, aviso de nueva venta), config SMTP de staging | Riesgo abierto, sin PR. Verificar antes de clientes reales |
 | 29 | Webhook de ONVO sin prueba de punta a punta | Origen: QA C1 2026-11-02 vía Mentor. Staging no tiene URL pública, así que el webhook real de ONVO no llega; la confirmación en QA vino de la reconsulta a ONVO (misma verificación que el webhook). Riesgo: la entrega real del webhook (secret, formato, reintentos) no está probada. | `OnvoWebhookController`, config del webhook en ONVO | Riesgo abierto, sin PR. Probar con URL pública antes del lanzamiento |
-| 30 | `repair()` de Flyway corre con perfiles dev y prod activos a la vez | Origen: revisión de Seguridad del PR #500 (`899a6bac`) vía Mentor, BAJO. En `FlywayRepairConfig`, si prod arranca con los perfiles `dev` y `prod` activos al mismo tiempo, el camino de dev habilita `repair()`. `repairHabilitado()` debería exigir que `prod` no esté activo para el camino de dev. | `FlywayRepairConfig.repairHabilitado()` | Abierto, va en PR aparte |
+| 30 | `repair()` de Flyway corre con perfiles dev y prod activos a la vez | Origen: revisión de Seguridad del PR #500 (`899a6bac`) vía Mentor, BAJO. En `FlywayRepairConfig`, si prod arranca con los perfiles `dev` y `prod` activos al mismo tiempo, el camino de dev habilita `repair()`. `repairHabilitado()` debería exigir que `prod` no esté activo para el camino de dev. | `FlywayRepairConfig.repairHabilitado()` | [PENDIENTE] Abierto, PR aparte solo si el Mentor lo asigna |
 
 Ya resueltos en master (no se listan como abiertos):
 - BAJOS de #413: `getMessage` en `StorefrontGuestOrderService` (hoy usa `paraLog`, líneas 166-176), teléfono vacío en `GuestUserResolver:54` (dígitos con valor por defecto) y parámetro sin usar en `TelegramService:63` (ya se usa). Cerrados por #416.
