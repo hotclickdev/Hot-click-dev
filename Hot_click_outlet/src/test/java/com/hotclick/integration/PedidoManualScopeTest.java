@@ -24,6 +24,7 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private CategoriaRepository categoriaRepository;
     @Autowired private TestimonioRepository testimonioRepository;
+    @Autowired private com.hotclick.repository.MovimientoStockRepository movimientoStockRepository;
 
     private Empresa empA, empB;
     private Bodega bodA;
@@ -59,6 +60,7 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        movimientoStockRepository.deleteAll(); // P-07: la compra ENTREGADO deja movimiento de stock
         pedidoRepository.deleteAll();
         productoRepository.deleteAll();
         bodegaRepository.deleteAll();
@@ -115,6 +117,22 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
             .andExpect(status().isOk());
         assertThat(pedidoRepository.count()).isEqualTo(1);
         assertThat(pedidoRepository.findAll().get(0).getEstadoPedido()).isEqualTo(Constants.PEDIDO_ENTREGADO);
+    }
+
+    @Test
+    @DisplayName("P-07 | compra manual que nace ENTREGADO descuenta stock una vez y deja movimiento con el número de pedido")
+    void p07CompraEntregadaDescuentaStockConReferencia() throws Exception {
+        int antes = productoRepository.findById(prodA.getId()).orElseThrow().getStockActual();
+        mockMvc.perform(post("/api/admin/asignar/compra").header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON).content(compraBody()))
+            .andExpect(status().isOk());
+        var pedido = pedidoRepository.findAll().get(0);
+        assertThat(pedido.getStockDescontadoEn()).isNotNull();
+        assertThat(productoRepository.findById(prodA.getId()).orElseThrow().getStockActual()).isEqualTo(antes - 1);
+        var movs = movimientoStockRepository.findByProductoIdOrderByFechaMovimientoDesc(prodA.getId());
+        assertThat(movs).hasSize(1);
+        assertThat(movs.get(0).getReferencia()).isEqualTo(pedido.getNumeroPedido());
+        assertThat(movs.get(0).getReferenciaId()).isEqualTo(pedido.getId());
     }
 
     private String compraBody() {

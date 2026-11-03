@@ -1,5 +1,8 @@
 package com.hotclick.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.hotclick.dto.json.CantidadEnteraDeserializer;
+
 import java.util.List;
 
 public class VentaRequestDTO {
@@ -58,6 +61,7 @@ public class VentaRequestDTO {
 
     public static class ItemVentaDTO {
         private Long productoId;
+        @JsonDeserialize(using = CantidadEnteraDeserializer.class)
         private Integer cantidad;
 
         public Long getProductoId() { return productoId; }

@@ -48,6 +48,7 @@ class PedidoServiceTest {
     @Mock private PedidoPagoManualService   pedidoPagoManualService;
     @Mock private PedidoGrupoService        pedidoGrupoService;
     @Mock private com.hotclick.service.payment.StockReservationService stockReservationService;
+    @Mock private com.hotclick.service.pedido.PedidoManualEntregaStockService manualEntregaStock;
     @Mock private com.hotclick.security.CompanyScope companyScope; // Seguridad #343: no admin de plataforma
 
     @InjectMocks private PedidoManualFactory         pedidoManualFactory;
@@ -71,6 +72,7 @@ class PedidoServiceTest {
         ReflectionTestUtils.setField(service, "pedidoDetailMapper", pedidoDetailMapper);
         ReflectionTestUtils.setField(service, "pedidoPagoManualService", pedidoPagoManualService);
         ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
+        ReflectionTestUtils.setField(service, "manualEntregaStock", manualEntregaStock);
         ReflectionTestUtils.setField(service, "despachoVerificador", new PedidoDespachoVerificador(pedidoGrupoService));
         // Por defecto el pedido tiene un Pago CAPTURADO; los tests de "sin pago" lo cambian.
         lenient().when(pedidoGrupoService.pagoDelGrupo(any())).thenReturn(Optional.of(pago(Constants.PAGO_CAPTURADO)));
@@ -221,6 +223,19 @@ class PedidoServiceTest {
         service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null);
 
         verify(n8nWebhookService).notificarPedidoEntregado(pedido);
+    }
+
+    @Test
+    @DisplayName("P-07: marcar ENTREGADO dos veces descuenta stock una sola vez (la segunda no transiciona)")
+    void p07EntregadoDosVecesDescuentaUnaVez() {
+        Pedido pedido = buildPedido(Constants.PEDIDO_ENVIADO);
+        when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
+        when(pedidoRepository.save(any())).thenReturn(pedido);
+
+        service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null);
+        service.cambiarEstado(1L, Constants.PEDIDO_ENTREGADO, null);
+
+        verify(manualEntregaStock, org.mockito.Mockito.times(1)).descontarSiCorresponde(any(), eq(pedido), any());
     }
 
     @Test
