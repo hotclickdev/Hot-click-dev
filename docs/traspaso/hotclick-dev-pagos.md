@@ -1,26 +1,119 @@
 # Traspaso: HotClick Dev Pagos
 
-Estado al lunes 26-oct-2026, ~3:15 PM (hora de Costa Rica). Sin secretos, teléfonos, SINPE ni cédulas.
+Actualizado: lunes 2-nov-2026, ~11 PM (hora de Costa Rica, UTC-6).
+Este archivo integra el anterior `docs/traspaso/dev-pagos.md` (30-oct), que ahora solo apunta acá.
+Sin secretos, cédulas, IBAN, SINPE ni teléfonos: solo **dónde** están los secretos, nunca sus valores.
 
-## Rol
-Dev backend de pagos de HotClick (`Hot_click_outlet`): Spring Boot 3.4 / Java 21, Postgres + Flyway, front React/Vite/pnpm.
-ONVO es **fail-closed**: sin llaves o con respuesta dudosa se rechaza; el mock solo existe en los perfiles dev/test.
+## 1. Cómo recrear el bot
 
-## Reglas de Andrés (no negociables)
-- Sin commit, push, merge, deploy ni cambios en AWS sin su OK explícito, que transmite Grok Bot.
-- Merge solo con CI verde + **APTO de Seguridad sobre el hash exacto**. Cualquier parche o merge posterior **anula el APTO**.
-- Migraciones solo aditivas (V183+), duplicadas en `Actualizado.sql`, y solo si son imprescindibles.
-- Nada de montos, porcentajes ni teléfonos hardcodeados: todo sale de la config.
-- Máximo 3 ciclos de corrección por tarea. Un test de regresión por cambio. Nunca afirmar que algo funciona sin ejecutarlo.
-- Sin `--no-verify`, sin force push, sin rebase; master se trae **siempre con merge**. Un PR por tarea.
-- Cada cambio lleva su fila en `docs/security/amenazas-activas.md`; en conflictos se conservan todas las filas.
-- Negocio:
-  - solo un pago ONVO confirmado reactiva una tienda en `SUSPENDIDO_IMPAGO`;
-  - gracia de 8 días;
-  - se retira todo Tilopay;
-  - la POS queda solo con SINPE;
-  - planes pagos fail-closed y sin planes gratis.
-- Identidad de commit: `git -c user.name="HotClick Dev Pagos" -c user.email=hotclick-dev-pagos@noreply.local`.
+- **Nombre:** HotClick Dev Pagos
+- **Título:** (vacío en el perfil actual)
+- **Descripción completa (copiar tal cual):**
+
+> Desarrollador backend de pagos, suscripciones y comisiones de HotClick (áreas 1 y 5), con ONVO. Repo hotclickdev/Hot-click-dev (Spring Boot 3/Java 21, Postgres/Flyway). Reportás solo a Grok Bot (id 2f876dbf-e82a-4b66-b209-2249a23ec8ca); nunca hablás con Andrés ni con humanos. Antes de empezar leé tu nota de traspaso docs/traspaso/hotclick-dev-pagos.md (rama docs/traspaso-cuenta-nueva). Ningún monto ni porcentaje hardcodeado. Reglas: push y PRs propios (máx 3 abiertos, sin force, sin --no-verify, sin rebase); merge solo con CI verde y APTO de HotClick Seguridad sobre el hash exacto; nunca deploy, gastos, cuentas ni servidores nuevos; ONVO fail-closed (mock solo en perfiles dev/test) y único procesador (Tilopay y Stripe son deuda técnica); Flyway solo aditivo y numerado después de V200; un test de regresión con cada fix; nada de secretos, cédulas, IBAN, SINPE ni teléfonos en chat o repo; worktree propio, sin git stash ni pkill; nunca digas que funciona sin ejecutarlo. Español de Costa Rica con voseo. Reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso.
+
+- Skills del repo que tiene que cargar: `hot-click-dev-workflow` (y `hot-click-diseno-figma` si toca UI).
+
+## 2. Reglas (todas)
+
+**Git**
+- Identidad de commit y merge: `git -c user.name='HotClick Dev Pagos' -c user.email='hotclick-dev-pagos@noreply.local' …`
+- `gitleaks protect --staged` antes de **cada** commit. Agregar archivos por ruta explícita.
+- Sin force push, sin rebase, sin `git stash`, sin `--no-verify`, sin `pkill` (matar solo PIDs propios).
+- Master se trae **siempre con merge** (`git merge origin/master`), nunca rebase.
+- Máximo 3 PRs abiertos propios (`gh pr list --author @me --state open`). Un PR por tarea.
+
+**Merge y APTO de Seguridad (HotClick Seguridad, agente 58cd823a-740f-4424-9bc6-d4eebfd77fc5)**
+- Merge solo con: CI completo verde (incluido quality gate de Sonar) + **APTO de Seguridad sobre el hash exacto** del head.
+- **Cualquier push nuevo (incluido un merge de master) anula el APTO**: hay que pedirlo otra vez sobre el hash nuevo.
+- Para re-APTO tras merge de master, incluir evidencia:
+  - merge-tree limpio: `git merge-tree --write-tree <head_anterior> origin/master` y `git diff --stat <tree> HEAD -- . ':!Hot_click_outlet/src/main/resources/static' ':!docs'` **vacío** (sin solape fuera de static/ y docs);
+  - archivos en conflicto y cómo se resolvieron;
+  - static/ rebuild con `env -i`, sin `.map`, gitleaks sin leaks;
+  - CI verde.
+- El bot no mergea por su cuenta si el usuario no lo pide; nunca deploy.
+
+**Código y datos**
+- Ningún monto ni porcentaje hardcodeado: todo sale de config/properties.
+- ONVO fail-closed: sin llave o respuesta dudosa se rechaza; mock solo en perfiles dev/test. ONVO es el único procesador.
+- Flyway: solo aditivo, numerado después de V200 (usar el siguiente libre de `origin/master` al crear; hoy > V222), y **duplicado en `Actualizado.sql`**. Renumerar contra master si choca.
+- Cada cambio lleva su fila en `docs/security/amenazas-activas.md`; en conflictos se conservan **todas** las filas de ambos lados.
+- Un test de regresión por fix. Nunca decir que funciona sin ejecutarlo.
+- No tocar sin autorización del usuario: `render.yaml`, docker-compose, `OnvoWebhookController`, `OnvoPaymentProvider`.
+- Nunca imprimir ni escribir la llave de pruebas ONVO (`ONVO_TEST_SECRET_KEY`). Contra ONVO solo GET de lectura, sin cobros.
+- Negocio: solo un pago ONVO confirmado reactiva una tienda en `SUSPENDIDO_IMPAGO`; gracia 8 días; POS solo SINPE; planes pagos fail-closed, sin planes gratis.
+
+**Tests**
+- Solo tests dirigidos: `cd Hot_click_outlet && mvn -q test -Dtest='Clase*'` (usar `mvn`, no `./mvnw`; `'Nombre*'` para clases `@Nested`). Llaves ONVO **ausentes** del entorno (`env -u ONVO_SECRET_KEY -u ONVO_WEBHOOK_SECRET`).
+- Suite completa: solo bajo lock compartido: `flock /workspace/hotclick/.suite-completa.lock mvn test`. Normalmente la corre CI.
+- Front: Node 22 (`~/.local/node22`); vitest `npx vitest run <ruta>`; Playwright `npx playwright test tests/<spec>`.
+- **static/** (gate E3): rebuild en commit aparte con mensaje `build(static): rebuild SPA … (env -i, sin VITE_*)`:
+  `cd Hot_click_outlet/frontend && env -i HOME=$HOME PATH=$HOME/.local/node22/bin:/usr/bin:/bin npx -y pnpm@11.1.2 build`
+  En conflictos de static/: en el merge tomar el static/ de master (`git rm -rq --cached static; rm -rf static; git checkout origin/master -- static; git add -A static`), y después rebuild. (Esto reemplaza la receta vieja con `VITE_APP_RELEASE`.) El único "VITE_" esperable en el bundle es código de la librería Clerk.
+- Sonar duplicación por archivo: `curl "https://sonarcloud.io/api/measures/component_tree?component=hotclickdev_Hot-click-dev&pullRequest=N&metricKeys=new_duplicated_lines&qualifiers=FIL&ps=500"`.
+
+## 3. Hecho (PRs mergeados, todos verificados como ancestros de `origin/master` el 2-nov)
+
+| PR | Merge | Qué |
+|---|---|---|
+| #409 | 52406b4e | billing ONVO (ver historial abajo) |
+| #407 | da225cfe | tenant/bodega (LOWs L1–L3 pendientes, abajo) |
+| #466 | 0bd56929 | aviso al admin de reembolso pendiente (`AvisoReembolsoPendienteService`, migración **V216** `pago_aviso_reembolso_admin`; prop `hotclick.aviso-reembolso.timeout-ms` = `AVISO_REEMBOLSO_TIMEOUT_MS`, default 10000. Ojo: en master actual el aviso usa `hotclick.aviso-reembolso.lease-minutos/max-intentos/barrido.*`; `timeout-ms` ya no aparece en `application.properties` de master, verificar si se renombró) |
+| #494 | 53138281 | FK pago→pedido (`fix/fk-pago-pedido`) |
+| #504 | e643c314 | QA5: rechazo ONVO → FALLIDO y libera stock; reconsulta de PENDIENTE; PUT estado idempotente |
+| #502 | 4905cd5f | QA5 ALTO: checkout del storefront paga por ONVO |
+
+Anteriores (historial 26–30 oct): #320, #333, #339, #342, #344, #346, #371 (c5b9bb06), #381 (1745d4dc), #374 (3c7dfaea), #388 (7bb6cf47), #391 (6e50752f), #397 (55ea9313), #401 (938d983d).
+
+**Detalles técnicos clave**
+- **ONVO no tiene estado `failed`.** Un rechazo deja el intent en `requires_payment_method` con `lastPaymentError`; `canceled` también es terminal. `OnvoCobroVerificador.intentRechazado` lo detecta.
+- `OnvoRechazoService`: pasa el pago a FALLIDO y libera stock (con `findByIdForUpdate`).
+- `OnvoPendientesReconsultaService`: job que reconsulta pagos PENDIENTE contra ONVO; lote acotado por `hotclick.pagos.onvo.respaldo.lote-max=${HOTCLICK_PAGOS_ONVO_RESPALDO_LOTE_MAX:200}`, validado en el constructor (test `topeDeLote`).
+- `PagoExpiradoCancelador`: cancela pagos vencidos y libera stock.
+- `PedidoStatusTokenService` (#501, Dev Pagos 2): HMAC `emitir(numero)`/`esValido(numero, st)`. `OnvoPaymentProvider.crearSesion` arma `successUrl = APP_URL/pago/exito?order=N&st=…`; `PaymentStatusPage` lee `st` y `paymentService.consultarEstado` lo manda en `X-Pedido-Token`. El storefront usa el mismo provider (test `OnvoUrlRetornoTiendaTest`, E2E `tienda-checkout-onvo.spec.ts`).
+- `PaymentController`: `/cancel` y `/guest/cancel` comparten `ejecutarCancelacion` (403/404/409); test `PaymentControllerCancelacionHelperTest`.
+- `PedidoService.cambiarEstado` idempotente: si ya está en el estado pedido, no repite correo ni stock.
+
+## 4. Pendientes
+
+- **[PENDIENTE] PR A — #507** `fix/onvo-appurl-logs` (head 9752181e), **draft, NO MERGE**: APP_URL fail-closed en prod (`OnvoArranqueProdGuard`), sessionId enmascarado (`IdEnmascarado`), `cardLast4/cardBrand` desde `paymentMethod.card` (`OnvoTarjetaService`). Bloqueado: `render.yaml` no declara `APP_URL`; si no está en el dashboard de Render prod, la app no arranca. Necesita confirmación del usuario de que APP_URL está en Render prod; CI/CD ofrece agregarla a `render.yaml` con `sync: false` (rama `origin/ci/doc-app-url-prod`). Falta: merge de master, CI completo y APTO.
+- **[PENDIENTE] BAJOs de #502** para un PR de seguimiento:
+  - `history.replaceState` para quitar `st=` de la URL tras leerlo;
+  - rate limit en `GET /api/payments/status/{n}`;
+  - la clave HMAC de `PedidoStatusTokenService` se comparte con `jwt.secret` (separarla en una prop propia).
+- **[INCOMPLETO] `tienda-pdp-comprar.spec.ts:56`** falla solo localmente (espera texto de `TiendaSuccessPage`); no está en el subset de CI y **no se verificó en master**.
+- **[PENDIENTE] LOWs de Seguridad sobre #407:** L1 borrar chequeo redundante en `PosVentaService:155-158`; L2 pasar por `BodegaTenantGuard` `PosQrPedidoFactory:106-108`, `RecoleccionService:145-147`, `PedidoManualFactory:176-177`; L3 test MockMvc del oráculo de bodega.
+- **[PENDIENTE] predeploy billing:** variables `PLANES_MONEDA`, `*_PRECIO_MENSUAL_USD` (3), `ONVO_PRICE_ID_PYME`, `ONVO_PRICE_ID_NEGOCIO_PLUS`, `SPRING_PROFILES_ACTIVE=prod`, **`APP_URL`**; consulta read-only `docs/security/onvo-billing-prechequeo-sql.md`; firma del webhook ONVO sin validar end-to-end (falta `ONVO_TEST_WEBHOOK_SECRET` en pruebas).
+- **Deuda técnica:** código de Tilopay y Stripe (`TilopayPaymentProvider`, `StripePaymentProvider`) a retirar; alertas sobre `[ALERTA-PAGO]`/`BILLING_LEDGER_OMITIDO`; cobro de `PAST_DUE`.
+- **Rama sin subir:** `fix/infra-reqa-workflows` (d4adc5cf) necesita token con scope `workflow`.
+
+## 5. Dónde están las cosas (sin valores)
+
+- **Secretos:** solo en el entorno (dashboard de Render prod y variables del box), nunca en el repo. Nombres: `ONVO_SECRET_KEY`, `ONVO_WEBHOOK_SECRET`, `ONVO_PUBLISHABLE_KEY`, `ONVO_TEST_SECRET_KEY`, `ONVO_TEST_WEBHOOK_SECRET`, `ONVO_SINPE_DESTINO`, `JWT_SECRET`, `DB_PASSWORD`, `MAIL_PASSWORD`. Los carga Andrés.
+- **Worktrees (box, `/workspace`):**
+  | Ruta | Rama | Head |
+  |---|---|---|
+  | hc-pagos-a | fix/onvo-appurl-logs (#507 draft) | 9752181e |
+  | hc-pagos-b | fix/pedido-rechazo-idempotente (#504 mergeado) | ea90ac29 |
+  | hc-pagos-c | fix/storefront-checkout-onvo (#502 mergeado) | 8662106e |
+  | hc-pagos-fkpago | fix/fk-pago-pedido (#494 mergeado) | 9205de33 |
+  | hc-pagos-s02s04 | fix/aviso-admin-reembolso-pendiente (#466 mergeado) | e8721111 |
+  | hc-pagos-traspaso | docs/traspaso-cuenta-nueva (#440) | (este doc) |
+  Todos limpios y sincronizados con origin al 2-nov.
+- **Patch:** `/workspace/onvo-rechazo-descartado.patch` (de HotClick Bugs; tocaba `OnvoPaymentProvider`, por eso solo se adoptó la lógica de `canceled`/error vacío en `OnvoCobroVerificador`).
+- **Evidencias:** `docs/traspaso/evidencia/`, `docs/security/amenazas-activas.md` (filas QA5), CI de cada PR en GitHub Actions.
+
+## 6. Próximos pasos exactos
+
+1. `gh pr list --author @me --state open` y leer este doc.
+2. #507: preguntar a Grok Bot si el usuario confirmó `APP_URL` en Render prod. Si sí: en `/workspace/hc-pagos-a`, `git fetch && git merge origin/master`, tests dirigidos (`OnvoArranqueProdGuard*Test,ArranqueProdLlaveOnvoTestOptInTest,CupoEmprendedorDemoProdArranqueTest,OnvoTarjetaServiceTest,IdEnmascaradoTest`), push, CI verde, sacar de draft y pedir APTO sobre el hash exacto con evidencia de merge-tree.
+3. Abrir PR de seguimiento con los 3 BAJOs de #502 (cada uno con test y fila en amenazas).
+4. Correr `tienda-pdp-comprar.spec.ts` sobre master y decidir si es un bug real.
+5. LOWs de #407.
+
+---
+
+## Anexo: nota anterior (26-oct)
 
 ## Mergeados
 #320, #333, #339, #342 (admin no reactiva impago sin pago, con lock) y #346 (CSP permite `https://sdk.onvopay.com` en script/frame).
