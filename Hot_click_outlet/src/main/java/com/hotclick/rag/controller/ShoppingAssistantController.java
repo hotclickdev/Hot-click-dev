@@ -77,7 +77,13 @@ public class ShoppingAssistantController {
         // ── Aislamiento multi-tenant ──────────────────────────────────────────
         // El slug se resuelve aquí (capa de entrada) para que ninguna capa inferior
         // reciba un empresaSlug sin validar. La empresa debe estar ACTIVA.
-        Empresa empresa = tenantGuard.requireEmpresaActiva(request.getEmpresaSlug());
+        Empresa empresa;
+        try {
+            empresa = tenantGuard.requireEmpresaActiva(request.getEmpresaSlug());
+        } catch (ShoppingAssistantTenantGuard.TenantNoDisponibleException e) {
+            // MEDIO-A: la garantía de 200 también cubre la resolución del tenant.
+            return ResponseEntity.ok(chatContingencia(request.getSesionId()));
+        }
 
         String empresaNombre = ShoppingAssistantTenantGuard.nombreComercial(empresa);
 
@@ -124,7 +130,13 @@ public class ShoppingAssistantController {
     @GetMapping("/session/{sesionId}/history")
     public ResponseEntity<Map<String, Object>> getHistory(@PathVariable String sesionId,
             @RequestParam(required = false) String empresaSlug) {
-        Map<String, Object> result = assistantService.getSessionHistory(sesionId, empresaActual(empresaSlug));
+        Long empresaId;
+        try {
+            empresaId = empresaActual(empresaSlug);
+        } catch (ShoppingAssistantTenantGuard.TenantNoDisponibleException e) {
+            return ResponseEntity.ok(HISTORIAL_VACIO);
+        }
+        Map<String, Object> result = assistantService.getSessionHistory(sesionId, empresaId);
         return ResponseEntity.ok(result);
     }
 
@@ -136,16 +148,25 @@ public class ShoppingAssistantController {
     @DeleteMapping("/session/{sesionId}")
     public ResponseEntity<Void> expireSession(@PathVariable String sesionId,
             @RequestParam(required = false) String empresaSlug) {
-        assistantService.expireSession(sesionId, empresaActual(empresaSlug));
+        try {
+            assistantService.expireSession(sesionId, empresaActual(empresaSlug));
+        } catch (ShoppingAssistantTenantGuard.TenantNoDisponibleException e) {
+            // Best-effort: la sesión vence sola por TTL.
+        }
         return ResponseEntity.noContent().build();
     }
 
     // Feedback de mensajes — publico, sin auth, best-effort
     @PostMapping("/feedback")
     public ResponseEntity<Void> feedback(@Valid @RequestBody FeedbackRequest request) {
+        Long empresaId;
+        try {
+            empresaId = empresaActual(request.getEmpresaSlug());
+        } catch (ShoppingAssistantTenantGuard.TenantNoDisponibleException e) {
+            return ResponseEntity.noContent().build(); // best-effort
+        }
         assistantService.submitFeedback(
-            request.getSesionId(), request.getMsgIndex(), request.getRating(),
-            empresaActual(request.getEmpresaSlug()));
+            request.getSesionId(), request.getMsgIndex(), request.getRating(), empresaId);
         return ResponseEntity.noContent().build();
     }
 
@@ -168,6 +189,25 @@ public class ShoppingAssistantController {
     public ResponseEntity<Map<String, Object>> estadoDeTenant(ResponseStatusException ex) {
         return ResponseEntity.status(ex.getStatusCode())
             .body(Map.of("success", false, "message", motivoPublico(ex)));
+    }
+
+    /**
+     * MEDIO-A: cualquier otro camino (p. ej. búsqueda por foto) que choque con la BD al resolver
+     * el tenant responde contingencia 200 sin detalles, nunca el 500 genérico.
+     */
+    @ExceptionHandler(ShoppingAssistantTenantGuard.TenantNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> tenantNoDisponible(
+            ShoppingAssistantTenantGuard.TenantNoDisponibleException ex) {
+        return ResponseEntity.ok(Map.of("success", false, "encontrado", false,
+            "productos", java.util.List.of(), "message", MOTIVO_5XX, "ref", ex.getRef()));
+    }
+
+    private static final Map<String, Object> HISTORIAL_VACIO =
+        Map.of("sesionId", "", "mensajes", java.util.List.of());
+
+    private static ChatResponse chatContingencia(String sesionId) {
+        return new ChatResponse(com.hotclick.rag.pipeline.RagResult.fallback().respuesta(),
+            sesionId, java.util.List.of(), java.util.List.of(), java.util.List.of());
     }
 
     static final String MOTIVO_404 = "Tienda no encontrada o inactiva";
