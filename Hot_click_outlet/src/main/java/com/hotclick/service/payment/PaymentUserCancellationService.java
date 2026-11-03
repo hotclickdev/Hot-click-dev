@@ -26,6 +26,8 @@ public class PaymentUserCancellationService {
     @Autowired private GuestCancelTokenService guestCancelTokenService;
     @Lazy @Autowired private OnvoPaymentProvider onvoPaymentProvider;
     @Lazy @Autowired private OnvoService onvoService;
+    @Lazy @Autowired(required = false)
+    private com.hotclick.service.sinpe.SinpeOnvoMarketplaceService sinpeOnvoMarketplaceService;
 
     @Transactional
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
@@ -50,6 +52,7 @@ public class PaymentUserCancellationService {
         }
 
         expirarSesionOnvo(pago);
+        cerrarIntentSinpeOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado por el usuario", numeroPedido);
     }
@@ -75,6 +78,7 @@ public class PaymentUserCancellationService {
         }
 
         expirarSesionOnvo(pago);
+        cerrarIntentSinpeOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado (invitado)", numeroPedido);
     }
@@ -114,6 +118,30 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException(
                 "No pudimos cerrar el pago en ONVO. Si ya pagaste, el pedido se confirma en unos minutos; "
                     + "si no, intentá cancelar de nuevo.");
+        }
+    }
+
+    /**
+     * N-01 ALTO: el SINPE del marketplace va por un payment intent ONVO (proveedor SINPE, token ONVOPI:). Antes de
+     * cancelar se cancela el intent en ONVO y se confirma por GET; si ONVO ya lo cobró o no se pudo confirmar, no
+     * se cancela (409, fail-closed como #510). Solo el modo simulado explícito deja pasar sin intent real.
+     */
+    private void cerrarIntentSinpeOnvo(Pago pago) {
+        String token = pago.getMerchantToken();
+        if (!Constants.PROVEEDOR_SINPE.equalsIgnoreCase(pago.getProveedor()) || token == null
+            || !token.startsWith(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.PREFIJO)) {
+            return;
+        }
+        var cierre = sinpeOnvoMarketplaceService == null
+            ? com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.CierreComprador.NO_CONFIRMADO
+            : sinpeOnvoMarketplaceService.cerrarIntentParaComprador(pago);
+        switch (cierre) {
+            case CANCELADO -> { }
+            case SIMULADO -> log.info("[SINPE-ONVO] Modo simulado: cancelación sin intent real, pago id={}", pago.getId());
+            case PAGADO -> throw new IllegalStateException(
+                "Tu pago SINPE ya fue recibido: el pedido se confirma en unos minutos y no puede cancelarse.");
+            case NO_CONFIRMADO -> throw new IllegalStateException(
+                "No pudimos cerrar el pago SINPE en ONVO. Intentá cancelar de nuevo en unos minutos.");
         }
     }
 
