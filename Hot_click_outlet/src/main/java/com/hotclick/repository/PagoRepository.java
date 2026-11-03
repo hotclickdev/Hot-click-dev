@@ -35,6 +35,18 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
                                                @Param("limite") LocalDateTime limite, Pageable pagina);
 
     /**
+     * QA7-B1: pagos ONVO cerrados localmente (FALLIDO o CANCELADO) con sesión, creados desde {@code desde}.
+     * Si ONVO igual los cobró y el webhook se perdió, el respaldo los pasa a REEMBOLSO_PENDIENTE con aviso.
+     * Los más recientes primero; mismo lock que los PENDIENTE (dos instancias no toman las mismas filas).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
+        + "AND p.merchantToken IS NOT NULL AND p.fechaCreacion >= :desde ORDER BY p.fechaCreacion DESC")
+    List<Pago> reclamarCerradosParaReconsulta(@Param("proveedor") String proveedor,
+                                             @Param("desde") LocalDateTime desde, Pageable pagina);
+
+    /**
      * Estado del pago en la base, sin vaciar antes los cambios pendientes de la sesión (flush COMMIT): un
      * proveedor que ya puso la copia en memoria en CAPTURADO todavía no lo escribió, así que acá se ve el
      * estado previo (p. ej. REEMBOLSO_PENDIENTE de un reintento).
