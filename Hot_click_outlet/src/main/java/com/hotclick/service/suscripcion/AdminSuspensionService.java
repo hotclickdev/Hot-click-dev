@@ -241,8 +241,14 @@ public class AdminSuspensionService {
     }
 
     /** Vence extensiones: EXTENSION_IMPAGO sin extensión vigente vuelve a SUSPENDIDO_IMPAGO. */
+    /** Entrada programada: ShedLock solo envuelve métodos void (QA5-SL-01). */
     @Scheduled(fixedDelayString = "PT10M", initialDelayString = "PT5M")
     @SchedulerLock(name = "vencerExtensionesImpago", lockAtMostFor = "PT9M", lockAtLeastFor = "PT1M")
+    @Transactional
+    public void vencerExtensionesProgramado() {
+        vencerExtensiones();
+    }
+
     @Transactional
     public int vencerExtensiones() {
         List<Long> ids = extensionRepo.findEmpresasConExtensionVencida(ahora());

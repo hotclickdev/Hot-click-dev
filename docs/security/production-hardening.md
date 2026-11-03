@@ -91,9 +91,10 @@ spring.datasource.hikari.maximum-pool-size=3  # Límite Supabase free tier
 - [ ] `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` de Supabase configurados
 - [ ] `SUPABASE_SERVICE_KEY` configurado
 - [ ] `CORS_ALLOWED_ORIGINS` apunta solo a dominios de producción (no localhost)
-- [ ] `APP_URL` apunta al dominio de producción
+- [ ] Confirmar que APP_URL en prod apunta a https://hotclick.lat antes del deploy (en el perfil dev, app.url por defecto es http://localhost:8080 y ONVO devuelve al cliente a esa URL).
 - [ ] `SENDGRID_API_KEY` configurado (para emails de 2FA y notificaciones)
 - [ ] `PAYPAL_WEBHOOK_ID` configurado (para verificación de webhooks)
+- [ ] Antes de migrar en un servidor o base nueva: la extensión `vector` (pgvector) tiene que existir. Verificá que pgvector esté instalado en el servidor Postgres y pedile a un superusuario que corra `CREATE EXTENSION IF NOT EXISTS vector;`. El rol de la app no puede crearla y V62 falla con `permission denied to create extension "vector"`. Ver [docs/infra/prerrequisitos-bd.md](../infra/prerrequisitos-bd.md).
 
 ### Después del primer deploy
 

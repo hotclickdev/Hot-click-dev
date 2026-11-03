@@ -31,6 +31,18 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("UPDATE Pedido p SET p.estadoPedido = 'PAGADO' WHERE p.id = :id AND p.estadoPedido NOT IN :yaConfirmados")
     int reclamarParaConfirmar(@Param("id") Long id, @Param("yaConfirmados") Collection<String> yaConfirmados);
 
+    /** Estado actual en la base (no el de la copia en memoria) de los paquetes dados. */
+    @Query("SELECT p.estadoPedido FROM Pedido p WHERE p.id IN :ids")
+    List<String> estadosDe(@Param("ids") Collection<Long> ids);
+
+    /**
+     * Paquetes cancelados en paralelo a un cobro parcial del grupo: pasan a REVISION_SOBREVENTA (no se
+     * despachan; un ADMIN los resuelve) solo si siguen CANCELADO. Devuelve cuántos se marcaron.
+     */
+    @Modifying
+    @Query("UPDATE Pedido p SET p.estadoPedido = 'REVISION_SOBREVENTA' WHERE p.id IN :ids AND p.estadoPedido = 'CANCELADO'")
+    int marcarRevisionSiCancelado(@Param("ids") Collection<Long> ids);
+
     List<Pedido> findByGrupoPagoOrderByIdAsc(String grupoPago);
 
     List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);

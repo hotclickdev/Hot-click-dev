@@ -159,4 +159,103 @@ public class NotificacionNegocioEmailSender {
             log.error("No se pudo enviar email de cambio de cobro: {}", e.getClass().getSimpleName());
         }
     }
+    public void enviarAlertaSobreventaAdmin(String correoAdmin, Long pagoId, String numerosPedidos,
+                                            Integer monto, String proveedor) {
+        try {
+            String pedidos = emailLayoutHelper.esc(String.valueOf(numerosPedidos));
+            resendEmailService.send(correoAdmin,
+                "[ALERTA] Cobro sin stock — reembolso pendiente (pedidos " + pedidos + ")",
+                "<p>Se registró un cobro sin stock para entregar (sobreventa).</p>"
+                    + "<ul><li>Pago #" + pagoId + " · " + emailLayoutHelper.esc(String.valueOf(proveedor)) + "</li>"
+                    + "<li>Monto: ₡" + (monto != null ? monto : 0) + "</li>"
+                    + "<li>Pedidos: " + pedidos + " (en revisión por sobreventa, no se despachan)</li></ul>"
+                    + "<p>El pago quedó en REEMBOLSO_PENDIENTE: gestioná el reembolso o la reposición desde "
+                    + "Admin → Pagos (estado REEMBOLSO_PENDIENTE).</p>");
+            log.info("Email alerta sobreventa enviado");
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de alerta de sobreventa: {}", e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Aviso sin PII: solo id interno del pago, estado y link al admin. Lanza la excepción del envío para que
+     * quien llama la registre (el pago ya quedó REEMBOLSO_PENDIENTE antes de este punto).
+     */
+    public void enviarAvisoReembolsoPendienteAdmin(String correoAdmin, Long pagoId, String estado, String linkAdmin) {
+        enviarAvisoReembolsoPendienteAdmin(correoAdmin, pagoId, estado, linkAdmin, ReembolsoPendienteResumenItem.Origen.ONVO_CANCELADO);
+    }
+
+    /** Aviso individual con asunto y texto según el origen del REEMBOLSO_PENDIENTE. Sin PII. Lanza si falla el envío. */
+    public void enviarAvisoReembolsoPendienteAdmin(String correoAdmin, Long pagoId, String estado, String linkAdmin,
+                                                   ReembolsoPendienteResumenItem.Origen origen) {
+        enviarAvisoReembolsoPendienteAdmin(correoAdmin, pagoId, estado, linkAdmin, origen, null);
+    }
+
+    /** Con detalle (pedidos, monto, proveedor): reemplaza la alerta de sobreventa en los caminos que crean REEMBOLSO_PENDIENTE. */
+    public void enviarAvisoReembolsoPendienteAdmin(String correoAdmin, Long pagoId, String estado, String linkAdmin,
+                                                   ReembolsoPendienteResumenItem.Origen origen, AvisoReembolsoDetalle detalle) {
+        String est = emailLayoutHelper.esc(String.valueOf(estado));
+        String link = emailLayoutHelper.esc(String.valueOf(linkAdmin));
+        ReembolsoPendienteResumenItem.Origen o = origen == null ? ReembolsoPendienteResumenItem.Origen.OTRO : origen;
+        String asunto;
+        String texto;
+        switch (o) {
+            case ONVO_CANCELADO -> { asunto = "Cobro sobre pedido cancelado";
+                texto = "ONVO cobró un pedido que ya estaba cancelado. No se reactivó el pedido ni se tocó el stock."; }
+            case SINPE -> { asunto = "Cobro SINPE sobre pedido cancelado";
+                texto = "Se confirmó un cobro SINPE (vía ONVO) de un pedido que ya estaba cancelado. No se reactivó el pedido ni se tocó el stock."; }
+            case SOBREVENTA -> { asunto = "Cobro sin stock (sobreventa)";
+                texto = "Se cobró un pedido sin stock para entregar. El pedido quedó en revisión por sobreventa y no se despacha."; }
+            default -> { asunto = "Cobro sin venta";
+                texto = "Se registró un cobro sin venta asociada (origen no determinable)."; }
+        }
+        resendEmailService.send(correoAdmin,
+            "[ALERTA] " + asunto + " — pago #" + pagoId + " en " + est,
+            "<p>" + texto + "</p>"
+                + "<ul><li>Pago #" + pagoId + "</li><li>Estado: " + est + "</li>" + detalleHtml(detalle) + "</ul>"
+                + "<p>Gestioná el reembolso desde <a href=\"" + link + "\">" + link + "</a>.</p>");
+    }
+
+    private String detalleHtml(AvisoReembolsoDetalle d) {
+        if (d == null) return "";
+        StringBuilder sb = new StringBuilder();
+        if (d.pedidos() != null && !d.pedidos().isBlank()) {
+            sb.append("<li>Pedidos: ").append(emailLayoutHelper.esc(d.pedidos())).append("</li>");
+        }
+        if (d.monto() != null) sb.append("<li>Monto: ₡").append(d.monto()).append("</li>");
+        if (d.proveedor() != null) sb.append("<li>Proveedor: ").append(emailLayoutHelper.esc(d.proveedor())).append("</li>");
+        return sb.toString();
+    }
+
+    /** Resumen único de REEMBOLSO_PENDIENTE anteriores a V217 sin avisar: id, monto y fecha. Sin datos del cliente. */
+    public void enviarResumenReembolsosPendientesAdmin(String correoAdmin,
+            java.util.List<ReembolsoPendienteResumenItem> pagos, String linkAdmin) {
+        String link = emailLayoutHelper.esc(String.valueOf(linkAdmin));
+        java.time.format.DateTimeFormatter f = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        java.util.Map<ReembolsoPendienteResumenItem.Origen, java.util.List<ReembolsoPendienteResumenItem>> porOrigen =
+            new java.util.EnumMap<>(ReembolsoPendienteResumenItem.Origen.class);
+        for (ReembolsoPendienteResumenItem p : pagos) {
+            ReembolsoPendienteResumenItem.Origen o = p.origen() == null ? ReembolsoPendienteResumenItem.Origen.OTRO : p.origen();
+            porOrigen.computeIfAbsent(o, k -> new java.util.ArrayList<>()).add(p);
+        }
+        StringBuilder filas = new StringBuilder();
+        for (var grupo : porOrigen.entrySet()) {
+            filas.append("<h3>").append(emailLayoutHelper.esc(grupo.getKey().titulo())).append(" (")
+                .append(grupo.getValue().size()).append(")</h3>")
+                .append("<table><tr><th>Pago</th><th>Monto</th><th>Fecha</th></tr>");
+            for (ReembolsoPendienteResumenItem p : grupo.getValue()) {
+                filas.append("<tr><td>#").append(p.pagoId()).append("</td><td>")
+                    .append(p.monto() == null ? "-" : String.valueOf(p.monto())).append(' ')
+                    .append(emailLayoutHelper.esc(p.moneda() == null ? "" : p.moneda())).append("</td><td>")
+                    .append(p.fecha() == null ? "-" : p.fecha().format(f)).append("</td></tr>");
+            }
+            filas.append("</table>");
+        }
+        resendEmailService.send(correoAdmin,
+            "[ALERTA] " + pagos.size() + " cobros pendientes de reembolso sin avisar (anteriores al aviso automático)",
+            "<p>Estos pagos quedaron REEMBOLSO_PENDIENTE antes de que existiera el aviso automático y nunca se avisaron.</p>"
+                + filas
+                + "<p>Gestioná los reembolsos desde <a href=\"" + link + "\">" + link + "</a>.</p>");
+    }
+
 }

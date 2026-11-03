@@ -19,7 +19,7 @@
 //
 // Variables de entorno opcionales:
 //   QA_BASE_URL       (default http://localhost:8080)
-//   QA_ADMIN_EMAIL     (default admin@hotclick.com)
+//   QA_ADMIN_EMAIL     (default admin@hotclick.lat)
 //   QA_ADMIN_PASSWORD  (obligatoria, sin valor por defecto)
 //   HEADLESS=false     para ver el navegador mientras corre
 
@@ -28,7 +28,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BASE_URL = process.env.QA_BASE_URL || 'http://localhost:8080';
-const ADMIN_EMAIL = process.env.QA_ADMIN_EMAIL || 'admin@hotclick.com';
+const ADMIN_EMAIL = process.env.QA_ADMIN_EMAIL || 'admin@hotclick.lat';
 const ADMIN_PASSWORD = process.env.QA_ADMIN_PASSWORD || (() => { throw new Error('QA_ADMIN_PASSWORD env var is required') })();
 const HEADLESS = process.env.HEADLESS !== 'false';
 const RUN_TAG = Date.now().toString(36); // sufijo único para los datos de prueba

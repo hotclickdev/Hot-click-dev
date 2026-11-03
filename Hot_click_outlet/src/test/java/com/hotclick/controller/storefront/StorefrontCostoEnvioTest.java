@@ -10,17 +10,23 @@ import static org.mockito.Mockito.when;
 
 class StorefrontCostoEnvioTest {
 
+    private static StorefrontPedidoDTO dto(String metodo, String provincia, String canton) {
+        StorefrontPedidoDTO d = new StorefrontPedidoDTO();
+        d.setMetodoEnvio(metodo); d.setProvincia(provincia); d.setCanton(canton);
+        return d;
+    }
+
     @Test
     void domicilioSumaEnvioNormalDeLaTabla() {
         OrderPricingService pricing = mock(OrderPricingService.class);
         when(pricing.calcularCostoEnvio("ENVIO_NORMAL_GAM")).thenReturn(4000);
-        assertThat(StorefrontGuestOrderService.costoEnvioTienda(StorefrontPedidoDTO.ENVIO_DOMICILIO, pricing)).isEqualTo(4000);
+        assertThat(StorefrontGuestOrderService.costoEnvioTienda(dto(StorefrontPedidoDTO.ENVIO_DOMICILIO, "San José", "Escazú"), pricing)).isEqualTo(4000);
     }
 
     @Test
     void retiroNoSumaEnvio() {
         OrderPricingService pricing = mock(OrderPricingService.class);
-        assertThat(StorefrontGuestOrderService.costoEnvioTienda("RETIRO", pricing)).isZero();
-        assertThat(StorefrontGuestOrderService.costoEnvioTienda(StorefrontPedidoDTO.ENVIO_DOMICILIO, null)).isZero();
+        assertThat(StorefrontGuestOrderService.costoEnvioTienda(dto("RETIRO", "San José", "Escazú"), pricing)).isZero();
+        assertThat(StorefrontGuestOrderService.costoEnvioTienda(dto(StorefrontPedidoDTO.ENVIO_DOMICILIO, "San José", "Escazú"), null)).isZero();
     }
 }

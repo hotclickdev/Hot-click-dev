@@ -27,7 +27,14 @@ describe('requisitosContrasena', () => {
   it('la combinación de letras, números y símbolos es solo sugerencia', () => {
     expect(requisitosContrasena('clave1234', 'a@b.com').combinada).toBe(false)
     expect(requisitosContrasena('clave-1234', 'a@b.com').combinada).toBe(true)
-    expect(contrasenaAceptable('frase larga sin numeros', 'a@b.com')).toBe(true)
+    expect(contrasenaAceptable('Frase larga 1', 'a@b.com')).toBe(true)
+  })
+
+  it('exige mayúscula y número como el registro', () => {
+    expect(contrasenaAceptable('abcdefgh', 'a@b.com')).toBe(false)
+    expect(contrasenaAceptable('frase larga sin numeros', 'a@b.com')).toBe(false)
+    expect(contrasenaAceptable('Abcdefgh', 'a@b.com')).toBe(false)
+    expect(contrasenaAceptable('Abcdefg1', 'a@b.com')).toBe(true)
   })
 })
 

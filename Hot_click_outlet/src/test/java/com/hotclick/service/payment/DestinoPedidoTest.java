@@ -1,0 +1,182 @@
+package com.hotclick.service.payment;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import com.hotclick.dto.PaymentCheckoutRequest;
+import com.hotclick.model.Pedido;
+import com.hotclick.repository.PedidoRepository;
+import com.hotclick.service.envio.ConfiguracionEnvioService;
+import com.hotclick.service.envio.DestinoEnvio;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+/** MED-5 Auditor 3: el destino estructurado manda, se guarda en el pedido y se valida contra la lista de CR. */
+@DisplayName("MED-5 Auditor 3 | destino del envío guardado y validado")
+class DestinoPedidoTest {
+
+    private static PaymentCheckoutRequest req(String provincia, String canton) {
+        PaymentCheckoutRequest r = new PaymentCheckoutRequest();
+        r.setItems(List.of()); r.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        r.setProvincia(provincia); r.setCanton(canton);
+        return r;
+    }
+
+    /** Request con un producto de la bodega 7 y el método del paquete en envios[] (top-level aparte). */
+    private static PaymentCheckoutRequest reqConPaquete(String metodoTop, String metodoPaquete) {
+        PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
+        item.setProductoId(10L); item.setCantidad(1);
+        PaymentCheckoutRequest.EnvioPaqueteDTO env = new PaymentCheckoutRequest.EnvioPaqueteDTO();
+        env.setBodegaId(7L); env.setMetodoEnvio(metodoPaquete);
+        PaymentCheckoutRequest r = new PaymentCheckoutRequest();
+        r.setItems(List.of(item)); r.setMetodoEnvio(metodoTop); r.setEnvios(List.of(env));
+        return r;
+    }
+
+    private static Map<Long, com.hotclick.model.Producto> productoEnBodega7() {
+        com.hotclick.model.Bodega b = new com.hotclick.model.Bodega();
+        b.setId(7L);
+        com.hotclick.model.Producto p = new com.hotclick.model.Producto();
+        p.setId(10L); p.setBodega(b); p.setPrecioVenta(1000);
+        return Map.of(10L, p);
+    }
+
+    @Test
+    @DisplayName("NO APTO #448: top-level retiro/null pero un paquete de envios[] a domicilio sin destino = 400")
+    void paqueteADomicilioSinDestinoRechaza() {
+        CheckoutPaquetesPlanner planner = new CheckoutPaquetesPlanner();
+        for (String top : new String[]{null, "RETIRO_EN_TIENDA"}) {
+            assertThatThrownBy(() -> planner.planificar(reqConPaquete(top, "ENVIO_NORMAL_GAM"), productoEnBodega7(), null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage(DestinoEnvio.DESTINO_INVALIDO);
+        }
+        // Todos los paquetes son retiro: no pide destino.
+        assertThat(planner.planificar(reqConPaquete(null, "RETIRO_EN_TIENDA"), productoEnBodega7(), null)).hasSize(1);
+        // Con destino válido el paquete a domicilio pasa.
+        PaymentCheckoutRequest ok = reqConPaquete("RETIRO_EN_TIENDA", "ENVIO_NORMAL_GAM");
+        ok.setProvincia("Heredia"); ok.setCanton("Belén");
+        assertThat(planner.planificar(ok, productoEnBodega7(), null)).hasSize(1);
+    }
+
+    private static CheckoutOrderFactory factory() {
+        CheckoutOrderFactory f = new CheckoutOrderFactory();
+        PedidoRepository repo = mock(PedidoRepository.class);
+        when(repo.save(any(Pedido.class))).thenAnswer(i -> i.getArgument(0));
+        ReflectionTestUtils.setField(f, "pedidoRepository", repo);
+        return f;
+    }
+
+    @Test
+    @DisplayName("Checkout: cantón que no es de la provincia, solo uno de los dos o provincia inexistente = 400 genérico")
+    void checkoutCantonAjenoRechaza() {
+        CheckoutPaquetesPlanner planner = new CheckoutPaquetesPlanner();
+        for (String[] d : new String[][]{{"Heredia", "Siquirres"}, {"San José", null}, {null, "Belén"}, {"Narnia", "Belén"}}) {
+            assertThatThrownBy(() -> planner.planificar(req(d[0], d[1]), Map.of(), null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage(DestinoEnvio.DESTINO_INVALIDO);
+        }
+        assertThat(planner.planificar(req("heredia", "BELEN"), Map.of(), null)).isEmpty();
+        // BAJO #447: con envío el destino es obligatorio; retiro no lo pide.
+        assertThatThrownBy(() -> planner.planificar(req(null, null), Map.of(), null))
+            .isInstanceOf(IllegalArgumentException.class).hasMessage(DestinoEnvio.DESTINO_INVALIDO);
+        PaymentCheckoutRequest retiro = req(null, null);
+        retiro.setMetodoEnvio("RETIRO_EN_TIENDA");
+        assertThat(planner.planificar(retiro, Map.of(), null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Checkout: texto «…, Siquirres, Limón» con Heredia/Belén cobra GAM y el pedido guarda destino, zona, monto y dirección del servidor")
+    void checkoutGuardaDestinoYZona() {
+        Pedido p = new Pedido(); p.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        factory().aplicarDestino(p, "Frente a la plaza, 200 m sur, Siquirres, Limón",
+            DestinoEnvio.resolver("heredia", "belen"), 4000);
+        assertThat(p.getDestinoProvincia()).isEqualTo("Heredia");
+        assertThat(p.getDestinoCanton()).isEqualTo("Belén");
+        assertThat(p.getEnvioZona()).isEqualTo("GAM");
+        assertThat(p.getEnvioMontoZona()).isEqualTo(4000);
+        assertThat(p.getDireccionEntrega()).isEqualTo("Frente a la plaza, 200 m sur, Belén, Heredia");
+
+        Pedido r = new Pedido(); r.setMetodoEnvio("ENVIO_RAPIDO");
+        factory().aplicarDestino(r, "Casa 4", DestinoEnvio.resolver("San José", "Escazú"), 5000);
+        assertThat(r.getEnvioZona()).isEqualTo("EXPRESS");
+        assertThat(r.getEnvioMontoZona()).isEqualTo(5000);
+        assertThat(r.getDireccionEntrega()).isEqualTo("Casa 4, Escazú, San José");
+
+        Pedido f = new Pedido(); f.setMetodoEnvio("ENVIO_NORMAL_FUERA_GAM");
+        factory().aplicarDestino(f, "Casa 4", null, 5500);
+        assertThat(f.getEnvioZona()).isEqualTo("FUERA_GAM");
+        assertThat(f.getDestinoProvincia()).isNull();
+    }
+
+    @Test
+    @DisplayName("B-2: solo se limpian nombres de zona al final; «Limón centro» en las señas queda, pero cantón/provincia/zona validados mandan")
+    void senasConOtraZonaQuedanPeroMandaElDestino() {
+        Pedido p = new Pedido(); p.setMetodoEnvio("ENVIO_NORMAL_GAM");
+        factory().aplicarDestino(p, "Limón centro, frente al parque", DestinoEnvio.resolver("Heredia", "Belén"), 4000);
+        assertThat(p.getDireccionEntrega()).isEqualTo("Limón centro, frente al parque, Belén, Heredia");
+        assertThat(p.getDestinoCanton()).isEqualTo("Belén");
+        assertThat(p.getEnvioZona()).isEqualTo("GAM");
+        assertThat(DestinoEnvio.direccionFinal("Calle Limón 4, Limón", DestinoEnvio.resolver("Heredia", "Belén")))
+            .isEqualTo("Calle Limón 4, Belén, Heredia");
+    }
+
+    @Test
+    @DisplayName("B-3: envioMontoZona es la tarifa de la zona; lo cobrado al subpedido extra (₡0) queda en costoEnvio")
+    void montoZonaEsTarifaNoCobro() {
+        Pedido extra = new Pedido(); extra.setMetodoEnvio("ENVIO_NORMAL_FUERA_GAM"); extra.setCostoEnvio(0);
+        factory().aplicarDestino(extra, "Casa 4", DestinoEnvio.resolver("Alajuela", "San Carlos"), 5500);
+        assertThat(extra.getEnvioMontoZona()).isEqualTo(5500);
+        assertThat(extra.getCostoEnvio()).isZero();
+    }
+
+    @Test
+    @DisplayName("Retiro: no guarda zona ni dirección")
+    void retiroSinZona() {
+        Pedido p = new Pedido(); p.setMetodoEnvio("RETIRO_EN_TIENDA");
+        factory().aplicarDestino(p, "Casa 4", DestinoEnvio.resolver("San José", "Escazú"), 0);
+        assertThat(p.getEnvioZona()).isNull();
+        assertThat(p.getDireccionEntrega()).isNull();
+    }
+
+    @Test
+    @DisplayName("BAJO #447: si falla leer la config de envío, 503 genérico (no se cobran defaults) y warn solo con la clase")
+    @SuppressWarnings("unchecked")
+    void configCaidaLogueaSinPii() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.query(anyString(), any(RowMapper.class)))
+            .thenThrow(new DataAccessResourceFailureException("host=db usuario=ana@test.cr"));
+        Logger logger = (Logger) LoggerFactory.getLogger(ConfiguracionEnvioService.class);
+        ListAppender<ILoggingEvent> app = new ListAppender<>();
+        app.start();
+        logger.addAppender(app);
+        try {
+            assertThatThrownBy(() -> new ConfiguracionEnvioService(jdbc).montos())
+                .isInstanceOf(com.hotclick.exception.EnvioNoDisponibleException.class)
+                .hasMessage(com.hotclick.exception.EnvioNoDisponibleException.MENSAJE);
+        } finally {
+            logger.detachAppender(app);
+        }
+        assertThat(app.list).hasSize(1);
+        ILoggingEvent ev = app.list.get(0);
+        assertThat(ev.getLevel().toString()).isEqualTo("WARN");
+        assertThat(ev.getFormattedMessage()).contains("DataAccessResourceFailureException")
+            .doesNotContain("ana@test.cr").doesNotContain("host=db");
+        assertThat(ev.getThrowableProxy()).isNull();
+        var r = new com.hotclick.config.GlobalExceptionHandler()
+            .handleEnvioNoDisponible(new com.hotclick.exception.EnvioNoDisponibleException());
+        assertThat(r.getStatusCode().value()).isEqualTo(503);
+        assertThat(r.getBody().toString()).contains(com.hotclick.exception.EnvioNoDisponibleException.MENSAJE);
+    }
+}

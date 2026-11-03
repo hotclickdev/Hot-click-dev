@@ -37,7 +37,7 @@ class ReenvioVerificacionServiceTest {
         otpService = mock(OtpService.class);
         rateLimiter = mock(RateLimiter.class);
         when(rateLimiter.tryAcquire(anyString(), anyInt(), anyInt())).thenReturn(true);
-        service = new ReenvioVerificacionService(usuarioService, otpService, rateLimiter, Runnable::run);
+        service = new ReenvioVerificacionService(usuarioService, otpService, rateLimiter);
     }
 
     private static Usuario usuario(int estado) {
@@ -76,10 +76,25 @@ class ReenvioVerificacionServiceTest {
     }
 
     @Test
-    void errorAlEnviar_noCambiaLaRespuesta() {
+    @DisplayName("QA4-013: tope de OtpService (2.º reenvío) → 429 real, no 'te enviamos'")
+    void topeDeOtp_devuelve429ConMensajeReal() {
         when(usuarioService.buscarPorCorreo(anyString())).thenReturn(Optional.of(usuario(Constants.ESTADO_PENDIENTE)));
         doThrow(new IllegalStateException("Demasiadas solicitudes")).when(otpService).enviarOtp(any(), anyString());
-        assertGenerico(service.reenviar("persona@example.com"));
+        ResponseEntity<ResponseDTO> r = service.reenviar("persona@example.com");
+        assertThat(r.getStatusCode().value()).isEqualTo(429);
+        assertThat(r.getBody().isSuccess()).isFalse();
+        assertThat(r.getBody().getMessage()).isEqualTo(ReenvioVerificacionService.MSG_LIMITE);
+    }
+
+    @Test
+    @DisplayName("QA4-013: fallo del proveedor de correo → 503 (fail-closed), no 'te enviamos'")
+    void falloDeCorreo_devuelve503() {
+        when(usuarioService.buscarPorCorreo(anyString())).thenReturn(Optional.of(usuario(Constants.ESTADO_PENDIENTE)));
+        doThrow(new RuntimeException("smtp down")).when(otpService).enviarOtp(any(), anyString());
+        ResponseEntity<ResponseDTO> r = service.reenviar("persona@example.com");
+        assertThat(r.getStatusCode().value()).isEqualTo(503);
+        assertThat(r.getBody().isSuccess()).isFalse();
+        assertThat(r.getBody().getMessage()).isEqualTo(ReenvioVerificacionService.MSG_FALLO_ENVIO);
     }
 
     @Test

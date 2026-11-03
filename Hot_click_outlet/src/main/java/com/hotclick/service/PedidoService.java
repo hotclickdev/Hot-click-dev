@@ -118,20 +118,26 @@ public class PedidoService {
      */
     @Transactional
     public Pedido cambiarEstado(Long id, String estadoSolicitado, String nota, String referenciaPago) {
-        Pedido pedido = pedidoRepository.findById(id)
+        // QA5 MEDIO: FOR UPDATE serializa los PUT paralelos; el segundo ya ve el estado nuevo y no repite efectos.
+        Pedido pedido = pedidoRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         String nuevoEstado = PedidoEstadoMaquina.validarEstado(estadoSolicitado);
         String estadoActual = PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido());
         boolean mismoEstado = nuevoEstado.equals(estadoActual);
+        if (mismoEstado && !(Constants.PEDIDO_PAGADO.equals(nuevoEstado) && !despachoVerificador.pagoVerificado(pedido))) {
+            // Idempotente: pedir el estado en que ya está no transiciona, no toca stock, no reembolsa ni manda correo.
+            return sinCambios(pedido);
+        }
         if (Constants.PEDIDO_ENVIADO.equals(nuevoEstado) && !mismoEstado) {
             despachoVerificador.verificarDespachable(pedido);
         }
+        boolean sobreventa = false;
         boolean cobroAlRetirar = Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)
             && Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(estadoActual)
             && PedidoPagoManualService.esEfectivoConRetiro(pedido);
         if (cobroAlRetirar) {
             // Efectivo + retiro en tienda: el cliente paga al retirar (registra el cobro y lo audita).
-            pedidoPagoManualService.confirmarCobroAlRetirar(pedido, estadoActual, referenciaPago);
+            sobreventa = pedidoPagoManualService.confirmarCobroAlRetirar(pedido, estadoActual, referenciaPago);
         } else {
             PedidoEstadoMaquina.verificarTransicion(estadoActual, nuevoEstado);
             if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado) && !mismoEstado
@@ -140,9 +146,11 @@ public class PedidoService {
             }
             if (Constants.PEDIDO_PAGADO.equals(nuevoEstado)
                     && (!mismoEstado || !despachoVerificador.pagoVerificado(pedido))) {
-                pedidoPagoManualService.confirmar(pedido, estadoActual, referenciaPago);
+                sobreventa = pedidoPagoManualService.confirmar(pedido, estadoActual, referenciaPago);
             }
         }
+        // MED-2: cobro manual sin stock → el pedido queda en revisión (no se despacha ni se entrega).
+        if (sobreventa) nuevoEstado = Constants.PEDIDO_REVISION_SOBREVENTA;
         // CMP-1: cancelar un pedido que todavía no pagó devuelve sus unidades reservadas.
         // (Un pedido PAGADO ya consumió stockActual; su reposición es otra decisión.)
         boolean liberarReserva = Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado
@@ -165,6 +173,13 @@ public class PedidoService {
         if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)) {
             n8nWebhookService.notificarPedidoEntregado(pedido);
         }
+        return pedido;
+    }
+
+    private static Pedido sinCambios(Pedido pedido) {
+        Hibernate.initialize(pedido.getItems());
+        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
+        if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); }
         return pedido;
     }
 

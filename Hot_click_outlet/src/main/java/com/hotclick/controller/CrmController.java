@@ -29,6 +29,7 @@ public class CrmController {
     @Autowired private CompanyScope companyScope;
     @Autowired private CrmAccessGuard crmAccessGuard;
     @Autowired private CrmClientesService crmClientesService;
+    @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
 
     /**
      * SEG-E / P8-03: el módulo CRM (lista, ficha, edición, puntos, WhatsApp) solo con plan que lo incluya.
@@ -50,6 +51,12 @@ public class CrmController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> crear(@RequestBody Map<String, String> body) {
+        // Seguridad (BAJO 2): el 409 de correo existente es un oráculo; tope por usuario.
+        // Fail-closed (tryAcquireEstricto): si la BD del rate limit cae, el alta responde 429 en vez de saltarse el tope.
+        if (!rateLimiter.tryAcquireEstricto("user:" + companyScope.getCurrentUserId() + ":crm:clientes:crear",
+                crearMax, crearVentanaSeg)) {
+            return ResponseEntity.status(429).body(ResponseDTO.error("Demasiados registros seguidos. Probá en un minuto."));
+        }
         String nombre = body.get("nombre");
         if (nombre == null || nombre.isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El nombre es requerido"));
@@ -65,11 +72,32 @@ public class CrmController {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.hotclick.security.RateLimiter rateLimiter;
+    @org.springframework.beans.factory.annotation.Value("${crm.clientes.crear.max:20}")
+    int crearMax = 20;
+    @org.springframework.beans.factory.annotation.Value("${crm.clientes.crear.ventana-seg:60}")
+    int crearVentanaSeg = 60;
+
     @GetMapping("/buscar")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<?> buscar(@RequestParam String q) {
-        return ResponseEntity.ok(ResponseDTO.success("OK",
-            crmClientesService.buscar(q, companyScope.requireEmpresaIdOrAdmin())));
+        Long empresaId = companyScope.requireEmpresaIdOrAdmin();
+        boolean cajero = propietarioGuard.esCajero(empresaId);
+        // Decisión 16/10 (ratificada en #475): buscar queda abierto en todo plan para el POS; sin sinAccesoCrm.
+        if (!cajero) return ResponseEntity.ok(ResponseDTO.success("OK", crmClientesService.buscar(q, empresaId)));
+        // CAJERO: mínimo 3 caracteres y correo/teléfono enmascarados (solo identifica al cliente de la venta).
+        if (q == null || q.trim().length() < 3) return ResponseEntity.ok(ResponseDTO.success("OK", java.util.List.of()));
+        // acotado: el servicio ya corta en 20; limit explícito por SCALE1
+        return ResponseEntity.ok(ResponseDTO.success("OK", crmClientesService.buscar(q, empresaId).stream()
+            .limit(20).map(CrmController::enmascararParaCajero).toList()));
+    }
+
+    static Map<String, Object> enmascararParaCajero(Map<String, Object> c) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>(c);
+        m.put("correo", com.hotclick.controller.crm.CrmClienteMapper.enmascararCorreo((String) c.get("correo")));
+        m.put("telefono", com.hotclick.controller.crm.CrmClienteMapper.enmascararTelefono((String) c.get("telefono")));
+        return m;
     }
 
     @GetMapping("/{id}")

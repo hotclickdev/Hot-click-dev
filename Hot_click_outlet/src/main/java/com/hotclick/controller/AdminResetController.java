@@ -96,9 +96,16 @@ public class AdminResetController {
         return null;
     }
 
+    /** Vaciado global fuera de dev/test/local con flag: 404, sin tocar la BD ni pedir contraseña. */
+    private static ResponseEntity<ResponseDTO> noEncontrado() {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+            .body(ResponseDTO.error("Recurso no encontrado"));
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/reset-plataforma-qa")
     public ResponseEntity<ResponseDTO> resetearPlataformaQa(@RequestBody(required = false) Map<String, String> body) {
+        if (!resetPlataformaKeepQaService.habilitado()) return noEncontrado();
         ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
         if (sinPassword != null) return sinPassword;
         String confirmacion = body == null ? null : body.get("confirmacion");
@@ -119,6 +126,7 @@ public class AdminResetController {
         Long empresaId = companyScope.getCurrentEmpresaId();
         if (empresaId == null) {
             if (companyScope.isAdminIT()) {
+                if (!resetPlataformaKeepQaService.habilitado()) return noEncontrado();
                 ResponseEntity<ResponseDTO> sinPassword = exigirPassword(body);
                 if (sinPassword != null) return sinPassword;
                 Map<String, Object> resumen = resetPlataformaKeepQaService.ejecutar();

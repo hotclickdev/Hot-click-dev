@@ -8,7 +8,7 @@ BEGIN;
 
 CREATE TEMP TABLE keep_correo (correo TEXT PRIMARY KEY);
 INSERT INTO keep_correo (correo) VALUES
-    ('admin@hotclick.com'),
+    ('admin@hotclick.lat'),
     ('qa.emprendedor.demo@hotclick.test'),
     ('qa.pyme.demo@hotclick.test'),
     ('qa.negocioplus.demo@hotclick.test'),

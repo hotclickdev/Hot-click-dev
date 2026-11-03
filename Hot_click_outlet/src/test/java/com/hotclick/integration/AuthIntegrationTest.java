@@ -65,8 +65,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/auth/login → cuenta inactiva retorna 403")
-    void login_inactiveAccount_returns403() throws Exception {
+    @DisplayName("POST /api/auth/login → cuenta inactiva retorna 401 genérico (BAJO área 2)")
+    void login_inactiveAccount_returns401() throws Exception {
         testUser.setEstado(Constants.ESTADO_INACTIVO);
         usuarioRepository.saveAndFlush(testUser);
 
@@ -76,12 +76,12 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "correo",    "testuser@hotclick.cr",
                     "contrasena", "Test1234!"
                 ))))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("POST /api/auth/login → cuenta suspendida retorna 403")
-    void login_suspendedAccount_returns403() throws Exception {
+    @DisplayName("POST /api/auth/login → cuenta suspendida retorna 401 genérico (BAJO área 2)")
+    void login_suspendedAccount_returns401() throws Exception {
         testUser.setEstado(Constants.ESTADO_SUSPENDIDO);
         usuarioRepository.saveAndFlush(testUser);
 
@@ -91,7 +91,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "correo",    "testuser@hotclick.cr",
                     "contrasena", "Test1234!"
                 ))))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isUnauthorized());
     }
 
     @Test

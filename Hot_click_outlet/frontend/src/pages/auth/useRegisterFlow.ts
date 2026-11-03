@@ -7,6 +7,7 @@ import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
 import { abandonedCartService } from '@/services/abandonedCartService'
 import { mensajeErrorAuth } from './authHelpers'
+import { mensajeFaltaContrasena } from '@/utils/politicaContrasena'
 import type { AuthResponse } from '@/types/auth'
 import type { CarritoRecuperable } from './CartModal'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
@@ -63,7 +64,8 @@ export function useRegisterFlow() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (form.contrasenaHash.length < 8) { setError(t('register.minChars')); return }
+    const faltaClave = mensajeFaltaContrasena(form.contrasenaHash, t)
+    if (faltaClave) { setError(faltaClave); return }
     setError(''); setLoading(true)
     try {
       const trimmed = {

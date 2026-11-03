@@ -50,6 +50,7 @@ class PaqueteSinBodegaEnvioTest {
         PaymentCheckoutRequest r = new PaymentCheckoutRequest();
         r.setItems(java.util.Arrays.stream(productos).map(PaqueteSinBodegaEnvioTest::item).toList());
         r.setEnvios(envios);
+        r.setProvincia("San José"); r.setCanton("San José"); // paquetes a domicilio exigen destino (#448)
         return r;
     }
 

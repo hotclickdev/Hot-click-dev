@@ -40,6 +40,7 @@ export default function PasoNueva({ flujo }: { flujo: RecuperarContrasena }) {
       <ul id="requisitos-contrasena" className="flex w-full flex-col gap-[6px]">
         <Requisito cumple={req.largo} texto={t('forgot.reqLength')} />
         <Requisito cumple={req.distintaDelCorreo} texto={t('forgot.reqNotEmail')} />
+        <Requisito cumple={req.mayusculaNumero} texto={t('forgot.reqUpperDigit')} />
         <Requisito cumple={req.combinada} texto={t('forgot.reqMix')} />
       </ul>
       <CampoRecuperar etiqueta={t('forgot.repeatPassword')} icono={<IconoCandado />}

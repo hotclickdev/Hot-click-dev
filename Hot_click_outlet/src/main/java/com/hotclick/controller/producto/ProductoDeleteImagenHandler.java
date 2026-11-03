@@ -55,6 +55,9 @@ public class ProductoDeleteImagenHandler {
             auditoriaAdminRegistroService.registrarSiAdmin("PRODUCTO_ELIMINADO", "PRODUCTO",
                 id, existente.getEmpresaId(), "Producto eliminado: " + existente.getNombreProducto());
             return ResponseEntity.ok(ResponseDTO.success("Producto eliminado", null));
+        } catch (com.hotclick.exception.TenantAccessDeniedException | com.hotclick.exception.RecursoNoEncontradoException e) {
+            // BAJO área 2: producto de otra empresa = mismo 404 que inexistente (no confirma que el id existe).
+            return ResponseEntity.status(404).body(ResponseDTO.error("Producto no encontrado"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }
