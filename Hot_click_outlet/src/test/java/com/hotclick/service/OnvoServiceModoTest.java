@@ -163,6 +163,22 @@ class OnvoServiceModoTest {
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @DisplayName("BAJO QA7-B1 (a): el expire tipado separa 404 explícito, 2xx sin cuerpo y id no consultable")
+    void expirarTipado() {
+        OnvoService s = servicio("onvo_live_secret_key_abc", "prod");
+        when(restTemplate.exchange(eq("https://api.onvopay.com/v1/checkout/sessions/cs_1/expire"), any(), any(), eq(Map.class)))
+            .thenReturn((ResponseEntity) ResponseEntity.status(200).build());
+        assertThat(s.expirarCheckoutSessionTipado("cs_1").tipo()).isEqualTo(OnvoService.TipoExpirar.SIN_CUERPO);
+        assertThat(s.expirarCheckoutSessionTipado("../x").tipo()).isEqualTo(OnvoService.TipoExpirar.NO_CONSULTABLE);
+        when(restTemplate.exchange(eq("https://api.onvopay.com/v1/checkout/sessions/cs_2/expire"), any(), any(), eq(Map.class)))
+            .thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", null, null, null));
+        assertThat(s.expirarCheckoutSessionTipado("cs_2").tipo()).isEqualTo(OnvoService.TipoExpirar.NO_EXISTE);
+        // La limpieza TTL conserva su contrato: el Map sigue vacío en esos casos.
+        assertThat(s.expirarCheckoutSession("cs_1")).isEmpty();
+    }
+
+    @Test
     @DisplayName("Con llave: un 404 de ONVO da vacío; un id con forma rara ni se consulta")
     void conLlave404EIdInvalido() {
         OnvoService s = servicio("onvo_live_secret_key_abc", "prod");

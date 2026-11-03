@@ -37,12 +37,15 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     /**
      * QA7-B1: pagos ONVO cerrados localmente (FALLIDO o CANCELADO) con sesión, creados desde {@code desde}.
      * Si ONVO igual los cobró y el webhook se perdió, el respaldo los pasa a REEMBOLSO_PENDIENTE con aviso.
-     * Los más recientes primero; mismo lock que los PENDIENTE (dos instancias no toman las mismas filas).
+     * BAJO QA7-B1 (b): rota por {@code reconsultaCerradoEn} (V223): primero los nunca revisados, después el
+     * revisado hace más tiempo; así ningún pago de la ventana queda sin revisar aunque haya más que el lote.
+     * Mismo lock que los PENDIENTE (dos instancias no toman las mismas filas).
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
     @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
-        + "AND p.merchantToken IS NOT NULL AND p.fechaCreacion >= :desde ORDER BY p.fechaCreacion DESC")
+        + "AND p.merchantToken IS NOT NULL AND p.fechaCreacion >= :desde "
+        + "ORDER BY p.reconsultaCerradoEn ASC NULLS FIRST, p.fechaCreacion ASC")
     List<Pago> reclamarCerradosParaReconsulta(@Param("proveedor") String proveedor,
                                              @Param("desde") LocalDateTime desde, Pageable pagina);
 
