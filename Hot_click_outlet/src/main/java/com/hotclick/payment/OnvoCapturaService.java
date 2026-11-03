@@ -78,6 +78,8 @@ public class OnvoCapturaService {
         }
 
         if (algunoCancelado(pago)) {
+            // QA7 (pedido 21): un cobro de prueba sobre un pedido cancelado también es dato de prueba.
+            marcarSiEsPrueba(pago, checkoutSessionId);
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
             pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
             // Marca de aviso pendiente en esta misma transacción; el envío sale después del commit.
