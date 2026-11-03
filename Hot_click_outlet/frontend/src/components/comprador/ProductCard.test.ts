@@ -71,4 +71,9 @@ describe('ProductCard del comprador (Figma 5:23)', () => {
     expect(html).toContain('₡25.000')
     expect(html).not.toContain('Agotado')
   })
+  it('BAJO 360 px: sin foto muestra el isotipo en vez de un bloque gris vacío', () => {
+    const sin = pintar({ imagenUrl: undefined, imagenes: [] } as unknown as Partial<Producto>)
+    expect(sin).toContain('data-sin-foto')
+    expect(pintar()).not.toContain('data-sin-foto')
+  })
 })

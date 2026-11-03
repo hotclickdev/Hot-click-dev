@@ -6,6 +6,7 @@ import { formatPrice } from '@/utils/format'
 import type { Producto } from '@/types/producto'
 import IconoFigma from './IconoFigma'
 import { ICONOS_COMPRADOR } from './iconosComprador'
+import isotipo from '@/assets/figma/comprador/isotipo.png'
 import favoritoActivo from '@/assets/figma/comprador/favorito-activo.svg'
 import { useAgregarAlPedido } from './useAgregarAlPedido'
 import { fotoProducto, insigniaTarjeta, nombreVendedor, precioDesde, precioListaTachado, tarjetaAgotada } from './productCardHelpers'
@@ -45,8 +46,13 @@ export default function ProductCard({ product, className = '', priority = false 
   return (
     <article className={`relative flex flex-col overflow-hidden rounded-[14px] border border-hc-n-200 bg-hc-n-0 ${className}`}>
       <Link to={destino} state={{ product }} className="relative block aspect-square w-[calc(100%+2px)] shrink-0 overflow-hidden bg-hc-n-100" tabIndex={-1} aria-hidden="true">
-        {foto && (
+        {foto ? (
           <img src={foto} alt="" className="size-full object-cover" loading={priority ? 'eager' : 'lazy'} decoding="async" />
+        ) : (
+          // BAJO 360 px: sin foto se veía un bloque gris vacío; mostramos el isotipo atenuado.
+          <span data-sin-foto className="flex size-full items-center justify-center bg-hc-n-50">
+            <img src={isotipo} alt="" className="size-12 opacity-30" loading="lazy" decoding="async" />
+          </span>
         )}
         {insignia && (
           <span className={`${CLASE_INSIGNIA} ${COLOR_INSIGNIA[insignia.tipo]}`}>

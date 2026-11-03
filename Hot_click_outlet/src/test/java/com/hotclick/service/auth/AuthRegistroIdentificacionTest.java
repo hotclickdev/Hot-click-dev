@@ -63,6 +63,9 @@ class AuthRegistroIdentificacionTest {
                 assertThat(f.get(cap.getValue())).as("columna NOT NULL " + col.name()).isNotNull();
             } catch (IllegalAccessException e) { throw new AssertionError(e); }
         }
+        // QA7-R1: el texto coincide con el flujo real (verificar correo), sin "un administrador revisará".
+        assertThat(res.getBody().getMessage()).isEqualTo(AuthRegistrationService.MENSAJE_REGISTRO_PENDIENTE)
+            .contains("Verificá tu correo").doesNotContain("administrador");
         assertThat(AuthRegistrationService.identificacionInterna()).isNotEqualTo(AuthRegistrationService.identificacionInterna());
     }
 }

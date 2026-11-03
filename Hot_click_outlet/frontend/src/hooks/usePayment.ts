@@ -3,6 +3,7 @@ import { paymentService } from '../services/paymentService'
 import type { CheckoutPayload } from '@/types/pedido'
 import { sincronizarRetornoPagoAlIniciar } from '@/prototipo/visitante/pagoRetornoVisitante'
 import { POS_QR_TOKEN_KEY } from '@/pages/pos/POSPagoPage'
+import { marcarPagoPendiente } from '@/utils/carritoPagoPendiente'
 import { MENSAJE_URL_PAGO_INVALIDA, esUrlPagoOnvo } from '@/utils/urlPagoOnvo'
 
 const MAX_INTENTOS = 3
@@ -138,6 +139,8 @@ export function usePayment() {
           )
           setEstado('failed')
         }, 12000)
+        // QA7-E1: si el retorno no carga, la app vacía el carrito al volver cuando el pago esté CAPTURADO.
+        if (data.numeroPedido) marcarPagoPendiente(data.numeroPedido)
         globalThis.location.href = data.redirectUrl
       }
     } catch (err: unknown) {

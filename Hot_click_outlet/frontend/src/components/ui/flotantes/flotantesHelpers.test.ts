@@ -122,3 +122,12 @@ describe('esRutaVisitante', () => {
     expect(esRutaVisitante('/', true)).toBe(false)
   })
 })
+
+describe('BAJO 360 px: botón de accesibilidad en móvil', () => {
+  it('se oculta en el inicio y en pantallas con CTA fija, no en el resto', async () => {
+    const { accesibilidadFabOcultaEnMovil } = await import('./flotantesHelpers')
+    expect(accesibilidadFabOcultaEnMovil('/')).toBe(true)
+    expect(accesibilidadFabOcultaEnMovil('/carrito')).toBe(true)
+    expect(accesibilidadFabOcultaEnMovil('/productos')).toBe(false)
+  })
+})

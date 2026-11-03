@@ -31,6 +31,10 @@ import java.util.UUID;
 @Service
 public class AuthRegistrationService {
 
+    /** QA7-R1: la cuenta queda PENDIENTE y el login exige verificar el correo; no hay revisión manual. */
+    static final String MENSAJE_REGISTRO_PENDIENTE =
+        "Cuenta creada. Verificá tu correo para activarla antes de iniciar sesión.";
+
     private static final Logger log = LoggerFactory.getLogger(AuthRegistrationService.class);
 
     @Autowired private UsuarioService               usuarioService;
@@ -70,7 +74,7 @@ public class AuthRegistrationService {
                 nuevo.getCorreo(),
                 nuevo.getTelefono() != null && !nuevo.getTelefono().isBlank() ? nuevo.getTelefono() : "—"));
             return ResponseEntity.ok(ResponseDTO.success(
-                "Solicitud enviada. Un administrador revisará y activará tu cuenta pronto.", nuevo));
+                MENSAJE_REGISTRO_PENDIENTE, nuevo));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeSeguro(e, "No se pudo completar el registro. Revisá los datos e intentá de nuevo.")));
         }

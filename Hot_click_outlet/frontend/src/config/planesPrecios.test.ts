@@ -26,3 +26,19 @@ describe('planesPrecios', () => {
     expect(textoMensualidadEmprendedor(null)).toBe('Mensualidad en dólares')
   })
 })
+
+describe('BAJO área 9: mensualidadesUsd para /vender', () => {
+  it('toma precioUsd del backend y descarta montos vacíos o desconocidos', async () => {
+    const { mensualidadesUsd, textoPlan } = await import('./planesPrecios')
+    const m = mensualidadesUsd([
+      { nombre: 'EMPRENDEDOR', precioUsd: 9 },
+      { nombre: 'PYME', precioUsd: 24 },
+      { nombre: 'NEGOCIO_PLUS', precioUsd: null },
+      { nombre: 'OTRO', precioUsd: 5 },
+    ])
+    expect(m).toEqual({ EMPRENDEDOR: 9, PYME: 24 })
+    expect(textoPlan('PYME', m.PYME)).toContain('/mes')
+    expect(textoPlan('NEGOCIO_PLUS', m.NEGOCIO_PLUS)).toContain('Mensualidad en dólares')
+    expect(mensualidadesUsd(null)).toEqual({})
+  })
+})

@@ -23,6 +23,7 @@ import type { Id } from '@/types/api'
 import CartEmptyState from './carrito/CartEmptyState'
 import { CodigosCarrito, NotasPedido } from './carrito/CodigosNotasCarrito'
 import { AsistentePedido, GuardarPorCorreo, PieCarritoMovil } from './carrito/ExtrasCarritoMovil'
+import { useEnPantalla } from './carrito/useEnPantalla'
 import PaqueteCarritoTarjeta from './carrito/PaqueteCarritoTarjeta'
 import ResumenCarrito from './carrito/ResumenCarrito'
 import {
@@ -53,6 +54,9 @@ export default function CartPage() {
   const items = useCartStore((s) => s.items)
   const removeItem = useCartStore((s) => s.removeItem)
   const clearCart = useCartStore((s) => s.clearCart)
+  // BAJO 360 px: el pie fijo tapaba el resumen; se oculta mientras el resumen está en pantalla.
+  const [resumenMovil, setResumenMovil] = useState<HTMLDivElement | null>(null)
+  const resumenMovilVisible = useEnPantalla(resumenMovil)
   const updateQuantity = useCartStore((s) => s.updateQuantity)
   const total = useCartStore((s) => s.total)
   const toWhatsAppMessage = useCartStore((s) => s.toWhatsAppMessage)
@@ -237,6 +241,7 @@ export default function CartPage() {
         {tarjetas}
         <NotasPedido notas={notas} onCambiar={setNotas} />
         <CodigosCarrito codigos={codigos} conSesion={Boolean(token)} incluirGiftCard descuentoMonto={descuento} giftCardAplicada={giftCard} />
+        <div ref={setResumenMovil}>
         <ResumenCarrito
           paquetes={paquetes}
           unidades={unidades}
@@ -250,10 +255,11 @@ export default function CartPage() {
           cuponPorcentaje={codigos.cuponDescuento}
           giftCard={giftCard}
         />
+        </div>
         {guardarPorCorreo}
         <AsistentePedido onPreguntar={preguntarAlAsistente} />
       </div>
-      <PieCarritoMovil total={totalEstimado} onContinuar={continuar} onWhatsApp={abrirWhatsAppPedido} />
+      <PieCarritoMovil total={totalEstimado} onContinuar={continuar} onWhatsApp={abrirWhatsAppPedido} oculto={resumenMovilVisible} />
     </MainLayout>
   )
 }
