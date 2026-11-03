@@ -1,5 +1,7 @@
 # Traspaso: QA Compra (QA 5)
 
+> La versión vigente de esta nota es [hotclick-qa-compra.md](hotclick-qa-compra.md). Esta es una versión vieja que se conserva como historial.
+
 Nota anterior, con el historial completo del área 1: [hotclick-qa-compra.md](hotclick-qa-compra.md).
 
 ## Rol
