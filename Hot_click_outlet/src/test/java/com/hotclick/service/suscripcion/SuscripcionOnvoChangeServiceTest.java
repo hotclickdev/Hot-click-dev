@@ -77,6 +77,39 @@ class SuscripcionOnvoChangeServiceTest {
         planPyme.setNombre("PYME");
 
         empresa.setPlan(planEmprendedor);
+        // QA8: el plan actual se resuelve por repo (el proxy LAZY no se inicializa fuera de sesión).
+        org.mockito.Mockito.lenient().when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
+        // M1: el alta ONVO toma el lock de fila del negocio.
+        org.mockito.Mockito.lenient().when(empresaRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(empresa));
+    }
+
+    @Test
+    @DisplayName("QA8: plan actual como proxy LAZY sin sesión no rompe el cambio de plan")
+    void planActualProxyLazySinSesion() {
+        Plan proxy = org.mockito.Mockito.mock(Plan.class);
+        when(proxy.getId()).thenReturn(1L);
+        org.mockito.Mockito.lenient().when(proxy.getNombre()).thenThrow(
+            new org.hibernate.LazyInitializationException("Could not initialize proxy [com.hotclick.model.Plan#1] - no session"));
+        empresa.setPlan(proxy);
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+
+        // Mismo plan: se detecta por el nombre leído del repo, sin tocar el proxy.
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Ya tenés el plan");
+        verify(proxy, never()).getNombre();
+    }
+
+    @Test
+    @DisplayName("QA8: negocio PENDIENTE_APROBACION no elige ni paga plan (sin llamar a ONVO)")
+    void empresaPendienteAprobacionNoPaga() {
+        empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
+            .isInstanceOf(com.hotclick.exception.EmpresaPendienteAprobacionException.class);
+        verify(onvoBilling, never()).crearCustomer(any(), any(), anyMap());
+        verify(suscripcionRepo, never()).findActivaByEmpresaId(any());
     }
 
     @Test
@@ -100,7 +133,8 @@ class SuscripcionOnvoChangeServiceTest {
 
         when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
-        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(sub));
 
         assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
             .isInstanceOf(IllegalStateException.class)
@@ -228,8 +262,44 @@ class SuscripcionOnvoChangeServiceTest {
         sub.setOnvoSubscriptionId("sub_real_l210");
         when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         when(planRepo.findById(1L)).thenReturn(Optional.of(planEmprendedor));
-        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(sub));
         return sub;
+    }
+
+    @Test
+    @DisplayName("Seguridad #391: sin PLANES_MONEDA la baja a gratis falla cerrado ANTES de cancelar en ONVO")
+    void bajaGratis_sinMoneda_noCancelaEnOnvoNiCambiaEstado() {
+        for (PreciosPlanesConfig config : new PreciosPlanesConfig[]{
+                null, new PreciosPlanesConfig("9", "24", "49", "")}) {
+            Suscripcion sub = prepararBajaConSubOnvo();
+            org.springframework.test.util.ReflectionTestUtils.setField(service, "ledgerWriter",
+                org.mockito.Mockito.mock(com.hotclick.service.billing.BillingLedgerWriter.class));
+            org.springframework.test.util.ReflectionTestUtils.setField(service, "preciosPlanes", config);
+
+            assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+                .isInstanceOf(ConfigBillingFaltanteException.class)
+                .hasMessageContaining("PLANES_MONEDA");
+
+            org.mockito.Mockito.verify(onvoBilling, org.mockito.Mockito.never()).cancelarAlVencer(any());
+            assertThat(sub.getEstado()).isEqualTo("ACTIVA");
+            assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
+        }
+    }
+
+    @Test
+    @DisplayName("Seguridad #391: con PLANES_MONEDA la baja a gratis sigue llamando a ONVO")
+    void bajaGratis_conMoneda_cancelaEnOnvo() {
+        prepararBajaConSubOnvo();
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "ledgerWriter",
+            org.mockito.Mockito.mock(com.hotclick.service.billing.BillingLedgerWriter.class));
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "preciosPlanes",
+            new PreciosPlanesConfig("9", "24", "49", "usd"));
+        when(onvoBilling.cancelarAlVencer("sub_real_l210"))
+            .thenReturn(OnvoBillingClient.ResultadoCancelacion.PROGRAMADA);
+
+        assertThat(service.cambiarPlan(10L, 1L).get("status")).isEqualTo("pendiente_ciclo");
+        org.mockito.Mockito.verify(onvoBilling).cancelarAlVencer("sub_real_l210");
     }
 
     @Test
@@ -351,9 +421,9 @@ class SuscripcionOnvoChangeServiceTest {
         Suscripcion sub = new Suscripcion();
         sub.setEmpresa(empresa);
         sub.setPlan(planPyme);
-        when(suscripcionRepo.findByOnvoSubscriptionId("sub_1")).thenReturn(Optional.of(sub));
-        when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
-        service.procesarPagoOnvoExitoso(10L, "sub_1", 2L);
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("sub_1")).thenReturn(Optional.of(sub));
+        when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(planPyme));
+        service.procesarPagoOnvoVerificado("sub_1", "PYME", java.time.LocalDate.of(2026, 12, 1), "clinv0001");
         assertThat(empresa.getEstadoEmpresa()).isEqualTo("ACTIVO");
         assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
     }

@@ -8,6 +8,7 @@ import com.hotclick.utils.BarcodeNormalizer;
 import com.hotclick.utils.InputSanitizer;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Set;
 
 @Component
@@ -58,7 +59,7 @@ public class ProductoDtoMapper {
         if (dto.getTalla()              != null) p.setTalla(sanitizer.cleanWithLimit(dto.getTalla(), 20));
         if (dto.getGrupoVarianteId()    != null) p.setGrupoVarianteId(sanitizer.cleanWithLimit(dto.getGrupoVarianteId(), 64));
         if (dto.getColorVariante()      != null) p.setColorVariante(sanitizer.cleanWithLimit(dto.getColorVariante(), 50));
-        if (dto.getTags()               != null) p.setTags(sanitizer.cleanWithLimit(dto.getTags().toLowerCase(), 500));
+        if (dto.getTags()               != null) p.setTags(sanitizer.cleanWithLimit(dto.getTags().toLowerCase(Locale.ROOT), 500));
         if (dto.getSku()                != null) p.setSku(sanitizer.cleanWithLimit(dto.getSku(), 50));
         aplicarBarcode(dto, p);
         aplicarCabys(dto, p);

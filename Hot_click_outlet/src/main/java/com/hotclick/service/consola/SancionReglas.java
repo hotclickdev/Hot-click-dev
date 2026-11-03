@@ -1,6 +1,7 @@
 package com.hotclick.service.consola;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 /** Niveles de pausa. La segunda falta leve sube a mediana y la tercera a definitiva. */
 public final class SancionReglas {
@@ -18,7 +19,7 @@ public final class SancionReglas {
     }
 
     public static String nivelAplicado(String solicitado, long levesPrevias) {
-        String nivel = solicitado == null ? "" : solicitado.trim().toUpperCase();
+        String nivel = solicitado == null ? "" : solicitado.trim().toUpperCase(Locale.ROOT);
         if (!LEVE.equals(nivel) && !MEDIANA.equals(nivel) && !DEFINITIVA.equals(nivel)) {
             throw new IllegalArgumentException("Nivel de sanción inválido.");
         }

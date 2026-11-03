@@ -52,6 +52,7 @@ class EmbeddingIndexerAfterCommitTest {
     void setUp() {
         ctx = new AnnotationConfigApplicationContext(Cfg.class);
         repo = ctx.getBean(ProductoEmbeddingRepository.class);
+        when(repo.tablaDisponible()).thenReturn(true);
         when(ctx.getBean(EmbeddingService.class).generarEmbedding(anyString())).thenReturn(new float[]{0.1f});
         publisher = ctx;
         tx = new TransactionTemplate(ctx.getBean(PlatformTransactionManager.class));

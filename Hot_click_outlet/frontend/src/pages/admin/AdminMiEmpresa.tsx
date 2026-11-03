@@ -5,6 +5,8 @@ import { useToast } from '@/components/ui/Toast'
 import EmpresaHeader from './mi-empresa/EmpresaHeader'
 import VisibilidadCard from './mi-empresa/VisibilidadCard'
 import PerfilForm from './mi-empresa/PerfilForm'
+import RegimenIvaCard from './mi-empresa/RegimenIvaCard'
+import type { RegimenIva } from './mi-empresa/regimenIva'
 import {
   MAX_FOTOS,
   CAMPOS_DIRTY,
@@ -161,6 +163,16 @@ export default function AdminMiEmpresa() {
     }
   }
 
+  async function guardarRegimenIva(regimenIva: RegimenIva) {
+    try {
+      await empresaService.updateFiscal({ regimenIva })
+      setEmpresa(e => ({ ...e!, regimenIva }))
+      toast({ message: 'Régimen de IVA guardado', type: 'success' })
+    } catch (err: unknown) {
+      toast({ message: mensajeErrorEmpresa(err, 'No pudimos guardar el régimen de IVA'), type: 'error' })
+    }
+  }
+
   const isDirty = useMemo(() => {
     if (!savedFormRef.current) return false
     const saved = savedFormRef.current
@@ -203,6 +215,7 @@ export default function AdminMiEmpresa() {
           puedePublicar={empresa.estadoEmpresa === 'ACTIVO'}
           motivoBloqueo={motivoBloqueoCuentaMiEmpresa(empresa.estadoEmpresa)}
         />
+        <RegimenIvaCard regimen={empresa.regimenIva} canEdit={canEdit} onGuardar={guardarRegimenIva} />
         <PerfilForm
           form={form}
           setForm={setForm}

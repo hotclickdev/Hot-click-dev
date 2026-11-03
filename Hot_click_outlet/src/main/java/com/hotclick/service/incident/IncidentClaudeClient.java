@@ -125,6 +125,7 @@ public class IncidentClaudeClient {
             }
 
             JsonNode root = objectMapper.readTree(response.body());
+            registrarCosto(root.path("usage"));
             return root.path("content").get(0).path("text").asText();
 
         } catch (InterruptedException e) {
@@ -135,5 +136,20 @@ public class IncidentClaudeClient {
             log.error("Error llamando a Claude: {}", e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * Costo estimado con la tarifa del modelo realmente usado (Sonnet 4.6 si {@code anthropic.model}
+     * no está fijado; {@code ia.precio.sonnet.*}). Solo log: no se suma a hot_click_ai_uso_tb porque
+     * esa tabla se valoriza con la tarifa principal y mezclaría modelos.
+     */
+    double registrarCosto(JsonNode usage) {
+        com.hotclick.service.ai.UsoTokens uso = com.hotclick.service.ai.UsoTokens.desdeUsage(usage);
+        if (uso == null || uso.esVacio()) return 0;
+        double costo = com.hotclick.service.ai.ClaudePrecios.actual().paraModelo(model)
+            .costoUsd(uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
+        log.info("[incident-ai] modelo={} tokens in={} out={} costoEstimadoUsd={}",
+            model, uso.entrada(), uso.salida(), String.format(java.util.Locale.ROOT, "%.4f", costo));
+        return costo;
     }
 }

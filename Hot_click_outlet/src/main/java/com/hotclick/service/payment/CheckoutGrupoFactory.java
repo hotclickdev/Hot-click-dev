@@ -96,7 +96,7 @@ public class CheckoutGrupoFactory {
         List<Subpedido> subpedidos = new ArrayList<>();
         for (CheckoutPaquetesPlanner.Paquete paquete : paquetes) {
             OrderPricingResult pricing = orderPricingService.calcularPaquete(
-                req, paquete.bodega(), paquete.subtotal(), paquete.metodoEnvio(), gcRestante);
+                req, paquete.bodega(), paquete.subtotal(), paquete.metodoEnvio(), gcRestante, paquete.lineasIva());
             gcRestante -= pricing.gcMonto();
             Pedido pedido = checkoutOrderFactory.crearSubpedido(pricing, paquete.subtotal(), paquete.costoTotal(),
                 provider, usuario, paquete.bodega(), paquete.metodoEnvio(), paquete.notas(), grupoPago, estadoInicial);

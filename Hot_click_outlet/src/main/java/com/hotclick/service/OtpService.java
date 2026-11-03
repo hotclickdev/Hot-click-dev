@@ -6,6 +6,7 @@ import com.hotclick.model.Usuario;
 import com.hotclick.repository.CodigoOtpRepository;
 import com.hotclick.repository.TipoOtpRepository;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.utils.ErrorPublico;
 import com.hotclick.service.email.EmailLayoutHelper;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,7 @@ public class OtpService {
     @Transactional
     public void enviarOtp(Usuario usuario, String tipoNombre) {
         TipoOtp tipo = tipoOtpRepository.findByNombre(tipoNombre)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Tipo de OTP no configurado: " + tipoNombre));
+                .orElseThrow(() -> RecursoNoEncontradoException.conDetalle(ErrorPublico.GENERICO, "tipo de OTP no configurado: " + tipoNombre));
 
         LocalDateTime ventana = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(Constants.OTP_VENTANA_REENVIO_MIN);
         long recientes = codigoOtpRepository.countRecentOtps(usuario, tipoNombre, ventana);

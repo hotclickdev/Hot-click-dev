@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -65,7 +66,7 @@ public class CheckoutValidator {
         if (req.getProvider() == null || req.getProvider().isBlank()) {
             throw new IllegalArgumentException("Elegí un método de pago");
         }
-        String provider = req.getProvider().trim().toUpperCase();
+        String provider = req.getProvider().trim().toUpperCase(Locale.ROOT);
         if (Constants.PROVEEDOR_ONVO.equals(provider) && !onvoEnabled) {
             throw new IllegalArgumentException(
                 "ONVO no está habilitado. Usá TILOPAY para pagos con tarjeta.");

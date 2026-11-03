@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.hotclick.service.copilot.AiCopilotToolDefinitions.ESTADOS_PEDIDO_VALIDOS;
@@ -64,7 +65,7 @@ class AiCopilotMutationTools {
 
     String proponerCambiarEstadoPedido(Long empresaId, JsonNode args, AccionPropuestaTelegram[] holder) {
         String numeroPedido = args.path("numeroPedido").asText("").trim();
-        String nuevoEstado  = args.path("nuevoEstado").asText("").trim().toUpperCase();
+        String nuevoEstado  = args.path("nuevoEstado").asText("").trim().toUpperCase(Locale.ROOT);
         String nota         = args.hasNonNull("nota") ? args.get("nota").asText("").trim() : null;
         if (nota != null && nota.length() > 500) nota = nota.substring(0, 500);
 

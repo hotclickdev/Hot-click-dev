@@ -72,8 +72,8 @@ public class CheckoutOrderFactory {
         pedido.setCuponCodigo(pricing.codigoCuponAplicado());
         pedido.setGiftCardCodigo(pricing.gcMonto() > 0 ? pricing.gcCodigo() : null);
         pedido.setGiftCardMonto(pricing.gcMonto());
-        pedido.setMontoImpuesto(0);
-        pedido.setAplicaImpuesto(false);
+        pedido.setMontoImpuesto(pricing.impuesto());
+        pedido.setAplicaImpuesto(pricing.impuesto() > 0);
         if (subtotal > 0) {
             pedido.setMargenGananciaPedido(
                 BigDecimal.valueOf((long) subtotal - costoTotal)

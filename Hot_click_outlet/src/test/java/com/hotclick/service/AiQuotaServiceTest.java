@@ -162,4 +162,40 @@ class AiQuotaServiceTest {
 
         assertThat(result).isFalse();
     }
+
+    // ── Persistencia de tokens (area 6) ───────────────────────────────────────
+
+    @Test
+    @DisplayName("actualizarTokens persiste entrada, salida y cache via UPSERT (sin llamadas)")
+    void actualizarTokens_persisteLosCuatroContadores() {
+        service.actualizarTokens(1L, new com.hotclick.service.ai.UsoTokens(100, 40, 3000L, 800L));
+
+        verify(aiUsoRepository).actualizarTokens(eq(1L), anyInt(), anyInt(), eq(100), eq(40), eq(3000L), eq(800L));
+        verify(aiUsoRepository, never()).reservarSlot(anyLong(), anyInt(), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("actualizarTokens(int,int) legado delega con cache en 0")
+    void actualizarTokens_legadoDelega() {
+        service.actualizarTokens(2L, 10, 5);
+
+        verify(aiUsoRepository).actualizarTokens(eq(2L), anyInt(), anyInt(), eq(10), eq(5), eq(0L), eq(0L));
+    }
+
+    @Test
+    @DisplayName("actualizarTokens con uso vacio no toca la BD")
+    void actualizarTokens_vacioNoEscribe() {
+        service.actualizarTokens(1L, com.hotclick.service.ai.UsoTokens.VACIO);
+        service.actualizarTokens(1L, (com.hotclick.service.ai.UsoTokens) null);
+
+        verifyNoInteractions(aiUsoRepository);
+    }
+
+    @Test
+    @DisplayName("registrarUso suma 1 llamada y los tokens de cache")
+    void registrarUso_conCache() {
+        service.registrarUso(1L, new com.hotclick.service.ai.UsoTokens(1, 2, 3L, 4L));
+
+        verify(aiUsoRepository).upsertIncrement(eq(1L), anyInt(), anyInt(), eq(1), eq(1), eq(2), eq(3L), eq(4L));
+    }
 }

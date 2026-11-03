@@ -171,8 +171,10 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(userCancellationService, "pagoRepository", pagoRepository);
         ReflectionTestUtils.setField(userCancellationService, "paymentFailureHandler", paymentFailureHandler);
         ReflectionTestUtils.setField(userCancellationService, "guestCancelTokenService", guestCancelTokenService);
-        ReflectionTestUtils.setField(paymentExpirationCleanupService, "stockReservationService", stockReservationService);
-        ReflectionTestUtils.setField(paymentExpirationCleanupService, "pedidoGrupoService", pedidoGrupoService);
+        // QA5 ALTO: la cancelación por pago vive en PagoExpiradoCancelador (una tx por pago).
+        ReflectionTestUtils.setField(paymentExpirationCleanupService, "pagoExpiradoCancelador",
+            new com.hotclick.service.payment.PagoExpiradoCancelador(
+                pagoRepository, pedidoRepository, stockReservationService, pedidoGrupoService));
     }
 
     // ── M-01: oferta cobrada en checkout con tarjeta ONVO (proveedor mock) ──
@@ -475,6 +477,7 @@ class PaymentServiceTest {
 
         when(empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")).thenReturn(List.of(empresa));
         when(pagoRepository.findExpiradosPendientesByEmpresa(any(), eq(1L))).thenReturn(List.of(pago));
+        when(pagoRepository.findByIdForUpdate(any())).thenReturn(Optional.of(pago));
         when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(testProducto));
         when(productoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(pagoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));

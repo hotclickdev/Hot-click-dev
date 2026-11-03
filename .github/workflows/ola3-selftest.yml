@@ -19,7 +19,6 @@ on:
       - '.github/workflows/commit-gate.yml'
       - '.github/workflows/ci-red-diagnose.yml'
       - '.github/workflows/health-pager.yml'
-      - '.github/workflows/keep-alive.yml'
       - '.github/workflows/ola3-selftest.yml'
       - 'docs/AGENTES_OLA3.md'
 

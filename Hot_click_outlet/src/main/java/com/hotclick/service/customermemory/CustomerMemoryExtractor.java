@@ -1,5 +1,6 @@
 package com.hotclick.service.customermemory;
 
+import com.hotclick.service.ai.ClaudeUsoRegistrador;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Component
@@ -35,12 +37,14 @@ class CustomerMemoryExtractor {
     private String model;
 
     private final ObjectMapper objectMapper;
+    private final ClaudeUsoRegistrador usoRegistrador;
 
-    CustomerMemoryExtractor(ObjectMapper objectMapper) {
+    CustomerMemoryExtractor(ObjectMapper objectMapper, ClaudeUsoRegistrador usoRegistrador) {
         this.objectMapper = objectMapper;
+        this.usoRegistrador = usoRegistrador;
     }
 
-    Map<String, Object> extractFromConversation(String userMsg, String assistantMsg) {
+    Map<String, Object> extractFromConversation(Long empresaId, String userMsg, String assistantMsg) {
         try {
             String systemPrompt = """
                 Sos un extractor de datos de cliente. A partir de un fragmento de conversación \
@@ -80,6 +84,7 @@ class CustomerMemoryExtractor {
             if (response.statusCode() != 200) return null;
 
             JsonNode json  = objectMapper.readTree(response.body());
+            usoRegistrador.registrar(empresaId, json.path("usage"));
             String   texto = json.path("content").path(0).path("text").asText("").trim();
 
             if (texto.isBlank()) return null;
@@ -93,7 +98,7 @@ class CustomerMemoryExtractor {
             JsonNode interestsNode = parsed.path("interests");
             if (interestsNode.isArray()) {
                 List<String> list = new ArrayList<>();
-                interestsNode.forEach(n -> { if (!n.asText().isBlank()) list.add(n.asText().toLowerCase()); });
+                interestsNode.forEach(n -> { if (!n.asText().isBlank()) list.add(n.asText().toLowerCase(Locale.ROOT)); });
                 result.put("interests", list);
             }
 

@@ -25,6 +25,10 @@ export const authService = {
     api.post('/auth/send-verification', data,
       turnstileToken ? { headers: { 'X-Turnstile-Token': turnstileToken } } : undefined),
 
+  /** QA4-004: reenvío público desde /login; la respuesta es genérica exista o no la cuenta. */
+  reenviarVerificacion: (correo: string) =>
+    api.post('/auth/reenviar-verificacion', { correo }),
+
   verifyRegistration: (correo: string, codigo: string) =>
     api.post('/auth/verify-registration', { correo, codigo }),
 
@@ -41,11 +45,15 @@ export const authService = {
   changePassword: (contrasenaActual: string, nuevaContrasena: string, refreshToken: string) =>
     api.post('/auth/change-password', { contrasenaActual, nuevaContrasena, refreshToken }),
 
-  setup2FA: () =>
-    api.post('/auth/2fa/setup'),
+  /**
+   * El backend exige la contraseña actual aunque el 2FA esté apagado. Si la app (TOTP) ya está activa y se
+   * rota el secreto, exige además el código vigente (`code`); sin TOTP activo no se manda.
+   */
+  setup2FA: (contrasena: string, code?: string) =>
+    api.post('/auth/2fa/setup', code ? { contrasena, code } : { contrasena }),
 
-  activate2FA: (code: string) =>
-    api.post('/auth/2fa/activate', { code }),
+  activate2FA: (code: string, contrasena: string) =>
+    api.post('/auth/2fa/activate', { code, contrasena }),
 
   disable2FA: (contrasena: string, code: string) =>
     api.post('/auth/2fa/disable', { contrasena, code }),

@@ -31,7 +31,7 @@ class TiqueteCompraListenerTest {
         }
         @Bean PlatformTransactionManager txm(DataSource ds) { return new DataSourceTransactionManager(ds); }
         @Bean FacturacionService facturacionService() { return mock(FacturacionService.class); }
-        @Bean TiqueteCompraListener listener(FacturacionService f) { return new TiqueteCompraListener(f); }
+        @Bean TiqueteCompraListener listener(FacturacionService f) { return new TiqueteCompraListener(f, true); }
     }
 
     private AnnotationConfigApplicationContext ctx;

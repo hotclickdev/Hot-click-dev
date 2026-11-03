@@ -1,5 +1,6 @@
 package com.hotclick.service.envio;
 
+import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,7 @@ public class ContraEntregaPolitica {
     }
 
     public ContraEntregaPolitica(@Value("${hotclick.envio.normal.contra-entrega:PEDIDO_COMPLETO}") String modoNormal) {
-        String m = modoNormal == null ? "" : modoNormal.trim().toUpperCase();
+        String m = modoNormal == null ? "" : modoNormal.trim().toUpperCase(Locale.ROOT);
         this.modoNormal = SOLO_ENVIO.equals(m) ? SOLO_ENVIO : PEDIDO_COMPLETO;
     }
 
@@ -35,7 +36,7 @@ public class ContraEntregaPolitica {
 
     public static boolean esEnvioNormal(String metodoEnvio) {
         if (metodoEnvio == null) return false;
-        String m = metodoEnvio.toUpperCase();
+        String m = metodoEnvio.toUpperCase(Locale.ROOT);
         // La tienda pública manda DOMICILIO: es el Envío Normal de HotClick.
         return m.startsWith("ENVIO_NORMAL") || "DOMICILIO".equals(m);
     }

@@ -1,3 +1,5 @@
+> **Histórico:** las comisiones de este borrador (8% / 4%) ya no rigen. Vigentes desde el 26-oct-2026: Emprendedor 9%, PYME 7,5%, Negocio Plus 6%, sin mínimo.
+
 # Brief: tres landings de alta de negocio
 
 Idea aprobada para diseño en Figma y desarrollo posterior (Claude Code). No incluye código ni archivo de Figma.

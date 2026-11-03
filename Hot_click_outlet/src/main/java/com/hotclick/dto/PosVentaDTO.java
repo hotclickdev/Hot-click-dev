@@ -12,6 +12,11 @@ public class PosVentaDTO {
     private Integer descuentoGlobal;
     private String  notas;
     private List<Item> items;
+    /** M4: venta con factura electrónica (en régimen simplificado suma el IVA al cobro). */
+    private Boolean facturaElectronica;
+    public boolean isFacturaElectronica() { return Boolean.TRUE.equals(facturaElectronica); }
+    public Boolean getFacturaElectronica() { return facturaElectronica; }
+    public void setFacturaElectronica(Boolean v) { this.facturaElectronica = v; }
 
     public Long getClienteId() { return clienteId; }
     public void setClienteId(Long clienteId) { this.clienteId = clienteId; }

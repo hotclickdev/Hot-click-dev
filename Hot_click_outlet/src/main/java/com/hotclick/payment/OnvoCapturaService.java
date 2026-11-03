@@ -35,7 +35,7 @@ public class OnvoCapturaService {
     @Autowired private com.hotclick.repository.PedidoRepository pedidoRepository;
 
     /** Resultado de escribir un cobro que ONVO ya confirmó. */
-    public enum Captura { CAPTURADO, DUPLICADO, COBRADO_SOBRE_CANCELADO }
+    public enum Captura { CAPTURADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA }
 
     @Lazy
     @Autowired private PaymentService paymentService;
@@ -44,6 +44,7 @@ public class OnvoCapturaService {
      * DUPLICADO si otra entrega ya la había procesado (dedupe por sessionId).
      * COBRADO_SOBRE_CANCELADO si el pedido ya estaba cancelado (expiró o lo canceló el comprador):
      * no se resucita, porque su stock ya se liberó y podría venderse dos veces.
+     * COBRADO_SOBREVENTA (M-08) si se agotó el stock entre el cobro y la confirmación.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Captura capturarVerificado(String checkoutSessionId, String resumen, String origen) {
@@ -84,11 +85,21 @@ public class OnvoCapturaService {
         pagoRepository.save(pago);
 
         marcarSiEsPrueba(pago, checkoutSessionId);
-        paymentService.confirmarPedido(pago);
+        boolean sobreventa = paymentService.confirmarPedido(pago)
+            == com.hotclick.service.payment.PaymentOrderConfirmationService.Resultado.SOBREVENTA;
 
         evento.setProcesado(true);
         evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
+        // M-08: con sobreventa el cobro queda registrado y el evento procesado: reintentar no cambia nada.
+        if (sobreventa) {
+            evento.setErrorProcesamiento("Cobro de ONVO sin stock: pedido en revisión, reembolso pendiente");
+        }
         webhookEventRepository.save(evento);
+        if (sobreventa) {
+            log.error("[ALERTA-PAGO] ONVO cobró un pedido sin stock; en revisión, reembolso pendiente: sessionId={}",
+                checkoutSessionId);
+            return Captura.COBRADO_SOBREVENTA;
+        }
 
         log.info("[onvo] Checkout confirmado: sessionId={}", checkoutSessionId);
         return Captura.CAPTURADO;

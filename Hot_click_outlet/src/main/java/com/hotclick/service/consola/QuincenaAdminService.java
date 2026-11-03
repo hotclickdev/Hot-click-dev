@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -163,7 +164,7 @@ public class QuincenaAdminService {
 
     static boolean esEfectivo(String metodo) {
         if (metodo == null) return false;
-        String normal = metodo.trim().toUpperCase();
+        String normal = metodo.trim().toUpperCase(Locale.ROOT);
         return "EFECTIVO".equals(normal) || "CONTRA_ENTREGA".equals(normal) || "CONTRAENTREGA".equals(normal);
     }
 

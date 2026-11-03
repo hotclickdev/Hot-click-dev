@@ -210,13 +210,16 @@ class IdorVendedorHotfixTest extends BaseIntegrationTest {
     // ── IDOR-07 ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("IDOR-07 | /api/admin/pagos, /pagos/kpis y /dashboard: comprador y sin empresa → 403")
+    @DisplayName("IDOR-07 | /api/admin/pagos y /pagos/kpis solo ADMIN (QA2-área2); /dashboard: dueño y ADMIN")
     void idor07_adminPagosDashboard() throws Exception {
-        for (String url : new String[]{"/api/admin/pagos", "/api/admin/pagos/kpis", "/api/admin/dashboard"}) {
-            rechaza(HttpMethod.GET, url, null, false);
-            permite(HttpMethod.GET, url, null, tokenA);
+        for (String url : new String[]{"/api/admin/pagos", "/api/admin/pagos/kpis"}) {
+            rechaza(HttpMethod.GET, url, null, true);
+            mockMvc.perform(req(HttpMethod.GET, url, null).header("Authorization", tokenA)).andExpect(status().isForbidden());
             permite(HttpMethod.GET, url, null, adminToken);
         }
+        rechaza(HttpMethod.GET, "/api/admin/dashboard", null, false);
+        permite(HttpMethod.GET, "/api/admin/dashboard", null, tokenA);
+        permite(HttpMethod.GET, "/api/admin/dashboard", null, adminToken);
     }
 
     // ── IDOR-08 ───────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -73,7 +74,7 @@ public class SancionPlataformaService {
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         SancionPlataforma fila = new SancionPlataforma();
         fila.setEmpresaId(empresa.getId());
-        fila.setNivelSolicitado(solicitado.trim().toUpperCase());
+        fila.setNivelSolicitado(solicitado.trim().toUpperCase(Locale.ROOT));
         fila.setNivelAplicado(aplicado);
         fila.setMotivo(motivo);
         fila.setPolitica(politica);
@@ -100,7 +101,10 @@ public class SancionPlataformaService {
         fila.setActiva(false);
         sancionRepo.save(fila);
         if (!fila.isRestituirVisibilidad() || sancionRepo.existsByEmpresaIdAndActivaTrue(fila.getEmpresaId())) return;
-        empresaRepo.findById(fila.getEmpresaId()).ifPresent(empresa -> {
+        // Lock pesimista (corre dentro de @Transactional): estado fresco frente al job de impago.
+        empresaRepo.findByIdForUpdate(fila.getEmpresaId()).ifPresent(empresa -> {
+            // Impago: la sanción se cierra pero la tienda sigue oculta; solo el pago ONVO la reactiva.
+            if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) return;
             empresa.setVisibilidadPublica(true);
             empresaRepo.save(empresa);
         });

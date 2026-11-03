@@ -114,7 +114,7 @@ public class TelegramClienteBotService {
             recordarPanel(chatId, nuevo);
             borrarEntradaDelTurno(chatId);
         } catch (Exception e) {
-            log.error("[telegram-cliente] error enviando a chat {} — {}", chatId, TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram-cliente] error enviando a chat {} — {}", TelegramTexto.chatEnmascarado(chatId), e.getClass().getSimpleName());
         }
     }
 
@@ -155,7 +155,7 @@ public class TelegramClienteBotService {
         try {
             post("deleteMessage", Map.of("chat_id", chatId, "message_id", borrar));
         } catch (Exception e) {
-            log.debug("[telegram-cliente] no se pudo borrar el mensaje {} — {}", borrar, TelegramTexto.sinToken(e.getMessage()));
+            log.debug("[telegram-cliente] no se pudo borrar el mensaje {} — {}", borrar, e.getClass().getSimpleName());
         }
     }
 
@@ -189,7 +189,7 @@ public class TelegramClienteBotService {
         try {
             post("sendChatAction", Map.of("chat_id", chatId, "action", "typing"));
         } catch (Exception e) {
-            log.debug("[telegram-cliente] sendChatAction falló — {}", TelegramTexto.sinToken(e.getMessage()));
+            log.debug("[telegram-cliente] sendChatAction falló — {}", e.getClass().getSimpleName());
         }
     }
 
@@ -199,7 +199,7 @@ public class TelegramClienteBotService {
         try {
             post("answerCallbackQuery", Map.of("callback_query_id", callbackQueryId));
         } catch (Exception e) {
-            log.warn("[telegram-cliente] answerCallbackQuery falló — {}", TelegramTexto.sinToken(e.getMessage()));
+            log.warn("[telegram-cliente] answerCallbackQuery falló — {}", e.getClass().getSimpleName());
         }
     }
 
@@ -243,7 +243,7 @@ public class TelegramClienteBotService {
                 return null;
             }
             if (filePath.isBlank() || filePath.contains("..") || filePath.startsWith("/")) {
-                log.warn("[telegram-cliente] file_path sospechoso para {}: '{}'", fileId, filePath);
+                log.warn("[telegram-cliente] file_path sospechoso para el archivo {} (no se registra la ruta)", fileId);
                 return null;
             }
 
@@ -252,7 +252,7 @@ public class TelegramClienteBotService {
             if (bytes != null && bytes.length > maxBytes) return null;
             return bytes;
         } catch (Exception e) {
-            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram-cliente] error descargando archivo {} — {}", fileId, e.getClass().getSimpleName());
             return null;
         }
     }

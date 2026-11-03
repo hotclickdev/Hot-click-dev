@@ -172,7 +172,7 @@ public class ReservaAntiBotService {
     private String identificador(Usuario usuario, boolean invitado) {
         if (!invitado && usuario != null && usuario.getId() != null) return "u:" + usuario.getId();
         String ip = ipActual();
-        if (ip != null && !ip.isBlank()) return "ip:" + ip;
+        if (ip != null && !ip.isBlank()) return "ip:" + com.hotclick.security.IpParaLlave.reducir(ip); // /64 en IPv6 (B2)
         return usuario != null && usuario.getId() != null ? "u:" + usuario.getId() : null;
     }
 

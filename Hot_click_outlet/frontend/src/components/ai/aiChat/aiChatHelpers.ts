@@ -45,6 +45,30 @@ export type AiChatProducto = Producto & {
   precioEtiqueta?: string | null
 }
 
+/** Botón que arma el backend (p. ej. al agotarse el cupo diario). El front solo lo pinta. */
+export type AiChatAccion = {
+  tipo?: string
+  label?: string
+  url?: string
+}
+
+/** Solo rutas internas ("/…") o wa.me por https; cualquier otra URL se descarta. */
+export function accionSegura(a: AiChatAccion | null | undefined): { tipo: 'buscar' | 'whatsapp'; label: string; url: string } | null {
+  if (!a || typeof a.url !== 'string' || typeof a.label !== 'string' || !a.label.trim()) return null
+  const url = a.url.trim()
+  if (a.tipo === 'whatsapp') {
+    return /^https:\/\/wa\.me\/\d{6,15}$/.test(url) ? { tipo: 'whatsapp', label: a.label.trim(), url } : null
+  }
+  if (a.tipo === 'buscar') {
+    return /^\/(?!\/)[\w\-./]*$/.test(url) ? { tipo: 'buscar', label: a.label.trim(), url } : null
+  }
+  return null
+}
+
+export function accionesSeguras(acciones: AiChatAccion[] | undefined) {
+  return (acciones ?? []).map(accionSegura).filter((a): a is NonNullable<ReturnType<typeof accionSegura>> => a !== null)
+}
+
 export type AiChatMensaje = {
   rol?: string
   texto?: string
@@ -54,6 +78,7 @@ export type AiChatMensaje = {
   productos?: AiChatProducto[]
   categorias?: string[]
   opts?: string[]
+  acciones?: AiChatAccion[]
 }
 
 export function normalizeProduct(p: AiProductPayload): AiChatProducto {

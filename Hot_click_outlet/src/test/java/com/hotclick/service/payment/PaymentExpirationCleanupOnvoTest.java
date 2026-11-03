@@ -73,7 +73,9 @@ class PaymentExpirationCleanupOnvoTest {
         when(pagoRepository.findExpiradosPendientesByEmpresa(any(), eq(1L))).thenReturn(List.of(pagoOnvo));
         when(pagoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
         when(pedidoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
-        ReflectionTestUtils.setField(service, "pedidoGrupoService", new PedidoGrupoService(pedidoRepository, pagoRepository));
+        ReflectionTestUtils.setField(service, "pagoExpiradoCancelador", new PagoExpiradoCancelador(pagoRepository,
+            pedidoRepository, stockReservationService, new PedidoGrupoService(pedidoRepository, pagoRepository)));
+        org.mockito.Mockito.lenient().when(pagoRepository.findByIdForUpdate(20L)).thenReturn(java.util.Optional.of(pagoOnvo));
     }
 
     private void noCancela() {
@@ -86,6 +88,14 @@ class PaymentExpirationCleanupOnvoTest {
     @DisplayName("ONVO ya cobró (webhook atrasado o perdido) → se confirma y no se cancela")
     void onvoCobrado_noCancela() {
         when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.OK);
+        service.ejecutar();
+        noCancela();
+    }
+
+    @Test
+    @DisplayName("M-08: la reconsulta halla un cobro sin stock → pedido en revisión, el barrido no lo cancela")
+    void onvoCobradoSinStock_noCancela() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.COBRADO_SOBREVENTA);
         service.ejecutar();
         noCancela();
     }

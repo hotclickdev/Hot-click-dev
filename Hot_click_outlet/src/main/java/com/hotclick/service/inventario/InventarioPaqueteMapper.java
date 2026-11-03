@@ -7,6 +7,7 @@ import com.hotclick.model.PaqueteLinea;
 import com.hotclick.utils.BarcodeNormalizer;
 
 import java.util.List;
+import java.util.Locale;
 
 final class InventarioPaqueteMapper {
 
@@ -59,7 +60,7 @@ final class InventarioPaqueteMapper {
         linea.setCategoriaTexto(blankToNull(sanitizer.cleanWithLimit(req.getCategoriaTexto(), 100)));
         linea.setImagenUrl(blankToNull(sanitizer.cleanWithLimit(req.getImagenUrl(), 500)));
         if (req.getEstado() != null && !req.getEstado().isBlank()) {
-            linea.setEstado(req.getEstado().trim().toUpperCase());
+            linea.setEstado(req.getEstado().trim().toUpperCase(Locale.ROOT));
         }
         if (req.getNotasConflicto() != null) {
             linea.setNotasConflicto(sanitizer.cleanWithLimit(req.getNotasConflicto(), 2000));

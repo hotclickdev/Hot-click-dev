@@ -1,0 +1,1 @@
+function e(e){if(!e)return!1;try{return(JSON.parse(atob(e.split(`.`)[1])).exp??0)*1e3>Date.now()}catch{return!1}}export{e as t};

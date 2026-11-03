@@ -9,6 +9,8 @@ export type SinpeOnvoQrDatos = { destino: string; monto: number; moneda: string;
 
 export const posService = {
   crearVenta:    (dto: JsonBody)     => api.post('/pos/venta', dto).then(r => r.data),
+  // M4: total exacto (IVA según régimen y comprobante) sin registrar la venta.
+  cotizarVenta:  (dto: JsonBody)     => api.post('/pos/venta/cotizar', dto).then(r => r.data),
   historial:     ()        => api.get('/pos/historial').then(r => r.data),
   abrirCaja:     (dto: JsonBody)     => api.post('/pos/caja/abrir', dto).then(r => r.data),
   cerrarCaja:    (id: Id, dto: JsonBody) => api.put(`/pos/caja/${id}/cerrar`, dto).then(r => r.data),

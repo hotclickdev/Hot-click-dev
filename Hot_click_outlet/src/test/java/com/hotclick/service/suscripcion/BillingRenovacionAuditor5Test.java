@@ -40,7 +40,14 @@ class BillingRenovacionAuditor5Test {
         @Mock SuscripcionPlanSupport planSupport;
         @Mock OnvoBillingClient onvoBilling;
         @Mock com.hotclick.repository.EmpresaRepository empresaRepo;
+        @Mock OnvoRenovacionReconsulta reconsulta;
         @InjectMocks SuscripcionRenewalService service;
+
+        @org.junit.jupiter.api.BeforeEach
+        void onvoConfirmaSinPago() {
+            // Por defecto ONVO confirma que no hay pago vigente: se da de baja como antes de A5-01.
+            lenient().when(reconsulta.reconsultar(any(), any(), any())).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
+        }
 
         @Test @DisplayName("S-01: sin cobro ONVO configurado, un PAST_DUE vencido NO se degrada")
         void sinCobroNoDegrada() {
@@ -118,6 +125,58 @@ class BillingRenovacionAuditor5Test {
             assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
             verify(planSupport).degradarPlanBatchConCache(eq(List.of(2L)), any());
             verify(suscripcionRepo, never()).saveAll(any());
+        }
+
+        @Test @DisplayName("A5-01: si ONVO dice que el cliente SÍ pagó, se reactiva y NO se marca VENCIDO ni se degrada")
+        void clientePagoNoSeBaja() {
+            ReflectionTestUtils.setField(service, "diasGracia", 7);
+            ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 3);
+            Suscripcion pagada = pastDue(1);
+            Suscripcion sinPago = pastDue(2);
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of(pagada, sinPago), List.of(), List.of());
+            when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of());
+            when(reconsulta.reconsultar(eq(pagada), any(), any())).thenReturn(OnvoRenovacionReconsulta.Estado.PAGADA);
+            when(suscripcionRepo.marcarVencidoSiPastDue(20L)).thenReturn(1);
+            assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
+            verify(suscripcionRepo, never()).marcarVencidoSiPastDue(10L);
+            verify(planSupport).degradarPlanBatchConCache(eq(List.of(2L)), any());
+            verify(empresaRepo).suspenderPorImpagoBatch(List.of(2L));
+        }
+
+        @Test @DisplayName("A5-01: si el GET a ONVO falla (INCIERTA), NO se da de baja, y la corrida termina sin repetir esa fila")
+        void getFallaNoSeBaja() {
+            ReflectionTestUtils.setField(service, "diasGracia", 7);
+            ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 2);
+            Suscripcion incierta = pastDue(1);
+            Suscripcion sinPago = pastDue(2);
+            ArgumentCaptor<org.springframework.data.domain.Pageable> pag =
+                ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+            // la fila incierta sigue PAST_DUE y reaparece en cada consulta: no debe bloquear ni ciclar
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), pag.capture()))
+                .thenReturn(List.of(incierta), List.of(incierta, sinPago), List.of(incierta));
+            when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of());
+            when(reconsulta.reconsultar(eq(incierta), any(), any())).thenReturn(OnvoRenovacionReconsulta.Estado.INCIERTA);
+            when(suscripcionRepo.marcarVencidoSiPastDue(20L)).thenReturn(1);
+            assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
+            verify(suscripcionRepo, never()).marcarVencidoSiPastDue(10L);
+            verify(planSupport, never()).degradarPlanBatchConCache(argThat(l -> l.contains(1L)), any());
+            verify(reconsulta, times(1)).reconsultar(eq(incierta), any(), any()); // una sola consulta por corrida
+            assertThat(pag.getAllValues().get(1).getPageSize()).isEqualTo(3); // max + omitidas
+        }
+
+        @Test @DisplayName("A5-01: los PAST_DUE heredados (sin onvoSubscriptionId) no consultan a ONVO")
+        void legadoNoConsultaOnvo() {
+            ReflectionTestUtils.setField(service, "diasGracia", 7);
+            ReflectionTestUtils.setField(service, "maxBajasPorCorrida", 3);
+            Suscripcion legado = pastDue(5);
+            legado.setOnvoSubscriptionId(null);
+            when(suscripcionRepo.findPastDueOnvoVencidos(any(), any())).thenReturn(List.of());
+            when(suscripcionRepo.findPastDueLegadoVencidos(any(), any())).thenReturn(List.of(legado), List.of());
+            when(suscripcionRepo.marcarVencidoSiPastDue(50L)).thenReturn(1);
+            assertThat(service.expirarPastDueVencidos()).isEqualTo(1);
+            // B1: solo reinicia el conteo de la corrida; no hay ninguna consulta a ONVO para el legado.
+            verify(reconsulta).iniciarCorrida(OnvoRenovacionReconsulta.Corrida.EXPIRAR_PAST_DUE);
+            verifyNoMoreInteractions(reconsulta);
         }
 
         @Test @DisplayName("MEDIO carrera: si todas las filas cambiaron, no se degrada a nadie")

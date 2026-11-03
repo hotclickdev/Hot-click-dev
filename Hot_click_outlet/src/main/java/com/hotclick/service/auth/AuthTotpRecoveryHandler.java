@@ -29,10 +29,15 @@ public class AuthTotpRecoveryHandler {
         }
         try {
             Usuario usuario = authSupport.usuarioFromRequest(request);
+            var limitado = authSupport.limite2faUsuario(usuario.getId());
+            if (limitado != null) return limitado;
+            var porFallos = authSupport.bloqueoPorFallos(usuario.getId(), request);
+            if (porFallos != null) return porFallos;
             if (!Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
                 return ResponseEntity.badRequest().body(ResponseDTO.error("El 2FA no está activado"));
             }
             if (!twoFactorService.verifyCode(usuario.getTwoFactorSecret(), code)) {
+                authSupport.registrarFalloCredencial(usuario.getId(), request);
                 return ResponseEntity.status(401).body(ResponseDTO.error("Código incorrecto o expirado"));
             }
             List<String> plainCodes  = twoFactorService.generateRecoveryCodes();

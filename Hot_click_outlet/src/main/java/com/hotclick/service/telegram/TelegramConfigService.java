@@ -32,6 +32,7 @@ public class TelegramConfigService {
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private TelegramClienteBotService bot;
+    @Autowired private TelegramRevocacionMiembro revocacionMiembro;
 
     public Map<String, Object> generarCodigo(Usuario usuario) {
         TelegramVinculacion v = vinculacionRepository.findByUsuarioId(usuario.getId())
@@ -85,15 +86,9 @@ public class TelegramConfigService {
         return out;
     }
 
+    /** TG3: ver {@link TelegramRevocacionMiembro} (consultas puntuales fuera de bucles, SCALE1). */
     public boolean revocarMiembro(Long usuarioId, Long empresaId) {
-        if (!miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1)) {
-            return false;
-        }
-        vinculacionRepository.findByUsuarioId(usuarioId).ifPresent(v -> {
-            revocar(v);
-            log.info("[telegram] vinculación de usuario {} revocada por gestor de empresa {}", usuarioId, empresaId);
-        });
-        return true;
+        return revocacionMiembro.revocar(usuarioId, empresaId);
     }
 
     public String registrarWebhook() {

@@ -110,7 +110,7 @@ public class AiCopilotSyncChatService {
 
             String texto = AiCopilotTextoRespuesta.normalizar(loop.texto(), AiCopilotTextoRespuesta.MAX_CHARS);
             messageStore.saveMsg(empresa, "assistant", texto, loop.tokensOut());
-            aiQuotaService.actualizarTokens(empresaId, loop.tokensIn(), loop.tokensOut());
+            aiQuotaService.actualizarTokens(empresaId, loop.uso());
             return new ChatConAccionesResultado(texto, loop.accionPropuesta());
 
         } catch (InterruptedException e) {

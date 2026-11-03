@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.BodegaRepository;
 import com.hotclick.repository.EmpresaRepository;
@@ -14,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 @Service
 public class TenantService {
@@ -50,7 +50,7 @@ public class TenantService {
         Long id = TenantContext.get();
         if (id == null) return null;
         return empresaRepo.findById(id)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + id));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + id));
     }
 
     // ── Info del tenant (cacheada) ────────────────────────────────────────────
@@ -65,7 +65,7 @@ public class TenantService {
     @Transactional(readOnly = true)
     public Map<String, Object> getTenantUso(Long empresaId) {
         long productos = productoRepo.countProductosActivosByEmpresaId(empresaId);
-        long usuarios  = usuarioRepo.countActivosByEmpresaId(empresaId);
+        long usuarios  = usuarioRepo.countMiembrosActivosByEmpresaId(empresaId);
         long bodegas   = bodegaRepo.countByEmpresaIdAndEstado(empresaId, Constants.ESTADO_ACTIVO);
 
         Map<String, Object> uso = new HashMap<>();
@@ -119,7 +119,7 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public void verificarLimiteUsuariosEquipo(Long empresaId) {
-        long uso = usuarioRepo.countActivosByEmpresaId(empresaId);
+        long uso = usuarioRepo.countMiembrosActivosByEmpresaId(empresaId);
         limitChecker.verificarLimiteUsuariosEquipo(empresaId, uso);
     }
 

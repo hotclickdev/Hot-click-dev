@@ -48,8 +48,9 @@ public class BillingLedger {
     @Column(name = "monto_centavos")
     private Integer montoCentavos;
 
+    /** Moneda real del cobro: sin valor por defecto (nunca se asume "crc"); BillingLedgerWriter exige una. */
     @Column(name = "moneda", nullable = false, length = 3)
-    private String moneda = "crc";
+    private String moneda;
 
     @Column(name = "detalle", length = 500)
     private String detalle;

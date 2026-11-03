@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 @Service
@@ -42,7 +43,7 @@ class ExtraccionOcrDetalleExtractor {
             for (int i = instrStart; i < lines.size() && instrLines.size() < 4; i++) {
                 String line = lines.get(i);
                 // Parar al encontrar siguiente sección (cabecera en mayúsculas o termina en ":")
-                if (line.length() < 35 && (line.equals(line.toUpperCase()) || line.endsWith(":"))) break;
+                if (line.length() < 35 && (line.equals(line.toUpperCase(Locale.ROOT)) || line.endsWith(":"))) break;
                 instrLines.add(line);
             }
             if (!instrLines.isEmpty()) d.comoUsar = String.join(" ", instrLines);
@@ -58,7 +59,7 @@ class ExtraccionOcrDetalleExtractor {
         for (String line : lines) {
             boolean isSpec = specKV.matcher(line).find() || techUnit.matcher(line).find();
             if (!isSpec) continue;
-            String ll = line.toLowerCase();
+            String ll = line.toLowerCase(Locale.ROOT);
             // Excluir líneas de instrucciones que también tengan números
             if (ll.startsWith("apply") || ll.startsWith("use ") || ll.startsWith("take ")
                 || ll.startsWith("store") || ll.startsWith("keep ") || ll.startsWith("do not")
@@ -74,11 +75,11 @@ class ExtraccionOcrDetalleExtractor {
         for (String line : lines) {
             if (line.length() < 20) continue;
             // Saltar cabeceras en ALL CAPS
-            if (line.equals(line.toUpperCase()) && line.replaceAll("[^A-Z]", "").length() > 5) continue;
+            if (line.equals(line.toUpperCase(Locale.ROOT)) && line.replaceAll("[^A-Z]", "").length() > 5) continue;
             // Saltar líneas que ya son specs
             if (specKV.matcher(line).find()) continue;
             // Saltar líneas de instrucciones
-            String ll = line.toLowerCase();
+            String ll = line.toLowerCase(Locale.ROOT);
             if (ll.startsWith("apply") || ll.startsWith("use ") || ll.startsWith("aplicar")) continue;
             descLines.add(line);
             if (descLines.size() >= 2) break;

@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -156,6 +157,17 @@ public class ShoppingAssistantController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Long>> metrics() {
         return ResponseEntity.ok(metricsService.getSummary());
+    }
+
+    /**
+     * BAJO (área 6): el 404 de {@code requireEmpresaActiva} (y los 400 de la búsqueda por foto)
+     * no deben caer en el catch genérico {@code Exception} de GlobalExceptionHandler, que los
+     * convertía en 500. Se responde el estado real, sin detalles internos.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> estadoDeTenant(ResponseStatusException ex) {
+        String motivo = ex.getReason() == null ? "Solicitud no válida" : ex.getReason();
+        return ResponseEntity.status(ex.getStatusCode()).body(Map.of("success", false, "message", motivo));
     }
 
     /** ALTO-1: empresa del tenant de la request; null si el cliente (legado) no envía slug. */

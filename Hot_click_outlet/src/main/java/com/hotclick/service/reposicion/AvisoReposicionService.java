@@ -60,7 +60,7 @@ public class AvisoReposicionService {
             } catch (RuntimeException e) {
                 suscripciones.liberarAviso(s.getId());
                 log.warn("[avisar-reposicion] producto {} — falló el correo de la suscripción {}: {}",
-                    productoId, s.getId(), e.getMessage());
+                    productoId, s.getId(), e.getClass().getSimpleName());
             }
         }
         log.info("[avisar-reposicion] producto {} repuesto — {} aviso(s) enviados", productoId, enviados);

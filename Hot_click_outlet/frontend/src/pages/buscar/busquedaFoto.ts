@@ -1,3 +1,5 @@
+import { accionesSeguras, type AiChatAccion } from '@/components/ai/aiChat/aiChatHelpers'
+
 export type ResultadoFoto = {
   id: number | string
   nombre: string
@@ -14,6 +16,13 @@ export type RespuestaFoto = {
   categoriaDetectada: string
   etiquetas: string[]
   productos: ResultadoFoto[]
+  /** Cupo diario del asistente agotado: aviso amable y botones validados (Buscar productos, WhatsApp). */
+  limite: LimiteFoto | null
+}
+
+export type LimiteFoto = {
+  mensaje: string
+  acciones: ReturnType<typeof accionesSeguras>
 }
 
 /** Desde este puntaje de similitud el resultado se marca como "Muy parecido". */
@@ -41,7 +50,14 @@ export function leerRespuestaFoto(data: unknown): RespuestaFoto {
       tienda: texto(p.empresaNombre) || null,
       categoria: texto(p.categoriaNombre) || texto(p.categoria) || null,
     }))
-  return { categoriaDetectada: texto(analisis.categoria), etiquetas, productos }
+  return { categoriaDetectada: texto(analisis.categoria), etiquetas, productos, limite: leerLimite(raiz, productos.length) }
+}
+
+/** El backend responde 200 con {@code mensaje} + {@code acciones} cuando el cupo diario se agotó (no llamó a Vision). */
+function leerLimite(raiz: Record<string, unknown>, cantidad: number): LimiteFoto | null {
+  const mensaje = texto(raiz.mensaje)
+  if (mensaje === '' || cantidad > 0 || !Array.isArray(raiz.acciones)) return null
+  return { mensaje, acciones: accionesSeguras(raiz.acciones as AiChatAccion[]) }
 }
 
 export type EtiquetaParecido = 'muyParecido' | 'mismaCategoria' | 'relacionado'

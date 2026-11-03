@@ -1,0 +1,1 @@
+import{o as e}from"./format-DoimvdyD.js";function t(t){return e(Math.round(t??0))}export{t};

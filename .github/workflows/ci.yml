@@ -38,6 +38,7 @@ jobs:
           SENDGRID_API_KEY: placeholder
           AWS_ACCESS_KEY_ID: placeholder
           AWS_SECRET_ACCESS_KEY: placeholder
+          HOTCLICK_NUMEROS_PROHIBIDOS: ${{ secrets.HOTCLICK_NUMEROS_PROHIBIDOS }}
 
   frontend:
     name: Build React

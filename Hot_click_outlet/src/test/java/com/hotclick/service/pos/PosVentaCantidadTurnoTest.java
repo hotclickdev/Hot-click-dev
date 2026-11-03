@@ -98,6 +98,9 @@ class PosVentaCantidadTurnoTest {
         when(bodegaRepository.findByEmpresaIdAndEstado(1L, Constants.ESTADO_ACTIVO))
             .thenReturn(List.of(bodega));
         when(productoRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(producto));
+        // BAJO-1 (#428): el dueño se lee sin lock (consulta escalar) antes del FOR UPDATE.
+        org.mockito.Mockito.lenient().when(productoRepository.findEmpresaIdById(any())).thenAnswer(i ->
+            productoRepository.findByIdForUpdate(i.getArgument(0)).map(Producto::getEmpresaId));
         when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             p.setId(99L);

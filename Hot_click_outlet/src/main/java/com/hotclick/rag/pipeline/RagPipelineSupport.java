@@ -1,5 +1,6 @@
 package com.hotclick.rag.pipeline;
 
+import com.hotclick.service.ai.UsoTokens;
 import com.hotclick.rag.dto.ProductoContexto;
 
 import java.util.*;
@@ -61,6 +62,10 @@ final class RagPipelineSupport {
     }
 
     static RagResult parseClaudeText(String texto, List<ProductoContexto> productos, int tokIn, int tokOut) {
+        return parseClaudeText(texto, productos, UsoTokens.de(tokIn, tokOut));
+    }
+
+    static RagResult parseClaudeText(String texto, List<ProductoContexto> productos, UsoTokens uso) {
         // Extraer [CATS:...] del texto
         List<String> categoriasSugeridas = List.of();
         Matcher mc = CATS_TAG.matcher(texto);
@@ -88,15 +93,16 @@ final class RagPipelineSupport {
         Matcher mp = PRODS_TAG.matcher(texto);
         if (mp.find()) {
             Set<String> skusSeleccionados = Arrays.stream(mp.group(1).split(","))
-                .map(s -> s.trim().toUpperCase())
+                .map(s -> s.trim().toUpperCase(Locale.ROOT))
                 .filter(s -> !s.isBlank())
                 .collect(Collectors.toSet());
             productosAMostrar = productos.stream()
-                .filter(p -> p.sku() != null && skusSeleccionados.contains(p.sku().toUpperCase()))
+                .filter(p -> p.sku() != null && skusSeleccionados.contains(p.sku().toUpperCase(Locale.ROOT)))
                 .toList();
             texto = texto.replace(mp.group(0), "").strip();
         }
 
-        return new RagResult(texto, productosAMostrar, categoriasSugeridas, opts, tokIn, tokOut);
+        return new RagResult(texto, productosAMostrar, categoriasSugeridas, opts,
+            uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
     }
 }

@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -116,7 +117,7 @@ public class StorefrontController {
         // Filtro de la tienda: categorías que tienen productos visibles (también las de plataforma), no solo las propias.
         List<Categoria> cats = productoRepository.findCategoriasCatalogoPublico(empresaId, PageRequest.of(0, MAX_CATEGORIAS)).stream()
             .filter(c -> c.getEstado() == null || c.getEstado() == Constants.ESTADO_ACTIVO)
-            .sorted(java.util.Comparator.comparing(c -> c.getNombreCategoria() == null ? "" : c.getNombreCategoria().toLowerCase()))
+            .sorted(java.util.Comparator.comparing(c -> c.getNombreCategoria() == null ? "" : c.getNombreCategoria().toLowerCase(Locale.ROOT)))
             .toList();
         return ResponseEntity.ok(ResponseDTO.success("Categorías obtenidas", cats));
     }

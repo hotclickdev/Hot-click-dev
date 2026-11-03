@@ -70,11 +70,9 @@ public class SolicitudEmpresaHandler {
     public ResponseEntity<ResponseDTO> rechazar(Long id, Map<String, String> body) {
         ResponseEntity<ResponseDTO> denied = solicitudAdminGuard.denyIfNotAdmin();
         if (denied != null) return denied;
-        Optional<Empresa> opt = empresaRepository.findById(id);
-        if (opt.isEmpty()) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
-        Empresa e = opt.get();
-        e.setEstadoEmpresa("RECHAZADO");
-        empresaRepository.save(e);
+        // Marca RECHAZADO y libera el puesto de trial Emprendedor (si lo tenía) en una sola transacción.
+        Empresa e = empresaAprobacionService.rechazar(id);
+        if (e == null) return ResponseEntity.status(404).body(ResponseDTO.error("Empresa no encontrada"));
         String nombreNegocio = nombreNegocio(e);
         String motivo = body != null ? body.get("comentario") : null;
         usuarioRepository.findByEmpresaIdConRoles(e.getId()).stream()

@@ -107,7 +107,7 @@ export default function VenderPage() {
               'Cada producto muestra qué tienda lo vende.',
               'El precio final y el costo de envío aparecen antes de pagar.',
               'Si algo sale mal, HotClick recibe el reclamo y le da seguimiento con la tienda.',
-              'Los pagos con tarjeta pasan por Tilopay. La tienda no ve los datos de la tarjeta.',
+              'Los pagos con tarjeta pasan por ONVO. La tienda no ve los datos de la tarjeta.',
             ].map((x) => (
               <li key={x} className="rounded-[12px] border border-hc-n-200 bg-hc-n-0 p-3 text-[14px] text-hc-n-900">{x}</li>
             ))}

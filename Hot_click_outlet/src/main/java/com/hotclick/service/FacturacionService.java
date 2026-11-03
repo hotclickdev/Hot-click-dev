@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.ComprobanteFiscal;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PedidoRepository;
@@ -15,7 +16,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.NoSuchElementException;
 
 /**
  * Orquesta la emisión de comprobantes electrónicos a Hacienda CR.
@@ -60,7 +60,7 @@ public class FacturacionService {
     @Transactional
     public ComprobanteFiscal emitir(Long pedidoId, String tipo) {
         Pedido pedido = pedidoRepo.findById(pedidoId)
-            .orElseThrow(() -> new NoSuchElementException("Pedido no encontrado: " + pedidoId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Pedido no encontrado", "pedidoId=" + pedidoId));
         companyScope.assertCanAccessNullable(pedido.getEmpresaId());
         exigirNoPrueba(pedido);
 

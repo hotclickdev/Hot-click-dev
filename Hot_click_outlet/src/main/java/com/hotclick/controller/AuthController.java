@@ -23,6 +23,7 @@ public class AuthController {
 
     @Autowired private AuthRegistrationService authRegistrationService;
     @Autowired private AuthLoginService        authLoginService;
+    @Autowired private com.hotclick.service.auth.ReenvioVerificacionService reenvioVerificacionService;
 
     // ── Registro ──────────────────────────────────────────────────────────────
 
@@ -50,6 +51,12 @@ public class AuthController {
     @PostMapping("/reenviar-codigo-negocio")
     public ResponseEntity<ResponseDTO> reenviarCodigoNegocio(HttpServletRequest request) {
         return authRegistrationService.reenviarCodigoNegocio(request);
+    }
+
+    /** QA4-004: reenvío público desde /login; respuesta genérica (no enumera cuentas). */
+    @PostMapping("/reenviar-verificacion")
+    public ResponseEntity<ResponseDTO> reenviarVerificacion(@RequestBody(required = false) Map<String, String> body) {
+        return reenvioVerificacionService.reenviar(body == null ? null : body.get("correo"));
     }
 
     @PostMapping("/verificar-correo-negocio")
@@ -128,8 +135,8 @@ public class AuthController {
     }
 
     @PostMapping("/2fa/email/send")
-    public ResponseEntity<ResponseDTO> sendLoginEmailOtp(@RequestBody Map<String, String> body) {
-        return authLoginService.sendLoginEmailOtp(body);
+    public ResponseEntity<ResponseDTO> sendLoginEmailOtp(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        return authLoginService.sendLoginEmailOtp(body, request);
     }
 
     @PostMapping("/2fa/email/enable")
@@ -150,8 +157,9 @@ public class AuthController {
     }
 
     @PostMapping("/2fa/setup")
-    public ResponseEntity<ResponseDTO> setup2FA(HttpServletRequest request) {
-        return authLoginService.setup2FA(request);
+    public ResponseEntity<ResponseDTO> setup2FA(@RequestBody(required = false) Map<String, String> body,
+                                                 HttpServletRequest request) {
+        return authLoginService.setup2FA(body, request);
     }
 
     @PostMapping("/2fa/activate")
@@ -161,7 +169,7 @@ public class AuthController {
     }
 
     @PostMapping("/2fa/disable")
-    public ResponseEntity<ResponseDTO> disable2FA(@RequestBody Map<String, String> body,
+    public ResponseEntity<ResponseDTO> disable2FA(@RequestBody(required = false) Map<String, String> body,
                                                    HttpServletRequest request) {
         return authLoginService.disable2FA(body, request);
     }

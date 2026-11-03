@@ -73,7 +73,8 @@ public class PosQrController {
             }
 
             return ResponseEntity.ok(ResponseDTO.success("QR generado",
-                posQrService.crearSesion(usuarioId, empresaId, turnoId, metodo, metodos, items, notas, clienteId, bodegaId)));
+                posQrService.crearSesion(usuarioId, empresaId, turnoId, metodo, metodos, items, notas, clienteId, bodegaId,
+                    Boolean.TRUE.equals(body.get("facturaElectronica")))));
         } catch (Exception e) {
             log.error("[POS-QR] Error creando sesión: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeCrear(e)));

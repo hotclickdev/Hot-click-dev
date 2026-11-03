@@ -54,6 +54,14 @@ public class PropietarioGuard {
             .orElse(false);
     }
 
+    /**
+     * QA2/QA1 área 2: lecturas de billing, wallet, cobros y facturas. Misma regla que
+     * {@link #puedeGestionarEmpresa}: PROPIETARIO (sin impersonación) o ADMIN de plataforma; si no, 403.
+     */
+    public void exigirGestionEmpresa(Long empresaId) {
+        if (!puedeGestionarEmpresa(empresaId)) throw new AccessDeniedException(MSG);
+    }
+
     /** Lanza 403 si el usuario actual no es propietario de la empresa del token. */
     public void exigirPropietario(Long empresaId) {
         if (companyScope.isImpersonating() || !esPropietario(companyScope.getCurrentUser(), empresaId)) {

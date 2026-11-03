@@ -17,10 +17,10 @@ public final class TelegramTexto {
 
     /** {@code bot123456:AA...} en la URL de la API o de descarga de archivos. */
     private static final Pattern TOKEN_EN_URL =
-        Pattern.compile("(?i)bot\\d+(?::|%3A)[A-Za-z0-9_-]+");
-    /** C2: token sin prefijo {@code bot} (p. ej. en mensajes de configuración). */
+        Pattern.compile("(?i)bot\\d+(?::|%(?:25)*3A)[A-Za-z0-9_-]+");
+    /** C2: token sin prefijo (Auditor 8: también %253A y tokens cortos, desde 10 caracteres) {@code bot} (p. ej. en mensajes de configuración). */
     private static final Pattern TOKEN_SUELTO =
-        Pattern.compile("(?i)\\d{6,}(?::|%3A)[A-Za-z0-9_-]{30,}");
+        Pattern.compile("(?i)\\d{6,}(?::|%(?:25)*3A)[A-Za-z0-9_-]{10,}");
     /** Caracteres con significado en Markdown legacy de Telegram. */
     private static final Pattern MARKDOWN = Pattern.compile("([_*`\\[])");
 
@@ -36,6 +36,55 @@ public final class TelegramTexto {
         if (texto == null) return null;
         String sinUrl = TOKEN_EN_URL.matcher(texto).replaceAll("bot***");
         return TOKEN_SUELTO.matcher(sinUrl).replaceAll("***");
+    }
+
+    /** Largo máximo de un mensaje de excepción ajeno dentro de una línea de log. */
+    public static final int MAX_MENSAJE_LOG = 120;
+
+    /**
+     * Un mensaje de excepción ajeno que va a una línea de log: sin token, sin saltos de línea
+     * (no se puede inyectar líneas falsas) y truncado a {@value #MAX_MENSAJE_LOG} caracteres.
+     */
+    public static String paraLog(String texto) {
+        if (texto == null) return null;
+        String limpio = sinToken(texto).replaceAll("[\\r\\n\\t]+", " ");
+        return limpio.length() <= MAX_MENSAJE_LOG ? limpio : limpio.substring(0, MAX_MENSAJE_LOG) + "…";
+    }
+
+    /**
+     * Excepción saneada para {@code log.error(msg, throwable)}: sin causa y sin el mensaje original.
+     * Los mensajes de Hibernate/PostgreSQL y sus {@code Caused by} traen datos de filas
+     * ({@code Detail: Key (email)=(...)}, {@code Failing row contains (...)}) que no deben llegar
+     * a logback ni a Sentry. Lleva la clase original, la clase de la causa raíz (sin su mensaje) y
+     * el stack trace original para poder diagnosticar.
+     */
+    public static final class ExcepcionSaneada extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        ExcepcionSaneada(String mensaje) {
+            super(mensaje, null, false, true);
+        }
+    }
+
+    /** Throwable limpio para el log del servidor: clase original + clase de la causa raíz + stack trace, sin mensajes. */
+    public static Throwable paraLog(Throwable original) {
+        if (original == null) return null;
+        Throwable raiz = original;
+        for (int i = 0; i < 50 && raiz.getCause() != null && raiz.getCause() != raiz; i++) {
+            raiz = raiz.getCause();
+        }
+        String mensaje = original.getClass().getName()
+            + (raiz != original ? " (causa raíz: " + raiz.getClass().getName() + ")" : "");
+        ExcepcionSaneada limpia = new ExcepcionSaneada(mensaje);
+        limpia.setStackTrace(original.getStackTrace());
+        return limpia;
+    }
+
+    /** El chat_id no va completo a logs ni avisos: {@code ***NNNN} con los últimos 4 dígitos. */
+    public static String chatEnmascarado(Long chatId) {
+        if (chatId == null) return "***";
+        String s = Long.toString(Math.abs(chatId));
+        return "***" + (s.length() > 4 ? s.substring(s.length() - 4) : s);
     }
 
     /** Telegram rechazó el formato (no el chat ni el token): se puede reenviar como texto plano. */

@@ -233,5 +233,12 @@ public class NotificacionEmailService {
 
     }
 
+    /** Alta pendiente de aprobación: el puesto de trial se asigna al aprobar, el aviso no habla de cupo consumido. */
+    @Async
+    public void enviarAltaEmprendedorPendienteAAdminIT(String nombreEmpresa, String correo, CupoEmprendedorEstado estado) {
+        if (adminItEmail == null || adminItEmail.isBlank()) return;
+        negocioEmailSender.enviarAltaEmprendedorPendienteAdmin(adminItEmail, nombreEmpresa, correo, estado);
+    }
+
 }
 

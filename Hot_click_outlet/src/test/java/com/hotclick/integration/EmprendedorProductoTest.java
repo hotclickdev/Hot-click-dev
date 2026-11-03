@@ -430,16 +430,15 @@ class EmprendedorProductoTest extends BaseIntegrationTest {
             .andExpect(status().isOk());
     }
 
-    // ── T-PROD-029: Importación bulk vacía → 200 con 0 importados ────────────
+    // ── T-PROD-029: Importación bulk vacía → 400 ────────────
     @Test
-    @DisplayName("T-PROD-029 | NORMAL — Bulk import con lista vacía → 200 ok=0")
-    void bulkImport_emptyList_200() throws Exception {
+    @DisplayName("T-PROD-029 | NORMAL — Bulk import con lista vacía → 400")
+    void bulkImport_emptyList_400() throws Exception {
         mockMvc.perform(post("/api/productos/bulk")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("[]"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.ok").value(0));
+            .andExpect(status().isBadRequest());
     }
 
     // ── SEC-98-01: el bulk valida cada producto ──────────────────────────────

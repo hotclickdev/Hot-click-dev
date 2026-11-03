@@ -31,6 +31,8 @@ public class EmprendePublicController {
         m.put("usados", e.usados());
         m.put("limite", e.limite());
         m.put("cuposGratisDisponibles", e.cuposGratisDisponibles());
+        // Período gratis en palabras (p. ej. «3 meses»), derivado de TRIAL_EMPRENDEDOR_DIAS; la UI no lo fija.
+        m.put("periodoGratis", e.periodoGratis());
         // Mensualidad USD de Emprendedor sin cupo, solo desde config; null si no está fijada (la UI no inventa monto).
         BigDecimal usd = preciosPlanes.precioUsd("EMPRENDEDOR").filter(v -> v.signum() > 0).orElse(null);
         m.put("mensualidadUsdSinCupo", usd);

@@ -169,6 +169,17 @@ class SinpeOnvoMarketplaceServiceTest {
     }
 
     @Test
+    @DisplayName("M-08: succeeded sin stock → COBRADO_SOBREVENTA, el evento queda registrado (sin excepción ni reintento)")
+    void succeededSinStock() {
+        get("succeeded", 1_250_000L);
+        when(paymentService.confirmarPedido(pago)).thenReturn(
+            com.hotclick.service.payment.PaymentOrderConfirmationService.Resultado.SOBREVENTA);
+        assertThat(s.confirmarPorWebhook(TIPO, "pi_1")).isEqualTo(
+            com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.Resultado.COBRADO_SOBREVENTA);
+        verify(eventos).save(any());
+    }
+
+    @Test
     @DisplayName("Ya CAPTURADO: un evento posterior no revierte")
     void capturadoNoRevierte() {
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);

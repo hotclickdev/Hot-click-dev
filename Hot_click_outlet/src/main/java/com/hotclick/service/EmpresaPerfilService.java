@@ -29,6 +29,10 @@ public class EmpresaPerfilService {
     @Autowired private SancionPlataformaRepository sancionRepo;
     @Autowired private AuditoriaAdminRegistroService auditoria;
 
+    /** Flag M4: permite cambiar el régimen de IVA de una empresa. APAGADO por defecto (sin OK, no se enciende). */
+    @org.springframework.beans.factory.annotation.Value("${hotclick.iva.cambio-regimen.enabled:false}")
+    private boolean cambioRegimenIvaHabilitado;
+
     public Map<String, Object> obtener(Long empresaId) {
         Map<String, Object> mapa = toSafeMap(empresa(empresaId));
         sancionRepo.findFirstByEmpresaIdAndActivaTrueOrderByCreadaDesc(empresaId).ifPresent(fila -> {
@@ -109,8 +113,12 @@ public class EmpresaPerfilService {
     }
 
     @CacheEvict(value = {"marcas-publicas", "categorias", "categorias-publicas"}, allEntries = true)
+    @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> toggleVisibilidad(Long empresaId, Object val) {
-        Empresa e = empresa(empresaId);
+        Empresa e = empresaRepository.findByIdForUpdate(empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
+        // Impago: 409 sin tocar la visibilidad; solo el pago ONVO confirmado reactiva.
+        if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(e.getEstadoEmpresa())) throw new com.hotclick.exception.ReactivacionSinPagoException();
         asegurarCuentaActivaParaCatalogo(e);
         if (val == null) throw new IllegalArgumentException("Campo visibilidadPublica requerido");
         boolean visible = Boolean.parseBoolean(val.toString());
@@ -190,6 +198,20 @@ public class EmpresaPerfilService {
             }
             e.setAmbienteHacienda(a);
         }
+        if (body.containsKey("regimenIva")) {
+            String r = body.get("regimenIva");
+            // L1 (#406): Set.of(...).contains(null) lanza NPE → 500. Nulo o desconocido es un 400 con texto fijo.
+            if (r == null || !com.hotclick.service.hacienda.CalculadoraIva.REGIMENES.contains(r)) {
+                throw new IllegalArgumentException("Régimen de IVA inválido: elegí SIMPLIFICADO o TRADICIONAL.");
+            }
+            // Cambiar de régimen altera lo que se cobra y lo que se declara a Hacienda: apagado por defecto
+            // hasta tener el OK explícito. Reenviar el valor actual (p. ej. SIMPLIFICADO) siempre se acepta.
+            if (!r.equals(e.getRegimenIva()) && !cambioRegimenIvaHabilitado) {
+                throw new IllegalArgumentException(
+                    "El cambio de régimen de IVA todavía no está habilitado. Seguís en " + e.getRegimenIva() + ".");
+            }
+            e.setRegimenIva(r);
+        }
     }
 
     private void copiarSiCabe(Map<String, String> body, String key, int max, String error,
@@ -239,6 +261,7 @@ public class EmpresaPerfilService {
         m.put("inscritoHacienda", Boolean.TRUE.equals(e.getInscritoHacienda()));
         m.put("nombreHacienda", e.getNombreHacienda());
         m.put("regimenTributario", e.getRegimenTributario());
+        m.put("regimenIva", e.getRegimenIva());
         return m;
     }
 }

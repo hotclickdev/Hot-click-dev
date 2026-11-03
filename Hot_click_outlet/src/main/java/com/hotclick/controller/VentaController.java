@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -69,10 +70,10 @@ public class VentaController {
             ? usuarioRepository.findTop500ByEmpresaIdOrderByIdDesc(empresaId)
             : usuarioRepository.findTop500ByOrderByIdDesc();
         if (q != null && !q.isBlank()) {
-            String lower = q.toLowerCase();
+            String lower = q.toLowerCase(Locale.ROOT);
             todos = todos.stream().filter(u ->
-                (u.getNombre() != null && u.getNombre().toLowerCase().contains(lower)) ||
-                (u.getCorreo() != null && u.getCorreo().toLowerCase().contains(lower))
+                (u.getNombre() != null && u.getNombre().toLowerCase(Locale.ROOT).contains(lower)) ||
+                (u.getCorreo() != null && u.getCorreo().toLowerCase(Locale.ROOT).contains(lower))
             ).collect(Collectors.toList());
         }
         List<Map<String, Object>> resultado = todos.stream().map(u -> {

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -125,7 +126,7 @@ public class SolicitudServicioController {
             String nuevoEstado = body.get("estado");
             if (nuevoEstado == null || nuevoEstado.isBlank())
                 return ResponseEntity.badRequest().body(ResponseDTO.error("Estado requerido"));
-            s.setEstado(nuevoEstado.toUpperCase());
+            s.setEstado(nuevoEstado.toUpperCase(Locale.ROOT));
             if (body.containsKey("notasAdmin")) s.setNotasAdmin(body.get("notasAdmin"));
             solicitudRepo.save(s);
             return ResponseEntity.ok(ResponseDTO.success("Estado actualizado", s));

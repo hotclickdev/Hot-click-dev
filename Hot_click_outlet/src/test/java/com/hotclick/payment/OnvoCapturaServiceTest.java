@@ -60,6 +60,21 @@ class OnvoCapturaServiceTest {
     }
 
     @Test
+    @DisplayName("M-08: sin stock la confirmación devuelve SOBREVENTA → COBRADO_SOBREVENTA, evento procesado, sin excepción")
+    void cobroSinStockQuedaRegistrado() {
+        when(paymentService.confirmarPedido(pago))
+            .thenReturn(com.hotclick.service.payment.PaymentOrderConfirmationService.Resultado.SOBREVENTA);
+        org.mockito.ArgumentCaptor<com.hotclick.model.WebhookEvent> evento =
+            org.mockito.ArgumentCaptor.forClass(com.hotclick.model.WebhookEvent.class);
+
+        assertThat(captura.capturarVerificado("cs_1", "{}", "webhook")).isEqualTo(Captura.COBRADO_SOBREVENTA);
+
+        verify(webhookEventRepository, org.mockito.Mockito.atLeastOnce()).save(evento.capture());
+        assertThat(evento.getValue().getProcesado()).isTrue();
+        assertThat(evento.getValue().getErrorProcesamiento()).contains("sin stock");
+    }
+
+    @Test
     @DisplayName("Pago de otro proveedor con el mismo token → no se toca")
     void otroProveedorNoSeCaptura() {
         pago.setProveedor("SINPE");

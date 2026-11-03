@@ -16,7 +16,9 @@ export const paymentService = {
    * @param {string} numeroPedido
    */
   consultarEstado(numeroPedido: string) {
-    return api.get(`/payments/status/${numeroPedido}`)
+    // Prueba de dueño para invitados: el token firmado que devolvió el checkout.
+    const token = sessionStorage.getItem(`hc-cancel-token:${numeroPedido}`)
+    return api.get(`/payments/status/${numeroPedido}`, token ? { headers: { 'X-Pedido-Token': token } } : undefined)
   },
 
   /**

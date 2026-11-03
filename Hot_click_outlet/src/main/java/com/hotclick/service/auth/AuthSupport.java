@@ -5,18 +5,25 @@ import com.hotclick.model.RefreshToken;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.PermisoRepository;
 import com.hotclick.security.JwtUtil;
+import com.hotclick.dto.ResponseDTO;
+import com.hotclick.security.ClientIpResolver;
 import com.hotclick.security.PlatformStaff;
+import com.hotclick.security.RateLimiter;
 import com.hotclick.service.RefreshTokenService;
 import com.hotclick.service.UsuarioService;
+import com.hotclick.utils.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class AuthSupport {
@@ -27,8 +34,93 @@ public class AuthSupport {
     @Autowired private JwtUtil             jwtUtil;
     @Autowired private RefreshTokenService refreshTokenService;
     @Autowired private PermisoRepository   permisoRepository;
+    @Autowired private RateLimiter         rateLimiter;
+    @Autowired private ClientIpResolver    clientIpResolver;
 
+    // Tope por usuario (no por IP) en /2fa/*: un atacante con varias IP no multiplica los intentos.
+    // Gestión (sesión): setup, activate, disable, recovery-codes/regenerate, email/enable|activate|disable.
+    @Value("${hotclick.ratelimit.2fa-usuario.max:15}")         private int tfaUsuarioMax = 15;
+    @Value("${hotclick.ratelimit.2fa-usuario.window:300}")     private int tfaUsuarioWindow = 300;
+    // Login (tempToken): /2fa/verify y /2fa/email/send. Va aparte para que gestionar el 2FA no consuma intentos de login.
+    @Value("${hotclick.ratelimit.2fa-login-usuario.max:10}")   private int tfaLoginMax = 10;
+    @Value("${hotclick.ratelimit.2fa-login-usuario.window:300}") private int tfaLoginWindow = 300;
+
+    private static final String MSG_LIMITE_2FA = "Demasiados intentos. Esperá un momento antes de volver a intentar.";
+
+    /** null si pasa; 429 si el usuario superó el tope de gestión 2FA. Falla cerrado si la BD no responde. */
+    public ResponseEntity<ResponseDTO> limite2faUsuario(Long usuarioId) {
+        return limite("2fa:usuario:" + usuarioId, tfaUsuarioMax, tfaUsuarioWindow);
+    }
+
+    /**
+     * Igual, para /2fa/verify y /2fa/email/send (el usuario sale del tempToken). El cupo es por usuario + IP:
+     * quien conoce la contraseña (y por eso obtiene un tempToken) y dispara intentos desde otra IP no le gasta el
+     * cupo de login al dueño de la cuenta. El bloqueo de cuenta por fallos ({@code registrarFalloAutenticacion})
+     * sigue siendo el tope global por usuario.
+     */
+    public ResponseEntity<ResponseDTO> limite2faLoginUsuario(Long usuarioId, HttpServletRequest request) {
+        String ip = ipCliente(request);
+        return limite("2fa:login:usuario:" + usuarioId + ":ip:" + ip, tfaLoginMax, tfaLoginWindow);
+    }
+
+    // ── Bloqueo por fallos de credencial (ver UsuarioService.registrarFalloAutenticacion) ──
+
+    /** IP del cliente tal como la ve el limitador (misma fuente que el resto de llaves por IP). */
+    public String ipCliente(HttpServletRequest request) {
+        return request == null ? com.hotclick.security.IpParaLlave.DESCONOCIDA : com.hotclick.security.IpParaLlave.clave(clientIpResolver.resolve(request));
+    }
+
+    /**
+     * Para las llaves de fallos: una IPv6 se reduce a su /64 (quien tiene un /64 o más rota 2^64 direcciones y
+     * esquivaría el tope por IP). IPv4 e IPv4-mapeada quedan completas; NAT64 (64:ff9b::/96) usa su IPv4 embebida. Lo que no sea una IP literal pasa igual.
+     */
+    static String prefijoIp(String ip) {
+        return com.hotclick.security.IpParaLlave.reducir(ip);
+    }
+
+    /**
+     * Para endpoints con sesión o tempToken: 403 si esta IP ya agotó sus fallos contra este usuario (antes de mirar
+     * la contraseña o el código); null si puede seguir. Solo esa IP queda afuera: el dueño, desde la suya, no.
+     */
+    public ResponseEntity<ResponseDTO> bloqueoPorFallos(Long usuarioId, HttpServletRequest request) {
+        if (!usuarioService.ipBloqueadaParaUsuario(usuarioId, ipCliente(request))) return null;
+        return ResponseEntity.status(403).body(ResponseDTO.error(
+            "Demasiados intentos fallidos desde esta ubicación. Esperá unos minutos antes de volver a intentar."));
+    }
+
+    /** Autenticación completa por otro camino (p. ej. WebAuthn): limpia los contadores igual que un login completo. */
+    public void autenticacionCompleta(Long usuarioId, HttpServletRequest request) {
+        usuarioService.resetearIntentosFallidos(usuarioId, ipCliente(request));
+    }
+
+    /** Cuenta una contraseña o código incorrecto (login, 2FA verify y gestión 2FA cuentan por el mismo camino). */
+    public void registrarFalloCredencial(Long usuarioId, HttpServletRequest request) {
+        usuarioService.registrarFalloAutenticacion(usuarioId, ipCliente(request));
+    }
+
+    private ResponseEntity<ResponseDTO> limite(String bucket, int max, int window) {
+        if (rateLimiter.tryAcquireEstricto(bucket, max, window)) return null;
+        return ResponseEntity.status(429).body(ResponseDTO.error(MSG_LIMITE_2FA));
+    }
+
+    /** Solo estado 1 (activo) recibe tokens: eliminado, suspendido, inactivo, pendiente o sin estado, no. */
+    public static boolean estaActiva(Usuario usuario) {
+        return usuario != null && Integer.valueOf(Constants.ESTADO_ACTIVO).equals(usuario.getEstado());
+    }
+
+    /** Falla cerrado con una respuesta genérica si la cuenta no está activa (sin revelar el estado). */
+    public void exigirCuentaActiva(Usuario usuario) {
+        if (!estaActiva(usuario)) {
+            throw new CuentaNoActivaException();
+        }
+    }
+
+    /**
+     * Único punto por el que se emiten access y refresh token al iniciar sesión (contraseña, 2FA, Clerk, registro):
+     * una cuenta con estado distinto de 1 no recibe tokens, sin importar por qué camino llegó acá.
+     */
     public AuthResponse buildAuthResponse(Usuario usuario) {
+        exigirCuentaActiva(usuario);
         String rol = PlatformStaff.rolPrincipal(
             usuario.getRoles().stream().map(r -> r.getNombreRol()).toList());
         // ADMIN y staff de plataforma: JWT y response sin tenant (V119 + V126).
@@ -104,7 +196,7 @@ public class AuthSupport {
     }
 
     public String slugify(String text) {
-        String normalized = Normalizer.normalize(text.toLowerCase().trim(), Normalizer.Form.NFD);
+        String normalized = Normalizer.normalize(text.toLowerCase(Locale.ROOT).trim(), Normalizer.Form.NFD);
         return normalized.replaceAll("[^\\p{ASCII}]", "")
                          .replaceAll("[^a-z0-9\\s-]", "")
                          .replaceAll("\\s+", "-")

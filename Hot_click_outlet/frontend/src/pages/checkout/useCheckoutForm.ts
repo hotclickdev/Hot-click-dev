@@ -7,7 +7,7 @@ import usePedidoExtrasStore from '@/store/pedidoExtrasStore'
 import { adminService } from '@/services/orderService'
 import { paymentService } from '@/services/paymentService'
 import {
-  BODEGA_DEFAULT,
+  PAQUETE_SIN_BODEGA,
   SHIPPING_COSTS,
   bodegaRetiroDePaquete,
   bodegaRetiroDesdeItems,
@@ -235,7 +235,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setMetodoEnvioPorPaqueteState((prev) => ({ ...prev, [bodegaId]: value }))
   }
 
-  const bodegaPrincipalId = paquetes[0]?.bodegaId ?? String(BODEGA_DEFAULT)
+  const bodegaPrincipalId = paquetes[0]?.bodegaId ?? PAQUETE_SIN_BODEGA
   const metodoEnvio = metodoEnvioPorPaquete[bodegaPrincipalId] ?? 'ENVIO_NORMAL_GAM'
   function setMetodoEnvio(value: string) {
     setMetodoEnvioPaquete(bodegaPrincipalId, value)

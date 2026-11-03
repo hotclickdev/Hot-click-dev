@@ -8,6 +8,7 @@ import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.OnvoService;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.payment.PaymentFailureHandler;
+import com.hotclick.service.payment.PaymentOrderConfirmationService;
 import com.hotclick.service.payment.PedidoGrupoService;
 import com.hotclick.service.pos.PosSinpeOnvoService;
 import com.hotclick.utils.Constants;
@@ -51,7 +52,7 @@ public class SinpeOnvoMarketplaceService {
     /** Tope del plazo interno (un día); fuera de 1..MAX el SINPE no se ofrece. */
     static final int MAX_MINUTOS = 24 * 60;
 
-    public enum Resultado { CONFIRMADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, EN_ESPERA, NO_VERIFICADO, NO_ENCONTRADO, NO_CONSULTABLE }
+    public enum Resultado { CONFIRMADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA, EN_ESPERA, NO_VERIFICADO, NO_ENCONTRADO, NO_CONSULTABLE }
 
     @Autowired private PagoRepository pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
@@ -167,7 +168,11 @@ public class SinpeOnvoMarketplaceService {
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         pago.setMetodoPagoTipo(Constants.PROVEEDOR_SINPE);
         pago.setFechaActualizacion(ahora);
-        paymentService.confirmarPedido(pago);
+        if (paymentService.confirmarPedido(pago) == PaymentOrderConfirmationService.Resultado.SOBREVENTA) {
+            registrarProcesado(token, tipo, "Cobro SINPE de ONVO sin stock: pedido en revisión, reembolso pendiente");
+            log.error("[ALERTA-PAGO] ONVO cobró SINPE de un pedido sin stock; reembolso pendiente: pago={}", pago.getId());
+            return Resultado.COBRADO_SOBREVENTA;
+        }
         registrarProcesado(token, tipo, null);
         log.info("[SINPE-ONVO] Pago {} confirmado por webhook + GET", pago.getId());
         return Resultado.CONFIRMADO;

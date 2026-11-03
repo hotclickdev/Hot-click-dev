@@ -14,7 +14,6 @@ import com.hotclick.repository.PaqueteInventarioRepository;
 import com.hotclick.repository.PaqueteLineaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
-import com.hotclick.service.ProductoService;
 import com.hotclick.service.StockService;
 import com.hotclick.service.SupabaseStorageService;
 import com.hotclick.utils.InputSanitizer;
@@ -55,7 +54,6 @@ class InventarioPaqueteServiceTest {
     @Mock ProductoRepository productoRepo;
     @Mock CatalogoMaestroRepository catalogoRepo;
     @Mock CategoriaRepository categoriaRepo;
-    @Mock ProductoService productoService;
     @Mock StockService stockService;
     @Mock SupabaseStorageService storageService;
     @Mock InputSanitizer sanitizer;

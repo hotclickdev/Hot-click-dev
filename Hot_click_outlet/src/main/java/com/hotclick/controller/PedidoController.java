@@ -111,7 +111,7 @@ public class PedidoController {
                 throw new IllegalArgumentException("Cada item debe indicar un producto válido");
             }
             Producto producto = productoRepository.findById(item.getProducto().getId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProducto().getId()));
+                .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Producto no encontrado", "productoId=" + item.getProducto().getId()));
             int cantidad = item.getCantidad() != null && item.getCantidad() > 0 ? item.getCantidad() : 1;
             int precio = producto.getPrecioVenta()  != null ? producto.getPrecioVenta()  : 0;
             int costo  = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;

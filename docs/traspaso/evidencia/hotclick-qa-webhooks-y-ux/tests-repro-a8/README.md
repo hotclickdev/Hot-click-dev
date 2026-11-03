@@ -12,3 +12,8 @@ Resultado: 4 tests, 4 FALLAN (assertion, ningún error) = bug reproducido. Log: 
 | A8-C7 /start en minúsculas | TelegramReproA8IntegrationTest.start_codigoEnMinusculas_vincula | FALLA: no vincula (estado != ACTIVA) |
 
 Con el fix, los 4 deben pasar.
+
+## Copias .java retiradas (29-30 oct 2026)
+Se borraron las copias .java de esta carpeta: la copia vieja tenía un literal de prueba que hacía saltar el gate E4 (falso positivo, confirmado por Seguridad; no hay nada que rotar). Los tests reales están en master 557e04c21:
+- Hot_click_outlet/src/test/java/com/hotclick/integration/TelegramReproA8IntegrationTest.java
+- Hot_click_outlet/src/test/java/com/hotclick/service/telegram/TelegramUpdateDedupReproC3Test.java

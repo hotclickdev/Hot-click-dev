@@ -1,5 +1,7 @@
 # Traspaso — HotClick CI/CD
 
+> **Nota vigente (30-oct-2026): [ci-cd.md](ci-cd.md).** Este archivo es la historia del 26-oct; para reglas, PRs abiertos y pendientes actuales leé `ci-cd.md`.
+
 Fecha: 26-oct-2026, ~14:50 (hora de Costa Rica, UTC-6). Repo: hotclickdev/Hot-click-dev.
 
 ## Rol

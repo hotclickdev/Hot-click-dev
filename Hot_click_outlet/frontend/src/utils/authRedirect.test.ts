@@ -22,3 +22,12 @@ describe('destino después del login', () => {
     expect(rutaLoginConRetorno('/\\evil.example')).toBe('/login')
   })
 })
+
+describe('/pyme: el login con retorno no se anida', () => {
+  it('un redirect que ya apunta a /login usa su destino interno', () => {
+    expect(rutaLoginConRetorno('/login?redirect=%2Fpyme')).toBe('/login?redirect=%2Fpyme')
+    expect(rutaLoginConRetorno('/login?redirect=%2Flogin%3Fredirect%3D%252Fpyme')).toBe('/login?redirect=%2Fpyme')
+    expect(rutaLoginConRetorno('/login')).toBe('/login')
+    expect(rutaLoginConRetorno('/login?redirect=https%3A%2F%2Fevil.example')).toBe('/login')
+  })
+})

@@ -3,6 +3,7 @@ package com.hotclick.service.publicchat;
 import com.hotclick.service.catalogo.ChatPrecioPersonalizado;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -201,7 +202,7 @@ class PublicChatAdvisorAnswers {
         String[] partes = blob.split("(?<=[.!?\\n])\\s+");
         StringBuilder sb = new StringBuilder();
         for (String parte : partes) {
-            String n = java.text.Normalizer.normalize(parte.toLowerCase(), java.text.Normalizer.Form.NFD)
+            String n = java.text.Normalizer.normalize(parte.toLowerCase(Locale.ROOT), java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "");
             for (String key : keys) {
                 if (n.contains(key)) {

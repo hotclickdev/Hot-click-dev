@@ -25,6 +25,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -345,7 +346,7 @@ public class TiendaRapidaService {
     }
 
     private String slugDe(String nombre) {
-        String base = Normalizer.normalize(nombre.toLowerCase(), Normalizer.Form.NFD)
+        String base = Normalizer.normalize(nombre.toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
             .replaceAll("[^\\p{ASCII}]", "")
             .replaceAll("[^a-z0-9\\s-]", "")
             .replaceAll("\\s+", "-")
@@ -369,7 +370,7 @@ public class TiendaRapidaService {
     }
 
     private static String correoInterno(String token) {
-        String semilla = token.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+        String semilla = token.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
         return "rapida-" + semilla.substring(0, Math.min(12, semilla.length())) + "@temporal.hotclick.local";
     }
 

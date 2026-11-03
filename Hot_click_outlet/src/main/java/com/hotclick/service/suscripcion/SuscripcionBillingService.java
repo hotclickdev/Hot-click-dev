@@ -1,6 +1,7 @@
 package com.hotclick.service.suscripcion;
 
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.utils.ErrorPublico;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -45,7 +45,7 @@ public class SuscripcionBillingService {
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public Suscripcion iniciarTrial(Long empresaId) {
         Empresa empresa = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
         Optional<Suscripcion> existente = suscripcionRepo.findActivaByEmpresaId(empresaId);
         if (existente.isPresent()) {
@@ -58,7 +58,7 @@ public class SuscripcionBillingService {
 
         // Auditor 5 S-07: el plan del trial sale de configuración; sin fallback a un plan arbitrario.
         Plan planPro = planRepo.findByNombre(planTrial)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Plan de trial no configurado: " + planTrial));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle(ErrorPublico.GENERICO, "plan de trial no configurado: " + planTrial));
 
         LocalDate trialEnd = LocalDate.now(Constants.ZONA_CR).plusDays(14);
 
@@ -103,9 +103,9 @@ public class SuscripcionBillingService {
     @Transactional(readOnly = true)
     public String[] leerDatosParaCheckout(Long empresaId, Long planId) {
         Empresa empresa = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
         Plan plan = planRepo.findById(planId)
-            .orElseThrow(() -> new NoSuchElementException("Plan no encontrado: " + planId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Plan no encontrado", "planId=" + planId));
         String priceId = stripeService.getPriceIdForPlan(plan.getNombre());
         if (priceId == null) {
             log.warn("[billing] plan {} sin precio configurado; checkout bloqueado (empresa={})", plan.getNombre(), empresaId);
@@ -157,14 +157,14 @@ public class SuscripcionBillingService {
     @Transactional(readOnly = true)
     public String leerStripeSubId(Long empresaId) {
         return suscripcionRepo.findActivaByEmpresaId(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("No hay suscripción activa para empresa " + empresaId))
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Suscripción activa no encontrada", "empresaId=" + empresaId))
             .getStripeSubscriptionId();
     }
 
     @Transactional
     public void aplicarCancelacion(Long empresaId, boolean inmediata) {
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción activa para empresa " + empresaId + " no encontrada"));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Suscripción activa no encontrada", "empresaId=" + empresaId));
         if (inmediata) {
             sub.setEstado("CANCELADO");
             sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
@@ -178,7 +178,7 @@ public class SuscripcionBillingService {
     /** Sin @Transactional: la lectura usa la TX propia del repo, luego HTTP sin conexión retenida. */
     public String crearPortalUrl(Long empresaId) throws StripeException {
         Empresa empresa = empresaRepo.findById(empresaId)
-            .orElseThrow(() -> new NoSuchElementException("Empresa no encontrada: " + empresaId));
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
         if (empresa.getStripeCustomerId() == null)
             throw new IllegalStateException("Empresa no tiene Customer Stripe");
         return stripeService.crearPortalSession(empresa.getStripeCustomerId());

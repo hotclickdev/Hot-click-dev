@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 
-@PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR') or hasAuthority('global.metrics')")
+@PreAuthorize("hasRole('ADMIN') or hasAuthority('global.metrics')") // QA2-área2: solo plataforma
 @RestController
 @RequestMapping("/api/admin")
 public class AdminPagoController {

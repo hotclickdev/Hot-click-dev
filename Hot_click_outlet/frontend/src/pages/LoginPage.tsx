@@ -17,7 +17,7 @@ export default function LoginPage() {
     step, setStep, loading, correo, setCorreo, contrasena, setContrasena,
     code2FA, setCode2FA, useRecovery, setUseRecovery, recoveryInput, setRecoveryInput,
     navigate, error, setError, needsVerification, needsPasswordReset,
-    resendLoading, refs2FA, turnstileRef, turnstileToken, setTurnstileToken,
+    resendLoading, verifCooldown, refs2FA, turnstileRef, turnstileToken, setTurnstileToken,
     twoFaMethods, resendCooldown, handleLogin, handleResendVerification,
     sendEmailOtp, handlePickMethod, handle2FA, handleEmailOtp, handleLoginSuccess,
   } = flow
@@ -33,7 +33,7 @@ export default function LoginPage() {
             contrasena={contrasena} setContrasena={setContrasena}
             error={error} needsVerification={needsVerification}
             needsPasswordReset={needsPasswordReset}
-            resendLoading={resendLoading} loading={loading}
+            resendLoading={resendLoading} verifCooldown={verifCooldown} loading={loading}
             turnstileToken={turnstileToken} turnstileRef={turnstileRef}
             turnstileSiteKey={TURNSTILE_SITE_KEY} clerkEnabled={clerkEnabled}
             setTurnstileToken={setTurnstileToken}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { securityService } from '@/services/securityService'
 import { flagService } from '@/services/flagService'
 import { campoLista, idSeguro, texto, type Fila } from './normalizar'
+import { formatUSD } from '@/utils/format'
 import { Aviso, Carga, Chip, Encabezado, TARJETA } from './piezas'
 
 export default function IaPlataforma() {
@@ -27,7 +28,7 @@ export default function IaPlataforma() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Encabezado titulo="IA" detalle="Uso del mes y el chat público. Es una estimación, no una factura." marca={costo == null ? '—' : costo.toFixed(2)} />
+      <Encabezado titulo="IA" detalle="Uso del mes y el chat público. Es una estimación, no una factura." marca={costo == null ? '—' : formatUSD(costo)} />
       {error && <p className="text-sm text-hc-primary-text">{error}</p>}
       {filas.length === 0 && <Aviso>No hay uso registrado este mes.</Aviso>}
       <div className="grid gap-3 sm:grid-cols-2">
@@ -47,7 +48,7 @@ export default function IaPlataforma() {
             <p className="mt-1 text-xs text-hc-n-600">
               {texto(fila.llamadas, '0')} llamadas · tope {texto(fila.limite, '—')} · {texto(fila.plan, '')}
               {texto(fila.tokensEntrada) ? ` · ${texto(fila.tokensEntrada)} tokens` : ''}
-              {texto(fila.costoUsd) ? ` · USD ${texto(fila.costoUsd)}` : ''}
+              {texto(fila.costoUsd) ? ` · ${formatUSD(texto(fila.costoUsd), 4)}` : ''}
             </p>
             <div className="mt-3 h-2 rounded-full bg-hc-n-100">
               <div className="h-2 rounded-full bg-hc-blue-600" style={{ width: `${ancho}%` }} />

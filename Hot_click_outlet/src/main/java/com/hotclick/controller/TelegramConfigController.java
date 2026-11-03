@@ -3,6 +3,7 @@ package com.hotclick.controller;
 import com.hotclick.model.Usuario;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.TelegramClienteBotService;
+import com.hotclick.service.telegram.TelegramAbusoService;
 import com.hotclick.service.telegram.TelegramConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ public class TelegramConfigController {
     @Autowired private TelegramClienteBotService bot;
     @Autowired private CompanyScope companyScope;
     @Autowired private TelegramConfigService telegramConfigService;
+    @Autowired private TelegramAbusoService abusoService;
 
     @com.hotclick.security.PermiteLector // acción personal / de comprador
     @PostMapping("/vincular")
@@ -79,6 +81,23 @@ public class TelegramConfigController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
+    /**
+     * Auditor 8 M-A: único camino para salir del bloqueo de 365 días del bot. Solo admin de
+     * plataforma (además de la regla de URL /api/telegram/admin/** con ROLE_ADMIN; impersonando no
+     * cuenta como admin). Auditado en hot_click_auditoria_admin_tb.
+     */
+    @PostMapping("/admin/desbloquear/{usuarioId}")
+    public ResponseEntity<?> desbloquear(@PathVariable Long usuarioId) {
+        if (!companyScope.isAdminIT()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return switch (abusoService.desbloquear(usuarioId)) {
+            case NO_ENCONTRADA -> ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            case SIN_BLOQUEO -> ResponseEntity.ok(Map.of("ok", true, "desbloqueado", false));
+            case DESBLOQUEADA -> ResponseEntity.ok(Map.of("ok", true, "desbloqueado", true));
+        };
+    }
+
     @PostMapping("/admin/webhook")
     public ResponseEntity<?> registrarWebhook() {
         if (!companyScope.isAdminIT()) {
@@ -96,7 +115,7 @@ public class TelegramConfigController {
             String respuesta = telegramConfigService.registrarWebhook();
             return ResponseEntity.ok(Map.of("telegram", respuesta != null ? respuesta : ""));
         } catch (Exception e) {
-            log.error("[telegram] setWebhook falló — {}: {}", e.getClass().getSimpleName(), com.hotclick.service.telegram.TelegramTexto.sinToken(e.getMessage()));
+            log.error("[telegram] setWebhook falló — {}", e.getClass().getSimpleName());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", "setWebhook falló, ver logs"));
         }
     }

@@ -27,13 +27,18 @@ public class AltaEmprendedorNotificador {
         try {
             telegramService.enviar(texto);
         } catch (Exception ex) {
-            log.error("[alta-emprendedor] fallo Telegram — {}", com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
+            log.error("[alta-emprendedor] fallo Telegram — {}", ex.getClass().getSimpleName());
         }
         try {
-            notificacionEmailService.enviarAltaEmprendedorAAdminIT(
-                nombreEmpresa, correo, resultado.cupoGratis(), resultado.estado());
+            if (resultado.pendienteCupo()) {
+                notificacionEmailService.enviarAltaEmprendedorPendienteAAdminIT(
+                    nombreEmpresa, correo, resultado.estado());
+            } else {
+                notificacionEmailService.enviarAltaEmprendedorAAdminIT(
+                    nombreEmpresa, correo, resultado.cupoGratis(), resultado.estado());
+            }
         } catch (Exception ex) {
-            log.error("[alta-emprendedor] fallo email admin — {}", ex.getMessage());
+            log.error("[alta-emprendedor] fallo email admin — {}", ex.getClass().getSimpleName());
         }
     }
 
@@ -46,19 +51,22 @@ public class AltaEmprendedorNotificador {
         sb.append("Cupos: ").append(estado.usados()).append('/').append(estado.limite()).append('\n');
         if (resultado.demo()) {
             sb.append("Demo QA: no consumió cupo.");
+        } else if (resultado.pendienteCupo()) {
+            sb.append("Pendiente de aprobación: el puesto de ").append(estado.textoGratis())
+              .append(" se asigna al aprobar (correo verificado, un puesto por persona).");
         } else if (resultado.cupoGratis()) {
             sb.append(textoCruce(estado));
         } else {
-            sb.append("Sin cupo gratis. Requiere membresía PYME o Negocio Plus.");
+            sb.append("Sin cupo de ").append(estado.textoGratis()).append(". Requiere membresía PYME o Negocio Plus.");
         }
         return sb.toString();
     }
 
     private static String textoCruce(CupoEmprendedorEstado estado) {
         if (estado.usados() >= estado.limite()) {
-            return "Se ocupó el último cupo gratis. A partir de ahora la membresía tiene costo.";
+            return "Se ocupó el último cupo de " + estado.textoGratis() + ". A partir de ahora la membresía tiene costo.";
         }
-        return "Entró con cupo gratis. Quedan " + estado.cuposGratisDisponibles() + ".";
+        return "Entró con " + estado.textoGratis() + ". Quedan " + estado.cuposGratisDisponibles() + ".";
     }
 
     private static String sanitizar(String valor) {

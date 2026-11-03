@@ -2858,7 +2858,8 @@ CREATE TABLE IF NOT EXISTS customer_memory (
     last_visit       TIMESTAMPTZ,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_customer_memory_visitor UNIQUE (visitor_id)
+    empresa_id       BIGINT,
+    CONSTRAINT uq_customer_memory_visitor_empresa UNIQUE NULLS NOT DISTINCT (visitor_id, empresa_id)
 );
 CREATE INDEX IF NOT EXISTS idx_customer_memory_visitor ON customer_memory (visitor_id);
 
@@ -4384,3 +4385,41 @@ CREATE TABLE IF NOT EXISTS hot_click_suspension_extension_tb (
     CONSTRAINT uq_suspension_extension_ciclo UNIQUE (suscripcion_id)
 );
 CREATE INDEX IF NOT EXISTS idx_suspension_extension_empresa ON hot_click_suspension_extension_tb (fk_id_empresa, vence_en);
+
+-- ====================================================
+-- V206 Trial del plan Emprendedor (27-oct-2026). Aditiva: columnas NULL e índices, no toca filas existentes.
+-- Primeros N negocios (cupo configurable, 70 por defecto) con trial de M días (90 por defecto); luego US$9/mes por ONVO.
+-- trial_emprendedor_pos UNIQUE = defensa extra contra puestos duplicados.
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_hasta DATE;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_pos INTEGER;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_trial_emprendedor_pos
+    ON hot_click_empresa_tb (trial_emprendedor_pos);
+CREATE INDEX IF NOT EXISTS idx_empresa_trial_emprendedor_hasta
+    ON hot_click_empresa_tb (trial_emprendedor_hasta) WHERE trial_emprendedor_hasta IS NOT NULL;
+
+-- ====================================================
+-- V207 Cupo Emprendedor: un puesto por persona (27-oct-2026). Aditiva: dos columnas NULL, dos índices únicos y un trigger.
+-- El puesto del trial se asigna al APROBAR el negocio (no al registrarlo) y es de UNA persona: el titular del puesto
+-- (usuario propietario y correo verificado, normalizado) queda en la propia fila de la empresa con UNIQUE, así que la BD
+-- rechaza un segundo puesto para la misma persona aunque el código falle. Los NULL no chocan entre sí en PostgreSQL.
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_titular_usuario BIGINT;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS trial_emprendedor_titular_correo VARCHAR(160);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_trial_emprendedor_titular_usuario
+    ON hot_click_empresa_tb (trial_emprendedor_titular_usuario);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_empresa_trial_emprendedor_titular_correo
+    ON hot_click_empresa_tb (trial_emprendedor_titular_correo);
+
+-- Si se borra un negocio que aún estaba en trial, su puesto vuelve al cupo (atómico, nunca bajo 0).
+-- El rechazo desde la app libera por su lado con un UPDATE condicionado (sin doble liberación).
+CREATE OR REPLACE FUNCTION fn_cupo_emprendedor_liberar_al_borrar() RETURNS trigger AS $fn$
+BEGIN
+    IF OLD.trial_emprendedor_pos IS NOT NULL AND OLD.estado_plan = 'TRIAL' THEN
+        UPDATE hot_click_cupo_emprendedor_tb SET usados = usados - 1 WHERE id = 1 AND usados > 0;
+    END IF;
+    RETURN OLD;
+END;
+$fn$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_cupo_emprendedor_liberar_al_borrar
+    AFTER DELETE ON hot_click_empresa_tb
+    FOR EACH ROW EXECUTE FUNCTION fn_cupo_emprendedor_liberar_al_borrar();

@@ -1,5 +1,6 @@
 package com.hotclick.service.email;
 
+import java.util.Locale;
 import com.hotclick.dto.CupoEmprendedorEstado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -125,10 +126,10 @@ public class NegocioEmailBuilder {
     public String buildAltaEmprendedorAdmin(String nombreEmpresa, String correo,
                                            boolean cupoGratis, CupoEmprendedorEstado estado) {
         String estadoCupo = cupoGratis
-            ? "Entró con cupo gratis."
-            : "Sin cupo gratis. Requiere membresía PYME o Negocio Plus.";
+            ? "Entró con " + estado.textoGratis() + "."
+            : "Sin cupo de " + estado.textoGratis() + ". Requiere membresía PYME o Negocio Plus.";
         if (cupoGratis && estado.usados() >= estado.limite()) {
-            estadoCupo = "Se ocupó el último cupo gratis. A partir de ahora la membresía tiene costo.";
+            estadoCupo = "Se ocupó el último cupo de " + estado.textoGratis() + ". A partir de ahora la membresía tiene costo.";
         }
         return layout.abrirHtml()
             + layout.header("Nueva alta de emprendimiento", estadoCupo)
@@ -138,6 +139,22 @@ public class NegocioEmailBuilder {
             + "<p style='margin:0 0 8px;color:#4D5560;font-size:14px'>Correo: "
             + layout.esc(correo) + "</p>"
             + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px'>Cupos: "
+            + estado.usados() + " / " + estado.limite()
+            + " (quedan " + estado.cuposGratisDisponibles() + ")</p>"
+            + layout.footer("Alerta automática de HotClick");
+    }
+
+    /** Alta pendiente: el puesto y el trial arrancan al aprobar (con correo verificado y un puesto por persona). */
+    public String buildAltaEmprendedorPendienteAdmin(String nombreEmpresa, String correo, CupoEmprendedorEstado estado) {
+        return layout.abrirHtml()
+            + layout.header("Nueva alta de emprendimiento",
+                "Pendiente de aprobación: el puesto de " + estado.textoGratis() + " se asigna al aprobar.")
+            + layout.abrirCuerpo()
+            + "<p style='margin:0 0 12px;color:#14171C;font-size:16px'><strong>"
+            + layout.esc(nombreEmpresa) + "</strong></p>"
+            + "<p style='margin:0 0 8px;color:#4D5560;font-size:14px'>Correo: "
+            + layout.esc(correo) + "</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px'>Cupos ocupados: "
             + estado.usados() + " / " + estado.limite()
             + " (quedan " + estado.cuposGratisDisponibles() + ")</p>"
             + layout.footer("Alerta automática de HotClick");
@@ -161,7 +178,7 @@ public class NegocioEmailBuilder {
               + "<p style='margin:0;color:#4D5560;font-size:14px;line-height:1.6'>" + layout.esc(motivo) + "</p></div>"
             : "";
         return layout.abrirHtml()
-            + layout.header("Actualización sobre " + layout.esc(tipoLabel.toLowerCase()), null)
+            + layout.header("Actualización sobre " + layout.esc(tipoLabel.toLowerCase(Locale.ROOT)), null)
             + layout.abrirCuerpo()
             + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
             + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>Revisamos <strong style='color:#14171C'>"

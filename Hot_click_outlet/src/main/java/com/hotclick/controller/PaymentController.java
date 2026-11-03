@@ -28,6 +28,9 @@ public class PaymentController {
     private TilopayConfirmacionService tilopayConfirmacionService;
 
     @Autowired
+    private com.hotclick.service.payment.PagoEstadoConsultaService pagoEstadoConsultaService;
+
+    @Autowired
     private com.hotclick.service.payment.GuestCheckoutGuard guestCheckoutGuard;
 
     @PostMapping("/checkout")
@@ -68,9 +71,12 @@ public class PaymentController {
     }
 
     @GetMapping("/status/{numeroPedido}")
-    public ResponseEntity<ResponseDTO> consultarEstado(@PathVariable String numeroPedido) {
+    public ResponseEntity<ResponseDTO> consultarEstado(@PathVariable String numeroPedido,
+            @RequestHeader(value = "X-Pedido-Token", required = false) String tokenPedido) {
         try {
-            PaymentStatusResponse response = paymentService.consultarEstado(numeroPedido);
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            String correo = auth != null ? auth.getName() : null;
+            PaymentStatusResponse response = pagoEstadoConsultaService.consultar(numeroPedido, correo, tokenPedido);
             return ResponseEntity.ok(ResponseDTO.success("Estado del pago", response));
         } catch (Exception e) {
             return ResponseEntity.status(404).body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));

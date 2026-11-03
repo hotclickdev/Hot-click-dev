@@ -168,9 +168,10 @@ class TelegramFlujoProductoConfirmHelper {
         } catch (com.hotclick.exception.PlanLimitException ex) {
             bot.enviarMensaje(v.getChatId(), esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage())), TelegramTeclado.soloMenu());
         } catch (Exception ex) {
-            log.error("[telegram-flujo] fallo creando producto en chat {} — {}", v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
-            abuso.avisarErrorDeUsuario(v.getChatId(), com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()));
-            bot.enviarMensaje(v.getChatId(), "No pude crear el producto: " + esc(com.hotclick.service.telegram.TelegramTexto.sinToken(ex.getMessage()))
+            log.error("[telegram-flujo] fallo creando producto en chat "
+                + com.hotclick.service.telegram.TelegramTexto.chatEnmascarado(v.getChatId()), com.hotclick.service.telegram.TelegramTexto.paraLog(ex));
+            abuso.avisarErrorDeUsuario(v.getChatId(), ex);
+            bot.enviarMensaje(v.getChatId(), "No pude crear el producto."
                 + "\nEl borrador sigue guardado — tocá *Publicar* para reintentar o /cancelar.",
                 List.of(List.of(TelegramClienteBotService.boton("✅ Publicar producto", "prd:ok"),
                                 TelegramClienteBotService.boton("❌ Cancelar", BTN_CANCELAR)),

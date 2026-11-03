@@ -19,11 +19,23 @@ public class FacturaController {
 
     private final FacturacionService facturacionService;
     private final FacturaConsultaService consultaService;
+    private final com.hotclick.security.PropietarioGuard propietarioGuard;
+    private final com.hotclick.security.CompanyScope companyScope;
 
     public FacturaController(FacturacionService facturacionService,
-                              FacturaConsultaService consultaService) {
+                              FacturaConsultaService consultaService,
+                              com.hotclick.security.PropietarioGuard propietarioGuard,
+                              com.hotclick.security.CompanyScope companyScope) {
         this.facturacionService = facturacionService;
         this.consultaService = consultaService;
+        this.propietarioGuard = propietarioGuard;
+        this.companyScope = companyScope;
+    }
+
+    /** QA2-área2: los comprobantes fiscales solo los lee el PROPIETARIO o el ADMIN (403, nunca 500). */
+    private void exigirLectura() {
+        if (companyScope.isAdminIT()) return;
+        propietarioGuard.exigirGestionEmpresa(companyScope.getCurrentEmpresaIdOrOwn());
     }
 
     /**
@@ -32,13 +44,20 @@ public class FacturaController {
      *
      * Body opcional: { "tipo": "01" | "04" }
      * Default: "04" (Tiquete Electrónico — no requiere datos del receptor)
+     *
+     * Área 7 N1: solo el admin de HotClick emite, y siempre a nombre de HotClick
+     * (docs/traspaso/plan-scrum.md:21). Cualquier otro rol recibe 403 sin reservar consecutivo.
      */
     @PostMapping("/emitir/{pedidoId}")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ComprobanteFiscal> emitir(
             @PathVariable Long pedidoId,
             @RequestBody(required = false) Map<String, String> body) {
 
+        if (!companyScope.isAdminIT()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                "Solo el admin de HotClick puede emitir comprobantes.");
+        }
         String tipo = (body != null) ? body.get("tipo") : null;
         ComprobanteFiscal cf = facturacionService.emitir(pedidoId, tipo);
         return ResponseEntity.accepted().body(cf);
@@ -57,18 +76,21 @@ public class FacturaController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {
+        exigirLectura();
         return ResponseEntity.ok(consultaService.listar(page, size, estado, fechaDesde, fechaHasta));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ComprobanteEmitido> detalle(@PathVariable Long id) {
+        exigirLectura();
         return ResponseEntity.ok(consultaService.detalle(id));
     }
 
     @GetMapping("/{id}/estado")
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ComprobanteEmitido> estado(@PathVariable Long id) {
+        exigirLectura();
         return ResponseEntity.ok(consultaService.detalle(id));
     }
 }

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -70,7 +71,7 @@ public class ConsolaFichaService {
     private List<String> motivos(Empresa empresa) {
         List<String> motivos = new ArrayList<>();
         sancionRepo.findFirstByEmpresaIdAndActivaTrueOrderByCreadaDesc(empresa.getId())
-            .ifPresent(fila -> motivos.add("Sanción " + fila.getNivelAplicado().toLowerCase() + ": " + fila.getMotivo()));
+            .ifPresent(fila -> motivos.add("Sanción " + fila.getNivelAplicado().toLowerCase(Locale.ROOT) + ": " + fila.getMotivo()));
         if (!tieneCuenta(empresa.getId())) motivos.add("Sin cuenta de cobro aprobada.");
         if (stockCero(empresa.getId()) && pedidosPagados(empresa.getId()) > 0) {
             motivos.add("Hay stock en cero y un pedido pagado.");

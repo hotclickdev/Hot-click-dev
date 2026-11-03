@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,7 +56,7 @@ public class EmprendedorRegistroService {
             throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres");
 
         // Correo del admin ya registrado
-        if (usuarioRepository.existsByCorreo(dto.getCorreoAdmin().trim().toLowerCase()))
+        if (usuarioRepository.existsByCorreo(dto.getCorreoAdmin().trim().toLowerCase(java.util.Locale.ROOT)))
             throw new com.hotclick.exception.CorreoYaRegistradoException();
 
         // Generar slug si no viene
@@ -66,8 +67,8 @@ public class EmprendedorRegistroService {
 
         // Correo empresa (puede ser igual al admin si no se especifica)
         String correoEmpresa = dto.getCorreoEmpresa() != null && !dto.getCorreoEmpresa().isBlank()
-            ? dto.getCorreoEmpresa().trim().toLowerCase()
-            : dto.getCorreoAdmin().trim().toLowerCase();
+            ? dto.getCorreoEmpresa().trim().toLowerCase(java.util.Locale.ROOT)
+            : dto.getCorreoAdmin().trim().toLowerCase(java.util.Locale.ROOT);
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa))
             throw new IllegalArgumentException("Ya existe una empresa registrada con ese correo");
 
@@ -104,7 +105,7 @@ public class EmprendedorRegistroService {
         usuario.setNombre(partes[0]);
         usuario.setApellidoPaterno(partes.length > 1 ? partes[1] : "Emprendedor");
         usuario.setIdentificacion("EMP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
-        usuario.setCorreo(dto.getCorreoAdmin().trim().toLowerCase());
+        usuario.setCorreo(dto.getCorreoAdmin().trim().toLowerCase(java.util.Locale.ROOT));
         usuario.setContrasenaHash(passwordEncoder.encode(dto.getPasswordAdmin()));
         usuario.setTelefono(dto.getTelefonoAdmin() != null ? dto.getTelefonoAdmin() : "00000000");
         usuario.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
@@ -173,7 +174,7 @@ public class EmprendedorRegistroService {
 
         String slug     = uniqueSlug(slugify(nombre));
         String correoEmp = (correoEmpresa != null && !correoEmpresa.isBlank())
-            ? correoEmpresa.trim().toLowerCase()
+            ? correoEmpresa.trim().toLowerCase(java.util.Locale.ROOT)
             : usuario.getCorreo();
 
         // 1. Crear empresa
@@ -241,7 +242,7 @@ public class EmprendedorRegistroService {
     }
 
     private String slugify(String text) {
-        String normalized = Normalizer.normalize(text.toLowerCase().trim(), Normalizer.Form.NFD);
+        String normalized = Normalizer.normalize(text.toLowerCase(Locale.ROOT).trim(), Normalizer.Form.NFD);
         return normalized.replaceAll("[^\\p{ASCII}]", "")
                          .replaceAll("[^a-z0-9\\s-]", "")
                          .replaceAll("\\s+", "-")

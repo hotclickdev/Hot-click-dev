@@ -42,6 +42,8 @@ public class TelegramCallbackHandler {
         }
         TelegramVinculacion v = opt.get();
         if (abuso.rechazarSiPausadoOBloqueado(v)) return;
+        // TG3: los botones también pasan por antiabuso (callback_data la arma el cliente).
+        if (abuso.rechazarSiInyeccion(chatId, data)) return;
         long messageId = cb.path("message").path("message_id").asLong(0);
         Long panel = messageId > 0 ? Long.valueOf(messageId) : v.getPanelMessageId();
         if (messageId > 0) v.setPanelMessageId(messageId);
@@ -87,7 +89,7 @@ public class TelegramCallbackHandler {
                 bot.enviarMensaje(v.getChatId(), "Perfecto, inventario confirmado. ¡Gracias!",
                     TelegramTeclado.soloMenu());
             }
-            default -> log.warn("[telegram-bot] callback desconocido '{}' de chat {}", data, chatId);
+            default -> log.warn("[telegram-bot] callback desconocido de chat {} (no se registra el callback_data)", TelegramTexto.chatEnmascarado(chatId));
         }
     }
 

@@ -1,3 +1,5 @@
+import FacturaElectronicaCheck from '@/components/facturacion/FacturaElectronicaCheck'
+import { useFacturaElectronica } from '@/components/facturacion/facturaElectronica'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -25,7 +27,7 @@ type MetodosPagoProps = {
 export function MetodosPago({ form, escritorio }: MetodosPagoProps) {
   const { t } = useTranslation()
   const rapido = Object.values(form.metodoEnvioPorPaquete).includes('ENVIO_RAPIDO')
-  const METODOS = metodosDisponibles()
+  const METODOS = metodosDisponibles(!metodoProximamente(PAGO_SINPE, form.sinpeManualHabilitado, form.tarjetaOnvoHabilitada))
   const disponibles = METODOS.filter((m) => !(m.id === PAGO_EFECTIVO && rapido)).map((m) => m.id as string)
   const seleccionable = metodoSeleccionable(form.metodoPago, disponibles, form.sinpeManualHabilitado, form.tarjetaOnvoHabilitada)
   const { setMetodoPago } = form
@@ -257,6 +259,12 @@ export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVar
 }
 
 /** Consentimiento de tratamiento de datos (Ley 8968). Obligatorio; Figma no lo dibuja. */
+/** M4: casilla de factura electrónica del checkout (estado compartido con el payload del pago). */
+export function FacturaElectronicaCheckout() {
+  const [marcado, cambiar] = useFacturaElectronica()
+  return <FacturaElectronicaCheck marcado={marcado} onCambiar={cambiar} contexto="checkout" />
+}
+
 export function ConsentimientoDatos({ marcado, onCambiar, error }: { marcado: boolean; onCambiar: (valor: boolean) => void; error?: boolean }) {
   const { t } = useTranslation()
   return (

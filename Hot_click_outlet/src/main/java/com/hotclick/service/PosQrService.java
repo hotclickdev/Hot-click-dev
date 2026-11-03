@@ -39,8 +39,17 @@ public class PosQrService {
     public Map<String, Object> crearSesion(Long usuarioId, Long empresaId, Long turnoId,
                                    String metodoPago, Object metodosPago, List<Map<String, Object>> items,
                                    String notas, Long clienteId, Long bodegaId) {
+        return crearSesion(usuarioId, empresaId, turnoId, metodoPago, metodosPago, items, notas, clienteId, bodegaId, false);
+    }
+
+    /** M4: con {@code facturaElectronica} el total del QR incluye el IVA en régimen simplificado. */
+    @Transactional
+    @SuppressWarnings("java:S107")
+    public Map<String, Object> crearSesion(Long usuarioId, Long empresaId, Long turnoId,
+                                   String metodoPago, Object metodosPago, List<Map<String, Object>> items,
+                                   String notas, Long clienteId, Long bodegaId, boolean facturaElectronica) {
         PosQrSesion sesion = sessionService.crearSesion(
-            usuarioId, empresaId, turnoId, metodoPago, metodosPago, items, notas, clienteId, bodegaId);
+            usuarioId, empresaId, turnoId, metodoPago, metodosPago, items, notas, clienteId, bodegaId, facturaElectronica);
         return sessionService.respuestaCajero(sesion);
     }
 

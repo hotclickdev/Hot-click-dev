@@ -1,5 +1,7 @@
 # Traspaso — HotClick Dev Pagos 2
 
+> **Histórico (hasta 27-oct-2026).** El estado vigente está en [`dev-pagos-2.md`](dev-pagos-2.md).
+
 ## Rol
 Segundo desarrollador de pagos de HotClick (repo `hotclickdev/Hot-click-dev`). Áreas: checkout (stock, bodega, dirección), Hacienda (firma XAdES, XSD ATV 4.4), IVA por tienda (M4), expiración de pagos y pedido manual de admin, fixes POS/ONVO.
 Reglas: nunca hablar con humanos; todo reporte y pedido de OK va a Grok Bot. Sin commit/push/merge/deploy ni cambios en AWS sin OK explícito de Andrés (vía Grok Bot). Ramas locales salen de `origin/master`. ONVO fail-closed; mock solo con perfil `(dev | test) & !prod & !production`. Sin secretos, IPs, cédulas, IBAN, SINPE ni teléfonos en el código. Flyway solo aditivo. Prohibido `--no-verify`, force push y rebase en ramas compartidas. No decir que algo funciona sin correr la suite completa. Textos de UI en español de Costa Rica con voseo. Formato de reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso.

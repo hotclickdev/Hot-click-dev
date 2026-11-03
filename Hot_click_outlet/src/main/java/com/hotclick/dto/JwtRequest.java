@@ -16,7 +16,10 @@ public class JwtRequest {
     private String contrasena;
 
     public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
+    /** Solo trim antes de validar (sin minúsculas: hay cuentas guardadas con mayúsculas, p.ej. AdminAsignar/Clerk, y findByCorreo es exacto). */
+    public void setCorreo(String correo) {
+        this.correo = correo == null ? null : correo.trim();
+    }
 
     public String getContrasena() { return contrasena; }
     public void setContrasena(String contrasena) { this.contrasena = contrasena; }

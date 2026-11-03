@@ -3,6 +3,7 @@ package com.hotclick.service.extraccion;
 import com.hotclick.service.ExtraccionService;
 
 import java.util.List;
+import java.util.Locale;
 
 /** Utilidades compartidas por los extractores de precio. */
 final class ExtraccionPrecioTextUtils {
@@ -43,7 +44,7 @@ final class ExtraccionPrecioTextUtils {
 
     static boolean esUrlEcommerce(String url) {
         if (url == null) return false;
-        String lower = url.toLowerCase();
+        String lower = url.toLowerCase(Locale.ROOT);
         return lower.contains("amazon") || lower.contains("ebay") || lower.contains("walmart") ||
                lower.contains("tiendamia") || lower.contains("encuentra24") || lower.contains("crautos") ||
                lower.contains("linio") || lower.contains("alibaba") || lower.contains("aliexpress") ||

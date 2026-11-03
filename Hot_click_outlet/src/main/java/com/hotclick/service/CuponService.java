@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -33,7 +34,7 @@ public class CuponService {
 
     @Transactional
     public Cupon solicitarCupon(String email, Long empresaId) {
-        String emailLower = email.trim().toLowerCase();
+        String emailLower = email.trim().toLowerCase(Locale.ROOT);
 
         if (cuponRepository.existsByEmail(emailLower)) {
             throw new IllegalStateException("Ya existe un cupón para este correo");
@@ -63,20 +64,20 @@ public class CuponService {
     /** @deprecated no filtra por empresa — el mismo código ahora puede existir en distintos tenants. */
     @Deprecated
     public Optional<Cupon> validarCodigo(String codigo) {
-        return cuponRepository.findByCodigo(codigo.trim().toUpperCase())
+        return cuponRepository.findByCodigo(codigo.trim().toUpperCase(Locale.ROOT))
                 .filter(c -> !Boolean.TRUE.equals(c.getUsado())
                           && c.getUsosActuales() < c.getMaxUsos());
     }
 
     public Optional<Cupon> validarCodigo(String codigo, Long empresaId) {
-        return cuponRepository.findByCodigoAndEmpresaId(codigo.trim().toUpperCase(), empresaId)
+        return cuponRepository.findByCodigoAndEmpresaId(codigo.trim().toUpperCase(Locale.ROOT), empresaId)
                 .filter(c -> !Boolean.TRUE.equals(c.getUsado())
                           && c.getUsosActuales() < c.getMaxUsos());
     }
 
     /** Cupón de plataforma (sin empresa), p. ej. el de bienvenida: aplica a cualquier tienda. */
     public Optional<Cupon> validarGlobal(String codigo) {
-        return cuponRepository.findByCodigo(codigo.trim().toUpperCase())
+        return cuponRepository.findByCodigo(codigo.trim().toUpperCase(Locale.ROOT))
                 .filter(c -> c.getEmpresa() == null)
                 .filter(c -> !Boolean.TRUE.equals(c.getUsado())
                           && c.getUsosActuales() < c.getMaxUsos());
@@ -93,7 +94,7 @@ public class CuponService {
 
     public boolean esDeEmpresa(String codigo, Long empresaId) {
         return empresaId != null
-            && cuponRepository.findByCodigoAndEmpresaId(codigo.trim().toUpperCase(), empresaId).isPresent();
+            && cuponRepository.findByCodigoAndEmpresaId(codigo.trim().toUpperCase(Locale.ROOT), empresaId).isPresent();
     }
 
     /**
@@ -106,7 +107,7 @@ public class CuponService {
     @Deprecated
     @Transactional
     public boolean marcarUsado(String codigo) {
-        String codigoUpper = codigo.trim().toUpperCase();
+        String codigoUpper = codigo.trim().toUpperCase(Locale.ROOT);
         int actualizados = cuponRepository.incrementarUsoSiDisponible(codigoUpper, LocalDateTime.now(Constants.ZONA_CR));
         if (actualizados == 0) {
             return false; // Ya estaba en el límite
@@ -118,7 +119,7 @@ public class CuponService {
 
     @Transactional
     public boolean marcarUsado(String codigo, Long empresaId) {
-        String codigoUpper = codigo.trim().toUpperCase();
+        String codigoUpper = codigo.trim().toUpperCase(Locale.ROOT);
         int actualizados = cuponRepository.incrementarUsoSiDisponiblePorEmpresa(codigoUpper, empresaId, LocalDateTime.now(Constants.ZONA_CR));
         if (actualizados == 0) {
             return false;

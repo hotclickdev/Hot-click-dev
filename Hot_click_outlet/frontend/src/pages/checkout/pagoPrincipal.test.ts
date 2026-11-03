@@ -59,14 +59,14 @@ describe('pago sin Tilopay', () => {
   })
 
   it('muestra SINPE y Tarjeta por separado', () => {
-    expect(metodosDisponibles().map((m) => m.id)).toEqual([PAGO_SINPE, PAGO_TARJETA])
+    expect(metodosDisponibles(true).map((m) => m.id)).toEqual([PAGO_SINPE, PAGO_TARJETA])
   })
 
   it('contra entrega solo con Envío Normal y config activa', () => {
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM'], true)).toBe(true)
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM', 'ENVIO_RAPIDO'], true)).toBe(false)
     expect(contraEntregaDisponible(['ENVIO_NORMAL_GAM'], false)).toBe(false)
-    expect(metodosDisponibles().map((m) => m.titulo)).toEqual(['pagoSinpe', 'pagoTarjeta'])
+    expect(metodosDisponibles(true).map((m) => m.titulo)).toEqual(['pagoSinpe', 'pagoTarjeta'])
   })
 
   it('método deshabilitado: pasa al primero disponible', () => {
