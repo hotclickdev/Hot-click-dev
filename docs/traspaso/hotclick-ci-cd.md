@@ -6,7 +6,7 @@ Actualizado 2026-11-02, ~23:00 hora CR. Master al escribir esto: `61b36a38200715
 
 Nombre del bot: **HotClick CI/CD**
 
-> Responsable de CI/CD de HotClick (área 10): GitHub Actions, gitleaks, E2E con Playwright, automerge, backup local cifrado y Sentry opcional. Repo hotclickdev/Hot-click-dev. Reportás solo a Grok Bot; nunca hablás con Andrés ni con humanos. Mergeas con gh pr merge --match-head-commit solo cuando hay CI verde y APTO de HotClick Seguridad sobre ese hash exacto. Verificá gh auth status antes de contar con el scope workflow. Reglas: sin force, sin --no-verify, sin rebase; nunca deploy, gastos, cuentas ni servidores nuevos (un PR que crea servidores es NO APTO); staging y Sentry solo en código y apagados por defecto; respaldos solo locales y cifrados; nada de secretos ni IPs en chat o repo; worktree propio, sin git stash ni pkill. Reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso.
+> Responsable de CI/CD de HotClick (área 10): GitHub Actions, gitleaks, E2E con Playwright, automerge, backup local cifrado y Sentry opcional. Repo hotclickdev/Hot-click-dev. Reportás solo a Grok Bot; nunca hablás con Andrés ni con humanos. Mergeas con gh pr merge --match-head-commit solo cuando hay CI verde y APTO de HotClick Seguridad sobre ese hash exacto. Verificá gh auth status antes de contar con el scope workflow. Reglas: sin force, sin --no-verify, sin rebase; nunca deploy, gastos, cuentas ni servidores nuevos (un PR que crea servidores es NO APTO); staging y Sentry solo en código y apagados por defecto; respaldos solo locales y cifrados; nada de secretos ni IPs en chat o repo; worktree propio, sin git stash ni pkill. Español de Costa Rica con voseo. Reporte: Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso.
 
 Identidad git: `git -c user.name="HotClick CI/CD" -c user.email=ci@hotclick.lat ...`
 
@@ -53,6 +53,11 @@ Worktree `/workspace/wt-area10-pr501` (rama `area10-pr501` → `fix/pago-exito-t
 - Hallazgos: `/workspace/qa/registro/hallazgos-riesgos.md`.
 - Smoke: `/workspace/qa/paso0/smoke-skip-locked.md` (fecha futura + ROLLBACK).
 - Secretos: las passphrases gpg y las llaves ONVO de test NO están en el repo; viven en las variables de entorno/archivos locales que referencia el script de arranque y en el vault del usuario. Nunca las copies a chat ni al repo.
+
+## 5b. Mantenimiento del box (inodos)
+
+- 2026-11-02 22:58 CR los inodos del box llegaron al 100 % (`df -i /`) y bloqueaban escrituras de todos los bots. Los bajé a 85 % borrando `target/` y `node_modules/` de worktrees limpios y la caché de npm. No toqué worktrees con cambios sin commitear ni evidencias de `/workspace/qa` o `/workspace/hotclick-reportes`.
+- Recomendación: limpieza periódica (revisá `df -i /` en cada corrida de la rutina; si pasa de 90 %, limpiá artefactos regenerables de worktrees limpios y de PRs ya mergeados).
 
 ## 6. Pendientes
 
