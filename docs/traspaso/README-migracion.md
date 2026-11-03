@@ -646,3 +646,134 @@ Deploy **solo** con el OK explícito de Andrés escrito en el chat de CI/CD.
 > Revisá el avance del lanzamiento de HotClick (repo hotclickdev/Hot-click-dev): PRs, CI, APTO de Seguridad, QA, y actualizá estado-lanzamiento.md por área. Coordiná bots vía Grok Bot si algo está trabado. Solo avisale a Andrés (en español de CR, simple) si un área ganó ✅, hay un error grave, o hace falta una decisión suya; si no, quedate callado. Nunca deploy, gasto ni acciones prohibidas sin OK explícito de Andrés.
 
 [PENDIENTE] Cuando recreen esta rutina en la cuenta nueva, cambien "vía Grok Bot" por "vía el Mentor". El texto literal de la rutina de CI/CD lo tiene que pasar ese mismo bot.
+
+## (o) Todo lo pendiente, consolidado
+
+> Generado por el Mentor el 2-nov-2026, 11:15 p. m. hora CR, a partir de este documento, de cada nota en `docs/traspaso/*.md` (rama `docs/traspaso-cuenta-nueva`) y de `/workspace/hotclick/estado-lanzamiento.md`. Sin duplicados: si un punto aparece en varias notas va una sola vez con todas las fuentes. Los criterios de aceptación de `plan-scrum.md` («sin [PENDIENTE] visible») no son pendientes y no se cuentan. [INCOMPLETO]: si un bot agrega pendientes después de esta fecha, sumalos acá.
+
+### o.1 Decisiones de Andrés
+
+| # | Item | Dueño (bot) | Estado | Fuente |
+|---|---|---|---|---|
+| 1 | Precio del envío exprés: ₡5.000 o ₡6.000 (antes se habló de ₡5.500) | Andrés vía Mentor | [PENDIENTE] | (n), hotclick-dev-marketplace.md, estado-lanzamiento.md |
+| 2 | Zonas y tarifa fuera del GAM, monto mínimo y cargo de contra entrega; retiro ₡2.000 | Andrés vía Mentor | [PENDIENTE] | pendientes/contenido.md (S4-60, #36) |
+| 3 | Período gratis configurable para los primeros 70 Emprendedor | Andrés vía Mentor | [PENDIENTE] | (n), hotclick-dev-marketplace.md |
+| 4 | Tope diario del asistente | Andrés vía Mentor | [PENDIENTE] | (n), hotclick-dev-marketplace.md |
+| 5 | B2: 2FA sin contraseña local; B5 SSO no puede activar 2FA; B7 reingreso de miembro ELIMINADO | Andrés vía Mentor | [PENDIENTE] | (n), auditor-2-cuentas-y-roles.md |
+| 6 | Arrancar la simulación de la Fase 2 (incluye pruebas del área 5 y POS) | Andrés vía Mentor | [PENDIENTE] | (n), (h) fila 9, auditor-5, hotclick-qa-pos.md |
+| 7 | Confirmar APP_URL=https://hotclick.lat en Render prod (desbloquea #507) | Andrés vía Mentor | [PENDIENTE] | (n), hotclick-ci-cd.md, hotclick-dev-pagos.md |
+| 8 | Destino SINPE de prueba (ONVO_SINPE_DESTINO) en staging | Andrés vía Mentor | [PENDIENTE] | (n), hotclick-ci-cd.md, hotclick-qa.md |
+| 9 | Endpoint público/túnel para probar el webhook ONVO de punta a punta | Andrés vía Mentor | [BLOQUEO] | (h) fila 5, hotclick-ci-cd.md |
+| 10 | Protección de rama en master (INF-08, MEDIO de Seguridad) | Andrés vía Mentor | [PENDIENTE] | (n), hotclick-seguridad.md, auditor-10 |
+| 11 | Montos de cada plan en ONVO (Emprendedor US$9, Pyme US$24, Negocio Plus US$49) | Andrés vía Mentor | [PENDIENTE] | hotclick-onvo.md |
+| 12 | Revisión de Términos y Privacidad por abogado colegiado | Andrés | [PENDIENTE] | legal-costa-rica-negocios.md |
+| 13 | Valor en prod de `hacienda.emision-automatica` | Andrés vía Mentor | [PENDIENTE] | hotclick-dev-pagos-2.md |
+| 14 | OK de lecturas en prod (checksums Flyway, APP_URL, conteo REEMBOLSO_PENDIENTE, correos duplicados) | Andrés vía Mentor | [PENDIENTE] | (h) fila 7, hotclick-bugs-2.md, hotclick-seguridad.md |
+| 15 | Valor de ONVO_WEBHOOK_401_UMBRAL y variables INF-03 | Andrés vía Mentor | [PENDIENTE] | hotclick-qa.md, estado-lanzamiento.md |
+| 16 | Decisiones de producto QA Cliente: redirección tras verificar correo y editar nombre | Andrés vía Mentor | [PENDIENTE] | hotclick-qa-cliente.md |
+| 17 | Textos legales/comerciales con datos faltantes: costos y plazos de envío, teléfono y horario de atención, proveedor de IA, conservación de datos, plazos de reclamo/retracto/garantía/reembolso, comisiones y límites por plan, acreditación al vendedor, preaviso, cookies | Andrés + Promociones | [PENDIENTE] | pendientes/contenido/textos-lanzamiento.md |
+| 18 | Tema legal a priorizar (devoluciones, contrato de vendedores o avisos de IA) | Andrés | [PENDIENTE] | legal-analisis-de-empresas.md |
+| 19 | Primera campaña (Promociones) y tipo del primer guion (Guion) | Andrés | [PENDIENTE] | promociones.md, guion.md |
+| 20 | OK por bot para subir su nota / commits (Preparación Fase 2 y demás que lo piden en su chat) | Andrés en el chat de cada bot | [PENDIENTE] | (n) punto 8 |
+| 21 | Definir cómo se asigna el rol CAJERO (EquipoController solo ofrece EDITOR/LECTOR/ADMIN) | Andrés + Dev Marketplace | [BLOQUEO] | hotclick-qa-pos.md |
+
+### o.2 Antes del deploy (solo con OK escrito de Andrés en el chat de CI/CD)
+
+| # | Item | Dueño (bot) | Estado | Fuente |
+|---|---|---|---|---|
+| 1 | APP_URL confirmado en Render prod | CI/CD | [PENDIENTE] | (m), hotclick-ci-cd.md |
+| 2 | `ASISTENTE_CUOTA_SAL_IP` propia y `SECURITY_TRUSTED_PROXIES` con rangos del CDN | CI/CD | [PENDIENTE] | (m), dev-marketplace-2.md |
+| 3 | Variables INF-03 (SENTRY_DSN, Telegram, ONVO_WEBHOOK_401_*) | CI/CD | [PENDIENTE] | (m), hotclick-qa.md |
+| 4 | Variables de billing: PLANES_MONEDA, *_PRECIO_MENSUAL_USD, ONVO_PRICE_ID_*, SPRING_PROFILES_ACTIVE=prod (guard al arrancar, MEDIO de Auditor 5) | CI/CD + Dev Pagos | [PENDIENTE] | hotclick-dev-pagos.md, auditor-5 |
+| 5 | Extensión `vector` creada antes de migrar | CI/CD | [PENDIENTE] | (m) |
+| 6 | Checksums de Flyway en prod y comparación de esquema base-vacia vs prod | CI/CD + Bugs 2 | [PENDIENTE] | (m), hotclick-bugs-2.md |
+| 7 | `Actualizado.sql` sin V208–V214, V216 ni V217+ | Dev Pagos 2 | [PENDIENTE] | hotclick-dev-pagos-2.md |
+| 8 | Conteo REEMBOLSO_PENDIENTE sin aviso (solo lectura) antes de V217 | Mentor | [PENDIENTE] | hotclick-bugs-2.md, estado-lanzamiento.md |
+| 9 | Consulta de correos duplicados antes de #463 (V214); falta índice único lower(correo) (B9) | Seguridad + Auditor 2 | [PENDIENTE] | (m), hotclick-seguridad.md, auditor-2 |
+| 10 | Huérfanos de customer_memory sin empresa (consulta pre-deploy) | CI/CD | [PENDIENTE] | estado-lanzamiento.md |
+| 11 | Aviso: V218 cambia el login del admin de plataforma a admin@hotclick.lat | Mentor | [PENDIENTE] | (m) |
+| 12 | SMTP de prod (staging usa Mailpit) | CI/CD | [PENDIENTE] | (h) fila 6 |
+| 13 | Semilla 03 y smoke con Flyway real sobre staging | CI/CD | [PENDIENTE] | hotclick-ci-cd.md |
+| 14 | FlywayRepairConfig corre repair() en staging con perfil dev; fila 30 (dev+prod a la vez) | Bugs | [PENDIENTE] | hotclick-ci-cd.md, hotclick-bugs.md |
+| 15 | Revisar endpoints destructivos detrás de flags en prod; gitleaks sobre todo el historial | Auditor 10 | [PENDIENTE] | auditor-10-infraestructura.md |
+
+### o.3 Por área (re-auditorías, re-QA, MEDIO y BAJO abiertos)
+
+| # | Área | Item | Dueño (bot) | Estado | Fuente |
+|---|---|---|---|---|---|
+| 1 | 1 Pagos | Re-auditoría tras P-01..P-03 sobre master vigente | Auditor 1 | [PENDIENTE] | auditor-1, (b) |
+| 2 | 1 | Re-QA de #502 (camino feliz UI, tarjeta 4242) y C2–C6 sobre master final | QA Compra + QA | [PENDIENTE] | hotclick-qa.md |
+| 3 | 1 | Re-QA de #505/#506 cuando staging tenga 61b36a38; re-QA M-08, #266, M-07; fix ALTO storefront→ONVO | QA Compra | [PENDIENTE] | hotclick-qa-compra.md, hotclick-dev-marketplace.md |
+| 4 | 1 | Pedido 13 PENDIENTE sin webhook / PUT estado (seguimiento con Dev Pagos, validar #504) | QA Compra + Dev Pagos | [PENDIENTE] | hotclick-qa-compra.md, hotclick-qa.md |
+| 5 | 1 | BAJOs de #502, LOWs de Seguridad sobre #407 (PosVentaService, BodegaTenantGuard) | Dev Pagos | [PENDIENTE] | hotclick-dev-pagos.md |
+| 6 | 1 | `tienda-pdp-comprar.spec.ts:56` falla local, no verificado en master | Dev Pagos | [INCOMPLETO] | hotclick-dev-pagos.md |
+| 7 | 1 | BAJOs de #501, #460, #436; `VisitantePagoResultado.tsx` no lee `st` | Dev Pagos 2 | [PENDIENTE] | hotclick-dev-pagos-2.md |
+| 8 | 1/4 | Filtro por empresa en OrdenCompraService:140 y StockReservationService:59/136 | Dev Pagos 2 | [PENDIENTE] | hotclick-dev-pagos-2.md |
+| 9 | 2 Cuentas | Re-auditoría sobre master (última 23f8c156; master avanzó) | Auditor 2 | [PENDIENTE] | auditor-2, (b) |
+| 10 | 2 | BAJOs B1, B2, B3, B9 y menú MIS SUCURSALES; sin pruebas Postgres ni front; 401 de login en prod | Auditor 2 → Bugs | [PENDIENTE] | auditor-2-cuentas-y-roles.md |
+| 11 | 2 | Re-QA master vigente, vitest/tsc de roles, reporte-iva en Postgres, veredicto del área | QA 2 | [PENDIENTE] | hotclick-qa-2.md |
+| 12 | 2 | Invitación y roles en staging (una vez), E2E ONVO test, Flyway limpio V196–V200, trim de correo en invitación | QA Negocio Plus | [PENDIENTE] | hotclick-qa-negocio-plus.md |
+| 13 | 2/9 | Usuario 7 de staging por borrar (admin, borrado lógico); re-probar C3/QA4-004 | QA Cliente | [PENDIENTE] | hotclick-qa-cliente.md |
+| 14 | 2/4 | Ocultar al CAJERO crear/editar/borrar bodegas (rol_en_empresa en store) | Dev Marketplace 2 | [PENDIENTE] | dev-marketplace-2.md |
+| 15 | 3 Marketplace | Re-QA #444 (montos inválidos) y #447 (detalle de pedido, cantón de otra provincia; falta semilla 04) | QA Reauditoría | [PENDIENTE] | hotclick-qa-reauditoria.md |
+| 16 | 3 | Confirmar V211/V213 en la base | QA Reauditoría | [PENDIENTE] | hotclick-qa-reauditoria.md |
+| 17 | 3 | Pagar con ONVO test, filtros de precio/tienda, re-probar hallazgos | TEST Usuario consumidor | [PENDIENTE] | test-usuario-consumidor-de-tienda.md |
+| 18 | 3 | MED-5 y BAJO envío ₡0; DTO público del catálogo sin bodega; BAJOs de cotizaciones/POS | Dev Marketplace | [PENDIENTE] | hotclick-dev-marketplace.md, estado-lanzamiento.md |
+| 19 | 3/6/9 | BAJOs de front (formatMontoMoneda, US$0.35, Math.round 1.005, ₡6.200, bottom sheets, ClaudePrecios, cuota solo en H2) | Dev Marketplace 2 | [PENDIENTE] | dev-marketplace-2.md |
+| 20 | 4 POS | Auditoría completa del área 4 sobre master con hash y revisión de informes previos | Auditor 4 | [INCOMPLETO] | auditor-4-pos-inventario.md |
+| 21 | 4 | Re-verificar área 4 desde la app; QR vencido, QA6-R4-03/04, rotar contraseña PYME (decide Andrés) | QA POS | [PENDIENTE] | hotclick-qa-pos.md |
+| 22 | 5 Suscripciones | Re-QA y reauditoría con #388 | Auditor 5 | [PENDIENTE] | auditor-5-suscripciones.md |
+| 23 | 5 | MEDIO: rechazos permanentes del webhook solo dejan log (falta alerta); MEDIO: PAST_DUE sin cobro y ledger "crc" | Dev Pagos | [PENDIENTE] | auditor-5-suscripciones.md |
+| 24 | 5 | BAJO: clave de falla sin attemptCount, estadoPlan sin sincronizar, código muerto Stripe/Tilopay | Dev Pagos | [PENDIENTE] | auditor-5-suscripciones.md |
+| 25 | 5/8 | 7 casos en vivo de webhooks (una vez), Web SDK ONVO test, QA8-003 video | QA Webhooks y UX | [PENDIENTE] | hotclick-qa-webhooks-y-ux.md |
+| 26 | 5 | Preguntas a ONVO (priceId en panel, trial con tarjeta, cupones, SINPE onBehalfOf) | ONVO | [PENDIENTE] | hotclick-onvo.md |
+| 27 | 6 Chatbots | Re-auditoría (última da481550 + #434); copilot admin no auditado a fondo | Auditor 6 | [PENDIENTE] | auditor-6, (b) |
+| 28 | 6 | MEDIO-2 tope global 3000/día (atendido en #450, sin auditar); MEDIO-3 cupo no devuelto si falla Claude | Auditor 6 | [PENDIENTE] | auditor-6-chatbots-y-copilot.md |
+| 29 | 6 | BAJOs: ON CONFLICT en CustomerMemoryService:83-89, índice idx_customer_memory_visitor; Seguridad: FK V211 NOT VALID, CONCURRENTLY, tarifa Sonnet | Dev Marketplace 2 | [PENDIENTE] | dev-marketplace-2.md, auditor-6 |
+| 30 | 7 Facturación | Verificar M2, M3, M5; test de consecutivos SKIP LOCKED contra Postgres real | Auditor 7 | [PENDIENTE] | auditor-7-facturacion-hacienda.md |
+| 31 | 7 | Cédulas con guiones/puntos escapan al sanitizador (XSD y HaciendaLogSanitizer); BAJOs área 7 | Dev Pagos 2 | [PENDIENTE] | auditor-7, hotclick-dev-pagos-2.md |
+| 32 | 8 Telegram | Re-auditoría de 61b36a38; helpers TelegramFlujo*, validación de parámetros de IA, HTTP en @Transactional | Auditor 8 | [PENDIENTE] | auditor-8-bot-telegram.md, (b) |
+| 33 | 8 | BAJOs post-lanzamiento (chatId en logs, dedup, puedeAjustarStock, LocalDateTime, comentario) | Bugs | [PENDIENTE] | auditor-8-bot-telegram.md |
+| 34 | 8 | Re-QA del área 8 cuando #338 esté en master | QA Webhooks y UX | [PENDIENTE] | hotclick-qa-webhooks-y-ux.md |
+| 35 | 10 Infra | Re-auditoría de 61b36a38; MEDIO INF-01 (Fase 3), INF-02, INF-03, INF-04, INF-08; BAJO INF-07, INF-09 | Auditor 10 + CI/CD | [PENDIENTE] | auditor-10, (b) |
+| 36 | 10 | HC-CICD-001 (pausar scheduler) y HC-CICD-002 | Bugs 2 | [PENDIENTE] | hotclick-ci-cd.md, (h) fila 8 |
+| 37 | Varias | Registro de BAJOs sin asignar (filas 1-9, 11, 13-16, 18-26, 28, 29); filas 25-26 de #482; BAJOs de #477 | Bugs / Bugs 2 (asigna Mentor) | [PENDIENTE] | hotclick-bugs.md, hotclick-bugs-2.md |
+| 38 | Seguridad | Confirmar prefijos de ruta (Carrito/Empresa/FeatureFlag/CuentaTitular) y correr 52 casos P0 en staging | Seguridad Pre-revisión | [PENDIENTE] | hotclick-seguridad-pre-revision.md |
+| 39 | Legal | Verificar leyes 7472/8968 (SCIJ), Hacienda, RGPD y Ley de IA UE, México/Colombia/Panamá; huecos ML/Rappi; Amazon y Square | Legal CR / Análisis / Global | [PENDIENTE] | legal-*.md |
+
+### o.4 PRs abiertos
+
+| # | PR | Item | Dueño (bot) | Estado | Fuente |
+|---|---|---|---|---|---|
+| 1 | #507 | fix/onvo-appurl-logs 9752181e, draft NO MERGE hasta APP_URL; falta merge de master, CI y APTO; verificar `hotclick.aviso-reembolso.timeout-ms` → lease-minutos/max-intentos/barrido.* | Dev Pagos | [BLOQUEO] | hotclick-dev-pagos.md, (h) 16 |
+| 2 | #501 | fix/pago-exito-token-status en e3296487, esperando re-APTO y merge | Dev Pagos 2 + Seguridad + CI/CD | [PENDIENTE] | hotclick-dev-pagos-2.md, (h) 17 |
+| 3 | #440 | Docs de traspaso, draft; revisar cuando salga de draft | Mentor + Seguridad | [PENDIENTE] | (h) 11, hotclick-seguridad.md |
+| 4 | #363 | Propuesta de esquema, draft con conflictos | Mentor | [PENDIENTE] | (h) 11, hotclick-ci-cd.md |
+| 5 | #309–#317 | Dependabot en rojo (SonarCloud), sin auto-merge sin APTO; mirar #312 y #314 y los bumps stripe-java 26→34 y shedlock 5→7 | CI/CD + Seguridad Pre-revisión | [PENDIENTE] | hotclick-ci-cd.md, hotclick-seguridad-pre-revision.md |
+| 6 | (tope) | La cuenta tiene 3 PRs abiertos (tope): el PR de la fila 30 no cabe sin cerrar uno | Mentor | [BLOQUEO] | hotclick-bugs.md |
+
+### o.5 Traspaso incompleto
+
+| # | Item | Dueño (bot) | Estado | Fuente |
+|---|---|---|---|---|
+| 1 | QA Emprendedor: falta la descripción completa del rol (bloqueado por límite de solicitudes) | QA Emprendedor | [INCOMPLETO] | qa-emprendedor.md |
+| 2 | Texto literal de la rutina de CI/CD (cada 30 min) | CI/CD | [INCOMPLETO] | (i-bis) |
+| 3 | Preparación Fase 2: dos commits listos, sube solo con OK de Andrés en su chat | Preparación Fase 2 | [BLOQUEO] | (n) punto 8 |
+| 4 | Notas que el Mentor subió/reemplazó (16 bots): cada bot verifica que su archivo sea su versión más nueva | Cada bot | [PENDIENTE] | este documento |
+| 5 | Notas escritas por el Mentor sin nota propia del bot (p. ej. Legal Costa Rica Negocios) | Bot respectivo | [INCOMPLETO] | legal-costa-rica-negocios.md |
+| 6 | ONVO: reporte inicial sobre la nota cortado por límite | ONVO | [INCOMPLETO] | hotclick-onvo.md |
+| 7 | Seguridad Pre-revisión: nota en trabajo vivo | Seguridad Pre-revisión | [INCOMPLETO] | hotclick-seguridad-pre-revision.md |
+| 8 | Reemplazar los ids viejos por los nuevos en todas las descripciones y rutinas; tabla nombre → id nuevo al Mentor | Mentor (cuenta nueva) | [PENDIENTE] | (k) punto 6 |
+| 9 | Rutina del Mentor: cambiar "vía Grok Bot" por "vía el Mentor" al recrearla | Mentor (cuenta nueva) | [PENDIENTE] | (i-bis) |
+| 10 | Tabla (f) de reportes: faltan reportes actualizados de algunos bots | Mentor | [INCOMPLETO] | encabezado, (f), (g) |
+
+### o.6 Infra / box
+
+| # | Item | Dueño (bot) | Estado | Fuente |
+|---|---|---|---|---|
+| 1 | 96 worktrees en /workspace/dev sin dueño confirmado: no borrar sin confirmar | Mentor + CI/CD | [PENDIENTE] | (h) 21, dev-marketplace-2.md |
+| 2 | Inodos en 86% (llegaron al 100%): vigilar `df -i`, parar arriba de 95%, limpiar target/ y node_modules | Mentor + CI/CD | [PENDIENTE] | (h) 13 y 21, (l) |
+| 3 | Worktrees descartables: wt-admin-pedidoid (#497 mergeado), wt-bajos-old, wt-med-old | Mentor | [PENDIENTE] | (h) 13 |
+| 4 | Archivos cifrados a copiar al PC de Andrés (cuentas QA y backups .gpg) | Andrés | [PENDIENTE] | resumen del Mentor |
+
+Totales: o.1 = 21, o.2 = 15, o.3 = 39, o.4 = 6, o.5 = 10, o.6 = 4 (95 items).
