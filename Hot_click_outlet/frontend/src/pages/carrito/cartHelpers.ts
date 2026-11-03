@@ -63,7 +63,7 @@ export type PaqueteCarrito = {
   negocio: string
   items: ItemCarrito[]
   subtotal: number
-  /** Envío normal estimado; el método definitivo se elige en el checkout. */
+  /** Envío del paquete; en el carrito es 0 con `envioVaria` porque depende del destino (se cotiza en el checkout). */
   envio: number
   /** Checkout: método de envío elegido para el paquete. */
   metodo?: string
@@ -87,14 +87,18 @@ export function paquetesConEnvioElegido(paquetes: PaqueteCheckout[], metodos: Re
   })
 }
 
-/** Agrupa el carrito por paquete (misma regla del checkout) y estima el envío normal de cada uno. */
+/**
+ * Agrupa el carrito por paquete (misma regla del checkout). QA7-D1: el envío no se estima acá — sin destino
+ * el carrito no sabe si es GAM (₡4.000) o fuera del GAM (₡5.500); el checkout lo cotiza con el servidor.
+ */
 export function paquetesDelCarrito(items: ItemCarrito[]): PaqueteCarrito[] {
   return paquetesDesdeItems(items as ItemCheckout[]).map((paquete) => ({
     clave: paquete.bodegaId,
     negocio: nombreVendedor(paquete),
     items: paquete.items as ItemCarrito[],
     subtotal: paquete.subtotal,
-    envio: SHIPPING_COSTS.ENVIO_NORMAL_GAM,
+    envio: 0,
+    envioVaria: true,
   }))
 }
 
