@@ -81,4 +81,24 @@ class OnvoPedidoPruebaTest {
         assertThat(p1.isEsPrueba()).isTrue();
     }
 
+    @Test
+    void cobroDePruebaSobreCancelado_marcaElGrupo() {
+        // QA7 (pedido 21): el return por pedido cancelado salía antes de marcar es_prueba.
+        p2.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        when(onvoService.modoEsperado()).thenReturn("test");
+        assertThat(captura.capturarVerificado("cs_1", "{}", "webhook"))
+            .isEqualTo(OnvoCapturaService.Captura.COBRADO_SOBRE_CANCELADO);
+        assertThat(p1.isEsPrueba()).isTrue();
+        assertThat(p2.isEsPrueba()).isTrue();
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    void cobroLiveSobreCancelado_noMarca() {
+        p2.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        when(onvoService.modoEsperado()).thenReturn("live");
+        captura.capturarVerificado("cs_1", "{}", "webhook");
+        assertThat(p1.isEsPrueba()).isFalse();
+        assertThat(p2.isEsPrueba()).isFalse();
+    }
 }
