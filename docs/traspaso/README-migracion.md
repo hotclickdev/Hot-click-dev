@@ -797,3 +797,39 @@ Por instrucción de Andrés ("lo que falta subelo"), se subieron los 2 commits p
 - `wip/preparacion-fase2-b-traspaso` (918470d27): nota de traspaso de Preparación Fase 2. **INCOMPLETO.**
 
 Estado: **ya no queda trabajo sin subir en la computadora.** Pendiente para la cuenta nueva: revisar y reconciliar todas las ramas `wip/*-traspaso` con sus ramas originales (abrir PR con CI verde + APTO de Seguridad antes de mergear). El pendiente "OK de Andrés para Preparación Fase 2" de la sección (o) queda resuelto en cuanto a la subida.
+
+## (q) Arranque rápido: Andrés solo escribe "continuar con el trabajo"
+
+Esta sección es para que la cuenta nueva siga sola. Cuando Andrés escriba **"continuar con el trabajo"** (o algo parecido), el Mentor de la cuenta nueva hace esto **sin preguntarle nada**:
+
+1. **Leer este documento completo** (`docs/traspaso/README-migracion.md` en la rama `docs/traspaso-cuenta-nueva`, o `/workspace/hotclick/traspaso-completo.md` en el box). Las notas de cada bot están en `docs/traspaso/*.md`.
+2. **Revisar el estado real**: `git fetch` en `/workspace/Hot-click-dev`, ver los PRs abiertos y el CI en GitHub, y leer `/workspace/hotclick/estado-lanzamiento.md` (la tabla por área). Lo que dice GitHub manda sobre lo que dice este documento.
+3. **Crear los bots que falten** con los perfiles de la sección (h), en el orden de la sección (k). Después de crearlos, **reemplazar los ids viejos** (por ejemplo el id de Grok Bot `2f876dbf-...` en la descripción del Mentor) por los ids nuevos.
+4. **Recrear las rutinas** de las secciones (i) e (i-bis), con el seguimiento a las 8:00 y 18:00 hora de CR.
+5. **Reasignar el trabajo** de la sección (o) a cada bot y mandarle a cada uno su nota de `docs/traspaso/<bot>.md`.
+6. **Reconciliar las ramas `wip/*-traspaso`**, cada una con su rama original, por medio de un PR con CI verde y el APTO de Seguridad sobre el hash exacto. Ninguna se mergea directo.
+7. Seguir el ciclo de siempre (auditoría, corrección con test, CI y APTO, merge, QA, ✅) y **avisarle a Andrés solo** cuando un área gane ✅, haya un error grave o haga falta una decisión suya (sección o.1).
+
+### q.1 Datos que no estaban escritos en otra parte (la memoria no se pasa a la cuenta nueva)
+
+- **Es la misma computadora (el box)**. Solo cambia la cuenta de Grok. Todo sigue en su lugar: el repo en `/workspace/Hot-click-dev`, los worktrees en `/workspace/wt-*`, el material del Mentor en `/workspace/hotclick/` (`estado-lanzamiento.md`, `plan-fase2-pruebas-seguridad.md`, `fase2/`, `staging/` y `staging-backups/`, estos últimos cifrados y solo locales), y la sesión de `gh` y git ya iniciada.
+- Los archivos `/workspace/hotclick/wait*.sh` y `wait*.log` eran vigilancias del CI de PRs viejos. Se pueden borrar sin problema.
+- **Revisar el espacio del box**: los inodos llegaron al 100% una vez. Hoy están en un 85%. Borrar `node_modules` y `target` de las ramas ya mergeadas cuando se llenen.
+- **La fecha límite** que había puesto Andrés (área 10 con ✅ para el 2 de noviembre de 2026 al mediodía, hora de CR) **ya pasó**. Hay que preguntarle una fecha nueva **una sola vez**, junto con las decisiones de o.1.
+- **Andrés**: se le habla de "usted", en español de Costa Rica, simple y sin jerga, con una o dos preguntas a la vez. **Ningún bot le escribe por privado**: todo pasa por el Mentor. Las asignaciones del Mentor cuentan como si fueran de él (OK general del 26 de octubre de 2026).
+- **Los avisos de errores graves en producción** le llegan a Andrés **por Telegram** (decidido el 31 de octubre de 2026).
+- **Auditor 6** manda sus resultados directo al Mentor y a HotClick QA (autorizado el 28 de octubre de 2026).
+- **Los bots trabajan directo en la computadora**, sin el agente de código en la nube de Cursor.
+- **Negocio**:
+  - ONVO es el único procesador de pagos y se cobra por el SINPE de ONVO. Tilopay y Stripe quedan solo como deuda técnica.
+  - Los planes son Emprendedor a US$9 al mes, Pyme a US$24 y Negocio Plus a US$49.
+  - Los primeros 70 emprendimientos del plan Emprendedor tienen 3 meses gratis. El plazo tiene que ser configurable, y al terminarse ONVO empieza a cobrar solo.
+  - El asistente tiene dos topes: 20 por cliente y una cuota según el plan. La cuota diaria todavía es una propuesta que Andrés tiene que aprobar.
+  - Los productos hechos a pedido se pueden vender sin stock. Si en un producto normal llega un segundo pago sin stock, el pedido queda "en revisión", no se envía y el reembolso queda pendiente.
+  - El WhatsApp legal y de contacto es el mismo teléfono de soporte. **Nunca se escribe en el código ni en un chat**: va siempre desde la configuración.
+- **Prohibido sin OK explícito de Andrés**: deploy, gasto, cuentas nuevas, servidores nuevos, borrar datos de producción, la llave live de ONVO, el piloto, el script de S3 y el backup en AWS. El OK del deploy solo vale si Andrés lo escribe en el chat de CI/CD. Rotar credenciales lo decide solo él. **Nunca se muestran secretos.**
+- **Reglas que Andrés ya guardó en la aplicación (hay que confirmar que existan en la cuenta nueva)**: git push al repo Hot-click-dev, automatizaciones de QA en `automations/` y runbooks de infraestructura y respaldo en servidores y computadoras autorizados.
+
+### q.2 Mensaje de arranque para pegarle al Mentor nuevo
+
+> Sos el Mentor de HotClick. Leé `docs/traspaso/README-migracion.md` (rama `docs/traspaso-cuenta-nueva`, repo hotclickdev/Hot-click-dev) y la sección (q). Seguí los pasos de q, creá los bots y las rutinas que falten y continuá con el trabajo. A Andrés solo le preguntás lo de la sección o.1.
