@@ -47,6 +47,7 @@ class OnvoCancelacionSesionTest {
     @Mock private PaymentFailureHandler paymentFailureHandler;
     @Mock private GuestCancelTokenService guestCancelTokenService;
     @Mock private OnvoPaymentProvider onvoPaymentProvider;
+    @Mock private OnvoService onvoService;
 
     @InjectMocks private PaymentUserCancellationService service;
 
@@ -67,6 +68,43 @@ class OnvoCancelacionSesionTest {
         when(guestCancelTokenService.esValido("ORD-B1", "ok")).thenReturn(true);
         when(pedidoRepository.findByNumeroPedido("ORD-B1")).thenReturn(Optional.of(pedido));
         when(pagoRepository.findTopByPedidoId(21L)).thenReturn(Optional.of(pago));
+        when(onvoService.isPagosDisponibles()).thenReturn(true);
+        when(onvoService.isMockMode()).thenReturn(false);
+    }
+
+    @Test
+    @DisplayName("sin llave / cliente ONVO deshabilitado y con sesión: no cancela (409), fail-closed")
+    void sinLlaveNoCancela() {
+        when(onvoService.isPagosDisponibles()).thenReturn(false);
+
+        assertThatThrownBy(() -> service.cancelarAnon("ORD-B1", "ok"))
+            .isInstanceOf(IllegalStateException.class);
+        verify(paymentFailureHandler, never()).marcarFallido(any(), any());
+        verify(onvoPaymentProvider, never()).expirarSesionSinCobro(any());
+    }
+
+    @Test
+    @DisplayName("pago ONVO sin sesión: cancela aunque no haya llave")
+    void sinSesionCancelaSinLlave() {
+        when(onvoService.isPagosDisponibles()).thenReturn(false);
+        pago.setMerchantToken(null);
+
+        service.cancelarAnon("ORD-B1", "ok");
+
+        verifyNoInteractions(onvoPaymentProvider);
+        verify(paymentFailureHandler).marcarFallido(pago, "Cancelado por el usuario");
+    }
+
+    @Test
+    @DisplayName("modo simulado explícito (isMockMode): cancela sin llamar a ONVO")
+    void modoMockCancela() {
+        when(onvoService.isMockMode()).thenReturn(true);
+        when(onvoService.isPagosDisponibles()).thenReturn(true);
+
+        service.cancelarAnon("ORD-B1", "ok");
+
+        verifyNoInteractions(onvoPaymentProvider);
+        verify(paymentFailureHandler).marcarFallido(pago, "Cancelado por el usuario");
     }
 
     @Test

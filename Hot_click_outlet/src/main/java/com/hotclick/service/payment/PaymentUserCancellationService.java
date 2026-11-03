@@ -4,6 +4,7 @@ import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.payment.OnvoPaymentProvider;
+import com.hotclick.service.OnvoService;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.utils.Constants;
@@ -24,6 +25,7 @@ public class PaymentUserCancellationService {
     @Autowired private PaymentFailureHandler paymentFailureHandler;
     @Autowired private GuestCancelTokenService guestCancelTokenService;
     @Lazy @Autowired private OnvoPaymentProvider onvoPaymentProvider;
+    @Lazy @Autowired private OnvoService onvoService;
 
     @Transactional
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
@@ -81,12 +83,24 @@ public class PaymentUserCancellationService {
      * QA7-B1 ALTO: antes de cancelar un pago ONVO se expira la checkout session en ONVO
      * (POST /v1/checkout/sessions/{id}/expire, mismo camino que la limpieza por TTL). Si ONVO no confirma
      * que quedó expirada y sin cobro (ya pagada, otro estado, caída o timeout) no se cancela: fail-closed,
-     * así nunca queda un pedido cancelado con un link de pago que todavía cobra.
+     * así nunca queda un pedido cancelado con un link de pago que todavía cobra. Sin llave o con el cliente
+     * deshabilitado también se rechaza (409); solo el modo simulado explícito (isMockMode) deja pasar.
      */
     private void expirarSesionOnvo(Pago pago) {
         String sesion = pago.getMerchantToken();
         if (!Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor()) || sesion == null || sesion.isBlank()) {
             return;
+        }
+        if (onvoService.isMockMode()) {
+            // Modo simulado explícito de OnvoService (perfil dev/test sin llave): no hay sesión real que expirar.
+            log.info("[onvo] Modo simulado: cancelación sin expirar en ONVO, pago id={}", pago.getId());
+            return;
+        }
+        if (!onvoService.isPagosDisponibles()) {
+            // Sin llave o cliente deshabilitado no podemos confirmar que el link dejó de cobrar: fail-closed.
+            log.warn("[onvo] Cliente ONVO no disponible: no se cancela pago id={} con sesión", pago.getId());
+            throw new IllegalStateException(
+                "No pudimos cerrar el pago en ONVO en este momento. Intentá cancelar de nuevo en unos minutos.");
         }
         boolean expirada;
         try {
