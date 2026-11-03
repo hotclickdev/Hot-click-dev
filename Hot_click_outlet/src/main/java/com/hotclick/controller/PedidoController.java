@@ -64,6 +64,9 @@ public class PedidoController {
         }
         // P7-02: vendedor sin negocio → 403 (null solo para ADMIN de plataforma).
         companyScope.requireEmpresaIdOrAdmin();
+        // P-07: todo pedido creado por /manual es MANUAL; se ignora el origen del request (el front no lo manda
+        // y caía en ONLINE, así ENTREGADO no descontaba stock).
+        dto.setOrigen(com.hotclick.model.OrigenPedido.MANUAL.codigo());
         Empresa empresa = empresaDelScope();
         try {
             Pedido nuevo = pedidoService.crearPedidoManual(dto, empresa);
