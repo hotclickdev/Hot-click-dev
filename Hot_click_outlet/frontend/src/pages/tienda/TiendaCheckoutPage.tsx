@@ -9,7 +9,12 @@ import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
 import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
 import { formatPrice } from '@/utils/format'
-import { efectivoDisponible } from '@/pages/checkout/pagoPrincipal'
+import { efectivoDisponible, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig } from '@/pages/checkout/pagoPrincipal'
+import { paymentService } from '@/services/paymentService'
+import { usePayment } from '@/hooks/usePayment'
+import {
+  PAGO_TIENDA_EFECTIVO, PAGO_TIENDA_ONVO, PAGO_TIENDA_SINPE_MANUAL, metodoInicialTienda, payloadCheckoutTienda, proveedorTienda,
+} from './tiendaPagoOnvo'
 import { cargarMontosEnvio } from '@/config/montosEnvio'
 import TiendaCheckoutDireccion from './TiendaCheckoutDireccion'
 import {
@@ -20,9 +25,10 @@ import {
 } from './tiendaCheckoutValidacion'
 import { BotonTienda, CabeceraTarjeta, CLASE_RADIO_TIENDA, CLASE_TARJETA, TituloTienda } from './PiezasTienda'
 
-/** Una sola opción «SINPE / Tarjeta» (como el marketplace); efectivo solo si la tienda lo acepta. */
-const PAGO_PRINCIPAL = { value: 'SINPE_MOVIL', label: 'SINPE / Tarjeta' }
-const PAGO_EFECTIVO = { value: 'EFECTIVO', label: 'Efectivo al recibir' }
+/** ONVO (tarjeta o SINPE en su checkout) es el procesador; SINPE manual solo si el backend lo publica. */
+const PAGO_PRINCIPAL = { value: PAGO_TIENDA_ONVO, label: 'SINPE / Tarjeta' }
+const PAGO_SINPE_MANUAL = { value: PAGO_TIENDA_SINPE_MANUAL, label: 'SINPE Móvil con comprobante' }
+const PAGO_EFECTIVO = { value: PAGO_TIENDA_EFECTIVO, label: 'Efectivo al recibir' }
 
 const ENVIO_DOMICILIO = { value: METODO_ENVIO_DOMICILIO, label: 'Envío a domicilio' }
 const ENVIO_RETIRO = { value: METODO_ENVIO_RETIRO, label: 'Retiro en tienda' }
@@ -56,7 +62,7 @@ export default function TiendaCheckoutPage() {
     correoCliente: correoCuenta ?? '',
     telefonoCliente: '',
     direccionEntrega: '',
-    metodoPago: 'SINPE_MOVIL',
+    metodoPago: metodoInicialTienda(),
     metodoEnvio: METODO_ENVIO_DOMICILIO,
     notas: '',
   })
@@ -80,7 +86,19 @@ export default function TiendaCheckoutPage() {
   useEffect(() => { void cargarMontosEnvio().then(() => setDestino((d) => ({ ...d }))) }, [])
   const costoEnvio = costoEnvioTienda(form.metodoEnvio, destino.provincia, destino.canton)
   const metodosEnvio = hayRetiro ? [ENVIO_DOMICILIO, ENVIO_RETIRO] : [ENVIO_DOMICILIO]
-  const metodosPago = efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_PRINCIPAL, PAGO_EFECTIVO] : [PAGO_PRINCIPAL]
+  const [config, setConfig] = useState({ tarjetaOnvo: false, sinpeManual: false })
+  useEffect(() => {
+    paymentService.getCheckoutConfig()
+      .then(({ data }) => setConfig({ tarjetaOnvo: tarjetaOnvoDesdeConfig(data), sinpeManual: sinpeManualDesdeConfig(data) }))
+      .catch(() => setConfig({ tarjetaOnvo: false, sinpeManual: false }))
+  }, [])
+  const { iniciarPago, estado: estadoPago, error: errorPago } = usePayment()
+  const metodosPago = [
+    PAGO_PRINCIPAL,
+    ...(config.sinpeManual ? [PAGO_SINPE_MANUAL] : []),
+    ...(efectivoDisponible(carrito.map((c) => c.producto)) ? [PAGO_EFECTIVO] : []),
+  ]
+  const errorVisible = error ?? errorPago
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -94,6 +112,20 @@ export default function TiendaCheckoutPage() {
     setError(null)
     try {
       const notas = [form.notas.trim(), encomienda.trim() ? `Encomienda: ${encomienda.trim()}` : ''].filter(Boolean).join(' | ')
+      if (form.metodoPago !== PAGO_TIENDA_EFECTIVO) {
+        // Mismo flujo que el marketplace: /payments/checkout + redirección a ONVO (fail-closed sin ONVO).
+        const provider = proveedorTienda(form.metodoPago, config.tarjetaOnvo, config.sinpeManual)
+        if (!provider) {
+          setError('El pago con tarjeta o SINPE no está disponible en este momento. Intentá más tarde.')
+          return
+        }
+        await iniciarPago(
+          payloadCheckoutTienda({ ...form, ...destino, notas, items: itemsParaPedido() as { productoId: unknown; cantidad: number }[] }, provider, !authToken),
+          !authToken,
+          provider === 'SINPE',
+        )
+        return
+      }
       const resultado = await tiendaService.crearPedido(slug as string, { ...form, ...destino, notas, items: itemsParaPedido() }) as { numeroPedido?: string; total?: number }
       vaciarCarrito()
       const qs = new URLSearchParams({ orden: resultado.numeroPedido ?? '' })
@@ -197,8 +229,8 @@ export default function TiendaCheckoutPage() {
               </div>
             </div>
           </section>
-          {error && (
-            <p role="alert" className="rounded-[12px] border border-hc-danger/20 bg-hc-danger-bg px-[14px] py-3 text-[13px] leading-[18px] text-hc-danger">{error}</p>
+          {errorVisible && (
+            <p role="alert" className="rounded-[12px] border border-hc-danger/20 bg-hc-danger-bg px-[14px] py-3 text-[13px] leading-[18px] text-hc-danger">{errorVisible}</p>
           )}
           {/* Copy de Producto (ENTREGA_0410 §2.4). */}
           <p className="text-[12px] leading-4 text-hc-n-600">
@@ -208,7 +240,7 @@ export default function TiendaCheckoutPage() {
           {/* Siempre rojo de marca (#E73B33): el color de la tienda no aplica a la acción de pago. */}
           <button
             type="submit"
-            disabled={enviando}
+            disabled={enviando || estadoPago === 'loading' || estadoPago === 'redirecting'}
             className="flex min-h-[48px] w-full items-center justify-center rounded-[12px] bg-hc-red-500 px-4 text-[15px] font-semibold text-hc-n-0 disabled:opacity-60"
           >
             {enviando ? 'Enviando pedido...' : 'Confirmar pedido'}

@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Llama repair() antes de migrate() para que Flyway actualice el checksum
- * de migraciones FAILED cuyo script fue corregido (idempotencia añadida).
+ * Estrategia de arranque de Flyway. repair() (actualiza checksums y limpia FAILED) solo
+ * corre con perfil dev o con {@code hotclick.flyway.repair-on-start=true}; si no, solo migrate().
  *
  * Con perfil {@code dev}:
  * <ul>
@@ -55,6 +55,7 @@ public class FlywayRepairConfig {
     private static final String NATIVAS_DEV = "db/dev-bootstrap/nativas.sql";
 
     static final String PROP_DEV_BOOTSTRAP = "hotclick.flyway.dev-bootstrap";
+    static final String PROP_REPAIR_ON_START = "hotclick.flyway.repair-on-start";
     static final String PROP_BASE_VACIA = "hotclick.flyway.base-vacia.enabled";
     static final String BASE_VACIA_LOCATION = "classpath:db/base-vacia";
     static final String BASE_VACIA_HISTORIAL = "flyway_base_vacia_history";
@@ -83,11 +84,31 @@ public class FlywayRepairConfig {
             } else if (esPerfilProd() && vacio && esPostgres(flyway)) {
                 abortarProdVacio();
             }
-            log.info("[flyway] Ejecutando repair() para sincronizar checksums de migraciones fallidas...");
-            flyway.repair();
-            log.info("[flyway] repair() completado. Iniciando migrate()...");
-            flyway.migrate();
+            repairSiCorrespondeYMigrate(flyway);
         };
+    }
+
+    /**
+     * repair() reescribe checksums y borra filas FAILED de flyway_schema_history: en prod
+     * taparía una migración editada después de aplicada. Solo corre con perfil {@code dev}
+     * o con {@code hotclick.flyway.repair-on-start=true} (uso único, runbook
+     * docs/operaciones/flyway-repair.md). Fail-closed: sin perfil, perfil desconocido o
+     * prod sin el flag, solo migrate().
+     */
+    void repairSiCorrespondeYMigrate(Flyway flyway) {
+        if (repairHabilitado()) {
+            log.warn("[flyway] Ejecutando repair() (perfil dev o {}=true)...", PROP_REPAIR_ON_START);
+            flyway.repair();
+            log.info("[flyway] repair() completado.");
+        } else {
+            log.info("[flyway] repair() omitido ({}=false y sin perfil dev).", PROP_REPAIR_ON_START);
+        }
+        flyway.migrate();
+    }
+
+    boolean repairHabilitado() {
+        return esPerfilDev()
+            || environment.getProperty(PROP_REPAIR_ON_START, Boolean.class, Boolean.FALSE);
     }
 
     /**

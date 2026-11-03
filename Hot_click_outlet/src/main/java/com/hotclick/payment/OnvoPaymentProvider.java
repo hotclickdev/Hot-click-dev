@@ -41,6 +41,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private WebhookEventRepository webhookEventRepository;
     @Autowired private OnvoCapturaService     onvoCapturaService;
+    @Autowired private com.hotclick.service.payment.PedidoStatusTokenService pedidoStatusTokenService;
     @Autowired(required = false) private com.hotclick.service.onvo.cuenta.CuentaOnvoService cuentaOnvoService;
 
     @Override
@@ -67,7 +68,10 @@ public class OnvoPaymentProvider implements PaymentProvider {
         }
 
         String descripcion = "Pedido HOTCLICK " + pedido.getNumeroPedido();
-        String successUrl  = appUrl + "/pago/exito?order=" + pedido.getNumeroPedido();
+        // st = token firmado de vida corta, solo para leer el estado sin sesión. No se registra en logs.
+        String successUrl  = appUrl + "/pago/exito?order=" + pedido.getNumeroPedido()
+            + "&st=" + java.net.URLEncoder.encode(pedidoStatusTokenService.emitir(pedido.getNumeroPedido()),
+                java.nio.charset.StandardCharsets.UTF_8);
         String cancelUrl   = appUrl + "/pago/cancelado?order=" + pedido.getNumeroPedido();
 
         Map<String, String> metadata = Map.of(

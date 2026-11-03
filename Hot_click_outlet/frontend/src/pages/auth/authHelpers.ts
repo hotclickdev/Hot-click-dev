@@ -30,3 +30,17 @@ export function correoEnmascarado(correo: string): string {
   if (local.length <= 2) return `${local[0]}••••@${dominio}`
   return `${local[0]}••••${local[local.length - 1]}@${dominio}`
 }
+
+/**
+ * Toast de bienvenida tras el login (QA5 área 2 fila 27): «Admin» solo para el rol ADMIN; el resto ve su primer
+ * nombre o, sin nombre, el saludo genérico. Antes cualquier rol interno (p. ej. un dueño) veía «¡Bienvenido, Admin!».
+ */
+export function saludoLogin(
+  rol: string | null | undefined,
+  nombre: string | null | undefined,
+  t: (clave: string, opciones?: Record<string, unknown>) => string,
+): string {
+  if (rol === 'ADMIN') return t('login.welcomeAdmin')
+  const primero = (nombre ?? '').trim().split(/\s+/)[0]
+  return primero ? t('login.welcomeNombre', { nombre: primero }) : t('login.welcome')
+}

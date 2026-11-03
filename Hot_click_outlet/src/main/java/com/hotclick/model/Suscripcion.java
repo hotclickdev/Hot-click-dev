@@ -22,6 +22,17 @@ public class Suscripcion {
     @JoinColumn(name = "fk_id_plan", nullable = false)
     private Plan plan;
 
+    /**
+     * QA3-023: plan elegido en un checkout o cambio de plan que todavía no confirmó ONVO. {@code plan} sigue siendo el
+     * vigente; solo el webhook ONVO verificado lo aplica y limpia este campo.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_id_plan_pendiente")
+    private Plan planPendiente;
+
+    public Plan getPlanPendiente() { return planPendiente; }
+    public void setPlanPendiente(Plan planPendiente) { this.planPendiente = planPendiente; }
+
     @Column(name = "stripe_customer_id", length = 100)
     private String stripeCustomerId;
 

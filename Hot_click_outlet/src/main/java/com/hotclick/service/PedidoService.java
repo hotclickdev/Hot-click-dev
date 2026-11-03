@@ -118,11 +118,16 @@ public class PedidoService {
      */
     @Transactional
     public Pedido cambiarEstado(Long id, String estadoSolicitado, String nota, String referenciaPago) {
-        Pedido pedido = pedidoRepository.findById(id)
+        // QA5 MEDIO: FOR UPDATE serializa los PUT paralelos; el segundo ya ve el estado nuevo y no repite efectos.
+        Pedido pedido = pedidoRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
         String nuevoEstado = PedidoEstadoMaquina.validarEstado(estadoSolicitado);
         String estadoActual = PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido());
         boolean mismoEstado = nuevoEstado.equals(estadoActual);
+        if (mismoEstado && !(Constants.PEDIDO_PAGADO.equals(nuevoEstado) && !despachoVerificador.pagoVerificado(pedido))) {
+            // Idempotente: pedir el estado en que ya está no transiciona, no toca stock, no reembolsa ni manda correo.
+            return sinCambios(pedido);
+        }
         if (Constants.PEDIDO_ENVIADO.equals(nuevoEstado) && !mismoEstado) {
             despachoVerificador.verificarDespachable(pedido);
         }
@@ -168,6 +173,13 @@ public class PedidoService {
         if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)) {
             n8nWebhookService.notificarPedidoEntregado(pedido);
         }
+        return pedido;
+    }
+
+    private static Pedido sinCambios(Pedido pedido) {
+        Hibernate.initialize(pedido.getItems());
+        if (pedido.getUsuarioFinal() != null) { pedido.getUsuarioFinal().getCorreo(); }
+        if (pedido.getBodega() != null) { pedido.getBodega().getNombreBodega(); }
         return pedido;
     }
 

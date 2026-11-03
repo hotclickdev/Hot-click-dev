@@ -4491,3 +4491,78 @@ UPDATE hot_click_empresa_tb
    SET correo_empresa = 'admin@hotclick.lat'
  WHERE lower(correo_empresa) = 'admin@hotclick.com'
    AND NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e2 WHERE lower(e2.correo_empresa) = 'admin@hotclick.lat');
+
+-- V220 (01-nov-2026) QA3-023: plan elegido sin pago confirmado. La suscripción conserva el plan vigente en
+-- fk_id_plan y el nuevo queda acá hasta que el webhook ONVO verificado lo aplica. Aditiva.
+ALTER TABLE hot_click_suscripcion_tb ADD COLUMN IF NOT EXISTS fk_id_plan_pendiente BIGINT
+    REFERENCES hot_click_plan_tb(id_plan);
+
+-- V221 (01-nov-2026): FK de pagos hacia las tablas viejas en MAYÚSCULAS -> tablas JPA en minúsculas (ALTO QA5, checkout 500).
+-- V221: reapunta las FK de pagos que quedaron hacia las tablas viejas en mayúsculas
+-- ("HOT_CLICK_PEDIDO_TB", "HOT_CLICK_USUARIO_TB", "HOT_CLICK_ESTADO_TB"), vacías en uso real,
+-- hacia las tablas que usa JPA (hot_click_pedido_tb, hot_click_usuario_tb, hot_click_estado_tb).
+-- Con la FK vieja todo checkout que crea el pago falla (violación de FK -> 500).
+-- Idempotente y solo aditiva: cada FK se toca solo si hoy referencia la tabla en mayúsculas y
+-- la tabla en minúsculas existe. Si ya apunta bien (p. ej. corregida a mano), no hace nada.
+-- No borra tablas ni datos. Se agrega NOT VALID y luego se intenta VALIDATE; si hay filas
+-- huérfanas queda NOT VALID (igual se aplica a filas nuevas) y se avisa con WARNING.
+DO $$
+DECLARE
+    r RECORD;
+    v_ref_actual TEXT;
+BEGIN
+    FOR r IN
+        SELECT * FROM (VALUES
+            ('hot_click_pago_tb',             'hot_click_pago_tb_fk_id_pedido_fkey',             'fk_id_pedido',  'HOT_CLICK_PEDIDO_TB',  'hot_click_pedido_tb',  'id_pedido'),
+            ('hot_click_pago_tb',             'hot_click_pago_tb_fk_id_usuario_fkey',            'fk_id_usuario', 'HOT_CLICK_USUARIO_TB', 'hot_click_usuario_tb', 'id_usuario'),
+            ('hot_click_pago_tb',             'hot_click_pago_tb_fk_id_estado_fkey',             'fk_id_estado',  'HOT_CLICK_ESTADO_TB',  'hot_click_estado_tb',  'id_estado'),
+            ('hot_click_payment_log_tb',      'hot_click_payment_log_tb_fk_id_usuario_fkey',     'fk_id_usuario', 'HOT_CLICK_USUARIO_TB', 'hot_click_usuario_tb', 'id_usuario'),
+            ('hot_click_transaccion_pago_tb', 'hot_click_transaccion_pago_tb_fk_id_estado_fkey', 'fk_id_estado',  'HOT_CLICK_ESTADO_TB',  'hot_click_estado_tb',  'id_estado'),
+            ('hot_click_webhook_event_tb',    'hot_click_webhook_event_tb_fk_id_estado_fkey',    'fk_id_estado',  'HOT_CLICK_ESTADO_TB',  'hot_click_estado_tb',  'id_estado')
+        ) AS t(tabla, fk, col, ref_vieja, ref_nueva, ref_col)
+    LOOP
+        SELECT rt.relname INTO v_ref_actual
+          FROM pg_constraint c
+          JOIN pg_class st ON st.oid = c.conrelid
+          JOIN pg_namespace n ON n.oid = st.relnamespace
+          JOIN pg_class rt ON rt.oid = c.confrelid
+         WHERE c.contype = 'f' AND c.conname = r.fk AND st.relname = r.tabla
+           AND n.nspname = current_schema();
+
+        IF v_ref_actual IS DISTINCT FROM r.ref_vieja THEN
+            CONTINUE; -- no existe o ya apunta a otra tabla: nada que hacer
+        END IF;
+        IF to_regclass(format('%I.%I', current_schema(), r.ref_nueva)) IS NULL THEN
+            RAISE WARNING 'V221: % sigue hacia "%": no existe %', r.fk, r.ref_vieja, r.ref_nueva;
+            CONTINUE;
+        END IF;
+
+        EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I', r.tabla, r.fk);
+        EXECUTE format('ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES %I (%I) NOT VALID',
+                       r.tabla, r.fk, r.col, r.ref_nueva, r.ref_col);
+        BEGIN
+            EXECUTE format('ALTER TABLE %I VALIDATE CONSTRAINT %I', r.tabla, r.fk);
+        EXCEPTION WHEN foreign_key_violation THEN
+            RAISE WARNING 'V221: % queda NOT VALID (filas huérfanas previas)', r.fk;
+        END;
+    END LOOP;
+END $$;
+
+-- V222 (02-nov-2026) HC-CICD-002: tipos de OTP REGISTRO y RESET_PASSWORD en la tabla JPA (forgot-password y registro sin correo en base desde V1).
+-- V222 (HC-CICD-002): siembra los tipos de OTP REGISTRO y RESET_PASSWORD en la tabla que lee JPA
+-- (hot_click_tipo_otp_tb). V1 los insertó solo en la tabla vieja "HOT_CLICK_TIPO_OTP_TB" (mayúsculas),
+-- así que en una base creada desde V1 forgot-password y el registro fallaban con
+-- "tipo de OTP no configurado". Valores copiados de V1: 300 s, 6 dígitos, estado 1 (ACTIVO).
+-- Idempotente: si la fila ya existe (prod) no hace nada; no edita filas existentes.
+CREATE TABLE IF NOT EXISTS hot_click_tipo_otp_tb (
+    id_tipo_otp           SERIAL PRIMARY KEY,
+    nombre                VARCHAR(30)  NOT NULL UNIQUE,
+    tiempo_expiracion_seg INTEGER      NOT NULL DEFAULT 300,
+    longitud_codigo       INTEGER      NOT NULL DEFAULT 6,
+    fk_id_estado          INTEGER      NOT NULL DEFAULT 1
+);
+
+INSERT INTO hot_click_tipo_otp_tb (nombre, tiempo_expiracion_seg, longitud_codigo, fk_id_estado)
+SELECT v.nombre, v.seg, v.longitud, v.estado
+  FROM (VALUES ('REGISTRO', 300, 6, 1), ('RESET_PASSWORD', 300, 6, 1)) AS v(nombre, seg, longitud, estado)
+ WHERE NOT EXISTS (SELECT 1 FROM hot_click_tipo_otp_tb t WHERE t.nombre = v.nombre);

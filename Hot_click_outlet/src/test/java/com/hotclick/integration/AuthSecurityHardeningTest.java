@@ -208,7 +208,7 @@ class AuthSecurityHardeningTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Usuario SUSPENDIDO no puede loguearse → 403")
+    @DisplayName("Usuario SUSPENDIDO no puede loguearse → 401 genérico (sin enumeración)")
     void suspendedUser_cannotLogin() throws Exception {
         testUser.setEstado(Constants.ESTADO_SUSPENDIDO);
         usuarioRepository.saveAndFlush(testUser);
@@ -219,7 +219,7 @@ class AuthSecurityHardeningTest extends BaseIntegrationTest {
                     "correo",    testUser.getCorreo(),
                     "contrasena", "Test1234!"
                 ))))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isUnauthorized());
     }
 
     // ── User enumeration prevention (A07 / API6) ────────────────────────────

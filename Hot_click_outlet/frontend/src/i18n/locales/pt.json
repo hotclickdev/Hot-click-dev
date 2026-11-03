@@ -1053,6 +1053,7 @@
     "error": "Erro ao entrar",
     "welcome": "Bem-vindo!",
     "welcomeAdmin": "Bem-vindo, Admin!",
+    "welcomeNombre": "Olá, {{nombre}}!",
     "adminModal": "Selecionar modo de acesso",
     "adminModalSub": "Você tem permissões de administrador. Como deseja entrar?",
     "enterAdmin": "Entrar como Administrador",
@@ -1067,6 +1068,9 @@
     "emergencyCodeHint": "Insira um dos seus códigos de emergência",
     "sending": "Enviando…",
     "resendVerification": "Reenviar e-mail",
+    "ingresarCodigo": "Já tenho o código",
+    "verifyError": "Não foi possível verificar o código. Confira e tente de novo.",
+    "cuentaVerificada": "Pronto, seu e-mail foi verificado. Já pode entrar.",
     "reenvioGenerico": "Se a conta existir e ainda não estiver verificada, enviamos um e-mail com o código.",
     "reenviarEn": "Reenviar em {{s}} s",
     "recoverByEmail": "Recuperar acesso por e-mail",
@@ -4741,7 +4745,13 @@
     "titulo": "Complete os dados do seu negócio",
     "texto": "Sua conta ainda não tem um negócio associado. Termine o cadastro para gerenciar seus produtos, vendas e depósitos.",
     "cta": "Completar meu negócio",
-    "volver": "Voltar à loja"
+    "volver": "Voltar à loja",
+    "cargando": "Buscando seus negócios…",
+    "elegirTitulo": "Escolha seu negócio",
+    "elegirTexto": "Sua conta tem acesso a estes negócios. Escolha com qual quer trabalhar.",
+    "entrar": "Entrar",
+    "activando": "Entrando…",
+    "errorActivar": "Não foi possível abrir esse negócio. Tente novamente."
   },
   "billing": {
     "tilopayConfirmando": "Confirmando o pagamento do seu plano…",
