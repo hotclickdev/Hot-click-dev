@@ -1,48 +1,34 @@
 # Traspaso: Auditor 5 Suscripciones
 
-**Rol:** auditor de solo lectura de suscripciones, planes (Emprendedor, Pyme, Negocio Plus), cobro recurrente y límites por plan. No escribe código ni abre PRs.
+## Rol y descripción (para recrearlo)
+Auditor del área 5 de HotClick: suscripciones, planes, período de gracia e impago con ONVO. Solo audita y reporta hallazgos (ALTO, MEDIO, BAJO) con evidencia y archivo:línea. No toca código ni hace commit, push, merge ni deploy. Repo hotclickdev/Hot-click-dev. Siempre indica el hash de master auditado. Nunca muestra secretos ni datos sensibles. Escribe en español de Costa Rica con voseo. Reporta a Grok Bot o al Mentor; no habla con humanos fuera de su chat.
 
-**En qué quedé:** terminé la auditoría Fase 1 sobre master fb9ef78e. Encontré 9 correcciones (4 ALTO, 3 MEDIO, 2 BAJO) y 5 mejoras. El cobro está validado contra la documentación pública de ONVO.
+## Reglas
+- Solo lectura y tests dirigidos (mvn -o -Dfrontend.skip=true -Dtest=...), nunca la suite completa salvo pedido.
+- Si saca código, usa git archive a /tmp y lo borra al terminar.
+- La evidencia de QA (/workspace/qa/a5/) sirve de referencia, no de base.
+- Reglas de negocio: Pyme y Negocio Plus se activan solo con pago confirmado por ONVO. Emprendedor incluye POS. Al terminar la gracia la tienda se pausa (las ventas existentes se mantienen; desde el día siguiente los productos salen agotados u ocultos, junto con las redes y el botón de compartir). Tilopay se elimina.
 
-**Ramas y PRs:** ninguna. No tengo commits locales.
+## Historial (S/ = Hot_click_outlet/src/main/java/com/hotclick/service/suscripcion/)
+- Fase 1 sobre fb9ef78e: S-01 a S-04, todos ALTO (docs/traspaso/evidencia/auditor-5-suscripciones/fase1-suscripciones.md).
+- fb432103: S-01 y S-03 corregidos; S-02 y S-04 abiertos. El #300 nunca entró.
+- 649387e7: detalle de S-02 y S-04 entregado a HotClick Dev Pagos 2.
+- c5b9bb06 (#371): S-02 y S-04 cerrados. Nuevo A5-01 ALTO: no se reconsultaba a ONVO antes de la baja.
+- 3c7dfaea (#381 + #374): A5-01 cerrado. Queda un ALTO porque falta #388 (moneda USD contra el price del plan). Con 7bb6cf47 (#388, fix b87b45d79) no quedó ningún ALTO. Tests: 122 OK en 3c7dfaea y 154 OK en 7bb6cf47.
+- 2026-10-30: aportes al plan de la Fase 2 (/workspace/hotclick/plan-fase2-pruebas-seguridad.md) enviados al Mentor.
 
-**ALTO pendientes:**
-- **S-01:** el job baja de plan a los planes vencidos, pero no hay forma de pagar porque `/checkout` y `/cambiar-plan` están deshabilitados por el "TODO: ONVO".
-- **S-02:** el webhook de billing activa planes sin verificar el pago con ONVO, ni el modo, el monto, la moneda o el estado.
-- **S-03:** la cancelación al vencer nunca baja de plan.
-- **S-04:** la idempotencia de `renewal.failed` es fija por suscripción.
+## Pendientes
+- [PENDIENTE] Re-QA y reauditoría del área 5 sobre un hash que incluya #388.
+- [PENDIENTE] MEDIO: los rechazos permanentes del webhook solo dejan log [ALERTA-PAGO]; falta un canal de alerta y un procedimiento manual.
+- [PENDIENTE] MEDIO: PLANES_MONEDA y *_PRECIO_MENSUAL_USD no se validan al arrancar (OnvoArranqueProdGuard). Hay que revisarlos en staging y prod.
+- [PENDIENTE] MEDIO: el job de PAST_DUE no genera cobro y el ledger queda en "crc". Un cupón o prorrateo se rechaza como pago_parcial.
+- [PENDIENTE] BAJO: la clave de falla no usa attemptCount (handler L321-327); empresa.estadoPlan no se sincroniza (RenovacionesTilopayService L70-72); sigue el código muerto de Stripe/Tilopay.
+- [PENDIENTE] Las pruebas del área 5 en la Fase 2, cuando Andrés dé el OK.
 
-**Sin verificar:** si ONVO usa un secret de webhook distinto para test y live, y cómo aplica los límites el componente `PlanGate` del frontend.
+## Próximos pasos
+1. Obtener el hash actual de master y confirmar que incluye b87b45d79.
+2. Reauditar S/OnvoBillingWebhookHandler, OnvoBillingVerificador, OnvoRenovacionReconsulta, RenovacionesTilopayService, SuscripcionRenewalService y PrecioPlanOnvo con tests dirigidos.
+3. Reportar los ALTO abiertos con su hash.
 
-**Próximos pasos:** después de que Andrés apruebe, Dev Pagos conecta el cobro de ONVO a los endpoints y corrige S-01 a S-04.
-
-**Decisiones de Andrés que conozco:** prod es solo lectura. Las correcciones las hacen los bots Dev después de su aprobación. El merge a master pide CI verde y APTO sobre el hash exacto.
-
-**Evidencia:** `evidencia/auditor-5-suscripciones/fase1-suscripciones.md`
-
-## Correcciones al README
-
-Revisión de `docs/traspaso/README.md` en `b9f241d8`, hecha en solo lectura por Auditor 5 Suscripciones.
-
-### (a) Errores o datos viejos
-- **Fila de Auditor 5 (línea 135):** dice "informe en hotclick-reportes/auditoria/". Esa carpeta está en el box de la cuenta vieja y no en el repo, así que la cuenta nueva no la va a ver. Hay que apuntar a `docs/traspaso/evidencia/auditor-5-suscripciones/fase1-suscripciones.md`, si CI/CD la subió.
-- **Línea 174:** describe las suscripciones por ONVO billing con renovación, gracia, suspensión y reactivación como si funcionaran. En master `fb9ef78e`, `/checkout` y `/cambiar-plan` respondían "cobro no disponible" por el "TODO: ONVO", y el flujo de cambio de plan por ONVO no lo llamaba ningún endpoint. No verifiqué si #333, #339, #342 o #344 lo resolvieron. La línea debería decir "verificar" hasta que haya un QA sobre el hash actual.
-- **Línea 210 (estado del área 5):** no menciona los ALTO S-01 a S-04 de mi auditoría. Hay que agregar cuáles cubren los PR mergeados y cuáles siguen abiertos.
-
-### (b) Lo que le falta a mi reemplazo
-- **Hallazgos ALTO que hay que confirmar sobre el master actual:**
-  - S-01: el plan baja sin que el negocio tenga forma de pagar.
-  - S-02: el webhook de billing activa el plan sin volver a consultar a ONVO ni validar `mode`, monto, moneda o estado, y confía en `plan_id` y `empresa_id` de la metadata.
-  - S-03: la cancelación con `cancelarAlVencer` nunca baja de plan.
-  - S-04: la clave de idempotencia de `renewal.failed` es fija por suscripción.
-- **Pendientes sin verificar:**
-  - Si ONVO usa un secret de webhook distinto para test y para live.
-  - Cómo aplica los límites el `PlanGate` del frontend.
-  - `BillingPreferenciasController`, que no exige ser dueño.
-- **Variables, solo por nombre:** `PAYMENTS_ONVO_PERMITIR_LLAVE_TEST`, `ONVO_SECRET_KEY` y la del secret del webhook de ONVO (confirmar su nombre exacto en `application*.yml`).
-- **Trampa:** gitleaks no está instalado en el box viejo. Hay que instalarlo antes de cualquier push.
-- **Trampa:** con la decisión 11 (piloto gratis por unos 4 meses), el job de vencimiento no debe bajar ni suspender a las tiendas del piloto. Hay que confirmar que el piloto lo contempla.
-
-### (c) Mejoras
-- Agregar al README la lista de los ALTO por área con su PR o estado, para que cada reemplazo vea qué falta re-auditar.
-- Indicar en cada fila de auditor el hash sobre el que se hizo la auditoría. La mía es sobre `fb9ef78e`.
+## Secretos
+No hay ninguno aquí. Las variables ONVO_* y la configuración de planes están en el entorno del servidor y en los secretos del repo; nunca se copian.

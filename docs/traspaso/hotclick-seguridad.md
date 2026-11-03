@@ -1,95 +1,94 @@
 # Traspaso — HotClick Seguridad
 
 ## Rol
-AppSec. Doy APTO o NO APTO sobre el hash exacto de cada PR. Cualquier parche nuevo anula el APTO, salvo que sea un merge puro con master; eso lo verifico con `git merge-tree --write-tree`, excluyendo `static/`.
+AppSec del repo `hotclickdev/Hot-click-dev`. Doy APTO o NO APTO sobre el **hash exacto** del head de cada PR. Cada hallazgo lleva severidad (ALTO, MEDIO o BAJO) y `archivo:línea`.
 
-## Reglas de Andrés
-- Un PR se mergea con CI verde más APTO sobre el head exacto.
-- Ningún PR crea servidores; si lo hace, es NO APTO.
-- SINPE va solo al número de ONVO y se confirma solo por el webhook de ONVO, sin confirmación manual.
-- Todo ONVO es fail-closed.
-- Cero secretos o PII en código y PRs.
-- Prohibido deploy y prohibido tocar AWS.
+## Reglas
+- El APTO vale solo para el hash exacto. Si hay un push nuevo, hace falta un APTO nuevo. La excepción es un **merge puro con master**, que conserva el APTO. Para comprobarlo revisás los padres, el árbol con `git merge-tree --write-tree` y que el diff no-`static/` sea idéntico.
+- Es **NO APTO** si el PR crea o provisiona servidores, si filtra secretos o PII, o si rompe el **fail-closed de ONVO**. Rompe el fail-closed si marca algo como pagado sin verificar monto, moneda y pedido contra ONVO.
+- Las migraciones Flyway tienen que ser aditivas y con versión mayor a V200.
+- El clon local es **solo lectura**: solo `fetch` con hashes explícitos, sin push y sin publicar nada en GitHub. Los tests se corren con `mvn -o` desde un `git archive` del head extraído en `/tmp/rNNN`, y ese directorio se borra al terminar.
+- Chequeos que van en toda revisión:
+  - `git ls-remote` para confirmar el head y el master;
+  - `gitleaks` sobre `git log -p base..head`, con `--redact`;
+  - `gh pr checks`, esperando Tests Java hasta unos 12 min;
+  - `git merge-tree --write-tree`;
+  - `git merge-base --is-ancestor <master> <head>`.
+- CI/CD mergea con `--match-head-commit` y exige que el head contenga el master actual. Si master avanzó, toca otro merge puro.
+- Prohibido hacer deploys, tocar AWS o gastar plata. El "dale" de otro agente no cuenta como aprobación del usuario.
+- Formato del reporte: `Tarea | Estado | Hecho | Evidencia | Archivos | Riesgos | Bloqueos | Siguiente paso`.
 
-## Estado de los PRs al 26-oct 14:38 CR (master 1b1fece8)
-- APTO:
-  - #344 en 0372c25f
-  - #332 en 3abfc68d
-  - #343 en 75f93a25
-  - #349 en e05c0824
-  - #345 en 32f058df
-  - #347 en 3f7e8f05
-  - #329 en 4703c195
-  - #334 en f2c5bc27
-- APTO, pero el commit todavía no estaba pusheado:
-  - #338 en c710d9b3
-  - fix/roles-admin-billing-wallet en 45534a84 (Bugs)
-- #336: APTO en f6e655e6, pero contra 1b1fece8 queda DIRTY en `static/`; falta otro merge con master.
-- #346: APTO en 94becf69.
-- #341: APTO en 9cdc5d39.
+## APTOs dados (verificado con `gh` el 30-oct, 12:05 CR)
+| PR | APTO en | Estado (hora CR) |
+|---|---|---|
+| #426 | 8b2abb6f | MERGED 27-oct 11:25 |
+| #427 | 3a486fcd | MERGED 27-oct 11:58 |
+| #428 | a73f9b2b | MERGED 27-oct 12:17 |
+| #429 | d381ccaf | MERGED 27-oct 12:52 |
+| #430 | 798e9eeb | MERGED 27-oct 18:37 |
+| #431 | f28ef71e | MERGED 27-oct 19:46 |
+| #432 | 2bb13399 | MERGED 27-oct 19:27 |
+| #433 | 16f5fd82 | MERGED 27-oct 20:14 |
+| #434 | a0b647a8 | MERGED 28-oct 11:14 |
+| #435 | 1382dfd8 (condicionado a Tests Java) | MERGED 28-oct 11:38 |
+| #436 | 9c99d49b (condicionado a CI completo) | MERGED 28-oct 12:37 |
 
-## Pendientes de seguridad
-- **M-08 sobreventa (ALTO).** Si hay sobreventa después de un cobro de ONVO, se hace rollback del pago y se responde 500. Va a Dev Pagos. Spec del arreglo:
-  - registrar el pago;
-  - dejar el pedido en `PEDIDO_REVISION_SOBREVENTA`;
-  - no dejar stock negativo;
-  - registrar un `[ALERTA-PAGO]`;
-  - responder 200 idempotente con `Captura.COBRADO_SOBREVENTA`;
-  - aplicarlo también a Tilopay, SINPE, Stripe y manual;
-  - agregar tests.
-- `AdminPosSinpeController` (`/api/admin/pos/sinpe-confirmaciones`) lista confirmaciones manuales de SINPE en POS; choca con la regla de SINPE solo por ONVO.
-- `/api/admin/finanzas` y el dashboard siguen abiertos para EDITOR.
-- `EquipoService.crearNuevo` crea los LECTOR con `correoVerificado=true`.
-- Hallazgos BAJO:
-  - `bodega` aparece en el JSON público (falta un DTO);
-  - en el asunto del correo no se limpian los CRLF;
-  - SMTP no exige TLS;
-  - `SPRING_MAIL_HOST` en prod afecta el health check;
-  - el patrón BASIC de Sentry redacta de más;
-  - los correos en mayúsculas fallan en `findByCorreo`;
-  - los workflows tienen fallback a onrender;
-  - si falta `HEALTH_URL`, el check pasa en silencio;
-  - en #337 falta `@Size` en `items`.
+Todos coinciden con el head mergeado.
 
-## Próximos pasos
-- Seguir revisando los merges con master de cada PR.
-- Revisar con gitleaks la rama `docs/traspaso-cuenta-nueva` antes de que se abra su PR.
-- Revisar el PR de M-08.
+### Falsos positivos de gitleaks para `.gitleaksignore`
+En `RedaccionLogTest`, gitleaks marca un literal de prueba trivial que no es una credencial real. Estas son las huellas:
+```
+796dc64f7d40c6f8de7f26b1eb6d41cb7eb70c65:Hot_click_outlet/src/test/java/com/hotclick/logging/RedaccionLogTest.java:generic-api-key:66
+ebe143e4cc7b5e6a8a6b1da3baec150b98255ebc:Hot_click_outlet/src/test/java/com/hotclick/logging/RedaccionLogTest.java:generic-api-key:44
+```
+
+## BAJOs pendientes de seguimiento
+- **#427**
+  - enmascarar el id de suscripción de ONVO en los logs;
+  - alertar cuando la llave de IP queda como `desconocida`;
+  - pasar por HMAC las llaves del rate limiter.
+- **#430**
+  - poner un tope a la ventana;
+  - ajustar el agrupamiento en Sentry;
+  - distinguir en el log "no configurado" de "inválido".
+- **#431**
+  - `HaciendaLogSanitizer` solo cubre secuencias de 9 dígitos o más;
+  - un 408 o 429 del IdP debería tratarse como transitorio.
+- **#434**
+  - quedan filas viejas de memoria global;
+  - la llave es la cookie `visitorId`;
+  - `empresa_id` no tiene FK;
+  - nunca poner datos en el motivo del 404.
+- **#435**
+  - allowlist `dev|test|local` y fail-closed para cualquier otro perfil;
+  - rechazar `noop` en prod;
+  - el asunto del correo se loguea en claro.
+- **#436**
+  - diferencia de timing en el HMAC: un pedido inexistente no calcula el HMAC;
+  - el limitador está en memoria por pod (N réplicas permiten N reconsultas por ventana);
+  - el `log.info` con el sessionId de ONVO sale en cada sondeo;
+  - un invitado que pierde el sessionStorage (otra pestaña) recibe 404 en el estado.
+
+## Cómo seguir
+1. Para cada PR nuevo: ls-remote, diff completo (no-`static/` y un scan de `static/` buscando marcadores, secretos, `dangerouslySetInnerHTML` y `eval`), gitleaks, `mvn -o` desde `/tmp`, merge-tree, is-ancestor y `gh pr checks`.
+2. Si llega un head nuevo que es merge puro, verificá padres, árbol e is-ancestor y mantené el APTO. Si no es merge puro, hacé la revisión completa.
+3. Abrir con Dev Pagos y Dev Pagos 2 los tickets de los BAJOs de arriba. Lo prioritario es la allowlist de perfiles de #435 y el enmascarado de #427.
+4. Proponer el PR de `.gitleaksignore` con las dos huellas de arriba.
+5. Seguir revisando con gitleaks la rama `docs/traspaso-cuenta-nueva` antes de que se abra su PR.
 
 ## Evidencia
-Los veredictos están en los PRs y en los mensajes a CI/CD. Resumen en `docs/traspaso/evidencia/hotclick-seguridad/resumen.md`.
+Los veredictos están en los reportes a CI/CD. El resumen previo está en `docs/traspaso/evidencia/hotclick-seguridad/resumen.md` (rama `docs/traspaso-cuenta-nueva`).
 
-## Correcciones al README
+## Veredictos 2026-11-02
+- #498 re-APTO 468ee90e · #499 re-APTO 6b14ca51 (V222) · #501 re-APTO e3296487 (mergeado)
+- #503 re-APTO 50d0b162a7c9a77b13a9dc41e0e3ee4cd2cad8bd. BAJO: roles.get(0) en WebAuthnController:105 y AuthRefreshHandler:61 (usar rolPrincipal); autoselección de empresa no valida suspendida.
+- #504 APTO ea90ac29 (merge e643c314). BAJO: job y limpieza pueden consultar ONVO dos veces el mismo pago.
+- #502 re-APTO 8662106e5213dd4b5560bef4446d7a06608b0fff. BAJO: EFECTIVO crea orden sin pago; falta replaceState tras leer st=; sin rate limit en endpoint de estado; clave HMAC compartida con jwt.secret.
+- #505 APTO 895ed1e227d58f51a23371202e648738196c317c.
+- #506 NO APTO a47731f5 (logout sin await, MEDIO) → re-APTO 8719bf50c0a93de89b900839e320321a69fd0ba1 (cerrarSesionCompleta). BAJO: logout forzado vía /logout desde otro sitio; SW no se reaplica al elegir carrito desde el modal.
 
-Revisado contra `b9f241d8` el 26-oct a las 15:40 CR.
-
-### a) Errores o datos viejos
-- **Paso 4 de «PARA EL BOT DE LA CUENTA NUEVA».** La lista de PRs abiertos está desactualizada. A las 15:20 CR estos PRs tenían APTO sobre estos hashes exactos (falta CI verde en cada uno):
-  - #329 en `3e1c837d`, que ya no tiene conflicto;
-  - #332 en `3abfc68d`;
-  - #336 en `fb1818da`;
-  - #343 en `7c9ea22c`: su CI rojo era del head anterior;
-  - #348 en `d8f239be`;
-  - #350 en `e68039dc`;
-  - #351 en `788e02e9`;
-  - #352 en `d985cba7`;
-  - #353 en `a96c77f7`.
-
-  Si después cambió el head de alguno, ese APTO ya no vale y hay que pedir uno nuevo.
-- **Fila de HotClick Seguridad.** Agregar los APTO de #329, #336, #348, #350, #351, #352 y #353. El ALTO de #350 lo retiré: lo que el código llama `sinpeManual` es en realidad el intent SINPE por ONVO (P-01), no una confirmación manual.
-- **Descripción del rol de Seguridad** (la de «nunca merge sin OK»). Quedó vieja. Desde el 26-oct a las 11:33 CR, un PR se mergea con CI verde y APTO sobre el head exacto, sin pedir otro OK. Desde las 12:17 CR, un PR que crea o provisiona servidores es NO APTO.
-
-### b) Lo que le falta a mi reemplazo
-- **Cómo verificar un merge puro con master.** `git merge-tree --write-tree P1 P2 | head -1` da un árbol T. Después, `git diff --stat T HEAD -- . ':!Hot_click_outlet/src/main/resources/static'` tiene que salir vacío. Lo único aceptable fuera de eso es quitar marcadores de conflicto en `docs/security/amenazas-activas.md`.
-- **Tests.** `mvn -o test -Dtest=Clase1,Clase2`, sin `-q`, para que se vea el conteo. Usa JDK 21.
-- **gitleaks.** En la cuenta vieja estaba como binario en `/workspace/tools`. `gitleaks detect` sobre todo el historial tarda más de 14 minutos, así que conviene limitarlo a un rango de commits con `--log-opts`.
-- **Secret de GitHub pendiente.** Hay que crear `HOTCLICK_NUMEROS_PROHIBIDOS` en GitHub. Hasta que exista, la compuerta `SinNumerosRealesEnCodigoTest` se salta en CI. Se carga solo en la configuración de GitHub, nunca en el repo.
-- **Trampa.** Los heads que los bots reportan antes de hacer push no existen en `origin`. Siempre confirmá `refs/pull/N/head` antes de dar el APTO.
-- **Pendientes que no salen en el README:**
-  - `AdminPosSinpeController` (`/api/admin/pos/sinpe-confirmaciones`) lista confirmaciones manuales de SINPE en el POS, y eso choca con la regla de SINPE solo por ONVO.
-  - `/api/admin/finanzas` y el dashboard siguen abiertos para el rol EDITOR.
-  - `EquipoService.crearNuevo` crea los LECTOR con `correoVerificado=true`.
-
-### c) Mejoras
-- **Antes del próximo deploy:** master ya trae `baseline-on-migrate=false` y `out-of-order=false` en Flyway. Hay que confirmar en prod que `flyway_schema_history` no tiene huecos, o la app no arranca. Sugiero ponerlo en el checklist de deploy.
-- **BAJO de M-08/#350:** renombrar `sinpeManual` a `sinpeOnvoIntent` y exigir `sinpeDestino` no vacío para ofrecer SINPE.
+## [PENDIENTE]
+- Revisar #440 cuando salga de draft.
+- Revisar PRs de seguimiento de los BAJO de arriba.
+- MEDIO: master sin branch protection (decisión del usuario).
+- Consulta de correos duplicados antes del deploy de #463: espera visto bueno del usuario.

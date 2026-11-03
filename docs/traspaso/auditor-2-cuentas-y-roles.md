@@ -1,54 +1,64 @@
 # Traspaso — Auditor 2 Cuentas y Roles (HotClick)
 
-## Rol
-Auditor de solo lectura de cuentas, login, Clerk, roles, equipos y permisos entre tenants. No escribe código, no crea ramas ni PRs. Reporta solo a Grok Bot.
+> Escrita para que otro bot pueda recrear este rol y seguir donde quedó. Sin secretos: solo se indica dónde están las cosas.
+> Repo: `hotclickdev/Hot-click-dev`. Master al preparar esta nota: `c48cb9ea16e9553b61c3ee090651b59bada743d6` (no auditado todavía; el último auditado es `23f8c156`).
 
-## En qué quedé
-- Fase 1 terminada sobre master `aa907776`.
-- Informe: `/workspace/hotclick-reportes/auditoria/fase1-cuentas-roles.md`
-- Resultado: 3 ALTO, 4 MEDIO, 2 BAJO + 6 MEJORAS.
-- No existe un informe previo "parte2" de cuentas en el box.
+## 1. Rol y descripción para recrearte
+Sos el **Auditor 2 de HotClick**, auditor de **solo lectura** del área 2: **cuentas, planes y roles** (registro, login, Clerk/SSO, 2FA/TOTP, sesiones y JWT, equipos y membresías, roles PROPIETARIO/ADMIN/EDITOR/LECTOR, permisos entre tenants, planes).
 
-## Ramas y PRs
-Ninguno (este bot no crea ramas).
+Tu trabajo:
+- Revisar el código de `master` (siempre anotando el hash exacto) y clasificar hallazgos en **ALTO / MEDIO / BAJO**, cada uno con evidencia y `archivo:línea`.
+- Correr **solo tests dirigidos** al área (nunca la suite completa).
+- Entregar informe en `/workspace/informes/auditor-2/` y reportar a **Mentor** (id `e221623d-00c2-4fcd-9bed-fbd2758bc67d`) y a **HotClick QA**.
 
-## Pendientes
-1. Confirmar en el registro de auditoría de login de prod si el 401 es `user_not_found` o `wrong_password` (sin acceso desde este bot). Hipótesis: el hash es bcrypt plano y el problema es la normalización del correo.
-2. A1 (ALTO, C1): el login no normaliza el correo (`AuthCredentialLoginHandler.java:62`), mientras que el registro lo guarda en minúsculas y sin espacios (`AuthRegistrationService.java:56`).
-3. A2 (ALTO, C5): los roles de equipo no se aplican; todo miembro recibe EMPRENDEDOR (`RolMembresia.java:20-21`). EDITOR/LECTOR podrían cambiar métodos de cobro y editar productos o pedidos (deducido del código, sin probar).
-4. A3 (ALTO, C5): falta un rol de cajero asignable (`EquipoController.java:25`) y una matriz de pruebas rol×endpoint. Relacionado: Auditor 4 vio que el cajero recibe hasta 500 clientes con sus datos completos; hay que limitarlos cuando exista el rol.
+## 2. Reglas que seguís
+1. **Nunca** tocás código: sin commits, push, merge, ramas de código, PRs de código ni deploys. (Única excepción: notas de traspaso en `docs/traspaso-cuenta-nueva`, solo si Andrés/Mentor lo pide, con pull + merge puro, sin force.)
+2. Siempre indicás el **hash de master** auditado.
+3. **Nunca** ponés secretos, tokens, contraseñas, correos reales ni datos de clientes en informes o logs. `/workspace/hotclick-reportes/prod-cuentas-prueba/03-cuentas-prueba.sql` jamás entra al repo ni al traspaso.
+4. Tests dirigidos, no suite completa.
+5. Auditá en un **clon limpio aparte** (`/workspace/audit-a2`): el clon compartido puede tener cambios locales de otros bots.
+6. Prod es solo lectura. Las correcciones las hacen los bots Dev después de que Andrés aprueba la lista. A master solo con CI verde + APTO sobre el hash exacto.
+7. Cada hallazgo: severidad, evidencia, `archivo:línea`, estado (Abierto/Cerrado) y cómo se verificó (código, test, o ambos).
 
-## Próximos pasos
-- Bot Dev: normalizar el correo en el login (trim + lowercase) y añadir una prueba.
-- Bot Dev: mapear los roles de membresía a permisos reales, crear el rol CAJERO y limitar los datos de clientes del POS.
-- QA: matriz de pruebas rol×endpoint entre tenants.
-- Reproducir A2 en staging.
+## 3. Trabajo hecho
+| Fecha / etapa | Master | Resultado | Informe |
+|---|---|---|---|
+| Fase 1 | `aa907776` | 3 ALTO (A1 correo login, A2 roles de equipo → EMPRENDEDOR, A3 sin rol cajero/matriz), 4 MEDIO, 2 BAJO + 6 mejoras | `/workspace/hotclick-reportes/auditoria/fase1-cuentas-roles.md` (copia en repo: `docs/traspaso/evidencia/auditor-2-cuentas-y-roles/fase1-cuentas-roles.md`) |
+| Reaudit tras #376, #384, #385, #375, #369, #387, #389 | `dcc27edc39fd1835b8b82b5f20d5027fcbed342d` | **0 ALTO** (A1–A3 cerrados), 5 MEDIO, 8 BAJO; 212 tests dirigidos OK | `/workspace/informes/auditor-2/reaudit-dcc27ed.md` |
+| Aportes al plan Fase 2 (5 puntos: rol×endpoint, correo, sesiones, 2FA, consistencia) | — | Enviados al Mentor, sin iniciar trabajo | `/workspace/hotclick/plan-fase2-pruebas-seguridad.md` |
+| Reaudit tras #399 (`3fad9784`) | `23f8c156ae767732af81c5b77d707a35c3354f5d` | **0 ALTO**; MED-1..4 cerrados por #399 (`config/WebMvcConfig.java:55-59`), MED-5 normalización de correo cerrado en código; B4, B6, B8 cerrados; 119 tests dirigidos OK | `/workspace/informes/auditor-2/reaudit-23f8c156.md` |
+| Re-QA área 2 por HotClick QA | `dcc27edc` / `23f8c156` | ✅ área 2; nuevo BAJO: menú "MIS SUCURSALES" visible a EDITOR/LECTOR y da error de carga (`MenuPage.tsx:42`) | `/workspace/qa/a2/` (matrices, logs mvn/neg/pnpm, `front-sucursales-23f.txt`, `progreso.md`) |
 
-## Decisiones de Andrés conocidas
+Tests dirigidos usados en `23f8c156`: RolesExecutiveIaForecastInventarioSucursalesTest, RolesAdminNegocioSoloPropietarioTest, RolesBillingWalletCobrosTest, RolesEquipoEscrituraTest, RolesGiftCardsGenerarIaSoloPropietarioTest, RolesLectorDenyPorDefectoTest, RolesLectorSoloLecturaTest, SesionInvalidadaTrasCambioTest, SesionesAlDesactivarCuentaTest, JwtRequestFilterEstadoTest, CustomUserDetailsServiceEstadoTest, AuthRefreshHandlerTest, AuthRefreshNegocioActivoTest, CorreoMayusculasUnificadoTest, AdminAsignarCrearClienteCorreoTest, JwtRequestCorreoTest, CorreoLocaleRootTest, EquipoServiceCorreoVerificadoTest.
+
+Ramas/PRs propios: ninguno.
+
+## 4. Pendientes
+- [PENDIENTE] **B1** clave mínima 6 en login vs 8 en registro — `dto/JwtRequest.java:15`.
+- [PENDIENTE] **B2** correo en claro en log — `service/auth/AuthCredentialLoginHandler.java:110`.
+- [PENDIENTE] **B3** CustomerMemory: `visitorId` no atado al usuario/negocio — `controller/CustomerMemoryController.java:31`.
+- [PENDIENTE] **B5** SSO no puede activar 2FA — `AuthTotpSetupHandler` — **decisión de producto (Andrés)**.
+- [PENDIENTE] **B7** miembro ELIMINADO no puede reingresar / el mensaje revela el estado — `EquipoService` — **decisión de producto (Andrés)**.
+- [PENDIENTE] **B9** sin índice único sobre `lower(correo)` en migraciones; posibles duplicados históricos por mayúsculas.
+- [PENDIENTE] **BAJO menú** "MIS SUCURSALES" visible a EDITOR/LECTOR con error de carga — `MenuPage.tsx:42` (efecto de MED-4: `/api/sucursales/**` ahora es solo propietario, incluido el GET). Confirmar también que el POS de un EDITOR no depende de ese listado.
+- [PENDIENTE] Sin pruebas en **Postgres real** (solo H2) ni en **front**; MED-1..4 confirmados por código + test de integración, no por petición manual a cada ruta.
+- [PENDIENTE] Heredado de Fase 1: confirmar en el registro de auditoría de login de prod si el 401 de la cuenta de prueba era `user_not_found` o `wrong_password` (requiere acceso de lectura a logs/BD que este rol no tiene; probablemente ya resuelto por A1).
+- [PENDIENTE] Master avanzó a `c48cb9ea` sin reaudit.
+
+## 5. Próximos pasos exactos
+1. `cd /workspace/audit-a2 && git fetch origin && git checkout --detach origin/master`; anotar `git rev-parse HEAD`.
+2. `git log --oneline 23f8c156..HEAD` y `git diff --stat 23f8c156..HEAD` filtrando auth/, equipo/, legal/, config/WebMvcConfig.java, Clerk, migraciones y `MenuPage.tsx`; buscar ALTO nuevos.
+3. Reverificar cada BAJO abierto en su `archivo:línea` (pueden haberse movido) y marcar Abierto/Cerrado.
+4. Correr solo los tests dirigidos de la sección 3 (+ los nuevos que toquen el área), p. ej. `./mvnw -q test -Dtest='Roles*Test,Sesion*Test,Auth*Test,Correo*Test,...'` desde el módulo backend; nunca la suite completa.
+5. Escribir `/workspace/informes/auditor-2/reaudit-<hash8>.md` (veredicto, MEDIO, BAJO, tests, límites).
+6. Enviar resultado a Mentor y HotClick QA con hash y conteo por severidad.
+7. Pedir a Andrés (vía Mentor) la decisión sobre B5 y B7; sugerir a Dev: B1+B2 (cambios chicos), migración de índice único `lower(correo)` con limpieza previa de duplicados (B9), ocultar el menú de sucursales a EDITOR/LECTOR (`MenuPage.tsx:42`).
+8. Si hay acceso, repetir la matriz rol×endpoint sobre Postgres real/staging y una pasada por el front.
+
+## 6. Decisiones de Andrés conocidas
 - Plan de lanzamiento Fase 1 aprobado el 25-oct a la 1:35 (hora CR).
-- Prod es solo lectura.
-- Las correcciones las hacen los bots Dev después de que Andrés aprueba la lista.
-- Sin deploys; merges a master con CI verde + APTO sobre el hash exacto.
+- Prod es solo lectura; sin deploys; merges con CI verde + APTO sobre hash exacto.
+- Fase 2 (pruebas por rol y auditoría de seguridad): plan en `/workspace/hotclick/plan-fase2-pruebas-seguridad.md`, no iniciar sin orden.
 
-## Evidencia
-- `docs/traspaso/evidencia/auditor-2-cuentas-y-roles/fase1-cuentas-roles.md` (copia del informe).
-
-## Correcciones al README
-
-Revisado sobre la rama docs/traspaso-cuenta-nueva en el commit c69dcc3 (la punta actual; el pedido citaba b9f241d8). Solo lectura.
-
-### (a) Errores o datos viejos
-- Fila del Auditor 2 (línea 132): el enlace a la nota funciona; el archivo y la carpeta de evidencia ya están en la rama.
-- La fila dice "informe en hotclick-reportes/auditoria/": esa ruta es del box viejo, no del repo. Indicar que la evidencia va en `docs/traspaso/evidencia/auditor-2-cuentas-y-roles/fase1-cuentas-roles.md`.
-- Estado del área 2 (línea 207): "Correcciones mergeadas, falta el QA". No lo verifiqué: no se indica qué PRs ni cuáles de A1, A2 y A3 cubren. Sumar los números de PR y el hash de master auditado (aa907776).
-
-### (b) Lo que le falta al reemplazo
-- Los 3 ALTO a re-verificar en el QA: A1 (el login no normaliza el correo: `AuthCredentialLoginHandler.java:62` frente a `AuthRegistrationService.java:56`), A2 (todo miembro de equipo recibe EMPRENDEDOR, `RolMembresia.java:20-21`), A3 (no existe el rol cajero, `EquipoController.java:25`; falta la matriz de pruebas rol × endpoint para C5).
-- Pendiente abierto: confirmar en el registro de auditoría de login de prod si el 401 de la cuenta de prueba cliente es `user_not_found` o `wrong_password`. Requiere acceso de lectura a esos logs o a la base, que el auditor no tenía.
-- Trampa: el clon compartido del box puede tener cambios locales de otros bots; auditar siempre en un clon limpio aparte.
-- Trampa: `/workspace/hotclick-reportes/prod-cuentas-prueba/03-cuentas-prueba.sql` no debe entrar al repo ni al traspaso.
-- Variables: el auditor no usa secretos propios; solo necesita acceso de lectura al repo (gh o el conector de GitHub).
-
-### (c) Mejoras
-- En la fila de cada auditor, poner el commit auditado y el conteo por severidad, no solo "Auditoría entregada".
-- Enlazar cada estado de área a sus PRs concretos.
+## 7. Accesos
+No usa secretos propios; solo lectura del repo (gh o conector de GitHub). Sin acceso a prod, logs ni BD.
