@@ -187,10 +187,33 @@ public class OnvoPaymentProvider implements PaymentProvider {
      * Si ONVO no responde, se relanza y la limpieza no cancela.
      */
     public boolean expirarSesionSinCobro(String checkoutSessionId) {
+        // Limpieza TTL y rechazo (revisado en BAJO QA7-B1 a): llegan acá después de que ONVO confirmó por GET que
+        // no hay cobro (NO_PAGADO / intent rechazado), y en mock las sesiones no tienen forma de ONVO; por eso
+        // aquí una respuesta vacía sigue contando como sin cobro. La cancelación usa expirarSesionParaCancelar.
         Map<?, ?> sesion = onvoService.expirarCheckoutSession(checkoutSessionId);
         if (sesion.isEmpty()) {
             return true;
         }
+        return sesionExpiradaSinCobro(sesion, checkoutSessionId);
+    }
+
+    /**
+     * BAJO QA7-B1 (a), camino de cancelación del comprador: true solo si ONVO confirma expirada y sin cobro,
+     * o con un 404 explícito. Un 2xx sin cuerpo o un id no consultable NO cuentan como sin cobro (fail-closed).
+     */
+    public boolean expirarSesionParaCancelar(String checkoutSessionId) {
+        OnvoService.ResultadoExpirar r = onvoService.expirarCheckoutSessionTipado(checkoutSessionId);
+        return switch (r.tipo()) {
+            case NO_EXISTE -> true;
+            case RESPUESTA -> sesionExpiradaSinCobro(r.sesion(), checkoutSessionId);
+            case SIN_CUERPO, NO_CONSULTABLE -> {
+                log.warn("[onvo] Expire sin confirmación ({}): no se cancela sessionId={}", r.tipo(), checkoutSessionId);
+                yield false;
+            }
+        };
+    }
+
+    private boolean sesionExpiradaSinCobro(Map<?, ?> sesion, String checkoutSessionId) {
         boolean expirada = "expired".equalsIgnoreCase(String.valueOf(sesion.get("status")));
         boolean pagada = "paid".equalsIgnoreCase(String.valueOf(sesion.get("paymentStatus")));
         if (!expirada || pagada) {

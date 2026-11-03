@@ -104,7 +104,7 @@ public class PaymentUserCancellationService {
         }
         boolean expirada;
         try {
-            expirada = onvoPaymentProvider.expirarSesionSinCobro(sesion);
+            expirada = onvoPaymentProvider.expirarSesionParaCancelar(sesion);
         } catch (RuntimeException e) {
             log.warn("[onvo] No se pudo expirar la sesión al cancelar pago id={} ({})", pago.getId(),
                 e.getClass().getSimpleName());
