@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import com.hotclick.dto.CarritoDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Carrito;
@@ -31,6 +32,17 @@ public class CarritoService {
      * El carrito está aislado por empresa: un mismo usuario que compra en dos
      * negocios distintos (multi-tenant) no debe compartir carrito entre ambos.
      */
+    /** QA5-CA-01: DTO armado dentro de la transacción (sin entidades LAZY hacia Jackson). */
+    @Transactional
+    public CarritoDTO obtenerCarritoActivoDto(Usuario usuario) {
+        return CarritoDTO.de(obtenerCarritoActivo(usuario));
+    }
+
+    @Transactional
+    public CarritoDTO agregarItemDto(Long carritoId, Long productoId, Integer cantidad) {
+        return CarritoDTO.de(agregarItem(carritoId, productoId, cantidad));
+    }
+
     @Transactional
     public Carrito obtenerCarritoActivo(Usuario usuario) {
         Long empresaId = TenantContext.get();

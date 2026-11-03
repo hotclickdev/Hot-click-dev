@@ -34,7 +34,8 @@ public class Carrito extends BaseEntity {
     @JoinColumn(name = "fk_id_empresa", nullable = false)
     private Empresa empresa;
 
-    @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL)
+    // QA5-CA-01: orphanRemoval para que items.clear() (vaciar) borre las filas.
+    @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CarritoItem> items = new ArrayList<>();
 
     public Long getId() { return id; }

@@ -258,6 +258,38 @@ describe('S2 dependabot-weekly', () => {
 });
 
 describe('E4 commit-gate', () => {
+  it('skip-flyway-gate omite solo Flyway en E4; sin label sigue bloqueando', () => {
+    const entity = 'Hot_click_outlet/src/main/java/com/hotclick/model/Carrito.java';
+    const diffText = [
+      `--- a/${entity}`,
+      `+++ b/${entity}`,
+      '@@ -1,1 +1,1 @@',
+      '-    @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL)',
+      '+    @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL, orphanRemoval = true)',
+    ].join('\n');
+    const base = { changedFiles: [entity], diffText, testFiles: [], skip: false };
+
+    const sinLabel = analyzeCommitGate(base);
+    assert.equal(sinLabel.flyway.ok, false);
+    assert.equal(sinLabel.verdict, 'BLOQUEADO');
+    assert.equal(formatVerdict({ analysis: sinLabel }).verdict, 'BLOQUEADO');
+
+    const conLabel = analyzeCommitGate({ ...base, skipFlyway: true });
+    assert.equal(conLabel.flyway.ok, true);
+    assert.equal(conLabel.flyway.skipped, true);
+    assert.equal(conLabel.verdict, 'LISTO');
+    assert.equal(formatVerdict({ analysis: conLabel }).verdict, 'LISTO');
+
+    // El label de Flyway no apaga los demás checks: un .env sigue bloqueando.
+    const conBlocker = analyzeCommitGate({
+      ...base,
+      changedFiles: [entity, 'Hot_click_outlet/.env'],
+      skipFlyway: true,
+    });
+    assert.equal(conBlocker.flyway.ok, true);
+    assert.equal(conBlocker.verdict, 'BLOQUEADO');
+  });
+
   it('BLOQUEADO por agent log / .env; LISTO en diff limpio', () => {
     const blocked = analyzeCommitGate({
       changedFiles: ['Hot_click_outlet/frontend/src/App.tsx', 'Hot_click_outlet/.env'],

@@ -20,6 +20,7 @@ import {
   parseUnifiedDiff,
   repoHasActualizado,
   scanTenantDiff,
+  SKIP_LABELS as GATE_SKIP_LABELS,
 } from './lib.mjs';
 import {
   REPO_ROOT,
@@ -37,7 +38,7 @@ import { upsertPrComment } from './ola3-github.mjs';
 const FE_TIMEOUT_MS = Number(process.env.COMMIT_GATE_FE_TIMEOUT_MS || 8 * 60 * 1000);
 const BE_TIMEOUT_MS = Number(process.env.COMMIT_GATE_BE_TIMEOUT_MS || 10 * 60 * 1000);
 
-export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip }) {
+export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip, skipFlyway = false }) {
   if (skip) {
     return {
       skipped: true,
@@ -60,7 +61,8 @@ export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip }) {
     changedFiles,
     diffFiles,
     actualizadoExists: repoHasActualizado(),
-    skip: false,
+    // Mismo label que E1 (gate-flyway.mjs): solo omite el check de Flyway, no el resto de E4.
+    skip: skipFlyway,
   });
   const tenant = evaluateTenant({
     findings: scanTenantDiff(diffFiles),
@@ -232,6 +234,7 @@ function main() {
     diffText,
     testFiles: listJavaTests(),
     skip,
+    skipFlyway: hasLabel(process.env.PR_LABELS, GATE_SKIP_LABELS.flyway),
   });
   const testResults = skip ? [] : runTouchedTests(analysis.plan);
   const formatted = formatVerdict({ analysis, testResults });
