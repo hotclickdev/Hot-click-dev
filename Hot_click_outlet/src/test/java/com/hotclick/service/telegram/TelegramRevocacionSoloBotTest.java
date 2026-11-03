@@ -49,6 +49,9 @@ class TelegramRevocacionSoloBotTest {
         ReflectionTestUtils.setField(revocacion, "vinculacionRepository", vr);
         ReflectionTestUtils.setField(revocacion, "bloqueoRepository", br);
         ReflectionTestUtils.setField(revocacion, "auditoria", auditoria);
+        com.hotclick.security.CompanyScope scope = mock(com.hotclick.security.CompanyScope.class);
+        when(scope.getCurrentUserId()).thenReturn(77L);
+        ReflectionTestUtils.setField(revocacion, "companyScope", scope);
         contexto = new TelegramEmpresaContextService();
         ReflectionTestUtils.setField(contexto, "miembroEmpresaRepository", mr);
         ReflectionTestUtils.setField(contexto, "vinculacionRepository", vr);
@@ -132,5 +135,31 @@ class TelegramRevocacionSoloBotTest {
         when(enA.getRolEnEmpresa()).thenReturn("PROPIETARIO");
         assertThat(revocacion.revocar(U, A)).isFalse();
         verifyNoInteractions(br, auditoria);
+    }
+
+    @Test
+    @DisplayName("el bloqueo y la bitácora guardan quién revocó")
+    void creadoPorEsElGestor() {
+        org.mockito.ArgumentCaptor<TelegramBloqueoEmpresa> cap = org.mockito.ArgumentCaptor.forClass(TelegramBloqueoEmpresa.class);
+        revocacion.revocar(U, A);
+        verify(br).save(cap.capture());
+        assertThat(cap.getValue().getCreadoPor()).isEqualTo(77L);
+        verify(auditoria).registrar(eq("TELEGRAM_REVOCAR_MIEMBRO"), eq("USUARIO"), eq(U), eq(A),
+            org.mockito.ArgumentMatchers.contains("77"));
+    }
+
+    @Test
+    @DisplayName("al vincular, las empresas bloqueadas no se asignan ni se ofrecen")
+    void postLinkSinBloqueadas() {
+        assertThat(TelegramVinculacionPostLinkHelper.sinBloqueadas(List.of(enA, enB), java.util.Set.of(A)))
+            .containsExactly(enB);
+        TelegramVinculacionPostLinkHelper helper = new TelegramVinculacionPostLinkHelper();
+        ReflectionTestUtils.setField(helper, "miembroEmpresaRepository", mr);
+        ReflectionTestUtils.setField(helper, "bloqueoRepository", br);
+        bloqueadas.add(A);
+        v.setEmpresaActivaId(null);
+        assertThat(helper.membresiasActivas(v)).containsExactly(enB);
+        helper.asignarEmpresaActiva(v);
+        assertThat(v.getEmpresaActivaId()).isEqualTo(B);
     }
 }

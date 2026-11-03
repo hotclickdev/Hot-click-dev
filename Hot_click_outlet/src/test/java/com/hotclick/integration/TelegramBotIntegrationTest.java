@@ -620,6 +620,47 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("N1 área 8: un miembro revocado del bot no recibe ventas, solicitudes, moderación ni el chequeo semanal")
+    void revocado_noRecibeNotificacionesNiChequeo() throws Exception {
+        Rol rolUser = obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1);
+        Usuario empleado = crearUsuario("tg-emp3@test.cr", "Emp3 TG", rolUser);
+        crearMiembro(empleado, empresa, "MIEMBRO");
+        vincularDirecto(duenno, empresa, CHAT_ID);
+        TelegramVinculacion ve = vincularDirecto(empleado, empresa, 555_006L);
+        crearProducto("Mouse revocado", 2, 3);
+
+        mockMvc.perform(delete("/api/telegram/equipo/" + empleado.getId())
+                .header("Authorization", tokenDuenno))
+            .andExpect(status().isOk());
+
+        assertThat(vinculacionRepository.findActivasPorEmpresa(empresa.getId()))
+            .extracting(TelegramVinculacion::getChatId).contains(CHAT_ID).doesNotContain(555_006L);
+        assertThat(telegramBloqueoEmpresaRepository.findAll())
+            .anySatisfy(b -> {
+                assertThat(b.getUsuarioId()).isEqualTo(empleado.getId());
+                assertThat(b.getCreadoPor()).isEqualTo(duenno.getId());
+            });
+
+        notificacionService.notificarVenta(empresa.getId(), "ORD-REV-1", 1_000, "SINPE", "Ana", "ONLINE");
+        notificacionService.notificarSolicitudEnviada(empresa.getId(), "Producto", "Mouse");
+        notificacionService.notificarProductoModerado(empresa.getId(), "Mouse", true, "nota");
+        verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("ORD-REV-1"));
+
+        // La revocación limpió la empresa activa; aunque el chat la vuelva a tener guardada, no hay chequeo.
+        ve = vinculacionRepository.findById(ve.getId()).orElseThrow();
+        ve.setEmpresaActivaId(empresa.getId());
+        vinculacionRepository.saveAndFlush(ve);
+        assertThat(vinculacionRepository.findByEstadoAndChatIdIsNotNull(TelegramVinculacion.ACTIVA))
+            .extracting(TelegramVinculacion::getChatId).doesNotContain(555_006L);
+        assertThat(scheduler.enviarChequeoA(ve)).isFalse();
+
+        Thread.sleep(500);
+        verify(bot, never()).enviarMensaje(eq(555_006L), anyString());
+        verify(bot, never()).enviarMensaje(eq(555_006L), anyString(), any());
+        verify(bot, never()).enviarMensaje(eq(555_006L), anyString(), any(), anyBoolean());
+    }
+
+    @Test
     @DisplayName("Venta: repetir la cantidad no la multiplica y confirmar dos veces no crea otro pedido")
     void venta_cantidadIndicada_noSeMultiplica() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID);

@@ -69,8 +69,18 @@ public class TelegramInventarioScheduler {
         log.info("[telegram-chequeo] {} chequeos enviados en {} ms", enviados, System.currentTimeMillis() - inicio);
     }
 
+    /** N1 área 8: un miembro revocado del bot para esa empresa no recibe el chequeo. */
+    private boolean bloqueadoEnEmpresaActiva(TelegramVinculacion v) {
+        if (v.getUsuario() == null || v.getEmpresaActivaId() == null) return false;
+        Integer n = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM hot_click_telegram_bloqueo_empresa_tb WHERE usuario_id = ? AND empresa_id = ?",
+            Integer.class, v.getUsuario().getId(), v.getEmpresaActivaId());
+        return n != null && n > 0;
+    }
+
     /** Visible para tests. Retorna true si se envió (la empresa tenía productos). */
     public boolean enviarChequeoA(TelegramVinculacion v) {
+        if (bloqueadoEnEmpresaActiva(v)) return false;
         List<Map<String, Object>> productos = productosAConfirmar(v.getEmpresaActivaId());
         if (productos.isEmpty()) return false;
 

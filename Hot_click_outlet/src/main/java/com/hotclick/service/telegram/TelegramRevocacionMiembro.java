@@ -6,6 +6,7 @@ import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.TelegramBloqueoEmpresaRepository;
 import com.hotclick.repository.TelegramVinculacionRepository;
+import com.hotclick.security.CompanyScope;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public class TelegramRevocacionMiembro {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private TelegramBloqueoEmpresaRepository bloqueoRepository;
     @Autowired private AuditoriaAdminRegistroService auditoria;
+    @Autowired(required = false) private CompanyScope companyScope;
 
     @Transactional
     public boolean revocar(Long usuarioId, Long empresaId) {
@@ -38,8 +40,9 @@ public class TelegramRevocacionMiembro {
             .findByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1).orElse(null);
         if (m == null || "PROPIETARIO".equals(m.getRolEnEmpresa())) return false;
         if (bloqueoRepository.existsByUsuarioIdAndEmpresaId(usuarioId, empresaId)) return true; // idempotente
+        Long actor = companyScope != null ? companyScope.getCurrentUserId() : null;
         bloqueoRepository.save(new TelegramBloqueoEmpresa(usuarioId, empresaId,
-            LocalDateTime.now(Constants.ZONA_CR), null));
+            LocalDateTime.now(Constants.ZONA_CR), actor));
         TelegramVinculacion v = vinculacionRepository.findByUsuarioId(usuarioId).orElse(null);
         if (v != null && empresaId.equals(v.getEmpresaActivaId())) {
             v.setEmpresaActivaId(null);
@@ -48,7 +51,7 @@ public class TelegramRevocacionMiembro {
         }
         auditoria.registrar("TELEGRAM_REVOCAR_MIEMBRO", "USUARIO", usuarioId, empresaId,
             "Acceso por Telegram del usuario " + usuarioId + " a la empresa " + empresaId
-                + " revocado; la membresía web no cambia");
+                + " revocado por el usuario " + actor + "; la membresía web no cambia");
         log.info("[telegram] bot de usuario {} bloqueado para empresa {} por gestor (membresía web intacta)",
             usuarioId, empresaId);
         return true;
