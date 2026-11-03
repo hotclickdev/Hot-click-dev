@@ -22,7 +22,7 @@
 |---|---|---|---|
 | 1 Pagos y checkout | Pendiente re-auditar | sin re-auditoría desde 26-oct; QA sobre `1e181f7e` (1-nov) | P-01..03 pendientes; espera re-QA de #502 (QA Compra). Checkout en base nueva arreglado con V221 (antes PR #494) — re-verificar |
 | 2 Cuentas y roles | ✅ por confirmar | auditor `23f8c156`; QA líder `64212015` | CAJERO activado contra decisión de Andrés (ver CAJERO) |
-| 3 Marketplace | ✅ por confirmar | QA líder `9e576bfd` | carrito del backend daba 500 (1-nov) [INCOMPLETO: sin PR conocido] |
+| 3 Marketplace | ✅ por confirmar | QA líder `9e576bfd` | carrito del backend daba 500 (1-nov): fix en PR #508 (`457e0abd`, QA5-CA-01), abierto, CI en curso, sin merge |
 | 4 POS e inventario | ✅ por confirmar | QA POS 6/6 sobre `1e181f7e` (1-nov) | re-verificar en `61b36a38` |
 | 5 Suscripciones | ✅ por confirmar | [INCOMPLETO: hash no registrado] | MEDIO abiertos al 1-nov |
 | 6 Chatbots y copilot | Pendiente re-auditar | `da481550` + #434 | |
