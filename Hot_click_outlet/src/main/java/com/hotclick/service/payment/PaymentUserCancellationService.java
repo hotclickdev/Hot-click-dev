@@ -3,12 +3,14 @@ package com.hotclick.service.payment;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
+import com.hotclick.payment.OnvoPaymentProvider;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class PaymentUserCancellationService {
     @Autowired private PagoRepository         pagoRepository;
     @Autowired private PaymentFailureHandler paymentFailureHandler;
     @Autowired private GuestCancelTokenService guestCancelTokenService;
+    @Lazy @Autowired private OnvoPaymentProvider onvoPaymentProvider;
 
     @Transactional
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
@@ -44,6 +47,7 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
         }
 
+        expirarSesionOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado por el usuario", numeroPedido);
     }
@@ -68,8 +72,35 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
         }
 
+        expirarSesionOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado (invitado)", numeroPedido);
+    }
+
+    /**
+     * QA7-B1 ALTO: antes de cancelar un pago ONVO se expira la checkout session en ONVO
+     * (POST /v1/checkout/sessions/{id}/expire, mismo camino que la limpieza por TTL). Si ONVO no confirma
+     * que quedó expirada y sin cobro (ya pagada, otro estado, caída o timeout) no se cancela: fail-closed,
+     * así nunca queda un pedido cancelado con un link de pago que todavía cobra.
+     */
+    private void expirarSesionOnvo(Pago pago) {
+        String sesion = pago.getMerchantToken();
+        if (!Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor()) || sesion == null || sesion.isBlank()) {
+            return;
+        }
+        boolean expirada;
+        try {
+            expirada = onvoPaymentProvider.expirarSesionSinCobro(sesion);
+        } catch (RuntimeException e) {
+            log.warn("[onvo] No se pudo expirar la sesión al cancelar pago id={} ({})", pago.getId(),
+                e.getClass().getSimpleName());
+            expirada = false;
+        }
+        if (!expirada) {
+            throw new IllegalStateException(
+                "No pudimos cerrar el pago en ONVO. Si ya pagaste, el pedido se confirma en unos minutos; "
+                    + "si no, intentá cancelar de nuevo.");
+        }
     }
 
     /**
