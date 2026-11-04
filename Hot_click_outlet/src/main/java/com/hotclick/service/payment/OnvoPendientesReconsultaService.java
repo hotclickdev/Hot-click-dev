@@ -48,6 +48,8 @@ public class OnvoPendientesReconsultaService {
     private final int lote;
     private final int antiguedadMinMinutos;
     private final int cerradosVentanaHoras;
+    /** BAJO: minutos mínimos entre dos reconsultas del mismo pago CANCELADO (antes: cada corrida, 2 min). */
+    private int canceladoReintentoMinutos = 60;
 
     /** Sin ventana explícita: 24 h (tests y llamadas existentes). */
     public OnvoPendientesReconsultaService(PagoRepository pagoRepository, OnvoService onvoService,
@@ -135,7 +137,8 @@ public class OnvoPendientesReconsultaService {
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         List<Pago> reclamados = tx.execute(s -> {
             List<Pago> filas = pagoRepository
-                .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, desde, PageRequest.of(0, lote));
+                .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, desde,
+                    ahora.minusMinutes(canceladoReintentoMinutos), PageRequest.of(0, lote));
             marcarRevision(filas, ahora);
             return filas;
         });
@@ -157,6 +160,15 @@ public class OnvoPendientesReconsultaService {
             log.info("[onvo] Respaldo cerrados: revisados={} reembolsoPendiente={}", pagos.size(), reembolso);
         }
         return new ResumenCerrados(pagos.size(), reembolso);
+    }
+
+    @Autowired(required = false)
+    void setCanceladoReintentoMinutos(
+            @Value("${hotclick.pagos.onvo.respaldo.cancelado-reintento-minutos:60}") int minutos) {
+        if (minutos < 0) {
+            throw new IllegalStateException("hotclick.pagos.onvo.respaldo.cancelado-reintento-minutos debe ser >= 0");
+        }
+        this.canceladoReintentoMinutos = minutos;
     }
 
     private enum Efecto { CAPTURADO, FALLIDO, NADA }

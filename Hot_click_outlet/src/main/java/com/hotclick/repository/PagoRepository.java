@@ -45,11 +45,17 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
-    @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
+    // BAJO: un CANCELADO ya revisado no se vuelve a pedir a ONVO en cada corrida (cada 2 min): solo cuando su
+    // última revisión es anterior a :canceladoRevisadoAntes. FALLIDO sigue rotando como antes.
+    @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor "
+        + "AND (p.estadoPago = 'FALLIDO' OR (p.estadoPago = 'CANCELADO' "
+        + "AND (p.reconsultaCerradoEn IS NULL OR p.reconsultaCerradoEn < :canceladoRevisadoAntes))) "
         + "AND p.merchantToken IS NOT NULL AND p.fechaCreacion >= :desde "
         + "ORDER BY p.reconsultaCerradoEn ASC NULLS FIRST, p.fechaCreacion ASC")
     List<Pago> reclamarCerradosParaReconsulta(@Param("proveedor") String proveedor,
-                                             @Param("desde") LocalDateTime desde, Pageable pagina);
+                                             @Param("desde") LocalDateTime desde,
+                                             @Param("canceladoRevisadoAntes") LocalDateTime canceladoRevisadoAntes,
+                                             Pageable pagina);
 
     /**
      * Estado del pago en la base, sin vaciar antes los cambios pendientes de la sesión (flush COMMIT): un
