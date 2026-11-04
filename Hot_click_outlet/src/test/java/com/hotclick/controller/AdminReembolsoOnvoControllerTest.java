@@ -113,7 +113,7 @@ class AdminReembolsoOnvoControllerTest {
     }
 
     @Test
-    void onvoSinRespuesta_quedaPendienteNuncaDevueltoYReintentaConLaMismaClave() throws Exception {
+    void onvoSinRespuesta_quedaPendienteNuncaDevueltoYNoSeRepide() throws Exception {
         when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenThrow(new ResourceAccessException("timeout"));
 
         mvc.perform(post(URL))
@@ -123,13 +123,10 @@ class AdminReembolsoOnvoControllerTest {
         assertEquals(Constants.PAGO_REEMBOLSO_PENDIENTE, pago.getEstadoPago());
         assertNull(pago.getMontoReembolsado());
 
-        // El reintento reusa la Idempotency-Key persistida (V228); sigue sin respuesta → sigue en duda, nunca devuelto.
-        mvc.perform(post(URL)).andExpect(status().isBadGateway());
-        org.mockito.ArgumentCaptor<String> keys = org.mockito.ArgumentCaptor.forClass(String.class);
-        verify(onvo, times(2)).crearReembolso(anyString(), anyString(), keys.capture());
-        assertEquals(1, keys.getAllValues().stream().distinct().count());
-        assertEquals(Constants.PAGO_REEMBOLSO_PENDIENTE, pago.getEstadoPago());
-        assertNull(pago.getMontoReembolsado());
+        mvc.perform(post(URL))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(ReembolsoOnvoService.MSG_REVISAR)));
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -161,5 +158,26 @@ class AdminReembolsoOnvoControllerTest {
         PreAuthorize pa = AdminReembolsoOnvoController.class
             .getMethod("reembolsar", Long.class).getAnnotation(PreAuthorize.class);
         assertEquals("hasRole('ADMIN')", pa.value());
+    }
+
+    @Test
+    void resolucionManual_soloAdmin_yDevueltoSinConfirmar400() throws Exception {
+        PreAuthorize pa = AdminReembolsoOnvoController.class.getMethod("resolver", Long.class,
+            AdminReembolsoOnvoController.ResolucionRequest.class, org.springframework.security.core.Authentication.class)
+            .getAnnotation(PreAuthorize.class);
+        assertEquals("hasRole('ADMIN')", pa.value());
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenThrow(new ResourceAccessException("timeout"));
+        mvc.perform(post(URL)).andExpect(status().isBadGateway());
+
+        mvc.perform(post(URL + "/resolucion").contentType("application/json").content("{\"resultado\":\"DEVUELTO\"}"))
+            .andExpect(status().isBadRequest());
+        assertEquals(Constants.PAGO_REEMBOLSO_PENDIENTE, pago.getEstadoPago());
+
+        mvc.perform(post(URL + "/resolucion").contentType("application/json")
+                .content("{\"resultado\":\"DEVUELTO\",\"confirmado\":true}"))
+            .andExpect(status().isOk());
+        assertEquals(Constants.PAGO_REEMBOLSADO, pago.getEstadoPago());
+        assertEquals(Constants.PEDIDO_CANCELADO, pedido.getEstadoPedido());
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString());
     }
 }

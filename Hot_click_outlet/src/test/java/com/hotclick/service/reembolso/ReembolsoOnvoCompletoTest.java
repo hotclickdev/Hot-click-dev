@@ -289,7 +289,6 @@ class ReembolsoOnvoCompletoTest {
         assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOf(ReembolsoException.class);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
-        assertThat(pago.getReembolsoIdempotencyKey()).isNull();
     }
 
     @Test
@@ -309,47 +308,88 @@ class ReembolsoOnvoCompletoTest {
     }
 
     @Test
-    @DisplayName("REEMBOLSO_PENDIENTE sin id: reintenta con la MISMA Idempotency-Key y adopta el refund")
-    void pendienteSinIdReintentaMismaClave() {
+    @DisplayName("REEMBOLSO_PENDIENTE sin id: 409 con 'Revisá en ONVO' y NO vuelve a llamar a /refunds")
+    void pendienteSinIdNoReintenta() {
         when(onvo.crearReembolso(eq(INTENT), anyString(), anyString()))
-            .thenThrow(new org.springframework.web.client.ResourceAccessException("timeout"))
-            .thenReturn(new OnvoReembolso("rf_test_r", "pending"));
+            .thenThrow(new org.springframework.web.client.ResourceAccessException("timeout"));
         assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
             e -> assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_EN_DUDA));
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pago.getOnvoReembolsoId()).isNull();
-        String clave = pago.getReembolsoIdempotencyKey();
-        assertThat(clave).isNotNull();
 
-        ReembolsoOnvoService.Resultado r = service.reembolsar(7L);
-        assertThat(r.status()).isEqualTo(202);
-        ArgumentCaptor<String> keys = ArgumentCaptor.forClass(String.class);
-        verify(onvo, times(2)).crearReembolso(eq(INTENT), anyString(), keys.capture());
-        assertThat(keys.getAllValues()).containsOnly(clave);
-        assertThat(pago.getOnvoReembolsoId()).isEqualTo("rf_test_r");
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+            assertThat(e.getStatus()).isEqualTo(409);
+            assertThat(e.getMessage()).contains(ReembolsoOnvoService.MSG_REVISAR);
+        });
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString());
+        verify(onvo, never()).obtenerReembolso(anyString());
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        assertThat(producto.getStockActual()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("Reintento con 4xx: no revierte ni marca devuelto (queda en duda)")
-    void reintento4xxQuedaEnDuda() {
+    @DisplayName("Con id de refund el reintento es solo una reconsulta por GET, sin POST ni Idempotency-Key")
+    void conIdSoloReconsulta() {
+        pedido.setEstadoPedido(Constants.PEDIDO_REEMBOLSO_PENDIENTE);
+        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        pago.setOnvoReembolsoId("rf_test_g");
+        when(onvo.obtenerReembolso("rf_test_g")).thenReturn(new OnvoReembolso("rf_test_g", "succeeded"));
+        assertThat(service.reembolsar(7L).status()).isEqualTo(200);
+        verify(onvo, never()).crearReembolso(anyString(), anyString(), anyString());
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
+    }
+
+    private void dejarPendienteSinId() {
         pedido.setEstadoPedido(Constants.PEDIDO_REEMBOLSO_PENDIENTE);
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pago.setReembolsoEstadoPedidoPrevio(Constants.PEDIDO_PREPARANDO);
         pago.setReembolsoEstadoPagoPrevio(Constants.PAGO_CAPTURADO);
-        pago.setReembolsoIdempotencyKey("hc-reembolso-pago-70-1");
-        when(onvo.crearReembolso(eq(INTENT), anyString(), eq("hc-reembolso-pago-70-1")))
-            .thenThrow(org.springframework.web.client.HttpClientErrorException.create(
-                org.springframework.http.HttpStatus.CONFLICT, "conflict", null, null, null));
-        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
-            e -> assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_EN_DUDA));
-        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_REEMBOLSO_PENDIENTE);
     }
 
     @Test
-    @DisplayName("REEMBOLSO_PENDIENTE sin id ni clave guardada: 409 y no se pide nada")
+    @DisplayName("Resolución manual DEVUELTO sin confirmación explícita: 400 y no cambia nada")
+    void manualDevueltoExigeConfirmacion() {
+        dejarPendienteSinId();
+        assertThatThrownBy(() -> service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.DEVUELTO, false, "admin@test"))
+            .isInstanceOfSatisfying(ReembolsoException.class, e -> assertThat(e.getStatus()).isEqualTo(400));
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getReembolsoResueltoPor()).isNull();
+    }
+
+    @Test
+    @DisplayName("Resolución manual DEVUELTO confirmada: REEMBOLSADO, CANCELADO, stock una vez y registra quién y cuándo")
+    void manualDevueltoConfirmado() {
+        dejarPendienteSinId();
+        ReembolsoOnvoService.Resultado r = service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.DEVUELTO, true, "admin@test");
+        assertThat(r.status()).isEqualTo(200);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
+        assertThat(producto.getStockActual()).isEqualTo(3);
+        assertThat(pago.getReembolsoResueltoPor()).isEqualTo("admin@test");
+        assertThat(pago.getReembolsoResueltoEn()).isNotNull();
+        assertThat(pago.getReembolsoResolucion()).isEqualTo("DEVUELTO");
+        verifyNoInteractions(onvo);
+    }
+
+    @Test
+    @DisplayName("Resolución manual NO_DEVUELTO: vuelve al estado previo real y registra quién y cuándo")
+    void manualNoDevuelto() {
+        dejarPendienteSinId();
+        service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.NO_DEVUELTO, false, "admin@test");
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PREPARANDO);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        assertThat(pago.getReembolsoResolucion()).isEqualTo("NO_DEVUELTO");
+        assertThat(producto.getStockActual()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Resolución manual sin reembolso pendiente: 409")
+    void manualSinPendiente409() {
+        assertThatThrownBy(() -> service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.NO_DEVUELTO, false, "admin@test"))
+            .isInstanceOfSatisfying(ReembolsoException.class, e -> assertThat(e.getStatus()).isEqualTo(409));
+    }
+
+    @Test
+    @DisplayName("REEMBOLSO_PENDIENTE sin id (estado puesto a mano): 409 y no se pide nada")
     void pendienteSinClave409() {
         pedido.setEstadoPedido(Constants.PEDIDO_REEMBOLSO_PENDIENTE);
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
