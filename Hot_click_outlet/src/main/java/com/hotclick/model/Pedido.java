@@ -243,6 +243,19 @@ public class Pedido extends BaseEntity {
     public BigDecimal getMargenGananciaPedido() { return margenGananciaPedido; }
     public void setMargenGananciaPedido(BigDecimal margenGananciaPedido) { this.margenGananciaPedido = margenGananciaPedido; }
 
+    /**
+     * P-07 BAJO: avisos de la entrega manual sin stock suficiente (no persiste). Va en la respuesta al admin
+     * para que vea qué faltó; el descuento sigue ocurriendo una sola vez.
+     */
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+    private List<String> advertenciasStock = new ArrayList<>();
+    public List<String> getAdvertenciasStock() { return advertenciasStock; }
+    public void agregarAdvertenciaStock(String aviso) {
+        if (advertenciasStock == null) advertenciasStock = new ArrayList<>();
+        advertenciasStock.add(aviso);
+    }
+
     public java.time.LocalDateTime getStockDescontadoEn() { return stockDescontadoEn; }
     public void setStockDescontadoEn(java.time.LocalDateTime stockDescontadoEn) { this.stockDescontadoEn = stockDescontadoEn; }
 

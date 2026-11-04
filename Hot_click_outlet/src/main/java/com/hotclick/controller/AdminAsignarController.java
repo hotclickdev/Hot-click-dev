@@ -199,7 +199,7 @@ public class AdminAsignarController {
             com.hotclick.model.Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
 
             com.hotclick.model.Pedido pedido = pedidoService.crearPedidoManual(dto, empresa);
-            return ResponseEntity.ok(ResponseDTO.success("Compra registrada correctamente", pedido));
+            return ResponseEntity.ok(ResponseDTO.success(com.hotclick.service.pedido.PedidoManualEntregaStockService.mensajeConAvisos("Compra registrada correctamente", pedido), pedido));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }

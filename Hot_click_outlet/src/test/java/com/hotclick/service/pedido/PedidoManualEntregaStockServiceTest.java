@@ -108,4 +108,37 @@ class PedidoManualEntregaStockServiceTest {
         svc.descontarSiCorresponde(this, pedido(OrigenPedido.MANUAL.codigo(), Constants.PEDIDO_ENTREGADO), "x");
         assertThat(producto.getStockActual()).isZero();
     }
+
+    @Test
+    @DisplayName("BAJO: entrega sin stock suficiente → aviso visible, stock en 0, un solo descuento")
+    void sinStockSuficienteAvisaYDescuentaUnaVez() {
+        producto.setStockActual(1);
+        producto.setNombreProducto("Casco");
+        Pedido p = pedido(OrigenPedido.MANUAL.codigo(), Constants.PEDIDO_ENTREGADO);
+
+        assertThat(svc.descontarSiCorresponde(this, p, "admin@test.cr")).isTrue();
+        assertThat(svc.descontarSiCorresponde(this, p, "admin@test.cr")).isFalse();
+
+        assertThat(producto.getStockActual()).isZero();
+        assertThat(p.getStockDescontadoEn()).isNotNull();
+        assertThat(p.getAdvertenciasStock()).hasSize(1);
+        assertThat(p.getAdvertenciasStock().get(0)).contains("Casco").contains("revisá el inventario");
+        assertThat(PedidoManualEntregaStockService.mensajeConAvisos("Pedido creado", p))
+            .startsWith("Pedido creado. Atención: Stock insuficiente para Casco");
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<MovimientoStock>> cap = ArgumentCaptor.forClass(List.class);
+        verify(movRepo, times(1)).saveAll(cap.capture());
+        MovimientoStock m = cap.getValue().get(0);
+        assertThat(m.getCantidad()).isEqualTo(1);
+        assertThat(m.getNotas()).contains("FALTANTE: 1");
+    }
+
+    @Test
+    @DisplayName("BAJO: con stock suficiente no hay avisos y el mensaje queda igual")
+    void conStockNoHayAvisos() {
+        Pedido p = pedido(OrigenPedido.MANUAL.codigo(), Constants.PEDIDO_ENTREGADO);
+        svc.descontarSiCorresponde(this, p, "admin@test.cr");
+        assertThat(p.getAdvertenciasStock()).isEmpty();
+        assertThat(PedidoManualEntregaStockService.mensajeConAvisos("Pedido creado", p)).isEqualTo("Pedido creado");
+    }
 }
