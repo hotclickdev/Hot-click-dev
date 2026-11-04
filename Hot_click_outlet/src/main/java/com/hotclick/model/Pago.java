@@ -85,6 +85,13 @@ public class Pago extends BaseEntity {
     public LocalDateTime getAvisoReembolsoAdminEn() { return avisoReembolsoAdminEn; }
     public void setAvisoReembolsoAdminEn(LocalDateTime v) { this.avisoReembolsoAdminEn = v; }
 
+    /** V226: id del refund de ONVO pedido por el ADMIN (NULL = sin reembolso por ONVO). */
+    @Column(name = "onvo_reembolso_id", length = 64)
+    private String onvoReembolsoId;
+
+    public String getOnvoReembolsoId() { return onvoReembolsoId; }
+    public void setOnvoReembolsoId(String v) { this.onvoReembolsoId = v; }
+
     /** V223 (BAJO QA7-B1 b): última vez que el respaldo reconsultó este pago cerrado en ONVO (NULL = nunca). */
     @Column(name = "reconsulta_cerrado_en")
     private LocalDateTime reconsultaCerradoEn;
