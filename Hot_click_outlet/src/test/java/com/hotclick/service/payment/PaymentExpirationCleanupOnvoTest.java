@@ -169,4 +169,70 @@ class PaymentExpirationCleanupOnvoTest {
         service.ejecutar();
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
     }
+
+    /** Barrido con el provider real (OnvoService mockeado): sesión ya expirada → cancela y libera la reserva. */
+    private OnvoPaymentProvider providerReal(com.hotclick.service.OnvoService onvo) {
+        OnvoPaymentProvider real = org.mockito.Mockito.spy(new OnvoPaymentProvider());
+        ReflectionTestUtils.setField(real, "onvoService", onvo);
+        org.mockito.Mockito.doReturn(Verificacion.NO_PAGADO).when(real).procesarPagoVerificado("cs_vencida", "cleanup");
+        ReflectionTestUtils.setField(service, "onvoPaymentProvider", real);
+        return real;
+    }
+
+    @Test
+    @DisplayName("BadRequest reconsulta: ya expirada y sin pagar en ONVO → cancela y libera sin llamar a /expire")
+    void yaExpiradaSinPagar_cancelaYLibera() {
+        var onvo = org.mockito.Mockito.mock(com.hotclick.service.OnvoService.class);
+        org.mockito.Mockito.doReturn(java.util.Map.of("status", "expired", "paymentStatus", "unpaid"))
+            .when(onvo).obtenerCheckoutSession("cs_vencida");
+        providerReal(onvo);
+        service.ejecutar();
+        assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
+        verify(stockReservationService).liberarReservas(pedido);
+        verify(onvo, never()).expirarCheckoutSession(any());
+    }
+
+    @Test
+    @DisplayName("BadRequest reconsulta: /expire 400 y al releer expirada sin pagar → cancela y libera")
+    void expire400LuegoExpirada_cancelaYLibera() {
+        var onvo = org.mockito.Mockito.mock(com.hotclick.service.OnvoService.class);
+        org.mockito.Mockito.doReturn(java.util.Map.of("status", "open", "paymentStatus", "unpaid"))
+            .doReturn(java.util.Map.of("status", "expired", "paymentStatus", "unpaid"))
+            .when(onvo).obtenerCheckoutSession("cs_vencida");
+        when(onvo.expirarCheckoutSession("cs_vencida")).thenThrow(org.springframework.web.client.HttpClientErrorException
+            .create(org.springframework.http.HttpStatus.BAD_REQUEST, "Bad Request", null, null, null));
+        providerReal(onvo);
+        service.ejecutar();
+        assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
+        verify(stockReservationService).liberarReservas(pedido);
+    }
+
+    @Test
+    @DisplayName("BadRequest reconsulta: /expire 400 y al releer pagada → no cancela ni libera")
+    void expire400LuegoPagada_noCancela() {
+        var onvo = org.mockito.Mockito.mock(com.hotclick.service.OnvoService.class);
+        org.mockito.Mockito.doReturn(java.util.Map.of("status", "open", "paymentStatus", "unpaid"))
+            .doReturn(java.util.Map.of("status", "expired", "paymentStatus", "paid"))
+            .when(onvo).obtenerCheckoutSession("cs_vencida");
+        when(onvo.expirarCheckoutSession("cs_vencida")).thenThrow(org.springframework.web.client.HttpClientErrorException
+            .create(org.springframework.http.HttpStatus.BAD_REQUEST, "Bad Request", null, null, null));
+        providerReal(onvo);
+        service.ejecutar();
+        noCancela();
+    }
+
+    @Test
+    @DisplayName("BadRequest reconsulta: /expire 400 y la relectura falla (en duda) → no cancela ni libera")
+    void expire400LuegoEnDuda_noCancela() {
+        var onvo = org.mockito.Mockito.mock(com.hotclick.service.OnvoService.class);
+        org.mockito.Mockito.doReturn(java.util.Map.of("status", "open", "paymentStatus", "unpaid"))
+            .doThrow(new IllegalStateException("caído"))
+            .when(onvo).obtenerCheckoutSession("cs_vencida");
+        when(onvo.expirarCheckoutSession("cs_vencida")).thenThrow(org.springframework.web.client.HttpClientErrorException
+            .create(org.springframework.http.HttpStatus.BAD_REQUEST, "Bad Request", null, null, null));
+        providerReal(onvo);
+        service.ejecutar();
+        noCancela();
+    }
 }
