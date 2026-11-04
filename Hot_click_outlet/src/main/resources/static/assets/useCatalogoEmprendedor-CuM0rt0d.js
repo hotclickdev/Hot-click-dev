@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-P43ya52a.js";function t(){return e()}export{t};
