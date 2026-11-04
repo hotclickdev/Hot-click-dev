@@ -37,4 +37,15 @@ class PedidoStockReservadoMigrationTest {
         assertThat(sinComentarios("Actualizado.sql"))
             .contains("ALTER TABLE HOT_CLICK_PEDIDO_TB ADD COLUMN IF NOT EXISTS STOCK_RESERVADO_EN TIMESTAMP");
     }
+
+    @Test
+    @DisplayName("V230 corrige por camino (grupo_pago o tienda invitado), sin tocar el esquema")
+    void v230PorCamino() throws IOException {
+        String sql = sinComentarios("src/main/resources/db/migration/V230__pedido_stock_reservado_backfill_por_camino.sql");
+        assertThat(sql).doesNotContain("ALTER ").doesNotContain("DROP ").doesNotContain("DELETE ").doesNotContain("TRUNCATE");
+        assertThat(sql).contains("GRUPO_PAGO IS NOT NULL").contains("CLIENTE_NOMBRE IS NOT NULL")
+            .contains("UPPER(METODO_ENVIO) IN ('DOMICILIO', 'RETIRO')").contains("NOT EXISTS (SELECT 1 FROM HOT_CLICK_PAGO_TB").contains("HOT_CLICK_PEDIDO_TB.ID_PEDIDO)")
+            .contains("'PENDIENTE', 'PENDIENTE_COMPROBANTE', 'PENDIENTE_APROBACION'");
+        assertThat(Files.readString(Path.of("Actualizado.sql"))).contains("V230 (04-nov-2026) ALTO-01 (transición)");
+    }
 }
