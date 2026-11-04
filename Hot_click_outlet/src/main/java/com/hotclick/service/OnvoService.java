@@ -540,6 +540,7 @@ public class OnvoService {
      * no es idempotente y un reintento podría devolver dos veces. Los errores se relanzan tal cual:
      * un 4xx es un rechazo de ONVO; cualquier otro error deja el resultado en duda.
      */
+    @SuppressWarnings("java:S1172") // idempotencyKey: se conserva la firma; ONVO no documenta el header y ya no se manda
     public OnvoReembolso crearReembolso(String intentId, String descripcion, String idempotencyKey) {
         if (!consultable(intentId)) throw new IllegalStateException("ONVO no disponible para reembolsar");
         Map<String, Object> body = new HashMap<>();
@@ -675,29 +676,70 @@ public class OnvoService {
      * Ids de ONVO (sesión, payment intent) para logs: solo los primeros 4 y últimos 4 caracteres. Alcanza para
      * correlacionar con el dashboard de ONVO sin dejar el id completo en CloudWatch/Sentry.
      */
-    private static final Pattern CAMPO_TEXTO = Pattern.compile("\"(code|message|type)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|\\[[^\\]]*\\])");
-    private static final Pattern TOKEN_LARGO = Pattern.compile("[A-Za-z0-9_\\-]{12,}");
-    private static final Pattern DIGITOS = Pattern.compile("\\d{6,}");
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON_MOTIVO = new com.fasterxml.jackson.databind.ObjectMapper();
 
     /**
-     * Motivo de un 4xx de ONVO apto para logs y para mostrar al admin: solo los campos code/type/message,
-     * con ids largos enmascarados, números largos (teléfonos, cédulas, cuentas) ocultos y tope de largo.
+     * Motivo de un 4xx de ONVO apto para logs y para mostrar al admin: solo los campos code/type/message
+     * del JSON, con ids que llevan dígitos enmascarados, números de 6+ dígitos ocultos y tope de largo.
      * Nunca el cuerpo crudo.
      */
     public static String motivoOnvo(String cuerpo) {
-        if (cuerpo == null || cuerpo.isBlank()) return "(sin detalle)";
-        StringBuilder sb = new StringBuilder();
-        var m = CAMPO_TEXTO.matcher(cuerpo);
-        while (m.find()) {
-            if (sb.length() > 0) sb.append("; ");
-            String v = m.group(2).replaceAll("^[\\[\"]+|[\\]\"]+$", "").replace("\",\"", ", ");
-            sb.append(m.group(1)).append('=').append(v);
+        if (cuerpo == null || cuerpo.isBlank()) return SIN_DETALLE;
+        com.fasterxml.jackson.databind.JsonNode n;
+        try {
+            n = JSON_MOTIVO.readTree(cuerpo);
+        } catch (Exception e) {
+            return SIN_DETALLE;
         }
-        String r = sb.length() == 0 ? "(sin detalle)" : sb.toString();
-        r = TOKEN_LARGO.matcher(r).replaceAll(t -> java.util.regex.Matcher.quoteReplacement(
-            t.group().matches(".*\\d.*") ? enmascarar(t.group()) : t.group()));
-        r = DIGITOS.matcher(r).replaceAll("***");
+        if (n == null || !n.isObject()) return SIN_DETALLE;
+        StringBuilder sb = new StringBuilder();
+        for (String campo : List.of("code", "type", "message")) {
+            com.fasterxml.jackson.databind.JsonNode v = n.get(campo);
+            if (v == null || v.isNull()) continue;
+            StringBuilder val = new StringBuilder();
+            if (v.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode x : v) {
+                    if (!val.isEmpty()) val.append(", ");
+                    val.append(x.asText());
+                }
+            } else {
+                val.append(v.asText());
+            }
+            if (!sb.isEmpty()) sb.append("; ");
+            sb.append(campo).append('=').append(val);
+        }
+        if (sb.isEmpty()) return SIN_DETALLE;
+        String r = sanearTokens(sb.toString());
         return r.length() > 300 ? r.substring(0, 300) + "…" : r;
+    }
+
+    private static final String SIN_DETALLE = "(sin detalle)";
+
+    /** Enmascara tokens con dígitos (ids) y oculta corridas de 6+ dígitos (teléfonos, cédulas, cuentas). */
+    private static String sanearTokens(String texto) {
+        StringBuilder out = new StringBuilder();
+        int i = 0;
+        while (i < texto.length()) {
+            int j = i;
+            while (j < texto.length() && esTokenChar(texto.charAt(j))) j++;
+            if (j == i) {
+                out.append(texto.charAt(i++));
+                continue;
+            }
+            String t = texto.substring(i, j);
+            int digitos = 0;
+            for (char c : t.toCharArray()) if (Character.isDigit(c)) digitos++;
+            if (digitos >= 6 && digitos == t.length()) out.append("***");
+            else if (digitos > 0 && t.length() >= 12) out.append(enmascarar(t));
+            else if (digitos >= 6) out.append("***");
+            else out.append(t);
+            i = j;
+        }
+        return out.toString();
+    }
+
+    private static boolean esTokenChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_' || c == '-';
     }
 
     public static String enmascarar(String id) {
