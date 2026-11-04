@@ -146,6 +146,27 @@ public class PaymentUserCancellationService {
     }
 
     /**
+     * QA MEDIO (panel): antes de que el admin o el negocio cancele un pedido por PUT /api/pedidos/{id}/estado, se cierra
+     * en ONVO la checkout session (tarjeta/SINPE por checkout) o el intent SINPE del marketplace, con la misma lógica
+     * fail-closed de la cancelación del comprador (#510 / N-01). Pago ya capturado o sin pago ONVO: no hace nada (lo
+     * capturado sigue su camino de reembolso). Si ONVO no confirma el cierre, lanza
+     * {@link com.hotclick.exception.CancelacionPagoNoCerradaException} (409) y el pedido no se cancela.
+     */
+    public void cerrarPagoOnvoAntesDeCancelar(Pedido pedido) {
+        Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
+        if (pago == null || Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return;
+        try {
+            expirarSesionOnvo(pago);
+            cerrarIntentSinpeOnvo(pago);
+        } catch (IllegalStateException e) {
+            log.warn("[onvo] Cancelación desde el panel rechazada: no se confirmó el cierre del pago id={}", pago.getId());
+            throw new com.hotclick.exception.CancelacionPagoNoCerradaException(
+                "No pudimos cerrar el link de pago en ONVO, así que el pedido no se canceló. "
+                    + "Si el cliente ya pagó, se confirma en unos minutos; si no, intentá de nuevo.");
+        }
+    }
+
+    /**
      * PAG-8: el SINPE o efectivo recién creado queda en PENDIENTE_COMPROBANTE; el comprador también puede cancelarlo
      * (marcarFallido cancela el grupo y libera la reserva). Con comprobante en revisión ya decide el admin.
      */
