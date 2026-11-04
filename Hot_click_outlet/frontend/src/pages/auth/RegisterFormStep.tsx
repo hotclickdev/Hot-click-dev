@@ -97,8 +97,10 @@ export default function RegisterFormStep({
           <input id="registro-identificacion" value={form.identificacion} onChange={actualizarCampo('identificacion')} required maxLength={20} placeholder="1-2345-6789" className={CLASE_ENTRADA} />
         </CampoCuenta>
         <CampoCuenta id="registro-clave" etiqueta={t('register.password')} icono={<IcoCandado size={18} />}>
-          <input id="registro-clave" type="password" value={form.contrasenaHash} onChange={actualizarCampo('contrasenaHash')} required minLength={8} maxLength={128} autoComplete="new-password" placeholder={t('register.minChars')} className={CLASE_ENTRADA} />
+          <input id="registro-clave" type="password" value={form.contrasenaHash} onChange={actualizarCampo('contrasenaHash')} required minLength={8} maxLength={128} autoComplete="new-password" aria-describedby="registro-clave-regla" placeholder={t('register.passwordPlaceholder')} className={CLASE_ENTRADA} />
         </CampoCuenta>
+        {/* BAJO área 9: la regla completa no cabía como placeholder a 360px; va como ayuda visible. */}
+        <p id="registro-clave-regla" className="-mt-2 text-[12px] text-hc-n-600">{t('register.minChars')}</p>
 
         {error && (
           <div role="alert" className="rounded-[10px] bg-[color-mix(in_srgb,var(--hc-danger)_7%,transparent)] px-3 py-[10px] text-[13px] leading-[18px] text-hc-danger">{error}</div>

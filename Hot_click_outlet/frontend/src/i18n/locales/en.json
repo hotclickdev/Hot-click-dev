@@ -1248,6 +1248,7 @@
     "phone": "Phone",
     "identification": "ID number",
     "password": "Password",
+    "passwordPlaceholder": "At least 8 characters",
     "minChars": "Minimum 8 characters, one uppercase letter and one number",
     "claveFalta": "Your password is missing {{lista}}",
     "claveFaltaLargo": "at least 8 characters",

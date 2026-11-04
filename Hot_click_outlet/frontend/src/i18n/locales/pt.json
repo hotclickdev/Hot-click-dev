@@ -1248,6 +1248,7 @@
     "phone": "Telefone",
     "identification": "CPF/Documento",
     "password": "Senha",
+    "passwordPlaceholder": "Mínimo de 8 caracteres",
     "minChars": "Mínimo 8 caracteres, uma maiúscula e um número",
     "claveFalta": "Falta {{lista}} na sua senha",
     "claveFaltaLargo": "chegar a 8 caracteres",

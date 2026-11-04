@@ -34,6 +34,14 @@ export function pantallaConCtaFija(pathname: string): boolean {
     || /^\/tienda\/[^/]+\/(carrito|checkout|producto)/.test(pathname)
 }
 
+/**
+ * BAJO 360 px: en el inicio móvil el botón de accesibilidad tapaba la tarjeta «Descubrí».
+ * Ahí se oculta en móvil (el pie mantiene «Idioma y accesibilidad»); también donde hay CTA fija.
+ */
+export function accesibilidadFabOcultaEnMovil(pathname: string): boolean {
+  return pathname === '/' || pantallaConCtaFija(pathname)
+}
+
 /** 83 px con barra (Figma); 16 px si la pantalla no tiene barra inferior. */
 export function bottomWhatsappPx(hayBarra: boolean): number {
   return hayBarra ? ALTO_BARRA_INFERIOR + SEPARACION_FLOTANTE : SEPARACION_FLOTANTE

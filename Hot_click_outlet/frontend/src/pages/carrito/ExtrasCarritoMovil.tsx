@@ -79,13 +79,15 @@ type PieCarritoMovilProps = {
   total: number
   onContinuar: () => void
   onWhatsApp: () => void
+  /** BAJO 360 px: se oculta mientras el resumen (que ya tiene su botón) está en pantalla, para no taparlo. */
+  oculto?: boolean
 }
 
 /** Pie fijo del carrito móvil: Figma `51:1997` (con WhatsApp) y `28:1080`. */
-export function PieCarritoMovil({ total, onContinuar, onWhatsApp }: PieCarritoMovilProps) {
+export function PieCarritoMovil({ total, onContinuar, onWhatsApp, oculto = false }: PieCarritoMovilProps) {
   const { t } = useTranslation()
   return (
-    <div className="sticky bottom-0 z-40 flex flex-col gap-[10px] border-t border-hc-n-200 bg-hc-n-0 px-4 pb-6 pt-3">
+    <div data-pie-carrito aria-hidden={oculto || undefined} className={`sticky bottom-0 z-40 ${oculto ? 'hidden' : 'flex'} flex-col gap-[10px] border-t border-hc-n-200 bg-hc-n-0 px-4 pb-6 pt-3`}>
       <button
         type="button"
         onClick={onWhatsApp}

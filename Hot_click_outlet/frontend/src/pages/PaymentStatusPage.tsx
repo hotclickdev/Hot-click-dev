@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams, useLocation } from 'react-router-dom'
 import { usePayment, MENSAJE_LOGIN_PEDIDO } from '@/hooks/usePayment'
 import useCartStore from '@/store/cartStore'
 import useAuthStore from '@/store/authStore'
+import { olvidarPagoPendiente } from '@/utils/carritoPagoPendiente'
 import PagoLoading from './pago/PagoLoading'
 import PagoExito from './pago/PagoExito'
 import PagoCancelado from './pago/PagoCancelado'
@@ -51,7 +52,7 @@ export default function PaymentStatusPage() {
 
   useEffect(() => {
     if (destinoVisitante) return
-    if (estado === 'success') clearCart()
+    if (estado === 'success') { clearCart(); olvidarPagoPendiente() }
   }, [estado, clearCart, destinoVisitante])
 
   useEffect(() => {

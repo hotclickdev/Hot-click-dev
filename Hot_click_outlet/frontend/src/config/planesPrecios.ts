@@ -51,3 +51,20 @@ export function textoMensualidadEmprendedor(
   if (cupo == null) return textoMensualidad()
   return textoMensualidad(cupo.mensualidadUsdSinCupo, cupo.cuposGratisDisponibles > 0)
 }
+
+/**
+ * BAJO área 9: /vender mostraba «Mensualidad en dólares» sin monto porque no leía `GET /billing/planes`.
+ * Mapa clave → precioUsd (solo montos > 0 que mandó el backend; nunca se inventan).
+ */
+export function mensualidadesUsd(planes: unknown): Partial<Record<ClavePlan, number>> {
+  const out: Partial<Record<ClavePlan, number>> = {}
+  if (!Array.isArray(planes)) return out
+  for (const p of planes as Array<{ nombre?: unknown; precioUsd?: unknown }>) {
+    const n = Number(p?.precioUsd)
+    if (typeof p?.nombre === 'string' && p.nombre in PLAN_PRECIOS && Number.isFinite(n) && n > 0) {
+      out[p.nombre as ClavePlan] = n
+    }
+  }
+  return out
+}
+

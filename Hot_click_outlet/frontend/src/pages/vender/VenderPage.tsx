@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { textoPlan, type ClavePlan } from '@/config/planesPrecios'
+import { useQuery } from '@tanstack/react-query'
+import api from '@/services/api'
+import { mensualidadesUsd, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 import MainLayout from '@/layouts/MainLayout'
 
 type PlanPuente = { id: 'emprendedor' | 'pyme' | 'negocio-plus'; titulo: string; pitch: string; puntos: string[] }
@@ -26,6 +28,12 @@ const BENEFICIOS = [
  */
 export default function VenderPage() {
   const [elegido, setElegido] = useState<PlanPuente['id']>('emprendedor')
+  // BAJO área 9: el monto en US$ sale de la config del backend, como en /planes.
+  const { data: mensualUsd } = useQuery({
+    queryKey: ['billing', 'planes', 'usd'],
+    queryFn: () => api.get('/billing/planes').then((r) => mensualidadesUsd(r.data)),
+    staleTime: 5 * 60 * 1000,
+  })
   const plan = PLANES.find((p) => p.id === elegido) ?? PLANES[0]
   const destino = `/registro-empresa?plan=${plan.id}`
 
@@ -90,7 +98,7 @@ export default function VenderPage() {
                       <li key={x} className="flex gap-2 text-[13px] text-hc-n-900"><span aria-hidden className="text-hc-blue-600">✓</span>{x}</li>
                     ))}
                   </ul>
-                  <span className="px-4 pb-4 text-[12px] text-hc-n-600">{textoPlan(CLAVE[p.id])}</span>
+                  <span className="px-4 pb-4 text-[12px] text-hc-n-600">{textoPlan(CLAVE[p.id], mensualUsd?.[CLAVE[p.id]])}</span>
                 </button>
               )
             })}

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { posponerAvisoSw } from '@/app/swUpdate'
 import { useLocation, useNavigationType } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
+import useCartStore from '@/store/cartStore'
+import { revisarPagoPendiente } from '@/utils/carritoPagoPendiente'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
 import { esRutaVisitante, whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
 import { PageLoader, PageLoaderFigma } from '@/components/ui/Spinner'
@@ -110,6 +112,10 @@ export function ConditionalChatModal() {
  */
 export function AbandonedCartWatcher() {
   useAbandonedCart()
+  // QA7-E1: vacía el carrito si un pago con pasarela quedó CAPTURADO y la página de éxito no cargó.
+  useEffect(() => {
+    void revisarPagoPendiente(() => useCartStore.getState().clearCart())
+  }, [])
   return null
 }
 

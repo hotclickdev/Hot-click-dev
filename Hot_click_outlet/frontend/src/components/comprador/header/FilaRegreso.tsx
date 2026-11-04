@@ -74,15 +74,17 @@ export default function FilaRegreso({
         <button type="button" onClick={volver} aria-label={t('comprador.header.volver')} className={CLASE_FLECHA}>
           <IconoFigma src={ICONOS_COMPRADOR.barraAtras} size={20} />
         </button>
-        <button
-          type="button"
-          onClick={() => navigate(1)}
-          disabled={!puedeAdelante}
-          aria-label={t('comprador.header.adelante')}
-          className={CLASE_FLECHA}
-        >
-          <IconoFigma src={ICONOS_COMPRADOR.barraAtras} size={20} className="-scale-x-100" />
-        </button>
+        {/* BAJO 360 px: sin historial hacia adelante la flecha gris deshabilitada parecía rota; no se muestra. */}
+        {puedeAdelante && (
+          <button
+            type="button"
+            onClick={() => navigate(1)}
+            aria-label={t('comprador.header.adelante')}
+            className={CLASE_FLECHA}
+          >
+            <IconoFigma src={ICONOS_COMPRADOR.barraAtras} size={20} className="-scale-x-100" />
+          </button>
+        )}
         <ListaMigas migas={migas} aria={t('product.migasAria')} />
       </div>
     </div>
