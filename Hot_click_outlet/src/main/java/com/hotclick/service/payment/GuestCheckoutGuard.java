@@ -48,6 +48,7 @@ import java.util.function.Supplier;
 public class GuestCheckoutGuard {
 
     public static final String MSG_CUPO = "Llegaste al máximo de unidades reservadas sin pagar. Pagá o cancelá un pedido pendiente e intentá de nuevo.";
+    public static final String MSG_YA_NO_PENDIENTE = "Ese pedido ya no está pendiente de pago. Revisá tu correo o empezá una compra nueva.";
     public static final String MSG_TOPE_PRODUCTO = "Como invitado podés reservar hasta %d unidades de un mismo producto. Iniciá sesión para comprar más.";
     private static final Set<String> PENDIENTES = Set.of(
         Constants.PEDIDO_PENDIENTE, Constants.PEDIDO_PENDIENTE_COMPROBANTE, Constants.PEDIDO_PENDIENTE_APROBACION);
@@ -71,7 +72,8 @@ public class GuestCheckoutGuard {
     private volatile Clock clock = Clock.systemUTC();
 
     record Reserva(Instant cuando, Long pedidoId, int unidades) {}
-    record EnCurso(Instant cuando, CompletableFuture<ResponseEntity<ResponseDTO>> resultado) {}
+    record Resultado(ResponseEntity<ResponseDTO> respuesta, Long pedidoId) {}
+    record EnCurso(Instant cuando, CompletableFuture<Resultado> resultado) {}
 
     private final Map<String, Deque<Reserva>> reservas = new ConcurrentHashMap<>();
     private final Map<String, EnCurso> idempotencia = new ConcurrentHashMap<>();
@@ -141,36 +143,57 @@ public class GuestCheckoutGuard {
                                                     Function<ResponseEntity<ResponseDTO>, Long> pedidoIdDe) {
         Instant ahora = clock.instant();
         purgarIdempotencia(ahora);
-        CompletableFuture<ResponseEntity<ResponseDTO>> mio = new CompletableFuture<>();
-        EnCurso previo = idempotencia.putIfAbsent(clave, new EnCurso(ahora, mio));
-        if (previo != null) return previo.resultado().join();
+        CompletableFuture<Resultado> mio = new CompletableFuture<>();
+        EnCurso nuevo = new EnCurso(ahora, mio);
+        EnCurso previo = idempotencia.putIfAbsent(clave, nuevo);
+        if (previo != null) return reusar(clave, previo);
 
-        ResponseEntity<ResponseDTO> respuesta;
+        Resultado resultado;
         try {
-            respuesta = conCupo(porProducto, ip, correo, checkout, pedidoIdDe);
+            resultado = conCupo(porProducto, ip, correo, checkout, pedidoIdDe);
         } catch (RuntimeException e) {
-            idempotencia.remove(clave);
+            idempotencia.remove(clave, nuevo);
             mio.completeExceptionally(e);
             throw e;
         }
-        if (!respuesta.getStatusCode().is2xxSuccessful()) idempotencia.remove(clave);
-        mio.complete(respuesta);
-        return respuesta;
+        if (!resultado.respuesta().getStatusCode().is2xxSuccessful()) idempotencia.remove(clave, nuevo);
+        mio.complete(resultado);
+        return resultado.respuesta();
     }
 
-    private ResponseEntity<ResponseDTO> conCupo(Map<Long, Integer> porProducto, String ip, String correo,
+    /**
+     * Fail-closed: la respuesta guardada solo se repite si el pedido que creó sigue pendiente de pago. Si ya se
+     * pagó, se canceló o no se puede confirmar su estado, se descarta la entrada y se responde 409: nunca se
+     * devuelve una sesión de pago vieja sobre un pedido cerrado, ni se crea un pedido nuevo en este mismo POST.
+     */
+    private ResponseEntity<ResponseDTO> reusar(String clave, EnCurso previo) {
+        Resultado r = previo.resultado().join();
+        if (!r.respuesta().getStatusCode().is2xxSuccessful()) return r.respuesta();
+        if (r.pedidoId() != null && sigueEnPendiente(r.pedidoId())) return r.respuesta();
+        idempotencia.remove(clave, previo);
+        return ResponseEntity.status(409).body(ResponseDTO.error(MSG_YA_NO_PENDIENTE));
+    }
+
+    private boolean sigueEnPendiente(Long pedidoId) {
+        for (Pedido p : pedidoRepository.findAllById(List.of(pedidoId))) {
+            if (pedidoId.equals(p.getId())) return PENDIENTES.contains(p.getEstadoPedido());
+        }
+        return false;
+    }
+
+    private Resultado conCupo(Map<Long, Integer> porProducto, String ip, String correo,
                                                 Supplier<ResponseEntity<ResponseDTO>> checkout,
                                                 Function<ResponseEntity<ResponseDTO>, Long> pedidoIdDe) {
         int unidades = porProducto.values().stream().mapToInt(Integer::intValue).sum();
         if (porProducto.values().stream().anyMatch(c -> c > maxPorProducto)) {
-            return ResponseEntity.status(429).body(ResponseDTO.error(String.format(MSG_TOPE_PRODUCTO, maxPorProducto)));
+            return new Resultado(ResponseEntity.status(429).body(ResponseDTO.error(String.format(MSG_TOPE_PRODUCTO, maxPorProducto))), null);
         }
         List<String> claves = new ArrayList<>(2);
         if (ip != null && !ip.isBlank()) claves.add("ip:" + com.hotclick.security.IpParaLlave.reducir(ip)); // /64 en IPv6 (B2)
         if (!correo.isBlank()) claves.add("mail:" + correo);
         for (String k : claves) {
             if (unidadesPendientes(k) + unidades > maxPendientes) {
-                return ResponseEntity.status(429).body(ResponseDTO.error(MSG_CUPO));
+                return new Resultado(ResponseEntity.status(429).body(ResponseDTO.error(MSG_CUPO)), null);
             }
         }
         ResponseEntity<ResponseDTO> r = checkout.get();
@@ -182,7 +205,7 @@ public class GuestCheckoutGuard {
                 synchronized (cola) { cola.addLast(nueva); }
             }
         }
-        return r;
+        return new Resultado(r, pedidoId);
     }
 
     private static Long pedidoIdPago(ResponseEntity<ResponseDTO> r) {
