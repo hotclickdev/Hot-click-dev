@@ -107,11 +107,13 @@ public class StockReservationService {
     }
 
     public void consumeForGiftCard(Pedido pedido) {
+        boolean reservo = pedido.getStockReservadoEn() != null;
+        pedido.setStockReservadoEn(null);
         for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
             Producto p = productoRepository.findByIdForUpdate(item.getProducto().getId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProducto().getId()));
             p.setStockActual(Math.max(0, p.getStockActual() - item.getCantidad()));
-            p.setStockReservado(Math.max(0, p.getStockReservado() - item.getCantidad()));
+            if (reservo) p.setStockReservado(Math.max(0, p.getStockReservado() - item.getCantidad()));
             if (Boolean.TRUE.equals(p.getEsUnico())) { p.setVendido(true); p.setVisibleCatalogo(false); }
             productoRepository.save(p);
         }
@@ -148,6 +150,9 @@ public class StockReservationService {
      * el recorte a 0 solo cubre los personalizados (sin stock propio) y es la última red de seguridad.
      */
     public void confirmAndConsumeStock(Pedido pedido, Object eventSource, ApplicationEventPublisher eventPublisher) {
+        // ALTO-01: solo se descuenta de stockReservado lo que ESTE pedido reservó (un MANUAL nunca reservó).
+        boolean reservo = pedido.getStockReservadoEn() != null;
+        pedido.setStockReservadoEn(null);
         for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
             Producto producto = bloquearActual(item.getProducto().getId(),
                 () -> new RecursoNoEncontradoException("Producto no encontrado al confirmar pago"));
@@ -165,8 +170,7 @@ public class StockReservationService {
             producto.setStockActual(nuevoStock);
 
             // Liberar la reserva (puede quedar negativa si ya fue liberada antes → clamp a 0)
-            int nuevoReservado = Math.max(0, producto.getStockReservado() - cantidad);
-            producto.setStockReservado(nuevoReservado);
+            if (reservo) producto.setStockReservado(Math.max(0, producto.getStockReservado() - cantidad));
 
             if (Boolean.TRUE.equals(producto.getEsUnico())) {
                 producto.setVendido(true);
@@ -187,6 +191,13 @@ public class StockReservationService {
      */
     public void liberarReservas(Pedido pedido) {
         if (pedido == null) return;
+        // ALTO-01: un pedido sin reserva propia (MANUAL, ya liberado o ya consumido) no toca stockReservado:
+        // restar igual se comía la reserva de otro pedido del mismo producto. Idempotente: la marca se limpia.
+        if (pedido.getStockReservadoEn() == null) {
+            log.info("Pedido {} sin reserva propia: no se libera stock reservado", pedido.getNumeroPedido());
+            return;
+        }
+        pedido.setStockReservadoEn(null);
         Hibernate.initialize(pedido.getItems());
 
         for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
