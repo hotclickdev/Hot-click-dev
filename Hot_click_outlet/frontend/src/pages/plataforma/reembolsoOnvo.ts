@@ -11,7 +11,7 @@ export const REEMBOLSO_CONFIRMACION = {
   cta: 'Sí, reembolsar',
 }
 
-export const REEMBOLSO_ERROR = 'No se pudo pedir el reembolso. Revisá el panel de ONVO antes de reintentar.'
+export const REEMBOLSO_ERROR = 'No se pudo pedir el reembolso. Revisá en ONVO antes de reintentar.'
 
 export function puedeReembolsarOnvo(rol: string | null | undefined): boolean {
   return rol === 'ADMIN'

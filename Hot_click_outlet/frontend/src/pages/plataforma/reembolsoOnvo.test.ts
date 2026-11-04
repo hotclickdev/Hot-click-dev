@@ -25,6 +25,6 @@ describe('Reembolso por ONVO', () => {
 
   it('la confirmación usa voseo', () => {
     expect(REEMBOLSO_CONFIRMACION.titulo).toContain('Devolvés')
-    expect(REEMBOLSO_ERROR).toContain('Revisá')
+    expect(REEMBOLSO_ERROR).toContain('Revisá en ONVO antes de reintentar')
   })
 })
