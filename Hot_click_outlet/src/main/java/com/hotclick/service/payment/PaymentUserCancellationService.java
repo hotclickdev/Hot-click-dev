@@ -148,13 +148,20 @@ public class PaymentUserCancellationService {
     /**
      * QA MEDIO (panel): antes de que el admin o el negocio cancele un pedido por PUT /api/pedidos/{id}/estado, se cierra
      * en ONVO la checkout session (tarjeta/SINPE por checkout) o el intent SINPE del marketplace, con la misma lógica
-     * fail-closed de la cancelación del comprador (#510 / N-01). Pago ya capturado o sin pago ONVO: no hace nada (lo
-     * capturado sigue su camino de reembolso). Si ONVO no confirma el cierre, lanza
-     * {@link com.hotclick.exception.CancelacionPagoNoCerradaException} (409) y el pedido no se cancela.
+     * fail-closed de la cancelación del comprador (#510 / N-01). Sin pago: no hace nada.
+     * Pago ya cobrado (CAPTURADO/PAGADO): 409 sin cancelar. Cancelar no reembolsa ni marca REEMBOLSO_PENDIENTE, así
+     * que dejaría un pedido CANCELADO con la plata cobrada; el reembolso va por su propio flujo.
+     * Si ONVO no confirma el cierre, lanza {@link com.hotclick.exception.CancelacionPagoNoCerradaException} (409)
+     * y el pedido no se cancela.
      */
     public void cerrarPagoOnvoAntesDeCancelar(Pedido pedido) {
         Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
-        if (pago == null || Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return;
+        if (pago == null) return;
+        if (pagoCobrado(pago.getEstadoPago())) {
+            log.warn("[pago] Cancelación desde el panel rechazada: el pago id={} ya está cobrado ({})",
+                pago.getId(), pago.getEstadoPago());
+            throw new com.hotclick.exception.CancelacionPagoNoCerradaException(MSG_PAGO_COBRADO);
+        }
         try {
             expirarSesionOnvo(pago);
             cerrarIntentSinpeOnvo(pago);
@@ -164,6 +171,14 @@ public class PaymentUserCancellationService {
                 "No pudimos cerrar el link de pago en ONVO, así que el pedido no se canceló. "
                     + "Si el cliente ya pagó, se confirma en unos minutos; si no, intentá de nuevo.");
         }
+    }
+
+    static final String MSG_PAGO_COBRADO =
+        "Este pedido ya está pagado, así que no se puede cancelar desde aquí. Si corresponde, gestioná el reembolso.";
+
+    /** Pago con la plata ya cobrada: cancelar el pedido sin reembolso la dejaría huérfana. */
+    static boolean pagoCobrado(String estadoPago) {
+        return Constants.PAGO_CAPTURADO.equalsIgnoreCase(estadoPago) || "PAGADO".equalsIgnoreCase(estadoPago);
     }
 
     /**
