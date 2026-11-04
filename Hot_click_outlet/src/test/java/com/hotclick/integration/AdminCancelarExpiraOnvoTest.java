@@ -17,7 +17,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.hotclick.service.payment.PaymentUserCancellationService;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,15 +41,23 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
     @Autowired private BodegaRepository bodegaRepository;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private PagoRepository pagoRepository;
-    @MockitoBean private OnvoPaymentProvider onvoPaymentProvider;
-    @MockitoBean private OnvoService onvoService;
+    @Autowired private PaymentUserCancellationService pagoCancelacion;
+    // Sin @MockitoBean: no abre otro contexto de Spring (un contexto extra rompió tablas H2 de otros tests en CI).
+    private final OnvoPaymentProvider onvoPaymentProvider = mock(OnvoPaymentProvider.class);
+    private final OnvoService onvoService = mock(OnvoService.class);
+    private Object providerOriginal;
+    private Object onvoServiceOriginal;
 
     private Long pedidoId;
     private static final String SESION = "cs_test_admin_cancel";
 
     @BeforeEach
     void armar() {
-        reset(notificacionEmailService, onvoPaymentProvider, onvoService);
+        Object destino = AopTestUtils.getTargetObject(pagoCancelacion);
+        providerOriginal = ReflectionTestUtils.getField(destino, "onvoPaymentProvider");
+        onvoServiceOriginal = ReflectionTestUtils.getField(destino, "onvoService");
+        ReflectionTestUtils.setField(destino, "onvoPaymentProvider", onvoPaymentProvider);
+        ReflectionTestUtils.setField(destino, "onvoService", onvoService);
         when(onvoService.isMockMode()).thenReturn(false);
         when(onvoService.isPagosDisponibles()).thenReturn(true);
         String slug = "admin-cancel-onvo-" + System.nanoTime();
@@ -104,6 +114,9 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
 
     @AfterEach
     void limpiar() {
+        Object destino = AopTestUtils.getTargetObject(pagoCancelacion);
+        ReflectionTestUtils.setField(destino, "onvoPaymentProvider", providerOriginal);
+        ReflectionTestUtils.setField(destino, "onvoService", onvoServiceOriginal);
         pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         bodegaRepository.deleteAll();
