@@ -49,6 +49,7 @@ class PedidoServiceTest {
     @Mock private PedidoGrupoService        pedidoGrupoService;
     @Mock private com.hotclick.service.payment.StockReservationService stockReservationService;
     @Mock private com.hotclick.service.pedido.PedidoManualEntregaStockService manualEntregaStock;
+    @Mock private com.hotclick.service.payment.PaymentUserCancellationService pagoCancelacion;
     @Mock private com.hotclick.security.CompanyScope companyScope; // Seguridad #343: no admin de plataforma
 
     @InjectMocks private PedidoManualFactory         pedidoManualFactory;
@@ -73,6 +74,7 @@ class PedidoServiceTest {
         ReflectionTestUtils.setField(service, "pedidoPagoManualService", pedidoPagoManualService);
         ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(service, "manualEntregaStock", manualEntregaStock);
+        ReflectionTestUtils.setField(service, "pagoCancelacion", pagoCancelacion);
         ReflectionTestUtils.setField(service, "despachoVerificador", new PedidoDespachoVerificador(pedidoGrupoService));
         // Por defecto el pedido tiene un Pago CAPTURADO; los tests de "sin pago" lo cambian.
         lenient().when(pedidoGrupoService.pagoDelGrupo(any())).thenReturn(Optional.of(pago(Constants.PAGO_CAPTURADO)));

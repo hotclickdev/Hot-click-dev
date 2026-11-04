@@ -276,13 +276,22 @@ class PedidoPagoManualTest extends BaseIntegrationTest {
     @ParameterizedTest(name = "Legítimo: transición {0} → {1} = 200")
     @CsvSource({
         "PAGADO,EN_PREPARACION", "EN_PREPARACION,LISTO_RETIRO", "LISTO_RETIRO,ENTREGADO",
-        "ENTREGADO,COMPLETADO", "PENDIENTE,CANCELADO", "PAGADO,CANCELADO", "ENVIADO,ENTREGADO", "PAGADO,PAGADO"
+        "ENTREGADO,COMPLETADO", "PENDIENTE,CANCELADO", "ENVIADO,ENTREGADO", "PAGADO,PAGADO"
     })
     void transicionValida_200(String desde, String hacia) throws Exception {
         Pedido p = crearPedido(empresa, desde, "SINPE");
         if (!desde.startsWith("PENDIENTE")) crearPago(p, Constants.PROVEEDOR_SINPE, Constants.PAGO_CAPTURADO);
         cambiar(tokenEmp, p, "{\"estado\":\"" + hacia + "\"}").andExpect(status().isOk());
         assertEstado(p, hacia);
+    }
+
+    @Test
+    @DisplayName("PAGADO con pago CAPTURADO → CANCELADO = 409: no se cancela un pedido con la plata cobrada")
+    void pagadoCapturadoACancelado_409() throws Exception {
+        Pedido p = crearPedido(empresa, Constants.PEDIDO_PAGADO, "SINPE");
+        crearPago(p, Constants.PROVEEDOR_SINPE, Constants.PAGO_CAPTURADO);
+        cambiar(tokenEmp, p, "{\"estado\":\"CANCELADO\"}").andExpect(status().isConflict());
+        assertEstado(p, Constants.PEDIDO_PAGADO);
     }
 
     @Test

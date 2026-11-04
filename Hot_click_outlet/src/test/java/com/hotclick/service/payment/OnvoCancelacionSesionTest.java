@@ -48,6 +48,7 @@ class OnvoCancelacionSesionTest {
     @Mock private GuestCancelTokenService guestCancelTokenService;
     @Mock private OnvoPaymentProvider onvoPaymentProvider;
     @Mock private OnvoService onvoService;
+    @Mock private com.hotclick.service.sinpe.SinpeOnvoMarketplaceService sinpeOnvoMarketplaceService;
 
     @InjectMocks private PaymentUserCancellationService service;
 
@@ -226,5 +227,73 @@ class OnvoCancelacionSesionTest {
         p.setMerchantToken(sesion);
         p.setEstadoPago(estado);
         return p;
+    }
+
+    // ---- Cancelación desde el panel: pago cobrado y cerrarIntentSinpeOnvo ----
+
+    private Pedido pedidoPanel() {
+        return pago.getPedido();
+    }
+
+    private void comoSinpeOnvo() {
+        pago.setProveedor(Constants.PROVEEDOR_SINPE);
+        pago.setMerchantToken(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.PREFIJO + "pi_test_1");
+    }
+
+    @Test
+    @DisplayName("panel: pago CAPTURADO → 409 sin tocar ONVO")
+    void panelCapturadoNoCancela() {
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel()))
+            .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class);
+        verifyNoInteractions(onvoPaymentProvider, sinpeOnvoMarketplaceService);
+    }
+
+    @Test
+    @DisplayName("panel: pago en estado PAGADO → 409")
+    void panelPagadoNoCancela() {
+        pago.setEstadoPago("PAGADO");
+        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel()))
+            .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class);
+    }
+
+    @Test
+    @DisplayName("cerrarIntentSinpeOnvo: ONVO ya cobró el intent SINPE → 409")
+    void sinpeIntentPagadoNoCancela() {
+        comoSinpeOnvo();
+        when(sinpeOnvoMarketplaceService.cerrarIntentParaComprador(pago))
+            .thenReturn(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.CierreComprador.PAGADO);
+        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel()))
+            .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class);
+    }
+
+    @Test
+    @DisplayName("cerrarIntentSinpeOnvo: ONVO no confirma el cierre → 409")
+    void sinpeIntentNoConfirmadoNoCancela() {
+        comoSinpeOnvo();
+        when(sinpeOnvoMarketplaceService.cerrarIntentParaComprador(pago))
+            .thenReturn(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.CierreComprador.NO_CONFIRMADO);
+        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel()))
+            .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class);
+    }
+
+    @Test
+    @DisplayName("cerrarIntentSinpeOnvo: intent cancelado en ONVO → se puede cancelar")
+    void sinpeIntentCanceladoPermite() {
+        comoSinpeOnvo();
+        when(sinpeOnvoMarketplaceService.cerrarIntentParaComprador(pago))
+            .thenReturn(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.CierreComprador.CANCELADO);
+        service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel());
+        verify(sinpeOnvoMarketplaceService).cerrarIntentParaComprador(pago);
+    }
+
+    @Test
+    @DisplayName("pagoCobrado: CAPTURADO/PAGADO sí; PENDIENTE/FALLIDO/CANCELADO no")
+    void pagoCobradoEstados() {
+        assertThat(PaymentUserCancellationService.pagoCobrado("CAPTURADO")).isTrue();
+        assertThat(PaymentUserCancellationService.pagoCobrado("PAGADO")).isTrue();
+        assertThat(PaymentUserCancellationService.pagoCobrado("PENDIENTE")).isFalse();
+        assertThat(PaymentUserCancellationService.pagoCobrado("FALLIDO")).isFalse();
+        assertThat(PaymentUserCancellationService.pagoCobrado(null)).isFalse();
     }
 }

@@ -48,6 +48,8 @@ public class PedidoService {
     @Autowired private PedidoDespachoVerificador despachoVerificador;
     @Autowired private com.hotclick.service.payment.StockReservationService stockReservationService;
     @Autowired private com.hotclick.service.pedido.PedidoManualEntregaStockService manualEntregaStock;
+    @org.springframework.context.annotation.Lazy @Autowired
+    private com.hotclick.service.payment.PaymentUserCancellationService pagoCancelacion;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -156,6 +158,10 @@ public class PedidoService {
         // (Un pedido PAGADO ya consumió stockActual; su reposición es otra decisión.)
         boolean liberarReserva = Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado
             && RESERVA_ACTIVA.contains(estadoActual);
+        // QA MEDIO: cancelar desde el panel cierra antes el link/intent ONVO (fail-closed, 409 si no se confirma).
+        if (Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado) {
+            pagoCancelacion.cerrarPagoOnvoAntesDeCancelar(pedido);
+        }
         pedido.setEstadoPedido(nuevoEstado);
         if (liberarReserva) {
             stockReservationService.liberarReservas(pedido);
