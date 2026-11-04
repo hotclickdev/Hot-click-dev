@@ -16,4 +16,7 @@ public interface MovimientoStockRepository extends JpaRepository<MovimientoStock
     Page<MovimientoStock> findByProductoIdOrderByFechaMovimientoDesc(Long productoId, Pageable pageable);
 
     List<MovimientoStock> findByTipoMovimientoOrderByFechaMovimientoDesc(String tipoMovimiento);
+
+    /** ¿Ya hay un movimiento de este tipo con esta referencia? (p. ej. DEVOLUCION de un pedido). */
+    boolean existsByTipoMovimientoAndReferenciaTipoAndReferenciaId(String tipoMovimiento, String referenciaTipo, Long referenciaId);
 }

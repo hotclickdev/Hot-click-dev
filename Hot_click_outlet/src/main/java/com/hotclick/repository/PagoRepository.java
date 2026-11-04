@@ -22,6 +22,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     Optional<Pago> findByMerchantToken(String merchantToken);
 
+    Optional<Pago> findByOnvoReembolsoId(String onvoReembolsoId);
+
     /**
      * QA5 MEDIO: lote de pagos ONVO PENDIENTE con antigüedad mínima para el job de respaldo del webhook.
      * SELECT ... FOR UPDATE SKIP LOCKED (PESSIMISTIC_WRITE + lock.timeout=-2, mismo patrón que la cola de

@@ -6,6 +6,9 @@ import { campoLista, texto, type Fila } from './normalizar'
 import { enlaceWhatsapp } from './whatsapp'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, Marco, TARJETA } from './piezas'
 import { formatPrice } from '@/utils/format'
+import useAuthStore from '@/store/authStore'
+import { HojaConfirmacion } from './HojaConfirmacion'
+import { mensajeReembolso, puedeReembolsarOnvo, REEMBOLSO_CONFIRMACION, reembolsoOnvoService } from './reembolsoOnvo'
 
 export default function PedidoDetalle() {
   const { id = '' } = useParams()
@@ -166,6 +169,25 @@ function Acciones({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: ()
   const [nota, setNota] = useState('')
   const [error, setError] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const esAdmin = puedeReembolsarOnvo(useAuthStore((s) => s.userRole))
+  const [confirmarReembolso, setConfirmarReembolso] = useState(false)
+  const [avisoReembolso, setAvisoReembolso] = useState('')
+
+  async function reembolsarOnvo() {
+    setOcupado(true)
+    setAvisoReembolso('')
+    try {
+      const r = await reembolsoOnvoService.reembolsar(id)
+      setAvisoReembolso(mensajeReembolso(r, 'Listo.'))
+      onCambio()
+    } catch (err) {
+      console.error(err)
+      setAvisoReembolso(mensajeReembolso(err))
+    } finally {
+      setOcupado(false)
+      setConfirmarReembolso(false)
+    }
+  }
 
   async function correr(accion: () => Promise<unknown>) {
     setOcupado(true)
@@ -200,6 +222,14 @@ function Acciones({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: ()
         <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado} onClick={() => void correr(() => consolaService.resolucion(id, 'REEMBOLSO', nota))}>Registrar reembolso</button>
         {error && <p className="text-sm text-hc-primary-text">{error}</p>}
         <p className="text-xs text-hc-n-600">El registro no devuelve la plata sola.</p>
+        {esAdmin && (
+          <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado} onClick={() => setConfirmarReembolso(true)}>Reembolsar por ONVO</button>
+        )}
+        {avisoReembolso && <p className="text-sm text-hc-n-900" role="status">{avisoReembolso}</p>}
+        {esAdmin && confirmarReembolso && (
+          <HojaConfirmacion {...REEMBOLSO_CONFIRMACION} ocupado={ocupado}
+            onConfirmar={() => void reembolsarOnvo()} onCancelar={() => setConfirmarReembolso(false)} />
+        )}
       </div>
     </section>
   )

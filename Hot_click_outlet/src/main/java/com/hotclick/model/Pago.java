@@ -92,6 +92,41 @@ public class Pago extends BaseEntity {
     public String getOnvoReembolsoId() { return onvoReembolsoId; }
     public void setOnvoReembolsoId(String v) { this.onvoReembolsoId = v; }
 
+    /** V227: estado del pedido antes del reembolso ONVO, para restaurarlo si ONVO lo rechaza. */
+    @Column(name = "reembolso_estado_pedido_previo", length = 30)
+    private String reembolsoEstadoPedidoPrevio;
+
+    /** V227: estado del pago antes del reembolso ONVO. */
+    @Column(name = "reembolso_estado_pago_previo", length = 30)
+    private String reembolsoEstadoPagoPrevio;
+
+    /** V228: Idempotency-Key del POST /v1/refunds; enviada solo en el primer POST (registro). */
+    @Column(name = "reembolso_idempotency_key", length = 80)
+    private String reembolsoIdempotencyKey;
+
+    /** V228: resolución manual de un reembolso ONVO pendiente (quién, cuándo y qué). */
+    @Column(name = "reembolso_resuelto_por", length = 120)
+    private String reembolsoResueltoPor;
+    @Column(name = "reembolso_resuelto_en")
+    private LocalDateTime reembolsoResueltoEn;
+    @Column(name = "reembolso_resolucion", length = 20)
+    private String reembolsoResolucion;
+
+    public String getReembolsoResueltoPor() { return reembolsoResueltoPor; }
+    public void setReembolsoResueltoPor(String v) { this.reembolsoResueltoPor = v; }
+    public LocalDateTime getReembolsoResueltoEn() { return reembolsoResueltoEn; }
+    public void setReembolsoResueltoEn(LocalDateTime v) { this.reembolsoResueltoEn = v; }
+    public String getReembolsoResolucion() { return reembolsoResolucion; }
+    public void setReembolsoResolucion(String v) { this.reembolsoResolucion = v; }
+
+    public String getReembolsoIdempotencyKey() { return reembolsoIdempotencyKey; }
+    public void setReembolsoIdempotencyKey(String v) { this.reembolsoIdempotencyKey = v; }
+
+    public String getReembolsoEstadoPedidoPrevio() { return reembolsoEstadoPedidoPrevio; }
+    public void setReembolsoEstadoPedidoPrevio(String v) { this.reembolsoEstadoPedidoPrevio = v; }
+    public String getReembolsoEstadoPagoPrevio() { return reembolsoEstadoPagoPrevio; }
+    public void setReembolsoEstadoPagoPrevio(String v) { this.reembolsoEstadoPagoPrevio = v; }
+
     /** V223 (BAJO QA7-B1 b): última vez que el respaldo reconsultó este pago cerrado en ONVO (NULL = nunca). */
     @Column(name = "reconsulta_cerrado_en")
     private LocalDateTime reconsultaCerradoEn;
