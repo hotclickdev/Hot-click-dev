@@ -397,4 +397,67 @@ class ReembolsoOnvoCompletoTest {
             e -> assertThat(e.getStatus()).isEqualTo(409));
         verify(onvo, never()).crearReembolso(anyString(), anyString(), anyString());
     }
+
+    @Test
+    @DisplayName("BAJO Seguridad: webhook refund failed sin estado previo queda PENDIENTE (409, ONVO reintenta)")
+    void webhookFailedSinEstadoPrevioEsPendiente() {
+        pedido.setEstadoPedido(Constants.PEDIDO_REEMBOLSO_PENDIENTE);
+        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        pago.setOnvoReembolsoId("rf_test_6a");
+        when(pagoRepository.findByOnvoReembolsoId("rf_test_6a")).thenReturn(Optional.of(pago));
+        when(onvo.obtenerReembolso("rf_test_6a")).thenReturn(new OnvoReembolso("rf_test_6a", "failed"));
+        assertThat(service.resolverPorWebhook("rf_test_6a")).isEqualTo(WebhookResultado.PENDIENTE);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+    }
+
+    @Test
+    @DisplayName("Webhook refund failed con estado previo: restaura y queda RESUELTO")
+    void webhookFailedConEstadoPrevioResuelve() {
+        dejarPendienteSinId();
+        pago.setOnvoReembolsoId("rf_test_6a2");
+        when(pagoRepository.findByOnvoReembolsoId("rf_test_6a2")).thenReturn(Optional.of(pago));
+        when(onvo.obtenerReembolso("rf_test_6a2")).thenReturn(new OnvoReembolso("rf_test_6a2", "failed"));
+        assertThat(service.resolverPorWebhook("rf_test_6a2")).isEqualTo(WebhookResultado.RESUELTO);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+    }
+
+    @Test
+    @DisplayName("BAJO Seguridad: DEVUELTO manual se bloquea si ONVO dice que el refund falló")
+    void manualDevueltoBloqueadoSiOnvoDiceFailed() {
+        dejarPendienteSinId();
+        pago.setOnvoReembolsoId("rf_test_6b");
+        when(onvo.obtenerReembolso("rf_test_6b")).thenReturn(new OnvoReembolso("rf_test_6b", "failed"));
+        assertThatThrownBy(() -> service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.DEVUELTO, true, "admin@test"))
+            .isInstanceOfSatisfying(ReembolsoException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(409);
+                assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_MANUAL_ONVO_NO_DEVUELTO);
+            });
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getReembolsoResueltoPor()).isNull();
+        assertThat(producto.getStockActual()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("BAJO Seguridad: DEVUELTO manual es best-effort: si ONVO no responde o dice pending, manda el admin")
+    void manualDevueltoBestEffort() {
+        dejarPendienteSinId();
+        pago.setOnvoReembolsoId("rf_test_6b2");
+        when(onvo.obtenerReembolso("rf_test_6b2")).thenThrow(new RuntimeException("timeout"));
+        assertThat(service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.DEVUELTO, true, "admin@test").status())
+            .isEqualTo(200);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
+    }
+
+    @Test
+    @DisplayName("BAJO 7: repetir el reembolso de un pago REEMBOLSADO → 409 'ya fue reembolsado', sin otro POST")
+    void repetirReembolsoYaReembolsado() {
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenReturn(new OnvoReembolso("rf_test_1", "succeeded"));
+        service.reembolsar(7L);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
+        assertThatThrownBy(() -> service.reembolsar(7L))
+            .isInstanceOf(ReembolsoException.class)
+            .hasMessage(ReembolsoOnvoService.MSG_YA_REEMBOLSADO)
+            .satisfies(e -> assertThat(((ReembolsoException) e).getStatus()).isEqualTo(409));
+        verify(onvo, times(1)).crearReembolso(eq(INTENT), anyString(), anyString());
+    }
 }

@@ -70,7 +70,7 @@ public class PedidoController {
         Empresa empresa = empresaDelScope();
         try {
             Pedido nuevo = pedidoService.crearPedidoManual(dto, empresa);
-            return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
+            return ResponseEntity.ok(ResponseDTO.success(com.hotclick.service.pedido.PedidoManualEntregaStockService.mensajeConAvisos("Pedido creado", nuevo), nuevo));
         } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
             return ResponseEntity.status(404).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException e) {
@@ -92,7 +92,7 @@ public class PedidoController {
             pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
             recalcularDesdeCatalogo(pedido);
             Pedido nuevo = pedidoService.crearPedido(pedido);
-            return ResponseEntity.ok(ResponseDTO.success("Pedido creado", nuevo));
+            return ResponseEntity.ok(ResponseDTO.success(com.hotclick.service.pedido.PedidoManualEntregaStockService.mensajeConAvisos("Pedido creado", nuevo), nuevo));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
         }

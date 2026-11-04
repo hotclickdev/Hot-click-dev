@@ -172,7 +172,7 @@ class OnvoCancelacionSesionTest {
         Pago noPagado = cerrado(17L, "cs_b1_nopagado", Constants.PAGO_CANCELADO);
         Pago error = cerrado(18L, "cs_b1_error", Constants.PAGO_FALLIDO);
         when(pagoRepository.reclamarPendientesParaReconsulta(any(), any(), any())).thenReturn(List.of());
-        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any()))
+        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any(), any()))
             .thenReturn(List.of(cobrado, noPagado, error));
         when(onvoPaymentProvider.procesarPagoVerificado("cs_b1_cobrado", "respaldo"))
             .thenReturn(Verificacion.COBRADO_SOBRE_CANCELADO);
@@ -186,7 +186,7 @@ class OnvoCancelacionSesionTest {
         assertThat(r).isEqualTo(new OnvoPendientesReconsultaService.ResumenCerrados(3, 1));
         ArgumentCaptor<LocalDateTime> desde = ArgumentCaptor.forClass(LocalDateTime.class);
         ArgumentCaptor<Pageable> pag = ArgumentCaptor.forClass(Pageable.class);
-        verify(pagoRepository, atLeastOnce()).reclamarCerradosParaReconsulta(eq(Constants.PROVEEDOR_ONVO), desde.capture(), pag.capture());
+        verify(pagoRepository, atLeastOnce()).reclamarCerradosParaReconsulta(eq(Constants.PROVEEDOR_ONVO), desde.capture(), any(), pag.capture());
         assertThat(desde.getValue()).isBetween(antes.minusSeconds(5), antes.plusSeconds(5));
         assertThat(pag.getValue().getPageSize()).isEqualTo(20);
         verifyNoInteractions(rechazo);
@@ -198,7 +198,7 @@ class OnvoCancelacionSesionTest {
     @Test
     @DisplayName("la query de cerrados filtra FALLIDO/CANCELADO de ONVO con sesión y reclama con lock SKIP LOCKED")
     void queryCerrados() throws Exception {
-        var m = PagoRepository.class.getMethod("reclamarCerradosParaReconsulta", String.class, LocalDateTime.class, Pageable.class);
+        var m = PagoRepository.class.getMethod("reclamarCerradosParaReconsulta", String.class, LocalDateTime.class, LocalDateTime.class, Pageable.class);
         String jpql = m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
         assertThat(jpql).contains("'FALLIDO'", "'CANCELADO'", "merchantToken IS NOT NULL", "fechaCreacion >= :desde");
         assertThat(jpql).doesNotContain("PENDIENTE");
@@ -211,13 +211,38 @@ class OnvoCancelacionSesionTest {
     }
 
     @Test
+    @DisplayName("BAJO: un CANCELADO ya revisado no se reconsulta en cada corrida, solo tras el intervalo de reintento")
+    void canceladoRevisadoNoSeReconsultaCadaCorrida() throws Exception {
+        var m = PagoRepository.class.getMethod("reclamarCerradosParaReconsulta", String.class, LocalDateTime.class, LocalDateTime.class, Pageable.class);
+        String jpql = m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        assertThat(jpql).contains("p.estadoPago = 'CANCELADO' AND (p.reconsultaCerradoEn IS NULL OR p.reconsultaCerradoEn < :canceladoRevisadoAntes)")
+            .contains("p.estadoPago = 'FALLIDO' OR");
+
+        OnvoService onvo = mock(OnvoService.class);
+        when(onvo.isPagosDisponibles()).thenReturn(true);
+        PlatformTransactionManager tm = mock(PlatformTransactionManager.class);
+        when(tm.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
+        var srv = respaldo(onvo, tm, 24);
+        srv.setCanceladoReintentoMinutos(45);
+        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any(), any())).thenReturn(List.of());
+        LocalDateTime antes = LocalDateTime.now(Constants.ZONA_CR);
+
+        srv.revisarCerrados();
+
+        ArgumentCaptor<LocalDateTime> corte = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(pagoRepository).reclamarCerradosParaReconsulta(eq(Constants.PROVEEDOR_ONVO), any(), corte.capture(), any());
+        assertThat(corte.getValue()).isBetween(antes.minusMinutes(45).minusSeconds(5), antes.minusMinutes(45).plusSeconds(5));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setCanceladoReintentoMinutos(-1));
+    }
+
+    @Test
     @DisplayName("ventana 0 o ONVO no disponible: no reconsulta cerrados")
     void ventanaCeroNoReconsulta() {
         OnvoService onvo = mock(OnvoService.class);
         when(onvo.isPagosDisponibles()).thenReturn(true);
         var srv = respaldo(onvo, mock(PlatformTransactionManager.class), 0);
         assertThat(srv.revisarCerrados()).isEqualTo(new OnvoPendientesReconsultaService.ResumenCerrados(0, 0));
-        verify(pagoRepository, never()).reclamarCerradosParaReconsulta(anyString(), any(), any());
+        verify(pagoRepository, never()).reclamarCerradosParaReconsulta(anyString(), any(), any(), any());
     }
 
     private static Pago cerrado(long id, String sesion, String estado) {

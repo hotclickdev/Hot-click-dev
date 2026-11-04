@@ -63,9 +63,16 @@ public class PedidoManualEntregaStockService {
             if (producto == null) continue;
             int antes = producto.getStockActual() != null ? producto.getStockActual() : 0;
             int cantidad = Math.min(item.getCantidad(), Math.max(0, antes)); // nunca deja stock negativo
-            if (cantidad < item.getCantidad()) {
-                log.warn("[P-07] pedido manual {}: producto {} sin stock suficiente para la entrega", pedido.getId(),
-                    producto.getId());
+            int faltante = item.getCantidad() - cantidad;
+            if (faltante > 0) {
+                // Comportamiento elegido: NO bloquear la entrega (ya ocurrió físicamente; bloquearla dejaría el
+                // pedido sin descontar y abriría un segundo descuento al reintentar). Se descuenta lo que hay,
+                // stock nunca negativo, stockDescontadoEn se marca una sola vez y el faltante queda visible:
+                // en la respuesta (advertenciasStock), en las notas del movimiento y en el log.
+                String aviso = avisoFaltante(producto, item.getCantidad(), cantidad);
+                pedido.agregarAdvertenciaStock(aviso);
+                log.warn("[P-07] pedido manual {}: producto {} sin stock suficiente (pedidas {}, descontadas {})",
+                    pedido.getId(), producto.getId(), item.getCantidad(), cantidad);
             }
             int despues = antes - cantidad;
             producto.setStockActual(despues);
@@ -78,12 +85,27 @@ public class PedidoManualEntregaStockService {
                 antes, despues, res, res, pedido.getNumeroPedido(), operadorCorreo);
             m.setReferenciaTipo(REFERENCIA_TIPO);
             m.setReferenciaId(pedido.getId());
-            m.setNotas("Entrega de pedido manual " + Objects.toString(pedido.getNumeroPedido(), ""));
+            String notas = "Entrega de pedido manual " + Objects.toString(pedido.getNumeroPedido(), "");
+            if (faltante > 0) notas += " — FALTANTE: " + faltante + " sin stock (revisar inventario)";
+            m.setNotas(notas);
             movimientos.add(m);
         }
         persistir(source, tocados.values(), movimientos);
         pedido.setStockDescontadoEn(LocalDateTime.now(Constants.ZONA_CR));
         return true;
+    }
+
+    /** Mensaje de la respuesta al admin: si hubo faltante, lo antepone para que sea visible en el toast. */
+    public static String mensajeConAvisos(String base, Pedido pedido) {
+        if (pedido == null || pedido.getAdvertenciasStock() == null || pedido.getAdvertenciasStock().isEmpty()) return base;
+        return base + ". Atención: " + String.join(" ", pedido.getAdvertenciasStock());
+    }
+
+    static String avisoFaltante(Producto producto, int pedidas, int descontadas) {
+        String nombre = producto.getNombreProducto() != null && !producto.getNombreProducto().isBlank()
+            ? producto.getNombreProducto() : "producto " + producto.getId();
+        return "Stock insuficiente para " + nombre + ": se entregaron " + pedidas + " pero solo había "
+            + descontadas + ". El stock quedó en 0; revisá el inventario.";
     }
 
     /**
