@@ -545,10 +545,18 @@ public class OnvoService {
         Map<String, Object> body = new HashMap<>();
         body.put("paymentIntentId", intentId);
         if (descripcion != null) body.put("description", descripcion);
-        HttpHeaders extra = new HttpHeaders();
-        // ONVO no documenta Idempotency-Key; se manda igual para que un reenvío del mismo intento no devuelva dos veces.
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) extra.set("Idempotency-Key", idempotencyKey);
-        OnvoReembolso r = parseReembolso(postOnvo("/refunds", body, extra));
+        // QA #528 (pedido 34): ONVO respondió 400 al POST con el header Idempotency-Key, que su API no documenta
+        // (docs.onvopay.com/en/api/crear-un-reembolso: solo paymentIntentId, amount, description, reason). Antes de
+        // agregarlo el mismo POST funcionaba. Ya no se manda: la clave queda solo como registro en el pago y nada
+        // depende de ella (un REEMBOLSO_PENDIENTE sin id de refund nunca se vuelve a pedir; se resuelve a mano).
+        OnvoReembolso r;
+        try {
+            r = parseReembolso(postOnvo("/refunds", body));
+        } catch (HttpClientErrorException e) {
+            log.warn("[onvo] ONVO rechazó el reembolso del intent {}: {} {}", enmascarar(intentId),
+                e.getStatusCode(), motivoOnvo(e.getResponseBodyAsString()));
+            throw e;
+        }
         log.info("[onvo] Reembolso {} del intent {}: {}", enmascarar(r.id()), enmascarar(intentId), r.status());
         return r;
     }
@@ -667,6 +675,31 @@ public class OnvoService {
      * Ids de ONVO (sesión, payment intent) para logs: solo los primeros 4 y últimos 4 caracteres. Alcanza para
      * correlacionar con el dashboard de ONVO sin dejar el id completo en CloudWatch/Sentry.
      */
+    private static final Pattern CAMPO_TEXTO = Pattern.compile("\"(code|message|type)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|\\[[^\\]]*\\])");
+    private static final Pattern TOKEN_LARGO = Pattern.compile("[A-Za-z0-9_\\-]{12,}");
+    private static final Pattern DIGITOS = Pattern.compile("\\d{6,}");
+
+    /**
+     * Motivo de un 4xx de ONVO apto para logs y para mostrar al admin: solo los campos code/type/message,
+     * con ids largos enmascarados, números largos (teléfonos, cédulas, cuentas) ocultos y tope de largo.
+     * Nunca el cuerpo crudo.
+     */
+    public static String motivoOnvo(String cuerpo) {
+        if (cuerpo == null || cuerpo.isBlank()) return "(sin detalle)";
+        StringBuilder sb = new StringBuilder();
+        var m = CAMPO_TEXTO.matcher(cuerpo);
+        while (m.find()) {
+            if (sb.length() > 0) sb.append("; ");
+            String v = m.group(2).replaceAll("^[\\[\"]+|[\\]\"]+$", "").replace("\",\"", ", ");
+            sb.append(m.group(1)).append('=').append(v);
+        }
+        String r = sb.length() == 0 ? "(sin detalle)" : sb.toString();
+        r = TOKEN_LARGO.matcher(r).replaceAll(t -> java.util.regex.Matcher.quoteReplacement(
+            t.group().matches(".*\\d.*") ? enmascarar(t.group()) : t.group()));
+        r = DIGITOS.matcher(r).replaceAll("***");
+        return r.length() > 300 ? r.substring(0, 300) + "…" : r;
+    }
+
     public static String enmascarar(String id) {
         if (id == null) return "null";
         if (id.length() <= 8) return "****";
