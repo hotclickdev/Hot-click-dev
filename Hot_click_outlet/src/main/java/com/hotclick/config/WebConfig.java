@@ -26,7 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
         java.net.http.HttpClient http = java.net.http.HttpClient.newBuilder()
             .connectTimeout(HTTP_CONNECT_TIMEOUT)
             .version(java.net.http.HttpClient.Version.HTTP_1_1)
-            .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
+            .followRedirects(java.net.http.HttpClient.Redirect.NEVER)
             .build();
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(http);
         factory.setReadTimeout(HTTP_READ_TIMEOUT);
