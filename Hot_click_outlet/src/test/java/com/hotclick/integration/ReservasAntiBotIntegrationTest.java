@@ -11,7 +11,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
-import com.hotclick.service.TilopayService;
+import com.hotclick.service.OnvoService;
 import com.hotclick.service.payment.PaymentExpirationCleanupService;
 import com.hotclick.service.payment.ReservaAntiBotService;
 import com.hotclick.service.payment.ReservaSospechosaLiberador;
@@ -64,9 +64,11 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
     @Autowired private CategoriaRepository            categoriaRepository;
     @Autowired private BodegaRepository               bodegaRepository;
     @Autowired private PlatformTransactionManager     txManager;
-    // G1: SINPE ya no entra por el checkout público; se usa TILOPAY y la pasarela responde "no aprobada"
-    // para que el liberador pueda cancelar (sin esto el modo mock aprobaría el cobro).
-    @MockitoBean private TilopayService               tilopayService;
+    // G1: SINPE ya no entra por el checkout público; se usa ONVO en modo simulado, que nunca da un cobro
+    // por pagado, así el liberador puede cancelar.
+    @MockitoBean private OnvoService                  onvoService;
+    @Autowired private com.hotclick.service.payment.CheckoutValidator checkoutValidator;
+    private Object onvoEnabledPrevio;
 
     private Empresa empresa;
     private Bodega bodega;
@@ -79,9 +81,14 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         reservaAntiBot.limpiar();
         reservaAntiBot.setClock(Clock.system(Constants.ZONA_CR));
 
-        when(tilopayService.loginSdk()).thenReturn("sdk-token-test");
-        when(tilopayService.consultarTransaccion(anyString()))
-            .thenReturn(new TilopayService.ConsultaResultado(false, "0", "No aprobada", null));
+        onvoEnabledPrevio = org.springframework.test.util.ReflectionTestUtils.getField(checkoutValidator, "onvoEnabled");
+        org.springframework.test.util.ReflectionTestUtils.setField(checkoutValidator, "onvoEnabled", true);
+        when(onvoService.isMockMode()).thenReturn(false);
+        when(onvoService.crearCheckoutSession(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+            .thenAnswer(inv -> new OnvoService.OnvoCheckoutSession("cs_test_" + System.nanoTime(), "https://checkout.test/onvo"));
+        when(onvoService.isPagosDisponibles()).thenReturn(true);
+        when(onvoService.modoEsperado()).thenReturn("live");
+        org.mockito.Mockito.doReturn(java.util.Map.of()).when(onvoService).obtenerCheckoutSession(org.mockito.ArgumentMatchers.any());
 
         empresa = new Empresa();
         empresa.setNombreEmpresa("AntiBot Inc");
@@ -129,6 +136,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        org.springframework.test.util.ReflectionTestUtils.setField(checkoutValidator, "onvoEnabled", onvoEnabledPrevio);
         reservaAntiBot.setClock(Clock.system(Constants.ZONA_CR));
         reservaAntiBot.limpiar();
         pagoRepository.deleteAll();
@@ -149,7 +157,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         reservar("203.0.113.10", 5);
         reservar("203.0.113.10", 5);
         assertThat(reservado()).isEqualTo(10);
-        // El TTL real de la pasarela (Tilopay) es de 30 min; la intención sigue siendo que una reserva
+        // El TTL real de la pasarela (ONVO) es de 30 min; la intención sigue siendo que una reserva
         // no marcada no se acorte a los 15 min de la regla anti-bot.
         assertThat(pagosPendientes()).allSatisfy(p ->
             assertThat(p.getFechaExpiracion()).isAfter(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(29)));
@@ -187,7 +195,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         Producto p = productoRepository.findById(producto.getId()).orElseThrow();
         assertThat(p.getStockActual()).isEqualTo(50);
 
-        // una corrida más no vuelve a restar (25 min: la reserva ajena de Tilopay vence a los 30 min, no a las 24 h de SINPE)
+        // una corrida más no vuelve a restar (25 min: la reserva ajena de ONVO vence a los 30 min, no a las 24 h de SINPE)
         avanzar(25);
         cleanup.ejecutar();
         assertThat(reservado()).isEqualTo(3);
@@ -233,7 +241,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
 
     private void reservar(String ip, int unidades) throws Exception {
         String body = """
-            {"bodegaId":%d,"metodoEnvio":"%s","provider":"TILOPAY","guestEmail":"bot%d@test.cr",
+            {"bodegaId":%d,"metodoEnvio":"%s","provider":"ONVO","guestEmail":"bot%d@test.cr",
              "guestPhone":"8888%04d","items":[{"productoId":%d,"cantidad":%d}]}
             """.formatted(bodega.getId(), Constants.ENVIO_RETIRO, ++correo, correo, producto.getId(), unidades);
         mockMvc.perform(post("/api/payments/guest-checkout")

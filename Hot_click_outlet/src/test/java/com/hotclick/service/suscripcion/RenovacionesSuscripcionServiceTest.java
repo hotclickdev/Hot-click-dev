@@ -60,8 +60,6 @@ class RenovacionesSuscripcionServiceTest {
         ArgumentCaptor<List<Suscripcion>> pastDue = ArgumentCaptor.forClass(List.class);
         verify(svc).guardarRenovaciones(nuevos.capture(), pastDue.capture());
         assertThat(nuevos.getValue()).isEmpty();
-        verify(svc, never()).nuevoCobro(any(), any(), any(), anyInt());
-        verifyNoInteractions(tilopay);
         assertThat(pastDue.getValue()).hasSize(2).allMatch(s -> "PAST_DUE".equals(s.getEstado()));
         verify(cobros, never()).saveAll(anyList());
         verify(subs).saveAll(anyList());
@@ -84,7 +82,7 @@ class RenovacionesSuscripcionServiceTest {
         SuscripcionRepository subs = mock(SuscripcionRepository.class);
         CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
         BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
-        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        CobroSuscripcionService svc = mock(CobroSuscripcionService.class);
         OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
         Suscripcion pagada = subOnvo(1, hoy);
         Suscripcion incierta = subOnvo(2, hoy);
@@ -167,7 +165,7 @@ class RenovacionesSuscripcionServiceTest {
         SuscripcionRepository subs = mock(SuscripcionRepository.class);
         CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
         BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
-        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        CobroSuscripcionService svc = mock(CobroSuscripcionService.class);
         OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
         Suscripcion a = sub(1, 12900, hoy);
         a.setOnvoSubscriptionId("clsub0001");

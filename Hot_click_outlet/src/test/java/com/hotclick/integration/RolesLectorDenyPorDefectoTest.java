@@ -153,9 +153,7 @@ class RolesLectorDenyPorDefectoTest extends BaseIntegrationTest {
     void lectorPagaQrPublicoPeroNoGestionaQr() throws Exception {
         // Comprador logueado cuyo negocio actual es uno donde es LECTOR: pagar un QR ajeno no es escritura del negocio.
         Map<String, MockHttpServletRequestBuilder> pago = new LinkedHashMap<>();
-        pago.put("POST /api/pos/qr/pago/{token}/tilopay", post("/api/pos/qr/pago/no-existe/tilopay"));
         pago.put("POST /api/pos/qr/pago/{token}/sinpe-onvo", json(post("/api/pos/qr/pago/no-existe/sinpe-onvo"), "{}"));
-        pago.put("POST /api/pos/qr/pago/{token}/tilopay/confirmar", post("/api/pos/qr/pago/no-existe/tilopay/confirmar"));
         List<String> bloqueados = new ArrayList<>();
         for (var e : pago.entrySet()) {
             int st = status(e.getValue(), tokenLector);

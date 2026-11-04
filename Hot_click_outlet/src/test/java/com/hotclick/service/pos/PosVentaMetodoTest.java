@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PosVentaMetodoTest {
 
     @ParameterizedTest
-    @ValueSource(strings = {"TARJETA", "onvo", "STRIPE", "TILOPAY", "DESCONOCIDO", " ", "SINPE", " sinpe "})
+    @ValueSource(strings = {"TARJETA", "onvo", "STRIPE", "OTRA_PASARELA", "DESCONOCIDO", " ", "SINPE", " sinpe "})
     void pasarelaSeRechaza(String metodo) {
         assertThatThrownBy(() -> PosVentaService.exigirMetodoSinPasarela(metodo))
             .isInstanceOf(IllegalArgumentException.class);

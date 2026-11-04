@@ -17,7 +17,6 @@ import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.OnvoService;
 import com.hotclick.service.email.ReembolsoPendienteResumenItem;
 import com.hotclick.service.sinpe.SinpeOnvoMarketplaceService;
-import com.hotclick.service.TilopayService;
 import com.hotclick.service.payment.PaymentExpirationCleanupService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.AfterEach;
@@ -67,7 +66,6 @@ class OnvoSobreventaPostCobroTest extends BaseIntegrationTest {
 
     /** Sin uso acá: comparte el contexto Spring con ReintentoSobreReembolsoIntegracionTest (mismos mocks), así
      *  no se crea un contexto más que desaloje otro del caché y su create-drop borre el esquema H2 compartido. */
-    @MockitoBean private TilopayService tilopayService;
 
     @Autowired private PaymentExpirationCleanupService cleanup;
     @Autowired private EmpresaRepository empresaRepository;

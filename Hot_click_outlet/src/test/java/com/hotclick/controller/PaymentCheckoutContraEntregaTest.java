@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 class PaymentCheckoutContraEntregaTest {
 
     @Mock PaymentService paymentService;
-    @Mock com.hotclick.service.payment.TilopayConfirmacionService tilopayConfirmacionService;
     @InjectMocks PaymentController controller;
 
     private static PaymentCheckoutRequest req(String provider, String metodo) {

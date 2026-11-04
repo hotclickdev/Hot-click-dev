@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@DisplayName("Checkout | sin proveedor por defecto, allowlist Tilopay sin SINPE (ONVO con flag)")
+@DisplayName("Checkout | sin proveedor por defecto, solo ONVO (con flag), sin SINPE")
 class ProveedorPagoSinDefaultTest {
 
     private static PaymentProvider prov(String n) {
@@ -24,7 +24,7 @@ class ProveedorPagoSinDefaultTest {
     }
 
     private final PaymentProviderFactory factory = new PaymentProviderFactory(
-        List.of(prov("STRIPE"), prov("TILOPAY"), prov("SINPE"), prov("ONVO")));
+        List.of(prov("STRIPE"), prov("SINPE"), prov("ONVO")));
 
     private static PaymentCheckoutRequest req(String provider) {
         PaymentCheckoutRequest r = new PaymentCheckoutRequest();
@@ -52,10 +52,9 @@ class ProveedorPagoSinDefaultTest {
     }
 
     @Test
-    void allowlistTilopayYOnvoSoloConFlag_sinSinpe() {
-        assertThat(validator(false).resolveProvider(req("tilopay"), factory)).isEqualTo("TILOPAY");
+    void allowlistSoloOnvoConFlag_sinSinpe() {
         assertThatThrownBy(() -> validator(false).resolveProvider(req("SINPE"), factory)).hasMessageContaining("no soportado");
-        assertThatThrownBy(() -> validator(false).resolveProvider(req("ONVO"), factory)).hasMessageContaining("ONVO no está habilitado");
+        assertThatThrownBy(() -> validator(false).resolveProvider(req("ONVO"), factory)).hasMessageContaining("El pago en línea no está disponible");
         assertThat(validator(true).resolveProvider(req("ONVO"), factory)).isEqualTo("ONVO");
     }
 }

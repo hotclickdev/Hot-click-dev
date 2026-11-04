@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 
 /** Regresión E2E-POS-01/02/03 (spec 07-pos-qr-sinpe). */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("POS QR: turno obligatorio, Tilopay y SINPE manual retirados")
+@DisplayName("POS QR: turno obligatorio y SINPE manual retirado")
 class PosQrControllerPagoTest {
 
     @Mock PosQrService posQrService;
@@ -64,17 +64,6 @@ class PosQrControllerPagoTest {
         when(turnoCajaService.getTurnoActivo(7L)).thenReturn(Optional.of(t));
         controller.crearSesion(Map.of("metodoPago", "SINPE", "items", List.of()), request);
         verify(posQrService).crearSesion(eq(7L), eq(9L), eq(55L), any(), any(), any(), any(), any(), any(), eq(false));
-    }
-
-    @Test
-    @DisplayName("E2E-POS-02: /tilopay y /tilopay/confirmar → 410 (404 si el QR no existe), nunca cobran")
-    void tilopayRetirado() {
-        when(posQrService.consultarEstado("tokcualquiera01")).thenReturn(Map.of("estado", "PENDIENTE"));
-        when(posQrService.consultarEstado("tokinexistente1")).thenThrow(new java.util.NoSuchElementException());
-        assertThat(controller.iniciarTilopay("tokinexistente1").getStatusCode().value()).isEqualTo(404);
-        assertThat(controller.iniciarTilopay("tokcualquiera01").getStatusCode().value()).isEqualTo(410);
-        assertThat(controller.confirmarTilopay("tokcualquiera01").getStatusCode().value()).isEqualTo(410);
-        verify(posQrService, never()).crearSesion(any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
     }
 
     @Test

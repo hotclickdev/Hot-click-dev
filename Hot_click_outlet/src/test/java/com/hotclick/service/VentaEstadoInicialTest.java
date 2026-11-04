@@ -15,7 +15,7 @@ class VentaEstadoInicialTest {
 
     @ParameterizedTest
     @CsvSource({"TARJETA,COMPLETADO", "tarjeta,entregado", "TARJETA,Confirmado", "TARJETA,PAGADO",
-                "ONVO,PAGADO", "STRIPE,COMPLETADO", "tilopay,ENTREGADO", "DESCONOCIDO,PAGADO", "' ',PAGADO",
+                "ONVO,PAGADO", "STRIPE,COMPLETADO", "otra_pasarela,ENTREGADO", "DESCONOCIDO,PAGADO", "' ',PAGADO",
                 "SINPE,PAGADO", "sinpe,Entregado", "SINPE,COMPLETADO", "SINPE,en_preparacion"})
     void pasarelaConEstadoAvanzadoSeRechaza(String metodo, String estado) {
         assertThatThrownBy(() -> VentaService.resolverEstadoInicial(metodo, estado))
@@ -24,7 +24,7 @@ class VentaEstadoInicialTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"TARJETA", "onvo", "STRIPE", "TILOPAY", "OTRO", "SINPE", " sinpe "})
+    @ValueSource(strings = {"TARJETA", "onvo", "STRIPE", "OTRA_PASARELA", "OTRO", "SINPE", " sinpe "})
     void pasarelaSinEstadoOPendienteQuedaPendiente(String metodo) {
         assertThat(VentaService.resolverEstadoInicial(metodo, null)).isEqualTo(Constants.PEDIDO_PENDIENTE);
         assertThat(VentaService.resolverEstadoInicial(metodo, " pendiente ")).isEqualTo(Constants.PEDIDO_PENDIENTE);

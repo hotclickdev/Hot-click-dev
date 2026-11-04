@@ -15,7 +15,6 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.OnvoService;
-import com.hotclick.service.TilopayService;
 import com.hotclick.service.payment.AvisoReembolsoPendienteService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.AfterEach;
@@ -65,7 +64,6 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
     // uno nuevo. Un contexto extra empuja el cache (máx. 32) a desalojar otro, y su create-drop borra el esquema del
     // H2 compartido (testdb) a tests que vienen después (#466, HOT_CLICK_REFRESH_TOKEN_TB not found).
     @MockitoBean private OnvoService onvoService;
-    @MockitoBean private TilopayService tilopayService;
 
     @Autowired private AvisoReembolsoPendienteService aviso;
     @Autowired private org.springframework.transaction.PlatformTransactionManager txManager;
@@ -460,7 +458,7 @@ class AvisoReembolsoPendienteIntegracionTest extends BaseIntegrationTest {
                 ped.setEstadoPedido(Constants.PEDIDO_REVISION_SOBREVENTA);
                 pedidoRepository.saveAndFlush(ped);
             }
-            case "OTRO" -> p.setProveedor(Constants.PROVEEDOR_TILOPAY);
+            case "OTRO" -> p.setProveedor("STRIPE");
             default -> { }
         }
         return pagoRepository.saveAndFlush(p);

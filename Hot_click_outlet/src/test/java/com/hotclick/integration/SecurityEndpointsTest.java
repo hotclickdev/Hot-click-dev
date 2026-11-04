@@ -80,15 +80,6 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("P-01 Seguridad: /pos/qr/pago/{token}/tilopay(/confirmar) ya no son públicas → 401 sin token")
-    void posQrTilopay_yaNoPublico() throws Exception {
-        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/tilopay"))
-            .andExpect(status().isUnauthorized());
-        mockMvc.perform(post("/api/pos/qr/pago/tokeninexistente99/tilopay/confirmar"))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @DisplayName("POS: /intent y /stripe ya no existen; /sinpe-onvo (SINPE por ONVO) exige cuerpo y token válido")
     void posQrOnvo_eliminado() throws Exception {
         for (String ruta : new String[]{"intent", "stripe"}) {

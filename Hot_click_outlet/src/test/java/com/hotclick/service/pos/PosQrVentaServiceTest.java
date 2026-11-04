@@ -3,7 +3,6 @@ package com.hotclick.service.pos;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.repository.PosQrSesionRepository;
-import com.hotclick.service.TilopayService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,36 +20,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** POS QR: tarjeta y SINPE Móvil por Tilopay (ONVO fuera del POS). */
+/** POS QR: completar la venta con tarjeta por la pasarela. */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Pago POS QR (Tilopay)")
+@DisplayName("Pago POS QR")
 class PosQrVentaServiceTest {
 
     @Mock PosQrSesionRepository posQrRepo;
-    @Mock TilopayService tilopayService;
     @Mock PosQrSessionService sessionService;
     @Mock PosQrVentaCompletionService completionService;
     @InjectMocks PosQrVentaService service;
 
 
     @Test
-    @DisplayName("ALTO 3: el poll ya no confirma con Tilopay aunque Tilopay diga aprobado")
-    void pollTilopayMarcaPagado() {
-        PosQrSesion sesion = sesionTarjeta();
-        sesion.setStripeSessionId("POSQR-ABC");
-        sesion.setFechaExpiracion(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(10));
-        when(posQrRepo.findByToken("tokentarjetaqr01")).thenReturn(Optional.of(sesion));
-        org.mockito.Mockito.lenient().when(tilopayService.consultarTransaccion("POSQR-ABC")).thenReturn(new TilopayService.ConsultaResultado(
-            true, "1", "ok", "auth", new BigDecimal("5000"), "CRC", "POSQR-ABC", false));
-
-        assertThat(service.verificarEstado("tokentarjetaqr01")).isEqualTo("PENDIENTE");
-        verify(completionService, never()).completarVentaTarjeta(any());
-        org.mockito.Mockito.verifyNoInteractions(tilopayService);
-    }
-
-    @Test
-    @DisplayName("Un id que no es de Tilopay (ONVO viejo) no se da por pagado")
-    void idNoTilopayNoPaga() {
+    @DisplayName("Un id de pasarela desconocido no se da por pagado")
+    void idDesconocidoNoPaga() {
         PosQrSesion sesion = sesionTarjeta();
         sesion.setStripeSessionId("onvo_pi_viejo");
         sesion.setFechaExpiracion(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR).plusMinutes(10));

@@ -142,7 +142,7 @@ class OnvoCancelacionSesionTest {
     @Test
     @DisplayName("pagos que no son ONVO no llaman a ONVO")
     void noOnvoNoLlama() {
-        pago.setProveedor(Constants.PROVEEDOR_TILOPAY);
+        pago.setProveedor(Constants.PROVEEDOR_STRIPE);
 
         service.cancelarAnon("ORD-B1", "ok");
 

@@ -94,7 +94,7 @@ class PaymentServiceTest {
             .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
                 .map(id -> productoRepository.findByIdForUpdate(id))
                 .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
-        // Por defecto cada confirmación/fallo gana su UPDATE condicional (la carrera se prueba en TilopayDobleConfirmacionTest).
+        // Por defecto cada confirmación/fallo gana su UPDATE condicional (la carrera se prueba en los tests de doble confirmación).
         lenient().when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
         lenient().when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
         testUser = new Usuario();
@@ -118,8 +118,8 @@ class PaymentServiceTest {
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
         testProducto.setBodega(testBodega);
 
-        when(providerFactory.soporta("TILOPAY")).thenReturn(true);
-        when(providerFactory.get("TILOPAY")).thenReturn(mockProvider);
+        when(providerFactory.soporta("ONVO")).thenReturn(true);
+        when(providerFactory.get("ONVO")).thenReturn(mockProvider);
         when(mockProvider.crearSesion(any(), any()))
             .thenReturn(new PaymentSession("TXN-123", REDIRECT));
 
@@ -138,6 +138,7 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(service, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(service, "eventPublisher", eventPublisher);
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
+        ReflectionTestUtils.setField(checkoutValidator, "onvoEnabled", true);
         ReflectionTestUtils.setField(service, "guestUserResolver", guestUserResolver);
         ReflectionTestUtils.setField(service, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(service, "checkoutGrupoFactory", checkoutGrupoFactory);
@@ -548,7 +549,7 @@ class PaymentServiceTest {
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();
         req.setBodegaId(1L);
         req.setMetodoEnvio(Constants.ENVIO_RETIRO);
-        req.setProvider("TILOPAY");
+        req.setProvider("ONVO");
 
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);

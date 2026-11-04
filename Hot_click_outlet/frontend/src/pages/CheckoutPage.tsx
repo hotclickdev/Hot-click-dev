@@ -18,7 +18,7 @@ import { notasConEncomienda } from './checkout/checkoutHelpers'
 export default function CheckoutPage() {
   const { items, total, toWhatsAppMessage } = useCartStore()
   const { token } = useAuthStore()
-  const { estado, pagoData, error, intentos, maxIntentos, iniciarPago, reset } = usePayment()
+  const { estado, pagoData, error, intentos, maxIntentos, iniciarPago } = usePayment()
   const errorBannerRef = useRef<HTMLDivElement | null>(null)
 
   const form = useCheckoutForm({ items, total })

@@ -38,7 +38,6 @@ class CapturaSinpeSoloOnvoTest {
         assertThat(escritores).containsExactlyInAnyOrder(
             "OnvoCapturaService.java",          // exige proveedor ONVO
             "StripePaymentProvider.java",       // exige proveedor STRIPE
-            "TilopayConfirmacionService.java",  // exige proveedor TILOPAY
             "PedidoPagoManualService.java",     // solo proveedor MANUAL
             "SinpeOnvoMarketplaceService.java"  // SINPE: webhook succeeded + GET
         );

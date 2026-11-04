@@ -17,7 +17,7 @@ class SinpeManualDeshabilitadoTest {
 
     @Test
     void sinBanderaSoloEfectivo_cualquierOtroProveedorSeRechaza() {
-        for (String proveedor : new String[] {"TRANSFERENCIA", "SINPE_MOVIL", "ONVO", "TILOPAY", "", "  "}) {
+        for (String proveedor : new String[] {"TRANSFERENCIA", "SINPE_MOVIL", "ONVO", "OTRA_PASARELA", "", "  "}) {
             assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido(proveedor, false))
                 .as(proveedor).isInstanceOf(IllegalStateException.class)
                 .hasMessage(SinpeCheckoutService.MSG_SINPE_MANUAL);
@@ -46,7 +46,7 @@ class SinpeManualDeshabilitadoTest {
         assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido(" efectivo ", true, false))
             .isInstanceOf(IllegalStateException.class);
         assertThatCode(() -> SinpeCheckoutService.exigirProveedorPermitido("EFECTIVO", false, true)).doesNotThrowAnyException();
-        assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido("TILOPAY", false, false))
+        assertThatThrownBy(() -> SinpeCheckoutService.exigirProveedorPermitido("OTRA_PASARELA", false, false))
             .isInstanceOf(IllegalStateException.class);
     }
 }

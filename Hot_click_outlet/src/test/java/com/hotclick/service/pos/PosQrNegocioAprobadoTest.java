@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("NP-13 | cobro QR (Tilopay/SINPE) solo con negocio aprobado")
+@DisplayName("NP-13 | cobro QR (tarjeta/SINPE) solo con negocio aprobado")
 class PosQrNegocioAprobadoTest {
 
     private static Empresa empresa(String estado) { Empresa e = new Empresa(); e.setEstadoEmpresa(estado); return e; }
