@@ -46,6 +46,8 @@ public class ReembolsoOnvoService {
     private static final Logger log = LoggerFactory.getLogger(ReembolsoOnvoService.class);
 
     public static final String MSG_NO_EXISTE = "Pedido no encontrado.";
+    public static final String MSG_YA_REEMBOLSADO =
+        "Este pedido ya fue reembolsado. No se volvió a devolver nada; revisá el detalle del pago si tenés dudas.";
     public static final String MSG_SIN_PAGO_ONVO =
         "Este pedido no tiene un cobro de ONVO para devolver. Si se pagó por fuera de la app, cancelalo como siempre.";
     public static final String MSG_ESTADO = "Solo se puede reembolsar un pedido pagado que todavía no se envió (estado actual: %s).";
@@ -281,6 +283,9 @@ public class ReembolsoOnvoService {
         }
         if (Constants.PEDIDO_REEMBOLSO_PENDIENTE.equals(estado)) {
             throw new ReembolsoException(409, MSG_EN_DUDA_PREVIO);
+        }
+        if (pago != null && Constants.PAGO_REEMBOLSADO.equals(pago.getEstadoPago())) {
+            throw new ReembolsoException(409, MSG_YA_REEMBOLSADO);
         }
         if (!onvo || !Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             throw new ReembolsoException(409, MSG_SIN_PAGO_ONVO);

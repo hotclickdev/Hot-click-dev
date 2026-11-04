@@ -60,4 +60,11 @@ class OnvoReembolsoIdempotencyHttpTest {
         assertThat(OnvoService.motivoOnvo(null)).isEqualTo("(sin detalle)");
         assertThat(OnvoService.motivoOnvo("<html>boom</html>")).isEqualTo("(sin detalle)");
     }
+
+    @Test
+    void motivoOnvoOcultaCorreos() {
+        String correo = "cliente.prueba+x" + "@" + "ejemplo.test";
+        String motivo = OnvoService.motivoOnvo("{\"message\":[\"customer " + correo + " not allowed\"]}");
+        assertThat(motivo).doesNotContain("cliente").doesNotContain("ejemplo").contains("not allowed").contains("***");
+    }
 }

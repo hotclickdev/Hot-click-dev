@@ -447,4 +447,17 @@ class ReembolsoOnvoCompletoTest {
             .isEqualTo(200);
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
     }
+
+    @Test
+    @DisplayName("BAJO 7: repetir el reembolso de un pago REEMBOLSADO → 409 'ya fue reembolsado', sin otro POST")
+    void repetirReembolsoYaReembolsado() {
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenReturn(new OnvoReembolso("rf_test_1", "succeeded"));
+        service.reembolsar(7L);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
+        assertThatThrownBy(() -> service.reembolsar(7L))
+            .isInstanceOf(ReembolsoException.class)
+            .hasMessage(ReembolsoOnvoService.MSG_YA_REEMBOLSADO)
+            .satisfies(e -> assertThat(((ReembolsoException) e).getStatus()).isEqualTo(409));
+        verify(onvo, times(1)).crearReembolso(eq(INTENT), anyString(), anyString());
+    }
 }

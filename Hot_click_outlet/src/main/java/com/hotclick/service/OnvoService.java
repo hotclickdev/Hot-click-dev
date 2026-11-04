@@ -672,10 +672,6 @@ public class OnvoService {
         return OnvoErrorSupport.relanzar(t);
     }
 
-    /**
-     * Ids de ONVO (sesión, payment intent) para logs: solo los primeros 4 y últimos 4 caracteres. Alcanza para
-     * correlacionar con el dashboard de ONVO sin dejar el id completo en CloudWatch/Sentry.
-     */
     private static final com.fasterxml.jackson.databind.ObjectMapper JSON_MOTIVO = new com.fasterxml.jackson.databind.ObjectMapper();
 
     /**
@@ -715,7 +711,7 @@ public class OnvoService {
 
     private static final String SIN_DETALLE = "(sin detalle)";
 
-    /** Enmascara tokens con dígitos (ids) y oculta corridas de 6+ dígitos (teléfonos, cédulas, cuentas). */
+    /** Oculta correos (cualquier token pegado a @), enmascara tokens con dígitos (ids) y oculta corridas de 6+ dígitos. */
     private static String sanearTokens(String texto) {
         StringBuilder out = new StringBuilder();
         int i = 0;
@@ -727,6 +723,11 @@ public class OnvoService {
                 continue;
             }
             String t = texto.substring(i, j);
+            if (j < texto.length() && texto.charAt(j) == '@' || i > 0 && texto.charAt(i - 1) == '@') {
+                out.append("***");
+                i = j;
+                continue;
+            }
             int digitos = 0;
             for (char c : t.toCharArray()) if (Character.isDigit(c)) digitos++;
             if (digitos >= 6 && digitos == t.length()) out.append("***");
@@ -739,9 +740,13 @@ public class OnvoService {
     }
 
     private static boolean esTokenChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '_' || c == '-';
+        return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.' || c == '+';
     }
 
+    /**
+     * Ids de ONVO (sesión, payment intent) para logs: solo los primeros 4 y últimos 4 caracteres. Alcanza para
+     * correlacionar con el dashboard de ONVO sin dejar el id completo en CloudWatch/Sentry.
+     */
     public static String enmascarar(String id) {
         if (id == null) return "null";
         if (id.length() <= 8) return "****";
