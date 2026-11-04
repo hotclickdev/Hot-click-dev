@@ -92,6 +92,19 @@ public class Pago extends BaseEntity {
     public String getOnvoReembolsoId() { return onvoReembolsoId; }
     public void setOnvoReembolsoId(String v) { this.onvoReembolsoId = v; }
 
+    /** V227: estado del pedido antes del reembolso ONVO, para restaurarlo si ONVO lo rechaza. */
+    @Column(name = "reembolso_estado_pedido_previo", length = 30)
+    private String reembolsoEstadoPedidoPrevio;
+
+    /** V227: estado del pago antes del reembolso ONVO. */
+    @Column(name = "reembolso_estado_pago_previo", length = 30)
+    private String reembolsoEstadoPagoPrevio;
+
+    public String getReembolsoEstadoPedidoPrevio() { return reembolsoEstadoPedidoPrevio; }
+    public void setReembolsoEstadoPedidoPrevio(String v) { this.reembolsoEstadoPedidoPrevio = v; }
+    public String getReembolsoEstadoPagoPrevio() { return reembolsoEstadoPagoPrevio; }
+    public void setReembolsoEstadoPagoPrevio(String v) { this.reembolsoEstadoPagoPrevio = v; }
+
     /** V223 (BAJO QA7-B1 b): última vez que el respaldo reconsultó este pago cerrado en ONVO (NULL = nunca). */
     @Column(name = "reconsulta_cerrado_en")
     private LocalDateTime reconsultaCerradoEn;

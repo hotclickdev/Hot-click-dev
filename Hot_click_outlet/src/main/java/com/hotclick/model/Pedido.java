@@ -77,6 +77,10 @@ public class Pedido extends BaseEntity {
     @Column(name = "stock_descontado_en")
     private java.time.LocalDateTime stockDescontadoEn;
 
+    /** V227: cuándo el reembolso ONVO repuso el stock; no nulo = no se vuelve a reponer. */
+    @Column(name = "stock_repuesto_en")
+    private java.time.LocalDateTime stockRepuestoEn;
+
     @Column(name = "origen", length = 20)
     private String origen = OrigenPedido.ONLINE.codigo();
 
@@ -241,6 +245,9 @@ public class Pedido extends BaseEntity {
 
     public java.time.LocalDateTime getStockDescontadoEn() { return stockDescontadoEn; }
     public void setStockDescontadoEn(java.time.LocalDateTime stockDescontadoEn) { this.stockDescontadoEn = stockDescontadoEn; }
+
+    public java.time.LocalDateTime getStockRepuestoEn() { return stockRepuestoEn; }
+    public void setStockRepuestoEn(java.time.LocalDateTime stockRepuestoEn) { this.stockRepuestoEn = stockRepuestoEn; }
 
     public String getOrigen() { return origen; }
     public void setOrigen(String origen) { this.origen = origen; }
