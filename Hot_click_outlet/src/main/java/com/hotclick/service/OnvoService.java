@@ -489,7 +489,7 @@ public class OnvoService {
             Map<?, ?> body = getOnvo(ruta + id);
             return body == null ? Map.of() : body;
         } catch (HttpClientErrorException.NotFound e) {
-            log.warn("[onvo] ONVO no tiene {}{}", ruta, id);
+            log.warn("[onvo] ONVO no tiene {}{}", ruta, enmascarar(id));
             return Map.of();
         }
     }
@@ -522,7 +522,7 @@ public class OnvoService {
                 ? new ResultadoExpirar(TipoExpirar.SIN_CUERPO, Map.of())
                 : new ResultadoExpirar(TipoExpirar.RESPUESTA, body);
         } catch (HttpClientErrorException.NotFound e) {
-            log.warn("[onvo] ONVO no tiene la sesión {} para expirar", sessionId);
+            log.warn("[onvo] ONVO no tiene la sesión {} para expirar", enmascarar(sessionId));
             return new ResultadoExpirar(TipoExpirar.NO_EXISTE, Map.of());
         }
     }
@@ -556,7 +556,7 @@ public class OnvoService {
             throw new IllegalStateException("Respuesta inválida de ONVO al crear checkout session");
         }
         String id = String.valueOf(respBody.get("id"));
-        log.info("[onvo] Checkout session creada: {}", id);
+        log.info("[onvo] Checkout session creada: {}", enmascarar(id));
         return new OnvoCheckoutSession(id, String.valueOf(respBody.get("url")));
     }
 
@@ -565,7 +565,7 @@ public class OnvoService {
             throw new IllegalStateException("Respuesta inválida de ONVO al crear payment intent");
         }
         String id = String.valueOf(respBody.get("id"));
-        log.info("[onvo] Payment intent creado: {}", id);
+        log.info("[onvo] Payment intent creado: {}", enmascarar(id));
         return new OnvoPaymentIntent(id);
     }
 
@@ -616,5 +616,15 @@ public class OnvoService {
             log.error("[onvo-circuit] OPEN {}: {}", operacion, t.getMessage());
         }
         return OnvoErrorSupport.relanzar(t);
+    }
+
+    /**
+     * Ids de ONVO (sesión, payment intent) para logs: solo los primeros 4 y últimos 4 caracteres. Alcanza para
+     * correlacionar con el dashboard de ONVO sin dejar el id completo en CloudWatch/Sentry.
+     */
+    public static String enmascarar(String id) {
+        if (id == null) return "null";
+        if (id.length() <= 8) return "****";
+        return id.substring(0, 4) + "..." + id.substring(id.length() - 4);
     }
 }
