@@ -4,9 +4,11 @@ import com.hotclick.model.MovimientoStock;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
+import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.utils.Constants;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,7 +23,8 @@ import java.util.Objects;
 /**
  * Repone el stock de un pedido reembolsado por ONVO, una sola vez: solo si el pedido consumió stock
  * ({@code stockDescontadoEn}) y todavía no se repuso ({@code stockRepuestoEn}, V227). Deja un movimiento
- * DEVOLUCION por producto con referencia al pedido. El llamador tiene el pedido con FOR UPDATE y una transacción.
+ * DEVOLUCION por producto con referencia al pedido. Si ya existe un DEVOLUCION de ese pedido (repuesto antes,
+ * p. ej. al cancelarlo), no repone otra vez: solo deja la marca. El llamador tiene el pedido con FOR UPDATE y una transacción.
  */
 @Service
 public class ReembolsoStockService {
@@ -30,15 +33,28 @@ public class ReembolsoStockService {
 
     private final ProductoRepository productoRepository;
     private final StockMovimientoSupport movimientoSupport;
+    private final MovimientoStockRepository movimientoRepository;
 
     public ReembolsoStockService(ProductoRepository productoRepository, StockMovimientoSupport movimientoSupport) {
+        this(productoRepository, movimientoSupport, null);
+    }
+
+    @Autowired
+    public ReembolsoStockService(ProductoRepository productoRepository, StockMovimientoSupport movimientoSupport,
+                                 MovimientoStockRepository movimientoRepository) {
         this.productoRepository = productoRepository;
         this.movimientoSupport = movimientoSupport;
+        this.movimientoRepository = movimientoRepository;
     }
 
     /** @return true si repuso en esta llamada. */
     public boolean reponerSiCorresponde(Object source, Pedido pedido, String operador) {
         if (pedido == null || pedido.getStockDescontadoEn() == null || pedido.getStockRepuestoEn() != null) return false;
+        if (movimientoRepository != null && pedido.getId() != null && movimientoRepository
+                .existsByTipoMovimientoAndReferenciaTipoAndReferenciaId(MovimientoStock.DEVOLUCION, REFERENCIA_TIPO, pedido.getId())) {
+            pedido.setStockRepuestoEn(LocalDateTime.now(Constants.ZONA_CR));
+            return false;
+        }
         List<PedidoItem> items = pedido.getItems() == null ? List.of() : pedido.getItems().stream()
             .filter(i -> i.getProducto() != null && i.getProducto().getId() != null
                 && i.getCantidad() != null && i.getCantidad() > 0)

@@ -113,7 +113,7 @@ class AdminReembolsoOnvoControllerTest {
     }
 
     @Test
-    void onvoSinRespuesta_quedaPendienteNuncaDevueltoYNoSeRepide() throws Exception {
+    void onvoSinRespuesta_quedaPendienteNuncaDevueltoYReintentaConLaMismaClave() throws Exception {
         when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenThrow(new ResourceAccessException("timeout"));
 
         mvc.perform(post(URL))
@@ -123,8 +123,13 @@ class AdminReembolsoOnvoControllerTest {
         assertEquals(Constants.PAGO_REEMBOLSO_PENDIENTE, pago.getEstadoPago());
         assertNull(pago.getMontoReembolsado());
 
-        mvc.perform(post(URL)).andExpect(status().isConflict());
-        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString());
+        // El reintento reusa la Idempotency-Key persistida (V228); sigue sin respuesta → sigue en duda, nunca devuelto.
+        mvc.perform(post(URL)).andExpect(status().isBadGateway());
+        org.mockito.ArgumentCaptor<String> keys = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(onvo, times(2)).crearReembolso(anyString(), anyString(), keys.capture());
+        assertEquals(1, keys.getAllValues().stream().distinct().count());
+        assertEquals(Constants.PAGO_REEMBOLSO_PENDIENTE, pago.getEstadoPago());
+        assertNull(pago.getMontoReembolsado());
     }
 
     @Test

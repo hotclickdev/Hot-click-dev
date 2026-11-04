@@ -100,6 +100,13 @@ public class Pago extends BaseEntity {
     @Column(name = "reembolso_estado_pago_previo", length = 30)
     private String reembolsoEstadoPagoPrevio;
 
+    /** V228: Idempotency-Key del POST /v1/refunds; se reusa al reintentar un REEMBOLSO_PENDIENTE sin id de refund. */
+    @Column(name = "reembolso_idempotency_key", length = 80)
+    private String reembolsoIdempotencyKey;
+
+    public String getReembolsoIdempotencyKey() { return reembolsoIdempotencyKey; }
+    public void setReembolsoIdempotencyKey(String v) { this.reembolsoIdempotencyKey = v; }
+
     public String getReembolsoEstadoPedidoPrevio() { return reembolsoEstadoPedidoPrevio; }
     public void setReembolsoEstadoPedidoPrevio(String v) { this.reembolsoEstadoPedidoPrevio = v; }
     public String getReembolsoEstadoPagoPrevio() { return reembolsoEstadoPagoPrevio; }

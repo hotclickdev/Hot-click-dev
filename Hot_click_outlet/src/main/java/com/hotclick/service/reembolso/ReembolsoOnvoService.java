@@ -79,8 +79,9 @@ public class ReembolsoOnvoService {
     public record Resultado(int status, String mensaje, String estadoPedido, String estadoPago) {}
 
     private record Preparado(Long pagoId, String intentId, String refundIdExistente, String numeroPedido,
-                             String idempotencyKey) {}
+                             String idempotencyKey, boolean reintento) {}
 
+    /** reconsulta = ya hay un refund con id para releer; no hace falta el intent. */
     private record Lectura(String token, boolean reconsulta) {}
 
     /** Resultado del webhook refund.*: el controller lo traduce a HTTP (2xx solo si quedó procesado). */
@@ -119,9 +120,9 @@ public class ReembolsoOnvoService {
                 ? onvoService.obtenerReembolso(p.refundIdExistente())
                 : onvoService.crearReembolso(p.intentId(), "Reembolso pedido " + p.numeroPedido(), p.idempotencyKey());
         } catch (HttpClientErrorException e) {
-            if (p.refundIdExistente() != null) {
-                log.warn("[reembolso] No se pudo leer el refund {}: {}",
-                    OnvoService.enmascarar(p.refundIdExistente()), e.getStatusCode());
+            if (p.refundIdExistente() != null || p.reintento()) {
+                log.warn("[reembolso] Reintento/lectura del refund del pedido {} sin respuesta clara: {}",
+                    pedidoId, e.getStatusCode());
                 throw new ReembolsoException(502, MSG_EN_DUDA);
             }
             log.warn("[reembolso] ONVO rechazó el reembolso del pedido {}: {}", pedidoId, e.getStatusCode());
@@ -163,8 +164,7 @@ public class ReembolsoOnvoService {
         Pedido pedido = pedidoRepository.findById(pedidoId)
             .orElseThrow(() -> new ReembolsoException(404, MSG_NO_EXISTE));
         Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
-        boolean reconsulta = Constants.PEDIDO_REEMBOLSO_PENDIENTE.equals(
-            PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido()));
+        boolean reconsulta = pago != null && pago.getOnvoReembolsoId() != null && pendiente(pedido, pago);
         return new Lectura(pago == null ? null : pago.getMerchantToken(), reconsulta);
     }
 
@@ -175,16 +175,28 @@ public class ReembolsoOnvoService {
         Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
         boolean onvo = pago != null && Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor());
 
-        if (Constants.PEDIDO_REEMBOLSO_PENDIENTE.equals(estado)) {
-            if (onvo && pago.getOnvoReembolsoId() != null) {
-                return new Preparado(pago.getId(), null, pago.getOnvoReembolsoId(), pedido.getNumeroPedido(), null);
+        if (onvo && pendiente(pedido, pago)) {
+            if (pago.getOnvoReembolsoId() != null) {
+                return new Preparado(pago.getId(), null, pago.getOnvoReembolsoId(), pedido.getNumeroPedido(), null, false);
             }
+            // Sin id de refund: ONVO no documenta un listado por intent, así que se reintenta el POST con la MISMA
+            // Idempotency-Key persistida (V228). Sin clave guardada, mismo token e intent válido, no se pide nada.
+            String key = pago.getReembolsoIdempotencyKey();
+            if (key != null && tokenLeido != null && tokenLeido.equals(pago.getMerchantToken())
+                    && intentId != null && onvoService.reembolsable(intentId)) {
+                return new Preparado(pago.getId(), intentId, null, pedido.getNumeroPedido(), key, true);
+            }
+            throw new ReembolsoException(409, MSG_EN_DUDA_PREVIO);
+        }
+        if (Constants.PEDIDO_REEMBOLSO_PENDIENTE.equals(estado)) {
             throw new ReembolsoException(409, MSG_EN_DUDA_PREVIO);
         }
         if (!onvo || !Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
             throw new ReembolsoException(409, MSG_SIN_PAGO_ONVO);
         }
-        if (!REEMBOLSABLES.contains(estado)) {
+        // Cancelado con el cobro todavía capturado: se devuelve igual y el pedido sigue CANCELADO.
+        boolean cancelado = Constants.PEDIDO_CANCELADO.equals(estado);
+        if (!cancelado && !REEMBOLSABLES.contains(estado)) {
             throw new ReembolsoException(409, String.format(MSG_ESTADO, estado));
         }
         if (CompraPaquetes.paquetesDe(pedido, pedidoRepository).size() > 1) {
@@ -200,20 +212,28 @@ public class ReembolsoOnvoService {
         LocalDateTime ahora = LocalDateTime.now();
         pago.setReembolsoEstadoPedidoPrevio(estado);
         pago.setReembolsoEstadoPagoPrevio(pago.getEstadoPago());
-        pedido.setEstadoPedido(Constants.PEDIDO_REEMBOLSO_PENDIENTE);
+        if (!cancelado) pedido.setEstadoPedido(Constants.PEDIDO_REEMBOLSO_PENDIENTE);
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pago.setMontoReembolsoPendiente(pago.getMonto());
         // Lo pidió el admin: sin correo de "reembolso pendiente" del barrido.
         pago.setAvisoReembolsoAdminEn(ahora);
         pago.setAvisoReembolsoAdminEnviadoEn(ahora);
+        String key = idempotencyKey(pago.getId(), ahora);
+        pago.setReembolsoIdempotencyKey(key);
         pedidoRepository.save(pedido);
         pagoRepository.save(pago);
-        return new Preparado(pago.getId(), intentId, null, pedido.getNumeroPedido(), idempotencyKey(pago.getId(), ahora));
+        return new Preparado(pago.getId(), intentId, null, pedido.getNumeroPedido(), key, false);
+    }
+
+    /** Reembolso en curso: el pedido o el pago (si el pedido ya estaba CANCELADO) en REEMBOLSO_PENDIENTE. */
+    private static boolean pendiente(Pedido pedido, Pago pago) {
+        return Constants.PEDIDO_REEMBOLSO_PENDIENTE.equals(PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido()))
+            || (pago != null && Constants.PAGO_REEMBOLSO_PENDIENTE.equals(pago.getEstadoPago()));
     }
 
     /**
      * Idempotency-Key del POST /v1/refunds: única por intento de reembolso (pago + momento en que se pasó a
-     * REEMBOLSO_PENDIENTE). La documentación pública de ONVO no lo menciona; si lo ignora no cambia nada.
+     * REEMBOLSO_PENDIENTE), guardada en el pago (V228) y reusada tal cual en cada reintento de ese intento. La documentación pública de ONVO no lo menciona; si lo ignora no cambia nada.
      */
     static String idempotencyKey(Long pagoId, LocalDateTime preparadoEn) {
         return "hc-reembolso-pago-" + pagoId + "-" + preparadoEn.atZone(Constants.ZONA_CR).toInstant().toEpochMilli();
@@ -297,6 +317,7 @@ public class ReembolsoOnvoService {
         pago.setAvisoReembolsoAdminEnviadoEn(null);
         pago.setReembolsoEstadoPedidoPrevio(null);
         pago.setReembolsoEstadoPagoPrevio(null);
+        pago.setReembolsoIdempotencyKey(null);
         return true;
     }
 }
