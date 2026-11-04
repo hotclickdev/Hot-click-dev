@@ -1,1 +1,0 @@
-import{t as e}from"./authService-Psaz_FcU.js";async function t(t){t.token&&await e.logout(null,t.token).catch(()=>{}),t.cerrarLocal(),t.avisar?.(),t.navegar(t.destino??`/`)}export{t};
