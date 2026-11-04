@@ -50,6 +50,11 @@ public class OnvoWebhookController {
 
     void setAlertaSecretInvalidoParaTest(com.hotclick.monitoreo.OnvoWebhookSecretInvalidoAlerta a) { this.alertaSecretInvalido = a; }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.reembolso.ReembolsoOnvoService reembolsoOnvoService;
+
+    void setReembolsoOnvoParaTest(com.hotclick.service.reembolso.ReembolsoOnvoService s) { this.reembolsoOnvoService = s; }
+
     void setSinpeMarketplaceParaTest(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService s) { this.sinpeMarketplace = s; }
 
     /** Tope de cuerpo y de intentos con secret inválido por minuto (un secret válido nunca se limita). */
@@ -104,6 +109,7 @@ public class OnvoWebhookController {
             if (billingWebhookHandler.manejarSiBilling(type, data, eventId)) {
                 return ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "billing"));
             }
+            if (type.startsWith("refund.")) return respuestaReembolso(type, data.path("id").asText(null));
             switch (type) {
                 case "checkout-session.succeeded" -> {
                     String sessionId = data.path("id").asText(null);
@@ -159,6 +165,25 @@ public class OnvoWebhookController {
         }
 
         return ResponseEntity.ok(Map.of("status", "ok", "type", type));
+    }
+
+    /**
+     * refund.*: el cuerpo solo aporta el id; el estado sale del GET /v1/refunds/{id}. Fail-closed: 2xx solo si el
+     * pago quedó resuelto (o ya lo estaba); pending, sin pago o sin respuesta de ONVO → error para que ONVO reintente.
+     */
+    private ResponseEntity<Map<String, String>> respuestaReembolso(String type, String refundId) {
+        if (refundId == null || refundId.isBlank()) {
+            log.error("[onvo-webhook] {} sin id", type);
+            return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
+        }
+        if (reembolsoOnvoService == null) return ResponseEntity.status(503).body(Map.of("error", "unavailable"));
+        return switch (reembolsoOnvoService.resolverPorWebhook(refundId)) {
+            case RESUELTO -> ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "refund"));
+            case YA_RESUELTO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
+            case PENDIENTE -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
+            case NO_ENCONTRADO -> ResponseEntity.status(404).body(Map.of("error", "not found"));
+            case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));
+        };
     }
 
     /** Clave de dedupe (ONVO no manda id de evento): tipo + data.id. */
