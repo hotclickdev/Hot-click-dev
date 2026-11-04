@@ -174,4 +174,21 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
         assertThat(estado()).isEqualTo(Constants.PEDIDO_PENDIENTE);
         verify(onvoPaymentProvider, never()).expirarSesionParaCancelar(anyString());
     }
+
+    @Test
+    @DisplayName("pedido PAGADO con pago CAPTURADO: 409, el pedido sigue PAGADO y el pago CAPTURADO (no queda plata huérfana)")
+    void pagadoCapturadoNoCancela() throws Exception {
+        Pedido pedido = pedidoRepository.findById(pedidoId).orElseThrow();
+        pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+        pedidoRepository.saveAndFlush(pedido);
+        Pago pago = pagoRepository.findTopByPedidoId(pedidoId).orElseThrow();
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        pagoRepository.saveAndFlush(pago);
+
+        assertThat(cancelar()).isEqualTo(409);
+
+        assertThat(estado()).isEqualTo(Constants.PEDIDO_PAGADO);
+        assertThat(pagoRepository.findTopByPedidoId(pedidoId).orElseThrow().getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        verifyNoInteractions(onvoPaymentProvider);
+    }
 }
