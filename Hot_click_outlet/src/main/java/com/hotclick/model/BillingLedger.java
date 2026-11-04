@@ -21,7 +21,6 @@ public class BillingLedger {
     public static final String PROVEEDOR_STRIPE = "STRIPE";
     public static final String PROVEEDOR_ONVO = "ONVO";
     public static final String PROVEEDOR_MANUAL = "MANUAL";
-    public static final String PROVEEDOR_TILOPAY = "TILOPAY";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

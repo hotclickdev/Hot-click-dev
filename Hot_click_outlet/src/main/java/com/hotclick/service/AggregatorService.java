@@ -49,7 +49,7 @@ public class AggregatorService {
     private static final Set<String> METODOS_COBRO_EN_EFECTIVO =
         Set.of(METODO_EFECTIVO, METODO_CONTRA_ENTREGA, METODO_CONTRAENTREGA);
 
-    /** Reserva contable estimada de la pasarela (Tilopay). Solo de config (application.properties), sin default en código. La paga HotClick: no se descuenta al vendedor. */
+    /** Reserva contable estimada de la pasarela (ONVO). Solo de config (application.properties), sin default en código. La paga HotClick: no se descuenta al vendedor. */
     @Value("${hotclick.comision.gateway.pct}")
     private int pctGateway;
 

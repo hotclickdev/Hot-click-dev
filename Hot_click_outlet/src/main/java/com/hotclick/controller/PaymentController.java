@@ -6,7 +6,6 @@ import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.dto.PaymentStatusResponse;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.service.PaymentService;
-import com.hotclick.service.payment.TilopayConfirmacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,9 +22,6 @@ public class PaymentController {
 
     @Autowired
     private com.hotclick.repository.ProductoRepository productoRepository;
-
-    @Autowired
-    private TilopayConfirmacionService tilopayConfirmacionService;
 
     @Autowired
     private com.hotclick.service.payment.PagoEstadoConsultaService pagoEstadoConsultaService;
@@ -147,37 +143,5 @@ public class PaymentController {
             @RequestBody(required = false) Map<String, String> body) {
         String cancelToken = body != null ? body.get("cancelToken") : null;
         return ejecutarCancelacion(() -> paymentService.cancelarAnon(numeroPedido, cancelToken));
-    }
-
-    @PostMapping("/tilopay/confirmar/{numeroPedido}")
-    public ResponseEntity<ResponseDTO> confirmarTilopay(
-            @PathVariable String numeroPedido,
-            @RequestBody(required = false) Map<String, String> queryParams) {
-        try {
-            PaymentStatusResponse response = tilopayConfirmacionService.confirmar(
-                numeroPedido, queryParams != null ? queryParams : Map.of());
-            return ResponseEntity.ok(ResponseDTO.success("Confirmación Tilopay", response));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
-        }
-    }
-
-    @PostMapping("/tilopay/reintentar/{numeroPedido}")
-    public ResponseEntity<ResponseDTO> reintentarTilopay(@PathVariable String numeroPedido) {
-        try {
-            var session = tilopayConfirmacionService.reintentar(numeroPedido);
-            return ResponseEntity.ok(ResponseDTO.success("Reintento Tilopay", Map.of(
-                "orderNumber", session.externalId(),
-                "sdkToken", session.sdkToken() != null ? session.sdkToken() : "",
-                "redirectUrl", session.redirectUrl() != null ? session.redirectUrl() : "",
-                "modoEmbebido", session.modoEmbebido()
-            )));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
-        }
     }
 }

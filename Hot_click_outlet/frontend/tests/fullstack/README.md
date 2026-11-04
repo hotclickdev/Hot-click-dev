@@ -26,9 +26,9 @@ Cuando se arregle, el `test.fail` pasará a "unexpected pass" y hay que quitarlo
 |---|---|
 | `05-compra-qa5` | QA5-002 (bodega default vs tienda ≠ empresa 1), QA5-003 (sin 500 de FK; 200 solo con ONVO de prueba), login sin CSP + `/mis-pedidos` sin rebote, envío normal preseleccionado, Retiro+SINPE en Mis pedidos (solo con ONVO) |
 | `06-roles-lector` | LECTOR en recolección: backend 403 con mensaje; UI no se rompe y muestra el 403 |
-| `07-pos-qr-sinpe` | Turno obligatorio, confirmar-sinpe 401/403/400, historial de caja, Tilopay retirado, QR vencido (necesita `E2E_DATABASE_URL`) |
+| `07-pos-qr-sinpe` | Turno obligatorio, confirmar-sinpe 401/403/400, historial de caja, QR vencido (necesita `E2E_DATABASE_URL`) |
 
 Bugs reales quedan como `test.fail` con ID (E2E-CMP-01 ya arreglado por #324),
-**E2E-POS-01** (QR/SINPE sin turno), **E2E-POS-02** (endpoints Tilopay vivos), **E2E-POS-03** (SINPE confirmable a mano).
+**E2E-POS-01** (QR/SINPE sin turno), **E2E-POS-03** (SINPE confirmable a mano).
 Cuando se arreglen, Playwright marca el test como "passed unexpectedly": borrar el `test.fail`.
 Rate limits por IP: guest-checkout 3/60s (05 usa 2 + 02 usa 1: no agregar más), login 10/60s (tokens cacheados en memoria por worker).

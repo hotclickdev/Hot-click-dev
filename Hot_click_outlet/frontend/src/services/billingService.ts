@@ -9,11 +9,7 @@ export type CambiarPlanResultado = {
   planNombre?: string
   mensaje?: string
   mock?: boolean
-  /** Tilopay (reemplaza ONVO): datos para abrir el SDK embebido. */
-  proveedor?: 'TILOPAY' | 'ONVO'
-  orderNumber?: string
-  montoCrc?: number
-  sdkToken?: string
+  proveedor?: 'ONVO'
 }
 
 /** GET /billing/trial/tarjeta: solo el propietario; el negocio sale del JWT. */
@@ -30,8 +26,6 @@ export type TrialTarjetaInicio = {
   mock?: boolean
 }
 
-export type ConfirmarCobroPlan = { estado: 'ACTIVO' | 'NO_CONFIRMADO' }
-
 export const billingService = {
   getPlanes: () => api.get('/billing/planes'),
   getSuscripcion: () => api.get('/billing/suscripcion'),
@@ -46,6 +40,4 @@ export const billingService = {
   iniciarTrialTarjeta: () => api.post<TrialTarjetaInicio>('/billing/trial/tarjeta'),
   crearPortal: () => api.post('/billing/portal'),
   cancelar: (inmediata = false) => api.post(`/billing/cancelar?inmediata=${inmediata}`),
-  confirmarCobroTilopay: (orderNumber: string) =>
-    api.post<ConfirmarCobroPlan>(`/billing/tilopay/confirmar/${encodeURIComponent(orderNumber)}`),
 }

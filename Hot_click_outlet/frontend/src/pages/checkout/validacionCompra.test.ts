@@ -44,7 +44,7 @@ describe('erroresDireccion', () => {
 describe('erroresPago', () => {
   it('SINPE exige comprobante; tarjeta no', () => {
     expect(erroresPago('SINPE', null, t)).toEqual({ comprobante: 'compra.pago.comprobanteRequerido' })
-    expect(erroresPago('TILOPAY', null, t)).toEqual({})
+    expect(erroresPago('TARJETA', null, t)).toEqual({})
   })
 })
 

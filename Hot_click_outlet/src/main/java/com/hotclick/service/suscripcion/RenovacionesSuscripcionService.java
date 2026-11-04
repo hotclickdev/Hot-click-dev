@@ -24,25 +24,25 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Día de cobro de Tilopay: a cada suscripción de pago con fecha_fin hoy o antes le abre un cobro de
- * RENOVACION (si no tiene uno pendiente) y la pasa a PAST_DUE hasta que pague.
+ * Día de cobro: a cada suscripción de pago con fecha_fin hoy o antes la pasa a PAST_DUE hasta que pague
+ * (ONVO confirma antes que no haya pago vigente). No genera cobros propios: la mensualidad se cobra por ONVO.
  * SCALE1: una lectura de suscripciones (con plan y empresa), una de cobros pendientes para todos los
  * negocios y la escritura en lote; nada se consulta por negocio dentro del recorrido.
  */
 @Service
-public class RenovacionesTilopayService {
+public class RenovacionesSuscripcionService {
 
-    private static final Logger log = LoggerFactory.getLogger(RenovacionesTilopayService.class);
+    private static final Logger log = LoggerFactory.getLogger(RenovacionesSuscripcionService.class);
 
     private final SuscripcionRepository suscripcionRepo;
     private final CobroSuscripcionRepository cobroRepo;
-    private final SuscripcionTilopayService suscripciones;
+    private final CobroSuscripcionService suscripciones;
     private final BillingLedgerWriter ledgerWriter;
     private final OnvoRenovacionReconsulta reconsulta;
     private final SecurityAuditService auditoria;
 
-    public RenovacionesTilopayService(SuscripcionRepository suscripcionRepo, CobroSuscripcionRepository cobroRepo,
-                                      SuscripcionTilopayService suscripciones, BillingLedgerWriter ledgerWriter,
+    public RenovacionesSuscripcionService(SuscripcionRepository suscripcionRepo, CobroSuscripcionRepository cobroRepo,
+                                      CobroSuscripcionService suscripciones, BillingLedgerWriter ledgerWriter,
                                       OnvoRenovacionReconsulta reconsulta, SecurityAuditService auditoria) {
         this.reconsulta = reconsulta;
         this.auditoria = auditoria;
@@ -70,8 +70,8 @@ public class RenovacionesTilopayService {
         for (Suscripcion sub : vencidas) {
             Long empresaId = sub.getEmpresa().getId();
             if (conPendiente.add(empresaId)) {
-                // Cobro de planes por Tilopay prohibido: no se genera cobro de renovación (TODO: ONVO).
-                log.warn("[ALERTA-PAGO] renovación sin cobro: Tilopay deshabilitado para planes empresa={} plan={}",
+                // Sin suscripción ONVO no hay cobro automático de la renovación: queda alerta para operaciones.
+                log.warn("[ALERTA-PAGO] renovación sin cobro automático (sin suscripción ONVO) empresa={} plan={}",
                     empresaId, sub.getPlan() != null ? sub.getPlan().getNombre() : null);
             }
             if ("ACTIVO".equals(sub.getEstado()) && puedePasarAPastDue(sub, hoy)) {
@@ -82,7 +82,7 @@ public class RenovacionesTilopayService {
         suscripciones.guardarRenovaciones(cobros, pastDue);
         for (Suscripcion sub : pastDue) {
             String proveedor = proveedorDeCobro(sub);
-            // Moneda real del cobro: ONVO la toma de la configuración de planes, Tilopay cobra en colones.
+            // Moneda real del cobro: ONVO la toma de la configuración de planes; las heredadas sin ONVO van en colones.
             String moneda = BillingLedger.PROVEEDOR_ONVO.equals(proveedor)
                 ? reconsulta.monedaConfigurada().orElse(null) : "crc";
             if (moneda == null) {
@@ -93,7 +93,7 @@ public class RenovacionesTilopayService {
                 proveedor, "renov-" + sub.getId() + "-" + hoy, null, moneda,
                 "Mensualidad pendiente de pago");
         }
-        if (!cobros.isEmpty()) log.info("[billing-tilopay] {} cobro(s) de renovación generados", cobros.size());
+        if (!cobros.isEmpty()) log.info("[billing-renovacion] {} cobro(s) de renovación generados", cobros.size());
         return cobros.size();
     }
 
@@ -122,10 +122,10 @@ public class RenovacionesTilopayService {
         }
     }
 
-    /** El ledger registra el proveedor que cobra la suscripción: ONVO si tiene id de ONVO, Tilopay si es heredada. */
+    /** El ledger registra el proveedor que cobra la suscripción: ONVO si tiene id de ONVO; si es heredada, MANUAL. */
     static String proveedorDeCobro(Suscripcion sub) {
         String onvoId = sub.getOnvoSubscriptionId();
-        return onvoId != null && !onvoId.isBlank() ? BillingLedger.PROVEEDOR_ONVO : BillingLedger.PROVEEDOR_TILOPAY;
+        return onvoId != null && !onvoId.isBlank() ? BillingLedger.PROVEEDOR_ONVO : BillingLedger.PROVEEDOR_MANUAL;
     }
 
     /**

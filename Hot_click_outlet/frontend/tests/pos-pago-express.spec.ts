@@ -8,21 +8,15 @@ const ITEMS_QR = [
 ]
 
 /**
- * P-01: Tilopay retirado del QR de caja. El backend responde 410 Gone en /tilopay a clientes viejos
- * y el front ya no lo llama: el QR solo cobra por SINPE (ONVO).
+ * P-01: el QR de caja no cobra con tarjeta: solo SINPE (ONVO). `onCobroTarjeta` cuenta cualquier
+ * POST de cobro a /pos/qr/pago/* que no sea SINPE por ONVO.
  */
-async function mockPagoExpress(page: Page, opts?: { metodos?: string[]; onTilopay?: (status: number) => void }) {
+async function mockPagoExpress(page: Page, opts?: { metodos?: string[]; onCobroTarjeta?: () => void }) {
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
-
-    if (path.includes('/pos/qr/pago/tokencarrito01/tilopay')) {
-      opts?.onTilopay?.(410)
-      await route.fulfill({
-        status: 410,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Pago con Tilopay retirado. Pagá por SINPE Móvil o en caja.' }),
-      })
-      return
+    const req = route.request()
+    if (req.method() === 'POST' && path.includes('/pos/qr/pago/') && !path.endsWith('/sinpe-onvo')) {
+      opts?.onCobroTarjeta?.()
     }
 
     if (path.includes('/pos/qr/pago/') && !path.endsWith('/estado')) {
@@ -74,9 +68,9 @@ test.describe('POS pago express', () => {
     expect(page.url()).not.toContain('/carrito')
   })
 
-  test('Tilopay retirado: aunque la caja habilite TARJETA no se ofrece ni se llama a /tilopay', async ({ page }) => {
+  test('aunque la caja habilite TARJETA no se ofrece ni se inicia un cobro con tarjeta', async ({ page }) => {
     let llamadas = 0
-    await mockPagoExpress(page, { metodos: ['TARJETA', 'SINPE'], onTilopay: () => { llamadas += 1 } })
+    await mockPagoExpress(page, { metodos: ['TARJETA', 'SINPE'], onCobroTarjeta: () => { llamadas += 1 } })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
 
@@ -87,19 +81,9 @@ test.describe('POS pago express', () => {
     expect(page.url()).not.toContain('/carrito')
   })
 
-  test('si un cliente viejo pega a /tilopay, el backend responde 410 Gone', async ({ page }) => {
-    const estados: number[] = []
-    await mockPagoExpress(page, { onTilopay: (st) => { estados.push(st) } })
-    await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
-    const status = await page.evaluate(async () =>
-      (await fetch('/api/pos/qr/pago/tokencarrito01/tilopay', { method: 'POST' })).status)
-    expect(status).toBe(410)
-    expect(estados).toEqual([410])
-  })
-
   test('sesión solo con TARJETA: no hay botón de pago con tarjeta', async ({ page }) => {
     let llamadas = 0
-    await mockPagoExpress(page, { metodos: ['TARJETA'], onTilopay: () => { llamadas += 1 } })
+    await mockPagoExpress(page, { metodos: ['TARJETA'], onCobroTarjeta: () => { llamadas += 1 } })
     await page.goto('/pos/pago/tokencarrito01', { waitUntil: 'domcontentloaded' })
     await expect(page.getByText('Demo POS')).toBeVisible()
     await expect(page.getByRole('button', { name: /Pagar/i })).toHaveCount(0)

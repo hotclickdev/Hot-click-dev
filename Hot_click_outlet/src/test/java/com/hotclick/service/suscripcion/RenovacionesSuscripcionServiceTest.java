@@ -6,7 +6,6 @@ import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
 import com.hotclick.repository.*;
 import com.hotclick.service.SecurityAuditService;
-import com.hotclick.service.TilopayService;
 import com.hotclick.service.billing.BillingLedgerWriter;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -19,7 +18,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /** SCALE1: la corrida de renovaciones consulta en lote y guarda en lote, sin consultas por negocio. */
-class RenovacionesTilopayServiceTest {
+class RenovacionesSuscripcionServiceTest {
     private static final OnvoRenovacionReconsulta.Corrida JOB = OnvoRenovacionReconsulta.Corrida.GENERAR_RENOVACIONES;
 
     private static Suscripcion sub(long empresaId, int precio, LocalDate fin) {
@@ -39,23 +38,21 @@ class RenovacionesTilopayServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void renovacionesEnLote_sinCobroTilopay() {
+    void renovacionesEnLote_sinCobroPropio() {
         LocalDate hoy = LocalDate.of(2026, 10, 28);
         SuscripcionRepository subs = mock(SuscripcionRepository.class);
         CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
         EmpresaRepository empresas = mock(EmpresaRepository.class);
         BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
-        TilopayService tilopay = mock(TilopayService.class);
-        SuscripcionTilopayService svc = spy(new SuscripcionTilopayService(cobros, mock(PlanRepository.class), empresas,
-            subs, tilopay, mock(SuscripcionOnvoChangeService.class), ledger, 28, "DIAS"));
+        CobroSuscripcionService svc = spy(new CobroSuscripcionService(cobros, mock(PlanRepository.class), empresas, subs));
         when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(
             sub(1, 12900, hoy), sub(2, 12900, hoy.minusDays(1)), sub(3, 12900, hoy.plusDays(5)), sub(4, 0, hoy)));
         when(cobros.empresasConCobro(eq(CobroSuscripcion.PENDIENTE), eq(CobroSuscripcion.MOTIVO_RENOVACION), anyCollection()))
             .thenReturn(List.of(2L));
 
-        int n = new RenovacionesTilopayService(subs, cobros, svc, ledger, mock(OnvoRenovacionReconsulta.class), mock(SecurityAuditService.class)).generarRenovaciones(hoy);
+        int n = new RenovacionesSuscripcionService(subs, cobros, svc, ledger, mock(OnvoRenovacionReconsulta.class), mock(SecurityAuditService.class)).generarRenovaciones(hoy);
 
-        assertThat(n).isZero(); // [ALERTA-PAGO]: no se genera cobro de renovación por Tilopay
+        assertThat(n).isZero(); // [ALERTA-PAGO]: no se genera cobro de renovación propio
         verify(cobros, times(1)).empresasConCobro(any(), any(), anyCollection());
         verify(cobros, never()).findFirstByEmpresaIdAndEstadoAndMotivoOrderByFechaCreacionDesc(any(), any(), any());
         verify(empresas, never()).findById(any());
@@ -99,7 +96,7 @@ class RenovacionesTilopayServiceTest {
         when(reconsulta.reconsultar(eq(incierta), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.INCIERTA);
         when(reconsulta.reconsultar(eq(sinPago), eq(hoy), eq(JOB))).thenReturn(OnvoRenovacionReconsulta.Estado.NO_PAGADA);
 
-        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta, mock(SecurityAuditService.class)).generarRenovaciones(hoy);
+        new RenovacionesSuscripcionService(subs, cobros, svc, ledger, reconsulta, mock(SecurityAuditService.class)).generarRenovaciones(hoy);
 
         ArgumentCaptor<List<Suscripcion>> pastDue = ArgumentCaptor.forClass(List.class);
         verify(svc).guardarRenovaciones(any(), pastDue.capture());
@@ -110,14 +107,12 @@ class RenovacionesTilopayServiceTest {
     }
 
     @Test
-    void ledgerRegistraElProveedorQueCobra_onvoSiTieneIdDeOnvo_tilopaySiEsHeredada() {
+    void ledgerRegistraElProveedorQueCobra_onvoSiTieneIdDeOnvo_manualSiEsHeredada() {
         LocalDate hoy = LocalDate.of(2026, 10, 28);
         SuscripcionRepository subs = mock(SuscripcionRepository.class);
         CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
         BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
-        SuscripcionTilopayService svc = spy(new SuscripcionTilopayService(cobros, mock(PlanRepository.class),
-            mock(EmpresaRepository.class), subs, mock(TilopayService.class), mock(SuscripcionOnvoChangeService.class),
-            ledger, 28, "DIAS"));
+        CobroSuscripcionService svc = spy(new CobroSuscripcionService(cobros, mock(PlanRepository.class), mock(EmpresaRepository.class), subs));
         OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
         Suscripcion conOnvo = sub(1, 12900, hoy);
         conOnvo.setOnvoSubscriptionId("clsub0001");
@@ -127,12 +122,12 @@ class RenovacionesTilopayServiceTest {
         when(subs.findVigentesConPlanYEmpresa()).thenReturn(List.of(conOnvo, heredada));
         when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
 
-        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta, mock(SecurityAuditService.class)).generarRenovaciones(hoy);
+        new RenovacionesSuscripcionService(subs, cobros, svc, ledger, reconsulta, mock(SecurityAuditService.class)).generarRenovaciones(hoy);
 
-        // moneda real: ONVO usa la configurada (usd), Tilopay cobra en colones; nunca un "crc" por defecto para ONVO
+        // moneda real: ONVO usa la configurada (usd), la heredada va en colones; nunca un "crc" por defecto para ONVO
         verify(ledger).registrar(any(), eq(conOnvo), eq("COBRO_FALLIDO"), eq("ONVO"), any(), any(), eq("usd"), any());
-        verify(ledger).registrar(any(), eq(heredada), eq("COBRO_FALLIDO"), eq("TILOPAY"), any(), any(), eq("crc"), any());
-        verify(ledger, never()).registrar(any(), eq(conOnvo), any(), eq("TILOPAY"), any(), any(), any(), any());
+        verify(ledger).registrar(any(), eq(heredada), eq("COBRO_FALLIDO"), eq("MANUAL"), any(), any(), eq("crc"), any());
+        verify(ledger, never()).registrar(any(), eq(conOnvo), any(), eq("MANUAL"), any(), any(), any(), any());
     }
 
     @Test
@@ -141,9 +136,7 @@ class RenovacionesTilopayServiceTest {
         SuscripcionRepository subs = mock(SuscripcionRepository.class);
         CobroSuscripcionRepository cobros = mock(CobroSuscripcionRepository.class);
         BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
-        SuscripcionTilopayService svc = spy(new SuscripcionTilopayService(cobros, mock(PlanRepository.class),
-            mock(EmpresaRepository.class), subs, mock(TilopayService.class), mock(SuscripcionOnvoChangeService.class),
-            ledger, 28, "DIAS"));
+        CobroSuscripcionService svc = spy(new CobroSuscripcionService(cobros, mock(PlanRepository.class), mock(EmpresaRepository.class), subs));
         OnvoRenovacionReconsulta reconsulta = mock(OnvoRenovacionReconsulta.class);
         Suscripcion conOnvo = sub(1, 12900, hoy);
         conOnvo.setOnvoSubscriptionId("clsub0001");
@@ -153,7 +146,7 @@ class RenovacionesTilopayServiceTest {
         when(cobros.empresasConCobro(any(), any(), anyCollection())).thenReturn(List.of());
 
         SecurityAuditService auditoria = mock(SecurityAuditService.class);
-        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta, auditoria).generarRenovaciones(hoy);
+        new RenovacionesSuscripcionService(subs, cobros, svc, ledger, reconsulta, auditoria).generarRenovaciones(hoy);
 
         verify(ledger, never()).registrar(any(), any(), any(), any(), any(), any(), any(), any());
         // sigue en PAST_DUE: sin moneda no se regala servicio
@@ -187,7 +180,7 @@ class RenovacionesTilopayServiceTest {
         SecurityAuditService auditoria = mock(SecurityAuditService.class);
         doThrow(new RuntimeException("db caída")).when(auditoria).log(any(), any(), any(), any(), any(), any(), any(), any());
 
-        new RenovacionesTilopayService(subs, cobros, svc, ledger, reconsulta, auditoria).generarRenovaciones(hoy);
+        new RenovacionesSuscripcionService(subs, cobros, svc, ledger, reconsulta, auditoria).generarRenovaciones(hoy);
 
         assertThat(a.getEstado()).isEqualTo("PAST_DUE");
         assertThat(b.getEstado()).isEqualTo("PAST_DUE");

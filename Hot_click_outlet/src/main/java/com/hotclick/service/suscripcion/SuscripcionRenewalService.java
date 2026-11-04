@@ -136,7 +136,7 @@ public class SuscripcionRenewalService {
                 limite, org.springframework.data.domain.PageRequest.of(0, max + omitidas.size()))) {
             if (!omitidas.contains(s.getId()) && lote.size() < max) lote.add(s);
         }
-        // PAST_DUE heredados de Tilopay/Stripe (sin onvoSubscriptionId): completan el cupo del mismo lote.
+        // PAST_DUE heredados de pasarelas previas (sin onvoSubscriptionId): completan el cupo del mismo lote.
         if (lote.size() < max) {
             for (com.hotclick.model.Suscripcion s : suscripcionRepo.findPastDueLegadoVencidos(
                     limite, org.springframework.data.domain.PageRequest.of(0, max - lote.size() + omitidas.size()))) {

@@ -12,13 +12,13 @@ class PlanNuevoPendienteAvisoTest {
 
     @Test
     void planElegidoSinPagarSeAvisa() {
-        assertThat(SuscripcionTilopayService.avisarPlanPendiente(AHORA.minusDays(1), AHORA, "PYME", "EMPRENDEDOR")).isTrue();
+        assertThat(CobroSuscripcionService.avisarPlanPendiente(AHORA.minusDays(1), AHORA, "PYME", "EMPRENDEDOR")).isTrue();
     }
 
     @Test
     void yaEnEsePlanOViejoNoSeAvisa() {
-        assertThat(SuscripcionTilopayService.avisarPlanPendiente(AHORA.minusDays(1), AHORA, "PYME", "pyme")).isFalse();
-        assertThat(SuscripcionTilopayService.avisarPlanPendiente(AHORA.minusDays(8), AHORA, "PYME", "EMPRENDEDOR")).isFalse();
-        assertThat(SuscripcionTilopayService.avisarPlanPendiente(AHORA, AHORA, null, "EMPRENDEDOR")).isFalse();
+        assertThat(CobroSuscripcionService.avisarPlanPendiente(AHORA.minusDays(1), AHORA, "PYME", "pyme")).isFalse();
+        assertThat(CobroSuscripcionService.avisarPlanPendiente(AHORA.minusDays(8), AHORA, "PYME", "EMPRENDEDOR")).isFalse();
+        assertThat(CobroSuscripcionService.avisarPlanPendiente(AHORA, AHORA, null, "EMPRENDEDOR")).isFalse();
     }
 }

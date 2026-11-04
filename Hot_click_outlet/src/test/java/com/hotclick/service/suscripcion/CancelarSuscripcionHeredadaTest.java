@@ -15,11 +15,11 @@ import static org.mockito.Mockito.*;
 
 /**
  * Bajar a Emprendedor (CRC 0) ya no pasa por /cambiar-plan (precio 0 da 409 PLAN_SIN_PRECIO):
- * se hace con POST /api/billing/cancelar. Una suscripción cobrada por Tilopay no tiene id de Stripe ni ONVO.
+ * se hace con POST /api/billing/cancelar. Una suscripción heredada (pasarela previa) no tiene id de Stripe ni ONVO.
  * Nota: /cancelar solo admite el rol EMPRENDEDOR (@PreAuthorize), no ADMIN.
  */
-@DisplayName("Cancelar suscripción Tilopay = degradar a Emprendedor")
-class CancelarSuscripcionTilopayTest {
+@DisplayName("Cancelar suscripción heredada = degradar a Emprendedor")
+class CancelarSuscripcionHeredadaTest {
 
     private SuscripcionBillingService servicio(SuscripcionRepository repo, StripeService stripe, SuscripcionPlanSupport plan) {
         SuscripcionBillingService s = new SuscripcionBillingService();
@@ -30,10 +30,10 @@ class CancelarSuscripcionTilopayTest {
         return s;
     }
 
-    private static Suscripcion subTilopay(Empresa e) {
+    private static Suscripcion subHeredada(Empresa e) {
         Suscripcion sub = new Suscripcion();
         sub.setEmpresa(e);
-        sub.setEstado("ACTIVO"); // pagada por Tilopay: sin stripe/onvo ids
+        sub.setEstado("ACTIVO"); // heredada: sin stripe/onvo ids
         return sub;
     }
 
@@ -43,7 +43,7 @@ class CancelarSuscripcionTilopayTest {
         var stripe = mock(StripeService.class);
         var plan = mock(SuscripcionPlanSupport.class);
         Empresa e = new Empresa();
-        Suscripcion sub = subTilopay(e);
+        Suscripcion sub = subHeredada(e);
         when(repo.findActivaByEmpresaId(5L)).thenReturn(Optional.of(sub));
 
         servicio(repo, stripe, plan).cancelar(5L, true);
@@ -59,7 +59,7 @@ class CancelarSuscripcionTilopayTest {
         var repo = mock(SuscripcionRepository.class);
         var stripe = mock(StripeService.class);
         var plan = mock(SuscripcionPlanSupport.class);
-        Suscripcion sub = subTilopay(new Empresa());
+        Suscripcion sub = subHeredada(new Empresa());
         when(repo.findActivaByEmpresaId(5L)).thenReturn(Optional.of(sub));
 
         servicio(repo, stripe, plan).cancelar(5L, false);

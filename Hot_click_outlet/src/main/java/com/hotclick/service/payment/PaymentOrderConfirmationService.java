@@ -117,7 +117,7 @@ public class PaymentOrderConfirmationService {
         java.util.Iterator<Pedido> paquetes = porConfirmar.iterator();
         while (paquetes.hasNext()) {
             Pedido pedido = paquetes.next();
-            // Idempotencia atómica: retorno de Tilopay, webhook, cleanup o admin pueden llegar a la vez
+            // Idempotencia atómica: retorno de ONVO, webhook, cleanup o admin pueden llegar a la vez
             // con una copia vieja del pedido; solo quien gana el UPDATE condicional aplica los efectos.
             if (pedidoRepository.reclamarParaConfirmar(pedido.getId(), NO_RECLAMABLES) == 0) {
                 log.info("confirmarPedido ignorado — pedido {} ya fue confirmado por otro proceso",

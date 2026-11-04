@@ -19,15 +19,6 @@ export function mensajeErrorPlan(err: unknown, fallback: string): string {
   return typeof error === 'string' && error ? error : fallback
 }
 
-/** Cobro Tilopay (legado; ya no lo devuelve /cambiar-plan desde Auditor 5 S-01). */
-export type PagoPlanTilopay = {
-  proveedor?: 'TILOPAY'
-  orderNumber: string
-  montoCrc: number
-  sdkToken: string
-  planNombre?: string
-}
-
 /** Auditor 5 S-01: cobro de mensualidad por ONVO (suscripción incompleta creada en el servidor). */
 export type PagoPlanOnvo = {
   proveedor: 'ONVO'
@@ -37,12 +28,12 @@ export type PagoPlanOnvo = {
   planNombre?: string
 }
 
-export type PagoPlanPendiente = PagoPlanTilopay | PagoPlanOnvo
+export type PagoPlanPendiente = PagoPlanOnvo
 
 /** Traduce la respuesta de /cambiar-plan a un cobro pendiente, o null si no requiere pago o faltan datos. */
 export function pagoPendienteDe(result: CambiarPlanResultado): PagoPlanPendiente | null {
   if (result.status !== 'requiere_pago') return null
-  if (result.subscriptionId && result.proveedor !== 'TILOPAY') {
+  if (result.subscriptionId) {
     return {
       proveedor: 'ONVO',
       subscriptionId: result.subscriptionId,
@@ -51,19 +42,10 @@ export function pagoPendienteDe(result: CambiarPlanResultado): PagoPlanPendiente
       planNombre: result.planNombre,
     }
   }
-  if (result.orderNumber && result.sdkToken && result.montoCrc) {
-    return {
-      proveedor: 'TILOPAY',
-      orderNumber: result.orderNumber,
-      montoCrc: result.montoCrc,
-      sdkToken: result.sdkToken,
-      planNombre: result.planNombre,
-    }
-  }
   return null
 }
 
-/** Dónde volver tras confirmar el cobro en /billing/tilopay/respuesta. */
+/** Dónde volver tras confirmar el cobro del plan. */
 export const CLAVE_RUTA_EXITO_PLAN = 'hc_plan_ruta_exito'
 
 type Options = {
@@ -83,7 +65,7 @@ export function rutaCambioPlan(nombrePlanDestino?: string | null): 'cancelar' | 
 }
 
 /**
- * Orquesta POST /billing/cambiar-plan y el cobro Tilopay si hace falta; la baja a Emprendedor va por /billing/cancelar.
+ * Orquesta POST /billing/cambiar-plan y el cobro ONVO si hace falta; la baja a Emprendedor va por /billing/cancelar.
  */
 export function useCambiarPlan({ rutaExito }: Options) {
   const navigate = useNavigate()

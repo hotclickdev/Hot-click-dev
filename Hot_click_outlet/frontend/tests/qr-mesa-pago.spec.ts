@@ -183,7 +183,7 @@ test.describe('QR de pago', () => {
     await expect(comprobante.getByRole('button', { name: 'Imprimir o guardar en PDF' })).toBeVisible()
   })
 
-  test('B16: aunque la caja habilite TARJETA, el QR solo ofrece SINPE (Tilopay retirado); número de cobro y caja', async ({ page }) => {
+  test('B16: aunque la caja habilite TARJETA, el QR solo ofrece SINPE; número de cobro y caja', async ({ page }) => {
     await preparar(page, { metodo: 'TARJETA', metodos: ['TARJETA', 'SINPE'] })
     await page.goto('/pos/pago/tok1', { waitUntil: 'domcontentloaded' })
 

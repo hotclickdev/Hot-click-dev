@@ -22,16 +22,16 @@ function clavesLegales(locale: string): string[] {
 }
 
 describe('legales: ONVO único procesador', () => {
-  it.each(PAGINAS)('%s no menciona Tilopay ni Stripe y nombra a ONVO', (rel) => {
+  it.each(PAGINAS)('%s no menciona Stripe y nombra a ONVO', (rel) => {
     const src = leer(rel)
-    expect(src).not.toMatch(/tilopay|stripe/i)
+    expect(src).not.toMatch(/stripe/i)
     expect(src).toMatch(/ONVO/)
   })
 
-  it.each(['es', 'en'])('claves legales i18n (%s) sin Tilopay ni Stripe', (locale) => {
+  it.each(['es', 'en'])('claves legales i18n (%s) sin Stripe', (locale) => {
     const textos = clavesLegales(locale)
     expect(textos.length).toBeGreaterThan(0)
-    for (const t of textos) expect(t).not.toMatch(/tilopay|stripe/i)
+    for (const t of textos) expect(t).not.toMatch(/stripe/i)
   })
 })
 

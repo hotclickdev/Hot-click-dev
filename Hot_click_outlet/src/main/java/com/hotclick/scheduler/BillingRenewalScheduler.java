@@ -22,12 +22,12 @@ public class BillingRenewalScheduler {
 
     private final SuscripcionService suscripcionService;
 
-    private final com.hotclick.service.suscripcion.RenovacionesTilopayService tilopayBilling;
+    private final com.hotclick.service.suscripcion.RenovacionesSuscripcionService renovaciones;
 
     public BillingRenewalScheduler(SuscripcionService suscripcionService,
-                                   com.hotclick.service.suscripcion.RenovacionesTilopayService tilopayBilling) {
+                                   com.hotclick.service.suscripcion.RenovacionesSuscripcionService renovaciones) {
         this.suscripcionService = suscripcionService;
-        this.tilopayBilling = tilopayBilling;
+        this.renovaciones = renovaciones;
     }
 
     @Scheduled(cron = "0 0 3 * * *")
@@ -35,8 +35,8 @@ public class BillingRenewalScheduler {
     public void procesarRenovaciones() {
         long inicio = System.currentTimeMillis();
 
-        // Mensualidades Tilopay: abre cobro y marca PAST_DUE a las vencidas (gracia la aplica expirarPastDue).
-        tilopayBilling.generarRenovaciones(java.time.LocalDate.now(com.hotclick.utils.Constants.ZONA_CR));
+        // Mensualidades vencidas: pasan a PAST_DUE (gracia la aplica expirarPastDue).
+        renovaciones.generarRenovaciones(java.time.LocalDate.now(com.hotclick.utils.Constants.ZONA_CR));
         int trialsExpirados = suscripcionService.expirarTrialsVencidos();
         int pastDueExpirados = suscripcionService.expirarPastDueVencidos();
         int canceladas = suscripcionService.cerrarCancelacionesVencidas();

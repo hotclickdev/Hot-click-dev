@@ -85,7 +85,7 @@ describe('efectivo con retiro (paga al retirar)', () => {
   it.each([
     ['EFECTIVO', 'ENVIO_A_DOMICILIO', 'PENDIENTE_COMPROBANTE'],
     ['SINPE', 'RETIRO_EN_TIENDA', 'PENDIENTE_COMPROBANTE'],
-    ['TILOPAY', 'RETIRO_EN_TIENDA', 'PENDIENTE'],
+    ['ONVO', 'RETIRO_EN_TIENDA', 'PENDIENTE'],
     ['EFECTIVO', 'RETIRO_EN_TIENDA', 'PENDIENTE'],
   ])('%s + %s en %s sigue en "Esperando pago"', (metodoPago, metodoEnvio, estado) => {
     expect(pagaAlRetirar(estado, { metodoPago, metodoEnvio })).toBe(false)
@@ -114,7 +114,7 @@ describe('NP-18 controles de estado del vendedor', () => {
   it('confirmar pago solo en pedidos de tienda propia sin pasarela', async () => {
     const { confirmaPagoManual } = await import('./estadoPedidoVendedor')
     expect(confirmaPagoManual('Esperando pago', { metodoPago: 'SINPE_MOVIL', metodoEnvio: 'DOMICILIO' })).toBe(true)
-    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'TILOPAY', metodoEnvio: 'ENVIO_NORMAL_GAM' })).toBe(false)
+    expect(confirmaPagoManual('Esperando pago', { metodoPago: 'ONVO', metodoEnvio: 'ENVIO_NORMAL_GAM' })).toBe(false)
     expect(confirmaPagoManual('Pendiente', { metodoPago: 'SINPE_MOVIL', metodoEnvio: 'RETIRO' })).toBe(false)
   })
 })

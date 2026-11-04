@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
 import { QA, auth, bodegaYProducto, conSql, login, miembro, sql, type Sesion } from './api'
 
-/** POS (QA6): QR, SINPE, Tilopay retirado, turno y historial de caja. Negocio QA NEGOCIO_PLUS + EDITOR. */
+/** POS (QA6): QR, SINPE, turno y historial de caja. Negocio QA NEGOCIO_PLUS + EDITOR. */
 test.describe.serial('POS — QR / SINPE / caja', () => {
   let dueno: Sesion
   let editor: Sesion
@@ -105,18 +105,6 @@ test.describe.serial('POS — QR / SINPE / caja', () => {
     const nums = ventas.map((v: { numeroPedido: string; id: number }) => [v.numeroPedido, v.id]).flat()
     expect(nums).toContain(numEfectivo)
     expect(nums).toContain(pedidoQr)
-  })
-
-  test('Tilopay retirado: /tilopay y /tilopay/confirmar ya no son públicos (401) y con sesión dan 404 o 410', async ({ request }) => {
-    expect((await request.post('/api/pos/qr/pago/tokenInexistenteE2E00000000000000000/tilopay')).status()).toBe(401)
-    const t = (await (await request.post('/api/pos/caja/abrir', { headers: auth(dueno), data: { montoInicial: 0 } })).json()).data
-    const token = (await (await qr(request, dueno)).json()).data.token
-    await request.put(`/api/pos/caja/${t?.id}/cerrar`, { headers: auth(dueno), data: { montoDeclarado: 0, notas: 'e2e' } })
-    for (const u of [`/tilopay`, `/tilopay?metodo=SINPE`, `/tilopay/confirmar`]) {
-      expect((await request.post(`/api/pos/qr/pago/${token}${u}`)).status(), `${u} sin sesión`).toBe(401)
-      const r = await request.post(`/api/pos/qr/pago/${token}${u}`, { headers: auth(dueno) })
-      expect([404, 410], `${u} → ${r.status()}`).toContain(r.status())
-    }
   })
 
   test('QR vencido: 404/vencido y nunca confirma la venta', async ({ request }) => {

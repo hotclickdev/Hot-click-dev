@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Planes 22-oct (V185): 9 / 7,5 / 6 % y sin mínimo por venta")
-class PlanesTilopayTest extends BaseIntegrationTest {
+class PlanesMontosTest extends BaseIntegrationTest {
 
     @Autowired private PlanRepository planRepository;
     @Autowired private EmpresaRepository empresaRepository;

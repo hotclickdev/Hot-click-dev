@@ -56,14 +56,14 @@ public class PosQrVentaService {
     }
 
     /**
-     * ALTO 3: el QR del POS ya no cobra ni confirma por Tilopay. Tarjeta queda no disponible (fail-closed)
+     * ALTO 3: el QR del POS no cobra con tarjeta. Tarjeta queda no disponible (fail-closed)
      * hasta que exista el cobro con tarjeta por ONVO; el único cobro en línea del QR es SINPE Móvil por ONVO,
      * confirmado solo por el webhook {@code payment-intent.succeeded}.
      */
     public static final String MSG_TARJETA_NO_DISPONIBLE =
         "El pago con tarjeta por QR no está disponible. Pagá por SINPE Móvil o en caja.";
 
-    public static final String MSG_SINPE_SOLO_ONVO = "SINPE Móvil se cobra por ONVO, no por Tilopay.";
+    public static final String MSG_SINPE_SOLO_ONVO = "SINPE Móvil se cobra por ONVO.";
 
 
 

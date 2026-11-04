@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  *
  * <ul>
  *   <li>Solo para métodos manuales (efectivo / contra entrega, SINPE, transferencia). Un pedido de
- *       tarjeta (TILOPAY, STRIPE, ONVO) o con un {@link Pago} de pasarela nunca se marca a mano.</li>
+ *       tarjeta (STRIPE, ONVO) o con un {@link Pago} de pasarela nunca se marca a mano.</li>
  *   <li>Exige una referencia del pago (máx. {@value #LARGO_MAXIMO_REFERENCIA} caracteres) o, en SINPE,
  *       un comprobante subido por el cliente que queda aprobado por quien confirma.</li>
  *   <li>Sin {@link Pago} (venta manual o de tienda) se registra uno {@value Constants#PROVEEDOR_MANUAL}

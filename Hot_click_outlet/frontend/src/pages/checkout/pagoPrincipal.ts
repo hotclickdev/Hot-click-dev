@@ -1,5 +1,5 @@
 /**
- * Pago en el checkout. Tilopay está en retiro: ningún botón va a esa pasarela.
+ * Pago en el checkout. ONVO es la única pasarela.
  * - Tarjeta: checkout hospedado de ONVO solo si el backend publica `tarjetaOnvo: true`
  *   (PAYMENTS_ONVO_ENABLED y ONVO configurado). Sin config o con error: «Próximamente».
  * - SINPE Móvil: por ONVO cuando `tarjetaOnvo: true`; si no, flujo manual con comprobante (/sinpe/checkout), solo si el backend publica
@@ -19,7 +19,7 @@ export function metodoProximamente(metodoUi: string, sinpeManualHabilitado: bool
 
 /** Valor que viaja como `provider` al API; null = método no disponible (no se inicia ningún pago). */
 export function proveedorDe(metodoUi: string, sinpeManualHabilitado = false, tarjetaOnvoHabilitada = false): string | null {
-  // Pasarela única: ONVO (su checkout hospedado ofrece tarjeta y SINPE Móvil). Nunca Tilopay.
+  // Pasarela única: ONVO (su checkout hospedado ofrece tarjeta y SINPE Móvil).
   if ((metodoUi === PAGO_TARJETA || metodoUi === PAGO_SINPE) && tarjetaOnvoHabilitada) return 'ONVO'
   if (metodoUi === PAGO_SINPE && sinpeManualHabilitado) return 'SINPE'
   return null

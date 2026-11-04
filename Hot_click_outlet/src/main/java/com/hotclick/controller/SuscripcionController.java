@@ -29,19 +29,19 @@ public class SuscripcionController {
     private final SuscripcionService suscripcionService;
     private final PlanRepository planRepo;
     private final AuthSupport authSupport;
-    private final com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService;
+    private final com.hotclick.service.suscripcion.CobroSuscripcionService cobroSuscripcionService;
     private final com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes;
     private final com.hotclick.security.PropietarioGuard propietarioGuard;
 
     public SuscripcionController(SuscripcionService suscripcionService,
                                   PlanRepository planRepo,
                                   AuthSupport authSupport,
-                                  com.hotclick.service.suscripcion.SuscripcionTilopayService suscripcionTilopayService,
+                                  com.hotclick.service.suscripcion.CobroSuscripcionService cobroSuscripcionService,
                                   com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes,
                                   com.hotclick.security.PropietarioGuard propietarioGuard) {
         this.preciosPlanes = preciosPlanes;
         this.propietarioGuard = propietarioGuard;
-        this.suscripcionTilopayService = suscripcionTilopayService;
+        this.cobroSuscripcionService = cobroSuscripcionService;
         this.suscripcionService = suscripcionService;
         this.planRepo           = planRepo;
         this.authSupport        = authSupport;
@@ -115,7 +115,7 @@ public class SuscripcionController {
 
     /**
      * Checkout de plan. Auditor 5 S-01: el cobro de mensualidades va por ONVO (mismo flujo que
-     * /cambiar-plan); Tilopay quedó sin cobro recurrente, así que ya no se ofrece por aquí.
+     * /cambiar-plan).
      */
     @PostMapping("/checkout/{planId}")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
@@ -226,40 +226,6 @@ public class SuscripcionController {
         }
     }
 
-    /** Confirma con Tilopay el cobro de mensualidad (alta o renovación) del propio negocio. */
-    @PostMapping("/tilopay/confirmar/{orderNumber}")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
-    public ResponseEntity<Map<String, Object>> confirmarTilopay(@PathVariable String orderNumber) {
-        Long empresaId = TenantContext.get();
-        if (empresaId == null) return ResponseEntity.status(401).build();
-        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
-        try {
-            return ResponseEntity.ok(suscripcionTilopayService.confirmar(empresaId, orderNumber));
-        } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
-            return cobroNoDisponible();
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(404).body(Map.of("error", "Cobro no encontrado"));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(409).body(Map.of("error", MSG_COBRO));
-        }
-    }
-
-    /** Mensualidad pendiente (renovación) para pagar desde el panel. */
-    @GetMapping("/tilopay/pendiente")
-    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
-    public ResponseEntity<Map<String, Object>> cobroPendiente() {
-        Long empresaId = TenantContext.get();
-        if (empresaId == null) return ResponseEntity.status(401).build();
-        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
-        try {
-            return suscripcionTilopayService.pendiente(empresaId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.noContent().build());
-        } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
-            return cobroNoDisponible();
-        }
-    }
-
     /** Plan nuevo elegido sin pagar: el panel muestra «Completá el pago» (204 si no hay). */
     @GetMapping("/plan-pendiente")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
@@ -267,7 +233,7 @@ public class SuscripcionController {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
         if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA2-área2
-        return suscripcionTilopayService.planNuevoPendiente(empresaId)
+        return cobroSuscripcionService.planNuevoPendiente(empresaId)
             .or(() -> planPendienteOnvo(empresaId))
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
