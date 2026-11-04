@@ -138,6 +138,7 @@ class CleanupExpiracionSinAutoBloqueoTest extends BaseIntegrationTest {
     private void crearPagoVencido(Empresa empresa, Bodega bodega, String sesion) {
         Pedido p = new Pedido();
         p.setNumeroPedido("ORD-QA5L-" + System.nanoTime() % 1_000_000);
+        p.setStockReservadoEn(java.time.LocalDateTime.now()); // ALTO-01: pedido de checkout que reservó
         p.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR).minusMinutes(40));
         p.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         p.setUsuarioFinal(testUser);
