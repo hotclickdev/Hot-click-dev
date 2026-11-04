@@ -65,6 +65,18 @@ class OnvoWebhookVerificadoTest {
     }
 
     @Test
+    @DisplayName("X-Webhook-Secret (docs.onvopay.com, Webhooks > Security, sin HMAC): prefijo, extensión, mayúsculas o vacío → 401; null configurado → 401")
+    void secretComparacionExactaFailClosed() {
+        assertThat(estado(SESION_OK, "webhook_secret_prueb")).isEqualTo(401);
+        assertThat(estado(SESION_OK, "webhook_secret_pruebaX")).isEqualTo(401);
+        assertThat(estado(SESION_OK, "WEBHOOK_SECRET_PRUEBA")).isEqualTo(401);
+        assertThat(estado(SESION_OK, "")).isEqualTo(401);
+        when(onvoService.getWebhookSecret()).thenReturn(null);
+        assertThat(estado(SESION_OK, "webhook_secret_prueba")).isEqualTo(401);
+        verifyNoInteractions(onvoPaymentProvider);
+    }
+
+    @Test
     @DisplayName("Muchos intentos con secret inválido → 429; un secret válido igual pasa")
     void limiteSoloParaSecretInvalido() {
         for (int i = 0; i < OnvoWebhookController.MAX_SECRET_INVALIDO_POR_MINUTO; i++) {
