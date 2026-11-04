@@ -190,11 +190,32 @@ public class OnvoPaymentProvider implements PaymentProvider {
         // Limpieza TTL y rechazo (revisado en BAJO QA7-B1 a): llegan acá después de que ONVO confirmó por GET que
         // no hay cobro (NO_PAGADO / intent rechazado), y en mock las sesiones no tienen forma de ONVO; por eso
         // aquí una respuesta vacía sigue contando como sin cobro. La cancelación usa expirarSesionParaCancelar.
-        Map<?, ?> sesion = onvoService.expirarCheckoutSession(checkoutSessionId);
+        // La sesión que ONVO ya expiró solo no se vuelve a expirar: /expire responde 400 y el pago quedaba
+        // PENDIENTE para siempre con la reserva tomada.
+        if (yaExpiradaSinPagar(checkoutSessionId)) {
+            return true;
+        }
+        Map<?, ?> sesion;
+        try {
+            sesion = onvoService.expirarCheckoutSession(checkoutSessionId);
+        } catch (org.springframework.web.client.HttpClientErrorException.BadRequest e) {
+            // Fail-closed: solo se cancela si al releerla ONVO la muestra expirada y sin pagar.
+            boolean ok = yaExpiradaSinPagar(checkoutSessionId);
+            if (!ok) log.warn("[onvo] Expire respondió 400 y la sesión no está expirada y sin pagar: no se cancela");
+            return ok;
+        }
         if (sesion.isEmpty()) {
             return true;
         }
         return sesionExpiradaSinCobro(sesion, checkoutSessionId);
+    }
+
+    /** GET de la sesión: true solo con status expired y paymentStatus unpaid explícitos. Los errores se relanzan. */
+    private boolean yaExpiradaSinPagar(String checkoutSessionId) {
+        Map<?, ?> sesion = onvoService.obtenerCheckoutSession(checkoutSessionId);
+        return sesion != null
+            && "expired".equalsIgnoreCase(String.valueOf(sesion.get("status")))
+            && "unpaid".equalsIgnoreCase(String.valueOf(sesion.get("paymentStatus")));
     }
 
     /**
