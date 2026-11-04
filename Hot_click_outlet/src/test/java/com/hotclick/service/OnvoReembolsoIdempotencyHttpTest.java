@@ -12,8 +12,12 @@ import org.springframework.web.client.RestTemplate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 
-@DisplayName("ONVO POST /v1/refunds manda el header Idempotency-Key (HTTP mockeado)")
+@DisplayName("ONVO POST /v1/refunds: sin header Idempotency-Key no documentado; 4xx loguea motivo enmascarado (HTTP mockeado)")
 class OnvoReembolsoIdempotencyHttpTest {
 
     private static final String CLAVE_IDEM = String.join("-", "hc", "reembolso", "pago", "70", "123");
@@ -32,14 +36,28 @@ class OnvoReembolsoIdempotencyHttpTest {
     }
 
     @Test
-    void headerIdempotencyKey() {
+    void sinHeaderIdempotencyKey() {
         server.expect(requestTo(API + "/refunds"))
             .andExpect(method(HttpMethod.POST))
-            .andExpect(header("Idempotency-Key", CLAVE_IDEM))
+            .andExpect(headerDoesNotExist("Idempotency-Key"))
             .andExpect(jsonPath("$.paymentIntentId").value("pi_test_1"))
             .andRespond(withSuccess("{\"id\":\"rf_1\",\"status\":\"pending\"}", MediaType.APPLICATION_JSON));
         assertThat(onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-7", CLAVE_IDEM).status())
             .isEqualTo("pending");
         server.verify();
+    }
+
+    @Test
+    void cuatroCientosRelanzaYMotivoEnmascarado() {
+        String intent = "pi_" + "abcd" + "1234567890" + "wxyz";
+        server.expect(requestTo(API + "/refunds"))
+            .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                .body("{\"statusCode\":400,\"message\":[\"Payment intent " + intent + " cannot be refunded\",\"tel 8" + "8887777\"],\"error\":\"Bad Request\"}"));
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+            () -> onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-7", CLAVE_IDEM));
+        String motivo = OnvoService.motivoOnvo(e.getResponseBodyAsString());
+        assertThat(motivo).contains("cannot be refunded").doesNotContain(intent).doesNotContain("88887777").contains("***");
+        assertThat(OnvoService.motivoOnvo(null)).isEqualTo("(sin detalle)");
+        assertThat(OnvoService.motivoOnvo("<html>boom</html>")).isEqualTo("(sin detalle)");
     }
 }

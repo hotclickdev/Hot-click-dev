@@ -540,15 +540,24 @@ public class OnvoService {
      * no es idempotente y un reintento podría devolver dos veces. Los errores se relanzan tal cual:
      * un 4xx es un rechazo de ONVO; cualquier otro error deja el resultado en duda.
      */
+    @SuppressWarnings("java:S1172") // idempotencyKey: se conserva la firma; ONVO no documenta el header y ya no se manda
     public OnvoReembolso crearReembolso(String intentId, String descripcion, String idempotencyKey) {
         if (!consultable(intentId)) throw new IllegalStateException("ONVO no disponible para reembolsar");
         Map<String, Object> body = new HashMap<>();
         body.put("paymentIntentId", intentId);
         if (descripcion != null) body.put("description", descripcion);
-        HttpHeaders extra = new HttpHeaders();
-        // ONVO no documenta Idempotency-Key; se manda igual para que un reenvío del mismo intento no devuelva dos veces.
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) extra.set("Idempotency-Key", idempotencyKey);
-        OnvoReembolso r = parseReembolso(postOnvo("/refunds", body, extra));
+        // QA #528 (pedido 34): ONVO respondió 400 al POST con el header Idempotency-Key, que su API no documenta
+        // (docs.onvopay.com/en/api/crear-un-reembolso: solo paymentIntentId, amount, description, reason). Antes de
+        // agregarlo el mismo POST funcionaba. Ya no se manda: la clave queda solo como registro en el pago y nada
+        // depende de ella (un REEMBOLSO_PENDIENTE sin id de refund nunca se vuelve a pedir; se resuelve a mano).
+        OnvoReembolso r;
+        try {
+            r = parseReembolso(postOnvo("/refunds", body));
+        } catch (HttpClientErrorException e) {
+            log.warn("[onvo] ONVO rechazó el reembolso del intent {}: {} {}", enmascarar(intentId),
+                e.getStatusCode(), motivoOnvo(e.getResponseBodyAsString()));
+            throw e;
+        }
         log.info("[onvo] Reembolso {} del intent {}: {}", enmascarar(r.id()), enmascarar(intentId), r.status());
         return r;
     }
@@ -667,6 +676,72 @@ public class OnvoService {
      * Ids de ONVO (sesión, payment intent) para logs: solo los primeros 4 y últimos 4 caracteres. Alcanza para
      * correlacionar con el dashboard de ONVO sin dejar el id completo en CloudWatch/Sentry.
      */
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON_MOTIVO = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    /**
+     * Motivo de un 4xx de ONVO apto para logs y para mostrar al admin: solo los campos code/type/message
+     * del JSON, con ids que llevan dígitos enmascarados, números de 6+ dígitos ocultos y tope de largo.
+     * Nunca el cuerpo crudo.
+     */
+    public static String motivoOnvo(String cuerpo) {
+        if (cuerpo == null || cuerpo.isBlank()) return SIN_DETALLE;
+        com.fasterxml.jackson.databind.JsonNode n;
+        try {
+            n = JSON_MOTIVO.readTree(cuerpo);
+        } catch (Exception e) {
+            return SIN_DETALLE;
+        }
+        if (n == null || !n.isObject()) return SIN_DETALLE;
+        StringBuilder sb = new StringBuilder();
+        for (String campo : List.of("code", "type", "message")) {
+            com.fasterxml.jackson.databind.JsonNode v = n.get(campo);
+            if (v == null || v.isNull()) continue;
+            StringBuilder val = new StringBuilder();
+            if (v.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode x : v) {
+                    if (!val.isEmpty()) val.append(", ");
+                    val.append(x.asText());
+                }
+            } else {
+                val.append(v.asText());
+            }
+            if (!sb.isEmpty()) sb.append("; ");
+            sb.append(campo).append('=').append(val);
+        }
+        if (sb.isEmpty()) return SIN_DETALLE;
+        String r = sanearTokens(sb.toString());
+        return r.length() > 300 ? r.substring(0, 300) + "…" : r;
+    }
+
+    private static final String SIN_DETALLE = "(sin detalle)";
+
+    /** Enmascara tokens con dígitos (ids) y oculta corridas de 6+ dígitos (teléfonos, cédulas, cuentas). */
+    private static String sanearTokens(String texto) {
+        StringBuilder out = new StringBuilder();
+        int i = 0;
+        while (i < texto.length()) {
+            int j = i;
+            while (j < texto.length() && esTokenChar(texto.charAt(j))) j++;
+            if (j == i) {
+                out.append(texto.charAt(i++));
+                continue;
+            }
+            String t = texto.substring(i, j);
+            int digitos = 0;
+            for (char c : t.toCharArray()) if (Character.isDigit(c)) digitos++;
+            if (digitos >= 6 && digitos == t.length()) out.append("***");
+            else if (digitos > 0 && t.length() >= 12) out.append(enmascarar(t));
+            else if (digitos >= 6) out.append("***");
+            else out.append(t);
+            i = j;
+        }
+        return out.toString();
+    }
+
+    private static boolean esTokenChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_' || c == '-';
+    }
+
     public static String enmascarar(String id) {
         if (id == null) return "null";
         if (id.length() <= 8) return "****";

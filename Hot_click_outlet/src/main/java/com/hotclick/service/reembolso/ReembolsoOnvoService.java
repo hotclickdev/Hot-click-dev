@@ -54,6 +54,9 @@ public class ReembolsoOnvoService {
     public static final String MSG_SIN_INTENT = "No se pudo identificar el cobro en ONVO. No se hizo ningún reembolso.";
     public static final String MSG_RECHAZO =
         "ONVO rechazó el reembolso. No se devolvió nada y el pedido sigue como estaba.";
+    public static final String MSG_RECHAZO_DEFINITIVO =
+        "ONVO rechazó el reembolso (%s). No se devolvió nada y el pedido sigue como estaba. "
+            + "Revisá el pago en el panel de ONVO antes de volver a intentarlo.";
     public static final String MSG_EN_DUDA =
         "ONVO no confirmó el reembolso. El pedido quedó en REEMBOLSO_PENDIENTE (no se marcó como devuelto). "
         + "Revisá el panel de ONVO antes de reintentar.";
@@ -132,9 +135,14 @@ public class ReembolsoOnvoService {
                     OnvoService.enmascarar(p.refundIdExistente()), e.getStatusCode());
                 throw new ReembolsoException(502, MSG_EN_DUDA);
             }
-            log.warn("[reembolso] ONVO rechazó el reembolso del pedido {}: {}", pedidoId, e.getStatusCode());
+            String motivo = OnvoService.motivoOnvo(e.getResponseBodyAsString());
+            log.warn("[reembolso] ONVO rechazó el reembolso del pedido {}: {} {}", pedidoId, e.getStatusCode(), motivo);
             tx.executeWithoutResult(s -> revertir(pedidoId, p));
-            throw new ReembolsoException(502, MSG_RECHAZO);
+            // QA #528: un 4xx de ONVO (salvo credenciales, que son problema nuestro) es un rechazo definitivo del
+            // pedido: 422 con el motivo enmascarado, no 502 (que sugiere reintentar).
+            int sc = e.getStatusCode().value();
+            if (sc == 401 || sc == 403) throw new ReembolsoException(502, MSG_RECHAZO);
+            throw new ReembolsoException(422, String.format(MSG_RECHAZO_DEFINITIVO, motivo));
         } catch (RuntimeException e) {
             log.error("[reembolso] Reembolso ONVO del pedido {} sin respuesta clara: {}", pedidoId, e.getClass().getSimpleName());
             throw new ReembolsoException(502, MSG_EN_DUDA);

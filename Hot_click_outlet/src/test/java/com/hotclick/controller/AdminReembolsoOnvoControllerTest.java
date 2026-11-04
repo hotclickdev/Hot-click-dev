@@ -88,12 +88,14 @@ class AdminReembolsoOnvoControllerTest {
     @Test
     void onvoRechaza_revierteYNoMarcaDevuelto() throws Exception {
         when(onvo.crearReembolso(eq(INTENT), anyString(), anyString()))
-            .thenThrow(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null, null, null));
+            .thenThrow(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null,
+                "{\"statusCode\":400,\"message\":[\"amount must be positive\"],\"error\":\"Bad Request\"}".getBytes(), null));
 
         mvc.perform(post(URL))
-            .andExpect(status().isBadGateway())
+            .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.success").value(false))
-            .andExpect(jsonPath("$.message").value(ReembolsoOnvoService.MSG_RECHAZO));
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("amount must be positive")))
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Revisá el pago")));
 
         assertEquals(Constants.PEDIDO_PAGADO, pedido.getEstadoPedido());
         assertEquals(Constants.PAGO_CAPTURADO, pago.getEstadoPago());
