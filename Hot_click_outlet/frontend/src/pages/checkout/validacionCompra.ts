@@ -2,7 +2,7 @@ import { validateAddress, validateGuestEmail, validatePhone } from './checkoutHe
 import { requiereDireccion } from './paquetesCompra'
 
 export type PasoCompra = 1 | 2 | 3
-export type MetodoPago = 'SINPE' | 'TILOPAY' | 'EFECTIVO'
+export type MetodoPago = 'SINPE' | 'TARJETA' | 'EFECTIVO'
 export type DatosCompra = { correo: string; telefono: string; nombre: string }
 export type DireccionCompra = { provincia: string; canton: string; senas: string; distrito?: string }
 export type CampoCompra = keyof DatosCompra | keyof DireccionCompra | 'comprobante'

@@ -24,7 +24,6 @@ public class PaymentExpirationCleanupService {
 
     @Autowired private EmpresaRepository          empresaRepository;
     @Autowired private PagoRepository             pagoRepository;
-    @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
     @Autowired private OnvoPaymentProvider        onvoPaymentProvider;
     @Autowired private PagoExpiradoCancelador     pagoExpiradoCancelador;
     @Autowired private ReservaAntiBotService      reservaAntiBot;
@@ -62,21 +61,8 @@ public class PaymentExpirationCleanupService {
         int cancelados = 0;
 
         for (Pago pago : expirados) {
-            // Las reconsultas a Tilopay/ONVO corren SIN transacción abierta acá: si confirman, su
-            // captura toma los locks de producto en su propia transacción y no espera a nadie nuestro.
-            if (Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) {
-                try {
-                    if (tilopayConfirmacionService.intentarConfirmarSiAprobado(pago)) {
-                        log.info("[payment-cleanup] Tilopay ya aprobado — confirmado: {}",
-                            pago.getMerchantToken());
-                        continue;
-                    }
-                } catch (Exception e) {
-                    log.warn("[payment-cleanup] Reconsulta Tilopay falló token={}: {}",
-                        pago.getMerchantToken(), e.getClass().getSimpleName());
-                }
-            }
-
+            // La reconsulta a ONVO corre SIN transacción abierta acá: si confirma, su captura toma los
+            // locks de producto en su propia transacción y no espera a nadie nuestro.
             if (Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor()) && !onvoPermiteCancelar(pago)) {
                 continue;
             }

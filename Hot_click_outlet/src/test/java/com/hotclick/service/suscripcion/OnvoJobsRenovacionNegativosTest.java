@@ -151,16 +151,16 @@ class OnvoJobsRenovacionNegativosTest {
         assertThat(job.expirarPastDueVencidos()).isEqualTo(1);
     }
 
-    // ---- job ACTIVO -> PAST_DUE (RenovacionesTilopayService) ----
-    RenovacionesTilopayService job2(SuscripcionTilopayService svc) {
-        return new RenovacionesTilopayService(subRepo, mock(CobroSuscripcionRepository.class), svc,
+    // ---- job ACTIVO -> PAST_DUE (RenovacionesSuscripcionService) ----
+    RenovacionesSuscripcionService job2(CobroSuscripcionService svc) {
+        return new RenovacionesSuscripcionService(subRepo, mock(CobroSuscripcionRepository.class), svc,
             mock(BillingLedgerWriter.class), reconsulta,
             mock(com.hotclick.service.SecurityAuditService.class));
     }
     Suscripcion activa() { pastDue.setEstado("ACTIVO"); pastDue.setFechaFin(hoy); return pastDue; }
 
     @SuppressWarnings("unchecked")
-    int pasanAPastDue(SuscripcionTilopayService svc) {
+    int pasanAPastDue(CobroSuscripcionService svc) {
         ArgumentCaptor<List<Suscripcion>> pd = ArgumentCaptor.forClass(List.class);
         verify(svc).guardarRenovaciones(any(), pd.capture());
         return pd.getValue().size();
@@ -169,7 +169,7 @@ class OnvoJobsRenovacionNegativosTest {
     @Test void job2_activePaid_noPasaAPastDue() {
         when(subRepo.findVigentesConPlanYEmpresa()).thenReturn(List.of(activa()));
         onvoDice("active", "paid", hoy.plusDays(30));
-        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        CobroSuscripcionService svc = mock(CobroSuscripcionService.class);
         job2(svc).generarRenovaciones(hoy);
         assertThat(pasanAPastDue(svc)).isZero();
         assertThat(pastDue.getEstado()).isEqualTo("ACTIVO");
@@ -178,7 +178,7 @@ class OnvoJobsRenovacionNegativosTest {
     @Test void job2_onvoCaido_noPasaAPastDue() {
         when(subRepo.findVigentesConPlanYEmpresa()).thenReturn(List.of(activa()));
         when(onvo.obtenerSuscripcion(SUB)).thenThrow(new RuntimeException("timeout"));
-        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        CobroSuscripcionService svc = mock(CobroSuscripcionService.class);
         job2(svc).generarRenovaciones(hoy);
         assertThat(pasanAPastDue(svc)).isZero();
         assertThat(pastDue.getEstado()).isEqualTo("ACTIVO");
@@ -187,7 +187,7 @@ class OnvoJobsRenovacionNegativosTest {
     @Test void job2_onvoNull_noPasaAPastDue() {
         when(subRepo.findVigentesConPlanYEmpresa()).thenReturn(List.of(activa()));
         when(onvo.obtenerSuscripcion(SUB)).thenReturn(null);
-        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        CobroSuscripcionService svc = mock(CobroSuscripcionService.class);
         job2(svc).generarRenovaciones(hoy);
         assertThat(pasanAPastDue(svc)).isZero();
     }
@@ -195,7 +195,7 @@ class OnvoJobsRenovacionNegativosTest {
     @Test void job2_canceled_sipasaAPastDue() {
         when(subRepo.findVigentesConPlanYEmpresa()).thenReturn(List.of(activa()));
         onvoDice("canceled", "paid", hoy.plusDays(30));
-        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        CobroSuscripcionService svc = mock(CobroSuscripcionService.class);
         job2(svc).generarRenovaciones(hoy);
         assertThat(pasanAPastDue(svc)).isEqualTo(1);
         assertThat(pastDue.getEstado()).isEqualTo("PAST_DUE");
@@ -204,7 +204,7 @@ class OnvoJobsRenovacionNegativosTest {
     @Test void job2_activeUnpaid_sipasaAPastDue() {
         when(subRepo.findVigentesConPlanYEmpresa()).thenReturn(List.of(activa()));
         onvoDice("active", "open", hoy.plusDays(30));
-        SuscripcionTilopayService svc = mock(SuscripcionTilopayService.class);
+        CobroSuscripcionService svc = mock(CobroSuscripcionService.class);
         job2(svc).generarRenovaciones(hoy);
         assertThat(pasanAPastDue(svc)).isEqualTo(1);
     }

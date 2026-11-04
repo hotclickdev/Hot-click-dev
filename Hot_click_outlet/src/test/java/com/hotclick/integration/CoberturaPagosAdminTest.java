@@ -239,9 +239,9 @@ class CoberturaPagosAdminTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("/api/ventas: TARJETA, STRIPE, TILOPAY, ONVO o método desconocido sin estado → PENDIENTE")
+    @DisplayName("/api/ventas: TARJETA, STRIPE, OTRA_PASARELA, ONVO o método desconocido sin estado → PENDIENTE")
     void ventaPasarelaSinEstadoQuedaPendiente() throws Exception {
-        for (String metodo : new String[]{"TARJETA", "stripe", "Tilopay", "ONVO", "BITCOIN"}) {
+        for (String metodo : new String[]{"TARJETA", "stripe", "Otra_Pasarela", "ONVO", "BITCOIN"}) {
             venta("{\"metodoPago\":\"" + metodo + "\",\"items\":[{\"productoId\":"
                     + producto.getId() + ",\"cantidad\":1}]}")
                 .andExpect(status().isOk());
@@ -251,9 +251,9 @@ class CoberturaPagosAdminTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("/api/ventas: STRIPE, TILOPAY o desconocido con estado distinto de PENDIENTE → 400")
+    @DisplayName("/api/ventas: STRIPE, OTRA_PASARELA o desconocido con estado distinto de PENDIENTE → 400")
     void ventaOtrasPasarelasConEstado400() throws Exception {
-        for (String metodo : new String[]{"STRIPE", "TILOPAY", "DESCONOCIDO"}) {
+        for (String metodo : new String[]{"STRIPE", "OTRA_PASARELA", "DESCONOCIDO"}) {
             venta("{\"metodoPago\":\"" + metodo + "\",\"estadoInicial\":\"COMPLETADO\",\"items\":[{\"productoId\":"
                     + producto.getId() + ",\"cantidad\":1}]}")
                 .andExpect(status().isBadRequest());

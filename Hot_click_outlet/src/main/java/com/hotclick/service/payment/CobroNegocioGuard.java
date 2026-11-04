@@ -4,7 +4,7 @@ import com.hotclick.model.Empresa;
 
 /**
  * NP-13, neutral de pasarela: un negocio no aprobado no puede cobrar en línea ni por QR, sea cual sea el
- * proveedor (Tilopay hoy, ONVO cuando se migre). El efectivo del POS no pasa por aquí.
+ * proveedor (ONVO). El efectivo del POS no pasa por aquí.
  * Cualquier proveedor nuevo debe llamar a {@link #exigirNegocioAprobado} antes de crear la sesión de cobro.
  */
 public final class CobroNegocioGuard {

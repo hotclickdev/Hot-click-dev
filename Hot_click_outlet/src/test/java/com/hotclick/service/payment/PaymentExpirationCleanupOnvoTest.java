@@ -40,7 +40,6 @@ class PaymentExpirationCleanupOnvoTest {
     @Mock private PagoRepository pagoRepository;
     @Mock private PedidoRepository pedidoRepository;
     @Mock private StockReservationService stockReservationService;
-    @Mock private TilopayConfirmacionService tilopayConfirmacionService;
     @Mock private OnvoPaymentProvider onvoPaymentProvider;
     @Mock private ReservaAntiBotService reservaAntiBot;
     @Mock private ReservaSospechosaLiberador reservaSospechosaLiberador;

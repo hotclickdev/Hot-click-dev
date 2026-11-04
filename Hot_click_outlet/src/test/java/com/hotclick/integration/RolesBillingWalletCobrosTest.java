@@ -66,7 +66,7 @@ class RolesBillingWalletCobrosTest extends BaseIntegrationTest {
     @ParameterizedTest(name = "EDITOR → 403 en GET {0}")
     @ValueSource(strings = {
         "/api/billing/suscripcion", "/api/billing/facturas", "/api/billing/plan-pendiente",
-        "/api/billing/preferencias", "/api/billing/tilopay/pendiente", "/api/billing/trial/tarjeta",
+        "/api/billing/preferencias", "/api/billing/trial/tarjeta",
         "/api/metodos-cobro", "/api/wallet/payouts", "/api/wallet/saldo", "/api/wallet/transacciones",
         "/api/facturas", "/api/admin/pagos", "/api/admin/pagos/kpis"})
     void editor403(String ruta) throws Exception {
@@ -76,7 +76,7 @@ class RolesBillingWalletCobrosTest extends BaseIntegrationTest {
     @ParameterizedTest(name = "LECTOR → 403 en GET {0}")
     @ValueSource(strings = {
         "/api/billing/suscripcion", "/api/billing/facturas", "/api/billing/plan-pendiente",
-        "/api/billing/preferencias", "/api/billing/tilopay/pendiente", "/api/billing/trial/tarjeta",
+        "/api/billing/preferencias", "/api/billing/trial/tarjeta",
         "/api/metodos-cobro", "/api/wallet/payouts", "/api/wallet/saldo", "/api/wallet/transacciones",
         "/api/facturas", "/api/admin/pagos", "/api/admin/pagos/kpis"})
     void lector403(String ruta) throws Exception {
@@ -86,12 +86,11 @@ class RolesBillingWalletCobrosTest extends BaseIntegrationTest {
     @ParameterizedTest(name = "PROPIETARIO → 2xx en GET {0}")
     @ValueSource(strings = {
         "/api/billing/suscripcion", "/api/billing/facturas", "/api/billing/plan-pendiente",
-        "/api/billing/preferencias", "/api/billing/tilopay/pendiente", "/api/billing/trial/tarjeta",
+        "/api/billing/preferencias", "/api/billing/trial/tarjeta",
         "/api/metodos-cobro", "/api/wallet/payouts", "/api/wallet/saldo", "/api/wallet/transacciones",
         "/api/facturas"})
     void propietario2xx(String ruta) throws Exception {
         int st = mockMvc.perform(get(ruta).header("Authorization", tokenDueno)).andReturn().getResponse().getStatus();
-        // tilopay/pendiente sin pasarela configurada responde 409 controlado; nunca 401/403/5xx.
         assertThat(st).as(ruta).isIn(200, 204, 409);
     }
 
@@ -117,14 +116,4 @@ class RolesBillingWalletCobrosTest extends BaseIntegrationTest {
             .andExpect(status().isConflict());
     }
 
-    @Test @DisplayName("BAJO: EDITOR y LECTOR → 403 en POST /api/billing/tilopay/confirmar/{orderNumber}")
-    void confirmarTilopaySoloDueno() throws Exception {
-        for (String t : new String[]{tokenEditor, tokenLector}) {
-            mockMvc.perform(post("/api/billing/tilopay/confirmar/ORD-QA2").header("Authorization", t))
-                .andExpect(status().isForbidden());
-        }
-        int st = mockMvc.perform(post("/api/billing/tilopay/confirmar/ORD-QA2").header("Authorization", tokenDueno))
-            .andReturn().getResponse().getStatus();
-        assertThat(st).isNotIn(401, 403).isLessThan(500);
-    }
 }

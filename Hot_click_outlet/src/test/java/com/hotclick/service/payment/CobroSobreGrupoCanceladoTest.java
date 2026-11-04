@@ -10,7 +10,6 @@ import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
 import com.hotclick.service.GiftCardService;
 import com.hotclick.service.PaymentService;
-import com.hotclick.service.TilopayService;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +40,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * MEDIO de Seguridad sobre #459: Tilopay y Stripe dejan el pago CAPTURADO antes de llamar a confirmarPedido. Si el
+ * MEDIO de Seguridad sobre #459: Las pasarelas dejan el pago CAPTURADO antes de llamar a confirmarPedido. Si el
  * grupo ya está CANCELADO (o se cancela entre la lectura y el UPDATE condicional, carrera de ONVO), el punto común
  * pasa el pago a REEMBOLSO_PENDIENTE y alerta (onSobreventa), sin revivir el pedido. Idempotente.
  */
@@ -61,14 +60,11 @@ class CobroSobreGrupoCanceladoTest {
     @Mock private EncargoService encargoService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private WebhookEventRepository webhookEventRepository;
-    @Mock private TilopayService tilopayService;
-    @Mock private TilopayPaymentProviderAccess providerAccess;
     @Mock private PaymentService paymentService;
     @Mock private AvisoReembolsoPendienteService avisoReembolso;
     @Mock private org.springframework.beans.factory.ObjectProvider<AvisoReembolsoPendienteService> avisoReembolsoProvider;
 
     @InjectMocks private PaymentOrderConfirmationService confirmacion;
-    @InjectMocks private TilopayConfirmacionService tilopay;
 
     private Pedido pedido;
     private Pago pago;
@@ -93,18 +89,11 @@ class CobroSobreGrupoCanceladoTest {
     }
 
     @Test
-    @DisplayName("Tilopay (servicio sin cambios) aprueba sobre grupo CANCELADO → REEMBOLSO_PENDIENTE + alerta")
-    void tilopay_grupoCancelado_reembolsoPendiente() {
-        pago.setProveedor(Constants.PROVEEDOR_TILOPAY);
-        pago.setEstadoPago(Constants.PAGO_PENDIENTE);
-        when(pedidoRepository.findByNumeroPedido("ORD-CAN")).thenReturn(Optional.of(pedido));
-        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
-        when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString())).thenReturn(false);
-        when(tilopayService.consultarTransaccion("ORD-CAN")).thenReturn(new TilopayService.ConsultaResultado(
-            true, "1", "ok", "AUTH", BigDecimal.valueOf(10000), "CRC", "ORD-CAN", false));
-        when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
-
-        tilopay.confirmar("ORD-CAN", Map.of("code", "1"));
+    @DisplayName("Pago CAPTURADO por la pasarela sobre grupo CANCELADO → REEMBOLSO_PENDIENTE + alerta")
+    void capturado_grupoCancelado_reembolsoPendiente() {
+        pago.setProveedor(Constants.PROVEEDOR_ONVO);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        confirmacion.confirmarPedido(pago, paymentService, eventPublisher);
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
@@ -119,16 +108,9 @@ class CobroSobreGrupoCanceladoTest {
     @DisplayName("#479 BAJO 1: sin bean de aviso (provider → null) el fallback onSobreventa sí avisa al admin")
     void sinBeanDeAviso_fallbackOnSobreventa() {
         when(avisoReembolsoProvider.getIfAvailable()).thenReturn(null);
-        pago.setProveedor(Constants.PROVEEDOR_TILOPAY);
-        pago.setEstadoPago(Constants.PAGO_PENDIENTE);
-        when(pedidoRepository.findByNumeroPedido("ORD-CAN")).thenReturn(Optional.of(pedido));
-        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
-        when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString())).thenReturn(false);
-        when(tilopayService.consultarTransaccion("ORD-CAN")).thenReturn(new TilopayService.ConsultaResultado(
-            true, "1", "ok", "AUTH", BigDecimal.valueOf(10000), "CRC", "ORD-CAN", false));
-        when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
-
-        tilopay.confirmar("ORD-CAN", Map.of("code", "1"));
+        pago.setProveedor(Constants.PROVEEDOR_ONVO);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+        confirmacion.confirmarPedido(pago, paymentService, eventPublisher);
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         verify(avisoReembolso, never()).registrarPendiente(any());
@@ -202,18 +184,12 @@ class CobroSobreGrupoCanceladoTest {
     // ── LOWs de Seguridad (post-#459) ────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("reintento Tilopay sobre pago REEMBOLSO_PENDIENTE: no vuelve a CAPTURADO ni re-alerta")
-    void reintentoTilopay_sobreReembolsoPendiente_noRecaptura() {
-        pago.setProveedor(Constants.PROVEEDOR_TILOPAY);
-        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+    @DisplayName("reintento de la pasarela sobre pago REEMBOLSO_PENDIENTE: no vuelve a CAPTURADO ni re-alerta")
+    void reintento_sobreReembolsoPendiente_noRecaptura() {
+        pago.setProveedor(Constants.PROVEEDOR_ONVO);
+        pago.setEstadoPago(Constants.PAGO_CAPTURADO);
         when(pagoRepository.estadoPagoEnBase(10L)).thenReturn(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        when(pedidoRepository.findByNumeroPedido("ORD-CAN")).thenReturn(Optional.of(pedido));
-        when(pagoRepository.findTopByPedidoIdForUpdate(1L)).thenReturn(Optional.of(pago));
-        when(tilopayService.consultarTransaccion("ORD-CAN")).thenReturn(new TilopayService.ConsultaResultado(
-            true, "1", "ok", "AUTH", BigDecimal.valueOf(10000), "CRC", "ORD-CAN", false));
-        when(paymentService.buildStatusResponse(pago)).thenReturn(new PaymentStatusResponse());
-
-        tilopay.confirmar("ORD-CAN", Map.of("code", "1"));
+        confirmacion.confirmarPedido(pago, paymentService, eventPublisher);
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         verify(paymentNotificationsFacade, never()).onSobreventa(any(), any());

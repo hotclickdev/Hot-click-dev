@@ -173,7 +173,7 @@ public class VentaService {
 
     /**
      * Fail-closed (#221/#225): devuelve el estado inicial normalizado. Solo EFECTIVO puede nacer en cualquier
-     * estado de la lista blanca (por defecto COMPLETADO); SINPE (G1), TARJETA, ONVO, STRIPE, TILOPAY y métodos
+     * estado de la lista blanca (por defecto COMPLETADO); SINPE (G1), TARJETA, ONVO, STRIPE y métodos
      * desconocidos solo nacen PENDIENTE, porque únicamente la pasarela confirma su cobro.
      */
     static String resolverEstadoInicial(String metodoPago, String estadoInicial) {

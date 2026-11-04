@@ -61,7 +61,7 @@ class BillingLedgerWriterTest {
         e.setId(10L);
         assertThat(new BillingLedger().getMoneda()).isNull();
         for (String proveedor : new String[]{BillingLedger.PROVEEDOR_ONVO, BillingLedger.PROVEEDOR_STRIPE,
-                BillingLedger.PROVEEDOR_TILOPAY, BillingLedger.PROVEEDOR_MANUAL, null}) {
+                BillingLedger.PROVEEDOR_ONVO, BillingLedger.PROVEEDOR_MANUAL, null}) {
             for (String tipo : new String[]{BillingLedger.TIPO_COBRO_FALLIDO, BillingLedger.TIPO_CANCELACION}) {
                 for (String sinMoneda : new String[]{null, "", "  "}) {
                     org.assertj.core.api.Assertions.assertThatThrownBy(() ->
@@ -79,7 +79,7 @@ class BillingLedgerWriterTest {
         Empresa e = new Empresa();
         e.setId(10L);
         writer.registrar(e, null, BillingLedger.TIPO_COBRO_OK, BillingLedger.PROVEEDOR_ONVO, "clinv1", 4900, " USD ", "x");
-        writer.registrar(e, null, BillingLedger.TIPO_COBRO_OK, BillingLedger.PROVEEDOR_TILOPAY, "ord1", null, "crc", "x");
+        writer.registrar(e, null, BillingLedger.TIPO_COBRO_OK, BillingLedger.PROVEEDOR_ONVO, "ord1", null, "crc", "x");
         ArgumentCaptor<BillingLedger> cap = ArgumentCaptor.forClass(BillingLedger.class);
         verify(ledgerRepo, org.mockito.Mockito.times(2)).save(cap.capture());
         assertThat(cap.getAllValues().get(0).getMoneda()).isEqualTo("usd");

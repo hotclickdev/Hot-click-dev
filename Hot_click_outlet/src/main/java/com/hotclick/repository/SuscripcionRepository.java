@@ -103,7 +103,7 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
                                              org.springframework.data.domain.Pageable lote);
 
     /**
-     * PAST_DUE heredados (Tilopay/Stripe) sin onvoSubscriptionId: RenovacionesTilopayService y el webhook Stripe
+     * PAST_DUE heredados (Stripe u otra pasarela previa) sin onvoSubscriptionId: RenovacionesSuscripcionService y el webhook Stripe
      * todavía los marcan. Se bajan por este camino, con la misma gracia escalonada.
      */
     @Query("SELECT s FROM Suscripcion s WHERE s.estado = 'PAST_DUE' AND s.fechaFin < :limite"

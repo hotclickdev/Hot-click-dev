@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 /**
  * URL pública de la app ({@code app.url}, variable de entorno APP_URL): con perfil prod/production/staging
  * la app NO arranca si queda vacía, sin https, en localhost, en loopback o como IP literal.
- * De {@code app.url} salen el success/cancel de ONVO, Tilopay, Stripe y los enlaces de correos; si apuntara a
+ * De {@code app.url} salen el success/cancel de ONVO, Stripe y los enlaces de correos; si apuntara a
  * localhost el comprador volvería a una URL que no existe. Fuera de esos perfiles no hace nada (dev usa localhost).
  * El mensaje de error no imprime el valor configurado.
  */

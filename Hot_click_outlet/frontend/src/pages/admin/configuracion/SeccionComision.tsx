@@ -18,7 +18,7 @@ type SeccionComisionProps = {
 }
 
 /**
- * Comisión Tilopay absorbida en precio + descuento SINPE opcional (por empresa).
+ * Comisión de pasarela (ONVO) absorbida en precio + descuento SINPE opcional (por empresa).
  */
 export default function SeccionComision({ toast }: SeccionComisionProps) {
   const { t } = useTranslation()

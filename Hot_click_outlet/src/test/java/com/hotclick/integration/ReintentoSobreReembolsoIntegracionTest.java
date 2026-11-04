@@ -17,8 +17,6 @@ import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.OnvoService;
 import com.hotclick.payment.OnvoCapturaService;
 import com.hotclick.payment.StripePaymentProvider;
-import com.hotclick.service.TilopayService;
-import com.hotclick.service.payment.TilopayConfirmacionService;
 import com.stripe.model.checkout.Session;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.AfterEach;
@@ -39,19 +37,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * MEDIO 1 de la pre-revisión del PR #460: un reintento del proveedor (ONVO, Tilopay o Stripe) sobre un pago
+ * MEDIO 1 de la pre-revisión del PR #460: un reintento del proveedor (ONVO o Stripe) sobre un pago
  * que ya está en REEMBOLSO_PENDIENTE no puede capturarlo ni confirmar el pedido, aunque alguna consulta
  * intermedia vacíe la sesión (flush AUTO) antes de llegar a confirmarPedido. Flujos reales con Spring + H2.
  */
-@DisplayName("[PR460-M1] Reintento sobre REEMBOLSO_PENDIENTE bloqueado en ONVO, Tilopay y Stripe (integración)")
+@DisplayName("[PR460-M1] Reintento sobre REEMBOLSO_PENDIENTE bloqueado en ONVO y Stripe (integración)")
 class ReintentoSobreReembolsoIntegracionTest extends BaseIntegrationTest {
 
     @MockitoBean private OnvoService onvoService;
 
-    @MockitoBean private TilopayService tilopayService;
 
     @Autowired private OnvoCapturaService onvoCapturaService;
-    @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
     @Autowired private StripePaymentProvider stripePaymentProvider;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private BodegaRepository bodegaRepository;
@@ -195,19 +191,6 @@ class ReintentoSobreReembolsoIntegracionTest extends BaseIntegrationTest {
 
         assertThat(r).isNotEqualTo(OnvoCapturaService.Captura.CAPTURADO);
         assertSinReintento(pedido, "cs_rp_onvo", producto);
-    }
-
-    @Test
-    @DisplayName("Tilopay: webhook aprobado sobre REEMBOLSO_PENDIENTE no captura ni confirma")
-    void tilopayReintentoNoCaptura() {
-        Producto producto = producto(5, 1, false);
-        Pedido pedido = pedidoConPago("ORD-RPT-1", producto, "ORD-RPT", Constants.PROVEEDOR_TILOPAY);
-        when(tilopayService.consultarTransaccion("ORD-RPT-1")).thenReturn(new TilopayService.ConsultaResultado(
-            true, "1", "Aprobada", "auth", BigDecimal.valueOf(10000), "CRC", "ORD-RPT-1", false));
-
-        tilopayConfirmacionService.procesarWebhook("ORD-RPT-1", "{}");
-
-        assertSinReintento(pedido, "ORD-RPT-1", producto);
     }
 
     @Test

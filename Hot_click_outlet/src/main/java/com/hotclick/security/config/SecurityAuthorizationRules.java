@@ -48,8 +48,6 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/payments/guest/cancel/*").permitAll()
             .requestMatchers(GET,  "/api/payments/status/*").permitAll()
-            .requestMatchers(POST, "/api/payments/tilopay/confirmar/*").permitAll()
-            .requestMatchers(POST, "/api/payments/tilopay/reintentar/*").permitAll()
             // SINPE — invitados
             .requestMatchers(POST, "/api/sinpe/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/sinpe/guest/*/comprobante").permitAll()
@@ -309,7 +307,7 @@ final class SecurityAuthorizationRules {
                 "/404",
                 "/seleccionar-negocio", "/mode-select", "/registrar-negocio",
                 "/sso-callback", "/sso-complete",
-                "/checkout", "/pago/exito", "/pago/cancelado", "/pago/tilopay/respuesta", "/billing/tilopay/respuesta",
+                "/checkout", "/pago/exito", "/pago/cancelado",
                 "/ayuda", "/registro-empresa/activar-plan",
                 "/pos/pago", "/pos/pago/**",
                 "/recuperar-carrito", "/recuperar-carrito/**",

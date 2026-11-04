@@ -87,7 +87,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                                      // comprador: rutas exactas (ya rechazan tiendas no ACTIVO por su cuenta)
                                      "/api/tienda/*/pedidos",
                                      "/api/payments/guest-checkout", "/api/payments/guest/cancel/*",
-                                     "/api/payments/tilopay/confirmar/*", "/api/payments/tilopay/reintentar/*",
                                      "/api/sinpe/checkout", "/api/sinpe/guest-checkout",
                                      "/api/sinpe/comprobantes/*/url-firmada",
                                      "/api/webhooks/**", "/api/pos/qr/pago/**");

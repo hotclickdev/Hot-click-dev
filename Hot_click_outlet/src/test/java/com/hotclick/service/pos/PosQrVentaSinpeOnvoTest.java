@@ -2,7 +2,6 @@ package com.hotclick.service.pos;
 
 import com.hotclick.model.PosQrSesion;
 import com.hotclick.repository.PosQrSesionRepository;
-import com.hotclick.service.TilopayService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +23,6 @@ import static org.mockito.Mockito.*;
 @DisplayName("Venta POS con SINPE por ONVO")
 class PosQrVentaSinpeOnvoTest {
     @Mock PosQrSesionRepository posQrRepo;
-    @Mock TilopayService tilopayService;
     @Mock PosQrSessionService sessionService;
     @Mock PosQrVentaCompletionService completionService;
     @Mock PosSinpeOnvoService sinpeOnvo;

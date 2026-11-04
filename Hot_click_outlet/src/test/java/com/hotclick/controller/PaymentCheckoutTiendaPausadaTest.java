@@ -23,7 +23,6 @@ class PaymentCheckoutTiendaPausadaTest {
 
     @Mock PaymentService paymentService;
     @Mock ProductoRepository productoRepository;
-    @Mock com.hotclick.service.payment.TilopayConfirmacionService tilopayConfirmacionService;
     @InjectMocks PaymentController controller;
 
     @Test

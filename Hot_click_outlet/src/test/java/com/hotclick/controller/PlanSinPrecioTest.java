@@ -4,7 +4,7 @@ import com.hotclick.exception.PlanSinPrecioException;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.service.suscripcion.PreciosPlanesConfig;
-import com.hotclick.service.suscripcion.SuscripcionTilopayService;
+import com.hotclick.service.suscripcion.CobroSuscripcionService;
 import com.hotclick.security.TenantContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 class PlanSinPrecioTest {
 
     private final PlanRepository planRepo = mock(PlanRepository.class);
-    private final SuscripcionTilopayService tilopay = mock(SuscripcionTilopayService.class);
+    private final CobroSuscripcionService cobros = mock(CobroSuscripcionService.class);
 
     @AfterEach void limpiar() { TenantContext.clear(); }
 
@@ -42,7 +42,7 @@ class PlanSinPrecioTest {
 
     private SuscripcionController controller(PreciosPlanesConfig precios) {
         when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
-        return new SuscripcionController(suscripcion, planRepo, auth, tilopay, precios, guard);
+        return new SuscripcionController(suscripcion, planRepo, auth, cobros, precios, guard);
     }
 
     @org.junit.jupiter.params.ParameterizedTest(name = "QA3-012: EDITOR recibe 403 en {0}")
@@ -55,7 +55,7 @@ class PlanSinPrecioTest {
         var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(c).build();
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(ruta))
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
-        verifyNoInteractions(tilopay, planRepo, suscripcion);
+        verifyNoInteractions(cobros, planRepo, suscripcion);
     }
 
     @Test @DisplayName("QA3-012: un EDITOR recibe 403 en cambiar-plan antes de precio, límite o cobro")
@@ -66,7 +66,7 @@ class PlanSinPrecioTest {
         var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(c).build();
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/billing/cambiar-plan/3"))
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
-        verifyNoInteractions(tilopay, planRepo);
+        verifyNoInteractions(cobros, planRepo);
     }
 
     @Test @DisplayName("Con precios configurados, /planes publica 9/24/49 y no el valor de BD")
@@ -99,8 +99,7 @@ class PlanSinPrecioTest {
         var r = controller(new PreciosPlanesConfig("9", "24", null)).crearCheckout(3L, null);
         assertThat(r.getStatusCode().value()).isEqualTo(409);
         assertThat(r.getBody()).containsEntry("codigo", "PLAN_SIN_PRECIO");
-        verify(tilopay, never()).iniciarCambioPlan(any(), any());
-        verify(suscripcion, never()).cambiarPlanOnvo(any(), any());
+                verify(suscripcion, never()).cambiarPlanOnvo(any(), any());
     }
 
     @Test @DisplayName("Precio configurado en 0, negativo o mal escrito cuenta como sin precio (409)")
@@ -123,7 +122,7 @@ class PlanSinPrecioTest {
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/billing/cambiar-plan/2"))
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isConflict())
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.codigo").value("PLAN_SIN_PRECIO"));
-        verifyNoInteractions(tilopay);
+        verifyNoInteractions(cobros);
     }
 
     @Test @DisplayName("Manipulación del cliente: precio/plan/monto enviados se ignoran; manda el servidor")
@@ -149,7 +148,7 @@ class PlanSinPrecioTest {
             .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.planNombre").value("NEGOCIO_PLUS"));
         // El servicio solo recibe empresa (del token) y planId (de la ruta); nada del cuerpo ni de la query.
         verify(suscripcion).cambiarPlanOnvo(7L, 3L);
-        verifyNoInteractions(tilopay);
+        verifyNoInteractions(cobros);
     }
 
     @Test @DisplayName("QA8: negocio pendiente de aprobación → 409 EMPRESA_PENDIENTE_APROBACION con mensaje claro")

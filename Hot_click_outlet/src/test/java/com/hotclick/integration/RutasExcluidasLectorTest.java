@@ -63,8 +63,6 @@ class RutasExcluidasLectorTest extends BaseIntegrationTest {
         "POST /api/payments/checkout",
         "POST /api/payments/guest-checkout",
         "POST /api/payments/guest/cancel/{numeroPedido}",
-        "POST /api/payments/tilopay/confirmar/{numeroPedido}",
-        "POST /api/payments/tilopay/reintentar/{numeroPedido}",
         "POST /api/public/chat",
         "POST /api/public/embudo",
         "POST /api/public/encargos",
@@ -86,10 +84,7 @@ class RutasExcluidasLectorTest extends BaseIntegrationTest {
         "POST /api/webhooks/payxpert",
         "POST /api/webhooks/sentry",
         "POST /api/webhooks/telegram",
-        "POST /api/webhooks/tilopay",
         "POST /api/pos/qr/pago/{token}/sinpe-onvo",
-        "POST /api/pos/qr/pago/{token}/tilopay",
-        "POST /api/pos/qr/pago/{token}/tilopay/confirmar",
         "POST /api/webhooks/uptime"
     );
 

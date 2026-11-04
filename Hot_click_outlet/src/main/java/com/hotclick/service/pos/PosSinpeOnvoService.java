@@ -33,7 +33,7 @@ public class PosSinpeOnvoService {
 
     private static final Logger log = LoggerFactory.getLogger(PosSinpeOnvoService.class);
 
-    /** Prefijo del id del intent en {@code stripe_session_id} para distinguirlo de órdenes Tilopay y checkouts. */
+    /** Prefijo del id del intent en {@code stripe_session_id} para distinguirlo de los checkouts. */
     public static final String PREFIJO_ONVO_PI = "ONVOPI:";
 
     public static final String MSG_NO_DISPONIBLE = "SINPE Móvil no está disponible por ahora. Cobrá con otro método.";

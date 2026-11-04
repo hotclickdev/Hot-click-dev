@@ -4,10 +4,12 @@ import {
 } from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
 
-describe('pago sin Tilopay', () => {
-  it('ningún método va a TILOPAY', () => {
+describe('pago solo con ONVO', () => {
+  it('ningún método va a otra pasarela que no sea ONVO o SINPE manual', () => {
     for (const habilitado of [true, false]) {
-      for (const m of [PAGO_SINPE, PAGO_TARJETA, PAGO_EFECTIVO]) expect(proveedorDe(m, habilitado)).not.toBe('TILOPAY')
+      for (const onvo of [true, false]) {
+        for (const m of [PAGO_SINPE, PAGO_TARJETA, PAGO_EFECTIVO]) expect([null, 'ONVO', 'SINPE']).toContain(proveedorDe(m, habilitado, onvo))
+      }
     }
   })
 

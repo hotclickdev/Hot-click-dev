@@ -32,7 +32,6 @@ public class ReservaSospechosaLiberador {
     @Autowired private PagoRepository             pagoRepository;
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private PedidoGrupoService         pedidoGrupoService;
-    @Autowired private TilopayConfirmacionService tilopayConfirmacionService;
     @Autowired private ReservaAntiBotService      reservaAntiBot;
 
     /** @return cantidad de pagos cuyas reservas se liberaron. */
@@ -59,8 +58,8 @@ public class ReservaSospechosaLiberador {
         Pago pago = pagoRepository.findByIdForUpdate(id).orElse(null);
         if (pago == null || !sigueVencido(pago, ahora)) return false;
         List<Pedido> grupo = pedidoGrupoService.delGrupo(pago.getPedido());
-        // Algún pedido ya avanzó (comprobante subido, pagado, etc.) o Tilopay ya aprobó: no se toca.
-        if (grupo.stream().anyMatch(p -> !esPendiente(p.getEstadoPedido())) || tilopayYaAprobado(pago)) {
+        // Algún pedido ya avanzó (comprobante subido, pagado, etc.): no se toca.
+        if (grupo.stream().anyMatch(p -> !esPendiente(p.getEstadoPedido()))) {
             return false;
         }
         pago.setEstadoPago(Constants.PAGO_CANCELADO);
@@ -75,16 +74,6 @@ public class ReservaSospechosaLiberador {
     private static boolean sigueVencido(Pago pago, LocalDateTime ahora) {
         return Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())
             && pago.getFechaExpiracion() != null && pago.getFechaExpiracion().isBefore(ahora);
-    }
-
-    private boolean tilopayYaAprobado(Pago pago) {
-        if (!Constants.PROVEEDOR_TILOPAY.equalsIgnoreCase(pago.getProveedor())) return false;
-        try {
-            return tilopayConfirmacionService.intentarConfirmarSiAprobado(pago);
-        } catch (Exception e) {
-            log.warn("[reserva-antibot] reconsulta Tilopay falló pago={}: {}", pago.getId(), e.getClass().getSimpleName());
-            return false;
-        }
     }
 
     private static boolean esPendiente(String estado) {

@@ -59,8 +59,7 @@ public class CheckoutValidator {
      * Allowlist del checkout público. STRIPE queda fuera; ONVO solo con hotclick.onvo flag. SINPE queda fuera
      * (G1): solo existe dentro de la pasarela ONVO; un Pago SINPE propio sería confirmable a mano.
      */
-    static final java.util.Set<String> PROVEEDORES_CHECKOUT = java.util.Set.of(
-        Constants.PROVEEDOR_TILOPAY, Constants.PROVEEDOR_ONVO);
+    static final java.util.Set<String> PROVEEDORES_CHECKOUT = java.util.Set.of(Constants.PROVEEDOR_ONVO);
 
     public String resolveProvider(PaymentCheckoutRequest req, PaymentProviderFactory providerFactory) {
         if (req.getProvider() == null || req.getProvider().isBlank()) {
@@ -69,7 +68,7 @@ public class CheckoutValidator {
         String provider = req.getProvider().trim().toUpperCase(Locale.ROOT);
         if (Constants.PROVEEDOR_ONVO.equals(provider) && !onvoEnabled) {
             throw new IllegalArgumentException(
-                "ONVO no está habilitado. Usá TILOPAY para pagos con tarjeta.");
+                "El pago en línea no está disponible en este momento.");
         }
         if (!PROVEEDORES_CHECKOUT.contains(provider) || !providerFactory.soporta(provider)) {
             throw new IllegalArgumentException("Proveedor de pago no soportado: " + provider);

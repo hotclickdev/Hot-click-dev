@@ -97,7 +97,7 @@ export default function POSPagoPage() {
 
   // El cliente elige entre los métodos que habilitó la caja; el backend fija el
   // método de la sesión cuando arranca el pago (intent, checkout o SINPE).
-  // P-01 Seguridad: el cobro con tarjeta por Tilopay dejó de ser público; el QR de caja solo ofrece SINPE por ONVO.
+  // P-01 Seguridad: el cobro con tarjeta dejó de ser público; el QR de caja solo ofrece SINPE por ONVO.
   const metodos = metodosDisponibles(info).filter((m) => m === 'SINPE')
   const metodo = metodoActivo(metodos, info.metodoPago, metodoElegido)
   const esSinpe = metodo === 'SINPE'

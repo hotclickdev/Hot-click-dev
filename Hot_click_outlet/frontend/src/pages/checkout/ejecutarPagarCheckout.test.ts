@@ -30,7 +30,7 @@ function deps(metodoPago: string, sinpeManualHabilitado?: boolean) {
   }
 }
 
-describe('ejecutarPagarCheckout sin Tilopay', () => {
+describe('ejecutarPagarCheckout solo ONVO', () => {
   it('SINPE habilitado: /sinpe/checkout con provider SINPE (isSinpe=true)', () => {
     const { d, iniciarPago } = deps(PAGO_SINPE, true)
     ejecutarPagarCheckout({ ...d, sinpeCedula: '01-0000-0000', sinpeTipoIdentificacion: 0, sinpeTelefono: '80000000' })
@@ -62,7 +62,7 @@ describe('ejecutarPagarCheckout sin Tilopay', () => {
     expect(avisarSinMetodo).toHaveBeenCalledTimes(1)
   })
 
-  it('Tarjeta y SINPE con ONVO habilitado van a /payments/checkout con provider ONVO (nunca Tilopay)', () => {
+  it('Tarjeta y SINPE con ONVO habilitado van a /payments/checkout con provider ONVO', () => {
     for (const m of [PAGO_TARJETA, PAGO_SINPE]) {
       const { d, iniciarPago } = deps(m, false)
       ejecutarPagarCheckout({ ...d, tarjetaOnvoHabilitada: true })

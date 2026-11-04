@@ -1,8 +1,7 @@
 package com.hotclick.exception;
 
 /**
- * Cobro de planes deshabilitado (decisión HOT_CLICK: los planes no se cobran por Tilopay; ONVO aún no está
- * conectado en esta rama). Fail-closed: 409 COBRO_PLAN_NO_DISPONIBLE, no se crea cobro ni se activa el plan.
+ * El cobro del plan no está disponible en este momento (ONVO sin configuración de planes). Fail-closed: 409 COBRO_PLAN_NO_DISPONIBLE, no se crea cobro ni se activa el plan.
  */
 public class CobroPlanNoDisponibleException extends RuntimeException {
     public static final String CODIGO = "COBRO_PLAN_NO_DISPONIBLE";

@@ -404,13 +404,13 @@ class SuscripcionOnvoChangeServiceTest {
     }
 
     @Test
-    @DisplayName("Pago confirmado por otro proveedor (Tilopay) no reactiva")
-    void tilopayNoReactiva() {
+    @DisplayName("Pago confirmado por otro proveedor (MANUAL) no reactiva")
+    void otroProveedorNoReactiva() {
         empresa.setEstadoEmpresa("SUSPENDIDO_IMPAGO");
         when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(planPyme));
         when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.empty());
-        service.planPagoConfirmado(10L, "PYME", "TILOPAY", "ord-1");
+        service.planPagoConfirmado(10L, "PYME", "MANUAL", "ord-1");
         assertThat(empresa.getEstadoEmpresa()).isEqualTo("SUSPENDIDO_IMPAGO");
     }
 

@@ -64,8 +64,8 @@ class AggregatorEfectivoOnlineTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"TARJETA", "ONVO", "TILOPAY", "SINPE"})
-    void tarjetaOnvoTilopay_siguenAcreditando(String metodo) {
+    @ValueSource(strings = {"TARJETA", "ONVO", "STRIPE", "SINPE"})
+    void tarjetaOnvoStripe_siguenAcreditando(String metodo) {
         aggregator.acreditarVentaEnTransaccion(pedido("ONLINE", metodo));
         verify(walletService).acreditarVenta(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong());
     }
