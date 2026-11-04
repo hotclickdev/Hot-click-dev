@@ -34,6 +34,7 @@ class GuestCheckoutGuardTest {
     private TurnstileFormGuard turnstile;
     private final AtomicLong ids = new AtomicLong(100);
     private final AtomicInteger creados = new AtomicInteger();
+    private final java.util.Map<Long, String> estados = new java.util.concurrent.ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
@@ -46,7 +47,7 @@ class GuestCheckoutGuardTest {
             for (Object id : (Iterable<?>) inv.getArgument(0)) {
                 Pedido p = new Pedido();
                 p.setId((Long) id);
-                p.setEstadoPedido("PENDIENTE_COMPROBANTE");
+                p.setEstadoPedido(estados.getOrDefault((Long) id, "PENDIENTE_COMPROBANTE"));
                 out.add(p);
             }
             return out;
@@ -125,5 +126,37 @@ class GuestCheckoutGuardTest {
         assertThat(guard.ejecutar(req("a@x.com", 1, 1), new MockHttpServletRequest(), this::crear).getStatusCode().value()).isEqualTo(200);
         guard.setTurnstileHabilitado(true);
         assertThat(guard.ejecutar(req("b@x.com", 2, 1), new MockHttpServletRequest(), this::crear).getStatusCode().value()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("Regresión: dos POST iguales con el primero ya PAGADO → 409, sin repetir la sesión ni crear otro pedido")
+    void segundoPostConPrimeroPagado_noReusaRespuesta() {
+        ResponseEntity<ResponseDTO> primero = guard.ejecutar(req("p@x.com", 577, 1), new MockHttpServletRequest(), this::crear);
+        Long pedidoId = ((PaymentCheckoutResponse) primero.getBody().getData()).getPedidoId();
+        estados.put(pedidoId, "PAGADO");
+
+        ResponseEntity<ResponseDTO> segundo = guard.ejecutar(req("p@x.com", 577, 1), new MockHttpServletRequest(), this::crear);
+
+        assertThat(segundo.getStatusCode().value()).isEqualTo(409);
+        assertThat(segundo.getBody().getMessage()).isEqualTo(GuestCheckoutGuard.MSG_YA_NO_PENDIENTE);
+        assertThat(segundo.getBody()).isNotSameAs(primero.getBody());
+        assertThat(creados.get()).isEqualTo(1);
+    }
+
+    @Test
+    void segundoPostConPrimeroPendiente_reusaRespuesta() {
+        ResponseEntity<ResponseDTO> primero = guard.ejecutar(req("q@x.com", 577, 1), new MockHttpServletRequest(), this::crear);
+        ResponseEntity<ResponseDTO> segundo = guard.ejecutar(req("q@x.com", 577, 1), new MockHttpServletRequest(), this::crear);
+        assertThat(segundo.getBody()).isSameAs(primero.getBody());
+        assertThat(creados.get()).isEqualTo(1);
+    }
+
+    @Test
+    void segundoPostConPrimeroCancelado_noReusa_yElTerceroCreaOtro() {
+        ResponseEntity<ResponseDTO> primero = guard.ejecutar(req("c@x.com", 577, 1), new MockHttpServletRequest(), this::crear);
+        estados.put(((PaymentCheckoutResponse) primero.getBody().getData()).getPedidoId(), "CANCELADO");
+        assertThat(guard.ejecutar(req("c@x.com", 577, 1), new MockHttpServletRequest(), this::crear).getStatusCode().value()).isEqualTo(409);
+        assertThat(guard.ejecutar(req("c@x.com", 577, 1), new MockHttpServletRequest(), this::crear).getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(creados.get()).isEqualTo(2);
     }
 }
