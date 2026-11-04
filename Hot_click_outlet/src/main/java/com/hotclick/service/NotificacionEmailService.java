@@ -35,6 +35,8 @@ import org.springframework.stereotype.Service;
 
 public class NotificacionEmailService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(NotificacionEmailService.class);
+
 
 
     @Autowired private NotificacionPedidoEmailSender pedidoEmailSender;
@@ -58,6 +60,7 @@ public class NotificacionEmailService {
     @Async
 
     public void enviarConfirmacionPedido(Pedido pedido) {
+        if (esPedidoDePrueba(pedido)) return;
 
         pedidoEmailSender.enviarConfirmacionPedido(pedido, adminItEmail, adminItTelefono);
 
@@ -66,6 +69,7 @@ public class NotificacionEmailService {
     /** Pedido registrado que se paga al recibir: sin «Total pagado» (ver NotificacionPedidoEmailSender). */
     @Async
     public void enviarPedidoRecibido(Pedido pedido) {
+        if (esPedidoDePrueba(pedido)) return;
         pedidoEmailSender.enviarPedidoRecibido(pedido, adminItEmail, adminItTelefono);
     }
 
@@ -74,6 +78,7 @@ public class NotificacionEmailService {
     @Async
 
     public void enviarNotificacionGuia(Pedido pedido) {
+        if (esPedidoDePrueba(pedido)) return;
 
         pedidoEmailSender.enviarNotificacionGuia(pedido);
 
@@ -84,6 +89,7 @@ public class NotificacionEmailService {
     @Async
 
     public void enviarSeguimientoEstado(Pedido pedido) {
+        if (esPedidoDePrueba(pedido)) return;
 
         enviarSeguimientoEstado(pedido, null);
 
@@ -94,6 +100,7 @@ public class NotificacionEmailService {
     @Async
 
     public void enviarSeguimientoEstado(Pedido pedido, String nota) {
+        if (esPedidoDePrueba(pedido)) return;
 
         pedidoEmailSender.enviarSeguimientoEstado(pedido, nota);
 
@@ -104,6 +111,7 @@ public class NotificacionEmailService {
     /** Versión síncrona — lanza excepción si SendGrid falla (usar desde el endpoint /notificar). */
 
     public void enviarSeguimientoEstadoSync(Pedido pedido, String nota) {
+        if (esPedidoDePrueba(pedido)) return;
 
         pedidoEmailSender.enviarSeguimientoEstadoSync(pedido, nota);
 
@@ -130,6 +138,7 @@ public class NotificacionEmailService {
     @Async
 
     public void enviarPagoFallido(Pedido pedido, String motivo) {
+        if (esPedidoDePrueba(pedido)) return;
 
         pedidoEmailSender.enviarPagoFallido(pedido, motivo);
 
@@ -140,6 +149,7 @@ public class NotificacionEmailService {
     @Async
 
     public void enviarNuevoPedidoAEmprendedor(Pedido pedido) {
+        if (esPedidoDePrueba(pedido)) return;
 
         pedidoEmailSender.enviarNuevoPedidoAEmprendedor(pedido);
 
@@ -150,6 +160,7 @@ public class NotificacionEmailService {
     @Async
 
     public void enviarNuevoPedidoAAdminIT(Pedido pedido, String correoAdminIT) {
+        if (esPedidoDePrueba(pedido)) return;
 
         pedidoEmailSender.enviarNuevoPedidoAAdminIT(pedido, correoAdminIT);
 
@@ -262,4 +273,13 @@ public class NotificacionEmailService {
         negocioEmailSender.enviarResumenReembolsosPendientesAdmin(adminItEmail, pagos, linkAdmin);
     }
 
+
+    /** BAJO: un pedido es_prueba no manda correos (ni WhatsApp asociado) a clientes, vendedores ni admin. */
+    static boolean esPedidoDePrueba(Pedido pedido) {
+        if (pedido != null && pedido.isEsPrueba()) {
+            log.info("[correo] pedido {} es de prueba: no se envía notificación", pedido.getId());
+            return true;
+        }
+        return false;
+    }
 }
