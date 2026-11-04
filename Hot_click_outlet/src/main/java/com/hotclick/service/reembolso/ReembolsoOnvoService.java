@@ -66,6 +66,8 @@ public class ReembolsoOnvoService {
     public static final String MSG_MANUAL_NO_PENDIENTE = "Este pedido no tiene un reembolso por ONVO pendiente.";
     public static final String MSG_MANUAL_SIN_CONFIRMAR =
         "Para marcarlo como devuelto tenés que confirmar explícitamente que lo viste devuelto en ONVO.";
+    public static final String MSG_MANUAL_ONVO_NO_DEVUELTO =
+        "ONVO informa que ese reembolso no se hizo (fallido o cancelado). No se puede marcar como devuelto.";
     public static final String MSG_MANUAL_DEVUELTO = "Registrado: el reembolso quedó como devuelto (confirmado a mano).";
     public static final String MSG_MANUAL_NO_DEVUELTO = "Registrado: no se devolvió nada y el pedido volvió a su estado anterior.";
     public static final String MSG_OK = "Reembolso confirmado por ONVO. El pedido quedó cancelado.";
@@ -163,7 +165,12 @@ public class ReembolsoOnvoService {
             }
             if (!Constants.PAGO_REEMBOLSO_PENDIENTE.equals(pago.getEstadoPago())) return WebhookResultado.YA_RESUELTO;
             Resultado res = aplicar(pedido, pago, r, "webhook ONVO");
-            return res.status() == 202 ? WebhookResultado.PENDIENTE : WebhookResultado.RESUELTO;
+            // BAJO Seguridad: un refund failed sin estado previo guardado deja el pago REEMBOLSO_PENDIENTE; eso no
+            // está resuelto, así que PENDIENTE (409) para que ONVO reintente, igual que un pending.
+            if (res.status() == 202 || Constants.PAGO_REEMBOLSO_PENDIENTE.equals(pago.getEstadoPago())) {
+                return WebhookResultado.PENDIENTE;
+            }
+            return WebhookResultado.RESUELTO;
         });
     }
 
@@ -178,6 +185,7 @@ public class ReembolsoOnvoService {
     public Resultado resolverManual(Long pedidoId, ResolucionManual resolucion, boolean confirmado, String operador) {
         if (resolucion == null) throw new ReembolsoException(400, "Falta el resultado (DEVUELTO o NO_DEVUELTO).");
         if (resolucion == ResolucionManual.DEVUELTO && !confirmado) throw new ReembolsoException(400, MSG_MANUAL_SIN_CONFIRMAR);
+        if (resolucion == ResolucionManual.DEVUELTO) bloquearSiOnvoDiceNoDevuelto(pedidoId);
         return tx.execute(st -> {
             Pedido pedido = pedidoRepository.findByIdForUpdate(pedidoId)
                 .orElseThrow(() -> new ReembolsoException(404, MSG_NO_EXISTE));
@@ -206,6 +214,37 @@ public class ReembolsoOnvoService {
             log.info("[reembolso] Pedido {} resuelto a mano: {}", pedido.getId(), resolucion);
             return new Resultado(200, mensaje, pedido.getEstadoPedido(), pago.getEstadoPago());
         });
+    }
+
+    /**
+     * BAJO Seguridad: antes de marcar DEVUELTO a mano se relee el refund en ONVO (best-effort, fuera de la
+     * transacción). Si ONVO dice explícitamente que no se hizo (failed/canceled) se bloquea con 409. Sin id de
+     * refund, sin llave o si ONVO no responde, manda la revisión del admin (no se bloquea).
+     */
+    private void bloquearSiOnvoDiceNoDevuelto(Long pedidoId) {
+        String refundId;
+        try {
+            refundId = tx.execute(s -> pedidoRepository.findById(pedidoId)
+                .flatMap(p -> CompraPaquetes.pagoDe(p, pagoRepository))
+                .map(Pago::getOnvoReembolsoId).orElse(null));
+        } catch (RuntimeException e) {
+            return;
+        }
+        if (refundId == null || !onvoService.reembolsable(refundId)) return;
+        OnvoReembolso r;
+        try {
+            r = onvoService.obtenerReembolso(refundId);
+        } catch (RuntimeException e) {
+            log.warn("[reembolso] Resolución manual: no se pudo releer el refund {} ({})",
+                OnvoService.enmascarar(refundId), e.getClass().getSimpleName());
+            return;
+        }
+        if (r == null || !refundId.equals(r.id()) || r.status() == null) return;
+        String st = r.status().toLowerCase(Locale.ROOT);
+        if ("failed".equals(st) || "canceled".equals(st) || "cancelled".equals(st)) {
+            log.warn("[reembolso] Pedido {}: DEVUELTO manual bloqueado, ONVO informa el refund como {}", pedidoId, st);
+            throw new ReembolsoException(409, MSG_MANUAL_ONVO_NO_DEVUELTO);
+        }
     }
 
     private Lectura leer(Long pedidoId) {
