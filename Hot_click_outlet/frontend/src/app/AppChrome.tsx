@@ -3,7 +3,7 @@ import { posponerAvisoSw } from '@/app/swUpdate'
 import { useLocation, useNavigationType } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import useCartStore from '@/store/cartStore'
-import { revisarPagoPendiente } from '@/utils/carritoPagoPendiente'
+import { escucharCarritoEntrePestanas, revisarPagoPendiente } from '@/utils/carritoPagoPendiente'
 import WhatsAppFab from '@/components/ui/WhatsAppFab'
 import { esRutaVisitante, whatsappOculto } from '@/components/ui/flotantes/flotantesHelpers'
 import { PageLoader, PageLoaderFigma } from '@/components/ui/Spinner'
@@ -115,6 +115,8 @@ export function AbandonedCartWatcher() {
   // QA7-E1: vacía el carrito si un pago con pasarela quedó CAPTURADO y la página de éxito no cargó.
   useEffect(() => {
     void revisarPagoPendiente(() => useCartStore.getState().clearCart())
+    // BAJO: el retorno del pago puede abrir otra pestaña; las demás releen el carrito cuando cambia.
+    return escucharCarritoEntrePestanas(() => { void useCartStore.persist.rehydrate() })
   }, [])
   return null
 }
