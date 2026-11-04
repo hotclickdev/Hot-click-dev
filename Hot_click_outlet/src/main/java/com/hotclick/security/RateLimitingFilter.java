@@ -214,6 +214,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/public/pedidos/seguimiento",  20,  60),
         // PUB-09: lectura del enlace de tienda rapida por token (un SELECT por request).
         new GetLimit("/api/public/tienda-rapida",        20,  60),
+        // BAJO: búsqueda pública del marketplace (full-text + Buy Box por request): scraping barato sin tope.
+        new GetLimit("/api/marketplace/buscar",          60,  60),
+        new GetLimit("/api/marketplace/productos",      120,  60),
         new GetLimit("/api/public",                      60,  60),
         new GetLimit("/api/tienda",                     120,  60),
         new GetLimit("/api/productos",                  120,  60)
