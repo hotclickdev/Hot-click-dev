@@ -28,9 +28,10 @@ class OnvoLogMaskTest {
     @Test
     void ningunLogOnvoPasaElIdCrudo() throws Exception {
         Pattern logCall = Pattern.compile("log\\.\\w+\\((.*?)\\);", Pattern.DOTALL);
-        Pattern idCrudo = Pattern.compile("(?<![\\w(])(checkoutSessionId|sessionId|session\\.id\\(\\)|id)\\s*[,)]");
+        Pattern idCrudo = Pattern.compile("(?<![\\w(])(checkoutSessionId|sessionId|session\\.id\\(\\)|pago\\.getMerchantToken\\(\\)|id)\\s*[,)]");
         List<String> malos = new ArrayList<>();
-        for (String f : List.of("service/OnvoService.java", "payment/OnvoPaymentProvider.java", "payment/OnvoCapturaService.java")) {
+        for (String f : List.of("service/OnvoService.java", "payment/OnvoPaymentProvider.java", "payment/OnvoCapturaService.java",
+                "service/payment/PaymentExpirationCleanupService.java")) {
             String src = Files.readString(Path.of("src/main/java/com/hotclick", f));
             Matcher m = logCall.matcher(src);
             while (m.find()) {
