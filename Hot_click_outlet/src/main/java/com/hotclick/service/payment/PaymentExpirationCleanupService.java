@@ -1,5 +1,6 @@
 package com.hotclick.service.payment;
 
+import com.hotclick.service.OnvoService;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pago;
 import com.hotclick.payment.OnvoPaymentProvider;
@@ -93,7 +94,7 @@ public class PaymentExpirationCleanupService {
                 pago.getMerchantToken(), "cleanup");
             switch (v) {
                 case OK, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA -> {
-                    log.info("[payment-cleanup] ONVO ya cobrado — confirmado: {}", pago.getMerchantToken());
+                    log.info("[payment-cleanup] ONVO ya cobrado — confirmado: {}", OnvoService.enmascarar(pago.getMerchantToken()));
                     return false;
                 }
                 case NO_ENCONTRADO -> {
@@ -112,7 +113,7 @@ public class PaymentExpirationCleanupService {
                 }
             }
         } catch (Exception e) {
-            log.warn("[payment-cleanup] Reconsulta ONVO falló token={}: {}", pago.getMerchantToken(), e.getClass().getSimpleName());
+            log.warn("[payment-cleanup] Reconsulta ONVO falló token={}: {}", OnvoService.enmascarar(pago.getMerchantToken()), e.getClass().getSimpleName());
             return false;
         }
     }

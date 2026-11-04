@@ -88,7 +88,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
             : onvoService.crearCheckoutSession(pedido.getTotalPedido(), descripcion, successUrl, cancelUrl,
                 usuario.getCorreo(), metadata, onBehalfOf);
 
-        log.info("[onvo] Checkout session creada: {} pedido={}", session.id(), pedido.getNumeroPedido());
+        log.info("[onvo] Checkout session creada: {} pedido={}", OnvoService.enmascarar(session.id()), pedido.getNumeroPedido());
 
         return new PaymentSession(session.id(), session.url());
     }
@@ -102,13 +102,13 @@ public class OnvoPaymentProvider implements PaymentProvider {
      */
     public Verificacion procesarPagoVerificado(String checkoutSessionId, String origen) {
         if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(checkoutSessionId, EVENTO_SESION)) {
-            log.info("[onvo] Sesión ya procesada: sessionId={}", checkoutSessionId);
+            log.info("[onvo] Sesión ya procesada: sessionId={}", OnvoService.enmascarar(checkoutSessionId));
             return Verificacion.DUPLICADO;
         }
         Pago pago = pagoRepository.findByMerchantToken(checkoutSessionId).orElse(null);
         if (pago == null || pago.getPedido() == null
                 || !Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) {
-            log.warn("[onvo] Sesión sin pago ONVO local: sessionId={}", checkoutSessionId);
+            log.warn("[onvo] Sesión sin pago ONVO local: sessionId={}", OnvoService.enmascarar(checkoutSessionId));
             return Verificacion.NO_ENCONTRADO;
         }
         if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) {
@@ -116,7 +116,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
         }
         if (!onvoService.isPagosDisponibles()) {
             // Sin llave las lecturas dan vacío: eso no es «ONVO no la tiene» y no autoriza a cancelar.
-            log.error("[ALERTA-PAGO] ONVO sin llave utilizable: no se puede verificar sessionId={}", checkoutSessionId);
+            log.error("[ALERTA-PAGO] ONVO sin llave utilizable: no se puede verificar sessionId={}", OnvoService.enmascarar(checkoutSessionId));
             return Verificacion.NO_CONSULTABLE;
         }
         Map<?, ?> sesion = onvoService.obtenerCheckoutSession(checkoutSessionId);
@@ -142,16 +142,16 @@ public class OnvoPaymentProvider implements PaymentProvider {
             }
             case RECHAZAR_MODO -> {
                 log.error("[ALERTA-PAGO] ONVO devolvió un cobro de otro modo (test/live) que la llave: sessionId={}",
-                    checkoutSessionId);
+                    OnvoService.enmascarar(checkoutSessionId));
                 return Verificacion.DATOS_DISTINTOS;
             }
             case EN_PROCESO -> {
-                log.info("[onvo] Cobro todavía en proceso en ONVO: sessionId={}", checkoutSessionId);
+                log.info("[onvo] Cobro todavía en proceso en ONVO: sessionId={}", OnvoService.enmascarar(checkoutSessionId));
                 return Verificacion.EN_PROCESO;
             }
             default -> {
                 // Sin transacción el pedido es un proxy lazy: se loguea la sesión, no el número de pedido.
-                log.info("[onvo] Sesión todavía sin cobro confirmado: sessionId={}", checkoutSessionId);
+                log.info("[onvo] Sesión todavía sin cobro confirmado: sessionId={}", OnvoService.enmascarar(checkoutSessionId));
                 return Verificacion.NO_PAGADO;
             }
         }
@@ -166,7 +166,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
             return onvoCapturaService.capturarVerificado(checkoutSessionId,
                 "{\"verificado\":\"GET ONVO\",\"paymentIntentId\":\"" + intentId + "\"}", origen);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            log.info("[onvo] Entrega concurrente ya registrada: sessionId={}", checkoutSessionId);
+            log.info("[onvo] Entrega concurrente ya registrada: sessionId={}", OnvoService.enmascarar(checkoutSessionId));
             return OnvoCapturaService.Captura.DUPLICADO;
         }
     }
@@ -177,7 +177,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
             String ref = onvoService.sinpeRefNumberDe(intentId);
             if (ref != null) onvoCapturaService.guardarSinpeRef(checkoutSessionId, ref);
         } catch (RuntimeException e) {
-            log.warn("[onvo] No se guardó SINPERefNumber: sessionId={} ({})", checkoutSessionId, e.getClass().getSimpleName());
+            log.warn("[onvo] No se guardó SINPERefNumber: sessionId={} ({})", OnvoService.enmascarar(checkoutSessionId), e.getClass().getSimpleName());
         }
     }
 
@@ -207,7 +207,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
             case NO_EXISTE -> true;
             case RESPUESTA -> sesionExpiradaSinCobro(r.sesion(), checkoutSessionId);
             case SIN_CUERPO, NO_CONSULTABLE -> {
-                log.warn("[onvo] Expire sin confirmación ({}): no se cancela sessionId={}", r.tipo(), checkoutSessionId);
+                log.warn("[onvo] Expire sin confirmación ({}): no se cancela sessionId={}", r.tipo(), OnvoService.enmascarar(checkoutSessionId));
                 yield false;
             }
         };
@@ -217,7 +217,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
         boolean expirada = "expired".equalsIgnoreCase(String.valueOf(sesion.get("status")));
         boolean pagada = "paid".equalsIgnoreCase(String.valueOf(sesion.get("paymentStatus")));
         if (!expirada || pagada) {
-            log.warn("[onvo] ONVO no dejó la sesión expirada y sin cobro: sessionId={}", checkoutSessionId);
+            log.warn("[onvo] ONVO no dejó la sesión expirada y sin cobro: sessionId={}", OnvoService.enmascarar(checkoutSessionId));
             return false;
         }
         return true;
