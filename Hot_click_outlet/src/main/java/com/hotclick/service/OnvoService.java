@@ -527,6 +527,49 @@ public class OnvoService {
         }
     }
 
+    /** Refund de ONVO: id y status (pending, succeeded o failed). */
+    public record OnvoReembolso(String id, String status) {}
+
+    /** true si se puede pedir o leer un reembolso de este payment intent (no mock, con llave, id con forma de ONVO). */
+    public boolean reembolsable(String intentId) {
+        return consultable(intentId);
+    }
+
+    /**
+     * Reembolso total del payment intent (POST /v1/refunds, sin amount = el total). Sin @Retry ni fallback:
+     * no es idempotente y un reintento podría devolver dos veces. Los errores se relanzan tal cual:
+     * un 4xx es un rechazo de ONVO; cualquier otro error deja el resultado en duda.
+     */
+    public OnvoReembolso crearReembolso(String intentId, String descripcion) {
+        if (!consultable(intentId)) throw new IllegalStateException("ONVO no disponible para reembolsar");
+        Map<String, Object> body = new HashMap<>();
+        body.put("paymentIntentId", intentId);
+        if (descripcion != null) body.put("description", descripcion);
+        OnvoReembolso r = parseReembolso(postOnvo("/refunds", body));
+        log.info("[onvo] Reembolso {} del intent {}: {}", ReembolsoIds.ocultar(r.id()), ReembolsoIds.ocultar(intentId), r.status());
+        return r;
+    }
+
+    /** Lee un refund (GET /v1/refunds/{id}). Los errores se relanzan. */
+    public OnvoReembolso obtenerReembolso(String refundId) {
+        if (!consultable(refundId)) throw new IllegalStateException("ONVO no disponible para leer el reembolso");
+        return parseReembolso(getOnvo("/refunds/" + refundId));
+    }
+
+    private static final class ReembolsoIds {
+        static String ocultar(String id) {
+            if (id == null) return "null";
+            return id.length() <= 8 ? "****" : id.substring(0, 4) + "..." + id.substring(id.length() - 4);
+        }
+    }
+
+    private static OnvoReembolso parseReembolso(Map<?, ?> body) {
+        if (body == null || body.get("id") == null || body.get("status") == null) {
+            throw new IllegalStateException("Respuesta inválida de ONVO al reembolsar");
+        }
+        return new OnvoReembolso(String.valueOf(body.get("id")), String.valueOf(body.get("status")));
+    }
+
     /** Mock o sin llave no consultan; el id viaja en la URL y solo se aceptan ids con forma de ONVO. */
     private boolean consultable(String id) {
         return !mockMode && pagosDisponibles && id != null && ID_ONVO.matcher(id).matches();

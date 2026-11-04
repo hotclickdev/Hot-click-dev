@@ -90,6 +90,8 @@ public class Constants {
     public static final String PEDIDO_PAGADO        = "PAGADO";
     /** M-08: cobrado sin stock (segundo pago sobre la última unidad). No se despacha; el reembolso queda pendiente. */
     public static final String PEDIDO_REVISION_SOBREVENTA = "REVISION_SOBREVENTA";
+    /** Reembolso por ONVO pedido por el ADMIN y todavía sin confirmar. Fuera de la máquina manual de estados. */
+    public static final String PEDIDO_REEMBOLSO_PENDIENTE = "REEMBOLSO_PENDIENTE";
     public static final String PEDIDO_EN_PREPARACION = "EN_PREPARACION";
     public static final String PEDIDO_LISTO_RETIRO   = "LISTO_RETIRO";
 
