@@ -51,6 +51,8 @@ class OnvoBillingWebhookHandlerTest {
 
     @BeforeEach
     void setUp() {
+        // QA #536: el handler exige fila local antes de activar (sin fila = rechazo de negocio, 2xx).
+        org.mockito.Mockito.lenient().when(suscripcionRepo.existsByOnvoSubscriptionId(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
         OnvoFacturaPeriodoStub.comoLatestInvoice(onvo);
         handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
             new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), onvo), suscripcionRepo);
@@ -174,8 +176,9 @@ class OnvoBillingWebhookHandlerTest {
     void noPagadaOMontoDistinto() throws Exception {
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "open", "live", 2_400));
-        assertThatThrownBy(() -> handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null))
-            .isInstanceOf(OnvoBillingWebhookHandler.EventoBillingRechazado.class);
+        // QA #536: rechazo de negocio no pagado → 2xx y queda pendiente (nunca 5xx)
+        assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue();
+        assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("pendiente:no_pagado");
         for (long total : new long[]{0, 2_401}) {
             when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice("clinv0001", "clsub0001", "paid", "live", total));
             assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(RENOVACION_DOC), null)).isTrue(); // M2: permanente → 200
