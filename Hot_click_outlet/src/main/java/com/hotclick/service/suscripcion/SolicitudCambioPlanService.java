@@ -76,7 +76,12 @@ public class SolicitudCambioPlanService {
         s.setFechaSolicitud(LocalDateTime.now(Constants.ZONA_CR));
         s.setSolicitadoPor(usuarioId);
         s.setRevisada(false);
-        s = repo.save(s);
+        try {
+            // El índice único parcial (V234) cierra la carrera del check-then-insert: el segundo insert falla → 409.
+            s = repo.saveAndFlush(s);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new SolicitudAbiertaException();
+        }
         log.info("[plan-solicitud] solicitud de bajar de plan empresa={} de={} a={} id={}",
             empresaId, s.getPlanActual(), s.getPlanSolicitado(), s.getId());
         return aMapa(s, empresa.getNombreEmpresa());

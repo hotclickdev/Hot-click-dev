@@ -47,11 +47,13 @@ class SolicitudCambioPlanServiceTest {
         lenient().when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         lenient().when(planRepo.findById(3L)).thenReturn(Optional.of(plus));
         lenient().when(planRepo.findById(2L)).thenReturn(Optional.of(plan(2L, "PYME")));
-        lenient().when(repo.save(any())).thenAnswer(inv -> {
+        org.mockito.stubbing.Answer<Object> conId = inv -> {
             SolicitudCambioPlan s = inv.getArgument(0);
             if (s.getId() == null) s.setId(99L);
             return s;
-        });
+        };
+        lenient().when(repo.save(any())).thenAnswer(conId);
+        lenient().when(repo.saveAndFlush(any())).thenAnswer(conId);
     }
 
     private static Plan plan(Long id, String n) {
@@ -78,7 +80,7 @@ class SolicitudCambioPlanServiceTest {
     void soloMasBajo() {
         assertThatThrownBy(() -> service.solicitar(10L, 5L, 3L, "motivo valido"))
             .isInstanceOf(SolicitudCambioPlanService.SolicitudInvalidaException.class);
-        verify(repo, never()).save(any());
+        verify(repo, never()).saveAndFlush(any());
     }
 
     @Test

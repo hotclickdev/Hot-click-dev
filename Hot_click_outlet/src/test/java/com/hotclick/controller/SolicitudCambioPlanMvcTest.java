@@ -66,6 +66,7 @@ class SolicitudCambioPlanMvcTest {
         when(planRepo.findById(2L)).thenReturn(Optional.of(pyme));
         when(planRepo.findById(3L)).thenReturn(Optional.of(plus));
         when(repo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(repo.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
         when(scope.getCurrentUserId()).thenReturn(5L);
         when(guard.puedeGestionarEmpresa(10L)).thenReturn(true);
         TenantContext.set(10L);
@@ -85,7 +86,7 @@ class SolicitudCambioPlanMvcTest {
                 .content(cuerpo("Bajaron las ventas este mes")))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.error").value(PropietarioGuard.MSG));
-        verify(repo, never()).save(any());
+        verify(repo, never()).saveAndFlush(any());
     }
 
     @Test
@@ -94,7 +95,7 @@ class SolicitudCambioPlanMvcTest {
                 .content(cuerpo("no")))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error").exists());
-        verify(repo, never()).save(any());
+        verify(repo, never()).saveAndFlush(any());
     }
 
     @Test
@@ -104,7 +105,7 @@ class SolicitudCambioPlanMvcTest {
                 .content(cuerpo("Bajaron las ventas este mes")))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.codigo").value("SOLICITUD_CAMBIO_PLAN_ABIERTA"));
-        verify(repo, never()).save(any());
+        verify(repo, never()).saveAndFlush(any());
     }
 
     @Test
@@ -112,7 +113,23 @@ class SolicitudCambioPlanMvcTest {
         mvc.perform(post("/api/billing/solicitud-cambio-plan").contentType(MediaType.APPLICATION_JSON)
                 .content(cuerpo("Bajaron las ventas este mes")))
             .andExpect(status().isOk());
-        verify(repo, times(1)).save(any());
+        verify(repo, times(1)).saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName("Doble POST en carrera: el segundo pasa el check pero choca con el índice único → 409, no 500")
+    void dobleInsert_unicidad_409() throws Exception {
+        when(repo.saveAndFlush(any()))
+            .thenAnswer(inv -> inv.getArgument(0))
+            .thenThrow(new org.springframework.dao.DataIntegrityViolationException("ux_solicitud_cambio_plan_abierta"));
+        mvc.perform(post("/api/billing/solicitud-cambio-plan").contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo("Bajaron las ventas este mes")))
+            .andExpect(status().isOk());
+        mvc.perform(post("/api/billing/solicitud-cambio-plan").contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo("Bajaron las ventas este mes")))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("SOLICITUD_CAMBIO_PLAN_ABIERTA"));
+        verify(repo, times(2)).saveAndFlush(any());
     }
 
     @Test
