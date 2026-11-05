@@ -117,7 +117,22 @@ jobs:
         if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'hotfix/')
         run: |
           set -euo pipefail
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o gitleaks.tar.gz
+          # -f corta en HTTP de error; --retry evita un corte de red a medias.
+          # Content-Length del response final debe cuadrar con el archivo (falla claro si viene incompleto).
+          curl -fsSL --retry 3 --retry-delay 5 \
+            -D gitleaks.hdr \
+            -o gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          expected=$(awk 'BEGIN{IGNORECASE=1} tolower($1)=="content-length:"{v=$2} END{print v}' gitleaks.hdr | tr -d '\r')
+          actual=$(wc -c < gitleaks.tar.gz | tr -d ' ')
+          if [ -z "$expected" ] || [ "$expected" = "0" ]; then
+            echo "Descarga de gitleaks sin Content-Length usable (headers en gitleaks.hdr)" >&2
+            exit 1
+          fi
+          if [ "$actual" != "$expected" ]; then
+            echo "Descarga incompleta de gitleaks: bytes=$actual esperado=$expected" >&2
+            exit 1
+          fi
           echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
           chmod +x gitleaks
