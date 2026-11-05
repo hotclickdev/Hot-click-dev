@@ -225,6 +225,24 @@ class SuscripcionOnvoCambioPlanAlto02bTest {
     }
 
     @Test
+    @DisplayName("Seguridad: trialing con método de pago → 422 en voseo, sin tocar ONVO ni el estado local")
+    void trialingConMetodoPago_noSeReemplaza() {
+        conSuscripcionOnvo("trialing", "price_emp", "pm_1");
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
+            .isInstanceOf(com.hotclick.exception.TrialConMetodoPagoException.class);
+        assertThat(com.hotclick.exception.TrialConMetodoPagoException.MENSAJE)
+            .contains("Tu plan sigue igual").contains("no se te cobró nada").contains("escribinos");
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), org.mockito.ArgumentMatchers.anyInt());
+        verify(suscripcionRepo, never()).save(any());
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
+        assertThat(sub.getOnvoPriceId()).isEqualTo("price_emp");
+        assertThat(sub.getPlanPendiente()).isNull();
+    }
+
+    @Test
     @DisplayName("Log enmascarado: solo los últimos 4 caracteres del id")
     void enmascarar() {
         assertThat(SuscripcionOnvoChangeService.enmascarar("sub_abcdef123456")).isEqualTo("****3456");

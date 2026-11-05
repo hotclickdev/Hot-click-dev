@@ -480,6 +480,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
                 "mensaje", "Tu plan ya está en ONVO; se activa cuando se confirme el cobro"
             );
         }
+        if ("trialing".equals(estado) && OnvoBillingClient.tieneMetodoPago(enOnvo)) {
+            // Seguridad: con tarjeta, ONVO cobra al terminar el trial; si cancelar la vieja fallara habría doble cobro.
+            log.warn("[onvo] cambio de plan en trial con método de pago: no se reemplaza empresa={}", empresaId);
+            throw new com.hotclick.exception.TrialConMetodoPagoException();
+        }
         if (estado != null && ESTADOS_SIN_COBRO.contains(estado)) {
             return reemplazarSuscripcionSinCobro(empresaId, empresa, sub, planDestino, priceId, estado, enOnvo);
         }
