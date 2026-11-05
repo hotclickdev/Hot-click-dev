@@ -75,6 +75,7 @@ class OnvoRenovacionReconsultaTest {
 
     @BeforeEach
     void setUp() {
+        OnvoFacturaPeriodoStub.comoLatestInvoice(onvo);
         tx = new TxManagerGrabador();
         reconsulta = new OnvoRenovacionReconsulta(onvo, planRepo, cambio, tx, lockTimeout,
             new OnvoReconsultaConfig(DIAS_GRACIA, DIAS_MAX_INCIERTA, MAX_INCIERTAS_SEGUIDAS, 5000),

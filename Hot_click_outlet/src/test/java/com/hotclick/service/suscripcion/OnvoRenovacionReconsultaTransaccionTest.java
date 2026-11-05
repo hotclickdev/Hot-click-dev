@@ -54,6 +54,7 @@ class OnvoRenovacionReconsultaTransaccionTest {
         jdbc.execute("CREATE TABLE corrida(clave VARCHAR(40) PRIMARY KEY, valor VARCHAR(40))");
         tm = new DataSourceTransactionManager(ds);
         onvo = mock(OnvoBillingClient.class);
+        OnvoFacturaPeriodoStub.comoLatestInvoice(onvo);
         cambio = mock(SuscripcionOnvoChangeService.class);
         PlanRepository planRepo = mock(PlanRepository.class);
         Plan pyme = new Plan();
