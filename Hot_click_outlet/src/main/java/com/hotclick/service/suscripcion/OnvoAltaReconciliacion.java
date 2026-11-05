@@ -23,6 +23,8 @@ import java.util.Map;
  *   <li>Solo activa si ONVO confirma suscripción {@code active} y factura del período {@code paid}, verificadas igual
  *       que en el webhook ({@link OnvoBillingVerificador#renovacion}), y por el MISMO camino idempotente
  *       ({@code procesarPagoOnvoVerificado}, que no hace nada si esa factura ya tiene COBRO_OK).</li>
+ *   <li>QA #536: {@code trialing} con método de pago guardado activa el plan hasta el fin del trial
+ *       ({@link OnvoBillingVerificador#trialConMetodo}, {@code procesarTrialOnvoVerificado}, una sola vez).</li>
  *   <li>Sin confirmación, o si ONVO falla: no cambia nada.</li>
  *   <li>Ignora filas sin plan pendiente, sin id ONVO o con {@code onvo_sub_por_cancelar} (reemplazo en revisión).
  *       El id sale de nuestra base, nunca del cliente.</li>
@@ -91,6 +93,17 @@ public class OnvoAltaReconciliacion {
                     || !customerCompatible(local, sub)) {
                 log.warn("[billing-onvo] reconciliación: datos de ONVO no verificables sub={}", ref);
                 return Resultado.SIN_CONFIRMAR;
+            }
+            if ("trialing".equalsIgnoreCase(OnvoBillingVerificador.texto(sub, "status"))) {
+                // QA #536: trial con método de pago guardado = plan activo hasta el fin del trial (mismo camino que el webhook).
+                OnvoBillingVerificador.Resultado t = OnvoBillingVerificador.trialConMetodo(
+                    sub, subId, modo, precioPlan::planParaPriceId, precioPlan::esperado);
+                if (!t.aceptado()) {
+                    log.info("[billing-onvo] reconciliación trial sin confirmar sub={} motivo={}", ref, t.motivo());
+                    return Resultado.SIN_CONFIRMAR;
+                }
+                cambio.procesarTrialOnvoVerificado(subId, t.planNombre(), t.fechaFin());
+                return Resultado.ACTIVADA;
             }
             if (!"active".equalsIgnoreCase(OnvoBillingVerificador.texto(sub, "status"))) return Resultado.SIN_CONFIRMAR;
             Map<?, ?> factura = onvo.obtenerFacturaDelPeriodoActual(sub);

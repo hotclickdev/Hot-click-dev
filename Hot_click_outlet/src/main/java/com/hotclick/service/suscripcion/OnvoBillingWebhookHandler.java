@@ -23,8 +23,8 @@ import java.util.Map;
  * S-02: el cuerpo del webhook solo dispara la verificación. Todo se relee por GET a ONVO
  * (renovación, payment intent, suscripción) y se exige mode = modo de la llave, estado pagado,
  * moneda y monto = price configurado del plan del priceId que confirma ONVO (sin moneda ni monto fijos en el código). El plan nunca sale de metadata.
- * Un evento que no se puede verificar lanza {@link EventoBillingRechazado} (el controlador responde 5xx
- * y ONVO reintenta); no se marca como procesado.
+ * Un evento que no se puede verificar lanza {@link EventoBillingRechazado}; QA #536: se registra como ignorado
+ * (permanente) o pendiente y se responde 2xx. Solo {@code config_faltante} y errores inesperados responden 5xx.
  */
 @Service
 public class OnvoBillingWebhookHandler {
@@ -40,6 +40,8 @@ public class OnvoBillingWebhookHandler {
         public String getMotivo() { return motivo; }
         /** M2: ONVO confirmó algo que no cuadra (modo, monto, price…): reintentar no lo arregla. */
         public boolean esPermanente() { return motivo != null && PERMANENTES.contains(motivo); }
+        /** Falta configuración de nuestro lado: el único rechazo que sigue respondiendo 5xx. */
+        public boolean esErrorNuestro() { return OnvoBillingVerificador.M_CONFIG_FALTANTE.equals(motivo); }
     }
 
     private static final String M_CUSTOMER = "customer";
@@ -50,7 +52,7 @@ public class OnvoBillingWebhookHandler {
      *  estado aún no pagado/activo en ONVO, configuración faltante: {@code config_faltante}) sigue lanzando para que el controlador responda 5xx y ONVO reintente. */
     static final java.util.Set<String> PERMANENTES = java.util.Set.of(
         "modo", "monto", "moneda", "price_desconocido", "plan_sin_precio", M_CUSTOMER, "id",
-        "pago_parcial", "falta_id", "falta_subscriptionId", M_FALTA_PERIODO);
+        "pago_parcial", "falta_id", "falta_subscriptionId", M_FALTA_PERIODO, "sub_desconocida");
 
     private final StripeEventoRepository eventoRepo;
     private final SuscripcionService suscripcionService;
@@ -95,7 +97,10 @@ public class OnvoBillingWebhookHandler {
                     type, e.getMotivo());
                 return true;
             }
-            throw e;
+            if (e.esErrorNuestro()) throw e;
+            log.warn("[onvo-billing] Evento sin clave de idempotencia queda pendiente (200): type={} motivo={}",
+                type, e.getMotivo());
+            return true;
         }
         if (Boolean.TRUE.equals(
             eventoRepo.findByIdForUpdate(eventId).map(StripeEvento::getProcesadoOk).orElse(null))) {
@@ -113,9 +118,17 @@ public class OnvoBillingWebhookHandler {
             marcar(eventId, true, null);
         } catch (EventoBillingRechazado e) {
             // B2: en el ledger va un código, nunca el mensaje de la excepción.
-            marcar(eventId, false, "rechazo:" + (e.getMotivo() == null ? "desconocido" : e.getMotivo()));
-            if (e.esPermanente()) return true; // M2: queda registrado y se responde 200
-            throw e;
+            String motivo = e.getMotivo() == null ? "desconocido" : e.getMotivo();
+            if (e.esErrorNuestro()) {
+                marcar(eventId, false, "rechazo:" + motivo);
+                throw e; // configuración faltante: error nuestro → 5xx y ONVO reintenta
+            }
+            // QA #536: un rechazo de negocio nunca es 5xx. Permanente → ignorado; el resto (sub aún no activa, sin pago,
+            // sin método) → pendiente: lo resuelve la reconciliación o el próximo evento. procesado_ok=false.
+            marcar(eventId, false, (e.esPermanente() ? "rechazo:" : "pendiente:") + motivo);
+            log.info("[onvo-billing] Evento {} registrado como {} motivo={} (2xx)", type,
+                e.esPermanente() ? "ignorado" : "pendiente", motivo);
+            return true;
         } catch (RuntimeException e) {
             marcar(eventId, false, e.getClass().getSimpleName());
             throw e;
@@ -167,11 +180,30 @@ public class OnvoBillingWebhookHandler {
         String subId = exigirId(subIdDeEvento(data), F_SUBSCRIPTION_ID);
         Map<?, ?> invoice = onvo.obtenerRenovacion(invoiceId);
         Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
+        if ("trialing".equalsIgnoreCase(OnvoBillingVerificador.texto(sub, "status"))) {
+            activarTrial(subId, sub);
+            return;
+        }
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.renovacion(
             invoice, sub, invoiceId, subId, onvo.modoEsperado(), precioPlan::planParaPriceId, precioPlan::esperado);
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         exigirCustomerLocal(subId, sub);
+        exigirSuscripcionLocal(subId);
         suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), invoiceId);
+    }
+
+    /**
+     * QA #536: la factura de $0 del trial llega como payment_succeeded con la suscripción en {@code trialing}. Con método
+     * de pago guardado se activa el plan hasta el fin del trial (mismo camino idempotente que la reconciliación); sin
+     * método queda pendiente ({@code sin_metodo_pago}, 2xx).
+     */
+    private void activarTrial(String subId, Map<?, ?> sub) {
+        OnvoBillingVerificador.Resultado t = OnvoBillingVerificador.trialConMetodo(
+            sub, subId, onvo.modoEsperado(), precioPlan::planParaPriceId, precioPlan::esperado);
+        if (!t.aceptado()) throw rechazo(t.motivo(), subId);
+        exigirCustomerLocal(subId, sub);
+        exigirSuscripcionLocal(subId);
+        suscripcionService.procesarTrialOnvoVerificado(subId, t.planNombre(), t.fechaFin());
     }
 
     /**
@@ -227,6 +259,7 @@ public class OnvoBillingWebhookHandler {
         // Referencia del ledger (referencia_externa, 120): el id de la factura que ONVO devuelve tiene que ser un id válido.
         String facturaId = OnvoBillingVerificador.texto(factura, "id");
         if (facturaId != null && !OnvoBillingClient.idValido(facturaId)) throw rechazo("id", "facturaId");
+        exigirSuscripcionLocal(subId);
         suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId != null ? facturaId : intentId);
     }
 
@@ -257,6 +290,14 @@ public class OnvoBillingWebhookHandler {
         Object meta = subOnvo == null ? null : subOnvo.get("metadata");
         Object enOnvo = meta instanceof Map<?, ?> m ? m.get("empresa_id") : null;
         return enOnvo != null && String.valueOf(local.getEmpresa().getId()).equals(String.valueOf(enOnvo));
+    }
+
+    /** QA #536: id de ONVO sin fila local = rechazo de negocio (2xx), no 5xx; se chequea antes de la transacción del servicio.
+     * #535: también cuenta una subida a Negocio Plus guardada como onvo_sub_nueva_pendiente. */
+    private void exigirSuscripcionLocal(String subId) {
+        if (suscripcionRepo.existsByOnvoSubscriptionId(subId)) return;
+        if (suscripcionRepo.findByOnvoSubNuevaPendiente(subId).isPresent()) return;
+        throw rechazo("sub_desconocida", subId);
     }
 
     private static EventoBillingRechazado rechazo(String motivo, String ref) {

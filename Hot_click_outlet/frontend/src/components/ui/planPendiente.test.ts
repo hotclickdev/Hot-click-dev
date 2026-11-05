@@ -77,3 +77,17 @@ describe('BAJO seguridad: 429 del rate limit de reconciliar-pago', () => {
     expect(refrescar).not.toHaveBeenCalled()
   })
 })
+
+describe('QA #536: trial SIN método de pago → «Completar pago» abre el SDK para guardar el método', () => {
+  it('requiere_pago de un trial (factura $0 ya paid) abre el SDK sobre la misma suscripción, no navega a planes', () => {
+    const accion = accionCompletarPago({
+      status: 'requiere_pago', subscriptionId: 'sub_trial', customerId: 'cus_1', publishableKey: 'pk_test',
+      planNombre: 'PYME', trialDias: 90,
+    })
+    expect(accion.tipo).toBe('pagar')
+    expect(accion).toEqual({
+      tipo: 'pagar',
+      pago: { proveedor: 'ONVO', subscriptionId: 'sub_trial', customerId: 'cus_1', publishableKey: 'pk_test', planNombre: 'PYME' },
+    })
+  })
+})

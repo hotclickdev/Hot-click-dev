@@ -374,4 +374,193 @@ class OnvoBillingMediosTest {
             verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
         }
     }
+
+    // ---------------------------------------------------------------- QA #536: trial con método de pago activa el plan
+
+    static Map<String, Object> trialConMetodo() {
+        Map<String, Object> m = subOnvo("trialing");
+        m.put("paymentMethodId", "pm_1");
+        m.put("trialEnd", "2027-02-03T03:25:59.064Z"); // 2027-02-02 en Costa Rica
+        return m;
+    }
+
+    @Nested
+    @DisplayName("QA #536: trialing + método de pago → plan activo hasta el fin del trial, una sola vez")
+    class TrialActivacion {
+        OnvoBillingClient onvo = mock(OnvoBillingClient.class);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        com.hotclick.service.SuscripcionService suscripcionService = mock(com.hotclick.service.SuscripcionService.class);
+        com.hotclick.repository.StripeEventoRepository eventoRepo = mock(com.hotclick.repository.StripeEventoRepository.class);
+        Map<String, com.hotclick.model.StripeEvento> eventos = new HashMap<>();
+        AtomicBoolean activado = new AtomicBoolean(false);
+        OnvoAltaReconciliacion rec;
+        OnvoBillingWebhookHandler handler;
+        final LocalDate finTrial = LocalDate.of(2027, 2, 2);
+
+        @BeforeEach
+        void init() throws Exception {
+            when(onvo.modoEsperado()).thenReturn("test");
+            when(onvo.planParaPriceId("price_pyme")).thenReturn("PYME");
+            doReturn(new HashMap<>(Map.of("id", "price_pyme", "mode", "test", "isActive", true,
+                "currency", "USD", "unitAmount", 2400L))).when(onvo).obtenerPrecio("price_pyme");
+            when(ledger.yaRegistrado(eq(SUB), eq("PLAN_ACTIVADO"))).thenAnswer(i -> activado.get());
+            org.mockito.Mockito.doAnswer(i -> { activado.set(true); return null; })
+                .when(ledger).registrar(any(), any(), eq("PLAN_ACTIVADO"), anyString(), eq(SUB), any(), any(), any());
+            set(service, "ledgerWriter", ledger);
+            var precios = mock(PreciosPlanesConfig.class);
+            when(precios.moneda()).thenReturn(Optional.of("usd"));
+            set(service, "preciosPlanes", precios);
+            sub.setPlanPendiente(planPyme);
+            sub.setEstado("TRIAL");
+            when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate(SUB)).thenReturn(Optional.of(sub));
+            when(suscripcionRepo.findByOnvoSubscriptionId(SUB)).thenReturn(Optional.of(sub));
+            when(suscripcionRepo.existsByOnvoSubscriptionId(SUB)).thenReturn(true);
+            // El webhook y la reconciliación llegan al MISMO servicio real.
+            when(suscripcionService.procesarTrialOnvoVerificado(anyString(), anyString(), any()))
+                .thenAnswer(i -> service.procesarTrialOnvoVerificado(i.getArgument(0), i.getArgument(1), i.getArgument(2)));
+            rec = new OnvoAltaReconciliacion(onvo, suscripcionRepo, service,
+                new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), onvo));
+            when(eventoRepo.findByIdForUpdate(anyString())).thenAnswer(i -> Optional.ofNullable(eventos.get((String) i.getArgument(0))));
+            when(eventoRepo.findById(anyString())).thenAnswer(i -> Optional.ofNullable(eventos.get((String) i.getArgument(0))));
+            when(eventoRepo.save(any())).thenAnswer(i -> { var e = (com.hotclick.model.StripeEvento) i.getArgument(0); eventos.put(e.getStripeEventId(), e); return e; });
+            handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
+                new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), onvo), suscripcionRepo);
+            doReturn(factura("inv_trial_0", "paid", INICIO, FIN)).when(onvo).obtenerRenovacion("inv_trial_0");
+        }
+
+        com.fasterxml.jackson.databind.JsonNode evento() throws Exception {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readTree(
+                "{\"id\":\"inv_trial_0\",\"subscriptionId\":\"" + SUB + "\"}");
+        }
+
+        @Test
+        @DisplayName("verificador: trialing+método acepta con fin del trial; sin método, otro modo u otro id rechaza")
+        void verificador() {
+            var ok = OnvoBillingVerificador.trialConMetodo(trialConMetodo(), SUB, "test",
+                p -> "PYME", (pl, pr) -> new OnvoBillingVerificador.PrecioEsperado("USD", 2400));
+            assertThat(ok.aceptado()).isTrue();
+            assertThat(ok.planNombre()).isEqualTo("PYME");
+            assertThat(ok.fechaFin()).isEqualTo(finTrial);
+            assertThat(OnvoBillingVerificador.trialConMetodo(subOnvo("trialing"), SUB, "test", p -> "PYME",
+                (pl, pr) -> new OnvoBillingVerificador.PrecioEsperado("USD", 2400)).motivo()).isEqualTo("sin_metodo_pago");
+            assertThat(OnvoBillingVerificador.trialConMetodo(trialConMetodo(), SUB, "live", p -> "PYME",
+                (pl, pr) -> new OnvoBillingVerificador.PrecioEsperado("USD", 2400)).motivo()).isEqualTo("modo");
+            assertThat(OnvoBillingVerificador.trialConMetodo(trialConMetodo(), "otra", "test", p -> "PYME",
+                (pl, pr) -> new OnvoBillingVerificador.PrecioEsperado("USD", 2400)).motivo()).isEqualTo("id");
+            assertThat(OnvoBillingVerificador.trialConMetodo(trialConMetodo(), SUB, "test", p -> null,
+                (pl, pr) -> null).motivo()).isEqualTo("price_desconocido");
+        }
+
+        @Test
+        @DisplayName("reconciliación: trialing+método activa el plan elegido con fecha_fin = fin del trial")
+        void reconciliacion_activa() {
+            doReturn(trialConMetodo()).when(onvo).obtenerSuscripcion(SUB);
+            assertThat(rec.reconciliar(sub)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
+            assertThat(sub.getEstado()).isEqualTo("ACTIVO");
+            assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
+            assertThat(sub.getPlanPendiente()).isNull();
+            assertThat(sub.getFechaFin()).isEqualTo(finTrial);
+            assertThat(sub.getTrialEnd()).isEqualTo(finTrial);
+            assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
+            assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
+            assertThat(empresa.getFechaVencPlan()).isEqualTo(finTrial);
+            verify(onvo, never()).obtenerFacturaDelPeriodoActual(any()); // el trial no exige factura pagada
+        }
+
+        @Test
+        @DisplayName("reconciliación: trialing SIN método no activa")
+        void reconciliacion_sinMetodo() {
+            doReturn(subOnvo("trialing")).when(onvo).obtenerSuscripcion(SUB);
+            assertThat(rec.reconciliar(sub)).isEqualTo(OnvoAltaReconciliacion.Resultado.SIN_CONFIRMAR);
+            assertThat(sub.getPlanPendiente()).isEqualTo(planPyme);
+            verify(empresaRepo, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("webhook: payment_succeeded de la factura $0 con sub trialing+método activa (2xx)")
+        void webhook_activa() throws Exception {
+            doReturn(trialConMetodo()).when(onvo).obtenerSuscripcion(SUB);
+            assertThat(handler.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_a")).isTrue();
+            assertThat(eventos.get("onvo_evt_a").getProcesadoOk()).isTrue();
+            assertThat(sub.getEstado()).isEqualTo("ACTIVO");
+            assertThat(sub.getFechaFin()).isEqualTo(finTrial);
+            verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("doble evento distinto (evt_a, evt_b) activa una sola vez")
+        void dobleEvento_unaVez() throws Exception {
+            doReturn(trialConMetodo()).when(onvo).obtenerSuscripcion(SUB);
+            handler.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_a");
+            handler.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_b");
+            handler.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_b"); // reintento del mismo
+            verify(ledger, times(1)).registrar(any(), any(), eq("PLAN_ACTIVADO"), anyString(), eq(SUB), any(), any(), any());
+            verify(empresaRepo, times(1)).save(empresa);
+        }
+
+        @Test
+        @DisplayName("webhook + reconciliación (en cualquier orden) activa una sola vez")
+        void webhookMasReconciliacion_unaVez() throws Exception {
+            doReturn(trialConMetodo()).when(onvo).obtenerSuscripcion(SUB);
+            handler.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_a");
+            sub.setPlanPendiente(planPyme); // aunque la fila volviera a tener pendiente, el ledger corta
+            rec.reconciliar(sub);
+            verify(ledger, times(1)).registrar(any(), any(), eq("PLAN_ACTIVADO"), anyString(), eq(SUB), any(), any(), any());
+            verify(empresaRepo, times(1)).save(empresa);
+        }
+
+        @Test
+        @DisplayName("webhook: trialing SIN método → 2xx, pendiente:sin_metodo_pago, no activa")
+        void webhook_sinMetodo_pendiente() throws Exception {
+            doReturn(subOnvo("trialing")).when(onvo).obtenerSuscripcion(SUB);
+            assertThat(handler.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_c")).isTrue();
+            assertThat(eventos.get("onvo_evt_c").getError()).isEqualTo("pendiente:sin_metodo_pago");
+            assertThat(eventos.get("onvo_evt_c").getProcesadoOk()).isFalse();
+            verify(empresaRepo, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("webhook: sub incomplete (sub_no_activa) → 2xx pendiente; sub sin fila local → 2xx rechazo")
+        void webhook_rechazosDeNegocio_2xx() throws Exception {
+            doReturn(subOnvo("incomplete")).when(onvo).obtenerSuscripcion(SUB);
+            assertThat(handler.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_d")).isTrue();
+            assertThat(eventos.get("onvo_evt_d").getError()).isEqualTo("pendiente:sub_no_activa");
+
+            doReturn(trialConMetodo()).when(onvo).obtenerSuscripcion(SUB);
+            when(suscripcionRepo.existsByOnvoSubscriptionId(SUB)).thenReturn(false);
+            assertThat(handler.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_e")).isTrue();
+            assertThat(eventos.get("onvo_evt_e").getError()).isEqualTo("rechazo:sub_desconocida");
+            verify(empresaRepo, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("webhook: configuración faltante (error nuestro) sigue lanzando → 5xx")
+        void webhook_configFaltante_5xx() throws Exception {
+            doReturn(trialConMetodo()).when(onvo).obtenerSuscripcion(SUB);
+            OnvoBillingWebhookHandler sinConfig = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
+                new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", null), onvo), suscripcionRepo);
+            org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> sinConfig.manejarSiBilling("subscription.payment_succeeded", evento(), "evt_f"))
+                .isInstanceOf(OnvoBillingWebhookHandler.EventoBillingRechazado.class);
+            assertThat(eventos.get("onvo_evt_f").getError()).isEqualTo("rechazo:config_faltante");
+        }
+
+        @Test
+        @DisplayName("completar-pago: trial SIN método con factura $0 paid → requiere_pago (abre el SDK), nunca sin_pago_pendiente")
+        void completarPago_trialSinMetodo_abreSdk() {
+            doReturn(subOnvo("trialing")).when(onvoBilling).obtenerSuscripcion(SUB);
+            doReturn(factura("inv_trial_0", "paid", INICIO, FIN)).when(onvoBilling).obtenerFacturaDelPeriodoActual(any());
+            Map<String, Object> out = service.completarPago(20L);
+            assertThat(out.get("status")).isEqualTo("requiere_pago");
+            assertThat(out.get("subscriptionId")).isEqualTo(SUB);
+            verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+        }
+
+        @Test
+        @DisplayName("completar-pago: trial CON método → sin_pago_pendiente")
+        void completarPago_trialConMetodo_nada() {
+            doReturn(trialConMetodo()).when(onvoBilling).obtenerSuscripcion(SUB);
+            assertThat(service.completarPago(20L).get("status")).isEqualTo("sin_pago_pendiente");
+        }
+    }
 }

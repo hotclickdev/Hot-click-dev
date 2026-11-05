@@ -136,6 +136,11 @@ public class SuscripcionService {
         onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin, facturaId);
     }
 
+    /** QA #536: trialing + método de pago confirmado por GET; activa el plan una sola vez. */
+    public boolean procesarTrialOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate finTrial) {
+        return onvoChangeService.procesarTrialOnvoVerificado(onvoSubId, planNombre, finTrial);
+    }
+
     public void procesarRenovacionOnvoFallida(String onvoSubId) {
         onvoChangeService.procesarRenovacionFallida(onvoSubId);
     }

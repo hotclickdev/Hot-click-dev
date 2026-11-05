@@ -63,6 +63,9 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     List<Long> idsReemplazoPendienteVencido(@Param("limite") java.time.LocalDateTime limite,
                                             org.springframework.data.domain.Pageable pagina);
 
+    /** QA #536: el webhook de billing distingue un id ONVO sin fila local (rechazo de negocio, 2xx). */
+    boolean existsByOnvoSubscriptionId(String onvoSubscriptionId);
+
     /** S-02 (C6 heredado): lock de fila al aplicar un pago ONVO verificado. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubscriptionId = :id")

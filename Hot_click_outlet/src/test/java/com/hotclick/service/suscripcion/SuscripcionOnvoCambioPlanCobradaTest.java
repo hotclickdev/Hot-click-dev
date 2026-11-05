@@ -230,6 +230,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
     @DisplayName("El mensaje del 422 va en voseo y pide mandar la solicitud")
     void mensajeVoseo() {
         assertThat(CambioPlanRequiereSolicitudException.MENSAJE).contains("Mandanos").contains("querés");
+        assertThat(CambioPlanRequiereSolicitudException.CODIGO).isEqualTo("CAMBIO_PLAN_REQUIERE_SOLICITUD");
         assertThat(new CambioPlanRequiereSolicitudException()).isInstanceOf(OnvoSolicitudRechazadaException.class);
     }
 
@@ -342,6 +343,9 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
         assertThat(sub.getPlanPendiente()).isNull();
         assertThat(empresa.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
+        // Precio completo el mismo día, sin prorrateo: el fin es el que confirma ONVO (reinicia el período).
+        assertThat(sub.getFechaFin()).isEqualTo(fin);
+        assertThat(empresa.getFechaVencPlan()).isEqualTo(fin);
     }
 
     @Test
@@ -419,4 +423,22 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThat(SuscripcionOnvoChangeService.esSubidaANegocioPlus("RARO", "NEGOCIO_PLUS")).isFalse();
         assertThat(SuscripcionOnvoChangeService.esSubidaANegocioPlus(null, "NEGOCIO_PLUS")).isFalse();
     }
+    @Test
+    @DisplayName("BAJO: trial ONVO de una suscripción reemplazada se ignora (igual que el camino de pago)")
+    void trialDeSuscripcionReemplazada_seIgnora() {
+        cobrada(plus, "active");
+        sub.setOnvoSubscriptionId("sub_nueva");
+        sub.setOnvoSubReemplazada("sub_vieja");
+        when(suscripcionRepo.findByOnvoSubscriptionId("sub_vieja")).thenReturn(Optional.empty());
+        when(suscripcionRepo.countConOnvoSubVieja("sub_vieja")).thenReturn(1L);
+        when(suscripcionRepo.marcarRevisionManualPorSubVieja(eq("sub_vieja"), any())).thenReturn(1);
+
+        boolean activo = service.procesarTrialOnvoVerificado("sub_vieja", "PYME", LocalDate.now().plusDays(10));
+
+        assertThat(activo).isFalse();
+        assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
+        assertThat(empresa.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
+        verify(suscripcionRepo, never()).findByOnvoSubscriptionIdForUpdate("sub_vieja");
+    }
+
 }
