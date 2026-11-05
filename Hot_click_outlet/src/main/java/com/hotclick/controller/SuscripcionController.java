@@ -203,6 +203,8 @@ public class SuscripcionController {
                 "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
         } catch (com.hotclick.exception.PlanSinPrecioException e) {
             return planSinPrecio(e);
+        } catch (com.hotclick.exception.PriceIdOnvoFaltanteException e) {
+            return priceIdFaltante();
         } catch (com.hotclick.exception.CobroPlanNoDisponibleException e) {
             return cobroNoDisponible();
         } catch (com.hotclick.exception.AltaOnvoEnCursoException e) {
@@ -227,6 +229,40 @@ public class SuscripcionController {
             return ResponseEntity.status(401).body(Map.of("error", MSG_SESION));
         } catch (Exception e) {
             log.error("[billing] Error cambiando plan empresa={}: {}", empresaId, e.getMessage());
+            return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
+        }
+    }
+
+    /** ALTO-02b: falta ONVO_PRICE_ID_{PLAN}; fail-closed, nada se cobró ni cambió. */
+    private static ResponseEntity<Map<String, Object>> priceIdFaltante() {
+        return ResponseEntity.status(503).body(Map.of(
+            "error", com.hotclick.exception.PriceIdOnvoFaltanteException.MENSAJE,
+            "codigo", com.hotclick.exception.PriceIdOnvoFaltanteException.CODIGO));
+    }
+
+    /**
+     * ALTO-02b: «Completar pago» del aviso. Si la suscripción ONVO está incomplete (o en trial sin método de pago)
+     * devuelve {@code requiere_pago} con lo necesario para el SDK de ONVO; si no, {@code sin_pago_pendiente}.
+     * No cambia el plan ni el price.
+     */
+    @PostMapping("/completar-pago")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> completarPago() {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario();
+        try {
+            Map<String, Object> out = new java.util.LinkedHashMap<>(suscripcionService.completarPagoOnvo(empresaId));
+            out.putIfAbsent("proveedor", "ONVO");
+            return ResponseEntity.ok(out);
+        } catch (com.hotclick.exception.OnvoSolicitudRechazadaException e) {
+            return ResponseEntity.status(422).body(Map.of(
+                "error", com.hotclick.exception.OnvoSolicitudRechazadaException.MENSAJE,
+                "codigo", com.hotclick.exception.OnvoSolicitudRechazadaException.CODIGO));
+        } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
+        } catch (Exception e) {
+            log.error("[billing] Error completando pago empresa={}: {}", empresaId, e.getClass().getSimpleName());
             return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
         }
     }

@@ -154,7 +154,7 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
 
         assertThat(out.get("subscriptionId")).isEqualTo("sub_trial");
         verify(onvoBilling, never()).crearCustomer(any(), any(), anyMap());
-        verify(onvoBilling, never()).cambiarPrecioSuscripcion(any(), any(), any());
+        verify(onvoBilling, never()).cancelarInmediato(any());
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
     }
 
@@ -179,7 +179,8 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         when(onvoBilling.getPriceIdForPlan("EMPRENDEDOR")).thenReturn(null);
 
         assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
-            .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("sin precio ONVO");
+            .isInstanceOf(com.hotclick.exception.PriceIdOnvoFaltanteException.class)
+            .hasMessageContaining("ONVO_PRICE_ID_EMPRENDEDOR");
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
     }
 

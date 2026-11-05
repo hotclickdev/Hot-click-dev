@@ -206,7 +206,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             return respuestaRequierePago(empresa, planDestino, sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId());
         }
         if (sub != null && sub.getOnvoSubscriptionId() != null && !sub.getOnvoSubscriptionId().isBlank()) {
-            return cambiarPlanExistente(empresaId, sub, planDestino, priceId);
+            return cambiarPlanExistente(empresaId, empresa, sub, planDestino, priceId);
         }
         return altaPlanPago(empresaId, empresa, planDestino, priceId, sub);
     }
@@ -413,7 +413,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     private String resolverPriceId(String planNombre) {
         String priceId = onvoBilling.getPriceIdForPlan(planNombre);
         if (priceId == null && !caminoMock()) {
-            throw new IllegalArgumentException("Plan " + planNombre + " sin precio ONVO configurado");
+            // Fail-closed: sin el price del plan no se crea ni se cambia nada en ONVO.
+            log.error("[ALERTA-PAGO] [onvo] falta ONVO_PRICE_ID_{} en la configuración; no se puede cobrar ese plan",
+                planNombre);
+            throw new com.hotclick.exception.PriceIdOnvoFaltanteException(planNombre);
         }
         return priceId != null ? priceId : "price_mock_" + planNombre;
     }
@@ -445,20 +448,113 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         );
     }
 
-    private Map<String, Object> cambiarPlanExistente(Long empresaId, Suscripcion sub,
+    /**
+     * ALTO-02b: ONVO no tiene un endpoint para cambiar el price de una suscripción (el PATCH de items edita items
+     * adicionales y rechaza priceId; el POST de actualizar no acepta items). Se decide con el estado real en ONVO:
+     * <ul>
+     *   <li>el price ya es el pedido: no se llama a ONVO; si falta cobrar, se devuelve el cobro pendiente;</li>
+     *   <li>la suscripción nunca se cobró (incomplete, incomplete_expired, trialing): se cancela en ONVO y se crea una
+     *       nueva con {@code items[].priceId} (lo único que documenta ONVO);</li>
+     *   <li>ya cobrada (active, past_due, unpaid...): fail-closed, 422 sin tocar nada.</li>
+     * </ul>
+     */
+    private Map<String, Object> cambiarPlanExistente(Long empresaId, Empresa empresa, Suscripcion sub,
                                                      Plan planDestino, String priceId) {
-        String itemId = onvoBilling.obtenerPrimerItemId(sub.getOnvoSubscriptionId());
-        onvoBilling.cambiarPrecioSuscripcion(sub.getOnvoSubscriptionId(), itemId, priceId);
-        self.guardarOnvoPricePendiente(empresaId, planDestino, priceId);
-
         if (caminoMock()) {
+            self.guardarOnvoPricePendiente(empresaId, planDestino, priceId);
             self.aplicarPlanLocal(empresaId, planDestino.getNombre(), priceId);
             return Map.of("status", "activado", "planNombre", planDestino.getNombre(), "mock", true);
         }
-        return Map.of(
-            "status", "actualizando",
-            "mensaje", "Cambio de plan enviado a ONVO; se activa al confirmar el cobro"
-        );
+        String onvoSubId = sub.getOnvoSubscriptionId();
+        Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(onvoSubId);
+        String estado = OnvoBillingClient.estadoDe(enOnvo);
+        String priceActual = OnvoBillingClient.primerPriceId(enOnvo);
+        if (priceId.equals(priceActual) && !"incomplete_expired".equals(estado)) {
+            // Idempotente: el ítem ya tiene el price pedido; no se repite ninguna llamada de cambio.
+            self.guardarOnvoPricePendiente(empresaId, planDestino, priceId);
+            if (requiereCobro(enOnvo)) {
+                return respuestaRequierePago(empresa, planDestino, sub.getOnvoCustomerId(), onvoSubId);
+            }
+            return Map.of(
+                "status", "actualizando",
+                "mensaje", "Tu plan ya está en ONVO; se activa cuando se confirme el cobro"
+            );
+        }
+        if (estado != null && ESTADOS_SIN_COBRO.contains(estado)) {
+            return reemplazarSuscripcionSinCobro(empresaId, sub, planDestino, priceId, estado);
+        }
+        log.warn("[onvo] cambio de plan sobre una suscripción ya cobrada: ONVO no permite cambiar el precio"
+            + " empresa={} estado={}", empresaId, estado);
+        throw new com.hotclick.exception.OnvoSolicitudRechazadaException(
+            "ONVO no permite cambiar el precio de una suscripción cobrada", null);
+    }
+
+    /** Estados ONVO en los que todavía no se cobró ningún período: se puede reemplazar sin perder nada pagado. */
+    static final java.util.Set<String> ESTADOS_SIN_COBRO = java.util.Set.of("incomplete", "incomplete_expired", "trialing");
+
+    /** Falta cobrar la primera factura, o el trial no tiene método de pago: el SDK de ONVO lo completa. */
+    static boolean requiereCobro(Map<?, ?> enOnvo) {
+        String estado = OnvoBillingClient.estadoDe(enOnvo);
+        return "incomplete".equals(estado)
+            || ("trialing".equals(estado) && !OnvoBillingClient.tieneMetodoPago(enOnvo));
+    }
+
+    private Map<String, Object> reemplazarSuscripcionSinCobro(Long empresaId, Suscripcion sub, Plan planDestino,
+                                                              String priceId, String estado) {
+        String anterior = sub.getOnvoSubscriptionId();
+        log.warn("[onvo] se reemplaza la suscripción sin cobro por otra con el price nuevo empresa={} estado={} sub={}",
+            empresaId, estado, anterior);
+        // Primero se cancela en ONVO (si falla, no se toca nada local); después se desvincula y se da de alta la nueva.
+        onvoBilling.cancelarInmediato(anterior);
+        self.desvincularOnvoSinCobro(empresaId, anterior);
+        Empresa empresa = empresaRepo.findById(empresaId)
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
+        Suscripcion actual = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
+        return altaPlanPago(empresaId, empresa, planDestino, priceId, actual);
+    }
+
+    /** Quita de la fila local la suscripción ONVO ya cancelada (nunca cobrada), para que el alta pueda guardar la nueva. */
+    @Transactional
+    public void desvincularOnvoSinCobro(Long empresaId, String onvoSubId) {
+        suscripcionRepo.findActivaByEmpresaId(empresaId)
+            .filter(s -> onvoSubId.equals(s.getOnvoSubscriptionId()))
+            .ifPresent(s -> {
+                s.setOnvoSubscriptionId(null);
+                s.setOnvoPriceId(null);
+                suscripcionRepo.save(s);
+            });
+    }
+
+    /**
+     * «Completar pago» del aviso de plan pendiente: si la suscripción ONVO está incomplete (primera factura sin cobrar)
+     * o en trial sin método de pago, devuelve los datos para abrir el SDK de ONVO con {@code paymentType: subscription}
+     * (https://docs.onvopay.com/integrations/sdk). No cambia precios ni crea nada. Sin nada que cobrar, {@code
+     * sin_pago_pendiente} y el panel lleva a la pantalla de planes.
+     */
+    public Map<String, Object> completarPago(Long empresaId) {
+        Empresa empresa = empresaRepo.findById(empresaId)
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
+        if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
+            throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
+        }
+        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
+        if (!tieneOnvoGuardado(sub) || caminoMock()) {
+            return Map.of("status", "sin_pago_pendiente");
+        }
+        Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(sub.getOnvoSubscriptionId());
+        if (!requiereCobro(enOnvo)) {
+            return Map.of("status", "sin_pago_pendiente");
+        }
+        // El plan sale del price que confirma ONVO, nunca de lo guardado localmente.
+        String planNombre = onvoBilling.planParaPriceId(OnvoBillingClient.primerPriceId(enOnvo));
+        if (planNombre == null) {
+            log.error("[ALERTA-PAGO] completarPago: el price de la suscripción ONVO no corresponde a ningún plan"
+                + " configurado empresa={}", empresaId);
+            throw new IllegalStateException("Price ONVO desconocido");
+        }
+        Plan plan = planRepo.findByNombre(planNombre)
+            .orElseThrow(() -> new IllegalStateException("Plan no encontrado: " + planNombre));
+        return respuestaRequierePago(empresa, plan, sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId());
     }
 
     private Map<String, Object> altaPlanPago(Long empresaId, Empresa empresa, Plan planDestino,
