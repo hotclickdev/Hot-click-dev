@@ -501,6 +501,15 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             self.aplicarPlanLocal(empresaId, planDestino.getNombre(), priceId);
             return Map.of("status", "activado", "planNombre", planDestino.getNombre(), "mock", true);
         }
+        String nuevaPendiente = sub.getOnvoSubNuevaPendiente();
+        if (nuevaPendiente != null && !nuevaPendiente.isBlank()) {
+            // Ya hay una subida creada sin pagar: se reabre la misma; nunca se crea una segunda suscripción.
+            if (PLAN_NEGOCIO_PLUS.equalsIgnoreCase(planDestino.getNombre())) {
+                return respuestaRequierePago(empresa, planDestino, sub.getOnvoCustomerId(), nuevaPendiente);
+            }
+            throw new com.hotclick.exception.OnvoSolicitudRechazadaException(
+                "Tenés una subida a Negocio Plus pendiente de pago. Completala o esperá a que venza para hacer otro cambio.", null);
+        }
         String onvoSubId = sub.getOnvoSubscriptionId();
         Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(onvoSubId);
         String estado = OnvoBillingClient.estadoDe(enOnvo);
@@ -522,12 +531,30 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw new com.hotclick.exception.TrialConMetodoPagoException();
         }
         if (estado != null && ESTADOS_SIN_COBRO.contains(estado)) {
-            return reemplazarSuscripcionSinCobro(empresaId, empresa, sub, planDestino, priceId, estado, enOnvo);
+            return reemplazarSuscripcion(empresaId, empresa, sub, planDestino, priceId, estado, enOnvo, false);
         }
-        log.warn("[onvo] cambio de plan sobre una suscripción ya cobrada: ONVO no permite cambiar el precio"
-            + " empresa={} estado={}", empresaId, estado);
-        throw new com.hotclick.exception.OnvoSolicitudRechazadaException(
-            "ONVO no permite cambiar el precio de una suscripción cobrada", null);
+        if ("active".equals(estado) && esSubidaANegocioPlus(nombrePlanActual(empresa), planDestino.getNombre())) {
+            // Única subida que la pyme hace sola: precio completo hoy, sin prorrateo, período nuevo desde hoy.
+            return reemplazarSuscripcion(empresaId, empresa, sub, planDestino, priceId, estado, enOnvo, true);
+        }
+        // Bajar de plan o cualquier otro cambio sobre una suscripción cobrada: no se toca ONVO; va por solicitud.
+        log.warn("[onvo] cambio de plan sobre una suscripción ya cobrada: requiere solicitud empresa={} estado={}",
+            empresaId, estado);
+        throw new com.hotclick.exception.CambioPlanRequiereSolicitudException();
+    }
+
+    static final String PLAN_NEGOCIO_PLUS = "NEGOCIO_PLUS";
+    private static final java.util.List<String> ORDEN_PLANES = java.util.List.of(PLAN_GRATIS, "PYME", PLAN_NEGOCIO_PLUS);
+
+    /** Rango del plan (EMPRENDEDOR 0, PYME 1, NEGOCIO_PLUS 2); -1 si no es uno de esos. */
+    static int rangoPlan(String nombre) {
+        return nombre == null ? -1 : ORDEN_PLANES.indexOf(nombre.toUpperCase(java.util.Locale.ROOT));
+    }
+
+    /** Solo subir a NEGOCIO_PLUS desde un plan conocido más bajo. */
+    static boolean esSubidaANegocioPlus(String actual, String destino) {
+        int a = rangoPlan(actual);
+        return PLAN_NEGOCIO_PLUS.equalsIgnoreCase(destino) && a >= 0 && a < rangoPlan(PLAN_NEGOCIO_PLUS);
     }
 
     /** Estados ONVO en los que todavía no se cobró ningún período: se puede reemplazar sin perder nada pagado. */
@@ -559,15 +586,24 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      * es compatible con allow_incomplete), así que si la vieja estaba en trialing se mandan los días que le quedan
      * (trialEnd de ONVO o, si no viene, la fecha local; hacia abajo, mínimo 0). El trial local no se toca.
      */
-    private Map<String, Object> reemplazarSuscripcionSinCobro(Long empresaId, Empresa empresa, Suscripcion sub,
-                                                              Plan planDestino, String priceId, String estado,
-                                                              Map<?, ?> enOnvo) {
+    private Map<String, Object> reemplazarSuscripcion(Long empresaId, Empresa empresa, Suscripcion sub,
+                                                      Plan planDestino, String priceId, String estado,
+                                                      Map<?, ?> enOnvo, boolean subidaCobrada) {
         String anterior = sub.getOnvoSubscriptionId();
         String customerId = sub.getOnvoCustomerId();
         if (customerId == null || customerId.isBlank()) {
             throw new IllegalStateException("La suscripción ONVO no tiene customer guardado.");
         }
-        int diasTrial = diasTrialReemplazo(empresa, sub, planDestino, estado, enOnvo, java.time.Instant.now());
+        String pendiente = sub.getOnvoSubPorCancelar();
+        if (pendiente != null && !pendiente.isBlank()) {
+            // Fail-closed: no se crea otra suscripción mientras una vieja siga sin cancelar en ONVO.
+            log.error("[ALERTA-PAGO] [onvo] reemplazo bloqueado: hay una suscripción vieja pendiente de cancelar empresa={}", empresaId);
+            throw new com.hotclick.exception.OnvoSolicitudRechazadaException(
+                "Tenemos un cambio de plan anterior pendiente de cerrar. Escribinos y lo resolvemos antes de hacer otro cambio.", null);
+        }
+        // Subida sobre una suscripción cobrada: sin trial, ONVO cobra el precio completo al confirmar (allow_incomplete).
+        int diasTrial = subidaCobrada ? 0
+            : diasTrialReemplazo(empresa, sub, planDestino, estado, enOnvo, java.time.Instant.now());
         log.warn("[onvo] reemplazo de suscripción sin cobro empresa={} estado={} sub={} diasTrial={}",
             empresaId, estado, enmascarar(anterior), diasTrial);
         Map<String, String> meta = Map.of(
@@ -596,6 +632,15 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
                 if (fila == null || !anterior.equals(fila.getOnvoSubscriptionId())) {
                     throw new IllegalStateException("La suscripción ONVO cambió mientras se reemplazaba.");
                 }
+                if (subidaCobrada) {
+                    // Dos tiempos: la vieja sigue vigente (ACTIVE, renueva, mismo plan). La nueva queda pendiente y
+                    // solo cuando ONVO confirma su pago se cancela la vieja (completarReemplazoTrasPago).
+                    fila.setOnvoSubNuevaPendiente(nuevaId);
+                    fila.setOnvoSubNuevaDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+                    registrarPlanPendiente(fila, planDestino);
+                    suscripcionRepo.save(fila);
+                    return null;
+                }
                 fila.setOnvoSubscriptionId(null);
                 persistirAltaOnvo(bloqueada, fila, planDestino, customerId, nuevaId, priceId);
                 return null;
@@ -603,6 +648,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         } catch (RuntimeException ex) {
             cancelarHuerfana(empresaId, nuevaId, ex);
             throw ex;
+        }
+        if (subidaCobrada) {
+            log.info("[onvo] subida a Negocio Plus pendiente de pago empresa={} nueva={}", empresaId, enmascarar(nuevaId));
+            return respuestaRequierePago(empresa, planDestino, customerId, nuevaId);
         }
         try {
             onvoBilling.cancelarInmediato(anterior);
@@ -712,7 +761,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             String priceId = OnvoBillingClient.primerPriceId(enOnvo);
             log.warn("[onvo] completarPago: suscripción sin trial con {} día(s) de trial local; se reemplaza empresa={}",
                 diasLocales, empresaId);
-            return reemplazarSuscripcionSinCobro(empresaId, empresa, sub, plan, priceId, "incomplete", enOnvo);
+            return reemplazarSuscripcion(empresaId, empresa, sub, plan, priceId, "incomplete", enOnvo, false);
         }
         return respuestaRequierePago(empresa, plan, sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId());
     }
@@ -873,8 +922,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (!referenciaValida(referenciaLedger)) {
             throw new IllegalArgumentException("Referencia de ledger ONVO inválida: se requiere el id de la factura");
         }
-        Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
+        if (ignorarPagoDeSuscripcionVieja(onvoSubId)) return;
+        Optional<Suscripcion> vigente = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId);
+        Optional<Suscripcion> pendiente = vigente.isPresent() ? Optional.empty()
+            : suscripcionRepo.findByOnvoSubNuevaPendienteForUpdate(onvoSubId);
+        if (vigente.isEmpty() && pendiente.isEmpty()) {
+            throw new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId);
+        }
         // MEDIO-3: webhook y reconciliación comparten este camino. Bajo el lock de fila: si esa factura ya activó
         // (COBRO_OK en el ledger), la segunda llamada no hace nada.
         if (ledgerWriter != null && ledgerWriter.yaRegistrado(referenciaLedger, BillingLedger.TIPO_COBRO_OK)) {
@@ -887,8 +941,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             log.warn("[onvo] Sin fin de período ONVO para sub={}", onvoSubId);
             throw new IllegalStateException("Sin fin de período ONVO para la suscripción");
         }
+        Suscripcion sub = vigente.orElseGet(() -> completarReemplazoTrasPago(pendiente.get()));
         sub.setPlan(plan);
-        sub.setPlanPendiente(null);
+        // Un cobro de la vieja mientras hay una subida sin pagar no borra el plan pendiente.
+        if (sub.getOnvoSubNuevaPendiente() == null) sub.setPlanPendiente(null);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
@@ -909,16 +965,95 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     }
 
     /**
+     * Punto único de cancelación de la vieja al subir a Negocio Plus. Lo llama {@link #procesarPagoOnvoVerificado}
+     * (webhook y cualquier reconciliación que use ese camino) con la fila ya bloqueada y el pago de la nueva verificado.
+     * Idempotente: cambia el id vigente a la nueva una sola vez (el segundo webhook ya encuentra la nueva como vigente y
+     * no entra acá), así la vieja se cancela una sola vez. Si cancelar la vieja falla, queda en onvo_sub_por_cancelar
+     * con revisión manual; como ya no es la vigente, un cobro suyo va a {@link #ignorarPagoDeSuscripcionVieja}.
+     */
+    public Suscripcion completarReemplazoTrasPago(Suscripcion fila) {
+        String nueva = fila.getOnvoSubNuevaPendiente();
+        String vieja = fila.getOnvoSubscriptionId();
+        if (nueva == null || nueva.isBlank()) return fila;
+        fila.setOnvoSubscriptionId(nueva);
+        fila.setOnvoSubNuevaPendiente(null);
+        fila.setOnvoSubNuevaDesde(null);
+        if (vieja != null && !vieja.isBlank() && !vieja.equals(nueva)) {
+            fila.setOnvoSubReemplazada(vieja);
+            try {
+                onvoBilling.cancelarInmediato(vieja);
+                log.info("[onvo] subida pagada: vieja cancelada empresa={} vieja={}",
+                    fila.getEmpresa() == null ? null : fila.getEmpresa().getId(), enmascarar(vieja));
+            } catch (RuntimeException e) {
+                log.error("[ALERTA-PAGO] [onvo] subida pagada pero no se pudo cancelar la vieja; queda para revisión"
+                        + " manual vieja={} causa={} status={}",
+                    enmascarar(vieja), e.getClass().getSimpleName(), OnvoBillingClient.statusDe(e));
+                fila.setOnvoSubPorCancelar(vieja);
+                fila.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+            }
+        }
+        suscripcionRepo.save(fila);
+        return fila;
+    }
+
+    /**
+     * Job de subidas sin pagar: pasado el plazo, cancela en ONVO la nueva (incomplete) y limpia la fila. La vieja no se
+     * toca. Si ONVO ya la reporta activa (pago con webhook en camino) o la cancelación falla, no se limpia: se reintenta.
+     * Devuelve true si la expiró.
+     */
+    @Transactional
+    public boolean expirarReemplazoPendiente(Long filaId, java.time.LocalDateTime limite) {
+        Suscripcion fila = suscripcionRepo.findByIdForUpdate(filaId).orElse(null);
+        if (fila == null || fila.getOnvoSubNuevaPendiente() == null || fila.getOnvoSubNuevaDesde() == null
+                || !fila.getOnvoSubNuevaDesde().isBefore(limite)) {
+            return false;
+        }
+        String nueva = fila.getOnvoSubNuevaPendiente();
+        String estado = OnvoBillingClient.estadoDe(onvoBilling.obtenerSuscripcion(nueva));
+        if ("active".equals(estado) || "trialing".equals(estado)) {
+            log.warn("[ALERTA-PAGO] [onvo] subida vencida pero ONVO la reporta {}: no se cancela nueva={}",
+                estado, enmascarar(nueva));
+            return false;
+        }
+        if (!"canceled".equals(estado) && !"incomplete_expired".equals(estado)) {
+            onvoBilling.cancelarInmediato(nueva);
+        }
+        fila.setOnvoSubNuevaPendiente(null);
+        fila.setOnvoSubNuevaDesde(null);
+        fila.setPlanPendiente(null);
+        suscripcionRepo.save(fila);
+        log.info("[onvo] subida a Negocio Plus sin pagar vencida y cancelada nueva={}", enmascarar(nueva));
+        return true;
+    }
+
+    /**
+     * BAJO (Seguridad): un pago de una suscripción ONVO vieja (reemplazada al subir a Negocio Plus o pendiente de
+     * cancelar) nunca activa ni cambia el plan. Se ignora, se marca la fila para revisión manual y se alerta sin PII.
+     * Solo aplica si el id ya no es el vigente de ninguna fila.
+     */
+    public boolean ignorarPagoDeSuscripcionVieja(String onvoSubId) {
+        if (onvoSubId == null || suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).isPresent()) return false;
+        if (suscripcionRepo.countConOnvoSubVieja(onvoSubId) == 0) return false;
+        int marcadas = suscripcionRepo.marcarRevisionManualPorSubVieja(onvoSubId,
+            java.time.LocalDateTime.now(Constants.ZONA_CR));
+        log.error("[ALERTA-PAGO] [onvo] pago de una suscripción ONVO vieja (reemplazada): se ignora y queda en"
+            + " revisión manual vieja={} filasMarcadas={}", enmascarar(onvoSubId), marcadas);
+        return true;
+    }
+
+    /**
      * QA #536 (decisión de Andrés): ONVO confirmó por GET una suscripción {@code trialing} con método de pago guardado
      * ({@link OnvoBillingVerificador#trialConMetodo}). El plan elegido queda activo durante el trial y {@code fecha_fin}
      * = fin del trial; el primer cobro lo hace ONVO al terminar y entra por {@link #procesarPagoOnvoVerificado} (o, si
      * falla, por past_due/gracia). Webhook y reconciliación comparten este camino. Idempotente bajo el lock de fila:
      * se activa UNA sola vez por suscripción ONVO (PLAN_ACTIVADO con referencia = id de la suscripción).
-     * @return true si activó; false si ya estaba activada.
+     * BAJO (#535): un id que solo figura como onvo_sub_reemplazada / por_cancelar se ignora (igual que el camino de pago).
+     * @return true si activó; false si ya estaba activada o se ignoró una suscripción vieja.
      */
     @Transactional
     public boolean procesarTrialOnvoVerificado(String onvoSubId, String planNombre, LocalDate finTrial) {
         if (!referenciaValida(onvoSubId)) throw new IllegalArgumentException("Id de suscripción ONVO inválido");
+        if (ignorarPagoDeSuscripcionVieja(onvoSubId)) return false;
         Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
         if (ledgerWriter != null && ledgerWriter.yaRegistrado(onvoSubId, BillingLedger.TIPO_PLAN_ACTIVADO)) {
@@ -929,7 +1064,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             .orElseThrow(() -> new IllegalStateException("Plan " + planNombre + " no configurado"));
         if (finTrial == null) throw new IllegalStateException("Sin fin de trial ONVO para la suscripción");
         sub.setPlan(plan);
-        sub.setPlanPendiente(null);
+        // Una subida pendiente no se borra por un evento de trial de la vieja (ya filtrado arriba); sí se limpia si es la vigente.
+        if (sub.getOnvoSubNuevaPendiente() == null) sub.setPlanPendiente(null);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);

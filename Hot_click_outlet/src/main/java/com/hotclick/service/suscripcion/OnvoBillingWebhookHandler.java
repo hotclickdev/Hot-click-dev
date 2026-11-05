@@ -80,6 +80,10 @@ public class OnvoBillingWebhookHandler {
         if (!esEventoBilling(type, data)) {
             return false;
         }
+        if ("payment-intent.succeeded".equals(type) && esPagoDeSuscripcionVieja(data)) {
+            // BAJO: pago de la suscripción vieja (reemplazada): nunca activa ni cambia el plan; queda en revisión.
+            return true;
+        }
         if ("payment-intent.succeeded".equals(type) && !intentAtribuibleASuscripcion(data)) {
             // M1: no se puede atribuir con certeza a una suscripción → flujo normal de checkout/POS.
             return false;
@@ -212,7 +216,9 @@ public class OnvoBillingWebhookHandler {
         String intentId = textOrNull(data, "id");
         if (subId == null || intentId == null) return false;
         if (!OnvoBillingClient.idValido(subId) || !OnvoBillingClient.idValido(intentId)) return false;
-        if (suscripcionRepo.findByOnvoSubscriptionIdForUpdate(subId).isEmpty()) return false;
+        // Una subida a Negocio Plus sin pagar también es atribuible: su id está como nueva pendiente en la fila.
+        if (suscripcionRepo.findByOnvoSubscriptionIdForUpdate(subId).isEmpty()
+                && suscripcionRepo.findByOnvoSubNuevaPendienteForUpdate(subId).isEmpty()) return false;
         // Sandbox ONVO: el payment intent NO trae subscriptionId; el vínculo es factura.paymentIntentId y
         // factura.subscriptionId (la factura del período actual; MEDIO-1: no latestInvoiceId).
         Map<?, ?> factura = facturaMasReciente(onvo.obtenerSuscripcion(subId));
@@ -223,6 +229,12 @@ public class OnvoBillingWebhookHandler {
             return false;
         }
         return true;
+    }
+
+    private boolean esPagoDeSuscripcionVieja(JsonNode data) {
+        String subId = subIdDeEvento(data);
+        return subId != null && OnvoBillingClient.idValido(subId)
+            && suscripcionService.ignorarPagoOnvoSuscripcionVieja(subId);
     }
 
     /**
@@ -256,7 +268,8 @@ public class OnvoBillingWebhookHandler {
      * Si el id de ONVO no existe localmente, procesarPagoOnvoVerificado falla (nunca se busca por metadata).
      */
     private void exigirCustomerLocal(String subId, Map<?, ?> subOnvo) {
-        suscripcionRepo.findByOnvoSubscriptionId(subId).ifPresent(local -> {
+        suscripcionRepo.findByOnvoSubscriptionId(subId)
+                .or(() -> suscripcionRepo.findByOnvoSubNuevaPendiente(subId)).ifPresent(local -> {
             String esperado = OnvoBillingVerificador.texto(subOnvo, "customerId");
             if (esperado == null) throw rechazo(M_CUSTOMER, subId);
             String propio = local.getOnvoCustomerId();
@@ -279,9 +292,12 @@ public class OnvoBillingWebhookHandler {
         return enOnvo != null && String.valueOf(local.getEmpresa().getId()).equals(String.valueOf(enOnvo));
     }
 
-    /** QA #536: id de ONVO sin fila local = rechazo de negocio (2xx), no 5xx; se chequea antes de la transacción del servicio. */
+    /** QA #536: id de ONVO sin fila local = rechazo de negocio (2xx), no 5xx; se chequea antes de la transacción del servicio.
+     * #535: también cuenta una subida a Negocio Plus guardada como onvo_sub_nueva_pendiente. */
     private void exigirSuscripcionLocal(String subId) {
-        if (!suscripcionRepo.existsByOnvoSubscriptionId(subId)) throw rechazo("sub_desconocida", subId);
+        if (suscripcionRepo.existsByOnvoSubscriptionId(subId)) return;
+        if (suscripcionRepo.findByOnvoSubNuevaPendiente(subId).isPresent()) return;
+        throw rechazo("sub_desconocida", subId);
     }
 
     private static EventoBillingRechazado rechazo(String motivo, String ref) {

@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-D8Gztmcu.js";function t(){return e()}export{t};

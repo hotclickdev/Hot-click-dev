@@ -319,6 +319,19 @@ class OnvoBillingMediosTest {
         }
 
         @Test
+        @DisplayName("#535: con subida pendiente reconcilia la NUEVA (no la vieja) por procesarPagoOnvoVerificado")
+        void subidaPendiente_reconciliaLaNueva() {
+            local.setOnvoSubscriptionId("cmw2vieja");
+            local.setOnvoSubNuevaPendiente(SUB);
+            doReturn(subOnvo("active")).when(onvo).obtenerSuscripcion(SUB);
+            doReturn(factura("inv_paid_sub", "paid", INICIO, FIN)).when(onvo).obtenerFacturaDelPeriodoActual(any());
+
+            assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
+            verify(onvo, never()).obtenerSuscripcion("cmw2vieja");
+            verify(cambio).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 4), "inv_paid_sub");
+        }
+
+        @Test
         @DisplayName("sin confirmación (incomplete o factura open) no cambia nada")
         void sinConfirmacion_noCambia() {
             doReturn(subOnvo("incomplete")).when(onvo).obtenerSuscripcion(SUB);

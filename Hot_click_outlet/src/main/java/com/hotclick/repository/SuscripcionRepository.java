@@ -34,6 +34,35 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
 
+    /** Cuántas filas tienen este id como suscripción ONVO vieja (reemplazada o pendiente de cancelar). */
+    @Query("SELECT COUNT(s) FROM Suscripcion s WHERE s.onvoSubReemplazada = :id OR s.onvoSubPorCancelar = :id")
+    long countConOnvoSubVieja(@Param("id") String onvoSubId);
+
+    /** Un solo UPDATE: marca para revisión manual las filas con esta suscripción vieja que aún no lo estaban. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Suscripcion s SET s.onvoRevisionManualDesde = :ahora"
+        + " WHERE (s.onvoSubReemplazada = :id OR s.onvoSubPorCancelar = :id) AND s.onvoRevisionManualDesde IS NULL")
+    int marcarRevisionManualPorSubVieja(@Param("id") String onvoSubId, @Param("ahora") java.time.LocalDateTime ahora);
+
+    /** Fila con esta suscripción ONVO nueva pendiente de pago (subida a Negocio Plus), con lock de fila. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubNuevaPendiente = :id")
+    Optional<Suscripcion> findByOnvoSubNuevaPendienteForUpdate(@Param("id") String onvoSubId);
+
+    Optional<Suscripcion> findByOnvoSubNuevaPendiente(String onvoSubId);
+
+    /** Lock por id de fila (job de reemplazos vencidos). */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Suscripcion s WHERE s.id = :id")
+    Optional<Suscripcion> findByIdForUpdate(@Param("id") Long id);
+
+    /** Ids de filas con una suscripción nueva sin pagar creada antes de {@code limite}; acotado por página. */
+    @Query("SELECT s.id FROM Suscripcion s WHERE s.onvoSubNuevaPendiente IS NOT NULL AND s.onvoSubNuevaDesde < :limite"
+        + " ORDER BY s.onvoSubNuevaDesde")
+    List<Long> idsReemplazoPendienteVencido(@Param("limite") java.time.LocalDateTime limite,
+                                            org.springframework.data.domain.Pageable pagina);
+
     /** QA #536: el webhook de billing distingue un id ONVO sin fila local (rechazo de negocio, 2xx). */
     boolean existsByOnvoSubscriptionId(String onvoSubscriptionId);
 

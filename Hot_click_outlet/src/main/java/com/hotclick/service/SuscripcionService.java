@@ -127,6 +127,11 @@ public class SuscripcionService {
 
 
     /** S-02/B2: activa/renueva con lo que ONVO confirmó por GET; {@code facturaId} (obligatorio) es la referencia del ledger. */
+    /** BAJO: pago de una suscripción ONVO vieja (reemplazada/pendiente de cancelar): se ignora y va a revisión. */
+    public boolean ignorarPagoOnvoSuscripcionVieja(String onvoSubId) {
+        return onvoChangeService.ignorarPagoDeSuscripcionVieja(onvoSubId);
+    }
+
     public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin, String facturaId) {
         onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin, facturaId);
     }

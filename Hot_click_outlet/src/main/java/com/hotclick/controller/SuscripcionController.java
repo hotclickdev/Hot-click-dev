@@ -233,6 +233,11 @@ public class SuscripcionController {
             return ResponseEntity.status(422).body(Map.of(
                 "error", com.hotclick.exception.TrialConMetodoPagoException.MENSAJE,
                 "codigo", com.hotclick.exception.TrialConMetodoPagoException.CODIGO));
+        } catch (com.hotclick.exception.CambioPlanRequiereSolicitudException e) {
+            // Suscripción cobrada: solo subir a Negocio Plus es directo; lo demás va por solicitud.
+            return ResponseEntity.status(422).body(Map.of(
+                "error", com.hotclick.exception.CambioPlanRequiereSolicitudException.MENSAJE,
+                "codigo", com.hotclick.exception.CambioPlanRequiereSolicitudException.CODIGO));
         } catch (com.hotclick.exception.ReemplazoOnvoNoDisponibleException e) {
             // ALTO-02b: ONVO no respondió al crear la suscripción nueva; la vieja quedó intacta.
             return ResponseEntity.status(503).body(Map.of(

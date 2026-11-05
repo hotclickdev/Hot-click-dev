@@ -78,7 +78,9 @@ public class OnvoAltaReconciliacion {
     }
 
     Resultado reconciliar(Suscripcion local) {
-        String subId = local == null ? null : local.getOnvoSubscriptionId();
+        // #535: con una subida pendiente se reconcilia la NUEVA; su pago confirma el reemplazo y cancela la vieja una vez.
+        String subId = local == null ? null
+            : (local.getOnvoSubNuevaPendiente() != null ? local.getOnvoSubNuevaPendiente() : local.getOnvoSubscriptionId());
         if (subId == null || !OnvoBillingClient.idValido(subId) || local.getPlanPendiente() == null
                 || local.getOnvoSubPorCancelar() != null) {
             return Resultado.IGNORADA;
