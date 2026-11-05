@@ -77,6 +77,10 @@ public class Pedido extends BaseEntity {
     @Column(name = "stock_descontado_en")
     private java.time.LocalDateTime stockDescontadoEn;
 
+    /** ALTO-01 (V229): este pedido tiene unidades en stock_reservado; null = nada propio que liberar o consumir. */
+    @Column(name = "stock_reservado_en")
+    private java.time.LocalDateTime stockReservadoEn;
+
     /** V227: cuándo el reembolso ONVO repuso el stock; no nulo = no se vuelve a reponer. */
     @Column(name = "stock_repuesto_en")
     private java.time.LocalDateTime stockRepuestoEn;
@@ -256,6 +260,8 @@ public class Pedido extends BaseEntity {
         advertenciasStock.add(aviso);
     }
 
+    public java.time.LocalDateTime getStockReservadoEn() { return stockReservadoEn; }
+    public void setStockReservadoEn(java.time.LocalDateTime stockReservadoEn) { this.stockReservadoEn = stockReservadoEn; }
     public java.time.LocalDateTime getStockDescontadoEn() { return stockDescontadoEn; }
     public void setStockDescontadoEn(java.time.LocalDateTime stockDescontadoEn) { this.stockDescontadoEn = stockDescontadoEn; }
 

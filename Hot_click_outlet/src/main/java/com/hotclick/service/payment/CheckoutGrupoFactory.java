@@ -106,6 +106,8 @@ public class CheckoutGrupoFactory {
                 provider, usuario, paquete.bodega(), paquete.metodoEnvio(), paquete.notas(), grupoPago, estadoInicial);
             checkoutOrderFactory.aplicarDestino(pedido, req.getDireccionEntrega(), destino,
                 orderPricingService.calcularCostoEnvio(paquete.metodoEnvio()));
+            // ALTO-01: reserveForCheckout ya reservó estas unidades; el pedido queda dueño de esa reserva.
+            pedido.setStockReservadoEn(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
             checkoutOrderFactory.addItemSnapshots(pedido, paquete.items(), reservation.productosMap());
             subpedidos.add(new Subpedido(pedido, pricing));
             totalCobro += pricing.totalConGC();

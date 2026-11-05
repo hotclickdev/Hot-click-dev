@@ -161,6 +161,7 @@ class OnvoSobreventaPostCobroTest extends BaseIntegrationTest {
     private Pedido pedidoConPago(String sesion, Producto producto, String numero) {
         Pedido p = new Pedido();
         p.setNumeroPedido(numero + "-" + (System.nanoTime() % 1_000_000));
+        p.setStockReservadoEn(java.time.LocalDateTime.now()); // ALTO-01: pedido de checkout que reservó
         p.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         p.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         p.setUsuarioFinal(testUser);
