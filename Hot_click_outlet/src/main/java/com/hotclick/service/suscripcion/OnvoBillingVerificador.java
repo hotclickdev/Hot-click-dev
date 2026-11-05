@@ -61,6 +61,42 @@ public final class OnvoBillingVerificador {
         return planYMonto(invoice, F_TOTAL, sub, planPorPrice, precios, fin);
     }
 
+    /** Trial sin método de pago guardado: todavía no hay nada que activar. */
+    public static final String M_SIN_METODO_PAGO = "sin_metodo_pago";
+
+    /**
+     * Decisión de Andrés (QA #536): una suscripción {@code trialing} con método de pago guardado activa el plan elegido
+     * durante el trial; {@code fechaFin} = fin del trial (ahí ONVO hace el primer cobro; si falla sigue past_due/gracia).
+     * Todo sale del GET de la suscripción: mismo modo, mismo id, price configurado con precio (sin monto: el trial no
+     * cobra). Fin del trial = {@code trialEnd} o, si no viene, {@code currentPeriodEnd}.
+     */
+    public static Resultado trialConMetodo(Map<?, ?> sub, String subId, String modo,
+                                           java.util.function.Function<String, String> planPorPrice,
+                                           PrecioPlan precios) {
+        if (sub == null) return Resultado.rechazo("sin_datos");
+        if (!modoCoincide(sub, modo)) return Resultado.rechazo("modo");
+        if (!igual(texto(sub, "id"), subId)) return Resultado.rechazo("id");
+        if (!"trialing".equalsIgnoreCase(texto(sub, F_STATUS))) return Resultado.rechazo(M_SUB_NO_ACTIVA);
+        if (!OnvoBillingClient.tieneMetodoPago(sub)) return Resultado.rechazo(M_SIN_METODO_PAGO);
+        String priceId = OnvoBillingClient.primerPriceId(sub);
+        String plan;
+        PrecioEsperado esperado;
+        try {
+            plan = priceId == null ? null : planPorPrice.apply(priceId);
+            if (plan == null) return Resultado.rechazo("price_desconocido");
+            esperado = precios.precio(plan, priceId);
+        } catch (ConfigBillingFaltanteException e) {
+            return Resultado.rechazo(M_CONFIG_FALTANTE);
+        }
+        if (esperado == null || esperado.moneda() == null || esperado.moneda().isBlank() || esperado.unidadMenor() <= 0) {
+            return Resultado.rechazo("plan_sin_precio");
+        }
+        LocalDate fin = fecha(texto(sub, "trialEnd"));
+        if (fin == null) fin = fecha(texto(sub, "currentPeriodEnd"));
+        if (fin == null) return Resultado.rechazo("sin_periodo");
+        return new Resultado(null, plan, fin);
+    }
+
     /**
      * B1: una factura con saldo pendiente no activa el plan. Sandbox ONVO: la factura no trae
      * amountRemaining/amountDue/amountPaid (se conservan por si aparecen); el pago real está en el
