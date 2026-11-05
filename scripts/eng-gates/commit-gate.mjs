@@ -12,6 +12,7 @@ import {
   evaluateFlyway,
   evaluateSensitive,
   evaluateSpa,
+  frontendSrcChangesAreTestsOnly,
   evaluateTenant,
   gitChangedFiles,
   gitUnifiedDiff,
@@ -68,9 +69,11 @@ export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip, ski
     findings: scanTenantDiff(diffFiles),
     skip: false,
   });
+  const frontendSrcChanged = changedFiles.some((f) => f.includes('Hot_click_outlet/frontend/src/'));
   const spa = evaluateSpa({
-    frontendSrcChanged: changedFiles.some((f) => f.includes('Hot_click_outlet/frontend/src/')),
+    frontendSrcChanged,
     staticChanged: changedFiles.some((f) => f.includes('Hot_click_outlet/src/main/resources/static/')),
+    frontendSrcOnlyTests: frontendSrcChanged && frontendSrcChangesAreTestsOnly(changedFiles),
     skip: false,
   });
   const sensitive = evaluateSensitive({

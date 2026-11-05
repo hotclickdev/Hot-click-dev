@@ -10,6 +10,7 @@ import {
   findSpaPlaceholdersInDir,
   gitChangedFiles,
   hasLabel,
+  frontendSrcChangesAreTestsOnly,
   isFrontendSrcPath,
   isStaticPath,
 } from './lib.mjs';
@@ -47,9 +48,11 @@ if (placeholderHits.length > 0) {
 }
 
 const changed = gitChangedFiles(base, head);
+const frontendSrcChanged = changed.some(isFrontendSrcPath);
 const verdict = evaluateSpa({
-  frontendSrcChanged: changed.some(isFrontendSrcPath),
+  frontendSrcChanged,
   staticChanged: changed.some(isStaticPath),
+  frontendSrcOnlyTests: frontendSrcChanged && frontendSrcChangesAreTestsOnly(changed),
   skip: hasLabel(process.env.PR_LABELS, SKIP_LABELS.spa),
 });
 
