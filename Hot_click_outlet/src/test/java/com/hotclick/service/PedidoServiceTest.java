@@ -683,11 +683,15 @@ class PedidoServiceTest {
     }
 
     @Test
-    @DisplayName("QA5 MEDIO | cancelar un cancelado con nota: ni stock, ni correo, ni n8n")
+    @DisplayName("BAJO-05 | cancelar un cancelado → PedidoYaCanceladoException; ni stock, ni correo, ni n8n")
     void cancelarCanceladoConNotaNoRepiteEfectos() {
         Pedido pedido = buildPedido(Constants.PEDIDO_CANCELADO);
         when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
-        service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, "Cancelado por la tienda");
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, "Cancelado por la tienda"))
+            .isInstanceOf(com.hotclick.exception.PedidoYaCanceladoException.class)
+            .hasMessage("Este pedido ya está cancelado.");
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
         verify(pedidoRepository, never()).save(any());
         verify(stockReservationService, never()).liberarReservas(any());
         verify(notificacionEmailService, never()).enviarSeguimientoEstado(any(), any());

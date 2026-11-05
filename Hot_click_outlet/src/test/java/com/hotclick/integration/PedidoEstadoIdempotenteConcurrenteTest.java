@@ -114,12 +114,14 @@ class PedidoEstadoIdempotenteConcurrenteTest extends BaseIntegrationTest {
         for (Future<?> f : fs) f.get(30, TimeUnit.SECONDS);
         pool.shutdown();
 
-        assertThat(ok.get()).isGreaterThanOrEqualTo(1);
+        assertThat(ok.get()).isEqualTo(1); // BAJO-05: los demás reciben PedidoYaCanceladoException (o timeout de lock)
         assertThat(pedidoRepository.findById(pedidoId).orElseThrow().getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
         verify(notificacionEmailService, times(1)).enviarSeguimientoEstado(any(), anyString());
 
         // Repetir el PUT más tarde tampoco repite el correo.
-        pedidoService.cambiarEstado(pedidoId, Constants.PEDIDO_CANCELADO, "Otra vez");
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> pedidoService.cambiarEstado(pedidoId, Constants.PEDIDO_CANCELADO, "Otra vez"))
+            .isInstanceOf(com.hotclick.exception.PedidoYaCanceladoException.class);
         verify(notificacionEmailService, times(1)).enviarSeguimientoEstado(any(), anyString());
     }
 }
