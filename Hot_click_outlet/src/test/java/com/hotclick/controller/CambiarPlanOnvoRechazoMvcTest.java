@@ -123,4 +123,30 @@ class CambiarPlanOnvoRechazoMvcTest {
         assertThat(retry.getMetrics().getNumberOfFailedCallsWithRetryAttempt()).isZero();
         assertThat(sub.getPlan().getNombre()).isEqualTo("EMPRENDEDOR");
     }
+
+    @Test
+    void reemplazoSinRespuestaDeOnvo_503EnVoseo() throws Exception {
+        SuscripcionService suscripcionService = mock(SuscripcionService.class);
+        when(suscripcionService.cambiarPlanOnvo(anyLong(), anyLong())).thenThrow(
+            new com.hotclick.exception.ReemplazoOnvoNoDisponibleException(new ResourceAccessException("timeout")));
+        Plan pyme = new Plan();
+        pyme.setNombre("PYME");
+        PlanRepository planRepo = mock(PlanRepository.class);
+        when(planRepo.findById(2L)).thenReturn(Optional.of(pyme));
+        PropietarioGuard guard = mock(PropietarioGuard.class);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        AuthSupport auth = mock(AuthSupport.class);
+        com.hotclick.model.Usuario u = new com.hotclick.model.Usuario();
+        u.setCorreoVerificado(true);
+        when(auth.usuarioFromRequest(any())).thenReturn(u);
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new SuscripcionController(suscripcionService, planRepo,
+            auth, mock(CobroSuscripcionService.class), mock(PreciosPlanesConfig.class), guard))
+            .setControllerAdvice(new GlobalExceptionHandler()).build();
+        TenantContext.set(7L);
+
+        mvc.perform(post("/api/billing/cambiar-plan/2"))
+            .andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.codigo").value(com.hotclick.exception.ReemplazoOnvoNoDisponibleException.CODIGO))
+            .andExpect(jsonPath("$.error").value(com.hotclick.exception.ReemplazoOnvoNoDisponibleException.MENSAJE));
+    }
 }

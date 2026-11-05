@@ -139,7 +139,7 @@ class SuscripcionOnvoCambioPlanAlto02bTest {
     }
 
     @Test
-    @DisplayName("Otro price + incomplete (nunca cobrada): cancela la vieja y crea otra con items[].priceId")
+    @DisplayName("Otro price + incomplete (nunca cobrada): PRIMERO crea la nueva, la guarda y DESPUÉS cancela la vieja")
     void otroPrice_incomplete_reemplaza() {
         conSuscripcionOnvo("incomplete", "price_emp", null);
         when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap()))
@@ -147,12 +147,122 @@ class SuscripcionOnvoCambioPlanAlto02bTest {
 
         Map<String, Object> out = service.cambiarPlan(10L, 2L);
 
-        org.mockito.InOrder orden = org.mockito.Mockito.inOrder(onvoBilling);
-        orden.verify(onvoBilling).cancelarInmediato("sub_vieja");
+        org.mockito.InOrder orden = org.mockito.Mockito.inOrder(onvoBilling, suscripcionRepo);
         orden.verify(onvoBilling).crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap());
+        orden.verify(suscripcionRepo).save(sub);
+        orden.verify(onvoBilling).cancelarInmediato("sub_vieja");
         assertThat(out.get("status")).isEqualTo("requiere_pago");
         assertThat(out.get("subscriptionId")).isEqualTo("sub_nueva");
         assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_nueva");
+        assertThat(sub.getOnvoPriceId()).isEqualTo("price_pyme");
+        assertThat(sub.getOnvoSubPorCancelar()).isNull();
+        assertThat(out).doesNotContainKey("trialDias");
+    }
+
+    @Test
+    @DisplayName("Reemplazo: ONVO rechaza la nueva → 422, la vieja no se cancela y nada local cambia")
+    void reemplazo_creacionRechazada_viejaIntacta() {
+        conSuscripcionOnvo("incomplete", "price_emp", null);
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap()))
+            .thenThrow(new com.hotclick.exception.OnvoSolicitudRechazadaException("400", null));
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
+            .isInstanceOf(com.hotclick.exception.OnvoSolicitudRechazadaException.class);
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        verify(suscripcionRepo, never()).save(any());
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
+        assertThat(sub.getOnvoPriceId()).isEqualTo("price_emp");
+        assertThat(sub.getPlanPendiente()).isNull();
+    }
+
+    @Test
+    @DisplayName("Reemplazo: ONVO no responde al crear → 503 en voseo, la vieja no se cancela y nada local cambia")
+    void reemplazo_creacionSinRespuesta_viejaIntacta() {
+        conSuscripcionOnvo("incomplete", "price_emp", null);
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap()))
+            .thenThrow(new org.springframework.web.client.ResourceAccessException("timeout"));
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
+            .isInstanceOf(com.hotclick.exception.ReemplazoOnvoNoDisponibleException.class);
+        assertThat(com.hotclick.exception.ReemplazoOnvoNoDisponibleException.MENSAJE)
+            .contains("no cambiamos tu plan").contains("no se te cobró nada").contains("Probá");
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        verify(suscripcionRepo, never()).save(any());
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
+    }
+
+    @Test
+    @DisplayName("Reemplazo: falla el guardado de la nueva → se cancela la nueva (huérfana), nunca la vieja")
+    void reemplazo_guardadoFalla_cancelaSoloLaNueva() {
+        conSuscripcionOnvo("incomplete", "price_emp", null);
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "si_2"));
+        org.mockito.Mockito.doThrow(new org.springframework.dao.DataIntegrityViolationException("x"))
+            .when(suscripcionRepo).save(any());
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 2L))
+            .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        verify(onvoBilling).cancelarInmediato("sub_nueva");
+        verify(onvoBilling, never()).cancelarInmediato("sub_vieja");
+    }
+
+    @Test
+    @DisplayName("Reemplazo: falla cancelar la vieja → la fila apunta a la nueva y la vieja queda marcada para revisión")
+    void reemplazo_cancelarViejaFalla_marcaRevisionManual() {
+        conSuscripcionOnvo("incomplete", "price_emp", null);
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "si_2"));
+        org.mockito.Mockito.doThrow(new IllegalStateException("onvo 500"))
+            .when(onvoBilling).cancelarInmediato("sub_vieja");
+
+        Map<String, Object> out = service.cambiarPlan(10L, 2L);
+
+        assertThat(out.get("status")).isEqualTo("requiere_pago");
+        assertThat(out.get("subscriptionId")).isEqualTo("sub_nueva");
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_nueva");
+        assertThat(sub.getOnvoSubPorCancelar()).isEqualTo("sub_vieja");
+        assertThat(sub.getOnvoRevisionManualDesde()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Log enmascarado: solo los últimos 4 caracteres del id")
+    void enmascarar() {
+        assertThat(SuscripcionOnvoChangeService.enmascarar("sub_abcdef123456")).isEqualTo("****3456");
+        assertThat(SuscripcionOnvoChangeService.enmascarar("abc")).isEqualTo("****");
+        assertThat(SuscripcionOnvoChangeService.enmascarar(null)).isEqualTo("****");
+    }
+
+    @Test
+    @DisplayName("Reemplazo en trialing: manda trialPeriodDays con los días que le quedan según trialEnd de ONVO")
+    void reemplazo_trialing_conservaDiasDeOnvo() {
+        conSuscripcionOnvo("trialing", "price_emp", null);
+        @SuppressWarnings("unchecked") Map<String, Object> enOnvo = new java.util.HashMap<>((Map<String, Object>) onvoBilling.obtenerSuscripcion("sub_vieja"));
+        enOnvo.put("trialEnd", java.time.Instant.now().plus(java.time.Duration.ofDays(12)).plusSeconds(3600).toString());
+        org.mockito.Mockito.doReturn(enOnvo).when(onvoBilling).obtenerSuscripcion("sub_vieja");
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap(), eq(12)))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "si_2"));
+
+        Map<String, Object> out = service.cambiarPlan(10L, 2L);
+
+        assertThat(out.get("trialDias")).isEqualTo(12);
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(onvoBilling).cancelarInmediato("sub_vieja");
+    }
+
+    @Test
+    @DisplayName("Días de trial: hacia abajo, mínimo 0; sin trialEnd en ONVO se usa la fecha local")
+    void diasTrialRestantes_redondeoYFallback() {
+        java.time.Instant ahora = java.time.Instant.parse("2026-11-04T12:00:00Z");
+        assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(
+            Map.of("trialEnd", "2026-11-07T11:59:59Z"), empresa, null, ahora)).isEqualTo(2);
+        assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(
+            Map.of("trialEnd", "2026-11-01T00:00:00Z"), empresa, null, ahora)).isZero();
+        Suscripcion local = new Suscripcion();
+        local.setTrialEnd(java.time.LocalDate.of(2026, 11, 14));
+        assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(Map.of(), empresa, local, ahora)).isEqualTo(10);
+        assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(
+            Map.of("trialEnd", "no-es-fecha"), empresa, local, ahora)).isEqualTo(10);
+        assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(null, empresa, null, ahora)).isZero();
     }
 
     @Test

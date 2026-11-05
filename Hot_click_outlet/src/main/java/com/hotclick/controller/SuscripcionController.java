@@ -218,6 +218,11 @@ public class SuscripcionController {
             return ResponseEntity.status(409).body(Map.of(
                 "error", com.hotclick.exception.PlanYaActivoException.MENSAJE,
                 "codigo", com.hotclick.exception.PlanYaActivoException.CODIGO));
+        } catch (com.hotclick.exception.ReemplazoOnvoNoDisponibleException e) {
+            // ALTO-02b: ONVO no respondió al crear la suscripción nueva; la vieja quedó intacta.
+            return ResponseEntity.status(503).body(Map.of(
+                "error", com.hotclick.exception.ReemplazoOnvoNoDisponibleException.MENSAJE,
+                "codigo", com.hotclick.exception.ReemplazoOnvoNoDisponibleException.CODIGO));
         } catch (com.hotclick.exception.OnvoSolicitudRechazadaException e) {
             // ALTO-02: rechazo de ONVO o bug de cliente → 422 claro; nada se cobró ni cambió.
             return ResponseEntity.status(422).body(Map.of(
