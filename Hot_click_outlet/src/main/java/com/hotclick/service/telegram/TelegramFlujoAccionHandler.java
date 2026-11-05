@@ -86,6 +86,10 @@ public class TelegramFlujoAccionHandler {
                     bot.enviarMensaje(v.getChatId(), "No reconozco esa acción. Escribí /menu.");
                 }
             }
+        } catch (com.hotclick.exception.PedidoYaCanceladoException ex) {
+            // BAJO-05: repetir la cancelación no es un fallo genérico; el pedido no cambia y se avisa claro.
+            support.limpiar(v);
+            bot.enviarMensaje(v.getChatId(), com.hotclick.exception.PedidoYaCanceladoException.MENSAJE);
         } catch (RecursoNoEncontradoException ex) {
             support.limpiar(v);
             bot.enviarMensaje(v.getChatId(), "Ya no encuentro ese registro — puede que haya cambiado. Pedime de nuevo lo que necesitás.");
