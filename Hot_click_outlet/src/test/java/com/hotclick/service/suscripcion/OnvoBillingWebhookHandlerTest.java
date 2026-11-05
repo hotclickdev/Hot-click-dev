@@ -51,6 +51,7 @@ class OnvoBillingWebhookHandlerTest {
 
     @BeforeEach
     void setUp() {
+        OnvoFacturaPeriodoStub.comoLatestInvoice(onvo);
         handler = new OnvoBillingWebhookHandler(eventoRepo, suscripcionService, onvo,
             new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), onvo), suscripcionRepo);
         when(eventoRepo.findByIdForUpdate(anyString())).thenAnswer(i -> Optional.ofNullable(eventos.get((String) i.getArgument(0))));

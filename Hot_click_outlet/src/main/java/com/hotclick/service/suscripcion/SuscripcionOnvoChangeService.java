@@ -144,6 +144,42 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         return cambiarPlanInterno(empresa, planId);
     }
 
+    /**
+     * Aviso de plan pendiente: si la suscripción ONVO está en trialing CON método de pago guardado no falta ningún
+     * pago (ONVO cobra solo al terminar el trial). Devuelve la fecha del primer cobro (trialEnd, o currentPeriodEnd si
+     * no viene) en hora de Costa Rica. Sin suscripción, otro estado, fecha ilegible o ONVO caído → vacío (la UI sigue
+     * mostrando «falta el pago», que es lo conservador).
+     */
+    public Optional<LocalDate> primerCobroTrialConMetodo(Long empresaId) {
+        try {
+            Optional<Suscripcion> sub = suscripcionRepo.findActivaByEmpresaId(empresaId);
+            String id = sub.map(Suscripcion::getOnvoSubscriptionId).orElse(null);
+            if (id == null || !OnvoBillingClient.idValido(id) || onvoBilling.isMockMode() || onvoBilling.sinLlave()) {
+                return Optional.empty();
+            }
+            Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(id);
+            return primerCobroTrial(enOnvo);
+        } catch (RuntimeException e) {
+            log.warn("[billing-onvo] no se pudo leer el trial en ONVO empresa={} causa={}", empresaId, e.getClass().getSimpleName());
+            return Optional.empty();
+        }
+    }
+
+    static Optional<LocalDate> primerCobroTrial(Map<?, ?> enOnvo) {
+        if (enOnvo == null || !"trialing".equals(String.valueOf(enOnvo.get("status")))
+            || !OnvoBillingClient.tieneMetodoPago(enOnvo)) return Optional.empty();
+        for (String campo : new String[]{"trialEnd", "currentPeriodEnd"}) {
+            if (enOnvo.get(campo) instanceof String s && !s.isBlank()) {
+                try {
+                    return Optional.of(java.time.Instant.parse(s).atZone(Constants.ZONA_CR).toLocalDate());
+                } catch (java.time.format.DateTimeParseException ignored) {
+                    // siguiente campo
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     /** Plan cuya mensualidad quedó impaga: el de la última suscripción VENCIDO, si es de pago. */
     @Transactional(readOnly = true)
     public Optional<Plan> planPendienteDeSuspension(Long empresaId) {
@@ -628,8 +664,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     /** Días de trial para la suscripción nueva: los que le quedan a la vieja si estaba en trial; si no, los del Emprendedor. */
     static int diasTrialReemplazo(Empresa empresa, Suscripcion sub, Plan planDestino, String estado,
                                   Map<?, ?> enOnvo, java.time.Instant ahora) {
-        int emprendedor = PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())
-            ? TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR)) : 0;
+        // MEDIO-2: el trial local vale para cualquier plan destino.
+        int emprendedor = TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR));
         if (!"trialing".equals(estado)) return emprendedor;
         return Math.max(emprendedor, diasTrialRestantes(enOnvo, empresa, sub, ahora));
     }
@@ -703,14 +739,32 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
         Plan plan = planRepo.findByNombre(planNombre)
             .orElseThrow(() -> new IllegalStateException("Plan no encontrado: " + planNombre));
+        // MEDIO-1: si la factura del período actual ya está paid, no se vuelve a pedir el pago (el plan lo activa el
+        // webhook o la reconciliación).
+        if ("paid".equalsIgnoreCase(OnvoBillingVerificador.texto(
+                onvoBilling.obtenerFacturaDelPeriodoActual(enOnvo), "status"))) {
+            return Map.of("status", "sin_pago_pendiente");
+        }
+        // MEDIO-2: suscripción incomplete creada SIN trial mientras al negocio le quedan días de trial local. Pagarla
+        // cobraría ya y perdería esos días. ONVO solo acepta trialPeriodDays al crear (trialStart/trialEnd son de solo
+        // lectura): se reemplaza por una nueva en trialing con los días que le quedan (sin cobro) y el SDK solo guarda
+        // la tarjeta; ONVO cobra al terminar el trial.
+        int diasLocales = TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR));
+        if ("incomplete".equals(OnvoBillingClient.estadoDe(enOnvo)) && diasLocales > 0) {
+            String priceId = OnvoBillingClient.primerPriceId(enOnvo);
+            log.warn("[onvo] completarPago: suscripción sin trial con {} día(s) de trial local; se reemplaza empresa={}",
+                diasLocales, empresaId);
+            return reemplazarSuscripcion(empresaId, empresa, sub, plan, priceId, "incomplete", enOnvo, false);
+        }
         return respuestaRequierePago(empresa, plan, sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId());
     }
 
     private Map<String, Object> altaPlanPago(Long empresaId, Empresa empresa, Plan planDestino,
                                              String priceId, Suscripcion subExistente) {
         // Trial Emprendedor: ONVO no cobra durante los días que le quedan y después cobra US$9 cada mes en automático.
-        int diasTrial = PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())
-            ? TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR)) : 0;
+        // MEDIO-2: los días de trial que le quedan al negocio se conservan para CUALQUIER plan pago (antes solo
+        // Emprendedor): una pyme en trial que elige otro plan no puede perderlos ni pagar de inmediato.
+        int diasTrial = TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR));
         // M1: misma garantía que el trial: el lock del negocio decide quién crea; la otra llamada reutiliza el id guardado.
         AltaOnvo alta = altaOnvoUnica(empresaId, empresa, subExistente, planDestino, priceId, diasTrial);
 
@@ -867,6 +921,12 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             : suscripcionRepo.findByOnvoSubNuevaPendienteForUpdate(onvoSubId);
         if (vigente.isEmpty() && pendiente.isEmpty()) {
             throw new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId);
+        }
+        // MEDIO-3: webhook y reconciliación comparten este camino. Bajo el lock de fila: si esa factura ya activó
+        // (COBRO_OK en el ledger), la segunda llamada no hace nada.
+        if (ledgerWriter != null && ledgerWriter.yaRegistrado(referenciaLedger, BillingLedger.TIPO_COBRO_OK)) {
+            log.info("[billing-onvo] Pago ONVO ya aplicado para esa factura sub={}: sin cambios", enmascarar(onvoSubId));
+            return;
         }
         Plan plan = planRepo.findByNombre(planNombre)
             .orElseThrow(() -> new IllegalStateException("Plan " + planNombre + " no configurado"));

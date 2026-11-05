@@ -25,6 +25,12 @@ public class BillingLedgerWriter {
         this.ledgerRepo = ledgerRepo;
     }
 
+    /** MEDIO-3: true si ya hay una fila de ese tipo para esa referencia (id de factura ONVO). */
+    public boolean yaRegistrado(String referenciaExterna, String tipo) {
+        return referenciaExterna != null && !referenciaExterna.isBlank()
+            && ledgerRepo.existsByReferenciaExternaAndTipo(referenciaExterna, tipo);
+    }
+
     @Transactional
     public void registrar(Empresa empresa, Suscripcion sub, String tipo, String proveedor,
                           String referenciaExterna, Integer montoCentavos, String moneda,

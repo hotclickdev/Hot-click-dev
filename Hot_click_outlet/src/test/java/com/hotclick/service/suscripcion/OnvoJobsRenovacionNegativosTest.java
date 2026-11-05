@@ -45,6 +45,7 @@ class OnvoJobsRenovacionNegativosTest {
 
     @BeforeEach
     void setUp() {
+        OnvoFacturaPeriodoStub.comoLatestInvoice(onvo);
         org.springframework.transaction.PlatformTransactionManager tm = mock(org.springframework.transaction.PlatformTransactionManager.class);
         when(tm.getTransaction(any())).thenReturn(new SimpleTransactionStatus(true));
         reconsulta = new OnvoRenovacionReconsulta(onvo, planRepo, cambio, tm, mock(LockTimeoutPorFila.class),

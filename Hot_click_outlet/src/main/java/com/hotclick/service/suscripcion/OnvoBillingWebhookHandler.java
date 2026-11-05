@@ -188,7 +188,7 @@ public class OnvoBillingWebhookHandler {
         if (suscripcionRepo.findByOnvoSubscriptionIdForUpdate(subId).isEmpty()
                 && suscripcionRepo.findByOnvoSubNuevaPendienteForUpdate(subId).isEmpty()) return false;
         // Sandbox ONVO: el payment intent NO trae subscriptionId; el vínculo es factura.paymentIntentId y
-        // factura.subscriptionId (la factura más reciente de la suscripción, latestInvoiceId).
+        // factura.subscriptionId (la factura del período actual; MEDIO-1: no latestInvoiceId).
         Map<?, ?> factura = facturaMasReciente(onvo.obtenerSuscripcion(subId));
         if (!subId.equals(OnvoBillingVerificador.texto(factura, F_SUBSCRIPTION_ID))
                 || !intentId.equals(OnvoBillingVerificador.texto(factura, "paymentIntentId"))) {
@@ -205,11 +205,12 @@ public class OnvoBillingWebhookHandler {
             && suscripcionService.ignorarPagoOnvoSuscripcionVieja(subId);
     }
 
-    /** Factura referida por latestInvoiceId de la suscripción (GET); mapa vacío si no hay. */
+    /**
+     * MEDIO-1: factura del período ACTUAL (listar renovaciones por subscriptionId y filtrar por currentPeriodStart).
+     * No se usa latestInvoiceId: tras el pago apunta a la factura open del período siguiente. Mapa vacío si no hay.
+     */
     private Map<?, ?> facturaMasReciente(Map<?, ?> sub) {
-        String facturaId = OnvoBillingVerificador.texto(sub, "latestInvoiceId");
-        if (facturaId == null) return Map.of();
-        return onvo.obtenerRenovacion(facturaId);
+        return onvo.obtenerFacturaDelPeriodoActual(sub);
     }
 
     /** Alta: ya atribuida por {@link #intentAtribuibleASuscripcion}; se relee el intent por GET y se verifica. */
