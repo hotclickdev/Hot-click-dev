@@ -1,0 +1,1 @@
+import{o as e,r as t}from"./rolldown-runtime-DAXXjFlN.js";import{s as n}from"./vendor-clerk-D8Xu90H0.js";import{t as r}from"./OnvoSuscripcionEmbed-Q693vfsw.js";var i=t({default:()=>o}),a=e(n(),1);function o({pago:e,onPagado:t}){return(0,a.jsx)(r,{subscriptionId:e.subscriptionId,customerId:e.customerId,publishableKey:e.publishableKey,onSuccess:t})}export{i as n,o as t};
