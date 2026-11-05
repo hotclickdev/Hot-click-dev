@@ -277,6 +277,21 @@ class OnvoBillingWebhookHandlerTest {
     }
 
     @Test
+    @DisplayName("Subida a Negocio Plus: el intent de la suscripción nueva pendiente es atribuible y llega al camino verificado")
+    void altaPorIntentDeSubidaPendiente() throws Exception {
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0001")).thenReturn(Optional.empty());
+        Suscripcion fila = local("clsub_vieja");
+        fila.setOnvoSubNuevaPendiente("clsub0001");
+        when(suscripcionRepo.findByOnvoSubNuevaPendienteForUpdate("clsub0001")).thenReturn(Optional.of(fila));
+        when(onvo.obtenerPaymentIntent("pi_1")).thenReturn((Map) INTENT_OK);
+        when(onvo.obtenerRenovacion("clinv_alta")).thenReturn((Map) facturaAlta("pi_1"));
+        when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) subOnvo("clsub0001", "active", "live", "price_pyme"));
+        var body = json("{\"id\":\"pi_1\",\"subscriptionId\":\"clsub0001\"}");
+        assertThat(handler.manejarSiBilling("payment-intent.succeeded", body, null)).isTrue();
+        verify(suscripcionService).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv_alta");
+    }
+
+    @Test
     @DisplayName("M1 regresión: el mismo customer con suscripción paga un checkout → no es billing, la venta sigue su flujo")
     void checkoutDeCustomerConSuscripcionNoEsBilling() throws Exception {
         assertThat(handler.manejarSiBilling("payment-intent.succeeded",

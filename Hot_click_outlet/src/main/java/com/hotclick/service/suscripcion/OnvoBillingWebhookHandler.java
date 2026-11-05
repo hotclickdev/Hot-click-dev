@@ -184,7 +184,9 @@ public class OnvoBillingWebhookHandler {
         String intentId = textOrNull(data, "id");
         if (subId == null || intentId == null) return false;
         if (!OnvoBillingClient.idValido(subId) || !OnvoBillingClient.idValido(intentId)) return false;
-        if (suscripcionRepo.findByOnvoSubscriptionIdForUpdate(subId).isEmpty()) return false;
+        // Una subida a Negocio Plus sin pagar también es atribuible: su id está como nueva pendiente en la fila.
+        if (suscripcionRepo.findByOnvoSubscriptionIdForUpdate(subId).isEmpty()
+                && suscripcionRepo.findByOnvoSubNuevaPendienteForUpdate(subId).isEmpty()) return false;
         // Sandbox ONVO: el payment intent NO trae subscriptionId; el vínculo es factura.paymentIntentId y
         // factura.subscriptionId (la factura más reciente de la suscripción, latestInvoiceId).
         Map<?, ?> factura = facturaMasReciente(onvo.obtenerSuscripcion(subId));
@@ -232,7 +234,8 @@ public class OnvoBillingWebhookHandler {
      * Si el id de ONVO no existe localmente, procesarPagoOnvoVerificado falla (nunca se busca por metadata).
      */
     private void exigirCustomerLocal(String subId, Map<?, ?> subOnvo) {
-        suscripcionRepo.findByOnvoSubscriptionId(subId).ifPresent(local -> {
+        suscripcionRepo.findByOnvoSubscriptionId(subId)
+                .or(() -> suscripcionRepo.findByOnvoSubNuevaPendiente(subId)).ifPresent(local -> {
             String esperado = OnvoBillingVerificador.texto(subOnvo, "customerId");
             if (esperado == null) throw rechazo(M_CUSTOMER, subId);
             String propio = local.getOnvoCustomerId();

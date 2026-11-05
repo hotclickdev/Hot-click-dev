@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Cambio de plan con la suscripción ONVO ya cobrada: solo subir a Negocio Plus es directo (precio completo hoy, sin
- * prorrateo; primero se crea la nueva y después se cancela la vieja). Lo demás responde 422 con solicitud. Un pago de
+ * prorrateo; la vieja se cancela recién cuando ONVO confirma el pago de la nueva). Lo demás responde 422 con solicitud. Un pago de
  * la suscripción vieja nunca activa ni cambia el plan.
  */
 @ExtendWith(MockitoExtension.class)
@@ -125,8 +125,8 @@ class SuscripcionOnvoCambioPlanCobradaTest {
     }
 
     @Test
-    @DisplayName("PYME→NEGOCIO_PLUS cobrada: crea la nueva SIN trial, la guarda y DESPUÉS cancela la vieja; el plan no cambia aún")
-    void subida_creaYDespuesCancela_planViejoHastaElPago() {
+    @DisplayName("PYME→NEGOCIO_PLUS cobrada: crea la nueva SIN trial como pendiente; la vieja sigue vigente y NO se cancela")
+    void subida_creaPendiente_viejaSigueActiva() {
         cobrada(pyme, "active");
         when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_plus"), anyMap()))
             .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "si_2"));
@@ -137,45 +137,41 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThat(out.get("subscriptionId")).isEqualTo("sub_nueva");
         assertThat(out.get("planNombre")).isEqualTo("NEGOCIO_PLUS");
         assertThat(out).doesNotContainKey("trialDias");
-        InOrder orden = inOrder(onvoBilling, suscripcionRepo);
-        orden.verify(onvoBilling).crearSuscripcionIncompleta(eq("cus_1"), eq("price_plus"), anyMap());
-        orden.verify(suscripcionRepo, org.mockito.Mockito.atLeastOnce()).save(sub);
-        orden.verify(onvoBilling).cancelarInmediato("sub_vieja");
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
-        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_nueva");
-        assertThat(sub.getOnvoSubReemplazada()).isEqualTo("sub_vieja");
-        assertThat(sub.getOnvoSubPorCancelar()).isNull();
-        // Hasta que ONVO confirme el pago sigue el plan viejo.
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
+        assertThat(sub.getOnvoSubNuevaPendiente()).isEqualTo("sub_nueva");
+        assertThat(sub.getOnvoSubNuevaDesde()).isNotNull();
+        assertThat(sub.getOnvoSubReemplazada()).isNull();
+        assertThat(sub.getEstado()).isEqualTo("ACTIVO");
         assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
         assertThat(sub.getPlanPendiente().getNombre()).isEqualTo("NEGOCIO_PLUS");
         assertThat(empresa.getPlan().getNombre()).isEqualTo("PYME");
     }
 
     @Test
-    @DisplayName("EMPRENDEDOR (de pago) → NEGOCIO_PLUS también es subida directa")
+    @DisplayName("EMPRENDEDOR (de pago) → NEGOCIO_PLUS también es subida directa (pendiente, sin cancelar)")
     void subidaDesdeEmprendedor() {
         cobrada(emprendedor, "active");
         when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_plus"), anyMap()))
             .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "si_2"));
 
         assertThat(service.cambiarPlan(10L, 3L).get("status")).isEqualTo("requiere_pago");
-        verify(onvoBilling).cancelarInmediato("sub_vieja");
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        assertThat(sub.getOnvoSubNuevaPendiente()).isEqualTo("sub_nueva");
     }
 
     @Test
-    @DisplayName("Falla cancelar la vieja: queda en onvo_sub_por_cancelar (revisión manual) y no se crea otra")
-    void subida_cancelacionFalla_revisionManual() {
+    @DisplayName("Segundo clic con subida pendiente: reabre la misma nueva, no crea otra")
+    void subidaPendiente_reabreLaMisma() {
         cobrada(pyme, "active");
-        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_plus"), anyMap()))
-            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "si_2"));
-        org.mockito.Mockito.doThrow(new RuntimeException("500")).when(onvoBilling).cancelarInmediato("sub_vieja");
+        sub.setOnvoSubNuevaPendiente("sub_nueva");
 
         Map<String, Object> out = service.cambiarPlan(10L, 3L);
 
-        assertThat(out.get("status")).isEqualTo("requiere_pago");
-        assertThat(sub.getOnvoSubPorCancelar()).isEqualTo("sub_vieja");
-        assertThat(sub.getOnvoRevisionManualDesde()).isNotNull();
-        verify(onvoBilling, org.mockito.Mockito.times(1)).crearSuscripcionIncompleta(any(), any(), anyMap());
+        assertThat(out.get("subscriptionId")).isEqualTo("sub_nueva");
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(onvoBilling, never()).cancelarInmediato(any());
     }
 
     @Test
@@ -296,18 +292,121 @@ class SuscripcionOnvoCambioPlanCobradaTest {
     }
 
     @Test
-    @DisplayName("Cobro de la subida fallido: el plan viejo pagado sigue (no pasa a PAST_DUE)")
+    @DisplayName("Cobro de la subida fallido: la nueva no es vigente; la fila (vieja) no cambia")
     void cobroSubidaFallido_planViejoSigue() {
         cobrada(pyme, "active");
-        sub.setOnvoSubscriptionId("sub_nueva");
-        sub.setOnvoSubReemplazada("sub_vieja");
+        sub.setOnvoSubNuevaPendiente("sub_nueva");
         sub.setPlanPendiente(plus);
-        when(suscripcionRepo.findByOnvoSubscriptionId("sub_nueva")).thenReturn(Optional.of(sub));
 
         service.procesarRenovacionFallida("sub_nueva");
 
         assertThat(sub.getEstado()).isEqualTo("ACTIVO");
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
         assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
+    }
+
+    /** Fila con la subida creada y sin pagar: vigente sub_vieja, pendiente sub_nueva. */
+    private void subidaPendiente() {
+        cobrada(pyme, "active");
+        org.springframework.test.util.ReflectionTestUtils.setField(sub, "id", 77L);
+        sub.setOnvoSubNuevaPendiente("sub_nueva");
+        sub.setOnvoSubNuevaDesde(java.time.LocalDateTime.now().minusHours(30));
+        sub.setPlanPendiente(plus);
+        java.util.concurrent.atomic.AtomicReference<Suscripcion> ref = new java.util.concurrent.atomic.AtomicReference<>(sub);
+        lenient().when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate(any())).thenAnswer(inv ->
+            inv.getArgument(0).equals(ref.get().getOnvoSubscriptionId()) ? Optional.of(ref.get()) : Optional.empty());
+        lenient().when(suscripcionRepo.findByOnvoSubscriptionId(any())).thenAnswer(inv ->
+            inv.getArgument(0).equals(ref.get().getOnvoSubscriptionId()) ? Optional.of(ref.get()) : Optional.empty());
+        lenient().when(suscripcionRepo.findByOnvoSubNuevaPendienteForUpdate(any())).thenAnswer(inv ->
+            inv.getArgument(0).equals(ref.get().getOnvoSubNuevaPendiente()) ? Optional.of(ref.get()) : Optional.empty());
+        lenient().when(suscripcionRepo.countConOnvoSubVieja(any())).thenAnswer(inv ->
+            inv.getArgument(0).equals(ref.get().getOnvoSubReemplazada())
+                || inv.getArgument(0).equals(ref.get().getOnvoSubPorCancelar()) ? 1L : 0L);
+        lenient().when(suscripcionRepo.findByIdForUpdate(77L)).thenReturn(Optional.of(sub));
+    }
+
+    @Test
+    @DisplayName("Pagada: la vieja se cancela UNA vez aunque llegue el webhook doble, y el plan pasa a Negocio Plus")
+    void subidaPagada_cancelaViejaUnaVez() {
+        subidaPendiente();
+        LocalDate fin = LocalDate.now().plusMonths(1);
+
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_123456");
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_123456");
+
+        verify(onvoBilling, org.mockito.Mockito.times(1)).cancelarInmediato("sub_vieja");
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_nueva");
+        assertThat(sub.getOnvoSubReemplazada()).isEqualTo("sub_vieja");
+        assertThat(sub.getOnvoSubNuevaPendiente()).isNull();
+        assertThat(sub.getOnvoSubPorCancelar()).isNull();
+        assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
+        assertThat(sub.getPlanPendiente()).isNull();
+        assertThat(empresa.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
+    }
+
+    @Test
+    @DisplayName("Renovación de la vieja mientras la subida no se paga: plan viejo, la pendiente sigue, nada se cancela")
+    void renovacionViejaConSubidaPendiente() {
+        subidaPendiente();
+
+        service.procesarPagoOnvoVerificado("sub_vieja", "PYME", LocalDate.now().plusMonths(1), "inv_654321");
+
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
+        assertThat(sub.getOnvoSubNuevaPendiente()).isEqualTo("sub_nueva");
+        assertThat(sub.getPlanPendiente().getNombre()).isEqualTo("NEGOCIO_PLUS");
+    }
+
+    @Test
+    @DisplayName("Pagada pero cancelar la vieja falla: revisión manual; un cobro posterior de la vieja se ignora")
+    void subidaPagada_cancelFalla_revisionYViejaNoCobra() {
+        subidaPendiente();
+        org.mockito.Mockito.doThrow(new RuntimeException("500")).when(onvoBilling).cancelarInmediato("sub_vieja");
+
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456");
+
+        assertThat(sub.getOnvoSubPorCancelar()).isEqualTo("sub_vieja");
+        assertThat(sub.getOnvoRevisionManualDesde()).isNotNull();
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_nueva");
+        assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
+
+        assertThat(service.ignorarPagoDeSuscripcionVieja("sub_vieja")).isTrue();
+        service.procesarPagoOnvoVerificado("sub_vieja", "PYME", LocalDate.now().plusMonths(2), "inv_999999");
+        assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
+        verify(suscripcionRepo, org.mockito.Mockito.atLeastOnce()).marcarRevisionManualPorSubVieja(eq("sub_vieja"), any());
+    }
+
+    @Test
+    @DisplayName("Sin pago: vencido el plazo, el job cancela la nueva; la vieja queda intacta")
+    void subidaNoPagada_expiraYViejaIntacta() {
+        subidaPendiente();
+        doReturnEstado("sub_nueva", "incomplete");
+
+        boolean expirada = service.expirarReemplazoPendiente(77L, java.time.LocalDateTime.now().minusHours(24));
+
+        assertThat(expirada).isTrue();
+        verify(onvoBilling).cancelarInmediato("sub_nueva");
+        verify(onvoBilling, never()).cancelarInmediato("sub_vieja");
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
+        assertThat(sub.getOnvoSubNuevaPendiente()).isNull();
+        assertThat(sub.getPlanPendiente()).isNull();
+        assertThat(sub.getEstado()).isEqualTo("ACTIVO");
+        assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("Job: antes del plazo o si ONVO ya la reporta activa, no se cancela nada")
+    void subidaNoVencidaOActiva_noSeCancela() {
+        subidaPendiente();
+        assertThat(service.expirarReemplazoPendiente(77L, java.time.LocalDateTime.now().minusHours(48))).isFalse();
+        doReturnEstado("sub_nueva", "active");
+        assertThat(service.expirarReemplazoPendiente(77L, java.time.LocalDateTime.now().minusHours(24))).isFalse();
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        assertThat(sub.getOnvoSubNuevaPendiente()).isEqualTo("sub_nueva");
+    }
+
+    private void doReturnEstado(String id, String estado) {
+        org.mockito.Mockito.doReturn(Map.of("id", id, "status", estado)).when(onvoBilling).obtenerSuscripcion(id);
     }
 
     @Test

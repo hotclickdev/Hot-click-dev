@@ -60,6 +60,13 @@ public class Suscripcion {
     @Column(name = "onvo_sub_reemplazada", length = 100)
     private String onvoSubReemplazada;
 
+    /** Subida a Negocio Plus: suscripción ONVO nueva sin pagar todavía; la vieja sigue vigente hasta el pago. */
+    @Column(name = "onvo_sub_nueva_pendiente", length = 100)
+    private String onvoSubNuevaPendiente;
+
+    @Column(name = "onvo_sub_nueva_desde")
+    private LocalDateTime onvoSubNuevaDesde;
+
     @Column(name = "onvo_revision_manual_desde")
     private LocalDateTime onvoRevisionManualDesde;
 
@@ -110,6 +117,10 @@ public class Suscripcion {
     public void setOnvoSubPorCancelar(String v) { this.onvoSubPorCancelar = v; }
     public String getOnvoSubReemplazada() { return onvoSubReemplazada; }
     public void setOnvoSubReemplazada(String v) { this.onvoSubReemplazada = v; }
+    public String getOnvoSubNuevaPendiente() { return onvoSubNuevaPendiente; }
+    public void setOnvoSubNuevaPendiente(String v) { this.onvoSubNuevaPendiente = v; }
+    public LocalDateTime getOnvoSubNuevaDesde() { return onvoSubNuevaDesde; }
+    public void setOnvoSubNuevaDesde(LocalDateTime v) { this.onvoSubNuevaDesde = v; }
     public LocalDateTime getOnvoRevisionManualDesde() { return onvoRevisionManualDesde; }
     public void setOnvoRevisionManualDesde(LocalDateTime v) { this.onvoRevisionManualDesde = v; }
     public void setOnvoPriceId(String v) { this.onvoPriceId = v; }

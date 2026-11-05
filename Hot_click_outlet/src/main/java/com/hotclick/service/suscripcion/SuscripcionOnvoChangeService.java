@@ -465,6 +465,15 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             self.aplicarPlanLocal(empresaId, planDestino.getNombre(), priceId);
             return Map.of("status", "activado", "planNombre", planDestino.getNombre(), "mock", true);
         }
+        String nuevaPendiente = sub.getOnvoSubNuevaPendiente();
+        if (nuevaPendiente != null && !nuevaPendiente.isBlank()) {
+            // Ya hay una subida creada sin pagar: se reabre la misma; nunca se crea una segunda suscripción.
+            if (PLAN_NEGOCIO_PLUS.equalsIgnoreCase(planDestino.getNombre())) {
+                return respuestaRequierePago(empresa, planDestino, sub.getOnvoCustomerId(), nuevaPendiente);
+            }
+            throw new com.hotclick.exception.OnvoSolicitudRechazadaException(
+                "Tenés una subida a Negocio Plus pendiente de pago. Completala o esperá a que venza para hacer otro cambio.", null);
+        }
         String onvoSubId = sub.getOnvoSubscriptionId();
         Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(onvoSubId);
         String estado = OnvoBillingClient.estadoDe(enOnvo);
@@ -582,18 +591,26 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
                 if (fila == null || !anterior.equals(fila.getOnvoSubscriptionId())) {
                     throw new IllegalStateException("La suscripción ONVO cambió mientras se reemplazaba.");
                 }
+                if (subidaCobrada) {
+                    // Dos tiempos: la vieja sigue vigente (ACTIVE, renueva, mismo plan). La nueva queda pendiente y
+                    // solo cuando ONVO confirma su pago se cancela la vieja (completarReemplazoTrasPago).
+                    fila.setOnvoSubNuevaPendiente(nuevaId);
+                    fila.setOnvoSubNuevaDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+                    registrarPlanPendiente(fila, planDestino);
+                    suscripcionRepo.save(fila);
+                    return null;
+                }
                 fila.setOnvoSubscriptionId(null);
                 persistirAltaOnvo(bloqueada, fila, planDestino, customerId, nuevaId, priceId);
-                if (subidaCobrada) {
-                    // Seguridad: un pago que llegue después para la vieja se ignora (ver procesarPagoOnvoVerificado).
-                    fila.setOnvoSubReemplazada(anterior);
-                    suscripcionRepo.save(fila);
-                }
                 return null;
             });
         } catch (RuntimeException ex) {
             cancelarHuerfana(empresaId, nuevaId, ex);
             throw ex;
+        }
+        if (subidaCobrada) {
+            log.info("[onvo] subida a Negocio Plus pendiente de pago empresa={} nueva={}", empresaId, enmascarar(nuevaId));
+            return respuestaRequierePago(empresa, planDestino, customerId, nuevaId);
         }
         try {
             onvoBilling.cancelarInmediato(anterior);
@@ -845,16 +862,22 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw new IllegalArgumentException("Referencia de ledger ONVO inválida: se requiere el id de la factura");
         }
         if (ignorarPagoDeSuscripcionVieja(onvoSubId)) return;
-        Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
+        Optional<Suscripcion> vigente = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId);
+        Optional<Suscripcion> pendiente = vigente.isPresent() ? Optional.empty()
+            : suscripcionRepo.findByOnvoSubNuevaPendienteForUpdate(onvoSubId);
+        if (vigente.isEmpty() && pendiente.isEmpty()) {
+            throw new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId);
+        }
         Plan plan = planRepo.findByNombre(planNombre)
             .orElseThrow(() -> new IllegalStateException("Plan " + planNombre + " no configurado"));
         if (fin == null) {
             log.warn("[onvo] Sin fin de período ONVO para sub={}", onvoSubId);
             throw new IllegalStateException("Sin fin de período ONVO para la suscripción");
         }
+        Suscripcion sub = vigente.orElseGet(() -> completarReemplazoTrasPago(pendiente.get()));
         sub.setPlan(plan);
-        sub.setPlanPendiente(null);
+        // Un cobro de la vieja mientras hay una subida sin pagar no borra el plan pendiente.
+        if (sub.getOnvoSubNuevaPendiente() == null) sub.setPlanPendiente(null);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
@@ -875,6 +898,68 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     }
 
     /**
+     * Punto único de cancelación de la vieja al subir a Negocio Plus. Lo llama {@link #procesarPagoOnvoVerificado}
+     * (webhook y cualquier reconciliación que use ese camino) con la fila ya bloqueada y el pago de la nueva verificado.
+     * Idempotente: cambia el id vigente a la nueva una sola vez (el segundo webhook ya encuentra la nueva como vigente y
+     * no entra acá), así la vieja se cancela una sola vez. Si cancelar la vieja falla, queda en onvo_sub_por_cancelar
+     * con revisión manual; como ya no es la vigente, un cobro suyo va a {@link #ignorarPagoDeSuscripcionVieja}.
+     */
+    public Suscripcion completarReemplazoTrasPago(Suscripcion fila) {
+        String nueva = fila.getOnvoSubNuevaPendiente();
+        String vieja = fila.getOnvoSubscriptionId();
+        if (nueva == null || nueva.isBlank()) return fila;
+        fila.setOnvoSubscriptionId(nueva);
+        fila.setOnvoSubNuevaPendiente(null);
+        fila.setOnvoSubNuevaDesde(null);
+        if (vieja != null && !vieja.isBlank() && !vieja.equals(nueva)) {
+            fila.setOnvoSubReemplazada(vieja);
+            try {
+                onvoBilling.cancelarInmediato(vieja);
+                log.info("[onvo] subida pagada: vieja cancelada empresa={} vieja={}",
+                    fila.getEmpresa() == null ? null : fila.getEmpresa().getId(), enmascarar(vieja));
+            } catch (RuntimeException e) {
+                log.error("[ALERTA-PAGO] [onvo] subida pagada pero no se pudo cancelar la vieja; queda para revisión"
+                        + " manual vieja={} causa={} status={}",
+                    enmascarar(vieja), e.getClass().getSimpleName(), OnvoBillingClient.statusDe(e));
+                fila.setOnvoSubPorCancelar(vieja);
+                fila.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+            }
+        }
+        suscripcionRepo.save(fila);
+        return fila;
+    }
+
+    /**
+     * Job de subidas sin pagar: pasado el plazo, cancela en ONVO la nueva (incomplete) y limpia la fila. La vieja no se
+     * toca. Si ONVO ya la reporta activa (pago con webhook en camino) o la cancelación falla, no se limpia: se reintenta.
+     * Devuelve true si la expiró.
+     */
+    @Transactional
+    public boolean expirarReemplazoPendiente(Long filaId, java.time.LocalDateTime limite) {
+        Suscripcion fila = suscripcionRepo.findByIdForUpdate(filaId).orElse(null);
+        if (fila == null || fila.getOnvoSubNuevaPendiente() == null || fila.getOnvoSubNuevaDesde() == null
+                || !fila.getOnvoSubNuevaDesde().isBefore(limite)) {
+            return false;
+        }
+        String nueva = fila.getOnvoSubNuevaPendiente();
+        String estado = OnvoBillingClient.estadoDe(onvoBilling.obtenerSuscripcion(nueva));
+        if ("active".equals(estado) || "trialing".equals(estado)) {
+            log.warn("[ALERTA-PAGO] [onvo] subida vencida pero ONVO la reporta {}: no se cancela nueva={}",
+                estado, enmascarar(nueva));
+            return false;
+        }
+        if (!"canceled".equals(estado) && !"incomplete_expired".equals(estado)) {
+            onvoBilling.cancelarInmediato(nueva);
+        }
+        fila.setOnvoSubNuevaPendiente(null);
+        fila.setOnvoSubNuevaDesde(null);
+        fila.setPlanPendiente(null);
+        suscripcionRepo.save(fila);
+        log.info("[onvo] subida a Negocio Plus sin pagar vencida y cancelada nueva={}", enmascarar(nueva));
+        return true;
+    }
+
+    /**
      * BAJO (Seguridad): un pago de una suscripción ONVO vieja (reemplazada al subir a Negocio Plus o pendiente de
      * cancelar) nunca activa ni cambia el plan. Se ignora, se marca la fila para revisión manual y se alerta sin PII.
      * Solo aplica si el id ya no es el vigente de ninguna fila.
@@ -892,12 +977,6 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @Transactional
     public void procesarRenovacionFallida(String onvoSubId) {
         suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).ifPresent(sub -> {
-            if (sub.getOnvoSubReemplazada() != null && sub.getPlanPendiente() != null) {
-                // Subida a Negocio Plus sin pagar: el plan viejo ya está pagado hasta fecha_fin y sigue igual.
-                log.warn("[billing-onvo] cobro de la subida no completado; el plan vigente sigue igual empresa={}",
-                    sub.getEmpresa().getId());
-                return;
-            }
             sub.setEstado("PAST_DUE");
             Empresa empresa = sub.getEmpresa();
             // H1 (fail-closed): un PAST_DUE sin fecha_fin nunca lo elige el job de impago y el negocio conservaría el
