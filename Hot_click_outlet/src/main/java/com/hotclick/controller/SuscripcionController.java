@@ -216,6 +216,11 @@ public class SuscripcionController {
             return ResponseEntity.status(409).body(Map.of(
                 "error", com.hotclick.exception.PlanYaActivoException.MENSAJE,
                 "codigo", com.hotclick.exception.PlanYaActivoException.CODIGO));
+        } catch (com.hotclick.exception.OnvoSolicitudRechazadaException e) {
+            // ALTO-02: rechazo de ONVO o bug de cliente → 422 claro; nada se cobró ni cambió.
+            return ResponseEntity.status(422).body(Map.of(
+                "error", com.hotclick.exception.OnvoSolicitudRechazadaException.MENSAJE,
+                "codigo", com.hotclick.exception.OnvoSolicitudRechazadaException.CODIGO));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
             return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
         } catch (SecurityException e) {

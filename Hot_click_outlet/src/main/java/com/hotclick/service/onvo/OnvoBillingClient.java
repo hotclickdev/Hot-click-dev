@@ -259,7 +259,22 @@ public class OnvoBillingClient {
             throw new IllegalStateException("Suscripción ONVO sin itemId para cambiar plan");
         }
         Map<String, Object> body = Map.of("priceId", nuevoPriceId);
-        patch("/subscriptions/" + subscriptionId + "/items/" + itemId, body);
+        // ONVO "Actualizar item de un Cargo recurrente" = PATCH /v1/subscriptions/:id/items/:item
+        // (https://docs.onvopay.com/api/actualizar-item-de-un-cargo-recurrente). ALTO-02: un 4xx o un
+        // fallo al armar el request es un rechazo/bug nuestro, no una caída: no abre el circuito.
+        try {
+            patch("/subscriptions/" + subscriptionId + "/items/" + itemId, body);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.warn("[onvo] cambiarPrecio rechazado por ONVO status={}", e.getStatusCode().value());
+            throw new com.hotclick.exception.OnvoSolicitudRechazadaException("ONVO rechazó cambiarPrecio", e);
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            if (e.getCause() instanceof java.net.ProtocolException) {
+                log.error("[onvo] cambiarPrecio: el cliente HTTP no soporta el método ({})",
+                    e.getCause().getClass().getSimpleName());
+                throw new com.hotclick.exception.OnvoSolicitudRechazadaException("Cliente HTTP sin soporte", e);
+            }
+            throw e;
+        }
         log.info("[onvo] Precio actualizado sub={} item={} price={}", subscriptionId, itemId, nuevoPriceId);
     }
 
@@ -456,6 +471,7 @@ public class OnvoBillingClient {
 
     private void cambiarPrecioFallback(String subscriptionId, String itemId,
                                        String nuevoPriceId, Throwable t) {
+        if (t instanceof com.hotclick.exception.OnvoSolicitudRechazadaException rechazo) throw rechazo;
         log.error("[onvo-circuit] OPEN cambiarPrecio: {} status={}", t.getClass().getSimpleName(), statusDe(t));
         throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
     }
