@@ -486,12 +486,30 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw new com.hotclick.exception.TrialConMetodoPagoException();
         }
         if (estado != null && ESTADOS_SIN_COBRO.contains(estado)) {
-            return reemplazarSuscripcionSinCobro(empresaId, empresa, sub, planDestino, priceId, estado, enOnvo);
+            return reemplazarSuscripcion(empresaId, empresa, sub, planDestino, priceId, estado, enOnvo, false);
         }
-        log.warn("[onvo] cambio de plan sobre una suscripción ya cobrada: ONVO no permite cambiar el precio"
-            + " empresa={} estado={}", empresaId, estado);
-        throw new com.hotclick.exception.OnvoSolicitudRechazadaException(
-            "ONVO no permite cambiar el precio de una suscripción cobrada", null);
+        if ("active".equals(estado) && esSubidaANegocioPlus(nombrePlanActual(empresa), planDestino.getNombre())) {
+            // Única subida que la pyme hace sola: precio completo hoy, sin prorrateo, período nuevo desde hoy.
+            return reemplazarSuscripcion(empresaId, empresa, sub, planDestino, priceId, estado, enOnvo, true);
+        }
+        // Bajar de plan o cualquier otro cambio sobre una suscripción cobrada: no se toca ONVO; va por solicitud.
+        log.warn("[onvo] cambio de plan sobre una suscripción ya cobrada: requiere solicitud empresa={} estado={}",
+            empresaId, estado);
+        throw new com.hotclick.exception.CambioPlanRequiereSolicitudException();
+    }
+
+    static final String PLAN_NEGOCIO_PLUS = "NEGOCIO_PLUS";
+    private static final java.util.List<String> ORDEN_PLANES = java.util.List.of(PLAN_GRATIS, "PYME", PLAN_NEGOCIO_PLUS);
+
+    /** Rango del plan (EMPRENDEDOR 0, PYME 1, NEGOCIO_PLUS 2); -1 si no es uno de esos. */
+    static int rangoPlan(String nombre) {
+        return nombre == null ? -1 : ORDEN_PLANES.indexOf(nombre.toUpperCase(java.util.Locale.ROOT));
+    }
+
+    /** Solo subir a NEGOCIO_PLUS desde un plan conocido más bajo. */
+    static boolean esSubidaANegocioPlus(String actual, String destino) {
+        int a = rangoPlan(actual);
+        return PLAN_NEGOCIO_PLUS.equalsIgnoreCase(destino) && a >= 0 && a < rangoPlan(PLAN_NEGOCIO_PLUS);
     }
 
     /** Estados ONVO en los que todavía no se cobró ningún período: se puede reemplazar sin perder nada pagado. */
@@ -518,15 +536,24 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      * es compatible con allow_incomplete), así que si la vieja estaba en trialing se mandan los días que le quedan
      * (trialEnd de ONVO o, si no viene, la fecha local; hacia abajo, mínimo 0). El trial local no se toca.
      */
-    private Map<String, Object> reemplazarSuscripcionSinCobro(Long empresaId, Empresa empresa, Suscripcion sub,
-                                                              Plan planDestino, String priceId, String estado,
-                                                              Map<?, ?> enOnvo) {
+    private Map<String, Object> reemplazarSuscripcion(Long empresaId, Empresa empresa, Suscripcion sub,
+                                                      Plan planDestino, String priceId, String estado,
+                                                      Map<?, ?> enOnvo, boolean subidaCobrada) {
         String anterior = sub.getOnvoSubscriptionId();
         String customerId = sub.getOnvoCustomerId();
         if (customerId == null || customerId.isBlank()) {
             throw new IllegalStateException("La suscripción ONVO no tiene customer guardado.");
         }
-        int diasTrial = diasTrialReemplazo(empresa, sub, planDestino, estado, enOnvo, java.time.Instant.now());
+        String pendiente = sub.getOnvoSubPorCancelar();
+        if (pendiente != null && !pendiente.isBlank()) {
+            // Fail-closed: no se crea otra suscripción mientras una vieja siga sin cancelar en ONVO.
+            log.error("[ALERTA-PAGO] [onvo] reemplazo bloqueado: hay una suscripción vieja pendiente de cancelar empresa={}", empresaId);
+            throw new com.hotclick.exception.OnvoSolicitudRechazadaException(
+                "Tenemos un cambio de plan anterior pendiente de cerrar. Escribinos y lo resolvemos antes de hacer otro cambio.", null);
+        }
+        // Subida sobre una suscripción cobrada: sin trial, ONVO cobra el precio completo al confirmar (allow_incomplete).
+        int diasTrial = subidaCobrada ? 0
+            : diasTrialReemplazo(empresa, sub, planDestino, estado, enOnvo, java.time.Instant.now());
         log.warn("[onvo] reemplazo de suscripción sin cobro empresa={} estado={} sub={} diasTrial={}",
             empresaId, estado, enmascarar(anterior), diasTrial);
         Map<String, String> meta = Map.of(
@@ -557,6 +584,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
                 }
                 fila.setOnvoSubscriptionId(null);
                 persistirAltaOnvo(bloqueada, fila, planDestino, customerId, nuevaId, priceId);
+                if (subidaCobrada) {
+                    // Seguridad: un pago que llegue después para la vieja se ignora (ver procesarPagoOnvoVerificado).
+                    fila.setOnvoSubReemplazada(anterior);
+                    suscripcionRepo.save(fila);
+                }
                 return null;
             });
         } catch (RuntimeException ex) {
@@ -812,6 +844,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (!referenciaValida(referenciaLedger)) {
             throw new IllegalArgumentException("Referencia de ledger ONVO inválida: se requiere el id de la factura");
         }
+        if (ignorarPagoDeSuscripcionVieja(onvoSubId)) return;
         Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
         Plan plan = planRepo.findByNombre(planNombre)
@@ -841,9 +874,36 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
     }
 
+    /**
+     * BAJO (Seguridad): un pago de una suscripción ONVO vieja (reemplazada al subir a Negocio Plus o pendiente de
+     * cancelar) nunca activa ni cambia el plan. Se ignora, se marca la fila para revisión manual y se alerta sin PII.
+     * Solo aplica si el id ya no es el vigente de ninguna fila.
+     */
+    public boolean ignorarPagoDeSuscripcionVieja(String onvoSubId) {
+        if (onvoSubId == null || suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).isPresent()) return false;
+        java.util.List<Suscripcion> filas = suscripcionRepo.findConOnvoSubVieja(onvoSubId);
+        if (filas.isEmpty()) return false;
+        for (Suscripcion f : filas) {
+            if (f.getOnvoRevisionManualDesde() == null) {
+                f.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+                suscripcionRepo.save(f);
+            }
+            log.error("[ALERTA-PAGO] [onvo] pago de una suscripción ONVO vieja (reemplazada): se ignora y queda en"
+                + " revisión manual empresa={} vieja={}", f.getEmpresa() == null ? null : f.getEmpresa().getId(),
+                enmascarar(onvoSubId));
+        }
+        return true;
+    }
+
     @Transactional
     public void procesarRenovacionFallida(String onvoSubId) {
         suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).ifPresent(sub -> {
+            if (sub.getOnvoSubReemplazada() != null && sub.getPlanPendiente() != null) {
+                // Subida a Negocio Plus sin pagar: el plan viejo ya está pagado hasta fecha_fin y sigue igual.
+                log.warn("[billing-onvo] cobro de la subida no completado; el plan vigente sigue igual empresa={}",
+                    sub.getEmpresa().getId());
+                return;
+            }
             sub.setEstado("PAST_DUE");
             Empresa empresa = sub.getEmpresa();
             // H1 (fail-closed): un PAST_DUE sin fecha_fin nunca lo elige el job de impago y el negocio conservaría el

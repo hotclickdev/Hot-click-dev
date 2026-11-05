@@ -34,6 +34,10 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
 
+    /** Fila cuya suscripción ONVO vieja (reemplazada o pendiente de cancelar) es este id. */
+    @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubReemplazada = :id OR s.onvoSubPorCancelar = :id")
+    java.util.List<Suscripcion> findConOnvoSubVieja(@Param("id") String onvoSubId);
+
     /** S-02 (C6 heredado): lock de fila al aplicar un pago ONVO verificado. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubscriptionId = :id")

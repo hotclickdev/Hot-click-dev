@@ -4,6 +4,7 @@ import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
+import SolicitudCambioPlanForm from '@/features/billing/SolicitudCambioPlanForm'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
 import {
   mapApiPlanToUi,
@@ -55,7 +56,8 @@ export default function CompararPlanesVista({
     pagoPendiente,
     seleccionarPlan,
     cancelarPago, irAExito,
-  } = useCambiarPlan({ rutaExito })
+    solicitud, cerrarSolicitud,
+  } = useCambiarPlan({ rutaExito, planActual: planActualApi })
 
   useEffect(() => {
     billingService.getPlanes()
@@ -151,6 +153,14 @@ export default function CompararPlanesVista({
     error,
     children: (
       <>
+        {solicitud ? (
+          <SolicitudCambioPlanForm
+            planId={solicitud.planId}
+            planNombre={planElegido?.nombre ?? solicitud.planNombre}
+            planActual={planActualApi}
+            onCerrar={() => { cerrarSolicitud(); setError(null) }}
+          />
+        ) : null}
         {/* Trial Emprendedor: días que quedan + «Agregar tarjeta» (solo se pinta en TRIAL / PENDIENTE_CUPO del propietario). */}
         <TarjetaTrialCard />
         {cargando ? (

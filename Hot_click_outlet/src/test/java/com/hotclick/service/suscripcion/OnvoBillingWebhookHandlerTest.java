@@ -255,6 +255,16 @@ class OnvoBillingWebhookHandlerTest {
     }
 
     @Test
+    @DisplayName("BAJO: intent pagado de la suscripción VIEJA (reemplazada) se consume e ignora: no activa ni va a checkout")
+    void intentDeSuscripcionViejaSeIgnora() throws Exception {
+        when(suscripcionService.ignorarPagoOnvoSuscripcionVieja("clsub_vieja")).thenReturn(true);
+        var body = json("{\"id\":\"pi_1\",\"subscriptionId\":\"clsub_vieja\"}");
+        assertThat(handler.manejarSiBilling("payment-intent.succeeded", body, null)).isTrue();
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(onvo, never()).obtenerPaymentIntent(any());
+    }
+
+    @Test
     @DisplayName("M1: alta por intent atribuida por subscriptionId local (lock) y confirmada por GET del intent")
     void altaPorIntentVerificada() throws Exception {
         when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("clsub0001")).thenReturn(Optional.of(local("clsub0001")));

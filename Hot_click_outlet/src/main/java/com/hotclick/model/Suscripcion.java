@@ -56,6 +56,10 @@ public class Suscripcion {
     @Column(name = "onvo_sub_por_cancelar", length = 100)
     private String onvoSubPorCancelar;
 
+    /** Suscripción ONVO vieja reemplazada al subir a Negocio Plus: un pago suyo nunca activa ni cambia el plan. */
+    @Column(name = "onvo_sub_reemplazada", length = 100)
+    private String onvoSubReemplazada;
+
     @Column(name = "onvo_revision_manual_desde")
     private LocalDateTime onvoRevisionManualDesde;
 
@@ -104,6 +108,8 @@ public class Suscripcion {
     public String getOnvoPriceId() { return onvoPriceId; }
     public String getOnvoSubPorCancelar() { return onvoSubPorCancelar; }
     public void setOnvoSubPorCancelar(String v) { this.onvoSubPorCancelar = v; }
+    public String getOnvoSubReemplazada() { return onvoSubReemplazada; }
+    public void setOnvoSubReemplazada(String v) { this.onvoSubReemplazada = v; }
     public LocalDateTime getOnvoRevisionManualDesde() { return onvoRevisionManualDesde; }
     public void setOnvoRevisionManualDesde(LocalDateTime v) { this.onvoRevisionManualDesde = v; }
     public void setOnvoPriceId(String v) { this.onvoPriceId = v; }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { billingService, type CambiarPlanResultado } from '@/services/billingService'
 import useTenantStore from '@/store/tenantStore'
 import type { Id } from '@/types/api'
+import { esRequiereSolicitud, requiereSolicitud } from './solicitudCambioPlan'
 
 /** QA8: el negocio aún no está aprobado; no puede elegir ni pagar plan (409 del backend). */
 export const MSG_EMPRESA_PENDIENTE_APROBACION = 'Tu negocio está en revisión; podrás elegir plan cuando lo aprobemos.'
@@ -51,7 +52,12 @@ export const CLAVE_RUTA_EXITO_PLAN = 'hc_plan_ruta_exito'
 type Options = {
   /** Ruta absoluta o relativa a la pantalla de éxito tras activar. */
   rutaExito: string
+  /** Plan actual (nombre API); con él se decide si el cambio va por solicitud. */
+  planActual?: string | null
 }
+
+/** Cambio que no se hace solo: se abre el formulario de solicitud para este plan. */
+export type SolicitudPendiente = { planId: Id; planNombre?: string | null }
 
 /** Plan base sin mensualidad: bajar a él es cancelar, no cambiar de plan (precio 0 da 409 en /cambiar-plan). */
 export const PLAN_BASE = 'EMPRENDEDOR'
@@ -67,12 +73,13 @@ export function rutaCambioPlan(nombrePlanDestino?: string | null): 'cancelar' | 
 /**
  * Orquesta POST /billing/cambiar-plan y el cobro ONVO si hace falta; la baja a Emprendedor va por /billing/cancelar.
  */
-export function useCambiarPlan({ rutaExito }: Options) {
+export function useCambiarPlan({ rutaExito, planActual }: Options) {
   const navigate = useNavigate()
   const loadTenantInfo = useTenantStore((s) => s.loadTenantInfo)
   const [loadingPlan, setLoadingPlan] = useState<Id | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pagoPendiente, setPagoPendiente] = useState<PagoPlanPendiente | null>(null)
+  const [solicitud, setSolicitud] = useState<SolicitudPendiente | null>(null)
 
   const irAExito = useCallback(async () => {
     await loadTenantInfo()
@@ -84,6 +91,13 @@ export function useCambiarPlan({ rutaExito }: Options) {
   const seleccionarPlan = useCallback(async (planId: Id, nombrePlanDestino?: string | null) => {
     setLoadingPlan(planId)
     setError(null)
+    setSolicitud(null)
+    if (requiereSolicitud(planActual, nombrePlanDestino)) {
+      // Bajar sobre un plan cobrado: sin botón directo, la pyme manda una solicitud.
+      setSolicitud({ planId, planNombre: nombrePlanDestino })
+      setLoadingPlan(null)
+      return
+    }
     try {
       if (rutaCambioPlan(nombrePlanDestino) === 'cancelar') {
         await billingService.cancelar(false)
@@ -118,10 +132,11 @@ export function useCambiarPlan({ rutaExito }: Options) {
       setError('Respuesta inesperada al cambiar de plan')
       setLoadingPlan(null)
     } catch (e: unknown) {
+      if (esRequiereSolicitud(e)) setSolicitud({ planId, planNombre: nombrePlanDestino })
       setError(mensajeErrorPlan(e, 'Error al cambiar el plan'))
       setLoadingPlan(null)
     }
-  }, [irAExito, loadTenantInfo, rutaExito])
+  }, [irAExito, loadTenantInfo, rutaExito, planActual])
 
   const cancelarPago = useCallback(() => {
     setPagoPendiente(null)
@@ -135,5 +150,7 @@ export function useCambiarPlan({ rutaExito }: Options) {
     seleccionarPlan,
     irAExito,
     cancelarPago,
+    solicitud,
+    cerrarSolicitud: () => setSolicitud(null),
   }
 }

@@ -78,6 +78,10 @@ public class OnvoBillingWebhookHandler {
         if (!esEventoBilling(type, data)) {
             return false;
         }
+        if ("payment-intent.succeeded".equals(type) && esPagoDeSuscripcionVieja(data)) {
+            // BAJO: pago de la suscripción vieja (reemplazada): nunca activa ni cambia el plan; queda en revisión.
+            return true;
+        }
         if ("payment-intent.succeeded".equals(type) && !intentAtribuibleASuscripcion(data)) {
             // M1: no se puede atribuir con certeza a una suscripción → flujo normal de checkout/POS.
             return false;
@@ -191,6 +195,12 @@ public class OnvoBillingWebhookHandler {
             return false;
         }
         return true;
+    }
+
+    private boolean esPagoDeSuscripcionVieja(JsonNode data) {
+        String subId = subIdDeEvento(data);
+        return subId != null && OnvoBillingClient.idValido(subId)
+            && suscripcionService.ignorarPagoOnvoSuscripcionVieja(subId);
     }
 
     /** Factura referida por latestInvoiceId de la suscripción (GET); mapa vacío si no hay. */
