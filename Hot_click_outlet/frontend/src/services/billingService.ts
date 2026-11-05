@@ -38,6 +38,7 @@ export const billingService = {
   cambiarPlan: (planId: Id) => api.post<CambiarPlanResultado>(`/billing/cambiar-plan/${planId}`),
   /** ALTO-02b: cobro pendiente de la suscripción ONVO (no cambia el plan ni el precio). */
   completarPago: () => api.post<{ status: string } & Partial<CambiarPlanResultado>>('/billing/completar-pago'),
+  reconciliarPago: () => api.post<{ status: string; mensaje?: string }>('/billing/reconciliar-pago'),
   getTrialTarjeta: () => api.get<TrialTarjetaEstado>('/billing/trial/tarjeta'),
   iniciarTrialTarjeta: () => api.post<TrialTarjetaInicio>('/billing/trial/tarjeta'),
   crearPortal: () => api.post('/billing/portal'),

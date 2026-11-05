@@ -248,6 +248,40 @@ class OnvoBillingMediosTest {
         assertThat(sub.getEstado()).isEqualTo("ACTIVO");
     }
 
+    @Test
+    @DisplayName("plan-pendiente: trialing con método de pago → fecha del primer cobro = fin del trial (hora CR)")
+    void primerCobro_trialConMetodo() {
+        Map<String, Object> enOnvo = subOnvo("trialing");
+        enOnvo.put("paymentMethodId", "pm_1");
+        enOnvo.put("trialEnd", "2027-02-02T05:59:00.000Z"); // 2027-02-01 23:59 en Costa Rica
+        doReturn(enOnvo).when(onvoBilling).obtenerSuscripcion(SUB);
+
+        assertThat(service.primerCobroTrialConMetodo(20L)).contains(LocalDate.of(2027, 2, 1));
+    }
+
+    @Test
+    @DisplayName("plan-pendiente: trialing sin método, incomplete u ONVO caído → sin fecha (sigue «falta el pago»)")
+    void primerCobro_sinMetodoOFalla() {
+        doReturn(subOnvo("trialing")).when(onvoBilling).obtenerSuscripcion(SUB);
+        assertThat(service.primerCobroTrialConMetodo(20L)).isEmpty();
+
+        Map<String, Object> incompleta = subOnvo("incomplete");
+        incompleta.put("paymentMethodId", "pm_1");
+        doReturn(incompleta).when(onvoBilling).obtenerSuscripcion(SUB);
+        assertThat(service.primerCobroTrialConMetodo(20L)).isEmpty();
+
+        when(onvoBilling.obtenerSuscripcion(SUB)).thenThrow(new org.springframework.web.client.ResourceAccessException("caído"));
+        assertThat(service.primerCobroTrialConMetodo(20L)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("plan-pendiente: sin trialEnd usa currentPeriodEnd")
+    void primerCobro_fallbackPeriodo() {
+        Map<String, Object> enOnvo = subOnvo("trialing");
+        enOnvo.put("paymentMethodId", "pm_1");
+        assertThat(SuscripcionOnvoChangeService.primerCobroTrial(enOnvo)).contains(LocalDate.of(2026, 12, 4));
+    }
+
     // ---------------------------------------------------------------- reconciliación (MEDIO-3)
 
     @Nested

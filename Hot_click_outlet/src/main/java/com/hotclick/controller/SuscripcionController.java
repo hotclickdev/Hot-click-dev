@@ -35,6 +35,8 @@ public class SuscripcionController {
     /** MEDIO-3: opcional para no romper los slices MVC que no lo declaran; sin él el endpoint responde 503. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hotclick.service.suscripcion.OnvoAltaReconciliacion reconciliacion;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.suscripcion.SuscripcionOnvoChangeService onvoCambio;
 
     public SuscripcionController(SuscripcionService suscripcionService,
                                   PlanRepository planRepo,
@@ -323,6 +325,13 @@ public class SuscripcionController {
         m.put("plan", n);
         m.put("motivo", "CAMBIO_PLAN");
         m.put("proveedor", "ONVO");
+        // Trial con método de pago guardado: no falta pago; la UI muestra el plan y la fecha del primer cobro.
+        if (onvoCambio != null) {
+            onvoCambio.primerCobroTrialConMetodo(empresaId).ifPresent(f -> {
+                m.put("estado", "TRIAL_CON_METODO");
+                m.put("primerCobro", f.toString());
+            });
+        }
         return java.util.Optional.of(m);
     }
 

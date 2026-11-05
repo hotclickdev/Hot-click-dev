@@ -144,6 +144,42 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         return cambiarPlanInterno(empresa, planId);
     }
 
+    /**
+     * Aviso de plan pendiente: si la suscripción ONVO está en trialing CON método de pago guardado no falta ningún
+     * pago (ONVO cobra solo al terminar el trial). Devuelve la fecha del primer cobro (trialEnd, o currentPeriodEnd si
+     * no viene) en hora de Costa Rica. Sin suscripción, otro estado, fecha ilegible o ONVO caído → vacío (la UI sigue
+     * mostrando «falta el pago», que es lo conservador).
+     */
+    public Optional<LocalDate> primerCobroTrialConMetodo(Long empresaId) {
+        try {
+            Optional<Suscripcion> sub = suscripcionRepo.findActivaByEmpresaId(empresaId);
+            String id = sub.map(Suscripcion::getOnvoSubscriptionId).orElse(null);
+            if (id == null || !OnvoBillingClient.idValido(id) || onvoBilling.isMockMode() || onvoBilling.sinLlave()) {
+                return Optional.empty();
+            }
+            Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(id);
+            return primerCobroTrial(enOnvo);
+        } catch (RuntimeException e) {
+            log.warn("[billing-onvo] no se pudo leer el trial en ONVO empresa={} causa={}", empresaId, e.getClass().getSimpleName());
+            return Optional.empty();
+        }
+    }
+
+    static Optional<LocalDate> primerCobroTrial(Map<?, ?> enOnvo) {
+        if (enOnvo == null || !"trialing".equals(String.valueOf(enOnvo.get("status")))
+            || !OnvoBillingClient.tieneMetodoPago(enOnvo)) return Optional.empty();
+        for (String campo : new String[]{"trialEnd", "currentPeriodEnd"}) {
+            if (enOnvo.get(campo) instanceof String s && !s.isBlank()) {
+                try {
+                    return Optional.of(java.time.Instant.parse(s).atZone(Constants.ZONA_CR).toLocalDate());
+                } catch (java.time.format.DateTimeParseException ignored) {
+                    // siguiente campo
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     /** Plan cuya mensualidad quedó impaga: el de la última suscripción VENCIDO, si es de pago. */
     @Transactional(readOnly = true)
     public Optional<Plan> planPendienteDeSuspension(Long empresaId) {
