@@ -11,6 +11,8 @@ import {
   evaluateSpa,
   evaluateTenant,
   findSpaPlaceholdersInDir,
+  frontendSrcChangesAreTestsOnly,
+  isFrontendSrcTestPath,
   isCriticalPackage,
   isEntityPath,
   isMigrationPath,
@@ -183,6 +185,57 @@ test('E3 asks for build when src changed and static did not', () => {
 test('E3 passes when static artifacts are in the PR', () => {
   const verdict = evaluateSpa({ frontendSrcChanged: true, staticChanged: true, skip: false });
   assert.equal(verdict.action, 'pass');
+});
+
+test('E3 path helpers: solo *.test|spec.ts/tsx cuentan como tests de frontend/src', () => {
+  assert.equal(isFrontendSrcTestPath('Hot_click_outlet/frontend/src/pages/Foo.test.ts'), true);
+  assert.equal(isFrontendSrcTestPath('Hot_click_outlet/frontend/src/pages/Foo.test.tsx'), true);
+  assert.equal(isFrontendSrcTestPath('Hot_click_outlet/frontend/src/pages/Foo.spec.ts'), true);
+  assert.equal(isFrontendSrcTestPath('Hot_click_outlet/frontend/src/pages/Foo.spec.tsx'), true);
+  assert.equal(isFrontendSrcTestPath('Hot_click_outlet/frontend/src/pages/Foo.ts'), false);
+  assert.equal(isFrontendSrcTestPath('Hot_click_outlet/frontend/src/pages/Foo.tsx'), false);
+  assert.equal(isFrontendSrcTestPath('Hot_click_outlet/frontend/src/pages/Foo.test.js'), false);
+  assert.equal(isFrontendSrcTestPath('otros/Foo.test.ts'), false);
+});
+
+test('E3 solo .test.ts: saltea comparación de static/', () => {
+  const files = ['Hot_click_outlet/frontend/src/pages/planPendiente.test.ts'];
+  assert.equal(frontendSrcChangesAreTestsOnly(files), true);
+  const verdict = evaluateSpa({
+    frontendSrcChanged: true,
+    staticChanged: false,
+    frontendSrcOnlyTests: true,
+    skip: false,
+  });
+  assert.equal(verdict.action, 'skip');
+  assert.equal(verdict.ok, true);
+});
+
+test('E3 un .ts real sin static/: exige build (falla si static/ stale)', () => {
+  const files = ['Hot_click_outlet/frontend/src/pages/planPendiente.ts'];
+  assert.equal(frontendSrcChangesAreTestsOnly(files), false);
+  const verdict = evaluateSpa({
+    frontendSrcChanged: true,
+    staticChanged: false,
+    frontendSrcOnlyTests: false,
+    skip: false,
+  });
+  assert.equal(verdict.action, 'build');
+});
+
+test('E3 mezcla de test y .ts real: exige build (falla si static/ stale)', () => {
+  const files = [
+    'Hot_click_outlet/frontend/src/pages/planPendiente.test.ts',
+    'Hot_click_outlet/frontend/src/pages/planPendiente.ts',
+  ];
+  assert.equal(frontendSrcChangesAreTestsOnly(files), false);
+  const verdict = evaluateSpa({
+    frontendSrcChanged: true,
+    staticChanged: false,
+    frontendSrcOnlyTests: frontendSrcChangesAreTestsOnly(files),
+    skip: false,
+  });
+  assert.equal(verdict.action, 'build');
 });
 
 test('E3 detecta VITE_* de relleno de CI en el texto de static/', () => {

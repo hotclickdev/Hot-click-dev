@@ -89,6 +89,19 @@ export function isFrontendSrcPath(filePath) {
   return filePath.replaceAll('\\', '/').includes('Hot_click_outlet/frontend/src/');
 }
 
+/** Test/spec de Vitest (u otros) bajo frontend/src: no forman parte del bundle de prod. */
+export function isFrontendSrcTestPath(filePath) {
+  const normalized = filePath.replaceAll('\\', '/');
+  if (!normalized.includes('Hot_click_outlet/frontend/src/')) return false;
+  return /\.(test|spec)\.(ts|tsx)$/i.test(normalized);
+}
+
+/** true si hay cambios bajo frontend/src y TODOS son *.test|spec.ts/tsx. */
+export function frontendSrcChangesAreTestsOnly(changedFiles) {
+  const src = (changedFiles || []).filter(isFrontendSrcPath);
+  return src.length > 0 && src.every(isFrontendSrcTestPath);
+}
+
 export function isStaticPath(filePath) {
   return filePath.replaceAll('\\', '/').includes('Hot_click_outlet/src/main/resources/static/');
 }
@@ -415,12 +428,20 @@ export function evaluateTenant({ findings, skip }) {
   };
 }
 
-export function evaluateSpa({ frontendSrcChanged, staticChanged, skip }) {
+export function evaluateSpa({ frontendSrcChanged, staticChanged, skip, frontendSrcOnlyTests = false }) {
   if (skip) {
     return { action: 'skip', ok: true, reason: `Label ${SKIP_LABELS.spa} presente` };
   }
   if (!frontendSrcChanged) {
     return { action: 'skip', ok: true, reason: 'Sin cambios en Hot_click_outlet/frontend/src/**' };
+  }
+  // Solo tests/specs: no cambian el bundle; no se exige static/ actualizado.
+  if (frontendSrcOnlyTests) {
+    return {
+      action: 'skip',
+      ok: true,
+      reason: 'Solo *.test|spec.ts/tsx bajo frontend/src; no se exige static/.',
+    };
   }
   if (staticChanged) {
     return {
