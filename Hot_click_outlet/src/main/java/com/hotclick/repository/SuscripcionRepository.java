@@ -128,6 +128,13 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.estado = 'PAST_DUE' ORDER BY s.fechaFin ASC")
     List<Suscripcion> findPastDueConEmpresa(org.springframework.data.domain.Pageable page);
 
+    /** MEDIO-3: altas/cambios ONVO pendientes de confirmar, recientes (desde), sin revisión manual; acotado por página. */
+    @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.planPendiente IS NOT NULL"
+        + " AND s.onvoSubscriptionId IS NOT NULL AND s.onvoSubPorCancelar IS NULL"
+        + " AND s.fechaActualizacion >= :desde ORDER BY s.fechaActualizacion DESC")
+    List<Suscripcion> findOnvoPendientesRecientes(@Param("desde") java.time.LocalDateTime desde,
+                                                  org.springframework.data.domain.Pageable page);
+
     /** Admin (anti N+1): suscripciones de un estado para varias empresas, más recientes primero. */
     @Query("SELECT s FROM Suscripcion s WHERE s.empresa.id IN :ids AND s.estado = :estado ORDER BY s.fechaCreacion DESC")
     List<Suscripcion> findByEmpresaIdsAndEstado(@Param("ids") java.util.Collection<Long> ids, @Param("estado") String estado);

@@ -32,6 +32,9 @@ public class SuscripcionController {
     private final com.hotclick.service.suscripcion.CobroSuscripcionService cobroSuscripcionService;
     private final com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes;
     private final com.hotclick.security.PropietarioGuard propietarioGuard;
+    /** MEDIO-3: opcional para no romper los slices MVC que no lo declaran; sin él el endpoint responde 503. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.suscripcion.OnvoAltaReconciliacion reconciliacion;
 
     public SuscripcionController(SuscripcionService suscripcionService,
                                   PlanRepository planRepo,
@@ -274,6 +277,29 @@ public class SuscripcionController {
             log.error("[billing] Error completando pago empresa={}: {}", empresaId, e.getClass().getSimpleName());
             return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
         }
+    }
+
+    /**
+     * MEDIO-3: al volver de «Completar pago» el panel pide confirmar con ONVO (GET). Solo el propietario; la suscripción
+     * sale de su empresa (TenantContext), nunca del cuerpo. Activa solo si ONVO confirma active + factura paid.
+     */
+    @PostMapping("/reconciliar-pago")
+    @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> reconciliarPago() {
+        Long empresaId = TenantContext.get();
+        if (empresaId == null) return ResponseEntity.status(401).build();
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario();
+        if (reconciliacion == null) {
+            return ResponseEntity.status(503).body(Map.of("error", "No pudimos confirmar el pago ahora. Probá de nuevo en unos minutos."));
+        }
+        return switch (reconciliacion.reconciliarEmpresa(empresaId)) {
+            case ACTIVADA -> ResponseEntity.ok(Map.of("status", "activado"));
+            case SIN_CONFIRMAR -> ResponseEntity.ok(Map.of("status", "pendiente",
+                "mensaje", "Todavía no vemos el pago confirmado en ONVO. Tu plan se activa apenas se confirme."));
+            case IGNORADA -> ResponseEntity.ok(Map.of("status", "sin_pago_pendiente"));
+            case ONVO_NO_DISPONIBLE -> ResponseEntity.status(503).body(Map.of("error",
+                "ONVO no respondió y no cambiamos nada. Probá de nuevo en unos minutos."));
+        };
     }
 
     /** Plan nuevo elegido sin pagar: el panel muestra «Completá el pago» (204 si no hay). */

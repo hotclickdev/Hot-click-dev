@@ -164,9 +164,10 @@ public class OnvoRenovacionReconsulta {
     }
 
     private Consulta evaluarFactura(Suscripcion local, Map<?, ?> sub, String subId, String modo, LocalDate hoy) {
-        String facturaId = OnvoBillingVerificador.texto(sub, "latestInvoiceId");
+        // MEDIO-1: la factura del período actual, no latestInvoiceId (que puede ser la open del período siguiente).
+        Map<?, ?> factura = onvo.obtenerFacturaDelPeriodoActual(sub);
+        String facturaId = OnvoBillingVerificador.texto(factura, "id");
         if (facturaId == null || !idValido(facturaId)) return incierta(subId, "sin factura", false);
-        Map<?, ?> factura = onvo.obtenerRenovacion(facturaId);
         OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.renovacion(
             factura, sub, facturaId, subId, modo, precioPlan::planParaPriceId, precioPlan::esperado);
         if (!r.aceptado()) {

@@ -328,6 +328,63 @@ public class OnvoBillingClient {
         return leerReal("/invoices/", invoiceId);
     }
 
+    /**
+     * MEDIO-1: {@code GET /v1/invoices?subscriptionId=…&limit=100} ("Listar renovaciones",
+     * https://docs.onvopay.com/api/listar-renovaciones). Respuesta {@code InvoiceList}: {@code data[]} + {@code meta}.
+     * Fail-closed igual que los GET por id: sin llave real o id inválido, lanza.
+     */
+    public List<Map<?, ?>> listarFacturasDeSuscripcion(String subscriptionId) {
+        Map<?, ?> resp = leerReal("/invoices?limit=100&subscriptionId=", subscriptionId);
+        Object data = resp.get("data");
+        List<Map<?, ?>> out = new java.util.ArrayList<>();
+        if (data instanceof List<?> l) {
+            for (Object o : l) if (o instanceof Map<?, ?> m) out.add(m);
+        }
+        return out;
+    }
+
+    /**
+     * MEDIO-1: factura del período ACTUAL de la suscripción. {@code latestInvoiceId} puede apuntar a la factura
+     * {@code open} del período siguiente (ONVO la crea por adelantado), así que se filtra por
+     * {@code subscriptionId} y {@code periodStart == currentPeriodStart}. Si hay varias del mismo período gana la
+     * {@code paid}. Sin coincidencia: null (quien llama no activa ni cobra a ciegas).
+     */
+    public static Map<?, ?> facturaDelPeriodoActual(List<Map<?, ?>> facturas, Map<?, ?> sub) {
+        if (facturas == null || sub == null) return null;
+        Object subId = sub.get("id");
+        Object inicio = sub.get("currentPeriodStart");
+        if (subId == null || inicio == null) return null;
+        Map<?, ?> elegida = null;
+        for (Map<?, ?> f : facturas) {
+            if (!String.valueOf(subId).equals(String.valueOf(f.get("subscriptionId")))) continue;
+            if (!mismoInstante(inicio, f.get("periodStart"))) continue;
+            if ("paid".equalsIgnoreCase(String.valueOf(f.get("status")))) return f;
+            if (elegida == null) elegida = f;
+        }
+        return elegida;
+    }
+
+    /**
+     * MEDIO-1: factura del período actual releída por {@code GET /v1/invoices/{id}} (trae el paymentIntent embebido
+     * que usa el verificador). Mapa vacío si ONVO no tiene factura de ese período.
+     */
+    public Map<?, ?> obtenerFacturaDelPeriodoActual(Map<?, ?> sub) {
+        Object subId = sub == null ? null : sub.get("id");
+        if (subId == null) return Map.of();
+        Map<?, ?> f = facturaDelPeriodoActual(listarFacturasDeSuscripcion(String.valueOf(subId)), sub);
+        Object id = f == null ? null : f.get("id");
+        return id == null ? Map.of() : obtenerRenovacion(String.valueOf(id));
+    }
+
+    private static boolean mismoInstante(Object a, Object b) {
+        if (a == null || b == null) return false;
+        try {
+            return java.time.Instant.parse(String.valueOf(a)).equals(java.time.Instant.parse(String.valueOf(b)));
+        } catch (java.time.format.DateTimeParseException e) {
+            return String.valueOf(a).equals(String.valueOf(b));
+        }
+    }
+
     /** GET /v1/prices/{id}: moneda y monto (unidad menor) que ONVO cobra por ese price. */
     public Map<?, ?> obtenerPrecio(String priceId) {
         return leerReal("/prices/", priceId);
