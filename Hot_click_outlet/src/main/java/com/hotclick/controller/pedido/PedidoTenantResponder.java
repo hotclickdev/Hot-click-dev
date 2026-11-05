@@ -38,6 +38,8 @@ public class PedidoTenantResponder {
             return ResponseEntity.status(403).body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.CancelacionPagoNoCerradaException e) {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.PedidoYaCanceladoException e) {
+            return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (PedidoNoDespachableException e) {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         } catch (Exception e) {

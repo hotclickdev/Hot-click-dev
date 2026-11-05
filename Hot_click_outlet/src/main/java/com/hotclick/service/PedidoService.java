@@ -127,6 +127,10 @@ public class PedidoService {
         String nuevoEstado = PedidoEstadoMaquina.validarEstado(estadoSolicitado);
         String estadoActual = PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido());
         boolean mismoEstado = nuevoEstado.equals(estadoActual);
+        if (mismoEstado && Constants.PEDIDO_CANCELADO.equals(nuevoEstado)) {
+            // BAJO-05: repetir la cancelación es un conflicto (409), no un «Estado actualizado»; no toca nada.
+            throw new com.hotclick.exception.PedidoYaCanceladoException();
+        }
         if (mismoEstado && !(Constants.PEDIDO_PAGADO.equals(nuevoEstado) && !despachoVerificador.pagoVerificado(pedido))) {
             // Idempotente: pedir el estado en que ya está no transiciona, no toca stock, no reembolsa ni manda correo.
             return sinCambios(pedido);

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * ALTO-01 transición: pedidos vivos creados ANTES de V229/V230 (sin marca). Se ejecuta el SQL real de V229 y V230
@@ -180,14 +181,19 @@ class ReservaPorPedidoTransicionV230Test extends BaseIntegrationTest {
         assertThat(marcado(checkoutPagado)).isFalse();
 
         // Cancelar manuales (dos veces cada uno): la reserva de los demás queda intacta.
-        for (int i = 0; i < 2; i++) {
-            pedidoService.cambiarEstado(manual.getId(), Constants.PEDIDO_CANCELADO, null);
-            pedidoService.cambiarEstado(manualLegado.getId(), Constants.PEDIDO_CANCELADO, null);
-            assertThat(reservado()).isEqualTo(6);
-        }
+        pedidoService.cambiarEstado(manual.getId(), Constants.PEDIDO_CANCELADO, null);
+        pedidoService.cambiarEstado(manualLegado.getId(), Constants.PEDIDO_CANCELADO, null);
+        assertThat(reservado()).isEqualTo(6);
+        // BAJO-05: la segunda cancelación es 409 (PedidoYaCanceladoException) y no toca la reserva.
+        assertThatThrownBy(() -> pedidoService.cambiarEstado(manual.getId(), Constants.PEDIDO_CANCELADO, null))
+            .isInstanceOf(com.hotclick.exception.PedidoYaCanceladoException.class);
+        assertThatThrownBy(() -> pedidoService.cambiarEstado(manualLegado.getId(), Constants.PEDIDO_CANCELADO, null))
+            .isInstanceOf(com.hotclick.exception.PedidoYaCanceladoException.class);
+        assertThat(reservado()).isEqualTo(6);
         pedidoService.cambiarEstado(checkout.getId(), Constants.PEDIDO_CANCELADO, null);
         assertThat(reservado()).isEqualTo(4);
-        pedidoService.cambiarEstado(checkout.getId(), Constants.PEDIDO_CANCELADO, null);
+        assertThatThrownBy(() -> pedidoService.cambiarEstado(checkout.getId(), Constants.PEDIDO_CANCELADO, null))
+            .isInstanceOf(com.hotclick.exception.PedidoYaCanceladoException.class);
         assertThat(reservado()).isEqualTo(4);
         pedidoService.cambiarEstado(sinpe.getId(), Constants.PEDIDO_CANCELADO, null);
         assertThat(reservado()).isEqualTo(3);
