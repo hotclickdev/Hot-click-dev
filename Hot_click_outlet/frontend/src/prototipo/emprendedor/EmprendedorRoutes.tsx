@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { rutasCajaRelativas } from '@/app/CajaShell'
 import EmprendedorShell from './EmprendedorShell'
 import { RUTA_EMPRENDEDOR } from './constants'
+import { ALIAS_EMPRENDEDOR } from './aliasEmprendedor'
 
 const MenuPage = lazy(() => import('./pages/MenuPage'))
 const ProductosPage = lazy(() => import('./pages/ProductosPage'))
@@ -68,17 +69,9 @@ export default function EmprendedorRoutes() {
       <Route path="login" element={<Navigate to="/login" replace />} />
       <Route path="registro" element={<Navigate to="/registro" replace />} />
       {rutasCajaRelativas()}
-      <Route path="bodegas" element={<Navigate to="opciones/bodegas" replace />} />
-      <Route path="bodegas/nueva" element={<Navigate to="opciones/bodegas/nueva" replace />} />
-      <Route path="negocio" element={<Navigate to="opciones/negocio" replace />} />
-      <Route path="plan" element={<Navigate to="opciones/plan" replace />} />
-      <Route path="plan/actualizado" element={<Navigate to="opciones/plan/actualizado" replace />} />
-      <Route path="ayuda" element={<Navigate to="opciones/ayuda" replace />} />
-      <Route path="consultas" element={<Navigate to="opciones/consultas" replace />} />
-      <Route path="perfil" element={<Navigate to="opciones/perfil" replace />} />
-      <Route path="cobro" element={<Navigate to="opciones/cobro" replace />} />
-      <Route path="cobro/nuevo" element={<Navigate to="opciones/cobro/nuevo" replace />} />
-      <Route path="telegram" element={<Navigate to="opciones/telegram" replace />} />
+      {ALIAS_EMPRENDEDOR.map(({ path, destino }) => (
+        <Route key={path} path={path} element={<Navigate to={destino} replace />} />
+      ))}
       <Route element={<EmprendedorShell conNav />}>
         <Route index element={page(MenuPage)} />
         <Route path="productos" element={page(ProductosPage)} />
@@ -112,10 +105,8 @@ export default function EmprendedorRoutes() {
         <Route path="opciones/plan" element={page(PlanesPage)} />
         <Route path="opciones/plan/actualizado" element={page(PlanActualizadoPage)} />
         <Route path="proximamente/pedidos" element={<Navigate to={`${RUTA_EMPRENDEDOR}/pedidos`} replace />} />
-        <Route path="proximamente/bodegas" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/bodegas`} replace />} />
         <Route path="proximamente/productos" element={<Navigate to={`${RUTA_EMPRENDEDOR}/productos`} replace />} />
         <Route path="proximamente/reportes" element={<Navigate to={`${RUTA_EMPRENDEDOR}/reportes`} replace />} />
-        <Route path="proximamente/negocio" element={<Navigate to={`${RUTA_EMPRENDEDOR}/opciones/negocio`} replace />} />
         <Route path="proximamente" element={page(ProximamentePage)} />
         <Route path="pedidos" element={page(PedidosPage)} />
       </Route>
