@@ -66,3 +66,14 @@ describe('trial con método de pago guardado: no falta el pago', () => {
     expect(avisoPlanPendiente(null)).toBeNull()
   })
 })
+
+describe('BAJO seguridad: 429 del rate limit de reconciliar-pago', () => {
+  it('429: «pago en proceso», sin error y sin refrescar', async () => {
+    const refrescar = vi.fn().mockResolvedValue(undefined)
+    const err429 = Object.assign(new Error('Request failed with status code 429'), {
+      isAxiosError: true, response: { status: 429, data: { status: 'pendiente', error: 'Esperá un minuto' } },
+    })
+    await expect(alVolverDelPago(() => Promise.reject(err429), refrescar)).resolves.toBe('en_proceso')
+    expect(refrescar).not.toHaveBeenCalled()
+  })
+})

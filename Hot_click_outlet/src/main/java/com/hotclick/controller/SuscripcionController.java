@@ -37,6 +37,12 @@ public class SuscripcionController {
     private com.hotclick.service.suscripcion.OnvoAltaReconciliacion reconciliacion;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hotclick.service.suscripcion.SuscripcionOnvoChangeService onvoCambio;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.security.RateLimiter rateLimiter;
+
+    /** BAJO seguridad: cada reconciliación consulta ONVO; tope por empresa (mismo RateLimiter de AiCopilot). */
+    static final int RECONCILIAR_MAX = 6;
+    static final int RECONCILIAR_VENTANA_SEG = 60;
 
     public SuscripcionController(SuscripcionService suscripcionService,
                                   PlanRepository planRepo,
@@ -291,6 +297,11 @@ public class SuscripcionController {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
         if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario();
+        if (rateLimiter != null && !rateLimiter.tryAcquire("empresa:" + empresaId + ":billing:reconciliar",
+                RECONCILIAR_MAX, RECONCILIAR_VENTANA_SEG)) {
+            return ResponseEntity.status(429).body(Map.of("status", "pendiente",
+                "error", "Ya estamos revisando tu pago. Esperá un minuto antes de volver a consultar."));
+        }
         if (reconciliacion == null) {
             return ResponseEntity.status(503).body(Map.of("error", "No pudimos confirmar el pago ahora. Probá de nuevo en unos minutos."));
         }

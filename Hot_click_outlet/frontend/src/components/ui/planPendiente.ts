@@ -78,7 +78,8 @@ export const MSG_PAGO_EN_PROCESO =
 
 /**
  * MEDIO-3: al volver del SDK de ONVO se pide `POST /billing/reconciliar-pago`. Con `activado` se refresca el aviso
- * (desaparece sin recargar). Cualquier otra respuesta o un error → «pago en proceso», sin mostrar error.
+ * (desaparece sin recargar). Cualquier otra respuesta o un error (incluido el 429 del tope por empresa) →
+ * «pago en proceso», sin mostrar error.
  */
 export async function alVolverDelPago(
   reconciliar: () => Promise<{ data: unknown }>,
