@@ -37,14 +37,7 @@ export type KpiCardProps = {
 
 export function fmtFechaSuscripcion(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
-  // BAJO: siempre en hora de Costa Rica. «YYYY-MM-DD» es una fecha de calendario (new Date la toma como medianoche
-  // UTC y en CR mostraba el día anterior); un instante ISO se pasa a America/Costa_Rica, no a la zona del navegador.
-  const soloFecha = /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
-  const fecha = new Date(soloFecha ? `${dateStr}T12:00:00Z` : dateStr)
-  if (Number.isNaN(fecha.getTime())) return '—'
-  return fecha.toLocaleDateString('es-CR', {
-    year: 'numeric', month: 'long', day: 'numeric', timeZone: soloFecha ? 'UTC' : 'America/Costa_Rica',
-  })
+  return new Date(dateStr).toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 export function fmtMontoFactura(centavos: number | undefined, moneda: string | undefined): string {
