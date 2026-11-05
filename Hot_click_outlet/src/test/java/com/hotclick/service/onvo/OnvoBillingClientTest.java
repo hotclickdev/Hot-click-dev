@@ -66,7 +66,6 @@ class OnvoBillingClientTest {
         server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
         client = clienteConPerfiles("test");
         assertThat(client.isMockMode()).isTrue();
-        client.cambiarPrecioSuscripcion("sub_1", "item_1", "price_x");
         client.cancelarAlVencer("sub_1");
         assertThat(client.obtenerPrimerItemId("sub_1")).isEqualTo("item_mock");
         server.verify();
@@ -99,8 +98,6 @@ class OnvoBillingClientTest {
             assertThatThrownBy(() -> c.crearCustomer("a@test.cr", "A", Map.of()))
                 .as("perfiles %s", String.join(",", perfiles)).isInstanceOf(IllegalStateException.class);
             assertThatThrownBy(() -> c.crearSuscripcionIncompleta("cus_1", "price_pyme", null))
-                .isInstanceOf(IllegalStateException.class);
-            assertThatThrownBy(() -> c.cambiarPrecioSuscripcion("sub_1", "si_1", "price_pyme"))
                 .isInstanceOf(IllegalStateException.class);
             assertThatThrownBy(() -> c.cancelarAlVencer("sub_1")).isInstanceOf(IllegalStateException.class);
             assertThatThrownBy(() -> c.obtenerPrimerItemId("sub_1")).isInstanceOf(IllegalStateException.class);
@@ -346,24 +343,14 @@ class OnvoBillingClientTest {
     }
 
     @Test
-    @DisplayName("HTTP 500 de ONVO se propaga al cambiar precio")
-    void http500_sePropaga() {
-        conLlave();
-        server.expect(requestTo(BASE + "/subscriptions/sub_1/items/si_1"))
-            .andExpect(method(HttpMethod.PATCH))
-            .andRespond(withServerError());
-        assertThatThrownBy(() -> client.cambiarPrecioSuscripcion("sub_1", "si_1", "price_pyme"))
-            .isInstanceOf(HttpServerErrorException.class);
-    }
-
-    @Test
-    @DisplayName("cambiarPrecio sin itemId falla antes de llamar a ONVO")
-    void cambiarPrecio_sinItem() {
-        conLlave();
-        server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
-        assertThatThrownBy(() -> client.cambiarPrecioSuscripcion("sub_1", " ", "price_pyme"))
-            .isInstanceOf(IllegalStateException.class);
-        server.verify();
+    @DisplayName("ALTO-02b: estadoDe/tieneMetodoPago leen status y paymentMethodId de la suscripción ONVO")
+    void estadoYMetodoPago() {
+        assertThat(OnvoBillingClient.estadoDe(Map.of("status", "incomplete"))).isEqualTo("incomplete");
+        assertThat(OnvoBillingClient.estadoDe(Map.of())).isNull();
+        assertThat(OnvoBillingClient.estadoDe(null)).isNull();
+        assertThat(OnvoBillingClient.tieneMetodoPago(Map.of("paymentMethodId", "pm_1"))).isTrue();
+        assertThat(OnvoBillingClient.tieneMetodoPago(Map.of("paymentMethodId", " "))).isFalse();
+        assertThat(OnvoBillingClient.tieneMetodoPago(Map.of())).isFalse();
     }
 
     @Test
@@ -557,7 +544,6 @@ class OnvoBillingClientTest {
         assertThat(c.isMockMode()).isFalse();
         assertThatThrownBy(() -> c.crearCustomer("a@test.cr", "A", Map.of())).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> c.crearSuscripcionIncompleta("cus_1", "price_pyme", null)).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> c.cambiarPrecioSuscripcion("sub_1", "item_1", "price_x")).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> c.cancelarAlVencer("sub_1")).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> c.obtenerPrimerItemId("sub_1")).isInstanceOf(IllegalStateException.class);
         server.verify();

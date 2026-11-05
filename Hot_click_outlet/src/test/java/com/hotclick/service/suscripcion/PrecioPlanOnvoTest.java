@@ -107,7 +107,12 @@ class PrecioPlanOnvoTest {
     }
 
     private static OnvoBillingClient clienteReal(String pyme, String plus) {
+        return clienteReal("price_emp", pyme, plus);
+    }
+
+    private static OnvoBillingClient clienteReal(String emprendedor, String pyme, String plus) {
         OnvoBillingClient c = new OnvoBillingClient(new org.springframework.web.client.RestTemplate());
+        org.springframework.test.util.ReflectionTestUtils.setField(c, "priceIdEmprendedor", emprendedor);
         org.springframework.test.util.ReflectionTestUtils.setField(c, "priceIdPyme", pyme);
         org.springframework.test.util.ReflectionTestUtils.setField(c, "priceIdNegocioPlus", plus);
         return c;
@@ -131,5 +136,21 @@ class PrecioPlanOnvoTest {
         PrecioPlanOnvo completo = new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"),
             clienteReal("price_pyme", "price_plus"));
         assertThat(completo.planParaPriceId("price_ajeno")).isNull();
+    }
+
+    @Test
+    @DisplayName("ALTO-02b: falta ONVO_PRICE_ID_EMPRENDEDOR → faltanPriceIds true y un price ajeno es config faltante")
+    void faltaEmprendedorCuentaComoFaltante() {
+        for (String emp : new String[] {null, "", "  "}) {
+            OnvoBillingClient c = clienteReal(emp, "price_pyme", "price_plus");
+            assertThat(c.faltanPriceIds()).isTrue();
+            PrecioPlanOnvo precio = new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), c);
+            assertThatThrownBy(() -> precio.planParaPriceId("price_ajeno"))
+                .isInstanceOf(ConfigBillingFaltanteException.class);
+            assertThat(precio.planParaPriceId("price_pyme")).isEqualTo("PYME");
+        }
+        assertThat(clienteReal("price_emp", "price_pyme", "price_plus").faltanPriceIds()).isFalse();
+        assertThat(new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"),
+            clienteReal("price_emp", "price_pyme", "price_plus")).planParaPriceId("price_emp")).isEqualTo("EMPRENDEDOR");
     }
 }

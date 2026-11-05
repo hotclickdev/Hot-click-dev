@@ -247,35 +247,24 @@ public class OnvoBillingClient {
         log.warn("[onvo] Suscripción cancelada de inmediato (reconciliación) sub={}", subscriptionId);
     }
 
-    @CircuitBreaker(name = "onvo", fallbackMethod = "cambiarPrecioFallback")
-    @Retry(name = "onvo")
-    public void cambiarPrecioSuscripcion(String subscriptionId, String itemId, String nuevoPriceId) {
-        if (sinLlave()) {
-            exigirSimulacionPermitida("cambiarPrecio");
-            log.info("[onvo-mock] cambiarPrecio sub={} item={} price={}", subscriptionId, itemId, nuevoPriceId);
-            return;
-        }
-        if (itemId == null || itemId.isBlank()) {
-            throw new IllegalStateException("Suscripción ONVO sin itemId para cambiar plan");
-        }
-        Map<String, Object> body = Map.of("priceId", nuevoPriceId);
-        // ONVO "Actualizar item de un Cargo recurrente" = PATCH /v1/subscriptions/:id/items/:item
-        // (https://docs.onvopay.com/api/actualizar-item-de-un-cargo-recurrente). ALTO-02: un 4xx o un
-        // fallo al armar el request es un rechazo/bug nuestro, no una caída: no abre el circuito.
-        try {
-            patch("/subscriptions/" + subscriptionId + "/items/" + itemId, body);
-        } catch (org.springframework.web.client.HttpClientErrorException e) {
-            log.warn("[onvo] cambiarPrecio rechazado por ONVO status={}", e.getStatusCode().value());
-            throw new com.hotclick.exception.OnvoSolicitudRechazadaException("ONVO rechazó cambiarPrecio", e);
-        } catch (org.springframework.web.client.ResourceAccessException e) {
-            if (e.getCause() instanceof java.net.ProtocolException) {
-                log.error("[onvo] cambiarPrecio: el cliente HTTP no soporta el método ({})",
-                    e.getCause().getClass().getSimpleName());
-                throw new com.hotclick.exception.OnvoSolicitudRechazadaException("Cliente HTTP sin soporte", e);
-            }
-            throw e;
-        }
-        log.info("[onvo] Precio actualizado sub={} item={} price={}", subscriptionId, itemId, nuevoPriceId);
+    /*
+     * ALTO-02b: no hay cambio de precio sobre una suscripción ONVO. "Actualizar item de un Cargo recurrente"
+     * (PATCH /v1/subscriptions/:id/items/:item, https://docs.onvopay.com/api/actualizar-item-de-un-cargo-recurrente)
+     * edita items ADICIONALES (description, amount, quantity, currency) y rechaza priceId con 400 "property priceId
+     * should not exist". "Actualizar un Cargo recurrente" (POST /v1/subscriptions/:id) tampoco acepta items ni priceId.
+     * El priceId solo se manda al crear: items[].priceId en POST /v1/subscriptions. Ver SuscripcionOnvoChangeService.
+     */
+
+    /** {@code status} de la suscripción ONVO (active, trialing, incomplete, incomplete_expired, past_due...), o null. */
+    public static String estadoDe(Map<?, ?> sub) {
+        Object v = sub == null ? null : sub.get("status");
+        return v instanceof String t && !t.isBlank() ? t : null;
+    }
+
+    /** {@code true} si la suscripción tiene método de pago asociado ({@code paymentMethodId}). */
+    public static boolean tieneMetodoPago(Map<?, ?> sub) {
+        Object v = sub == null ? null : sub.get("paymentMethodId");
+        return v instanceof String t && !t.isBlank();
     }
 
     @CircuitBreaker(name = "onvo", fallbackMethod = "cancelarFallback")
@@ -325,7 +314,8 @@ public class OnvoBillingClient {
 
     /** true si falta alguno de los price ids de planes (ONVO_PRICE_ID_*): sin ellos no se puede clasificar un price. */
     public boolean faltanPriceIds() {
-        return blankToNull(priceIdPyme) == null || blankToNull(priceIdNegocioPlus) == null;
+        return blankToNull(priceIdEmprendedor) == null
+            || blankToNull(priceIdPyme) == null || blankToNull(priceIdNegocioPlus) == null;
     }
 
     /** GET /v1/subscriptions/{id}. Fail-closed: sin llave real no se inventa nada. */
@@ -410,11 +400,6 @@ public class OnvoBillingClient {
             API_BASE + path, HttpMethod.DELETE, new HttpEntity<>(authHeaders()), Map.class);
     }
 
-    private void patch(String path, Map<String, Object> body) {
-        restTemplate.exchange(
-            API_BASE + path, HttpMethod.PATCH, new HttpEntity<>(body, authHeaders()), Map.class);
-    }
-
     private HttpHeaders authHeaders() {
         exigirLlaveValidaParaPerfil();
         HttpHeaders headers = new HttpHeaders();
@@ -469,12 +454,6 @@ public class OnvoBillingClient {
         throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
     }
 
-    private void cambiarPrecioFallback(String subscriptionId, String itemId,
-                                       String nuevoPriceId, Throwable t) {
-        if (t instanceof com.hotclick.exception.OnvoSolicitudRechazadaException rechazo) throw rechazo;
-        log.error("[onvo-circuit] OPEN cambiarPrecio: {} status={}", t.getClass().getSimpleName(), statusDe(t));
-        throw new IllegalStateException("Servicio de pagos no disponible temporalmente", t);
-    }
 
     private ResultadoCancelacion cancelarFallback(String subscriptionId, Throwable t) {
         log.error("[onvo-circuit] OPEN cancelar: {} status={}", t.getClass().getSimpleName(), statusDe(t));

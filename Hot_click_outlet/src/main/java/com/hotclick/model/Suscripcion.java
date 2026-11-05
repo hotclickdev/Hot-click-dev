@@ -52,6 +52,13 @@ public class Suscripcion {
     private String onvoPriceId;
 
     /** TRIAL | ACTIVO | CANCELADO | VENCIDO | PAST_DUE */
+    /** ALTO-02b: suscripción ONVO vieja que no se pudo cancelar tras un reemplazo; revisión manual. */
+    @Column(name = "onvo_sub_por_cancelar", length = 100)
+    private String onvoSubPorCancelar;
+
+    @Column(name = "onvo_revision_manual_desde")
+    private LocalDateTime onvoRevisionManualDesde;
+
     @Column(name = "estado", nullable = false, length = 20)
     private String estado = "TRIAL";
 
@@ -95,6 +102,10 @@ public class Suscripcion {
     public String getOnvoSubscriptionId() { return onvoSubscriptionId; }
     public void setOnvoSubscriptionId(String v) { this.onvoSubscriptionId = v; }
     public String getOnvoPriceId() { return onvoPriceId; }
+    public String getOnvoSubPorCancelar() { return onvoSubPorCancelar; }
+    public void setOnvoSubPorCancelar(String v) { this.onvoSubPorCancelar = v; }
+    public LocalDateTime getOnvoRevisionManualDesde() { return onvoRevisionManualDesde; }
+    public void setOnvoRevisionManualDesde(LocalDateTime v) { this.onvoRevisionManualDesde = v; }
     public void setOnvoPriceId(String v) { this.onvoPriceId = v; }
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }

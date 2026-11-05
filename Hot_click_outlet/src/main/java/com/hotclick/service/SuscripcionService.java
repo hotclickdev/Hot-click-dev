@@ -120,6 +120,11 @@ public class SuscripcionService {
         return onvoChangeService.cambiarPlan(empresaId, planId);
     }
 
+    /** ALTO-02b: «Completar pago» del aviso de plan pendiente (SDK de ONVO sobre la suscripción incompleta). */
+    public Map<String, Object> completarPagoOnvo(Long empresaId) {
+        return onvoChangeService.completarPago(empresaId);
+    }
+
 
     /** S-02/B2: activa/renueva con lo que ONVO confirmó por GET; {@code facturaId} (obligatorio) es la referencia del ledger. */
     public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin, String facturaId) {

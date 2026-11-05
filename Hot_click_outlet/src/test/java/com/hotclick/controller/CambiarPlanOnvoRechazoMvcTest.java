@@ -8,7 +8,6 @@ import com.hotclick.security.PropietarioGuard;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.SuscripcionService;
 import com.hotclick.service.auth.AuthSupport;
-import com.hotclick.service.onvo.OnvoBillingClient;
 import com.hotclick.service.suscripcion.CobroSuscripcionService;
 import com.hotclick.service.suscripcion.PreciosPlanesConfig;
 import com.hotclick.config.GlobalExceptionHandler;
@@ -22,14 +21,10 @@ import io.github.resilience4j.retry.RetryRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 import java.util.Map;
@@ -39,9 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.client.ExpectedCount.manyTimes;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -83,17 +75,13 @@ class CambiarPlanOnvoRechazoMvcTest {
 
     @Test
     void rechazo4xx_422_circuitoCerrado_planIntacto() throws Exception {
-        RestTemplate restTemplate = new RestTemplate();
-        OnvoBillingClient onvo = new OnvoBillingClient(restTemplate);
-        ReflectionTestUtils.setField(onvo, "secretKey", "llave-ficticia-de-test");
-        MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();
-        server.expect(manyTimes(), requestTo("https://api.onvopay.com/v1/subscriptions/sub_1/items/si_1"))
-            .andRespond(withStatus(HttpStatus.BAD_REQUEST));
-
+        // ALTO-02b: ONVO no permite cambiar el price de una suscripción cobrada; el servicio falla cerrado con
+        // OnvoSolicitudRechazadaException antes de llamar a ONVO. Se decora igual que una llamada @CircuitBreaker/@Retry.
         CircuitBreaker cb = registroCircuito().circuitBreaker("onvo");
         Retry retry = registroRetry().retry("onvo");
-        Runnable llamadaOnvo = Retry.decorateRunnable(retry,
-            CircuitBreaker.decorateRunnable(cb, () -> onvo.cambiarPrecioSuscripcion("sub_1", "si_1", "price_pyme")));
+        Runnable llamadaOnvo = Retry.decorateRunnable(retry, CircuitBreaker.decorateRunnable(cb, () -> {
+            throw new OnvoSolicitudRechazadaException("ONVO no permite cambiar el precio de una suscripción cobrada", null);
+        }));
         Plan emprendedor = new Plan();
         emprendedor.setNombre("EMPRENDEDOR");
         Plan pyme = new Plan();
@@ -134,5 +122,57 @@ class CambiarPlanOnvoRechazoMvcTest {
         assertThat(cb.getMetrics().getNumberOfNotPermittedCalls()).isZero();
         assertThat(retry.getMetrics().getNumberOfFailedCallsWithRetryAttempt()).isZero();
         assertThat(sub.getPlan().getNombre()).isEqualTo("EMPRENDEDOR");
+    }
+
+    @Test
+    void reemplazoSinRespuestaDeOnvo_503EnVoseo() throws Exception {
+        SuscripcionService suscripcionService = mock(SuscripcionService.class);
+        when(suscripcionService.cambiarPlanOnvo(anyLong(), anyLong())).thenThrow(
+            new com.hotclick.exception.ReemplazoOnvoNoDisponibleException(new ResourceAccessException("timeout")));
+        Plan pyme = new Plan();
+        pyme.setNombre("PYME");
+        PlanRepository planRepo = mock(PlanRepository.class);
+        when(planRepo.findById(2L)).thenReturn(Optional.of(pyme));
+        PropietarioGuard guard = mock(PropietarioGuard.class);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        AuthSupport auth = mock(AuthSupport.class);
+        com.hotclick.model.Usuario u = new com.hotclick.model.Usuario();
+        u.setCorreoVerificado(true);
+        when(auth.usuarioFromRequest(any())).thenReturn(u);
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new SuscripcionController(suscripcionService, planRepo,
+            auth, mock(CobroSuscripcionService.class), mock(PreciosPlanesConfig.class), guard))
+            .setControllerAdvice(new GlobalExceptionHandler()).build();
+        TenantContext.set(7L);
+
+        mvc.perform(post("/api/billing/cambiar-plan/2"))
+            .andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.codigo").value(com.hotclick.exception.ReemplazoOnvoNoDisponibleException.CODIGO))
+            .andExpect(jsonPath("$.error").value(com.hotclick.exception.ReemplazoOnvoNoDisponibleException.MENSAJE));
+    }
+
+    @Test
+    void trialConMetodoPago_422EnVoseo() throws Exception {
+        SuscripcionService suscripcionService = mock(SuscripcionService.class);
+        when(suscripcionService.cambiarPlanOnvo(anyLong(), anyLong()))
+            .thenThrow(new com.hotclick.exception.TrialConMetodoPagoException());
+        Plan pyme = new Plan();
+        pyme.setNombre("PYME");
+        PlanRepository planRepo = mock(PlanRepository.class);
+        when(planRepo.findById(2L)).thenReturn(Optional.of(pyme));
+        PropietarioGuard guard = mock(PropietarioGuard.class);
+        when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
+        AuthSupport auth = mock(AuthSupport.class);
+        com.hotclick.model.Usuario u = new com.hotclick.model.Usuario();
+        u.setCorreoVerificado(true);
+        when(auth.usuarioFromRequest(any())).thenReturn(u);
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new SuscripcionController(suscripcionService, planRepo,
+            auth, mock(CobroSuscripcionService.class), mock(PreciosPlanesConfig.class), guard))
+            .setControllerAdvice(new GlobalExceptionHandler()).build();
+        TenantContext.set(7L);
+
+        mvc.perform(post("/api/billing/cambiar-plan/2"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value(com.hotclick.exception.TrialConMetodoPagoException.CODIGO))
+            .andExpect(jsonPath("$.error").value(com.hotclick.exception.TrialConMetodoPagoException.MENSAJE));
     }
 }
