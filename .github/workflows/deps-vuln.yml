@@ -28,7 +28,22 @@ jobs:
       - name: Descargar osv-scanner
         run: |
           VERSION=v2.5.1
-          curl -sSL "https://github.com/google/osv-scanner/releases/download/${VERSION}/osv-scanner_linux_amd64" -o osv-scanner
+          # -f corta en HTTP de error; --retry evita un corte de red a medias.
+          # Content-Length del response final debe cuadrar con el archivo (falla claro si viene incompleto).
+          curl -fsSL --retry 3 --retry-delay 5 \
+            -D osv-scanner.hdr \
+            -o osv-scanner \
+            "https://github.com/google/osv-scanner/releases/download/${VERSION}/osv-scanner_linux_amd64"
+          expected=$(awk 'BEGIN{IGNORECASE=1} tolower($1)=="content-length:"{v=$2} END{print v}' osv-scanner.hdr | tr -d '\r')
+          actual=$(wc -c < osv-scanner | tr -d ' ')
+          if [ -z "$expected" ] || [ "$expected" = "0" ]; then
+            echo "Descarga de osv-scanner sin Content-Length usable (headers en osv-scanner.hdr)" >&2
+            exit 1
+          fi
+          if [ "$actual" != "$expected" ]; then
+            echo "Descarga incompleta de osv-scanner: bytes=$actual esperado=$expected" >&2
+            exit 1
+          fi
           echo "f9f25499a2c8cc367b3af45df2ea7eeca7fbccceab9c35079968f4b3652194be  osv-scanner" | sha256sum -c -
           chmod +x osv-scanner
 
