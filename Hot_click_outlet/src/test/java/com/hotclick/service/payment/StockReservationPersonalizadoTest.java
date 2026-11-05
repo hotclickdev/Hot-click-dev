@@ -120,6 +120,7 @@ class StockReservationPersonalizadoTest {
         when(repo.findByIdForUpdate(2L)).thenReturn(Optional.of(normal));
 
         Pedido pedido = new Pedido();
+        pedido.setStockReservadoEn(java.time.LocalDateTime.now());
         pedido.setNumeroPedido("ORD-M08B");
         pedido.setItems(new ArrayList<>());
         for (Producto p : List.of(pers, normal)) {

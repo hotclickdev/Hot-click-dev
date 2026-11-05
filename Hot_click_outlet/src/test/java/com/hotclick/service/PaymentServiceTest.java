@@ -562,6 +562,7 @@ class PaymentServiceTest {
         Pedido p = new Pedido();
         p.setId(1L);
         p.setNumeroPedido("ORD-TEST-001");
+        p.setStockReservadoEn(java.time.LocalDateTime.now()); // ALTO-01: pedido de checkout que reservó
         p.setEstadoPedido(estado);
         p.setUsuarioFinal(testUser);
         p.setBodega(testBodega);

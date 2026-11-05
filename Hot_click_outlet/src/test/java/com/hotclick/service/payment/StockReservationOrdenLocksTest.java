@@ -103,7 +103,9 @@ class StockReservationOrdenLocksTest {
         pedido.setItems(items);
         StockReservationService s = servicio(repo);
 
+        pedido.setStockReservadoEn(java.time.LocalDateTime.now()); // ALTO-01: pedido de checkout que reservó
         s.confirmAndConsumeStock(pedido, this, e -> { });
+        pedido.setStockReservadoEn(java.time.LocalDateTime.now());
         s.liberarReservas(pedido);
 
         InOrder o = inOrder(repo);

@@ -122,6 +122,8 @@ public class StorefrontGuestOrderService {
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedido.setOrigen(OrigenPedido.ONLINE.codigo());
+        // ALTO-01: los ítems se reservaron arriba con stockService.reservar; el pedido es dueño de esa reserva.
+        pedido.setStockReservadoEn(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setClienteNombre(dto.getNombreCliente());
         pedido.setClienteTel(dto.getTelefonoCliente());
         pedido.setNotas(construirNotas(dto));
