@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-CKNdLq22.js";function t(){return e()}export{t};
