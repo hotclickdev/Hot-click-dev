@@ -245,14 +245,14 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         sub.setOnvoSubReemplazada("sub_vieja");
         sub.setPlanPendiente(plus);
         when(suscripcionRepo.findByOnvoSubscriptionId("sub_vieja")).thenReturn(Optional.empty());
-        when(suscripcionRepo.findConOnvoSubVieja("sub_vieja")).thenReturn(List.of(sub));
+        when(suscripcionRepo.countConOnvoSubVieja("sub_vieja")).thenReturn(1L);
 
         service.procesarPagoOnvoVerificado("sub_vieja", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456");
 
         verify(suscripcionRepo, never()).findByOnvoSubscriptionIdForUpdate(any());
         assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
         assertThat(empresa.getPlan().getNombre()).isEqualTo("PYME");
-        assertThat(sub.getOnvoRevisionManualDesde()).isNotNull();
+        verify(suscripcionRepo).marcarRevisionManualPorSubVieja(eq("sub_vieja"), any());
         verify(empresaRepo, never()).save(any());
     }
 
@@ -263,7 +263,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         sub.setOnvoSubscriptionId("sub_nueva");
         sub.setOnvoSubPorCancelar("sub_vieja");
         when(suscripcionRepo.findByOnvoSubscriptionId("sub_vieja")).thenReturn(Optional.empty());
-        when(suscripcionRepo.findConOnvoSubVieja("sub_vieja")).thenReturn(List.of(sub));
+        when(suscripcionRepo.countConOnvoSubVieja("sub_vieja")).thenReturn(1L);
 
         assertThat(service.ignorarPagoDeSuscripcionVieja("sub_vieja")).isTrue();
         assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
@@ -275,7 +275,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         cobrada(pyme, "active");
         when(suscripcionRepo.findByOnvoSubscriptionId("sub_vieja")).thenReturn(Optional.of(sub));
         assertThat(service.ignorarPagoDeSuscripcionVieja("sub_vieja")).isFalse();
-        verify(suscripcionRepo, never()).findConOnvoSubVieja(any());
+        verify(suscripcionRepo, never()).countConOnvoSubVieja(any());
     }
 
     @Test

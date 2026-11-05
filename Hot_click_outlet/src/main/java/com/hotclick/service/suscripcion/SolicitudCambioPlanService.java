@@ -85,9 +85,9 @@ public class SolicitudCambioPlanService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listar(int limit) {
         int n = Math.max(1, Math.min(limit, 500));
-        return repo.findAllByOrderByRevisadaAscFechaSolicitudDesc(PageRequest.of(0, n)).stream()
-            .map(s -> aMapa(s, empresaRepo.findById(s.getEmpresaId()).map(Empresa::getNombreEmpresa).orElse(null)))
-            .toList();
+        List<SolicitudCambioPlan> filas = repo.findAllByOrderByRevisadaAscFechaSolicitudDesc(PageRequest.of(0, n));
+        // Un solo query para los nombres de todas las pymes de la página (sin N+1).
+        return SolicitudCambioPlanVista.lista(filas, empresaRepo.findAllById(SolicitudCambioPlanVista.idsEmpresa(filas)));
     }
 
     /** Marca revisada con quién y cuándo. Idempotente: si ya estaba revisada no pisa quién la revisó. */
@@ -102,14 +102,15 @@ public class SolicitudCambioPlanService {
             s = repo.save(s);
             log.info("[plan-solicitud] revisada id={} admin={}", id, adminId);
         }
-        return aMapa(s, empresaRepo.findById(s.getEmpresaId()).map(Empresa::getNombreEmpresa).orElse(null));
+        Empresa e = empresaRepo.findById(s.getEmpresaId()).orElse(null);
+        return aMapa(s, e == null ? null : e.getNombreEmpresa());
     }
 
     private String planActual(Empresa empresa) {
         Plan p = empresa.getPlan();
         if (p != null && p.getId() != null) {
-            String n = planRepo.findById(p.getId()).map(Plan::getNombre).orElse(null);
-            if (n != null) return n;
+            Plan guardado = planRepo.findById(p.getId()).orElse(null);
+            if (guardado != null && guardado.getNombre() != null) return guardado.getNombre();
         }
         return empresa.getPlanSaas() != null ? empresa.getPlanSaas() : "EMPRENDEDOR";
     }

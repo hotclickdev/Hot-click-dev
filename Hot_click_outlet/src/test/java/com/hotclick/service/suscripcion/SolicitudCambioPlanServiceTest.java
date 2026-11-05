@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -113,5 +114,25 @@ class SolicitudCambioPlanServiceTest {
 
         service.marcarRevisada(99L, 2L);
         assertThat(s.getRevisadaPor()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Lista del admin: nombres de todas las pymes en un solo query (sin N+1) y tope 500")
+    void listarSinNMasUno() {
+        SolicitudCambioPlan a = new SolicitudCambioPlan(); a.setId(1L); a.setEmpresaId(10L);
+        SolicitudCambioPlan b = new SolicitudCambioPlan(); b.setId(2L); b.setEmpresaId(10L);
+        when(repo.findAllByOrderByRevisadaAscFechaSolicitudDesc(org.mockito.ArgumentMatchers.any()))
+            .thenReturn(List.of(a, b));
+        Empresa e = new Empresa(); e.setId(10L); e.setNombreEmpresa("Pyme Uno");
+        when(empresaRepo.findAllById(org.mockito.ArgumentMatchers.<Iterable<Long>>any())).thenReturn(List.of(e));
+
+        List<Map<String, Object>> out = service.listar(9999);
+
+        assertThat(out).hasSize(2);
+        assertThat(out.get(1).get("nombreEmpresa")).isEqualTo("Pyme Uno");
+        org.mockito.Mockito.verify(empresaRepo, org.mockito.Mockito.times(1)).findAllById(org.mockito.ArgumentMatchers.<Iterable<Long>>any());
+        org.mockito.Mockito.verify(empresaRepo, org.mockito.Mockito.never()).findById(org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verify(repo).findAllByOrderByRevisadaAscFechaSolicitudDesc(
+            org.springframework.data.domain.PageRequest.of(0, 500));
     }
 }

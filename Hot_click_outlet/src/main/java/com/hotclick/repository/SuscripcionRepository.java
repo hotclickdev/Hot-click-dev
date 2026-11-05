@@ -34,9 +34,16 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
 
-    /** Fila cuya suscripción ONVO vieja (reemplazada o pendiente de cancelar) es este id. */
-    @Query("SELECT s FROM Suscripcion s WHERE s.onvoSubReemplazada = :id OR s.onvoSubPorCancelar = :id")
-    java.util.List<Suscripcion> findConOnvoSubVieja(@Param("id") String onvoSubId);
+    /** Cuántas filas tienen este id como suscripción ONVO vieja (reemplazada o pendiente de cancelar). */
+    @Query("SELECT COUNT(s) FROM Suscripcion s WHERE s.onvoSubReemplazada = :id OR s.onvoSubPorCancelar = :id")
+    long countConOnvoSubVieja(@Param("id") String onvoSubId);
+
+    /** Un solo UPDATE: marca para revisión manual las filas con esta suscripción vieja que aún no lo estaban. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Suscripcion s SET s.onvoRevisionManualDesde = :ahora"
+        + " WHERE (s.onvoSubReemplazada = :id OR s.onvoSubPorCancelar = :id) AND s.onvoRevisionManualDesde IS NULL")
+    int marcarRevisionManualPorSubVieja(@Param("id") String onvoSubId, @Param("ahora") java.time.LocalDateTime ahora);
 
     /** S-02 (C6 heredado): lock de fila al aplicar un pago ONVO verificado. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)

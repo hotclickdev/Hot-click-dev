@@ -881,17 +881,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      */
     public boolean ignorarPagoDeSuscripcionVieja(String onvoSubId) {
         if (onvoSubId == null || suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).isPresent()) return false;
-        java.util.List<Suscripcion> filas = suscripcionRepo.findConOnvoSubVieja(onvoSubId);
-        if (filas.isEmpty()) return false;
-        for (Suscripcion f : filas) {
-            if (f.getOnvoRevisionManualDesde() == null) {
-                f.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
-                suscripcionRepo.save(f);
-            }
-            log.error("[ALERTA-PAGO] [onvo] pago de una suscripción ONVO vieja (reemplazada): se ignora y queda en"
-                + " revisión manual empresa={} vieja={}", f.getEmpresa() == null ? null : f.getEmpresa().getId(),
-                enmascarar(onvoSubId));
-        }
+        if (suscripcionRepo.countConOnvoSubVieja(onvoSubId) == 0) return false;
+        int marcadas = suscripcionRepo.marcarRevisionManualPorSubVieja(onvoSubId,
+            java.time.LocalDateTime.now(Constants.ZONA_CR));
+        log.error("[ALERTA-PAGO] [onvo] pago de una suscripción ONVO vieja (reemplazada): se ignora y queda en"
+            + " revisión manual vieja={} filasMarcadas={}", enmascarar(onvoSubId), marcadas);
         return true;
     }
 
