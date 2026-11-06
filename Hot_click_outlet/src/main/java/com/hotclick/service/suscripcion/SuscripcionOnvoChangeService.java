@@ -235,6 +235,9 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             // Falla cerrado: sin ONVO_SECRET_KEY ningún camino activa un plan pago.
             throw new IllegalStateException("Pagos no configurados. No se cambió el plan.");
         }
+        // BAJO: los rechazos por regla de negocio (422) se deciden ANTES de resolver el price del destino; si no, un
+        // cambio que igual exige solicitud respondía 503 ONVO_PRICE_ID_FALTANTE cuando faltaba ese price.
+        Map<?, ?> enOnvoPrevio = validarReglasCambioAntesDelPrecio(empresaId, empresa, sub, planDestino, emprendedorDePago);
         String priceId = resolverPriceId(planDestino.getNombre());
         if (emprendedorDePago && sub != null && sub.getOnvoSubscriptionId() != null
             && priceId.equals(sub.getOnvoPriceId())) {
@@ -242,7 +245,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             return respuestaRequierePago(empresa, planDestino, sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId());
         }
         if (sub != null && sub.getOnvoSubscriptionId() != null && !sub.getOnvoSubscriptionId().isBlank()) {
-            return cambiarPlanExistente(empresaId, empresa, sub, planDestino, priceId);
+            return cambiarPlanExistente(empresaId, empresa, sub, planDestino, priceId, enOnvoPrevio);
         }
         return altaPlanPago(empresaId, empresa, planDestino, priceId, sub);
     }
@@ -494,8 +497,53 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      *   <li>ya cobrada (active, past_due, unpaid...): fail-closed, 422 sin tocar nada.</li>
      * </ul>
      */
+    /**
+     * BAJO: reglas de negocio del cambio sobre una suscripción ONVO existente que no dependen del price del destino.
+     * Lanza los mismos rechazos que {@link #cambiarPlanExistente} (422) antes de {@link #resolverPriceId}. Devuelve la
+     * suscripción leída en ONVO para no volver a pedirla, o null si no aplica (sin suscripción, mock, subida pendiente
+     * de Negocio Plus o Emprendedor idempotente).
+     */
+    private Map<?, ?> validarReglasCambioAntesDelPrecio(Long empresaId, Empresa empresa, Suscripcion sub,
+                                                       Plan planDestino, boolean emprendedorDePago) {
+        if (caminoMock() || sub == null || sub.getOnvoSubscriptionId() == null || sub.getOnvoSubscriptionId().isBlank()) {
+            return null;
+        }
+        String nuevaPendiente = sub.getOnvoSubNuevaPendiente();
+        if (nuevaPendiente != null && !nuevaPendiente.isBlank()) {
+            if (PLAN_NEGOCIO_PLUS.equalsIgnoreCase(planDestino.getNombre())) return null;
+            throw new com.hotclick.exception.OnvoSolicitudRechazadaException(
+                "Tenés una subida a Negocio Plus pendiente de pago. Completala o esperá a que venza para hacer otro cambio.", null);
+        }
+        if (emprendedorDePago && (PLAN_GRATIS.equalsIgnoreCase(onvoBilling.planParaPriceId(sub.getOnvoPriceId()))
+            || mismoPrice(onvoBilling.getPriceIdForPlan(PLAN_GRATIS), sub.getOnvoPriceId()))) {
+            return null; // idempotente: se devuelve el cobro de la misma suscripción
+        }
+        Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(sub.getOnvoSubscriptionId());
+        String estado = OnvoBillingClient.estadoDe(enOnvo);
+        String priceActual = OnvoBillingClient.primerPriceId(enOnvo);
+        // Solo lectura del price del destino (sin lanzar): si falta, el 503 lo decide resolverPriceId después.
+        boolean mismoPlan = planDestino.getNombre().equalsIgnoreCase(onvoBilling.planParaPriceId(priceActual))
+            || mismoPrice(onvoBilling.getPriceIdForPlan(planDestino.getNombre()), priceActual);
+        if (mismoPlan && !"incomplete_expired".equals(estado)) {
+            return enOnvo; // idempotente: lo resuelve cambiarPlanExistente
+        }
+        if ("trialing".equals(estado) && OnvoBillingClient.tieneMetodoPago(enOnvo)) {
+            log.warn("[onvo] cambio de plan en trial con método de pago: no se reemplaza empresa={}", empresaId);
+            throw new com.hotclick.exception.TrialConMetodoPagoException();
+        }
+        if (estado != null && ESTADOS_SIN_COBRO.contains(estado)) return enOnvo;
+        if ("active".equals(estado) && esSubidaANegocioPlus(nombrePlanActual(empresa), planDestino.getNombre())) return enOnvo;
+        log.warn("[onvo] cambio de plan sobre una suscripción ya cobrada: requiere solicitud empresa={} estado={}",
+            empresaId, estado);
+        throw new com.hotclick.exception.CambioPlanRequiereSolicitudException();
+    }
+
+    private static boolean mismoPrice(String a, String b) {
+        return a != null && !a.isBlank() && a.equals(b);
+    }
+
     private Map<String, Object> cambiarPlanExistente(Long empresaId, Empresa empresa, Suscripcion sub,
-                                                     Plan planDestino, String priceId) {
+                                                     Plan planDestino, String priceId, Map<?, ?> enOnvoPrevio) {
         if (caminoMock()) {
             self.guardarOnvoPricePendiente(empresaId, planDestino, priceId);
             self.aplicarPlanLocal(empresaId, planDestino.getNombre(), priceId);
@@ -511,7 +559,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
                 "Tenés una subida a Negocio Plus pendiente de pago. Completala o esperá a que venza para hacer otro cambio.", null);
         }
         String onvoSubId = sub.getOnvoSubscriptionId();
-        Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(onvoSubId);
+        Map<?, ?> enOnvo = enOnvoPrevio != null ? enOnvoPrevio : onvoBilling.obtenerSuscripcion(onvoSubId);
         String estado = OnvoBillingClient.estadoDe(enOnvo);
         String priceActual = OnvoBillingClient.primerPriceId(enOnvo);
         if (priceId.equals(priceActual) && !"incomplete_expired".equals(estado)) {

@@ -563,4 +563,71 @@ class OnvoBillingMediosTest {
             assertThat(service.completarPago(20L).get("status")).isEqualTo("sin_pago_pendiente");
         }
     }
+
+    // ---------------------------------------------------------------- BAJOs fix/bajos-plan-trial
+
+    @Test
+    @DisplayName("BAJO-1: price del destino faltante + cambio que exige solicitud → 422 CambioPlanRequiereSolicitud, no 503")
+    void cambiarPlan_solicitudAntesDelPrecio() {
+        Map<String, Object> enOnvo = subOnvo("active");
+        enOnvo.put("items", List.of(Map.of("id", "item_1", "priceId", "price_emp")));
+        sub.setOnvoPriceId("price_emp");
+        when(onvoBilling.planParaPriceId("price_emp")).thenReturn("EMPRENDEDOR");
+        when(onvoBilling.getPriceIdForPlan("PYME")).thenReturn(null); // falta ONVO_PRICE_ID_PYME
+        doReturn(enOnvo).when(onvoBilling).obtenerSuscripcion(SUB);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.cambiarPlan(20L, 2L))
+            .isInstanceOf(com.hotclick.exception.CambioPlanRequiereSolicitudException.class);
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+        verify(onvoBilling, times(1)).obtenerSuscripcion(SUB);
+    }
+
+    @Test
+    @DisplayName("BAJO-1: trial con método de pago y price faltante → 422 TrialConMetodoPago, no 503")
+    void cambiarPlan_trialConMetodoAntesDelPrecio() {
+        Map<String, Object> enOnvo = subOnvo("trialing");
+        enOnvo.put("paymentMethodId", "pm_1");
+        enOnvo.put("items", List.of(Map.of("id", "item_1", "priceId", "price_emp")));
+        sub.setOnvoPriceId("price_emp");
+        when(onvoBilling.getPriceIdForPlan("PYME")).thenReturn(null);
+        doReturn(enOnvo).when(onvoBilling).obtenerSuscripcion(SUB);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.cambiarPlan(20L, 2L))
+            .isInstanceOf(com.hotclick.exception.TrialConMetodoPagoException.class);
+    }
+
+    @Test
+    @DisplayName("BAJO-1: cambio permitido (incomplete) con price faltante sigue siendo 503 PriceIdOnvoFaltante")
+    void cambiarPlan_permitidoSinPrecio_503() {
+        Map<String, Object> enOnvo = subOnvo("incomplete");
+        enOnvo.put("items", List.of(Map.of("id", "item_1", "priceId", "price_emp")));
+        when(onvoBilling.getPriceIdForPlan("PYME")).thenReturn(null);
+        doReturn(enOnvo).when(onvoBilling).obtenerSuscripcion(SUB);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.cambiarPlan(20L, 2L))
+            .isInstanceOf(com.hotclick.exception.PriceIdOnvoFaltanteException.class);
+    }
+
+    @Test
+    @DisplayName("BAJO-2: en trial se elige la factura del período del trial, no la open del período siguiente (latestInvoiceId)")
+    void facturaDelTrial_noLaSiguiente() {
+        Map<String, Object> enOnvo = subOnvo("trialing");
+        Map<String, Object> trial = factura("inv_trial", "paid", INICIO, FIN);
+        trial.put("total", 0);
+        List<Map<?, ?>> facturas = List.of(factura("inv_open_sig", "open", FIN, "2027-01-04T22:33:30.285Z"), trial);
+        assertThat(OnvoBillingClient.facturaDelPeriodoActual(facturas, enOnvo).get("id")).isEqualTo("inv_trial");
+    }
+
+    @Test
+    @DisplayName("BAJO-3: trialEnd cerca de medianoche UTC → fecha de primer cobro en hora de Costa Rica")
+    void primerCobro_bordeMedianocheUtc() {
+        Map<String, Object> enOnvo = subOnvo("trialing");
+        enOnvo.put("paymentMethodId", "pm_1");
+        enOnvo.put("trialEnd", "2027-02-03T03:25:59Z"); // 2 feb 21:25 en CR; en UTC ya es 3 feb
+        assertThat(SuscripcionOnvoChangeService.primerCobroTrial(enOnvo)).contains(LocalDate.of(2027, 2, 2));
+        enOnvo.put("trialEnd", "2027-02-03T05:59:59Z");
+        assertThat(SuscripcionOnvoChangeService.primerCobroTrial(enOnvo)).contains(LocalDate.of(2027, 2, 2));
+        enOnvo.put("trialEnd", "2027-02-03T06:00:00Z"); // medianoche en CR
+        assertThat(SuscripcionOnvoChangeService.primerCobroTrial(enOnvo)).contains(LocalDate.of(2027, 2, 3));
+    }
 }
