@@ -54,7 +54,7 @@ jobs:
           version: 11.1.2
 
       - name: Setup Node 22
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -109,7 +109,7 @@ jobs:
 
       - name: Setup Node 22
         if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'hotfix/')
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
