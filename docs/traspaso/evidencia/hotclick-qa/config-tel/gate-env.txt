@@ -1,0 +1,24 @@
+### A) variable con numeros reales (cargada de archivo privado, no impresa)
+exit=0
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.117 s -- in com.hotclick.service.contacto.ContactoPlataformaTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.620 s -- in com.hotclick.legal.SinNumerosRealesEnCodigoTest
+### B) sin variable, local
+exit=0
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.116 s -- in com.hotclick.service.contacto.ContactoPlataformaTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.019 s -- in com.hotclick.legal.SinNumerosRealesEnCodigoTest
+### C) sin variable, CI=true
+exit=1
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.116 s -- in com.hotclick.service.contacto.ContactoPlataformaTest
+Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.023 s <<< FAILURE! -- in com.hotclick.legal.SinNumerosRealesEnCodigoTest
+[ERROR]   SinNumerosRealesEnCodigoTest.ningunArchivoContieneLosNumerosReales:60 HOTCLICK_NUMEROS_PROHIBIDOS no está configurada en CI: agregá el secret con los números prohibidos (separados por comas).
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.023 s <<< FAILURE! -- in Sin números reales de contacto/SINPE en el código
+[ERROR] Tests run: 6, Failures: 1, Errors: 0, Skipped: 0
+java.lang.AssertionError: HOTCLICK_NUMEROS_PROHIBIDOS no está configurada en CI: agregá el secret con los números prohibidos (separados por comas).
+### D) variable con ficticio 88888888 (debe detectar)
+exit=1
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in com.hotclick.service.contacto.ContactoPlataformaTest
+Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.580 s <<< FAILURE! -- in com.hotclick.legal.SinNumerosRealesEnCodigoTest
+[ERROR]   SinNumerosRealesEnCodigoTest.ningunArchivoContieneLosNumerosReales:74 [Número real en archivo:línea (usá las variables de entorno)] 
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.580 s <<< FAILURE! -- in Sin números reales de contacto/SINPE en el código
+[ERROR] Tests run: 6, Failures: 1, Errors: 0, Skipped: 0
+[Número real en archivo:línea (usá las variables de entorno)] 

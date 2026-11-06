@@ -1,0 +1,16 @@
+[global-setup] Sin E2E_ADMIN_EMAIL/PASSWORD — tests admin se saltarán
+
+Running 1 test using 1 worker
+
+(node:357543) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[api] /api/public/embudo
+[WebServer] 9:23:46 PM [vite] (client) [console.error] [division territorial] Error: catálogo vacío
+[WebServer]     at http://127.0.0.1:3417/src/services/divisionTerritorialService.ts:14:34
+[WebServer] 9:23:46 PM [vite] (client) [console.error] [division territorial] Error: catálogo vacío
+[WebServer]     at http://127.0.0.1:3417/src/services/divisionTerritorialService.ts:14:34
+[api] /api/consentimiento
+[api] /api/payments/guest-checkout
+  ✓  1 [chromium] › tests/sinpe-numero-config.spec.ts:33:1 › SINPE configurado: el checkout muestra el número al elegir SINPE (1.8s)
+
+  1 passed (3.1s)
