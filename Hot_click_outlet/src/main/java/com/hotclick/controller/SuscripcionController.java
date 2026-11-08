@@ -268,6 +268,8 @@ public class SuscripcionController {
     /**
      * ALTO-02b: «Completar pago» del aviso. Si la suscripción ONVO está incomplete (o en trial sin método de pago)
      * devuelve {@code requiere_pago} con lo necesario para el SDK de ONVO; si no, {@code sin_pago_pendiente}.
+     * Con subida a Negocio Plus pendiente, el SDK es el de {@code onvo_sub_nueva_pendiente} si ONVO la confirma
+     * cobrable; si ya está cancelada o vencida, no se abre. ONVO caído no se traduce a {@code sin_pago_pendiente}.
      * No cambia el plan ni el price.
      */
     @PostMapping("/completar-pago")
