@@ -243,7 +243,7 @@ class QaAltaPymeTestConcurrenciaTest {
     }
 
     @Test
-    @DisplayName("H2 no aborta la transacción como PostgreSQL: el límite queda en el test opt-in")
+    @DisplayName("H2 no aborta la transacción como PostgreSQL: ese caso corre en QaAltaPymeTestPostgresTest")
     void h2NoAbortaLaTransaccion() {
         QaAltaPymeTestService s = abierta(ANTES);
         jdbc.execute("DROP TABLE hot_click_qa_alta_pyme_test_tb");
