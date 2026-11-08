@@ -1,11 +1,26 @@
 import { defineConfig, searchForWorkspaceRoot } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const directorioFrontend = path.dirname(fileURLToPath(import.meta.url))
+
+/** HTTPS solo si hay cert y clave locales. Sin variables, el server sigue en HTTP. No apaga la verificación TLS del proxy. */
+function httpsDevLocal(): { key: Buffer; cert: Buffer } | undefined {
+  const keyPath = process.env.VITE_DEV_HTTPS_KEY?.trim() ?? ''
+  const certPath = process.env.VITE_DEV_HTTPS_CERT?.trim() ?? ''
+  if (keyPath === '' && certPath === '') return undefined
+  if (keyPath === '' || certPath === '') {
+    throw new Error('HTTPS local de QA: definí VITE_DEV_HTTPS_KEY y VITE_DEV_HTTPS_CERT juntos, o ninguno.')
+  }
+  if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+    throw new Error('HTTPS local de QA: no está el certificado o la clave. No se arranca en HTTP para no disfrazar un TLS a medias.')
+  }
+  return { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }
+}
 
 function escapeHtmlAttr(value: string) {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')
@@ -149,6 +164,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    https: httpsDevLocal(),
     // `src/config/tiemposEnvio.ts` importa la config compartida con el backend (D13).
     fs: { allow: [searchForWorkspaceRoot(directorioFrontend), path.resolve(directorioFrontend, '../src/main/resources/config')] },
     proxy: {

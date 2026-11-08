@@ -97,6 +97,17 @@ class AltaEmprendedorNotificadorTest {
     }
 
     @Test
+    @DisplayName("Excepción QA: el aviso dice PYME a cobro TEST y no habla de trial ni de puesto al aprobar")
+    void textoQaPymeCobro() {
+        ResultadoAltaCupo alta = ResultadoAltaCupo.qaPymeCobroTest(CupoEmprendedorEstado.of(9, 70));
+        String texto = AltaEmprendedorNotificador.armarTexto("Sim", QaAltaPymeTestService.CORREO_FIXTURE, alta);
+        assertThat(texto).contains("PYME a cobro TEST").contains("sin trial").contains("sin cupo");
+        assertThat(texto).doesNotContain("se asigna al aprobar").doesNotContain("Entró con");
+        assertThat(alta.qaPymeCobroTest()).isTrue();
+        assertThat(alta.pendienteCupo()).isFalse();
+    }
+
+    @Test
     @DisplayName("Alta pendiente: usa el correo de alta pendiente, no el de «sin cupo / requiere membresía»")
     void notificaAltaPendiente() {
         ResultadoAltaCupo alta = ResultadoAltaCupo.pendiente(CupoEmprendedorEstado.of(3, 70));

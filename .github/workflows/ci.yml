@@ -40,6 +40,55 @@ jobs:
           AWS_SECRET_ACCESS_KEY: placeholder
           HOTCLICK_NUMEROS_PROHIBIDOS: ${{ secrets.HOTCLICK_NUMEROS_PROHIBIDOS }}
 
+  qa-alta-pg:
+    name: QA alta Postgres (tx abortada)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: hotclick_qa_alta
+          POSTGRES_USER: hotclick_qa
+          POSTGRES_PASSWORD: hotclick_qa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hotclick_qa -d hotclick_qa_alta"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5.3.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Setup Maven
+        run: sudo apt-get install -y maven --quiet
+
+      - name: QaAltaPymeTestPostgresTest
+        run: mvn -f Hot_click_outlet/pom.xml -Dtest=QaAltaPymeTestPostgresTest test --no-transfer-progress
+        env:
+          HC_PG_TEST_URL: jdbc:postgresql://127.0.0.1:5432/hotclick_qa_alta?user=hotclick_qa&password=hotclick_qa
+
+      - name: "Gate: el test corrio y no quedo skipped"
+        if: always()
+        run: python3 scripts/ci/qa-alta-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.service.QaAltaPymeTestPostgresTest.xml
+
+      - name: Reporte Surefire (sin secretos)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: qa-alta-pg-surefire
+          path: Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.service.QaAltaPymeTestPostgresTest.xml
+          if-no-files-found: error
+
   frontend:
     name: Build React
     runs-on: ubuntu-latest

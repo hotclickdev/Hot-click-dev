@@ -6,6 +6,8 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.ResultadoAltaCupo;
 import com.hotclick.dto.UbicacionDespachoAlta;
 import com.hotclick.service.AltaEmprendedorNotificador;
+import com.hotclick.service.QaAltaPymeTestService;
+import com.hotclick.service.QaAltaPymeTestVinculo;
 import com.hotclick.service.BodegaDespachoInicialService;
 import com.hotclick.service.CupoEmprendedorService;
 import com.hotclick.model.Empresa;
@@ -50,6 +52,7 @@ public class AuthNuevoNegocioHandler {
     @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
     @Autowired private BodegaDespachoInicialService bodegaDespachoInicialService;
     @Autowired(required = false) private com.hotclick.service.onvo.cuenta.CuentaOnvoService cuentaOnvoService;
+    @Autowired(required = false) private QaAltaPymeTestService qaAltaPymeTestService;
 
     @Transactional
     public ResponseEntity<?> nuevoNegocio(RegistroEmpresaDTO dto, HttpServletRequest request) {
@@ -119,6 +122,7 @@ public class AuthNuevoNegocioHandler {
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa.setEstado(Constants.ESTADO_ACTIVO);
         Empresa guardada = empresaRepository.save(empresa);
+        QaAltaPymeTestVinculo.ligar(cupo, guardada, qaAltaPymeTestService);
         if (cuentaOnvoService != null) cuentaOnvoService.alRegistrarEmpresa(guardada);
         moderacionAdminAvisoService.avisarEmpresaPendiente(
             guardada.getId(),

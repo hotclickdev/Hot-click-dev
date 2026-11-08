@@ -34,6 +34,7 @@ public class EmpresaAprobacionService {
     @Autowired private ProductoService               productoService;
     @Autowired private UbicacionDespachoService      ubicacionDespachoService;
     @Autowired private CupoEmprendedorAprobacionService cupoEmprendedorAprobacionService;
+    @Autowired(required = false) private QaAltaPymeTestService qaAltaPymeTest;
 
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
@@ -46,12 +47,16 @@ public class EmpresaAprobacionService {
             throw new com.hotclick.exception.ReactivacionSinPagoException();
         }
         ubicacionDespachoService.exigirParaPublicar(empresaId);
+        // El fixture QA ya consumido no entra al cupo ni al trial: queda oculto hasta el cobro TEST del flujo existente.
+        boolean qaCobro = qaAltaPymeTest != null && qaAltaPymeTest.empresaConCobroPymeTest(e);
         // Puesto y trial Emprendedor cuentan desde acá (correo verificado, un puesto por persona). Si el propietario no
         // verificó su correo lanza y se revierte toda la aprobación sin consumir puesto.
-        var cupo = cupoEmprendedorAprobacionService.resolverAlAprobar(e);
+        var cupo = qaCobro
+            ? CupoEmprendedorAprobacionService.Resultado.NO_APLICA
+            : cupoEmprendedorAprobacionService.resolverAlAprobar(e);
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         e.setEstadoEmpresa("ACTIVO");
-        e.setVisibilidadPublica(cupo != CupoEmprendedorAprobacionService.Resultado.REQUIERE_MEMBRESIA);
+        e.setVisibilidadPublica(visibleAlAprobar(qaCobro, cupo));
         if (Constants.ESTADO_PLAN_PRUEBA_CERRADA.equals(e.getEstadoPlan())) {
             e.setEstadoPlan("ACTIVO");
             e.setFechaVencPlan(null);
@@ -65,6 +70,12 @@ public class EmpresaAprobacionService {
         // evict, los productos recién publicados tardarían en aparecer.
         productoService.evictProductosPublicos();
         return e;
+    }
+
+    /** El cobro QA y quien se quedó sin puesto no se publican. El resto de las aprobaciones sí. */
+    static boolean visibleAlAprobar(boolean qaCobroPymeTest, CupoEmprendedorAprobacionService.Resultado cupo) {
+        if (qaCobroPymeTest) return false;
+        return cupo != CupoEmprendedorAprobacionService.Resultado.REQUIERE_MEMBRESIA;
     }
 
     /**

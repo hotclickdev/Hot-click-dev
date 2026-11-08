@@ -10,6 +10,7 @@ import com.hotclick.service.suscripcion.TrialEmprendedorConfig;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -63,21 +64,32 @@ public class CupoEmprendedorService {
     private final SuscripcionRepository suscripcionRepository;
     private final Environment environment;
     private final boolean demoCorreoHabilitado;
+    private final QaAltaPymeTestService qaAltaPymeTest;
+
+    /** Atajo de tests: sin la excepción QA (queda apagada). */
+    public CupoEmprendedorService(JdbcTemplate jdbcTemplate, PlanRepository planRepository,
+                                  TrialEmprendedorConfig trialConfig, SuscripcionRepository suscripcionRepository,
+                                  Environment environment, boolean demoCorreoHabilitado) {
+        this(jdbcTemplate, planRepository, trialConfig, suscripcionRepository, environment, demoCorreoHabilitado, null);
+    }
 
     /**
      * @param demoCorreoHabilitado {@code hotclick.cupo-emprendedor.demo-correo-habilitado}: por defecto {@code false}.
      *        Solo se respeta con perfil dev o test (y nunca con prod/production); ver {@link #esDemo(String)}.
      */
+    @Autowired
     public CupoEmprendedorService(JdbcTemplate jdbcTemplate, PlanRepository planRepository,
                                   TrialEmprendedorConfig trialConfig, SuscripcionRepository suscripcionRepository,
                                   Environment environment,
-                                  @Value("${hotclick.cupo-emprendedor.demo-correo-habilitado:false}") boolean demoCorreoHabilitado) {
+                                  @Value("${hotclick.cupo-emprendedor.demo-correo-habilitado:false}") boolean demoCorreoHabilitado,
+                                  QaAltaPymeTestService qaAltaPymeTest) {
         this.jdbcTemplate = jdbcTemplate;
         this.planRepository = planRepository;
         this.trialConfig = trialConfig;
         this.suscripcionRepository = suscripcionRepository;
         this.environment = environment;
         this.demoCorreoHabilitado = demoCorreoHabilitado;
+        this.qaAltaPymeTest = qaAltaPymeTest;
     }
 
     public CupoEmprendedorEstado estadoPublico() {
@@ -105,9 +117,25 @@ public class CupoEmprendedorService {
      */
     @Transactional
     public ResultadoAltaCupo aplicarAlta(Empresa empresa, String correoEmpresa) {
+        if (qaAltaPymeTest != null && qaAltaPymeTest.esCorreoDelFixture(correoEmpresa)) {
+            return altaDelFixtureQa(empresa, correoEmpresa);
+        }
         if (esDemo(correoEmpresa)) {
             aplicarPlanGratis(empresa);
             return ResultadoAltaCupo.demo(estadoPublico());
+        }
+        aplicarPendienteCupo(empresa);
+        return ResultadoAltaCupo.pendiente(estadoPublico());
+    }
+
+    /**
+     * El correo reservado no usa el atajo demo. Con la puerta abierta toma PYME a cobro y no toca el cupo; si no, sigue
+     * el alta real (pendiente de aprobación y de puesto).
+     */
+    private ResultadoAltaCupo altaDelFixtureQa(Empresa empresa, String correoEmpresa) {
+        if (qaAltaPymeTest.consumirSiAplica(correoEmpresa)) {
+            aplicarQaPymeCobro(empresa);
+            return ResultadoAltaCupo.qaPymeCobroTest(estadoPublico());
         }
         aplicarPendienteCupo(empresa);
         return ResultadoAltaCupo.pendiente(estadoPublico());
@@ -250,5 +278,21 @@ public class CupoEmprendedorService {
         planRepository.findByNombre("EMPRENDEDOR").ifPresent(empresa::setPlan);
         empresa.setPlanSaas("EMPRENDEDOR");
         empresa.setEstadoPlan("ACTIVO");
+    }
+
+    /** PYME a la espera del cobro TEST. Sin puesto, sin fechas de trial y sin publicar. */
+    private void aplicarQaPymeCobro(Empresa empresa) {
+        var plan = planRepository.findByNombre(QaAltaPymeTestService.PLAN_DESTINO)
+            .orElseThrow(() -> new IllegalStateException("Plan PYME no configurado"));
+        empresa.setPlan(plan);
+        empresa.setPlanSaas(QaAltaPymeTestService.PLAN_DESTINO);
+        empresa.setEstadoPlan(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+        empresa.setVisibilidadPublica(false);
+        empresa.setTrialHasta(null);
+        empresa.setFechaVencPlan(null);
+        empresa.setTrialEmprendedorHasta(null);
+        empresa.setTrialEmprendedorPos(null);
+        empresa.setTrialEmprendedorTitularUsuario(null);
+        empresa.setTrialEmprendedorTitularCorreo(null);
     }
 }

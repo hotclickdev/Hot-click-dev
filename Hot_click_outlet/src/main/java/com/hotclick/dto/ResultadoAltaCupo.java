@@ -5,10 +5,15 @@ package com.hotclick.dto;
  * real queda {@code pendienteCupo} y el puesto se asigna cuando HotClick lo aprueba (ver
  * {@code CupoEmprendedorAprobacionService}). {@code gratis}/{@code pago} se conservan para el resultado ya resuelto.
  */
-public record ResultadoAltaCupo(boolean cupoGratis, boolean demo, CupoEmprendedorEstado estado, boolean pendienteCupo) {
+public record ResultadoAltaCupo(boolean cupoGratis, boolean demo, CupoEmprendedorEstado estado, boolean pendienteCupo,
+                                 boolean qaPymeCobroTest) {
 
     public ResultadoAltaCupo(boolean cupoGratis, boolean demo, CupoEmprendedorEstado estado) {
-        this(cupoGratis, demo, estado, false);
+        this(cupoGratis, demo, estado, false, false);
+    }
+
+    public ResultadoAltaCupo(boolean cupoGratis, boolean demo, CupoEmprendedorEstado estado, boolean pendienteCupo) {
+        this(cupoGratis, demo, estado, pendienteCupo, false);
     }
 
     public static ResultadoAltaCupo gratis(CupoEmprendedorEstado estado) {
@@ -25,6 +30,11 @@ public record ResultadoAltaCupo(boolean cupoGratis, boolean demo, CupoEmprendedo
 
     /** Negocio real recién registrado: el puesto y el trial se deciden al aprobarlo. */
     public static ResultadoAltaCupo pendiente(CupoEmprendedorEstado estado) {
-        return new ResultadoAltaCupo(false, false, estado, true);
+        return new ResultadoAltaCupo(false, false, estado, true, false);
+    }
+
+    /** Fixture QA autorizado: PYME a cobro, sin puesto de trial. Un solo uso, decidido en el servidor. */
+    public static ResultadoAltaCupo qaPymeCobroTest(CupoEmprendedorEstado estado) {
+        return new ResultadoAltaCupo(false, false, estado, false, true);
     }
 }
