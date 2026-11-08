@@ -307,6 +307,51 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
     }
 
+    /** currentPeriodStart de la subida, el que ONVO abrió al crearla. */
+    private void periodoDeLaNueva(String inicioIso) {
+        Map<String, Object> cuerpo = new java.util.HashMap<>();
+        cuerpo.put("id", "sub_nueva");
+        cuerpo.put("status", "active");
+        if (inicioIso != null) cuerpo.put("currentPeriodStart", inicioIso);
+        org.mockito.Mockito.doReturn(cuerpo).when(onvoBilling).obtenerSuscripcion("sub_nueva");
+    }
+
+    @Test
+    @DisplayName("Subida pagada: fecha_inicio es el currentPeriodStart de ONVO, no el del plan viejo")
+    void subidaPagada_noHeredaFechaInicioVieja() {
+        subidaPendiente();
+        sub.setFechaInicio(LocalDate.of(2026, 11, 4));
+        // 06:44:32Z = 00:44 CR del 8 nov. El cargo de las 02:00 CR no es el ancla.
+        periodoDeLaNueva("2026-11-08T06:44:32.843Z");
+        LocalDate fin = LocalDate.of(2026, 12, 8);
+
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_periodo");
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_periodo");
+
+        assertThat(sub.getFechaInicio()).isEqualTo(LocalDate.of(2026, 11, 8));
+        assertThat(sub.getFechaFin()).isEqualTo(fin);
+        assertThat(empresa.getFechaVencPlan()).isEqualTo(fin);
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_nueva");
+        verify(onvoBilling, org.mockito.Mockito.times(1)).cancelarInmediato("sub_vieja");
+        verify(onvoBilling, org.mockito.Mockito.times(1)).obtenerSuscripcion("sub_nueva");
+    }
+
+    @Test
+    @DisplayName("Subida pagada sin currentPeriodStart: no cancela la vieja ni hereda ni cambia la fecha")
+    void subidaPagada_sinInicioOnvo_noCancelaNiCambiaFecha() {
+        subidaPendiente();
+        sub.setFechaInicio(LocalDate.of(2026, 11, 4));
+        periodoDeLaNueva(null);
+
+        assertThatThrownBy(() -> service.procesarPagoOnvoVerificado(
+            "sub_nueva", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 8), "inv_periodo"))
+            .isInstanceOf(IllegalStateException.class);
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        assertThat(sub.getFechaInicio()).isEqualTo(LocalDate.of(2026, 11, 4));
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
+        assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
+    }
+
     /** Fila con la subida creada y sin pagar: vigente sub_vieja, pendiente sub_nueva. */
     private void subidaPendiente() {
         cobrada(pyme, "active");
@@ -331,6 +376,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
     @DisplayName("Pagada: la vieja se cancela UNA vez aunque llegue el webhook doble, y el plan pasa a Negocio Plus")
     void subidaPagada_cancelaViejaUnaVez() {
         subidaPendiente();
+        periodoDeLaNueva("2026-01-01T12:00:00Z");
         LocalDate fin = LocalDate.now().plusMonths(1);
 
         service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_123456");
@@ -353,6 +399,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
     @DisplayName("Renovación de la vieja mientras la subida no se paga: plan viejo, la pendiente sigue, nada se cancela")
     void renovacionViejaConSubidaPendiente() {
         subidaPendiente();
+        sub.setFechaInicio(LocalDate.of(2026, 11, 4));
 
         service.procesarPagoOnvoVerificado("sub_vieja", "PYME", LocalDate.now().plusMonths(1), "inv_654321");
 
@@ -360,12 +407,14 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
         assertThat(sub.getOnvoSubNuevaPendiente()).isEqualTo("sub_nueva");
         assertThat(sub.getPlanPendiente().getNombre()).isEqualTo("NEGOCIO_PLUS");
+        assertThat(sub.getFechaInicio()).isEqualTo(LocalDate.of(2026, 11, 4));
     }
 
     @Test
     @DisplayName("Pagada pero cancelar la vieja falla: revisión manual; un cobro posterior de la vieja se ignora")
     void subidaPagada_cancelFalla_revisionYViejaNoCobra() {
         subidaPendiente();
+        periodoDeLaNueva("2026-01-01T12:00:00Z");
         org.mockito.Mockito.doThrow(new RuntimeException("500")).when(onvoBilling).cancelarInmediato("sub_vieja");
 
         service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456");

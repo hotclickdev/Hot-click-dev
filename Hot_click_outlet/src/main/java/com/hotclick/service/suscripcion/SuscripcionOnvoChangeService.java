@@ -1009,6 +1009,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      * metadata ni de sub.plan. La suscripción se busca solo por el id ONVO, con lock de fila.
      * B2: {@code referenciaLedger} es el id de la factura de ONVO (una por cobro) y es obligatorio: no hay sobrecarga
      * sin referencia ni caída al id de la suscripción, que volvería a deduplicar el ledger por suscripción.
+     * <p>Subida pagada: {@code fecha_fin} sigue siendo el fin que ONVO ya confirmó. {@code fecha_inicio} pasa a ser el
+     * {@code currentPeriodStart} de esa suscripción (hora de Costa Rica), no la del plan anterior. ONVO abre ese
+     * período al crear la suscripción ({@code startDate} no es compatible con {@code allow_incomplete}); el instante
+     * del cargo no lo mueve. Una renovación de la vigente no toca {@code fecha_inicio}.
      */
     @Transactional
     public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin, String referenciaLedger) {
@@ -1034,6 +1038,9 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             log.warn("[onvo] Sin fin de período ONVO para sub={}", onvoSubId);
             throw new IllegalStateException("Sin fin de período ONVO para la suscripción");
         }
+        // Antes de cancelar la vieja: si ONVO no confirma el inicio, no se toca la fila ni se cancela nada.
+        boolean esSubida = vigente.isEmpty();
+        LocalDate inicioSubida = esSubida ? inicioPeriodoSubida(onvoSubId, fin) : null;
         Suscripcion sub = vigente.orElseGet(() -> completarReemplazoTrasPago(pendiente.get()));
         sub.setPlan(plan);
         // Un cobro de la vieja mientras hay una subida sin pagar no borra el plan pendiente.
@@ -1042,6 +1049,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
         sub.setFechaFin(fin);
+        if (inicioSubida != null) sub.setFechaInicio(inicioSubida);
         suscripcionRepo.save(sub);
 
         Empresa empresa = sub.getEmpresa();
@@ -1054,7 +1062,24 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         evictTenant(empresa.getId());
         anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK,
             referenciaLedger, "Pago ONVO verificado");
-        log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
+        log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={} inicio={}",
+            empresa.getId(), plan.getNombre(), fin, sub.getFechaInicio());
+    }
+
+    /**
+     * Inicio del período que ONVO abrió al crear la subida ({@code currentPeriodStart}, fecha en Costa Rica).
+     * Tiene que ser anterior al fin ya verificado. Si falta o no se puede leer, falla cerrado: no se hereda la
+     * fecha del plan anterior ni se inventa una a partir del cargo.
+     */
+    private LocalDate inicioPeriodoSubida(String onvoSubId, LocalDate fin) {
+        LocalDate inicio = OnvoBillingVerificador.fecha(
+            OnvoBillingVerificador.texto(onvoBilling.obtenerSuscripcion(onvoSubId), "currentPeriodStart"));
+        if (inicio == null || !inicio.isBefore(fin)) {
+            log.error("[ALERTA-PAGO] subida pagada sin inicio de período ONVO anterior al fin sub={} fin={}",
+                enmascarar(onvoSubId), fin);
+            throw new IllegalStateException("Sin inicio de período ONVO para la subida");
+        }
+        return inicio;
     }
 
     /**
