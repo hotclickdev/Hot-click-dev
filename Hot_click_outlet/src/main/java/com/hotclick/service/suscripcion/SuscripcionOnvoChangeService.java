@@ -1009,10 +1009,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      * metadata ni de sub.plan. La suscripción se busca solo por el id ONVO, con lock de fila.
      * B2: {@code referenciaLedger} es el id de la factura de ONVO (una por cobro) y es obligatorio: no hay sobrecarga
      * sin referencia ni caída al id de la suscripción, que volvería a deduplicar el ledger por suscripción.
-     * <p>Subida pagada: {@code fecha_fin} sigue siendo el fin que ONVO ya confirmó. {@code fecha_inicio} pasa a ser el
-     * {@code currentPeriodStart} de esa suscripción (hora de Costa Rica), no la del plan anterior. ONVO abre ese
-     * período al crear la suscripción ({@code startDate} no es compatible con {@code allow_incomplete}); el instante
-     * del cargo no lo mueve. Una renovación de la vigente no toca {@code fecha_inicio}.
+     * <p>Cobertura parcial, no el criterio de aceptación: al activar la subida, {@code fecha_inicio} copia
+     * {@code currentPeriodStart} (hora de Costa Rica) y no la fecha del plan anterior. El criterio ya decidido es
+     * otro: el período empieza el día del pago confirmado. Este método no recibe ese instante y no mueve el
+     * calendario de ONVO. Una renovación de la vigente no toca {@code fecha_inicio}.
      */
     @Transactional
     public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin, String referenciaLedger) {
@@ -1067,9 +1067,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     }
 
     /**
-     * Inicio del período que ONVO abrió al crear la subida ({@code currentPeriodStart}, fecha en Costa Rica).
-     * Tiene que ser anterior al fin ya verificado. Si falta o no se puede leer, falla cerrado: no se hereda la
-     * fecha del plan anterior ni se inventa una a partir del cargo.
+     * Cobertura parcial: fecha de {@code currentPeriodStart} en Costa Rica. No es el día del pago confirmado.
+     * Si falta o no es anterior al fin, falla cerrado y no cancela la vieja.
      */
     private LocalDate inicioPeriodoSubida(String onvoSubId, LocalDate fin) {
         LocalDate inicio = OnvoBillingVerificador.fecha(

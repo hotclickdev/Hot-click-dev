@@ -19,6 +19,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -317,11 +318,11 @@ class SuscripcionOnvoCambioPlanCobradaTest {
     }
 
     @Test
-    @DisplayName("Subida pagada: fecha_inicio es el currentPeriodStart de ONVO, no el del plan viejo")
+    @DisplayName("PARCIAL, no aceptación: fecha_inicio copia currentPeriodStart y no hereda la del plan viejo")
     void subidaPagada_noHeredaFechaInicioVieja() {
         subidaPendiente();
         sub.setFechaInicio(LocalDate.of(2026, 11, 4));
-        // 06:44:32Z = 00:44 CR del 8 nov. El cargo de las 02:00 CR no es el ancla.
+        // Mismo día de calendario en CR (00:44 de creación y 02:00 de pago). No cubre el cruce de medianoche.
         periodoDeLaNueva("2026-11-08T06:44:32.843Z");
         LocalDate fin = LocalDate.of(2026, 12, 8);
 
@@ -350,6 +351,27 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThat(sub.getFechaInicio()).isEqualTo(LocalDate.of(2026, 11, 4));
         assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
         assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("PARCIAL, no aceptación: cruce de medianoche CR deja el inicio en currentPeriodStart, no en el día del pago")
+    void subidaPagada_cruceMedianoche_noUsaElDiaDelPago() {
+        subidaPendiente();
+        sub.setFechaInicio(LocalDate.of(2026, 11, 4));
+        // 05:30Z = 23:30 del 8 nov en America/Costa_Rica. El pago 08:00:49Z es 02:00 del 9 nov.
+        Instant inicioOnvo = Instant.parse("2026-11-09T05:30:00Z");
+        Instant pagoConfirmado = Instant.parse("2026-11-09T08:00:49Z");
+        LocalDate diaCreacion = inicioOnvo.atZone(Constants.ZONA_CR).toLocalDate();
+        LocalDate diaPago = pagoConfirmado.atZone(Constants.ZONA_CR).toLocalDate();
+        periodoDeLaNueva(inicioOnvo.toString());
+
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 9), "inv_cruce");
+
+        assertThat(diaPago).isEqualTo(diaCreacion.plusDays(1));
+        // Comportamiento actual. No es el criterio: el período debe empezar el día del pago confirmado.
+        assertThat(sub.getFechaInicio()).isEqualTo(diaCreacion);
+        assertThat(sub.getFechaInicio()).isNotEqualTo(diaPago);
+        assertThat(sub.getFechaFin()).isEqualTo(LocalDate.of(2026, 12, 9));
     }
 
     /** Fila con la subida creada y sin pagar: vigente sub_vieja, pendiente sub_nueva. */
