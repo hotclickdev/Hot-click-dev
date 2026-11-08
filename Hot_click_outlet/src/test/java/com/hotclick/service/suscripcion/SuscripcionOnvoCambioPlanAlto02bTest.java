@@ -305,7 +305,8 @@ class SuscripcionOnvoCambioPlanAlto02bTest {
             .isInstanceOf(com.hotclick.exception.PriceIdOnvoFaltanteException.class);
         assertThat(com.hotclick.exception.PriceIdOnvoFaltanteException.MENSAJE)
             .contains("No se te cobró nada").contains("Escribinos");
-        verify(onvoBilling, never()).obtenerSuscripcion(any());
+        // BAJO-1: ahora se LEE la suscripción en ONVO para decidir antes los rechazos 422; nunca se escribe nada.
+        verify(onvoBilling, never()).cancelarInmediato(any());
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
     }
 

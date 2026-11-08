@@ -10,6 +10,7 @@ import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.OnvoService;
 import com.hotclick.service.onvo.OnvoBillingClient;
+import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -439,6 +440,100 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
         assertThat(empresa.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
         verify(suscripcionRepo, never()).findByOnvoSubscriptionIdForUpdate("sub_vieja");
+    }
+
+    /** Vigente active + nueva incomplete guardada. No usa ids reales de ONVO. */
+    private void subidaPendienteSinPagar() {
+        cobrada(pyme, "active");
+        sub.setOnvoSubNuevaPendiente("sub_nueva");
+        sub.setOnvoSubNuevaDesde(java.time.LocalDateTime.now());
+        sub.setPlanPendiente(plus);
+    }
+
+    private static Map<String, Object> cuerpoNueva(String estado) {
+        Map<String, Object> enOnvo = new java.util.HashMap<>();
+        enOnvo.put("id", "sub_nueva");
+        if (estado != null) enOnvo.put("status", estado);
+        enOnvo.put("items", List.of(Map.of("id", "si_2", "price", Map.of("id", "price_plus"))));
+        return enOnvo;
+    }
+
+    @Test
+    @DisplayName("Completar pago con subida incomplete y factura open: SDK de la NUEVA, sin crear ni cancelar")
+    void completarPago_subidaCobrable_abreSdkDeLaNueva() {
+        subidaPendienteSinPagar();
+        empresa.setTrialEmprendedorPos(1);
+        empresa.setTrialEmprendedorHasta(LocalDate.now(Constants.ZONA_CR).plusDays(30));
+        org.mockito.Mockito.doReturn(cuerpoNueva("incomplete")).when(onvoBilling).obtenerSuscripcion("sub_nueva");
+        when(onvoBilling.planParaPriceId("price_plus")).thenReturn("NEGOCIO_PLUS");
+        org.mockito.Mockito.doReturn(Map.of("status", "open")).when(onvoBilling).obtenerFacturaDelPeriodoActual(any());
+
+        Map<String, Object> out = service.completarPago(10L);
+
+        assertThat(out.get("status")).isEqualTo("requiere_pago");
+        assertThat(out.get("subscriptionId")).isEqualTo("sub_nueva");
+        assertThat(out.get("customerId")).isEqualTo("cus_1");
+        assertThat(out.get("planNombre")).isEqualTo("NEGOCIO_PLUS");
+        assertThat(out.get("publishableKey")).isEqualTo("pk_test");
+        assertThat(out).doesNotContainKey("trialDias");
+        verify(onvoBilling, never()).obtenerSuscripcion("sub_vieja");
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_vieja");
+        assertThat(sub.getOnvoSubNuevaPendiente()).isEqualTo("sub_nueva");
+        assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
+        assertThat(sub.getPlanPendiente().getNombre()).isEqualTo("NEGOCIO_PLUS");
+        assertThat(empresa.getPlan().getNombre()).isEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("Completar pago con subida canceled o incomplete_expired: no abre el SDK ni crea otra")
+    void completarPago_subidaExpiradaOCancelada_noAbreSdk() {
+        for (String estado : List.of("canceled", "incomplete_expired")) {
+            subidaPendienteSinPagar();
+            org.mockito.Mockito.doReturn(cuerpoNueva(estado)).when(onvoBilling).obtenerSuscripcion("sub_nueva");
+
+            Map<String, Object> out = service.completarPago(10L);
+
+            assertThat(out.get("status")).as(estado).isEqualTo("sin_pago_pendiente");
+            assertThat(out).as(estado).doesNotContainKey("subscriptionId");
+            assertThat(sub.getOnvoSubNuevaPendiente()).as(estado).isEqualTo("sub_nueva");
+            assertThat(sub.getPlanPendiente().getNombre()).as(estado).isEqualTo("NEGOCIO_PLUS");
+        }
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        verify(onvoBilling, never()).planParaPriceId(any());
+    }
+
+    @Test
+    @DisplayName("Completar pago con subida pendiente y ONVO caído: falla cerrado, no dice sin_pago_pendiente")
+    void completarPago_subidaOnvoCaido_failClosed() {
+        subidaPendienteSinPagar();
+        when(onvoBilling.obtenerSuscripcion("sub_nueva"))
+            .thenThrow(new org.springframework.web.client.ResourceAccessException("timeout"));
+
+        assertThatThrownBy(() -> service.completarPago(10L))
+            .isInstanceOf(org.springframework.web.client.ResourceAccessException.class);
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        assertThat(sub.getOnvoSubNuevaPendiente()).isEqualTo("sub_nueva");
+        assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("Completar pago con subida pendiente sin estado ONVO: falla cerrado")
+    void completarPago_subidaSinEstado_failClosed() {
+        subidaPendienteSinPagar();
+        org.mockito.Mockito.doReturn(cuerpoNueva(null)).when(onvoBilling).obtenerSuscripcion("sub_nueva");
+
+        assertThatThrownBy(() -> service.completarPago(10L)).isInstanceOf(IllegalStateException.class);
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        assertThat(sub.getOnvoSubNuevaPendiente()).isEqualTo("sub_nueva");
     }
 
 }
