@@ -29,6 +29,9 @@ logs/
 application-local.properties
 application-local.yml
 
+# Certificado local de QA HTTPS (mkcert). No es material de producción.
+Hot_click_outlet/frontend/certs/local/
+
 # Environment — NUNCA commitear archivos con credenciales reales
 .env
 .env.local

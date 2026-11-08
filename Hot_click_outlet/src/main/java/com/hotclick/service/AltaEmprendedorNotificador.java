@@ -49,7 +49,9 @@ public class AltaEmprendedorNotificador {
         sb.append("Negocio: ").append(sanitizar(nombreEmpresa)).append('\n');
         sb.append("Correo: ").append(sanitizar(correo)).append('\n');
         sb.append("Cupos: ").append(estado.usados()).append('/').append(estado.limite()).append('\n');
-        if (resultado.demo()) {
+        if (resultado.qaPymeCobroTest()) {
+            sb.append("Excepción QA de un uso: PYME a cobro TEST, sin trial y sin cupo.");
+        } else if (resultado.demo()) {
             sb.append("Demo QA: no consumió cupo.");
         } else if (resultado.pendienteCupo()) {
             sb.append("Pendiente de aprobación: el puesto de ").append(estado.textoGratis())

@@ -39,6 +39,7 @@ public class EmprendedorRegistroService {
     @Autowired private ModeracionAdminAvisoService moderacionAdminAvisoService;
     @Autowired private BodegaDespachoInicialService bodegaDespachoInicialService;
     @Autowired(required = false) private com.hotclick.service.onvo.cuenta.CuentaOnvoService cuentaOnvoService;
+    @Autowired(required = false) private QaAltaPymeTestService qaAltaPymeTestService;
 
     @Transactional
     public Usuario registrar(RegistroEmpresaDTO dto) {
@@ -91,6 +92,7 @@ public class EmprendedorRegistroService {
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
         empresa.setEstado(Constants.ESTADO_ACTIVO);
         empresa = empresaRepository.save(empresa);
+        QaAltaPymeTestVinculo.ligar(alta, empresa, qaAltaPymeTestService);
         if (cuentaOnvoService != null) cuentaOnvoService.alRegistrarEmpresa(empresa);
         moderacionAdminAvisoService.avisarEmpresaPendiente(
             empresa.getId(),
@@ -201,6 +203,7 @@ public class EmprendedorRegistroService {
             }
         }
         empresa = empresaRepository.save(empresa);
+        QaAltaPymeTestVinculo.ligar(alta, empresa, qaAltaPymeTestService);
         if (cuentaOnvoService != null) cuentaOnvoService.alRegistrarEmpresa(empresa);
         moderacionAdminAvisoService.avisarEmpresaPendiente(
             empresa.getId(),
