@@ -768,6 +768,9 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      * o en trial sin método de pago, devuelve los datos para abrir el SDK de ONVO con {@code paymentType: subscription}
      * (https://docs.onvopay.com/integrations/sdk). No cambia precios ni crea nada. Sin nada que cobrar, {@code
      * sin_pago_pendiente} y el panel lleva a la pantalla de planes.
+     * <p>Subida a Negocio Plus en dos tiempos: la cobrable es {@code onvo_sub_nueva_pendiente} (incomplete), no la
+     * vigente que sigue active. Si esa nueva ya está cancelada o {@code incomplete_expired}, no se abre el SDK.
+     * Si ONVO no responde o no manda estado, la excepción sube y no se responde {@code sin_pago_pendiente}.
      */
     public Map<String, Object> completarPago(Long empresaId) {
         Empresa empresa = empresaRepo.findById(empresaId)
@@ -778,6 +781,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
         if (!tieneOnvoGuardado(sub) || caminoMock()) {
             return Map.of("status", "sin_pago_pendiente");
+        }
+        String nuevaPendiente = sub.getOnvoSubNuevaPendiente();
+        if (nuevaPendiente != null && !nuevaPendiente.isBlank()) {
+            return completarPagoSubidaPendiente(empresa, sub, nuevaPendiente);
         }
         Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(sub.getOnvoSubscriptionId());
         if (!requiereCobro(enOnvo)) {
@@ -812,6 +819,44 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             return reemplazarSuscripcion(empresaId, empresa, sub, plan, priceId, "incomplete", enOnvo, false);
         }
         return respuestaRequierePago(empresa, plan, sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId());
+    }
+
+    /**
+     * La subida guardada en {@code onvo_sub_nueva_pendiente} es la que hay que cobrar. No lee la vigente, no crea otra
+     * suscripción y no cancela nada. ONVO caído o sin estado: excepción (fail-closed). Cancelada o vencida: no hay SDK.
+     */
+    private Map<String, Object> completarPagoSubidaPendiente(Empresa empresa, Suscripcion sub, String nuevaId) {
+        Map<?, ?> enOnvo = onvoBilling.obtenerSuscripcion(nuevaId);
+        String estado = OnvoBillingClient.estadoDe(enOnvo);
+        if (estado == null) {
+            log.error("[ALERTA-PAGO] completarPago: ONVO no confirmó el estado de la subida pendiente empresa={}",
+                empresa.getId());
+            throw new IllegalStateException("ONVO no confirmó el estado de la subida pendiente");
+        }
+        if (!requiereCobro(enOnvo)) {
+            log.info("[onvo] completarPago: subida pendiente sin cobro que abrir empresa={} estado={}",
+                empresa.getId(), estado);
+            return Map.of("status", "sin_pago_pendiente");
+        }
+        return sdkDeSuscripcionLeida(empresa, sub.getOnvoCustomerId(), nuevaId, enOnvo);
+    }
+
+    /** Plan que confirma el price de ONVO y, si la factura del período no está paid, datos del SDK. No escribe nada. */
+    private Map<String, Object> sdkDeSuscripcionLeida(Empresa empresa, String customerId, String subscriptionId,
+                                                      Map<?, ?> enOnvo) {
+        String planNombre = onvoBilling.planParaPriceId(OnvoBillingClient.primerPriceId(enOnvo));
+        if (planNombre == null) {
+            log.error("[ALERTA-PAGO] completarPago: el price de la suscripción ONVO no corresponde a ningún plan"
+                + " configurado empresa={}", empresa.getId());
+            throw new IllegalStateException("Price ONVO desconocido");
+        }
+        Plan plan = planRepo.findByNombre(planNombre)
+            .orElseThrow(() -> new IllegalStateException("Plan no encontrado: " + planNombre));
+        if (!trialSinMetodo(enOnvo) && "paid".equalsIgnoreCase(OnvoBillingVerificador.texto(
+                onvoBilling.obtenerFacturaDelPeriodoActual(enOnvo), "status"))) {
+            return Map.of("status", "sin_pago_pendiente");
+        }
+        return respuestaRequierePago(empresa, plan, customerId, subscriptionId);
     }
 
     private Map<String, Object> altaPlanPago(Long empresaId, Empresa empresa, Plan planDestino,
