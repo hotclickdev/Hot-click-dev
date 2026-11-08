@@ -125,27 +125,44 @@ class QaAltaPymeTestPuertaTest {
     }
 
     @Test
-    @DisplayName("Si la tabla no responde, no se consume y no se filtra el mensaje SQL")
-    void tablaCaidaNoConsume() {
+    @DisplayName("Si la tabla no responde, el error sale y no se sigue el alta")
+    void tablaCaidaNoSeTraga() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         when(jdbc.update(anyString(), any(), eq(QaAltaPymeTestService.CORREO_FIXTURE), any()))
             .thenThrow(new DataAccessResourceFailureException("detalle interno con " + QaAltaPymeTestService.CORREO_FIXTURE));
         QaAltaPymeTestService s = servicio(true, env("test"), FICTICIA, PUBLICA, jdbc);
-        assertThat(s.consumirSiAplica(QaAltaPymeTestService.CORREO_FIXTURE)).isFalse();
+        assertThatThrownBy(() -> s.consumirSiAplica(QaAltaPymeTestService.CORREO_FIXTURE))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("No se pudo aplicar la excepción QA")
+            .hasMessageNotContaining(QaAltaPymeTestService.CORREO_FIXTURE);
     }
 
     @Test
-    @DisplayName("Aprobar el fixture con la tabla caída no sigue a ciegas")
+    @DisplayName("Leer la concesión por id con la tabla caída no sigue a ciegas")
     void lecturaCaidaNoSigue() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        when(jdbc.queryForObject(anyString(), eq(Integer.class), eq(QaAltaPymeTestService.CORREO_FIXTURE)))
+        when(jdbc.queryForObject(anyString(), eq(Integer.class), eq(8L)))
             .thenThrow(new DataAccessResourceFailureException("bd"));
         QaAltaPymeTestService s = servicio(true, env("test"), FICTICIA, PUBLICA, jdbc);
         Empresa e = new Empresa();
+        e.setId(8L);
         e.setCorreoEmpresa(QaAltaPymeTestService.CORREO_FIXTURE);
         assertThatThrownBy(() -> s.empresaConCobroPymeTest(e))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageNotContaining(QaAltaPymeTestService.CORREO_FIXTURE);
+    }
+
+    @Test
+    @DisplayName("Puerta cerrada no lee la fila: flag off o prod no heredan el cobro")
+    void puertaCerradaNoLee() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        Empresa e = new Empresa();
+        e.setId(8L);
+        e.setCorreoEmpresa(QaAltaPymeTestService.CORREO_FIXTURE);
+        assertThat(servicio(false, env("dev"), FICTICIA, PUBLICA, jdbc).empresaConCobroPymeTest(e)).isFalse();
+        assertThat(servicio(true, env("prod"), FICTICIA, PUBLICA, jdbc).empresaConCobroPymeTest(e)).isFalse();
+        assertThat(servicio(true, env("staging"), FICTICIA, PUBLICA, jdbc).empresaConCobroPymeTest(e)).isFalse();
+        verify(jdbc, never()).queryForObject(anyString(), eq(Integer.class), any());
     }
 
     @Test

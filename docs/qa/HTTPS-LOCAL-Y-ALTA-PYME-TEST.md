@@ -37,22 +37,15 @@ Hacerlos en la máquina de quien va a probar, con una CA local nueva. No reutili
 3. Exportar `VITE_DEV_HTTPS_KEY` y `VITE_DEV_HTTPS_CERT` hacia esos dos archivos y arrancar `pnpm dev`.
 4. Confiar el candado en el navegador (la CA del paso 1). Si el navegador avisa que el certificado no es de confianza, no seguir con el Vault.
 5. Para que los retornos de pago usen el mismo origen, en esa sesión local exportar `APP_URL=https://localhost:3000`. No dejarlo así en un entorno compartido.
-6. Abrir `https://localhost:3000/registro-empresa` y mirar el formulario de ONVO. Si pide HTTPS y el candado es el de mkcert, el primer control está cubierto en esa máquina. Si rechaza el host `localhost` igual, el segundo control no se resuelve con este certificado. Parar y reportarlo. No declarar el alta ONVO como hecha.
+6. Abrir `https://localhost:3000/registro-empresa` y mirar el formulario de ONVO. Guardar este código no valida el Vault ni aprueba `localhost`. Si el formulario sigue rechazando el host, el certificado no lo resuelve. Parar y reportarlo. No declarar el alta ONVO como hecha.
 
 ## Excepción de un solo alta PYME a cobro TEST
 
 El alta normal deja el negocio `PENDIENTE_CUPO` (plan Emprendedor). El puesto y los días (`hotclick.trial-emprendedor.cupo` 70, `hotclick.trial-emprendedor.dias` 90) se asignan al aprobar. Esos defaults no se mueven. Los precios USD que ya documenta el repo siguen: PYME 24 y Negocio Plus 49 (`.env.example` y `application-dev.properties`). No se cambia la regla de subida a Negocio Plus: precio completo, sin prorrateo, período desde el pago confirmado, y el plan viejo sigue hasta ese pago.
 
-La excepción es la fila de `V235__qa_alta_pyme_test.sql`:
+`V235` crea la tabla vacía. No inserta el correo ni la fecha: esa migración también corre en producción y no puede sembrar datos de QA. El correo y el vencimiento (30-nov-2026 23:59:59, hora de Costa Rica) viven en `QaAltaPymeTestService`. La fila se escribe solo al consumir o al revocar, y solo con la puerta abierta. Con prod, staging, sin perfil o con el flag apagado, no se inserta.
 
-| Campo | Valor |
-| --- | --- |
-| Correo | `qa.sim.alta20261108@hotclick.test` |
-| Plan | PYME |
-| Estado inicial | `DISPONIBLE` |
-| Vence | 30-nov-2026 23:59:59, hora de Costa Rica |
-
-`HOTCLICK_QA_ALTA_PYME_TEST_HABILITADO` sale en `false`. Con el flag apagado, ese correo no toma el atajo demo de `@hotclick.test`: queda pendiente de cupo, como un alta real, y la fila no se toca. Las otras cuentas `@hotclick.test` siguen el demo de desarrollo.
+`HOTCLICK_QA_ALTA_PYME_TEST_HABILITADO` sale en `false`. Con el flag apagado, ese correo no toma el atajo demo de `@hotclick.test`: queda pendiente de cupo, como un alta real. Las otras cuentas `@hotclick.test` siguen el demo de desarrollo.
 
 La fila se consume solo si, a la vez:
 
@@ -61,7 +54,9 @@ La fila se consume solo si, a la vez:
 - `ONVO_SECRET_KEY` empieza por `onvo_test_` y tiene cuerpo, y no contiene `onvo_live_`;
 - `ONVO_PUBLISHABLE_KEY` empieza por `onvo_test_` o `pk_test`, y no es live ni vacía.
 
-El consumo es un `UPDATE` condicionado (`DISPONIBLE`, sin revocar, `vence_en` todavía en el futuro). Dos altas a la vez dejan una sola fila `CONSUMIDO`. Si la transacción del registro se revierte, la fila vuelve a `DISPONIBLE` y se puede reintentar. Un commit segundo no la toma. Pasada la fecha, el intento la deja `EXPIRADO`. `QaAltaPymeTestService.revocar()` la cierra antes del uso; no hay endpoint para eso. Revocar no deshace un consumo ya guardado.
+El consumo es un `UPDATE` si ya hay fila disponible, o un `INSERT` si la tabla sigue vacía. Dos altas a la vez dejan una sola fila `CONSUMIDO`; la perdedora recibe el error y su transacción se revierte, no sigue el trial. Si la transacción del registro se revierte, no queda fila y se puede reintentar. Un commit segundo no la toma. Pasada la fecha no se inserta el correo; si ya había una fila disponible, queda `EXPIRADO`. `revocar()` con la puerta abierta la cierra antes del uso. Sin puerta y sin fila no escribe. No hay endpoint. Revocar no deshace un consumo ya guardado.
+
+La aprobación mira `empresa_id` y la misma puerta. Otro negocio, aunque use el mismo correo, no queda oculto ni fuera del trial. Con el flag apagado o un perfil que no sea dev/test, esa excepción no se aplica. Un error de SQL no se convierte en «no aplica»: se relanza y el alta se revierte. H2 no deja la conexión abortada como PostgreSQL. Ese caso está en `QaAltaPymeTestPostgresTest`, que solo corre con `HC_PG_TEST_URL`. Aquí no había esa base.
 
 El negocio, cuando la puerta sí se abre, queda plan PYME, `REQUIERE_MEMBRESIA`, sin puesto y sin fechas de trial, y sigue `PENDIENTE_APROBACION`. Al aprobarlo no se llama al cupo: no se publica y no arranca el trial de 90 días. El cobro posterior es el `cambiarPlan` que ya existe. Sin puesto de trial, `diasRestantes` es 0, así que ese camino pide el precio completo. Este cambio no llama a ONVO, no crea la suscripción y no valida webhook, timeout ni cruce de día.
 

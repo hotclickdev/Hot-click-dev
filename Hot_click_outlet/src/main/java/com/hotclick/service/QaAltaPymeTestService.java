@@ -23,32 +23,46 @@ import java.util.Locale;
  * servidor, un perfil que sea solo dev o test, y llaves ONVO de prueba sin ambigüedad. Prod, staging, sin perfil,
  * llave live, llave vacía o publishable que no sea de prueba dejan la fila intacta.
  *
- * <p>El uso es un {@code UPDATE} condicionado dentro de la transacción del alta. Si esa transacción se revierte, la
- * fila vuelve a {@code DISPONIBLE} y el reintento puede tomarla. Un segundo commit no puede.
+ * <p>La migración no inserta la fila. Se crea al consumir o al revocar, y solo con la puerta abierta. El alta queda
+ * ligada a {@code empresa_id}. Un error de SQL no se convierte en «no aplica»: en PostgreSQL la transacción ya quedó
+ * abortada, así que se relanza y el alta se revierte.
  */
 @Service
 public class QaAltaPymeTestService {
 
     static final String CORREO_FIXTURE = "qa.sim.alta20261108@hotclick.test";
     static final String PLAN_DESTINO = "PYME";
+    /** 30-nov-2026 23:59:59, hora de Costa Rica. Vive en código: la migración no siembra la fecha ni el correo. */
+    static final LocalDateTime VENCE = LocalDateTime.of(2026, 11, 30, 23, 59, 59);
     private static final String PREFIJO_SECRET_TEST = "onvo_test_";
     private static final String MARCA_LIVE = "onvo_live_";
+    private static final String FALLO_BD = "No se pudo aplicar la excepción QA";
 
     private static final String SQL_CONSUMIR =
         "UPDATE hot_click_qa_alta_pyme_test_tb SET estado = 'CONSUMIDO', consumido_en = ? "
-            + "WHERE correo_normalizado = ? AND estado = 'DISPONIBLE' AND revocado_en IS NULL AND vence_en > ?";
+            + "WHERE id = 1 AND correo_normalizado = ? AND estado = 'DISPONIBLE' AND revocado_en IS NULL AND vence_en > ?";
     private static final String SQL_EXPIRAR =
         "UPDATE hot_click_qa_alta_pyme_test_tb SET estado = 'EXPIRADO' "
-            + "WHERE correo_normalizado = ? AND estado = 'DISPONIBLE' AND revocado_en IS NULL AND vence_en <= ?";
+            + "WHERE id = 1 AND estado = 'DISPONIBLE' AND revocado_en IS NULL AND vence_en <= ?";
+    private static final String SQL_INSERTAR =
+        "INSERT INTO hot_click_qa_alta_pyme_test_tb "
+            + "(id, correo_normalizado, plan_destino, estado, vence_en, consumido_en) "
+            + "SELECT 1, ?, 'PYME', 'CONSUMIDO', ?, ? "
+            + "WHERE NOT EXISTS (SELECT 1 FROM hot_click_qa_alta_pyme_test_tb WHERE id = 1)";
     private static final String SQL_REVOCAR =
         "UPDATE hot_click_qa_alta_pyme_test_tb SET estado = 'REVOCADO', revocado_en = ? "
-            + "WHERE correo_normalizado = ? AND estado = 'DISPONIBLE' AND revocado_en IS NULL";
+            + "WHERE id = 1 AND estado = 'DISPONIBLE' AND revocado_en IS NULL";
+    private static final String SQL_INSERTAR_REVOCADA =
+        "INSERT INTO hot_click_qa_alta_pyme_test_tb "
+            + "(id, correo_normalizado, plan_destino, estado, vence_en, revocado_en) "
+            + "SELECT 1, ?, 'PYME', 'REVOCADO', ?, ? "
+            + "WHERE NOT EXISTS (SELECT 1 FROM hot_click_qa_alta_pyme_test_tb WHERE id = 1)";
     private static final String SQL_VINCULAR =
         "UPDATE hot_click_qa_alta_pyme_test_tb SET empresa_id = ? "
-            + "WHERE correo_normalizado = ? AND estado = 'CONSUMIDO' AND empresa_id IS NULL AND revocado_en IS NULL";
+            + "WHERE id = 1 AND correo_normalizado = ? AND estado = 'CONSUMIDO' AND empresa_id IS NULL AND revocado_en IS NULL";
     private static final String SQL_COBRO =
         "SELECT COUNT(*) FROM hot_click_qa_alta_pyme_test_tb "
-            + "WHERE correo_normalizado = ? AND estado = 'CONSUMIDO' AND revocado_en IS NULL AND plan_destino = 'PYME'";
+            + "WHERE empresa_id = ? AND estado = 'CONSUMIDO' AND revocado_en IS NULL AND plan_destino = 'PYME'";
 
     private static final Logger log = LoggerFactory.getLogger(QaAltaPymeTestService.class);
     private static final String NO_SE_PUDO_LIGAR = "No se pudo ligar la excepción QA al negocio";
@@ -83,33 +97,30 @@ public class QaAltaPymeTestService {
     }
 
     /**
-     * Toma la fila si la puerta está abierta y sigue disponible, sin vencer y sin revocar. Si ya venció, la deja
-     * {@code EXPIRADO} y no la consume. Cualquier otro fallo no escribe y devuelve false.
+     * Toma el único uso si la puerta está abierta y no venció. Si ya hay fila {@code DISPONIBLE}, la pasa a
+     * {@code CONSUMIDO}. Si no hay fila, la inserta ya consumida. Una segunda llamada no escribe.
+     * Un error de SQL se relanza: no se sigue el alta normal sobre una transacción abortada.
      */
     public boolean consumirSiAplica(String correo) {
         if (!esCorreoDelFixture(correo) || !puertaAbierta()) return false;
-        String clave = normalizar(correo);
-        Timestamp ahora = ahora();
         try {
-            if (jdbc.update(SQL_CONSUMIR, ahora, clave, ahora) == 1) {
-                log.info("[qa-alta-pyme-test] concesión de un uso consumida");
-                return true;
-            }
-            jdbc.update(SQL_EXPIRAR, clave, ahora);
-            return false;
+            return consumirEnBd(normalizar(correo), ahora());
         } catch (DataAccessException ex) {
             log.warn("[qa-alta-pyme-test] no se pudo consumir — {}", ex.getClass().getSimpleName());
-            return false;
+            throw new IllegalStateException(FALLO_BD);
         }
     }
 
-    /** Cierra la fila antes del uso. No deshace un consumo ya comprometido. No es un endpoint. */
+    /**
+     * Cierra el uso antes de consumirlo. Sin fila y con la puerta cerrada no escribe (prod no gana el correo).
+     * No deshace un consumo ya comprometido. No es un endpoint. Un error de SQL se relanza.
+     */
     public boolean revocar() {
         try {
-            return jdbc.update(SQL_REVOCAR, ahora(), CORREO_FIXTURE) == 1;
+            return revocarEnBd(ahora());
         } catch (DataAccessException ex) {
             log.warn("[qa-alta-pyme-test] no se pudo revocar — {}", ex.getClass().getSimpleName());
-            return false;
+            throw new IllegalStateException(FALLO_BD);
         }
     }
 
@@ -122,18 +133,45 @@ public class QaAltaPymeTestService {
     }
 
     /**
-     * true solo si este negocio es el fixture y la fila ya se consumió para PYME. Si la tabla no responde y el correo
-     * es el del fixture, falla: aprobar no debe publicar ni asignar trial a ciegas.
+     * true solo con la puerta abierta y la fila consumida ligada a este {@code empresa_id}. Otro id, aunque repita el
+     * correo, no hereda la excepción. Si la tabla no responde, falla: aprobar no publica ni asigna trial a ciegas.
      */
     public boolean empresaConCobroPymeTest(Empresa empresa) {
-        if (empresa == null || !esCorreoDelFixture(empresa.getCorreoEmpresa())) return false;
+        if (empresa == null || empresa.getId() == null || !puertaAbierta()) return false;
         try {
-            Integer n = jdbc.queryForObject(SQL_COBRO, Integer.class, normalizar(empresa.getCorreoEmpresa()));
+            Integer n = jdbc.queryForObject(SQL_COBRO, Integer.class, empresa.getId());
             return n != null && n == 1;
         } catch (DataAccessException ex) {
             log.warn("[qa-alta-pyme-test] no se pudo leer la concesión — {}", ex.getClass().getSimpleName());
-            throw new IllegalStateException("No se pudo verificar la excepción QA");
+            throw new IllegalStateException(FALLO_BD);
         }
+    }
+
+    private boolean consumirEnBd(String clave, Timestamp ahora) {
+        if (vencido(ahora)) {
+            jdbc.update(SQL_EXPIRAR, ahora);
+            return false;
+        }
+        if (jdbc.update(SQL_CONSUMIR, ahora, clave, ahora) == 1) {
+            log.info("[qa-alta-pyme-test] concesión de un uso consumida");
+            return true;
+        }
+        Timestamp vence = Timestamp.valueOf(VENCE);
+        if (jdbc.update(SQL_INSERTAR, clave, vence, ahora) == 1) {
+            log.info("[qa-alta-pyme-test] concesión de un uso consumida");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean revocarEnBd(Timestamp ahora) {
+        if (jdbc.update(SQL_REVOCAR, ahora) == 1) return true;
+        if (!puertaAbierta()) return false;
+        return jdbc.update(SQL_INSERTAR_REVOCADA, CORREO_FIXTURE, Timestamp.valueOf(VENCE), ahora) == 1;
+    }
+
+    private boolean vencido(Timestamp ahora) {
+        return !ahora.before(Timestamp.valueOf(VENCE));
     }
 
     static boolean perfilLocalNoAmbiguo(Environment environment) {
