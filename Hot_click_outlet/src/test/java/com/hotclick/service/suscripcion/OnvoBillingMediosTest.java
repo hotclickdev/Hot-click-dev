@@ -366,6 +366,16 @@ class OnvoBillingMediosTest {
         }
 
         @Test
+        @DisplayName("TRIAL sin REQUIERE_MEMBRESIA no hace GET a ONVO")
+        void trialReal_noConsultaOnvo() {
+            local.setPlanPendiente(null);
+            local.setEstado("TRIAL");
+            empresa.setEstadoPlan("ACTIVO");
+            assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.IGNORADA);
+            verify(onvo, never()).obtenerSuscripcion(any());
+        }
+
+        @Test
         @DisplayName("alta del plan vigente sin planPendiente: active + factura paid activa una vez")
         void altaMismoPlan_pagadaActiva() {
             local.setPlanPendiente(null);
@@ -408,7 +418,7 @@ class OnvoBillingMediosTest {
         }
 
         @Test
-        @DisplayName("replay del alta ya activa: el endpoint responde activada y no vuelve a escribir COBRO_OK")
+        @DisplayName("replay del alta ya activa: no escribe otro COBRO_OK ni dice activada sin un GET nuevo")
         void altaMismoPlan_replayNoDuplica() throws Exception {
             BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
             AtomicBoolean registrado = new AtomicBoolean(false);
@@ -434,7 +444,7 @@ class OnvoBillingMediosTest {
             assertThat(real.reconciliarEmpresa(20L)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
             assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
             assertThat(sub.getEstado()).isEqualTo("ACTIVO");
-            assertThat(real.reconciliarEmpresa(20L)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
+            assertThat(real.reconciliarEmpresa(20L)).isEqualTo(OnvoAltaReconciliacion.Resultado.IGNORADA);
             verify(ledger, times(1)).registrar(any(), any(), anyString(), anyString(), eq("inv_paid_alta"), any(), any(), any());
             verify(onvo, never()).cancelarInmediato(any());
         }

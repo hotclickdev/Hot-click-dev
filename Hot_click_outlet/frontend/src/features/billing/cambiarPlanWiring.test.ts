@@ -51,8 +51,8 @@ describe('bajar a Emprendedor', () => {
 describe('Auditor 5 S-01: /cambiar-plan cobra por ONVO', () => {
   it('requiere_pago con subscriptionId abre ONVO', async () => {
     const { pagoPendienteDe } = await import('./useCambiarPlan')
-    expect(pagoPendienteDe({ status: 'requiere_pago', subscriptionId: 'sub_1', publishableKey: 'pk', planNombre: 'PYME', proveedor: 'ONVO' }))
-      .toEqual({ proveedor: 'ONVO', subscriptionId: 'sub_1', customerId: undefined, publishableKey: 'pk', planNombre: 'PYME' })
+    expect(pagoPendienteDe({ status: 'requiere_pago', subscriptionId: 'sub_1', publishableKey: 'pk', planNombre: 'PYME', proveedor: 'ONVO', montoUsd: 24 }))
+      .toEqual({ proveedor: 'ONVO', subscriptionId: 'sub_1', customerId: undefined, publishableKey: 'pk', planNombre: 'PYME', montoUsd: 24 })
   })
   it('sin datos de cobro no abre nada (antes quedaba en "Respuesta inesperada")', async () => {
     const { pagoPendienteDe } = await import('./useCambiarPlan')

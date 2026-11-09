@@ -49,6 +49,7 @@ class CatalogoPublicoGateTest {
         assertThat(query.value())
             .contains("planPendiente IS NULL")
             .contains("REQUIERE_MEMBRESIA")
-            .contains("TRIAL");
+            .contains("INCOMPLETE")
+            .doesNotContain("TRIAL");
     }
 }

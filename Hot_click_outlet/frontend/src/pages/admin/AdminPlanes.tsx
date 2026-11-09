@@ -9,7 +9,7 @@ import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
-import { montoPlanVisible } from '@/features/billing/montoPlan'
+import { montoCobroVisible } from '@/features/billing/montoPlan'
 import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import type { Id } from '@/types/api'
@@ -201,7 +201,7 @@ export default function AdminPlanes() {
               Cancelar
             </button>
           </div>
-          <MontoPlanPago monto={montoPlanVisible(planes.find((p) => p.nombre === pagoPendiente.planNombre))} />
+          <MontoPlanPago monto={montoCobroVisible(pagoPendiente)} />
           <EstadoActivacionPago estado={activacion} />
           <PagoPlanEmbed pago={pagoPendiente} onPagado={() => { void confirmarPagoEmbed() }} />
         </div>

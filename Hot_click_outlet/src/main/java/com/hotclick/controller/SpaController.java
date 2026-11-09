@@ -1,5 +1,6 @@
 package com.hotclick.controller;
 
+import com.hotclick.catalogo.CatalogoPublicoGate;
 import com.hotclick.model.BlogEntrada;
 import com.hotclick.controller.spa.SpaSeoSupport;
 import com.hotclick.repository.BlogEntradaRepository;
@@ -96,7 +97,9 @@ public class SpaController {
     @ResponseBody
     public ResponseEntity<String> tiendaPage(@PathVariable String slug, HttpServletRequest request) {
         return empresaRepository.findBySlug(slug)
-            .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()) && Boolean.TRUE.equals(e.getVisibilidadPublica()))
+            .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa())
+                && Boolean.TRUE.equals(e.getVisibilidadPublica())
+                && CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()))
             .<ResponseEntity<String>>map(e -> ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
                 .body(spaSeoSupport.injectTiendaMeta(indexHtmlContent, e, request.getRequestURI())))

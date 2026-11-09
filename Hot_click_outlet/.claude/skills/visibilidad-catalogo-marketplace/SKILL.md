@@ -36,6 +36,8 @@ destacados/carrusel/marca/categoría/búsqueda/ofertas). Las queries usan
 5. `empresa.estado_empresa = 'ACTIVO'`
 6. `empresa.visibilidad_publica = TRUE`
 7. `empresa.estado_plan` es NULL o distinto de `REQUIERE_MEMBRESIA`
+   (el mismo predicado `CatalogoPublicoGate.membresiaConfirmada` cierra checkout, invitado,
+   SINPE, pedido de tienda, recomendaciones, SEO de `/tienda/{slug}` y el slug de cupones)
 
 La condición 7 es decisión explícita de lanzamiento (2026-11-09): una tienda aprobada
 que todavía no confirmó la membresía (ONVO active + factura paid) no se lista ni

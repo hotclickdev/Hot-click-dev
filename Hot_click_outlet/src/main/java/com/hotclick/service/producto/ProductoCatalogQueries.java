@@ -37,7 +37,8 @@ public class ProductoCatalogQueries {
         if (p == null || !Boolean.TRUE.equals(p.getVisibleCatalogo())) return false;
         var e = p.getEmpresa() != null ? p.getEmpresa() : (p.getBodega() != null ? p.getBodega().getEmpresa() : null);
         return e != null && "ACTIVO".equals(String.valueOf(e.getEstadoEmpresa()))
-            && !Boolean.FALSE.equals(e.getVisibilidadPublica());
+            && !Boolean.FALSE.equals(e.getVisibilidadPublica())
+            && com.hotclick.catalogo.CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan());
     }
 
     @Cacheable(value = "productos-publicos", key = "'rec-' + #id + '-' + #limit")

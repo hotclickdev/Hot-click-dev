@@ -28,6 +28,9 @@ class CatalogoPublicoVis3Test {
         assertThat(ProductoCatalogQueries.esPublico(prod(true, "PENDIENTE", true))).isFalse();
         assertThat(ProductoCatalogQueries.esPublico(prod(true, "ACTIVO", false))).isFalse();
         assertThat(ProductoCatalogQueries.esPublico(new Producto())).isFalse();
+        Producto sinMembresia = prod(true, "ACTIVO", true);
+        sinMembresia.getEmpresa().setEstadoPlan(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+        assertThat(ProductoCatalogQueries.esPublico(sinMembresia)).isFalse();
     }
 
     @Test

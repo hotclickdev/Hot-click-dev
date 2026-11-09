@@ -6,7 +6,7 @@ export function MontoPlanPago({ monto }: { monto: string | null }) {
   if (!monto) return null
   return (
     <p className="text-sm" style={{ color: 'var(--hc-text)' }}>
-      Vas a confirmar <strong>{monto}</strong>.
+      Mensualidad del cobro, la que el servidor compara con ONVO: <strong>{monto}</strong>.
     </p>
   )
 }

@@ -46,5 +46,9 @@ class StockReservationPublicableTest {
             producto(Constants.ESTADO_ACTIVO, true, empresa("PENDIENTE", true)))).isFalse();
         assertThat(StockReservationService.esPublicableEnMemoria(
             producto(Constants.ESTADO_ACTIVO, true, empresa("ACTIVO", false)))).isFalse();
+        Empresa sinMembresia = empresa("ACTIVO", true);
+        sinMembresia.setEstadoPlan(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+        assertThat(StockReservationService.esPublicableEnMemoria(
+            producto(Constants.ESTADO_ACTIVO, true, sinMembresia))).isFalse();
     }
 }

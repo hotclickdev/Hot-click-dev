@@ -60,22 +60,12 @@ public class OnvoAltaReconciliacion {
     }
 
     /**
-     * Al volver de «Completar pago» (endpoint del propietario). Si el webhook ya activó la fila, responde activada
-     * sin otro cobro ni otro COBRO_OK: la membresía vigente no se vuelve a escribir.
+     * Al volver de «Completar pago». Activada solo si esta llamada verifico ONVO (active + factura paid)
+     * y paso por {@code procesarPagoOnvoVerificado}. Una fila ya ACTIVA en la base, sin esa verificacion,
+     * no se reporta como activada.
      */
     public Resultado reconciliarEmpresa(Long empresaId) {
-        return suscripcionRepo.findActivaByEmpresaId(empresaId).map(s -> {
-            Resultado r = reconciliar(s);
-            if (r == Resultado.IGNORADA && membresiaYaActiva(s)) return Resultado.ACTIVADA;
-            return r;
-        }).orElse(Resultado.IGNORADA);
-    }
-
-    /** Plan vigente ya confirmado: no hay alta ni subida pendiente. */
-    static boolean membresiaYaActiva(Suscripcion s) {
-        if (s == null || s.getPlanPendiente() != null || s.getOnvoSubNuevaPendiente() != null) return false;
-        if (!"ACTIVO".equals(s.getEstado())) return false;
-        return s.getEmpresa() != null && "ACTIVO".equals(s.getEmpresa().getEstadoPlan());
+        return suscripcionRepo.findActivaByEmpresaId(empresaId).map(this::reconciliar).orElse(Resultado.IGNORADA);
     }
 
     /** Job: pendientes recientes, con tope por corrida. */
@@ -126,7 +116,8 @@ public class OnvoAltaReconciliacion {
     static boolean altaMismoPlanSinConfirmar(Suscripcion local) {
         if (local == null || local.getPlanPendiente() != null || local.getOnvoSubNuevaPendiente() != null) return false;
         String estadoEmpresa = local.getEmpresa() == null ? null : local.getEmpresa().getEstadoPlan();
-        return MembresiaPlan.sinConfirmar(estadoEmpresa) || MembresiaPlan.altaLocalSinConfirmar(local.getEstado());
+        if (MembresiaPlan.sinConfirmar(estadoEmpresa)) return true;
+        return MembresiaPlan.altaIncompleta(local.getEstado());
     }
 
     private Resultado confirmarConOnvo(Suscripcion local, String subId, String ref) {

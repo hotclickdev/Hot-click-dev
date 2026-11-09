@@ -4,6 +4,7 @@ import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
+import { montoCobroVisible } from '@/features/billing/montoPlan'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import SolicitudCambioPlanForm from '@/features/billing/SolicitudCambioPlanForm'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
@@ -132,7 +133,7 @@ export default function CompararPlanesVista({
             <p className="text-sm font-semibold">
               Pagar {pagoPendiente.planNombre ?? planElegido?.nombre}
             </p>
-            <MontoPlanPago monto={planElegido?.monto ?? null} />
+            <MontoPlanPago monto={montoCobroVisible(pagoPendiente)} />
             <EstadoActivacionPago estado={activacion} />
             <PagoPlanEmbed pago={pagoPendiente} onPagado={() => { void confirmarPagoEmbed() }} />
           </div>

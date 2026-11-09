@@ -28,6 +28,7 @@ export type PagoPlanOnvo = {
   customerId?: string
   publishableKey?: string
   planNombre?: string
+  montoUsd?: number
 }
 
 export type PagoPlanPendiente = PagoPlanOnvo
@@ -36,13 +37,15 @@ export type PagoPlanPendiente = PagoPlanOnvo
 export function pagoPendienteDe(result: CambiarPlanResultado): PagoPlanPendiente | null {
   if (result.status !== 'requiere_pago') return null
   if (result.subscriptionId) {
-    return {
+    const pago: PagoPlanPendiente = {
       proveedor: 'ONVO',
       subscriptionId: result.subscriptionId,
       customerId: result.customerId,
       publishableKey: result.publishableKey,
       planNombre: result.planNombre,
     }
+    if (typeof result.montoUsd === 'number' && result.montoUsd > 0) pago.montoUsd = result.montoUsd
+    return pago
   }
   return null
 }

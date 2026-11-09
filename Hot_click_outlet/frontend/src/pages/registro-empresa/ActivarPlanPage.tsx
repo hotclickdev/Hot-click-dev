@@ -7,14 +7,14 @@ import { billingService } from '@/services/billingService'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
-import { montoPlanVisible } from '@/features/billing/montoPlan'
+import { montoCobroVisible } from '@/features/billing/montoPlan'
 import EmprendimientoPasoVerificar from '@/pages/auth/emprendimiento/EmprendimientoPasoVerificar'
 import { useVerificarCorreoOtp } from '@/hooks/useVerificarCorreoOtp'
 import { RUTA_PANEL_VENDEDOR } from '@/utils/destinoVender'
 import { leerPlanQuery, planIdToNombreBackend } from './planQueryParam'
 import type { Id } from '@/types/api'
 
-type PlanApi = { id: Id; nombre: string; precioUsd?: number | null; precioMensual?: number }
+type PlanApi = { id: Id; nombre: string }
 
 export default function ActivarPlanPage() {
   const [searchParams] = useSearchParams()
@@ -27,7 +27,6 @@ export default function ActivarPlanPage() {
   const puedeActivar = correoVerificado || otp.verificado
 
   const [planId, setPlanId] = useState<Id | null>(null)
-  const [planElegido, setPlanElegido] = useState<PlanApi | null>(null)
   const [buscandoPlan, setBuscandoPlan] = useState(true)
   const [errorPlan, setErrorPlan] = useState('')
   const [intentado, setIntentado] = useState(false)
@@ -46,10 +45,7 @@ export default function ActivarPlanPage() {
         const planes = Array.isArray(data) ? (data as PlanApi[]) : []
         const nombreBuscado = planIdToNombreBackend(planQuery)
         const encontrado = planes.find((p) => p.nombre === nombreBuscado)
-        if (encontrado) {
-          setPlanId(encontrado.id)
-          setPlanElegido(encontrado)
-        }
+        if (encontrado) setPlanId(encontrado.id)
         else setErrorPlan('No se encontró el plan seleccionado')
       })
       .catch(() => { if (activo) setErrorPlan('No se pudieron cargar los planes') })
@@ -102,7 +98,7 @@ export default function ActivarPlanPage() {
                     <h2 className="font-bold text-lg" style={{ color: 'var(--hc-text)' }}>Activá tu plan {pagoPendiente.planNombre}</h2>
                     <p className="text-sm mt-1" style={{ color: 'var(--hc-muted)' }}>Confirmá el pago para activar tu suscripción.</p>
                   </div>
-                  <MontoPlanPago monto={montoPlanVisible(planElegido)} />
+                  <MontoPlanPago monto={montoCobroVisible(pagoPendiente)} />
                   <EstadoActivacionPago estado={activacion} />
                   <PagoPlanEmbed pago={pagoPendiente} onPagado={() => { void confirmarPagoEmbed() }} />
                   {errorCobro && <p className="text-sm text-center text-red-500">{errorCobro}</p>}
