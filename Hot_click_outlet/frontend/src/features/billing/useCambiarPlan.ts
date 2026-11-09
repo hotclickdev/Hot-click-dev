@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { billingService, type CambiarPlanResultado } from '@/services/billingService'
 import useTenantStore from '@/store/tenantStore'
 import type { Id } from '@/types/api'
+import { trasPagoEmbed, type EstadoActivacion } from './activacionPago'
 import { esRequiereSolicitud, requiereSolicitud } from './solicitudCambioPlan'
 
 /** QA8: el negocio aún no está aprobado; no puede elegir ni pagar plan (409 del backend). */
@@ -80,13 +81,22 @@ export function useCambiarPlan({ rutaExito, planActual }: Options) {
   const [error, setError] = useState<string | null>(null)
   const [pagoPendiente, setPagoPendiente] = useState<PagoPlanPendiente | null>(null)
   const [solicitud, setSolicitud] = useState<SolicitudPendiente | null>(null)
+  const [activacion, setActivacion] = useState<EstadoActivacion | null>(null)
 
   const irAExito = useCallback(async () => {
     await loadTenantInfo()
     setPagoPendiente(null)
     setLoadingPlan(null)
+    setActivacion(null)
     navigate(rutaExito)
   }, [loadTenantInfo, navigate, rutaExito])
+
+  /** El SDK avisó éxito: se confirma con ONVO. Pendiente no navega ni se trata como activo. */
+  const confirmarPagoEmbed = useCallback(async () => {
+    setActivacion('confirmando')
+    const r = await trasPagoEmbed(() => billingService.reconciliarPago(), irAExito)
+    if (r === 'pendiente') setActivacion('pendiente')
+  }, [irAExito])
 
   const seleccionarPlan = useCallback(async (planId: Id, nombrePlanDestino?: string | null) => {
     setLoadingPlan(planId)
@@ -140,6 +150,7 @@ export function useCambiarPlan({ rutaExito, planActual }: Options) {
 
   const cancelarPago = useCallback(() => {
     setPagoPendiente(null)
+    setActivacion(null)
   }, [])
 
   return {
@@ -147,8 +158,10 @@ export function useCambiarPlan({ rutaExito, planActual }: Options) {
     error,
     setError,
     pagoPendiente,
+    activacion,
     seleccionarPlan,
     irAExito,
+    confirmarPagoEmbed,
     cancelarPago,
     solicitud,
     cerrarSolicitud: () => setSolicitud(null),

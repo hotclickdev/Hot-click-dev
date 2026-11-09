@@ -2,6 +2,7 @@ package com.hotclick.security;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.service.suscripcion.MembresiaPlan;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,7 @@ import java.util.Map;
  * Restricciones de seguridad aplicadas:
  *   - Empresa debe tener estado_empresa = 'ACTIVO'
  *   - Empresa debe tener visibilidad_publica = true
+ *   - estado_plan no puede ser REQUIERE_MEMBRESIA (membresía sin confirmar)
  *   Cualquier incumplimiento → 404 (no revelar existencia de empresas inactivas).
  */
 @Component
@@ -69,7 +71,8 @@ public class SlugTenantInterceptor implements HandlerInterceptor {
 
         if (empresa == null
                 || !"ACTIVO".equals(empresa.getEstadoEmpresa())
-                || !Boolean.TRUE.equals(empresa.getVisibilidadPublica())) {
+                || !Boolean.TRUE.equals(empresa.getVisibilidadPublica())
+                || MembresiaPlan.sinConfirmar(empresa.getEstadoPlan())) {
             respond404(response);
             return false;
         }
