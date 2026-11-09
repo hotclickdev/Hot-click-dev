@@ -51,5 +51,8 @@ class CatalogoPublicoGateTest {
             .contains("REQUIERE_MEMBRESIA")
             .contains("INCOMPLETE")
             .doesNotContain("TRIAL");
+        long abiertos = query.value().chars().filter(c -> c == '(').count();
+        long cerrados = query.value().chars().filter(c -> c == ')').count();
+        assertThat(abiertos).isEqualTo(cerrados);
     }
 }

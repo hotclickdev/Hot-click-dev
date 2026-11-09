@@ -170,7 +170,7 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
         + " AND (s.planPendiente IS NOT NULL"
         + " OR (s.planPendiente IS NULL AND s.onvoSubNuevaPendiente IS NULL"
         + " AND (e.estadoPlan = 'REQUIERE_MEMBRESIA'"
-        + " OR s.estado IN ('INCOMPLETE', 'PENDING', 'PENDIENTE')))"
+        + " OR s.estado IN ('INCOMPLETE', 'PENDING', 'PENDIENTE'))))"
         + " ORDER BY s.fechaActualizacion DESC")
     List<Suscripcion> findOnvoPendientesRecientes(@Param("desde") java.time.LocalDateTime desde,
                                                   org.springframework.data.domain.Pageable page);
