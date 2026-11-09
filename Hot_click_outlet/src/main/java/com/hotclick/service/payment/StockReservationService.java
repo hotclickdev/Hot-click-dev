@@ -3,11 +3,15 @@ package com.hotclick.service.payment;
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.StockInsuficienteException;
+import com.hotclick.model.MovimientoStock;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.service.pedido.PedidoManualEntregaStockService;
+import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.sse.StockCambioEvent;
+import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -28,7 +33,11 @@ public class StockReservationService {
 
     private static final Logger log = LoggerFactory.getLogger(StockReservationService.class);
 
+    private static final String MSG_PRODUCTO_NO_ENCONTRADO = "Producto no encontrado al confirmar pago";
+    private static final String NOTA_VENTA_ONLINE = "Venta online pagada ";
+
     @Autowired private ProductoRepository productoRepository;
+    @Autowired private StockMovimientoSupport movimientoSupport;
     @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
 
     /**
@@ -145,45 +154,118 @@ public class StockReservationService {
     }
 
     /**
-     * Descuenta stockActual, libera stockReservado y publica eventos de cambio de stock.
-     * El stock nunca queda negativo. {@link #productosSinStock} ya separó antes los cobros sin stock;
-     * el recorte a 0 solo cubre los personalizados (sin stock propio) y es la última red de seguridad.
+     * Descuenta stockActual, libera la reserva de este pedido y deja un movimiento VENTA por línea
+     * con el mismo registro que POS y P-07 ({@link StockMovimientoSupport}). Idempotente: si
+     * {@code stockDescontadoEn} ya está puesto, no vuelve a descontar ni a escribir. Fail-closed:
+     * sin empresa del pedido no toca stock; un producto de otro negocio no se bloquea ni se mueve.
+     * El stock nunca queda negativo.
      */
     public void confirmAndConsumeStock(Pedido pedido, Object eventSource, ApplicationEventPublisher eventPublisher) {
+        if (pedido == null || pedido.getStockDescontadoEn() != null) return;
+        Long empresaId = pedido.getEmpresaId();
+        if (empresaId == null) {
+            log.error("Consumo de stock rechazado: pedido {} sin empresa", pedido.getNumeroPedido());
+            return;
+        }
         // ALTO-01: solo se descuenta de stockReservado lo que ESTE pedido reservó (un MANUAL nunca reservó).
         boolean reservo = pedido.getStockReservadoEn() != null;
         pedido.setStockReservadoEn(null);
-        for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
-            Producto producto = bloquearActual(item.getProducto().getId(),
-                () -> new RecursoNoEncontradoException("Producto no encontrado al confirmar pago"));
-
-            int cantidad   = item.getCantidad();
-            int nuevoStock = producto.getStockActual() - cantidad;
-
-            if (nuevoStock < 0) {
-                if (!Boolean.TRUE.equals(producto.getEsPersonalizado())) {
-                    log.error("OVERSELL: producto={} stockActual={} cantidad={}",
-                        producto.getId(), producto.getStockActual(), cantidad);
-                }
-                nuevoStock = 0;
-            }
-            producto.setStockActual(nuevoStock);
-
-            // Liberar la reserva (puede quedar negativa si ya fue liberada antes → clamp a 0)
-            if (reservo) producto.setStockReservado(Math.max(0, producto.getStockReservado() - cantidad));
-
-            if (Boolean.TRUE.equals(producto.getEsUnico())) {
-                producto.setVendido(true);
-                producto.setVisibleCatalogo(false);
-            }
-            productoRepository.save(producto);
-
-            eventPublisher.publishEvent(new StockCambioEvent(
-                eventSource, producto.getId(), producto.getEmpresaId(), nuevoStock));
+        List<PedidoItem> lineas = lineasConProducto(pedido);
+        Map<Long, Producto> propios = bloquearProductosDelPedido(empresaId, lineas);
+        List<MovimientoStock> movimientos = new ArrayList<>();
+        for (PedidoItem item : lineas) {
+            Producto producto = propios.get(item.getProducto().getId());
+            if (producto == null) continue;
+            movimientos.add(consumirLinea(pedido, item, producto, reservo, eventSource, eventPublisher));
         }
-        // P-07: marca que este pedido ya consumió stock (la entrega manual no vuelve a descontar).
-        if (pedido.getStockDescontadoEn() == null) pedido.setStockDescontadoEn(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
+        movimientoSupport.guardarLote(movimientos);
+        pedido.setStockDescontadoEn(LocalDateTime.now(Constants.ZONA_CR));
     }
+
+    private List<PedidoItem> lineasConProducto(Pedido pedido) {
+        if (pedido.getItems() == null) return List.of();
+        return itemsOrdenados(pedido.getItems()).stream()
+            .filter(Objects::nonNull)
+            .filter(i -> i.getProducto() != null && i.getProducto().getId() != null)
+            .filter(i -> i.getCantidad() != null && i.getCantidad() > 0)
+            .toList();
+    }
+
+    /** Dueño sin lock; el FOR UPDATE solo incluye productos de la empresa del pedido, en orden de id. */
+    private Map<Long, Producto> bloquearProductosDelPedido(Long empresaId, List<PedidoItem> lineas) {
+        List<Long> ids = idsOrdenados(lineas.stream().map(i -> i.getProducto().getId()).toList());
+        List<Long> propios = idsDelTenant(empresaId, ids);
+        Map<Long, Producto> map = new HashMap<>();
+        if (propios.isEmpty()) return map;
+        for (Producto p : productoRepository.findAllByIdsAndEmpresaForUpdate(propios, empresaId)) {
+            if (entityManager != null && entityManager.contains(p)) entityManager.refresh(p);
+            if (empresaId.equals(p.getEmpresaId())) map.put(p.getId(), p);
+        }
+        for (Long id : propios) {
+            if (!map.containsKey(id)) throw new RecursoNoEncontradoException(MSG_PRODUCTO_NO_ENCONTRADO);
+        }
+        return map;
+    }
+
+    private List<Long> idsDelTenant(Long empresaId, List<Long> ids) {
+        List<Long> propios = new ArrayList<>();
+        for (Long id : ids) {
+            Long dueno = productoRepository.findEmpresaIdById(id).orElse(null);
+            if (dueno == null) throw new RecursoNoEncontradoException(MSG_PRODUCTO_NO_ENCONTRADO);
+            if (!empresaId.equals(dueno)) {
+                log.error("Producto {} no pertenece a la empresa {} del pedido; no se descuenta", id, empresaId);
+                continue;
+            }
+            propios.add(id);
+        }
+        return propios;
+    }
+
+    private MovimientoStock consumirLinea(Pedido pedido, PedidoItem item, Producto producto, boolean reservo,
+                                          Object eventSource, ApplicationEventPublisher eventPublisher) {
+        Consumo consumo = calcularConsumo(producto, item.getCantidad());
+        producto.setStockActual(consumo.despues());
+        int resAntes = producto.getStockReservado();
+        if (reservo) producto.setStockReservado(Math.max(0, resAntes - item.getCantidad()));
+        if (Boolean.TRUE.equals(producto.getEsUnico())) {
+            producto.setVendido(true);
+            producto.setVisibleCatalogo(false);
+        }
+        productoRepository.save(producto);
+        MovimientoStock movimiento = movimientoDeVenta(pedido, producto, consumo, resAntes, item.getCantidad());
+        eventPublisher.publishEvent(new StockCambioEvent(
+            eventSource, producto.getId(), producto.getEmpresaId(), consumo.despues()));
+        return movimiento;
+    }
+
+    private Consumo calcularConsumo(Producto producto, int pedida) {
+        int antes = producto.getStockActual() == null ? 0 : producto.getStockActual();
+        if (antes >= pedida) return new Consumo(antes, antes - pedida, pedida);
+        if (!Boolean.TRUE.equals(producto.getEsPersonalizado())) {
+            log.error("OVERSELL: producto={} stockActual={} cantidad={}", producto.getId(), antes, pedida);
+        }
+        return new Consumo(antes, 0, Math.max(0, antes));
+    }
+
+    private MovimientoStock movimientoDeVenta(Pedido pedido, Producto producto, Consumo consumo,
+                                              int resAntes, int pedida) {
+        MovimientoStock m = movimientoSupport.buildMovimiento(producto, MovimientoStock.VENTA, consumo.descontada(),
+            consumo.antes(), consumo.despues(), resAntes, producto.getStockReservado(),
+            pedido.getNumeroPedido(), null);
+        m.setReferenciaTipo(PedidoManualEntregaStockService.REFERENCIA_TIPO);
+        m.setReferenciaId(pedido.getId());
+        m.setNotas(notaVenta(pedido, pedida, consumo.descontada()));
+        return m;
+    }
+
+    private static String notaVenta(Pedido pedido, int pedida, int descontada) {
+        String nota = NOTA_VENTA_ONLINE + Objects.toString(pedido.getNumeroPedido(), "");
+        int faltante = pedida - descontada;
+        if (faltante <= 0) return nota;
+        return nota + " — FALTANTE: " + faltante + " sin stock (revisar inventario)";
+    }
+
+    private record Consumo(int antes, int despues, int descontada) {}
 
     /**
      * Solo libera stockReservado sin tocar stockActual.

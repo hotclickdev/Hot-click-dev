@@ -1,10 +1,13 @@
 package com.hotclick.service.payment;
 
 import com.hotclick.dto.PaymentCheckoutRequest;
+import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
+import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +22,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -30,12 +34,21 @@ class ReservaPorPedidoTest {
     private ProductoRepository repo;
     private StockReservationService service;
     private Producto producto;
+    private Empresa empresa;
 
     @BeforeEach
     void setUp() {
         repo = mock(ProductoRepository.class);
         service = new StockReservationService();
         ReflectionTestUtils.setField(service, "productoRepository", repo);
+        StockMovimientoSupport support = new StockMovimientoSupport();
+        ReflectionTestUtils.setField(support, "movimientoStockRepository", mock(MovimientoStockRepository.class));
+        ReflectionTestUtils.setField(support, "eventPublisher", mock(ApplicationEventPublisher.class));
+        ReflectionTestUtils.setField(service, "movimientoSupport", support);
+        empresa = new Empresa();
+        empresa.setId(1L);
+        empresa.setEstadoEmpresa("ACTIVO");
+        empresa.setVisibilidadPublica(true);
         producto = new Producto();
         producto.setId(14L);
         producto.setEstado(Constants.ESTADO_ACTIVO);
@@ -46,13 +59,17 @@ class ReservaPorPedidoTest {
         producto.setPrecioCompra(500);
         producto.setNombreProducto("P14");
         producto.setEsPersonalizado(false);
+        producto.setEmpresa(empresa);
         when(repo.findAllByIdsForUpdate(anyList())).thenReturn(List.of(producto));
         when(repo.findByIdForUpdate(14L)).thenReturn(Optional.of(producto));
+        when(repo.findEmpresaIdById(14L)).thenReturn(Optional.of(1L));
+        when(repo.findAllByIdsAndEmpresaForUpdate(anyList(), eq(1L))).thenReturn(List.of(producto));
     }
 
     private Pedido pedido(String numero, int cantidad, boolean reservo) {
         Pedido p = new Pedido();
         p.setNumeroPedido(numero);
+        p.setEmpresa(empresa);
         p.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         if (reservo) p.setStockReservadoEn(LocalDateTime.now());
         PedidoItem it = new PedidoItem();
