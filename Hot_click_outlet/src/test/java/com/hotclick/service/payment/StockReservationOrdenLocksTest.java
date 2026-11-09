@@ -8,6 +8,7 @@ import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.ProductoRepository.DuenoProducto;
 import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.DisplayName;
@@ -60,6 +61,13 @@ class StockReservationOrdenLocksTest {
         return s;
     }
 
+    private static DuenoProducto dueno(long id, long empresaId) {
+        return new DuenoProducto() {
+            public Long getId() { return id; }
+            public Long getEmpresaId() { return empresaId; }
+        };
+    }
+
     @Test
     @DisplayName("P-05 | carrito [B,A,B] → un solo SELECT FOR UPDATE con ids únicos ordenados [A,B]")
     @SuppressWarnings("unchecked")
@@ -105,8 +113,7 @@ class StockReservationOrdenLocksTest {
         p2.setEmpresa(empresa);
         when(repo.findByIdForUpdate(9L)).thenReturn(Optional.of(p9));
         when(repo.findByIdForUpdate(2L)).thenReturn(Optional.of(p2));
-        when(repo.findEmpresaIdById(2L)).thenReturn(Optional.of(1L));
-        when(repo.findEmpresaIdById(9L)).thenReturn(Optional.of(1L));
+        when(repo.findDuenoByIds(anyList())).thenReturn(List.of(dueno(2L, 1L), dueno(9L, 1L)));
         when(repo.findAllByIdsAndEmpresaForUpdate(anyList(), eq(1L))).thenReturn(List.of(p2, p9));
         Pedido pedido = new Pedido();
         pedido.setEmpresa(empresa);
@@ -129,9 +136,12 @@ class StockReservationOrdenLocksTest {
         ArgumentCaptor<List<Long>> ids = ArgumentCaptor.forClass(List.class);
         verify(repo).findAllByIdsAndEmpresaForUpdate(ids.capture(), eq(1L));
         assertThat(ids.getValue()).containsExactly(2L, 9L);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Long>> duenos = ArgumentCaptor.forClass(List.class);
+        verify(repo).findDuenoByIds(duenos.capture());
+        assertThat(duenos.getValue()).containsExactly(2L, 9L);
         InOrder o = inOrder(repo);
-        o.verify(repo).findEmpresaIdById(2L);
-        o.verify(repo).findEmpresaIdById(9L);
+        o.verify(repo).findDuenoByIds(anyList());
         o.verify(repo).findAllByIdsAndEmpresaForUpdate(anyList(), eq(1L));
         o.verify(repo).findByIdForUpdate(2L);
         o.verify(repo).findByIdForUpdate(9L);

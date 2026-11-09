@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class StockReservationService {
@@ -193,11 +194,11 @@ public class StockReservationService {
 
     /** Dueño sin lock; el FOR UPDATE solo incluye productos de la empresa del pedido, en orden de id. */
     private Map<Long, Producto> bloquearProductosDelPedido(Long empresaId, List<PedidoItem> lineas) {
-        List<Long> ids = idsOrdenados(lineas.stream().map(i -> i.getProducto().getId()).toList());
+        List<Long> ids = idsDeLineas(lineas);
         List<Long> propios = idsDelTenant(empresaId, ids);
         Map<Long, Producto> map = new HashMap<>();
         if (propios.isEmpty()) return map;
-        for (Producto p : productoRepository.findAllByIdsAndEmpresaForUpdate(propios, empresaId)) {
+        for (Producto p : bloquearFilas(propios, empresaId)) {
             if (entityManager != null && entityManager.contains(p)) entityManager.refresh(p);
             if (empresaId.equals(p.getEmpresaId())) map.put(p.getId(), p);
         }
@@ -207,10 +208,15 @@ public class StockReservationService {
         return map;
     }
 
+    private List<Long> idsDeLineas(List<PedidoItem> lineas) {
+        return idsOrdenados(lineas.stream().map(i -> i.getProducto().getId()).toList());
+    }
+
     private List<Long> idsDelTenant(Long empresaId, List<Long> ids) {
+        Map<Long, Long> duenos = duenosDe(ids);
         List<Long> propios = new ArrayList<>();
         for (Long id : ids) {
-            Long dueno = productoRepository.findEmpresaIdById(id).orElse(null);
+            Long dueno = duenos.get(id);
             if (dueno == null) throw new RecursoNoEncontradoException(MSG_PRODUCTO_NO_ENCONTRADO);
             if (!empresaId.equals(dueno)) {
                 log.error("Producto {} no pertenece a la empresa {} del pedido; no se descuenta", id, empresaId);
@@ -231,7 +237,7 @@ public class StockReservationService {
             producto.setVendido(true);
             producto.setVisibleCatalogo(false);
         }
-        productoRepository.save(producto);
+        guardarProducto(producto);
         MovimientoStock movimiento = movimientoDeVenta(pedido, producto, consumo, resAntes, item.getCantidad());
         eventPublisher.publishEvent(new StockCambioEvent(
             eventSource, producto.getId(), producto.getEmpresaId(), consumo.despues()));
@@ -308,5 +314,23 @@ public class StockReservationService {
         return e == null || ("ACTIVO".equals(e.getEstadoEmpresa())
             && Boolean.TRUE.equals(e.getVisibilidadPublica())
             && com.hotclick.catalogo.CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()));
+    }
+
+    private List<Producto> bloquearFilas(List<Long> ids, Long empresaId) {
+        return productoRepository.findAllByIdsAndEmpresaForUpdate(ids, empresaId);
+    }
+
+    private void guardarProducto(Producto producto) {
+        productoRepository.save(producto);
+    }
+
+    private Map<Long, Long> duenosDe(List<Long> ids) {
+        if (ids.isEmpty()) return Map.of();
+        List<ProductoRepository.DuenoProducto> filas = productoRepository.findDuenoByIds(ids);
+        if (filas == null || filas.isEmpty()) return Map.of();
+        return filas.stream()
+            .filter(fila -> fila.getId() != null && fila.getEmpresaId() != null)
+            .collect(Collectors.toMap(ProductoRepository.DuenoProducto::getId,
+                ProductoRepository.DuenoProducto::getEmpresaId, (a, b) -> a));
     }
 }

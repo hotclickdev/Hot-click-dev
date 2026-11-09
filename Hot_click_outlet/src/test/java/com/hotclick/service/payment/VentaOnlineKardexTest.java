@@ -7,6 +7,7 @@ import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.ProductoRepository.DuenoProducto;
 import com.hotclick.service.pedido.PedidoManualEntregaStockService;
 import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.sse.StockCambioEvent;
@@ -19,8 +20,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -57,6 +56,7 @@ class VentaOnlineKardexTest {
         ReflectionTestUtils.setField(service, "movimientoSupport", support);
         empresaA = empresa(10L);
         empresaB = empresa(20L);
+        when(repo.findDuenoByIds(anyList())).thenAnswer(inv -> duenos(inv.getArgument(0)));
         when(repo.findAllByIdsAndEmpresaForUpdate(anyList(), any())).thenAnswer(inv -> {
             List<Long> ids = inv.getArgument(0);
             Long empresaId = inv.getArgument(1);
@@ -76,8 +76,6 @@ class VentaOnlineKardexTest {
     @DisplayName("Una venta pagada deja un movimiento por línea; reconfirmar no duplica; stock y kardex cuadran")
     void unaVenta_unMovimientoPorLinea_reconfirmarNoDuplica_kardexCuadra() {
         producto13.setEmpresa(empresaA);
-        when(repo.findEmpresaIdById(5L)).thenReturn(Optional.of(10L));
-        when(repo.findEmpresaIdById(13L)).thenReturn(Optional.of(10L));
         Pedido venta = pedido(77L, "ORD-77", empresaA, true, linea(producto5, 2), linea(producto13, 4));
 
         service.confirmAndConsumeStock(venta, this, eventos);
@@ -107,8 +105,6 @@ class VentaOnlineKardexTest {
         producto13.setEmpresa(empresaB);
         producto13.setStockActual(4);
         producto13.setStockReservado(1);
-        when(repo.findEmpresaIdById(5L)).thenReturn(Optional.of(10L));
-        when(repo.findEmpresaIdById(13L)).thenReturn(Optional.of(20L));
 
         Pedido ventaA = pedido(81L, "ORD-81", empresaA, true, linea(producto5, 2), linea(producto13, 1));
         service.confirmAndConsumeStock(ventaA, this, eventos);
@@ -146,7 +142,6 @@ class VentaOnlineKardexTest {
     void faltante_kardexQuedaEnCero() {
         producto5.setStockActual(1);
         producto5.setStockReservado(1);
-        when(repo.findEmpresaIdById(5L)).thenReturn(Optional.of(10L));
         Pedido venta = pedido(91L, "ORD-91", empresaA, true, linea(producto5, 3));
 
         service.confirmAndConsumeStock(venta, this, eventos);
@@ -169,7 +164,6 @@ class VentaOnlineKardexTest {
     @Test
     @DisplayName("Sin empresa del pedido no se descuenta ni se escribe movimiento")
     void sinEmpresaNoConsume() {
-        when(repo.findEmpresaIdById(5L)).thenReturn(Optional.of(10L));
         Pedido venta = pedido(90L, "ORD-90", null, true, linea(producto5, 2));
         service.confirmAndConsumeStock(venta, this, eventos);
         assertThat(producto5.getStockActual()).isEqualTo(10);
@@ -200,6 +194,22 @@ class VentaOnlineKardexTest {
         assertThat(m.getReferenciaId()).isEqualTo(pedidoId);
         assertThat(m.getFechaMovimiento()).isNotNull();
         assertThat(m.getNotas()).startsWith("Venta online pagada " + numero);
+    }
+
+    private List<DuenoProducto> duenos(List<Long> ids) {
+        List<DuenoProducto> out = new ArrayList<>();
+        for (Long id : ids) {
+            Producto p = productoDe(id);
+            if (p != null && p.getEmpresaId() != null) out.add(dueno(p.getId(), p.getEmpresaId()));
+        }
+        return out;
+    }
+
+    private static DuenoProducto dueno(long id, long empresaId) {
+        return new DuenoProducto() {
+            public Long getId() { return id; }
+            public Long getEmpresaId() { return empresaId; }
+        };
     }
 
     private Producto productoDe(Long id) {

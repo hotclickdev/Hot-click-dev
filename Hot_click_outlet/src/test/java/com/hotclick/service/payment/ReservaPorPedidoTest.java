@@ -7,6 +7,7 @@ import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
 import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.ProductoRepository.DuenoProducto;
 import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,8 +63,15 @@ class ReservaPorPedidoTest {
         producto.setEmpresa(empresa);
         when(repo.findAllByIdsForUpdate(anyList())).thenReturn(List.of(producto));
         when(repo.findByIdForUpdate(14L)).thenReturn(Optional.of(producto));
-        when(repo.findEmpresaIdById(14L)).thenReturn(Optional.of(1L));
+        when(repo.findDuenoByIds(anyList())).thenReturn(List.of(dueno(14L, 1L)));
         when(repo.findAllByIdsAndEmpresaForUpdate(anyList(), eq(1L))).thenReturn(List.of(producto));
+    }
+
+    private static DuenoProducto dueno(long id, long empresaId) {
+        return new DuenoProducto() {
+            public Long getId() { return id; }
+            public Long getEmpresaId() { return empresaId; }
+        };
     }
 
     private Pedido pedido(String numero, int cantidad, boolean reservo) {

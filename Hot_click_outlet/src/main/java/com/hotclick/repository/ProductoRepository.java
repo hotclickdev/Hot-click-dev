@@ -46,6 +46,15 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p.empresa.id FROM Producto p WHERE p.id = :id")
     Optional<Long> findEmpresaIdById(@Param("id") Long id);
 
+    /** Dueños de un lote, sin lock. El producto sin empresa no aparece (JPQL hace inner join). */
+    @Query("SELECT p.id AS id, p.empresa.id AS empresaId FROM Producto p WHERE p.id IN :ids ORDER BY p.id")
+    List<DuenoProducto> findDuenoByIds(@Param("ids") List<Long> ids);
+
+    interface DuenoProducto {
+        Long getId();
+        Long getEmpresaId();
+    }
+
     Optional<Producto> findByBarcode(String barcode);
 
     @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.barcode = :barcode AND p.estado = 1")
