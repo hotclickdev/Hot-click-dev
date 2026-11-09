@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -37,7 +38,11 @@ import static org.mockito.Mockito.lenient;
  * El alta PYME en REQUIERE_MEMBRESIA vuelve de ONVO y llama reconciliar-pago con la suscripción
  * desacoplada: {@code empresa} es LAZY y la sesión ya cerró. Un mock que pone la empresa a mano
  * no reproduce ese LazyInitializationException.
+ * <p>
+ * Base H2 propia: este contexto es distinto (espía ONVO) y {@code ddl-auto=create-drop}
+ * sobre {@code mem:testdb} tiraba las tablas del resto de la suite al cerrarse.
  */
+@TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:onvoAltaLazy;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;NON_KEYWORDS=VALUE")
 @DisplayName("Reconciliar pago inmediato con empresa LAZY fuera de sesión")
 class OnvoAltaReconciliacionLazyTest extends BaseIntegrationTest {
 
