@@ -9,6 +9,8 @@ import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.onvo.OnvoBillingClient;
 import com.hotclick.service.suscripcion.OnvoAltaReconciliacion;
+import com.hotclick.service.suscripcion.PrecioPlanOnvo;
+import com.hotclick.service.suscripcion.PreciosPlanesConfig;
 import com.hotclick.service.suscripcion.SuscripcionOnvoChangeService;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
@@ -18,8 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -33,16 +33,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 /**
  * El alta PYME en REQUIERE_MEMBRESIA vuelve de ONVO y llama reconciliar-pago con la suscripción
  * desacoplada: {@code empresa} es LAZY y la sesión ya cerró. Un mock que pone la empresa a mano
  * no reproduce ese LazyInitializationException.
  * <p>
- * Base H2 propia: este contexto es distinto (espía ONVO) y {@code ddl-auto=create-drop}
- * sobre {@code mem:testdb} tiraba las tablas del resto de la suite al cerrarse.
+ * Usa el mismo contexto de la suite. Un {@code @MockitoSpyBean} o una base H2 aparte abren otro
+ * {@code SessionFactory} con {@code ddl-auto=create-drop} y, al cerrarse, borran {@code mem:testdb}.
  */
-@TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:onvoAltaLazy;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;NON_KEYWORDS=VALUE")
 @DisplayName("Reconciliar pago inmediato con empresa LAZY fuera de sesión")
 class OnvoAltaReconciliacionLazyTest extends BaseIntegrationTest {
 
@@ -53,14 +53,15 @@ class OnvoAltaReconciliacionLazyTest extends BaseIntegrationTest {
     private static final String INICIO = "2026-11-09T19:45:00.000Z";
     private static final String FIN = "2026-12-09T19:45:00.000Z";
 
-    @Autowired private OnvoAltaReconciliacion reconciliacion;
     @Autowired private SuscripcionOnvoChangeService cambio;
+    @Autowired private PreciosPlanesConfig precios;
     @Autowired private SuscripcionRepository suscripcionRepo;
     @Autowired private EmpresaRepository empresaRepo;
     @Autowired private PlanRepository planRepo;
     @Autowired private BillingLedgerRepository ledgerRepo;
     @Autowired private PlatformTransactionManager txManager;
-    @MockitoSpyBean private OnvoBillingClient onvo;
+
+    private OnvoAltaReconciliacion reconciliacion;
 
     private Long empresaId;
 
@@ -155,7 +156,9 @@ class OnvoAltaReconciliacionLazyTest extends BaseIntegrationTest {
         return planRepo.saveAndFlush(p);
     }
 
+    /** Cliente ONVO de mentira, armado acá: no reemplaza el bean y no abre otro contexto. */
     private void prepararOnvo() {
+        OnvoBillingClient onvo = mock(OnvoBillingClient.class);
         lenient().doReturn("test").when(onvo).modoEsperado();
         lenient().doReturn("PYME").when(onvo).planParaPriceId(PRICE);
         lenient().doReturn(false).when(onvo).sinLlave();
@@ -165,6 +168,7 @@ class OnvoAltaReconciliacionLazyTest extends BaseIntegrationTest {
         lenient().doReturn(precio()).when(onvo).obtenerPrecio(PRICE);
         lenient().doReturn(suscripcionOnvo()).when(onvo).obtenerSuscripcion(SUB);
         lenient().doReturn(facturaPagada()).when(onvo).obtenerFacturaDelPeriodoActual(org.mockito.ArgumentMatchers.any());
+        reconciliacion = new OnvoAltaReconciliacion(onvo, suscripcionRepo, cambio, new PrecioPlanOnvo(precios, onvo));
     }
 
     private static Map<String, Object> precio() {
