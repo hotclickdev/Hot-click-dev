@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { HotClickMark } from '@/components/ui/BrandLogo'
 import { AnimatePresence } from 'framer-motion'
@@ -12,6 +12,7 @@ import EmprendimientoPasoVerificar from '@/pages/auth/emprendimiento/Emprendimie
 import { useVerificarCorreoOtp } from '@/hooks/useVerificarCorreoOtp'
 import { RUTA_PANEL_VENDEDOR } from '@/utils/destinoVender'
 import { leerPlanQuery, planIdToNombreBackend } from './planQueryParam'
+import { vistaActivarPlan } from './activarPlanVista'
 import type { Id } from '@/types/api'
 
 type PlanApi = { id: Id; nombre: string }
@@ -29,10 +30,10 @@ export default function ActivarPlanPage() {
   const [planId, setPlanId] = useState<Id | null>(null)
   const [buscandoPlan, setBuscandoPlan] = useState(true)
   const [errorPlan, setErrorPlan] = useState('')
-  const [intentado, setIntentado] = useState(false)
+  const intentoRef = useRef<string | null>(null)
 
   const {
-    loadingPlan, error: errorCobro, pagoPendiente,
+    loadingPlan, error: errorCobro, pagoPendiente, setError,
     seleccionarPlan, cancelarPago, confirmarPagoEmbed, activacion,
   } = useCambiarPlan({ rutaExito: RUTA_PANEL_VENDEDOR })
 
@@ -54,10 +55,21 @@ export default function ActivarPlanPage() {
   }, [planQuery])
 
   useEffect(() => {
-    if (!puedeActivar || !planId || intentado) return
-    setIntentado(true)
+    if (!puedeActivar || !planId) return
+    const clave = `${planId}:${otp.verificado ? '1' : '0'}`
+    if (intentoRef.current === clave) return
+    intentoRef.current = clave
     void seleccionarPlan(planId)
-  }, [puedeActivar, planId, intentado, seleccionarPlan])
+  }, [puedeActivar, planId, otp.verificado, seleccionarPlan])
+
+  const vista = vistaActivarPlan({
+    correoVerificado,
+    otpVerificado: otp.verificado,
+    hayPago: pagoPendiente != null,
+    errorCobro,
+    buscandoPlan,
+    cargandoPlan: loadingPlan != null,
+  })
 
   if (!token) return <Navigate to="/registro-empresa" replace />
   if (!planQuery) return <Navigate to="/registro-empresa" replace />
@@ -79,20 +91,24 @@ export default function ActivarPlanPage() {
           <div className="p-6 sm:p-8">
 
             <AnimatePresence mode="wait">
-              {!puedeActivar ? (
-                <EmprendimientoPasoVerificar
-                  key="otp"
-                  correoReg={userEmail ?? ''}
-                  otpFalló={otp.otpFalló}
-                  codigoVerif={otp.codigoVerif}
-                  error={otp.error}
-                  loading={otp.loading}
-                  reenvioLoad={otp.reenvioLoad}
-                  setCodigoVerif={otp.setCodigoVerif}
-                  onSubmit={otp.verificar}
-                  onReenviar={otp.reenviar}
-                />
-              ) : pagoPendiente ? (
+              {vista === 'otp' ? (
+                <div key="otp" className="space-y-4">
+                  {errorCobro ? (
+                    <p className="text-sm text-center text-red-500" role="alert">{errorCobro}</p>
+                  ) : null}
+                  <EmprendimientoPasoVerificar
+                    correoReg={userEmail ?? ''}
+                    otpFalló={otp.otpFalló}
+                    codigoVerif={otp.codigoVerif}
+                    error={otp.error}
+                    loading={otp.loading}
+                    reenvioLoad={otp.reenvioLoad}
+                    setCodigoVerif={otp.setCodigoVerif}
+                    onSubmit={otp.verificar}
+                    onReenviar={otp.reenviar}
+                  />
+                </div>
+              ) : vista === 'pago' && pagoPendiente ? (
                 <div key="pago" className="space-y-4">
                   <div className="text-center mb-2">
                     <h2 className="font-bold text-lg" style={{ color: 'var(--hc-text)' }}>Activá tu plan {pagoPendiente.planNombre}</h2>
@@ -113,9 +129,23 @@ export default function ActivarPlanPage() {
                 </div>
               ) : (
                 <div key="cargando" className="text-center py-6">
-                  <p className="text-sm" style={{ color: 'var(--hc-muted)' }}>
-                    {buscandoPlan || loadingPlan ? 'Preparando tu suscripción…' : (errorPlan || 'Un momento…')}
+                  <p className="text-sm" style={{ color: 'var(--hc-muted)' }} role={errorCobro || errorPlan ? 'alert' : undefined}>
+                    {buscandoPlan || loadingPlan ? 'Preparando tu suscripción…' : (errorPlan || errorCobro || 'Un momento…')}
                   </p>
+                  {vista === 'error' ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        intentoRef.current = null
+                        setError(null)
+                        if (planId) void seleccionarPlan(planId)
+                      }}
+                      className="mt-4 w-full text-center text-sm py-2 rounded-xl"
+                      style={{ color: 'var(--hc-accent)', background: 'none', border: '1px solid var(--hc-border)', cursor: 'pointer' }}
+                    >
+                      Reintentar
+                    </button>
+                  ) : null}
                 </div>
               )}
             </AnimatePresence>

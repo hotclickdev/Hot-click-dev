@@ -63,9 +63,14 @@ public class OnvoAltaReconciliacion {
      * Al volver de «Completar pago». Activada solo si esta llamada verifico ONVO (active + factura paid)
      * y paso por {@code procesarPagoOnvoVerificado}. Una fila ya ACTIVA en la base, sin esa verificacion,
      * no se reporta como activada.
+     * <p>
+     * La empresa entra con JOIN FETCH. El alta en {@code REQUIERE_MEMBRESIA} lee {@code estado_plan} para
+     * decidir si consulta ONVO; con {@code open-in-view=false} ese proxy, fuera de la sesión del repositorio,
+     * tiraba LazyInitializationException (HTTP 500) y el cobro ya hecho quedaba en «pago en proceso» hasta el
+     * job, que sí hace JOIN FETCH. El GET a ONVO no va dentro de esa transacción.
      */
     public Resultado reconciliarEmpresa(Long empresaId) {
-        return suscripcionRepo.findActivaByEmpresaId(empresaId).map(this::reconciliar).orElse(Resultado.IGNORADA);
+        return suscripcionRepo.findActivaConEmpresaByEmpresaId(empresaId).map(this::reconciliar).orElse(Resultado.IGNORADA);
     }
 
     /** Job: pendientes recientes, con tope por corrida. */

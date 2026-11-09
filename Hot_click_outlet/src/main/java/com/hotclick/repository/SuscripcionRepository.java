@@ -22,6 +22,16 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     Optional<Suscripcion> findActivaByEmpresaId(@Param("empresaId") Long empresaId);
 
     /**
+     * Igual que {@link #findActivaByEmpresaId}, pero deja la empresa inicializada.
+     * La reconciliación inmediata lee {@code estado_plan} cuando la sesión del repositorio ya cerró
+     * ({@code open-in-view=false}). Sin el fetch, el proxy LAZY tira LazyInitializationException.
+     */
+    @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.empresa.id = :empresaId " +
+           "AND s.estado NOT IN ('CANCELADO', 'VENCIDO') " +
+           "ORDER BY s.fechaCreacion DESC")
+    Optional<Suscripcion> findActivaConEmpresaByEmpresaId(@Param("empresaId") Long empresaId);
+
+    /**
      * Igual que {@link #findActivaByEmpresaId} pero como lista: no tira IncorrectResultSize si por una carrera hay más
      * de una suscripción no cancelada. Los caminos que crean suscripciones en ONVO la usan para detectarlo y avisar.
      */
