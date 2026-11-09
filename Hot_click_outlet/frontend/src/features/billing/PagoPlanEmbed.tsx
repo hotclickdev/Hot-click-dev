@@ -3,7 +3,10 @@ import type { PagoPlanPendiente } from './useCambiarPlan'
 
 type Props = {
   pago: PagoPlanPendiente
-  /** ONVO confirma en el SDK; el plan se activa cuando el webhook de billing verifica el cobro. */
+  /**
+   * El SDK terminó. Quien llama tiene que reconciliar con ONVO y mostrar si quedó
+   * pendiente o activo. Este embed no marca el plan como activo.
+   */
   onPagado: () => void
   onVolver?: () => void
 }

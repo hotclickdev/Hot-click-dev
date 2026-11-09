@@ -7,6 +7,8 @@ export type CambiarPlanResultado = {
   customerId?: string
   publishableKey?: string
   planNombre?: string
+  /** Precio USD de la config que el verificador compara con el price de ONVO. */
+  montoUsd?: number
   mensaje?: string
   mock?: boolean
   proveedor?: 'ONVO'

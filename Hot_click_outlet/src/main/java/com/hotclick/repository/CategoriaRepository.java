@@ -24,7 +24,7 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
         "WHERE c.fk_id_empresa IS NULL AND c.fk_id_estado = 1 " +
         "AND c.slug IS NOT NULL AND trim(c.slug) <> '' " +
         "AND p.fk_id_estado = 1 AND p.visible_catalogo = TRUE AND p.vendido = FALSE " +
-        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+        "AND e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND (e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA') " +
         "GROUP BY c.id_categoria, c.slug, c.nombre_categoria, c.descripcion " +
         "HAVING COUNT(p.id_producto) >= :minimo " +
         "ORDER BY c.nombre_categoria")
@@ -35,7 +35,7 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
         "LEFT JOIN hot_click_empresa_tb e ON c.fk_id_empresa = e.id_empresa " +
         "WHERE c.fk_id_estado = :estado " +
         "AND (c.fk_id_empresa IS NULL " +
-        "     OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE))")
+        "     OR (e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND (e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA')))")
     List<Categoria> findPublicasByEstado(@Param("estado") Integer estado);
 
     List<Categoria> findByAdminClienteIdAndEstado(Long adminId, Integer estado);

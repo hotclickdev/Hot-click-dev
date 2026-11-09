@@ -4,6 +4,7 @@ import com.hotclick.exception.PlanLimitException;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.service.suscripcion.MembresiaPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -82,7 +83,14 @@ public class TenantLimitChecker {
     public void verificarFeature(Long empresaId, String feature) {
         if (empresaId == null) return;
         Empresa empresa = empresaRepo.findById(empresaId).orElse(null);
-        if (empresa == null || empresa.getPlan() == null) return;
+        if (empresa == null) return;
+        if (MembresiaPlan.sinConfirmar(empresa.getEstadoPlan())) {
+            throw new PlanLimitException(
+                "Tu membresía todavía no está activa.",
+                feature,
+                "Confirmá el pago del plan para usar esta función.");
+        }
+        if (empresa.getPlan() == null) return;
 
         Plan plan = empresa.getPlan();
         boolean habilitada = switch (feature) {

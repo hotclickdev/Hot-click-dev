@@ -160,10 +160,18 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
     @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.estado = 'PAST_DUE' ORDER BY s.fechaFin ASC")
     List<Suscripcion> findPastDueConEmpresa(org.springframework.data.domain.Pageable page);
 
-    /** MEDIO-3: altas/cambios ONVO pendientes de confirmar, recientes (desde), sin revisión manual; acotado por página. */
-    @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa WHERE s.planPendiente IS NOT NULL"
-        + " AND s.onvoSubscriptionId IS NOT NULL AND s.onvoSubPorCancelar IS NULL"
-        + " AND s.fechaActualizacion >= :desde ORDER BY s.fechaActualizacion DESC")
+    /**
+     * MEDIO-3: altas/cambios ONVO pendientes de confirmar, recientes (desde), sin revisión manual; acotado por página.
+     * Incluye el alta del plan vigente sin plan pendiente solo si la empresa esta en REQUIERE_MEMBRESIA
+     * o la fila esta incomplete/pending. Un TRIAL real no entra: no se hace GET por eso.
+     */
+    @Query("SELECT s FROM Suscripcion s JOIN FETCH s.empresa e WHERE s.onvoSubscriptionId IS NOT NULL"
+        + " AND s.onvoSubPorCancelar IS NULL AND s.fechaActualizacion >= :desde"
+        + " AND (s.planPendiente IS NOT NULL"
+        + " OR (s.planPendiente IS NULL AND s.onvoSubNuevaPendiente IS NULL"
+        + " AND (e.estadoPlan = 'REQUIERE_MEMBRESIA'"
+        + " OR s.estado IN ('INCOMPLETE', 'PENDING', 'PENDIENTE'))))"
+        + " ORDER BY s.fechaActualizacion DESC")
     List<Suscripcion> findOnvoPendientesRecientes(@Param("desde") java.time.LocalDateTime desde,
                                                   org.springframework.data.domain.Pageable page);
 

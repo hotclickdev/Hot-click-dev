@@ -74,6 +74,27 @@ class CatalogoMarketplaceTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Empresa B')]").exists());
     }
 
+    @Test
+    @DisplayName("T-MKT-008 | REQUIERE_MEMBRESIA no se lista aunque la tienda esté ACTIVO y visible")
+    void catalogoPublico_ocultaMembresiaSinConfirmar() throws Exception {
+        Empresa sinPago = crearEmpresa("Sin Membresia", "mkt-sin-pago", "mkt-sin-pago@test.cr", "ACTIVO", true);
+        sinPago.setEstadoPlan(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+        empresaRepository.saveAndFlush(sinPago);
+        crearProducto("Prod Sin Membresia", "SKU-MKT-SM1", sinPago, true);
+        Empresa alDia = crearEmpresa("Al Dia", "mkt-al-dia", "mkt-al-dia@test.cr", "ACTIVO", true);
+        crearProducto("Prod Al Dia", "SKU-MKT-AD1", alDia, true);
+
+        mockMvc.perform(get("/api/productos?size=50"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Sin Membresia')]").doesNotExist())
+            .andExpect(jsonPath("$.data.content[?(@.nombreProducto == 'Prod Al Dia')]").exists());
+
+        mockMvc.perform(get("/api/tienda/" + alDia.getSlug()))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/tienda/" + sinPago.getSlug()))
+            .andExpect(status().isNotFound());
+    }
+
     // ── T-MKT-002: el negativo legítimo — empresa pendiente no aparece ────────
     @Test
     @DisplayName("T-MKT-002 | CRÍTICO — Productos de empresa PENDIENTE_APROBACION no aparecen en el catálogo")

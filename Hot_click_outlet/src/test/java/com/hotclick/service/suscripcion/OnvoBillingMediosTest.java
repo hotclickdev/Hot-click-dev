@@ -353,14 +353,100 @@ class OnvoBillingMediosTest {
         }
 
         @Test
-        @DisplayName("reemplazada / con onvo_sub_por_cancelar o sin plan pendiente → se ignora sin llamar a ONVO")
+        @DisplayName("reemplazada o ya activa sin pendiente → se ignora sin llamar a ONVO")
         void ignoradas() {
             local.setOnvoSubPorCancelar("sub_vieja");
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.IGNORADA);
             local.setOnvoSubPorCancelar(null);
             local.setPlanPendiente(null);
+            local.setEstado("ACTIVO");
+            empresa.setEstadoPlan("ACTIVO");
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.IGNORADA);
             verify(onvo, never()).obtenerSuscripcion(any());
+        }
+
+        @Test
+        @DisplayName("TRIAL sin REQUIERE_MEMBRESIA no hace GET a ONVO")
+        void trialReal_noConsultaOnvo() {
+            local.setPlanPendiente(null);
+            local.setEstado("TRIAL");
+            empresa.setEstadoPlan("ACTIVO");
+            assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.IGNORADA);
+            verify(onvo, never()).obtenerSuscripcion(any());
+        }
+
+        @Test
+        @DisplayName("alta del plan vigente sin planPendiente: active + factura paid activa una vez")
+        void altaMismoPlan_pagadaActiva() {
+            local.setPlanPendiente(null);
+            local.setEstado("TRIAL");
+            empresa.setEstadoPlan(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+            doReturn(subOnvo("active")).when(onvo).obtenerSuscripcion(SUB);
+            doReturn(factura("inv_paid_alta", "paid", INICIO, FIN)).when(onvo).obtenerFacturaDelPeriodoActual(any());
+
+            assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
+            verify(cambio).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 4), "inv_paid_alta");
+            verify(onvo, never()).cancelarInmediato(any());
+        }
+
+        @Test
+        @DisplayName("alta sin planPendiente: ONVO active pero factura no paid deja todo pendiente")
+        void altaMismoPlan_sinPago() {
+            local.setPlanPendiente(null);
+            local.setEstado("INCOMPLETE");
+            empresa.setEstadoPlan(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+            doReturn(subOnvo("active")).when(onvo).obtenerSuscripcion(SUB);
+            doReturn(factura("inv_x", "open", INICIO, FIN)).when(onvo).obtenerFacturaDelPeriodoActual(any());
+
+            assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.SIN_CONFIRMAR);
+            assertThat(empresa.getEstadoPlan()).isEqualTo(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("alta sin planPendiente: ONVO caído no cambia la fila")
+        void altaMismoPlan_onvoCae() {
+            local.setPlanPendiente(null);
+            local.setEstado("PENDING");
+            empresa.setEstadoPlan(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+            when(onvo.obtenerSuscripcion(SUB)).thenThrow(new org.springframework.web.client.ResourceAccessException("caído"));
+
+            assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.ONVO_NO_DISPONIBLE);
+            assertThat(local.getEstado()).isEqualTo("PENDING");
+            assertThat(empresa.getEstadoPlan()).isEqualTo(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("replay del alta ya activa: no escribe otro COBRO_OK ni dice activada sin un GET nuevo")
+        void altaMismoPlan_replayNoDuplica() throws Exception {
+            BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+            AtomicBoolean registrado = new AtomicBoolean(false);
+            when(ledger.yaRegistrado(eq("inv_paid_alta"), anyString())).thenAnswer(i -> registrado.get());
+            org.mockito.Mockito.doAnswer(i -> { registrado.set(true); return null; })
+                .when(ledger).registrar(any(), any(), anyString(), anyString(), eq("inv_paid_alta"), any(), any(), any());
+            set(service, "ledgerWriter", ledger);
+            var precios = mock(PreciosPlanesConfig.class);
+            when(precios.moneda()).thenReturn(Optional.of("usd"));
+            set(service, "preciosPlanes", precios);
+            when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate(SUB)).thenReturn(Optional.of(sub));
+            when(suscripcionRepo.findActivaByEmpresaId(20L)).thenReturn(Optional.of(sub));
+            sub.setPlan(planPyme);
+            sub.setPlanPendiente(null);
+            sub.setEstado("TRIAL");
+            empresa.setPlan(planPyme);
+            empresa.setEstadoPlan(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+            doReturn(subOnvo("active")).when(onvo).obtenerSuscripcion(SUB);
+            doReturn(factura("inv_paid_alta", "paid", INICIO, FIN)).when(onvo).obtenerFacturaDelPeriodoActual(any());
+            OnvoAltaReconciliacion real = new OnvoAltaReconciliacion(onvo, suscripcionRepo, service,
+                new PrecioPlanOnvo(new PreciosPlanesConfig("9", "24", "49", "usd"), onvo));
+
+            assertThat(real.reconciliarEmpresa(20L)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
+            assertThat(empresa.getEstadoPlan()).isEqualTo("ACTIVO");
+            assertThat(sub.getEstado()).isEqualTo("ACTIVO");
+            assertThat(real.reconciliarEmpresa(20L)).isEqualTo(OnvoAltaReconciliacion.Resultado.IGNORADA);
+            verify(ledger, times(1)).registrar(any(), any(), anyString(), anyString(), eq("inv_paid_alta"), any(), any(), any());
+            verify(onvo, never()).cancelarInmediato(any());
         }
 
         @Test

@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { Boton } from './ui'
 import { billingService } from '@/services/billingService'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
+import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
+import { montoCobroVisible } from '@/features/billing/montoPlan'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import SolicitudCambioPlanForm from '@/features/billing/SolicitudCambioPlanForm'
 import FormularioPorPasos, { ProgresoPasos } from './FormularioPorPasos'
@@ -55,7 +57,7 @@ export default function CompararPlanesVista({
     setError,
     pagoPendiente,
     seleccionarPlan,
-    cancelarPago, irAExito,
+    cancelarPago, confirmarPagoEmbed, activacion,
     solicitud, cerrarSolicitud,
   } = useCambiarPlan({ rutaExito, planActual: planActualApi })
 
@@ -131,7 +133,9 @@ export default function CompararPlanesVista({
             <p className="text-sm font-semibold">
               Pagar {pagoPendiente.planNombre ?? planElegido?.nombre}
             </p>
-            <PagoPlanEmbed pago={pagoPendiente} onPagado={irAExito} />
+            <MontoPlanPago monto={montoCobroVisible(pagoPendiente)} />
+            <EstadoActivacionPago estado={activacion} />
+            <PagoPlanEmbed pago={pagoPendiente} onPagado={() => { void confirmarPagoEmbed() }} />
           </div>
           {emp ? (
             <button

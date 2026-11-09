@@ -5,6 +5,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.service.FeatureFlagService;
+import com.hotclick.service.suscripcion.MembresiaPlan;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,19 +55,20 @@ public class TenantInfoBuilder {
         }
 
         java.util.Set<String> flagsEmpresa = flagService.getFlagsActivosParaEmpresa(empresaId);
+        boolean membresiaActiva = !MembresiaPlan.sinConfirmar(empresa.getEstadoPlan());
         Map<String, Boolean> features = new HashMap<>();
-        features.put("pos",      planTiene(plan, "pos")      || flagsEmpresa.contains("pos"));
-        features.put("crm",      planTiene(plan, "crm")      || flagsEmpresa.contains("crm"));
-        features.put("compras",  planTiene(plan, "compras")  || flagsEmpresa.contains("compras"));
-        features.put("reportes", planTiene(plan, "reportes") || flagsEmpresa.contains("reportes"));
-        features.put("ai",       planTiene(plan, "ai")       || flagsEmpresa.contains("ai_copilot"));
-        features.put("api",      planTiene(plan, "api")      || flagsEmpresa.contains("api_keys"));
-        features.put("giftCards", planTiene(plan, "giftCards"));
-        features.put("facturacion_electronica", flagsEmpresa.contains("facturacion_electronica"));
-        features.put("mobile_pos",    flagsEmpresa.contains("mobile_pos"));
-        features.put("self_checkout", flagsEmpresa.contains("self_checkout"));
-        features.put("split_payments", flagsEmpresa.contains("split_payments"));
-        features.put("white_label",   flagsEmpresa.contains("white_label"));
+        features.put("pos",      membresiaActiva && (planTiene(plan, "pos") || flagsEmpresa.contains("pos")));
+        features.put("crm",      membresiaActiva && (planTiene(plan, "crm") || flagsEmpresa.contains("crm")));
+        features.put("compras",  membresiaActiva && (planTiene(plan, "compras") || flagsEmpresa.contains("compras")));
+        features.put("reportes", membresiaActiva && (planTiene(plan, "reportes") || flagsEmpresa.contains("reportes")));
+        features.put("ai",       membresiaActiva && (planTiene(plan, "ai") || flagsEmpresa.contains("ai_copilot")));
+        features.put("api",      membresiaActiva && (planTiene(plan, "api") || flagsEmpresa.contains("api_keys")));
+        features.put("giftCards", membresiaActiva && planTiene(plan, "giftCards"));
+        features.put("facturacion_electronica", membresiaActiva && flagsEmpresa.contains("facturacion_electronica"));
+        features.put("mobile_pos",    membresiaActiva && flagsEmpresa.contains("mobile_pos"));
+        features.put("self_checkout", membresiaActiva && flagsEmpresa.contains("self_checkout"));
+        features.put("split_payments", membresiaActiva && flagsEmpresa.contains("split_payments"));
+        features.put("white_label",   membresiaActiva && flagsEmpresa.contains("white_label"));
         info.put("features", features);
 
         return info;

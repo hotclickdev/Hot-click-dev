@@ -35,11 +35,20 @@ destacados/carrusel/marca/categoría/búsqueda/ofertas). Las queries usan
 4. `producto.fk_id_empresa` NOT NULL (INNER JOIN)
 5. `empresa.estado_empresa = 'ACTIVO'`
 6. `empresa.visibilidad_publica = TRUE`
+7. `empresa.estado_plan` es NULL o distinto de `REQUIERE_MEMBRESIA`
+   (el mismo predicado `CatalogoPublicoGate.membresiaConfirmada` cierra checkout, invitado,
+   SINPE, pedido de tienda, recomendaciones, SEO de `/tienda/{slug}` y el slug de cupones)
+
+La condición 7 es decisión explícita de lanzamiento (2026-11-09): una tienda aprobada
+que todavía no confirmó la membresía (ONVO active + factura paid) no se lista ni
+abre su ficha pública. Trial, PAST_DUE y la gracia de impago (que ya sale por
+`estado_empresa`, no por este filtro) siguen visibles. No ocultar ningún otro
+`estado_plan` sin otra decisión del dueño.
 
 HOTCLICK no opera tienda propia: empresa 1 (seed) queda `INACTIVO` /
 `visibilidad_publica=false` y sus productos / huérfanos con
 `visible_catalogo=false` (migración V120). El storefront
-`/api/tienda/{slug}` exige 5 y 6 en `SlugTenantInterceptor`.
+`/api/tienda/{slug}` exige 5, 6 y 7 en `SlugTenantInterceptor` (404, sin revelar la tienda).
 
 **No confundir** con Marca/Categoría globales (`fk_id_empresa IS NULL` ahí
 sigue siendo taxonomía de plataforma, no catálogo de productos).

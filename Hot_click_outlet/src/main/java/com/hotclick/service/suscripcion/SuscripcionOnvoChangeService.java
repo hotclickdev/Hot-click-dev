@@ -890,6 +890,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         out.put("customerId", customerId);
         out.put("publishableKey", onvoService.getPublishableKey());
         out.put("planNombre", planDestino.getNombre());
+        // Mismo precio que el verificador compara contra el price de ONVO. Sin config, no se inventa un monto.
+        if (preciosPlanes != null && planDestino.getNombre() != null) {
+            preciosPlanes.precioUsd(planDestino.getNombre()).ifPresent(monto -> out.put("montoUsd", monto));
+        }
         return out;
     }
 

@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import api from '@/services/api'
 import { billingService } from '@/services/billingService'
 import { mensajeErrorPlan } from '@/features/billing/useCambiarPlan'
+import { sondearActivacion } from '@/features/billing/activacionPago'
 import {
-  accionCompletarPago, alVolverDelPago, avisoPlanPendiente, fechaVisible, MSG_PAGO_EN_PROCESO, nombrePlanVisible,
+  accionCompletarPago, avisoPlanPendiente, fechaVisible, MSG_PAGO_EN_PROCESO, nombrePlanVisible,
   type AvisoPlanPendiente, type PagoDesdeAviso,
 } from './planPendiente'
 
@@ -55,8 +56,14 @@ export default function PlanPendienteBanner({ rutaPlan }: { rutaPlan: string }) 
 
   const volverDelPago = async () => {
     setPago(null)
-    const r = await alVolverDelPago(() => billingService.reconciliarPago(), refrescar)
-    setEnProceso(r === 'en_proceso')
+    setEnProceso(false)
+    const r = await sondearActivacion(() => billingService.reconciliarPago())
+    try {
+      await refrescar()
+      setEnProceso(r !== 'activo')
+    } catch {
+      setEnProceso(true)
+    }
   }
 
   if (!aviso) return null

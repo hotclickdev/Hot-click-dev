@@ -7,6 +7,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.TenantContext;
+import com.hotclick.service.suscripcion.MembresiaPlan;
 import com.hotclick.service.tenant.TenantInfoBuilder;
 import com.hotclick.service.tenant.TenantLimitChecker;
 import com.hotclick.utils.Constants;
@@ -84,7 +85,8 @@ public class TenantService {
 
         Empresa empresa = empresaRepo.findById(empresaId).orElse(null);
         if (empresa == null) return false;
-        if ("VENCIDO".equals(empresa.getEstadoPlan())) return false;
+        // VENCIDO sigue igual. REQUIERE_MEMBRESIA no tiene funciones de pago hasta que el cobro queda activo.
+        if ("VENCIDO".equals(empresa.getEstadoPlan()) || MembresiaPlan.sinConfirmar(empresa.getEstadoPlan())) return false;
 
         if (flagService.isEnabled(feature, empresaId)) return true;
         if (empresa.getPlan() == null) return false;

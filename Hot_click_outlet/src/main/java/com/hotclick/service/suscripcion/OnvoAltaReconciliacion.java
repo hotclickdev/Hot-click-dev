@@ -25,8 +25,12 @@ import java.util.Map;
  *       ({@code procesarPagoOnvoVerificado}, que no hace nada si esa factura ya tiene COBRO_OK).</li>
  *   <li>QA #536: {@code trialing} con método de pago guardado activa el plan hasta el fin del trial
  *       ({@link OnvoBillingVerificador#trialConMetodo}, {@code procesarTrialOnvoVerificado}, una sola vez).</li>
- *   <li>Sin confirmación, o si ONVO falla: no cambia nada.</li>
- *   <li>Ignora filas sin plan pendiente, sin id ONVO o con {@code onvo_sub_por_cancelar} (reemplazo en revisión).
+ *   <li>Sin confirmación, o si ONVO falla: no cambia nada. Solo GET a ONVO: no crea cobros ni hace POST.</li>
+ *   <li>Con plan pendiente se reconcilia el cambio. Sin plan pendiente también cubre el alta del plan vigente
+ *       (suscripción local en trial/incomplete/pending, o {@code estado_plan = REQUIERE_MEMBRESIA}): el cobro
+ *       se confirma solo con suscripción {@code active} y factura paid, por el mismo camino del webhook.
+ *       El trial con método (#536) sigue exigiendo plan pendiente.</li>
+ *   <li>Ignora filas sin id ONVO, con {@code onvo_sub_por_cancelar} o ya activas sin nada pendiente.
  *       El id sale de nuestra base, nunca del cliente.</li>
  * </ul>
  */
@@ -55,7 +59,11 @@ public class OnvoAltaReconciliacion {
         this.precioPlan = precioPlan;
     }
 
-    /** Al volver de «Completar pago» (endpoint del propietario). */
+    /**
+     * Al volver de «Completar pago». Activada solo si esta llamada verifico ONVO (active + factura paid)
+     * y paso por {@code procesarPagoOnvoVerificado}. Una fila ya ACTIVA en la base, sin esa verificacion,
+     * no se reporta como activada.
+     */
     public Resultado reconciliarEmpresa(Long empresaId) {
         return suscripcionRepo.findActivaByEmpresaId(empresaId).map(this::reconciliar).orElse(Resultado.IGNORADA);
     }
@@ -78,50 +86,80 @@ public class OnvoAltaReconciliacion {
     }
 
     Resultado reconciliar(Suscripcion local) {
-        // #535: con una subida pendiente se reconcilia la NUEVA; su pago confirma el reemplazo y cancela la vieja una vez.
-        String subId = local == null ? null
-            : (local.getOnvoSubNuevaPendiente() != null ? local.getOnvoSubNuevaPendiente() : local.getOnvoSubscriptionId());
-        if (subId == null || !OnvoBillingClient.idValido(subId) || local.getPlanPendiente() == null
-                || local.getOnvoSubPorCancelar() != null) {
-            return Resultado.IGNORADA;
-        }
+        String subId = idAReconciliar(local);
+        if (subId == null) return Resultado.IGNORADA;
         String ref = SuscripcionOnvoChangeService.enmascarar(subId);
         try {
-            String modo = onvo.modoEsperado();
-            Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
-            if (!OnvoBillingVerificador.modoCoincide(sub, modo) || !subId.equals(OnvoBillingVerificador.texto(sub, "id"))
-                    || !customerCompatible(local, sub)) {
-                log.warn("[billing-onvo] reconciliación: datos de ONVO no verificables sub={}", ref);
-                return Resultado.SIN_CONFIRMAR;
-            }
-            if ("trialing".equalsIgnoreCase(OnvoBillingVerificador.texto(sub, "status"))) {
-                // QA #536: trial con método de pago guardado = plan activo hasta el fin del trial (mismo camino que el webhook).
-                OnvoBillingVerificador.Resultado t = OnvoBillingVerificador.trialConMetodo(
-                    sub, subId, modo, precioPlan::planParaPriceId, precioPlan::esperado);
-                if (!t.aceptado()) {
-                    log.info("[billing-onvo] reconciliación trial sin confirmar sub={} motivo={}", ref, t.motivo());
-                    return Resultado.SIN_CONFIRMAR;
-                }
-                cambio.procesarTrialOnvoVerificado(subId, t.planNombre(), t.fechaFin());
-                return Resultado.ACTIVADA;
-            }
-            if (!"active".equalsIgnoreCase(OnvoBillingVerificador.texto(sub, "status"))) return Resultado.SIN_CONFIRMAR;
-            Map<?, ?> factura = onvo.obtenerFacturaDelPeriodoActual(sub);
-            String facturaId = OnvoBillingVerificador.texto(factura, "id");
-            if (facturaId == null || !OnvoBillingClient.idValido(facturaId)) return Resultado.SIN_CONFIRMAR;
-            OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.renovacion(
-                factura, sub, facturaId, subId, modo, precioPlan::planParaPriceId, precioPlan::esperado);
-            if (!r.aceptado()) {
-                log.info("[billing-onvo] reconciliación sin confirmar sub={} motivo={}", ref, r.motivo());
-                return Resultado.SIN_CONFIRMAR;
-            }
-            cambio.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId);
-            return Resultado.ACTIVADA;
+            return confirmarConOnvo(local, subId, ref);
         } catch (RuntimeException e) {
             log.warn("[ALERTA-PAGO] reconciliación ONVO falló, sin cambios sub={} causa={}", ref,
                 e.getClass().getSimpleName());
             return Resultado.ONVO_NO_DISPONIBLE;
         }
+    }
+
+    /**
+     * #535: con una subida pendiente se reconcilia la NUEVA. Sin plan pendiente, el alta del plan vigente
+     * (fila en trial/incomplete/pending o empresa en REQUIERE_MEMBRESIA). Nunca el id que manda el cliente.
+     */
+    static String idAReconciliar(Suscripcion local) {
+        if (local == null || local.getOnvoSubPorCancelar() != null) return null;
+        boolean subida = local.getOnvoSubNuevaPendiente() != null;
+        if (subida && local.getPlanPendiente() == null) return null;
+        if (local.getPlanPendiente() == null && !altaMismoPlanSinConfirmar(local)) return null;
+        String subId = subida ? local.getOnvoSubNuevaPendiente() : local.getOnvoSubscriptionId();
+        if (subId == null || !OnvoBillingClient.idValido(subId)) return null;
+        return subId;
+    }
+
+    /** Alta o repago del plan que ya está en la fila: no hay plan pendiente distinto. */
+    static boolean altaMismoPlanSinConfirmar(Suscripcion local) {
+        if (local == null || local.getPlanPendiente() != null || local.getOnvoSubNuevaPendiente() != null) return false;
+        String estadoEmpresa = local.getEmpresa() == null ? null : local.getEmpresa().getEstadoPlan();
+        if (MembresiaPlan.sinConfirmar(estadoEmpresa)) return true;
+        return MembresiaPlan.altaIncompleta(local.getEstado());
+    }
+
+    private Resultado confirmarConOnvo(Suscripcion local, String subId, String ref) {
+        String modo = onvo.modoEsperado();
+        Map<?, ?> sub = onvo.obtenerSuscripcion(subId);
+        if (!OnvoBillingVerificador.modoCoincide(sub, modo) || !subId.equals(OnvoBillingVerificador.texto(sub, "id"))
+                || !customerCompatible(local, sub)) {
+            log.warn("[billing-onvo] reconciliación: datos de ONVO no verificables sub={}", ref);
+            return Resultado.SIN_CONFIRMAR;
+        }
+        if ("trialing".equalsIgnoreCase(OnvoBillingVerificador.texto(sub, "status"))) {
+            return confirmarTrial(local, sub, subId, modo, ref);
+        }
+        return confirmarPago(sub, subId, modo, ref);
+    }
+
+    /** #536 sigue igual: trial con método solo si hay plan pendiente. El alta del plan vigente espera el cobro. */
+    private Resultado confirmarTrial(Suscripcion local, Map<?, ?> sub, String subId, String modo, String ref) {
+        if (local.getPlanPendiente() == null) return Resultado.SIN_CONFIRMAR;
+        OnvoBillingVerificador.Resultado t = OnvoBillingVerificador.trialConMetodo(
+            sub, subId, modo, precioPlan::planParaPriceId, precioPlan::esperado);
+        if (!t.aceptado()) {
+            log.info("[billing-onvo] reconciliación trial sin confirmar sub={} motivo={}", ref, t.motivo());
+            return Resultado.SIN_CONFIRMAR;
+        }
+        cambio.procesarTrialOnvoVerificado(subId, t.planNombre(), t.fechaFin());
+        return Resultado.ACTIVADA;
+    }
+
+    private Resultado confirmarPago(Map<?, ?> sub, String subId, String modo, String ref) {
+        if (!"active".equalsIgnoreCase(OnvoBillingVerificador.texto(sub, "status"))) return Resultado.SIN_CONFIRMAR;
+        Map<?, ?> factura = onvo.obtenerFacturaDelPeriodoActual(sub);
+        String facturaId = OnvoBillingVerificador.texto(factura, "id");
+        if (facturaId == null || !OnvoBillingClient.idValido(facturaId)) return Resultado.SIN_CONFIRMAR;
+        OnvoBillingVerificador.Resultado r = OnvoBillingVerificador.renovacion(
+            factura, sub, facturaId, subId, modo, precioPlan::planParaPriceId, precioPlan::esperado);
+        if (!r.aceptado()) {
+            log.info("[billing-onvo] reconciliación sin confirmar sub={} motivo={}", ref, r.motivo());
+            return Resultado.SIN_CONFIRMAR;
+        }
+        cambio.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId);
+        return Resultado.ACTIVADA;
     }
 
     private static boolean customerCompatible(Suscripcion local, Map<?, ?> sub) {

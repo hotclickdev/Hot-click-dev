@@ -36,7 +36,7 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
         "  ORDER BY b.id_bodega LIMIT 1)) " +
         "FROM hot_click_empresa_tb e " +
         "LEFT JOIN hot_click_bodega_tb bo ON bo.id_bodega = e.fk_id_bodega_venta_online " +
-        "WHERE e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE " +
+        "WHERE e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND (e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA') " +
         "AND e.slug IS NOT NULL AND trim(e.slug) <> '' " +
         "ORDER BY 2")
     List<Object[]> findTiendasPublicasSeo();
@@ -61,7 +61,7 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
         + "(SELECT COUNT(pr.id) FROM Producto pr WHERE pr.empresa = e AND pr.estado = 1 AND pr.visibleCatalogo = true "
         + "AND pr.stockActual > 0 AND pr.vendido = false) AS productos "
         + "FROM Empresa e LEFT JOIN e.plan p "
-        + "WHERE e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true AND e.slug IS NOT NULL ORDER BY e.id ASC")
+        + "WHERE e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true AND (e.estadoPlan IS NULL OR e.estadoPlan <> 'REQUIERE_MEMBRESIA') AND e.slug IS NOT NULL ORDER BY e.id ASC")
     List<NegocioPublicoFila> findNegociosPublicos(Pageable pageable);
 
     /**
@@ -77,7 +77,7 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
         + "AND pf.imagenPrincipalUrl <> '') AS conFoto, "
         + "e.destacado AS destacado, e.destacadoOrden AS destacadoOrden, e.destacadoDesde AS destacadoDesde "
         + "FROM Empresa e LEFT JOIN e.plan p "
-        + "WHERE e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true AND e.slug IS NOT NULL ORDER BY e.id ASC")
+        + "WHERE e.estadoEmpresa = 'ACTIVO' AND e.visibilidadPublica = true AND (e.estadoPlan IS NULL OR e.estadoPlan <> 'REQUIERE_MEMBRESIA') AND e.slug IS NOT NULL ORDER BY e.id ASC")
     List<NegocioDestacadoFila> findCandidatosDestacados(Pageable pageable);
 
     @Query("SELECT e FROM Empresa e LEFT JOIN FETCH e.plan ORDER BY e.fechaRegistro DESC")

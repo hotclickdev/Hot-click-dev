@@ -1,5 +1,6 @@
 import { formatoColon } from '@/theme/formatoColon'
 import { PLAN_PRECIOS, textoComision, type ClavePlan } from '@/config/planesPrecios'
+import { montoPlanVisible } from '@/features/billing/montoPlan'
 import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 import type { Id } from '@/types/api'
 import type { PlanId } from './plan'
@@ -9,6 +10,8 @@ export type PlanUi = {
   nombreApi: string
   nombre: string
   precio: string
+  /** Monto a confirmar en el pago. Null si el backend no mandó cifra. */
+  monto: string | null
   beneficios: readonly string[]
   cta: string | null
 }
@@ -24,6 +27,7 @@ export type PlanApiTuPlan = {
   id: Id
   nombre: string
   precioMensual?: number
+  precioUsd?: number | null
   comisionPorcentaje?: number | string
   comisionMinimaCrc?: number
   maxProductos?: number
@@ -76,6 +80,7 @@ export function mapApiPlanToUi(p: PlanApiTuPlan): PlanUi {
     precio: Number(p.precioMensual ?? 0) === 0
       ? 'Gratis'
       : `${formatoColon(Number(p.precioMensual))}/mes`,
+    monto: montoPlanVisible(p),
     beneficios: beneficiosDesdeApi(p),
     cta: CTA_PLAN[p.nombre] ?? `Cambiar a ${p.nombre}`,
   }

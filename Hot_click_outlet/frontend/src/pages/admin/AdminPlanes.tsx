@@ -8,6 +8,8 @@ import AccesoTiendaPublica from '@/components/sistema/AccesoTiendaPublica'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
+import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
+import { montoCobroVisible } from '@/features/billing/montoPlan'
 import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import type { Id } from '@/types/api'
@@ -146,7 +148,7 @@ export default function AdminPlanes() {
     setError,
     pagoPendiente,
     seleccionarPlan,
-    cancelarPago, irAExito,
+    cancelarPago, confirmarPagoEmbed, activacion,
   } = useCambiarPlan({ rutaExito: '/admin/billing/suscripcion' })
 
   function handleLogout() {
@@ -199,7 +201,9 @@ export default function AdminPlanes() {
               Cancelar
             </button>
           </div>
-          <PagoPlanEmbed pago={pagoPendiente} onPagado={irAExito} />
+          <MontoPlanPago monto={montoCobroVisible(pagoPendiente)} />
+          <EstadoActivacionPago estado={activacion} />
+          <PagoPlanEmbed pago={pagoPendiente} onPagado={() => { void confirmarPagoEmbed() }} />
         </div>
       )}
 

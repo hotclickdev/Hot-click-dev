@@ -223,6 +223,8 @@ public class StockReservationService {
         if (p.getEstado() == null || p.getEstado() != com.hotclick.utils.Constants.ESTADO_ACTIVO) return false;
         if (!Boolean.TRUE.equals(p.getVisibleCatalogo())) return false;
         com.hotclick.model.Empresa e = p.getEmpresa();
-        return e == null || ("ACTIVO".equals(e.getEstadoEmpresa()) && Boolean.TRUE.equals(e.getVisibilidadPublica()));
+        return e == null || ("ACTIVO".equals(e.getEstadoEmpresa())
+            && Boolean.TRUE.equals(e.getVisibilidadPublica())
+            && com.hotclick.catalogo.CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()));
     }
 }
