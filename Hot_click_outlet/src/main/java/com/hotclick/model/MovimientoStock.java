@@ -29,6 +29,8 @@ public class MovimientoStock {
     @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_id_producto", nullable = false)
+    // Solo afecta el DDL que genera Hibernate (tests H2). Prod sigue con Flyway, sin cascade.
+    @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
     private Producto producto;
 
     @Column(name = "tipo_movimiento", nullable = false, length = 30)

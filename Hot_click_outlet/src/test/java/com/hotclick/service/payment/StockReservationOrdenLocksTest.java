@@ -2,15 +2,20 @@ package com.hotclick.service.payment;
 
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoItem;
 import com.hotclick.model.Producto;
+import com.hotclick.repository.MovimientoStockRepository;
 import com.hotclick.repository.ProductoRepository;
+import com.hotclick.repository.ProductoRepository.DuenoProducto;
+import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
@@ -20,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /** P-05 (C1): los locks de stock se toman en orden de id, en un solo batch, para evitar deadlocks. */
@@ -48,7 +54,18 @@ class StockReservationOrdenLocksTest {
     private StockReservationService servicio(ProductoRepository repo) {
         StockReservationService s = new StockReservationService();
         ReflectionTestUtils.setField(s, "productoRepository", repo);
+        StockMovimientoSupport support = new StockMovimientoSupport();
+        ReflectionTestUtils.setField(support, "movimientoStockRepository", mock(MovimientoStockRepository.class));
+        ReflectionTestUtils.setField(support, "eventPublisher", mock(ApplicationEventPublisher.class));
+        ReflectionTestUtils.setField(s, "movimientoSupport", support);
         return s;
+    }
+
+    private static DuenoProducto dueno(long id, long empresaId) {
+        return new DuenoProducto() {
+            public Long getId() { return id; }
+            public Long getEmpresaId() { return empresaId; }
+        };
     }
 
     @Test
@@ -89,10 +106,17 @@ class StockReservationOrdenLocksTest {
     @DisplayName("P-05 | confirmar y liberar bloquean en orden de id aunque el pedido venga [9,2]")
     void confirmarYLiberarOrdenados() {
         ProductoRepository repo = mock(ProductoRepository.class);
+        Empresa empresa = new Empresa();
+        empresa.setId(1L);
         Producto p9 = producto(9, 5), p2 = producto(2, 5);
+        p9.setEmpresa(empresa);
+        p2.setEmpresa(empresa);
         when(repo.findByIdForUpdate(9L)).thenReturn(Optional.of(p9));
         when(repo.findByIdForUpdate(2L)).thenReturn(Optional.of(p2));
+        when(repo.findDuenoByIds(anyList())).thenReturn(List.of(dueno(2L, 1L), dueno(9L, 1L)));
+        when(repo.findAllByIdsAndEmpresaForUpdate(anyList(), eq(1L))).thenReturn(List.of(p2, p9));
         Pedido pedido = new Pedido();
+        pedido.setEmpresa(empresa);
         List<PedidoItem> items = new ArrayList<>();
         for (Producto p : List.of(p9, p2)) {
             PedidoItem it = new PedidoItem();
@@ -108,9 +132,17 @@ class StockReservationOrdenLocksTest {
         pedido.setStockReservadoEn(java.time.LocalDateTime.now());
         s.liberarReservas(pedido);
 
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Long>> ids = ArgumentCaptor.forClass(List.class);
+        verify(repo).findAllByIdsAndEmpresaForUpdate(ids.capture(), eq(1L));
+        assertThat(ids.getValue()).containsExactly(2L, 9L);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Long>> duenos = ArgumentCaptor.forClass(List.class);
+        verify(repo).findDuenoByIds(duenos.capture());
+        assertThat(duenos.getValue()).containsExactly(2L, 9L);
         InOrder o = inOrder(repo);
-        o.verify(repo).findByIdForUpdate(2L);
-        o.verify(repo).findByIdForUpdate(9L);
+        o.verify(repo).findDuenoByIds(anyList());
+        o.verify(repo).findAllByIdsAndEmpresaForUpdate(anyList(), eq(1L));
         o.verify(repo).findByIdForUpdate(2L);
         o.verify(repo).findByIdForUpdate(9L);
     }

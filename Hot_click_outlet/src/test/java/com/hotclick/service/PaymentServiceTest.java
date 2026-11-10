@@ -7,6 +7,8 @@ import com.hotclick.payment.PaymentProvider;
 import com.hotclick.payment.PaymentProviderFactory;
 import com.hotclick.payment.PaymentSession;
 import com.hotclick.repository.*;
+import com.hotclick.repository.ProductoRepository.DuenoProducto;
+import com.hotclick.service.stock.StockMovimientoSupport;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.service.analytics.AtribucionPedidoService;
 import com.hotclick.service.payment.*;
@@ -82,6 +84,7 @@ class PaymentServiceTest {
     private Usuario  testUser;
     private Bodega   testBodega;
     private Producto testProducto;
+    private Empresa  testEmpresa;
 
     private static final String CORREO  = "buyer@hotclick.cr";
     private static final String REDIRECT = "https://checkout.stripe.com/pay/TXN-123";
@@ -94,6 +97,18 @@ class PaymentServiceTest {
             .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
                 .map(id -> productoRepository.findByIdForUpdate(id))
                 .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
+        org.mockito.Mockito.lenient().when(productoRepository.findAllByIdsAndEmpresaForUpdate(org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.any()))
+            .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
+                .map(id -> productoRepository.findByIdForUpdate(id))
+                .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
+        org.mockito.Mockito.lenient().when(productoRepository.findDuenoByIds(org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(inv -> {
+                java.util.List<DuenoProducto> duenos = new java.util.ArrayList<>();
+                for (Long id : inv.<java.util.List<Long>>getArgument(0)) {
+                    if (Long.valueOf(10L).equals(id)) duenos.add(dueno(10L, 7L));
+                }
+                return duenos;
+            });
         // Por defecto cada confirmación/fallo gana su UPDATE condicional (la carrera se prueba en los tests de doble confirmación).
         lenient().when(pedidoRepository.reclamarParaConfirmar(any(), any())).thenReturn(1);
         lenient().when(pagoRepository.marcarFallidoSiPendiente(any(), any())).thenReturn(1);
@@ -101,10 +116,15 @@ class PaymentServiceTest {
         testUser.setId(1L);
         testUser.setCorreo(CORREO);
 
+        testEmpresa = new Empresa();
+        testEmpresa.setId(7L);
+        testEmpresa.setEstadoEmpresa("ACTIVO");
+        testEmpresa.setVisibilidadPublica(true);
         testBodega = new Bodega();
         testBodega.setId(1L);
         testBodega.setNombreBodega("Bodega Central");
         testBodega.setPermiteRetiroCliente(true);
+        testBodega.setEmpresa(testEmpresa);
 
         testProducto = new Producto();
         testProducto.setId(10L);
@@ -117,6 +137,11 @@ class PaymentServiceTest {
         testProducto.setVendido(false);
         testProducto.setEstado(Constants.ESTADO_ACTIVO);
         testProducto.setBodega(testBodega);
+        testProducto.setEmpresa(testEmpresa);
+        StockMovimientoSupport movimientos = new StockMovimientoSupport();
+        ReflectionTestUtils.setField(movimientos, "movimientoStockRepository", org.mockito.Mockito.mock(MovimientoStockRepository.class));
+        ReflectionTestUtils.setField(movimientos, "eventPublisher", eventPublisher);
+        ReflectionTestUtils.setField(stockReservationService, "movimientoSupport", movimientos);
 
         when(providerFactory.soporta("ONVO")).thenReturn(true);
         when(providerFactory.get("ONVO")).thenReturn(mockProvider);
@@ -566,10 +591,18 @@ class PaymentServiceTest {
         p.setEstadoPedido(estado);
         p.setUsuarioFinal(testUser);
         p.setBodega(testBodega);
+        p.setEmpresa(testEmpresa);
         p.setCostoEnvio(0);
         p.setTotalPedido(25000);
         p.setItems(new ArrayList<>());
         return p;
+    }
+
+    private static DuenoProducto dueno(long id, long empresaId) {
+        return new DuenoProducto() {
+            public Long getId() { return id; }
+            public Long getEmpresaId() { return empresaId; }
+        };
     }
 
     private PedidoItem buildItem(Producto producto, int cantidad) {
