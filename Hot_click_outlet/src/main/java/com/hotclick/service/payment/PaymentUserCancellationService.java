@@ -119,6 +119,22 @@ public class PaymentUserCancellationService {
                 "No pudimos cerrar el pago en ONVO. Si ya pagaste, el pedido se confirma en unos minutos; "
                     + "si no, intentá cancelar de nuevo.");
         }
+        // MEDIO limpieza: expirada o inexistente (404) no prueba que el intent no cobró. Gate fail-closed por GET:
+        // solo se cancela con el intent explícitamente sin cobro; si cobró, se confirma o queda REEMBOLSO_PENDIENTE.
+        OnvoPaymentProvider.CobroIntent cobro = onvoPaymentProvider.revisarCobroAntesDeCancelar(sesion, "cancelacion");
+        if (cobro == OnvoPaymentProvider.CobroIntent.SIN_COBRO) {
+            return;
+        }
+        if (cobro == OnvoPaymentProvider.CobroIntent.CONFIRMADO || cobro == OnvoPaymentProvider.CobroIntent.DUPLICADO
+                || cobro == OnvoPaymentProvider.CobroIntent.REEMBOLSO_PENDIENTE) {
+            log.warn("[onvo] Cancelación rechazada: ONVO ya cobró el pago id={} ({})", pago.getId(), cobro);
+            throw new IllegalStateException(
+                "Tu pago ya fue recibido, así que el pedido no se puede cancelar. Si corresponde, pedí el reembolso.");
+        }
+        log.warn("[onvo] Cancelación rechazada: no se pudo confirmar que el pago id={} no cobró ({})", pago.getId(), cobro);
+        throw new IllegalStateException(
+            "No pudimos confirmar con ONVO que el pago no se cobró. Si ya pagaste, el pedido se confirma en unos minutos; "
+                + "si no, intentá cancelar de nuevo.");
     }
 
     /**

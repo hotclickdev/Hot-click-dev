@@ -37,6 +37,9 @@ class OnvoPendientesReconsultaServiceTest {
     void armar() {
         when(tm.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
         when(onvo.isPagosDisponibles()).thenReturn(true);
+        // MEDIO limpieza: con NO_PAGADO el intent decide primero; acá ONVO confirma que no cobró.
+        when(provider.revisarCobroAntesDeCancelar(anyString(), anyString()))
+            .thenReturn(OnvoPaymentProvider.CobroIntent.SIN_COBRO);
     }
 
     private OnvoPendientesReconsultaService servicio(int lote, int antiguedad) {

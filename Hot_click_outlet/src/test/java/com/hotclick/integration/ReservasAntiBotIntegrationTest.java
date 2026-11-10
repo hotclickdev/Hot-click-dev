@@ -88,7 +88,14 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
             .thenAnswer(inv -> new OnvoService.OnvoCheckoutSession("cs_test_" + System.nanoTime(), "https://checkout.test/onvo"));
         when(onvoService.isPagosDisponibles()).thenReturn(true);
         when(onvoService.modoEsperado()).thenReturn("live");
-        org.mockito.Mockito.doReturn(java.util.Map.of()).when(onvoService).obtenerCheckoutSession(org.mockito.ArgumentMatchers.any());
+        // MEDIO limpieza: una sesión 404 ya no autoriza a cancelar. ONVO muestra la sesión vencida sin pagar y su
+        // intent explícitamente sin cobro (requires_payment_method), que es lo que permite liberar.
+        org.mockito.Mockito.doReturn(java.util.Map.of("status", "expired", "paymentStatus", "unpaid",
+                "paymentIntentId", "pi_antibot_sin_cobro", "mode", "live"))
+            .when(onvoService).obtenerCheckoutSession(org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.doReturn(java.util.Map.of("id", "pi_antibot_sin_cobro", "status", "requires_payment_method",
+                "amount", 0, "currency", "CRC", "mode", "live"))
+            .when(onvoService).obtenerPaymentIntent("pi_antibot_sin_cobro");
 
         empresa = new Empresa();
         empresa.setNombreEmpresa("AntiBot Inc");

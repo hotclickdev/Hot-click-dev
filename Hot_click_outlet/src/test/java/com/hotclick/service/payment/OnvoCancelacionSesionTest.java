@@ -112,6 +112,8 @@ class OnvoCancelacionSesionTest {
     @DisplayName("cancelar un pago ONVO expira la sesión en ONVO antes de marcarlo FALLIDO")
     void cancelarExpiraSesion() {
         when(onvoPaymentProvider.expirarSesionParaCancelar("cs_test_b1")).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobroAntesDeCancelar("cs_test_b1", "cancelacion"))
+            .thenReturn(OnvoPaymentProvider.CobroIntent.SIN_COBRO);
 
         service.cancelarAnon("ORD-B1", "ok");
 

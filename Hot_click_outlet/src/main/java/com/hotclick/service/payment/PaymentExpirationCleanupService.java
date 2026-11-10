@@ -85,8 +85,8 @@ public class PaymentExpirationCleanupService {
     /**
      * Antes de cancelar un pago ONVO vencido se le pregunta a ONVO: si cobró (webhook atrasado o perdido)
      * se confirma; si el cobro sigue en proceso, no se pudo consultar o el monto no coincide, queda
-     * pendiente para la próxima vuelta. Solo se cancela si ONVO no tiene la sesión o la deja expirada
-     * y sin cobro, así ya no se puede pagar un pedido cancelado.
+     * pendiente para la próxima vuelta. Solo se cancela si el payment intent está explícitamente sin cobro
+     * ({@link OnvoPaymentProvider#revisarCobroAntesDeCancelar}), también cuando ONVO ya no tiene la sesión (404).
      */
     private boolean onvoPermiteCancelar(Pago pago) {
         try {
@@ -98,7 +98,9 @@ public class PaymentExpirationCleanupService {
                     return false;
                 }
                 case NO_ENCONTRADO -> {
-                    return true;
+                    // Sesión inexistente (404) NO prueba que el intent no cobró: decide el intent guardado (V237).
+                    // Sin intent conocido o en duda → no se cancela ni se libera stock (alerta, revisión manual).
+                    return intentSinCobro(pago);
                 }
                 case NO_PAGADO -> {
                     // MEDIO (QA: charge succeeded y pedido cancelado): la sesión puede decir unpaid/expired con el

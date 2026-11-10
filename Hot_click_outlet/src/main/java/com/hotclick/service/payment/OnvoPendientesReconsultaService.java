@@ -147,6 +147,15 @@ public class OnvoPendientesReconsultaService {
         for (Pago pago : pagos) {
             try {
                 OnvoPaymentProvider.Verificacion v = onvoPaymentProvider.procesarPagoVerificado(pago.getMerchantToken(), ORIGEN);
+                if (v == OnvoPaymentProvider.Verificacion.NO_PAGADO || v == OnvoPaymentProvider.Verificacion.NO_ENCONTRADO) {
+                    // MEDIO limpieza (compensación del cobro tardío): la sesión puede quedar expired/unpaid o dar 404
+                    // con el intent ya cobrado. Decide el intent (guardado si hace falta); si cobró, la captura sobre
+                    // el pedido cancelado lo deja REEMBOLSO_PENDIENTE. Solo GET; no resucita el pedido.
+                    if (onvoPaymentProvider.revisarCobroAntesDeCancelar(pago.getMerchantToken(), ORIGEN)
+                            == OnvoPaymentProvider.CobroIntent.REEMBOLSO_PENDIENTE) {
+                        v = OnvoPaymentProvider.Verificacion.COBRADO_SOBRE_CANCELADO;
+                    }
+                }
                 if (v == OnvoPaymentProvider.Verificacion.COBRADO_SOBRE_CANCELADO) {
                     reembolso++;
                     log.error("[ALERTA-PAGO] Respaldo: ONVO cobró el pago cerrado id={}; queda REEMBOLSO_PENDIENTE", pago.getId());
@@ -179,6 +188,13 @@ public class OnvoPendientesReconsultaService {
             OnvoPaymentProvider.Verificacion v = onvoPaymentProvider.procesarPagoVerificado(sesion, ORIGEN);
             if (v == OnvoPaymentProvider.Verificacion.OK) {
                 return Efecto.CAPTURADO;
+            }
+            if (v == OnvoPaymentProvider.Verificacion.NO_PAGADO || v == OnvoPaymentProvider.Verificacion.NO_ENCONTRADO) {
+                // MEDIO limpieza: el intent decide (sesión expired/unpaid o 404 con cobro). Solo con SIN_COBRO se
+                // evalúa el rechazo, que además exige el intent rechazado por GET.
+                OnvoPaymentProvider.CobroIntent c = onvoPaymentProvider.revisarCobroAntesDeCancelar(sesion, ORIGEN);
+                if (c == OnvoPaymentProvider.CobroIntent.CONFIRMADO) return Efecto.CAPTURADO;
+                if (c != OnvoPaymentProvider.CobroIntent.SIN_COBRO) return Efecto.NADA;
             }
             if (v == OnvoPaymentProvider.Verificacion.NO_PAGADO
                     && onvoRechazoService.cerrarSiRechazado(pago.getId(), sesion)) {

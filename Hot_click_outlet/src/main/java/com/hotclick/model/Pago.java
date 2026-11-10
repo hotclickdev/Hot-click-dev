@@ -92,6 +92,13 @@ public class Pago extends BaseEntity {
     public String getOnvoReembolsoId() { return onvoReembolsoId; }
     public void setOnvoReembolsoId(String v) { this.onvoReembolsoId = v; }
 
+    /** V237: payment intent de ONVO de la checkout session (NULL = todavía no se vio). Sirve si la sesión da 404. */
+    @Column(name = "onvo_payment_intent_id", length = 64)
+    private String onvoPaymentIntentId;
+
+    public String getOnvoPaymentIntentId() { return onvoPaymentIntentId; }
+    public void setOnvoPaymentIntentId(String v) { this.onvoPaymentIntentId = v; }
+
     /** V227: estado del pedido antes del reembolso ONVO, para restaurarlo si ONVO lo rechaza. */
     @Column(name = "reembolso_estado_pedido_previo", length = 30)
     private String reembolsoEstadoPedidoPrevio;

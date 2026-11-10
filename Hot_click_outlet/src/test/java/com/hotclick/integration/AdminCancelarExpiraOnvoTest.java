@@ -137,6 +137,8 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
     @DisplayName("ONVO confirma: expira la sesión y el pedido queda CANCELADO")
     void cancelaYExpira() throws Exception {
         when(onvoPaymentProvider.expirarSesionParaCancelar(SESION)).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobroAntesDeCancelar(SESION, "cancelacion"))
+            .thenReturn(com.hotclick.payment.OnvoPaymentProvider.CobroIntent.SIN_COBRO);
 
         assertThat(cancelar()).isEqualTo(200);
 

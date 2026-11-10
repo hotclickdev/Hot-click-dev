@@ -36,6 +36,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -283,5 +284,100 @@ class PaymentExpirationCleanupCapturadoTest {
         cancelado();
         verify(onvo, never()).obtenerCheckoutSession(any());
         verify(onvo, never()).obtenerPaymentIntent(any());
+    }
+
+    // ── Sesión inexistente (404): NO demuestra que el intent no cobró ───────────────────────────────────────────
+
+    /** ONVO ya no tiene la sesión (leer() da vacío en 404); el pago recuerda el intent (V237) o no. */
+    private void sesion404(String intentGuardado) {
+        doReturn(Map.of()).when(onvo).obtenerCheckoutSession(SESION);
+        pago.setOnvoPaymentIntentId(intentGuardado);
+    }
+
+    @Test
+    @DisplayName("404 + intent guardado succeeded → se confirma por la captura idempotente, no se cancela")
+    void sesion404IntentCobrado_confirma() {
+        sesion404(INTENT);
+        doReturn(intent("succeeded")).when(onvo).obtenerPaymentIntent(INTENT);
+        doAnswer(inv -> { pago.setEstadoPago(Constants.PAGO_CAPTURADO); return OnvoCapturaService.Captura.CAPTURADO; })
+            .when(captura).capturarVerificado(eq(SESION), anyString(), eq("cleanup"));
+
+        service.ejecutar();
+
+        verify(captura, times(1)).capturarVerificado(eq(SESION), anyString(), eq("cleanup"));
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+        verify(stockReservationService, never()).liberarReservas(any());
+    }
+
+    @Test
+    @DisplayName("404 + intent guardado succeeded sin stock → REEMBOLSO_PENDIENTE, no se cancela")
+    void sesion404IntentCobradoSinStock_reembolso() {
+        sesion404(INTENT);
+        doReturn(intent("succeeded")).when(onvo).obtenerPaymentIntent(INTENT);
+        doAnswer(inv -> { pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+            return OnvoCapturaService.Captura.COBRADO_SOBREVENTA; })
+            .when(captura).capturarVerificado(eq(SESION), anyString(), eq("cleanup"));
+        service.ejecutar();
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        verify(stockReservationService, never()).liberarReservas(any());
+    }
+
+    @Test
+    @DisplayName("404 + error / timeout / ambiguo al leer el intent guardado → sin cambios")
+    void sesion404IntentErrorOAmbiguo_sinCambios() {
+        sesion404(INTENT);
+        doThrow(new IllegalStateException("5xx")).when(onvo).obtenerPaymentIntent(INTENT);
+        service.ejecutar();
+        noCambia();
+
+        doThrow(new ResourceAccessException("Read timed out")).when(onvo).obtenerPaymentIntent(INTENT);
+        service.ejecutar();
+        noCambia();
+
+        for (String estado : List.of("processing", "requires_action", "requires_capture", "estado_nuevo")) {
+            doReturn(intent(estado)).when(onvo).obtenerPaymentIntent(INTENT);
+            service.ejecutar();
+            noCambia();
+        }
+        Map<String, Object> otroModo = intent("requires_payment_method"); otroModo.put("mode", "live");
+        doReturn(otroModo).when(onvo).obtenerPaymentIntent(INTENT);
+        service.ejecutar();
+        doReturn(Map.of()).when(onvo).obtenerPaymentIntent(INTENT);
+        service.ejecutar();
+        noCambia();
+        verify(captura, never()).capturarVerificado(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("404 + intent guardado explícitamente no cobrado (requires_payment_method / canceled) → se cancela")
+    void sesion404IntentNoCobrado_cancela() {
+        sesion404(INTENT);
+        doReturn(intent("requires_payment_method")).when(onvo).obtenerPaymentIntent(INTENT);
+        service.ejecutar();
+        cancelado();
+        verify(captura, never()).capturarVerificado(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("404 sin intent resoluble → no cancela ni libera stock (alerta, revisión manual)")
+    void sesion404SinIntent_noLibera() {
+        sesion404(null);
+        service.ejecutar();
+        service.ejecutar();
+        noCambia();
+        verify(onvo, never()).obtenerPaymentIntent(any());
+        assertThat(provider.revisarCobroAntesDeCancelar(SESION, "cleanup"))
+            .isEqualTo(OnvoPaymentProvider.CobroIntent.EN_DUDA);
+    }
+
+    @Test
+    @DisplayName("La sesión expone su intent → se recuerda en el pago (V237) para cuando ONVO dé 404")
+    void sesionConIntent_seRecuerda() {
+        sesionVencidaSinPagar();
+        doReturn(intent("processing")).when(onvo).obtenerPaymentIntent(INTENT);
+        service.ejecutar();
+        verify(captura, org.mockito.Mockito.atLeastOnce()).guardarIntentId(SESION, INTENT);
+        noCambia();
     }
 }

@@ -156,6 +156,24 @@ public class OnvoCapturaService {
             });
     }
 
+    /**
+     * V237: recuerda el payment intent que ONVO muestra por GET en la sesión (la sesión manda: si cambió, se guarda el
+     * último y queda un aviso). No toca estado ni montos. Best-effort: quien llama ignora los fallos.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void guardarIntentId(String checkoutSessionId, String intentId) {
+        if (checkoutSessionId == null || intentId == null || intentId.isBlank()) return;
+        pagoRepository.findByMerchantToken(checkoutSessionId).ifPresent(p -> {
+            if (intentId.equals(p.getOnvoPaymentIntentId())) return;
+            if (p.getOnvoPaymentIntentId() != null) {
+                log.warn("[onvo] La sesión cambió de payment intent; se guarda el actual. sessionId={}",
+                    OnvoService.enmascarar(checkoutSessionId));
+            }
+            p.setOnvoPaymentIntentId(intentId);
+            pagoRepository.save(p);
+        });
+    }
+
     WebhookEvent registrar(String token, String tipo, String resumen, String origen) {
         WebhookEvent evento = new WebhookEvent();
         evento.setMerchantToken(token);

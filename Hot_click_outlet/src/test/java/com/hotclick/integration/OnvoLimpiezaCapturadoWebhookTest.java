@@ -385,4 +385,84 @@ class OnvoLimpiezaCapturadoWebhookTest extends BaseIntegrationTest {
         assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(estadoPedido(pedido)).isEqualTo(Constants.PEDIDO_CANCELADO);
     }
+
+    // ── Corrección 404: sesión inexistente no prueba que el intent no cobró ─────────────────────────────────────
+
+    @Test
+    @DisplayName("404 sin intent resoluble: el barrido (TTL y anti-bot) no cancela ni libera stock")
+    void sesion404SinIntentNoLiberaStock() {
+        Producto producto = producto(1, 1);
+        Pedido pedido = pedidoConPagoVencido(producto);
+        doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(SESION);
+
+        cleanup.ejecutar();
+        cleanup.ejecutar();
+
+        assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
+        assertThat(estadoPedido(pedido)).isEqualTo(Constants.PEDIDO_PENDIENTE);
+        assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockReservado()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("El intent visto en una vuelta se guarda (V237); si después la sesión da 404 y el intent cobró → PAGADO")
+    void intentGuardadoLuegoSesion404Cobrado() {
+        Producto producto = producto(1, 1);
+        Pedido pedido = pedidoConPagoVencido(producto);
+        onvoCobradoConSesionVencida(pedido.getId(), "processing"); // en duda: no se toca, pero se recuerda el intent
+        cleanup.ejecutar();
+        assertThat(pago().getOnvoPaymentIntentId()).isEqualTo(INTENT);
+        assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
+
+        doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(SESION);
+        doReturn(Map.of("id", INTENT, "status", "succeeded", "amount", 1_000_000, "receivedAmount", 1_000_000,
+            "currency", "CRC", "mode", "test")).when(onvoService).obtenerPaymentIntent(INTENT);
+        cleanup.ejecutar();
+
+        assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        assertThat(estadoPedido(pedido)).isEqualTo(Constants.PEDIDO_PAGADO);
+        Producto tras = productoRepository.findById(producto.getId()).orElseThrow();
+        assertThat(tras.getStockActual()).isZero();
+        assertThat(tras.getStockReservado()).isZero();
+    }
+
+    @Test
+    @DisplayName("404 + intent guardado no cobrado → se cancela y libera como hoy")
+    void sesion404IntentGuardadoNoCobradoCancela() {
+        Producto producto = producto(1, 1);
+        Pedido pedido = pedidoConPagoVencido(producto);
+        Pago pg = pago();
+        pg.setOnvoPaymentIntentId(INTENT);
+        pagoRepository.saveAndFlush(pg);
+        doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(SESION);
+        doReturn(Map.of("id", INTENT, "status", "requires_payment_method", "amount", 1_000_000,
+            "currency", "CRC", "mode", "test")).when(onvoService).obtenerPaymentIntent(INTENT);
+
+        cleanup.ejecutar();
+
+        assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
+        assertThat(estadoPedido(pedido)).isEqualTo(Constants.PEDIDO_CANCELADO);
+        assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockReservado()).isZero();
+    }
+
+    @Test
+    @DisplayName("Webhook tardío con sesión 404: encuentra el pago por el intent guardado y deja REEMBOLSO_PENDIENTE sobre el cancelado")
+    void webhookTardioSesion404PorIntentGuardado() throws Exception {
+        Producto producto = producto(1, 1);
+        Pedido pedido = pedidoConPagoVencido(producto);
+        onvoCobradoConSesionVencida(pedido.getId(), "requires_payment_method");
+        cleanup.ejecutar(); // se recuerda el intent y se cancela (sin cobro)
+        assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
+        assertThat(pago().getOnvoPaymentIntentId()).isEqualTo(INTENT);
+
+        // El cobro entra después; ONVO ya no tiene la sesión y el intent no trae metadata.
+        doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(SESION);
+        doReturn(Map.of("id", INTENT, "status", "succeeded", "amount", 1_000_000, "receivedAmount", 1_000_000,
+            "currency", "CRC", "mode", "test")).when(onvoService).obtenerPaymentIntent(INTENT);
+        MvcResult r = webhookIntent();
+
+        assertThat(r.getResponse().getStatus()).isEqualTo(200);
+        assertThat(r.getResponse().getContentAsString()).contains("refund_pending");
+        assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(estadoPedido(pedido)).isEqualTo(Constants.PEDIDO_CANCELADO);
+    }
 }
