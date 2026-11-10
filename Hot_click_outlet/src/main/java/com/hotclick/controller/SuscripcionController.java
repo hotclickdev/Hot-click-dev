@@ -67,27 +67,12 @@ public class SuscripcionController {
             if (preciosPlanes.precioPublicoUsd(p.getNombre()).isEmpty()) return planSinPrecio(new com.hotclick.exception.PlanSinPrecioException(p.getNombre()));
         }
         List<Map<String, Object>> result = planes.stream().map(p -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id", p.getId());
-            m.put("nombre", p.getNombre());
-            m.put("descripcion", p.getDescripcion());
-            // precioMensual en colones (UI / cobro ONVO). precioUsd es legado.
-            m.put("precioMensual", p.getPrecioMensual());
+            // precioMensual (colones) es legado; el monto que se muestra es precioUsd, el que cobra ONVO.
+            Map<String, Object> m = com.hotclick.service.suscripcion.PlanPublicoMapper.base(p);
             m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.getNombre()).orElseThrow(
                 () -> new com.hotclick.exception.PlanSinPrecioException(p.getNombre())));
             m.put("comisionPorcentaje", p.getComisionPorcentaje());
             m.put("comisionMinimaCrc", 0); // V185: sin mínimo por venta
-            m.put("maxUsuarios", p.getMaxUsuarios());
-            m.put("maxProductos", p.getMaxProductos());
-            m.put("maxBodegas", p.getMaxBodegas());
-            m.put("maxCajas", p.getMaxCajas());
-            m.put("tienePos", p.getTienePos());
-            m.put("tieneCrm", p.getTieneCrm());
-            m.put("tieneCompras", p.getTieneCompras());
-            m.put("tieneReportes", p.getTieneReportes());
-            m.put("tieneAi", p.getTieneAi());
-            m.put("tieneApi", p.getTieneApi());
-            m.put("tieneGiftCards", p.getTieneGiftCards());
             return m;
         }).toList();
         return ResponseEntity.ok(result);

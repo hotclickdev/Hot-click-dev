@@ -31,7 +31,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -62,11 +65,16 @@ class PlanesPrecioFuenteUnicaTest {
         return p;
     }
 
-    private void planesDeBd() {
-        when(planRepo.findByActivoTrueOrderByPrecioMensualAsc()).thenReturn(List.of(
+    private static List<Plan> catalogoBd() {
+        return List.of(
             plan(1, "EMPRENDEDOR", "0.00", 0),
             plan(2, "PYME", "11.99", 12900),
-            plan(3, "NEGOCIO_PLUS", "19.99", 28900)));
+            plan(3, "NEGOCIO_PLUS", "19.99", 28900));
+    }
+
+    private void planesDeBd() {
+        when(planRepo.findByActivoTrueOrderByPrecioMensualAsc()).thenReturn(catalogoBd());
+        when(planRepo.findByNombreInAndActivoTrueOrderByPrecioMensualAsc(any(), any())).thenReturn(catalogoBd());
     }
 
     private MockMvc mvc(PreciosPlanesConfig precios) {
@@ -157,14 +165,67 @@ class PlanesPrecioFuenteUnicaTest {
     }
 
     @Test
-    @DisplayName("precioPublicoUsd: usd o moneda sin definir publican; otra moneda, 0 o vacío no")
+    @DisplayName("precioPublicoUsd: solo con moneda USD explícita; nula, vacía, otra moneda, 0 o vacío no publican")
     void precioPublicoUsdReglas() {
         assertThat(new PreciosPlanesConfig("9", "24", "49", "USD").precioPublicoUsd("PYME")).contains(new BigDecimal("24"));
-        assertThat(new PreciosPlanesConfig("9", "24", "49", null).precioPublicoUsd("negocio_plus")).contains(new BigDecimal("49"));
+        assertThat(new PreciosPlanesConfig("9", "24", "49", "usd").precioPublicoUsd("negocio_plus")).contains(new BigDecimal("49"));
+        // Fail-closed de moneda: sin USD explícito (nula o vacía) no se publica precio.
+        assertThat(new PreciosPlanesConfig("9", "24", "49", null).precioPublicoUsd("NEGOCIO_PLUS")).isEmpty();
+        assertThat(new PreciosPlanesConfig("9", "24", "49", "").precioPublicoUsd("PYME")).isEmpty();
+        assertThat(new PreciosPlanesConfig("9", "24", "49", " ").precioPublicoUsd("PYME")).isEmpty();
+        assertThat(new PreciosPlanesConfig("9", "24", "49").precioPublicoUsd("PYME")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "24", "49", "eur").precioPublicoUsd("PYME")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "0", "49", "usd").precioPublicoUsd("PYME")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "24", "49", "usd").precioPublicoUsd("OTRO")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "24", "49", "usd").precioPublicoUsd(null)).isEmpty();
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "GET /api/planes sin moneda USD explícita («{0}»): todos los precioUsd null")
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @ValueSource(strings = {" "})
+    void sinMonedaNoPublica(String moneda) throws Exception {
+        planesDeBd();
+        mvc(new PreciosPlanesConfig("9", "24", "49", moneda)).perform(get("/api/planes"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3))
+            .andExpect(jsonPath("$[0].precioUsd").value(nullValue()))
+            .andExpect(jsonPath("$[1].precioUsd").value(nullValue()))
+            .andExpect(jsonPath("$[2].precioUsd").value(nullValue()));
+    }
+
+    @Test
+    @DisplayName("SCALE1: la consulta es acotada al catálogo autorizado y su tamaño (nombre UNIQUE: no deja afuera planes válidos)")
+    void consultaAcotadaAlCatalogo() throws Exception {
+        planesDeBd();
+        mvc(new PreciosPlanesConfig("9", "24", "49", "usd")).perform(get("/api/planes"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3));
+        verify(planRepo).findByNombreInAndActivoTrueOrderByPrecioMensualAsc(
+            eq(List.of("EMPRENDEDOR", "PYME", "NEGOCIO_PLUS")),
+            eq(org.springframework.data.domain.PageRequest.of(0, 3)));
+        verify(planRepo, org.mockito.Mockito.never()).findByActivoTrueOrderByPrecioMensualAsc();
+        // El catálogo es exactamente el conjunto de planes que tienen precio en la config.
+        PreciosPlanesConfig cfg = new PreciosPlanesConfig("9", "24", "49", "usd");
+        assertThat(PreciosPlanesConfig.CATALOGO).allSatisfy(n -> assertThat(cfg.precioPublicoUsd(n)).isPresent());
+    }
+
+    @Test
+    @DisplayName("/api/planes y /api/billing/planes comparten los campos base del plan (mismo mapper)")
+    @SuppressWarnings("unchecked")
+    void mismosCamposBase() {
+        planesDeBd();
+        PreciosPlanesConfig cfg = new PreciosPlanesConfig("9", "24", "49", "usd");
+        var publico = new TenantController(mock(TenantService.class), planRepo, mock(PruebaPlanService.class), cfg)
+            .planesPublicos().getBody();
+        var billing = (List<Map<String, Object>>) new SuscripcionController(
+            mock(com.hotclick.service.SuscripcionService.class), planRepo, mock(AuthSupport.class),
+            mock(com.hotclick.service.suscripcion.CobroSuscripcionService.class), cfg, mock(PropietarioGuard.class))
+            .listarPlanes().getBody();
+        for (int i = 0; i < 3; i++) {
+            Map<String, Object> base = com.hotclick.service.suscripcion.PlanPublicoMapper.base(catalogoBd().get(i));
+            assertThat(publico.get(i)).containsAllEntriesOf(base).containsEntry("precioUsd", billing.get(i).get("precioUsd"));
+            assertThat(billing.get(i)).containsAllEntriesOf(base);
+        }
     }
 
     // ---- Tienda suspendida: el monto pendiente es el de ONVO (USD), no los colones viejos de la tabla plan ----

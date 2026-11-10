@@ -74,7 +74,8 @@ class PlanSinPrecioTest {
     void configurado() {
         when(planRepo.findByActivoTrueOrderByPrecioMensualAsc())
             .thenReturn(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME"), plan(3, "NEGOCIO_PLUS")));
-        var r = controller(new PreciosPlanesConfig("9", "24", "49")).listarPlanes();
+        // Moneda USD explícita: sin ella no se publica precio (ver sinMonedaEnLista).
+        var r = controller(new PreciosPlanesConfig("9", "24", "49", "usd")).listarPlanes();
         assertThat(r.getStatusCode().value()).isEqualTo(200);
         var lista = (List<Map<String, Object>>) r.getBody();
         assertThat(lista).extracting(m -> m.get("precioUsd"))
@@ -86,10 +87,22 @@ class PlanSinPrecioTest {
     void faltaPrecioEnLista() {
         when(planRepo.findByActivoTrueOrderByPrecioMensualAsc())
             .thenReturn(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME")));
-        var r = controller(new PreciosPlanesConfig("9", "", "49")).listarPlanes();
+        var r = controller(new PreciosPlanesConfig("9", "", "49", "usd")).listarPlanes();
         assertThat(r.getStatusCode().value()).isEqualTo(409);
         var body = (Map<String, Object>) r.getBody();
         assertThat(body).containsEntry("codigo", "PLAN_SIN_PRECIO").containsEntry("plan", "PYME");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "Sin moneda USD explícita («{0}»), /billing/planes responde 409 PLAN_SIN_PRECIO")
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {" ", "crc", "eur"})
+    @SuppressWarnings("unchecked")
+    void sinMonedaEnLista(String moneda) {
+        when(planRepo.findByActivoTrueOrderByPrecioMensualAsc())
+            .thenReturn(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME"), plan(3, "NEGOCIO_PLUS")));
+        var r = controller(new PreciosPlanesConfig("9", "24", "49", moneda)).listarPlanes();
+        assertThat(r.getStatusCode().value()).isEqualTo(409);
+        assertThat((Map<String, Object>) r.getBody()).containsEntry("codigo", "PLAN_SIN_PRECIO");
     }
 
     @Test @DisplayName("Checkout de un plan sin precio: 409 PLAN_SIN_PRECIO y no se inicia cobro")
