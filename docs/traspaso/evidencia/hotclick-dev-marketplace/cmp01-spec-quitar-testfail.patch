@@ -1,0 +1,11 @@
+--- a/Hot_click_outlet/frontend/tests/fullstack/05-compra-qa5.spec.ts
++++ b/Hot_click_outlet/frontend/tests/fullstack/05-compra-qa5.spec.ts
+@@ -103,8 +103,6 @@
+ 
+   test('Retiro + SINPE (ONVO): el pedido aparece en Mis pedidos', async ({ request }) => {
+     test.skip(!conOnvo, 'Requiere ONVO de prueba (E2E_ONVO_SECRET_KEY onvo_test_): sin llave ningún checkout llega a crear el pedido')
+-    // Con llave, la única cuenta con sesión disponible es de negocio (registro roto: E2E-REG-01) → choca con E2E-CMP-01.
+-    test.fail(true, 'Bloqueado por E2E-CMP-01 / E2E-REG-01 (no hay comprador puro en el seed)')
+     const s = await login(request, QA.PYME)
+     const res = await request.post('/api/payments/checkout', {
+       headers: auth(s),

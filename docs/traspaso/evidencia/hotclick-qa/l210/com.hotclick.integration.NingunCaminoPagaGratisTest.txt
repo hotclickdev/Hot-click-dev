@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.hotclick.integration.NingunCaminoPagaGratisTest
+-------------------------------------------------------------------------------
+Tests run: 22, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 42.26 s -- in com.hotclick.integration.NingunCaminoPagaGratisTest
