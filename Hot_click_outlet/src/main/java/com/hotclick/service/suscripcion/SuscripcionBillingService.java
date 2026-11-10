@@ -176,8 +176,14 @@ public class SuscripcionBillingService {
             stripeService.cancelarSuscripcion(ids.stripe(), inmediata);
         }
 
-        // TX2: persistir resultado (la fila tiene que seguir con el mismo id ONVO que se canceló)
-        self.aplicarCancelacion(empresaId, cancelarYa, ids.onvo());
+        // TX2: persistir resultado (la fila bloqueada tiene que seguir con el mismo id ONVO y sin subida pendiente)
+        try {
+            self.aplicarCancelacion(empresaId, cancelarYa, ids.onvo());
+        } catch (FilaCambioTrasCancelarEnOnvoException e) {
+            // ONVO ya canceló/programó pero la fila cambió: la TX2 se revirtió; se marca para revisión en una TX aparte.
+            if (idPresente(ids.onvo())) self.marcarRevisionManual(empresaId);
+            throw new CancelacionOnvoNoDisponibleException();
+        }
         log.info("[billing] Suscripción cancelada empresa={} inmediata={} efectiva={} onvo={}",
             empresaId, inmediata, cancelarYa, idPresente(ids.onvo()));
         return cancelarYa;
@@ -257,12 +263,21 @@ public class SuscripcionBillingService {
      */
     @Transactional
     public void aplicarCancelacion(Long empresaId, boolean inmediata, String onvoCancelada) {
-        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId)
+        Suscripcion activa = suscripcionRepo.findActivaByEmpresaId(empresaId)
             .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Suscripción activa no encontrada", "empresaId=" + empresaId));
-        if (idPresente(onvoCancelada) && !onvoCancelada.equals(sub.getOnvoSubscriptionId())) {
-            log.error("[ALERTA-PAGO] [billing] la suscripción ONVO de la fila cambió durante la cancelación; no se aplica"
-                + " localmente, revisar a mano empresa={}", empresaId);
-            throw new CancelacionOnvoNoDisponibleException();
+        // Lock de fila (PESSIMISTIC_WRITE) y relectura: un webhook o un cambio de plan concurrente no se pisa.
+        Suscripcion sub = bloquear(activa);
+        if (idPresente(onvoCancelada)) {
+            if (!onvoCancelada.equals(sub.getOnvoSubscriptionId()) || !esVigente(sub)) {
+                log.error("[ALERTA-PAGO] [billing] la suscripción ONVO de la fila cambió durante la cancelación; no se"
+                    + " aplica localmente, revisión manual empresa={}", empresaId);
+                throw new FilaCambioTrasCancelarEnOnvoException();
+            }
+        }
+        if (idPresente(sub.getOnvoSubNuevaPendiente())) {
+            log.error("[ALERTA-PAGO] [billing] apareció una subida ONVO pendiente durante la cancelación; no se aplica"
+                + " localmente, revisión manual empresa={}", empresaId);
+            throw new FilaCambioTrasCancelarEnOnvoException();
         }
         if (inmediata) {
             sub.setEstado("CANCELADO");
@@ -272,6 +287,44 @@ public class SuscripcionBillingService {
             sub.setCancelarAlVencer(true);
         }
         suscripcionRepo.save(sub);
+    }
+
+    /** Fila bloqueada por id (PESSIMISTIC_WRITE); sin id (fila no persistida) se usa la leída. */
+    private Suscripcion bloquear(Suscripcion activa) {
+        if (activa.getId() == null) return activa;
+        return suscripcionRepo.findByIdForUpdate(activa.getId()).orElseThrow(() ->
+            RecursoNoEncontradoException.conDetalle("Suscripción activa no encontrada", "suscripcionId=" + activa.getId()));
+    }
+
+    private static boolean esVigente(Suscripcion sub) {
+        return sub.getEstado() == null
+            || !("CANCELADO".equalsIgnoreCase(sub.getEstado()) || "VENCIDO".equalsIgnoreCase(sub.getEstado()));
+    }
+
+    /**
+     * Revisión manual tras cancelar en ONVO sin poder aplicarlo localmente. TX propia (la de la cancelación ya se
+     * revirtió). Mejor esfuerzo: si falla, solo queda la alerta.
+     */
+    @Transactional
+    public void marcarRevisionManual(Long empresaId) {
+        try {
+            suscripcionRepo.findActivaByEmpresaId(empresaId).ifPresent(s -> {
+                if (s.getOnvoRevisionManualDesde() == null) {
+                    s.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+                    suscripcionRepo.save(s);
+                }
+            });
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] [billing] no se pudo marcar la revisión manual empresa={} causa={}",
+                empresaId, e.getClass().getSimpleName());
+        }
+    }
+
+    /** La fila cambió (otro id ONVO, ya no vigente o subida pendiente) entre cancelar en ONVO y guardar. */
+    static final class FilaCambioTrasCancelarEnOnvoException extends RuntimeException {
+        FilaCambioTrasCancelarEnOnvoException() {
+            super("La suscripción cambió durante la cancelación");
+        }
     }
 
     /** Sin @Transactional: la lectura usa la TX propia del repo, luego HTTP sin conexión retenida. */

@@ -286,7 +286,11 @@ class CancelarTrialOnvoFailClosedTest {
         assertThatThrownBy(() -> billing.cancelar(EMPRESA, true))
             .isInstanceOf(CancelacionOnvoNoDisponibleException.class);
         assertThat(otra.getEstado()).isEqualTo("TRIAL");
-        verify(repo, never()).save(any());
+        assertThat(otra.getFechaCancelacion()).isNull();
+        verifyNoInteractions(planSupport);
+        // Seguimiento (d): ONVO ya canceló → la fila queda marcada para revisión manual (única escritura).
+        assertThat(otra.getOnvoRevisionManualDesde()).isNotNull();
+        verify(repo, times(1)).save(any());
     }
 
     @Test
