@@ -267,8 +267,8 @@ public class OnvoBillingClient {
         return v instanceof String t && !t.isBlank();
     }
 
+    /** Sin {@code @Retry}: es un POST; con respuesta ambigua no se repite a ciegas (MEDIO Seguridad, Opción A). */
     @CircuitBreaker(name = "onvo", fallbackMethod = "cancelarFallback")
-    @Retry(name = "onvo")
     public ResultadoCancelacion cancelarAlVencer(String subscriptionId) {
         boolean idMock = subscriptionId != null && subscriptionId.startsWith("sub_mock");
         // Fail-closed: un id simulado fuera de dev/test nunca se da por cancelado.
@@ -295,6 +295,75 @@ public class OnvoBillingClient {
         }
         log.info("[onvo] Suscripción marcada cancelAtPeriodEnd: {}", subscriptionId);
         return ResultadoCancelacion.PROGRAMADA;
+    }
+
+    /**
+     * MEDIO Seguridad (Opción A): cancelación pedida por el negocio ({@code /api/billing/cancelar}). Se cancela en ONVO
+     * ANTES de tocar nada local y solo se devuelve un resultado con confirmación explícita de ONVO:
+     * <ul>
+     *   <li>{@code inmediata=true}: {@code DELETE /v1/subscriptions/{id}} (responde el objeto Subscription);</li>
+     *   <li>{@code inmediata=false}: {@code POST /v1/subscriptions/{id}} con {@code cancelAtPeriodEnd=true}.</li>
+     * </ul>
+     * SIN {@code @Retry} a propósito: una escritura con respuesta ambigua no se repite a ciegas. Si la escritura falla o
+     * la respuesta no confirma, se relee la suscripción con un GET (solo lectura); si tampoco confirma, lanza y el
+     * llamador responde 503 sin cambios locales. No se manda Idempotency-Key. En dev/test sin llave (o id simulado) se
+     * comporta igual que {@link #cancelarInmediato}/{@link #cancelarAlVencer} (simulación solo con perfil permitido).
+     */
+    public ResultadoCancelacion cancelarPorNegocio(String subscriptionId, boolean inmediata) {
+        boolean idMock = subscriptionId != null && subscriptionId.startsWith("sub_mock");
+        if (sinLlave() || idMock) {
+            exigirSimulacionPermitida("cancelarPorNegocio");
+            log.info("[onvo-mock] cancelarPorNegocio(inmediata={})", inmediata);
+            return inmediata ? ResultadoCancelacion.CANCELADA : ResultadoCancelacion.PROGRAMADA;
+        }
+        if (!idValido(subscriptionId)) {
+            throw new IllegalArgumentException("Id de suscripción ONVO inválido");
+        }
+        String path = "/subscriptions/" + subscriptionId;
+        Map<?, ?> resp = null;
+        try {
+            resp = inmediata ? deleteConRespuesta(path) : post(path, Map.of("cancelAtPeriodEnd", true));
+        } catch (RuntimeException e) {
+            log.warn("[onvo] cancelación del negocio sin respuesta clara sub={} inmediata={} causa={} status={};"
+                    + " se verifica por GET", enmascararId(subscriptionId), inmediata, e.getClass().getSimpleName(),
+                statusDe(e));
+        }
+        ResultadoCancelacion r = cancelacionConfirmada(resp, subscriptionId, inmediata);
+        if (r != null) {
+            log.info("[onvo] cancelación del negocio confirmada sub={} resultado={}", enmascararId(subscriptionId), r);
+            return r;
+        }
+        // Respuesta ambigua o error: se relee (lectura), nunca se repite la escritura. Si el GET falla, sube la excepción.
+        r = cancelacionConfirmada(get(path), subscriptionId, inmediata);
+        if (r == null) {
+            log.error("[ALERTA-PAGO] ONVO no confirmó la cancelación pedida por el negocio sub={} inmediata={}",
+                enmascararId(subscriptionId), inmediata);
+            throw new IllegalStateException("ONVO no confirmó la cancelación");
+        }
+        log.info("[onvo] cancelación del negocio confirmada por GET sub={} resultado={}", enmascararId(subscriptionId), r);
+        return r;
+    }
+
+    /**
+     * Confirmación explícita de ONVO sobre ESA suscripción (el {@code id} es obligatorio y tiene que coincidir): {@code canceled} (o {@code incomplete_expired}, que ONVO ya
+     * no cobra) = CANCELADA; con {@code inmediata=false}, {@code cancelAtPeriodEnd=true} = PROGRAMADA. Cualquier otra
+     * cosa (sin cuerpo, otro id, otro estado) = null (ambigua).
+     */
+    static ResultadoCancelacion cancelacionConfirmada(Map<?, ?> sub, String subscriptionId, boolean inmediata) {
+        if (sub == null || sub.isEmpty()) return null;
+        Object id = sub.get("id");
+        // Sin id o con otro id no es confirmación de ESTA suscripción.
+        if (id == null || subscriptionId == null || !String.valueOf(id).equals(subscriptionId)) return null;
+        Object status = sub.get("status");
+        if ("canceled".equals(status) || "incomplete_expired".equals(status)) return ResultadoCancelacion.CANCELADA;
+        if (!inmediata && Boolean.TRUE.equals(sub.get("cancelAtPeriodEnd"))) return ResultadoCancelacion.PROGRAMADA;
+        return null;
+    }
+
+    /** Id enmascarado para logs: solo los últimos 4 caracteres. */
+    private static String enmascararId(String id) {
+        if (id == null || id.length() <= 4) return "****";
+        return "****" + id.substring(id.length() - 4);
     }
 
     /** «live» o «test» según la llave de billing. Sin llave (o billing deshabilitado) no hay modo: null. */
@@ -455,6 +524,12 @@ public class OnvoBillingClient {
     private void delete(String path) {
         restTemplate.exchange(
             API_BASE + path, HttpMethod.DELETE, new HttpEntity<>(authHeaders()), Map.class);
+    }
+
+    private Map<?, ?> deleteConRespuesta(String path) {
+        ResponseEntity<Map> resp = restTemplate.exchange(
+            API_BASE + path, HttpMethod.DELETE, new HttpEntity<>(authHeaders()), Map.class);
+        return resp == null || resp.getBody() == null ? Map.of() : resp.getBody();
     }
 
     private HttpHeaders authHeaders() {

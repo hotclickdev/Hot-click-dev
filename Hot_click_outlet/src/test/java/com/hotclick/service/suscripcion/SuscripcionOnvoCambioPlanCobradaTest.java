@@ -208,6 +208,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThatThrownBy(() -> service.cambiarPlan(10L, 2L)).isInstanceOf(CambioPlanRequiereSolicitudException.class);
         verify(onvoBilling, never()).obtenerSuscripcion(any());
         verify(onvoBilling, never()).cancelarAlVencer(any());
+        verify(onvoBilling, never()).cancelarPorNegocio(any(), org.mockito.ArgumentMatchers.anyBoolean());
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
         verify(onvoBilling, never()).cancelarInmediato(any());
         assertThat(sub.getPlanPendiente()).isNull();
@@ -221,6 +222,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThatThrownBy(() -> service.cambiarPlan(10L, 1L)).isInstanceOf(CambioPlanRequiereSolicitudException.class);
         verify(onvoBilling, never()).obtenerSuscripcion(any());
         verify(onvoBilling, never()).cancelarAlVencer(any());
+        verify(onvoBilling, never()).cancelarPorNegocio(any(), org.mockito.ArgumentMatchers.anyBoolean());
         verify(onvoBilling, never()).cancelarInmediato(any());
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
         assertThat(sub.getCancelarAlVencer()).isFalse();
@@ -234,6 +236,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThatThrownBy(() -> service.cambiarPlan(10L, 1L)).isInstanceOf(CambioPlanRequiereSolicitudException.class);
         verify(onvoBilling, never()).obtenerSuscripcion(any());
         verify(onvoBilling, never()).cancelarAlVencer(any());
+        verify(onvoBilling, never()).cancelarPorNegocio(any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test

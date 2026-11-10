@@ -1,5 +1,7 @@
 package com.hotclick.service.suscripcion;
 
+import com.hotclick.exception.CancelacionConSubidaPendienteException;
+import com.hotclick.exception.CancelacionOnvoNoDisponibleException;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.utils.ErrorPublico;
 import com.hotclick.model.Empresa;
@@ -9,6 +11,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PlanRepository;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.StripeService;
+import com.hotclick.service.onvo.OnvoBillingClient;
 import com.hotclick.utils.Constants;
 import com.stripe.exception.StripeException;
 import org.slf4j.Logger;
@@ -32,6 +35,8 @@ public class SuscripcionBillingService {
     @Autowired private PlanRepository        planRepo;
     @Autowired private StripeService         stripeService;
     @Autowired private SuscripcionPlanSupport planSupport;
+    /** ONVO es la pasarela de las suscripciones; sin bean, una cancelación con id ONVO falla cerrada (503). */
+    @Autowired(required = false) private OnvoBillingClient onvoBilling;
 
     /** Auditor 5 S-07: plan que recibe el trial de 14 días. */
     @org.springframework.beans.factory.annotation.Value("${hotclick.billing.plan-trial:PYME}")
@@ -140,21 +145,80 @@ public class SuscripcionBillingService {
     }
 
     /**
-     * TX1 (leer stripeSubId) → HTTP Stripe → TX2 (guardar cancelación).
+     * MEDIO Seguridad (Opción A): TX1 (leer ids) → ONVO (fail-closed) → Stripe heredado → TX2 (guardar cancelación).
+     * <p>Con id de suscripción ONVO se cancela PRIMERO en ONVO ({@link OnvoBillingClient#cancelarPorNegocio}); si ONVO
+     * falla, no responde o la respuesta es ambigua → {@link CancelacionOnvoNoDisponibleException} (503) y CERO cambios
+     * locales. Solo con la confirmación de ONVO se aplica la cancelación local. El cliente Stripe se llama únicamente si
+     * hay id de Stripe (antes se llamaba con null y su no-op dejaba viva la suscripción ONVO, que el cobro al final del
+     * trial reactivaba por webhook). Sin id ONVO ni Stripe el comportamiento es el de siempre.
+     *
+     * @return true si la suscripción quedó cancelada ya (pedida inmediata, o ONVO la reportó cancelada).
      */
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
-    public void cancelar(Long empresaId, boolean inmediata) throws StripeException {
+    public boolean cancelar(Long empresaId, boolean inmediata) throws StripeException {
         if (self.planPagadoNoSeCancelaSolo(empresaId)) {
             throw new com.hotclick.exception.CambioPlanRequiereSolicitudException();
         }
-        String stripeSubId = self.leerStripeSubId(empresaId);
+        IdsExternos ids = self.leerIdsExternos(empresaId);
+        if (idPresente(ids.onvoNuevaPendiente())) {
+            throw new CancelacionConSubidaPendienteException();
+        }
 
-        // HTTP Stripe — fuera de TX
-        stripeService.cancelarSuscripcion(stripeSubId, inmediata);
+        boolean cancelarYa = inmediata;
+        if (idPresente(ids.onvo())) {
+            // HTTP ONVO — fuera de TX y ANTES de cualquier cambio local.
+            OnvoBillingClient.ResultadoCancelacion r = cancelarEnOnvo(empresaId, ids.onvo(), inmediata);
+            if (r == OnvoBillingClient.ResultadoCancelacion.CANCELADA) cancelarYa = true;
+        }
 
-        // TX2: persistir resultado
-        self.aplicarCancelacion(empresaId, inmediata);
-        log.info("[billing] Suscripción cancelada empresa={} inmediata={}", empresaId, inmediata);
+        if (idPresente(ids.stripe())) {
+            // HTTP Stripe (suscripciones heredadas) — fuera de TX
+            stripeService.cancelarSuscripcion(ids.stripe(), inmediata);
+        }
+
+        // TX2: persistir resultado (la fila bloqueada tiene que seguir con el mismo id ONVO y sin subida pendiente)
+        try {
+            self.aplicarCancelacion(empresaId, cancelarYa, ids.onvo());
+        } catch (FilaCambioTrasCancelarEnOnvoException e) {
+            // ONVO ya canceló/programó pero la fila cambió: la TX2 se revirtió; se marca para revisión en una TX aparte.
+            if (idPresente(ids.onvo())) self.marcarRevisionManual(empresaId);
+            throw new CancelacionOnvoNoDisponibleException();
+        }
+        log.info("[billing] Suscripción cancelada empresa={} inmediata={} efectiva={} onvo={}",
+            empresaId, inmediata, cancelarYa, idPresente(ids.onvo()));
+        return cancelarYa;
+    }
+
+    private OnvoBillingClient.ResultadoCancelacion cancelarEnOnvo(Long empresaId, String onvoSubId, boolean inmediata) {
+        if (onvoBilling == null) {
+            log.error("[ALERTA-PAGO] [billing] cancelación con suscripción ONVO sin cliente ONVO; no se toca nada empresa={}",
+                empresaId);
+            throw new CancelacionOnvoNoDisponibleException();
+        }
+        OnvoBillingClient.ResultadoCancelacion r;
+        try {
+            r = onvoBilling.cancelarPorNegocio(onvoSubId, inmediata);
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] [billing] ONVO no confirmó la cancelación; sin cambios locales empresa={} inmediata={}"
+                    + " causa={} status={}",
+                empresaId, inmediata, e.getClass().getSimpleName(), OnvoBillingClient.statusDe(e));
+            throw new CancelacionOnvoNoDisponibleException();
+        }
+        if (r == null) {
+            log.error("[ALERTA-PAGO] [billing] ONVO sin resultado de cancelación; sin cambios locales empresa={}", empresaId);
+            throw new CancelacionOnvoNoDisponibleException();
+        }
+        return r;
+    }
+
+    /** Ids externos de la suscripción activa (Stripe heredado, ONVO vigente y ONVO de una subida pendiente). */
+    public record IdsExternos(String stripe, String onvo, String onvoNuevaPendiente) {}
+
+    @Transactional(readOnly = true)
+    public IdsExternos leerIdsExternos(Long empresaId) {
+        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId)
+            .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Suscripción activa no encontrada", "empresaId=" + empresaId));
+        return new IdsExternos(sub.getStripeSubscriptionId(), sub.getOnvoSubscriptionId(), sub.getOnvoSubNuevaPendiente());
     }
 
     /**
@@ -196,8 +260,31 @@ public class SuscripcionBillingService {
 
     @Transactional
     public void aplicarCancelacion(Long empresaId, boolean inmediata) {
-        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId)
+        aplicarCancelacion(empresaId, inmediata, null);
+    }
+
+    /**
+     * Con {@code onvoCancelada} (id ONVO ya cancelado/programado en ONVO), la fila activa tiene que seguir teniendo ese
+     * mismo id; si cambió entre la lectura y ahora, no se toca nada y queda alerta para revisión.
+     */
+    @Transactional
+    public void aplicarCancelacion(Long empresaId, boolean inmediata, String onvoCancelada) {
+        Suscripcion activa = suscripcionRepo.findActivaByEmpresaId(empresaId)
             .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Suscripción activa no encontrada", "empresaId=" + empresaId));
+        // Lock de fila (PESSIMISTIC_WRITE) y relectura: un webhook o un cambio de plan concurrente no se pisa.
+        Suscripcion sub = bloquear(activa);
+        if (idPresente(onvoCancelada)) {
+            if (!onvoCancelada.equals(sub.getOnvoSubscriptionId()) || !esVigente(sub)) {
+                log.error("[ALERTA-PAGO] [billing] la suscripción ONVO de la fila cambió durante la cancelación; no se"
+                    + " aplica localmente, revisión manual empresa={}", empresaId);
+                throw new FilaCambioTrasCancelarEnOnvoException();
+            }
+        }
+        if (idPresente(sub.getOnvoSubNuevaPendiente())) {
+            log.error("[ALERTA-PAGO] [billing] apareció una subida ONVO pendiente durante la cancelación; no se aplica"
+                + " localmente, revisión manual empresa={}", empresaId);
+            throw new FilaCambioTrasCancelarEnOnvoException();
+        }
         if (inmediata) {
             sub.setEstado("CANCELADO");
             sub.setFechaCancelacion(LocalDate.now(Constants.ZONA_CR));
@@ -206,6 +293,44 @@ public class SuscripcionBillingService {
             sub.setCancelarAlVencer(true);
         }
         suscripcionRepo.save(sub);
+    }
+
+    /** Fila bloqueada por id (PESSIMISTIC_WRITE); sin id (fila no persistida) se usa la leída. */
+    private Suscripcion bloquear(Suscripcion activa) {
+        if (activa.getId() == null) return activa;
+        return suscripcionRepo.findByIdForUpdate(activa.getId()).orElseThrow(() ->
+            RecursoNoEncontradoException.conDetalle("Suscripción activa no encontrada", "suscripcionId=" + activa.getId()));
+    }
+
+    private static boolean esVigente(Suscripcion sub) {
+        return sub.getEstado() == null
+            || !("CANCELADO".equalsIgnoreCase(sub.getEstado()) || "VENCIDO".equalsIgnoreCase(sub.getEstado()));
+    }
+
+    /**
+     * Revisión manual tras cancelar en ONVO sin poder aplicarlo localmente. TX propia (la de la cancelación ya se
+     * revirtió). Mejor esfuerzo: si falla, solo queda la alerta.
+     */
+    @Transactional
+    public void marcarRevisionManual(Long empresaId) {
+        try {
+            suscripcionRepo.findActivaByEmpresaId(empresaId).ifPresent(s -> {
+                if (s.getOnvoRevisionManualDesde() == null) {
+                    s.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+                    suscripcionRepo.save(s);
+                }
+            });
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] [billing] no se pudo marcar la revisión manual empresa={} causa={}",
+                empresaId, e.getClass().getSimpleName());
+        }
+    }
+
+    /** La fila cambió (otro id ONVO, ya no vigente o subida pendiente) entre cancelar en ONVO y guardar. */
+    static final class FilaCambioTrasCancelarEnOnvoException extends RuntimeException {
+        FilaCambioTrasCancelarEnOnvoException() {
+            super("La suscripción cambió durante la cancelación");
+        }
     }
 
     /** Sin @Transactional: la lectura usa la TX propia del repo, luego HTTP sin conexión retenida. */

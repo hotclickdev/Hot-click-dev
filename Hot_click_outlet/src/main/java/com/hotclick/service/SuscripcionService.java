@@ -43,8 +43,9 @@ public class SuscripcionService {
         return billingService.guardarClienteYSuscripcion(empresaId, planId, customerId, priceId);
     }
 
-    public void cancelar(Long empresaId, boolean inmediata) throws StripeException {
-        billingService.cancelar(empresaId, inmediata);
+    /** @return true si quedó cancelada ya (inmediata, o ONVO la reportó cancelada). */
+    public boolean cancelar(Long empresaId, boolean inmediata) throws StripeException {
+        return billingService.cancelar(empresaId, inmediata);
     }
 
     @Transactional(readOnly = true)
