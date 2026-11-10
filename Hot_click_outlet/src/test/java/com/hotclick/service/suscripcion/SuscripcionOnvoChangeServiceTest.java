@@ -1,5 +1,6 @@
 package com.hotclick.service.suscripcion;
 
+import com.hotclick.exception.CambioPlanRequiereSolicitudException;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
@@ -253,9 +254,11 @@ class SuscripcionOnvoChangeServiceTest {
         }
     }
 
+    /** PYME en trial (todavía no cobrada): la baja a Emprendedor sigue yendo a ONVO. */
     private Suscripcion prepararBajaConSubOnvo() {
         empresa.setPlan(planPyme);
         empresa.setPlanSaas("PYME");
+        empresa.setEstadoPlan("TRIAL");
         Suscripcion sub = new Suscripcion();
         sub.setEmpresa(empresa);
         sub.setEstado("ACTIVA");
@@ -265,6 +268,20 @@ class SuscripcionOnvoChangeServiceTest {
         org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
         org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(sub));
         return sub;
+    }
+
+    @Test
+    @DisplayName("PYME ya cobrada que elige Emprendedor: 422 y no se cancela en ONVO")
+    void pymeCobrada_bajaAEmprendedor_422() {
+        Suscripcion sub = prepararBajaConSubOnvo();
+        empresa.setEstadoPlan("ACTIVO");
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+            .isInstanceOf(CambioPlanRequiereSolicitudException.class);
+
+        verify(onvoBilling, never()).cancelarAlVencer(any());
+        assertThat(sub.getCancelarAlVencer()).isNotEqualTo(Boolean.TRUE);
+        assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
     }
 
     @Test
