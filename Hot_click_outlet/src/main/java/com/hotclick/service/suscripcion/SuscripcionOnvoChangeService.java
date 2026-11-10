@@ -475,7 +475,16 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         // Fail-closed ANTES de llamar a ONVO: si falta PLANES_MONEDA el ledger de la baja no se podría escribir y la
         // operación se revertiría localmente después de haber cancelado en ONVO (cancelación huérfana).
         if (ledgerWriter != null) monedaLedgerOFalla("CANCELACION");
-        OnvoBillingClient.ResultadoCancelacion r = onvoBilling.cancelarAlVencer(sub.getOnvoSubscriptionId());
+        // MEDIO Seguridad (Opción A): mismo camino que /cancelar. Sin reintentos ciegos (el POST no se repite; ante
+        // error o respuesta ambigua solo se relee por GET). Sin confirmación de ONVO → 503 y cero cambios locales.
+        OnvoBillingClient.ResultadoCancelacion r;
+        try {
+            r = onvoBilling.cancelarPorNegocio(sub.getOnvoSubscriptionId(), false);
+        } catch (RuntimeException e) {
+            log.error("[ALERTA-PAGO] [onvo] bajar a {}: ONVO no confirmó la cancelación; sin cambios locales empresa={}"
+                + " causa={} status={}", PLAN_GRATIS, empresaId, e.getClass().getSimpleName(), OnvoBillingClient.statusDe(e));
+            throw new com.hotclick.exception.CancelacionOnvoNoDisponibleException();
+        }
         if (r == OnvoBillingClient.ResultadoCancelacion.CANCELADA) {
             // ONVO ya no cobra: se refleja el estado local en vez de dejar la suscripción ACTIVA.
             log.error("[ALERTA-PAGO] Suscripción ONVO cancelada de inmediato; se baja a {} empresa={}",
@@ -485,7 +494,9 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
         if (r != OnvoBillingClient.ResultadoCancelacion.PROGRAMADA) {
             // Fail-closed: sin confirmación de ONVO no se toca el estado local.
-            throw new IllegalStateException("ONVO no confirmó la cancelación. No se cambió el plan.");
+            log.error("[ALERTA-PAGO] [onvo] bajar a {}: ONVO sin resultado de cancelación; sin cambios locales empresa={}",
+                PLAN_GRATIS, empresaId);
+            throw new com.hotclick.exception.CancelacionOnvoNoDisponibleException();
         }
         self.marcarCancelarAlVencer(empresaId);
         return Map.of(
@@ -962,6 +973,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             sub.setPlan(planVigente(empresa, plan));
         }
         registrarPlanPendiente(sub, plan);
+        // La suscripción ONVO nueva no tiene cancelAtPeriodEnd: una cancelación al vencer previa (de la vieja, que el
+        // reemplazo cancela, o local sin ONVO) no se arrastra; si no, el cobro de la nueva la conservaría.
+        if (Boolean.TRUE.equals(sub.getCancelarAlVencer())) {
+            log.warn("[onvo-alta] suscripción ONVO nueva sobre una fila con cancelación al vencer: se limpia empresa={}",
+                empresa.getId());
+            sub.setCancelarAlVencer(false);
+        }
         sub.setOnvoCustomerId(customerId);
         sub.setOnvoSubscriptionId(subscriptionId);
         sub.setOnvoPriceId(priceId);
@@ -1077,7 +1095,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (sub.getOnvoSubNuevaPendiente() == null) sub.setPlanPendiente(null);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
-        sub.setCancelarAlVencer(false);
+        // MEDIO Seguridad (Opción A): un cobro no deshace una cancelación al vencer; se conserva y queda alerta.
+        conservarCancelacionAlVencer(sub, onvoSubId, "cobro");
         sub.setFechaFin(fin);
         // El período que se está pagando arranca hoy (Costa Rica), no en la fecha_inicio del plan anterior.
         sub.setFechaInicio(LocalDate.now(Constants.ZONA_CR));
@@ -1202,12 +1221,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
         // MEDIO Seguridad (Opción A): la activación del trial no deshace una cancelación al vencer ya confirmada en ONVO.
-        if (Boolean.TRUE.equals(sub.getCancelarAlVencer())) {
-            log.warn("[billing-onvo] trial con método sobre una suscripción con cancelación al vencer: se conserva"
-                + " sub={}", enmascarar(onvoSubId));
-        } else {
-            sub.setCancelarAlVencer(false);
-        }
+        conservarCancelacionAlVencer(sub, onvoSubId, "trial");
         sub.setTrialEnd(finTrial);
         sub.setFechaFin(finTrial);
         suscripcionRepo.save(sub);
@@ -1233,7 +1247,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     private boolean ignorarPorCanceladaLocal(Suscripcion sub, String onvoSubId, String evento) {
         if (sub == null || !"CANCELADO".equalsIgnoreCase(sub.getEstado())) return false;
         if (sub.getOnvoRevisionManualDesde() == null) {
-            sub.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+            marcarRevisionManual(sub);
             suscripcionRepo.save(sub);
         }
         log.error("[ALERTA-PAGO] [onvo] {} de una suscripción ya cancelada localmente: NO se reactiva; revisión manual"
@@ -1241,9 +1255,32 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         return true;
     }
 
+    /**
+     * MEDIO Seguridad (Opción A): con {@code cancelarAlVencer=true} (cancelación al vencer ya confirmada en ONVO) un
+     * cobro o una activación de trial NO la deshace: se conserva, se marca para revisión manual y se alerta sin PII.
+     * Sin cancelación pendiente queda {@code false} como siempre.
+     */
+    private void conservarCancelacionAlVencer(Suscripcion sub, String onvoSubId, String evento) {
+        if (!Boolean.TRUE.equals(sub.getCancelarAlVencer())) {
+            sub.setCancelarAlVencer(false);
+            return;
+        }
+        marcarRevisionManual(sub);
+        log.error("[ALERTA-PAGO] [onvo] {} sobre una suscripción con cancelación al vencer: se conserva la cancelación;"
+            + " revisión manual sub={}", evento, enmascarar(onvoSubId));
+    }
+
+    private static void marcarRevisionManual(Suscripcion sub) {
+        if (sub.getOnvoRevisionManualDesde() == null) {
+            sub.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+        }
+    }
+
     @Transactional
     public void procesarRenovacionFallida(String onvoSubId) {
         suscripcionRepo.findByOnvoSubscriptionId(onvoSubId).ifPresent(sub -> {
+            // MEDIO Seguridad (Opción A): una renovación fallida no pasa a PAST_DUE una fila ya CANCELADO.
+            if (ignorarPorCanceladaLocal(sub, onvoSubId, "renovación fallida")) return;
             sub.setEstado("PAST_DUE");
             Empresa empresa = sub.getEmpresa();
             // H1 (fail-closed): un PAST_DUE sin fecha_fin nunca lo elige el job de impago y el negocio conservaría el

@@ -251,6 +251,11 @@ public class SuscripcionController {
             return ResponseEntity.status(422).body(Map.of(
                 "error", com.hotclick.exception.CambioPlanRequiereSolicitudException.MENSAJE,
                 "codigo", com.hotclick.exception.CambioPlanRequiereSolicitudException.CODIGO));
+        } catch (com.hotclick.exception.CancelacionOnvoNoDisponibleException e) {
+            // MEDIO Seguridad (Opción A): bajar a Emprendedor sin confirmación de ONVO; no se cambió nada local.
+            return ResponseEntity.status(503).body(Map.of(
+                "error", com.hotclick.exception.CancelacionOnvoNoDisponibleException.MENSAJE,
+                "codigo", com.hotclick.exception.CancelacionOnvoNoDisponibleException.CODIGO));
         } catch (com.hotclick.exception.ReemplazoOnvoNoDisponibleException e) {
             // ALTO-02b: ONVO no respondió al crear la suscripción nueva; la vieja quedó intacta.
             return ResponseEntity.status(503).body(Map.of(

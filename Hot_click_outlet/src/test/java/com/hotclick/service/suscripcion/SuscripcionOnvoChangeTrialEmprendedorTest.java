@@ -120,6 +120,7 @@ class SuscripcionOnvoChangeTrialEmprendedorTest {
         assertThat(empresa.getEstadoPlan()).isEqualTo("VENCIDO");
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
         verify(onvoBilling, never()).cancelarAlVencer(any());
+        verify(onvoBilling, never()).cancelarPorNegocio(any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test

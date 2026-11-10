@@ -279,7 +279,7 @@ class SuscripcionOnvoChangeServiceTest {
         assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
             .isInstanceOf(CambioPlanRequiereSolicitudException.class);
 
-        verify(onvoBilling, never()).cancelarAlVencer(any());
+        verify(onvoBilling, never()).cancelarPorNegocio(any(), org.mockito.ArgumentMatchers.anyBoolean());
         assertThat(sub.getCancelarAlVencer()).isNotEqualTo(Boolean.TRUE);
         assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
     }
@@ -298,7 +298,7 @@ class SuscripcionOnvoChangeServiceTest {
                 .isInstanceOf(ConfigBillingFaltanteException.class)
                 .hasMessageContaining("PLANES_MONEDA");
 
-            org.mockito.Mockito.verify(onvoBilling, org.mockito.Mockito.never()).cancelarAlVencer(any());
+            org.mockito.Mockito.verify(onvoBilling, org.mockito.Mockito.never()).cancelarPorNegocio(any(), org.mockito.ArgumentMatchers.anyBoolean());
             assertThat(sub.getEstado()).isEqualTo("ACTIVA");
             assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
         }
@@ -312,18 +312,18 @@ class SuscripcionOnvoChangeServiceTest {
             org.mockito.Mockito.mock(com.hotclick.service.billing.BillingLedgerWriter.class));
         org.springframework.test.util.ReflectionTestUtils.setField(service, "preciosPlanes",
             new PreciosPlanesConfig("9", "24", "49", "usd"));
-        when(onvoBilling.cancelarAlVencer("sub_real_l210"))
+        when(onvoBilling.cancelarPorNegocio("sub_real_l210", false))
             .thenReturn(OnvoBillingClient.ResultadoCancelacion.PROGRAMADA);
 
         assertThat(service.cambiarPlan(10L, 1L).get("status")).isEqualTo("pendiente_ciclo");
-        org.mockito.Mockito.verify(onvoBilling).cancelarAlVencer("sub_real_l210");
+        org.mockito.Mockito.verify(onvoBilling).cancelarPorNegocio("sub_real_l210", false);
     }
 
     @Test
     @DisplayName("L210: ONVO responde canceled → suscripción local CANCELADO y empresa en Emprendedor")
     void bajaGratis_onvoCanceled_actualizaEstadoLocal() {
         Suscripcion sub = prepararBajaConSubOnvo();
-        when(onvoBilling.cancelarAlVencer("sub_real_l210"))
+        when(onvoBilling.cancelarPorNegocio("sub_real_l210", false))
             .thenReturn(OnvoBillingClient.ResultadoCancelacion.CANCELADA);
         when(suscripcionRepo.findByOnvoSubscriptionId("sub_real_l210")).thenReturn(Optional.of(sub));
         when(planRepo.findByNombre("EMPRENDEDOR")).thenReturn(Optional.of(planEmprendedor));
@@ -341,7 +341,7 @@ class SuscripcionOnvoChangeServiceTest {
     @DisplayName("L210: ONVO confirma cancelAtPeriodEnd → solo se marca cancelarAlVencer")
     void bajaGratis_programada_marcaAlVencer() {
         Suscripcion sub = prepararBajaConSubOnvo();
-        when(onvoBilling.cancelarAlVencer("sub_real_l210"))
+        when(onvoBilling.cancelarPorNegocio("sub_real_l210", false))
             .thenReturn(OnvoBillingClient.ResultadoCancelacion.PROGRAMADA);
 
         Map<String, Object> r = service.cambiarPlan(10L, 1L);
@@ -355,9 +355,11 @@ class SuscripcionOnvoChangeServiceTest {
     @DisplayName("L210: sin resultado de ONVO → excepción y el estado local no cambia (fail-closed)")
     void bajaGratis_sinResultado_failClosed() {
         Suscripcion sub = prepararBajaConSubOnvo();
-        when(onvoBilling.cancelarAlVencer("sub_real_l210")).thenReturn(null);
+        when(onvoBilling.cancelarPorNegocio("sub_real_l210", false)).thenReturn(null);
 
-        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L)).isInstanceOf(IllegalStateException.class);
+        // MEDIO Seguridad (Opción A): sin confirmación de ONVO → 503 CANCELACION_ONVO_NO_DISPONIBLE.
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+            .isInstanceOf(com.hotclick.exception.CancelacionOnvoNoDisponibleException.class);
         assertThat(sub.getEstado()).isEqualTo("ACTIVA");
         assertThat(sub.getCancelarAlVencer()).isNotEqualTo(Boolean.TRUE);
         verify(suscripcionRepo, never()).save(any());
@@ -463,5 +465,56 @@ class SuscripcionOnvoChangeServiceTest {
         empresa.setEstadoEmpresa("ACTIVO");
         when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
         assertThatThrownBy(() -> service.pagarSuspension(10L)).isInstanceOf(IllegalStateException.class);
+    }
+    @org.junit.jupiter.params.ParameterizedTest(name = "MEDIO Seguridad (a): bajar a gratis con ONVO caído ({0}) → 503, una sola llamada y cero cambios")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"timeout", "error"})
+    void bajaGratis_onvoFalla_503SinCambios(String falla) {
+        Suscripcion sub = prepararBajaConSubOnvo();
+        RuntimeException e = "timeout".equals(falla)
+            ? new org.springframework.web.client.ResourceAccessException("Read timed out")
+            : new IllegalStateException("ONVO no confirmó la cancelación");
+        when(onvoBilling.cancelarPorNegocio("sub_real_l210", false)).thenThrow(e);
+
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L))
+            .isInstanceOf(com.hotclick.exception.CancelacionOnvoNoDisponibleException.class);
+
+        verify(onvoBilling, org.mockito.Mockito.times(1)).cancelarPorNegocio("sub_real_l210", false);
+        verify(onvoBilling, never()).cancelarAlVencer(any());
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        verify(suscripcionRepo, never()).save(any());
+        assertThat(sub.getEstado()).isEqualTo("ACTIVA");
+        assertThat(sub.getCancelarAlVencer()).isNotEqualTo(Boolean.TRUE);
+        assertThat(sub.getOnvoRevisionManualDesde()).isNull();
+        assertThat(empresa.getPlanSaas()).isEqualTo("PYME");
+    }
+
+    @Test
+    @DisplayName("MEDIO Seguridad (2): una suscripción ONVO nueva no arrastra una cancelación al vencer previa")
+    void altaOnvoNueva_limpiaCancelacionAlVencerPrevia() {
+        Suscripcion sub = new Suscripcion();
+        sub.setEmpresa(empresa);
+        sub.setPlan(planEmprendedor);
+        sub.setEstado("TRIAL");
+        sub.setCancelarAlVencer(true);
+        when(empresaRepo.findById(10L)).thenReturn(Optional.of(empresa));
+        when(planRepo.findById(2L)).thenReturn(Optional.of(planPyme));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
+        org.mockito.Mockito.lenient().when(suscripcionRepo.findActivasByEmpresaId(10L)).thenReturn(java.util.List.of(sub));
+        org.mockito.Mockito.lenient().when(onvoBilling.isMockMode()).thenReturn(false);
+        when(onvoBilling.getPriceIdForPlan("PYME")).thenReturn("price_pyme");
+        when(onvoBilling.crearCustomer(any(), any(), anyMap()))
+            .thenReturn(new OnvoBillingClient.OnvoCustomer("cus_real"));
+        org.mockito.Mockito.lenient().when(onvoBilling.crearSuscripcionIncompleta(eq("cus_real"), eq("price_pyme"), anyMap()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "item_1"));
+        org.mockito.Mockito.lenient().when(onvoBilling.crearSuscripcionIncompleta(eq("cus_real"), eq("price_pyme"), anyMap(),
+                org.mockito.ArgumentMatchers.anyInt()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "item_1"));
+        org.mockito.Mockito.lenient().when(onvoService.getPublishableKey()).thenReturn("pk_test");
+        org.mockito.Mockito.lenient().when(suscripcionRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThat(service.cambiarPlan(10L, 2L).get("status")).isEqualTo("requiere_pago");
+
+        assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_nueva");
+        assertThat(sub.getCancelarAlVencer()).isFalse();
     }
 }
