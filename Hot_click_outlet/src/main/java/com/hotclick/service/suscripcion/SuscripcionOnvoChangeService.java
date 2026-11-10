@@ -606,6 +606,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         return nombre == null ? -1 : ORDEN_PLANES.indexOf(nombre.toUpperCase(java.util.Locale.ROOT));
     }
 
+    /** Plan que no está en ORDEN_PLANES (o sin nombre): no se sabe si es de pago, así que se bloquea (fail-closed). */
+    static boolean planFueraDeOrden(String nombre) {
+        return rangoPlan(nombre) < 0;
+    }
+
     /** Solo subir a NEGOCIO_PLUS desde un plan conocido más bajo. */
     static boolean esSubidaANegocioPlus(String actual, String destino) {
         int a = rangoPlan(actual);
@@ -620,9 +625,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     /**
      * Bajar desde PYME o Negocio Plus ya cobrado. Se resuelve sin preguntarle a ONVO.
      * Emprendedor (rango 0) no entra: no es una baja de un plan de pago superior.
+     * Fail-closed: con el período cobrado, un plan actual o destino fuera de ORDEN_PLANES también va por solicitud.
      */
     static boolean bajadaDePlanPagado(String actual, String destino, String estadoSub, String estadoPlan) {
         if (!periodoCobrado(estadoSub) && !periodoCobrado(estadoPlan)) return false;
+        if (planFueraDeOrden(actual) || planFueraDeOrden(destino)) return true;
         int desde = rangoPlan(actual);
         int hacia = rangoPlan(destino);
         return desde > 0 && hacia >= 0 && hacia < desde;
@@ -631,6 +638,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     /** Cancelar en autoservicio un PYME/Negocio Plus cobrado, o un Emprendedor que ya tiene suscripción de cobro. */
     static boolean cancelacionDePlanPagado(String actual, String estadoSub, String estadoPlan, boolean tieneCobroExterno) {
         if (!periodoCobrado(estadoSub) && !periodoCobrado(estadoPlan)) return false;
+        // Fail-closed: con el período cobrado, un plan fuera de ORDEN_PLANES no se cancela en autoservicio.
+        if (planFueraDeOrden(actual)) return true;
         int desde = rangoPlan(actual);
         if (desde > 0) return true;
         return desde == 0 && tieneCobroExterno;

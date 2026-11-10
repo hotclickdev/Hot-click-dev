@@ -40,6 +40,15 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, Long> 
            "ORDER BY s.fechaCreacion DESC, s.id DESC")
     List<Suscripcion> findActivasByEmpresaId(@Param("empresaId") Long empresaId);
 
+    /**
+     * Solo los ids de las suscripciones vigentes, sin cargar la entidad: quien necesita el lock carga la fila después
+     * con {@link #findByIdForUpdate} y no recibe una instancia ya leída sin lock.
+     */
+    @Query("SELECT s.id FROM Suscripcion s WHERE s.empresa.id = :empresaId " +
+           "AND s.estado NOT IN ('CANCELADO', 'VENCIDO') " +
+           "ORDER BY s.fechaCreacion DESC, s.id DESC")
+    List<Long> idsActivasByEmpresaId(@Param("empresaId") Long empresaId);
+
     Optional<Suscripcion> findByStripeSubscriptionId(String stripeSubscriptionId);
 
     Optional<Suscripcion> findByOnvoSubscriptionId(String onvoSubscriptionId);
