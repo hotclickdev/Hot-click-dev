@@ -345,14 +345,15 @@ public class OnvoBillingClient {
     }
 
     /**
-     * Confirmación explícita de ONVO sobre ESA suscripción: {@code canceled} (o {@code incomplete_expired}, que ONVO ya
+     * Confirmación explícita de ONVO sobre ESA suscripción (el {@code id} es obligatorio y tiene que coincidir): {@code canceled} (o {@code incomplete_expired}, que ONVO ya
      * no cobra) = CANCELADA; con {@code inmediata=false}, {@code cancelAtPeriodEnd=true} = PROGRAMADA. Cualquier otra
      * cosa (sin cuerpo, otro id, otro estado) = null (ambigua).
      */
     static ResultadoCancelacion cancelacionConfirmada(Map<?, ?> sub, String subscriptionId, boolean inmediata) {
         if (sub == null || sub.isEmpty()) return null;
         Object id = sub.get("id");
-        if (id != null && !String.valueOf(id).equals(subscriptionId)) return null;
+        // Sin id o con otro id no es confirmación de ESTA suscripción.
+        if (id == null || subscriptionId == null || !String.valueOf(id).equals(subscriptionId)) return null;
         Object status = sub.get("status");
         if ("canceled".equals(status) || "incomplete_expired".equals(status)) return ResultadoCancelacion.CANCELADA;
         if (!inmediata && Boolean.TRUE.equals(sub.get("cancelAtPeriodEnd"))) return ResultadoCancelacion.PROGRAMADA;

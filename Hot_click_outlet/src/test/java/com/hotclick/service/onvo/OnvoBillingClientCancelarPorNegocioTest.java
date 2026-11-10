@@ -150,9 +150,36 @@ class OnvoBillingClientCancelarPorNegocioTest {
         assertThat(OnvoBillingClient.cancelacionConfirmada(
             java.util.Map.of("id", "clsubotra", "status", "canceled"), SUB, true)).isNull();
         assertThat(OnvoBillingClient.cancelacionConfirmada(java.util.Map.of(), SUB, true)).isNull();
+        // (3) Sin id no es confirmación de ESTA suscripción.
+        assertThat(OnvoBillingClient.cancelacionConfirmada(java.util.Map.of("status", "canceled"), SUB, true)).isNull();
+        assertThat(OnvoBillingClient.cancelacionConfirmada(
+            java.util.Map.of("status", "trialing", "cancelAtPeriodEnd", true), SUB, false)).isNull();
+        assertThat(OnvoBillingClient.cancelacionConfirmada(java.util.Map.of("id", SUB, "status", "canceled"), null, true)).isNull();
         assertThat(OnvoBillingClient.cancelacionConfirmada(null, SUB, false)).isNull();
         assertThat(OnvoBillingClient.cancelacionConfirmada(
             java.util.Map.of("id", SUB, "status", "incomplete_expired"), SUB, true)).isEqualTo(ResultadoCancelacion.CANCELADA);
+    }
+
+    @Test
+    @DisplayName("(3) DELETE y GET responden canceled SIN id → excepción (no se acepta como confirmación)")
+    void respuestaSinId_falla() {
+        server.expect(once(), requestTo(URL)).andExpect(method(HttpMethod.DELETE))
+            .andRespond(withSuccess("{\"status\":\"canceled\"}", MediaType.APPLICATION_JSON));
+        server.expect(once(), requestTo(URL)).andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess("{\"status\":\"canceled\"}", MediaType.APPLICATION_JSON));
+        assertThatThrownBy(() -> client.cancelarPorNegocio(SUB, true)).isInstanceOf(IllegalStateException.class);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("(3) POST sin id pero GET con el id correcto → PROGRAMADA (la confirmación sale del GET)")
+    void postSinId_getConId() {
+        server.expect(once(), requestTo(URL)).andExpect(method(HttpMethod.POST))
+            .andRespond(withSuccess("{\"status\":\"trialing\",\"cancelAtPeriodEnd\":true}", MediaType.APPLICATION_JSON));
+        server.expect(once(), requestTo(URL)).andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(sub("trialing", true), MediaType.APPLICATION_JSON));
+        assertThat(client.cancelarPorNegocio(SUB, false)).isEqualTo(ResultadoCancelacion.PROGRAMADA);
+        server.verify();
     }
 
     @Test
