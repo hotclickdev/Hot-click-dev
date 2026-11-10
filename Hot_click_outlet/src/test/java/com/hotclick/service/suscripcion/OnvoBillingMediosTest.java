@@ -240,8 +240,8 @@ class OnvoBillingMediosTest {
         when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate(SUB)).thenReturn(Optional.of(sub));
         LocalDate fin = LocalDate.of(2026, 12, 4);
 
-        service.procesarPagoOnvoVerificado(SUB, "PYME", fin, "inv_paid_alta"); // webhook
-        service.procesarPagoOnvoVerificado(SUB, "PYME", fin, "inv_paid_alta"); // reconcile
+        service.procesarPagoOnvoVerificado(SUB, "PYME", fin, "inv_paid_alta", null); // webhook
+        service.procesarPagoOnvoVerificado(SUB, "PYME", fin, "inv_paid_alta", null); // reconcile
 
         verify(ledger, times(1)).registrar(any(), any(), anyString(), anyString(), eq("inv_paid_alta"), any(), any(), any());
         verify(empresaRepo, times(1)).save(empresa);
@@ -315,7 +315,7 @@ class OnvoBillingMediosTest {
             doReturn(factura("inv_paid_alta", "paid", INICIO, FIN)).when(onvo).obtenerFacturaDelPeriodoActual(any());
 
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
-            verify(cambio).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 4), "inv_paid_alta");
+            verify(cambio).procesarPagoOnvoVerificado(eq(SUB), eq("PYME"), eq(LocalDate.of(2026, 12, 4)), eq("inv_paid_alta"), any());
         }
 
         @Test
@@ -328,7 +328,7 @@ class OnvoBillingMediosTest {
 
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
             verify(onvo, never()).obtenerSuscripcion("cmw2vieja");
-            verify(cambio).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 4), "inv_paid_sub");
+            verify(cambio).procesarPagoOnvoVerificado(eq(SUB), eq("PYME"), eq(LocalDate.of(2026, 12, 4)), eq("inv_paid_sub"), any());
         }
 
         @Test
@@ -341,7 +341,7 @@ class OnvoBillingMediosTest {
             doReturn(factura("inv_x", "open", INICIO, FIN)).when(onvo).obtenerFacturaDelPeriodoActual(any());
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.SIN_CONFIRMAR);
 
-            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         }
 
         @Test
@@ -349,7 +349,7 @@ class OnvoBillingMediosTest {
         void onvoFalla_noCambia() {
             when(onvo.obtenerSuscripcion(SUB)).thenThrow(new org.springframework.web.client.ResourceAccessException("caído"));
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.ONVO_NO_DISPONIBLE);
-            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         }
 
         @Test
@@ -385,7 +385,7 @@ class OnvoBillingMediosTest {
             doReturn(factura("inv_paid_alta", "paid", INICIO, FIN)).when(onvo).obtenerFacturaDelPeriodoActual(any());
 
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.ACTIVADA);
-            verify(cambio).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 4), "inv_paid_alta");
+            verify(cambio).procesarPagoOnvoVerificado(eq(SUB), eq("PYME"), eq(LocalDate.of(2026, 12, 4)), eq("inv_paid_alta"), any());
             verify(onvo, never()).cancelarInmediato(any());
         }
 
@@ -400,7 +400,7 @@ class OnvoBillingMediosTest {
 
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.SIN_CONFIRMAR);
             assertThat(empresa.getEstadoPlan()).isEqualTo(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
-            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         }
 
         @Test
@@ -414,7 +414,7 @@ class OnvoBillingMediosTest {
             assertThat(rec.reconciliar(local)).isEqualTo(OnvoAltaReconciliacion.Resultado.ONVO_NO_DISPONIBLE);
             assertThat(local.getEstado()).isEqualTo("PENDING");
             assertThat(empresa.getEstadoPlan()).isEqualTo(com.hotclick.utils.Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
-            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         }
 
         @Test
@@ -457,7 +457,7 @@ class OnvoBillingMediosTest {
             rec.reconciliarPendientes();
             verify(suscripcionRepo).findOnvoPendientesRecientes(any(),
                 org.mockito.ArgumentMatchers.argThat(p -> p.getPageSize() == 50));
-            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+            verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         }
     }
 
@@ -570,7 +570,7 @@ class OnvoBillingMediosTest {
             assertThat(eventos.get("onvo_evt_a").getProcesadoOk()).isTrue();
             assertThat(sub.getEstado()).isEqualTo("ACTIVO");
             assertThat(sub.getFechaFin()).isEqualTo(finTrial);
-            verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+            verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         }
 
         @Test

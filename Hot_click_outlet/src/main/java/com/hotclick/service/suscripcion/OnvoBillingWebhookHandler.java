@@ -189,7 +189,7 @@ public class OnvoBillingWebhookHandler {
         if (!r.aceptado()) throw rechazo(r.motivo(), subId);
         exigirCustomerLocal(subId, sub);
         exigirSuscripcionLocal(subId);
-        suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), invoiceId);
+        suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), invoiceId, r.fechaInicio());
     }
 
     /**
@@ -260,7 +260,8 @@ public class OnvoBillingWebhookHandler {
         String facturaId = OnvoBillingVerificador.texto(factura, "id");
         if (facturaId != null && !OnvoBillingClient.idValido(facturaId)) throw rechazo("id", "facturaId");
         exigirSuscripcionLocal(subId);
-        suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId != null ? facturaId : intentId);
+        suscripcionService.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(),
+            facturaId != null ? facturaId : intentId, r.fechaInicio());
     }
 
     /**

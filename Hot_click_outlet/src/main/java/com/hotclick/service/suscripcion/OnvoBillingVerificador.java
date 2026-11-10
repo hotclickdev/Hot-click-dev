@@ -30,10 +30,19 @@ public final class OnvoBillingVerificador {
 
     private OnvoBillingVerificador() {}
 
-    /** Resultado: {@code motivo == null} = aceptar. */
-    public record Resultado(String motivo, String planNombre, LocalDate fechaFin) {
+    /**
+     * Resultado: {@code motivo == null} = aceptar. {@code fechaInicio} = inicio del período de ese cobro en Costa Rica
+     * (paid_at del cobro verificado o, si falta, el inicio de período de ONVO); null si ONVO no trae ninguno.
+     */
+    public record Resultado(String motivo, String planNombre, LocalDate fechaFin, LocalDate fechaInicio) {
+        public Resultado(String motivo, String planNombre, LocalDate fechaFin) {
+            this(motivo, planNombre, fechaFin, null);
+        }
         public boolean aceptado() { return motivo == null; }
-        static Resultado rechazo(String m) { return new Resultado(m, null, null); }
+        static Resultado rechazo(String m) { return new Resultado(m, null, null, null); }
+        Resultado conInicio(LocalDate inicio) {
+            return aceptado() ? new Resultado(null, planNombre, fechaFin, inicio) : this;
+        }
     }
 
     /** Moneda (ISO, como la configura el plan) y monto en unidad menor que ONVO tiene que cobrar por el plan. */
@@ -58,7 +67,46 @@ public final class OnvoBillingVerificador {
         if (parcial != null) return Resultado.rechazo(parcial);
         LocalDate fin = fecha(texto(invoice, "periodEnd"));
         if (fin == null) fin = fecha(texto(sub, "currentPeriodEnd"));
-        return planYMonto(invoice, F_TOTAL, sub, planPorPrice, precios, fin);
+        // El inicio es el de ESTE cobro: paid_at de la factura (o de su intent/cargo), si no el periodStart de la
+        // factura y recién después el currentPeriodStart de la suscripción.
+        LocalDate inicio = pagadoEn(invoice);
+        if (inicio == null) inicio = fecha(texto(invoice, "periodStart"));
+        if (inicio == null) inicio = fecha(texto(sub, "currentPeriodStart"));
+        return planYMonto(invoice, F_TOTAL, sub, planPorPrice, precios, fin).conInicio(inicio);
+    }
+
+    /**
+     * Fecha (Costa Rica) del {@code paid_at}/{@code paidAt} del cobro ya leído por GET: el objeto mismo, su
+     * {@code paymentIntent} embebido o el primer cargo {@code succeeded} de {@code charges}. null si falta o no se
+     * puede leer: quien llama cae al inicio de período de ONVO.
+     */
+    static LocalDate pagadoEn(Map<?, ?> cobro) {
+        if (cobro == null) return null;
+        LocalDate d = fechaPago(cobro);
+        if (d != null) return d;
+        if (cobro.get("paymentIntent") instanceof Map<?, ?> pi) {
+            d = fechaPago(pi);
+            if (d != null) return d;
+            d = pagoDeCargos(pi);
+            if (d != null) return d;
+        }
+        return pagoDeCargos(cobro);
+    }
+
+    private static LocalDate fechaPago(Map<?, ?> m) {
+        LocalDate d = fecha(texto(m, "paidAt"));
+        return d != null ? d : fecha(texto(m, "paid_at"));
+    }
+
+    private static LocalDate pagoDeCargos(Map<?, ?> m) {
+        if (!(m.get("charges") instanceof java.util.List<?> cargos)) return null;
+        for (Object c : cargos) {
+            if (c instanceof Map<?, ?> cargo && "succeeded".equalsIgnoreCase(texto(cargo, F_STATUS))) {
+                LocalDate d = fechaPago(cargo);
+                if (d != null) return d;
+            }
+        }
+        return null;
     }
 
     /** Trial sin método de pago guardado: todavía no hay nada que activar. */
@@ -151,11 +199,14 @@ public final class OnvoBillingVerificador {
         }
         // El alta por intent cobra el plan completo (moneda y monto del price configurado); lo prorrateado entra por la factura.
         String monedaFactura = texto(factura, "currency");
+        LocalDate inicio = pagadoEn(intent);
+        if (inicio == null) inicio = pagadoEn(factura);
+        if (inicio == null) inicio = fecha(texto(sub, "currentPeriodStart"));
         Resultado r = planYMonto(intent, "amount", sub, planPorPrice, precios, fecha(texto(sub, "currentPeriodEnd")));
         if (r.aceptado() && monedaFactura != null && !monedaFactura.equalsIgnoreCase(texto(intent, "currency"))) {
             return Resultado.rechazo("moneda");
         }
-        return r;
+        return r.conInicio(inicio);
     }
 
     /** customerId plano si existe; si no, customer.id (forma real del payment intent en ONVO). */
