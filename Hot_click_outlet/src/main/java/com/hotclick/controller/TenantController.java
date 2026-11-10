@@ -1,13 +1,12 @@
 package com.hotclick.controller;
 
-import com.hotclick.model.Plan;
-import com.hotclick.repository.PlanRepository;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.TenantService;
 import com.hotclick.service.prueba.PruebaPlanService;
 import com.hotclick.service.suscripcion.PlanPublicoMapper;
+import com.hotclick.service.suscripcion.PlanPublicoVista;
+import com.hotclick.service.suscripcion.PlanesActivosLector;
 import com.hotclick.service.suscripcion.PreciosPlanesConfig;
-import com.hotclick.utils.PaginasCompletas;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,14 +19,14 @@ import java.util.Map;
 public class TenantController {
 
     private final TenantService tenantService;
-    private final PlanRepository planRepo;
+    private final PlanesActivosLector planesActivos;
     private final PruebaPlanService pruebaPlanService;
     private final PreciosPlanesConfig preciosPlanes;
 
-    public TenantController(TenantService tenantService, PlanRepository planRepo,
+    public TenantController(TenantService tenantService, PlanesActivosLector planesActivos,
                             PruebaPlanService pruebaPlanService, PreciosPlanesConfig preciosPlanes) {
         this.tenantService = tenantService;
-        this.planRepo = planRepo;
+        this.planesActivos = planesActivos;
         this.pruebaPlanService = pruebaPlanService;
         this.preciosPlanes = preciosPlanes;
     }
@@ -76,26 +75,26 @@ public class TenantController {
      * ALTO: {@code precioUsd} sale SOLO de la config de precios (la misma que {@code PrecioPlanOnvo} verifica contra el
      * price de ONVO), nunca de la columna precio_usd de la tabla plan (V89/V105: 19.99 / 11.99). Si un plan no tiene
      * precio publicable, va {@code precioUsd: null} (la UI muestra «Mensualidad en dólares», sin monto inventado).
-     * SCALE1: se listan TODOS los planes activos (mismo criterio que antes, sin filtrar por nombre), leídos en páginas
-     * acotadas con orden estable (precio_mensual y luego id) hasta la última página; misma lectura que
-     * /api/billing/planes. La respuesta sigue siendo la lista completa; si superara el tope de páginas, falla en vez de
-     * devolver una lista parcial. Un plan activo sin precio publicable va con precioUsd null (no se esconde).
+     * Se listan TODOS los planes activos con {@link PlanesActivosLector} (el mismo lector que /api/billing/planes):
+     * páginas acotadas en una transacción REPEATABLE READ de solo lectura, orden precio_mensual e id. La respuesta es la
+     * lista completa; si una página falla no se devuelve una lista parcial. Un plan activo sin precio publicable va con
+     * precioUsd null (no se esconde).
      */
     @GetMapping("/planes")
     public ResponseEntity<List<Map<String, Object>>> planesPublicos() {
-        List<Plan> planes = PaginasCompletas.todas(planRepo::findByActivoTrue,
-            PageRequest.of(0, PlanPublicoMapper.TAMANO_PAGINA, PlanPublicoMapper.ORDEN), PlanPublicoMapper.MAX_PAGINAS);
+        List<PlanPublicoVista> planes = planesActivos.activos(
+            PageRequest.of(0, PlanesActivosLector.TAMANO_PAGINA, PlanesActivosLector.ORDEN));
         return ResponseEntity.ok(planes.stream().map(this::planPublico).toList());
     }
 
     /** Campos comunes del plan + los que esta API exponía de la entidad, con precioUsd de la config (o null). */
-    private Map<String, Object> planPublico(Plan p) {
+    private Map<String, Object> planPublico(PlanPublicoVista p) {
         Map<String, Object> m = PlanPublicoMapper.base(p);
-        m.put("activo", p.getActivo());
-        m.put("maxCreditosAi", p.getMaxCreditosAi());
-        m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.getNombre()).orElse(null));
-        m.put("comisionPorcentaje", p.getComisionPorcentaje());
-        m.put("comisionMinimaCrc", p.getComisionMinimaCrc());
+        m.put("activo", p.activo());
+        m.put("maxCreditosAi", p.maxCreditosAi());
+        m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.nombre()).orElse(null));
+        m.put("comisionPorcentaje", p.comisionPorcentaje());
+        m.put("comisionMinimaCrc", p.comisionMinimaCrc());
         return m;
     }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { montoCobroVisible, montoPlanVisible, textoPrecioCatalogo } from './montoPlan'
+import { montoCobroVisible, montoPlanVisible, rotuloPrecioLista, textoPrecioCatalogo } from './montoPlan'
 import { TEXTO_MONEDA_PLANES } from '@/config/planesPrecios'
 
 describe('monto del cobro antes de confirmar', () => {
@@ -38,5 +38,14 @@ describe('tarjetas de Admin › Planes y /planes: mensualidad en USD desde preci
     expect(TEXTO_MONEDA_PLANES).toContain('productos se venden en colones')
     expect(TEXTO_MONEDA_PLANES).toContain('mensualidad del plan se cobra en dólares (USD)')
     expect(TEXTO_MONEDA_PLANES).not.toMatch(/precios (están )?en colones/i)
+  })
+})
+
+describe('Emprendedor en Admin › Planes: US$9 es precio de lista', () => {
+  it('rotula «Precio de lista» solo a Emprendedor con monto', () => {
+    expect(rotuloPrecioLista({ nombre: 'EMPRENDEDOR', precioUsd: 9 })).toBe('Precio de lista')
+    expect(rotuloPrecioLista({ nombre: 'EMPRENDEDOR', precioUsd: null })).toBeNull()
+    expect(rotuloPrecioLista({ nombre: 'PYME', precioUsd: 24 })).toBeNull()
+    expect(rotuloPrecioLista(null)).toBeNull()
   })
 })

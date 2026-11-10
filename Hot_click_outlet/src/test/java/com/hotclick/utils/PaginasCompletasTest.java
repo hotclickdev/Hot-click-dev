@@ -30,27 +30,29 @@ class PaginasCompletasTest {
             List<Integer> todos = IntStream.range(0, n).boxed().toList();
             List<Pageable> pedidas = new ArrayList<>();
             List<Integer> out = PaginasCompletas.todas(p -> { pedidas.add(p); return pagina(todos, p); },
-                PageRequest.of(0, 5), 10);
+                PageRequest.of(0, 5));
             assertThat(out).as("n=%s", n).containsExactlyElementsOf(todos);
             assertThat(pedidas).allSatisfy(p -> assertThat(p.getPageSize()).isEqualTo(5));
         }
     }
 
     @Test
-    @DisplayName("Pasado el tope de páginas lanza; no trunca en silencio")
-    void topeLanza() {
-        List<Integer> todos = IntStream.range(0, 11).boxed().toList();
-        assertThatThrownBy(() -> PaginasCompletas.todas(p -> pagina(todos, p), PageRequest.of(0, 5), 2))
-            .isInstanceOf(IllegalStateException.class);
-        assertThat(PaginasCompletas.todas(p -> pagina(todos, p), PageRequest.of(0, 5), 3)).hasSize(11);
+    @DisplayName("Sin tope: 1.203 elementos en 241 páginas, todos; si una página falla, lanza y no devuelve nada parcial")
+    void sinTopeYErrorSinParcial() {
+        List<Integer> todos = IntStream.range(0, 1203).boxed().toList();
+        assertThat(PaginasCompletas.todas(p -> pagina(todos, p), PageRequest.of(0, 5))).containsExactlyElementsOf(todos);
+        assertThatThrownBy(() -> PaginasCompletas.todas(p -> {
+            if (p.getPageNumber() == 7) throw new IllegalStateException("caída");
+            return pagina(todos, p);
+        }, PageRequest.of(0, 5))).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    @DisplayName("Rechaza una consulta sin paginar o un tope inválido")
+    @DisplayName("Rechaza una consulta sin paginar")
     void argumentos() {
-        assertThatThrownBy(() -> PaginasCompletas.todas(p -> pagina(List.of(), p), Pageable.unpaged(), 3))
+        assertThatThrownBy(() -> PaginasCompletas.todas(p -> pagina(List.of(), p), Pageable.unpaged()))
             .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> PaginasCompletas.todas(p -> pagina(List.of(), p), PageRequest.of(0, 5), 0))
+        assertThatThrownBy(() -> PaginasCompletas.todas(p -> pagina(List.of(), p), null))
             .isInstanceOf(IllegalArgumentException.class);
     }
 }

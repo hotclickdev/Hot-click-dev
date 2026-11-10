@@ -9,7 +9,7 @@ import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
-import { montoCobroVisible, textoPrecioCatalogo } from '@/features/billing/montoPlan'
+import { montoCobroVisible, rotuloPrecioLista, textoPrecioCatalogo } from '@/features/billing/montoPlan'
 import { TEXTO_MONEDA_PLANES } from '@/config/planesPrecios'
 import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
@@ -67,6 +67,7 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
   const esFree = plan.nombre === 'EMPRENDEDOR'
   // Mensualidad en USD (precioUsd del backend = lo que cobra ONVO). precioMensual (colones) es legado y no se muestra.
   const precio = textoPrecioCatalogo(plan)
+  const rotulo = rotuloPrecioLista(plan)
 
   return (
     <div
@@ -97,6 +98,7 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
         <div className="flex items-end gap-1 mt-1">
           <span className="text-3xl font-bold" data-testid="precio-plan">{precio}</span>
         </div>
+        {rotulo && <p className="text-xs mt-0.5 opacity-70">{rotulo}</p>}
         <p className="text-xs mt-1 opacity-60">{plan.descripcion}</p>
       </div>
 

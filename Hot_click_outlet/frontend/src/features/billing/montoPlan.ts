@@ -31,3 +31,11 @@ function montoUsd(valor: unknown): string | null {
   if (!Number.isFinite(n) || n <= 0) return null
   return textoMensualidad(n)
 }
+
+/**
+ * Rótulo «Precio de lista» para Emprendedor con monto: US$9 es el precio de lista del plan; el cupo gratis de cada
+ * negocio lo decide el backend y esta pantalla no lo conoce, así que no se afirma que ese negocio lo pague.
+ */
+export function rotuloPrecioLista(plan: { nombre?: unknown; precioUsd?: unknown } | null | undefined): string | null {
+  return plan?.nombre === 'EMPRENDEDOR' && montoPlanVisible(plan) ? 'Precio de lista' : null
+}

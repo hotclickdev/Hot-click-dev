@@ -8,27 +8,24 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Recorre una consulta paginada hasta la última página y devuelve TODOS los elementos, en el orden del
- * {@link Pageable} (que debe ser estable). Cada página es una sola consulta acotada a su tamaño; no hay consultas por
- * elemento. Nunca trunca en silencio: si se pasa de {@code maxPaginas}, lanza en vez de devolver una lista parcial.
+ * Recorre una consulta paginada hasta la última página ({@code hasNext() == false}) y devuelve TODOS los elementos en
+ * el orden del {@link Pageable} (que debe ser estable). Cada página es una consulta acotada a su tamaño; no hay
+ * consultas por elemento. No hay tope de páginas: nunca devuelve una lista parcial; si una página falla, la excepción
+ * sube. Acota cada consulta, no la memoria: la lista completa queda en memoria. Para que las páginas sean coherentes
+ * entre sí, el llamador debe correrlas en una sola transacción con snapshot (ver PlanesActivosLector).
  */
 public final class PaginasCompletas {
 
     private PaginasCompletas() {}
 
-    public static <T> List<T> todas(Function<Pageable, Slice<T>> consulta, Pageable primera, int maxPaginas) {
+    public static <T> List<T> todas(Function<Pageable, Slice<T>> consulta, Pageable primera) {
         if (primera == null || primera.isUnpaged()) throw new IllegalArgumentException("Se requiere una página acotada");
-        if (maxPaginas < 1) throw new IllegalArgumentException("maxPaginas debe ser >= 1");
         List<T> out = new ArrayList<>();
         Pageable actual = primera;
-        for (int leidas = 1; ; leidas++) {
+        while (true) {
             Slice<T> pagina = consulta.apply(actual);
             out.addAll(pagina.getContent());
             if (!pagina.hasNext()) return out;
-            if (leidas >= maxPaginas) {
-                throw new IllegalStateException("Listado de más de " + maxPaginas + " páginas de "
-                    + primera.getPageSize() + ": no se devuelve una lista parcial");
-            }
             actual = pagina.nextPageable();
         }
     }

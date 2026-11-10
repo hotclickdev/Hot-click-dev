@@ -47,7 +47,11 @@ class PlanSinPrecioTest {
 
     private SuscripcionController controller(PreciosPlanesConfig precios) {
         when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
-        return new SuscripcionController(suscripcion, planRepo, auth, cobros, precios, guard);
+        SuscripcionController c = new SuscripcionController(suscripcion, planRepo, auth, cobros, precios, guard);
+        org.springframework.test.util.ReflectionTestUtils.setField(c, "planesActivos",
+            new com.hotclick.service.suscripcion.PlanesActivosLector(planRepo,
+                mock(com.hotclick.service.suscripcion.SnapshotLecturaPg.class)));
+        return c;
     }
 
     @org.junit.jupiter.params.ParameterizedTest(name = "QA3-012: EDITOR recibe 403 en {0}")

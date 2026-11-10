@@ -1,7 +1,5 @@
 package com.hotclick.service.suscripcion;
 
-import com.hotclick.model.Plan;
-import org.springframework.data.domain.Sort;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -15,33 +13,24 @@ public final class PlanPublicoMapper {
 
     private PlanPublicoMapper() {}
 
-    /**
-     * Lectura de los planes activos para los listados públicos: TODOS los activos (sin filtrar por nombre), en páginas
-     * acotadas con orden estable (precio_mensual ascendente, desempate por id). El llamador recorre todas las páginas con
-     * {@link com.hotclick.utils.PaginasCompletas}; si hubiera más de {@link #MAX_PAGINAS} falla, nunca trunca.
-     */
-    public static final Sort ORDEN = Sort.by(Sort.Order.asc("precioMensual"), Sort.Order.asc("id"));
-    public static final int TAMANO_PAGINA = 50;
-    public static final int MAX_PAGINAS = 20;
-
     /** Mapa ordenado con id, nombre, descripción, precioMensual (legado, colones), límites y features. */
-    public static Map<String, Object> base(Plan p) {
+    public static Map<String, Object> base(PlanPublicoVista p) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", p.getId());
-        m.put("nombre", p.getNombre());
-        m.put("descripcion", p.getDescripcion());
-        m.put("precioMensual", p.getPrecioMensual());
-        m.put("maxUsuarios", p.getMaxUsuarios());
-        m.put("maxProductos", p.getMaxProductos());
-        m.put("maxBodegas", p.getMaxBodegas());
-        m.put("maxCajas", p.getMaxCajas());
-        m.put("tienePos", p.getTienePos());
-        m.put("tieneCrm", p.getTieneCrm());
-        m.put("tieneCompras", p.getTieneCompras());
-        m.put("tieneReportes", p.getTieneReportes());
-        m.put("tieneAi", p.getTieneAi());
-        m.put("tieneApi", p.getTieneApi());
-        m.put("tieneGiftCards", p.getTieneGiftCards());
+        m.put("id", p.id());
+        m.put("nombre", p.nombre());
+        m.put("descripcion", p.descripcion());
+        m.put("precioMensual", p.precioMensual());
+        m.put("maxUsuarios", p.maxUsuarios());
+        m.put("maxProductos", p.maxProductos());
+        m.put("maxBodegas", p.maxBodegas());
+        m.put("maxCajas", p.maxCajas());
+        m.put("tienePos", p.tienePos());
+        m.put("tieneCrm", p.tieneCrm());
+        m.put("tieneCompras", p.tieneCompras());
+        m.put("tieneReportes", p.tieneReportes());
+        m.put("tieneAi", p.tieneAi());
+        m.put("tieneApi", p.tieneApi());
+        m.put("tieneGiftCards", p.tieneGiftCards());
         return m;
     }
 }

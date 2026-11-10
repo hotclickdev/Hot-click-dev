@@ -39,6 +39,9 @@ public class SuscripcionController {
     private com.hotclick.service.suscripcion.SuscripcionOnvoChangeService onvoCambio;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hotclick.security.RateLimiter rateLimiter;
+    /** Lector compartido de planes activos (proxy transaccional REPEATABLE READ). Obligatorio en el contexto. */
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.hotclick.service.suscripcion.PlanesActivosLector planesActivos;
 
     /** BAJO seguridad: cada reconciliación consulta ONVO; tope por empresa (mismo RateLimiter de AiCopilot). */
     static final int RECONCILIAR_MAX = 6;
@@ -59,26 +62,27 @@ public class SuscripcionController {
     }
 
     /**
-     * Lista todos los planes activos (públicos). Misma lectura que GET /api/planes: todos los activos, en páginas acotadas
-     * con orden estable (precio_mensual, id). Diferencia deliberada y previa: acá (catálogo para cobrar) un plan activo
-     * sin precio publicable hace 409 PLAN_SIN_PRECIO para toda la lista; /api/planes (página pública) lo deja con null.
+     * Lista todos los planes activos (públicos) con {@link com.hotclick.service.suscripcion.PlanesActivosLector}, el
+     * mismo lector que GET /api/planes (mismo conjunto, mismo snapshot por petición, orden precio_mensual e id).
+     * Diferencia deliberada y previa: acá (catálogo para cobrar) un plan activo sin precio publicable hace 409
+     * PLAN_SIN_PRECIO para toda la lista; /api/planes (página pública) lo deja con null.
      */
     @GetMapping("/planes")
     public ResponseEntity<?> listarPlanes() {
-        List<Plan> planes = com.hotclick.utils.PaginasCompletas.todas(planRepo::findByActivoTrue,
-            org.springframework.data.domain.PageRequest.of(0, com.hotclick.service.suscripcion.PlanPublicoMapper.TAMANO_PAGINA,
-                com.hotclick.service.suscripcion.PlanPublicoMapper.ORDEN),
-            com.hotclick.service.suscripcion.PlanPublicoMapper.MAX_PAGINAS);
+        List<com.hotclick.service.suscripcion.PlanPublicoVista> planes =
+            planesActivos.activos(org.springframework.data.domain.PageRequest.of(0,
+                com.hotclick.service.suscripcion.PlanesActivosLector.TAMANO_PAGINA,
+                com.hotclick.service.suscripcion.PlanesActivosLector.ORDEN));
         // Sin precio configurado no se publica el plan con 0 ni con valores viejos: 409 PLAN_SIN_PRECIO.
-        for (Plan p : planes) {
-            if (preciosPlanes.precioPublicoUsd(p.getNombre()).isEmpty()) return planSinPrecio(new com.hotclick.exception.PlanSinPrecioException(p.getNombre()));
+        for (com.hotclick.service.suscripcion.PlanPublicoVista p : planes) {
+            if (preciosPlanes.precioPublicoUsd(p.nombre()).isEmpty()) return planSinPrecio(new com.hotclick.exception.PlanSinPrecioException(p.nombre()));
         }
         List<Map<String, Object>> result = planes.stream().map(p -> {
             // precioMensual (colones) es legado; el monto que se muestra es precioUsd, el que cobra ONVO.
             Map<String, Object> m = com.hotclick.service.suscripcion.PlanPublicoMapper.base(p);
-            m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.getNombre()).orElseThrow(
-                () -> new com.hotclick.exception.PlanSinPrecioException(p.getNombre())));
-            m.put("comisionPorcentaje", p.getComisionPorcentaje());
+            m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.nombre()).orElseThrow(
+                () -> new com.hotclick.exception.PlanSinPrecioException(p.nombre())));
+            m.put("comisionPorcentaje", p.comisionPorcentaje());
             m.put("comisionMinimaCrc", 0); // V185: sin mínimo por venta
             return m;
         }).toList();

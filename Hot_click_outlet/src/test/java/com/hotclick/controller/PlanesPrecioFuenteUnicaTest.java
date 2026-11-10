@@ -83,9 +83,22 @@ class PlanesPrecioFuenteUnicaTest {
         return new org.springframework.data.domain.SliceImpl<>(todos.subList(desde, hasta), p, hasta < todos.size());
     }
 
+    /** Lector real (sin proxy: la transacción y el snapshot se prueban en los tests de Spring/Postgres). */
+    private com.hotclick.service.suscripcion.PlanesActivosLector lector() {
+        return new com.hotclick.service.suscripcion.PlanesActivosLector(planRepo,
+            mock(com.hotclick.service.suscripcion.SnapshotLecturaPg.class));
+    }
+
+    private SuscripcionController billing(PreciosPlanesConfig cfg) {
+        SuscripcionController c = new SuscripcionController(mock(com.hotclick.service.SuscripcionService.class), planRepo,
+            mock(AuthSupport.class), mock(com.hotclick.service.suscripcion.CobroSuscripcionService.class), cfg,
+            mock(PropietarioGuard.class));
+        org.springframework.test.util.ReflectionTestUtils.setField(c, "planesActivos", lector());
+        return c;
+    }
+
     private MockMvc mvc(PreciosPlanesConfig precios) {
-        return MockMvcBuilders.standaloneSetup(new TenantController(
-            mock(TenantService.class), planRepo, mock(PruebaPlanService.class), precios)).build();
+        return MockMvcBuilders.standaloneSetup(new TenantController(mock(TenantService.class), lector(), mock(PruebaPlanService.class), precios)).build();
     }
 
     private static Map<String, Object> priceOnvo(String id, long unitAmount) {
@@ -124,8 +137,7 @@ class PlanesPrecioFuenteUnicaTest {
         PrecioPlanOnvo precioOnvo = new PrecioPlanOnvo(config, onvo);
         Map<String, String> priceIds = Map.of("EMPRENDEDOR", "price_emp", "PYME", "price_pyme", "NEGOCIO_PLUS", "price_plus");
 
-        var body = (List<Map<String, Object>>) new TenantController(
-            mock(TenantService.class), planRepo, mock(PruebaPlanService.class), config).planesPublicos().getBody();
+        var body = (List<Map<String, Object>>) new TenantController(mock(TenantService.class), lector(), mock(PruebaPlanService.class), config).planesPublicos().getBody();
         assertThat(body).hasSize(3);
         for (Map<String, Object> p : body) {
             String nombre = (String) p.get("nombre");
@@ -221,22 +233,36 @@ class PlanesPrecioFuenteUnicaTest {
         verify(planRepo, org.mockito.Mockito.times(3)).findByActivoTrue(paginas.capture());
         assertThat(paginas.getAllValues()).extracting(org.springframework.data.domain.Pageable::getPageNumber).containsExactly(0, 1, 2);
         assertThat(paginas.getAllValues()).allSatisfy(pg -> {
-            assertThat(pg.getPageSize()).isEqualTo(com.hotclick.service.suscripcion.PlanPublicoMapper.TAMANO_PAGINA);
-            assertThat(pg.getSort()).isEqualTo(com.hotclick.service.suscripcion.PlanPublicoMapper.ORDEN);
+            assertThat(pg.getPageSize()).isEqualTo(com.hotclick.service.suscripcion.PlanesActivosLector.TAMANO_PAGINA);
+            assertThat(pg.getSort()).isEqualTo(com.hotclick.service.suscripcion.PlanesActivosLector.ORDEN);
         });
     }
 
     @Test
-    @DisplayName("SCALE1: más páginas que el tope → error, nunca una lista parcial")
-    void topeDePaginasNoTrunca() {
+    @DisplayName("Sin tope de páginas: 1.205 activos (25 páginas), todos devueltos en orden; error en una página → excepción, sin lista parcial")
+    void masDeMilSinTope() throws Exception {
+        List<Plan> todos = new java.util.ArrayList<>(catalogoBd());
+        for (int i = 0; i < 1202; i++) todos.add(plan(1000 + i, i % 5 == 0 ? "pyme" : "Legado " + i, "1", 40_000 + i / 3));
+        when(planRepo.findByActivoTrue(any())).thenAnswer(inv -> paginar(todos, inv.getArgument(0)));
+        mvc(new PreciosPlanesConfig("9", "24", "49", "usd")).perform(get("/api/planes"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1205))
+            .andExpect(jsonPath("$[1204].id").value(2201));
+        verify(planRepo, org.mockito.Mockito.times(25)).findByActivoTrue(any());
+
+        org.mockito.Mockito.reset(planRepo);
         when(planRepo.findByActivoTrue(any())).thenAnswer(inv -> {
             org.springframework.data.domain.Pageable p = inv.getArgument(0);
-            return new org.springframework.data.domain.SliceImpl<>(List.of(plan(p.getPageNumber(), "P" + p.getPageNumber(), "1", 0)), p, true);
+            if (p.getPageNumber() == 3) throw new org.springframework.dao.QueryTimeoutException("caída simulada");
+            return paginar(todos, p);
         });
-        var c = new TenantController(mock(TenantService.class), planRepo, mock(PruebaPlanService.class),
+        var c = new TenantController(mock(TenantService.class), lector(), mock(PruebaPlanService.class),
             new PreciosPlanesConfig("9", "24", "49", "usd"));
-        org.assertj.core.api.Assertions.assertThatThrownBy(c::planesPublicos).isInstanceOf(IllegalStateException.class);
-        verify(planRepo, org.mockito.Mockito.times(com.hotclick.service.suscripcion.PlanPublicoMapper.MAX_PAGINAS)).findByActivoTrue(any());
+        org.assertj.core.api.Assertions.assertThatThrownBy(c::planesPublicos)
+            .isInstanceOf(org.springframework.dao.QueryTimeoutException.class);
+        var b = billing(new PreciosPlanesConfig("9", "24", "49", "usd"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(b::listarPlanes)
+            .isInstanceOf(org.springframework.dao.QueryTimeoutException.class);
     }
 
     @Test
@@ -245,14 +271,12 @@ class PlanesPrecioFuenteUnicaTest {
     void mismosCamposBase() {
         planesDeBd();
         PreciosPlanesConfig cfg = new PreciosPlanesConfig("9", "24", "49", "usd");
-        var publico = new TenantController(mock(TenantService.class), planRepo, mock(PruebaPlanService.class), cfg)
+        var publico = new TenantController(mock(TenantService.class), lector(), mock(PruebaPlanService.class), cfg)
             .planesPublicos().getBody();
-        var billing = (List<Map<String, Object>>) new SuscripcionController(
-            mock(com.hotclick.service.SuscripcionService.class), planRepo, mock(AuthSupport.class),
-            mock(com.hotclick.service.suscripcion.CobroSuscripcionService.class), cfg, mock(PropietarioGuard.class))
+        var billing = (List<Map<String, Object>>) billing(cfg)
             .listarPlanes().getBody();
         for (int i = 0; i < 3; i++) {
-            Map<String, Object> base = com.hotclick.service.suscripcion.PlanPublicoMapper.base(catalogoBd().get(i));
+            Map<String, Object> base = com.hotclick.service.suscripcion.PlanPublicoMapper.base(com.hotclick.service.suscripcion.PlanPublicoVista.de(catalogoBd().get(i)));
             assertThat(publico.get(i)).containsAllEntriesOf(base).containsEntry("precioUsd", billing.get(i).get("precioUsd"));
             assertThat(billing.get(i)).containsAllEntriesOf(base);
         }
@@ -282,10 +306,7 @@ class PlanesPrecioFuenteUnicaTest {
         List<Plan> todos = new java.util.ArrayList<>(catalogoBd());
         for (int i = 0; i < 60; i++) todos.add(plan(200 + i, i % 2 == 0 ? "pyme" : "Negocio_Plus", "1", 30_000 + i));
         when(planRepo.findByActivoTrue(any())).thenAnswer(inv -> paginar(todos, inv.getArgument(0)));
-        java.util.function.Function<List<Plan>, SuscripcionController> ctrl = x -> new SuscripcionController(
-            mock(com.hotclick.service.SuscripcionService.class), planRepo, mock(AuthSupport.class),
-            mock(com.hotclick.service.suscripcion.CobroSuscripcionService.class),
-            new PreciosPlanesConfig("9", "24", "49", "usd"), mock(PropietarioGuard.class));
+        java.util.function.Function<List<Plan>, SuscripcionController> ctrl = x -> billing(new PreciosPlanesConfig("9", "24", "49", "usd"));
         var ok = ctrl.apply(todos).listarPlanes();
         assertThat(ok.getStatusCode().value()).isEqualTo(200);
         assertThat((List<Map<String, Object>>) ok.getBody()).hasSize(63)
@@ -336,9 +357,7 @@ class PlanesPrecioFuenteUnicaTest {
     @SuppressWarnings("unchecked")
     void billingPlanesMismaRegla() {
         planesDeBd();
-        java.util.function.Function<PreciosPlanesConfig, SuscripcionController> ctrl = precios -> new SuscripcionController(
-            mock(com.hotclick.service.SuscripcionService.class), planRepo, mock(AuthSupport.class),
-            mock(com.hotclick.service.suscripcion.CobroSuscripcionService.class), precios, mock(PropietarioGuard.class));
+        java.util.function.Function<PreciosPlanesConfig, SuscripcionController> ctrl = precios -> billing(precios);
         assertThat(ctrl.apply(new PreciosPlanesConfig("9", "24", "49", "crc")).listarPlanes().getStatusCode().value())
             .isEqualTo(409);
         var ok = ctrl.apply(new PreciosPlanesConfig("9", "24", "49", "usd")).listarPlanes();
