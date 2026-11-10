@@ -17,6 +17,8 @@ public class PagoResumenDTO {
     private String  merchantToken;
     private String  fechaCreacion;
     private String  fechaActualizacion;
+    /** Motivo de ONVO si el reembolso quedó REEMBOLSO_PENDIENTE. Vacío si no hubo rechazo. */
+    private String  reembolsoError;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -34,6 +36,7 @@ public class PagoResumenDTO {
         d.correoUsuario     = (p.getUsuario() != null) ? p.getUsuario().getCorreo() : null;
         d.fechaCreacion     = p.getFechaCreacion()     != null ? p.getFechaCreacion().format(FMT)     : null;
         d.fechaActualizacion= p.getFechaActualizacion() != null ? p.getFechaActualizacion().format(FMT) : null;
+        d.reembolsoError    = p.getReembolsoError();
         return d;
     }
 
@@ -47,4 +50,5 @@ public class PagoResumenDTO {
     public String  getMerchantToken()     { return merchantToken; }
     public String  getFechaCreacion()     { return fechaCreacion; }
     public String  getFechaActualizacion(){ return fechaActualizacion; }
+    public String  getReembolsoError()    { return reembolsoError; }
 }

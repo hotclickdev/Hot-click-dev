@@ -41,9 +41,27 @@ class OnvoReembolsoIdempotencyHttpTest {
             .andExpect(method(HttpMethod.POST))
             .andExpect(headerDoesNotExist("Idempotency-Key"))
             .andExpect(jsonPath("$.paymentIntentId").value("pi_test_1"))
+            .andExpect(jsonPath("$.amount").value(900_000))
+            .andExpect(jsonPath("$.reason").value("requested_by_customer"))
+            .andExpect(jsonPath("$.currency").doesNotExist())
             .andRespond(withSuccess("{\"id\":\"rf_1\",\"status\":\"pending\"}", MediaType.APPLICATION_JSON));
-        assertThat(onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-7", CLAVE_IDEM).status())
+        assertThat(onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-7", CLAVE_IDEM, 900_000L).status())
             .isEqualTo("pending");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("400 refunds.payment_intent_already_payed: el POST es /refunds con amount y el código queda legible")
+    void yaPagadoConservaCodigo() {
+        server.expect(requestTo(API + "/refunds"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(jsonPath("$.amount").value(900_000))
+            .andExpect(jsonPath("$.paymentIntentId").value("pi_test_1"))
+            .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                .body("{\"code\":\"refunds.payment_intent_already_payed\",\"message\":\"Payment intent already payed\"}"));
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+            () -> onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-34", CLAVE_IDEM, 900_000L));
+        assertThat(OnvoService.motivoOnvo(e.getResponseBodyAsString())).contains("refunds.payment_intent_already_payed");
         server.verify();
     }
 
@@ -54,7 +72,7 @@ class OnvoReembolsoIdempotencyHttpTest {
             .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
                 .body("{\"statusCode\":400,\"message\":[\"Payment intent " + intent + " cannot be refunded\",\"tel 8" + "8887777\"],\"error\":\"Bad Request\"}"));
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
-            () -> onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-7", CLAVE_IDEM));
+            () -> onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-7", CLAVE_IDEM, 900_000L));
         String motivo = OnvoService.motivoOnvo(e.getResponseBodyAsString());
         assertThat(motivo).contains("cannot be refunded").doesNotContain(intent).doesNotContain("88887777").contains("***");
         assertThat(OnvoService.motivoOnvo(null)).isEqualTo("(sin detalle)");
