@@ -71,8 +71,16 @@ public class ReembolsoOnvoService {
             + "No se pidió el reembolso. El pago quedó en REEMBOLSO_PENDIENTE.";
     public static final String MSG_YA_HAY_REFUND =
         "ONVO ya tiene un reembolso de este cobro. No se pidió otro. El pago sigue en REEMBOLSO_PENDIENTE.";
-    /** Código estable que ONVO devolvió en el pedido 34 al reembolsar un intent ya capturado sin amount. */
+    /**
+     * ONVO TEST lo devolvió en el pedido 34 y en los pedidos 10, 21 y 49 con el intent {@code succeeded},
+     * {@code receivedAmount} igual al total y sin un refund {@code succeeded}. No está en openapi.yaml ni en
+     * docs.onvopay.com/reference/errors. El POST ya era el del ejemplo (paymentIntentId + amount en céntimos).
+     */
     static final String CODIGO_YA_PAGADO = "refunds.payment_intent_already_payed";
+    public static final String MSG_ONVO_NO_DEVUELVE =
+        "ONVO rechazó el reembolso (" + CODIGO_YA_PAGADO + "). El cobro sigue succeeded y no hay un refund "
+            + "confirmado: no se devolvió la plata. La API pública solo tiene POST /v1/refunds "
+            + "(paymentIntentId y amount); no hay otro endpoint. El pago queda en REEMBOLSO_PENDIENTE.";
     private static final String INTENT_REEMBOLSADO = "refunded";
     private static final String INTENT_PARCIAL = "partially_refunded";
     private static final String INTENT_CAPTURADO = "succeeded";
@@ -175,6 +183,9 @@ public class ReembolsoOnvoService {
         if (intent == null) throw new ReembolsoException(502, MSG_EN_DUDA);
         Resultado ya = siOnvoYaReembolso(pedidoId, p, intent, operador);
         if (ya != null) return ya;
+        if (rechazoTerminalGuardado(p.pagoId())) {
+            throw new ReembolsoException(409, MSG_ONVO_NO_DEVUELVE);
+        }
         if (reembolsoYaEnOnvo(p, intent)) {
             tx.executeWithoutResult(s -> guardarError(p.pagoId(), MSG_YA_HAY_REFUND));
             throw new ReembolsoException(409, MSG_YA_HAY_REFUND);
@@ -209,8 +220,13 @@ public class ReembolsoOnvoService {
             throw new ReembolsoException(502, MSG_RECHAZO);
         }
         if (motivo.contains(CODIGO_YA_PAGADO)) {
-            Resultado ya = siOnvoYaReembolso(pedidoId, p, leerIntent(p.intentId()), operador);
+            Map<?, ?> otraVez = leerIntent(p.intentId());
+            Resultado ya = siOnvoYaReembolso(pedidoId, p, otraVez, operador);
             if (ya != null) return ya;
+            if (capturadoEntero(p, otraVez)) {
+                tx.executeWithoutResult(s -> guardarError(p.pagoId(), MSG_ONVO_NO_DEVUELVE));
+                throw new ReembolsoException(422, MSG_ONVO_NO_DEVUELVE);
+            }
         }
         tx.executeWithoutResult(s -> guardarError(p.pagoId(), motivo));
         throw new ReembolsoException(422, String.format(MSG_RECHAZO_DEFINITIVO, motivo));
@@ -241,6 +257,24 @@ public class ReembolsoOnvoService {
         }
         log.info("[reembolso] Pedido {}: ONVO ya devolvió el monto del pago; no se pide otro refund", pedidoId);
         return exigirOk(tx.execute(s -> aplicar(pedidoId, p.pagoId(), new OnvoReembolso(null, INTENT_CAPTURADO), operador)));
+    }
+
+    /** Intent succeeded y el monto recibido sigue siendo el total: ONVO no devolvió nada. */
+    private static boolean capturadoEntero(Preparado p, Map<?, ?> intent) {
+        if (intent == null || !INTENT_CAPTURADO.equals(estadoIntent(intent)) || !montoCoincide(p, intent)) return false;
+        Object recibido = intent.get("receivedAmount");
+        if (recibido == null) return true;
+        try {
+            long queda = new java.math.BigDecimal(String.valueOf(recibido)).longValueExact();
+            return queda == p.monto().longValue() * CENTIMOS_POR_COLON;
+        } catch (ArithmeticException | NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private boolean rechazoTerminalGuardado(Long pagoId) {
+        String error = tx.execute(s -> pagoRepository.findById(pagoId).map(Pago::getReembolsoError).orElse(null));
+        return error != null && error.contains(CODIGO_YA_PAGADO);
     }
 
     /** amount del intent = céntimos del pago y receivedAmount = 0: se devolvió todo ese cobro. */

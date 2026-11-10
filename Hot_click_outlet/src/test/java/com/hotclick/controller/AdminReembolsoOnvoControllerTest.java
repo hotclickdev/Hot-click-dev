@@ -105,9 +105,9 @@ class AdminReembolsoOnvoControllerTest {
         assertEquals(15000, pago.getMontoReembolsoPendiente());
 
         mvc.perform(post(URL))
-            .andExpect(status().isUnprocessableEntity())
+            .andExpect(status().isConflict())
             .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("refunds.payment_intent_already_payed")));
-        verify(onvo, times(2)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
         verify(onvo, never()).cancelarPaymentIntent(anyString());
         assertNull(pago.getMontoReembolsado());
     }

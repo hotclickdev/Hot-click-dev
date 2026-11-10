@@ -543,9 +543,10 @@ public class OnvoService {
      * Contrato: <a href="https://docs.onvopay.com/payments/refunds">guía</a> y esquema {@code Refund} de
      * openapi.yaml: {@code paymentIntentId}, {@code amount} en la unidad menor (céntimos si es CRC),
      * {@code description} y {@code reason}. {@code currency} es readOnly: no se manda.
-     * <p>QA pedido 34: el POST sin {@code amount} (y el intento de tratar un intent {@code succeeded}
-     * como cancelable) respondió {@code refunds.payment_intent_already_payed}. Cancelar
-     * ({@code POST /v1/payment-intents/{id}/cancel}) no devuelve un cobro capturado. El monto va siempre.
+     * <p>QA (pedidos 34, 10, 21 y 49, ONVO TEST): este POST, con {@code paymentIntentId} y {@code amount}
+     * en céntimos, igual respondió 400 {@code refunds.payment_intent_already_payed} con el intent
+     * {@code succeeded} y {@code receivedAmount} igual al total. El código no está en el OpenAPI.
+     * No hay campo {@code chargeId} de entrada ni otro endpoint de refund. Cancelar el intent no devuelve el cobro.
      * Sin @Retry ni fallback: un reintento podría devolver dos veces. Los errores se relanzan.
      * La clave de idempotencia no se manda: ONVO no la documenta y un POST con ese header dio 400.
      */
