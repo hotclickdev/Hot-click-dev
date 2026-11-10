@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +31,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -417,7 +423,7 @@ class ReembolsoOnvoCompletoTest {
     void pendienteConRefundEnOnvoNoDuplica() {
         pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
         pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        doReturn(intent("refunded", 1_500_000)).when(onvo).obtenerPaymentIntent(INTENT);
+        doReturn(intentDevuelto(1_500_000)).when(onvo).obtenerPaymentIntent(INTENT);
         assertThat(service.reembolsar(7L).status()).isEqualTo(200);
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
         assertThat(producto.getStockActual()).isEqualTo(3);
@@ -559,7 +565,7 @@ class ReembolsoOnvoCompletoTest {
     void alreadyPayedConIntentRefundedConfirmaUnaVez() {
         pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
         pago.setMonto(9000);
-        doReturn(intent("succeeded", 900_000), intent("refunded", 900_000)).when(onvo).obtenerPaymentIntent(INTENT);
+        doReturn(intent("succeeded", 900_000), intentDevuelto(900_000)).when(onvo).obtenerPaymentIntent(INTENT);
         when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L))).thenThrow(rechazoYaPagado());
         assertThat(service.reembolsar(7L).status()).isEqualTo(200);
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSADO);
@@ -595,12 +601,129 @@ class ReembolsoOnvoCompletoTest {
         assertThat(producto.getStockActual()).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("4xx y después un timeout: el siguiente intento no manda otro POST")
+    void cuatroXxSeguidoDeTimeoutNoRepitePost() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setMonto(9000);
+        doReturn(intent("succeeded", 900_000)).when(onvo).obtenerPaymentIntent(INTENT);
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L)))
+            .thenThrow(rechazoYaPagado())
+            .thenThrow(new ResourceAccessException("timeout"));
+
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
+            e -> assertThat(e.getStatus()).isEqualTo(422));
+        assertThat(pago.getReembolsoError()).contains(ReembolsoOnvoService.CODIGO_YA_PAGADO);
+
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
+            e -> assertThat(e.getStatus()).isEqualTo(502));
+        assertThat(pago.getReembolsoError()).isEqualTo(ReembolsoOnvoService.MARCA_EN_VUELO);
+
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
+            e -> assertThat(e.getStatus()).isEqualTo(409));
+        verify(onvo, times(2)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getMontoReembolsado()).isNull();
+        assertThat(producto.getStockActual()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Dos admins a la vez después de un 4xx: un solo POST")
+    void dosAdminsDespuesDe4xxUnSoloPost() throws Exception {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setMonto(9000);
+        doReturn(intent("succeeded", 900_000)).when(onvo).obtenerPaymentIntent(INTENT);
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L)))
+            .thenThrow(rechazoYaPagado());
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOf(ReembolsoException.class);
+
+        CountDownLatch adentro = new CountDownLatch(1);
+        CountDownLatch soltar = new CountDownLatch(1);
+        AtomicInteger posts = new AtomicInteger();
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L))).thenAnswer(inv -> {
+            posts.incrementAndGet();
+            adentro.countDown();
+            if (!soltar.await(5, TimeUnit.SECONDS)) {
+                throw new ResourceAccessException("timeout");
+            }
+            throw new ResourceAccessException("timeout");
+        });
+        simularLockDeFila();
+        AtomicReference<String> falloUno = new AtomicReference<>();
+        AtomicReference<String> falloDos = new AtomicReference<>();
+        Thread uno = new Thread(() -> correr(falloUno));
+        Thread dos = new Thread(() -> correr(falloDos));
+        uno.start();
+        dos.start();
+        try {
+            assertThat(adentro.await(5, TimeUnit.SECONDS)).isTrue();
+            long limite = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (uno.isAlive() && dos.isAlive() && System.nanoTime() < limite) {
+                Thread.onSpinWait();
+            }
+            assertThat(posts.get()).isEqualTo(1);
+            assertThat(uno.isAlive() ^ dos.isAlive()).isTrue();
+        } finally {
+            soltar.countDown();
+            uno.join(5000);
+            dos.join(5000);
+        }
+        assertThat(posts.get()).isEqualTo(1);
+        assertThat(pago.getEstadoPago()).isNotEqualTo(Constants.PAGO_REEMBOLSADO);
+        assertThat(List.of(falloUno.get(), falloDos.get()))
+            .contains(ReembolsoOnvoService.MSG_EN_DUDA_PREVIO, ReembolsoOnvoService.MSG_EN_DUDA);
+    }
+
+    private void correr(AtomicReference<String> fallo) {
+        try {
+            service.reembolsar(7L);
+        } catch (RuntimeException e) {
+            fallo.set(e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("Intent refunded con otro monto: no se marca REEMBOLSADO ni se pide otro POST")
+    void refundedConOtroMontoNoConfirma() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        Map<String, Object> otro = intent("refunded", 100);
+        otro.put("receivedAmount", 0);
+        doReturn(otro).when(onvo).obtenerPaymentIntent(INTENT);
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
+            e -> assertThat(e.getStatus()).isEqualTo(409));
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getMontoReembolsado()).isNull();
+        verify(onvo, never()).crearReembolso(anyString(), anyString(), anyString(), anyLong());
+    }
+
+    private void simularLockDeFila() {
+        ReentrantLock fila = new ReentrantLock(true);
+        when(txManager.getTransaction(any())).thenAnswer(inv -> {
+            fila.lock();
+            return new org.springframework.transaction.support.SimpleTransactionStatus();
+        });
+        org.mockito.stubbing.Answer<Object> soltar = inv -> {
+            fila.unlock();
+            return null;
+        };
+        doAnswer(soltar).when(txManager).commit(any());
+        doAnswer(soltar).when(txManager).rollback(any());
+    }
+
     private static Map<String, Object> intent(String status, int amount) {
         java.util.HashMap<String, Object> mapa = new java.util.HashMap<>();
         mapa.put("id", INTENT);
         mapa.put("status", status);
         mapa.put("amount", amount);
         mapa.put("currency", "CRC");
+        return mapa;
+    }
+
+    /** status refunded y receivedAmount 0: ONVO ya devolvió todo el amount. */
+    private static Map<String, Object> intentDevuelto(int amount) {
+        Map<String, Object> mapa = intent("refunded", amount);
+        mapa.put("receivedAmount", 0);
         return mapa;
     }
 

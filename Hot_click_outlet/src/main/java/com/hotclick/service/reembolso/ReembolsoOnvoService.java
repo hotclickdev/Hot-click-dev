@@ -76,6 +76,8 @@ public class ReembolsoOnvoService {
     private static final String INTENT_REEMBOLSADO = "refunded";
     private static final String INTENT_PARCIAL = "partially_refunded";
     private static final String INTENT_CAPTURADO = "succeeded";
+    /** Se commitea bajo lock antes del POST. Si el llamado no termina en 4xx, el siguiente intento no repite. */
+    static final String MARCA_EN_VUELO = "EN_VUELO";
     private static final long CENTIMOS_POR_COLON = 100L;
     public static final String MSG_EN_DUDA =
         "ONVO no confirmó el reembolso. El pedido quedó en REEMBOLSO_PENDIENTE (no se marcó como devuelto). "
@@ -183,6 +185,7 @@ public class ReembolsoOnvoService {
             tx.executeWithoutResult(s -> guardarError(p.pagoId(), problema));
             throw new ReembolsoException(422, problema);
         }
+        reclamarPost(pedidoId, p.pagoId());
         try {
             OnvoReembolso r = onvoService.crearReembolso(p.intentId(), "Reembolso pedido " + p.numeroPedido(),
                 p.idempotencyKey(), p.monto().longValue() * CENTIMOS_POR_COLON);
@@ -225,11 +228,48 @@ public class ReembolsoOnvoService {
         }
     }
 
-    /** El GET del intent ya dice refunded: ONVO confirmó la devolución. No se hace otro POST. */
+    /**
+     * El GET dice {@code refunded} y el monto que ya no quedó en el intent es el del pago
+     * ({@code receivedAmount} en 0 y {@code amount} igual a los céntimos locales). Si no, no se marca devuelto.
+     */
     private Resultado siOnvoYaReembolso(Long pedidoId, Preparado p, Map<?, ?> intent, String operador) {
         if (intent == null || !INTENT_REEMBOLSADO.equals(estadoIntent(intent))) return null;
-        log.info("[reembolso] Pedido {}: ONVO ya tiene la intención reembolsada; no se pide otro refund", pedidoId);
+        if (!montoDevueltoCoincide(p, intent)) {
+            log.warn("[reembolso] Pedido {}: ONVO informa refunded pero el monto devuelto no es el del pago", pedidoId);
+            tx.executeWithoutResult(s -> guardarError(p.pagoId(), MSG_YA_HAY_REFUND));
+            throw new ReembolsoException(409, MSG_YA_HAY_REFUND);
+        }
+        log.info("[reembolso] Pedido {}: ONVO ya devolvió el monto del pago; no se pide otro refund", pedidoId);
         return exigirOk(tx.execute(s -> aplicar(pedidoId, p.pagoId(), new OnvoReembolso(null, INTENT_CAPTURADO), operador)));
+    }
+
+    /** amount del intent = céntimos del pago y receivedAmount = 0: se devolvió todo ese cobro. */
+    private static boolean montoDevueltoCoincide(Preparado p, Map<?, ?> intent) {
+        if (!montoCoincide(p, intent) || intent.get("receivedAmount") == null) return false;
+        try {
+            long queda = new java.math.BigDecimal(String.valueOf(intent.get("receivedAmount"))).longValueExact();
+            return queda == 0L;
+        } catch (ArithmeticException | NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Lock de la fila y commit de {@code EN_VUELO} antes del POST. El otro admin, o un reintento
+     * después de un timeout/5xx, lo ve y no manda otro refund. Un 4xx definitivo pisa la marca con el motivo.
+     */
+    private void reclamarPost(Long pedidoId, Long pagoId) {
+        tx.executeWithoutResult(s -> {
+            pedidoRepository.findByIdForUpdate(pedidoId)
+                .orElseThrow(() -> new ReembolsoException(404, MSG_NO_EXISTE));
+            Pago pago = pagoRepository.findById(pagoId)
+                .orElseThrow(() -> new ReembolsoException(404, MSG_NO_EXISTE));
+            if (pago.getOnvoReembolsoId() != null || MARCA_EN_VUELO.equals(pago.getReembolsoError())) {
+                throw new ReembolsoException(409, MSG_EN_DUDA_PREVIO);
+            }
+            pago.setReembolsoError(MARCA_EN_VUELO);
+            pagoRepository.save(pago);
+        });
     }
 
     private static String problemaDeCobro(Preparado p, Map<?, ?> intent) {
@@ -464,10 +504,11 @@ public class ReembolsoOnvoService {
             pago.getMonto(), pago.getMoneda(), ambiguo);
     }
 
-    /** Clave guardada y sin 4xx: el POST pudo haber creado un refund que no alcanzamos a registrar. */
+    /** Clave guardada y sin un 4xx definitivo: el POST pudo haber creado un refund que no registramos. */
     private static boolean intentoAmbiguo(Pago pago) {
-        return pago.getReembolsoIdempotencyKey() != null
-            && (pago.getReembolsoError() == null || pago.getReembolsoError().isBlank());
+        if (pago.getReembolsoIdempotencyKey() == null) return false;
+        String error = pago.getReembolsoError();
+        return error == null || error.isBlank() || MARCA_EN_VUELO.equals(error);
     }
 
     /** OpenAPI PaymentIntent: refunded, partially_refunded, o receivedAmount menor al capturado. */
