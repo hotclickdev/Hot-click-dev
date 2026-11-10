@@ -121,8 +121,16 @@ jobs:
       - name: Setup Maven
         run: sudo apt-get install -y maven --quiet
 
-      - name: OnvoAltaMarketplacePostgresTest
-        run: mvn -f Hot_click_outlet/pom.xml -Dtest=OnvoAltaMarketplacePostgresTest test --no-transfer-progress
+      - name: "Self-test del gate de planes (XML ausente/vacio/skipped/fallo/obsoleto/valido)"
+        run: python3 -m unittest scripts/ci/test_planes_snapshot_pg_surefire.py
+
+      - name: "Marca de inicio (reportes de esta corrida, no viejos)"
+        run: |
+          rm -f Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.service.suscripcion.PlanesActivosSnapshotPostgresTest.xml
+          touch "$RUNNER_TEMP/planes-pg-inicio"
+
+      - name: OnvoAltaMarketplacePostgresTest + PlanesActivosSnapshotPostgresTest
+        run: mvn -f Hot_click_outlet/pom.xml -Dtest=OnvoAltaMarketplacePostgresTest,PlanesActivosSnapshotPostgresTest test --no-transfer-progress
         env:
           HC_PG_TEST_URL: jdbc:postgresql://127.0.0.1:5432/hotclick_qa_alta?user=hotclick_qa&password=hotclick_qa
 
@@ -130,12 +138,18 @@ jobs:
         if: always()
         run: python3 scripts/ci/onvo-alta-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.OnvoAltaMarketplacePostgresTest.xml
 
+      - name: "Gate: snapshot de planes corrio en Postgres (suite, fresco, 0 skipped/fallos/errores)"
+        if: always()
+        run: python3 scripts/ci/planes-snapshot-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.service.suscripcion.PlanesActivosSnapshotPostgresTest.xml "$RUNNER_TEMP/planes-pg-inicio"
+
       - name: Reporte Surefire (sin secretos)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: onvo-alta-pg-surefire
-          path: Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.OnvoAltaMarketplacePostgresTest.xml
+          path: |
+            Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.OnvoAltaMarketplacePostgresTest.xml
+            Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.service.suscripcion.PlanesActivosSnapshotPostgresTest.xml
           if-no-files-found: error
 
   frontend:
