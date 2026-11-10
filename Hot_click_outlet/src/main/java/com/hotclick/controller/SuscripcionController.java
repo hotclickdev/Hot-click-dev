@@ -64,7 +64,7 @@ public class SuscripcionController {
         List<Plan> planes = planRepo.findByActivoTrueOrderByPrecioMensualAsc();
         // Sin precio configurado no se publica el plan con 0 ni con valores viejos: 409 PLAN_SIN_PRECIO.
         for (Plan p : planes) {
-            if (preciosPlanes.precioUsd(p.getNombre()).filter(v -> v.signum() > 0).isEmpty()) return planSinPrecio(new com.hotclick.exception.PlanSinPrecioException(p.getNombre()));
+            if (preciosPlanes.precioPublicoUsd(p.getNombre()).isEmpty()) return planSinPrecio(new com.hotclick.exception.PlanSinPrecioException(p.getNombre()));
         }
         List<Map<String, Object>> result = planes.stream().map(p -> {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -73,7 +73,8 @@ public class SuscripcionController {
             m.put("descripcion", p.getDescripcion());
             // precioMensual en colones (UI / cobro ONVO). precioUsd es legado.
             m.put("precioMensual", p.getPrecioMensual());
-            m.put("precioUsd", preciosPlanes.requerir(p.getNombre()));
+            m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.getNombre()).orElseThrow(
+                () -> new com.hotclick.exception.PlanSinPrecioException(p.getNombre())));
             m.put("comisionPorcentaje", p.getComisionPorcentaje());
             m.put("comisionMinimaCrc", 0); // V185: sin mínimo por venta
             m.put("maxUsuarios", p.getMaxUsuarios());

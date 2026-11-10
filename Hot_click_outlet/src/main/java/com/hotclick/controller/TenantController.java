@@ -5,9 +5,11 @@ import com.hotclick.repository.PlanRepository;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.TenantService;
 import com.hotclick.service.prueba.PruebaPlanService;
+import com.hotclick.service.suscripcion.PreciosPlanesConfig;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,12 +20,14 @@ public class TenantController {
     private final TenantService tenantService;
     private final PlanRepository planRepo;
     private final PruebaPlanService pruebaPlanService;
+    private final PreciosPlanesConfig preciosPlanes;
 
     public TenantController(TenantService tenantService, PlanRepository planRepo,
-                            PruebaPlanService pruebaPlanService) {
+                            PruebaPlanService pruebaPlanService, PreciosPlanesConfig preciosPlanes) {
         this.tenantService = tenantService;
         this.planRepo = planRepo;
         this.pruebaPlanService = pruebaPlanService;
+        this.preciosPlanes = preciosPlanes;
     }
 
     /**
@@ -66,10 +70,43 @@ public class TenantController {
     }
 
     /**
-     * Listado de planes disponibles — público, para la página de pricing.
+     * Listado de planes disponibles — público, para la página de pricing (/planes).
+     * ALTO: {@code precioUsd} sale SOLO de la config de precios (la misma que {@code PrecioPlanOnvo} verifica contra el
+     * price de ONVO), nunca de la columna precio_usd de la tabla plan (V89/V105: 19.99 / 11.99). Si un plan no tiene
+     * precio configurado, se publica con {@code precioUsd: null} (la UI muestra «Mensualidad en dólares», sin monto
+     * inventado) en vez de un precio viejo. Los límites y features siguen saliendo de la tabla plan.
      */
     @GetMapping("/planes")
-    public ResponseEntity<List<Plan>> planesPublicos() {
-        return ResponseEntity.ok(planRepo.findByActivoTrueOrderByPrecioMensualAsc());
+    public ResponseEntity<List<Map<String, Object>>> planesPublicos() {
+        List<Map<String, Object>> out = planRepo.findByActivoTrueOrderByPrecioMensualAsc().stream()
+            .map(this::planPublico)
+            .toList();
+        return ResponseEntity.ok(out);
+    }
+
+    /** Mismos campos que exponía la entidad, con precioUsd reemplazado por el de la config (o null). */
+    private Map<String, Object> planPublico(Plan p) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", p.getId());
+        m.put("nombre", p.getNombre());
+        m.put("descripcion", p.getDescripcion());
+        m.put("precioMensual", p.getPrecioMensual());
+        m.put("maxUsuarios", p.getMaxUsuarios());
+        m.put("maxProductos", p.getMaxProductos());
+        m.put("maxBodegas", p.getMaxBodegas());
+        m.put("maxCajas", p.getMaxCajas());
+        m.put("tienePos", p.getTienePos());
+        m.put("tieneCrm", p.getTieneCrm());
+        m.put("tieneCompras", p.getTieneCompras());
+        m.put("tieneReportes", p.getTieneReportes());
+        m.put("tieneAi", p.getTieneAi());
+        m.put("tieneApi", p.getTieneApi());
+        m.put("tieneGiftCards", p.getTieneGiftCards());
+        m.put("activo", p.getActivo());
+        m.put("maxCreditosAi", p.getMaxCreditosAi());
+        m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.getNombre()).orElse(null));
+        m.put("comisionPorcentaje", p.getComisionPorcentaje());
+        m.put("comisionMinimaCrc", p.getComisionMinimaCrc());
+        return m;
     }
 }
