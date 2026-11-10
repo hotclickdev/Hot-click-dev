@@ -9,7 +9,8 @@ import TrustGlyph from '@/components/ui/TrustGlyph'
 import CloseIcon from '@/components/ui/CloseIcon'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
-import { montoCobroVisible } from '@/features/billing/montoPlan'
+import { montoCobroVisible, textoPrecioCatalogo } from '@/features/billing/montoPlan'
+import { TEXTO_MONEDA_PLANES } from '@/config/planesPrecios'
 import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import SolicitudCambioPlanForm from '@/features/billing/SolicitudCambioPlanForm'
@@ -64,7 +65,8 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
 }) {
   const esEnterprise = plan.nombre === 'NEGOCIO_PLUS'
   const esFree = plan.nombre === 'EMPRENDEDOR'
-  const precioCrc = Number(plan.precioMensual ?? 0)
+  // Mensualidad en USD (precioUsd del backend = lo que cobra ONVO). precioMensual (colones) es legado y no se muestra.
+  const precio = textoPrecioCatalogo(plan)
 
   return (
     <div
@@ -93,12 +95,7 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider opacity-70">{plan.nombre}</p>
         <div className="flex items-end gap-1 mt-1">
-          <span className="text-3xl font-bold">
-            {precioCrc === 0 ? 'Gratis' : `₡${precioCrc.toLocaleString('es-CR')}`}
-          </span>
-          {precioCrc > 0 && (
-            <span className="text-sm opacity-60 mb-1">/mes</span>
-          )}
+          <span className="text-3xl font-bold" data-testid="precio-plan">{precio}</span>
         </div>
         <p className="text-xs mt-1 opacity-60">{plan.descripcion}</p>
       </div>
@@ -237,7 +234,7 @@ export default function AdminPlanes() {
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        Los precios están en colones (CRC). El cobro mensual se procesa con ONVO.
+        {TEXTO_MONEDA_PLANES}
         Bajar de un plan ya pagado se pide con una solicitud; HotClick la revisa.
       </p>
 

@@ -11,6 +11,14 @@ export function montoPlanVisible(
 }
 
 /**
+ * Texto de la mensualidad de una tarjeta del catálogo: «US$24/mes» con el precioUsd del backend; sin monto,
+ * «Mensualidad en dólares» (nunca colones de precioMensual, nunca «Gratis» inventado).
+ */
+export function textoPrecioCatalogo(plan: { precioUsd?: unknown } | null | undefined): string {
+  return montoPlanVisible(plan) ?? textoMensualidad()
+}
+
+/**
  * Monto que el backend puso en la respuesta de cobro (`montoUsd`).
  * Sale de la misma config que el verificador compara con el price de ONVO.
  */
