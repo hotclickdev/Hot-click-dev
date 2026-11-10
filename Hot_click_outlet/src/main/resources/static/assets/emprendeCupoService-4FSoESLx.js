@@ -1,1 +1,0 @@
-import{t as e}from"./api-BfA0AOac.js";var t={get:()=>e.get(`/public/emprende/cupos`)},n=`PENDIENTE_CUPO`;function r(e){return e===n}export{r as n,t};

@@ -62,7 +62,8 @@ public class AuthRegistroEmpresaHandler {
         }
     }
 
-    private Map<String, Object> buildRegistroResultado(AuthResponse authResponse, boolean otpEnviado, String otpError) {
+    /** El alta deja {@code correo_verificado=false}. El cliente tiene que recibir ese valor: si falta, asumía verificado y saltaba el OTP. */
+    static Map<String, Object> buildRegistroResultado(AuthResponse authResponse, boolean otpEnviado, String otpError) {
         Map<String, Object> resultado = new HashMap<>();
         resultado.put("accessToken",  authResponse.getAccessToken());
         resultado.put("refreshToken", authResponse.getRefreshToken());
@@ -73,6 +74,7 @@ public class AuthRegistroEmpresaHandler {
         resultado.put("empresaId",    authResponse.getEmpresaId());
         resultado.put("empresaSlug",  authResponse.getEmpresaSlug());
         resultado.put("empresaNombre",authResponse.getEmpresaNombre());
+        resultado.put("correoVerificado", authResponse.getCorreoVerificado());
         resultado.put("otpEnviado",   otpEnviado);
         if (otpError != null) resultado.put("otpError", otpError);
         return resultado;
