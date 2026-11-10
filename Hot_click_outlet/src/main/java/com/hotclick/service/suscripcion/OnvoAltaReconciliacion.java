@@ -163,7 +163,7 @@ public class OnvoAltaReconciliacion {
             log.info("[billing-onvo] reconciliación sin confirmar sub={} motivo={}", ref, r.motivo());
             return Resultado.SIN_CONFIRMAR;
         }
-        cambio.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId);
+        cambio.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId, r.fechaInicio());
         return Resultado.ACTIVADA;
     }
 

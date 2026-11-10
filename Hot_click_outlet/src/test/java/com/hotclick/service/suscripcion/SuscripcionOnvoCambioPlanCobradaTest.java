@@ -247,7 +247,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("sub_vieja")).thenReturn(Optional.of(sub));
         LocalDate fin = LocalDate.of(2026, 12, 9);
 
-        service.procesarPagoOnvoVerificado("sub_vieja", "NEGOCIO_PLUS", fin, "inv_paid_plus");
+        service.procesarPagoOnvoVerificado("sub_vieja", "NEGOCIO_PLUS", fin, "inv_paid_plus", null);
 
         assertThat(sub.getFechaInicio()).isEqualTo(LocalDate.now(Constants.ZONA_CR));
         assertThat(sub.getFechaFin()).isEqualTo(fin);
@@ -289,7 +289,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         when(suscripcionRepo.findByOnvoSubscriptionId("sub_vieja")).thenReturn(Optional.empty());
         when(suscripcionRepo.countConOnvoSubVieja("sub_vieja")).thenReturn(1L);
 
-        service.procesarPagoOnvoVerificado("sub_vieja", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456");
+        service.procesarPagoOnvoVerificado("sub_vieja", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456", null);
 
         verify(suscripcionRepo, never()).findByOnvoSubscriptionIdForUpdate(any());
         assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
@@ -330,7 +330,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         when(suscripcionRepo.findByOnvoSubscriptionId("sub_nueva")).thenReturn(Optional.of(sub));
         when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("sub_nueva")).thenReturn(Optional.of(sub));
 
-        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456");
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456", null);
 
         assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
         assertThat(sub.getPlanPendiente()).isNull();
@@ -377,8 +377,8 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         subidaPendiente();
         LocalDate fin = LocalDate.now().plusMonths(1);
 
-        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_123456");
-        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_123456");
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_123456", null);
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", fin, "inv_123456", null);
 
         verify(onvoBilling, org.mockito.Mockito.times(1)).cancelarInmediato("sub_vieja");
         assertThat(sub.getOnvoSubscriptionId()).isEqualTo("sub_nueva");
@@ -398,7 +398,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
     void renovacionViejaConSubidaPendiente() {
         subidaPendiente();
 
-        service.procesarPagoOnvoVerificado("sub_vieja", "PYME", LocalDate.now().plusMonths(1), "inv_654321");
+        service.procesarPagoOnvoVerificado("sub_vieja", "PYME", LocalDate.now().plusMonths(1), "inv_654321", null);
 
         verify(onvoBilling, never()).cancelarInmediato(any());
         assertThat(sub.getPlan().getNombre()).isEqualTo("PYME");
@@ -412,7 +412,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         subidaPendiente();
         org.mockito.Mockito.doThrow(new RuntimeException("500")).when(onvoBilling).cancelarInmediato("sub_vieja");
 
-        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456");
+        service.procesarPagoOnvoVerificado("sub_nueva", "NEGOCIO_PLUS", LocalDate.now().plusMonths(1), "inv_123456", null);
 
         assertThat(sub.getOnvoSubPorCancelar()).isEqualTo("sub_vieja");
         assertThat(sub.getOnvoRevisionManualDesde()).isNotNull();
@@ -420,7 +420,7 @@ class SuscripcionOnvoCambioPlanCobradaTest {
         assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
 
         assertThat(service.ignorarPagoDeSuscripcionVieja("sub_vieja")).isTrue();
-        service.procesarPagoOnvoVerificado("sub_vieja", "PYME", LocalDate.now().plusMonths(2), "inv_999999");
+        service.procesarPagoOnvoVerificado("sub_vieja", "PYME", LocalDate.now().plusMonths(2), "inv_999999", null);
         assertThat(sub.getPlan().getNombre()).isEqualTo("NEGOCIO_PLUS");
         verify(suscripcionRepo, org.mockito.Mockito.atLeastOnce()).marcarRevisionManualPorSubVieja(eq("sub_vieja"), any());
     }

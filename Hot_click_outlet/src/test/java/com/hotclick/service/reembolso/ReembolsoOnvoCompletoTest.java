@@ -695,6 +695,289 @@ class ReembolsoOnvoCompletoTest {
         verify(onvo, never()).crearReembolso(anyString(), anyString(), anyString(), anyLong());
     }
 
+    // ---------------------------------------------------------------- BAJOs #548/#549
+
+    /** Deja el pago como después de un 4xx genérico: REEMBOLSO_PENDIENTE, clave guardada y el motivo (no ambiguo). */
+    private void pendienteDespuesDe4xx() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setMonto(9000);
+        Map<String, Object> capturado = intent("succeeded", 900_000);
+        capturado.put("receivedAmount", 900_000);
+        doReturn(capturado).when(onvo).obtenerPaymentIntent(INTENT);
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L))).thenThrow(rechazoGenerico());
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOf(ReembolsoException.class);
+        assertThat(pago.getReembolsoError()).contains("amount must be positive");
+        clearInvocations(onvo);
+    }
+
+    @Test
+    @DisplayName("BAJO 1: dos clics simultáneos, el primero recibe already_payed mientras el segundo espera el lock: un solo POST")
+    void dosClicsSimultaneosAlreadyPayedUnSoloPost() throws Exception {
+        pendienteDespuesDe4xx();
+        AtomicInteger posts = new AtomicInteger();
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L))).thenAnswer(inv -> {
+            posts.incrementAndGet();
+            throw rechazoYaPagado();
+        });
+        // El clic B ya pasó todas las lecturas y se queda esperando el FOR UPDATE de reclamarPost (2.º lock de B)
+        // hasta que el clic A termina y guarda el rechazo already_payed.
+        CountDownLatch bEnLaPuerta = new CountDownLatch(1);
+        CountDownLatch aTermino = new CountDownLatch(1);
+        AtomicInteger locksDeB = new AtomicInteger();
+        when(pedidoRepository.findByIdForUpdate(7L)).thenAnswer(inv -> {
+            if ("clic-B".equals(Thread.currentThread().getName()) && locksDeB.incrementAndGet() == 2) {
+                bEnLaPuerta.countDown();
+                assertThat(aTermino.await(5, TimeUnit.SECONDS)).isTrue();
+            }
+            return Optional.of(pedido);
+        });
+        AtomicReference<RuntimeException> falloB = new AtomicReference<>();
+        Thread b = new Thread(() -> {
+            try {
+                service.reembolsar(7L);
+            } catch (RuntimeException e) {
+                falloB.set(e);
+            }
+        }, "clic-B");
+        b.start();
+        try {
+            assertThat(bEnLaPuerta.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(422);
+                assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_ONVO_NO_DEVUELVE);
+            });
+        } finally {
+            aTermino.countDown();
+            b.join(5000);
+        }
+        assertThat(falloB.get()).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+            assertThat(e.getStatus()).isEqualTo(409);
+            assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_ONVO_NO_DEVUELVE);
+        });
+        assertThat(posts.get()).isEqualTo(1);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getReembolsoError()).isEqualTo(ReembolsoOnvoService.MSG_ONVO_NO_DEVUELVE);
+        assertThat(pago.getMontoReembolsado()).isNull();
+    }
+
+    @Test
+    @DisplayName("BAJO 1: si bajo el lock el pago ya no está REEMBOLSO_PENDIENTE, no se manda el POST")
+    void bajoElLockPagoYaNoPendienteNoPide() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        AtomicInteger locks = new AtomicInteger();
+        when(pedidoRepository.findByIdForUpdate(7L)).thenAnswer(inv -> {
+            // 1.º lock = preparar; en el 2.º (reclamarPost) otro proceso ya resolvió el pago.
+            if (locks.incrementAndGet() == 2) pago.setEstadoPago(Constants.PAGO_CAPTURADO);
+            return Optional.of(pedido);
+        });
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+            assertThat(e.getStatus()).isEqualTo(409);
+            assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_CAMBIO);
+        });
+        verify(onvo, never()).crearReembolso(anyString(), anyString(), anyString(), anyLong());
+        assertThat(pago.getReembolsoError()).isNotEqualTo(ReembolsoOnvoService.MARCA_EN_VUELO);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "HTTP {0}")
+    @org.junit.jupiter.params.provider.ValueSource(ints = {408, 409, 429})
+    @DisplayName("BAJO 2: 408, 409 y 429 de ONVO no son 4xx definitivos: queda EN_VUELO y no se repite el POST")
+    void noDefinitivosDejanEnVuelo(int status) {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setMonto(9000);
+        doReturn(intent("succeeded", 900_000)).when(onvo).obtenerPaymentIntent(INTENT);
+        String body = "{\"code\":\"rate_limited\",\"message\":\"try later\"}";
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L)))
+            .thenThrow(HttpClientErrorException.create(HttpStatus.valueOf(status), "x", null, body.getBytes(), null));
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+            assertThat(e.getStatus()).isEqualTo(502);
+            assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_EN_DUDA);
+        });
+        assertThat(pago.getReembolsoError()).isEqualTo(ReembolsoOnvoService.MARCA_EN_VUELO);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
+            e -> assertThat(e.getStatus()).isEqualTo(409));
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
+        assertThat(pago.getMontoReembolsado()).isNull();
+    }
+
+    @Test
+    @DisplayName("BAJO 2: un 400 definitivo sí reemplaza EN_VUELO por el motivo")
+    void cuatroCientosDefinitivoReemplazaMarca() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setMonto(9000);
+        doReturn(intent("succeeded", 900_000)).when(onvo).obtenerPaymentIntent(INTENT);
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L))).thenThrow(rechazoGenerico());
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
+            e -> assertThat(e.getStatus()).isEqualTo(422));
+        assertThat(pago.getReembolsoError()).isNotEqualTo(ReembolsoOnvoService.MARCA_EN_VUELO).contains("amount must be positive");
+    }
+
+    @Test
+    @DisplayName("BAJO 3: already_payed se detecta por igualdad del code; un code parecido o el texto en message no cuentan")
+    void alreadyPayedPorCodigoExacto() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setMonto(9000);
+        Map<String, Object> capturado = intent("succeeded", 900_000);
+        capturado.put("receivedAmount", 900_000);
+        doReturn(capturado).when(onvo).obtenerPaymentIntent(INTENT);
+        String body = "{\"code\":\"refunds.payment_intent_already_payed_v2\","
+            + "\"message\":\"refunds.payment_intent_already_payed\"}";
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L)))
+            .thenThrow(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null, body.getBytes(), null));
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+            assertThat(e.getStatus()).isEqualTo(422);
+            assertThat(e.getMessage()).isNotEqualTo(ReembolsoOnvoService.MSG_ONVO_NO_DEVUELVE)
+                .startsWith("ONVO rechazó el reembolso (code=")
+                .doesNotContain("code=" + ReembolsoOnvoService.CODIGO_YA_PAGADO + ";");
+        });
+        // No se trató como already_payed: no hubo el GET extra del intent después del rechazo.
+        verify(onvo, times(1)).obtenerPaymentIntent(INTENT);
+        assertThat(ReembolsoOnvoService.rechazoTerminalGuardado(pago.getReembolsoError())).isFalse();
+
+        assertThat(OnvoService.codigoOnvo("{\"code\":\"refunds.payment_intent_already_payed\"}"))
+            .isEqualTo(ReembolsoOnvoService.CODIGO_YA_PAGADO);
+        assertThat(OnvoService.codigoOnvo("{\"message\":\"refunds.payment_intent_already_payed\"}")).isNull();
+        assertThat(OnvoService.codigoOnvo("no json")).isNull();
+        assertThat(ReembolsoOnvoService.rechazoTerminalGuardado(
+            "code=refunds.payment_intent_already_payed; message=Payment intent already payed")).isTrue();
+        assertThat(ReembolsoOnvoService.rechazoTerminalGuardado(
+            "code=otro; message=refunds.payment_intent_already_payed")).isFalse();
+        assertThat(ReembolsoOnvoService.rechazoTerminalGuardado(ReembolsoOnvoService.MSG_ONVO_NO_DEVUELVE)).isTrue();
+    }
+
+    private void pendienteConRefund(String refundId) {
+        dejarPendienteSinId();
+        pago.setOnvoReembolsoId(refundId);
+        pago.setReembolsoError(ReembolsoOnvoService.MARCA_EN_VUELO);
+    }
+
+    @Test
+    @DisplayName("BAJO 4: NO_DEVUELTO con id y ONVO dice succeeded → 409; no limpia EN_VUELO ni restaura")
+    void manualNoDevueltoOnvoDiceSucceeded() {
+        pendienteConRefund("rf_test_nd1");
+        when(onvo.obtenerReembolso("rf_test_nd1")).thenReturn(new OnvoReembolso("rf_test_nd1", "succeeded"));
+        assertThatThrownBy(() -> service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.NO_DEVUELTO, false, "admin@test"))
+            .isInstanceOfSatisfying(ReembolsoException.class, e -> {
+                assertThat(e.getStatus()).isEqualTo(409);
+                assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_MANUAL_ONVO_SI_DEVUELTO);
+            });
+        assertThat(pago.getReembolsoError()).isEqualTo(ReembolsoOnvoService.MARCA_EN_VUELO);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getReembolsoResueltoPor()).isNull();
+    }
+
+    @Test
+    @DisplayName("BAJO 4: NO_DEVUELTO con id y ONVO pending o sin respuesta → 409 sin cambios")
+    void manualNoDevueltoSinVerificar() {
+        pendienteConRefund("rf_test_nd2");
+        when(onvo.obtenerReembolso("rf_test_nd2"))
+            .thenReturn(new OnvoReembolso("rf_test_nd2", "pending"))
+            .thenThrow(new ResourceAccessException("timeout"));
+        for (int i = 0; i < 2; i++) {
+            assertThatThrownBy(() -> service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.NO_DEVUELTO, false, "admin@test"))
+                .isInstanceOfSatisfying(ReembolsoException.class, e -> {
+                    assertThat(e.getStatus()).isEqualTo(409);
+                    assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_MANUAL_NO_VERIFICADO);
+                });
+        }
+        assertThat(pago.getReembolsoError()).isEqualTo(ReembolsoOnvoService.MARCA_EN_VUELO);
+        assertThat(pago.getOnvoReembolsoId()).isEqualTo("rf_test_nd2");
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+    }
+
+    @Test
+    @DisplayName("BAJO 4: NO_DEVUELTO con id y ONVO confirma failed → restaura y registra NO_DEVUELTO")
+    void manualNoDevueltoVerificadoFailed() {
+        pendienteConRefund("rf_test_nd3");
+        when(onvo.obtenerReembolso("rf_test_nd3")).thenReturn(new OnvoReembolso("rf_test_nd3", "failed"));
+        assertThat(service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.NO_DEVUELTO, false, "admin@test").status())
+            .isEqualTo(200);
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        assertThat(pago.getReembolsoError()).isNull();
+        assertThat(pago.getReembolsoResolucion()).isEqualTo("NO_DEVUELTO");
+    }
+
+    @Test
+    @DisplayName("BAJO 4: NO_DEVUELTO sin id de refund y POST sin respuesta (EN_VUELO) → resolución manual auditada")
+    void manualNoDevueltoSinIdAuditado() {
+        dejarPendienteSinId();
+        pago.setReembolsoError(ReembolsoOnvoService.MARCA_EN_VUELO);
+        assertThat(service.resolverManual(7L, ReembolsoOnvoService.ResolucionManual.NO_DEVUELTO, false, "admin@test").status())
+            .isEqualTo(200);
+        assertThat(pago.getReembolsoResolucion()).isEqualTo(ReembolsoOnvoService.RESOLUCION_NO_DEVUELTO_SIN_ID);
+        assertThat(pago.getReembolsoResueltoPor()).isEqualTo("admin@test");
+        assertThat(pago.getReembolsoResueltoEn()).isNotNull();
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        verify(onvo, never()).obtenerReembolso(anyString());
+        assertThat(ReembolsoOnvoService.RESOLUCION_NO_DEVUELTO_SIN_ID.length()).isLessThanOrEqualTo(20); // V228: VARCHAR(20)
+    }
+
+    @Test
+    @DisplayName("BAJO 5: los comentarios no llevan ids de pedidos de QA")
+    void comentariosSinIdsDePedidosQa() throws Exception {
+        for (String ruta : List.of("src/main/java/com/hotclick/service/reembolso/ReembolsoOnvoService.java",
+                                   "src/main/java/com/hotclick/service/OnvoService.java")) {
+            String src = java.nio.file.Files.readString(java.nio.file.Path.of(ruta));
+            assertThat(src).as(ruta).doesNotContainPattern("(?i)pedidos? \\d+")
+                .doesNotContain("34, 10, 21").doesNotContain("10, 21 y 49");
+        }
+    }
+
+    @Test
+    @DisplayName("BAJO 6: already_payed y el GET posterior del intent falla: no se marca devuelto y no se repite el POST")
+    void alreadyPayedConGetFallido() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setMonto(9000);
+        Map<String, Object> capturado = intent("succeeded", 900_000);
+        capturado.put("receivedAmount", 900_000);
+        doReturn(capturado)
+            .doThrow(new ResourceAccessException("timeout"))
+            .doReturn(capturado)
+            .when(onvo).obtenerPaymentIntent(INTENT);
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L))).thenThrow(rechazoYaPagado());
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+            assertThat(e.getStatus()).isEqualTo(422);
+            assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_YA_PAGADO_SIN_CONFIRMAR);
+        });
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getMontoReembolsado()).isNull();
+        assertThat(producto.getStockActual()).isEqualTo(1);
+        assertThat(guardados).isEmpty();
+
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+            assertThat(e.getStatus()).isEqualTo(409);
+            assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_YA_PAGADO_SIN_CONFIRMAR);
+        });
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+    }
+
+    @Test
+    @DisplayName("BAJO 6: already_payed con receivedAmount distinto del total: no se marca devuelto y no se repite el POST")
+    void alreadyPayedConReceivedAmountDistinto() {
+        pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+        pago.setMonto(9000);
+        Map<String, Object> antes = intent("succeeded", 900_000);
+        antes.put("receivedAmount", 900_000);
+        Map<String, Object> despues = intent("succeeded", 900_000);
+        despues.put("receivedAmount", 450_000);
+        doReturn(antes, despues).when(onvo).obtenerPaymentIntent(INTENT);
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L))).thenThrow(rechazoYaPagado());
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class, e -> {
+            assertThat(e.getStatus()).isEqualTo(422);
+            assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_YA_PAGADO_SIN_CONFIRMAR);
+        });
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getMontoReembolsado()).isNull();
+        assertThat(producto.getStockActual()).isEqualTo(1);
+
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
+            e -> assertThat(e.getStatus()).isEqualTo(409));
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+    }
+
     private void simularLockDeFila() {
         ReentrantLock fila = new ReentrantLock(true);
         when(txManager.getTransaction(any())).thenAnswer(inv -> {

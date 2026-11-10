@@ -72,15 +72,22 @@ public class ReembolsoOnvoService {
     public static final String MSG_YA_HAY_REFUND =
         "ONVO ya tiene un reembolso de este cobro. No se pidió otro. El pago sigue en REEMBOLSO_PENDIENTE.";
     /**
-     * ONVO TEST lo devolvió en el pedido 34 y en los pedidos 10, 21 y 49 con el intent {@code succeeded},
-     * {@code receivedAmount} igual al total y sin un refund {@code succeeded}. No está en openapi.yaml ni en
-     * docs.onvopay.com/reference/errors. El POST ya era el del ejemplo (paymentIntentId + amount en céntimos).
+     * ONVO TEST lo devolvió en QA con el intent {@code succeeded}, {@code receivedAmount} igual al total y sin un
+     * refund {@code succeeded}. No está en openapi.yaml ni en docs.onvopay.com/reference/errors. El POST ya era el
+     * del ejemplo (paymentIntentId + amount en céntimos). Se detecta por igualdad exacta del campo {@code code}.
      */
     static final String CODIGO_YA_PAGADO = "refunds.payment_intent_already_payed";
     public static final String MSG_ONVO_NO_DEVUELVE =
         "ONVO rechazó el reembolso (" + CODIGO_YA_PAGADO + "). El cobro sigue succeeded y no hay un refund "
             + "confirmado: no se devolvió la plata. La API pública solo tiene POST /v1/refunds "
             + "(paymentIntentId y amount); no hay otro endpoint. El pago queda en REEMBOLSO_PENDIENTE.";
+    /** already_payed sin poder confirmar el cobro (GET fallido o receivedAmount distinto): tampoco se repite el POST. */
+    public static final String MSG_YA_PAGADO_SIN_CONFIRMAR =
+        "ONVO rechazó el reembolso (" + CODIGO_YA_PAGADO + ") y no se pudo confirmar el estado del cobro. "
+            + "No se marcó como devuelto y no se vuelve a pedir. Revisá el pago en el panel de ONVO y registrá "
+            + "el resultado con la resolución manual.";
+    /** 408, 409 y 429 no son un rechazo definitivo: el refund pudo quedar creado. Se deja la marca EN_VUELO. */
+    static final Set<Integer> HTTP_NO_DEFINITIVOS = Set.of(408, 409, 429);
     private static final String INTENT_REEMBOLSADO = "refunded";
     private static final String INTENT_PARCIAL = "partially_refunded";
     private static final String INTENT_CAPTURADO = "succeeded";
@@ -101,6 +108,13 @@ public class ReembolsoOnvoService {
         "Para marcarlo como devuelto tenés que confirmar explícitamente que lo viste devuelto en ONVO.";
     public static final String MSG_MANUAL_ONVO_NO_DEVUELTO =
         "ONVO informa que ese reembolso no se hizo (fallido o cancelado). No se puede marcar como devuelto.";
+    public static final String MSG_MANUAL_ONVO_SI_DEVUELTO =
+        "ONVO informa que ese reembolso sí se hizo. No se puede marcar como no devuelto.";
+    public static final String MSG_MANUAL_NO_VERIFICADO =
+        "No se pudo confirmar en ONVO que ese reembolso no se hizo (sin respuesta o todavía en proceso). "
+            + "No se cambió nada; volvé a intentar más tarde.";
+    /** NO_DEVUELTO sin id de refund con un POST sin respuesta (EN_VUELO): no se pudo verificar en ONVO. */
+    static final String RESOLUCION_NO_DEVUELTO_SIN_ID = "NO_DEVUELTO_SIN_ID";
     public static final String MSG_MANUAL_DEVUELTO = "Registrado: el reembolso quedó como devuelto (confirmado a mano).";
     public static final String MSG_MANUAL_NO_DEVUELTO = "Registrado: no se devolvió nada y el pedido volvió a su estado anterior.";
     public static final String MSG_OK = "Reembolso confirmado por ONVO. El pedido quedó cancelado.";
@@ -183,9 +197,6 @@ public class ReembolsoOnvoService {
         if (intent == null) throw new ReembolsoException(502, MSG_EN_DUDA);
         Resultado ya = siOnvoYaReembolso(pedidoId, p, intent, operador);
         if (ya != null) return ya;
-        if (rechazoTerminalGuardado(p.pagoId())) {
-            throw new ReembolsoException(409, MSG_ONVO_NO_DEVUELVE);
-        }
         if (reembolsoYaEnOnvo(p, intent)) {
             tx.executeWithoutResult(s -> guardarError(p.pagoId(), MSG_YA_HAY_REFUND));
             throw new ReembolsoException(409, MSG_YA_HAY_REFUND);
@@ -219,14 +230,17 @@ public class ReembolsoOnvoService {
             tx.executeWithoutResult(s -> revertir(pedidoId, p));
             throw new ReembolsoException(502, MSG_RECHAZO);
         }
-        if (motivo.contains(CODIGO_YA_PAGADO)) {
+        if (HTTP_NO_DEFINITIVOS.contains(sc)) {
+            // Timeout, conflicto o límite de ONVO: no se sabe si el refund quedó creado. EN_VUELO queda puesta.
+            throw new ReembolsoException(502, MSG_EN_DUDA);
+        }
+        if (CODIGO_YA_PAGADO.equals(OnvoService.codigoOnvo(e.getResponseBodyAsString()))) {
             Map<?, ?> otraVez = leerIntent(p.intentId());
             Resultado ya = siOnvoYaReembolso(pedidoId, p, otraVez, operador);
             if (ya != null) return ya;
-            if (capturadoEntero(p, otraVez)) {
-                tx.executeWithoutResult(s -> guardarError(p.pagoId(), MSG_ONVO_NO_DEVUELVE));
-                throw new ReembolsoException(422, MSG_ONVO_NO_DEVUELVE);
-            }
+            String terminal = capturadoEntero(p, otraVez) ? MSG_ONVO_NO_DEVUELVE : MSG_YA_PAGADO_SIN_CONFIRMAR;
+            tx.executeWithoutResult(s -> guardarError(p.pagoId(), terminal));
+            throw new ReembolsoException(422, terminal);
         }
         tx.executeWithoutResult(s -> guardarError(p.pagoId(), motivo));
         throw new ReembolsoException(422, String.format(MSG_RECHAZO_DEFINITIVO, motivo));
@@ -272,9 +286,22 @@ public class ReembolsoOnvoService {
         }
     }
 
-    private boolean rechazoTerminalGuardado(Long pagoId) {
-        String error = tx.execute(s -> pagoRepository.findById(pagoId).map(Pago::getReembolsoError).orElse(null));
-        return error != null && error.contains(CODIGO_YA_PAGADO);
+    /**
+     * El pago ya tiene guardado el rechazo already_payed: no se repite el POST. Se compara por igualdad: los mensajes
+     * propios o un segmento {@code code=...} exacto del motivo enmascarado (filas guardadas antes de este cambio).
+     */
+    static boolean rechazoTerminalGuardado(String error) {
+        if (error == null || error.isBlank()) return false;
+        if (recortar(MSG_ONVO_NO_DEVUELVE).equals(error) || recortar(MSG_YA_PAGADO_SIN_CONFIRMAR).equals(error)) return true;
+        for (String segmento : error.split(";")) {
+            if (("code=" + CODIGO_YA_PAGADO).equals(segmento.trim())) return true;
+        }
+        return false;
+    }
+
+    private static String recortar(String texto) {
+        String t = texto == null ? "" : texto;
+        return t.length() > 300 ? t.substring(0, 300) : t;
     }
 
     /** amount del intent = céntimos del pago y receivedAmount = 0: se devolvió todo ese cobro. */
@@ -291,6 +318,8 @@ public class ReembolsoOnvoService {
     /**
      * Lock de la fila y commit de {@code EN_VUELO} antes del POST. El otro admin, o un reintento
      * después de un timeout/5xx, lo ve y no manda otro refund. Un 4xx definitivo pisa la marca con el motivo.
+     * Bajo el mismo lock se revisa que el pago siga REEMBOLSO_PENDIENTE y que no tenga guardado el rechazo
+     * already_payed: un clic que pasó las lecturas mientras otro guardaba ese rechazo no manda un segundo POST.
      */
     private void reclamarPost(Long pedidoId, Long pagoId) {
         tx.executeWithoutResult(s -> {
@@ -298,6 +327,13 @@ public class ReembolsoOnvoService {
                 .orElseThrow(() -> new ReembolsoException(404, MSG_NO_EXISTE));
             Pago pago = pagoRepository.findById(pagoId)
                 .orElseThrow(() -> new ReembolsoException(404, MSG_NO_EXISTE));
+            if (!Constants.PAGO_REEMBOLSO_PENDIENTE.equals(pago.getEstadoPago())) {
+                throw new ReembolsoException(409, MSG_CAMBIO);
+            }
+            if (rechazoTerminalGuardado(pago.getReembolsoError())) {
+                throw new ReembolsoException(409, MSG_YA_PAGADO_SIN_CONFIRMAR.equals(pago.getReembolsoError())
+                    ? MSG_YA_PAGADO_SIN_CONFIRMAR : MSG_ONVO_NO_DEVUELVE);
+            }
             if (pago.getOnvoReembolsoId() != null || MARCA_EN_VUELO.equals(pago.getReembolsoError())) {
                 throw new ReembolsoException(409, MSG_EN_DUDA_PREVIO);
             }
@@ -382,12 +418,14 @@ public class ReembolsoOnvoService {
     /**
      * Resolución manual (ADMIN) de un reembolso pendiente, tras revisarlo en ONVO. Registra quién y cuándo (V228).
      * DEVUELTO exige {@code confirmado=true}: pago REEMBOLSADO, pedido CANCELADO y stock repuesto una sola vez.
-     * NO_DEVUELTO restaura el estado previo real (sin estado guardado, queda pendiente y 409).
+     * NO_DEVUELTO restaura el estado previo real (sin estado guardado, queda pendiente y 409). Con id de refund solo
+     * si ONVO confirma failed/canceled; sin id, con un POST sin respuesta, se audita como NO_DEVUELTO_SIN_ID.
      */
     public Resultado resolverManual(Long pedidoId, ResolucionManual resolucion, boolean confirmado, String operador) {
         if (resolucion == null) throw new ReembolsoException(400, "Falta el resultado (DEVUELTO o NO_DEVUELTO).");
         if (resolucion == ResolucionManual.DEVUELTO && !confirmado) throw new ReembolsoException(400, MSG_MANUAL_SIN_CONFIRMAR);
         if (resolucion == ResolucionManual.DEVUELTO) bloquearSiOnvoDiceNoDevuelto(pedidoId);
+        String refundVerificado = resolucion == ResolucionManual.NO_DEVUELTO ? verificarNoDevuelto(pedidoId) : null;
         return tx.execute(st -> {
             Pedido pedido = pedidoRepository.findByIdForUpdate(pedidoId)
                 .orElseThrow(() -> new ReembolsoException(404, MSG_NO_EXISTE));
@@ -396,6 +434,7 @@ public class ReembolsoOnvoService {
                 throw new ReembolsoException(409, MSG_MANUAL_NO_PENDIENTE);
             }
             String quien = operador == null || operador.isBlank() ? "ADMIN" : operador;
+            String resolucionGuardada = resolucion.name();
             String mensaje;
             if (resolucion == ResolucionManual.DEVUELTO) {
                 pago.setEstadoPago(Constants.PAGO_REEMBOLSADO);
@@ -405,12 +444,23 @@ public class ReembolsoOnvoService {
                 stockService.reponerSiCorresponde(this, pedido, quien);
                 mensaje = MSG_MANUAL_DEVUELTO;
             } else {
+                // El refund que se verificó afuera tiene que ser el mismo que hay ahora bajo el lock.
+                if (!java.util.Objects.equals(refundVerificado, pago.getOnvoReembolsoId())) {
+                    throw new ReembolsoException(409, MSG_CAMBIO);
+                }
+                boolean enVueloSinId = pago.getOnvoReembolsoId() == null && MARCA_EN_VUELO.equals(pago.getReembolsoError());
                 if (!restaurar(pedido, pago)) throw new ReembolsoException(409, MSG_EN_DUDA);
+                if (enVueloSinId) {
+                    // Sin id de refund no hay qué releer en ONVO: queda la revisión del admin, auditada aparte.
+                    resolucionGuardada = RESOLUCION_NO_DEVUELTO_SIN_ID;
+                    log.warn("[reembolso] Pedido {}: NO_DEVUELTO manual de un POST sin respuesta (sin id de refund), "
+                        + "sin verificar en ONVO", pedido.getId());
+                }
                 mensaje = MSG_MANUAL_NO_DEVUELTO;
             }
             pago.setReembolsoResueltoPor(quien.length() > 120 ? quien.substring(0, 120) : quien);
             pago.setReembolsoResueltoEn(LocalDateTime.now(Constants.ZONA_CR));
-            pago.setReembolsoResolucion(resolucion.name());
+            pago.setReembolsoResolucion(resolucionGuardada);
             pedidoRepository.save(pedido);
             pagoRepository.save(pago);
             log.info("[reembolso] Pedido {} resuelto a mano: {}", pedido.getId(), resolucion);
@@ -447,6 +497,34 @@ public class ReembolsoOnvoService {
             log.warn("[reembolso] Pedido {}: DEVUELTO manual bloqueado, ONVO informa el refund como {}", pedidoId, st);
             throw new ReembolsoException(409, MSG_MANUAL_ONVO_NO_DEVUELTO);
         }
+    }
+
+    /**
+     * NO_DEVUELTO con id de refund: se relee en ONVO y solo sigue si ONVO dice failed o canceled. Si dice succeeded,
+     * si sigue pending o si no responde, 409 y no se toca nada (la marca EN_VUELO y el id quedan). Sin id de refund
+     * devuelve null y la resolución queda como revisión manual auditada.
+     */
+    private String verificarNoDevuelto(Long pedidoId) {
+        String refundId = tx.execute(s -> pedidoRepository.findById(pedidoId)
+            .flatMap(p -> CompraPaquetes.pagoDe(p, pagoRepository))
+            .map(Pago::getOnvoReembolsoId).orElse(null));
+        if (refundId == null) return null;
+        if (!onvoService.reembolsable(refundId)) throw new ReembolsoException(409, MSG_MANUAL_NO_VERIFICADO);
+        OnvoReembolso r;
+        try {
+            r = onvoService.obtenerReembolso(refundId);
+        } catch (RuntimeException e) {
+            log.warn("[reembolso] Resolución manual: no se pudo releer el refund {} ({})",
+                OnvoService.enmascarar(refundId), e.getClass().getSimpleName());
+            throw new ReembolsoException(409, MSG_MANUAL_NO_VERIFICADO);
+        }
+        if (r == null || !refundId.equals(r.id()) || r.status() == null) {
+            throw new ReembolsoException(409, MSG_MANUAL_NO_VERIFICADO);
+        }
+        String st = r.status().toLowerCase(Locale.ROOT);
+        if ("failed".equals(st) || "canceled".equals(st) || "cancelled".equals(st)) return refundId;
+        if ("succeeded".equals(st)) throw new ReembolsoException(409, MSG_MANUAL_ONVO_SI_DEVUELTO);
+        throw new ReembolsoException(409, MSG_MANUAL_NO_VERIFICADO);
     }
 
     private Lectura leer(Long pedidoId) {

@@ -138,7 +138,7 @@ class OnvoAltaReconciliacionLazyTest extends BaseIntegrationTest {
         assertThat(reconciliacion.reconciliarEmpresa(empresaId))
             .isEqualTo(OnvoAltaReconciliacion.Resultado.IGNORADA);
         reconciliacion.reconciliarPendientes();
-        cambio.procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 9), FACTURA);
+        cambio.procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 9), FACTURA, null);
 
         assertThat(cobrosOk()).isEqualTo(1);
         assertThat(empresaRepo.findById(empresaId).orElseThrow().getEstadoPlan()).isEqualTo("ACTIVO");

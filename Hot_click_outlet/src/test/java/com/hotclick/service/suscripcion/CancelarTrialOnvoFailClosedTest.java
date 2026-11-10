@@ -280,7 +280,9 @@ class CancelarTrialOnvoFailClosedTest {
         Suscripcion leida = trialPorTarjeta();
         Suscripcion otra = trialPorTarjeta();
         otra.setOnvoSubscriptionId("clsubotra0002");
-        when(repo.findActivaByEmpresaId(EMPRESA)).thenReturn(Optional.of(leida), Optional.of(leida), Optional.of(otra));
+        // Tras el merge de #547 planPagadoNoSeCancelaSolo ya no lee por findActivaByEmpresaId (usa ids + FOR UPDATE):
+        // 1.ª lectura = leerIdsExternos, 2.ª = aplicarCancelacion (ya con otro id ONVO).
+        when(repo.findActivaByEmpresaId(EMPRESA)).thenReturn(Optional.of(leida), Optional.of(otra));
         when(onvo.cancelarPorNegocio(SUB_ONVO, true)).thenReturn(ResultadoCancelacion.CANCELADA);
 
         assertThatThrownBy(() -> billing.cancelar(EMPRESA, true))

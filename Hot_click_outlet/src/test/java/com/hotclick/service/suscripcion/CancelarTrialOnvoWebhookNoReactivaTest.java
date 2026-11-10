@@ -100,7 +100,7 @@ class CancelarTrialOnvoWebhookNoReactivaTest {
         Suscripcion sub = cancelada();
         when(subs.findByOnvoSubscriptionIdForUpdate(SUB)).thenReturn(Optional.of(sub));
 
-        service.procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0001");
+        service.procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0001", LocalDate.of(2026, 11, 10));
 
         assertSigueCancelada(sub);
     }
@@ -113,7 +113,7 @@ class CancelarTrialOnvoWebhookNoReactivaTest {
         when(subs.findByOnvoSubscriptionIdForUpdate("clsubnueva01")).thenReturn(Optional.empty());
         when(subs.findByOnvoSubNuevaPendienteForUpdate("clsubnueva01")).thenReturn(Optional.of(sub));
 
-        service.procesarPagoOnvoVerificado("clsubnueva01", "PYME", LocalDate.of(2026, 12, 10), "clinv0002");
+        service.procesarPagoOnvoVerificado("clsubnueva01", "PYME", LocalDate.of(2026, 12, 10), "clinv0002", LocalDate.of(2026, 11, 10));
 
         assertSigueCancelada(sub);
         assertThat(sub.getOnvoSubscriptionId()).isEqualTo(SUB);
@@ -155,7 +155,7 @@ class CancelarTrialOnvoWebhookNoReactivaTest {
         sub.setFechaCancelacion(null);
         when(subs.findByOnvoSubscriptionIdForUpdate(SUB)).thenReturn(Optional.of(sub));
 
-        service.procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0003");
+        service.procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0003", LocalDate.of(2026, 11, 10));
 
         assertThat(sub.getEstado()).isEqualTo("ACTIVO");
         assertThat(sub.getOnvoRevisionManualDesde()).isNull();
@@ -171,8 +171,8 @@ class CancelarTrialOnvoWebhookNoReactivaTest {
         when(subs.existsByOnvoSubscriptionId(SUB)).thenReturn(true);
 
         SuscripcionService fachada = mock(SuscripcionService.class);
-        doAnswer(i -> { service.procesarPagoOnvoVerificado(i.getArgument(0), i.getArgument(1), i.getArgument(2), i.getArgument(3)); return null; })
-            .when(fachada).procesarPagoOnvoVerificado(anyString(), anyString(), any(), anyString());
+        doAnswer(i -> { service.procesarPagoOnvoVerificado(i.getArgument(0), i.getArgument(1), i.getArgument(2), i.getArgument(3), i.getArgument(4)); return null; })
+            .when(fachada).procesarPagoOnvoVerificado(anyString(), anyString(), any(), anyString(), any());
 
         StripeEventoRepository eventoRepo = mock(StripeEventoRepository.class);
         Map<String, StripeEvento> eventos = new HashMap<>();
@@ -215,7 +215,7 @@ class CancelarTrialOnvoWebhookNoReactivaTest {
 
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", doc, null)).isTrue();
 
-        verify(fachada).procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0001");
+        verify(fachada).procesarPagoOnvoVerificado(eq(SUB), eq("PYME"), eq(LocalDate.of(2026, 12, 10)), eq("clinv0001"), any());
         assertSigueCancelada(sub);
     }
 }

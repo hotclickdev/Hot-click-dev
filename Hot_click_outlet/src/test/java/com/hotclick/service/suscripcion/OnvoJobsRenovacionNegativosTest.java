@@ -105,14 +105,14 @@ class OnvoJobsRenovacionNegativosTest {
         onvoDice("active", "paid", hoy.plusDays(25));
         assertThat(job.expirarPastDueVencidos()).isZero();
         noSuspende();
-        verify(cambio).procesarPagoOnvoVerificado(eq(SUB), eq("PYME"), eq(hoy.plusDays(25)), eq(FAC));
+        verify(cambio).procesarPagoOnvoVerificado(eq(SUB), eq("PYME"), eq(hoy.plusDays(25)), eq(FAC), any());
     }
 
     @Test void onvoCaido_excepcion_noSuspende() {
         when(onvo.obtenerSuscripcion(SUB)).thenThrow(new RuntimeException("ONVO 503"));
         assertThat(job.expirarPastDueVencidos()).isZero();
         noSuspende();
-        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
     }
 
     @Test void onvoNullSuscripcion_noSuspende() {
@@ -133,7 +133,7 @@ class OnvoJobsRenovacionNegativosTest {
         assertThat(job.expirarPastDueVencidos()).isEqualTo(1);
         verify(subRepo).marcarVencidoSiPastDue(70L);
         verify(empresaRepo).suspenderPorImpagoBatch(List.of(7L));
-        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(cambio, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
     }
 
     @Test void onvoActiveFacturaUnpaid_sisuspende() {

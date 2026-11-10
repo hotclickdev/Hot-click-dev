@@ -189,7 +189,7 @@ class CancelarTrialOnvoSeguimientoSeguridadTest {
         when(subs.findByOnvoSubscriptionIdForUpdate(SUB)).thenReturn(Optional.of(sub));
 
         servicioWebhook(subs, mock(BillingLedgerWriter.class))
-            .procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0001");
+            .procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0001", LocalDate.of(2026, 11, 10));
 
         assertThat(sub.getCancelarAlVencer()).isTrue();
         assertThat(sub.getOnvoRevisionManualDesde()).isNotNull();
@@ -206,7 +206,7 @@ class CancelarTrialOnvoSeguimientoSeguridadTest {
         when(subs.findByOnvoSubscriptionIdForUpdate(SUB)).thenReturn(Optional.of(sub));
 
         servicioWebhook(subs, mock(BillingLedgerWriter.class))
-            .procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0002");
+            .procesarPagoOnvoVerificado(SUB, "PYME", LocalDate.of(2026, 12, 10), "clinv0002", LocalDate.of(2026, 11, 10));
 
         assertThat(sub.getCancelarAlVencer()).isFalse();
         assertThat(sub.getOnvoRevisionManualDesde()).isNull();

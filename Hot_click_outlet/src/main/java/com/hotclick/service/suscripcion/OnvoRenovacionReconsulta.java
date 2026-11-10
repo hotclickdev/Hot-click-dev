@@ -184,7 +184,7 @@ public class OnvoRenovacionReconsulta {
         // B2: la referencia del ledger es el id de la factura (una por mes), no el de la suscripción.
         txPorFila.executeWithoutResult(st -> {
             lockTimeout.aplicar();
-            cambio.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId);
+            cambio.procesarPagoOnvoVerificado(subId, r.planNombre(), r.fechaFin(), facturaId, r.fechaInicio());
         });
         log.info("[billing-onvo] Reconsulta reactivó empresa={} hasta={} (ONVO active y factura pagada)",
             local.getEmpresa() == null ? null : local.getEmpresa().getId(), r.fechaFin());

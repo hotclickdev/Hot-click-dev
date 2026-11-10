@@ -543,7 +543,7 @@ public class OnvoService {
      * Contrato: <a href="https://docs.onvopay.com/payments/refunds">guía</a> y esquema {@code Refund} de
      * openapi.yaml: {@code paymentIntentId}, {@code amount} en la unidad menor (céntimos si es CRC),
      * {@code description} y {@code reason}. {@code currency} es readOnly: no se manda.
-     * <p>QA (pedidos 34, 10, 21 y 49, ONVO TEST): este POST, con {@code paymentIntentId} y {@code amount}
+     * <p>QA (ONVO TEST): este POST, con {@code paymentIntentId} y {@code amount}
      * en céntimos, igual respondió 400 {@code refunds.payment_intent_already_payed} con el intent
      * {@code succeeded} y {@code receivedAmount} igual al total. El código no está en el OpenAPI.
      * No hay campo {@code chargeId} de entrada ni otro endpoint de refund. Cancelar el intent no devuelve el cobro.
@@ -719,6 +719,22 @@ public class OnvoService {
     }
 
     private static final String SIN_DETALLE = "(sin detalle)";
+
+    /**
+     * Campo {@code code} de un 4xx de ONVO, tal cual (sin enmascarar), para compararlo por igualdad exacta.
+     * null si el cuerpo no es JSON o no trae un {@code code} de texto.
+     */
+    public static String codigoOnvo(String cuerpo) {
+        if (cuerpo == null || cuerpo.isBlank()) return null;
+        try {
+            com.fasterxml.jackson.databind.JsonNode n = JSON_MOTIVO.readTree(cuerpo);
+            if (n == null || !n.isObject()) return null;
+            com.fasterxml.jackson.databind.JsonNode v = n.get("code");
+            return v != null && v.isTextual() ? v.asText().trim() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     /** Oculta correos (cualquier token pegado a @), enmascara tokens con dígitos (ids) y oculta corridas de 6+ dígitos. */
     private static String sanearTokens(String texto) {

@@ -221,11 +221,17 @@ public class SuscripcionBillingService {
         return new IdsExternos(sub.getStripeSubscriptionId(), sub.getOnvoSubscriptionId(), sub.getOnvoSubNuevaPendiente());
     }
 
-    /** true si la baja la tiene que revisar el admin. No llama a Stripe ni a ONVO. */
-    @Transactional(readOnly = true)
+    /**
+     * true si la baja la tiene que revisar el admin. No llama a Stripe ni a ONVO.
+     * Se lee con lock de fila (FOR UPDATE): solo se busca el id vigente y la fila se carga con el lock, así el
+     * estado y el plan no salen de una lectura vieja mientras un webhook de cobro la está cambiando.
+     */
+    @Transactional
     public boolean planPagadoNoSeCancelaSolo(Long empresaId) {
-        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
-        if (sub == null) return false;
+        Long subId = suscripcionRepo.idsActivasByEmpresaId(empresaId).stream().findFirst().orElse(null);
+        if (subId == null) return false;
+        Suscripcion sub = suscripcionRepo.findByIdForUpdate(subId).orElse(null);
+        if (sub == null || "CANCELADO".equals(sub.getEstado()) || "VENCIDO".equals(sub.getEstado())) return false;
         Empresa empresa = sub.getEmpresa();
         String nombre = nombrePlan(sub, empresa);
         boolean cobroExterno = idPresente(sub.getOnvoSubscriptionId()) || idPresente(sub.getStripeSubscriptionId());
