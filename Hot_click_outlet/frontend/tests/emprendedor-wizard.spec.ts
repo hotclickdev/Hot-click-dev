@@ -21,6 +21,8 @@ function payloadAuth() {
       empresaNombre: 'Demo',
       permissions: [],
       roles: ['EMPRENDEDOR'],
+      // El store ya no asume el correo verificado. Esta sesión es un dueño que el servidor marcó verificado.
+      correoVerificado: true,
     },
     version: 0,
   }

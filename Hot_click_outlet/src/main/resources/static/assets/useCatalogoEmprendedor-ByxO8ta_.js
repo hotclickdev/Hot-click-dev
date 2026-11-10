@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-DNQeP-G-.js";function t(){return e()}export{t};

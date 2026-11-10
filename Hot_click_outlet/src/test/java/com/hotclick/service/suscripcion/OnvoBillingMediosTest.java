@@ -430,7 +430,7 @@ class OnvoBillingMediosTest {
             when(precios.moneda()).thenReturn(Optional.of("usd"));
             set(service, "preciosPlanes", precios);
             when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate(SUB)).thenReturn(Optional.of(sub));
-            when(suscripcionRepo.findActivaByEmpresaId(20L)).thenReturn(Optional.of(sub));
+            when(suscripcionRepo.findActivaConEmpresaByEmpresaId(20L)).thenReturn(Optional.of(sub));
             sub.setPlan(planPyme);
             sub.setPlanPendiente(null);
             sub.setEstado("TRIAL");

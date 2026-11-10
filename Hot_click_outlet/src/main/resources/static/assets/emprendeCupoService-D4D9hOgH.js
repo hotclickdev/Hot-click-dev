@@ -1,0 +1,1 @@
+import{t as e}from"./api-MN6h_yzf.js";var t={get:()=>e.get(`/public/emprende/cupos`)},n=`PENDIENTE_CUPO`;function r(e){return e===n}export{r as n,t};
