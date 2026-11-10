@@ -103,6 +103,7 @@ export default function AdminSuscripcion() {
       <SuscripcionAcciones
         esTrial={esTrial}
         tieneStripe={tieneStripe}
+        planDePago={planNombre === 'PYME' || planNombre === 'NEGOCIO_PLUS'}
         sub={sub}
         estado={estado}
         confirmarCancelar={confirmarCancelar}

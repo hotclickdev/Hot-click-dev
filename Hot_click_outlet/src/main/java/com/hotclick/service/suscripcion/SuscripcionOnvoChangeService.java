@@ -223,6 +223,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         boolean emprendedorDePago = PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre())
             && TrialEmprendedorService.emprendedorEsDePago(empresa);
 
+        // Una tienda que ya pagó solo sube sola a Negocio Plus. Bajar (a PYME o a Emprendedor) es solicitud,
+        // y se decide con el estado local: no se lee ni se cancela nada en ONVO.
+        if (bajadaDePlanPagado(planActual, planDestino.getNombre(),
+                sub == null ? null : sub.getEstado(), empresa.getEstadoPlan())) {
+            throw new com.hotclick.exception.CambioPlanRequiereSolicitudException();
+        }
+
         if (PLAN_GRATIS.equalsIgnoreCase(planDestino.getNombre()) && !emprendedorDePago) {
             // Seguridad #333: bajar a gratis no es pagar; una tienda suspendida nunca llega acá.
             if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
@@ -603,6 +610,30 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     static boolean esSubidaANegocioPlus(String actual, String destino) {
         int a = rangoPlan(actual);
         return PLAN_NEGOCIO_PLUS.equalsIgnoreCase(destino) && a >= 0 && a < rangoPlan(PLAN_NEGOCIO_PLUS);
+    }
+
+    /** ACTIVO o PAST_DUE: el período ya se cobró (o quedó en mora). Trial e incomplete no. */
+    static boolean periodoCobrado(String estado) {
+        return "ACTIVO".equalsIgnoreCase(estado) || "PAST_DUE".equalsIgnoreCase(estado);
+    }
+
+    /**
+     * Bajar desde PYME o Negocio Plus ya cobrado. Se resuelve sin preguntarle a ONVO.
+     * Emprendedor (rango 0) no entra: no es una baja de un plan de pago superior.
+     */
+    static boolean bajadaDePlanPagado(String actual, String destino, String estadoSub, String estadoPlan) {
+        if (!periodoCobrado(estadoSub) && !periodoCobrado(estadoPlan)) return false;
+        int desde = rangoPlan(actual);
+        int hacia = rangoPlan(destino);
+        return desde > 0 && hacia >= 0 && hacia < desde;
+    }
+
+    /** Cancelar en autoservicio un PYME/Negocio Plus cobrado, o un Emprendedor que ya tiene suscripción de cobro. */
+    static boolean cancelacionDePlanPagado(String actual, String estadoSub, String estadoPlan, boolean tieneCobroExterno) {
+        if (!periodoCobrado(estadoSub) && !periodoCobrado(estadoPlan)) return false;
+        int desde = rangoPlan(actual);
+        if (desde > 0) return true;
+        return desde == 0 && tieneCobroExterno;
     }
 
     /** Estados ONVO en los que todavía no se cobró ningún período: se puede reemplazar sin perder nada pagado. */
@@ -1046,6 +1077,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
         sub.setFechaFin(fin);
+        // El período que se está pagando arranca hoy (Costa Rica), no en la fecha_inicio del plan anterior.
+        sub.setFechaInicio(LocalDate.now(Constants.ZONA_CR));
         suscripcionRepo.save(sub);
 
         Empresa empresa = sub.getEmpresa();

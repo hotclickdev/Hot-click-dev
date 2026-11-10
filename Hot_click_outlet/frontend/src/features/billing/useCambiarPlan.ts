@@ -63,19 +63,19 @@ type Options = {
 /** Cambio que no se hace solo: se abre el formulario de solicitud para este plan. */
 export type SolicitudPendiente = { planId: Id; planNombre?: string | null }
 
-/** Plan base sin mensualidad: bajar a él es cancelar, no cambiar de plan (precio 0 da 409 en /cambiar-plan). */
+/** Plan base. Desde un plan ya pagado no se llama a cancelar: requiereSolicitud abre el formulario. */
 export const PLAN_BASE = 'EMPRENDEDOR'
 
 /**
- * Decide el endpoint: bajar al plan base va por POST /billing/cancelar (al vencer el período);
- * cualquier otro plan, por POST /billing/cambiar-plan. Ojo: /cancelar solo admite rol EMPRENDEDOR (no ADMIN).
+ * Sin un plan de pago vigente, elegir Emprendedor va por POST /billing/cancelar.
+ * PYME y Negocio Plus van por POST /billing/cambiar-plan. /cancelar solo admite rol EMPRENDEDOR.
  */
 export function rutaCambioPlan(nombrePlanDestino?: string | null): 'cancelar' | 'cambiar-plan' {
   return nombrePlanDestino?.toUpperCase() === PLAN_BASE ? 'cancelar' : 'cambiar-plan'
 }
 
 /**
- * Orquesta POST /billing/cambiar-plan y el cobro ONVO si hace falta; la baja a Emprendedor va por /billing/cancelar.
+ * Orquesta el cambio de plan. Bajar desde un plan ya pagado abre la solicitud; no cancela en ONVO.
  */
 export function useCambiarPlan({ rutaExito, planActual }: Options) {
   const navigate = useNavigate()

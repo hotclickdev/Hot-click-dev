@@ -1,6 +1,8 @@
 package com.hotclick.service.suscripcion;
 
+import com.hotclick.exception.CambioPlanRequiereSolicitudException;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.Plan;
 import com.hotclick.model.Suscripcion;
 import com.hotclick.repository.SuscripcionRepository;
 import com.hotclick.service.StripeService;
@@ -11,6 +13,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 /**
@@ -67,5 +70,29 @@ class CancelarSuscripcionHeredadaTest {
         assertThat(sub.getCancelarAlVencer()).isTrue();
         assertThat(sub.getEstado()).isEqualTo("ACTIVO");
         verifyNoInteractions(plan);
+    }
+
+    @Test
+    @DisplayName("Plan pagado activo: 422 y no se llama a Stripe")
+    void planPagado_noSeCancelaSolo() {
+        var repo = mock(SuscripcionRepository.class);
+        var stripe = mock(StripeService.class);
+        var plan = mock(SuscripcionPlanSupport.class);
+        Empresa e = new Empresa();
+        e.setEstadoPlan("ACTIVO");
+        e.setPlanSaas("NEGOCIO_PLUS");
+        Plan plus = new Plan();
+        plus.setNombre("NEGOCIO_PLUS");
+        Suscripcion sub = subHeredada(e);
+        sub.setPlan(plus);
+        sub.setOnvoSubscriptionId("sub_plus");
+        when(repo.findActivaByEmpresaId(5L)).thenReturn(Optional.of(sub));
+
+        assertThatThrownBy(() -> servicio(repo, stripe, plan).cancelar(5L, false))
+            .isInstanceOf(CambioPlanRequiereSolicitudException.class);
+
+        verifyNoInteractions(stripe);
+        assertThat(sub.getCancelarAlVencer()).isNotEqualTo(Boolean.TRUE);
+        assertThat(sub.getEstado()).isEqualTo("ACTIVO");
     }
 }
