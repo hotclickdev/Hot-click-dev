@@ -52,19 +52,31 @@ a expirar primero y volver a leer, nunca a liberar.
 
 `hot_click_pago_tb.cancelacion_solicitada_en` / `_origen` (USUARIO, INVITADO, PANEL). Se escribe con un UPDATE
 condicional (la primera gana; columna `updatable=false` en la entidad para que un save obsoleto no la pise) cuando el
-comprador o el panel pide cancelar y ONVO no confirmó todavía que no hubo cobro, o cuando sí cobró. La captura la relee
-de la base: con la intención registrada un cobro nunca confirma la venta. Si el `/expire` mismo falla (ONVO caído),
-no se registra y el mensaje pide reintentar (comportamiento previo; decisión pendiente, ver abajo).
+comprador o el panel pide cancelar un pago ONVO con sesión, solo si el pago sigue `PENDIENTE`. La captura la relee de
+la base: con la intención registrada un cobro nunca confirma la venta.
+
+**Intención antes de red (fix2, alcance confirmado por Grok Bot):** la intención se guarda ANTES de la primera llamada a
+ONVO (`/expire` o GET). Sin locks tomados (comprador, invitado y la fase previa del panel) va en su propia transacción
+confirmada (`CancelacionIntencionService`, `REQUIRES_NEW`): sobrevive a un fallo de red, a un reinicio o a un rollback
+posterior. Si el `/expire` falla con la intención guardada, la respuesta es el 409 de «cancelación registrada» (veraz:
+un cobro posterior va a reembolso, no confirma). Si la intención no se puede guardar, no se llama a ONVO ni se cancela
+(409, reintentar). En el camino de respaldo con el pedido ya bloqueado se usa el mismo UPDATE dentro de la transacción
+(nunca `REQUIRES_NEW` bajo lock, ver abajo).
 
 ## Locks y orden
 
 - Comprador/invitado: GET a ONVO sin locks → `FOR UPDATE` del pago (refresh) → pedidos/productos. Mismo orden que la
   captura del webhook (pago → pedidos → productos).
-- Panel: `PedidoService#cambiarEstado` ya bloquea el pedido antes; después el pago. Antes, la captura del gate abría
-  una transacción `REQUIRES_NEW` que esperaba el mismo pedido desde otra conexión: autobloqueo que PostgreSQL no ve.
-  Ahora no hay `REQUIRES_NEW` en ese camino (`guardarIntentId` pasó a `REQUIRED`, la escritura del cobro es
-  `MANDATORY`). Un cruce panel (pedido → pago) contra webhook (pago → pedido) es un deadlock entre dos sesiones que
-  PostgreSQL detecta y corta (una de las dos recibe error; el webhook se reintenta). No es un cuelgue.
+- Panel (fix2): `PedidoService#cambiarEstado` con `CANCELADO` corre primero una fase SIN locks
+  (`cerrarPagoOnvoAntesDeCancelarSinLocks`): lee el pedido sin bloquear y valida la transición; intención en
+  transacción propia; `/expire` + GET sin locks; después `FOR UPDATE` del pago (y, si hubo cobro, la captura bloquea los
+  pedidos). Recién entonces `FOR UPDATE` del pedido (flush + refresh para decidir con el estado actual). Orden
+  pago → pedido, igual que el webhook: ya no hay cruce panel/webhook. Ningún lock se mantiene durante la red.
+  Si la fase previa no corrió (pedido no visible, transición inválida con la lectura sin lock), el camino anterior
+  queda de respaldo: pedido bloqueado, intención dentro de la transacción, sin `REQUIRES_NEW` (`guardarIntentId` es
+  `REQUIRED`, la escritura del cobro `MANDATORY`).
+- Prueba (H2): durante el `/expire` simulado, otra conexión ve la intención confirmada y toma `FOR UPDATE` de pedido y
+  pago sin esperar (`AdminCancelarExpiraOnvoTest#intencionConfirmadaYSinLocksDuranteRed`).
 - Pendiente de ejecución real en PostgreSQL: estos órdenes no se validaron con locks reales (H2 no es equivalente).
 
 ## Conciliación durable de cerrados (V238)
@@ -77,8 +89,43 @@ no se registra y el mensaje pide reintentar (comportamiento previo; decisión pe
 - Resuelto sin cobro: solo intent `canceled` (ONVO no lo reutiliza) → `conciliacion_resuelta_en`.
 - `requires_payment_method` / `requires_confirmation` con la sesión expirada **no** se dan por resueltos: se siguen
   reconsultando con el tope. A los N intentos (por defecto 30) queda UNA alerta `[ALERTA-PAGO]` para revisión manual.
-- Sesión 404 sin intent guardado (p. ej. pagos anteriores a V237): no se puede resolver por GET; sigue con el tope y
-  la alerta. Sin backfill: los cerrados históricos entran al primer barrido (ver decisiones).
+- Sesión 404 sin intent guardado (p. ej. pagos anteriores a V237): no se puede resolver por GET; queda marcado
+  (`conciliacion_sin_referencia_en`) y pasa directo al tope de backoff. Sin backfill.
+
+## Control de tormenta de consultas y alertas (fix2, persistente)
+
+Todo vive en columnas de `hot_click_pago_tb` (V238); nada en memoria, así que un reinicio no repite la tormenta.
+
+- **Históricos sin agendar (lotes):** el reclamo de cerrados tiene dos cuotas por corrida: nunca agendados
+  (`conciliacion_proxima_en IS NULL`, de los más nuevos a los más viejos) y reintentos vencidos (por vencimiento). El
+  atraso histórico se drena de a `conciliacion-lote/2` por corrida y no desplaza a los recientes ni a los reintentos.
+- **Pendientes en duda (backoff):** el respaldo de pendientes y la limpieza TTL reagendan con el mismo backoff los
+  pagos `PENDIENTE` que quedan en duda (404 sin referencia, intent en proceso, ONVO caído, datos distintos); no vuelven
+  a consultarse hasta su `conciliacion_proxima_en`. Capturados y rechazados no se reagendan.
+- **404 sin referencia (dedupe):** la primera vez se marca con un UPDATE condicional; solo esa vez sale el log: si el
+  pago sigue `PENDIENTE` (reserva tomada) como `[ALERTA-PAGO]`, si ya estaba cerrado como WARN. La conciliación de
+  cerrados deja además UNA alerta resumen por corrida con la cantidad de nuevos sin referencia. Las vueltas siguientes
+  solo registran DEBUG.
+- **Alerta de intentos:** UNA `[ALERTA-PAGO]` cuando `conciliacion_intentos` llega al umbral (no en cada vuelta).
+- **Sin abandono por edad:** ninguna regla descarta un pago por antigüedad; solo se espacia hasta el tope (1 consulta
+  por día por pago con los valores por defecto). Dejar de reconsultar es una decisión pendiente (abajo).
+
+### Parámetros técnicos (provisionales; valores por defecto en `application.properties`)
+
+| Propiedad (`hotclick.pagos.onvo.respaldo.*`) | Variable de entorno | Defecto | Efecto |
+|---|---|---|---|
+| `cerrados-habilitado` | `HOTCLICK_PAGOS_ONVO_RESPALDO_CERRADOS_HABILITADO` | `true` | Activa la conciliación de cerrados |
+| `conciliacion-backoff-base-minutos` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_BACKOFF_BASE_MINUTOS` | 2 | Espera del 1.er reintento; luego `base*2^(n-1)` |
+| `conciliacion-backoff-max-minutos` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_BACKOFF_MAX_MINUTOS` | 1440 | Tope de espera (y espera fija de sin referencia) |
+| `conciliacion-alerta-intentos` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_ALERTA_INTENTOS` | 30 | Intento en que sale la única alerta por pago |
+| `conciliacion-lote` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_LOTE` | 10 (1..`lote-max`) | Cerrados por corrida: mitad nuevos, mitad reintentos |
+| `lote` / `lote-max` | `HOTCLICK_PAGOS_ONVO_RESPALDO_LOTE` / `_LOTE_MAX` | 20 / 200 | Pendientes por corrida y tope validado |
+| `antiguedad-min-minutos` | `HOTCLICK_PAGOS_ONVO_RESPALDO_ANTIGUEDAD_MIN_MINUTOS` | 5 | Antigüedad mínima para reconsultar un pendiente |
+| `intervalo-ms` | `HOTCLICK_PAGOS_ONVO_RESPALDO_INTERVALO_MS` | 120000 | Frecuencia del job de respaldo |
+
+Cota de consultas a ONVO por corrida del respaldo: `lote` pendientes + `conciliacion-lote` cerrados (cada uno hasta 2
+GET). Con los valores por defecto: hasta 30 pagos cada 2 min. Con el backoff, un pago sin resolver baja a 1 vuelta
+diaria tras ~11 intentos (~1,4 días).
 
 ## Límite: el último GET no es atómico
 
@@ -97,7 +144,12 @@ transacción local (no «milisegundos»: incluye timeouts de red). Mitigaciones:
 
 ## Otros residuales
 
-- 404 sin intent guardado: el pago queda PENDIENTE con la reserva hasta revisión manual (alerta en cada vuelta).
+- 404 sin intent guardado: el pago queda PENDIENTE con la reserva hasta revisión manual (una alerta por pago y
+  reconsulta diaria).
+- Intención antes de red: si el comprador cancela, el `/expire` falla y después igual paga el link, ese cobro va a
+  `REEMBOLSO_PENDIENTE` (no confirma). Es la consecuencia del alcance confirmado; el mensaje se lo advierte.
+- Carrera: si la captura confirma justo después de guardar la intención y antes del GET, la captura respeta la
+  intención (reembolso); el panel puede responder «ya está pagado» con el estado leído. Pendiente de PostgreSQL real.
 - Si ONVO no copia la metadata del checkout al intent, `payment-intent.succeeded` de una venta en línea solo se resuelve
   por el intent guardado; la limpieza y la conciliación siguen cubriendo el caso.
 - Un intent `succeeded` con la sesión expired/unpaid o 404 se confirma (expiración automática) solo con la verificación
@@ -107,8 +159,10 @@ transacción local (no «milisegundos»: incluye timeouts de red). Mitigaciones:
 ## Decisiones pendientes (no aprobadas; no se eligieron aquí)
 
 1. Horizonte de la conciliación: hoy no se abandona nunca (tope diario). ¿Cuándo pasa a manual y deja de reconsultar?
-2. Pagos cerrados anteriores a V238: entran todos al primer barrido (sin backfill). ¿Acotar o escalonar?
-3. Valores de backoff y del umbral de alerta (los actuales son técnicos y provisionales).
-4. ¿Registrar la intención de cancelar también cuando el `/expire` falla (ONVO caído)?
+2. Pagos cerrados anteriores a V238: sin backfill; ahora se escalonan por la cuota de nuevos (técnico). ¿Excluirlos o
+   pasarlos a manual?
+3. Valores de backoff, lote y umbral de alerta (tabla de arriba; técnicos y provisionales).
+4. ~~¿Registrar la intención cuando el `/expire` falla?~~ Grok Bot confirmó el alcance «intención antes de red»
+   (implementado). Andrés no respondió directamente.
 5. Anti-bot para ONVO: ¿aceptar que la reserva dure el TTL completo, o autorizar otro mecanismo?
 6. Mensajes al comprador/panel en los nuevos 409 y en la cancelación con cobro (hoy responde «Pedido cancelado»).
