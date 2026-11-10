@@ -5,9 +5,13 @@ describe('solicitud de cambio de plan', () => {
   it('bajar de Negocio Plus a Pyme va por solicitud', () => {
     expect(requiereSolicitud('NEGOCIO_PLUS', 'PYME')).toBe(true)
   })
-  it('subir o bajar a Emprendedor no va por solicitud', () => {
+  it('bajar de un plan pagado a Emprendedor también va por solicitud', () => {
+    expect(requiereSolicitud('NEGOCIO_PLUS', 'EMPRENDEDOR')).toBe(true)
+    expect(requiereSolicitud('PYME', 'EMPRENDEDOR')).toBe(true)
+  })
+  it('subir, o elegir plan sin uno de pago vigente, no va por solicitud', () => {
     expect(requiereSolicitud('PYME', 'NEGOCIO_PLUS')).toBe(false)
-    expect(requiereSolicitud('NEGOCIO_PLUS', 'EMPRENDEDOR')).toBe(false)
+    expect(requiereSolicitud('EMPRENDEDOR', 'PYME')).toBe(false)
     expect(requiereSolicitud(null, 'PYME')).toBe(false)
   })
   it('valida el motivo', () => {

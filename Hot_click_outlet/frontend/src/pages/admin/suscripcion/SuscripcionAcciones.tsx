@@ -4,6 +4,7 @@ import type { SuscripcionInfo } from './suscripcionHelpers'
 export default function SuscripcionAcciones({
   esTrial,
   tieneStripe,
+  planDePago,
   sub,
   estado,
   confirmarCancelar,
@@ -17,6 +18,8 @@ export default function SuscripcionAcciones({
 }: {
   esTrial: boolean
   tieneStripe?: boolean
+  /** PYME o Negocio Plus ya cobrado: no se cancela solo. */
+  planDePago?: boolean
   sub: SuscripcionInfo | null
   estado: string
   confirmarCancelar: boolean
@@ -65,7 +68,13 @@ export default function SuscripcionAcciones({
         </div>
       )}
 
-      {tieneStripe && !sub?.cancelarAlVencer && estado === 'ACTIVO' && (
+      {planDePago && (estado === 'ACTIVO' || estado === 'PAST_DUE') && (
+        <p className="py-3 text-sm" style={{ color: 'var(--hc-muted)' }}>
+          Para bajar o cancelar este plan mandá una solicitud desde Planes. HotClick la revisa; el plan sigue igual.
+        </p>
+      )}
+
+      {tieneStripe && !planDePago && !sub?.cancelarAlVencer && estado === 'ACTIVO' && (
         <div className="flex items-center justify-between py-3">
           <div>
             <p className="text-sm" style={{ color: 'var(--hc-text)' }}>Cancelar suscripción</p>

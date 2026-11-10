@@ -206,9 +206,50 @@ class SuscripcionOnvoCambioPlanCobradaTest {
     void bajada_requiereSolicitud() {
         cobrada(plus, "active");
         assertThatThrownBy(() -> service.cambiarPlan(10L, 2L)).isInstanceOf(CambioPlanRequiereSolicitudException.class);
+        verify(onvoBilling, never()).obtenerSuscripcion(any());
+        verify(onvoBilling, never()).cancelarAlVencer(any());
         verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
         verify(onvoBilling, never()).cancelarInmediato(any());
         assertThat(sub.getPlanPendiente()).isNull();
+    }
+
+    @Test
+    @DisplayName("Bajar NEGOCIO_PLUS→EMPRENDEDOR cobrada: 422, sin cancelar en ONVO ni marcar cancelar_al_vencer")
+    void bajadaAEmprendedor_sinOnvo() {
+        cobrada(plus, "active");
+        sub.setCancelarAlVencer(false);
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L)).isInstanceOf(CambioPlanRequiereSolicitudException.class);
+        verify(onvoBilling, never()).obtenerSuscripcion(any());
+        verify(onvoBilling, never()).cancelarAlVencer(any());
+        verify(onvoBilling, never()).cancelarInmediato(any());
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap());
+        assertThat(sub.getCancelarAlVencer()).isFalse();
+        assertThat(sub.getEstado()).isEqualTo("ACTIVO");
+    }
+
+    @Test
+    @DisplayName("Bajar PYME→EMPRENDEDOR cobrada: también 422 sin ONVO")
+    void bajadaPymeAEmprendedor_sinOnvo() {
+        cobrada(pyme, "active");
+        assertThatThrownBy(() -> service.cambiarPlan(10L, 1L)).isInstanceOf(CambioPlanRequiereSolicitudException.class);
+        verify(onvoBilling, never()).obtenerSuscripcion(any());
+        verify(onvoBilling, never()).cancelarAlVencer(any());
+    }
+
+    @Test
+    @DisplayName("Pago confirmado al subir de plan: fecha_inicio es el día del pago, no la del plan anterior")
+    void pagoConfirmado_fechaInicioEsElDiaDelPago() {
+        cobrada(pyme, "active");
+        sub.setFechaInicio(LocalDate.of(2026, 11, 8));
+        when(suscripcionRepo.findByOnvoSubscriptionIdForUpdate("sub_vieja")).thenReturn(Optional.of(sub));
+        LocalDate fin = LocalDate.of(2026, 12, 9);
+
+        service.procesarPagoOnvoVerificado("sub_vieja", "NEGOCIO_PLUS", fin, "inv_paid_plus");
+
+        assertThat(sub.getFechaInicio()).isEqualTo(LocalDate.now(Constants.ZONA_CR));
+        assertThat(sub.getFechaFin()).isEqualTo(fin);
+        assertThat(empresa.getFechaVencPlan()).isEqualTo(fin);
+        assertThat(empresa.getPlanSaas()).isEqualTo("NEGOCIO_PLUS");
     }
 
     @Test

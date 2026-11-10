@@ -12,6 +12,7 @@ import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPag
 import { montoCobroVisible } from '@/features/billing/montoPlan'
 import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
+import SolicitudCambioPlanForm from '@/features/billing/SolicitudCambioPlanForm'
 import type { Id } from '@/types/api'
 import { useCerrarSesion } from '@/hooks/useCerrarSesion'
 
@@ -149,7 +150,8 @@ export default function AdminPlanes() {
     pagoPendiente,
     seleccionarPlan,
     cancelarPago, confirmarPagoEmbed, activacion,
-  } = useCambiarPlan({ rutaExito: '/admin/billing/suscripcion' })
+    solicitud, cerrarSolicitud,
+  } = useCambiarPlan({ rutaExito: '/admin/billing/suscripcion', planActual: planNombre })
 
   function handleLogout() {
     cerrarSesionCompleta()
@@ -191,6 +193,15 @@ export default function AdminPlanes() {
         </div>
       )}
 
+      {solicitud ? (
+        <SolicitudCambioPlanForm
+          planId={solicitud.planId}
+          planNombre={solicitud.planNombre}
+          planActual={planNombre}
+          onCerrar={() => { cerrarSolicitud(); setError(null) }}
+        />
+      ) : null}
+
       {pagoPendiente && (
         <div className="rounded-2xl p-5 space-y-3" style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}>
           <div className="flex items-center justify-between gap-2">
@@ -227,7 +238,7 @@ export default function AdminPlanes() {
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
         Los precios están en colones (CRC). El cobro mensual se procesa con ONVO.
-        Podés cancelar en cualquier momento desde la sección de suscripción.
+        Bajar de un plan ya pagado se pide con una solicitud; HotClick la revisa.
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold pt-2">

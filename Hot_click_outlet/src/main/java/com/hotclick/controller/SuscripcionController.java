@@ -164,6 +164,10 @@ public class SuscripcionController {
             suscripcionService.cancelar(empresaId, inmediata);
             return ResponseEntity.ok(Map.of("status", "ok",
                 "mensaje", inmediata ? "Suscripción cancelada" : "Se cancelará al vencer el período"));
+        } catch (com.hotclick.exception.CambioPlanRequiereSolicitudException e) {
+            return ResponseEntity.status(422).body(Map.of(
+                "error", com.hotclick.exception.CambioPlanRequiereSolicitudException.MENSAJE,
+                "codigo", com.hotclick.exception.CambioPlanRequiereSolicitudException.CODIGO));
         } catch (StripeException e) {
             log.error("[billing] Error cancelando empresa={}: {}", empresaId, e.getMessage());
             return ResponseEntity.status(502).body(Map.of("error", "Error con Stripe"));

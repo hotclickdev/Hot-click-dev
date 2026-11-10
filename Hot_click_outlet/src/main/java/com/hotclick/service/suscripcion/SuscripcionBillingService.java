@@ -144,6 +144,9 @@ public class SuscripcionBillingService {
      */
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public void cancelar(Long empresaId, boolean inmediata) throws StripeException {
+        if (self.planPagadoNoSeCancelaSolo(empresaId)) {
+            throw new com.hotclick.exception.CambioPlanRequiereSolicitudException();
+        }
         String stripeSubId = self.leerStripeSubId(empresaId);
 
         // HTTP Stripe — fuera de TX
@@ -152,6 +155,30 @@ public class SuscripcionBillingService {
         // TX2: persistir resultado
         self.aplicarCancelacion(empresaId, inmediata);
         log.info("[billing] Suscripción cancelada empresa={} inmediata={}", empresaId, inmediata);
+    }
+
+    /** true si la baja la tiene que revisar el admin. No llama a Stripe ni a ONVO. */
+    @Transactional(readOnly = true)
+    public boolean planPagadoNoSeCancelaSolo(Long empresaId) {
+        Suscripcion sub = suscripcionRepo.findActivaByEmpresaId(empresaId).orElse(null);
+        if (sub == null) return false;
+        Empresa empresa = sub.getEmpresa();
+        String nombre = nombrePlan(sub, empresa);
+        boolean cobroExterno = idPresente(sub.getOnvoSubscriptionId()) || idPresente(sub.getStripeSubscriptionId());
+        return SuscripcionOnvoChangeService.cancelacionDePlanPagado(
+            nombre, sub.getEstado(), empresa == null ? null : empresa.getEstadoPlan(), cobroExterno);
+    }
+
+    private static String nombrePlan(Suscripcion sub, Empresa empresa) {
+        if (sub.getPlan() != null && sub.getPlan().getNombre() != null) return sub.getPlan().getNombre();
+        if (empresa != null && empresa.getPlan() != null && empresa.getPlan().getNombre() != null) {
+            return empresa.getPlan().getNombre();
+        }
+        return empresa == null ? null : empresa.getPlanSaas();
+    }
+
+    private static boolean idPresente(String id) {
+        return id != null && !id.isBlank();
     }
 
     @Transactional(readOnly = true)

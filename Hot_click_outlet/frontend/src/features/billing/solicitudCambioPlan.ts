@@ -13,11 +13,11 @@ function rango(nombre?: string | null): number {
   return ORDEN_PLANES.indexOf((nombre ?? '').toUpperCase() as (typeof ORDEN_PLANES)[number])
 }
 
-/** Bajar a un plan pagado más bajo (Negocio Plus → Pyme): no hay botón directo, va por solicitud. */
+/** Bajar desde un plan de pago (a PYME o a Emprendedor): no hay botón directo, va por solicitud. */
 export function requiereSolicitud(actual?: string | null, destino?: string | null): boolean {
   const a = rango(actual)
   const d = rango(destino)
-  return a >= 0 && d > 0 && d < a
+  return a > 0 && d >= 0 && d < a
 }
 
 export function motivoSolicitudValido(motivo: string): boolean {
