@@ -530,17 +530,19 @@ class ReembolsoOnvoCompletoTest {
     }
 
     @Test
-    @DisplayName("refunds.payment_intent_already_payed: queda pendiente; si ONVO sigue sin refund, el replay usa la misma clave y repone una vez")
-    void alreadyPayedQuedaPendienteYReplayNoRepite() {
+    @DisplayName("already_payed con el intent aún succeeded y receivedAmount intacto: no se devuelve y no se repite el POST")
+    void alreadyPayedConCobroIntactoNoRepite() {
         pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
         pago.setMonto(9000);
-        doReturn(intent("succeeded", 900_000)).when(onvo).obtenerPaymentIntent(INTENT);
+        Map<String, Object> capturado = intent("succeeded", 900_000);
+        capturado.put("receivedAmount", 900_000);
+        doReturn(capturado).when(onvo).obtenerPaymentIntent(INTENT);
         when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L)))
             .thenThrow(rechazoYaPagado());
         assertThatThrownBy(() -> service.reembolsar(7L))
             .isInstanceOfSatisfying(ReembolsoException.class, e -> {
                 assertThat(e.getStatus()).isEqualTo(422);
-                assertThat(e.getMessage()).contains(ReembolsoOnvoService.CODIGO_YA_PAGADO);
+                assertThat(e.getMessage()).isEqualTo(ReembolsoOnvoService.MSG_ONVO_NO_DEVUELVE);
             });
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
@@ -549,15 +551,11 @@ class ReembolsoOnvoCompletoTest {
         assertThat(guardados).isEmpty();
         assertThat(pago.getMontoReembolsado()).isNull();
 
-        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L)))
-            .thenReturn(new OnvoReembolso("rf_34b", "succeeded"));
-        ArgumentCaptor<String> claves = ArgumentCaptor.forClass(String.class);
-        assertThat(service.reembolsar(7L).status()).isEqualTo(200);
-        verify(onvo, times(2)).crearReembolso(eq(INTENT), anyString(), claves.capture(), eq(900_000L));
-        assertThat(claves.getAllValues().get(0)).isEqualTo(claves.getAllValues().get(1));
-        assertThat(producto.getStockActual()).isEqualTo(3);
-        assertThat(guardados).hasSize(1);
+        assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
+            e -> assertThat(e.getStatus()).isEqualTo(409));
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
         verify(onvo, never()).cancelarPaymentIntent(anyString());
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
     }
 
     @Test
@@ -608,12 +606,12 @@ class ReembolsoOnvoCompletoTest {
         pago.setMonto(9000);
         doReturn(intent("succeeded", 900_000)).when(onvo).obtenerPaymentIntent(INTENT);
         when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L)))
-            .thenThrow(rechazoYaPagado())
+            .thenThrow(rechazoGenerico())
             .thenThrow(new ResourceAccessException("timeout"));
 
         assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
             e -> assertThat(e.getStatus()).isEqualTo(422));
-        assertThat(pago.getReembolsoError()).contains(ReembolsoOnvoService.CODIGO_YA_PAGADO);
+        assertThat(pago.getReembolsoError()).contains("amount must be positive");
 
         assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOfSatisfying(ReembolsoException.class,
             e -> assertThat(e.getStatus()).isEqualTo(502));
@@ -634,7 +632,7 @@ class ReembolsoOnvoCompletoTest {
         pago.setMonto(9000);
         doReturn(intent("succeeded", 900_000)).when(onvo).obtenerPaymentIntent(INTENT);
         when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(900_000L)))
-            .thenThrow(rechazoYaPagado());
+            .thenThrow(rechazoGenerico());
         assertThatThrownBy(() -> service.reembolsar(7L)).isInstanceOf(ReembolsoException.class);
 
         CountDownLatch adentro = new CountDownLatch(1);
@@ -729,6 +727,11 @@ class ReembolsoOnvoCompletoTest {
 
     private static HttpClientErrorException rechazoYaPagado() {
         String body = "{\"code\":\"refunds.payment_intent_already_payed\",\"message\":\"Payment intent already payed\"}";
+        return HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null, body.getBytes(), null);
+    }
+
+    private static HttpClientErrorException rechazoGenerico() {
+        String body = "{\"message\":[\"amount must be positive\"],\"error\":\"Bad Request\"}";
         return HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null, body.getBytes(), null);
     }
 }
