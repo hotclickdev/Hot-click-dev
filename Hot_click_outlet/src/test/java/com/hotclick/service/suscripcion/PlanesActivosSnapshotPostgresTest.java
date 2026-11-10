@@ -122,6 +122,9 @@ class PlanesActivosSnapshotPostgresTest {
 
     @Autowired PlanesActivosLector lector;
     @Autowired @Qualifier("planRepository") PlanRepository repoReal;
+    /** El @Primary de PlanesLectorGancho: el mismo que usa el lector; dispara la barrera tras cada página. */
+    @Autowired PlanRepository repoConGancho;
+    @Autowired SnapshotLecturaPg snapshot;
     @Autowired PlatformTransactionManager txManager;
     @Autowired DataSource dataSource;
 
@@ -158,21 +161,50 @@ class PlanesActivosSnapshotPostgresTest {
             Long.class);
     }
 
-    /** Tras la primera página, otro hilo confirma los cambios y recién entonces el lector sigue (barrera). */
-    private List<String> barreraConEscritor() {
-        JdbcTemplate enTx = new JdbcTemplate(dataSource); // usa la conexión de la transacción del lector
-        List<String> aislamiento = new ArrayList<>();
+    /** Lo observado dentro de la transacción de lectura y lo que el escritor llegó a confirmar. */
+    private record Barrera(List<String> aislamiento, List<String> soloLectura, List<Integer> paginas,
+                           java.util.concurrent.atomic.AtomicInteger filasEscritas) {
+        void escritorCorrio() {
+            assertThat(paginas).as("el gancho corrió en cada página (repositorio con gancho)").hasSizeGreaterThan(1)
+                .startsWith(0);
+            assertThat(filasEscritas.get()).as("alta + baja + 2 cambios de precio confirmados").isEqualTo(4);
+        }
+    }
+
+    /**
+     * Tras la primera página (gancho del PlanRepository @Primary), otro hilo con su propia conexión confirma un alta,
+     * una baja y dos cambios de precio; recién entonces el lector sigue (barrera).
+     */
+    private Barrera barreraConEscritor() {
+        JdbcTemplate enTx = new JdbcTemplate(dataSource); // conexión ligada a la transacción en curso
+        Barrera b = new Barrera(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+            new java.util.concurrent.atomic.AtomicInteger());
         PlanesLectorGancho.TRAS_PAGINA.set(n -> {
-            aislamiento.add(enTx.queryForObject("SHOW transaction_isolation", String.class));
+            b.paginas().add(n);
+            b.aislamiento().add(enTx.queryForObject("SHOW transaction_isolation", String.class));
+            b.soloLectura().add(enTx.queryForObject("SHOW transaction_read_only", String.class));
             if (n != 0) return;
             CompletableFuture.runAsync(() -> {
-                escritor.update("INSERT INTO hot_click_plan_tb (nombre, precio_mensual) VALUES ('Alta nueva', 500)");
-                escritor.update("UPDATE hot_click_plan_tb SET activo = false WHERE id_plan = ?", idADesactivar);
-                escritor.update("UPDATE hot_click_plan_tb SET precio_mensual = 99999 WHERE id_plan = ?", idBajoAMover);
-                escritor.update("UPDATE hot_click_plan_tb SET precio_mensual = 1 WHERE id_plan = ?", idAltoAMover);
+                int f = escritor.update("INSERT INTO hot_click_plan_tb (nombre, precio_mensual) VALUES ('Alta nueva', 500)");
+                f += escritor.update("UPDATE hot_click_plan_tb SET activo = false WHERE id_plan = ? AND activo", idADesactivar);
+                f += escritor.update("UPDATE hot_click_plan_tb SET precio_mensual = 99999 WHERE id_plan = ?", idBajoAMover);
+                f += escritor.update("UPDATE hot_click_plan_tb SET precio_mensual = 1 WHERE id_plan = ?", idAltoAMover);
+                b.filasEscritas().set(f);
             }).orTimeout(30, TimeUnit.SECONDS).join();
         });
-        return aislamiento;
+        return b;
+    }
+
+    /** La mutación quedó confirmada en la base (vista desde otra conexión). */
+    private void mutacionConfirmada() {
+        assertThat(escritor.queryForObject(
+            "SELECT count(*) FROM hot_click_plan_tb WHERE nombre = 'Alta nueva' AND activo", Integer.class)).isEqualTo(1);
+        assertThat(escritor.queryForObject("SELECT activo FROM hot_click_plan_tb WHERE id_plan = ?", Boolean.class,
+            idADesactivar)).isFalse();
+        assertThat(escritor.queryForObject("SELECT precio_mensual FROM hot_click_plan_tb WHERE id_plan = ?",
+            Integer.class, idBajoAMover)).isEqualTo(99999);
+        assertThat(escritor.queryForObject("SELECT precio_mensual FROM hot_click_plan_tb WHERE id_plan = ?",
+            Integer.class, idAltoAMover)).isEqualTo(1);
     }
 
     private Supplier<List<Object>> tenant() {
@@ -207,11 +239,15 @@ class PlanesActivosSnapshotPostgresTest {
     private void snapshotSinFaltantesNiDuplicados(Supplier<List<Object>> endpoint) {
         List<Object> inicial = new ArrayList<>(idsActivosAhora());
         assertThat(inicial).hasSize(SEMBRADOS + 4);
-        List<String> aislamiento = barreraConEscritor();
+        Barrera barrera = barreraConEscritor();
 
         List<Object> leido = endpoint.get();
 
-        assertThat(aislamiento).hasSizeGreaterThan(20).containsOnly("repeatable read");
+        barrera.escritorCorrio();
+        mutacionConfirmada();
+        assertThat(barrera.paginas()).as("1.204 activos / 50 = 25 páginas").hasSize(25);
+        assertThat(barrera.aislamiento()).containsOnly("repeatable read");
+        assertThat(barrera.soloLectura()).containsOnly("on");
         assertThat(leido).doesNotHaveDuplicates().containsExactlyElementsOf(inicial);
         // Segunda petición: transacción nueva, ve lo confirmado por el escritor.
         PlanesLectorGancho.TRAS_PAGINA.set(n -> { });
@@ -245,9 +281,12 @@ class PlanesActivosSnapshotPostgresTest {
                 JdbcTemplate enExterna = new JdbcTemplate(dataSource);
                 assertThat(enExterna.queryForObject("SHOW transaction_isolation", String.class)).isEqualTo("read committed");
                 List<Object> inicial = new ArrayList<>(idsActivosAhora());
-                List<String> aislamiento = barreraConEscritor();
+                Barrera barrera = barreraConEscritor();
                 List<Object> leido = endpoint.get();
-                assertThat(aislamiento).isNotEmpty().containsOnly("repeatable read");
+                barrera.escritorCorrio();
+                mutacionConfirmada();
+                assertThat(barrera.aislamiento()).containsOnly("repeatable read");
+                assertThat(barrera.soloLectura()).containsOnly("on");
                 assertThat(leido).doesNotHaveDuplicates().containsExactlyElementsOf(inicial);
                 // La externa sigue siendo READ COMMITTED (ve lo confirmado por el escritor).
                 assertThat(enExterna.queryForObject("SHOW transaction_isolation", String.class)).isEqualTo("read committed");
@@ -260,40 +299,65 @@ class PlanesActivosSnapshotPostgresTest {
     }
 
     @Test
-    @DisplayName("Control: la misma barrera en READ COMMITTED sí produce faltantes y duplicados (el test detecta el problema)")
+    @DisplayName("Control: la misma barrera (repositorio con gancho) en READ COMMITTED sí duplica y pierde filas")
     void controlReadCommittedFalla() {
         List<Object> inicial = new ArrayList<>(idsActivosAhora());
-        barreraConEscritor();
+        Barrera barrera = barreraConEscritor();
         TransactionTemplate rc = new TransactionTemplate(txManager);
         rc.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         rc.setReadOnly(true);
-        List<Object> leido = rc.execute(st -> com.hotclick.utils.PaginasCompletas.todas(repoReal::findByActivoTrue,
+        List<Object> leido = rc.execute(st -> com.hotclick.utils.PaginasCompletas.todas(repoConGancho::findByActivoTrue,
                 PageRequest.of(0, PlanesActivosLector.TAMANO_PAGINA, PlanesActivosLector.ORDEN))
             .stream().map(p -> (Object) p.getId()).toList());
+
+        barrera.escritorCorrio();
+        mutacionConfirmada();
+        assertThat(barrera.aislamiento()).containsOnly("read committed");
         assertThat(leido).isNotEqualTo(inicial);
-        assertThat(leido.stream().distinct().count()).as("duplicado por el plan que pasó al final").isLessThan(leido.size());
+        assertThat(java.util.Collections.frequency(leido, idBajoAMover))
+            .as("el plan que pasó de la página 1 al final se lee dos veces").isEqualTo(2);
+        assertThat(leido).as("el plan que pasó del final a la página 1 ya leída falta").doesNotContain(idAltoAMover);
     }
 
     @Test
-    @DisplayName("No deja SET de sesión: todas las conexiones del pool siguen con default_transaction_isolation de la base")
+    @DisplayName("Sin SET de sesión (aislamiento ni solo lectura) en el pool; SET TRANSACTION solo vale como primera sentencia")
     void sinSetDeSesion() throws Exception {
-        String porDefecto = escritor.queryForObject("SHOW default_transaction_isolation", String.class);
-        for (int i = 0; i < 3; i++) tenant().get();
+        String aislamientoBase = escritor.queryForObject("SHOW default_transaction_isolation", String.class);
+        String soloLecturaBase = escritor.queryForObject("SHOW default_transaction_read_only", String.class);
+        assertThat(soloLecturaBase).isEqualTo("off");
+        for (int i = 0; i < 3; i++) assertThat(tenant().get()).hasSize(SEMBRADOS + 4);
+        billing().get();
         List<Connection> cons = new ArrayList<>();
         try {
-            for (int i = 0; i < 3; i++) cons.add(dataSource.getConnection());
+            for (int i = 0; i < 3; i++) cons.add(dataSource.getConnection()); // todo el pool (máx. 3)
             for (Connection c : cons) {
-                try (var st = c.createStatement(); var rs = st.executeQuery("SHOW default_transaction_isolation")) {
-                    rs.next();
-                    assertThat(rs.getString(1)).isEqualTo(porDefecto);
-                }
-                try (var st = c.createStatement(); var rs = st.executeQuery("SHOW transaction_isolation")) {
-                    rs.next();
-                    assertThat(rs.getString(1)).isEqualTo(porDefecto);
-                }
+                assertThat(mostrar(c, "default_transaction_isolation")).isEqualTo(aislamientoBase);
+                assertThat(mostrar(c, "transaction_isolation")).isEqualTo(aislamientoBase);
+                assertThat(mostrar(c, "default_transaction_read_only")).isEqualTo(soloLecturaBase);
+                assertThat(mostrar(c, "transaction_read_only")).isEqualTo("off");
             }
         } finally {
             for (Connection c : cons) c.close();
+        }
+        // Postgres rechaza SET TRANSACTION ISOLATION LEVEL después de una consulta (SQLSTATE 25001): que el lector
+        // lea en REPEATABLE READ (tests de arriba) prueba que el SET fue la primera sentencia de su transacción.
+        TransactionTemplate tx = new TransactionTemplate(txManager);
+        tx.setReadOnly(true);
+        Throwable ex = org.assertj.core.api.Assertions.catchThrowable(() -> tx.executeWithoutResult(st -> {
+            new JdbcTemplate(dataSource).queryForObject("SELECT 1", Integer.class);
+            snapshot.exigirRepeatableRead();
+        }));
+        assertThat(ex).isNotNull();
+        Throwable raiz = ex;
+        while (raiz.getCause() != null && !(raiz instanceof java.sql.SQLException)) raiz = raiz.getCause();
+        assertThat(raiz).isInstanceOf(java.sql.SQLException.class);
+        assertThat(((java.sql.SQLException) raiz).getSQLState()).isEqualTo("25001");
+    }
+
+    private static String mostrar(Connection c, String parametro) throws java.sql.SQLException {
+        try (var st = c.createStatement(); var rs = st.executeQuery("SHOW " + parametro)) {
+            rs.next();
+            return rs.getString(1);
         }
     }
 }

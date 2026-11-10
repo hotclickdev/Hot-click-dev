@@ -166,11 +166,11 @@ class PlanesActivosLectorTransaccionTest {
     @DisplayName("Rechaza una primera página distinta de 0, sin paginar o sin el orden estable")
     void rechazaPaginaInvalida() {
         assertThatThrownBy(() -> lector.activos(PageRequest.of(1, 50, PlanesActivosLector.ORDEN)))
-            .isInstanceOf(IllegalArgumentException.class);
+            .isInstanceOf(LecturaPlanesException.class);
         assertThatThrownBy(() -> lector.activos(PageRequest.of(0, 50, Sort.by("precioMensual"))))
-            .isInstanceOf(IllegalArgumentException.class);
+            .isInstanceOf(LecturaPlanesException.class);
         assertThatThrownBy(() -> lector.activos(org.springframework.data.domain.Pageable.unpaged()))
-            .isInstanceOf(IllegalArgumentException.class);
+            .isInstanceOf(LecturaPlanesException.class);
     }
 
     @Test

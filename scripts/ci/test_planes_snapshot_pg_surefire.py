@@ -108,6 +108,27 @@ class GatePlanesPg(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertIn(gate.REQUERIDOS[0], salida)
 
+    def test_caso_extra_falla(self):
+        rc, salida = self.correr(xml(OK + [("otroCaso", "")]))
+        self.assertEqual(rc, 1)
+        self.assertIn("extras=otroCaso", salida)
+
+    def test_caso_repetido_falla(self):
+        rc, salida = self.correr(xml(OK[1:] + [(gate.REQUERIDOS[1], "")]))
+        self.assertEqual(rc, 1)
+        self.assertIn("repetidos=", salida)
+
+    def test_exactamente_cinco_esperados(self):
+        self.assertEqual(len(gate.REQUERIDOS), 5)
+        self.assertEqual(len(set(gate.REQUERIDOS)), 5)
+
+    def test_requeridos_coinciden_con_los_test_de_la_clase(self):
+        import re
+        java = (Path(__file__).resolve().parents[2] / "Hot_click_outlet/src/test/java/com/hotclick/service/suscripcion"
+                / "PlanesActivosSnapshotPostgresTest.java").read_text(encoding="utf-8")
+        metodos = [re.search(r"\bvoid\s+(\w+)\(", trozo).group(1) for trozo in java.split("@Test")[1:]]
+        self.assertEqual(sorted(metodos), sorted(gate.REQUERIDOS))
+
     def test_reporte_obsoleto_falla(self):
         Path(self.ruta).write_text(xml(OK), encoding="utf-8")
         viejo = time.time() - 3600

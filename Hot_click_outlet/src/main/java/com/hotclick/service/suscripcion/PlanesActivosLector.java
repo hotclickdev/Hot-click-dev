@@ -46,12 +46,13 @@ public class PlanesActivosLector {
 
     /**
      * Todos los activos desde {@code primera} hasta la última página, en una sola transacción REPEATABLE READ (Postgres).
-     * {@code primera} tiene que ser la página 0, acotada y con {@link #ORDEN} (orden estable): si no, se rechaza.
+     * {@code primera} tiene que ser la página 0, acotada y con {@link #ORDEN} (orden estable): si no, se rechaza con
+     * {@link LecturaPlanesException} (500 genérico).
      */
     @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
     public List<PlanPublicoVista> activos(Pageable primera) {
         if (primera == null || primera.isUnpaged() || primera.getPageNumber() != 0 || !ORDEN.equals(primera.getSort())) {
-            throw new IllegalArgumentException("Se requiere la página 0 acotada con orden precioMensual, id");
+            throw new LecturaPlanesException("Se requiere la página 0 acotada con orden precioMensual, id");
         }
         snapshot.exigirRepeatableRead(); // primera sentencia de la transacción
         return PaginasCompletas.todas(planRepo::findByActivoTrue, primera).stream().map(PlanPublicoVista::de).toList();

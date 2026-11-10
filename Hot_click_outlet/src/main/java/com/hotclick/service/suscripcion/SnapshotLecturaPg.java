@@ -15,7 +15,9 @@ import java.util.Locale;
  * Pide REPEATABLE READ para la transacción EN CURSO con {@code SET TRANSACTION ISOLATION LEVEL REPEATABLE READ}
  * (alcance de la transacción, válido con PgBouncer en transaction mode) y lo verifica con
  * {@code SHOW transaction_isolation}. No usa {@code Connection.setTransactionIsolation}: pgjdbc lo traduce a
- * {@code SET SESSION CHARACTERISTICS}, que es de sesión. Tiene que ser la primera sentencia de la transacción.
+ * {@code SET SESSION CHARACTERISTICS}, que es de sesión. Tiene que ser la primera sentencia de la transacción:
+ * Postgres rechaza el SET si antes hubo una consulta (lo prueba PlanesActivosSnapshotPostgresTest). Si falla, lanza
+ * {@link LecturaPlanesException} (500 genérico), nunca un 400 con texto interno.
  *
  * <p>Solo Postgres tiene snapshot que pedir: con otra base (H2 de los tests) no hace nada; el aislamiento real se
  * prueba contra Postgres (PlanesActivosSnapshotPostgresTest).
@@ -37,7 +39,7 @@ public class SnapshotLecturaPg {
                 try (ResultSet rs = st.executeQuery("SHOW transaction_isolation")) {
                     String nivel = rs.next() ? rs.getString(1) : null;
                     if (nivel == null || !NIVEL.equals(nivel.toLowerCase(Locale.ROOT))) {
-                        throw new IllegalStateException("La lectura de planes no quedó en REPEATABLE READ");
+                        throw new LecturaPlanesException("La lectura de planes no quedó en REPEATABLE READ");
                     }
                 }
             }

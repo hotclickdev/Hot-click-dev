@@ -121,7 +121,7 @@ jobs:
       - name: Setup Maven
         run: sudo apt-get install -y maven --quiet
 
-      - name: "Self-test del gate de planes (XML ausente/vacio/skipped/fallo/obsoleto/valido)"
+      - name: "Self-test del gate de planes (ausente/vacio/skipped/fallo/extra/obsoleto/valido; 5 casos = @Test)"
         run: python3 -m unittest scripts/ci/test_planes_snapshot_pg_surefire.py
 
       - name: "Marca de inicio (reportes de esta corrida, no viejos)"
@@ -138,7 +138,7 @@ jobs:
         if: always()
         run: python3 scripts/ci/onvo-alta-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.OnvoAltaMarketplacePostgresTest.xml
 
-      - name: "Gate: snapshot de planes corrio en Postgres (suite, fresco, 0 skipped/fallos/errores)"
+      - name: "Gate: snapshot de planes en Postgres (suite, fresco, exactamente 5 casos, 0 skipped/fallos/errores)"
         if: always()
         run: python3 scripts/ci/planes-snapshot-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.service.suscripcion.PlanesActivosSnapshotPostgresTest.xml "$RUNNER_TEMP/planes-pg-inicio"
 

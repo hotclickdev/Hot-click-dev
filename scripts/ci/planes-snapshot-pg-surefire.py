@@ -7,8 +7,8 @@ Exige:
 - XML presente, parseable y no vacío;
 - identidad de la suite: testsuite name == clase esperada (no sirve el reporte de otra clase);
 - reporte fresco: el XML se escribió después de la marca que el job toca antes de correr Maven (no reportes viejos);
-- tests > 0, skipped = 0, failures = 0, errors = 0, y ningún testcase con <skipped>, <failure> o <error>;
-- los casos obligatorios presentes.
+- EXACTAMENTE los casos esperados (5, por nombre, sin faltantes, extras ni repetidos) y tests == 5;
+- skipped = 0, failures = 0, errors = 0, y ningún testcase con <skipped>, <failure> o <error>.
 No imprime URLs ni contraseñas: solo conteos y nombres de caso.
 """
 import os
@@ -68,17 +68,24 @@ def main(ruta: str, marca: str) -> int:
         if any(c.find(t) is not None for t in ("skipped", "failure", "error", "rerunFailure", "flakyFailure"))
     ]
     faltan = [n for n in REQUERIDOS if n not in nombres]
+    extras = sorted({n for n in nombres if n not in REQUERIDOS})
+    repetidos = sorted({n for n in nombres if nombres.count(n) > 1})
     print(
         f"{SUITE} tests={tests} skipped={skipped} failures={failures} errors={errors} "
         f"casos={','.join(nombres) or '-'}"
     )
     if tests < 1 or len(casos) < 1 or tests != len(casos):
         return _falla(f"sin tests ejecutados o conteo inconsistente (tests={tests}, casos={len(casos)})")
-    if skipped != 0 or failures != 0 or errors != 0 or malos or faltan:
+    if tests != len(REQUERIDOS) or faltan or extras or repetidos:
+        return _falla(
+            f"se esperaban exactamente {len(REQUERIDOS)} casos ({','.join(REQUERIDOS)}); tests={tests} "
+            f"faltan={','.join(faltan) or '-'} extras={','.join(extras) or '-'} repetidos={','.join(repetidos) or '-'}"
+        )
+    if skipped != 0 or failures != 0 or errors != 0 or malos:
         return _falla(
             "el test de PostgreSQL tiene que ejecutarse completo y pasar. "
             f"skipped={skipped} failures={failures} errors={errors} "
-            f"con_problema={','.join(malos) or '-'} faltan={','.join(faltan) or '-'}"
+            f"con_problema={','.join(malos) or '-'}"
         )
     print("GATE PLANES-PG PASS")
     return 0
