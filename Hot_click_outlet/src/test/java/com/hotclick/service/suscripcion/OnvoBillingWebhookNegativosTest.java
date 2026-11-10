@@ -25,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
@@ -88,7 +89,7 @@ class OnvoBillingWebhookNegativosTest {
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn(null);
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn(null);
         handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), null);
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         assertThat(eventos.values()).allMatch(e -> !Boolean.TRUE.equals(e.getProcesadoOk()));
     }
 
@@ -97,7 +98,7 @@ class OnvoBillingWebhookNegativosTest {
         when(onvo.obtenerRenovacion("clinv0001")).thenThrow(new IllegalStateException("onvo down"));
         assertThatThrownBy(() -> handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), null))
             .isInstanceOf(IllegalStateException.class);
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         StripeEvento ev = eventos.get("onvo_subscription.renewal.succeeded_clinv0001");
         assertThat(ev.getProcesadoOk()).isNotEqualTo(Boolean.TRUE);
 
@@ -105,7 +106,7 @@ class OnvoBillingWebhookNegativosTest {
         org.mockito.Mockito.doReturn(invoice()).when(onvo).obtenerRenovacion("clinv0001");
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) sub("active"));
         handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), null);
-        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado("clsub0001", "PYME", LocalDate.of(2026, 12, 1), "clinv0001");
+        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado(eq("clsub0001"), eq("PYME"), eq(LocalDate.of(2026, 12, 1)), eq("clinv0001"), any());
     }
 
     @Test
@@ -116,7 +117,7 @@ class OnvoBillingWebhookNegativosTest {
         assertThat(handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), null)).isTrue();
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getError()).isEqualTo("pendiente:sub_no_activa");
         assertThat(eventos.get("onvo_subscription.renewal.succeeded_clinv0001").getProcesadoOk()).isFalse();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -124,12 +125,12 @@ class OnvoBillingWebhookNegativosTest {
         when(onvo.obtenerRenovacion("clinv0001")).thenReturn((Map) invoice());
         when(onvo.obtenerSuscripcion("clsub0001")).thenReturn((Map) sub("active"));
         for (int i = 0; i < 3; i++) handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), null);
-        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         verify(onvo, times(1)).obtenerRenovacion("clinv0001");
         // y con id de evento arriba (eventIdRaw) también
         eventos.clear();
         for (int i = 0; i < 2; i++) handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), "evt_1");
-        verify(suscripcionService, times(2)).procesarPagoOnvoVerificado(any(), any(), any(), any()); // 1 previo + 1 nuevo
+        verify(suscripcionService, times(2)).procesarPagoOnvoVerificado(any(), any(), any(), any(), any()); // 1 previo + 1 nuevo
     }
 
     @Test
@@ -147,7 +148,7 @@ class OnvoBillingWebhookNegativosTest {
         handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), null);
         String vieja = "{\"subscriptionId\":\"clsub0001\",\"invoicePeriodStart\":\"2026-10-01T06:00:00.000Z\"}";
         handler.manejarSiBilling("subscription.renewal.failed", json(vieja), null);
-        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(suscripcionService, times(1)).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         verify(suscripcionService, never()).procesarRenovacionOnvoFallida(any());
         verify(suscripcionService, never()).procesarSuscripcionOnvoEliminada(any());
     }
@@ -157,7 +158,7 @@ class OnvoBillingWebhookNegativosTest {
         for (String body : new String[]{"{}", "{\"id\":null}", "{\"subscriptionId\":\"clsub0001\"}", "{\"id\":\"clinv0001\"}"}) {
             handler.manejarSiBilling("subscription.renewal.succeeded", json(body), null);
         }
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -197,7 +198,7 @@ class OnvoBillingWebhookNegativosTest {
         boolean atendido = handler.manejarSiBilling("subscription.renewal.succeeded", json(REN), null);
 
         assertThat(atendido).isTrue(); // 200: reintentar no lo arregla
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         StripeEvento ev = eventos.get("onvo_subscription.renewal.succeeded_clinv0001");
         assertThat(ev.getProcesadoOk()).isFalse();
         assertThat(ev.getError()).isEqualTo("rechazo:moneda"); // código, nunca el mensaje de la excepción
@@ -210,7 +211,7 @@ class OnvoBillingWebhookNegativosTest {
         boolean atendido = handler.manejarSiBilling("subscription.renewal.succeeded", json("{}"), null);
         assertThat(atendido).isTrue();
         assertThat(eventos).isEmpty();
-        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any());
+        verify(suscripcionService, never()).procesarPagoOnvoVerificado(any(), any(), any(), any(), any());
         assertThat(alertas(logs)).isEqualTo(1);
     }
 }

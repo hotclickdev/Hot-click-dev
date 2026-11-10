@@ -52,7 +52,7 @@ class BillingOnvoS02Test {
         sub.setEstado("PAST_DUE");
         when(subs.findByOnvoSubscriptionIdForUpdate("clsub")).thenReturn(Optional.of(sub));
         LocalDate fin = LocalDate.of(2026, 12, 1);
-        servicio(subs, emps, planes, mock(OnvoBillingClient.class)).procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", fin, "clinv0001");
+        servicio(subs, emps, planes, mock(OnvoBillingClient.class)).procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", fin, "clinv0001", null);
         assertThat(sub.getEstado()).isEqualTo("ACTIVO");
         assertThat(sub.getFechaFin()).isEqualTo(fin);
         assertThat(e.getPlanSaas()).isEqualTo("NEGOCIO_PLUS");
@@ -87,7 +87,7 @@ class BillingOnvoS02Test {
         Suscripcion sub = prepararPago(subs, planes);
         BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
         servicioConLedger(subs, planes, ledger)
-            .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0007");
+            .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0007", null);
         verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clinv0007"), any(), any(), any());
     }
 
@@ -100,7 +100,7 @@ class BillingOnvoS02Test {
             assertThat(sobrecargas).as(c.getSimpleName()).isEqualTo(1);
             assertThat(java.util.Arrays.stream(c.getDeclaredMethods())
                 .filter(m -> m.getName().equals("procesarPagoOnvoVerificado"))
-                .allMatch(m -> m.getParameterCount() == 4)).as(c.getSimpleName()).isTrue();
+                .allMatch(m -> m.getParameterCount() == 5)).as(c.getSimpleName()).isTrue();
         }
     }
 
@@ -114,7 +114,7 @@ class BillingOnvoS02Test {
         SuscripcionOnvoChangeService svc = servicioConLedger(subs, planes, ledger);
         org.springframework.test.util.ReflectionTestUtils.setField(svc, "preciosPlanes",
             new PreciosPlanesConfig("9", "24", "49", "usd"));
-        svc.procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0007");
+        svc.procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0007", null);
         verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clinv0007"), any(), eq("usd"), any());
     }
 
@@ -128,7 +128,7 @@ class BillingOnvoS02Test {
             BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
             var svc = servicioConLedger(subs, planes, ledger);
             org.assertj.core.api.Assertions.assertThatThrownBy(
-                    () -> svc.procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), mala))
+                    () -> svc.procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), mala, null))
                 .isInstanceOf(IllegalArgumentException.class);
             assertThat(sub.getEstado()).isEqualTo("PAST_DUE");
             verify(subs, org.mockito.Mockito.never()).save(any());

@@ -606,6 +606,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         return nombre == null ? -1 : ORDEN_PLANES.indexOf(nombre.toUpperCase(java.util.Locale.ROOT));
     }
 
+    /** Plan que no está en ORDEN_PLANES (o sin nombre): no se sabe si es de pago, así que se bloquea (fail-closed). */
+    static boolean planFueraDeOrden(String nombre) {
+        return rangoPlan(nombre) < 0;
+    }
+
     /** Solo subir a NEGOCIO_PLUS desde un plan conocido más bajo. */
     static boolean esSubidaANegocioPlus(String actual, String destino) {
         int a = rangoPlan(actual);
@@ -620,9 +625,11 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     /**
      * Bajar desde PYME o Negocio Plus ya cobrado. Se resuelve sin preguntarle a ONVO.
      * Emprendedor (rango 0) no entra: no es una baja de un plan de pago superior.
+     * Fail-closed: con el período cobrado, un plan actual o destino fuera de ORDEN_PLANES también va por solicitud.
      */
     static boolean bajadaDePlanPagado(String actual, String destino, String estadoSub, String estadoPlan) {
         if (!periodoCobrado(estadoSub) && !periodoCobrado(estadoPlan)) return false;
+        if (planFueraDeOrden(actual) || planFueraDeOrden(destino)) return true;
         int desde = rangoPlan(actual);
         int hacia = rangoPlan(destino);
         return desde > 0 && hacia >= 0 && hacia < desde;
@@ -631,6 +638,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     /** Cancelar en autoservicio un PYME/Negocio Plus cobrado, o un Emprendedor que ya tiene suscripción de cobro. */
     static boolean cancelacionDePlanPagado(String actual, String estadoSub, String estadoPlan, boolean tieneCobroExterno) {
         if (!periodoCobrado(estadoSub) && !periodoCobrado(estadoPlan)) return false;
+        // Fail-closed: con el período cobrado, un plan fuera de ORDEN_PLANES no se cancela en autoservicio.
+        if (planFueraDeOrden(actual)) return true;
         int desde = rangoPlan(actual);
         if (desde > 0) return true;
         return desde == 0 && tieneCobroExterno;
@@ -1044,9 +1053,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      * metadata ni de sub.plan. La suscripción se busca solo por el id ONVO, con lock de fila.
      * B2: {@code referenciaLedger} es el id de la factura de ONVO (una por cobro) y es obligatorio: no hay sobrecarga
      * sin referencia ni caída al id de la suscripción, que volvería a deduplicar el ledger por suscripción.
+     * {@code inicioOnvo} es el inicio del período de ESE cobro según ONVO ({@link OnvoBillingVerificador.Resultado#fechaInicio()}:
+     * paid_at del cobro en Costa Rica o, si falta, el inicio de período). null = ONVO no lo trajo: se usa la fecha de
+     * procesamiento con un log de advertencia. Ver {@link #inicioDelPeriodo}.
      */
     @Transactional
-    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin, String referenciaLedger) {
+    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, LocalDate fin, String referenciaLedger,
+                                           LocalDate inicioOnvo) {
         if (!referenciaValida(referenciaLedger)) {
             throw new IllegalArgumentException("Referencia de ledger ONVO inválida: se requiere el id de la factura");
         }
@@ -1070,6 +1083,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw new IllegalStateException("Sin fin de período ONVO para la suscripción");
         }
         Suscripcion sub = vigente.orElseGet(() -> completarReemplazoTrasPago(pendiente.get()));
+        LocalDate inicio = inicioDelPeriodo(sub, inicioOnvo, fin, onvoSubId);
         sub.setPlan(plan);
         // Un cobro de la vieja mientras hay una subida sin pagar no borra el plan pendiente.
         if (sub.getOnvoSubNuevaPendiente() == null) sub.setPlanPendiente(null);
@@ -1077,8 +1091,9 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         sub.setEstado("ACTIVO");
         sub.setCancelarAlVencer(false);
         sub.setFechaFin(fin);
-        // El período que se está pagando arranca hoy (Costa Rica), no en la fecha_inicio del plan anterior.
-        sub.setFechaInicio(LocalDate.now(Constants.ZONA_CR));
+        // El período arranca el día del pago según ONVO (Costa Rica), no el día en que se procesa ni la fecha_inicio
+        // del plan anterior.
+        sub.setFechaInicio(inicio);
         suscripcionRepo.save(sub);
 
         Empresa empresa = sub.getEmpresa();
@@ -1092,6 +1107,36 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK,
             referenciaLedger, "Pago ONVO verificado");
         log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
+    }
+
+    /**
+     * Inicio del período que paga este cobro.
+     * <ul>
+     *   <li>Mismo período ya aplicado (fila ACTIVO con el mismo fin): no se reescribe el inicio.</li>
+     *   <li>Si no, el que confirmó ONVO ({@code paid_at} o inicio de período, ya en Costa Rica).</li>
+     *   <li>Sin dato de ONVO: la fecha de procesamiento, con advertencia.</li>
+     *   <li>Coherencia con el fin: el inicio tiene que ser anterior a {@code fin}; si no, un mes antes del fin, con
+     *       advertencia.</li>
+     * </ul>
+     */
+    static LocalDate inicioDelPeriodo(Suscripcion sub, LocalDate inicioOnvo, LocalDate fin, String onvoSubId) {
+        if (sub.getFechaInicio() != null && fin.equals(sub.getFechaFin()) && "ACTIVO".equals(sub.getEstado())
+                && sub.getFechaInicio().isBefore(fin)) {
+            return sub.getFechaInicio();
+        }
+        LocalDate inicio = inicioOnvo;
+        if (inicio == null) {
+            inicio = LocalDate.now(Constants.ZONA_CR);
+            log.warn("[billing-onvo] ONVO no trajo paid_at ni inicio de período sub={}: fecha_inicio = fecha de "
+                + "procesamiento {}", enmascarar(onvoSubId), inicio);
+        }
+        if (!inicio.isBefore(fin)) {
+            LocalDate ajustado = fin.minusMonths(1);
+            log.warn("[billing-onvo] inicio {} no es anterior al fin {} sub={}: fecha_inicio = {}",
+                inicio, fin, enmascarar(onvoSubId), ajustado);
+            inicio = ajustado;
+        }
+        return inicio;
     }
 
     /**

@@ -132,8 +132,9 @@ public class SuscripcionService {
         return onvoChangeService.ignorarPagoDeSuscripcionVieja(onvoSubId);
     }
 
-    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin, String facturaId) {
-        onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin, facturaId);
+    public void procesarPagoOnvoVerificado(String onvoSubId, String planNombre, java.time.LocalDate fechaFin, String facturaId,
+                                           java.time.LocalDate inicioOnvo) {
+        onvoChangeService.procesarPagoOnvoVerificado(onvoSubId, planNombre, fechaFin, facturaId, inicioOnvo);
     }
 
     /** QA #536: trialing + método de pago confirmado por GET; activa el plan una sola vez. */

@@ -118,7 +118,7 @@ class OnvoRenovacionReconsultaTransaccionTest {
             jdbc.update("INSERT INTO corrida(clave, valor) VALUES (?, 'reactivada')", subId);
             if (falla) throw new IllegalStateException("falla de la fila " + subId);
             return null;
-        }).when(cambio).procesarPagoOnvoVerificado(eq(subId), any(), any(), any());
+        }).when(cambio).procesarPagoOnvoVerificado(eq(subId), any(), any(), any(), any());
     }
 
     private List<String> filas() {
@@ -172,7 +172,7 @@ class OnvoRenovacionReconsultaTransaccionTest {
             try {
                 // Lo que hacía @Transactional (REQUIRED) en procesarPagoOnvoVerificado: se une a la externa.
                 new TransactionTemplate(tm).executeWithoutResult(
-                    interna -> cambio.procesarPagoOnvoVerificado("clsub0002", "PYME", HOY, "clinv0002"));
+                    interna -> cambio.procesarPagoOnvoVerificado("clsub0002", "PYME", HOY, "clinv0002", null));
             } catch (IllegalStateException atrapada) {
                 // el catch por fila de la reconsulta: la excepción se absorbe, pero la externa ya quedó rollback-only
             }
