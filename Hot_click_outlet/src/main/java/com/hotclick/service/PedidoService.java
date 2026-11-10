@@ -50,8 +50,9 @@ public class PedidoService {
     @Autowired private com.hotclick.service.pedido.PedidoManualEntregaStockService manualEntregaStock;
     @org.springframework.context.annotation.Lazy @Autowired
     private com.hotclick.service.payment.PaymentUserCancellationService pagoCancelacion;
-    @jakarta.persistence.PersistenceContext
-    private jakarta.persistence.EntityManager entityManager;
+    // Opcional: contextos de prueba mínimos sin JPA (p. ej. CacheEvictEmpresaSinIdTest) no tienen EntityManager.
+    @Autowired
+    private org.springframework.beans.factory.ObjectProvider<jakarta.persistence.EntityManager> entityManagerProvider;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -235,11 +236,13 @@ public class PedidoService {
      * actualizarla: se relee (refresh) ya con el lock tomado para decidir con el estado actual.
      */
     private Pedido bloquearPedido(Long id, boolean refrescar) {
+        jakarta.persistence.EntityManager entityManager = refrescar && entityManagerProvider != null
+            ? entityManagerProvider.getIfAvailable() : null;
         // Los cambios de la fase previa (p. ej. la captura que canceló el pedido) se escriben antes de releer.
-        if (refrescar && entityManager != null) entityManager.flush();
+        if (entityManager != null) entityManager.flush();
         Pedido pedido = pedidoRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
-        if (refrescar && entityManager != null && entityManager.contains(pedido)) {
+        if (entityManager != null && entityManager.contains(pedido)) {
             entityManager.refresh(pedido);
         }
         return pedido;
