@@ -1,6 +1,5 @@
-import { formatoColon } from '@/theme/formatoColon'
 import { PLAN_PRECIOS, textoComision, type ClavePlan } from '@/config/planesPrecios'
-import { montoPlanVisible } from '@/features/billing/montoPlan'
+import { montoPlanVisible, rotuloPrecioLista, textoPrecioCatalogo } from '@/features/billing/montoPlan'
 import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 import type { Id } from '@/types/api'
 import type { PlanId } from './plan'
@@ -9,7 +8,12 @@ export type PlanUi = {
   id: Id
   nombreApi: string
   nombre: string
+  /** Mensualidad en USD (precioUsd = lo que cobra ONVO); sin monto, «Mensualidad en dólares». Nunca colones. */
   precio: string
+  /** «Precio de lista» para Emprendedor con monto; si no, null. */
+  rotuloPrecio: string | null
+  /** Regla previa del paso de verificación (precioMensual legado en 0). No se muestra. */
+  sinMensualidadLegado: boolean
   /** Monto a confirmar en el pago. Null si el backend no mandó cifra. */
   monto: string | null
   beneficios: readonly string[]
@@ -77,9 +81,9 @@ export function mapApiPlanToUi(p: PlanApiTuPlan): PlanUi {
     id: p.id,
     nombreApi: p.nombre,
     nombre: etiquetaPlan(p.nombre),
-    precio: Number(p.precioMensual ?? 0) === 0
-      ? 'Gratis'
-      : `${formatoColon(Number(p.precioMensual))}/mes`,
+    precio: textoPrecioCatalogo(p),
+    rotuloPrecio: rotuloPrecioLista(p),
+    sinMensualidadLegado: Number(p.precioMensual ?? 0) === 0,
     monto: montoPlanVisible(p),
     beneficios: beneficiosDesdeApi(p),
     cta: CTA_PLAN[p.nombre] ?? `Cambiar a ${p.nombre}`,
@@ -88,7 +92,7 @@ export function mapApiPlanToUi(p: PlanApiTuPlan): PlanUi {
 
 /** NP-3: antes de confirmar un plan de pago hay que verificar el correo (el backend devuelve 400 si no). */
 export function requiereVerificarCorreo(plan: PlanUi | null, correoVerificado: boolean | null | undefined): boolean {
-  return plan != null && plan.precio !== 'Gratis' && correoVerificado !== true
+  return plan != null && !plan.sinMensualidadLegado && correoVerificado !== true
 }
 
 export function validarPasoElegirPlan(
