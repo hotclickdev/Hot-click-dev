@@ -177,7 +177,7 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("sobre el umbral (3×4 = 12) → se marcan, no se liberan antes de la demora y luego vuelve el stock")
+    @DisplayName("fix2: sobre el umbral (3×4 = 12) con ONVO → se marcan pero el anti-bot NO libera (sesión aún pagable); los cierra el TTL")
     void sobreUmbral_seLiberaTrasLaDemora() throws Exception {
         reservar("203.0.113.20", 4);
         reservar("203.0.113.20", 4);
@@ -193,21 +193,16 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         cleanup.ejecutar();
         assertThat(reservado()).isEqualTo(15);
 
+        // MEDIO anti-bot: antes se liberaban a los 16 min con el intent requires_payment_method y la sesión ONVO
+        // todavía abierta (el comprador podía pagar). Ahora el anti-bot no toca pagos ONVO en línea.
         avanzar(16);
         cleanup.ejecutar();
-        assertThat(reservado()).isEqualTo(3);
-        assertThat(pagosPendientes()).hasSize(1);
-        assertThat(pedidoRepository.findAll().stream()
-            .filter(p -> Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido()))).hasSize(3);
+        assertThat(reservado()).isEqualTo(15);
+        assertThat(pagosPendientes()).hasSize(4);
         Producto p = productoRepository.findById(producto.getId()).orElseThrow();
         assertThat(p.getStockActual()).isEqualTo(50);
 
-        // una corrida más no vuelve a restar (25 min: la reserva ajena de ONVO vence a los 30 min, no a las 24 h de SINPE)
-        avanzar(25);
-        cleanup.ejecutar();
-        assertThat(reservado()).isEqualTo(3);
-
-        // pasados los 30 min de TTL de la pasarela, la reserva ajena también vence y no queda nada pendiente
+        // pasados los 30 min de TTL de la pasarela, la limpieza expira/relee y libera todas, una sola vez
         avanzar(31);
         cleanup.ejecutar();
         assertThat(reservado()).isEqualTo(0);
@@ -215,14 +210,19 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
         assertThat(pedidoRepository.findAll().stream()
             .filter(x -> Constants.PEDIDO_CANCELADO.equals(x.getEstadoPedido()))).hasSize(4);
         assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockActual()).isEqualTo(50);
+
+        avanzar(5);
+        cleanup.ejecutar();
+        assertThat(reservado()).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("dos liberaciones concurrentes → el stock se devuelve una sola vez")
+    @DisplayName("fix2: dos pasadas concurrentes del anti-bot sobre pagos ONVO → ninguna libera ni llama a ONVO")
     void liberacionConcurrente_noDobleLiberacion() throws Exception {
         reservar("198.51.100.40", 3); // ajena, debe seguir reservada
         for (int i = 0; i < 3; i++) reservar("203.0.113.40", 4);
         assertThat(reservado()).isEqualTo(15);
+        org.mockito.Mockito.clearInvocations(onvoService);
 
         LocalDateTime despues = LocalDateTime.now(Constants.ZONA_CR).plusMinutes(16);
         TransactionTemplate tx = new TransactionTemplate(txManager);
@@ -237,11 +237,13 @@ class ReservasAntiBotIntegrationTest extends BaseIntegrationTest {
             Future<Integer> b = pool.submit(tarea);
             largada.countDown();
             int total = a.get() + b.get();
-            assertThat(total).isEqualTo(3);
+            assertThat(total).isEqualTo(0);
         } finally {
             pool.shutdownNow();
         }
-        assertThat(reservado()).isEqualTo(3);
+        assertThat(reservado()).isEqualTo(15);
+        org.mockito.Mockito.verify(onvoService, org.mockito.Mockito.never())
+            .obtenerCheckoutSession(org.mockito.ArgumentMatchers.any());
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────

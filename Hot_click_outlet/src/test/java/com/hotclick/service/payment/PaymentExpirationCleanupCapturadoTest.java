@@ -94,6 +94,8 @@ class PaymentExpirationCleanupCapturadoTest {
         when(empresaRepository.findByEstadoEmpresaOrderByFechaRegistroAsc("ACTIVO")).thenReturn(List.of(empresa));
         when(pagoRepository.findExpiradosPendientesByEmpresa(any(), eq(1L))).thenReturn(List.of(pago));
         when(pagoRepository.findByMerchantToken(SESION)).thenReturn(Optional.of(pago));
+        // fix2: el intent guardado se lee de la base (columna updatable=false).
+        when(pagoRepository.intentIdEnBase(SESION)).thenAnswer(inv -> Optional.ofNullable(pago.getOnvoPaymentIntentId()));
         when(pagoRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(pago));
         when(pagoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
         when(pedidoRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));

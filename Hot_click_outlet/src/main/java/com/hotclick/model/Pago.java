@@ -92,8 +92,12 @@ public class Pago extends BaseEntity {
     public String getOnvoReembolsoId() { return onvoReembolsoId; }
     public void setOnvoReembolsoId(String v) { this.onvoReembolsoId = v; }
 
-    /** V237: payment intent de ONVO de la checkout session (NULL = todavía no se vio). Sirve si la sesión da 404. */
-    @Column(name = "onvo_payment_intent_id", length = 64)
+    /**
+     * V237: payment intent de ONVO de la checkout session (NULL = todavía no se vio). Sirve si la sesión da 404.
+     * fix2 (BAJO): {@code updatable = false}: solo lo escribe {@link com.hotclick.repository.PagoRepository#guardarIntentId}
+     * (UPDATE condicional); un {@code save} de una copia obsoleta del pago ya no lo pisa con NULL.
+     */
+    @Column(name = "onvo_payment_intent_id", length = 64, updatable = false)
     private String onvoPaymentIntentId;
 
     public String getOnvoPaymentIntentId() { return onvoPaymentIntentId; }
@@ -147,6 +151,42 @@ public class Pago extends BaseEntity {
 
     public LocalDateTime getReconsultaCerradoEn() { return reconsultaCerradoEn; }
     public void setReconsultaCerradoEn(LocalDateTime v) { this.reconsultaCerradoEn = v; }
+
+    /*
+     * V238 (fix2). Columnas que solo escriben UPDATE condicionales de PagoRepository (updatable = false): un save de
+     * una copia obsoleta del pago no las pisa. En memoria pueden quedar viejas; quien decide las relee de la base.
+     */
+
+    /** V238: cuándo el comprador o el panel pidió cancelar este pago (intención explícita durable; NULL = nunca). */
+    @Column(name = "cancelacion_solicitada_en", updatable = false)
+    private LocalDateTime cancelacionSolicitadaEn;
+
+    /** V238: quién pidió cancelar (USUARIO, INVITADO o PANEL). */
+    @Column(name = "cancelacion_solicitada_origen", length = 20, updatable = false)
+    private String cancelacionSolicitadaOrigen;
+
+    /** V238: reconsultas del pago cerrado (conciliación durable, base del backoff). */
+    @Column(name = "conciliacion_intentos", updatable = false)
+    private Integer conciliacionIntentos;
+
+    /** V238: no antes de este momento se vuelve a reconsultar el pago cerrado (NULL = cuanto antes). */
+    @Column(name = "conciliacion_proxima_en", updatable = false)
+    private LocalDateTime conciliacionProximaEn;
+
+    /** V238: el pago cerrado quedó resuelto sin cobro de forma definitiva (intent canceled en ONVO). */
+    @Column(name = "conciliacion_resuelta_en", updatable = false)
+    private LocalDateTime conciliacionResueltaEn;
+
+    public LocalDateTime getCancelacionSolicitadaEn() { return cancelacionSolicitadaEn; }
+    public void setCancelacionSolicitadaEn(LocalDateTime v) { this.cancelacionSolicitadaEn = v; }
+    public String getCancelacionSolicitadaOrigen() { return cancelacionSolicitadaOrigen; }
+    public void setCancelacionSolicitadaOrigen(String v) { this.cancelacionSolicitadaOrigen = v; }
+    public Integer getConciliacionIntentos() { return conciliacionIntentos; }
+    public void setConciliacionIntentos(Integer v) { this.conciliacionIntentos = v; }
+    public LocalDateTime getConciliacionProximaEn() { return conciliacionProximaEn; }
+    public void setConciliacionProximaEn(LocalDateTime v) { this.conciliacionProximaEn = v; }
+    public LocalDateTime getConciliacionResueltaEn() { return conciliacionResueltaEn; }
+    public void setConciliacionResueltaEn(LocalDateTime v) { this.conciliacionResueltaEn = v; }
 
     /** V217: cuándo se confirmó el envío del aviso (NULL = no confirmado; el barrido reintenta). */
     @Column(name = "aviso_reembolso_admin_enviado_en")

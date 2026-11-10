@@ -103,7 +103,7 @@ public class PedidoService {
     }
 
     /** Cambio de estado sin referencia de pago (Telegram/copiloto): PAGADO manual queda rechazado (400). */
-    @Transactional
+    @Transactional(noRollbackFor = com.hotclick.exception.CancelacionSolicitadaRegistradaException.class)
     public Pedido cambiarEstado(Long id, String nuevoEstado, String nota) {
         return cambiarEstado(id, nuevoEstado, nota, null);
     }
@@ -119,7 +119,9 @@ public class PedidoService {
      *   <li>Efectivo + retiro: {@code PENDIENTE_COMPROBANTE → ENTREGADO} registra el cobro.</li>
      * </ul>
      */
-    @Transactional
+    // fix2: CancelacionSolicitadaRegistradaException no revierte: solo se lanza después de guardar la intención de
+    // cancelar en el pago (V238) y sin otros cambios en esta transacción, para que esa intención quede durable.
+    @Transactional(noRollbackFor = com.hotclick.exception.CancelacionSolicitadaRegistradaException.class)
     public Pedido cambiarEstado(Long id, String estadoSolicitado, String nota, String referenciaPago) {
         // QA5 MEDIO: FOR UPDATE serializa los PUT paralelos; el segundo ya ve el estado nuevo y no repite efectos.
         Pedido pedido = pedidoRepository.findByIdForUpdate(id)

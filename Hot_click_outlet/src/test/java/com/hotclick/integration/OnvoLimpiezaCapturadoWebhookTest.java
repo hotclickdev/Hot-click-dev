@@ -430,9 +430,7 @@ class OnvoLimpiezaCapturadoWebhookTest extends BaseIntegrationTest {
     void sesion404IntentGuardadoNoCobradoCancela() {
         Producto producto = producto(1, 1);
         Pedido pedido = pedidoConPagoVencido(producto);
-        Pago pg = pago();
-        pg.setOnvoPaymentIntentId(INTENT);
-        pagoRepository.saveAndFlush(pg);
+        guardarIntent(INTENT);
         doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(SESION);
         doReturn(Map.of("id", INTENT, "status", "requires_payment_method", "amount", 1_000_000,
             "currency", "CRC", "mode", "test")).when(onvoService).obtenerPaymentIntent(INTENT);
@@ -464,5 +462,30 @@ class OnvoLimpiezaCapturadoWebhookTest extends BaseIntegrationTest {
         assertThat(r.getResponse().getContentAsString()).contains("refund_pending");
         assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(estadoPedido(pedido)).isEqualTo(Constants.PEDIDO_CANCELADO);
+    }
+
+    /** fix2: el intent solo se escribe con el UPDATE condicional (columna updatable=false), como en producción. */
+    private void guardarIntent(String intent) {
+        new org.springframework.transaction.support.TransactionTemplate(txManagerFix2)
+            .executeWithoutResult(s -> pagoRepository.guardarIntentId(SESION, intent));
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.transaction.PlatformTransactionManager txManagerFix2;
+
+    @Test
+    @DisplayName("fix2 BAJO: un save de una copia obsoleta del pago no pisa con NULL el intent guardado")
+    void saveObsoletoNoPisaIntent() {
+        Producto producto = producto(1, 1);
+        pedidoConPagoVencido(producto);
+        Pago obsoleto = pago(); // copia leída ANTES de guardar el intent
+        assertThat(obsoleto.getOnvoPaymentIntentId()).isNull();
+
+        guardarIntent(INTENT);
+        obsoleto.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        pagoRepository.saveAndFlush(obsoleto); // como PaymentFailureHandler con su copia vieja
+
+        assertThat(pagoRepository.intentIdEnBase(SESION)).contains(INTENT);
+        assertThat(pago().getOnvoPaymentIntentId()).isEqualTo(INTENT);
     }
 }

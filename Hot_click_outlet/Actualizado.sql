@@ -4644,3 +4644,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_qa_alta_pyme_test_empresa
 -- Aditiva: columna nullable, sin backfill.
 ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS reembolso_error VARCHAR(300);
 
+
+-- V237: payment intent de ONVO de la checkout session (sirve si la sesión da 404). Aditiva, sin backfill.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS onvo_payment_intent_id VARCHAR(64);
+CREATE INDEX IF NOT EXISTS idx_hot_click_pago_onvo_payment_intent_id ON hot_click_pago_tb (onvo_payment_intent_id);
+
+-- V238: intención explícita de cancelar y conciliación durable de pagos ONVO cerrados. Aditiva, sin backfill.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS cancelacion_solicitada_en TIMESTAMP;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS cancelacion_solicitada_origen VARCHAR(20);
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS conciliacion_intentos INTEGER;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS conciliacion_proxima_en TIMESTAMP;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS conciliacion_resuelta_en TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_hot_click_pago_conciliacion_pendiente
+    ON hot_click_pago_tb (conciliacion_proxima_en)
+    WHERE conciliacion_resuelta_en IS NULL AND estado_pago IN ('FALLIDO', 'CANCELADO');

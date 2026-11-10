@@ -100,13 +100,15 @@ public class PaymentExpirationCleanupService {
                 case NO_ENCONTRADO -> {
                     // Sesión inexistente (404) NO prueba que el intent no cobró: decide el intent guardado (V237).
                     // Sin intent conocido o en duda → no se cancela ni se libera stock (alerta, revisión manual).
-                    return intentSinCobro(pago);
+                    return intentSinCobro(pago, false);
                 }
                 case NO_PAGADO -> {
                     // MEDIO (QA: charge succeeded y pedido cancelado): la sesión puede decir unpaid/expired con el
                     // intent ya cobrado. Antes de tocar nada se relee el intent; si cobró, se confirma (o queda
                     // REEMBOLSO_PENDIENTE) por la captura idempotente y no se cancela.
-                    if (!intentSinCobro(pago)) {
+                    // fix2: antes del expire la sesión puede seguir abierta (SIN_COBRO_SESION_ABIERTA): eso solo
+                    // autoriza a expirar; liberar exige SIN_COBRO en la última lectura de abajo.
+                    if (!intentSinCobro(pago, true)) {
                         return false;
                     }
                     // QA5 MEDIO: si ONVO lo rechazó, queda FALLIDO (no CANCELADO) y ya liberó el stock.
@@ -118,7 +120,7 @@ public class PaymentExpirationCleanupService {
                         return false;
                     }
                     // Última lectura justo antes de cancelar: un cobro que entró mientras se expiraba gana.
-                    return intentSinCobro(pago);
+                    return intentSinCobro(pago, false);
                 }
                 default -> {
                     return false;
@@ -131,12 +133,14 @@ public class PaymentExpirationCleanupService {
     }
 
     /** true solo si ONVO confirma por GET que el intent no cobró; cualquier otra respuesta deja el pago como está. */
-    private boolean intentSinCobro(Pago pago) {
+    private boolean intentSinCobro(Pago pago, boolean antesDeExpirar) {
         OnvoPaymentProvider.CobroIntent c = onvoPaymentProvider.revisarCobroAntesDeCancelar(pago.getMerchantToken(), "cleanup");
-        if (c == OnvoPaymentProvider.CobroIntent.SIN_COBRO) {
+        if (c == OnvoPaymentProvider.CobroIntent.SIN_COBRO
+                || (antesDeExpirar && c == OnvoPaymentProvider.CobroIntent.SIN_COBRO_SESION_ABIERTA)) {
             return true;
         }
-        if (c != null && c != OnvoPaymentProvider.CobroIntent.EN_DUDA) {
+        if (c != null && c != OnvoPaymentProvider.CobroIntent.EN_DUDA
+                && c != OnvoPaymentProvider.CobroIntent.SIN_COBRO_SESION_ABIERTA) {
             log.warn("[payment-cleanup] Intent cobrado en ONVO, no se cancela ({}): {}", c, OnvoService.enmascarar(pago.getMerchantToken()));
         }
         return false;

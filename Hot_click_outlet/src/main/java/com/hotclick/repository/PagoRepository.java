@@ -40,25 +40,66 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
                                                @Param("limite") LocalDateTime limite, Pageable pagina);
 
     /**
-     * QA7-B1: pagos ONVO cerrados localmente (FALLIDO o CANCELADO) con sesión, creados desde {@code desde}.
+     * QA7-B1 + fix2 (conciliación durable): pagos ONVO cerrados localmente (FALLIDO o CANCELADO) con sesión que todavía
+     * no quedaron resueltos sin cobro y a los que ya les toca la reconsulta ({@code conciliacion_proxima_en} vencida o
+     * NULL). Sin corte por antigüedad: ningún pago se abandona por edad, solo se espacia (backoff en el servicio).
      * Si ONVO igual los cobró y el webhook se perdió, el respaldo los pasa a REEMBOLSO_PENDIENTE con aviso.
-     * BAJO QA7-B1 (b): rota por {@code reconsultaCerradoEn} (V223): primero los nunca revisados, después el
-     * revisado hace más tiempo; así ningún pago de la ventana queda sin revisar aunque haya más que el lote.
-     * Mismo lock que los PENDIENTE (dos instancias no toman las mismas filas).
+     * Orden: primero los nunca agendados, después el de próxima reconsulta más vieja. Mismo lock que los PENDIENTE
+     * (FOR UPDATE SKIP LOCKED: dos instancias no toman las mismas filas).
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
-    // BAJO: un CANCELADO ya revisado no se vuelve a pedir a ONVO en cada corrida (cada 2 min): solo cuando su
-    // última revisión es anterior a :canceladoRevisadoAntes. FALLIDO sigue rotando como antes.
     @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor "
-        + "AND (p.estadoPago = 'FALLIDO' OR (p.estadoPago = 'CANCELADO' "
-        + "AND (p.reconsultaCerradoEn IS NULL OR p.reconsultaCerradoEn < :canceladoRevisadoAntes))) "
-        + "AND p.merchantToken IS NOT NULL AND p.fechaCreacion >= :desde "
-        + "ORDER BY p.reconsultaCerradoEn ASC NULLS FIRST, p.fechaCreacion ASC")
+        + "AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
+        + "AND p.merchantToken IS NOT NULL AND p.conciliacionResueltaEn IS NULL "
+        + "AND (p.conciliacionProximaEn IS NULL OR p.conciliacionProximaEn <= :ahora) "
+        + "ORDER BY p.conciliacionProximaEn ASC NULLS FIRST, p.fechaCreacion ASC")
     List<Pago> reclamarCerradosParaReconsulta(@Param("proveedor") String proveedor,
-                                             @Param("desde") LocalDateTime desde,
-                                             @Param("canceladoRevisadoAntes") LocalDateTime canceladoRevisadoAntes,
+                                             @Param("ahora") LocalDateTime ahora,
                                              Pageable pagina);
+
+    /**
+     * fix2: agenda la próxima reconsulta del pago cerrado (dentro del reclamo, con la fila bloqueada). Se agenda ANTES
+     * de llamar a ONVO: si el proceso muere a mitad, tras el reinicio el pago vuelve a salir cuando le toca.
+     */
+    @Modifying
+    @Query(value = "UPDATE hot_click_pago_tb SET conciliacion_intentos = COALESCE(conciliacion_intentos, 0) + 1, "
+        + "conciliacion_proxima_en = :proxima, reconsulta_cerrado_en = :ahora WHERE id_pago = :id", nativeQuery = true)
+    int agendarConciliacion(@Param("id") Long id, @Param("ahora") LocalDateTime ahora,
+                            @Param("proxima") LocalDateTime proxima);
+
+    /** fix2: pago cerrado resuelto sin cobro de forma definitiva (intent canceled). Idempotente. */
+    @Modifying
+    @Query(value = "UPDATE hot_click_pago_tb SET conciliacion_resuelta_en = :ahora "
+        + "WHERE id_pago = :id AND conciliacion_resuelta_en IS NULL", nativeQuery = true)
+    int marcarConciliacionResuelta(@Param("id") Long id, @Param("ahora") LocalDateTime ahora);
+
+    /**
+     * fix2 (BAJO): guarda el payment intent visto en la sesión sin pasar por la entidad (columna updatable=false). Solo
+     * cambia si es distinto; un save obsoleto del pago ya no lo puede pisar con NULL.
+     */
+    @Modifying
+    @Query(value = "UPDATE hot_click_pago_tb SET onvo_payment_intent_id = :intent WHERE merchant_token = :token "
+        + "AND (onvo_payment_intent_id IS NULL OR onvo_payment_intent_id <> :intent)", nativeQuery = true)
+    int guardarIntentId(@Param("token") String merchantToken, @Param("intent") String intentId);
+
+    /** fix2: intent guardado leído de la base (no de una copia en memoria que puede estar vieja). */
+    @Query("SELECT p.onvoPaymentIntentId FROM Pago p WHERE p.merchantToken = :token")
+    Optional<String> intentIdEnBase(@Param("token") String merchantToken);
+
+    /**
+     * fix2: registra la intención explícita de cancelar (comprador o panel). La primera gana; idempotente. No cambia
+     * estados: la captura y la conciliación la respetan después (cobro → REEMBOLSO_PENDIENTE, nunca confirmar).
+     */
+    @Modifying
+    @Query(value = "UPDATE hot_click_pago_tb SET cancelacion_solicitada_en = :ahora, cancelacion_solicitada_origen = :origen "
+        + "WHERE id_pago = :id AND cancelacion_solicitada_en IS NULL", nativeQuery = true)
+    int registrarCancelacionSolicitada(@Param("id") Long id, @Param("ahora") LocalDateTime ahora,
+                                       @Param("origen") String origen);
+
+    /** fix2: intención de cancelar leída de la base (la entidad en memoria puede estar vieja). */
+    @Query("SELECT p.cancelacionSolicitadaEn FROM Pago p WHERE p.id = :id")
+    Optional<LocalDateTime> cancelacionSolicitadaEnBase(@Param("id") Long id);
 
     /**
      * Estado del pago en la base, sin vaciar antes los cambios pendientes de la sesión (flush COMMIT): un

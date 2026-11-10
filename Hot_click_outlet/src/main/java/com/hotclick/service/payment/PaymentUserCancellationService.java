@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 public class PaymentUserCancellationService {
 
@@ -29,7 +31,7 @@ public class PaymentUserCancellationService {
     @Lazy @Autowired(required = false)
     private com.hotclick.service.sinpe.SinpeOnvoMarketplaceService sinpeOnvoMarketplaceService;
 
-    @Transactional
+    @Transactional(noRollbackFor = CancelacionPendienteOnvoException.class)
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
             .orElseThrow(() -> new SecurityException("No se pudo validar el pedido"));
@@ -51,13 +53,13 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
         }
 
-        expirarSesionOnvo(pago);
+        expirarSesionOnvo(pago, ORIGEN_USUARIO);
         cerrarIntentSinpeOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado por el usuario", numeroPedido);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = CancelacionPendienteOnvoException.class)
     public void cancelarAnon(String numeroPedido, String cancelToken) {
         if (!guestCancelTokenService.esValido(numeroPedido, cancelToken)) {
             throw new SecurityException("Token de cancelación inválido o ausente");
@@ -77,7 +79,7 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
         }
 
-        expirarSesionOnvo(pago);
+        expirarSesionOnvo(pago, ORIGEN_INVITADO);
         cerrarIntentSinpeOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado (invitado)", numeroPedido);
@@ -90,7 +92,7 @@ public class PaymentUserCancellationService {
      * así nunca queda un pedido cancelado con un link de pago que todavía cobra. Sin llave o con el cliente
      * deshabilitado también se rechaza (409); solo el modo simulado explícito (isMockMode) deja pasar.
      */
-    private void expirarSesionOnvo(Pago pago) {
+    private void expirarSesionOnvo(Pago pago, String origen) {
         String sesion = pago.getMerchantToken();
         if (!Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor()) || sesion == null || sesion.isBlank()) {
             return;
@@ -119,22 +121,98 @@ public class PaymentUserCancellationService {
                 "No pudimos cerrar el pago en ONVO. Si ya pagaste, el pedido se confirma en unos minutos; "
                     + "si no, intentá cancelar de nuevo.");
         }
-        // MEDIO limpieza: expirada o inexistente (404) no prueba que el intent no cobró. Gate fail-closed por GET:
-        // solo se cancela con el intent explícitamente sin cobro; si cobró, se confirma o queda REEMBOLSO_PENDIENTE.
-        OnvoPaymentProvider.CobroIntent cobro = onvoPaymentProvider.revisarCobroAntesDeCancelar(sesion, "cancelacion");
-        if (cobro == OnvoPaymentProvider.CobroIntent.SIN_COBRO) {
-            return;
+        // MEDIO limpieza: expirada o inexistente (404) no prueba que el intent no cobró. Gate fail-closed por GET.
+        // fix2: cancelación EXPLÍCITA → el gate no captura (capturar=false). Un cobro nunca confirma la venta aquí:
+        // con el pago bloqueado se cancela y queda REEMBOLSO_PENDIENTE. Sin REQUIRES_NEW bajo el lock del pedido.
+        OnvoPaymentProvider.RevisionCobro revision = onvoPaymentProvider.revisarCobro(sesion, "cancelacion", false);
+        OnvoPaymentProvider.CobroIntent cobro = revision == null ? OnvoPaymentProvider.CobroIntent.EN_DUDA : revision.cobro();
+        switch (cobro) {
+            case SIN_COBRO -> {
+                // BAJO: el GET no retiene locks; con la fila bloqueada se revalida que nadie lo cobró mientras tanto.
+                Pago bloqueado = bloquear(pago);
+                if (pagoCobrado(bloqueado.getEstadoPago()) || enReembolso(bloqueado.getEstadoPago())) {
+                    throw ventaYaConfirmada(bloqueado);
+                }
+            }
+            case COBRADO_SIN_CAPTURAR -> cancelarConCobro(pago, origen);
+            case CONFIRMADO, DUPLICADO, REEMBOLSO_PENDIENTE -> throw ventaYaConfirmada(pago);
+            default -> {
+                // EN_DUDA, DATOS_DISTINTOS, SIN_COBRO_SESION_ABIERTA: no se cancela ahora, pero la intención explícita
+                // queda guardada (el commit no se revierte) y la captura/conciliación la respetan después.
+                Pago bloqueado = bloquear(pago);
+                if (pagoCobrado(bloqueado.getEstadoPago()) || enReembolso(bloqueado.getEstadoPago())) {
+                    throw ventaYaConfirmada(bloqueado);
+                }
+                registrarIntencion(bloqueado, origen);
+                log.warn("[onvo] Cancelación registrada sin cerrar: no se pudo confirmar que el pago id={} no cobró ({})",
+                    pago.getId(), cobro);
+                throw new CancelacionPendienteOnvoException(MSG_CANCELACION_REGISTRADA);
+            }
         }
-        if (cobro == OnvoPaymentProvider.CobroIntent.CONFIRMADO || cobro == OnvoPaymentProvider.CobroIntent.DUPLICADO
-                || cobro == OnvoPaymentProvider.CobroIntent.REEMBOLSO_PENDIENTE) {
-            log.warn("[onvo] Cancelación rechazada: ONVO ya cobró el pago id={} ({})", pago.getId(), cobro);
-            throw new IllegalStateException(
-                "Tu pago ya fue recibido, así que el pedido no se puede cancelar. Si corresponde, pedí el reembolso.");
+    }
+
+    static final String ORIGEN_USUARIO = "USUARIO";
+    static final String ORIGEN_INVITADO = "INVITADO";
+    static final String ORIGEN_PANEL = "PANEL";
+
+    static final String MSG_CANCELACION_REGISTRADA =
+        "Registramos tu pedido de cancelación, pero ONVO todavía no confirma si el pago se cobró. "
+            + "Si se cobró, el pedido queda cancelado y el pago pasa a reembolso; no se confirma la compra.";
+
+    static final String MSG_VENTA_CONFIRMADA =
+        "Este pedido ya está pagado y confirmado, así que no se puede cancelar desde aquí. El reembolso lo revisa el administrador.";
+
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+    @Lazy @Autowired(required = false)
+    private com.hotclick.payment.OnvoCapturaService onvoCapturaService;
+
+    /**
+     * fix2: cobro de ONVO que llega a una cancelación explícita ANTES de que se confirme la venta. En la transacción
+     * de quien llama (sin REQUIRES_NEW) y con el pago bloqueado: venta ya confirmada → 409 (revisión del admin, sin
+     * devolución automática ni reversión de stock); si no, el pedido se cancela, la reserva se libera una sola vez y
+     * el pago queda REEMBOLSO_PENDIENTE con aviso. Orden de locks: pago y después pedidos/productos, igual que la
+     * captura del webhook (en el panel el pedido ya venía bloqueado antes; un cruce lo detecta y corta PostgreSQL).
+     */
+    private void cancelarConCobro(Pago pago, String origen) {
+        Pago bloqueado = bloquear(pago);
+        if (pagoCobrado(bloqueado.getEstadoPago()) || enReembolso(bloqueado.getEstadoPago())) {
+            throw ventaYaConfirmada(bloqueado);
         }
-        log.warn("[onvo] Cancelación rechazada: no se pudo confirmar que el pago id={} no cobró ({})", pago.getId(), cobro);
-        throw new IllegalStateException(
-            "No pudimos confirmar con ONVO que el pago no se cobró. Si ya pagaste, el pedido se confirma en unos minutos; "
-                + "si no, intentá cancelar de nuevo.");
+        if (onvoCapturaService == null) {
+            throw new IllegalStateException(MSG_CANCELACION_REGISTRADA);
+        }
+        registrarIntencion(bloqueado, origen);
+        if (!onvoCapturaService.registrarCobroSobreCancelacionExplicita(bloqueado, "cancelacion")) {
+            // Otra entrega registró la sesión entre el GET y el lock: decide lo que quedó en la base.
+            throw ventaYaConfirmada(bloquear(bloqueado));
+        }
+        log.warn("[onvo] Cancelación explícita con cobro en ONVO: pago id={} queda REEMBOLSO_PENDIENTE", pago.getId());
+    }
+
+    private void registrarIntencion(Pago bloqueado, String origen) {
+        if (bloqueado.getId() == null) return;
+        pagoRepository.registrarCancelacionSolicitada(bloqueado.getId(), LocalDateTime.now(Constants.ZONA_CR), origen);
+    }
+
+    /** Relee el pago con FOR UPDATE (refresh si ya está en la sesión: un find con lock no actualiza la copia). */
+    private Pago bloquear(Pago pago) {
+        if (pago.getId() == null) return pago;
+        if (entityManager != null && entityManager.contains(pago)) {
+            entityManager.refresh(pago, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+            return pago;
+        }
+        return pagoRepository.findByIdForUpdate(pago.getId()).orElse(pago);
+    }
+
+    private static IllegalStateException ventaYaConfirmada(Pago pago) {
+        log.warn("[onvo] Cancelación rechazada: el pago id={} ya está cobrado/confirmado ({})", pago.getId(), pago.getEstadoPago());
+        return new IllegalStateException(MSG_VENTA_CONFIRMADA);
+    }
+
+    private static boolean enReembolso(String estadoPago) {
+        return Constants.PAGO_REEMBOLSO_PENDIENTE.equalsIgnoreCase(estadoPago)
+            || Constants.PAGO_REEMBOLSADO.equalsIgnoreCase(estadoPago);
     }
 
     /**
@@ -179,9 +257,17 @@ public class PaymentUserCancellationService {
             throw new com.hotclick.exception.CancelacionPagoNoCerradaException(MSG_PAGO_COBRADO);
         }
         try {
-            expirarSesionOnvo(pago);
+            expirarSesionOnvo(pago, ORIGEN_PANEL);
             cerrarIntentSinpeOnvo(pago);
+        } catch (CancelacionPendienteOnvoException e) {
+            // fix2: la intención quedó guardada en el pago; PedidoService no revierte por esta excepción.
+            throw new com.hotclick.exception.CancelacionSolicitadaRegistradaException(
+                "ONVO todavía no confirma si el cliente pagó, así que el pedido no se canceló ahora. Quedó registrada la "
+                    + "cancelación: si el pago se cobró, el pedido se cancela y pasa a reembolso; no se confirma la venta.");
         } catch (IllegalStateException e) {
+            if (MSG_VENTA_CONFIRMADA.equals(e.getMessage())) {
+                throw new com.hotclick.exception.CancelacionPagoNoCerradaException(MSG_PAGO_COBRADO);
+            }
             log.warn("[onvo] Cancelación desde el panel rechazada: no se confirmó el cierre del pago id={}", pago.getId());
             throw new com.hotclick.exception.CancelacionPagoNoCerradaException(
                 "No pudimos cerrar el link de pago en ONVO, así que el pedido no se canceló. "

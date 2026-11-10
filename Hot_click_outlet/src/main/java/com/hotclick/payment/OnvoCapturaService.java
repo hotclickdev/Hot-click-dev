@@ -35,6 +35,7 @@ public class OnvoCapturaService {
     @Autowired(required = false) private com.hotclick.service.OnvoService onvoService;
     @Autowired private com.hotclick.repository.PedidoRepository pedidoRepository;
     @Autowired(required = false) private com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
+    @Autowired(required = false) private com.hotclick.service.payment.StockReservationService stockReservationService;
 
     /** Resultado de escribir un cobro que ONVO ya confirmó. */
     public enum Captura { CAPTURADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA }
@@ -78,7 +79,15 @@ public class OnvoCapturaService {
             return Captura.DUPLICADO;
         }
 
-        if (algunoCancelado(pago)) {
+        // fix2: intención explícita durable. Si el comprador o el panel pidió cancelar (aunque ONVO estuviera en duda
+        // en ese momento), el cobro no confirma la venta: el pedido se cancela, la reserva se libera una sola vez
+        // (marca stockReservadoEn) y el pago queda REEMBOLSO_PENDIENTE con aviso. Se relee de la base.
+        boolean cancelacionPedida = pago.getId() != null
+            && pagoRepository.cancelacionSolicitadaEnBase(pago.getId()).isPresent();
+        if (cancelacionPedida) {
+            cancelarPedidosPendientes(pago);
+        }
+        if (cancelacionPedida || algunoCancelado(pago)) {
             // QA7 (pedido 21): un cobro de prueba sobre un pedido cancelado también es dato de prueba.
             marcarSiEsPrueba(pago, checkoutSessionId);
             pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
@@ -138,6 +147,51 @@ public class OnvoCapturaService {
         log.warn("[ALERTA-PAGO] Cobro ONVO en modo prueba: pedido marcado es_prueba. sessionId={}", OnvoService.enmascarar(sessionId));
     }
 
+    /**
+     * fix2 (cancelación explícita con cobro). Corre en la transacción de quien llama (MANDATORY: nunca abre otra, así
+     * no hay REQUIRES_NEW bajo el lock del pedido del panel) y exige el pago ya bloqueado por quien llama
+     * ({@code FOR UPDATE}). Registra el evento de la sesión (dedupe: el webhook que llegue después sale DUPLICADO),
+     * cancela los pedidos pendientes del grupo con su reserva liberada una sola vez y deja el pago
+     * REEMBOLSO_PENDIENTE con aviso al admin. No confirma la venta, no reembolsa solo ni escribe en ONVO.
+     *
+     * @return false si otra entrega ya registró la sesión (quien llama relee el estado del pago).
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean registrarCobroSobreCancelacionExplicita(Pago pagoBloqueado, String origen) {
+        String sesion = pagoBloqueado.getMerchantToken();
+        if (webhookEventRepository.existsByMerchantTokenAndEventoTipo(sesion, OnvoPaymentProvider.EVENTO_SESION)) {
+            return false;
+        }
+        WebhookEvent evento = registrar(sesion, OnvoPaymentProvider.EVENTO_SESION,
+            "{\"verificado\":\"GET ONVO\",\"cancelacionExplicita\":true}", origen);
+        cancelarPedidosPendientes(pagoBloqueado);
+        marcarSiEsPrueba(pagoBloqueado, sesion);
+        pagoBloqueado.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        pagoBloqueado.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
+        if (avisoReembolso != null) avisoReembolso.registrarPendiente(pagoBloqueado);
+        pagoRepository.save(pagoBloqueado);
+        evento.setProcesado(true);
+        evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
+        evento.setErrorProcesamiento("Cobro de ONVO sobre cancelación explícita: reembolso pendiente");
+        webhookEventRepository.save(evento);
+        log.error("[ALERTA-PAGO] ONVO cobró un pedido que se pidió cancelar; queda para reembolso del admin: sessionId={}",
+            OnvoService.enmascarar(sesion));
+        return true;
+    }
+
+    /** Pedidos del grupo todavía pendientes → CANCELADO y su reserva liberada (idempotente por stockReservadoEn). */
+    private void cancelarPedidosPendientes(Pago pago) {
+        if (pago.getPedido() == null || stockReservationService == null) return;
+        for (com.hotclick.model.Pedido p : pedidoGrupoService.delGrupo(pago.getPedido())) {
+            String e = p.getEstadoPedido();
+            if (Constants.PEDIDO_PENDIENTE.equals(e) || Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(e)
+                    || Constants.PEDIDO_PENDIENTE_APROBACION.equals(e)) {
+                p.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+                stockReservationService.liberarReservas(p);
+            }
+        }
+    }
+
     private boolean algunoCancelado(Pago pago) {
         if (pago.getPedido() == null) return false;
         return pedidoGrupoService.delGrupo(pago.getPedido()).stream()
@@ -159,19 +213,19 @@ public class OnvoCapturaService {
     /**
      * V237: recuerda el payment intent que ONVO muestra por GET en la sesión (la sesión manda: si cambió, se guarda el
      * último y queda un aviso). No toca estado ni montos. Best-effort: quien llama ignora los fallos.
+     * fix2 (BAJO): UPDATE condicional sobre la columna (updatable=false en la entidad), así un save posterior de una
+     * copia obsoleta del pago no lo pisa con NULL. REQUIRED (antes REQUIRES_NEW): se une a la transacción de quien
+     * llama y no abre una segunda conexión que espere la fila bajo un lock externo (autobloqueo del panel).
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void guardarIntentId(String checkoutSessionId, String intentId) {
         if (checkoutSessionId == null || intentId == null || intentId.isBlank()) return;
-        pagoRepository.findByMerchantToken(checkoutSessionId).ifPresent(p -> {
-            if (intentId.equals(p.getOnvoPaymentIntentId())) return;
-            if (p.getOnvoPaymentIntentId() != null) {
-                log.warn("[onvo] La sesión cambió de payment intent; se guarda el actual. sessionId={}",
-                    OnvoService.enmascarar(checkoutSessionId));
-            }
-            p.setOnvoPaymentIntentId(intentId);
-            pagoRepository.save(p);
-        });
+        String previo = pagoRepository.intentIdEnBase(checkoutSessionId).orElse(null);
+        if (intentId.equals(previo)) return;
+        if (pagoRepository.guardarIntentId(checkoutSessionId, intentId) > 0 && previo != null) {
+            log.warn("[onvo] La sesión cambió de payment intent; se guarda el actual. sessionId={}",
+                OnvoService.enmascarar(checkoutSessionId));
+        }
     }
 
     WebhookEvent registrar(String token, String tipo, String resumen, String origen) {

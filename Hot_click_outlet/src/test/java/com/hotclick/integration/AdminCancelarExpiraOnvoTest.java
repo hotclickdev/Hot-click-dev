@@ -42,6 +42,7 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private PagoRepository pagoRepository;
     @Autowired private PaymentUserCancellationService pagoCancelacion;
+    @Autowired private com.hotclick.repository.WebhookEventRepository webhookEventRepository;
     // Sin @MockitoBean: no abre otro contexto de Spring (un contexto extra rompió tablas H2 de otros tests en CI).
     private final OnvoPaymentProvider onvoPaymentProvider = mock(OnvoPaymentProvider.class);
     private final OnvoService onvoService = mock(OnvoService.class);
@@ -117,6 +118,8 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
         Object destino = AopTestUtils.getTargetObject(pagoCancelacion);
         ReflectionTestUtils.setField(destino, "onvoPaymentProvider", providerOriginal);
         ReflectionTestUtils.setField(destino, "onvoService", onvoServiceOriginal);
+        webhookEventRepository.findAll().stream().filter(e -> SESION.equals(e.getMerchantToken()))
+            .forEach(webhookEventRepository::delete);
         pagoRepository.deleteAll();
         pedidoRepository.deleteAll();
         bodegaRepository.deleteAll();
@@ -137,8 +140,9 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
     @DisplayName("ONVO confirma: expira la sesión y el pedido queda CANCELADO")
     void cancelaYExpira() throws Exception {
         when(onvoPaymentProvider.expirarSesionParaCancelar(SESION)).thenReturn(true);
-        when(onvoPaymentProvider.revisarCobroAntesDeCancelar(SESION, "cancelacion"))
-            .thenReturn(com.hotclick.payment.OnvoPaymentProvider.CobroIntent.SIN_COBRO);
+        when(onvoPaymentProvider.revisarCobro(SESION, "cancelacion", false))
+            .thenReturn(new com.hotclick.payment.OnvoPaymentProvider.RevisionCobro(
+                com.hotclick.payment.OnvoPaymentProvider.CobroIntent.SIN_COBRO, "canceled"));
 
         assertThat(cancelar()).isEqualTo(200);
 
@@ -192,5 +196,41 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
         assertThat(estado()).isEqualTo(Constants.PEDIDO_PAGADO);
         assertThat(pagoRepository.findTopByPedidoId(pedidoId).orElseThrow().getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
         verifyNoInteractions(onvoPaymentProvider);
+    }
+
+    @Test
+    @DisplayName("fix2: ONVO en duda → 409, el pedido sigue PENDIENTE y la intención de cancelar QUEDA guardada (commit, sin rollback)")
+    void enDudaRegistraIntencionDurable() throws Exception {
+        when(onvoPaymentProvider.expirarSesionParaCancelar(SESION)).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobro(SESION, "cancelacion", false))
+            .thenReturn(new OnvoPaymentProvider.RevisionCobro(OnvoPaymentProvider.CobroIntent.EN_DUDA, "processing"));
+
+        assertThat(cancelar()).isEqualTo(409);
+
+        assertThat(estado()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+        Pago pago = pagoRepository.findTopByPedidoId(pedidoId).orElseThrow();
+        assertThat(pagoRepository.cancelacionSolicitadaEnBase(pago.getId())).isPresent();
+        assertThat(pago.getCancelacionSolicitadaOrigen()).isEqualTo("PANEL");
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
+    }
+
+    @Test
+    @DisplayName("fix2 MEDIO autobloqueo: panel (pedido FOR UPDATE) + intent cobrado → sin REQUIRES_NEW: 200 rápido, CANCELADO y REEMBOLSO_PENDIENTE, nunca PAGADO")
+    void cobradoSinAutobloqueoNoConfirma() throws Exception {
+        when(onvoPaymentProvider.expirarSesionParaCancelar(SESION)).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobro(SESION, "cancelacion", false))
+            .thenReturn(new OnvoPaymentProvider.RevisionCobro(OnvoPaymentProvider.CobroIntent.COBRADO_SIN_CAPTURAR, "succeeded"));
+
+        long inicio = System.nanoTime();
+        int status = cancelar();
+        long ms = (System.nanoTime() - inicio) / 1_000_000;
+
+        assertThat(status).isEqualTo(200);
+        assertThat(ms).isLessThan(5_000);
+        assertThat(estado()).isEqualTo(Constants.PEDIDO_CANCELADO);
+        Pago pago = pagoRepository.findTopByPedidoId(pedidoId).orElseThrow();
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getCancelacionSolicitadaOrigen()).isEqualTo("PANEL");
+        assertThat(webhookEventRepository.existsByMerchantTokenAndEventoTipo(SESION, "checkout-session.succeeded")).isTrue();
     }
 }

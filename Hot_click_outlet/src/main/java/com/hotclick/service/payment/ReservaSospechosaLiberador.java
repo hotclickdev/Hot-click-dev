@@ -33,18 +33,13 @@ public class ReservaSospechosaLiberador {
     @Autowired private PedidoGrupoService         pedidoGrupoService;
     @Autowired private ReservaAntiBotService      reservaAntiBot;
 
-    @Autowired(required = false) @org.springframework.context.annotation.Lazy
-    private com.hotclick.payment.OnvoPaymentProvider onvoPaymentProvider;
-
     @Autowired(required = false)
     private org.springframework.transaction.PlatformTransactionManager txManager;
 
     /**
      * @return cantidad de pagos cuyas reservas se liberaron.
-     * <p>MEDIO limpieza: sin transacción propia. Cada pago ONVO pasa primero por el gate fail-closed del intent
-     * ({@link com.hotclick.payment.OnvoPaymentProvider#revisarCobroAntesDeCancelar}) FUERA de cualquier lock; solo con
-     * {@code SIN_COBRO} se libera, cada pago en su transacción corta (lock del pago y re-chequeo). Un intent cobrado
-     * se confirma o queda REEMBOLSO_PENDIENTE; en duda (incluida la sesión 404 sin intent conocido) no se toca.
+     * <p>MEDIO limpieza: sin transacción propia; cada pago en su transacción corta (lock del pago y re-chequeo).
+     * fix2: los pagos ONVO en línea quedan fuera (ver {@link #onvoPermiteLiberar}); los cierra la limpieza por TTL.
      */
     public int liberarVencidas(Long empresaId, LocalDateTime ahora) {
         LocalDateTime desde = ahora
@@ -65,18 +60,17 @@ public class ReservaSospechosaLiberador {
         return liberados;
     }
 
-    /** Pagos que no son ONVO: como siempre. ONVO: solo si el gate confirma por GET que el intent no cobró. */
+    /**
+     * Pagos que no son ONVO: como siempre. fix2 (MEDIO anti-bot): los pagos ONVO en línea NO se liberan aquí. El
+     * anti-bot no expira la sesión (y no se agregan escrituras a ONVO), así que un intent requires_payment_method con
+     * la sesión abierta todavía se puede pagar: liberar su reserva dejaba vender dos veces el mismo stock. Los cierra la
+     * limpieza por TTL, que expira la sesión y vuelve a leer el intent antes de liberar. Sin llamadas a ONVO.
+     */
     private boolean onvoPermiteLiberar(Long id) {
         Pago pago = pagoRepository.findById(id).orElse(null);
         if (pago == null || !Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) return true;
-        if (onvoPaymentProvider == null || pago.getMerchantToken() == null) return false;
-        com.hotclick.payment.OnvoPaymentProvider.CobroIntent c =
-            onvoPaymentProvider.revisarCobroAntesDeCancelar(pago.getMerchantToken(), "antibot");
-        if (c != com.hotclick.payment.OnvoPaymentProvider.CobroIntent.SIN_COBRO) {
-            log.warn("[reserva-antibot] Pago ONVO id={} no se libera: el intent no está confirmado sin cobro ({})", id, c);
-            return false;
-        }
-        return true;
+        log.info("[reserva-antibot] Pago ONVO id={} no se libera aquí: lo cierra la limpieza por TTL (expira y relee)", id);
+        return false;
     }
 
     private <T> T enTransaccion(java.util.function.Supplier<T> trabajo) {
