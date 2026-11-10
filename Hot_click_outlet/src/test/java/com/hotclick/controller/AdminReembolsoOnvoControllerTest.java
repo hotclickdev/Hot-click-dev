@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Reembolso del admin por ONVO: éxito, rechazo (revierte), duda (no marca devuelto) y pago por fuera (409). */
+/** Reembolso del admin por ONVO: éxito, rechazo (queda pendiente), duda (no marca devuelto) y pago por fuera (409). */
 class AdminReembolsoOnvoControllerTest {
 
     private static final String URL = "/api/admin/pedidos/7/reembolso-onvo";
@@ -66,13 +66,15 @@ class AdminReembolsoOnvoControllerTest {
         when(pagoRepository.findById(70L)).thenReturn(Optional.of(pago));
         when(onvo.reembolsable(anyString())).thenReturn(true);
         doReturn(Map.of("id", SESION, "paymentIntentId", INTENT)).when(onvo).obtenerCheckoutSession(SESION);
+        doReturn(java.util.Map.of("id", INTENT, "status", "succeeded", "amount", 1_500_000, "currency", "CRC"))
+            .when(onvo).obtenerPaymentIntent(INTENT);
         ReembolsoOnvoService service = new ReembolsoOnvoService(pedidoRepository, pagoRepository, onvo, stock, txManager);
         mvc = MockMvcBuilders.standaloneSetup(new AdminReembolsoOnvoController(service)).build();
     }
 
     @Test
     void onvoConfirma_pagoReembolsadoYPedidoCancelado() throws Exception {
-        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenReturn(new OnvoReembolso("rf_test_1", "succeeded"));
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(1_500_000L))).thenReturn(new OnvoReembolso("rf_test_1", "succeeded"));
 
         mvc.perform(post(URL))
             .andExpect(status().isOk())
@@ -82,30 +84,37 @@ class AdminReembolsoOnvoControllerTest {
 
         assertEquals(15000, pago.getMontoReembolsado());
         assertEquals("rf_test_1", pago.getOnvoReembolsoId());
-        verify(onvo, times(1)).crearReembolso(eq(INTENT), anyString(), anyString());
+        verify(onvo, times(1)).crearReembolso(eq(INTENT), anyString(), anyString(), eq(1_500_000L));
     }
 
     @Test
-    void onvoRechaza_revierteYNoMarcaDevuelto() throws Exception {
-        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString()))
+    void onvoRechaza_quedaPendienteYNoMarcaDevuelto() throws Exception {
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(1_500_000L)))
             .thenThrow(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", null,
-                "{\"statusCode\":400,\"message\":[\"amount must be positive\"],\"error\":\"Bad Request\"}".getBytes(), null));
+                "{\"statusCode\":400,\"code\":\"refunds.payment_intent_already_payed\",\"message\":\"Payment intent already payed\"}".getBytes(), null));
 
         mvc.perform(post(URL))
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.success").value(false))
-            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("amount must be positive")))
-            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Revisá el pago")));
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("refunds.payment_intent_already_payed")))
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("REEMBOLSO_PENDIENTE")));
 
-        assertEquals(Constants.PEDIDO_PAGADO, pedido.getEstadoPedido());
-        assertEquals(Constants.PAGO_CAPTURADO, pago.getEstadoPago());
+        assertEquals(Constants.PEDIDO_REEMBOLSO_PENDIENTE, pedido.getEstadoPedido());
+        assertEquals(Constants.PAGO_REEMBOLSO_PENDIENTE, pago.getEstadoPago());
         assertNull(pago.getMontoReembolsado());
-        assertNull(pago.getMontoReembolsoPendiente());
+        assertEquals(15000, pago.getMontoReembolsoPendiente());
+
+        mvc.perform(post(URL))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("refunds.payment_intent_already_payed")));
+        verify(onvo, times(2)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
+        verify(onvo, never()).cancelarPaymentIntent(anyString());
+        assertNull(pago.getMontoReembolsado());
     }
 
     @Test
     void onvoDevuelveFailed_revierte() throws Exception {
-        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenReturn(new OnvoReembolso("rf_test_2", "failed"));
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(1_500_000L))).thenReturn(new OnvoReembolso("rf_test_2", "failed"));
 
         mvc.perform(post(URL)).andExpect(status().isBadGateway());
 
@@ -116,7 +125,7 @@ class AdminReembolsoOnvoControllerTest {
 
     @Test
     void onvoSinRespuesta_quedaPendienteNuncaDevueltoYNoSeRepide() throws Exception {
-        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenThrow(new ResourceAccessException("timeout"));
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(1_500_000L))).thenThrow(new ResourceAccessException("timeout"));
 
         mvc.perform(post(URL))
             .andExpect(status().isBadGateway())
@@ -128,12 +137,12 @@ class AdminReembolsoOnvoControllerTest {
         mvc.perform(post(URL))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(ReembolsoOnvoService.MSG_REVISAR)));
-        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString());
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
     }
 
     @Test
     void pendingEnOnvo_202YAlReconsultarSeConfirma() throws Exception {
-        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenReturn(new OnvoReembolso("rf_test_3", "pending"));
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(1_500_000L))).thenReturn(new OnvoReembolso("rf_test_3", "pending"));
         mvc.perform(post(URL)).andExpect(status().isAccepted());
         assertEquals(Constants.PAGO_REEMBOLSO_PENDIENTE, pago.getEstadoPago());
 
@@ -141,7 +150,7 @@ class AdminReembolsoOnvoControllerTest {
         mvc.perform(post(URL)).andExpect(status().isOk());
         assertEquals(Constants.PAGO_REEMBOLSADO, pago.getEstadoPago());
         assertEquals(Constants.PEDIDO_CANCELADO, pedido.getEstadoPedido());
-        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString());
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -152,7 +161,7 @@ class AdminReembolsoOnvoControllerTest {
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.message").value(ReembolsoOnvoService.MSG_SIN_PAGO_ONVO));
         assertEquals(Constants.PEDIDO_PAGADO, pedido.getEstadoPedido());
-        verify(onvo, never()).crearReembolso(anyString(), anyString(), anyString());
+        verify(onvo, never()).crearReembolso(anyString(), anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -168,7 +177,7 @@ class AdminReembolsoOnvoControllerTest {
             AdminReembolsoOnvoController.ResolucionRequest.class, org.springframework.security.core.Authentication.class)
             .getAnnotation(PreAuthorize.class);
         assertEquals("hasRole('ADMIN')", pa.value());
-        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString())).thenThrow(new ResourceAccessException("timeout"));
+        when(onvo.crearReembolso(eq(INTENT), anyString(), anyString(), eq(1_500_000L))).thenThrow(new ResourceAccessException("timeout"));
         mvc.perform(post(URL)).andExpect(status().isBadGateway());
 
         mvc.perform(post(URL + "/resolucion").contentType("application/json").content("{\"resultado\":\"DEVUELTO\"}"))
@@ -180,6 +189,6 @@ class AdminReembolsoOnvoControllerTest {
             .andExpect(status().isOk());
         assertEquals(Constants.PAGO_REEMBOLSADO, pago.getEstadoPago());
         assertEquals(Constants.PEDIDO_CANCELADO, pedido.getEstadoPedido());
-        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString());
+        verify(onvo, times(1)).crearReembolso(anyString(), anyString(), anyString(), anyLong());
     }
 }

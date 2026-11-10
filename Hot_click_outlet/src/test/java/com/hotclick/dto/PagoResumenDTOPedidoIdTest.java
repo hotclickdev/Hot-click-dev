@@ -31,7 +31,7 @@ class PagoResumenDTOPedidoIdTest {
         assertThat(json.get("numeroPedido")).isEqualTo("ORD-X");
         // Solo se suma pedidoId: el resto del contrato queda igual (sin datos nuevos del pedido ni del comprador).
         assertThat(json.keySet()).containsExactlyInAnyOrder("id", "pedidoId", "numeroPedido", "proveedor", "estadoPago",
-            "monto", "correoUsuario", "merchantToken", "fechaCreacion", "fechaActualizacion");
+            "monto", "correoUsuario", "merchantToken", "fechaCreacion", "fechaActualizacion", "reembolsoError");
     }
 
     @Test

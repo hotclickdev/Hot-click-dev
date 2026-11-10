@@ -530,26 +530,34 @@ public class OnvoService {
     /** Refund de ONVO: id y status (pending, succeeded o failed). */
     public record OnvoReembolso(String id, String status) {}
 
+    /** OpenAPI Refund.reason: si no se indica, ONVO usa este mismo valor. */
+    static final String REASON_REEMBOLSO_CLIENTE = "requested_by_customer";
+
     /** true si se puede pedir o leer un reembolso de este payment intent (no mock, con llave, id con forma de ONVO). */
     public boolean reembolsable(String intentId) {
         return consultable(intentId);
     }
 
     /**
-     * Reembolso total del payment intent (POST /v1/refunds, sin amount = el total). Sin @Retry ni fallback:
-     * no es idempotente y un reintento podría devolver dos veces. Los errores se relanzan tal cual:
-     * un 4xx es un rechazo de ONVO; cualquier otro error deja el resultado en duda.
+     * Reembolso de un payment intent ya capturado ({@code POST /v1/refunds}).
+     * Contrato: <a href="https://docs.onvopay.com/payments/refunds">guía</a> y esquema {@code Refund} de
+     * openapi.yaml: {@code paymentIntentId}, {@code amount} en la unidad menor (céntimos si es CRC),
+     * {@code description} y {@code reason}. {@code currency} es readOnly: no se manda.
+     * <p>QA pedido 34: el POST sin {@code amount} (y el intento de tratar un intent {@code succeeded}
+     * como cancelable) respondió {@code refunds.payment_intent_already_payed}. Cancelar
+     * ({@code POST /v1/payment-intents/{id}/cancel}) no devuelve un cobro capturado. El monto va siempre.
+     * Sin @Retry ni fallback: un reintento podría devolver dos veces. Los errores se relanzan.
+     * La clave de idempotencia no se manda: ONVO no la documenta y un POST con ese header dio 400.
      */
-    @SuppressWarnings("java:S1172") // idempotencyKey: se conserva la firma; ONVO no documenta el header y ya no se manda
-    public OnvoReembolso crearReembolso(String intentId, String descripcion, String idempotencyKey) {
+    @SuppressWarnings("java:S1172") // idempotencyKey: registro local; el header no está en el contrato de ONVO
+    public OnvoReembolso crearReembolso(String intentId, String descripcion, String idempotencyKey, long amountCentimos) {
         if (!consultable(intentId)) throw new IllegalStateException("ONVO no disponible para reembolsar");
+        if (amountCentimos <= 0) throw new IllegalArgumentException("El reembolso exige el monto en céntimos");
         Map<String, Object> body = new HashMap<>();
         body.put("paymentIntentId", intentId);
+        body.put("amount", amountCentimos);
+        body.put("reason", REASON_REEMBOLSO_CLIENTE);
         if (descripcion != null) body.put("description", descripcion);
-        // QA #528 (pedido 34): ONVO respondió 400 al POST con el header Idempotency-Key, que su API no documenta
-        // (docs.onvopay.com/en/api/crear-un-reembolso: solo paymentIntentId, amount, description, reason). Antes de
-        // agregarlo el mismo POST funcionaba. Ya no se manda: la clave queda solo como registro en el pago y nada
-        // depende de ella (un REEMBOLSO_PENDIENTE sin id de refund nunca se vuelve a pedir; se resuelve a mano).
         OnvoReembolso r;
         try {
             r = parseReembolso(postOnvo("/refunds", body));

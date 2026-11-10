@@ -112,6 +112,13 @@ public class Pago extends BaseEntity {
     @Column(name = "reembolso_resolucion", length = 20)
     private String reembolsoResolucion;
 
+    /** V236: motivo enmascarado si ONVO rechazó el POST /v1/refunds y el pago quedó REEMBOLSO_PENDIENTE. */
+    @Column(name = "reembolso_error", length = 300)
+    private String reembolsoError;
+
+    public String getReembolsoError() { return reembolsoError; }
+    public void setReembolsoError(String v) { this.reembolsoError = v; }
+
     public String getReembolsoResueltoPor() { return reembolsoResueltoPor; }
     public void setReembolsoResueltoPor(String v) { this.reembolsoResueltoPor = v; }
     public LocalDateTime getReembolsoResueltoEn() { return reembolsoResueltoEn; }

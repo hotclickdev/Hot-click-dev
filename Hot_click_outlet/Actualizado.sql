@@ -4640,3 +4640,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_qa_alta_pyme_test_correo
 CREATE UNIQUE INDEX IF NOT EXISTS uq_qa_alta_pyme_test_empresa
     ON hot_click_qa_alta_pyme_test_tb (empresa_id) WHERE empresa_id IS NOT NULL;
 
+-- V236: motivo enmascarado cuando ONVO rechaza POST /v1/refunds (el pago queda REEMBOLSO_PENDIENTE).
+-- Aditiva: columna nullable, sin backfill.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS reembolso_error VARCHAR(300);
+
