@@ -73,8 +73,14 @@ class PlanesPrecioFuenteUnicaTest {
     }
 
     private void planesDeBd() {
-        when(planRepo.findByActivoTrueOrderByPrecioMensualAsc()).thenReturn(catalogoBd());
-        when(planRepo.findByNombreInAndActivoTrueOrderByPrecioMensualAsc(any(), any())).thenReturn(catalogoBd());
+        when(planRepo.findByActivoTrue(any())).thenAnswer(inv -> paginar(catalogoBd(), inv.getArgument(0)));
+    }
+
+    /** Simula la paginación de Spring Data sobre una lista ya ordenada. */
+    private static org.springframework.data.domain.Slice<Plan> paginar(List<Plan> todos, org.springframework.data.domain.Pageable p) {
+        int desde = (int) Math.min(p.getOffset(), todos.size());
+        int hasta = Math.min(desde + p.getPageSize(), todos.size());
+        return new org.springframework.data.domain.SliceImpl<>(todos.subList(desde, hasta), p, hasta < todos.size());
     }
 
     private MockMvc mvc(PreciosPlanesConfig precios) {
@@ -194,19 +200,43 @@ class PlanesPrecioFuenteUnicaTest {
     }
 
     @Test
-    @DisplayName("SCALE1: la consulta es acotada al catálogo autorizado y su tamaño (nombre UNIQUE: no deja afuera planes válidos)")
-    void consultaAcotadaAlCatalogo() throws Exception {
-        planesDeBd();
+    @DisplayName("SCALE1: lista TODOS los activos en páginas acotadas (más de una página y nombres no canónicos, sin truncar)")
+    void todosLosActivosPaginados() throws Exception {
+        // 3 del catálogo + 120 activos con nombres no canónicos: más de 2 páginas de TAMANO_PAGINA_PLANES (50).
+        List<Plan> todos = new java.util.ArrayList<>(catalogoBd());
+        for (int i = 0; i < 120; i++) todos.add(plan(100 + i, "Legado Feria " + i, "5.00", 50_000 + i));
+        when(planRepo.findByActivoTrue(any())).thenAnswer(inv -> paginar(todos, inv.getArgument(0)));
         mvc(new PreciosPlanesConfig("9", "24", "49", "usd")).perform(get("/api/planes"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(3));
-        verify(planRepo).findByNombreInAndActivoTrueOrderByPrecioMensualAsc(
-            eq(List.of("EMPRENDEDOR", "PYME", "NEGOCIO_PLUS")),
-            eq(org.springframework.data.domain.PageRequest.of(0, 3)));
-        verify(planRepo, org.mockito.Mockito.never()).findByActivoTrueOrderByPrecioMensualAsc();
-        // El catálogo es exactamente el conjunto de planes que tienen precio en la config.
-        PreciosPlanesConfig cfg = new PreciosPlanesConfig("9", "24", "49", "usd");
-        assertThat(PreciosPlanesConfig.CATALOGO).allSatisfy(n -> assertThat(cfg.precioPublicoUsd(n)).isPresent());
+            .andExpect(jsonPath("$.length()").value(123))
+            .andExpect(jsonPath("$[0].nombre").value("EMPRENDEDOR"))
+            .andExpect(jsonPath("$[1].precioUsd").value(24))
+            .andExpect(jsonPath("$[2].precioUsd").value(49))
+            // No canónico: se publica (no se esconde) pero sin precio inventado ni el de BD (fail-closed null).
+            .andExpect(jsonPath("$[3].nombre").value("Legado Feria 0"))
+            .andExpect(jsonPath("$[3].precioUsd").value(nullValue()))
+            .andExpect(jsonPath("$[122].nombre").value("Legado Feria 119"))
+            .andExpect(jsonPath("$[122].precioUsd").value(nullValue()));
+        var paginas = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(planRepo, org.mockito.Mockito.times(3)).findByActivoTrue(paginas.capture());
+        assertThat(paginas.getAllValues()).extracting(org.springframework.data.domain.Pageable::getPageNumber).containsExactly(0, 1, 2);
+        assertThat(paginas.getAllValues()).allSatisfy(pg -> {
+            assertThat(pg.getPageSize()).isEqualTo(com.hotclick.service.suscripcion.PlanPublicoMapper.TAMANO_PAGINA);
+            assertThat(pg.getSort()).isEqualTo(com.hotclick.service.suscripcion.PlanPublicoMapper.ORDEN);
+        });
+    }
+
+    @Test
+    @DisplayName("SCALE1: más páginas que el tope → error, nunca una lista parcial")
+    void topeDePaginasNoTrunca() {
+        when(planRepo.findByActivoTrue(any())).thenAnswer(inv -> {
+            org.springframework.data.domain.Pageable p = inv.getArgument(0);
+            return new org.springframework.data.domain.SliceImpl<>(List.of(plan(p.getPageNumber(), "P" + p.getPageNumber(), "1", 0)), p, true);
+        });
+        var c = new TenantController(mock(TenantService.class), planRepo, mock(PruebaPlanService.class),
+            new PreciosPlanesConfig("9", "24", "49", "usd"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(c::planesPublicos).isInstanceOf(IllegalStateException.class);
+        verify(planRepo, org.mockito.Mockito.times(com.hotclick.service.suscripcion.PlanPublicoMapper.MAX_PAGINAS)).findByActivoTrue(any());
     }
 
     @Test
@@ -226,6 +256,44 @@ class PlanesPrecioFuenteUnicaTest {
             assertThat(publico.get(i)).containsAllEntriesOf(base).containsEntry("precioUsd", billing.get(i).get("precioUsd"));
             assertThat(billing.get(i)).containsAllEntriesOf(base);
         }
+    }
+
+    @Test
+    @DisplayName("Nombres con otra capitalización («pyme») se listan: sin filtro IN exacto; el precio normaliza mayúsculas")
+    void capitalizacionNoCanonica() throws Exception {
+        List<Plan> todos = List.of(plan(1, "EMPRENDEDOR", "0", 0), plan(7, "pyme", "11.99", 12900),
+            plan(2, "PYME", "11.99", 12900), plan(3, "Negocio_Plus", "19.99", 28900));
+        when(planRepo.findByActivoTrue(any())).thenAnswer(inv -> paginar(todos, inv.getArgument(0)));
+        mvc(new PreciosPlanesConfig("9", "24", "49", "usd")).perform(get("/api/planes"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(4))
+            .andExpect(jsonPath("$[1].nombre").value("pyme"))
+            .andExpect(jsonPath("$[1].precioUsd").value(24))
+            .andExpect(jsonPath("$[2].nombre").value("PYME"))
+            .andExpect(jsonPath("$[2].precioUsd").value(24))
+            .andExpect(jsonPath("$[3].nombre").value("Negocio_Plus"))
+            .andExpect(jsonPath("$[3].precioUsd").value(49));
+    }
+
+    @Test
+    @DisplayName("/api/billing/planes lee el MISMO conjunto paginado (más de una página); un activo sin precio sigue dando 409 global")
+    @SuppressWarnings("unchecked")
+    void billingMismoConjuntoPaginado() {
+        List<Plan> todos = new java.util.ArrayList<>(catalogoBd());
+        for (int i = 0; i < 60; i++) todos.add(plan(200 + i, i % 2 == 0 ? "pyme" : "Negocio_Plus", "1", 30_000 + i));
+        when(planRepo.findByActivoTrue(any())).thenAnswer(inv -> paginar(todos, inv.getArgument(0)));
+        java.util.function.Function<List<Plan>, SuscripcionController> ctrl = x -> new SuscripcionController(
+            mock(com.hotclick.service.SuscripcionService.class), planRepo, mock(AuthSupport.class),
+            mock(com.hotclick.service.suscripcion.CobroSuscripcionService.class),
+            new PreciosPlanesConfig("9", "24", "49", "usd"), mock(PropietarioGuard.class));
+        var ok = ctrl.apply(todos).listarPlanes();
+        assertThat(ok.getStatusCode().value()).isEqualTo(200);
+        assertThat((List<Map<String, Object>>) ok.getBody()).hasSize(63)
+            .extracting(m -> m.get("id")).containsExactlyElementsOf(todos.stream().map(p -> (Object) p.getId()).toList());
+        todos.add(plan(999, "Legado Feria", "1", 99_999));
+        var r = ctrl.apply(todos).listarPlanes();
+        assertThat(r.getStatusCode().value()).isEqualTo(409);
+        assertThat((Map<String, Object>) r.getBody()).containsEntry("codigo", "PLAN_SIN_PRECIO").containsEntry("plan", "Legado Feria");
     }
 
     // ---- Tienda suspendida: el monto pendiente es el de ONVO (USD), no los colones viejos de la tabla plan ----

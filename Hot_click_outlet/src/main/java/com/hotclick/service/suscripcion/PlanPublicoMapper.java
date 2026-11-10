@@ -1,6 +1,7 @@
 package com.hotclick.service.suscripcion;
 
 import com.hotclick.model.Plan;
+import org.springframework.data.domain.Sort;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -13,6 +14,15 @@ import java.util.Map;
 public final class PlanPublicoMapper {
 
     private PlanPublicoMapper() {}
+
+    /**
+     * Lectura de los planes activos para los listados públicos: TODOS los activos (sin filtrar por nombre), en páginas
+     * acotadas con orden estable (precio_mensual ascendente, desempate por id). El llamador recorre todas las páginas con
+     * {@link com.hotclick.utils.PaginasCompletas}; si hubiera más de {@link #MAX_PAGINAS} falla, nunca trunca.
+     */
+    public static final Sort ORDEN = Sort.by(Sort.Order.asc("precioMensual"), Sort.Order.asc("id"));
+    public static final int TAMANO_PAGINA = 50;
+    public static final int MAX_PAGINAS = 20;
 
     /** Mapa ordenado con id, nombre, descripción, precioMensual (legado, colones), límites y features. */
     public static Map<String, Object> base(Plan p) {

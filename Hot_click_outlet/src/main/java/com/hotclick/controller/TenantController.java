@@ -7,6 +7,7 @@ import com.hotclick.service.TenantService;
 import com.hotclick.service.prueba.PruebaPlanService;
 import com.hotclick.service.suscripcion.PlanPublicoMapper;
 import com.hotclick.service.suscripcion.PreciosPlanesConfig;
+import com.hotclick.utils.PaginasCompletas;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -75,13 +76,15 @@ public class TenantController {
      * ALTO: {@code precioUsd} sale SOLO de la config de precios (la misma que {@code PrecioPlanOnvo} verifica contra el
      * price de ONVO), nunca de la columna precio_usd de la tabla plan (V89/V105: 19.99 / 11.99). Si un plan no tiene
      * precio publicable, va {@code precioUsd: null} (la UI muestra «Mensualidad en dólares», sin monto inventado).
-     * SCALE1: consulta acotada al catálogo de planes con precio ({@link PreciosPlanesConfig#CATALOGO}); como nombre es
-     * UNIQUE, la página de tamaño {@code CATALOGO.size()} nunca deja afuera un plan válido.
+     * SCALE1: se listan TODOS los planes activos (mismo criterio que antes, sin filtrar por nombre), leídos en páginas
+     * acotadas con orden estable (precio_mensual y luego id) hasta la última página; misma lectura que
+     * /api/billing/planes. La respuesta sigue siendo la lista completa; si superara el tope de páginas, falla en vez de
+     * devolver una lista parcial. Un plan activo sin precio publicable va con precioUsd null (no se esconde).
      */
     @GetMapping("/planes")
     public ResponseEntity<List<Map<String, Object>>> planesPublicos() {
-        List<Plan> planes = planRepo.findByNombreInAndActivoTrueOrderByPrecioMensualAsc(
-            PreciosPlanesConfig.CATALOGO, PageRequest.of(0, PreciosPlanesConfig.CATALOGO.size()));
+        List<Plan> planes = PaginasCompletas.todas(planRepo::findByActivoTrue,
+            PageRequest.of(0, PlanPublicoMapper.TAMANO_PAGINA, PlanPublicoMapper.ORDEN), PlanPublicoMapper.MAX_PAGINAS);
         return ResponseEntity.ok(planes.stream().map(this::planPublico).toList());
     }
 

@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -78,12 +77,6 @@ public class PreciosPlanesConfig {
     }
 
     static final String MONEDA_USD = "usd";
-
-    /**
-     * Catálogo de planes con precio (los mismos nombres que resuelve {@link #precioUsd}). {@code nombre} es UNIQUE en
-     * hot_click_plan_tb, así que hay a lo sumo un plan activo por nombre: este tamaño es la cota exacta del listado.
-     */
-    public static final List<String> CATALOGO = List.of("EMPRENDEDOR", "PYME", "NEGOCIO_PLUS");
 
     /** Precio configurado y mayor que 0, o 409 PLAN_SIN_PRECIO (0 o negativo cuenta como sin precio). */
     public BigDecimal requerir(String nombrePlan) {

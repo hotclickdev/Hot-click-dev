@@ -58,10 +58,17 @@ public class SuscripcionController {
         this.authSupport        = authSupport;
     }
 
-    /** Lista todos los planes disponibles (públicos). */
+    /**
+     * Lista todos los planes activos (públicos). Misma lectura que GET /api/planes: todos los activos, en páginas acotadas
+     * con orden estable (precio_mensual, id). Diferencia deliberada y previa: acá (catálogo para cobrar) un plan activo
+     * sin precio publicable hace 409 PLAN_SIN_PRECIO para toda la lista; /api/planes (página pública) lo deja con null.
+     */
     @GetMapping("/planes")
     public ResponseEntity<?> listarPlanes() {
-        List<Plan> planes = planRepo.findByActivoTrueOrderByPrecioMensualAsc();
+        List<Plan> planes = com.hotclick.utils.PaginasCompletas.todas(planRepo::findByActivoTrue,
+            org.springframework.data.domain.PageRequest.of(0, com.hotclick.service.suscripcion.PlanPublicoMapper.TAMANO_PAGINA,
+                com.hotclick.service.suscripcion.PlanPublicoMapper.ORDEN),
+            com.hotclick.service.suscripcion.PlanPublicoMapper.MAX_PAGINAS);
         // Sin precio configurado no se publica el plan con 0 ni con valores viejos: 409 PLAN_SIN_PRECIO.
         for (Plan p : planes) {
             if (preciosPlanes.precioPublicoUsd(p.getNombre()).isEmpty()) return planSinPrecio(new com.hotclick.exception.PlanSinPrecioException(p.getNombre()));
