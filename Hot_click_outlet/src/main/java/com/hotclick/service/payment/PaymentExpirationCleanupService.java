@@ -101,12 +101,22 @@ public class PaymentExpirationCleanupService {
                     return true;
                 }
                 case NO_PAGADO -> {
+                    // MEDIO (QA: charge succeeded y pedido cancelado): la sesión puede decir unpaid/expired con el
+                    // intent ya cobrado. Antes de tocar nada se relee el intent; si cobró, se confirma (o queda
+                    // REEMBOLSO_PENDIENTE) por la captura idempotente y no se cancela.
+                    if (!intentSinCobro(pago)) {
+                        return false;
+                    }
                     // QA5 MEDIO: si ONVO lo rechazó, queda FALLIDO (no CANCELADO) y ya liberó el stock.
                     if (onvoRechazoService != null
                             && onvoRechazoService.cerrarSiRechazado(pago.getId(), pago.getMerchantToken())) {
                         return false;
                     }
-                    return onvoPaymentProvider.expirarSesionSinCobro(pago.getMerchantToken());
+                    if (!onvoPaymentProvider.expirarSesionSinCobro(pago.getMerchantToken())) {
+                        return false;
+                    }
+                    // Última lectura justo antes de cancelar: un cobro que entró mientras se expiraba gana.
+                    return intentSinCobro(pago);
                 }
                 default -> {
                     return false;
@@ -116,5 +126,17 @@ public class PaymentExpirationCleanupService {
             log.warn("[payment-cleanup] Reconsulta ONVO falló token={}: {}", OnvoService.enmascarar(pago.getMerchantToken()), e.getClass().getSimpleName());
             return false;
         }
+    }
+
+    /** true solo si ONVO confirma por GET que el intent no cobró; cualquier otra respuesta deja el pago como está. */
+    private boolean intentSinCobro(Pago pago) {
+        OnvoPaymentProvider.CobroIntent c = onvoPaymentProvider.revisarCobroAntesDeCancelar(pago.getMerchantToken(), "cleanup");
+        if (c == OnvoPaymentProvider.CobroIntent.SIN_COBRO) {
+            return true;
+        }
+        if (c != null && c != OnvoPaymentProvider.CobroIntent.EN_DUDA) {
+            log.warn("[payment-cleanup] Intent cobrado en ONVO, no se cancela ({}): {}", c, OnvoService.enmascarar(pago.getMerchantToken()));
+        }
+        return false;
     }
 }
