@@ -412,6 +412,13 @@ class OnvoLimpiezaCapturadoWebhookTest extends BaseIntegrationTest {
         cleanup.ejecutar();
         assertThat(pago().getOnvoPaymentIntentId()).isEqualTo(INTENT);
         assertThat(pago().getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
+        // fix2 (tormenta): en duda → reconsulta agendada (persistente); la pasada siguiente no vuelve a consultar ONVO.
+        LocalDateTime proxima = pago().getConciliacionProximaEn();
+        assertThat(proxima).isAfter(LocalDateTime.now(Constants.ZONA_CR));
+        org.mockito.Mockito.clearInvocations(onvoService);
+        cleanup.ejecutar();
+        org.mockito.Mockito.verify(onvoService, org.mockito.Mockito.never()).obtenerCheckoutSession(SESION);
+        vencerReconsulta();
 
         doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(SESION);
         doReturn(Map.of("id", INTENT, "status", "succeeded", "amount", 1_000_000, "receivedAmount", 1_000_000,
@@ -465,6 +472,14 @@ class OnvoLimpiezaCapturadoWebhookTest extends BaseIntegrationTest {
     }
 
     /** fix2: el intent solo se escribe con el UPDATE condicional (columna updatable=false), como en producción. */
+    /** Simula que pasó el backoff: la próxima reconsulta queda vencida. */
+    private void vencerReconsulta() {
+        Long id = pago().getId();
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        new org.springframework.transaction.support.TransactionTemplate(txManagerFix2)
+            .executeWithoutResult(s -> pagoRepository.agendarConciliacion(id, ahora, ahora.minusMinutes(1)));
+    }
+
     private void guardarIntent(String intent) {
         new org.springframework.transaction.support.TransactionTemplate(txManagerFix2)
             .executeWithoutResult(s -> pagoRepository.guardarIntentId(SESION, intent));

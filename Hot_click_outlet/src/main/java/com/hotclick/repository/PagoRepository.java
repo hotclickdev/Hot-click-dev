@@ -34,29 +34,46 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    // fix2 (tormenta 404 / en duda): un pendiente que quedó en duda se reagenda con backoff persistente
+    // (conciliacion_proxima_en) y no vuelve a ocupar el lote hasta que le toca: los nuevos no quedan detrás.
     @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor AND p.estadoPago = 'PENDIENTE' "
-        + "AND p.merchantToken IS NOT NULL AND p.fechaCreacion <= :limite ORDER BY p.fechaCreacion ASC")
+        + "AND p.merchantToken IS NOT NULL AND p.fechaCreacion <= :limite "
+        + "AND (p.conciliacionProximaEn IS NULL OR p.conciliacionProximaEn <= :ahora) ORDER BY p.fechaCreacion ASC")
     List<Pago> reclamarPendientesParaReconsulta(@Param("proveedor") String proveedor,
-                                               @Param("limite") LocalDateTime limite, Pageable pagina);
+                                               @Param("limite") LocalDateTime limite,
+                                               @Param("ahora") LocalDateTime ahora, Pageable pagina);
 
     /**
-     * QA7-B1 + fix2 (conciliación durable): pagos ONVO cerrados localmente (FALLIDO o CANCELADO) con sesión que todavía
-     * no quedaron resueltos sin cobro y a los que ya les toca la reconsulta ({@code conciliacion_proxima_en} vencida o
-     * NULL). Sin corte por antigüedad: ningún pago se abandona por edad, solo se espacia (backoff en el servicio).
-     * Si ONVO igual los cobró y el webhook se perdió, el respaldo los pasa a REEMBOLSO_PENDIENTE con aviso.
-     * Orden: primero los nunca agendados, después el de próxima reconsulta más vieja. Mismo lock que los PENDIENTE
-     * (FOR UPDATE SKIP LOCKED: dos instancias no toman las mismas filas).
+     * QA7-B1 + fix2 (conciliación durable): pagos ONVO cerrados localmente (FALLIDO o CANCELADO) con sesión, no
+     * resueltos sin cobro y con la reconsulta ya vencida ({@code conciliacion_proxima_en <= :ahora}). Sin corte por
+     * antigüedad: ningún pago se abandona por edad, solo se espacia (backoff persistente). Orden: el que espera hace más
+     * tiempo. Si ONVO igual los cobró y el webhook se perdió, el respaldo los pasa a REEMBOLSO_PENDIENTE con aviso.
+     * FOR UPDATE SKIP LOCKED: dos instancias no toman las mismas filas.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
     @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor "
         + "AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
         + "AND p.merchantToken IS NOT NULL AND p.conciliacionResueltaEn IS NULL "
-        + "AND (p.conciliacionProximaEn IS NULL OR p.conciliacionProximaEn <= :ahora) "
-        + "ORDER BY p.conciliacionProximaEn ASC NULLS FIRST, p.fechaCreacion ASC")
+        + "AND p.conciliacionProximaEn IS NOT NULL AND p.conciliacionProximaEn <= :ahora "
+        + "ORDER BY p.conciliacionProximaEn ASC, p.fechaCreacion ASC")
     List<Pago> reclamarCerradosParaReconsulta(@Param("proveedor") String proveedor,
                                              @Param("ahora") LocalDateTime ahora,
                                              Pageable pagina);
+
+    /**
+     * fix2 (tormenta de históricos): cerrados que nunca se agendaron (incluye todos los anteriores a V238, sin backfill).
+     * Van en su propia cuota del lote y de los más NUEVOS a los más viejos: el atraso histórico se drena de a poco y no
+     * deja detrás a las cancelaciones recientes ni a los reintentos vencidos.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor "
+        + "AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
+        + "AND p.merchantToken IS NOT NULL AND p.conciliacionResueltaEn IS NULL "
+        + "AND p.conciliacionProximaEn IS NULL "
+        + "ORDER BY p.fechaCreacion DESC")
+    List<Pago> reclamarCerradosNuevos(@Param("proveedor") String proveedor, Pageable pagina);
 
     /**
      * fix2: agenda la próxima reconsulta del pago cerrado (dentro del reclamo, con la fila bloqueada). Se agenda ANTES
@@ -87,13 +104,31 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     @Query("SELECT p.onvoPaymentIntentId FROM Pago p WHERE p.merchantToken = :token")
     Optional<String> intentIdEnBase(@Param("token") String merchantToken);
 
+    /** fix2: intentos de conciliación leídos de la base (para el backoff; la entidad en memoria puede estar vieja). */
+    @Query("SELECT p.conciliacionIntentos FROM Pago p WHERE p.id = :id")
+    Optional<Integer> conciliacionIntentosEnBase(@Param("id") Long id);
+
+    /** fix2: marca sin referencia leída de la base (sesión 404 y sin intent guardado). */
+    @Query("SELECT p.conciliacionSinReferenciaEn FROM Pago p WHERE p.id = :id")
+    Optional<LocalDateTime> sinReferenciaEnBase(@Param("id") Long id);
+
     /**
-     * fix2: registra la intención explícita de cancelar (comprador o panel). La primera gana; idempotente. No cambia
-     * estados: la captura y la conciliación la respetan después (cobro → REEMBOLSO_PENDIENTE, nunca confirmar).
+     * fix2 (dedupe persistente de alertas): marca UNA vez que la sesión dio 404 sin intent guardado. Devuelve 1 solo la
+     * primera vez: quien llama alerta solo entonces y no en cada vuelta de los barridos.
+     */
+    @Modifying
+    @Query(value = "UPDATE hot_click_pago_tb SET conciliacion_sin_referencia_en = :ahora "
+        + "WHERE merchant_token = :token AND conciliacion_sin_referencia_en IS NULL", nativeQuery = true)
+    int marcarSinReferencia(@Param("token") String merchantToken, @Param("ahora") LocalDateTime ahora);
+
+    /**
+     * fix2: registra la intención explícita de cancelar (comprador o panel). La primera gana; idempotente; solo sobre
+     * un pago todavía PENDIENTE. No cambia estados: la captura y la conciliación la respetan después (cobro →
+     * REEMBOLSO_PENDIENTE, nunca confirmar).
      */
     @Modifying
     @Query(value = "UPDATE hot_click_pago_tb SET cancelacion_solicitada_en = :ahora, cancelacion_solicitada_origen = :origen "
-        + "WHERE id_pago = :id AND cancelacion_solicitada_en IS NULL", nativeQuery = true)
+        + "WHERE id_pago = :id AND cancelacion_solicitada_en IS NULL AND estado_pago = 'PENDIENTE'", nativeQuery = true)
     int registrarCancelacionSolicitada(@Param("id") Long id, @Param("ahora") LocalDateTime ahora,
                                        @Param("origen") String origen);
 

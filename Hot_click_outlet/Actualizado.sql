@@ -4655,6 +4655,7 @@ ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS cancelacion_solicitada_or
 ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS conciliacion_intentos INTEGER;
 ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS conciliacion_proxima_en TIMESTAMP;
 ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS conciliacion_resuelta_en TIMESTAMP;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS conciliacion_sin_referencia_en TIMESTAMP;
 CREATE INDEX IF NOT EXISTS idx_hot_click_pago_conciliacion_pendiente
     ON hot_click_pago_tb (conciliacion_proxima_en)
     WHERE conciliacion_resuelta_en IS NULL AND estado_pago IN ('FALLIDO', 'CANCELADO');

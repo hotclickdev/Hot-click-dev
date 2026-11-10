@@ -382,4 +382,25 @@ class PaymentExpirationCleanupCapturadoTest {
         verify(captura, org.mockito.Mockito.atLeastOnce()).guardarIntentId(SESION, INTENT);
         noCambia();
     }
+
+    @Test
+    @DisplayName("fix2 tormenta: vencido ONVO con próxima reconsulta futura → no se consulta a ONVO en esta pasada")
+    void agendadoFuturo_noConsulta() {
+        pago.setConciliacionProximaEn(LocalDateTime.now(Constants.ZONA_CR).plusMinutes(30));
+        service.ejecutar();
+        verify(onvo, never()).obtenerCheckoutSession(any());
+        noCambia();
+    }
+
+    @Test
+    @DisplayName("fix2 tormenta: vencido ONVO en duda (404 sin intent) → se agenda con backoff persistente")
+    void enDuda_seAgenda() {
+        sesion404(null);
+        OnvoPendientesReconsultaService reconsulta = org.mockito.Mockito.mock(OnvoPendientesReconsultaService.class);
+        ReflectionTestUtils.setField(service, "reconsulta", reconsulta);
+        when(pagoRepository.findById(20L)).thenReturn(Optional.of(pago));
+        service.ejecutar();
+        verify(reconsulta).agendarEnDuda(20L);
+        noCambia();
+    }
 }

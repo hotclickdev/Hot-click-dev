@@ -220,7 +220,8 @@ public class OnvoPaymentProvider implements PaymentProvider {
      * fix2: resultado del gate con el estado del intent leído (null si no se llegó a leer). La conciliación durable lo
      * usa para saber si el pago quedó resuelto sin cobro de forma definitiva (intent {@code canceled}).
      */
-    public record RevisionCobro(CobroIntent cobro, String estadoIntent) {
+    public record RevisionCobro(CobroIntent cobro, String estadoIntent, boolean sinReferencia, boolean sinReferenciaNueva) {
+        public RevisionCobro(CobroIntent cobro, String estadoIntent) { this(cobro, estadoIntent, false, false); }
         static RevisionCobro de(CobroIntent c) { return new RevisionCobro(c, null); }
     }
 
@@ -246,9 +247,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
             if (sesion == null || sesion.isEmpty()) {
                 // 404 (o id no consultable): solo se puede decidir con un intent conocido de antes.
                 if (guardado == null) {
-                    log.error("[ALERTA-PAGO] Sesión ONVO inexistente y sin payment intent conocido: no se cancela ni se libera "
-                        + "stock; revisión manual. sessionId={}", OnvoService.enmascarar(checkoutSessionId));
-                    return RevisionCobro.de(CobroIntent.EN_DUDA);
+                    return sinReferencia(checkoutSessionId);
                 }
                 intentId = guardado;
             } else {
@@ -292,6 +291,35 @@ public class OnvoPaymentProvider implements PaymentProvider {
             log.warn("[onvo] Reconsulta del intent falló: sessionId={} ({})", OnvoService.enmascarar(checkoutSessionId), e.getClass().getSimpleName());
             return RevisionCobro.de(CobroIntent.EN_DUDA);
         }
+    }
+
+    /**
+     * Sesión 404 sin intent guardado: EN_DUDA (nadie cancela ni libera). fix2 (tormenta de alertas): la marca es
+     * persistente y la alerta sale UNA vez por pago; si el pago sigue PENDIENTE (reserva tomada) va como [ALERTA-PAGO],
+     * si ya estaba cerrado (p. ej. históricos anteriores a V237) solo WARN y la conciliación deja un resumen por corrida.
+     */
+    private RevisionCobro sinReferencia(String checkoutSessionId) {
+        boolean nueva = false;
+        try {
+            nueva = onvoCapturaService != null && onvoCapturaService.marcarSinReferencia(checkoutSessionId);
+        } catch (RuntimeException e) {
+            log.warn("[onvo] No se guardó la marca sin referencia: sessionId={} ({})", OnvoService.enmascarar(checkoutSessionId),
+                e.getClass().getSimpleName());
+        }
+        if (nueva) {
+            boolean pendiente = pagoRepository != null && pagoRepository.findByMerchantToken(checkoutSessionId)
+                .map(p -> Constants.PAGO_PENDIENTE.equals(p.getEstadoPago())).orElse(false);
+            if (pendiente) {
+                log.error("[ALERTA-PAGO] Sesión ONVO inexistente y sin payment intent conocido: no se cancela ni se libera "
+                    + "stock; revisión manual. sessionId={}", OnvoService.enmascarar(checkoutSessionId));
+            } else {
+                log.warn("[onvo] Pago cerrado sin referencia en ONVO (sesión 404, sin intent guardado): sessionId={}",
+                    OnvoService.enmascarar(checkoutSessionId));
+            }
+        } else {
+            log.debug("[onvo] Sesión ONVO sin referencia (ya alertada): sessionId={}", OnvoService.enmascarar(checkoutSessionId));
+        }
+        return new RevisionCobro(CobroIntent.EN_DUDA, null, true, nueva);
     }
 
     /** Intent cobrado sin capturar: mismas verificaciones que la captura (pago ONVO local, monto/moneda/modo/id). */

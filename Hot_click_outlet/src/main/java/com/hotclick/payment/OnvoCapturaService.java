@@ -228,6 +228,16 @@ public class OnvoCapturaService {
         }
     }
 
+    /**
+     * fix2 (dedupe persistente): marca una sola vez que la sesión dio 404 sin intent guardado. true solo la primera vez.
+     * REQUIRED: se une a la transacción de quien llama o abre una corta (los barridos corren sin transacción).
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public boolean marcarSinReferencia(String checkoutSessionId) {
+        if (checkoutSessionId == null) return false;
+        return pagoRepository.marcarSinReferencia(checkoutSessionId, LocalDateTime.now(Constants.ZONA_CR)) > 0;
+    }
+
     WebhookEvent registrar(String token, String tipo, String resumen, String origen) {
         WebhookEvent evento = new WebhookEvent();
         evento.setMerchantToken(token);

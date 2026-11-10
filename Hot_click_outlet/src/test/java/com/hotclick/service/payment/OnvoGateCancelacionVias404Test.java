@@ -123,7 +123,7 @@ class OnvoGateCancelacionVias404Test {
             .isInstanceOf(CancelacionPendienteOnvoException.class)
             .hasMessageContaining("Registramos tu pedido de cancelación");
         verify(paymentFailureHandler, never()).marcarFallido(any(), any());
-        verify(pagoRepository).registrarCancelacionSolicitada(eq(41L), any(), eq("INVITADO"));
+        verify(pagoRepository, org.mockito.Mockito.atLeastOnce()).registrarCancelacionSolicitada(eq(41L), any(), eq("INVITADO"));
     }
 
     @Test
@@ -139,7 +139,7 @@ class OnvoGateCancelacionVias404Test {
         verify(captura, never()).capturarVerificado(anyString(), anyString(), anyString());
         verify(captura).registrarCobroSobreCancelacionExplicita(pago, "cancelacion");
         verify(pagoRepository).findByIdForUpdate(41L);
-        verify(pagoRepository).registrarCancelacionSolicitada(eq(41L), any(), eq("INVITADO"));
+        verify(pagoRepository, org.mockito.Mockito.atLeastOnce()).registrarCancelacionSolicitada(eq(41L), any(), eq("INVITADO"));
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
     }
 
@@ -198,7 +198,7 @@ class OnvoGateCancelacionVias404Test {
     void panel404SinIntent_noCancela() {
         assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelar(pedido))
             .isInstanceOf(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
-        verify(pagoRepository).registrarCancelacionSolicitada(eq(41L), any(), eq("PANEL"));
+        verify(pagoRepository, org.mockito.Mockito.atLeastOnce()).registrarCancelacionSolicitada(eq(41L), any(), eq("PANEL"));
     }
 
     @Test
@@ -213,7 +213,7 @@ class OnvoGateCancelacionVias404Test {
 
         verify(captura, never()).capturarVerificado(anyString(), anyString(), anyString());
         verify(captura).registrarCobroSobreCancelacionExplicita(pago, "cancelacion");
-        verify(pagoRepository).registrarCancelacionSolicitada(eq(41L), any(), eq("PANEL"));
+        verify(pagoRepository, org.mockito.Mockito.atLeastOnce()).registrarCancelacionSolicitada(eq(41L), any(), eq("PANEL"));
     }
 
     @Test
@@ -225,7 +225,7 @@ class OnvoGateCancelacionVias404Test {
 
         assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelar(pedido))
             .isInstanceOf(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
-        verify(pagoRepository).registrarCancelacionSolicitada(eq(41L), any(), eq("PANEL"));
+        verify(pagoRepository, org.mockito.Mockito.atLeastOnce()).registrarCancelacionSolicitada(eq(41L), any(), eq("PANEL"));
         verify(captura, never()).capturarVerificado(anyString(), anyString(), anyString());
     }
 
@@ -353,5 +353,52 @@ class OnvoGateCancelacionVias404Test {
             .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
         assertThat(c4.noRollbackFor()).containsExactly(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
         assertThat(c3.noRollbackFor()).containsExactly(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
+    }
+
+    @Test
+    @DisplayName("fix2 tormenta: 404 sin intent → marca persistente; solo la PRIMERA vez es nueva (una alerta por pago)")
+    void sinReferenciaDedupePersistente() {
+        when(captura.marcarSinReferencia(SESION)).thenReturn(true, false);
+
+        var primera = provider.revisarCobro(SESION, "respaldo", true);
+        var segunda = provider.revisarCobro(SESION, "respaldo", true);
+
+        assertThat(primera.cobro()).isEqualTo(CobroIntent.EN_DUDA);
+        assertThat(primera.sinReferencia()).isTrue();
+        assertThat(primera.sinReferenciaNueva()).isTrue();
+        assertThat(segunda.cobro()).isEqualTo(CobroIntent.EN_DUDA);
+        assertThat(segunda.sinReferencia()).isTrue();
+        assertThat(segunda.sinReferenciaNueva()).isFalse();
+        verify(captura, org.mockito.Mockito.times(2)).marcarSinReferencia(SESION);
+        verify(onvo, never()).obtenerPaymentIntent(any());
+    }
+
+    @Test
+    @DisplayName("fix2: si guardar la marca falla, igual EN_DUDA (fail-closed), sin cancelar ni liberar")
+    void sinReferenciaMarcaFalla() {
+        when(captura.marcarSinReferencia(SESION)).thenThrow(new org.springframework.dao.QueryTimeoutException("db"));
+        var r = provider.revisarCobro(SESION, "respaldo", true);
+        assertThat(r.cobro()).isEqualTo(CobroIntent.EN_DUDA);
+        assertThat(r.sinReferenciaNueva()).isFalse();
+    }
+
+    @Test
+    @DisplayName("fix2 orden de locks: el panel sin locks usa la intención en transacción propia antes de la red")
+    void panelSinLocksIntencionAntesDeRed() {
+        CancelacionIntencionService intencion = mock(CancelacionIntencionService.class);
+        when(intencion.registrar(any(), any())).thenReturn(true);
+        ReflectionTestUtils.setField(cancelacion, "cancelacionIntencionService", intencion);
+
+        assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelarSinLocks(pedido))
+            .isInstanceOf(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
+
+        var orden = org.mockito.Mockito.inOrder(intencion, onvo);
+        orden.verify(intencion).registrar(41L, "PANEL");
+        orden.verify(onvo).expirarCheckoutSessionTipado(SESION);
+        // Con lock ya tomado (camino de respaldo) NO se usa la transacción propia.
+        org.mockito.Mockito.clearInvocations(intencion);
+        assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelar(pedido))
+            .isInstanceOf(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
+        verify(intencion, never()).registrar(any(), any());
     }
 }

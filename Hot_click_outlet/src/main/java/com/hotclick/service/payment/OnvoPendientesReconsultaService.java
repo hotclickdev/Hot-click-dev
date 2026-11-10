@@ -56,6 +56,9 @@ public class OnvoPendientesReconsultaService {
     private int backoffMaxMinutos = 1440;
     /** fix2: a los N intentos sin resolver se deja UNA alerta para revisión manual (no se deja de reconsultar). */
     private int alertaIntentos = 30;
+    /** fix2 (tormenta de históricos): tope de cerrados por corrida, mitad nunca agendados y mitad reintentos vencidos. */
+    private int loteConciliacion = 10;
+    private final int loteMax;
 
     /** Conciliación de cerrados habilitada (tests y llamadas existentes). */
     public OnvoPendientesReconsultaService(PagoRepository pagoRepository, OnvoService onvoService,
@@ -91,6 +94,8 @@ public class OnvoPendientesReconsultaService {
         this.tx = new TransactionTemplate(txManager);
         this.lote = lote;
         this.antiguedadMinMinutos = antiguedadMinMinutos;
+        this.loteMax = loteMax;
+        this.loteConciliacion = Math.min(10, loteMax);
     }
 
     /** Resultado de una corrida (para logs y tests). */
@@ -100,9 +105,10 @@ public class OnvoPendientesReconsultaService {
         if (!onvoService.isPagosDisponibles()) {
             return new Resumen(0, 0, 0, 0);
         }
-        LocalDateTime limite = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(antiguedadMinMinutos);
+        LocalDateTime ahoraPend = LocalDateTime.now(Constants.ZONA_CR);
+        LocalDateTime limite = ahoraPend.minusMinutes(antiguedadMinMinutos);
         List<Pago> reclamados = tx.execute(s -> pagoRepository
-            .reclamarPendientesParaReconsulta(Constants.PROVEEDOR_ONVO, limite, PageRequest.of(0, lote)));
+            .reclamarPendientesParaReconsulta(Constants.PROVEEDOR_ONVO, limite, ahoraPend, PageRequest.of(0, lote)));
         List<Pago> pagos = reclamados == null ? List.of() : reclamados;
         int capturados = 0;
         int fallidos = 0;
@@ -111,6 +117,12 @@ public class OnvoPendientesReconsultaService {
             switch (revisar(pago)) {
                 case CAPTURADO -> capturados++;
                 case FALLIDO -> fallidos++;
+                case EN_DUDA -> {
+                    // fix2: en duda (404 sin referencia, en proceso, error) → backoff persistente; no ocupa el lote
+                    // de cada corrida ni repite consultas/alertas cada 2 min.
+                    sinCambio++;
+                    agendarEnDuda(pago.getId());
+                }
                 default -> sinCambio++;
             }
         }
@@ -136,20 +148,30 @@ public class OnvoPendientesReconsultaService {
             return new ResumenCerrados(0, 0);
         }
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        int cuotaNuevos = Math.max(1, loteConciliacion / 2);
+        int cuotaReintentos = Math.max(0, loteConciliacion - cuotaNuevos);
         // Reclamo corto con FOR UPDATE SKIP LOCKED; se agenda la próxima reconsulta antes de llamar a ONVO.
+        // fix2 (tormenta de históricos): cuota propia para los nunca agendados (de los más nuevos a los más viejos) y
+        // otra para los reintentos vencidos; un atraso histórico grande no desplaza a los recientes ni a los reintentos.
         List<Pago> reclamados = tx.execute(s -> {
-            List<Pago> filas = pagoRepository
-                .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, ahora, PageRequest.of(0, lote));
-            if (filas == null) return List.<Pago>of();
+            List<Pago> filas = new java.util.ArrayList<>();
+            List<Pago> reintentos = cuotaReintentos == 0 ? List.of() : pagoRepository
+                .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, ahora, PageRequest.of(0, cuotaReintentos));
+            List<Pago> nuevos = pagoRepository
+                .reclamarCerradosNuevos(Constants.PROVEEDOR_ONVO, PageRequest.of(0, cuotaNuevos));
+            if (reintentos != null) filas.addAll(reintentos);
+            if (nuevos != null) filas.addAll(nuevos);
             for (Pago p : filas) {
                 int intentos = (p.getConciliacionIntentos() == null ? 0 : p.getConciliacionIntentos()) + 1;
-                pagoRepository.agendarConciliacion(p.getId(), ahora, ahora.plusMinutes(esperaMinutos(intentos)));
+                long espera = p.getConciliacionSinReferenciaEn() != null ? backoffMaxMinutos : esperaMinutos(intentos);
+                pagoRepository.agendarConciliacion(p.getId(), ahora, ahora.plusMinutes(espera));
                 p.setConciliacionIntentos(intentos);
             }
             return filas;
         });
         List<Pago> pagos = reclamados == null ? List.of() : reclamados;
         int reembolso = 0;
+        int sinReferenciaNuevos = 0;
         for (Pago pago : pagos) {
             try {
                 OnvoPaymentProvider.Verificacion v = onvoPaymentProvider.procesarPagoVerificado(pago.getMerchantToken(), ORIGEN);
@@ -165,6 +187,11 @@ public class OnvoPendientesReconsultaService {
                         // Único cierre definitivo sin cobro: ONVO no reutiliza un intent canceled.
                         tx.executeWithoutResult(s -> pagoRepository.marcarConciliacionResuelta(pago.getId(), LocalDateTime.now(Constants.ZONA_CR)));
                         continue;
+                    } else if (r != null && r.sinReferencia()) {
+                        // Sin referencia (404 sin intent): no tiene sentido reintentar seguido; tope directo.
+                        if (r.sinReferenciaNueva()) sinReferenciaNuevos++;
+                        tx.executeWithoutResult(s -> pagoRepository.agendarConciliacion(pago.getId(), ahora,
+                            ahora.plusMinutes(backoffMaxMinutos)));
                     }
                 }
                 if (v == OnvoPaymentProvider.Verificacion.COBRADO_SOBRE_CANCELADO) {
@@ -179,10 +206,42 @@ public class OnvoPendientesReconsultaService {
                 alertarSiCorresponde(pago);
             }
         }
+        if (sinReferenciaNuevos > 0) {
+            // Una sola alerta por corrida (no una por pago): típico del primer barrido de históricos sin intent.
+            log.error("[ALERTA-PAGO] Conciliación ONVO: {} pago(s) cerrado(s) sin referencia nuevos (sesión 404 sin intent "
+                + "guardado); quedan con reconsulta diaria y revisión manual en el panel de ONVO", sinReferenciaNuevos);
+        }
         if (reembolso > 0) {
             log.info("[onvo] Respaldo cerrados: revisados={} reembolsoPendiente={}", pagos.size(), reembolso);
         }
         return new ResumenCerrados(pagos.size(), reembolso);
+    }
+
+    /**
+     * fix2: reagenda un pago en duda (pendiente o vencido) con backoff persistente. Sin referencia → directo al tope.
+     * Transacción corta propia; nunca se llama con un lock de pedido tomado.
+     */
+    public void agendarEnDuda(Long pagoId) {
+        if (pagoId == null) return;
+        try {
+            tx.executeWithoutResult(s -> {
+                int intentos = pagoRepository.conciliacionIntentosEnBase(pagoId).orElse(0) + 1;
+                boolean sinRef = pagoRepository.sinReferenciaEnBase(pagoId).isPresent();
+                LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+                long espera = sinRef ? backoffMaxMinutos : esperaMinutos(intentos);
+                pagoRepository.agendarConciliacion(pagoId, ahora, ahora.plusMinutes(espera));
+            });
+        } catch (RuntimeException e) {
+            log.warn("[onvo] No se pudo agendar la reconsulta del pago id={} ({})", pagoId, e.getClass().getSimpleName());
+        }
+    }
+
+    @Autowired(required = false)
+    void setLoteConciliacion(@Value("${hotclick.pagos.onvo.respaldo.conciliacion-lote:10}") int loteConciliacion) {
+        if (loteConciliacion < 1 || loteConciliacion > loteMax) {
+            throw new IllegalStateException("hotclick.pagos.onvo.respaldo.conciliacion-lote debe estar entre 1 y lote-max");
+        }
+        this.loteConciliacion = loteConciliacion;
     }
 
     /** Minutos hasta la próxima reconsulta: base * 2^(intentos-1), con tope. Nunca 0 ni negativo. */
@@ -212,7 +271,7 @@ public class OnvoPendientesReconsultaService {
         this.alertaIntentos = alerta;
     }
 
-    private enum Efecto { CAPTURADO, FALLIDO, NADA }
+    private enum Efecto { CAPTURADO, FALLIDO, EN_DUDA, NADA }
 
     private Efecto revisar(Pago pago) {
         String sesion = pago.getMerchantToken();
@@ -229,19 +288,24 @@ public class OnvoPendientesReconsultaService {
                 // fix2: con la sesión abierta el rechazo igual se evalúa: cerrarSiRechazado expira y vuelve a exigir
                 // SIN_COBRO antes de liberar.
                 if (c != OnvoPaymentProvider.CobroIntent.SIN_COBRO
-                        && c != OnvoPaymentProvider.CobroIntent.SIN_COBRO_SESION_ABIERTA) return Efecto.NADA;
+                        && c != OnvoPaymentProvider.CobroIntent.SIN_COBRO_SESION_ABIERTA) {
+                    return (c == null || c == OnvoPaymentProvider.CobroIntent.EN_DUDA
+                        || c == OnvoPaymentProvider.CobroIntent.DATOS_DISTINTOS) ? Efecto.EN_DUDA : Efecto.NADA;
+                }
             }
             if (v == OnvoPaymentProvider.Verificacion.NO_PAGADO
                     && onvoRechazoService.cerrarSiRechazado(pago.getId(), sesion)) {
                 return Efecto.FALLIDO;
             }
+            if (v == OnvoPaymentProvider.Verificacion.EN_PROCESO || v == OnvoPaymentProvider.Verificacion.DATOS_DISTINTOS) {
+                return Efecto.EN_DUDA;
+            }
             return Efecto.NADA;
         } catch (RuntimeException e) {
-            // Fail-closed: ONVO caído, timeout o respuesta rara → el pago queda como estaba.
+            // Fail-closed: ONVO caído, timeout o respuesta rara → el pago queda como estaba (y se espacia).
             log.warn("[onvo] Respaldo webhook: no se pudo reconsultar pago id={} ({})", pago.getId(),
                 e.getClass().getSimpleName());
-            return Efecto.NADA;
+            return Efecto.EN_DUDA;
         }
     }
-
 }

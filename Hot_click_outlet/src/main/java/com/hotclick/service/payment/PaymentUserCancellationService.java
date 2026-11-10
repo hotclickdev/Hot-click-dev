@@ -53,7 +53,8 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
         }
 
-        expirarSesionOnvo(pago, ORIGEN_USUARIO);
+        // fix2: comprador sin locks tomados → intención confirmada en su propia transacción antes de la red.
+        expirarSesionOnvo(pago, ORIGEN_USUARIO, true);
         cerrarIntentSinpeOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado por el usuario", numeroPedido);
@@ -79,7 +80,7 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
         }
 
-        expirarSesionOnvo(pago, ORIGEN_INVITADO);
+        expirarSesionOnvo(pago, ORIGEN_INVITADO, true);
         cerrarIntentSinpeOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado (invitado)", numeroPedido);
@@ -92,15 +93,22 @@ public class PaymentUserCancellationService {
      * así nunca queda un pedido cancelado con un link de pago que todavía cobra. Sin llave o con el cliente
      * deshabilitado también se rechaza (409); solo el modo simulado explícito (isMockMode) deja pasar.
      */
-    private void expirarSesionOnvo(Pago pago, String origen) {
+    /**
+     * @param sinLocks true si la transacción de quien llama todavía no bloqueó pedido ni pago: la intención se confirma
+     *                 en su propia transacción ({@link CancelacionIntencionService}) ANTES de expirar/consultar ONVO.
+     *                 false (lock de pedido ya tomado): misma intención, pero dentro de la transacción de quien llama.
+     * @return true si ONVO ya había cobrado y la cancelación quedó con el pago en REEMBOLSO_PENDIENTE (pedido ya
+     *         cancelado por la captura).
+     */
+    private boolean expirarSesionOnvo(Pago pago, String origen, boolean sinLocks) {
         String sesion = pago.getMerchantToken();
         if (!Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor()) || sesion == null || sesion.isBlank()) {
-            return;
+            return false;
         }
         if (onvoService.isMockMode()) {
             // Modo simulado explícito de OnvoService (perfil dev/test sin llave): no hay sesión real que expirar.
             log.info("[onvo] Modo simulado: cancelación sin expirar en ONVO, pago id={}", pago.getId());
-            return;
+            return false;
         }
         if (!onvoService.isPagosDisponibles()) {
             // Sin llave o cliente deshabilitado no podemos confirmar que el link dejó de cobrar: fail-closed.
@@ -108,6 +116,8 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException(
                 "No pudimos cerrar el pago en ONVO en este momento. Intentá cancelar de nuevo en unos minutos.");
         }
+        // fix2 (intención antes de red): desde acá hay red; la intención ya tiene que estar guardada.
+        boolean intencion = registrarIntencionAntesDeRed(pago, origen, sinLocks);
         boolean expirada;
         try {
             expirada = onvoPaymentProvider.expirarSesionParaCancelar(sesion);
@@ -117,6 +127,11 @@ public class PaymentUserCancellationService {
             expirada = false;
         }
         if (!expirada) {
+            if (intencion) {
+                // La intención quedó: un cobro posterior no confirma la venta (va a reembolso). Mensaje veraz.
+                log.warn("[onvo] Cancelación registrada sin cerrar: ONVO no confirmó la expiración del pago id={}", pago.getId());
+                throw new CancelacionPendienteOnvoException(MSG_CANCELACION_REGISTRADA);
+            }
             throw new IllegalStateException(
                 "No pudimos cerrar el pago en ONVO. Si ya pagaste, el pedido se confirma en unos minutos; "
                     + "si no, intentá cancelar de nuevo.");
@@ -133,8 +148,12 @@ public class PaymentUserCancellationService {
                 if (pagoCobrado(bloqueado.getEstadoPago()) || enReembolso(bloqueado.getEstadoPago())) {
                     throw ventaYaConfirmada(bloqueado);
                 }
+                return false;
             }
-            case COBRADO_SIN_CAPTURAR -> cancelarConCobro(pago, origen);
+            case COBRADO_SIN_CAPTURAR -> {
+                cancelarConCobro(pago, origen);
+                return true;
+            }
             case CONFIRMADO, DUPLICADO, REEMBOLSO_PENDIENTE -> throw ventaYaConfirmada(pago);
             default -> {
                 // EN_DUDA, DATOS_DISTINTOS, SIN_COBRO_SESION_ABIERTA: no se cancela ahora, pero la intención explícita
@@ -148,6 +167,28 @@ public class PaymentUserCancellationService {
                     pago.getId(), cobro);
                 throw new CancelacionPendienteOnvoException(MSG_CANCELACION_REGISTRADA);
             }
+        }
+    }
+
+    /**
+     * Guarda la intención antes de la primera llamada de red. Devuelve true si la intención quedó en la base (nueva o
+     * previa). Sin bean (tests unitarios) o con locks tomados: UPDATE dentro de la transacción de quien llama, que no
+     * se revierte por las excepciones de cancelación pendiente (noRollbackFor).
+     */
+    private boolean registrarIntencionAntesDeRed(Pago pago, String origen, boolean sinLocks) {
+        if (pago.getId() == null) return false;
+        try {
+            if (sinLocks && cancelacionIntencionService != null) {
+                return cancelacionIntencionService.registrar(pago.getId(), origen);
+            }
+            pagoRepository.registrarCancelacionSolicitada(pago.getId(), LocalDateTime.now(Constants.ZONA_CR), origen);
+            return pagoRepository.cancelacionSolicitadaEnBase(pago.getId()).isPresent();
+        } catch (RuntimeException e) {
+            // Sin intención durable no se sigue: cancelar sin ella podría confirmar un cobro tardío (fail-closed).
+            log.warn("[onvo] No se pudo registrar la intención de cancelar el pago id={} ({})", pago.getId(),
+                e.getClass().getSimpleName());
+            throw new IllegalStateException(
+                "No pudimos registrar la cancelación en este momento. Intentá cancelar de nuevo en unos minutos.");
         }
     }
 
@@ -166,6 +207,8 @@ public class PaymentUserCancellationService {
     private jakarta.persistence.EntityManager entityManager;
     @Lazy @Autowired(required = false)
     private com.hotclick.payment.OnvoCapturaService onvoCapturaService;
+    @Autowired(required = false)
+    private CancelacionIntencionService cancelacionIntencionService;
 
     /**
      * fix2: cobro de ONVO que llega a una cancelación explícita ANTES de que se confirme la venta. En la transacción
@@ -249,16 +292,34 @@ public class PaymentUserCancellationService {
      * y el pedido no se cancela.
      */
     public void cerrarPagoOnvoAntesDeCancelar(Pedido pedido) {
+        cerrarPagoPanel(pedido, false);
+    }
+
+    /** Resultado del cierre del pago desde el panel (fase sin locks de {@code PedidoService.cambiarEstado}). */
+    public enum CierrePanel { SIN_PAGO, CERRADO, CANCELADO_CON_COBRO }
+
+    /**
+     * fix2 (orden de locks del panel): misma lógica que {@link #cerrarPagoOnvoAntesDeCancelar}, pero llamada ANTES de
+     * bloquear el pedido. La intención se confirma en su propia transacción antes de la red, la red corre sin locks y
+     * después se bloquea el PAGO (y, si hubo cobro, los pedidos dentro de la captura): orden pago → pedido, el mismo
+     * del webhook/captura. {@code PedidoService} bloquea el pedido recién después.
+     */
+    public CierrePanel cerrarPagoOnvoAntesDeCancelarSinLocks(Pedido pedido) {
+        return cerrarPagoPanel(pedido, true);
+    }
+
+    private CierrePanel cerrarPagoPanel(Pedido pedido, boolean sinLocks) {
         Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
-        if (pago == null) return;
+        if (pago == null) return CierrePanel.SIN_PAGO;
         if (pagoCobrado(pago.getEstadoPago())) {
             log.warn("[pago] Cancelación desde el panel rechazada: el pago id={} ya está cobrado ({})",
                 pago.getId(), pago.getEstadoPago());
             throw new com.hotclick.exception.CancelacionPagoNoCerradaException(MSG_PAGO_COBRADO);
         }
         try {
-            expirarSesionOnvo(pago, ORIGEN_PANEL);
+            boolean conCobro = expirarSesionOnvo(pago, ORIGEN_PANEL, sinLocks);
             cerrarIntentSinpeOnvo(pago);
+            return conCobro ? CierrePanel.CANCELADO_CON_COBRO : CierrePanel.CERRADO;
         } catch (CancelacionPendienteOnvoException e) {
             // fix2: la intención quedó guardada en el pago; PedidoService no revierte por esta excepción.
             throw new com.hotclick.exception.CancelacionSolicitadaRegistradaException(

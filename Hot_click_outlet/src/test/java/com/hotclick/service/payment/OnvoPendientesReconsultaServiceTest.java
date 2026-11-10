@@ -57,15 +57,15 @@ class OnvoPendientesReconsultaServiceTest {
     @Test
     @DisplayName("usa el tope de lote y la antigüedad mínima configurados, y reclama con lock (FOR UPDATE SKIP LOCKED)")
     void loteYAntiguedad() throws Exception {
-        when(repo.reclamarPendientesParaReconsulta(any(), any(), any())).thenReturn(List.of());
+        when(repo.reclamarPendientesParaReconsulta(any(), any(), any(), any())).thenReturn(List.of());
         LocalDateTime antes = LocalDateTime.now(Constants.ZONA_CR).minusMinutes(7);
         servicio(3, 7).ejecutar();
         ArgumentCaptor<Pageable> pag = ArgumentCaptor.forClass(Pageable.class);
         ArgumentCaptor<LocalDateTime> lim = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(repo).reclamarPendientesParaReconsulta(eq(Constants.PROVEEDOR_ONVO), lim.capture(), pag.capture());
+        verify(repo).reclamarPendientesParaReconsulta(eq(Constants.PROVEEDOR_ONVO), lim.capture(), any(), pag.capture());
         assertThat(pag.getValue().getPageSize()).isEqualTo(3);
         assertThat(lim.getValue()).isBetween(antes.minusSeconds(5), antes.plusSeconds(5));
-        var m = PagoRepository.class.getMethod("reclamarPendientesParaReconsulta", String.class, LocalDateTime.class, Pageable.class);
+        var m = PagoRepository.class.getMethod("reclamarPendientesParaReconsulta", String.class, LocalDateTime.class, LocalDateTime.class, Pageable.class);
         assertThat(m.getAnnotation(org.springframework.data.jpa.repository.Lock.class).value())
             .isEqualTo(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
         assertThat(m.getAnnotation(org.springframework.data.jpa.repository.QueryHints.class).value()[0].value()).isEqualTo("-2");
@@ -77,7 +77,7 @@ class OnvoPendientesReconsultaServiceTest {
     @Test
     @DisplayName("lote mixto: cobrado → captura verificada; rechazado → FALLIDO; en proceso → nada")
     void loteMixto() {
-        when(repo.reclamarPendientesParaReconsulta(any(), any(), any())).thenReturn(List.of(pago(1), pago(2), pago(3)));
+        when(repo.reclamarPendientesParaReconsulta(any(), any(), any(), any())).thenReturn(List.of(pago(1), pago(2), pago(3)));
         when(provider.procesarPagoVerificado("cs_resp_1", "respaldo")).thenReturn(Verificacion.OK);
         when(provider.procesarPagoVerificado("cs_resp_2", "respaldo")).thenReturn(Verificacion.NO_PAGADO);
         when(provider.procesarPagoVerificado("cs_resp_3", "respaldo")).thenReturn(Verificacion.EN_PROCESO);
@@ -92,7 +92,7 @@ class OnvoPendientesReconsultaServiceTest {
     @DisplayName("segunda corrida no repite efectos: lo ya cerrado no vuelve al lote y el cierre es idempotente")
     void segundaCorridaSinEfectos() {
         List<Pago> pendientes = new ArrayList<>(List.of(pago(2)));
-        when(repo.reclamarPendientesParaReconsulta(any(), any(), any())).thenAnswer(i -> List.copyOf(pendientes));
+        when(repo.reclamarPendientesParaReconsulta(any(), any(), any(), any())).thenAnswer(i -> List.copyOf(pendientes));
         when(provider.procesarPagoVerificado(anyString(), anyString())).thenReturn(Verificacion.NO_PAGADO);
         when(rechazo.cerrarSiRechazado(2L, "cs_resp_2")).thenAnswer(i -> { pendientes.clear(); return true; });
         assertThat(servicio(20, 5).ejecutar().fallidos()).isEqualTo(1);
@@ -104,7 +104,7 @@ class OnvoPendientesReconsultaServiceTest {
     @Test
     @DisplayName("fail-closed: ONVO falla en un pago → ese pago no cambia y el resto del lote sigue")
     void failClosed() {
-        when(repo.reclamarPendientesParaReconsulta(any(), any(), any())).thenReturn(List.of(pago(1), pago(2)));
+        when(repo.reclamarPendientesParaReconsulta(any(), any(), any(), any())).thenReturn(List.of(pago(1), pago(2)));
         when(provider.procesarPagoVerificado("cs_resp_1", "respaldo"))
             .thenThrow(new org.springframework.web.client.ResourceAccessException("timeout"));
         when(provider.procesarPagoVerificado("cs_resp_2", "respaldo")).thenReturn(Verificacion.NO_PAGADO);
@@ -129,5 +129,41 @@ class OnvoPendientesReconsultaServiceTest {
         org.assertj.core.api.Assertions.assertThatCode(() ->
                 new OnvoPendientesReconsultaService(repo, onvo, provider, rechazo, tm, 200, 5, 200))
             .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("fix2 tormenta: pendiente en duda → backoff persistente leído de la base; sin referencia → tope")
+    void enDudaReagendaConBackoff() throws Exception {
+        when(repo.reclamarPendientesParaReconsulta(any(), any(), any(), any())).thenReturn(List.of(pago(3), pago(4)));
+        when(provider.procesarPagoVerificado(anyString(), anyString())).thenReturn(Verificacion.EN_PROCESO);
+        when(repo.conciliacionIntentosEnBase(3L)).thenReturn(java.util.Optional.of(2));
+        when(repo.sinReferenciaEnBase(4L)).thenReturn(java.util.Optional.of(LocalDateTime.now(Constants.ZONA_CR)));
+        LocalDateTime antes = LocalDateTime.now(Constants.ZONA_CR);
+
+        var r = servicio(20, 5).ejecutar();
+
+        assertThat(r).isEqualTo(new OnvoPendientesReconsultaService.Resumen(2, 0, 0, 2));
+        ArgumentCaptor<LocalDateTime> proxima = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(repo).agendarConciliacion(eq(3L), any(), proxima.capture());
+        // 3.er intento: 2 * 2^2 = 8 min.
+        assertThat(proxima.getValue()).isBetween(antes.plusMinutes(8).minusSeconds(5), antes.plusMinutes(8).plusSeconds(5));
+        verify(repo).agendarConciliacion(eq(4L), any(), proxima.capture());
+        assertThat(proxima.getValue()).isBetween(antes.plusMinutes(1440).minusSeconds(5), antes.plusMinutes(1440).plusSeconds(5));
+        // Lo ya agendado no vuelve a salir hasta que le toca (persistente, sobrevive reinicios).
+        var m = PagoRepository.class.getMethod("reclamarPendientesParaReconsulta", String.class, LocalDateTime.class,
+            LocalDateTime.class, Pageable.class);
+        assertThat(m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value())
+            .contains("(p.conciliacionProximaEn IS NULL OR p.conciliacionProximaEn <= :ahora)");
+    }
+
+    @Test
+    @DisplayName("fix2: capturado o rechazado no se reagenda (solo los en duda)")
+    void resueltosNoSeReagendan() {
+        when(repo.reclamarPendientesParaReconsulta(any(), any(), any(), any())).thenReturn(List.of(pago(1), pago(2)));
+        when(provider.procesarPagoVerificado("cs_resp_1", "respaldo")).thenReturn(Verificacion.OK);
+        when(provider.procesarPagoVerificado("cs_resp_2", "respaldo")).thenReturn(Verificacion.NO_PAGADO);
+        when(rechazo.cerrarSiRechazado(2L, "cs_resp_2")).thenReturn(true);
+        servicio(20, 5).ejecutar();
+        verify(repo, never()).agendarConciliacion(any(), any(), any());
     }
 }

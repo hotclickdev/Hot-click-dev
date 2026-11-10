@@ -30,6 +30,9 @@ public class PaymentExpirationCleanupService {
     @Autowired private ReservaAntiBotService      reservaAntiBot;
     @Autowired private ReservaSospechosaLiberador reservaSospechosaLiberador;
     @Autowired private OnvoRechazoService         onvoRechazoService;
+    /** fix2 (tormenta): reagenda con backoff persistente el pago ONVO que no se pudo cancelar (en duda). */
+    @Autowired(required = false) @org.springframework.context.annotation.Lazy
+    private OnvoPendientesReconsultaService       reconsulta;
 
     /** Minutos sin pagar tras los que un pago pendiente se reconsulta y, si corresponde, se cancela. */
     @Value("${hotclick.pagos.onvo.vencimiento-minutos:30}")
@@ -64,8 +67,21 @@ public class PaymentExpirationCleanupService {
         for (Pago pago : expirados) {
             // La reconsulta a ONVO corre SIN transacción abierta acá: si confirma, su captura toma los
             // locks de producto en su propia transacción y no espera a nadie nuestro.
-            if (Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor()) && !onvoPermiteCancelar(pago)) {
-                continue;
+            if (Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) {
+                // fix2: un vencido ONVO en duda (404 sin referencia, intent en proceso, ONVO caído) no se reconsulta en
+                // cada pasada de 5 min: espera su próxima reconsulta agendada (persistente, sobrevive reinicios).
+                LocalDateTime proxima = pago.getConciliacionProximaEn();
+                if (proxima != null && proxima.isAfter(LocalDateTime.now(Constants.ZONA_CR))) {
+                    continue;
+                }
+                if (!onvoPermiteCancelar(pago)) {
+                    // Solo si sigue PENDIENTE (confirmado o rechazado ya salió del barrido por su estado).
+                    if (reconsulta != null && pagoRepository.findById(pago.getId())
+                            .map(p -> Constants.PAGO_PENDIENTE.equals(p.getEstadoPago())).orElse(false)) {
+                        reconsulta.agendarEnDuda(pago.getId());
+                    }
+                    continue;
+                }
             }
 
             try {

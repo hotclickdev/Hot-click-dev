@@ -177,6 +177,12 @@ public class Pago extends BaseEntity {
     @Column(name = "conciliacion_resuelta_en", updatable = false)
     private LocalDateTime conciliacionResueltaEn;
 
+    /** V238: la sesión dio 404 y no había intent guardado (sin referencia). Dedupe persistente de la alerta. */
+    @Column(name = "conciliacion_sin_referencia_en", updatable = false)
+    private LocalDateTime conciliacionSinReferenciaEn;
+
+    public LocalDateTime getConciliacionSinReferenciaEn() { return conciliacionSinReferenciaEn; }
+    public void setConciliacionSinReferenciaEn(LocalDateTime v) { this.conciliacionSinReferenciaEn = v; }
     public LocalDateTime getCancelacionSolicitadaEn() { return cancelacionSolicitadaEn; }
     public void setCancelacionSolicitadaEn(LocalDateTime v) { this.cancelacionSolicitadaEn = v; }
     public String getCancelacionSolicitadaOrigen() { return cancelacionSolicitadaOrigen; }
