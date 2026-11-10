@@ -14,6 +14,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.*;
 
 /**
@@ -51,7 +53,8 @@ class CancelarSuscripcionHeredadaTest {
 
         servicio(repo, stripe, plan).cancelar(5L, true);
 
-        verify(stripe).cancelarSuscripcion(null, true); // sin id externo: no-op del cliente Stripe
+        // Sin id externo no se llama a ningún cliente (antes se llamaba al no-op de Stripe con null: mismo efecto).
+        verify(stripe, never()).cancelarSuscripcion(any(), anyBoolean());
         assertThat(sub.getEstado()).isEqualTo("CANCELADO");
         verify(plan).degradarAPlanBase(e);
         verify(repo).save(sub);

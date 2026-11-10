@@ -1057,6 +1057,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (vigente.isEmpty() && pendiente.isEmpty()) {
             throw new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId);
         }
+        // MEDIO Seguridad (Opción A): un cobro posterior nunca reactiva una suscripción ya cancelada localmente.
+        if (ignorarPorCanceladaLocal(vigente.isPresent() ? vigente.get() : pendiente.get(), onvoSubId, "cobro")) return;
         // MEDIO-3: webhook y reconciliación comparten este camino. Bajo el lock de fila: si esa factura ya activó
         // (COBRO_OK en el ledger), la segunda llamada no hace nada.
         if (ledgerWriter != null && ledgerWriter.yaRegistrado(referenciaLedger, BillingLedger.TIPO_COBRO_OK)) {
@@ -1186,6 +1188,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (ignorarPagoDeSuscripcionVieja(onvoSubId)) return false;
         Suscripcion sub = suscripcionRepo.findByOnvoSubscriptionIdForUpdate(onvoSubId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Suscripción ONVO", onvoSubId));
+        if (ignorarPorCanceladaLocal(sub, onvoSubId, "trial")) return false;
         if (ledgerWriter != null && ledgerWriter.yaRegistrado(onvoSubId, BillingLedger.TIPO_PLAN_ACTIVADO)) {
             log.info("[billing-onvo] Trial ONVO ya activado sub={}: sin cambios", enmascarar(onvoSubId));
             return false;
@@ -1198,7 +1201,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (sub.getOnvoSubNuevaPendiente() == null) sub.setPlanPendiente(null);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
-        sub.setCancelarAlVencer(false);
+        // MEDIO Seguridad (Opción A): la activación del trial no deshace una cancelación al vencer ya confirmada en ONVO.
+        if (Boolean.TRUE.equals(sub.getCancelarAlVencer())) {
+            log.warn("[billing-onvo] trial con método sobre una suscripción con cancelación al vencer: se conserva"
+                + " sub={}", enmascarar(onvoSubId));
+        } else {
+            sub.setCancelarAlVencer(false);
+        }
         sub.setTrialEnd(finTrial);
         sub.setFechaFin(finTrial);
         suscripcionRepo.save(sub);
@@ -1213,6 +1222,22 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         anotarLedger(empresa, sub, BillingLedger.TIPO_PLAN_ACTIVADO, onvoSubId, "Plan activo en trial ONVO con método de pago");
         log.info("[billing-onvo] Trial con método activó empresa={} plan={} primerCobro={}",
             empresa.getId(), plan.getNombre(), finTrial);
+        return true;
+    }
+
+    /**
+     * MEDIO Seguridad (Opción A): la fila ya está CANCELADO localmente (el negocio canceló y ONVO lo confirmó). Un
+     * cobro o una activación de trial que llegue después NO la reactiva: se ignora (sin ledger ni cambio de plan), se
+     * marca para revisión manual (posible devolución) y se alerta sin PII. Corre bajo el lock de fila del llamador.
+     */
+    private boolean ignorarPorCanceladaLocal(Suscripcion sub, String onvoSubId, String evento) {
+        if (sub == null || !"CANCELADO".equalsIgnoreCase(sub.getEstado())) return false;
+        if (sub.getOnvoRevisionManualDesde() == null) {
+            sub.setOnvoRevisionManualDesde(java.time.LocalDateTime.now(Constants.ZONA_CR));
+            suscripcionRepo.save(sub);
+        }
+        log.error("[ALERTA-PAGO] [onvo] {} de una suscripción ya cancelada localmente: NO se reactiva; revisión manual"
+            + " (posible devolución) sub={}", evento, enmascarar(onvoSubId));
         return true;
     }
 

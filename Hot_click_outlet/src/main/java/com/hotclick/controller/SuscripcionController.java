@@ -161,9 +161,18 @@ public class SuscripcionController {
         if (empresaId == null) return ResponseEntity.status(401).build();
         if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-012
         try {
-            suscripcionService.cancelar(empresaId, inmediata);
+            boolean canceladaYa = suscripcionService.cancelar(empresaId, inmediata);
             return ResponseEntity.ok(Map.of("status", "ok",
-                "mensaje", inmediata ? "Suscripción cancelada" : "Se cancelará al vencer el período"));
+                "mensaje", canceladaYa ? "Suscripción cancelada" : "Se cancelará al vencer el período"));
+        } catch (com.hotclick.exception.CancelacionOnvoNoDisponibleException e) {
+            // MEDIO Seguridad (Opción A): ONVO no confirmó la cancelación; no se cambió nada local.
+            return ResponseEntity.status(503).body(Map.of(
+                "error", com.hotclick.exception.CancelacionOnvoNoDisponibleException.MENSAJE,
+                "codigo", com.hotclick.exception.CancelacionOnvoNoDisponibleException.CODIGO));
+        } catch (com.hotclick.exception.CancelacionConSubidaPendienteException e) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.CancelacionConSubidaPendienteException.MENSAJE,
+                "codigo", com.hotclick.exception.CancelacionConSubidaPendienteException.CODIGO));
         } catch (com.hotclick.exception.CambioPlanRequiereSolicitudException e) {
             return ResponseEntity.status(422).body(Map.of(
                 "error", com.hotclick.exception.CambioPlanRequiereSolicitudException.MENSAJE,
