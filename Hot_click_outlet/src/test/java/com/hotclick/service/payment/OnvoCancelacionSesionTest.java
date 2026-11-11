@@ -274,21 +274,142 @@ class OnvoCancelacionSesionTest {
         verify(pagoRepository).agendarConciliacion(eq(300L), any(), any());
     }
 
-    @Test
-    @DisplayName("fix2 backlog: alerta una vez por ventana (por instancia) al superar el umbral; config validada")
-    void backlogAlertaUnaVez() {
+    private OnvoPendientesReconsultaService respaldoConMocks() {
         OnvoService onvo = mock(OnvoService.class);
         when(onvo.isPagosDisponibles()).thenReturn(true);
         PlatformTransactionManager tm = mock(PlatformTransactionManager.class);
         when(tm.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
-        var srv = respaldo(onvo, tm, true);
+        return respaldo(onvo, tm, true);
+    }
+
+    @Test
+    @DisplayName("fix2 backlog: limitador ShedLock (nombre exclusivo, ventana = lockAtMostFor = lockAtLeastFor); sin ventana en memoria")
+    void backlogAlertaConLimitador() {
+        var srv = respaldoConMocks();
         srv.setFairness(72, 100, 60);
+        net.javacrumbs.shedlock.core.LockProvider lp = mock(net.javacrumbs.shedlock.core.LockProvider.class);
+        net.javacrumbs.shedlock.core.SimpleLock tomado = mock(net.javacrumbs.shedlock.core.SimpleLock.class);
+        when(lp.lock(any())).thenReturn(java.util.Optional.of(tomado), java.util.Optional.empty());
+        srv.setLockProvider(lp);
         when(pagoRepository.contarBacklogConciliacion(any(), any())).thenReturn(5000L);
-        srv.revisarCerrados();
-        srv.revisarCerrados();
-        verify(pagoRepository, times(2)).contarBacklogConciliacion(eq(Constants.PROVEEDOR_ONVO), any());
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+
+        assertThat(srv.alertarBacklog(ahora)).isTrue();
+        assertThat(srv.alertarBacklog(ahora)).as("otra instancia/corrida con la ventana tomada").isFalse();
+
+        ArgumentCaptor<net.javacrumbs.shedlock.core.LockConfiguration> cfg =
+            ArgumentCaptor.forClass(net.javacrumbs.shedlock.core.LockConfiguration.class);
+        verify(lp, times(2)).lock(cfg.capture());
+        assertThat(cfg.getValue().getName()).isEqualTo("alerta_backlog_conciliacion_onvo");
+        assertThat(cfg.getValue().getLockAtMostFor()).isEqualTo(java.time.Duration.ofMinutes(60));
+        assertThat(cfg.getValue().getLockAtLeastFor()).isEqualTo(java.time.Duration.ofMinutes(60));
+        verify(tomado).unlock();
+        // Bajo el umbral no se toca el limitador.
+        when(pagoRepository.contarBacklogConciliacion(any(), any())).thenReturn(99L);
+        assertThat(srv.alertarBacklog(ahora)).isFalse();
+        verify(lp, times(2)).lock(any());
+        assertThat(java.util.Arrays.stream(OnvoPendientesReconsultaService.class.getDeclaredFields())
+            .map(java.lang.reflect.Field::getName)).doesNotContain("ultimaAlertaBacklog");
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setFairness(0, 1, 1));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setFairness(1, 0, 1));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setFairness(1, 1, 0));
+    }
+
+    @Test
+    @DisplayName("fix2 backlog: sin limitador no hay alerta (sin fallback en memoria), aunque se llame muchas veces")
+    void backlogSinLimitadorNoAlerta() {
+        var srv = respaldoConMocks();
+        when(pagoRepository.contarBacklogConciliacion(any(), any())).thenReturn(5000L);
+        for (int i = 0; i < 3; i++) {
+            assertThat(srv.alertarBacklog(LocalDateTime.now(Constants.ZONA_CR))).isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("fix2 backlog: dentro de una transacción activa no se intenta el limitador")
+    void backlogDentroDeTransaccionNoIntenta() {
+        var srv = respaldoConMocks();
+        net.javacrumbs.shedlock.core.LockProvider lp = mock(net.javacrumbs.shedlock.core.LockProvider.class);
+        srv.setLockProvider(lp);
+        when(pagoRepository.contarBacklogConciliacion(any(), any())).thenReturn(5000L);
+        org.springframework.transaction.support.TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            assertThat(srv.alertarBacklog(LocalDateTime.now(Constants.ZONA_CR))).isFalse();
+        } finally {
+            org.springframework.transaction.support.TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
+        verifyNoInteractions(lp);
+    }
+
+    @Test
+    @DisplayName("fix2 backlog: si el limitador falla, la conciliación ya escrita no cambia ni se propaga el error")
+    void backlogFallaLimitadorNoAlteraConciliacion() {
+        var srv = respaldoConMocks();
+        net.javacrumbs.shedlock.core.LockProvider lp = mock(net.javacrumbs.shedlock.core.LockProvider.class);
+        when(lp.lock(any())).thenThrow(new org.springframework.dao.DataAccessResourceFailureException("bd caida"));
+        srv.setLockProvider(lp);
+        when(pagoRepository.contarBacklogConciliacion(any(), any())).thenReturn(5000L);
+        Pago p = cerrado(400L, "cs_bl_falla", Constants.PAGO_CANCELADO);
+        when(pagoRepository.reclamarCerradosRecientes(any(), any(), any(), any())).thenReturn(List.of(p), List.of());
+        when(onvoPaymentProvider.procesarPagoVerificado(any(), eq("respaldo"))).thenReturn(Verificacion.EN_PROCESO);
+
+        assertThat(srv.revisarCerrados()).isEqualTo(new OnvoPendientesReconsultaService.ResumenCerrados(1, 0));
+        verify(pagoRepository).agendarConciliacion(eq(400L), any(), any());
+        verify(lp).lock(any());
+        assertThat(srv.alertarBacklog(LocalDateTime.now(Constants.ZONA_CR))).as("sin reclamo no hay alerta").isFalse();
+        // Recuperado el limitador, el aviso posterior sale (la falla no bloqueó ventanas futuras).
+        net.javacrumbs.shedlock.core.SimpleLock tomado = mock(net.javacrumbs.shedlock.core.SimpleLock.class);
+        org.mockito.Mockito.doThrow(new IllegalStateException("unlock")).when(tomado).unlock();
+        org.mockito.Mockito.reset(lp);
+        when(lp.lock(any())).thenReturn(java.util.Optional.of(tomado));
+        assertThat(srv.alertarBacklog(LocalDateTime.now(Constants.ZONA_CR))).isTrue();
+    }
+
+    @Test
+    @DisplayName("fix2 fairness lote 4: con las tres clases saturadas cada una recibe al menos un lugar")
+    void fairnessLoteCuatroGarantizaClases() {
+        var srv = respaldoConMocks();
+        srv.setLoteConciliacion(4);
+        List<Pago> recientes = new java.util.ArrayList<>();
+        List<Pago> vencidos = new java.util.ArrayList<>();
+        List<Pago> nuevos = new java.util.ArrayList<>();
+        for (long i = 0; i < 4; i++) {
+            recientes.add(cerrado(500 + i, "cs_l4_rec_" + i, Constants.PAGO_CANCELADO));
+            vencidos.add(cerrado(600 + i, "cs_l4_ven_" + i, Constants.PAGO_FALLIDO));
+            nuevos.add(cerrado(700 + i, "cs_l4_nue_" + i, Constants.PAGO_FALLIDO));
+        }
+        // Cada reclamo devuelve a lo sumo lo pedido (como el Pageable real).
+        when(pagoRepository.reclamarCerradosRecientes(any(), any(), any(), any())).thenAnswer(inv ->
+            recientes.subList(0, ((Pageable) inv.getArgument(3)).getPageSize()));
+        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any(), any())).thenAnswer(inv ->
+            vencidos.subList(0, ((Pageable) inv.getArgument(3)).getPageSize()));
+        when(pagoRepository.reclamarCerradosNuevos(any(), any(), any())).thenAnswer(inv ->
+            nuevos.subList(0, ((Pageable) inv.getArgument(2)).getPageSize()));
+        List<String> consultados = new java.util.ArrayList<>();
+        when(onvoPaymentProvider.procesarPagoVerificado(any(), eq("respaldo"))).thenAnswer(inv -> {
+            consultados.add(inv.getArgument(0));
+            return Verificacion.EN_PROCESO;
+        });
+
+        assertThat(srv.revisarCerrados().revisados()).isEqualTo(4);
+        assertThat(consultados.stream().filter(t -> t.startsWith("cs_l4_rec_")).count()).isEqualTo(2);
+        assertThat(consultados.stream().filter(t -> t.startsWith("cs_l4_ven_")).count()).isEqualTo(1);
+        assertThat(consultados.stream().filter(t -> t.startsWith("cs_l4_nue_")).count()).isEqualTo(1);
+        // Sin relleno: el lote ya se llenó.
+        verify(pagoRepository, times(1)).reclamarCerradosRecientes(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("fix2 fairness: lote-max < 4 con cerrados habilitados no arranca")
+    void loteMaxMenorACuatroNoArranca() {
+        OnvoService onvo = mock(OnvoService.class);
+        PlatformTransactionManager tm = mock(PlatformTransactionManager.class);
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () ->
+            new OnvoPendientesReconsultaService(pagoRepository, onvo, onvoPaymentProvider, mock(OnvoRechazoService.class),
+                tm, 3, 5, 3, true));
+        // Sin conciliación de cerrados el tope de pendientes sigue como antes.
+        new OnvoPendientesReconsultaService(pagoRepository, onvo, onvoPaymentProvider, mock(OnvoRechazoService.class),
+            tm, 3, 5, 3, false);
     }
 
     @Test
@@ -330,8 +451,11 @@ class OnvoCancelacionSesionTest {
     @DisplayName("fix2: lote de conciliación configurable y acotado por lote-max")
     void loteConciliacionValidado() {
         var srv = respaldo(mock(OnvoService.class), mock(PlatformTransactionManager.class), true);
-        srv.setLoteConciliacion(1);
+        srv.setLoteConciliacion(4);
         srv.setLoteConciliacion(200);
+        // fix2 fairness: con 1..3 alguna clase (recientes / vencidos / nunca agendados) se queda sin lugar.
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setLoteConciliacion(3));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setLoteConciliacion(1));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setLoteConciliacion(0));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setLoteConciliacion(201));
     }

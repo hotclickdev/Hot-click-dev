@@ -90,9 +90,9 @@ un cobro posterior va a reembolso, no confirma). Si la intención no se puede gu
   + refresh; ya no hay `orElse(pago)` (fail-closed: sin fila bloqueada no se decide).
 - Prueba (H2): durante el `/expire` simulado, otra conexión ve la intención confirmada y toma `FOR UPDATE` de pedido y
   pago sin esperar (`AdminCancelarExpiraOnvoTest#intencionConfirmadaYSinLocksDuranteRed`).
-- PostgreSQL real: `PagoOnvoCancelacionLocksPostgresTest` (12 casos: wrappers comprador/panel(Telegram)/captura,
+- PostgreSQL real: `PagoOnvoCancelacionLocksPostgresTest` (13 casos: wrappers comprador/panel(Telegram)/captura,
   intención con timeout sin red, rollback, captura vs liberación, SKIP LOCKED, lease entre dos instancias, backoff tras
-  reinicio, fairness con 5000 históricos) y `PagoConciliacionFlywayPostgresTest` (Flyway desde esquema vacío con V236
+  reinicio, fairness con 5000 históricos; 13.º: limitador de la alerta de backlog entre instancias) y `PagoConciliacionFlywayPostgresTest` (Flyway desde esquema vacío con V236
   sintético → V237/V238, validate, segundo migrate sin reaplicar, nullable/índices). Corren en el job `onvo-alta-pg` con
   gate fail-on-skip (`scripts/ci/fix2-pg-surefire.py`). **No ejecutados todavía**: no hay PostgreSQL local; hasta CI no
   hay evidencia PG real. H2 no es equivalente.
@@ -118,8 +118,8 @@ un cobro posterior va a reembolso, no confirma). Si la intención no se puede gu
 
 ## Control de tormenta de consultas y alertas (fix2, persistente)
 
-Todo vive en columnas de `hot_click_pago_tb` (V238), salvo la ventana de la alerta de backlog (ver abajo); un reinicio no
-repite la tormenta de consultas.
+Todo vive en columnas de `hot_click_pago_tb` (V238); la ventana de la alerta de backlog vive en la tabla `shedlock`.
+Un reinicio no repite la tormenta de consultas ni de alertas.
 
 - **Fairness recientes/históricos (lotes):** tres reclamos disjuntos con `FOR UPDATE SKIP LOCKED` por corrida:
   1. recientes (`fecha_creacion >= ahora - conciliacion-reciente-horas`), hasta la mitad del lote;
@@ -129,10 +129,21 @@ repite la tormenta de consultas.
   Cada fila reclamada se agenda en la misma transacción antes de llamar a ONVO (lease): otra instancia o el relleno no la
   vuelven a tomar. La edad solo da prioridad; nadie se descarta. Con 5000+ históricos, los recientes salen en la primera
   corrida y los históricos avanzan en todas (prueba PG `fairnessBacklogCincoMilHistoricosYRecientes`).
-- **Backlog:** al final de cada corrida se cuentan los cerrados vencidos o nunca agendados; si superan
-  `conciliacion-backlog-alerta` sale UNA `[ALERTA-PAGO]` por ventana de `conciliacion-backlog-alerta-cada-minutos`.
-  Esa ventana vive en memoria **por instancia** (residual: con N instancias, hasta N alertas por ventana; un reinicio
-  puede repetirla una vez).
+- **Lote mínimo 4 (garantía por clase):** `conciliacion-lote` y `lote-max` (con cerrados habilitados) deben ser >= 4.
+  Con 4: recientes 2, vencidos 1, nunca agendados 1; con 1..3 alguna clase quedaba sin lugar. No arranca si no se cumple.
+- **Backlog (limitador OPERATIVO, no entrega obligatoria):** al final de cada corrida, ya fuera de toda transacción y sin
+  locks de pagos, se cuentan los cerrados vencidos o nunca agendados. Si superan `conciliacion-backlog-alerta`, se pide el
+  lock de ShedLock `alerta_backlog_conciliacion_onvo` (tabla `shedlock` de V30, reloj de la base, nombre exclusivo) con
+  lockAtMostFor = lockAtLeastFor = `conciliacion-backlog-alerta-cada-minutos`. La adquisición es atómica y NO bloqueante
+  (INSERT/UPDATE condicional). Solo quien lo obtiene emite la `[ALERTA-PAGO]`. Sin migración nueva.
+  - Sin limitador o sin reclamo no hay alerta; no hay ventana en memoria.
+  - Falla del limitador → `[OPERATIVO]` (error distinto de la alerta) y la conciliación sigue intacta (ya quedó escrita).
+  - Caída entre el reclamo y el log → esa ventana queda sin alerta; si el backlog sigue, sale en la siguiente. Nunca
+    cambia pagos, la conciliación ni el backoff.
+  - La retención (`DataRetentionScheduler`, filas de shedlock con lock_until de más de 7 días) puede borrar la fila;
+    ShedLock recuerda en memoria que existía y solo haría UPDATE. Si el reclamo vuelve vacío y la fila no existe, se
+    limpia ese caché (`clearCache`) y se reintenta una vez: un borrado no silencia avisos posteriores.
+  - **No** es entrega durable, ni exactly-once, ni outbox, ni estado financiero o de auditoría.
 - **Pendientes en duda (backoff):** el respaldo de pendientes y la limpieza TTL reagendan con el mismo backoff los
   pagos `PENDIENTE` que quedan en duda (404 sin referencia, intent en proceso, ONVO caído, datos distintos); no vuelven
   a consultarse hasta su `conciliacion_proxima_en`. Capturados y rechazados no se reagendan.
@@ -152,10 +163,10 @@ repite la tormenta de consultas.
 | `conciliacion-backoff-base-minutos` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_BACKOFF_BASE_MINUTOS` | 2 | Espera del 1.er reintento; luego `base*2^(n-1)` |
 | `conciliacion-backoff-max-minutos` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_BACKOFF_MAX_MINUTOS` | 1440 | Tope de espera (y espera fija de sin referencia) |
 | `conciliacion-alerta-intentos` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_ALERTA_INTENTOS` | 30 | Intento en que sale la única alerta por pago |
-| `conciliacion-lote` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_LOTE` | 10 (1..`lote-max`) | Cerrados por corrida (cuotas recientes/históricos arriba) |
+| `conciliacion-lote` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_LOTE` | 10 (4..`lote-max`) | Cerrados por corrida (cuotas recientes/históricos arriba) |
 | `conciliacion-reciente-horas` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_RECIENTE_HORAS` | 72 (> 0) | Edad que separa recientes de históricos (solo prioridad) |
 | `conciliacion-backlog-alerta` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_BACKLOG_ALERTA` | 1000 (> 0) | Umbral de la alerta de backlog |
-| `conciliacion-backlog-alerta-cada-minutos` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_BACKLOG_ALERTA_CADA_MINUTOS` | 60 (> 0) | Ventana de la alerta (en memoria, por instancia) |
+| `conciliacion-backlog-alerta-cada-minutos` | `HOTCLICK_PAGOS_ONVO_CONCILIACION_BACKLOG_ALERTA_CADA_MINUTOS` | 60 (> 0) | Ventana de la alerta (lock ShedLock compartido, reloj de la base) |
 | `lote` / `lote-max` | `HOTCLICK_PAGOS_ONVO_RESPALDO_LOTE` / `_LOTE_MAX` | 20 / 200 | Pendientes por corrida y tope validado |
 | `antiguedad-min-minutos` | `HOTCLICK_PAGOS_ONVO_RESPALDO_ANTIGUEDAD_MIN_MINUTOS` | 5 | Antigüedad mínima para reconsultar un pendiente |
 | `intervalo-ms` | `HOTCLICK_PAGOS_ONVO_RESPALDO_INTERVALO_MS` | 120000 | Frecuencia del job de respaldo |
@@ -188,7 +199,10 @@ transacción local (no «milisegundos»: incluye timeouts de red). Mitigaciones:
 - Carrera: si la captura confirma justo después de guardar la intención y antes del GET, la captura respeta la
   intención (reembolso); el panel puede responder «ya está pagado» con el estado leído. Cubierto por las pruebas PG
   (no ejecutadas aún).
-- Alerta de backlog deduplicada en memoria por instancia (no persistente).
+- Alerta de backlog: limitador operativo; una caída puede omitir una ventana (sin entrega durable).
+- Preexistente, fuera de fix2 (lectura, sin ejecución): `DataRetentionScheduler` compara `lock_until` contra la hora de
+  CR, mientras ShedLock con `usingDbTime` escribe con el reloj de la base (posible desfase de zona, a verificar); además, en cualquier `@SchedulerLock` que no corra en 7 días, el borrado de su
+  fila deja la instancia sin poder tomar el lock hasta reiniciar (caché de ShedLock). Anotado para revisión.
 - `StockReservationService` (fuera del diff de fix2) todavía usa `entityManager != null` antes de `refresh`; con
   `@PersistenceContext` el EntityManager no es nulo en runtime, pero el patrón queda anotado para revisión.
 - Si ONVO no copia la metadata del checkout al intent, `payment-intent.succeeded` de una venta en línea solo se resuelve

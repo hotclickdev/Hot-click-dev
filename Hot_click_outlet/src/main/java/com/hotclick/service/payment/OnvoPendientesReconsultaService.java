@@ -62,9 +62,16 @@ public class OnvoPendientesReconsultaService {
     private int recienteHoras = 72;
     /** fix2 (backlog): alerta cuando los cerrados vencidos o nunca agendados superan este número. */
     private long backlogAlerta = 1000;
-    /** fix2: a lo sumo una alerta de backlog cada N minutos POR INSTANCIA (en memoria; no persistente). */
+    /**
+     * fix2: a lo sumo una alerta de backlog cada N minutos, para TODAS las instancias: limitador operativo con el lock de
+     * ShedLock {@value #LOCK_ALERTA_BACKLOG} (tabla shedlock, reloj de la base). No hay ventana en memoria.
+     */
     private int backlogAlertaCadaMinutos = 60;
-    private volatile LocalDateTime ultimaAlertaBacklog;
+    /** Nombre exclusivo del limitador (no lo usa ningún @SchedulerLock). */
+    static final String LOCK_ALERTA_BACKLOG = "alerta_backlog_conciliacion_onvo";
+    /** fix2 (fairness): con lote >= 4 cada clase (recientes, vencidos, nunca agendados) tiene al menos 1 lugar. */
+    static final int LOTE_CONCILIACION_MIN = 4;
+    private net.javacrumbs.shedlock.core.LockProvider lockProvider;
     private final int loteMax;
 
     /** Conciliación de cerrados habilitada (tests y llamadas existentes). */
@@ -102,6 +109,10 @@ public class OnvoPendientesReconsultaService {
         this.lote = lote;
         this.antiguedadMinMinutos = antiguedadMinMinutos;
         this.loteMax = loteMax;
+        if (cerradosHabilitado && loteMax < LOTE_CONCILIACION_MIN) {
+            throw new IllegalStateException("hotclick.pagos.onvo.respaldo.lote-max debe ser >= " + LOTE_CONCILIACION_MIN
+                + " con la conciliación de cerrados habilitada (fairness por clase)");
+        }
         this.loteConciliacion = Math.min(10, loteMax);
     }
 
@@ -269,19 +280,93 @@ public class OnvoPendientesReconsultaService {
         }
     }
 
-    /** Backlog = cerrados sin resolver vencidos o nunca agendados. Una alerta por ventana, por instancia. */
-    private void alertarBacklog(LocalDateTime ahora) {
+    /**
+     * Backlog = cerrados sin resolver vencidos o nunca agendados. Limitador OPERATIVO de la alerta (no es estado
+     * financiero ni auditoría, no es entrega durable ni exactly-once):
+     * <ul>
+     *   <li>reloj de la base y nombre exclusivo ({@value #LOCK_ALERTA_BACKLOG}); adquisición atómica NO bloqueante
+     *       (INSERT/UPDATE condicional de ShedLock: si otra instancia tiene la ventana, vuelve vacío al toque);</li>
+     *   <li>solo fuera de transacción (después del commit del reclamo; sin locks de pagos): con una transacción activa
+     *       no se intenta;</li>
+     *   <li>sin limitador no hay alerta (no hay fallback en memoria);</li>
+     *   <li>el lock dura la ventana (lockAtMostFor = lockAtLeastFor): si la instancia se cae entre adquirir y escribir
+     *       el log, esa ventana queda sin alerta; si el backlog sigue, sale en la siguiente;</li>
+     *   <li>cualquier falla del alertador se registra y NO cambia la conciliación (ya quedó escrita).</li>
+     * </ul>
+     * @return true si esta llamada emitió la alerta.
+     */
+    boolean alertarBacklog(LocalDateTime ahora) {
+        long backlog;
         try {
-            long backlog = pagoRepository.contarBacklogConciliacion(Constants.PROVEEDOR_ONVO, ahora);
-            if (backlog < backlogAlerta) return;
-            LocalDateTime ultima = ultimaAlertaBacklog;
-            if (ultima != null && ultima.plusMinutes(backlogAlertaCadaMinutos).isAfter(ahora)) return;
-            ultimaAlertaBacklog = ahora;
-            log.error("[ALERTA-PAGO] Conciliación ONVO atrasada: {} pago(s) cerrado(s) esperando reconsulta (umbral {}); "
-                + "se drenan de a {} por corrida, recientes primero", backlog, backlogAlerta, loteConciliacion);
+            backlog = pagoRepository.contarBacklogConciliacion(Constants.PROVEEDOR_ONVO, ahora);
         } catch (RuntimeException e) {
             log.warn("[onvo] No se pudo medir el backlog de conciliación ({})", e.getClass().getSimpleName());
+            return false;
         }
+        if (backlog < backlogAlerta) return false;
+        if (lockProvider == null) {
+            log.debug("[onvo] Backlog de conciliación {} sin limitador configurado: no se alerta", backlog);
+            return false;
+        }
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+            log.warn("[onvo] Alerta de backlog omitida: se llamó dentro de una transacción (el limitador corre fuera)");
+            return false;
+        }
+        java.time.Duration ventana = java.time.Duration.ofMinutes(backlogAlertaCadaMinutos);
+        java.util.Optional<net.javacrumbs.shedlock.core.SimpleLock> lock;
+        try {
+            var cfg = new net.javacrumbs.shedlock.core.LockConfiguration(
+                java.time.Instant.now(), LOCK_ALERTA_BACKLOG, ventana, ventana);
+            lock = lockProvider.lock(cfg);
+            if (lock.isEmpty() && filaLimitadorAusente()) {
+                // ShedLock recuerda en memoria que la fila existe y después solo hace UPDATE. Si la retención
+                // (DataRetentionScheduler, lock_until viejo) la borró, el UPDATE no aplica nunca y la alerta quedaría
+                // muda hasta reiniciar. Sin fila no hay ventana vigente: se limpia ese caché y se reintenta una vez.
+                if (lockProvider instanceof net.javacrumbs.shedlock.support.StorageBasedLockProvider sb) {
+                    sb.clearCache();
+                    lock = lockProvider.lock(cfg);
+                }
+            }
+        } catch (RuntimeException e) {
+            // Error OPERATIVO del limitador, distinto de la alerta de backlog: sin reclamo no se emite la alerta
+            // (no hay fallback en memoria). La conciliación ya quedó escrita y no se toca.
+            log.error("[OPERATIVO] Limitador de la alerta de backlog ONVO no disponible ({}); alerta no emitida en esta "
+                + "corrida, la conciliación sigue", e.getClass().getSimpleName());
+            return false;
+        }
+        if (lock.isEmpty()) return false;
+        log.error("[ALERTA-PAGO] Conciliación ONVO atrasada: {} pago(s) cerrado(s) esperando reconsulta (umbral {}); "
+            + "se drenan de a {} por corrida, recientes primero", backlog, backlogAlerta, loteConciliacion);
+        try {
+            // Con lockAtLeastFor = ventana, liberar deja la fila tomada hasta el fin de la ventana.
+            lock.get().unlock();
+        } catch (RuntimeException e) {
+            // La ventana igual vence sola (lockAtMostFor): no bloquea avisos posteriores.
+            log.warn("[OPERATIVO] No se pudo liberar el limitador de la alerta de backlog ({}); vence con la ventana",
+                e.getClass().getSimpleName());
+        }
+        return true;
+    }
+
+    private boolean filaLimitadorAusente() {
+        if (jdbcTemplate == null) return false;
+        Integer n = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM shedlock WHERE name = ?", Integer.class,
+            LOCK_ALERTA_BACKLOG);
+        return n == null || n == 0;
+    }
+
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    /** Solo para detectar la fila del limitador borrada por la retención (ver {@link #alertarBacklog}). */
+    @Autowired
+    void setJdbcTemplate(org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    /** Limitador de la alerta de backlog (bean de ShedLockConfig). Obligatorio en runtime. */
+    @Autowired
+    void setLockProvider(net.javacrumbs.shedlock.core.LockProvider lockProvider) {
+        this.lockProvider = lockProvider;
     }
 
     @Autowired(required = false)
@@ -298,8 +383,9 @@ public class OnvoPendientesReconsultaService {
 
     @Autowired(required = false)
     void setLoteConciliacion(@Value("${hotclick.pagos.onvo.respaldo.conciliacion-lote:10}") int loteConciliacion) {
-        if (loteConciliacion < 1 || loteConciliacion > loteMax) {
-            throw new IllegalStateException("hotclick.pagos.onvo.respaldo.conciliacion-lote debe estar entre 1 y lote-max");
+        if (loteConciliacion < LOTE_CONCILIACION_MIN || loteConciliacion > loteMax) {
+            throw new IllegalStateException("hotclick.pagos.onvo.respaldo.conciliacion-lote debe estar entre "
+                + LOTE_CONCILIACION_MIN + " y lote-max (con menos de 4 alguna clase se queda sin lugar)");
         }
         this.loteConciliacion = loteConciliacion;
     }

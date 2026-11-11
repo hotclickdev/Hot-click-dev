@@ -35,6 +35,7 @@ SUITES = {
         "dosInstanciasConcurrentesReclamanDisjuntoConLease",
         "backoffPersisteYSeRecuperaTrasReinicio",
         "fairnessBacklogCincoMilHistoricosYRecientes",
+        "alertaBacklogLimitadorShedLockEntreInstancias",
     ),
 }
 PROBLEMAS = ("skipped", "failure", "error", "rerunFailure", "flakyFailure")

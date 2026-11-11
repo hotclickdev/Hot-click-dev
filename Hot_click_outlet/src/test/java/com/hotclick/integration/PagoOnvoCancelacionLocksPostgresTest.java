@@ -154,6 +154,7 @@ class PagoOnvoCancelacionLocksPostgresTest extends BaseIntegrationTest {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private PagoRepository pagoRepository;
+    @Autowired private net.javacrumbs.shedlock.core.LockProvider lockProvider;
     @Value("${hotclick.billing.lock-timeout-ms}") private int lockTimeoutMs;
 
     private Empresa empresa;
@@ -693,5 +694,46 @@ class PagoOnvoCancelacionLocksPostgresTest extends BaseIntegrationTest {
             .isEqualTo(HISTORICOS - 22L);
         // El pago PENDIENTE del pedido base no es cerrado: nunca entra a esta conciliación.
         assertThat(corridas.values().stream().flatMap(List::stream)).doesNotContain(SESION);
+    }
+
+    @Test
+    @DisplayName("alertaBacklogLimitadorShedLockEntreInstancias")
+    void alertaBacklogLimitadorShedLockEntreInstancias() throws Exception {
+        String nombre = "alerta_backlog_conciliacion_onvo";
+        // Misma DDL que V30 (la tabla no es entidad JPA; acá Hibernate crea el esquema).
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS shedlock (name VARCHAR(64) NOT NULL, lock_until TIMESTAMP NOT NULL, "
+            + "locked_at TIMESTAMP NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name))");
+        jdbcTemplate.update("DELETE FROM shedlock WHERE name = ?", nombre);
+        PagoRepository backlog = mock(PagoRepository.class);
+        when(backlog.contarBacklogConciliacion(any(), any())).thenReturn(5000L);
+        java.util.function.Supplier<OnvoPendientesReconsultaService> instancia = () -> {
+            var srv = new OnvoPendientesReconsultaService(backlog, onvoService, mock(OnvoPaymentProvider.class),
+                onvoRechazoService, txManager, 10, 5, 200, true);
+            org.springframework.test.util.ReflectionTestUtils.invokeMethod(srv, "setLockProvider", lockProvider);
+            org.springframework.test.util.ReflectionTestUtils.invokeMethod(srv, "setJdbcTemplate", jdbcTemplate);
+            return srv;
+        };
+        java.lang.reflect.Method alertar = OnvoPendientesReconsultaService.class
+            .getDeclaredMethod("alertarBacklog", LocalDateTime.class);
+        alertar.setAccessible(true);
+        CyclicBarrier largada = new CyclicBarrier(2);
+        List<Future<Boolean>> r = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            var srv = instancia.get();
+            r.add(hilos.submit(() -> {
+                largada.await(10, TimeUnit.SECONDS);
+                return (Boolean) alertar.invoke(srv, LocalDateTime.now(Constants.ZONA_CR));
+            }));
+        }
+        int emitidas = 0;
+        for (Future<Boolean> f : r) if (f.get(lockTimeoutMs, TimeUnit.MILLISECONDS)) emitidas++;
+        assertThat(emitidas).as("exactamente una alerta, sin espera").isEqualTo(1);
+        assertThat((Boolean) alertar.invoke(instancia.get(), LocalDateTime.now(Constants.ZONA_CR))).isFalse();
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM shedlock WHERE name = ? AND lock_until > "
+            + "timezone('utc', now())", Integer.class, nombre)).isEqualTo(1);
+        // Retención borra la fila: el aviso siguiente sale sin reiniciar.
+        jdbcTemplate.update("DELETE FROM shedlock WHERE name = ?", nombre);
+        assertThat((Boolean) alertar.invoke(instancia.get(), LocalDateTime.now(Constants.ZONA_CR))).isTrue();
+        jdbcTemplate.update("DELETE FROM shedlock WHERE name = ?", nombre);
     }
 }
