@@ -21,7 +21,9 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -42,16 +44,27 @@ import static org.mockito.Mockito.mock;
  * Proxy Spring real del lector (H2): transacción propia, de solo lectura, REQUIRES_NEW incluso desde una transacción
  * externa, una sola transacción para todas las páginas, DTO materializados y los dos endpoints con el mismo conjunto.
  * H2 NO prueba el aislamiento REPEATABLE READ: eso lo prueba PlanesActivosSnapshotPostgresTest contra Postgres.
+ *
+ * <p>Base H2 EXCLUSIVA ({@value #URL_EXCLUSIVA}): su ddl-auto=create-drop y sus deleteAll no tocan la H2 compartida
+ * {@code testdb} de los contextos @SpringBootTest cacheados (CI #552: WalletAggregatorStressAndSecurityTest vio
+ * HOT_CLICK_REFRESH_TOKEN_TB ausente después de este test). {@code @DirtiesContext} cierra el contexto al terminar la
+ * clase para no ocupar un lugar del caché de contextos.
  */
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@TestPropertySource(properties = "spring.datasource.url=" + PlanesActivosLectorTransaccionTest.URL_EXCLUSIVA)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Import({PlanesActivosLector.class, SnapshotLecturaPg.class, PlanesLectorGancho.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @DisplayName("PlanesActivosLector: proxy transaccional real, REQUIRES_NEW y mismo conjunto en ambos endpoints (H2)")
 class PlanesActivosLectorTransaccionTest {
 
+    static final String URL_EXCLUSIVA =
+        "jdbc:h2:mem:planes_lector_tx;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;NON_KEYWORDS=VALUE";
+
     @Autowired PlanesActivosLector lector;
+    @Autowired javax.sql.DataSource dataSource;
     @Autowired @Qualifier("planRepository") PlanRepository repoReal;
     @Autowired PlatformTransactionManager txManager;
 
@@ -96,6 +109,15 @@ class PlanesActivosLectorTransaccionTest {
         return sembrados.stream().filter(Plan::getActivo)
             .sorted(java.util.Comparator.comparing(Plan::getPrecioMensual).thenComparing(Plan::getId))
             .map(p -> (Object) p.getId()).toList();
+    }
+
+    @Test
+    @DisplayName("Usa su propia base H2 (planes_lector_tx), nunca la testdb compartida por los otros contextos")
+    void baseDeDatosExclusiva() throws Exception {
+        try (java.sql.Connection c = dataSource.getConnection()) {
+            String url = c.getMetaData().getURL();
+            assertThat(url).startsWith("jdbc:h2:mem:planes_lector_tx").doesNotContain("testdb");
+        }
     }
 
     @Test
