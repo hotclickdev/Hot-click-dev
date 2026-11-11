@@ -90,6 +90,8 @@ class PagoOnvoCancelacionLocksPostgresTest extends BaseIntegrationTest {
     static final String SCHEMA = "hc_fix2_locks";
     private static final String SESION = "cs_fix2pg_sesion01";
     private static final String INTENT = "pi_fix2pg_intent01";
+    /** Mismo resumen que arma el llamador productivo OnvoPaymentProvider.capturar (payload_raw es jsonb). */
+    private static final String RESUMEN_GET = "{\"verificado\":\"GET ONVO\",\"paymentIntentId\":\"" + INTENT + "\"}";
     private static final int HISTORICOS = 5000;
 
     private static String urlBase;
@@ -383,9 +385,9 @@ class PagoOnvoCancelacionLocksPostgresTest extends BaseIntegrationTest {
         assertThat(estadoPedido(pedido.getId())).isEqualTo(Constants.PEDIDO_PENDIENTE);
 
         // Captura REAL posterior (webhook): respeta la intención → cancela, libera una vez y queda reembolso.
-        assertThat(onvoCapturaService.capturarVerificado(SESION, "succeeded", "webhook"))
+        assertThat(onvoCapturaService.capturarVerificado(SESION, RESUMEN_GET, "webhook"))
             .isEqualTo(OnvoCapturaService.Captura.COBRADO_SOBRE_CANCELADO);
-        assertThat(onvoCapturaService.capturarVerificado(SESION, "succeeded", "webhook"))
+        assertThat(onvoCapturaService.capturarVerificado(SESION, RESUMEN_GET, "webhook"))
             .isEqualTo(OnvoCapturaService.Captura.DUPLICADO);
         assertThat(pagoDe(pedido.getId()).getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(estadoPedido(pedido.getId())).isEqualTo(Constants.PEDIDO_CANCELADO);
@@ -433,7 +435,7 @@ class PagoOnvoCancelacionLocksPostgresTest extends BaseIntegrationTest {
         Future<?> comprador = hilos.submit(() -> paymentService.cancelarPorUsuario(pedido.getNumeroPedido(), testUser.getCorreo()));
         assertThat(enRed.await(20, TimeUnit.SECONDS)).isTrue();
         // La captura REAL corre mientras el comprador está en la red: no espera ningún lock suyo.
-        assertThat(hilos.submit(() -> onvoCapturaService.capturarVerificado(SESION, "succeeded", "webhook"))
+        assertThat(hilos.submit(() -> onvoCapturaService.capturarVerificado(SESION, RESUMEN_GET, "webhook"))
             .get(lockTimeoutMs, TimeUnit.MILLISECONDS)).isEqualTo(OnvoCapturaService.Captura.COBRADO_SOBRE_CANCELADO);
         seguir.countDown();
 
@@ -486,7 +488,7 @@ class PagoOnvoCancelacionLocksPostgresTest extends BaseIntegrationTest {
             String.class, pagoId)).isEqualTo("PANEL");
         assertThat(bloqueableYa("hot_click_pago_tb", "id_pago", pagoId)).isTrue();
         assertThat(bloqueableYa("hot_click_pedido_tb", "id_pedido", pedido.getId())).isTrue();
-        assertThat(hilos.submit(() -> onvoCapturaService.capturarVerificado(SESION, "succeeded", "webhook"))
+        assertThat(hilos.submit(() -> onvoCapturaService.capturarVerificado(SESION, RESUMEN_GET, "webhook"))
             .get(lockTimeoutMs, TimeUnit.MILLISECONDS)).isEqualTo(OnvoCapturaService.Captura.COBRADO_SOBRE_CANCELADO);
         seguir.countDown();
 
