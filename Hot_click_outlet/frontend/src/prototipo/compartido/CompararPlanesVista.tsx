@@ -217,6 +217,7 @@ function ResumenPlan({ plan }: { plan: PlanUi }) {
       <div>
         <p className="font-display text-lg font-bold">{plan.nombre}</p>
         <p className="font-display text-[22px] font-bold text-hc-primary">{plan.precio}</p>
+        {plan.rotuloPrecio ? <p className="text-xs text-hc-muted">{plan.rotuloPrecio}</p> : null}
       </div>
       <ul className="flex flex-col gap-2">
         {plan.beneficios.map((b) => (
@@ -251,6 +252,7 @@ function TarjetaPlan({
       <article className={`flex flex-1 flex-col gap-3 rounded-xl p-5 md:px-5 md:py-6 ${borde}`}>
         <p className="font-display text-base font-bold md:text-lg">{plan.nombre}</p>
         <p className="font-display text-lg font-bold text-hc-primary md:text-[22px]">{plan.precio}</p>
+        {plan.rotuloPrecio ? <p className="-mt-2 text-[11px] text-hc-muted">{plan.rotuloPrecio}</p> : null}
         <ul className="flex flex-col gap-2">
           {plan.beneficios.map((b) => (
             <li key={b} className="text-[11px] text-hc-muted md:text-[13px]">✓ {b}</li>
@@ -289,6 +291,7 @@ function TarjetaPlan({
         <div>
           <p className="font-display text-lg font-bold">{plan.nombre}</p>
           <p className="text-sm text-hc-muted">{plan.precio}</p>
+          {plan.rotuloPrecio ? <p className="text-xs text-hc-muted">{plan.rotuloPrecio}</p> : null}
         </div>
         {actual ? (
           <span

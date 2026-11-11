@@ -64,6 +64,20 @@ public class PreciosPlanesConfig {
         });
     }
 
+    /**
+     * Mensualidad USD que se puede PUBLICAR (catálogo /api/planes, /api/billing/planes, monto pendiente de una tienda
+     * suspendida): es el mismo valor que {@link PrecioPlanOnvo} compara contra el price de ONVO, así lo publicado es lo
+     * que ONVO cobra. Fail-closed: vacío si el precio falta, es 0/negativo o está mal escrito, y también si
+     * {@code hotclick.planes.moneda} no es USD de forma explícita (vacía, nula u otra moneda): sin moneda confirmada no
+     * se publica un monto en dólares. Nunca sale de la tabla plan (precio_usd viejo de V89/V105).
+     */
+    public Optional<BigDecimal> precioPublicoUsd(String nombrePlan) {
+        if (!MONEDA_USD.equals(moneda)) return Optional.empty();
+        return precioUsd(nombrePlan).filter(v -> v.signum() > 0);
+    }
+
+    static final String MONEDA_USD = "usd";
+
     /** Precio configurado y mayor que 0, o 409 PLAN_SIN_PRECIO (0 o negativo cuenta como sin precio). */
     public BigDecimal requerir(String nombrePlan) {
         return precioUsd(nombrePlan).filter(v -> v.signum() > 0)

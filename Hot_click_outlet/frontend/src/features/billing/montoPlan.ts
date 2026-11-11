@@ -11,6 +11,14 @@ export function montoPlanVisible(
 }
 
 /**
+ * Texto de la mensualidad de una tarjeta del catálogo: «US$24/mes» con el precioUsd del backend; sin monto,
+ * «Mensualidad en dólares» (nunca colones de precioMensual, nunca «Gratis» inventado).
+ */
+export function textoPrecioCatalogo(plan: { precioUsd?: unknown } | null | undefined): string {
+  return montoPlanVisible(plan) ?? textoMensualidad()
+}
+
+/**
  * Monto que el backend puso en la respuesta de cobro (`montoUsd`).
  * Sale de la misma config que el verificador compara con el price de ONVO.
  */
@@ -22,4 +30,12 @@ function montoUsd(valor: unknown): string | null {
   const n = Number(valor)
   if (!Number.isFinite(n) || n <= 0) return null
   return textoMensualidad(n)
+}
+
+/**
+ * Rótulo «Precio de lista» para Emprendedor con monto: US$9 es el precio de lista del plan; el cupo gratis de cada
+ * negocio lo decide el backend y esta pantalla no lo conoce, así que no se afirma que ese negocio lo pague.
+ */
+export function rotuloPrecioLista(plan: { nombre?: unknown; precioUsd?: unknown } | null | undefined): string | null {
+  return plan?.nombre === 'EMPRENDEDOR' && montoPlanVisible(plan) ? 'Precio de lista' : null
 }
