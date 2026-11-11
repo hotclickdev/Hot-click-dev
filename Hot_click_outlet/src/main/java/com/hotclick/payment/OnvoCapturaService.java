@@ -218,14 +218,16 @@ public class OnvoCapturaService {
      * llama y no abre una segunda conexión que espere la fila bajo un lock externo (autobloqueo del panel).
      */
     @Transactional(propagation = Propagation.REQUIRED)
-    public void guardarIntentId(String checkoutSessionId, String intentId) {
-        if (checkoutSessionId == null || intentId == null || intentId.isBlank()) return;
+    public boolean guardarIntentId(String checkoutSessionId, String intentId) {
+        if (checkoutSessionId == null || intentId == null || intentId.isBlank()) return false;
+        // fix2: la primera referencia gana y nunca se reemplaza en silencio. Un intent distinto al guardado es un
+        // conflicto: false (quien llama decide EN_DUDA) y alerta; la columna queda como estaba.
+        if (pagoRepository.guardarIntentId(checkoutSessionId, intentId) > 0) return true;
         String previo = pagoRepository.intentIdEnBase(checkoutSessionId).orElse(null);
-        if (intentId.equals(previo)) return;
-        if (pagoRepository.guardarIntentId(checkoutSessionId, intentId) > 0 && previo != null) {
-            log.warn("[onvo] La sesión cambió de payment intent; se guarda el actual. sessionId={}",
-                OnvoService.enmascarar(checkoutSessionId));
-        }
+        if (intentId.equals(previo)) return true;
+        log.error("[ALERTA-PAGO] La sesión ONVO muestra un payment intent distinto al guardado; no se reemplaza y "
+            + "queda en duda (revisión manual). sessionId={}", OnvoService.enmascarar(checkoutSessionId));
+        return false;
     }
 
     /**

@@ -54,7 +54,12 @@ public class PaymentUserCancellationService {
         }
 
         // fix2: comprador sin locks tomados → intención confirmada en su propia transacción antes de la red.
-        expirarSesionOnvo(pago, ORIGEN_USUARIO, true);
+        if (expirarSesionOnvo(pago, ORIGEN_USUARIO, true)) {
+            // fix2: ONVO ya cobró: la cancelación quedó con el pedido cancelado y el pago REEMBOLSO_PENDIENTE. No se
+            // marca FALLIDO (pisaría REEMBOLSO_PENDIENTE y el aviso de reembolso).
+            log.info("Pedido {} cancelado por el usuario con cobro en ONVO: reembolso pendiente", numeroPedido);
+            return;
+        }
         cerrarIntentSinpeOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado por el usuario", numeroPedido);
@@ -80,7 +85,10 @@ public class PaymentUserCancellationService {
             throw new IllegalStateException("El pago ya fue confirmado y no puede cancelarse");
         }
 
-        expirarSesionOnvo(pago, ORIGEN_INVITADO, true);
+        if (expirarSesionOnvo(pago, ORIGEN_INVITADO, true)) {
+            log.info("Pedido {} cancelado (invitado) con cobro en ONVO: reembolso pendiente", numeroPedido);
+            return;
+        }
         cerrarIntentSinpeOnvo(pago);
         paymentFailureHandler.marcarFallido(pago, "Cancelado por el usuario");
         log.info("Pedido {} cancelado (invitado)", numeroPedido);
@@ -118,6 +126,18 @@ public class PaymentUserCancellationService {
         }
         // fix2 (intención antes de red): desde acá hay red; la intención ya tiene que estar guardada.
         boolean intencion = registrarIntencionAntesDeRed(pago, origen, sinLocks);
+        if (!intencion) {
+            // El UPDATE solo aplica a PENDIENTE. Si sigue PENDIENTE y no quedó la intención, no hay red (fail-closed).
+            // Si ya está cobrado o en reembolso, la venta ya está decidida (409). Otros estados cerrados siguen igual.
+            String estado = pago.getId() == null ? null : pagoRepository.estadoPagoEnBase(pago.getId());
+            if (estado == null || Constants.PAGO_PENDIENTE.equalsIgnoreCase(estado)) {
+                throw new IllegalStateException(
+                    "No pudimos registrar la cancelación en este momento. Intentá cancelar de nuevo en unos minutos.");
+            }
+            if (pagoCobrado(estado) || enReembolso(estado)) {
+                throw new IllegalStateException(MSG_VENTA_CONFIRMADA);
+            }
+        }
         boolean expirada;
         try {
             expirada = onvoPaymentProvider.expirarSesionParaCancelar(sesion);
@@ -238,14 +258,24 @@ public class PaymentUserCancellationService {
         pagoRepository.registrarCancelacionSolicitada(bloqueado.getId(), LocalDateTime.now(Constants.ZONA_CR), origen);
     }
 
-    /** Relee el pago con FOR UPDATE (refresh si ya está en la sesión: un find con lock no actualiza la copia). */
+    /**
+     * Relee el pago con FOR UPDATE (refresh si ya está en la sesión: un find con lock no actualiza la copia).
+     * Fail-closed: sin EntityManager (solo fuera de Spring; @PersistenceContext es obligatorio en el arranque), sin id
+     * o si el pago ya no existe, NO se sigue con una copia sin lock.
+     */
     private Pago bloquear(Pago pago) {
-        if (pago.getId() == null) return pago;
-        if (entityManager != null && entityManager.contains(pago)) {
+        if (entityManager == null) {
+            throw new IllegalStateException("No pudimos cerrar el pago en este momento. Intentá de nuevo en unos minutos.");
+        }
+        if (pago.getId() == null) {
+            throw new IllegalStateException("No pudimos cerrar el pago en este momento. Intentá de nuevo en unos minutos.");
+        }
+        if (entityManager.contains(pago)) {
             entityManager.refresh(pago, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
             return pago;
         }
-        return pagoRepository.findByIdForUpdate(pago.getId()).orElse(pago);
+        return pagoRepository.findByIdForUpdate(pago.getId()).orElseThrow(() ->
+            new IllegalStateException("No pudimos cerrar el pago en este momento. Intentá de nuevo en unos minutos."));
     }
 
     private static IllegalStateException ventaYaConfirmada(Pago pago) {
@@ -291,9 +321,22 @@ public class PaymentUserCancellationService {
      * Si ONVO no confirma el cierre, lanza {@link com.hotclick.exception.CancelacionPagoNoCerradaException} (409)
      * y el pedido no se cancela.
      */
+    /**
+     * fix2 (respaldo con el pedido YA bloqueado): no se llama a ONVO ni se captura bajo el lock del pedido (invertiría el
+     * orden pago → pedido). Sin pago: no hace nada. Con pago: 409 reintentable; el reintento entra por la fase sin locks
+     * ({@link #cerrarPagoOnvoAntesDeCancelarSinLocks}). Solo llega acá si el pedido cambió entre la lectura sin lock y
+     * el lock (carrera) o si la fase previa no pudo correr.
+     */
     public void cerrarPagoOnvoAntesDeCancelar(Pedido pedido) {
-        cerrarPagoPanel(pedido, false);
+        Pago pago = CompraPaquetes.pagoDe(pedido, pagoRepository).orElse(null);
+        if (pago == null) return;
+        log.warn("[pago] Cancelación desde el panel sin fase previa (pedido cambió en medio): 409 reintentable, pago id={}",
+            pago.getId());
+        throw new com.hotclick.exception.CancelacionPagoNoCerradaException(MSG_REINTENTAR_PANEL);
     }
+
+    static final String MSG_REINTENTAR_PANEL =
+        "El pedido cambió mientras se cancelaba, así que no se canceló. Revisá su estado e intentá de nuevo.";
 
     /** Resultado del cierre del pago desde el panel (fase sin locks de {@code PedidoService.cambiarEstado}). */
     public enum CierrePanel { SIN_PAGO, CERRADO, CANCELADO_CON_COBRO }

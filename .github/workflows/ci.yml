@@ -92,7 +92,7 @@ jobs:
   onvo-alta-pg:
     name: ONVO alta Postgres (marketplace y ledger)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     services:
       postgres:
         image: postgres:18-alpine
@@ -136,6 +136,39 @@ jobs:
         with:
           name: onvo-alta-pg-surefire
           path: Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.OnvoAltaMarketplacePostgresTest.xml
+          if-no-files-found: error
+
+      # fix2 pagos ONVO: Flyway (V236 sintético → V237/V238) y locks/fairness en PostgreSQL real del job.
+      # Gate fail-on-skip: nombres exactos, conteos y XML fresco. Sin failIfNoSpecifiedTests=false.
+      - name: "Autotest gate fix2 PG"
+        if: always()
+        run: python3 -m unittest scripts/ci/test_fix2_pg_surefire.py
+
+      - name: "Marca de inicio fix2 PG"
+        if: always()
+        run: |
+          rm -f Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.migration.PagoConciliacionFlywayPostgresTest.xml \
+                Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.PagoOnvoCancelacionLocksPostgresTest.xml
+          touch "$RUNNER_TEMP/fix2-pg-inicio"
+
+      - name: PagoConciliacionFlywayPostgresTest + PagoOnvoCancelacionLocksPostgresTest
+        if: always()
+        run: mvn -f Hot_click_outlet/pom.xml -Dtest=PagoConciliacionFlywayPostgresTest,PagoOnvoCancelacionLocksPostgresTest test --no-transfer-progress
+        env:
+          HC_PG_TEST_URL: jdbc:postgresql://127.0.0.1:5432/hotclick_qa_alta?user=hotclick_qa&password=hotclick_qa
+
+      - name: "Gate fix2 PG: suites exactas, sin skipped y frescas"
+        if: always()
+        run: python3 scripts/ci/fix2-pg-surefire.py Hot_click_outlet/target/surefire-reports "$RUNNER_TEMP/fix2-pg-inicio"
+
+      - name: Reporte Surefire fix2 PG (sin secretos)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fix2-pg-surefire
+          path: |
+            Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.migration.PagoConciliacionFlywayPostgresTest.xml
+            Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.PagoOnvoCancelacionLocksPostgresTest.xml
           if-no-files-found: error
 
   frontend:

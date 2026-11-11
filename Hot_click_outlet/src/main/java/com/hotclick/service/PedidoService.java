@@ -50,9 +50,10 @@ public class PedidoService {
     @Autowired private com.hotclick.service.pedido.PedidoManualEntregaStockService manualEntregaStock;
     @org.springframework.context.annotation.Lazy @Autowired
     private com.hotclick.service.payment.PaymentUserCancellationService pagoCancelacion;
-    // Opcional: contextos de prueba mínimos sin JPA (p. ej. CacheEvictEmpresaSinIdTest) no tienen EntityManager.
-    @Autowired
-    private org.springframework.beans.factory.ObjectProvider<jakarta.persistence.EntityManager> entityManagerProvider;
+    // Dependencia OBLIGATORIA: @PersistenceContext hace fallar el arranque si no hay EntityManagerFactory. La fase sin
+    // locks de la cancelación depende del flush + refresh con lock; sin EntityManager no hay camino alternativo.
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -175,8 +176,8 @@ public class PedidoService {
         boolean liberarReserva = Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado
             && RESERVA_ACTIVA.contains(estadoActual);
         // QA MEDIO: cancelar desde el panel cierra antes el link/intent ONVO (fail-closed, 409 si no se confirma).
-        // Respaldo (fase previa no corrió: pedido no visible antes, estado cambiado entre medio, mocks): mismo cierre con
-        // el pedido ya bloqueado y la intención dentro de esta transacción (sin REQUIRES_NEW bajo lock).
+        // Respaldo (la fase previa no corrió: el pedido cambió entre la lectura sin lock y el lock). Con el pedido ya
+        // bloqueado NO se llama a ONVO ni se captura (invertiría pago → pedido): con pago, 409 reintentable.
         if (Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado && cierre == null) {
             pagoCancelacion.cerrarPagoOnvoAntesDeCancelar(pedido);
         }
@@ -236,13 +237,16 @@ public class PedidoService {
      * actualizarla: se relee (refresh) ya con el lock tomado para decidir con el estado actual.
      */
     private Pedido bloquearPedido(Long id, boolean refrescar) {
-        jakarta.persistence.EntityManager entityManager = refrescar && entityManagerProvider != null
-            ? entityManagerProvider.getIfAvailable() : null;
+        if (refrescar && entityManager == null) {
+            // Fail-closed: nunca decidir la cancelación con una copia vieja del pedido (solo pasa fuera de Spring).
+            throw new IllegalStateException("PedidoService sin EntityManager: no se puede releer el pedido bloqueado");
+        }
         // Los cambios de la fase previa (p. ej. la captura que canceló el pedido) se escriben antes de releer.
-        if (entityManager != null) entityManager.flush();
+        if (refrescar) entityManager.flush();
         Pedido pedido = pedidoRepository.findByIdForUpdate(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
-        if (entityManager != null && entityManager.contains(pedido)) {
+        if (refrescar) {
+            // findByIdForUpdate ya tomó el lock; si devolvió la copia de la sesión, se relee con el lock tomado.
             entityManager.refresh(pedido);
         }
         return pedido;

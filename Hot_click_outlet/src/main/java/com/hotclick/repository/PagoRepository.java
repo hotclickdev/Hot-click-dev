@@ -44,36 +44,55 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
                                                @Param("ahora") LocalDateTime ahora, Pageable pagina);
 
     /**
-     * QA7-B1 + fix2 (conciliación durable): pagos ONVO cerrados localmente (FALLIDO o CANCELADO) con sesión, no
-     * resueltos sin cobro y con la reconsulta ya vencida ({@code conciliacion_proxima_en <= :ahora}). Sin corte por
-     * antigüedad: ningún pago se abandona por edad, solo se espacia (backoff persistente). Orden: el que espera hace más
-     * tiempo. Si ONVO igual los cobró y el webhook se perdió, el respaldo los pasa a REEMBOLSO_PENDIENTE con aviso.
-     * FOR UPDATE SKIP LOCKED: dos instancias no toman las mismas filas.
+     * QA7-B1 + fix2 (conciliación durable, fairness): tres reclamos disjuntos de pagos ONVO cerrados localmente
+     * (FALLIDO/CANCELADO) con sesión y sin resolver, todos con FOR UPDATE SKIP LOCKED (dos instancias no toman las
+     * mismas filas). La antigüedad SOLO ordena la prioridad: ningún pago se abandona por edad.
+     * <ul>
+     *   <li>recientes ({@code fechaCreacion >= :corte}): nunca agendados primero, después los vencidos;</li>
+     *   <li>históricos vencidos ({@code fechaCreacion < :corte}, próxima vencida): el que espera hace más tiempo;</li>
+     *   <li>históricos nunca agendados (incluye todos los anteriores a V238, sin backfill): de los más nuevos a los
+     *       más viejos.</li>
+     * </ul>
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
     @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor "
         + "AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
         + "AND p.merchantToken IS NOT NULL AND p.conciliacionResueltaEn IS NULL "
+        + "AND p.fechaCreacion >= :corte "
+        + "AND (p.conciliacionProximaEn IS NULL OR p.conciliacionProximaEn <= :ahora) "
+        + "ORDER BY p.conciliacionProximaEn ASC NULLS FIRST, p.fechaCreacion DESC")
+    List<Pago> reclamarCerradosRecientes(@Param("proveedor") String proveedor,
+                                        @Param("ahora") LocalDateTime ahora,
+                                        @Param("corte") LocalDateTime corte,
+                                        Pageable pagina);
+
+    /** Históricos con la reconsulta vencida (ver {@link #reclamarCerradosRecientes}). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor "
+        + "AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
+        + "AND p.merchantToken IS NOT NULL AND p.conciliacionResueltaEn IS NULL "
+        + "AND (p.fechaCreacion < :corte OR p.fechaCreacion IS NULL) "
         + "AND p.conciliacionProximaEn IS NOT NULL AND p.conciliacionProximaEn <= :ahora "
         + "ORDER BY p.conciliacionProximaEn ASC, p.fechaCreacion ASC")
     List<Pago> reclamarCerradosParaReconsulta(@Param("proveedor") String proveedor,
                                              @Param("ahora") LocalDateTime ahora,
+                                             @Param("corte") LocalDateTime corte,
                                              Pageable pagina);
 
-    /**
-     * fix2 (tormenta de históricos): cerrados que nunca se agendaron (incluye todos los anteriores a V238, sin backfill).
-     * Van en su propia cuota del lote y de los más NUEVOS a los más viejos: el atraso histórico se drena de a poco y no
-     * deja detrás a las cancelaciones recientes ni a los reintentos vencidos.
-     */
+    /** Históricos nunca agendados (ver {@link #reclamarCerradosRecientes}). */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
     @Query("SELECT p FROM Pago p WHERE p.proveedor = :proveedor "
         + "AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
         + "AND p.merchantToken IS NOT NULL AND p.conciliacionResueltaEn IS NULL "
+        + "AND (p.fechaCreacion < :corte OR p.fechaCreacion IS NULL) "
         + "AND p.conciliacionProximaEn IS NULL "
-        + "ORDER BY p.fechaCreacion DESC")
-    List<Pago> reclamarCerradosNuevos(@Param("proveedor") String proveedor, Pageable pagina);
+        + "ORDER BY p.fechaCreacion DESC NULLS LAST")
+    List<Pago> reclamarCerradosNuevos(@Param("proveedor") String proveedor,
+                                     @Param("corte") LocalDateTime corte,
+                                     Pageable pagina);
 
     /**
      * fix2: agenda la próxima reconsulta del pago cerrado (dentro del reclamo, con la fila bloqueada). Se agenda ANTES
@@ -95,10 +114,36 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
      * fix2 (BAJO): guarda el payment intent visto en la sesión sin pasar por la entidad (columna updatable=false). Solo
      * cambia si es distinto; un save obsoleto del pago ya no lo puede pisar con NULL.
      */
+    // fix2: la primera referencia gana; nunca se reemplaza un intent ya guardado (un cambio se trata como conflicto).
     @Modifying
     @Query(value = "UPDATE hot_click_pago_tb SET onvo_payment_intent_id = :intent WHERE merchant_token = :token "
-        + "AND (onvo_payment_intent_id IS NULL OR onvo_payment_intent_id <> :intent)", nativeQuery = true)
+        + "AND onvo_payment_intent_id IS NULL", nativeQuery = true)
     int guardarIntentId(@Param("token") String merchantToken, @Param("intent") String intentId);
+
+    /**
+     * fix2: reagenda SIN contar otro intento y sin adelantar una próxima reconsulta ya más lejana (GREATEST): lo usa
+     * la marca sin referencia después del reclamo (que ya contó el intento).
+     */
+    @Modifying
+    @Query(value = "UPDATE hot_click_pago_tb SET conciliacion_proxima_en = "
+        + "GREATEST(COALESCE(conciliacion_proxima_en, :proxima), :proxima) WHERE id_pago = :id", nativeQuery = true)
+    int reagendarSinContar(@Param("id") Long id, @Param("proxima") LocalDateTime proxima);
+
+    /**
+     * fix2: cuenta un intento en duda y agenda sin adelantar una próxima reconsulta ya más lejana (GREATEST): un
+     * barrido rápido (limpieza cada 5 min) no acorta el backoff que dejó otro (p. ej. tope de sin referencia).
+     */
+    @Modifying
+    @Query(value = "UPDATE hot_click_pago_tb SET conciliacion_intentos = COALESCE(conciliacion_intentos, 0) + 1, "
+        + "conciliacion_proxima_en = GREATEST(COALESCE(conciliacion_proxima_en, :proxima), :proxima) "
+        + "WHERE id_pago = :id", nativeQuery = true)
+    int agendarSinAdelantar(@Param("id") Long id, @Param("proxima") LocalDateTime proxima);
+
+    /** fix2 (backlog): cerrados sin resolver con reconsulta vencida o nunca agendada. Solo para métrica/alerta. */
+    @Query("SELECT COUNT(p) FROM Pago p WHERE p.proveedor = :proveedor AND p.estadoPago IN ('FALLIDO', 'CANCELADO') "
+        + "AND p.merchantToken IS NOT NULL AND p.conciliacionResueltaEn IS NULL "
+        + "AND (p.conciliacionProximaEn IS NULL OR p.conciliacionProximaEn <= :ahora)")
+    long contarBacklogConciliacion(@Param("proveedor") String proveedor, @Param("ahora") LocalDateTime ahora);
 
     /** fix2: intent guardado leído de la base (no de una copia en memoria que puede estar vieja). */
     @Query("SELECT p.onvoPaymentIntentId FROM Pago p WHERE p.merchantToken = :token")

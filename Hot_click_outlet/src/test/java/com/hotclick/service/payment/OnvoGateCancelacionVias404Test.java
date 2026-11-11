@@ -61,6 +61,8 @@ class OnvoGateCancelacionVias404Test {
     @Mock private WebhookEventRepository webhookEventRepository;
     @Mock private com.hotclick.service.sinpe.SinpeOnvoMarketplaceService sinpeOnvoMarketplaceService;
 
+    // fix2: dependencia obligatoria (en Spring la inyecta @PersistenceContext); contains()=false → findByIdForUpdate.
+    @Mock private jakarta.persistence.EntityManager entityManager;
     @InjectMocks private PaymentUserCancellationService cancelacion;
 
     private OnvoPaymentProvider provider;
@@ -88,6 +90,7 @@ class OnvoGateCancelacionVias404Test {
         when(pagoRepository.findByMerchantToken(SESION)).thenReturn(Optional.of(pago));
         when(pagoRepository.findById(41L)).thenReturn(Optional.of(pago));
         when(pagoRepository.findByIdForUpdate(41L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.cancelacionSolicitadaEnBase(41L)).thenReturn(Optional.of(LocalDateTime.now()));
         // fix2: el intent guardado se lee de la base (columna updatable=false), no de la copia en memoria.
         when(pagoRepository.intentIdEnBase(SESION)).thenAnswer(inv -> Optional.ofNullable(pago.getOnvoPaymentIntentId()));
         when(onvo.isPagosDisponibles()).thenReturn(true);
@@ -196,7 +199,7 @@ class OnvoGateCancelacionVias404Test {
     @Test
     @DisplayName("Panel: sesión 404 sin intent conocido → 409 y la intención de cancelar queda registrada (PANEL)")
     void panel404SinIntent_noCancela() {
-        assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelar(pedido))
+        assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelarSinLocks(pedido))
             .isInstanceOf(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
         verify(pagoRepository, org.mockito.Mockito.atLeastOnce()).registrarCancelacionSolicitada(eq(41L), any(), eq("PANEL"));
     }
@@ -209,7 +212,7 @@ class OnvoGateCancelacionVias404Test {
         doAnswer(inv -> { pago.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE); return true; })
             .when(captura).registrarCobroSobreCancelacionExplicita(pago, "cancelacion");
 
-        cancelacion.cerrarPagoOnvoAntesDeCancelar(pedido);
+        cancelacion.cerrarPagoOnvoAntesDeCancelarSinLocks(pedido);
 
         verify(captura, never()).capturarVerificado(anyString(), anyString(), anyString());
         verify(captura).registrarCobroSobreCancelacionExplicita(pago, "cancelacion");
@@ -223,7 +226,7 @@ class OnvoGateCancelacionVias404Test {
             .when(onvo).obtenerCheckoutSession(SESION);
         doReturn(intent("requires_payment_method")).when(onvo).obtenerPaymentIntent(INTENT);
 
-        assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelar(pedido))
+        assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelarSinLocks(pedido))
             .isInstanceOf(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
         verify(pagoRepository, org.mockito.Mockito.atLeastOnce()).registrarCancelacionSolicitada(eq(41L), any(), eq("PANEL"));
         verify(captura, never()).capturarVerificado(anyString(), anyString(), anyString());
@@ -233,7 +236,7 @@ class OnvoGateCancelacionVias404Test {
     @DisplayName("fix2 Panel: pago ya CAPTURADO → 409 MSG_PAGO_COBRADO sin llamar a ONVO (revisión admin, sin devolución automática)")
     void panelPagoCapturado_409() {
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
-        assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelar(pedido))
+        assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelarSinLocks(pedido))
             .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class)
             .hasMessage(PaymentUserCancellationService.MSG_PAGO_COBRADO);
         verify(onvo, never()).expirarCheckoutSessionTipado(anyString());
@@ -395,10 +398,67 @@ class OnvoGateCancelacionVias404Test {
         var orden = org.mockito.Mockito.inOrder(intencion, onvo);
         orden.verify(intencion).registrar(41L, "PANEL");
         orden.verify(onvo).expirarCheckoutSessionTipado(SESION);
-        // Con lock ya tomado (camino de respaldo) NO se usa la transacción propia.
-        org.mockito.Mockito.clearInvocations(intencion);
+        // Con lock ya tomado (camino de respaldo): ni transacción propia, ni ONVO, ni captura → 409 reintentable.
+        org.mockito.Mockito.clearInvocations(intencion, onvo, captura);
         assertThatThrownBy(() -> cancelacion.cerrarPagoOnvoAntesDeCancelar(pedido))
-            .isInstanceOf(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
+            .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class)
+            .hasMessage(PaymentUserCancellationService.MSG_REINTENTAR_PANEL);
         verify(intencion, never()).registrar(any(), any());
+        org.mockito.Mockito.verifyNoInteractions(onvo, captura);
+    }
+
+    @Test
+    @DisplayName("fix2: intención NO registrada y pago PENDIENTE → sin red (409), aunque haya bean")
+    void intencionFalsePendienteSinRed() {
+        CancelacionIntencionService intencion = mock(CancelacionIntencionService.class);
+        when(intencion.registrar(any(), any())).thenReturn(false);
+        when(pagoRepository.estadoPagoEnBase(41L)).thenReturn(Constants.PAGO_PENDIENTE);
+        ReflectionTestUtils.setField(cancelacion, "cancelacionIntencionService", intencion);
+
+        assertThatThrownBy(() -> cancelacion.cancelarAnon("ORD-G404", "ok"))
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining("No pudimos registrar la cancelación");
+        verify(onvo, never()).expirarCheckoutSessionTipado(any());
+        verify(paymentFailureHandler, never()).marcarFallido(any(), any());
+    }
+
+    @Test
+    @DisplayName("fix2: intención no registrada porque ya está en REEMBOLSO_PENDIENTE → 409 venta decidida, sin red")
+    void intencionFalseReembolsoSinRed() {
+        CancelacionIntencionService intencion = mock(CancelacionIntencionService.class);
+        when(intencion.registrar(any(), any())).thenReturn(false);
+        when(pagoRepository.estadoPagoEnBase(41L)).thenReturn(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        ReflectionTestUtils.setField(cancelacion, "cancelacionIntencionService", intencion);
+
+        assertThatThrownBy(() -> cancelacion.cancelarAnon("ORD-G404", "ok"))
+            .isInstanceOf(IllegalStateException.class).hasMessage(PaymentUserCancellationService.MSG_VENTA_CONFIRMADA);
+        verify(onvo, never()).expirarCheckoutSessionTipado(any());
+    }
+
+    @Test
+    @DisplayName("fix2 (2): comprador con cobro sin capturar → REEMBOLSO_PENDIENTE y NO se llama a marcarFallido")
+    void compradorCobradoNoMarcaFallido() {
+        pago.setOnvoPaymentIntentId(INTENT);
+        doReturn(intent("succeeded")).when(onvo).obtenerPaymentIntent(INTENT);
+        when(captura.registrarCobroSobreCancelacionExplicita(any(), any())).thenReturn(true);
+        ReflectionTestUtils.setField(cancelacion, "onvoCapturaService", captura);
+
+        cancelacion.cancelarAnon("ORD-G404", "ok");
+
+        verify(captura).registrarCobroSobreCancelacionExplicita(pago, "cancelacion");
+        verify(paymentFailureHandler, never()).marcarFallido(any(), any());
+    }
+
+    @Test
+    @DisplayName("fix2: la sesión muestra un intent distinto al guardado → EN_DUDA, sin reemplazar ni decidir")
+    void intentDistintoAlGuardadoEnDuda() {
+        pago.setOnvoPaymentIntentId("pi_guardado_previo");
+        doReturn(Map.of("id", SESION, "status", "expired", "paymentStatus", "unpaid", "paymentIntentId", INTENT,
+            "mode", "test")).when(onvo).obtenerCheckoutSession(SESION);
+
+        var r = provider.revisarCobro(SESION, "cleanup", true);
+
+        assertThat(r.cobro()).isEqualTo(CobroIntent.EN_DUDA);
+        verify(captura, never()).guardarIntentId(any(), any());
+        verify(onvo, never()).obtenerPaymentIntent(any());
     }
 }

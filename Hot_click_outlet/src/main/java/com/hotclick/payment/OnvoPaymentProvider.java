@@ -262,6 +262,11 @@ public class OnvoPaymentProvider implements PaymentProvider {
                         }
                         return RevisionCobro.de(sesionAbierta ? CobroIntent.SIN_COBRO_SESION_ABIERTA : CobroIntent.SIN_COBRO);
                     }
+                } else if (guardado != null && !guardado.equals(intentId)) {
+                    // fix2: referencia previa distinta: no se reemplaza ni se decide con ninguna de las dos.
+                    log.error("[ALERTA-PAGO] Sesión ONVO con payment intent distinto al guardado: en duda, sin cancelar ni "
+                        + "confirmar. sessionId={}", OnvoService.enmascarar(checkoutSessionId));
+                    return RevisionCobro.de(CobroIntent.EN_DUDA);
                 } else {
                     recordarIntent(checkoutSessionId, intentId, guardado);
                 }

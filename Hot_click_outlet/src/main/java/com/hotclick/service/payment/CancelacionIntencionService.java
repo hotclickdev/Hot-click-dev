@@ -21,14 +21,22 @@ import java.time.LocalDateTime;
 public class CancelacionIntencionService {
 
     private final PagoRepository pagoRepository;
+    private final com.hotclick.service.suscripcion.LockTimeoutPorFila lockTimeout;
 
-    public CancelacionIntencionService(PagoRepository pagoRepository) {
+    public CancelacionIntencionService(PagoRepository pagoRepository,
+                                       com.hotclick.service.suscripcion.LockTimeoutPorFila lockTimeout) {
         this.pagoRepository = pagoRepository;
+        this.lockTimeout = lockTimeout;
     }
 
+    /**
+     * Si otra transacción retiene la fila del pago (p. ej. una captura), el UPDATE espera a lo sumo el lock_timeout
+     * (PostgreSQL, {@code SET LOCAL}); al vencer lanza y quien llama responde 409 SIN llamar a ONVO.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean registrar(Long pagoId, String origen) {
         if (pagoId == null) return false;
+        lockTimeout.aplicar();
         pagoRepository.registrarCancelacionSolicitada(pagoId, LocalDateTime.now(Constants.ZONA_CR), origen);
         return pagoRepository.cancelacionSolicitadaEnBase(pagoId).isPresent();
     }

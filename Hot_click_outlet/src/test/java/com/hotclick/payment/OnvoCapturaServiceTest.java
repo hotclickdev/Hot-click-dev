@@ -178,16 +178,28 @@ class OnvoCapturaServiceTest {
     }
 
     @Test
-    @DisplayName("fix2 BAJO: guardarIntentId usa el UPDATE condicional (no un save de la entidad)")
+    @DisplayName("fix2 BAJO: guardarIntentId usa el UPDATE condicional y nunca reemplaza una referencia previa")
     void guardarIntentIdCondicional() {
-        when(pagoRepository.intentIdEnBase("cs_1")).thenReturn(Optional.empty());
-        captura.guardarIntentId("cs_1", "pi_1");
-        verify(pagoRepository).guardarIntentId("cs_1", "pi_1");
+        when(pagoRepository.guardarIntentId("cs_1", "pi_1")).thenReturn(1);
+        assertThat(captura.guardarIntentId("cs_1", "pi_1")).isTrue();
         verify(pagoRepository, never()).save(any());
 
+        // Ya guardado el mismo: el UPDATE no toca filas y se acepta.
+        when(pagoRepository.guardarIntentId("cs_1", "pi_1")).thenReturn(0);
         when(pagoRepository.intentIdEnBase("cs_1")).thenReturn(Optional.of("pi_1"));
-        org.mockito.Mockito.clearInvocations(pagoRepository);
-        captura.guardarIntentId("cs_1", "pi_1");
-        verify(pagoRepository, never()).guardarIntentId(anyString(), anyString());
+        assertThat(captura.guardarIntentId("cs_1", "pi_1")).isTrue();
+
+        // Distinto al guardado: conflicto (false), no se reemplaza.
+        when(pagoRepository.guardarIntentId("cs_1", "pi_otro")).thenReturn(0);
+        assertThat(captura.guardarIntentId("cs_1", "pi_otro")).isFalse();
+        verify(pagoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("fix2: el UPDATE de guardarIntentId solo escribe si la columna está vacía")
+    void guardarIntentIdSoloSiVacio() throws Exception {
+        var m = com.hotclick.repository.PagoRepository.class.getMethod("guardarIntentId", String.class, String.class);
+        String sql = m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        assertThat(sql).contains("onvo_payment_intent_id IS NULL").doesNotContain("<>");
     }
 }

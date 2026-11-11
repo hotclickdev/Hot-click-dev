@@ -144,10 +144,10 @@ class OnvoPendientesReconsultaServiceTest {
 
         assertThat(r).isEqualTo(new OnvoPendientesReconsultaService.Resumen(2, 0, 0, 2));
         ArgumentCaptor<LocalDateTime> proxima = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(repo).agendarConciliacion(eq(3L), any(), proxima.capture());
+        verify(repo).agendarSinAdelantar(eq(3L), proxima.capture());
         // 3.er intento: 2 * 2^2 = 8 min.
         assertThat(proxima.getValue()).isBetween(antes.plusMinutes(8).minusSeconds(5), antes.plusMinutes(8).plusSeconds(5));
-        verify(repo).agendarConciliacion(eq(4L), any(), proxima.capture());
+        verify(repo).agendarSinAdelantar(eq(4L), proxima.capture());
         assertThat(proxima.getValue()).isBetween(antes.plusMinutes(1440).minusSeconds(5), antes.plusMinutes(1440).plusSeconds(5));
         // Lo ya agendado no vuelve a salir hasta que le toca (persistente, sobrevive reinicios).
         var m = PagoRepository.class.getMethod("reclamarPendientesParaReconsulta", String.class, LocalDateTime.class,
@@ -165,5 +165,18 @@ class OnvoPendientesReconsultaServiceTest {
         when(rechazo.cerrarSiRechazado(2L, "cs_resp_2")).thenReturn(true);
         servicio(20, 5).ejecutar();
         verify(repo, never()).agendarConciliacion(any(), any(), any());
+        verify(repo, never()).agendarSinAdelantar(any(), any());
+    }
+
+    @Test
+    @DisplayName("fix2: agendar en duda usa GREATEST (no adelanta una próxima mayor) y cuenta un solo intento")
+    void enDudaNoAdelanta() throws Exception {
+        var m = PagoRepository.class.getMethod("agendarSinAdelantar", Long.class, LocalDateTime.class);
+        String sql = m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        assertThat(sql).contains("GREATEST(COALESCE(conciliacion_proxima_en, :proxima), :proxima)")
+            .contains("conciliacion_intentos = COALESCE(conciliacion_intentos, 0) + 1");
+        var r = PagoRepository.class.getMethod("reagendarSinContar", Long.class, LocalDateTime.class);
+        assertThat(r.getAnnotation(org.springframework.data.jpa.repository.Query.class).value())
+            .contains("GREATEST(").doesNotContain("conciliacion_intentos");
     }
 }

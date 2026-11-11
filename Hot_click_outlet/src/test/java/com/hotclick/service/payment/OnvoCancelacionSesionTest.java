@@ -51,6 +51,8 @@ class OnvoCancelacionSesionTest {
     @Mock private OnvoService onvoService;
     @Mock private com.hotclick.service.sinpe.SinpeOnvoMarketplaceService sinpeOnvoMarketplaceService;
 
+    // fix2: dependencia obligatoria (en Spring la inyecta @PersistenceContext); contains()=false → findByIdForUpdate.
+    @Mock private jakarta.persistence.EntityManager entityManager;
     @InjectMocks private PaymentUserCancellationService service;
 
     private Pago pago;
@@ -70,6 +72,9 @@ class OnvoCancelacionSesionTest {
         when(guestCancelTokenService.esValido("ORD-B1", "ok")).thenReturn(true);
         when(pedidoRepository.findByNumeroPedido("ORD-B1")).thenReturn(Optional.of(pedido));
         when(pagoRepository.findTopByPedidoId(21L)).thenReturn(Optional.of(pago));
+        when(pagoRepository.findByIdForUpdate(16L)).thenReturn(Optional.of(pago));
+        // fix2: sin bean de intención (unitario) el UPDATE va por el repositorio; la intención "quedó" en la base.
+        when(pagoRepository.cancelacionSolicitadaEnBase(16L)).thenReturn(Optional.of(java.time.LocalDateTime.now()));
         when(onvoService.isPagosDisponibles()).thenReturn(true);
         when(onvoService.isMockMode()).thenReturn(false);
     }
@@ -176,7 +181,7 @@ class OnvoCancelacionSesionTest {
         Pago error = cerrado(18L, "cs_b1_error", Constants.PAGO_FALLIDO);
         error.setConciliacionIntentos(4);
         when(pagoRepository.reclamarPendientesParaReconsulta(any(), any(), any(), any())).thenReturn(List.of());
-        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any()))
+        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any(), any()))
             .thenReturn(List.of(cobrado, noPagado, error));
         when(onvoPaymentProvider.procesarPagoVerificado("cs_b1_cobrado", "respaldo"))
             .thenReturn(Verificacion.COBRADO_SOBRE_CANCELADO);
@@ -189,13 +194,20 @@ class OnvoCancelacionSesionTest {
         assertThat(r).isEqualTo(new OnvoPendientesReconsultaService.ResumenCerrados(3, 1));
         ArgumentCaptor<LocalDateTime> ahora = ArgumentCaptor.forClass(LocalDateTime.class);
         ArgumentCaptor<Pageable> pag = ArgumentCaptor.forClass(Pageable.class);
-        verify(pagoRepository, atLeastOnce()).reclamarCerradosParaReconsulta(eq(Constants.PROVEEDOR_ONVO), ahora.capture(), pag.capture());
+        verify(pagoRepository, atLeastOnce()).reclamarCerradosParaReconsulta(eq(Constants.PROVEEDOR_ONVO), ahora.capture(), any(), any());
         // fix2: sin corte de 24 h; se pasa "ahora" para las próximas reconsultas vencidas.
         assertThat(ahora.getValue()).isBetween(antes.minusSeconds(5), antes.plusSeconds(5));
-        // fix2 (tormenta de históricos): lote de conciliación propio (10): 5 reintentos vencidos + 5 nunca agendados.
-        assertThat(pag.getValue().getPageSize()).isEqualTo(5);
-        verify(pagoRepository).reclamarCerradosNuevos(eq(Constants.PROVEEDOR_ONVO), pag.capture());
-        assertThat(pag.getValue().getPageSize()).isEqualTo(5);
+        // fix2 (fairness): lote 10. Recientes hasta 5 (acá ninguno) → históricos vencidos hasta 5 (llegan 3) →
+        // nunca agendados con lo que sobra (7) → relleno de recientes (7).
+        verify(pagoRepository, times(2)).reclamarCerradosRecientes(eq(Constants.PROVEEDOR_ONVO), any(), any(), pag.capture());
+        // 1.º recientes (cuota 5); 2.º relleno con lo que dejaron libre los históricos (10 - 3 = 7).
+        assertThat(pag.getAllValues()).extracting(Pageable::getPageSize).containsExactly(5, 7);
+        ArgumentCaptor<Pageable> pv = ArgumentCaptor.forClass(Pageable.class);
+        verify(pagoRepository).reclamarCerradosParaReconsulta(eq(Constants.PROVEEDOR_ONVO), any(), any(), pv.capture());
+        assertThat(pv.getValue().getPageSize()).isEqualTo(5);
+        ArgumentCaptor<Pageable> pn = ArgumentCaptor.forClass(Pageable.class);
+        verify(pagoRepository).reclamarCerradosNuevos(eq(Constants.PROVEEDOR_ONVO), any(), pn.capture());
+        assertThat(pn.getValue().getPageSize()).isEqualTo(7);
         verifyNoInteractions(rechazo);
         // Cada pago reclamado queda agendado (backoff) ANTES de llamar a ONVO: 1.º intento 2 min, 5.º intento 32 min.
         ArgumentCaptor<LocalDateTime> proxima = ArgumentCaptor.forClass(LocalDateTime.class);
@@ -207,25 +219,76 @@ class OnvoCancelacionSesionTest {
     }
 
     @Test
-    @DisplayName("fix2: las queries de cerrados no cortan por antigüedad, reclaman con SKIP LOCKED y separan nuevos de reintentos")
+    @DisplayName("fix2: queries de cerrados disjuntas (recientes / históricos vencidos / nunca agendados), SKIP LOCKED, sin abandono por edad")
     void queryCerrados() throws Exception {
-        var m = PagoRepository.class.getMethod("reclamarCerradosParaReconsulta", String.class, LocalDateTime.class, Pageable.class);
-        String jpql = m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
-        assertThat(jpql).contains("'FALLIDO'", "'CANCELADO'", "merchantToken IS NOT NULL",
-            "p.conciliacionResueltaEn IS NULL", "p.conciliacionProximaEn IS NOT NULL AND p.conciliacionProximaEn <= :ahora");
-        assertThat(jpql).doesNotContain("PENDIENTE").doesNotContain("fechaCreacion >=").doesNotContain(":desde");
-        assertThat(jpql).contains("ORDER BY p.conciliacionProximaEn ASC, p.fechaCreacion ASC").doesNotContain("DESC");
-        assertThat(m.getAnnotation(org.springframework.data.jpa.repository.Lock.class).value())
-            .isEqualTo(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
-        assertThat(m.getAnnotation(org.springframework.data.jpa.repository.QueryHints.class).value()[0].value()).isEqualTo("-2");
+        var rec = PagoRepository.class.getMethod("reclamarCerradosRecientes", String.class, LocalDateTime.class,
+            LocalDateTime.class, Pageable.class);
+        var venc = PagoRepository.class.getMethod("reclamarCerradosParaReconsulta", String.class, LocalDateTime.class,
+            LocalDateTime.class, Pageable.class);
+        var nue = PagoRepository.class.getMethod("reclamarCerradosNuevos", String.class, LocalDateTime.class, Pageable.class);
+        for (var m : List.of(rec, venc, nue)) {
+            String jpql = m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+            assertThat(jpql).contains("'FALLIDO'", "'CANCELADO'", "merchantToken IS NOT NULL", "p.conciliacionResueltaEn IS NULL")
+                .doesNotContain("PENDIENTE").doesNotContain(":desde");
+            assertThat(m.getAnnotation(org.springframework.data.jpa.repository.Lock.class).value())
+                .isEqualTo(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+            assertThat(m.getAnnotation(org.springframework.data.jpa.repository.QueryHints.class).value()[0].value()).isEqualTo("-2");
+        }
+        // La edad solo particiona (corte) y ordena: recientes >= corte; históricos < corte (o sin fecha).
+        assertThat(rec.getAnnotation(org.springframework.data.jpa.repository.Query.class).value())
+            .contains("p.fechaCreacion >= :corte", "(p.conciliacionProximaEn IS NULL OR p.conciliacionProximaEn <= :ahora)");
+        assertThat(venc.getAnnotation(org.springframework.data.jpa.repository.Query.class).value())
+            .contains("(p.fechaCreacion < :corte OR p.fechaCreacion IS NULL)",
+                "p.conciliacionProximaEn IS NOT NULL AND p.conciliacionProximaEn <= :ahora",
+                "ORDER BY p.conciliacionProximaEn ASC");
+        assertThat(nue.getAnnotation(org.springframework.data.jpa.repository.Query.class).value())
+            .contains("(p.fechaCreacion < :corte OR p.fechaCreacion IS NULL)", "p.conciliacionProximaEn IS NULL",
+                "ORDER BY p.fechaCreacion DESC");
+    }
 
-        var n = PagoRepository.class.getMethod("reclamarCerradosNuevos", String.class, Pageable.class);
-        String nuevos = n.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
-        assertThat(nuevos).contains("'FALLIDO'", "'CANCELADO'", "p.conciliacionResueltaEn IS NULL",
-            "p.conciliacionProximaEn IS NULL", "ORDER BY p.fechaCreacion DESC").doesNotContain("fechaCreacion >=");
-        assertThat(n.getAnnotation(org.springframework.data.jpa.repository.Lock.class).value())
-            .isEqualTo(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
-        assertThat(n.getAnnotation(org.springframework.data.jpa.repository.QueryHints.class).value()[0].value()).isEqualTo("-2");
+    @Test
+    @DisplayName("fix2 fairness: con recientes que llenan su cuota, los históricos igual avanzan (sin inanición)")
+    void fairnessRecientesYHistoricos() {
+        OnvoService onvo = mock(OnvoService.class);
+        when(onvo.isPagosDisponibles()).thenReturn(true);
+        PlatformTransactionManager tm = mock(PlatformTransactionManager.class);
+        when(tm.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
+        var srv = respaldo(onvo, tm, true);
+        List<Pago> recientes = new java.util.ArrayList<>();
+        for (long i = 0; i < 5; i++) recientes.add(cerrado(100 + i, "cs_rec_" + i, Constants.PAGO_CANCELADO));
+        when(pagoRepository.reclamarCerradosRecientes(any(), any(), any(), any())).thenReturn(recientes, List.of());
+        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any(), any()))
+            .thenReturn(List.of(cerrado(200, "cs_hv", Constants.PAGO_FALLIDO)));
+        when(pagoRepository.reclamarCerradosNuevos(any(), any(), any()))
+            .thenReturn(List.of(cerrado(300, "cs_hn", Constants.PAGO_FALLIDO)));
+        when(onvoPaymentProvider.procesarPagoVerificado(any(), eq("respaldo"))).thenReturn(Verificacion.EN_PROCESO);
+
+        assertThat(srv.revisarCerrados().revisados()).isEqualTo(7);
+
+        ArgumentCaptor<Pageable> pag = ArgumentCaptor.forClass(Pageable.class);
+        verify(pagoRepository).reclamarCerradosParaReconsulta(any(), any(), any(), pag.capture());
+        assertThat(pag.getValue().getPageSize()).isEqualTo(3);
+        verify(pagoRepository).reclamarCerradosNuevos(any(), any(), pag.capture());
+        assertThat(pag.getValue().getPageSize()).isEqualTo(4);
+        verify(pagoRepository).agendarConciliacion(eq(200L), any(), any());
+        verify(pagoRepository).agendarConciliacion(eq(300L), any(), any());
+    }
+
+    @Test
+    @DisplayName("fix2 backlog: alerta una vez por ventana (por instancia) al superar el umbral; config validada")
+    void backlogAlertaUnaVez() {
+        OnvoService onvo = mock(OnvoService.class);
+        when(onvo.isPagosDisponibles()).thenReturn(true);
+        PlatformTransactionManager tm = mock(PlatformTransactionManager.class);
+        when(tm.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
+        var srv = respaldo(onvo, tm, true);
+        srv.setFairness(72, 100, 60);
+        when(pagoRepository.contarBacklogConciliacion(any(), any())).thenReturn(5000L);
+        srv.revisarCerrados();
+        srv.revisarCerrados();
+        verify(pagoRepository, times(2)).contarBacklogConciliacion(eq(Constants.PROVEEDOR_ONVO), any());
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setFairness(0, 1, 1));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> srv.setFairness(1, 0, 1));
     }
 
     @Test
@@ -239,8 +302,8 @@ class OnvoCancelacionSesionTest {
         Pago nuevo = cerrado(31L, "cs_sinref_nuevo", Constants.PAGO_CANCELADO);
         Pago yaMarcado = cerrado(32L, "cs_sinref_viejo", Constants.PAGO_FALLIDO);
         yaMarcado.setConciliacionSinReferenciaEn(LocalDateTime.now(Constants.ZONA_CR).minusDays(3));
-        when(pagoRepository.reclamarCerradosNuevos(any(), any())).thenReturn(List.of(nuevo));
-        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any())).thenReturn(List.of(yaMarcado));
+        when(pagoRepository.reclamarCerradosNuevos(any(), any(), any())).thenReturn(List.of(nuevo));
+        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any(), any())).thenReturn(List.of(yaMarcado));
         when(onvoPaymentProvider.procesarPagoVerificado(any(), eq("respaldo"))).thenReturn(Verificacion.NO_ENCONTRADO);
         when(onvoPaymentProvider.revisarCobro("cs_sinref_nuevo", "respaldo", true)).thenReturn(
             new com.hotclick.payment.OnvoPaymentProvider.RevisionCobro(CobroIntent.EN_DUDA, null, true, true));
@@ -251,15 +314,15 @@ class OnvoCancelacionSesionTest {
         assertThat(srv.revisarCerrados()).isEqualTo(new OnvoPendientesReconsultaService.ResumenCerrados(2, 0));
 
         ArgumentCaptor<LocalDateTime> proxima = ArgumentCaptor.forClass(LocalDateTime.class);
-        // Ya marcado: el reclamo lo agenda directo al tope (no 2 min); y tras el 404 se mantiene en el tope.
-        verify(pagoRepository, org.mockito.Mockito.times(2)).agendarConciliacion(eq(32L), any(), proxima.capture());
-        proxima.getAllValues().forEach(v ->
-            assertThat(v).isBetween(antes.plusMinutes(1440).minusSeconds(5), antes.plusMinutes(1440).plusSeconds(5)));
-        // Nuevo: el reclamo lo agenda a 2 min (aún no se sabía) y al quedar sin referencia pasa al tope.
+        // Ya marcado: el reclamo lo agenda directo al tope (no 2 min) contando UN intento.
+        verify(pagoRepository, times(1)).agendarConciliacion(eq(32L), any(), proxima.capture());
+        assertThat(proxima.getValue()).isBetween(antes.plusMinutes(1440).minusSeconds(5), antes.plusMinutes(1440).plusSeconds(5));
+        // Nuevo: el reclamo lo agenda a 2 min (un intento) y al quedar sin referencia pasa al tope SIN contar otro.
+        verify(pagoRepository, times(1)).agendarConciliacion(eq(31L), any(), any());
         ArgumentCaptor<LocalDateTime> p31 = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(pagoRepository, org.mockito.Mockito.times(2)).agendarConciliacion(eq(31L), any(), p31.capture());
-        assertThat(p31.getAllValues().get(1))
-            .isBetween(antes.plusMinutes(1440).minusSeconds(5), antes.plusMinutes(1440).plusSeconds(5));
+        verify(pagoRepository).reagendarSinContar(eq(31L), p31.capture());
+        assertThat(p31.getValue()).isBetween(antes.plusMinutes(1440).minusSeconds(5), antes.plusMinutes(1440).plusSeconds(5));
+        verify(pagoRepository).reagendarSinContar(eq(32L), any());
         verify(pagoRepository, never()).marcarConciliacionResuelta(any(), any());
     }
 
@@ -300,7 +363,7 @@ class OnvoCancelacionSesionTest {
         var srv = respaldo(onvo, tm, true);
         Pago cancelado = cerrado(21L, "cs_canc", Constants.PAGO_CANCELADO);
         Pago abierto = cerrado(22L, "cs_rpm", Constants.PAGO_CANCELADO);
-        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any())).thenReturn(List.of(cancelado, abierto));
+        when(pagoRepository.reclamarCerradosParaReconsulta(any(), any(), any(), any())).thenReturn(List.of(cancelado, abierto));
         when(onvoPaymentProvider.procesarPagoVerificado(any(), eq("respaldo"))).thenReturn(Verificacion.NO_PAGADO);
         when(onvoPaymentProvider.revisarCobro("cs_canc", "respaldo", true)).thenReturn(
             new com.hotclick.payment.OnvoPaymentProvider.RevisionCobro(CobroIntent.SIN_COBRO, "canceled"));
@@ -320,7 +383,7 @@ class OnvoCancelacionSesionTest {
         when(onvo.isPagosDisponibles()).thenReturn(true);
         var srv = respaldo(onvo, mock(PlatformTransactionManager.class), false);
         assertThat(srv.revisarCerrados()).isEqualTo(new OnvoPendientesReconsultaService.ResumenCerrados(0, 0));
-        verify(pagoRepository, never()).reclamarCerradosParaReconsulta(anyString(), any(), any());
+        verify(pagoRepository, never()).reclamarCerradosParaReconsulta(anyString(), any(), any(), any());
     }
 
     private static Pago cerrado(long id, String sesion, String estado) {
@@ -347,7 +410,7 @@ class OnvoCancelacionSesionTest {
     @DisplayName("panel: pago CAPTURADO → 409 sin tocar ONVO")
     void panelCapturadoNoCancela() {
         pago.setEstadoPago(Constants.PAGO_CAPTURADO);
-        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel()))
+        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelarSinLocks(pedidoPanel()))
             .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class);
         verifyNoInteractions(onvoPaymentProvider, sinpeOnvoMarketplaceService);
     }
@@ -356,7 +419,7 @@ class OnvoCancelacionSesionTest {
     @DisplayName("panel: pago en estado PAGADO → 409")
     void panelPagadoNoCancela() {
         pago.setEstadoPago("PAGADO");
-        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel()))
+        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelarSinLocks(pedidoPanel()))
             .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class);
     }
 
@@ -366,7 +429,7 @@ class OnvoCancelacionSesionTest {
         comoSinpeOnvo();
         when(sinpeOnvoMarketplaceService.cerrarIntentParaComprador(pago))
             .thenReturn(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.CierreComprador.PAGADO);
-        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel()))
+        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelarSinLocks(pedidoPanel()))
             .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class);
     }
 
@@ -376,7 +439,7 @@ class OnvoCancelacionSesionTest {
         comoSinpeOnvo();
         when(sinpeOnvoMarketplaceService.cerrarIntentParaComprador(pago))
             .thenReturn(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.CierreComprador.NO_CONFIRMADO);
-        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel()))
+        assertThatThrownBy(() -> service.cerrarPagoOnvoAntesDeCancelarSinLocks(pedidoPanel()))
             .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class);
     }
 
@@ -386,7 +449,7 @@ class OnvoCancelacionSesionTest {
         comoSinpeOnvo();
         when(sinpeOnvoMarketplaceService.cerrarIntentParaComprador(pago))
             .thenReturn(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService.CierreComprador.CANCELADO);
-        service.cerrarPagoOnvoAntesDeCancelar(pedidoPanel());
+        service.cerrarPagoOnvoAntesDeCancelarSinLocks(pedidoPanel());
         verify(sinpeOnvoMarketplaceService).cerrarIntentParaComprador(pago);
     }
 
@@ -444,6 +507,30 @@ class OnvoCancelacionSesionTest {
         assertThatThrownBy(() -> service.cancelarAnon("ORD-B1", "ok"))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("No pudimos registrar la cancelación");
         verify(onvoPaymentProvider, never()).expirarSesionParaCancelar(any());
+        verify(paymentFailureHandler, never()).marcarFallido(any(), any());
+    }
+
+    @Test
+    @DisplayName("fix2 fail-closed: sin EntityManager (fuera de Spring) no se cancela con una copia sin lock")
+    void sinEntityManagerNoCancela() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "entityManager", null);
+        when(onvoPaymentProvider.expirarSesionParaCancelar("cs_test_b1")).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobro("cs_test_b1", "cancelacion", false))
+            .thenReturn(new OnvoPaymentProvider.RevisionCobro(OnvoPaymentProvider.CobroIntent.SIN_COBRO, "canceled"));
+
+        assertThatThrownBy(() -> service.cancelarAnon("ORD-B1", "ok")).isInstanceOf(IllegalStateException.class);
+        verify(paymentFailureHandler, never()).marcarFallido(any(), any());
+    }
+
+    @Test
+    @DisplayName("fix2 fail-closed: el pago desapareció al bloquearlo → no se sigue con la copia sin lock")
+    void pagoInexistenteAlBloquearNoCancela() {
+        when(pagoRepository.findByIdForUpdate(16L)).thenReturn(Optional.empty());
+        when(onvoPaymentProvider.expirarSesionParaCancelar("cs_test_b1")).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobro("cs_test_b1", "cancelacion", false))
+            .thenReturn(new OnvoPaymentProvider.RevisionCobro(OnvoPaymentProvider.CobroIntent.SIN_COBRO, "canceled"));
+
+        assertThatThrownBy(() -> service.cancelarAnon("ORD-B1", "ok")).isInstanceOf(IllegalStateException.class);
         verify(paymentFailureHandler, never()).marcarFallido(any(), any());
     }
 }

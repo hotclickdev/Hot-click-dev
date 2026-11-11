@@ -44,6 +44,8 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
     @Autowired private PaymentUserCancellationService pagoCancelacion;
     @Autowired private com.hotclick.repository.WebhookEventRepository webhookEventRepository;
     @Autowired private org.springframework.transaction.PlatformTransactionManager txManager;
+    @Autowired private com.hotclick.service.PaymentService paymentService;
+    @Autowired private com.hotclick.service.TelegramFlujoService telegramFlujoService;
     // Sin @MockitoBean: no abre otro contexto de Spring (un contexto extra rompió tablas H2 de otros tests en CI).
     private final OnvoPaymentProvider onvoPaymentProvider = mock(OnvoPaymentProvider.class);
     private final OnvoService onvoService = mock(OnvoService.class);
@@ -276,5 +278,70 @@ class AdminCancelarExpiraOnvoTest extends BaseIntegrationTest {
         assertThat(pagoRepository.cancelacionSolicitadaEnBase(pago.getId())).isPresent();
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
         verify(onvoPaymentProvider, never()).revisarCobro(anyString(), anyString(), org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    private String numeroPedido() {
+        return pedidoRepository.findById(pedidoId).orElseThrow().getNumeroPedido();
+    }
+
+    @Test
+    @DisplayName("fix2 wrapper PaymentService (comprador): cobro sin capturar → pedido CANCELADO y pago REEMBOLSO_PENDIENTE, nunca FALLIDO")
+    void compradorWrapperCobroNoPisaReembolso() {
+        when(onvoPaymentProvider.expirarSesionParaCancelar(SESION)).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobro(SESION, "cancelacion", false))
+            .thenReturn(new OnvoPaymentProvider.RevisionCobro(OnvoPaymentProvider.CobroIntent.COBRADO_SIN_CAPTURAR, "succeeded"));
+
+        paymentService.cancelarPorUsuario(numeroPedido(), testUser.getCorreo());
+
+        Pago pago = pagoRepository.findTopByPedidoId(pedidoId).orElseThrow();
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pago.getCancelacionSolicitadaOrigen()).isEqualTo("USUARIO");
+        assertThat(estado()).isEqualTo(Constants.PEDIDO_CANCELADO);
+    }
+
+    @Test
+    @DisplayName("fix2 wrapper PaymentService (comprador): en duda → 409 y la intención queda (el wrapper no revierte)")
+    void compradorWrapperEnDudaConservaIntencion() {
+        when(onvoPaymentProvider.expirarSesionParaCancelar(SESION)).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobro(SESION, "cancelacion", false))
+            .thenReturn(new OnvoPaymentProvider.RevisionCobro(OnvoPaymentProvider.CobroIntent.EN_DUDA, "processing"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                paymentService.cancelarPorUsuario(numeroPedido(), testUser.getCorreo()))
+            .isInstanceOf(com.hotclick.service.payment.CancelacionPendienteOnvoException.class);
+
+        Pago pago = pagoRepository.findTopByPedidoId(pedidoId).orElseThrow();
+        assertThat(pagoRepository.cancelacionSolicitadaEnBase(pago.getId())).isPresent();
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
+        assertThat(estado()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+    }
+
+    @Test
+    @DisplayName("fix2 wrapper Telegram (REQUIRES_NEW): en duda → cancelación registrada sin revertir la intención")
+    void telegramWrapperEnDudaConservaIntencion() {
+        when(onvoPaymentProvider.expirarSesionParaCancelar(SESION)).thenReturn(true);
+        when(onvoPaymentProvider.revisarCobro(SESION, "cancelacion", false))
+            .thenReturn(new OnvoPaymentProvider.RevisionCobro(OnvoPaymentProvider.CobroIntent.EN_DUDA, "processing"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                telegramFlujoService.cambiarEstadoPedidoTx(pedidoId, Constants.PEDIDO_CANCELADO, null))
+            .isInstanceOf(com.hotclick.exception.CancelacionSolicitadaRegistradaException.class);
+
+        Pago pago = pagoRepository.findTopByPedidoId(pedidoId).orElseThrow();
+        assertThat(pagoRepository.cancelacionSolicitadaEnBase(pago.getId())).isPresent();
+        assertThat(estado()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+    }
+
+    @Test
+    @DisplayName("fix2 respaldo del panel (pedido ya bloqueado): 409 reintentable, sin ONVO ni captura bajo el lock")
+    void respaldoPanelSinRedNiCaptura() {
+        Pedido pedido = pedidoRepository.findById(pedidoId).orElseThrow();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> pagoCancelacion.cerrarPagoOnvoAntesDeCancelar(pedido))
+            .isInstanceOf(com.hotclick.exception.CancelacionPagoNoCerradaException.class)
+            .hasMessageContaining("intentá de nuevo");
+
+        verifyNoInteractions(onvoPaymentProvider);
+        assertThat(pagoRepository.findTopByPedidoId(pedidoId).orElseThrow().getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
     }
 }

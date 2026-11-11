@@ -56,8 +56,15 @@ public class OnvoPendientesReconsultaService {
     private int backoffMaxMinutos = 1440;
     /** fix2: a los N intentos sin resolver se deja UNA alerta para revisión manual (no se deja de reconsultar). */
     private int alertaIntentos = 30;
-    /** fix2 (tormenta de históricos): tope de cerrados por corrida, mitad nunca agendados y mitad reintentos vencidos. */
+    /** fix2 (fairness): tope de cerrados por corrida; hasta la mitad para recientes, el resto para históricos. */
     private int loteConciliacion = 10;
+    /** fix2 (fairness): edad que separa recientes de históricos. Solo prioridad; no abandona nada. */
+    private int recienteHoras = 72;
+    /** fix2 (backlog): alerta cuando los cerrados vencidos o nunca agendados superan este número. */
+    private long backlogAlerta = 1000;
+    /** fix2: a lo sumo una alerta de backlog cada N minutos POR INSTANCIA (en memoria; no persistente). */
+    private int backlogAlertaCadaMinutos = 60;
+    private volatile LocalDateTime ultimaAlertaBacklog;
     private final int loteMax;
 
     /** Conciliación de cerrados habilitada (tests y llamadas existentes). */
@@ -148,24 +155,31 @@ public class OnvoPendientesReconsultaService {
             return new ResumenCerrados(0, 0);
         }
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
-        int cuotaNuevos = Math.max(1, loteConciliacion / 2);
-        int cuotaReintentos = Math.max(0, loteConciliacion - cuotaNuevos);
-        // Reclamo corto con FOR UPDATE SKIP LOCKED; se agenda la próxima reconsulta antes de llamar a ONVO.
-        // fix2 (tormenta de históricos): cuota propia para los nunca agendados (de los más nuevos a los más viejos) y
-        // otra para los reintentos vencidos; un atraso histórico grande no desplaza a los recientes ni a los reintentos.
+        LocalDateTime corte = ahora.minusHours(recienteHoras);
+        // Reclamo corto con FOR UPDATE SKIP LOCKED; se agenda la próxima reconsulta (lease) antes de llamar a ONVO.
+        // fix2 (fairness): recientes primero hasta la mitad del lote; lo que sobra va a históricos (mitad vencidos,
+        // mitad nunca agendados). Un atraso histórico grande no desplaza a los recientes y siempre avanza.
         List<Pago> reclamados = tx.execute(s -> {
             List<Pago> filas = new java.util.ArrayList<>();
-            List<Pago> reintentos = cuotaReintentos == 0 ? List.of() : pagoRepository
-                .reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, ahora, PageRequest.of(0, cuotaReintentos));
-            List<Pago> nuevos = pagoRepository
-                .reclamarCerradosNuevos(Constants.PROVEEDOR_ONVO, PageRequest.of(0, cuotaNuevos));
-            if (reintentos != null) filas.addAll(reintentos);
-            if (nuevos != null) filas.addAll(nuevos);
-            for (Pago p : filas) {
-                int intentos = (p.getConciliacionIntentos() == null ? 0 : p.getConciliacionIntentos()) + 1;
-                long espera = p.getConciliacionSinReferenciaEn() != null ? backoffMaxMinutos : esperaMinutos(intentos);
-                pagoRepository.agendarConciliacion(p.getId(), ahora, ahora.plusMinutes(espera));
-                p.setConciliacionIntentos(intentos);
+            int cuotaRecientes = Math.min(loteConciliacion, Math.max(1, (loteConciliacion + 1) / 2));
+            reclamar(filas, pagoRepository.reclamarCerradosRecientes(Constants.PROVEEDOR_ONVO, ahora, corte,
+                PageRequest.of(0, cuotaRecientes)), ahora);
+            int cuotaVencidos = (loteConciliacion - filas.size() + 1) / 2;
+            if (cuotaVencidos > 0) {
+                reclamar(filas, pagoRepository.reclamarCerradosParaReconsulta(Constants.PROVEEDOR_ONVO, ahora, corte,
+                    PageRequest.of(0, cuotaVencidos)), ahora);
+            }
+            int cuotaNuevos = loteConciliacion - filas.size();
+            if (cuotaNuevos > 0) {
+                reclamar(filas, pagoRepository.reclamarCerradosNuevos(Constants.PROVEEDOR_ONVO, corte,
+                    PageRequest.of(0, cuotaNuevos)), ahora);
+            }
+            // Relleno: si los históricos no usaron su parte, más recientes. Los ya reclamados quedaron agendados
+            // (próxima futura) en esta misma transacción, así que no vuelven a salir.
+            int relleno = loteConciliacion - filas.size();
+            if (relleno > 0) {
+                reclamar(filas, pagoRepository.reclamarCerradosRecientes(Constants.PROVEEDOR_ONVO, ahora, corte,
+                    PageRequest.of(0, relleno)), ahora);
             }
             return filas;
         });
@@ -190,7 +204,8 @@ public class OnvoPendientesReconsultaService {
                     } else if (r != null && r.sinReferencia()) {
                         // Sin referencia (404 sin intent): no tiene sentido reintentar seguido; tope directo.
                         if (r.sinReferenciaNueva()) sinReferenciaNuevos++;
-                        tx.executeWithoutResult(s -> pagoRepository.agendarConciliacion(pago.getId(), ahora,
+                        // El reclamo ya contó el intento: reagenda sin contar otro y sin adelantar una próxima mayor.
+                        tx.executeWithoutResult(s -> pagoRepository.reagendarSinContar(pago.getId(),
                             ahora.plusMinutes(backoffMaxMinutos)));
                     }
                 }
@@ -214,6 +229,7 @@ public class OnvoPendientesReconsultaService {
         if (reembolso > 0) {
             log.info("[onvo] Respaldo cerrados: revisados={} reembolsoPendiente={}", pagos.size(), reembolso);
         }
+        alertarBacklog(ahora);
         return new ResumenCerrados(pagos.size(), reembolso);
     }
 
@@ -229,11 +245,55 @@ public class OnvoPendientesReconsultaService {
                 boolean sinRef = pagoRepository.sinReferenciaEnBase(pagoId).isPresent();
                 LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
                 long espera = sinRef ? backoffMaxMinutos : esperaMinutos(intentos);
-                pagoRepository.agendarConciliacion(pagoId, ahora, ahora.plusMinutes(espera));
+                // Nunca adelanta una próxima reconsulta ya más lejana (GREATEST en el UPDATE).
+                pagoRepository.agendarSinAdelantar(pagoId, ahora.plusMinutes(espera));
             });
         } catch (RuntimeException e) {
             log.warn("[onvo] No se pudo agendar la reconsulta del pago id={} ({})", pagoId, e.getClass().getSimpleName());
         }
+    }
+
+    /**
+     * Agrega lo reclamado y lo agenda YA (lease): la próxima reconsulta queda escrita antes de llamar a ONVO, así otro
+     * reclamo de esta transacción u otra instancia (tras el commit) no lo vuelve a tomar.
+     */
+    private void reclamar(List<Pago> destino, List<Pago> filas, LocalDateTime ahora) {
+        if (filas == null) return;
+        for (Pago p : filas) {
+            if (destino.stream().anyMatch(d -> d.getId() != null && d.getId().equals(p.getId()))) continue;
+            int intentos = (p.getConciliacionIntentos() == null ? 0 : p.getConciliacionIntentos()) + 1;
+            long espera = p.getConciliacionSinReferenciaEn() != null ? backoffMaxMinutos : esperaMinutos(intentos);
+            pagoRepository.agendarConciliacion(p.getId(), ahora, ahora.plusMinutes(espera));
+            p.setConciliacionIntentos(intentos);
+            destino.add(p);
+        }
+    }
+
+    /** Backlog = cerrados sin resolver vencidos o nunca agendados. Una alerta por ventana, por instancia. */
+    private void alertarBacklog(LocalDateTime ahora) {
+        try {
+            long backlog = pagoRepository.contarBacklogConciliacion(Constants.PROVEEDOR_ONVO, ahora);
+            if (backlog < backlogAlerta) return;
+            LocalDateTime ultima = ultimaAlertaBacklog;
+            if (ultima != null && ultima.plusMinutes(backlogAlertaCadaMinutos).isAfter(ahora)) return;
+            ultimaAlertaBacklog = ahora;
+            log.error("[ALERTA-PAGO] Conciliación ONVO atrasada: {} pago(s) cerrado(s) esperando reconsulta (umbral {}); "
+                + "se drenan de a {} por corrida, recientes primero", backlog, backlogAlerta, loteConciliacion);
+        } catch (RuntimeException e) {
+            log.warn("[onvo] No se pudo medir el backlog de conciliación ({})", e.getClass().getSimpleName());
+        }
+    }
+
+    @Autowired(required = false)
+    void setFairness(@Value("${hotclick.pagos.onvo.respaldo.conciliacion-reciente-horas:72}") int recienteHoras,
+                     @Value("${hotclick.pagos.onvo.respaldo.conciliacion-backlog-alerta:1000}") long backlogAlerta,
+                     @Value("${hotclick.pagos.onvo.respaldo.conciliacion-backlog-alerta-cada-minutos:60}") int cadaMinutos) {
+        if (recienteHoras <= 0 || backlogAlerta <= 0 || cadaMinutos <= 0) {
+            throw new IllegalStateException("conciliación ONVO: reciente-horas, backlog-alerta y backlog-alerta-cada-minutos > 0");
+        }
+        this.recienteHoras = recienteHoras;
+        this.backlogAlerta = backlogAlerta;
+        this.backlogAlertaCadaMinutos = cadaMinutos;
     }
 
     @Autowired(required = false)
