@@ -25,6 +25,13 @@ jobs:
       - name: Setup Maven
         run: sudo apt-get install -y maven --quiet
 
+      # Receta Flyway de historial completo (FlywayBaseVacia*: esquema base equivalente a V1 + baseline V1 + V2..V70 +
+      # hook + V71..VN, Testcontainers pgvector:pg17). Marca antes de Maven para exigir reportes frescos.
+      - name: "Marca de inicio Flyway base vacía"
+        run: |
+          rm -f Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.config.FlywayBaseVacia*PostgresTest.xml
+          touch "$RUNNER_TEMP/flyway-base-vacia-inicio"
+
       - name: Run tests
         run: mvn test --no-transfer-progress -f Hot_click_outlet/pom.xml
         env:
@@ -39,6 +46,25 @@ jobs:
           AWS_ACCESS_KEY_ID: placeholder
           AWS_SECRET_ACCESS_KEY: placeholder
           HOTCLICK_NUMEROS_PROHIBIDOS: ${{ secrets.HOTCLICK_NUMEROS_PROHIBIDOS }}
+
+      - name: "Autotest gate Flyway base vacía"
+        if: always()
+        run: python3 -m unittest scripts/ci/test_flyway_base_vacia_pg_surefire.py
+
+      - name: "Gate Flyway base vacía: 3 clases / 7 casos exactos, sin skipped y frescos"
+        if: always()
+        run: python3 scripts/ci/flyway-base-vacia-pg-surefire.py Hot_click_outlet/target/surefire-reports "$RUNNER_TEMP/flyway-base-vacia-inicio"
+
+      - name: Reporte Surefire Flyway base vacía (sin secretos)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flyway-base-vacia-surefire
+          path: |
+            Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.config.FlywayBaseVaciaPostgresTest.xml
+            Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.config.FlywayBaseVaciaJpaValidatePostgresTest.xml
+            Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.config.FlywayBaseVaciaOtpPostgresTest.xml
+          if-no-files-found: error
 
   qa-alta-pg:
     name: QA alta Postgres (tx abortada)

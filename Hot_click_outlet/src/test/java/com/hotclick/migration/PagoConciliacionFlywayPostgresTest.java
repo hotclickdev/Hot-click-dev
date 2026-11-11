@@ -20,11 +20,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * fix2 (V237/V238) sobre el PostgreSQL REAL del job {@code onvo-alta-pg} (no QA, no producción). Schema propio
- * {@value #SCHEMA}, recreado en cada test. Las migraciones V1..V236 no son reproducibles en cadena (V1 era baseline
- * legacy), así que se parte de un schema VACÍO, se crea a mano el estado mínimo de {@code hot_click_pago_tb} al que
- * llegan V237/V238 (V236 SINTÉTICO, con una fila previa) y Flyway baselinea en 236 con la MISMA configuración que la
- * app (classpath:db/migration, validate-on-migrate, sin out-of-order). V237 y V238 se aplican desde los archivos
- * reales del classpath, no copias.
+ * {@value #SCHEMA}, recreado en cada test. Se parte de un schema VACÍO, se crea a mano el estado mínimo de
+ * {@code hot_click_pago_tb} al que llegan V237/V238 (V236 SINTÉTICO, con una fila previa) y Flyway baselinea en 236 con
+ * la MISMA configuración que la app (classpath:db/migration, validate-on-migrate, sin out-of-order). V237 y V238 se
+ * aplican desde los archivos reales del classpath, no copias.
+ *
+ * <p><b>No equivale al historial.</b> Solo prueba que V237/V238 son aditivas sobre una tabla mínima. La cadena completa
+ * SÍ tiene receta propia: {@code com.hotclick.config.FlywayBaseVaciaPostgresTest} (+ JpaValidate y Otp), por el camino
+ * {@code hotclick.flyway.base-vacia.enabled}: esquema base equivalente a V1 (db/base-vacia, no el V1 literal de prod) +
+ * baseline V1 + V2..V70 + hook (db/base-vacia/hooks) + V71..VN reales, en Testcontainers pgvector:pg17 dentro del job
+ * «Tests Java», con su propio gate (scripts/ci/flyway-base-vacia-pg-surefire.py).
  */
 @EnabledIfEnvironmentVariable(named = "HC_PG_TEST_URL", matches = ".+")
 @DisplayName("PostgreSQL: Flyway V236 sintético → V237/V238 (validate, sin reaplicar, nullable, índices)")
