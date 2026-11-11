@@ -71,6 +71,9 @@ class CacheEvictEmpresaSinIdTest {
     @MockitoBean ProductoCacheEvictor cacheEvictor;
     @MockitoBean ProductoWriteOperations writeOperations;
     @MockitoBean ProductoUpdater productoUpdater;
+    // fix2: PedidoService exige EntityManager (@PersistenceContext, obligatorio). Este contexto mínimo no tiene JPA,
+    // así que se declara explícito (crearPedido no lo usa). Sin él el contexto NO arranca: ver sinJpaNoArranca().
+    @MockitoBean jakarta.persistence.EntityManagerFactory entityManagerFactory;
 
     @Autowired PedidoService pedidoService;
     @Autowired ProductoService productoService;
@@ -102,5 +105,42 @@ class CacheEvictEmpresaSinIdTest {
         assertThatCode(() -> productoService.crearProducto(new ProductoRequestDTO(), "admin@test.cr", empresa))
             .doesNotThrowAnyException();
         assertThat(cacheManager.getCache("dashboard-metricas").get("global")).isNull();
+    }
+
+    @Test
+    @DisplayName("fix2: sin EntityManagerFactory el contexto con PedidoService NO arranca (dependencia obligatoria, sin fallback)")
+    void sinJpaNoArranca() {
+        // Todas las dependencias @Autowired de PedidoService como singletons ya armados (sin post-proceso), menos JPA.
+        runnerPedido().run(ctx -> {
+            assertThat(ctx).hasFailed();
+            assertThat(ctx.getStartupFailure()).rootCause()
+                .isInstanceOf(org.springframework.beans.factory.NoSuchBeanDefinitionException.class)
+                .hasMessageContaining("EntityManagerFactory");
+        });
+        // Control: con la misma configuración + una EntityManagerFactory, arranca. La falla es solo por JPA ausente.
+        runnerPedido()
+            .withInitializer(c -> c.getBeanFactory().registerSingleton("entityManagerFactory", mockEmf()))
+            .run(ctx -> {
+                assertThat(ctx).hasNotFailed();
+                assertThat(ctx).hasSingleBean(PedidoService.class);
+            });
+    }
+
+    private static jakarta.persistence.EntityManagerFactory mockEmf() {
+        var emf = org.mockito.Mockito.mock(jakarta.persistence.EntityManagerFactory.class);
+        org.mockito.Mockito.when(emf.createEntityManager()).thenAnswer(i -> org.mockito.Mockito.mock(jakarta.persistence.EntityManager.class));
+        return emf;
+    }
+
+    private static org.springframework.boot.test.context.runner.ApplicationContextRunner runnerPedido() {
+        return new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+            .withBean(PedidoService.class)
+            .withInitializer(c -> {
+                for (java.lang.reflect.Field f : PedidoService.class.getDeclaredFields()) {
+                    if (f.isAnnotationPresent(org.springframework.beans.factory.annotation.Autowired.class)) {
+                        c.getBeanFactory().registerSingleton("mock-" + f.getName(), org.mockito.Mockito.mock(f.getType()));
+                    }
+                }
+            });
     }
 }

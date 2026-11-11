@@ -37,6 +37,8 @@ class OnvoCapturaServiceTest {
     @Mock WebhookEventRepository webhookEventRepository;
     @Mock PaymentService paymentService;
     @Mock PedidoGrupoService pedidoGrupoService;
+    @Mock com.hotclick.service.payment.StockReservationService stockReservationService;
+    @Mock com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
     @InjectMocks OnvoCapturaService captura;
 
     private Pago pago;
@@ -110,5 +112,94 @@ class OnvoCapturaServiceTest {
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
         verify(paymentService, never()).confirmarPedido(any());
+    }
+
+    // ── fix2: intención explícita de cancelar ───────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("fix2: cobro que llega con la cancelación ya pedida (ONVO estaba en duda) → NO confirma: pedido CANCELADO, reserva liberada, REEMBOLSO_PENDIENTE")
+    void cobroConCancelacionPedidaNoConfirma() {
+        Pedido pedido = new Pedido();
+        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pago.setId(7L);
+        pago.setPedido(pedido);
+        when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido));
+        when(pagoRepository.cancelacionSolicitadaEnBase(7L))
+            .thenReturn(Optional.of(java.time.LocalDateTime.now(Constants.ZONA_CR)));
+
+        assertThat(captura.capturarVerificado("cs_1", "{}", "webhook")).isEqualTo(Captura.COBRADO_SOBRE_CANCELADO);
+
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
+        verify(stockReservationService).liberarReservas(pedido);
+        verify(avisoReembolso).registrarPendiente(pago);
+        verify(paymentService, never()).confirmarPedido(any());
+    }
+
+    @Test
+    @DisplayName("fix2: sin cancelación pedida (expiración automática) el cobro válido confirma como siempre")
+    void cobroSinCancelacionPedidaConfirma() {
+        pago.setId(8L);
+        when(pagoRepository.cancelacionSolicitadaEnBase(8L)).thenReturn(Optional.empty());
+        assertThat(captura.capturarVerificado("cs_1", "{}", "cleanup")).isEqualTo(Captura.CAPTURADO);
+        verify(paymentService).confirmarPedido(pago);
+        verify(stockReservationService, never()).liberarReservas(any());
+    }
+
+    @Test
+    @DisplayName("fix2: cobro sobre cancelación explícita (misma transacción, pago bloqueado) → evento registrado, pedido cancelado, REEMBOLSO_PENDIENTE; repetido → false")
+    void registrarCobroSobreCancelacionExplicita() {
+        Pedido pedido = new Pedido();
+        pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pago.setId(9L);
+        pago.setPedido(pedido);
+        when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido));
+
+        assertThat(captura.registrarCobroSobreCancelacionExplicita(pago, "cancelacion")).isTrue();
+        assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+        assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
+        verify(stockReservationService).liberarReservas(pedido);
+        verify(avisoReembolso).registrarPendiente(pago);
+        verify(paymentService, never()).confirmarPedido(any());
+
+        when(webhookEventRepository.existsByMerchantTokenAndEventoTipo("cs_1", OnvoPaymentProvider.EVENTO_SESION)).thenReturn(true);
+        assertThat(captura.registrarCobroSobreCancelacionExplicita(pago, "cancelacion")).isFalse();
+    }
+
+    @Test
+    @DisplayName("fix2: registrarCobroSobreCancelacionExplicita es MANDATORY (nunca abre REQUIRES_NEW) y guardarIntentId es REQUIRED")
+    void propagaciones() throws Exception {
+        var m1 = OnvoCapturaService.class.getMethod("registrarCobroSobreCancelacionExplicita", Pago.class, String.class);
+        assertThat(m1.getAnnotation(org.springframework.transaction.annotation.Transactional.class).propagation())
+            .isEqualTo(org.springframework.transaction.annotation.Propagation.MANDATORY);
+        var m2 = OnvoCapturaService.class.getMethod("guardarIntentId", String.class, String.class);
+        assertThat(m2.getAnnotation(org.springframework.transaction.annotation.Transactional.class).propagation())
+            .isEqualTo(org.springframework.transaction.annotation.Propagation.REQUIRED);
+    }
+
+    @Test
+    @DisplayName("fix2 BAJO: guardarIntentId usa el UPDATE condicional y nunca reemplaza una referencia previa")
+    void guardarIntentIdCondicional() {
+        when(pagoRepository.guardarIntentId("cs_1", "pi_1")).thenReturn(1);
+        assertThat(captura.guardarIntentId("cs_1", "pi_1")).isTrue();
+        verify(pagoRepository, never()).save(any());
+
+        // Ya guardado el mismo: el UPDATE no toca filas y se acepta.
+        when(pagoRepository.guardarIntentId("cs_1", "pi_1")).thenReturn(0);
+        when(pagoRepository.intentIdEnBase("cs_1")).thenReturn(Optional.of("pi_1"));
+        assertThat(captura.guardarIntentId("cs_1", "pi_1")).isTrue();
+
+        // Distinto al guardado: conflicto (false), no se reemplaza.
+        when(pagoRepository.guardarIntentId("cs_1", "pi_otro")).thenReturn(0);
+        assertThat(captura.guardarIntentId("cs_1", "pi_otro")).isFalse();
+        verify(pagoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("fix2: el UPDATE de guardarIntentId solo escribe si la columna está vacía")
+    void guardarIntentIdSoloSiVacio() throws Exception {
+        var m = com.hotclick.repository.PagoRepository.class.getMethod("guardarIntentId", String.class, String.class);
+        String sql = m.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        assertThat(sql).contains("onvo_payment_intent_id IS NULL").doesNotContain("<>");
     }
 }

@@ -147,7 +147,8 @@ public class PaymentService {
         stockReservationService.liberarReservas(pedido);
     }
 
-    @Transactional
+    // fix2: la cancelación pendiente guarda la intención; el wrapper no la revierte (mismo noRollbackFor que el servicio).
+    @Transactional(noRollbackFor = com.hotclick.service.payment.CancelacionPendienteOnvoException.class)
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
         userCancellationService.cancelarPorUsuario(numeroPedido, correoUsuario);
     }
@@ -166,7 +167,7 @@ public class PaymentService {
         paymentFailureHandler.marcarFallido(pago, motivo);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = com.hotclick.service.payment.CancelacionPendienteOnvoException.class)
     public void cancelarAnon(String numeroPedido, String cancelToken) {
         userCancellationService.cancelarAnon(numeroPedido, cancelToken);
     }

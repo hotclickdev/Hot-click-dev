@@ -42,6 +42,8 @@ class OnvoRechazoServiceTest {
         doReturn(Map.of("paymentStatus", "unpaid", "paymentIntentId", "pi_1", "mode", MODO)).when(onvo).obtenerCheckoutSession(SESION);
         when(provider.expirarSesionSinCobro(SESION)).thenReturn(true);
         when(cancelador.marcarFallido(anyLong())).thenReturn(true);
+        // MEDIO limpieza: última lectura del intent antes de liberar.
+        when(provider.revisarCobroAntesDeCancelar(SESION, "rechazo")).thenReturn(OnvoPaymentProvider.CobroIntent.SIN_COBRO);
     }
 
     private static Map<String, Object> intent(String status, Object error) {

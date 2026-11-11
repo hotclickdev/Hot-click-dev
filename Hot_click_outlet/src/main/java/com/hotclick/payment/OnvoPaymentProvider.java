@@ -124,6 +124,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
             return Verificacion.NO_ENCONTRADO;
         }
         String intentId = OnvoCobroVerificador.paymentIntentId(sesion);
+        recordarIntent(checkoutSessionId, intentId, pago.getOnvoPaymentIntentId());
         Map<?, ?> intent = onvoService.obtenerPaymentIntent(intentId);
         switch (OnvoCobroVerificador.decidir(pago, sesion, intent, onvoService.modoEsperado())) {
             case ACEPTAR -> {
@@ -154,6 +155,310 @@ public class OnvoPaymentProvider implements PaymentProvider {
                 log.info("[onvo] Sesión todavía sin cobro confirmado: sessionId={}", OnvoService.enmascarar(checkoutSessionId));
                 return Verificacion.NO_PAGADO;
             }
+        }
+    }
+
+    /**
+     * MEDIO limpieza (cobro capturado cancelado): qué dice el payment intent de la sesión justo antes de cancelar.
+     * Solo {@code SIN_COBRO} autoriza a la limpieza a cancelar.
+     */
+    public enum CobroIntent {
+        /**
+         * ONVO confirma por GET que el intent no cobró y que ya no se puede pagar por el checkout: intent
+         * {@code canceled}, o {@code requires_payment_method}/{@code requires_confirmation} con la sesión expired (o
+         * inexistente, decidiendo el intent guardado). Lo único que autoriza a cancelar y liberar stock.
+         */
+        SIN_COBRO,
+        /**
+         * fix2 (BAJO requires_confirmation): el intent todavía no cobró, pero la sesión sigue abierta (no expired) y el
+         * comprador puede pagar. No autoriza a cancelar ni a liberar: solo a expirar primero y volver a leer.
+         */
+        SIN_COBRO_SESION_ABIERTA,
+        /**
+         * fix2 (cancelación explícita): el intent cobró (mismo monto, moneda, modo e id) y quien llamó pidió NO capturar.
+         * Decide quien llama, con el pago bloqueado; nunca se confirma en silencio.
+         */
+        COBRADO_SIN_CAPTURAR,
+        /** El intent cobró y quedó confirmado por el camino idempotente de captura. */
+        CONFIRMADO,
+        /** El intent cobró pero ya no se pudo vender (pedido cancelado o sin stock): REEMBOLSO_PENDIENTE. */
+        REEMBOLSO_PENDIENTE,
+        /** Otra entrega ya lo había capturado. */
+        DUPLICADO,
+        /** El intent cobró con otro monto, moneda o id: no se confirma ni se cancela (alerta). */
+        DATOS_DISTINTOS,
+        /** ONVO no respondió, respondió vacío o un estado que todavía puede cobrar: no se toca nada. */
+        EN_DUDA
+    }
+
+    /** Estados del intent (OpenAPI de ONVO) en los que no hubo cobro. Cualquier otro valor cuenta como en duda. */
+    static final java.util.Set<String> INTENT_SIN_COBRO =
+        java.util.Set.of("requires_payment_method", "requires_confirmation", "canceled");
+
+    /**
+     * Gate fail-closed de TODA cancelación de un pago ONVO en línea (limpieza TTL, cancelación del comprador o del
+     * panel, respaldo). Relee por GET la sesión y su payment intent; si la sesión ya no existe (404) usa el intent
+     * guardado en el pago (V237). Una sesión inexistente NO prueba que el intent no cobró.
+     * <ul>
+     *   <li>intent succeeded con monto/moneda/modo/id iguales → captura idempotente existente (confirma, o
+     *       REEMBOLSO_PENDIENTE si el pedido ya no se puede vender);</li>
+     *   <li>intent sin cobro y sin receivedAmount: {@code canceled}, o requires_payment_method/requires_confirmation
+     *       con la sesión expired o inexistente → {@code SIN_COBRO}, lo único que autoriza a cancelar y liberar stock;
+     *       con la sesión todavía abierta → {@code SIN_COBRO_SESION_ABIERTA} (solo autoriza a expirar primero);</li>
+     *   <li>error, timeout, respuesta vacía, otro id/modo, estado intermedio, o sesión 404 sin intent conocido →
+     *       {@code EN_DUDA}: nadie cancela ni libera.</li>
+     * </ul>
+     * Solo GET: no escribe en ONVO. LÍMITE: el último GET no es atómico contra una captura posterior (ver
+     * docs/security/onvo-gate-cancelacion-limite.md); la compensación es el webhook / el respaldo de cerrados, que
+     * capturan sobre un pedido cancelado y lo dejan REEMBOLSO_PENDIENTE con aviso al admin.
+     */
+    public CobroIntent revisarCobroAntesDeCancelar(String checkoutSessionId, String origen) {
+        return revisarCobro(checkoutSessionId, origen, true).cobro();
+    }
+
+    /**
+     * fix2: resultado del gate con el estado del intent leído (null si no se llegó a leer). La conciliación durable lo
+     * usa para saber si el pago quedó resuelto sin cobro de forma definitiva (intent {@code canceled}).
+     */
+    public record RevisionCobro(CobroIntent cobro, String estadoIntent, boolean sinReferencia, boolean sinReferenciaNueva) {
+        public RevisionCobro(CobroIntent cobro, String estadoIntent) { this(cobro, estadoIntent, false, false); }
+        static RevisionCobro de(CobroIntent c) { return new RevisionCobro(c, null); }
+    }
+
+    /**
+     * Gate de {@link #revisarCobroAntesDeCancelar}. Con {@code capturar=false} (cancelación explícita del comprador o
+     * del panel) un intent cobrado NO pasa por la captura: devuelve {@link CobroIntent#COBRADO_SIN_CAPTURAR} y decide
+     * quien llama, en su transacción y con el pago bloqueado (sin abrir una transacción REQUIRES_NEW bajo un lock
+     * externo, que se autobloqueaba con el FOR UPDATE del pedido del panel).
+     */
+    public RevisionCobro revisarCobro(String checkoutSessionId, String origen, boolean capturar) {
+        try {
+            if (onvoService.isMockMode()) {
+                // Modo simulado explícito (perfil dev/test sin llave): no hay sesión ni intent reales. Igual que antes.
+                return RevisionCobro.de(CobroIntent.SIN_COBRO);
+            }
+            if (!onvoService.isPagosDisponibles()) return RevisionCobro.de(CobroIntent.EN_DUDA);
+            String guardado = intentGuardado(checkoutSessionId);
+            Map<?, ?> sesion = onvoService.obtenerCheckoutSession(checkoutSessionId);
+            String intentId;
+            // Sesión que todavía se puede pagar: existe y ONVO no la muestra expired.
+            boolean sesionAbierta = sesion != null && !sesion.isEmpty()
+                && !"expired".equalsIgnoreCase(String.valueOf(sesion.get("status")));
+            if (sesion == null || sesion.isEmpty()) {
+                // 404 (o id no consultable): solo se puede decidir con un intent conocido de antes.
+                if (guardado == null) {
+                    return sinReferencia(checkoutSessionId);
+                }
+                intentId = guardado;
+            } else {
+                intentId = OnvoCobroVerificador.paymentIntentId(sesion);
+                if (intentId == null || intentId.isBlank()) {
+                    if (guardado != null) {
+                        intentId = guardado;
+                    } else {
+                        // Sin intent no hay cobro posible, salvo que la sesión diga paid (inconsistente: en duda).
+                        if ("paid".equalsIgnoreCase(String.valueOf(sesion.get("paymentStatus")))) {
+                            return RevisionCobro.de(CobroIntent.EN_DUDA);
+                        }
+                        return RevisionCobro.de(sesionAbierta ? CobroIntent.SIN_COBRO_SESION_ABIERTA : CobroIntent.SIN_COBRO);
+                    }
+                } else if (guardado != null && !guardado.equals(intentId)) {
+                    // fix2: referencia previa distinta: no se reemplaza ni se decide con ninguna de las dos.
+                    log.error("[ALERTA-PAGO] Sesión ONVO con payment intent distinto al guardado: en duda, sin cancelar ni "
+                        + "confirmar. sessionId={}", OnvoService.enmascarar(checkoutSessionId));
+                    return RevisionCobro.de(CobroIntent.EN_DUDA);
+                } else {
+                    recordarIntent(checkoutSessionId, intentId, guardado);
+                }
+            }
+            Map<?, ?> intent = onvoService.obtenerPaymentIntent(intentId);
+            String modo = onvoService.modoEsperado();
+            if (intent == null || intent.isEmpty() || !intentId.equals(texto(intent, "id"))
+                    || modo == null || !modo.equalsIgnoreCase(texto(intent, "mode"))) {
+                log.warn("[onvo] Intent sin respuesta clara antes de cancelar: sessionId={}", OnvoService.enmascarar(checkoutSessionId));
+                return RevisionCobro.de(CobroIntent.EN_DUDA);
+            }
+            String estado = texto(intent, "status");
+            String estadoNorm = estado == null ? null : estado.toLowerCase(java.util.Locale.ROOT);
+            if ("succeeded".equals(estadoNorm)) {
+                return new RevisionCobro(capturar
+                    ? confirmarIntentCobrado(checkoutSessionId, intentId, intent, origen)
+                    : cobradoSinCapturar(checkoutSessionId, intent), estadoNorm);
+            }
+            if (estadoNorm != null && INTENT_SIN_COBRO.contains(estadoNorm) && sinMontoRecibido(intent)) {
+                // canceled es terminal en ONVO. requires_payment_method / requires_confirmation solo cuentan como sin
+                // cobro definitivo si la sesión ya no se puede pagar (expired o inexistente).
+                boolean terminal = "canceled".equals(estadoNorm) || !sesionAbierta;
+                return new RevisionCobro(terminal ? CobroIntent.SIN_COBRO : CobroIntent.SIN_COBRO_SESION_ABIERTA, estadoNorm);
+            }
+            return new RevisionCobro(CobroIntent.EN_DUDA, estadoNorm);
+        } catch (RuntimeException e) {
+            log.warn("[onvo] Reconsulta del intent falló: sessionId={} ({})", OnvoService.enmascarar(checkoutSessionId), e.getClass().getSimpleName());
+            return RevisionCobro.de(CobroIntent.EN_DUDA);
+        }
+    }
+
+    /**
+     * Sesión 404 sin intent guardado: EN_DUDA (nadie cancela ni libera). fix2 (tormenta de alertas): la marca es
+     * persistente y la alerta sale UNA vez por pago; si el pago sigue PENDIENTE (reserva tomada) va como [ALERTA-PAGO],
+     * si ya estaba cerrado (p. ej. históricos anteriores a V237) solo WARN y la conciliación deja un resumen por corrida.
+     */
+    private RevisionCobro sinReferencia(String checkoutSessionId) {
+        boolean nueva = false;
+        try {
+            nueva = onvoCapturaService != null && onvoCapturaService.marcarSinReferencia(checkoutSessionId);
+        } catch (RuntimeException e) {
+            log.warn("[onvo] No se guardó la marca sin referencia: sessionId={} ({})", OnvoService.enmascarar(checkoutSessionId),
+                e.getClass().getSimpleName());
+        }
+        if (nueva) {
+            boolean pendiente = pagoRepository != null && pagoRepository.findByMerchantToken(checkoutSessionId)
+                .map(p -> Constants.PAGO_PENDIENTE.equals(p.getEstadoPago())).orElse(false);
+            if (pendiente) {
+                log.error("[ALERTA-PAGO] Sesión ONVO inexistente y sin payment intent conocido: no se cancela ni se libera "
+                    + "stock; revisión manual. sessionId={}", OnvoService.enmascarar(checkoutSessionId));
+            } else {
+                log.warn("[onvo] Pago cerrado sin referencia en ONVO (sesión 404, sin intent guardado): sessionId={}",
+                    OnvoService.enmascarar(checkoutSessionId));
+            }
+        } else {
+            log.debug("[onvo] Sesión ONVO sin referencia (ya alertada): sessionId={}", OnvoService.enmascarar(checkoutSessionId));
+        }
+        return new RevisionCobro(CobroIntent.EN_DUDA, null, true, nueva);
+    }
+
+    /** Intent cobrado sin capturar: mismas verificaciones que la captura (pago ONVO local, monto/moneda/modo/id). */
+    private CobroIntent cobradoSinCapturar(String checkoutSessionId, Map<?, ?> intent) {
+        Pago pago = pagoRepository.findByMerchantToken(checkoutSessionId).orElse(null);
+        if (pago == null || !Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) return CobroIntent.EN_DUDA;
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return CobroIntent.DUPLICADO;
+        if (!OnvoCobroVerificador.coincide(pago, intent)) {
+            log.error("[ALERTA-PAGO] {}", OnvoCobroVerificador.mensajeAlerta(pago, intent));
+            return CobroIntent.DATOS_DISTINTOS;
+        }
+        return CobroIntent.COBRADO_SIN_CAPTURAR;
+    }
+
+    /** Intent guardado en el pago (V237), o null. */
+    private String intentGuardado(String checkoutSessionId) {
+        if (pagoRepository == null || checkoutSessionId == null) return null;
+        // fix2: se lee la columna de la base (la copia en memoria puede estar vieja: la columna es updatable=false).
+        String v = pagoRepository.intentIdEnBase(checkoutSessionId).orElse(null);
+        return v == null || v.isBlank() ? null : v;
+    }
+
+    /** Best-effort: guardar el intent de la sesión nunca cambia una verificación. */
+    private void recordarIntent(String checkoutSessionId, String intentId, String guardado) {
+        if (intentId == null || intentId.isBlank() || intentId.equals(guardado) || onvoCapturaService == null) return;
+        try {
+            onvoCapturaService.guardarIntentId(checkoutSessionId, intentId);
+        } catch (RuntimeException e) {
+            log.warn("[onvo] No se guardó el payment intent: sessionId={} ({})", OnvoService.enmascarar(checkoutSessionId), e.getClass().getSimpleName());
+        }
+    }
+
+    private CobroIntent confirmarIntentCobrado(String checkoutSessionId, String intentId, Map<?, ?> intent, String origen) {
+        Pago pago = pagoRepository.findByMerchantToken(checkoutSessionId).orElse(null);
+        if (pago == null || !Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) return CobroIntent.EN_DUDA;
+        if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())) return CobroIntent.DUPLICADO;
+        if (!OnvoCobroVerificador.coincide(pago, intent)) {
+            log.error("[ALERTA-PAGO] {}", OnvoCobroVerificador.mensajeAlerta(pago, intent));
+            return CobroIntent.DATOS_DISTINTOS;
+        }
+        log.error("[ALERTA-PAGO] Intent succeeded con la sesión sin marcar pagada: se confirma por la captura idempotente. sessionId={}",
+            OnvoService.enmascarar(checkoutSessionId));
+        OnvoCapturaService.Captura captura = capturar(checkoutSessionId, intentId, origen);
+        if (captura == OnvoCapturaService.Captura.CAPTURADO) guardarSinpeRef(checkoutSessionId, intentId);
+        return switch (captura) {
+            case CAPTURADO -> CobroIntent.CONFIRMADO;
+            case DUPLICADO -> CobroIntent.DUPLICADO;
+            case COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA -> CobroIntent.REEMBOLSO_PENDIENTE;
+        };
+    }
+
+    /** receivedAmount ausente o 0: ONVO no recibió plata. Cualquier monto recibido deja el caso en duda. */
+    private static boolean sinMontoRecibido(Map<?, ?> intent) {
+        Object r = intent.get("receivedAmount");
+        if (r == null) return true;
+        try {
+            return new java.math.BigDecimal(String.valueOf(r)).signum() == 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private static String texto(Map<?, ?> m, String campo) {
+        Object v = m == null ? null : m.get(campo);
+        return v == null ? null : String.valueOf(v);
+    }
+
+    /**
+     * Webhook {@code payment-intent.succeeded} de una venta en línea (checkout hospedado). El cuerpo solo da el id:
+     * se relee el intent por GET, se busca el pedido por {@code metadata.pedidoId} del intent (pista, no prueba),
+     * se exige que la sesión del pago apunte a ese mismo intent y la confirmación sale de
+     * {@link #procesarPagoVerificado} (dedupe por sesión + lock de la fila). Si la sesión todavía no figura pagada
+     * pero el intent sí, se usa {@link #revisarCobroAntesDeCancelar}. {@code NO_ENCONTRADO} = no es venta en línea.
+     */
+    public Verificacion procesarIntentVentaOnline(String intentId, String origen) {
+        if (intentId == null || intentId.isBlank()) return Verificacion.NO_ENCONTRADO;
+        if (!onvoService.isPagosDisponibles()) return Verificacion.NO_CONSULTABLE;
+        Map<?, ?> intent;
+        Map<?, ?> sesion;
+        Pago pago;
+        try {
+            intent = onvoService.obtenerPaymentIntent(intentId);
+            if (intent == null || intent.isEmpty()) return Verificacion.NO_ENCONTRADO;
+            // Primero el intent ya visto en la sesión del pago (V237); si no, metadata.pedidoId como pista.
+            pago = pagoRepository.findFirstByOnvoPaymentIntentId(intentId).orElse(null);
+            if (pago == null) {
+                Long pedidoId = pedidoIdDeMetadata(intent);
+                if (pedidoId == null) return Verificacion.NO_ENCONTRADO;
+                pago = pagoRepository.findTopByPedidoId(pedidoId).orElse(null);
+            }
+            if (pago == null || pago.getMerchantToken() == null
+                    || !Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) {
+                return Verificacion.NO_ENCONTRADO;
+            }
+            if (Constants.PAGO_CAPTURADO.equals(pago.getEstadoPago())
+                    || com.hotclick.service.payment.PaymentOrderConfirmationService.enReembolso(pago.getEstadoPago())) {
+                return Verificacion.DUPLICADO;
+            }
+            sesion = onvoService.obtenerCheckoutSession(pago.getMerchantToken());
+        } catch (RuntimeException e) {
+            log.warn("[onvo] payment-intent.succeeded sin respuesta de ONVO: intent={} ({})", OnvoService.enmascarar(intentId), e.getClass().getSimpleName());
+            return Verificacion.NO_CONSULTABLE;
+        }
+        boolean sesionInexistente = sesion == null || sesion.isEmpty();
+        boolean mismoIntent = sesionInexistente
+            ? intentId.equals(pago.getOnvoPaymentIntentId())
+            : intentId.equals(OnvoCobroVerificador.paymentIntentId(sesion));
+        if (!mismoIntent) {
+            log.warn("[onvo] payment-intent.succeeded: la sesión del pedido no apunta a ese intent: intent={}", OnvoService.enmascarar(intentId));
+            return Verificacion.NO_ENCONTRADO;
+        }
+        String sessionId = pago.getMerchantToken();
+        Verificacion v = sesionInexistente ? Verificacion.NO_ENCONTRADO : procesarPagoVerificado(sessionId, origen);
+        if (v != Verificacion.NO_PAGADO && v != Verificacion.NO_ENCONTRADO) return v;
+        // Sesión sin marcar pagada o ya inexistente (404): decide el intent (guardado si hace falta).
+        return switch (revisarCobroAntesDeCancelar(sessionId, origen)) {
+            case CONFIRMADO -> Verificacion.OK;
+            case DUPLICADO -> Verificacion.DUPLICADO;
+            case REEMBOLSO_PENDIENTE -> Verificacion.COBRADO_SOBREVENTA;
+            case DATOS_DISTINTOS -> Verificacion.DATOS_DISTINTOS;
+            case EN_DUDA, COBRADO_SIN_CAPTURAR -> Verificacion.EN_PROCESO;
+            case SIN_COBRO, SIN_COBRO_SESION_ABIERTA -> Verificacion.NO_PAGADO;
+        };
+    }
+
+    private static Long pedidoIdDeMetadata(Map<?, ?> intent) {
+        if (!(intent.get("metadata") instanceof Map<?, ?> md)) return null;
+        Object v = md.get("pedidoId");
+        if (v == null) return null;
+        try {
+            long id = Long.parseLong(String.valueOf(v).trim());
+            return id > 0 ? id : null;
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

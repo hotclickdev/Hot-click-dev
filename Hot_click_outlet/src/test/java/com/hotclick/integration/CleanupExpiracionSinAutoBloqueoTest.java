@@ -74,7 +74,13 @@ class CleanupExpiracionSinAutoBloqueoTest extends BaseIntegrationTest {
         reservaAntiBot.setClock(Clock.system(Constants.ZONA_CR));
         when(onvoService.isPagosDisponibles()).thenReturn(true);
         when(onvoService.modoEsperado()).thenReturn("live");
-        doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(SESION_VENCIDA);
+        // fix2: una sesión 404 sin intent conocido queda EN_DUDA (no se cancela, gate del 404). El pago vencido se
+        // modela como en ONVO real: sesión expired/unpaid con su intent requires_payment_method sin cobro.
+        doReturn(Map.of("status", "expired", "paymentStatus", "unpaid", "paymentIntentId", "pi_qa5_vencida", "mode", "live"))
+            .when(onvoService).obtenerCheckoutSession(SESION_VENCIDA);
+        doReturn(Map.of("id", "pi_qa5_vencida", "status", "requires_payment_method", "amount", 1_000_000,
+                "currency", "CRC", "mode", "live"))
+            .when(onvoService).obtenerPaymentIntent("pi_qa5_vencida");
         doReturn(Map.of("paymentStatus", "paid", "status", "open", "paymentIntentId", INTENT, "mode", "live"))
             .when(onvoService).obtenerCheckoutSession(SESION_COBRADA);
         doReturn(Map.of("id", INTENT, "status", "succeeded", "amount", 1_000_000, "currency", "CRC", "mode", "live"))

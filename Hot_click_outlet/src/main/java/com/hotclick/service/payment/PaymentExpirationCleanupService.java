@@ -30,6 +30,9 @@ public class PaymentExpirationCleanupService {
     @Autowired private ReservaAntiBotService      reservaAntiBot;
     @Autowired private ReservaSospechosaLiberador reservaSospechosaLiberador;
     @Autowired private OnvoRechazoService         onvoRechazoService;
+    /** fix2 (tormenta): reagenda con backoff persistente el pago ONVO que no se pudo cancelar (en duda). */
+    @Autowired(required = false) @org.springframework.context.annotation.Lazy
+    private OnvoPendientesReconsultaService       reconsulta;
 
     /** Minutos sin pagar tras los que un pago pendiente se reconsulta y, si corresponde, se cancela. */
     @Value("${hotclick.pagos.onvo.vencimiento-minutos:30}")
@@ -64,8 +67,21 @@ public class PaymentExpirationCleanupService {
         for (Pago pago : expirados) {
             // La reconsulta a ONVO corre SIN transacción abierta acá: si confirma, su captura toma los
             // locks de producto en su propia transacción y no espera a nadie nuestro.
-            if (Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor()) && !onvoPermiteCancelar(pago)) {
-                continue;
+            if (Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) {
+                // fix2: un vencido ONVO en duda (404 sin referencia, intent en proceso, ONVO caído) no se reconsulta en
+                // cada pasada de 5 min: espera su próxima reconsulta agendada (persistente, sobrevive reinicios).
+                LocalDateTime proxima = pago.getConciliacionProximaEn();
+                if (proxima != null && proxima.isAfter(LocalDateTime.now(Constants.ZONA_CR))) {
+                    continue;
+                }
+                if (!onvoPermiteCancelar(pago)) {
+                    // Solo si sigue PENDIENTE (confirmado o rechazado ya salió del barrido por su estado).
+                    if (reconsulta != null && pagoRepository.findById(pago.getId())
+                            .map(p -> Constants.PAGO_PENDIENTE.equals(p.getEstadoPago())).orElse(false)) {
+                        reconsulta.agendarEnDuda(pago.getId());
+                    }
+                    continue;
+                }
             }
 
             try {
@@ -85,8 +101,8 @@ public class PaymentExpirationCleanupService {
     /**
      * Antes de cancelar un pago ONVO vencido se le pregunta a ONVO: si cobró (webhook atrasado o perdido)
      * se confirma; si el cobro sigue en proceso, no se pudo consultar o el monto no coincide, queda
-     * pendiente para la próxima vuelta. Solo se cancela si ONVO no tiene la sesión o la deja expirada
-     * y sin cobro, así ya no se puede pagar un pedido cancelado.
+     * pendiente para la próxima vuelta. Solo se cancela si el payment intent está explícitamente sin cobro
+     * ({@link OnvoPaymentProvider#revisarCobroAntesDeCancelar}), también cuando ONVO ya no tiene la sesión (404).
      */
     private boolean onvoPermiteCancelar(Pago pago) {
         try {
@@ -98,15 +114,29 @@ public class PaymentExpirationCleanupService {
                     return false;
                 }
                 case NO_ENCONTRADO -> {
-                    return true;
+                    // Sesión inexistente (404) NO prueba que el intent no cobró: decide el intent guardado (V237).
+                    // Sin intent conocido o en duda → no se cancela ni se libera stock (alerta, revisión manual).
+                    return intentSinCobro(pago, false);
                 }
                 case NO_PAGADO -> {
+                    // MEDIO (QA: charge succeeded y pedido cancelado): la sesión puede decir unpaid/expired con el
+                    // intent ya cobrado. Antes de tocar nada se relee el intent; si cobró, se confirma (o queda
+                    // REEMBOLSO_PENDIENTE) por la captura idempotente y no se cancela.
+                    // fix2: antes del expire la sesión puede seguir abierta (SIN_COBRO_SESION_ABIERTA): eso solo
+                    // autoriza a expirar; liberar exige SIN_COBRO en la última lectura de abajo.
+                    if (!intentSinCobro(pago, true)) {
+                        return false;
+                    }
                     // QA5 MEDIO: si ONVO lo rechazó, queda FALLIDO (no CANCELADO) y ya liberó el stock.
                     if (onvoRechazoService != null
                             && onvoRechazoService.cerrarSiRechazado(pago.getId(), pago.getMerchantToken())) {
                         return false;
                     }
-                    return onvoPaymentProvider.expirarSesionSinCobro(pago.getMerchantToken());
+                    if (!onvoPaymentProvider.expirarSesionSinCobro(pago.getMerchantToken())) {
+                        return false;
+                    }
+                    // Última lectura justo antes de cancelar: un cobro que entró mientras se expiraba gana.
+                    return intentSinCobro(pago, false);
                 }
                 default -> {
                     return false;
@@ -116,5 +146,19 @@ public class PaymentExpirationCleanupService {
             log.warn("[payment-cleanup] Reconsulta ONVO falló token={}: {}", OnvoService.enmascarar(pago.getMerchantToken()), e.getClass().getSimpleName());
             return false;
         }
+    }
+
+    /** true solo si ONVO confirma por GET que el intent no cobró; cualquier otra respuesta deja el pago como está. */
+    private boolean intentSinCobro(Pago pago, boolean antesDeExpirar) {
+        OnvoPaymentProvider.CobroIntent c = onvoPaymentProvider.revisarCobroAntesDeCancelar(pago.getMerchantToken(), "cleanup");
+        if (c == OnvoPaymentProvider.CobroIntent.SIN_COBRO
+                || (antesDeExpirar && c == OnvoPaymentProvider.CobroIntent.SIN_COBRO_SESION_ABIERTA)) {
+            return true;
+        }
+        if (c != null && c != OnvoPaymentProvider.CobroIntent.EN_DUDA
+                && c != OnvoPaymentProvider.CobroIntent.SIN_COBRO_SESION_ABIERTA) {
+            log.warn("[payment-cleanup] Intent cobrado en ONVO, no se cancela ({}): {}", c, OnvoService.enmascarar(pago.getMerchantToken()));
+        }
+        return false;
     }
 }

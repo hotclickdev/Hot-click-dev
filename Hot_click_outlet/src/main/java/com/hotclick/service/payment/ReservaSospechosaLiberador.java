@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,8 +33,14 @@ public class ReservaSospechosaLiberador {
     @Autowired private PedidoGrupoService         pedidoGrupoService;
     @Autowired private ReservaAntiBotService      reservaAntiBot;
 
-    /** @return cantidad de pagos cuyas reservas se liberaron. */
-    @Transactional
+    @Autowired(required = false)
+    private org.springframework.transaction.PlatformTransactionManager txManager;
+
+    /**
+     * @return cantidad de pagos cuyas reservas se liberaron.
+     * <p>MEDIO limpieza: sin transacción propia; cada pago en su transacción corta (lock del pago y re-chequeo).
+     * fix2: los pagos ONVO en línea quedan fuera (ver {@link #onvoPermiteLiberar}); los cierra la limpieza por TTL.
+     */
     public int liberarVencidas(Long empresaId, LocalDateTime ahora) {
         LocalDateTime desde = ahora
             .minusMinutes((long) reservaAntiBot.getVentanaMinutos() + reservaAntiBot.getLiberarEnMinutos())
@@ -43,14 +48,34 @@ public class ReservaSospechosaLiberador {
         List<Long> ids = pagoRepository.findIdsReservaMarcadaVencidaByEmpresa(ahora, desde, empresaId);
         int liberados = 0;
         for (Long id : ids) {
-            if (liberarSiCorresponde(id, ahora)) liberados++;
+            if (!onvoPermiteLiberar(id)) continue;
+            Boolean ok = enTransaccion(() -> liberarSiCorresponde(id, ahora));
+            if (Boolean.TRUE.equals(ok)) liberados++;
         }
-        // Pagos y pedidos son entidades gestionadas (cargadas en esta transacción): el cambio de
-        // estado se escribe en el commit por dirty checking, sin un save por fila.
+        // Pagos y pedidos son entidades gestionadas en la transacción de cada pago: el cambio de
+        // estado se escribe en su commit por dirty checking, sin un save por fila.
         if (liberados > 0) {
             log.warn("[reserva-antibot] empresa={}: {} reservas sospechosas liberadas", empresaId, liberados);
         }
         return liberados;
+    }
+
+    /**
+     * Pagos que no son ONVO: como siempre. fix2 (MEDIO anti-bot): los pagos ONVO en línea NO se liberan aquí. El
+     * anti-bot no expira la sesión (y no se agregan escrituras a ONVO), así que un intent requires_payment_method con
+     * la sesión abierta todavía se puede pagar: liberar su reserva dejaba vender dos veces el mismo stock. Los cierra la
+     * limpieza por TTL, que expira la sesión y vuelve a leer el intent antes de liberar. Sin llamadas a ONVO.
+     */
+    private boolean onvoPermiteLiberar(Long id) {
+        Pago pago = pagoRepository.findById(id).orElse(null);
+        if (pago == null || !Constants.PROVEEDOR_ONVO.equalsIgnoreCase(pago.getProveedor())) return true;
+        log.info("[reserva-antibot] Pago ONVO id={} no se libera aquí: lo cierra la limpieza por TTL (expira y relee)", id);
+        return false;
+    }
+
+    private <T> T enTransaccion(java.util.function.Supplier<T> trabajo) {
+        if (txManager == null) return trabajo.get();
+        return new org.springframework.transaction.support.TransactionTemplate(txManager).execute(s -> trabajo.get());
     }
 
     /** Toma el pago con lock, re-chequea y, si sigue marcado y vencido, cancela y devuelve el stock. */

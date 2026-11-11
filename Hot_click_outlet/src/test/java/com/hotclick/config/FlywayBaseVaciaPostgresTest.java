@@ -106,9 +106,28 @@ class FlywayBaseVaciaPostgresTest {
         assertEquals(0, jdbc.queryForObject(
             "SELECT COUNT(*) FROM flyway_schema_history WHERE NOT success", Integer.class));
         assertEquals(0, flywayComoApp(ds).info().pending().length, "no queda ninguna migración pendiente");
-        assertTrue(jdbc.queryForObject(
-            "SELECT COUNT(*) FROM flyway_schema_history WHERE type = 'SQL' AND success", Integer.class) >= versionadas - 1,
-            "V2..VN se ejecutan de verdad (no baseline)");
+        // Historial: exactamente V2..VN como SQL ejecutado (V1 lo cubre el BASELINE). Semántica: esquema base equivalente
+        // a V1 (db/base-vacia, no el V1 literal de prod) + baseline V1 + V2..V70 + hook (historial aparte) + V71..VN.
+        // Todas las V del classpath, incluidas las de versión con subíndice (V171_1 = 171.1).
+        long todasLasV = archivos.stream().filter(f -> f.matches("V\\d+(_\\d+)*__.*\\.sql")).count();
+        assertEquals(todasLasV - 1, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM flyway_schema_history WHERE type = 'SQL' AND success", Integer.class).longValue(),
+            "V2..VN se ejecutan de verdad (no baseline), una vez cada una");
+        assertEquals(1, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM flyway_schema_history WHERE type = 'BASELINE'", Integer.class), "un solo BASELINE");
+        assertEquals("1", jdbc.queryForObject(
+            "SELECT version FROM flyway_schema_history WHERE type = 'BASELINE'", String.class), "el BASELINE es V1");
+        for (String v : List.of("237", "238")) {
+            assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history WHERE version = ? "
+                + "AND type = 'SQL' AND success AND checksum IS NOT NULL", Integer.class, v), "V" + v + " aplicada con checksum");
+        }
+        assertEquals(0, jdbc.queryForObject(
+            "SELECT COUNT(*) FROM flyway_schema_history WHERE type = 'SQL' AND checksum IS NULL", Integer.class));
+        // Esquema base y hook en su historial propio (no se mezclan con el principal).
+        assertEquals(List.of("1", "2"), jdbc.queryForList("SELECT version FROM " + FlywayRepairConfig.BASE_VACIA_HISTORIAL
+            + " WHERE success AND version IS NOT NULL ORDER BY installed_rank", String.class));
+        // validate() con la configuración de la app: checksums del classpath = historial.
+        assertTrue(flywayComoApp(ds).validateWithResult().validationSuccessful, "validate() del historial completo");
 
         assertEquals(1, jdbc.queryForObject(
             "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'public' "
@@ -136,9 +155,15 @@ class FlywayBaseVaciaPostgresTest {
             "SELECT COUNT(*) FROM hot_click_usuario_tb WHERE lower(correo) LIKE '%@hotclick.com'", Integer.class));
 
         // Segundo arranque sobre la base ya creada: no repite el esquema base y no falla.
+        Integer filas = jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history", Integer.class);
         arrancarComo(ds, env);
         assertEquals(aplicada, jdbc.queryForObject(
             "SELECT MAX(CAST(split_part(version, '.', 1) AS INTEGER)) FROM flyway_schema_history WHERE success", Integer.class));
+        assertEquals(filas, jdbc.queryForObject("SELECT COUNT(*) FROM flyway_schema_history", Integer.class),
+            "el segundo arranque no agrega filas al historial");
+        // Segundo migrate explícito: 0 ejecutadas y 0 pendientes.
+        assertEquals(0, flywayComoApp(ds).migrate().migrationsExecuted, "segundo migrate sin reaplicar");
+        assertEquals(0, flywayComoApp(ds).info().pending().length);
     }
 
     @Test
