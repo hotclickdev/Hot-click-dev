@@ -3,6 +3,10 @@
     "sentry": {
       "type": "http",
       "url": "https://mcp.sentry.dev/mcp/hotclick"
+    },
+    "wpcom-mcp": {
+      "type": "http",
+      "url": "https://public-api.wordpress.com/wpcom/v2/mcp/v1"
     }
   }
 }
