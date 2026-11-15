@@ -140,6 +140,7 @@ class PagoOnvoGrupoLocksPostgresTest extends BaseIntegrationTest {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private PagoRepository pagoRepository;
     @Autowired private com.hotclick.service.payment.PagoExpiradoCancelador pagoExpiradoCancelador;
+    @Autowired private com.hotclick.service.payment.ReservaTiendaVencidaService reservaTiendaVencidaService;
     @Autowired private com.hotclick.service.payment.PaymentFailureHandler paymentFailureHandler;
     @Value("${hotclick.billing.lock-timeout-ms}") private int lockTimeoutMs;
 
@@ -747,6 +748,130 @@ class PagoOnvoGrupoLocksPostgresTest extends BaseIntegrationTest {
             assertThat(errores).as("ronda %d", ronda).containsOnlyNulls();
             for (Producto p : prods) assertThat(reservado(p)).as("ronda %d producto %d", ronda, p.getId()).isEqualTo(EXTRA);
             for (Producto p : prods) assertThat(stockActual(p)).isEqualTo(STOCK);
+        }
+    }
+
+    // ── Caminos migrados: cancelación de pedido, rollback de checkout, sobreventa, tienda vencida ──────────
+
+    /** Grupo sin Pago (pedido de tienda/manual o checkout que aún no creó el pago). */
+    private void sinPago(Grupo g) {
+        jdbcTemplate.update("DELETE FROM hot_click_pago_tb WHERE fk_id_pedido IN "
+            + "(SELECT id_pedido FROM hot_click_pedido_tb WHERE grupo_pago = ?)", g.principal().getGrupoPago());
+    }
+
+    private static final int[][][] CRUZ_A = {{{5, 1}, {3, 1}}, {{3, 2}, {1, 1}}, {{5, 2}, {0, 1}}};
+    private static final int[][][] CRUZ_B = {{{3, 1}, {5, 1}}, {{5, 3}, {1, 2}}, {{3, 1}, {2, 1}}};
+
+    @Test
+    @DisplayName("panelCancelarSinPagoLiberaSoloEsePedidoYNoDeadlockeaContraLiberacionNueva")
+    void panelCancelarSinPagoLiberaSoloEsePedidoYNoDeadlockeaContraLiberacionNueva() throws Exception {
+        for (int ronda = 0; ronda < 6; ronda++) {
+            List<Producto> prods = productos(6);
+            Grupo a = grupo(prods, CRUZ_A);
+            Grupo b = grupo(prods, CRUZ_B);
+            sinPago(a);
+            intencion(b);
+            Long unico = a.pedidos().get(0).getId();
+            List<Throwable> errores = correrJuntos(List.of(
+                () -> { pedidoService.cambiarEstado(unico, Constants.PEDIDO_CANCELADO, null); return null; },
+                () -> capturar(b)));
+            assertThat(errores).as("ronda %d", ronda).containsOnlyNulls();
+            // Solo ESE pedido de A se cancela y libera; los otros dos de A siguen pendientes con su reserva.
+            assertThat(estadoPedido(unico)).isEqualTo(Constants.PEDIDO_CANCELADO);
+            assertThat(estadoPedido(a.pedidos().get(1).getId())).isEqualTo(Constants.PEDIDO_PENDIENTE);
+            assertThat(estadoPedido(a.pedidos().get(2).getId())).isEqualTo(Constants.PEDIDO_PENDIENTE);
+            Map<Long, Integer> restoA = new HashMap<>();
+            for (int[][] ped : new int[][][]{CRUZ_A[1], CRUZ_A[2]}) {
+                for (int[] l : ped) restoA.merge(prods.get(l[0]).getId(), l[1], Integer::sum);
+            }
+            for (Producto p : prods) assertThat(reservado(p)).as("ronda %d producto %d", ronda, p.getId())
+                .isEqualTo(EXTRA + restoA.getOrDefault(p.getId(), 0));
+            assertLiberado(b, prods, mapaReservado(prods, restoA));
+        }
+    }
+
+    private Map<Long, Integer> mapaReservado(List<Producto> prods, Map<Long, Integer> extra) {
+        Map<Long, Integer> m = new HashMap<>();
+        for (Producto p : prods) m.put(p.getId(), EXTRA + extra.getOrDefault(p.getId(), 0));
+        return m;
+    }
+
+    @Test
+    @DisplayName("rollbackDeCheckoutLiberaPedidoPorCaminoSeguroSinDeadlockContraLiberacionNueva")
+    void rollbackDeCheckoutLiberaPedidoPorCaminoSeguroSinDeadlockContraLiberacionNueva() throws Exception {
+        for (int ronda = 0; ronda < 6; ronda++) {
+            List<Producto> prods = productos(6);
+            Grupo a = grupo(prods, CRUZ_A);
+            Grupo b = grupo(prods, CRUZ_B);
+            sinPago(a);
+            intencion(b);
+            List<Throwable> errores = correrJuntos(List.of(
+                () -> { for (Pedido p : a.pedidos()) paymentService.liberarReservas(pedidoRepository.findById(p.getId()).orElseThrow()); return null; },
+                () -> capturar(b)));
+            assertThat(errores).as("ronda %d", ronda).containsOnlyNulls();
+            for (Producto p : prods) assertThat(reservado(p)).as("ronda %d producto %d", ronda, p.getId()).isEqualTo(EXTRA);
+            assertThat(pedidosConReserva(a)).isZero();
+            // Idempotente: repetir no vuelve a liberar.
+            for (Pedido p : a.pedidos()) paymentService.liberarReservas(pedidoRepository.findById(p.getId()).orElseThrow());
+            for (Producto p : prods) assertThat(reservado(p)).isEqualTo(EXTRA);
+        }
+    }
+
+    @Test
+    @DisplayName("sobreventaLiberaGrupoUnaVezYNoDeadlockeaContraLiberacionNueva")
+    void sobreventaLiberaGrupoUnaVezYNoDeadlockeaContraLiberacionNueva() throws Exception {
+        for (int ronda = 0; ronda < 6; ronda++) {
+            List<Producto> prods = productos(6);
+            Grupo a = grupo(prods, CRUZ_A);
+            Grupo b = grupo(prods, CRUZ_B);
+            // Al producto 5 le falta stock para confirmar A: el cobro cae en sobreventa (pedidos a revisión).
+            jdbcTemplate.update("UPDATE hot_click_producto_tb SET stock_actual = 1 WHERE id_producto = ?", prods.get(5).getId());
+            intencion(b);
+            List<Captura> resultados = new ArrayList<>();
+            List<Throwable> errores = correrJuntos(List.of(
+                () -> { Captura c = capturar(a); synchronized (resultados) { resultados.add(c); } return c; },
+                () -> capturar(b)));
+            assertThat(errores).as("ronda %d", ronda).containsOnlyNulls();
+            assertThat(resultados).containsExactly(Captura.COBRADO_SOBREVENTA);
+            for (Pedido p : a.pedidos()) assertThat(estadoPedido(p.getId())).isEqualTo(Constants.PEDIDO_REVISION_SOBREVENTA);
+            assertThat(pagoDe(a).getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
+            assertThat(pedidosConReserva(a)).isZero();
+            for (Producto p : prods) assertThat(reservado(p)).as("ronda %d producto %d", ronda, p.getId()).isEqualTo(EXTRA);
+            assertLiberado(b, prods, extraEsperado(prods));
+            assertThat(stockActual(prods.get(5))).isEqualTo(1);
+        }
+    }
+
+    @Test
+    @DisplayName("tiendaVencidaCancelaSoloPendientesVencidosEnLoteYNoDeadlockeaContraLiberacionNueva")
+    void tiendaVencidaCancelaSoloPendientesVencidosEnLoteYNoDeadlockeaContraLiberacionNueva() throws Exception {
+        for (int ronda = 0; ronda < 6; ronda++) {
+            List<Producto> prods = productos(6);
+            Grupo a = grupo(prods, CRUZ_A);
+            Grupo b = grupo(prods, CRUZ_B);
+            sinPago(a);
+            jdbcTemplate.update("UPDATE hot_click_pedido_tb SET metodo_pago = 'SINPE_MOVIL', metodo_envio = 'RETIRO', fecha_pedido = ? WHERE grupo_pago = ?",
+                java.sql.Timestamp.valueOf(LocalDateTime.now(Constants.ZONA_CR).minusHours(500)), a.principal().getGrupoPago());
+            // El 3.er pedido de A ya fue pagado por otro camino: no es PENDIENTE, no se toca.
+            Long pagado = a.pedidos().get(2).getId();
+            jdbcTemplate.update("UPDATE hot_click_pedido_tb SET estado_pedido = 'PAGADO' WHERE id_pedido = ?", pagado);
+            intencion(b);
+            List<Throwable> errores = correrJuntos(List.of(
+                () -> reservaTiendaVencidaService.ejecutar(LocalDateTime.now(Constants.ZONA_CR)),
+                () -> capturar(b)));
+            assertThat(errores).as("ronda %d", ronda).containsOnlyNulls();
+            assertThat(estadoPedido(a.pedidos().get(0).getId())).isEqualTo(Constants.PEDIDO_CANCELADO);
+            assertThat(estadoPedido(a.pedidos().get(1).getId())).isEqualTo(Constants.PEDIDO_CANCELADO);
+            assertThat(estadoPedido(pagado)).isEqualTo(Constants.PEDIDO_PAGADO);
+            // Del 3.er pedido de A (PAGADO por fuera) queda su reserva intacta.
+            Map<Long, Integer> resto = new HashMap<>();
+            for (int[] l : CRUZ_A[2]) resto.merge(prods.get(l[0]).getId(), l[1], Integer::sum);
+            for (Producto p : prods) assertThat(reservado(p)).as("ronda %d producto %d", ronda, p.getId())
+                .isEqualTo(EXTRA + resto.getOrDefault(p.getId(), 0));
+            assertLiberado(b, prods, mapaReservado(prods, resto));
+            // Idempotente: otra corrida no libera de nuevo.
+            reservaTiendaVencidaService.ejecutar(LocalDateTime.now(Constants.ZONA_CR));
+            for (Producto p : prods) assertThat(reservado(p)).isEqualTo(EXTRA + resto.getOrDefault(p.getId(), 0));
         }
     }
 }
