@@ -1,0 +1,121 @@
+# PLANTILLA NO INSTALADA. Reusable de confianza, llamado por SHA (W). Contiene el SHA del
+# código detector D (commit distinto de W y del head: sin autorreferencia).
+# Head y diff se leen SOLO como datos: sin checkout del PR, sin npm del PR, sin cachés,
+# sin credenciales persistidas. Token: solo lectura (el llamado solo puede bajar permisos).
+# r3: (1) P se lee como DATOS desde la ref dedicada POLICY_REF (árbol de un solo fichero
+#     e4-policy.json); W NO puede fijar el SHA de P (P contiene W => ciclo), así que el escaneo
+#     REGISTRA commit+blob de P en la procedencia y el cierre exige que coincidan con el P fijado.
+#     (2) Lector de aprobación: ÚNICO paso con token; escribe approval.json (respuestas crudas).
+#     (3) Escaneo SIN token: E4 completo (analyzeCommitGate/formatVerdict de D) + gitleaks.
+#     (4) Procedencia: anotación ::notice title=E4-PROVENANCE:: leída por el cierre.
+#     Nada de esto está instalado ni acreditado contra GitHub real.
+name: e4-trusted
+on:
+  workflow_call:
+    outputs:
+      java_tests: { value: "${{ jobs.scan.outputs.java_tests }}" }
+      fe: { value: "${{ jobs.scan.outputs.fe }}" }
+# r4 permisos (un reusable NO puede subir los permisos que concede el caller; pedir de más => startup_failure):
+#   - contents: read y pull-requests: read son TODO lo que pide este workflow; el caller concede lo mismo o más.
+#   - GET /repos/{o}/{r}/issues/comments/{id} acepta "Issues: read" O "Pull requests: read" (docs REST de GitHub),
+#     y el repo es público; por eso NO se pide `issues: read`.
+#   - GET /repos/{o}/{r}/pulls/{n} usa pull-requests: read.
+#   - La lectura GraphQL del IssueComment con GITHUB_TOKEN queda POR DEMOSTRAR en la prueba acotada (fase A);
+#     si falla => rojo (fail-closed). Nunca write, nunca checks/issues/id-token (test/templates.test.mjs lo exige).
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  scan:
+    name: scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      java_tests: ${{ steps.scan.outputs.java_tests }}
+      fe: ${{ steps.scan.outputs.fe }}
+    env:
+      POLICY_REF: "refs/heads/e4-policy"   # ref dedicada (datos); su commit se valida en el cierre
+      DETECTOR_SHA: "f4bc27aeb004c2caa65507c742a6de27713bf6bd"
+      CHECKOUT_ACTION_SHA_NOTE: "actions/checkout fijado abajo por SHA"
+      NODE_TARBALL_URL: "https://nodejs.org/dist/v22.23.4/node-v22.23.4-linux-x64.tar.xz"
+      NODE_TARBALL_SHA256: "1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce"
+      GITLEAKS_URL: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz"
+      GITLEAKS_TGZ_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}   # NO GITHUB_SHA (merge commit)
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: guard-pins (fail-closed)
+        run: |
+          set -euo pipefail
+          for v in "$DETECTOR_SHA" "$NODE_TARBALL_SHA256" "$GITLEAKS_TGZ_SHA256"; do
+            case "$v" in *__PIN_*|"") echo "pin sin fijar"; exit 1;; esac
+          done
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ && "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "evento sin SHAs"; exit 1; }
+          [[ "${{ github.event_name }}" == "pull_request" ]] || { echo "evento no soportado"; exit 1; }
+      - name: checkout detector de confianza (D)
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: hotclickdev/Hot-click-dev
+          ref: ${{ env.DETECTOR_SHA }}
+          path: trusted
+          persist-credentials: false
+      - name: verificar D exacto
+        run: test "$(git -C trusted rev-parse HEAD)" = "$DETECTOR_SHA"
+      - name: node fijado por sha256 (sin setup-node ni caché)
+        run: |
+          set -euo pipefail
+          curl -fsSL "$NODE_TARBALL_URL" -o node.txz
+          echo "$NODE_TARBALL_SHA256  node.txz" | sha256sum -c -
+          mkdir node && tar -xJf node.txz -C node --strip-components=1
+          echo "$PWD/node/bin" >> "$GITHUB_PATH"
+      - name: dependencias del detector (lockfile de D, sin scripts, sin caché)
+        working-directory: trusted
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/eng-gates --cache "$RUNNER_TEMP/npm-cache-efimera"
+      - name: gitleaks fijado por sha256
+        run: |
+          set -euo pipefail
+          curl -fsSL "$GITLEAKS_URL" -o gl.tgz
+          echo "$GITLEAKS_TGZ_SHA256  gl.tgz" | sha256sum -c -
+          mkdir gl && tar -xzf gl.tgz -C gl gitleaks
+      - name: head y base como DATOS (anónimo, repo aparte, sin checkout)
+        env: { GIT_TERMINAL_PROMPT: "0" }
+        run: |
+          set -euo pipefail
+          git init -q --bare headdata.git
+          git -C headdata.git fetch -q --no-tags https://github.com/hotclickdev/Hot-click-dev.git "$HEAD_SHA" "$BASE_SHA"
+          test "$(git -C headdata.git rev-parse "$HEAD_SHA^{commit}")" = "$HEAD_SHA"
+          git -C headdata.git config --list --local | grep -qi extraheader && exit 1 || true
+      - name: P como DATOS (ref dedicada, repo aparte, sin checkout)
+        id: policy
+        env: { GIT_TERMINAL_PROMPT: "0" }
+        run: |
+          set -euo pipefail
+          git init -q --bare policydata.git
+          git -C policydata.git fetch -q --no-tags https://github.com/hotclickdev/Hot-click-dev.git "+$POLICY_REF:refs/p"
+          echo "commit=$(git -C policydata.git rev-parse 'refs/p^{commit}')" >> "$GITHUB_OUTPUT"
+      - name: lector de aprobación (ÚNICO paso con token; solo GET + query GraphQL)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          node trusted/scripts/eng-gates/trusted/src/bin/read-approval.mjs \
+            --policy-git policydata.git --policy-commit "${{ steps.policy.outputs.commit }}" --out "$RUNNER_TEMP/approval.json"
+      - name: escaneo de confianza (3 etapas: árbol, rango, E4 completo; BLOQUEO FIJO en D hasta revisión)
+        id: scan
+        env: { GH_TOKEN: "", GITHUB_TOKEN: "", ACTIONS_RUNTIME_TOKEN: "", ACTIONS_ID_TOKEN_REQUEST_TOKEN: "" }
+        run: |
+          # r4: la salida se guarda (pipefail + tee) y el paso FALLA si el escaneo sale != 0 o si no hay
+          # EXACTAMENTE una línea ::notice title=E4-PROVENANCE:: (sin anotación el cierre no puede verificar nada).
+          set -o pipefail
+          rc=0
+          node trusted/scripts/eng-gates/trusted/src/bin/e4-trusted-scan.mjs \
+            --head-git headdata.git --head "$HEAD_SHA" --base "$BASE_SHA" \
+            --detector-dir trusted --detector-commit "$DETECTOR_SHA" \
+            --policy-git policydata.git --policy-commit "${{ steps.policy.outputs.commit }}" \
+            --approval "$RUNNER_TEMP/approval.json" \
+            --scan-config trusted/scripts/eng-gates/trusted/src/scan-config.json \
+            --manifest trusted/scripts/eng-gates/trusted/src/corpus-manifest.json \
+            --gitleaks gl/gitleaks --gitleaks-config trusted/scripts/eng-gates/trusted/src/gitleaks-trusted.toml \
+            | tee "$RUNNER_TEMP/scan.out" || rc=$?
+          n=$(grep -c '^::notice title=E4-PROVENANCE::' "$RUNNER_TEMP/scan.out" || true)
+          [ "$n" = "1" ] || { echo "::error::procedencia: se esperaba exactamente 1 anotación E4-PROVENANCE (hay $n)"; exit 1; }
+          exit "$rc"
