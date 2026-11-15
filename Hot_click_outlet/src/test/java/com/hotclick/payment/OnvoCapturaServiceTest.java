@@ -39,6 +39,8 @@ class OnvoCapturaServiceTest {
     @Mock PedidoGrupoService pedidoGrupoService;
     @Mock com.hotclick.service.payment.StockReservationService stockReservationService;
     @Mock com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
+    @Mock com.hotclick.repository.PedidoRepository pedidoRepository;
+    @Mock jakarta.persistence.EntityManager entityManager;
     @InjectMocks OnvoCapturaService captura;
 
     private Pago pago;
@@ -120,10 +122,13 @@ class OnvoCapturaServiceTest {
     @DisplayName("fix2: cobro que llega con la cancelación ya pedida (ONVO estaba en duda) → NO confirma: pedido CANCELADO, reserva liberada, REEMBOLSO_PENDIENTE")
     void cobroConCancelacionPedidaNoConfirma() {
         Pedido pedido = new Pedido();
+        pedido.setId(70L);
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedido.setStockReservadoEn(java.time.LocalDateTime.now(Constants.ZONA_CR));
         pago.setId(7L);
         pago.setPedido(pedido);
         when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(70L)).thenReturn(Optional.of(pedido));
         when(pagoRepository.cancelacionSolicitadaEnBase(7L))
             .thenReturn(Optional.of(java.time.LocalDateTime.now(Constants.ZONA_CR)));
 
@@ -131,7 +136,8 @@ class OnvoCapturaServiceTest {
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
+        verify(stockReservationService, never()).liberarReservas(any());
         verify(avisoReembolso).registrarPendiente(pago);
         verify(paymentService, never()).confirmarPedido(any());
     }
@@ -150,15 +156,19 @@ class OnvoCapturaServiceTest {
     @DisplayName("fix2: cobro sobre cancelación explícita (misma transacción, pago bloqueado) → evento registrado, pedido cancelado, REEMBOLSO_PENDIENTE; repetido → false")
     void registrarCobroSobreCancelacionExplicita() {
         Pedido pedido = new Pedido();
+        pedido.setId(90L);
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedido.setStockReservadoEn(java.time.LocalDateTime.now(Constants.ZONA_CR));
         pago.setId(9L);
         pago.setPedido(pedido);
         when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido));
+        when(pedidoRepository.findByIdForUpdate(90L)).thenReturn(Optional.of(pedido));
 
         assertThat(captura.registrarCobroSobreCancelacionExplicita(pago, "cancelacion")).isTrue();
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
+        verify(stockReservationService, never()).liberarReservas(any());
         verify(avisoReembolso).registrarPendiente(pago);
         verify(paymentService, never()).confirmarPedido(any());
 

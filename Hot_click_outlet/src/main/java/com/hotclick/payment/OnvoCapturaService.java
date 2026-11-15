@@ -2,6 +2,7 @@ package com.hotclick.payment;
 
 import com.hotclick.service.OnvoService;
 import com.hotclick.model.Pago;
+import com.hotclick.model.Pedido;
 import com.hotclick.model.WebhookEvent;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.WebhookEventRepository;
@@ -17,6 +18,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Escribe en la base lo que ONVO ya confirmó por GET. Solo lo llama {@link OnvoPaymentProvider}
@@ -36,6 +39,8 @@ public class OnvoCapturaService {
     @Autowired private com.hotclick.repository.PedidoRepository pedidoRepository;
     @Autowired(required = false) private com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
     @Autowired(required = false) private com.hotclick.service.payment.StockReservationService stockReservationService;
+    @Autowired(required = false) private com.hotclick.service.suscripcion.LockTimeoutPorFila lockTimeout;
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
 
     /** Resultado de escribir un cobro que ONVO ya confirmó. */
     public enum Captura { CAPTURADO, DUPLICADO, COBRADO_SOBRE_CANCELADO, COBRADO_SOBREVENTA }
@@ -179,17 +184,53 @@ public class OnvoCapturaService {
         return true;
     }
 
-    /** Pedidos del grupo todavía pendientes → CANCELADO y su reserva liberada (idempotente por stockReservadoEn). */
+    /**
+     * Pedidos del grupo todavía pendientes → CANCELADO y su reserva liberada (idempotente por stockReservadoEn).
+     * Orden de locks, con el Pago YA bloqueado por quien llama: Pedidos del grupo {@code FOR UPDATE ORDER BY id} →
+     * Productos de todos los pedidos a liberar en UN {@code SELECT ... ORDER BY id FOR UPDATE} → escrituras.
+     * Sin reintentos locales: cualquier fallo (lock_timeout, deadlock, dato inconsistente) revierte la transacción
+     * completa y reintenta el webhook o quien llama. Decisión de estado tomada con los pedidos ya bloqueados.
+     */
     private void cancelarPedidosPendientes(Pago pago) {
         if (pago.getPedido() == null || stockReservationService == null) return;
-        for (com.hotclick.model.Pedido p : pedidoGrupoService.delGrupo(pago.getPedido())) {
-            String e = p.getEstadoPedido();
-            if (Constants.PEDIDO_PENDIENTE.equals(e) || Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(e)
-                    || Constants.PEDIDO_PENDIENTE_APROBACION.equals(e)) {
-                p.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-                stockReservationService.liberarReservas(p);
-            }
+        // El tope de espera aplica a los locks siguientes (pedidos y productos) y al resto de esta transacción.
+        if (lockTimeout != null) lockTimeout.aplicar();
+        List<Pedido> pendientes = bloquearGrupo(pago.getPedido()).stream()
+            .filter(OnvoCapturaService::estaPendiente)
+            .toList();
+        List<Pedido> conReserva = pendientes.stream().filter(p -> p.getStockReservadoEn() != null).toList();
+        stockReservationService.liberarReservasDeGrupoBloqueado(conReserva);
+        for (Pedido p : pendientes) p.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+    }
+
+    private static boolean estaPendiente(Pedido p) {
+        String e = p.getEstadoPedido();
+        return Constants.PEDIDO_PENDIENTE.equals(e) || Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(e)
+            || Constants.PEDIDO_PENDIENTE_APROBACION.equals(e);
+    }
+
+    /**
+     * Bloquea los pedidos del grupo en orden de id (sin grupo, solo el pedido) y los relee bajo el lock. Fail-closed:
+     * si el pedido base desapareció o no está en el resultado, se aborta (nada de decidir con una copia vieja).
+     */
+    private List<Pedido> bloquearGrupo(Pedido base) {
+        if (entityManager == null) {
+            throw new IllegalStateException("OnvoCapturaService sin EntityManager: no se puede releer el grupo bloqueado");
         }
+        // Los cambios previos de la sesión se escriben antes de releer (refresh los descartaría).
+        entityManager.flush();
+        String grupo = base.getGrupoPago();
+        List<Pedido> bloqueados;
+        if (grupo == null || grupo.isBlank()) {
+            bloqueados = pedidoRepository.findByIdForUpdate(base.getId()).map(List::of).orElse(List.of());
+        } else {
+            bloqueados = pedidoRepository.findByGrupoPagoForUpdateOrderById(grupo);
+        }
+        if (bloqueados.stream().noneMatch(p -> Objects.equals(p.getId(), base.getId()))) {
+            throw new IllegalStateException("Pedido " + base.getId() + " ausente al bloquear su grupo para cancelar");
+        }
+        for (Pedido p : bloqueados) entityManager.refresh(p);
+        return bloqueados;
     }
 
     private boolean algunoCancelado(Pago pago) {

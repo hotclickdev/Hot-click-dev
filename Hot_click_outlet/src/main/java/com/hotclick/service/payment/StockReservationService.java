@@ -306,6 +306,78 @@ public class StockReservationService {
         log.info("Reservas liberadas para pedido {}", pedido.getNumeroPedido());
     }
 
+    /**
+     * fix2 (locks entre procesos): libera la reserva de VARIOS pedidos del mismo grupo con UN solo
+     * {@code SELECT ... WHERE id IN ... ORDER BY id FOR UPDATE} sobre la unión de sus productos. Quien llama ya
+     * bloqueó el Pago y los pedidos (orden Pago → Pedidos → Productos) y pasa solo los que tienen
+     * {@code stockReservadoEn != null}. Solo baja stockReservado (nunca bajo 0); no toca stockActual, no crea
+     * movimientos VENTA ni confirma. Fail-closed y sin catch: producto ausente, de otro negocio, pedido sin empresa,
+     * línea sin producto o con cantidad inválida lanzan excepción y la transacción revierte completa.
+     * No cambia {@link #liberarReservas(Pedido)} ni a sus otros llamadores.
+     */
+    public void liberarReservasDeGrupoBloqueado(List<Pedido> pedidos) {
+        if (pedidos == null || pedidos.isEmpty()) return;
+        Map<Long, Long> pedidoPorProducto = new HashMap<>();
+        Map<Long, Long> cantidades = new HashMap<>();
+        for (Pedido ped : pedidos) {
+            Long empresaId = ped.getEmpresaId();
+            if (empresaId == null) {
+                throw new IllegalStateException("Liberación rechazada: pedido " + ped.getId() + " sin empresa");
+            }
+            Hibernate.initialize(ped.getItems());
+            for (PedidoItem item : ped.getItems()) {
+                if (item == null || item.getProducto() == null || item.getProducto().getId() == null
+                        || item.getCantidad() == null || item.getCantidad() <= 0) {
+                    throw new IllegalStateException("Liberación rechazada: línea inválida en pedido " + ped.getId());
+                }
+                Long productoId = item.getProducto().getId();
+                Long previa = pedidoPorProducto.putIfAbsent(productoId, empresaId);
+                if (previa != null && !previa.equals(empresaId)) {
+                    throw new IllegalStateException("Liberación rechazada: producto " + productoId + " en varias empresas");
+                }
+                cantidades.merge(productoId, item.getCantidad().longValue(), Long::sum);
+            }
+        }
+        if (cantidades.isEmpty()) {
+            limpiarMarcas(pedidos);
+            return;
+        }
+        List<Long> ids = idsOrdenados(cantidades.keySet());
+        // Dueños leídos SIN lock: si alguno no es de la empresa del pedido, se aborta antes de bloquear nada ajeno.
+        Map<Long, Long> duenos = duenosDe(ids);
+        for (Long id : ids) {
+            if (!pedidoPorProducto.get(id).equals(duenos.get(id))) {
+                throw new RecursoNoEncontradoException(MSG_PRODUCTO_NO_ENCONTRADO);
+            }
+        }
+        List<Producto> bloqueados = productoRepository.findAllByIdsForUpdate(ids);
+        Map<Long, Producto> porId = new HashMap<>();
+        for (Producto p : bloqueados) {
+            if (entityManager != null && entityManager.contains(p)) entityManager.refresh(p);
+            // Dueño releído con el lock tomado (pudo cambiar entre la lectura sin lock y el lock).
+            if (!pedidoPorProducto.get(p.getId()).equals(p.getEmpresaId())) {
+                throw new RecursoNoEncontradoException(MSG_PRODUCTO_NO_ENCONTRADO);
+            }
+            porId.put(p.getId(), p);
+        }
+        for (Long id : ids) {
+            if (!porId.containsKey(id)) throw new RecursoNoEncontradoException(MSG_PRODUCTO_NO_ENCONTRADO);
+        }
+        for (Long id : ids) {
+            Producto producto = porId.get(id);
+            if (Boolean.TRUE.equals(producto.getEsPersonalizado())) continue; // nunca reservó stock
+            int reservado = producto.getStockReservado() == null ? 0 : producto.getStockReservado();
+            producto.setStockReservado((int) Math.max(0L, reservado - cantidades.get(id)));
+            productoRepository.save(producto);
+        }
+        limpiarMarcas(pedidos);
+        log.info("Reservas liberadas en lote para {} pedidos del grupo ({} productos)", pedidos.size(), ids.size());
+    }
+
+    private static void limpiarMarcas(List<Pedido> pedidos) {
+        for (Pedido ped : pedidos) ped.setStockReservadoEn(null);
+    }
+
     /** ESC-1/IDOR-10: equivale a ProductoRepository.esPublicable sobre la entidad ya bloqueada. */
     public static boolean esPublicableEnMemoria(Producto p) {
         if (p.getEstado() == null || p.getEstado() != com.hotclick.utils.Constants.ESTADO_ACTIVO) return false;

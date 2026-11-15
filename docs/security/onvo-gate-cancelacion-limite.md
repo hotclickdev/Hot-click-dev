@@ -85,6 +85,22 @@ un cobro posterior va a reembolso, no confirma). Si la intención no se puede gu
   Respaldo con el pedido YA bloqueado (la fase previa no corrió o el pedido cambió en medio): **no** se llama a ONVO ni
   se captura bajo ese lock (invertiría el orden pedido → pago). Sin pago, sigue; con pago, 409 reintentable
   («El pedido cambió mientras se cancelaba…»); el reintento entra por la fase sin locks.
+- Liberación del grupo (`OnvoCapturaService#cancelarPedidosPendientes`, desde la captura R1 y desde
+  `registrarCobroSobreCancelacionExplicita` R2), con el pago YA bloqueado por quien llama: `LockTimeoutPorFila`
+  (`SET LOCAL lock_timeout`, vale hasta el final de esa transacción) → flush → pedidos del grupo
+  `FOR UPDATE ORDER BY id` (`PedidoRepository#findByGrupoPagoForUpdateOrderById`; sin grupo, solo el pedido por id) +
+  refresh → se filtra bajo lock (PENDIENTE, PENDIENTE_COMPROBANTE, PENDIENTE_APROBACION) → una sola consulta
+  `findAllByIdsForUpdate` (ORDER BY id) sobre la unión de productos (`StockReservationService#liberarReservasDeGrupoBloqueado`)
+  → recién entonces `CANCELADO`. Idempotente por `stockReservadoEn`. Sin `catch` genérico ni reintentos locales: pedido base
+  ausente, producto ausente o de otra empresa, línea con cantidad inválida o `lock_timeout` revierten la transacción
+  completa (R1 es `REQUIRES_NEW`; el webhook o quien llama reintenta; la intención durable no se pierde). No toca
+  `stockActual`, no crea movimientos `VENTA` ni confirma. No cambia `liberarReservas` ni TTL, `marcarFallido` ni el panel
+  `CERRADO`. Pruebas: unitarias (`OnvoCancelacionGrupoLocksTest`, `StockReservationLoteGrupoTest`) y contratos PG
+  `PagoOnvoGrupoLocksPostgresTest` (**escritos, no ejecutados**: sin PostgreSQL desechable local; fuera del `-Dtest` de
+  `ci.yml` y del gate `fix2-pg-surefire.py`).
+- Pendiente (fuera de alcance, no corregido): el panel → `PAGADO` toma Pedido → Pago (inversión preexistente; deadlock
+  posible contra captura/cancelación con cobro, hoy termina en 400 o abortado); el orden de productos de TTL y
+  `marcarFallido` sigue siendo por pedido; el checkout no tiene `@Size` en items, por lo que G·I del grupo no está acotado.
 - EntityManager obligatorio (`@PersistenceContext`, sin fallback): si falta `EntityManagerFactory` la app no arranca
   (`CacheEvictEmpresaSinIdTest#sinJpaNoArranca`). El bloqueo del pago usa `findByIdForUpdate(...).orElseThrow()` + flush
   + refresh; ya no hay `orElse(pago)` (fail-closed: sin fila bloqueada no se decide).
