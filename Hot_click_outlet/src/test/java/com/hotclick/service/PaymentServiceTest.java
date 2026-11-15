@@ -105,6 +105,9 @@ class PaymentServiceTest {
             .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
                 .map(id -> productoRepository.findByIdForUpdate(id))
                 .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
+        org.mockito.Mockito.lenient().when(pedidoRepository.findAllByIdForUpdateOrderById(org.mockito.ArgumentMatchers.anyCollection()))
+            .thenAnswer(inv -> ((java.util.Collection<Long>) inv.getArgument(0)).stream()
+                .map(pedidosPorId::get).filter(java.util.Objects::nonNull).toList());
         // fix2: la liberación de grupo (TTL, marcarFallido) bloquea el pedido por id antes de los productos.
         org.mockito.Mockito.lenient().when(pedidoRepository.findByIdForUpdate(org.mockito.ArgumentMatchers.any()))
             .thenAnswer(inv -> java.util.Optional.ofNullable(ultimoPedido));
@@ -571,6 +574,7 @@ class PaymentServiceTest {
         when(pedidoRepository.save(any())).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             if (p.getId() == null) p.setId(100L);
+            pedidosPorId.put(p.getId(), p);
             if (p.getItems() == null) p.setItems(new ArrayList<>());
             return p;
         });
@@ -591,6 +595,7 @@ class PaymentServiceTest {
     }
 
     private Pedido ultimoPedido;
+    private final java.util.Map<Long, Pedido> pedidosPorId = new java.util.HashMap<>();
 
     private Pedido buildPedido(String estado) {
         Pedido p = new Pedido();
@@ -605,6 +610,7 @@ class PaymentServiceTest {
         p.setCostoEnvio(0);
         p.setTotalPedido(25000);
         p.setItems(new ArrayList<>());
+        pedidosPorId.put(p.getId(), p);
         return p;
     }
 

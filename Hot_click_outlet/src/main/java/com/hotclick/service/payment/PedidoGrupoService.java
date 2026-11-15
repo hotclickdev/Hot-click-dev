@@ -57,6 +57,31 @@ public class PedidoGrupoService {
         return bloqueados;
     }
 
+    /**
+     * fix2: bloquea EXACTAMENTE estos pedidos ({@code FOR UPDATE ORDER BY id}, una sola consulta) y los relee bajo el
+     * lock. Para los caminos que liberan reservas sin recorrer todo el grupo (cancelación de un pedido, rollback de
+     * checkout, sobreventa, reserva de tienda vencida). Fail-closed: si algún pedido no aparece (borrado), aborta.
+     * Devuelve las mismas instancias de la sesión, en orden de id.
+     */
+    public List<Pedido> bloquearPedidos(java.util.Collection<Pedido> pedidos) {
+        if (pedidos == null || pedidos.isEmpty()) return List.of();
+        List<Long> ids = new java.util.ArrayList<>();
+        for (Pedido p : pedidos) {
+            if (p == null || p.getId() == null) throw new IllegalStateException("Pedido sin id al bloquear para liberar");
+            if (!ids.contains(p.getId())) ids.add(p.getId());
+        }
+        java.util.Collections.sort(ids);
+        if (entityManager != null) entityManager.flush();
+        List<Pedido> bloqueados = pedidoRepository.findAllByIdForUpdateOrderById(ids);
+        if (bloqueados.size() != ids.size()) {
+            throw new IllegalStateException("Pedidos ausentes al bloquear para liberar reservas");
+        }
+        if (entityManager != null) {
+            for (Pedido p : bloqueados) entityManager.refresh(p);
+        }
+        return bloqueados;
+    }
+
     /** El Pago vive en el subpedido principal; desde cualquier subpedido se llega a él. */
     public Optional<Pago> pagoDelGrupo(Pedido pedido) {
         Optional<Pago> directo = pagoRepository.findTopByPedidoId(pedido.getId());

@@ -32,6 +32,7 @@ public class ReservaTiendaVencidaService {
     private final PedidoRepository pedidoRepository;
     private final StockReservationService stockReservationService;
     private final long horas;
+    @org.springframework.beans.factory.annotation.Autowired private PedidoGrupoService pedidoGrupoService;
 
     public ReservaTiendaVencidaService(EmpresaRepository empresaRepository,
                                        PedidoRepository pedidoRepository,
@@ -66,10 +67,18 @@ public class ReservaTiendaVencidaService {
     }
 
     private int cancelarDeEmpresa(Long empresaId, LocalDateTime corte) {
-        List<Pedido> vencidos = pedidoRepository.findTiendaPendientesVencidos(empresaId, corte, PageRequest.of(0, LOTE));
+        List<Pedido> candidatos = pedidoRepository.findTiendaPendientesVencidos(empresaId, corte, PageRequest.of(0, LOTE));
+        if (candidatos.isEmpty()) return 0;
+        // fix2: pedidos FOR UPDATE ORDER BY id (una consulta; relee bajo lock) → un solo lock de productos ordenado →
+        // recién después CANCELADO. Si algo falla, ningún pedido del lote queda cancelado. Se revalida bajo lock que
+        // sigan pendientes (un cambio concurrente del panel ya no se pisa).
+        List<Pedido> vencidos = pedidoGrupoService.bloquearPedidos(candidatos).stream()
+            .filter(p -> Constants.PEDIDO_PENDIENTE.equals(p.getEstadoPedido()))
+            .toList();
+        stockReservationService.liberarReservasDeGrupoBloqueado(
+            vencidos.stream().filter(p -> p.getStockReservadoEn() != null).toList());
         for (Pedido pedido : vencidos) {
             pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-            stockReservationService.liberarReservas(pedido);
             log.info("[reserva-tienda] Pedido {} cancelado: reserva vencida ({} h)", pedido.getNumeroPedido(), horas);
         }
         // Entidades administradas dentro de la transacción: el cambio de estado se guarda al confirmar.

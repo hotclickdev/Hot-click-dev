@@ -185,8 +185,10 @@ public class PedidoService {
             pagoCancelacion.cerrarPagoOnvoAntesDeCancelar(pedido);
         }
         pedido.setEstadoPedido(nuevoEstado);
-        if (liberarReserva) {
-            stockReservationService.liberarReservas(pedido);
+        if (liberarReserva && pedido.getStockReservadoEn() != null) {
+            // fix2: el pedido ya está bloqueado (FOR UPDATE) y, si hubo pago, el pago antes que él. Un solo lock de
+            // productos ordenado, sin catch por línea. Solo ESTE pedido (no se amplía la cancelación al grupo).
+            stockReservationService.liberarReservasDeGrupoBloqueado(List.of(pedido));
         }
         // P-07: pedido manual entregado → descuenta stock una sola vez (idempotente por stockDescontadoEn).
         if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado) && !mismoEstado) {

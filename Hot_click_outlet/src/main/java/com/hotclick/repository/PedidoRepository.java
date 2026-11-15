@@ -54,6 +54,14 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Query("SELECT p FROM Pedido p WHERE p.grupoPago = :grupo ORDER BY p.id")
     List<Pedido> findByGrupoPagoForUpdateOrderById(@Param("grupo") String grupo);
 
+    /**
+     * fix2: bloquea pedidos concretos con {@code SELECT ... WHERE id IN ... ORDER BY id FOR UPDATE} (mismo orden en
+     * todas las transacciones). Quien llama relee (refresh) las copias que ya estuvieran en la sesión.
+     */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Pedido p WHERE p.id IN :ids ORDER BY p.id")
+    List<Pedido> findAllByIdForUpdateOrderById(@Param("ids") Collection<Long> ids);
+
     List<Pedido> findByCompra_IdOrderByNumeroPaqueteAsc(Long compraId);
 
     /** Paquetes de una compra con empresa, comprador y bodega; los items van con {@link #cargarItemsDe}. */

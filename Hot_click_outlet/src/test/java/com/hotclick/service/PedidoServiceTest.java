@@ -654,10 +654,13 @@ class PedidoServiceTest {
     @DisplayName("CMP-1 | cancelar un pedido sin pagar libera su reserva de stock")
     void cancelarSinPagarLiberaReserva(String estado) {
         Pedido pedido = buildPedido(estado);
+        pedido.setStockReservadoEn(java.time.LocalDateTime.now());
         when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         when(pedidoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, null);
-        verify(stockReservationService).liberarReservas(pedido);
+        // fix2: un solo lock de productos ordenado (solo ESTE pedido), no liberarReservas por línea.
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
+        verify(stockReservationService, never()).liberarReservas(any());
     }
 
     @Test
@@ -667,7 +670,7 @@ class PedidoServiceTest {
         when(pedidoRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(pedido));
         lenient().when(pedidoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         try { service.cambiarEstado(1L, Constants.PEDIDO_CANCELADO, null); } catch (RuntimeException ignored) { }
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     @Test
@@ -679,7 +682,7 @@ class PedidoServiceTest {
         assertThat(r.getEstadoPedido()).isEqualTo("PREPARANDO");
         verify(pedidoRepository, never()).save(any());
         verify(notificacionEmailService, never()).enviarSeguimientoEstado(any(), any());
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     @Test
@@ -693,7 +696,7 @@ class PedidoServiceTest {
             .hasMessage("Este pedido ya está cancelado.");
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
         verify(pedidoRepository, never()).save(any());
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
         verify(notificacionEmailService, never()).enviarSeguimientoEstado(any(), any());
         verifyNoInteractions(n8nWebhookService);
     }
