@@ -8,6 +8,8 @@
 #     (2) Lector de aprobación: ÚNICO paso con token; escribe approval.json (respuestas crudas).
 #     (3) Escaneo SIN token: E4 completo (analyzeCommitGate/formatVerdict de D) + gitleaks.
 #     (4) Procedencia: anotación ::notice title=E4-PROVENANCE:: leída por el cierre.
+#     (5) r6.1: P trae `mode`. En no-exceptions NO corre el lector con token (el paso queda condicionado a mode == live-exception,
+#     leído de P en el paso «P como DATOS») y el escaneo NO recibe --approval (lo rechaza). Los permisos de W no cambian (contents: read, pull-requests: read).
 #     Nada de esto está instalado ni acreditado contra GitHub real.
 name: e4-trusted
 on:
@@ -35,7 +37,7 @@ jobs:
       fe: ${{ steps.scan.outputs.fe }}
     env:
       POLICY_REF: "refs/heads/e4-policy"   # ref dedicada (datos); su commit se valida en el cierre
-      DETECTOR_SHA: "417a794b46ea3421fb64c81cf2c32a5251d9e368"
+      DETECTOR_SHA: "91242ff1d510ad5b339149a1a06672447f94b62c"
       CHECKOUT_ACTION_SHA_NOTE: "actions/checkout fijado abajo por SHA"
       NODE_TARBALL_URL: "https://nodejs.org/dist/v22.23.4/node-v22.23.4-linux-x64.tar.xz"
       NODE_TARBALL_SHA256: "1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce"
@@ -94,7 +96,12 @@ jobs:
           git init -q --bare policydata.git
           git -C policydata.git fetch -q --no-tags https://github.com/hotclickdev/Hot-click-dev.git "+$POLICY_REF:refs/p"
           echo "commit=$(git -C policydata.git rev-parse 'refs/p^{commit}')" >> "$GITHUB_OUTPUT"
-      - name: lector de aprobación (ÚNICO paso con token; solo GET + query GraphQL)
+          # r6.1: `mode` de P (solo DATOS, jamás se ejecuta). Cualquier otro valor => el paso falla (fail-closed); el escaneo lo vuelve a validar contra P.
+          mode=$(git -C policydata.git cat-file blob 'refs/p:e4-policy.json' | node -e 'let s="";process.stdin.on("data",(d)=>{s+=d}).on("end",()=>{process.stdout.write(String(JSON.parse(s).mode))})')
+          case "$mode" in no-exceptions|live-exception) ;; *) echo "::error::mode de P inválido"; exit 1;; esac
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+      - name: lector de aprobación (ÚNICO paso con token; solo GET + query GraphQL; SOLO en live-exception)
+        if: steps.policy.outputs.mode == 'live-exception'
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           node trusted/scripts/eng-gates/trusted/src/bin/read-approval.mjs \
@@ -107,11 +114,14 @@ jobs:
           # EXACTAMENTE una línea ::notice title=E4-PROVENANCE:: (sin anotación el cierre no puede verificar nada).
           set -o pipefail
           rc=0
+          # r6.1: --approval SOLO en live-exception; en no-exceptions no hay lector ni archivo de aprobación (el escaneo lo rechazaría).
+          approval_args=()
+          if [ "${{ steps.policy.outputs.mode }}" = "live-exception" ]; then approval_args=(--approval "$RUNNER_TEMP/approval.json"); fi
           node trusted/scripts/eng-gates/trusted/src/bin/e4-trusted-scan.mjs \
             --head-git headdata.git --head "$HEAD_SHA" --base "$BASE_SHA" \
             --detector-dir trusted --detector-commit "$DETECTOR_SHA" \
             --policy-git policydata.git --policy-commit "${{ steps.policy.outputs.commit }}" \
-            --approval "$RUNNER_TEMP/approval.json" \
+            "${approval_args[@]}" \
             --scan-config trusted/scripts/eng-gates/trusted/src/scan-config.json \
             --manifest trusted/scripts/eng-gates/trusted/src/corpus-manifest.json \
             --gitleaks gl/gitleaks --gitleaks-config trusted/scripts/eng-gates/trusted/src/gitleaks-trusted.toml \
