@@ -35,7 +35,7 @@ jobs:
       fe: ${{ steps.scan.outputs.fe }}
     env:
       POLICY_REF: "refs/heads/e4-policy"   # ref dedicada (datos); su commit se valida en el cierre
-      DETECTOR_SHA: "f4bc27aeb004c2caa65507c742a6de27713bf6bd"
+      DETECTOR_SHA: "5306b531a24e85a5badb8e096929fc622786ef8a"
       CHECKOUT_ACTION_SHA_NOTE: "actions/checkout fijado abajo por SHA"
       NODE_TARBALL_URL: "https://nodejs.org/dist/v22.23.4/node-v22.23.4-linux-x64.tar.xz"
       NODE_TARBALL_SHA256: "1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce"
@@ -71,7 +71,7 @@ jobs:
           echo "$PWD/node/bin" >> "$GITHUB_PATH"
       - name: dependencias del detector (lockfile de D, sin scripts, sin caché)
         working-directory: trusted
-        run: npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/eng-gates --cache "$RUNNER_TEMP/npm-cache-efimera"
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/eng-gates/trusted --cache "$RUNNER_TEMP/npm-cache-efimera"
       - name: gitleaks fijado por sha256
         run: |
           set -euo pipefail
