@@ -8,6 +8,7 @@ import com.hotclick.security.PropietarioGuard;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.auth.AuthSupport;
 import com.hotclick.service.suscripcion.AdminSuspensionService;
+import com.hotclick.service.suscripcion.PreciosPlanesConfig;
 import com.hotclick.service.suscripcion.SuscripcionOnvoChangeService;
 import com.hotclick.service.suscripcion.SuspensionImpago;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +27,8 @@ import java.util.Map;
 
 /**
  * Suscripción impaga (día 9+): lo único que ve el dueño suspendido. Cuenta, monto pendiente y pagar por ONVO.
- * El monto sale del plan impago en la tabla plan (precio_mensual), nunca de un valor fijo.
+ * El monto es la mensualidad USD configurada del plan impago (la misma que verifica el cobro ONVO), nunca la columna
+ * precio_mensual (colones) ni precio_usd de la tabla plan. Sin precio configurado no se muestra monto (fail-closed).
  */
 @RestController
 @RequestMapping("/api/billing/impago")
@@ -40,10 +42,12 @@ public class CuentaSuspendidaController {
     private final PropietarioGuard propietarioGuard;
     private final AuthSupport authSupport;
     private final AdminSuspensionService extensiones;
+    private final PreciosPlanesConfig preciosPlanes;
 
     public CuentaSuspendidaController(EmpresaRepository empresaRepo, SuscripcionOnvoChangeService onvoChange,
                                       PropietarioGuard propietarioGuard, AuthSupport authSupport,
-                                      AdminSuspensionService extensiones) {
+                                      AdminSuspensionService extensiones, PreciosPlanesConfig preciosPlanes) {
+        this.preciosPlanes = preciosPlanes;
         this.extensiones = extensiones;
         this.empresaRepo = empresaRepo;
         this.onvoChange = onvoChange;
@@ -51,7 +55,7 @@ public class CuentaSuspendidaController {
         this.authSupport = authSupport;
     }
 
-    /** Datos de la cuenta y monto pendiente (CRC). Para una tienda activa responde suspendida=false. */
+    /** Datos de la cuenta y monto pendiente (USD de la config, el que cobra ONVO). Para una tienda activa responde suspendida=false. */
     @GetMapping
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> estado() {
@@ -73,8 +77,11 @@ public class CuentaSuspendidaController {
         if (suspendida) {
             onvoChange.planPendienteDeSuspension(empresaId).ifPresent((Plan p) -> {
                 out.put("planPendiente", p.getNombre());
-                out.put("montoPendiente", p.getPrecioMensual());
-                out.put("moneda", "CRC");
+                // ALTO precios: lo que cobra ONVO (USD de config). Sin config: sin monto, la UI deshabilita «Pagar».
+                preciosPlanes.precioPublicoUsd(p.getNombre()).ifPresent(usd -> {
+                    out.put("montoPendiente", usd);
+                    out.put("moneda", "USD");
+                });
             });
         }
         return ResponseEntity.ok(out);

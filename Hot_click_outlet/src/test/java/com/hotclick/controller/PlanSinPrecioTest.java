@@ -36,13 +36,22 @@ class PlanSinPrecioTest {
         return p;
     }
 
+    /** /billing/planes lee los activos paginados (una sola página alcanza en estos casos). */
+    private void stubPlanes(List<Plan> planes) {
+        when(planRepo.findByActivoTrue(any())).thenReturn(new org.springframework.data.domain.SliceImpl<>(planes));
+    }
+
     private final com.hotclick.service.SuscripcionService suscripcion = mock(com.hotclick.service.SuscripcionService.class);
     private final com.hotclick.service.auth.AuthSupport auth = mock(com.hotclick.service.auth.AuthSupport.class);
     private final com.hotclick.security.PropietarioGuard guard = mock(com.hotclick.security.PropietarioGuard.class);
 
     private SuscripcionController controller(PreciosPlanesConfig precios) {
         when(guard.puedeGestionarEmpresa(any())).thenReturn(true);
-        return new SuscripcionController(suscripcion, planRepo, auth, cobros, precios, guard);
+        SuscripcionController c = new SuscripcionController(suscripcion, planRepo, auth, cobros, precios, guard);
+        org.springframework.test.util.ReflectionTestUtils.setField(c, "planesActivos",
+            new com.hotclick.service.suscripcion.PlanesActivosLector(planRepo,
+                mock(com.hotclick.service.suscripcion.SnapshotLecturaPg.class)));
+        return c;
     }
 
     @org.junit.jupiter.params.ParameterizedTest(name = "QA3-012: EDITOR recibe 403 en {0}")
@@ -72,9 +81,9 @@ class PlanSinPrecioTest {
     @Test @DisplayName("Con precios configurados, /planes publica 9/24/49 y no el valor de BD")
     @SuppressWarnings("unchecked")
     void configurado() {
-        when(planRepo.findByActivoTrueOrderByPrecioMensualAsc())
-            .thenReturn(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME"), plan(3, "NEGOCIO_PLUS")));
-        var r = controller(new PreciosPlanesConfig("9", "24", "49")).listarPlanes();
+        stubPlanes(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME"), plan(3, "NEGOCIO_PLUS")));
+        // Moneda USD explícita: sin ella no se publica precio (ver sinMonedaEnLista).
+        var r = controller(new PreciosPlanesConfig("9", "24", "49", "usd")).listarPlanes();
         assertThat(r.getStatusCode().value()).isEqualTo(200);
         var lista = (List<Map<String, Object>>) r.getBody();
         assertThat(lista).extracting(m -> m.get("precioUsd"))
@@ -84,12 +93,22 @@ class PlanSinPrecioTest {
     @Test @DisplayName("Si falta el precio de un plan, /planes responde 409 PLAN_SIN_PRECIO")
     @SuppressWarnings("unchecked")
     void faltaPrecioEnLista() {
-        when(planRepo.findByActivoTrueOrderByPrecioMensualAsc())
-            .thenReturn(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME")));
-        var r = controller(new PreciosPlanesConfig("9", "", "49")).listarPlanes();
+        stubPlanes(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME")));
+        var r = controller(new PreciosPlanesConfig("9", "", "49", "usd")).listarPlanes();
         assertThat(r.getStatusCode().value()).isEqualTo(409);
         var body = (Map<String, Object>) r.getBody();
         assertThat(body).containsEntry("codigo", "PLAN_SIN_PRECIO").containsEntry("plan", "PYME");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "Sin moneda USD explícita («{0}»), /billing/planes responde 409 PLAN_SIN_PRECIO")
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {" ", "crc", "eur"})
+    @SuppressWarnings("unchecked")
+    void sinMonedaEnLista(String moneda) {
+        stubPlanes(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME"), plan(3, "NEGOCIO_PLUS")));
+        var r = controller(new PreciosPlanesConfig("9", "24", "49", moneda)).listarPlanes();
+        assertThat(r.getStatusCode().value()).isEqualTo(409);
+        assertThat((Map<String, Object>) r.getBody()).containsEntry("codigo", "PLAN_SIN_PRECIO");
     }
 
     @Test @DisplayName("Checkout de un plan sin precio: 409 PLAN_SIN_PRECIO y no se inicia cobro")
@@ -109,7 +128,7 @@ class PlanSinPrecioTest {
             assertThat(precios.precioUsd(plan)).isEmpty();
             assertThatThrownBy(() -> precios.requerir(plan)).isInstanceOf(PlanSinPrecioException.class);
         }
-        when(planRepo.findByActivoTrueOrderByPrecioMensualAsc()).thenReturn(List.of(plan(1, "EMPRENDEDOR")));
+        stubPlanes(List.of(plan(1, "EMPRENDEDOR")));
         assertThat(controller(precios).listarPlanes().getStatusCode().value()).isEqualTo(409);
     }
 
