@@ -1,5 +1,6 @@
 package com.hotclick.service;
 
+import java.util.List;
 import com.hotclick.service.payment.CheckoutValidator;
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PaymentCheckoutResponse;
@@ -95,12 +96,13 @@ public class PaymentService {
             session = providerFactory.get(provider)
                 .crearSesion(CheckoutGrupoFactory.paraCobro(principal, grupo.totalCobro()), usuario);
         } catch (RuntimeException e) {
-            grupo.pedidos().forEach(stockReservationService::liberarReservas);
+            liberarGrupoTrasFalloDeSesion(grupo.pedidos(), e);
             throw e;
         } catch (Exception e) {
-            grupo.pedidos().forEach(stockReservationService::liberarReservas);
-            throw new IntegracionExternaException(provider, IntegracionExternaException.Tipo.IO_ERROR,
-                "Error iniciando sesión de pago: " + e.getMessage(), e);
+            IntegracionExternaException ie = new IntegracionExternaException(provider,
+                IntegracionExternaException.Tipo.IO_ERROR, "Error iniciando sesión de pago: " + e.getMessage(), e);
+            liberarGrupoTrasFalloDeSesion(grupo.pedidos(), ie);
+            throw ie;
         }
 
         Pago pago = paymentRecordFactory.createAndPersist(session, principal, usuario, provider, grupo.totalCobro());
@@ -142,12 +144,37 @@ public class PaymentService {
         return orderConfirmationService.revisarSobreventa(pago);
     }
 
+    /**
+     * fix2: libera la reserva de UN pedido por el camino seguro (pedido FOR UPDATE → un lock de productos ordenado,
+     * sin catch por línea). Sin llamadores en main; se conserva por compatibilidad.
+     */
     @Transactional
     public void liberarReservas(Pedido pedido) {
-        stockReservationService.liberarReservas(pedido);
+        if (pedido == null) return;
+        liberarBloqueando(List.of(pedido));
     }
 
-    @Transactional
+    /**
+     * fix2: el Pago todavía no existe (o ya no importa): bloquea los pedidos FOR UPDATE ORDER BY id y libera las
+     * reservas de todos en un solo lock de productos. Sin catch: un fallo revierte la transacción del llamador.
+     */
+    private void liberarBloqueando(List<Pedido> pedidos) {
+        List<Pedido> bloqueados = pedidoGrupoService.bloquearPedidos(pedidos);
+        stockReservationService.liberarReservasDeGrupoBloqueado(
+            bloqueados.stream().filter(p -> p.getStockReservadoEn() != null).toList());
+    }
+
+    /** El fallo de la sesión de pago es el error que se informa; si liberar también falla, queda como suprimido. */
+    private void liberarGrupoTrasFalloDeSesion(List<Pedido> pedidos, Exception causa) {
+        try {
+            liberarBloqueando(pedidos);
+        } catch (RuntimeException liberacion) {
+            causa.addSuppressed(liberacion);
+        }
+    }
+
+    // fix2: la cancelación pendiente guarda la intención; el wrapper no la revierte (mismo noRollbackFor que el servicio).
+    @Transactional(noRollbackFor = com.hotclick.service.payment.CancelacionPendienteOnvoException.class)
     public void cancelarPorUsuario(String numeroPedido, String correoUsuario) {
         userCancellationService.cancelarPorUsuario(numeroPedido, correoUsuario);
     }
@@ -166,7 +193,7 @@ public class PaymentService {
         paymentFailureHandler.marcarFallido(pago, motivo);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = com.hotclick.service.payment.CancelacionPendienteOnvoException.class)
     public void cancelarAnon(String numeroPedido, String cancelToken) {
         userCancellationService.cancelarAnon(numeroPedido, cancelToken);
     }

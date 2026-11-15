@@ -60,6 +60,8 @@ class PaymentExpirationCleanupOnvoTest {
         pedido.setId(10L);
         pedido.setNumeroPedido("ORD-ONVO");
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedido.setStockReservadoEn(LocalDateTime.now());
+        org.mockito.Mockito.lenient().when(pedidoRepository.findByIdForUpdate(10L)).thenReturn(java.util.Optional.of(pedido));
 
         pagoOnvo = new Pago();
         pagoOnvo.setId(20L);
@@ -75,12 +77,15 @@ class PaymentExpirationCleanupOnvoTest {
         ReflectionTestUtils.setField(service, "pagoExpiradoCancelador", new PagoExpiradoCancelador(pagoRepository,
             pedidoRepository, stockReservationService, new PedidoGrupoService(pedidoRepository, pagoRepository)));
         org.mockito.Mockito.lenient().when(pagoRepository.findByIdForUpdate(20L)).thenReturn(java.util.Optional.of(pagoOnvo));
+        // MEDIO limpieza: el intent se relee antes de cancelar; acá ONVO confirma que no cobró.
+        when(onvoPaymentProvider.revisarCobroAntesDeCancelar("cs_vencida", "cleanup"))
+            .thenReturn(OnvoPaymentProvider.CobroIntent.SIN_COBRO);
     }
 
     private void noCancela() {
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     @Test
@@ -159,7 +164,29 @@ class PaymentExpirationCleanupOnvoTest {
         service.ejecutar();
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
+    }
+
+    @Test
+    @DisplayName("MEDIO limpieza: sin cobro en la sesión pero el intent cobró → no se cancela")
+    void sinCobroPeroIntentCobrado_noCancela() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.NO_PAGADO);
+        when(onvoPaymentProvider.revisarCobroAntesDeCancelar("cs_vencida", "cleanup"))
+            .thenReturn(OnvoPaymentProvider.CobroIntent.CONFIRMADO);
+        service.ejecutar();
+        noCancela();
+        verify(onvoPaymentProvider, never()).expirarSesionSinCobro(any());
+    }
+
+    @Test
+    @DisplayName("MEDIO limpieza: relectura del intent en duda → no se cancela ni se expira")
+    void intentEnDuda_noCancela() {
+        when(onvoPaymentProvider.procesarPagoVerificado("cs_vencida", "cleanup")).thenReturn(Verificacion.NO_PAGADO);
+        when(onvoPaymentProvider.revisarCobroAntesDeCancelar("cs_vencida", "cleanup"))
+            .thenReturn(OnvoPaymentProvider.CobroIntent.EN_DUDA);
+        service.ejecutar();
+        noCancela();
+        verify(onvoPaymentProvider, never()).expirarSesionSinCobro(any());
     }
 
     @Test
@@ -174,6 +201,8 @@ class PaymentExpirationCleanupOnvoTest {
     private OnvoPaymentProvider providerReal(com.hotclick.service.OnvoService onvo) {
         OnvoPaymentProvider real = org.mockito.Mockito.spy(new OnvoPaymentProvider());
         ReflectionTestUtils.setField(real, "onvoService", onvo);
+        // Sesiones sin paymentIntentId y sin pagar: la relectura del intent las da SIN_COBRO.
+        when(onvo.isPagosDisponibles()).thenReturn(true);
         org.mockito.Mockito.doReturn(Verificacion.NO_PAGADO).when(real).procesarPagoVerificado("cs_vencida", "cleanup");
         ReflectionTestUtils.setField(service, "onvoPaymentProvider", real);
         return real;
@@ -189,7 +218,7 @@ class PaymentExpirationCleanupOnvoTest {
         service.ejecutar();
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
         verify(onvo, never()).expirarCheckoutSession(any());
     }
 
@@ -205,7 +234,7 @@ class PaymentExpirationCleanupOnvoTest {
         providerReal(onvo);
         service.ejecutar();
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
     }
 
     @Test

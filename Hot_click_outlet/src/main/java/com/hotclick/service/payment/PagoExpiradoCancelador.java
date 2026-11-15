@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -65,14 +64,16 @@ public class PagoExpiradoCancelador {
         pago.setEstadoPago(estadoPago);
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
 
-        List<Pedido> pedidosActualizados = new ArrayList<>();
-        for (Pedido pedido : pedidoGrupoService.delGrupo(pago.getPedido())) {
-            if (Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())) {
-                pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-                pedidosActualizados.add(pedido);
-                stockReservationService.liberarReservas(pedido);
-                log.info("Pedido {} cancelado {}", pedido.getNumeroPedido(), motivo);
-            }
+        // fix2: orden Pago (ya bloqueado) → pedidos del grupo FOR UPDATE ORDER BY id → productos en UN lock ordenado.
+        // El TTL solo cancela PEDIDO_PENDIENTE (sin PENDIENTE_COMPROBANTE/APROBACION). Sin catch: un fallo revierte todo.
+        List<Pedido> pedidosActualizados = pedidoGrupoService.bloquearGrupo(pago.getPedido()).stream()
+            .filter(p -> Constants.PEDIDO_PENDIENTE.equals(p.getEstadoPedido()))
+            .toList();
+        stockReservationService.liberarReservasDeGrupoBloqueado(
+            pedidosActualizados.stream().filter(p -> p.getStockReservadoEn() != null).toList());
+        for (Pedido pedido : pedidosActualizados) {
+            pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
+            log.info("Pedido {} cancelado {}", pedido.getNumeroPedido(), motivo);
         }
         pagoRepository.saveAll(List.of(pago));
         pedidoRepository.saveAll(pedidosActualizados);

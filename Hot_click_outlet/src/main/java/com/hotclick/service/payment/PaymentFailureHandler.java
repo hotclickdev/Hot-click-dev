@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class PaymentFailureHandler {
@@ -39,7 +40,11 @@ public class PaymentFailureHandler {
         pago.setFechaActualizacion(ahora);
         pagoRepository.save(pago);
 
-        for (Pedido pedido : pedidoGrupoService.delGrupo(pago.getPedido())) {
+        // fix2: orden Pago (UPDATE condicional) → pedidos del grupo FOR UPDATE ORDER BY id → productos en UN lock ordenado.
+        List<Pedido> grupo = pedidoGrupoService.bloquearGrupo(pago.getPedido());
+        stockReservationService.liberarReservasDeGrupoBloqueado(
+            grupo.stream().filter(p -> p.getStockReservadoEn() != null).toList());
+        for (Pedido pedido : grupo) {
             boolean pendiente = Constants.PEDIDO_PENDIENTE.equals(pedido.getEstadoPedido())
                 || Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(pedido.getEstadoPedido())
                 || Constants.PEDIDO_PENDIENTE_APROBACION.equals(pedido.getEstadoPedido());
@@ -47,7 +52,6 @@ public class PaymentFailureHandler {
                 pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
                 pedidoRepository.save(pedido);
             }
-            stockReservationService.liberarReservas(pedido);
             paymentNotificationsFacade.onPagoFallido(pedido, motivo);
         }
         log.info("Pago {} marcado FALLIDO: {}", pago.getPedido().getNumeroPedido(), motivo);

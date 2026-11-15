@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, type KeyboardEvent, type RefObject } from 'react'
 import useCartStore from '@/store/cartStore'
+import { avisarSiTopeCarrito } from '@/store/avisarTopeCarrito'
+import { useToast } from '@/components/ui/Toast'
 import useAuthStore from '@/store/authStore'
 import { isAfterHours, removeMsg } from './aiChatHelpers'
 import type { AiChatMensaje } from './aiChatHelpers'
@@ -45,6 +47,7 @@ export function useAiChat({
   exitIntentEnabled = false,
 }: UseAiChatArgs) {
   const addItem    = useCartStore(s => s.addItem)
+  const toast      = useToast()
   const userName   = useAuthStore(s => s.userName)
   const storageKey = `hc-chat-msgs-${sessionKey}`
   const searchKey  = `hc-chat-searches-${sessionKey}`
@@ -94,13 +97,14 @@ export function useAiChat({
 
   const handleAdd = useCallback((producto: Producto) => {
     if (requiereFichaEncargo(producto)) return
-    addItem({
+    const agregado = addItem({
       id: producto.id, nombre: producto.nombre, sku: producto.sku ?? '',
       precio: producto.precio, precioVenta: producto.precio,
       imagenPrincipalUrl: producto.imagenUrl ?? null, stock: topeStock(producto.stock),
     } as unknown as Producto, 1)
+    if (!avisarSiTopeCarrito(agregado, (m) => toast({ message: m, type: 'error' }))) return
     onProductAdd?.(producto)
-  }, [addItem, onProductAdd])
+  }, [addItem, onProductAdd, toast])
 
   function copyMessage(texto: string, idx: number) {
     navigator.clipboard.writeText(texto).then(() => {

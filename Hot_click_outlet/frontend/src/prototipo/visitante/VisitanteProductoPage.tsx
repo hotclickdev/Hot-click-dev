@@ -14,6 +14,7 @@ import {
 import VisitanteMain, { VisitanteBoton, VisitanteEmptyState, VisitantePrecio } from './VisitantePiezas'
 import { visitanteRuta } from './visitanteMock'
 import useCartStore from '@/store/cartStore'
+import { avisarSiTopeCarrito } from '@/store/avisarTopeCarrito'
 import { useProductoVisitante } from './useProductoVisitante'
 import type { Producto } from '@/types/producto'
 
@@ -91,7 +92,7 @@ export default function VisitanteProductoPage() {
 function agregarSiHayCrudo(
   crudo: Producto | null,
   cantidad: number,
-  addItem: (p: Producto, qty?: number) => void,
+  addItem: (p: Producto, qty?: number) => boolean,
   navigate: ReturnType<typeof useNavigate>,
   setAviso: (msg: string) => void,
 ) {
@@ -99,7 +100,7 @@ function agregarSiHayCrudo(
     setAviso('Este producto no está disponible para comprar.')
     return
   }
-  addItem(crudo, cantidad)
+  if (!avisarSiTopeCarrito(addItem(crudo, cantidad), setAviso)) return
   navigate(visitanteRuta('carrito'))
 }
 

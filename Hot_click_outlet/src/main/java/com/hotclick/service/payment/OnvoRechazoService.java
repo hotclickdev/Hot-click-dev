@@ -53,6 +53,11 @@ public class OnvoRechazoService {
         if (!onvoPaymentProvider.expirarSesionSinCobro(sessionId)) {
             return false;
         }
+        // MEDIO limpieza: última lectura del intent justo antes de liberar stock (el comprador pudo reintentar y pagar).
+        if (onvoPaymentProvider.revisarCobroAntesDeCancelar(sessionId, "rechazo")
+                != OnvoPaymentProvider.CobroIntent.SIN_COBRO) {
+            return false;
+        }
         boolean cerrado = pagoExpiradoCancelador.marcarFallido(pagoId);
         if (cerrado) {
             log.warn("[onvo] Cobro rechazado por ONVO: pago id={} FALLIDO y stock liberado", pagoId);
