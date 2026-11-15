@@ -99,7 +99,7 @@ jobs:
         run: |
           node trusted/scripts/eng-gates/trusted/src/bin/read-approval.mjs \
             --policy-git policydata.git --policy-commit "${{ steps.policy.outputs.commit }}" --out "$RUNNER_TEMP/approval.json"
-      - name: escaneo de confianza (3 etapas: árbol, rango, E4 completo; BLOQUEO FIJO en D hasta revisión)
+      - name: "escaneo de confianza (3 etapas: árbol, rango, E4 completo; BLOQUEO FIJO en D hasta revisión)"
         id: scan
         env: { GH_TOKEN: "", GITHUB_TOKEN: "", ACTIONS_RUNTIME_TOKEN: "", ACTIONS_ID_TOKEN_REQUEST_TOKEN: "" }
         run: |
