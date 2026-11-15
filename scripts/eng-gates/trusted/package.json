@@ -1,0 +1,6 @@
+{
+  "name": "e4-trusted-detector",
+  "private": true,
+  "type": "module",
+  "description": "Detector de confianza E4 r4. Solo módulos node: (sin dependencias npm). Añadido en la fase A porque master no tiene package-lock.json en scripts/eng-gates y npm ci del reusable lo exige."
+}
