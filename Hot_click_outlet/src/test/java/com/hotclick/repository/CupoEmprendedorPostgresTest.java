@@ -116,8 +116,21 @@ class CupoEmprendedorPostgresTest {
         return out;
     }
 
+    /**
+     * DriverManagerDataSource no tiene pool: cada transacción abre su propia conexión. Con 100 hilos a la vez se
+     * superaba {@code max_connections} del Postgres de pruebas (p. ej. 40) y fallaba con "Could not open JDBC
+     * Connection". El semáforo acota las conexiones abiertas a la vez; las 100 personas siguen compitiendo por los 70
+     * puestos (la carrera real está en el UPDATE del contador y el UNIQUE, no en abrir la conexión).
+     */
+    private static final java.util.concurrent.Semaphore CONEXIONES = new java.util.concurrent.Semaphore(15);
+
     private ResultadoReserva reservar(CupoEmprendedorService s, Empresa e, long usuario, String correo) {
-        return tx.execute(st -> s.reservarPuesto(e, usuario, correo));
+        CONEXIONES.acquireUninterruptibly();
+        try {
+            return tx.execute(st -> s.reservarPuesto(e, usuario, correo));
+        } finally {
+            CONEXIONES.release();
+        }
     }
 
     @Test
