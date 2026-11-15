@@ -6,10 +6,14 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
 public class PaymentCheckoutRequest {
+
+    /** Tope de líneas del carrito (alineado con SelfCheckoutService.MAX_LINEAS_POR_PEDIDO). */
+    public static final int MAX_ITEMS = 50;
 
     /** Opcional: sin bodega (o con la default id 1) el backend resuelve la del negocio del producto. */
     private Long bodegaId;
@@ -20,6 +24,9 @@ public class PaymentCheckoutRequest {
     private String notas;
 
     @NotEmpty(message = "El carrito no puede estar vacío")
+    // Mismo tope que SelfCheckoutService.MAX_LINEAS_POR_PEDIDO y StorefrontPedidoDTO: acota los pedidos del grupo y los
+    // locks de producto que toma el checkout y la liberación/confirmación del grupo.
+    @Size(max = MAX_ITEMS, message = "El pedido no puede tener más de 50 productos distintos")
     @Valid
     private List<ItemDTO> items;
 
