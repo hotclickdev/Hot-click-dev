@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 2,
+  "_notes": "Plantilla schemaVersion 2: path/blob/sha256 leídos de HEAD 1583445493df4b26d1a264ad92eb9e0fda0b2253 como datos. expectedFindings [{tool:'gitleaks',rule,line,column,secretSha256}] e historical [{tool:'gitleaks',commit,path,rule,line,column,secretSha256}] y expectedE4 [{id,snippetSha256}] SIN FIJAR: el manifiesto definitivo debe revisarlo Seguridad con los pins definitivos; mientras tanto FALLA. NO es un manifiesto definitivo ni autorizado.",
+  "files": [
+    {
+      "path": "scripts/eng-gates/fixtures/e4-synthetic/SyntheticStrongPrefixFixtureTest.java.txt",
+      "blob": "efed78278ce887882dd0514284c66f9b8016513d",
+      "sha256": "aba968ca943194317b6a25f86ba3559d0fc0c175922be193e52156ffd2a8a015",
+      "expectedFindings": "__UNSET__",
+      "expectedE4": "__UNSET__"
+    },
+    {
+      "path": "scripts/eng-gates/fixtures/e4-synthetic/SyntheticWebhookFixtureTest.broken.java.txt",
+      "blob": "54728c10124123e15aafa6b79c4c297f8ef2505f",
+      "sha256": "62f19a65c8edda40fe9949fdcba832d2be619b50a416c8a0492e8afca329bfe0",
+      "expectedFindings": "__UNSET__",
+      "expectedE4": "__UNSET__"
+    },
+    {
+      "path": "scripts/eng-gates/fixtures/e4-synthetic/SyntheticWebhookFixtureTest.changed-value.java.txt",
+      "blob": "dcc220fe93f80c94eefa8d0c67b0d2012bd9bfce",
+      "sha256": "808ea6191ee203b2690e74f1b68b80cfb3f633fee8add589a5a17110aa729fca",
+      "expectedFindings": "__UNSET__",
+      "expectedE4": "__UNSET__"
+    },
+    {
+      "path": "scripts/eng-gates/fixtures/e4-synthetic/SyntheticWebhookFixtureTest.duplicate.java.txt",
+      "blob": "482850f2aee4795a0d6c2e7018e3f75cc7ba56b6",
+      "sha256": "328df654c57822b1be387007d983a92650bacb776ed26a32a344bafde858cdc7",
+      "expectedFindings": "__UNSET__",
+      "expectedE4": "__UNSET__"
+    },
+    {
+      "path": "scripts/eng-gates/fixtures/e4-synthetic/SyntheticWebhookFixtureTest.java.txt",
+      "blob": "03125af278d132e693c4d5b46e5cc59619132120",
+      "sha256": "2989755aa65f1e20feb16f7968628cd44d16052605360fd6759ffa7059ba05ec",
+      "expectedFindings": "__UNSET__",
+      "expectedE4": "__UNSET__"
+    },
+    {
+      "path": "scripts/eng-gates/fixtures/e4-synthetic/SyntheticWebhookFixtureTest.orphan.java.txt",
+      "blob": "5bc448cc7dd15200a50cab4515e869fb56b8f143",
+      "sha256": "76533ff8dbdba79f298a4d24f252e1aee71a33987e3be12eafd55e0856d53a8f",
+      "expectedFindings": "__UNSET__",
+      "expectedE4": "__UNSET__"
+    }
+  ],
+  "historical": "__UNSET__"
+}

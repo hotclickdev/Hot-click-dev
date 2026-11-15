@@ -35,11 +35,16 @@ import {
   writeGithubOutput,
 } from './ola3-lib.mjs';
 import { upsertPrComment } from './ola3-github.mjs';
+import { execFileSync } from 'node:child_process';
+import { resolveParse, sha256Text } from './java-loop-map.mjs';
+import { APPROVAL_SOURCE_STATUS } from './e4-secret-exceptions.mjs';
 
 const FE_TIMEOUT_MS = Number(process.env.COMMIT_GATE_FE_TIMEOUT_MS || 8 * 60 * 1000);
 const BE_TIMEOUT_MS = Number(process.env.COMMIT_GATE_BE_TIMEOUT_MS || 10 * 60 * 1000);
 
-export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip, skipFlyway = false }) {
+export function analyzeCommitGate({
+  changedFiles, diffText, testFiles, skip, skipFlyway = false, fileTexts, parse, prAuthor, now,
+}) {
   if (skip) {
     return {
       skipped: true,
@@ -53,7 +58,10 @@ export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip, ski
   // Blockers: reportes reales (`**/playwright-report/**`), no menciones en skip-dir / artifacts YAML.
   // Tests Java: omitir stubs `@Disabled` bajo `src/test/java/**/pending/`.
   // Secretos: heurística en source; no en `**/src/main/resources/static/**` (E3 cubre frescura SPA).
-  const blockers = scanCommitBlockers({ changedFiles, diffText });
+  // Excepciones E4: archivo exacto de HEAD + parser + autor del PR; sin fuente de aprobación independiente
+  // (no configurada) ninguna excepción aplica y el hallazgo sigue bloqueando. Cada evaluación queda en `secretAudit`.
+  const secretAudit = [];
+  const blockers = scanCommitBlockers({ changedFiles, diffText, fileTexts, parse, prAuthor, now, audit: secretAudit });
   const plan = planCommitChecks(changedFiles);
   const javaTests = pickJavaTests(changedFiles, testFiles);
   const entityFiles = changedFiles.filter(isEntityPath);
@@ -93,6 +101,7 @@ export function analyzeCommitGate({ changedFiles, diffText, testFiles, skip, ski
   return {
     skipped: false,
     blockers,
+    secretAudit,
     plan: { ...plan, javaTests },
     flyway,
     tenant,
@@ -130,6 +139,12 @@ export function formatVerdict({ analysis, testResults = [] }) {
     lines.push('', 'Bloqueos:');
     for (const item of analysis.blockers) {
       lines.push(`- \`${item.path}\` ${item.title}${item.snippet ? ` — \`${item.snippet}\`` : ''}`);
+    }
+  }
+  if (analysis.secretAudit?.length) {
+    lines.push('', `Auditoría excepciones E4 (${APPROVAL_SOURCE_STATUS.configured ? 'fuente independiente configurada' : APPROVAL_SOURCE_STATUS.reason}):`);
+    for (const rec of analysis.secretAudit) {
+      lines.push(`- \`${rec.path}\` ${rec.constant || '?'} huella=${rec.fingerprint || 'n/a'} entrada=${rec.entryId || 'ninguna'} decisión=${rec.decision} — ${rec.reasons.join('; ') || 'sin motivos'}`);
     }
   }
   lines.push(
@@ -222,7 +237,24 @@ function listJavaTests() {
   }
 }
 
-function main() {
+/** Texto exacto de HEAD (blob id + SHA-256) de los Java de src/test tocados: base para verificar excepciones E4. */
+export function readHeadTestJavaTexts(head, changedFiles) {
+  const out = {};
+  for (const filePath of changedFiles || []) {
+    const n = filePath.replaceAll('\\', '/');
+    if (!/(?:^|\/)src\/test\/.*\.java$/.test(n)) continue;
+    try {
+      const blob = execFileSync('git', ['rev-parse', '--verify', `${head}:${n}`], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+      const text = execFileSync('git', ['cat-file', 'blob', blob], { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
+      out[n] = { text, blob, hash: sha256Text(text) };
+    } catch {
+      // borrado o ilegible: sin texto → la excepción no es verificable (fail-closed)
+    }
+  }
+  return out;
+}
+
+async function main() {
   const skip = hasLabel(process.env.PR_LABELS, SKIP_LABELS.commitGate);
   const base = process.env.BASE_SHA;
   const head = process.env.HEAD_SHA;
@@ -232,12 +264,17 @@ function main() {
   }
   const changedFiles = skip ? [] : gitChangedFiles(base, head);
   const diffText = skip ? '' : gitUnifiedDiff(base, head);
+  const parser = await resolveParse();
+  if (!parser.ok) console.error(`E4: parser Java no disponible (${parser.error}); excepciones de secretos no verificables`);
   const analysis = analyzeCommitGate({
     changedFiles,
     diffText,
     testFiles: listJavaTests(),
     skip,
     skipFlyway: hasLabel(process.env.PR_LABELS, GATE_SKIP_LABELS.flyway),
+    fileTexts: skip ? {} : readHeadTestJavaTexts(head, changedFiles),
+    parse: parser.ok ? parser.parse : undefined,
+    prAuthor: process.env.PR_AUTHOR || '',
   });
   const testResults = skip ? [] : runTouchedTests(analysis.plan);
   const formatted = formatVerdict({ analysis, testResults });
@@ -252,5 +289,5 @@ function main() {
 }
 
 if (basename(process.argv[1] || '') === 'commit-gate.mjs') {
-  main();
+  await main();
 }

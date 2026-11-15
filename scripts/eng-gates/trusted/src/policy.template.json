@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "status": "__UNSET__",
+  "repository": "hotclickdev/Hot-click-dev",
+  "pullNumber": 555,
+  "mode": "no-exceptions",
+  "candidateHeadSha": null,
+  "approverActorId": 279566055,
+  "approverLogin": "hotclickdev",
+  "approvalCommentId": null,
+  "verifierCommit": "__UNSET__",
+  "fixture": null,
+  "validity": {
+    "kind": "untilPullMerged",
+    "pullNumber": 555
+  },
+  "trustedReusable": {
+    "path": "hotclickdev/Hot-click-dev/.github/workflows/e4-trusted.yml",
+    "sha": "__UNSET__"
+  },
+  "caller": {
+    "path": ".github/workflows/e4-trusted-caller.yml",
+    "blob": "__UNSET__"
+  },
+  "gitleaks": {
+    "version": "8.30.1",
+    "sha256": "__UNSET__",
+    "configSha256": "__UNSET__"
+  },
+  "corpusManifestSha256": "__UNSET__",
+  "_notes": "Plantilla NO activa (status __UNSET__). r6.1: `mode` obligatorio ('no-exceptions' | 'live-exception'). Esta plantilla es no-exceptions: candidateHeadSha, approvalCommentId y fixture van PRESENTES y en JSON null (un campo AUSENTE no vale como null); el head se pasa al cierre con --head <sha40> (distinto de P, D, V y W), no vive en la política. En live-exception (camino r6) candidateHeadSha (sha40), approvalCommentId (entero) y fixture son obligatorios. status=ACTIVE y todos los valores los fija la política revisada fuera del head (commit P). verifierCommit=V se comprueba con git (rev-parse + árbol limpio + blobs), no se autodeclara; D lo fija W y lo verifica el escaneo. La política vive en un commit P; P NO aparece dentro de la política (autorreferencia irrealizable): se pasa como argumento y se registra en la procedencia. checkRunName = nombre EFECTIVO del check del job reusable: «<name del job caller> / <name del job reusable scan>» (nombres estables, sin sufijo de versión). caller.path = e4-trusted-caller.yml (no se pisa commit-gate.yml). approverActorId=279566055 (hotclickdev, User; el login es informativo, manda el ID) y validity={untilPullMerged,555} DESIGNADOS por el dueño (sin plazos inventados); sin defaults. detectorCommit = D (commit de los detectores; nunca el head) y testsCheckName = nombre efectivo del check del job SIN privilegios del caller que corre Maven/pnpm del head; ambos obligatorios en el cierre. P se lee como DATOS de un commit cuyo árbol solo contiene e4-policy.json (src/lib/policy-source.mjs).",
+  "checkRunName": "Trusted E4 VEREDICTO / scan",
+  "detectorCommit": "__UNSET__",
+  "testsCheckName": "Trusted E4 tests tocados"
+}
