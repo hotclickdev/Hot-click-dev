@@ -1,6 +1,7 @@
 package com.hotclick.service.pos;
 
 import com.hotclick.model.OrigenPedido;
+import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PosVentaDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
@@ -57,11 +58,10 @@ public class PosVentaService {
     @Autowired private com.hotclick.repository.PosVentaTurnoRepository ventaTurnoRepository;
 
     /**
-     * Tope de líneas por venta POS. Mismo número (50) que el de PR 553 en PaymentCheckoutRequest.MAX_ITEMS,
-     * StorefrontPedidoDTO, ManualPedidoDTO y SelfCheckoutService.MAX_LINEAS_POR_PEDIDO; no se referencia
-     * esa constante porque aún no está en master. Al mergear PR 553, unificar.
+     * Tope de líneas por venta POS: alias de la constante compartida
+     * {@link PaymentCheckoutRequest#MAX_ITEMS} (alineada con SelfCheckoutService.MAX_LINEAS_POR_PEDIDO).
      */
-    public static final int MAX_LINEAS_POS = 50;
+    public static final int MAX_LINEAS_POS = PaymentCheckoutRequest.MAX_ITEMS;
     public static final String MENSAJE_MAX_LINEAS_POS =
         "El pedido no puede tener más de " + MAX_LINEAS_POS + " productos distintos";
 

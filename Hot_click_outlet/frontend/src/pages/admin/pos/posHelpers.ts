@@ -1,5 +1,6 @@
 import type { Id } from '@/types/api'
 import { formatMiles } from '@/utils/format'
+import { MAX_LINEAS_CARRITO, MENSAJE_MAX_LINEAS_CARRITO } from '@/store/cartStore'
 
 export type DenominacionPos = {
   v: number
@@ -186,9 +187,9 @@ export function descomponer(monto: number) {
   return r
 }
 
-/** Mismo tope (50) que el carrito web (MAX_LINEAS_CARRITO) y que PosVentaService.MAX_LINEAS_POS. */
-export const MAX_LINEAS_POS = 50
-export const MENSAJE_MAX_LINEAS_POS = `El pedido no puede tener más de ${MAX_LINEAS_POS} productos distintos`
+/** Tope del POS: alias de las constantes compartidas del carrito web (PaymentCheckoutRequest.MAX_ITEMS en backend). */
+export const MAX_LINEAS_POS = MAX_LINEAS_CARRITO
+export const MENSAJE_MAX_LINEAS_POS = MENSAJE_MAX_LINEAS_CARRITO
 
 /** true si agregar este producto crearía una línea nueva por encima del tope. */
 export function excedeTopeLineasPos(prev: ItemCarritoPos[], producto: ProductoEntradaCarrito): boolean {

@@ -1,5 +1,6 @@
 package com.hotclick.service.pos;
 
+import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PosVentaDTO;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -13,6 +14,7 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.SelfCheckoutService;
 import com.hotclick.service.StockService;
 import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.service.TurnoCajaService;
@@ -201,24 +203,25 @@ class PosVentaCantidadTurnoTest {
     }
 
     @Test
-    @DisplayName("Tope: el número es 50, igual que PR 553")
-    void topeEs50() {
-        assertThat(PosVentaService.MAX_LINEAS_POS).isEqualTo(50);
+    @DisplayName("Tope: el POS usa la constante compartida de PR 553 (PaymentCheckoutRequest.MAX_ITEMS)")
+    void topeEsConstanteCompartida() {
+        assertThat(PosVentaService.MAX_LINEAS_POS).isEqualTo(PaymentCheckoutRequest.MAX_ITEMS);
+        assertThat(PosVentaService.MAX_LINEAS_POS).isEqualTo(SelfCheckoutService.MAX_LINEAS_POR_PEDIDO);
     }
 
     @Test
     @DisplayName("Tope: 51 líneas en crearVenta → IllegalArgumentException (400), sin efectos")
     void crearVenta_masDe50Lineas_rechaza() {
-        assertThatThrownBy(() -> service.crearVenta(ventaConLineas(51), 5L, 1L, "caja@test.cr"))
+        assertThatThrownBy(() -> service.crearVenta(ventaConLineas(PaymentCheckoutRequest.MAX_ITEMS + 1), 5L, 1L, "caja@test.cr"))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("El pedido no puede tener más de 50 productos distintos");
+            .hasMessage("El pedido no puede tener más de " + PaymentCheckoutRequest.MAX_ITEMS + " productos distintos");
         sinEfectos();
     }
 
     @Test
     @DisplayName("Tope: 51 líneas en cotizarCobro → IllegalArgumentException")
     void cotizar_masDe50Lineas_rechaza() {
-        assertThatThrownBy(() -> service.cotizarCobro(ventaConLineas(51), 1L))
+        assertThatThrownBy(() -> service.cotizarCobro(ventaConLineas(PaymentCheckoutRequest.MAX_ITEMS + 1), 1L))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage(PosVentaService.MENSAJE_MAX_LINEAS_POS);
     }
