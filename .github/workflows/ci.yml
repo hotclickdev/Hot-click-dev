@@ -188,12 +188,13 @@ jobs:
         if: always()
         run: |
           rm -f Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.migration.PagoConciliacionFlywayPostgresTest.xml \
-                Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.PagoOnvoCancelacionLocksPostgresTest.xml
+                Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.PagoOnvoCancelacionLocksPostgresTest.xml \
+                Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.PagoOnvoGrupoLocksPostgresTest.xml
           touch "$RUNNER_TEMP/fix2-pg-inicio"
 
-      - name: PagoConciliacionFlywayPostgresTest + PagoOnvoCancelacionLocksPostgresTest
+      - name: PagoConciliacionFlywayPostgresTest + PagoOnvoCancelacionLocksPostgresTest + PagoOnvoGrupoLocksPostgresTest
         if: always()
-        run: mvn -f Hot_click_outlet/pom.xml -Dtest=PagoConciliacionFlywayPostgresTest,PagoOnvoCancelacionLocksPostgresTest test --no-transfer-progress
+        run: mvn -f Hot_click_outlet/pom.xml -Dtest=PagoConciliacionFlywayPostgresTest,PagoOnvoCancelacionLocksPostgresTest,PagoOnvoGrupoLocksPostgresTest test --no-transfer-progress
         env:
           HC_PG_TEST_URL: jdbc:postgresql://127.0.0.1:5432/hotclick_qa_alta?user=hotclick_qa&password=hotclick_qa
 
@@ -209,6 +210,7 @@ jobs:
           path: |
             Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.migration.PagoConciliacionFlywayPostgresTest.xml
             Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.PagoOnvoCancelacionLocksPostgresTest.xml
+            Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.PagoOnvoGrupoLocksPostgresTest.xml
           if-no-files-found: error
 
   frontend:
