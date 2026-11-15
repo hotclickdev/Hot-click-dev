@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "E4 trusted policy (P) v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "status",
+    "repository",
+    "pullNumber",
+    "candidateHeadSha",
+    "approverActorId",
+    "approvalCommentId",
+    "verifierCommit",
+    "fixture",
+    "validity",
+    "trustedReusable",
+    "caller",
+    "gitleaks",
+    "corpusManifestSha256",
+    "checkRunName",
+    "detectorCommit",
+    "testsCheckName"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "enum": [
+        "ACTIVE"
+      ]
+    },
+    "repository": {
+      "const": "hotclickdev/Hot-click-dev"
+    },
+    "pullNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "candidateHeadSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "approverActorId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "approverLogin": {
+      "type": "string",
+      "minLength": 1
+    },
+    "approvalCommentId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "verifierCommit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "fixture": {
+      "type": "object",
+      "required": [
+        "path",
+        "constant",
+        "blob",
+        "fingerprint",
+        "entryId"
+      ],
+      "properties": {
+        "blob": {
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "fingerprint": {
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "entryId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "validity": {
+      "type": "object",
+      "required": [
+        "kind",
+        "pullNumber"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "untilPullMerged"
+        },
+        "pullNumber": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "trustedReusable": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha"
+      ],
+      "properties": {
+        "sha": {
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      }
+    },
+    "caller": {
+      "type": "object",
+      "required": [
+        "path",
+        "blob"
+      ],
+      "properties": {
+        "blob": {
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      }
+    },
+    "gitleaks": {
+      "type": "object",
+      "required": [
+        "version",
+        "sha256",
+        "configSha256"
+      ]
+    },
+    "corpusManifestSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "checkRunName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "detectorCommit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "testsCheckName": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

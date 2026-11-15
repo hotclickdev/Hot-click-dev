@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "status": "__UNSET__",
+  "repository": "hotclickdev/Hot-click-dev",
+  "pullNumber": 553,
+  "candidateHeadSha": "__UNSET__",
+  "approverActorId": 279566055,
+  "approverLogin": "hotclickdev",
+  "approvalCommentId": "__UNSET__",
+  "verifierCommit": "__UNSET__",
+  "fixture": {
+    "path": "Hot_click_outlet/src/test/java/com/hotclick/integration/OnvoLimpiezaCapturadoWebhookTest.java",
+    "constant": "SECRET",
+    "entryId": "e4-generic-src-test-onvo-limpieza-webhook-secret",
+    "blob": "__UNSET__",
+    "fingerprint": "a93cb7603dd6ec9fbea79ea509f2fb71a4a43b6dfe664feecd436eefadfd729a"
+  },
+  "validity": {
+    "kind": "untilPullMerged",
+    "pullNumber": 553
+  },
+  "trustedReusable": {
+    "path": "hotclickdev/Hot-click-dev/.github/workflows/e4-trusted.yml",
+    "sha": "__UNSET__"
+  },
+  "caller": {
+    "path": ".github/workflows/commit-gate.yml",
+    "blob": "__UNSET__"
+  },
+  "gitleaks": {
+    "version": "8.30.1",
+    "sha256": "__UNSET__",
+    "configSha256": "__UNSET__"
+  },
+  "corpusManifestSha256": "__UNSET__",
+  "_notes": "Plantilla NO activa. status=ACTIVE y todos los valores los fija la política revisada fuera del head (commit P). verifierCommit=V se comprueba con git (rev-parse + árbol limpio + blobs), no se autodeclara; D lo fija W y lo verifica el escaneo. La política vive en un commit P posterior al comentario; P NO aparece dentro de la política (sería autorreferencia irrealizable): se pasa como argumento y se registra en la procedencia. checkRunName = nombre EFECTIVO del check del job reusable (no acreditado; se fija tras la prueba de integración). candidateHeadSha/approvalCommentId solo tras decisión del dueño. r3: approverActorId=279566055 (hotclickdev, User; el login es informativo, manda el ID) y validity={untilPullMerged,553} DESIGNADOS por el dueño (vigencia = hasta mergear el PR sobre el hash exacto aprobado; sin plazos inventados); la política sigue NO activa (status __UNSET__). Sin defaults. r3: detectorCommit = D (commit de los detectores; nunca el head) y testsCheckName = nombre efectivo del check del job SIN privilegios del caller que corre Maven/pnpm del head; ambos obligatorios en el cierre. P se lee como DATOS de un commit cuyo árbol solo contiene e4-policy.json (src/lib/policy-source.mjs).",
+  "checkRunName": "__UNSET__",
+  "detectorCommit": "__UNSET__",
+  "testsCheckName": "__UNSET__"
+}
