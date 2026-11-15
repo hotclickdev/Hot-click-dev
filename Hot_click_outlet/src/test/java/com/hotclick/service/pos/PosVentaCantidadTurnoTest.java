@@ -230,7 +230,7 @@ class PosVentaCantidadTurnoTest {
     @DisplayName("Tope: exactamente 50 líneas no se rechaza por el tope")
     void crearVenta_50Lineas_noRechazaPorTope() {
         try {
-            service.crearVenta(ventaConLineas(50), 5L, 1L, "caja@test.cr");
+            service.crearVenta(ventaConLineas(PaymentCheckoutRequest.MAX_ITEMS), 5L, 1L, "caja@test.cr");
         } catch (RuntimeException e) {
             assertThat(e.getMessage() == null ? "" : e.getMessage()).doesNotContain("productos distintos");
         }
