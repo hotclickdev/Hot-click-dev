@@ -145,6 +145,7 @@ public class StockReservationService {
         }
         List<Long> faltantes = new ArrayList<>();
         if (pedido.isEmpty()) return faltantes;
+        soltarCopiasDeSesion(pedidos); // mismo hueco de @Version viejo que en la liberación de grupo
         for (Producto p : productoRepository.findAllByIdsForUpdate(idsOrdenados(pedido.keySet()))) {
             if (entityManager != null && entityManager.contains(p)) entityManager.refresh(p);
             if (Boolean.TRUE.equals(p.getEsPersonalizado())) continue;
@@ -350,9 +351,11 @@ public class StockReservationService {
                 throw new RecursoNoEncontradoException(MSG_PRODUCTO_NO_ENCONTRADO);
             }
         }
+        soltarCopiasDeSesion(pedidos);
         List<Producto> bloqueados = productoRepository.findAllByIdsForUpdate(ids);
         Map<Long, Producto> porId = new HashMap<>();
         for (Producto p : bloqueados) {
+            // Copia recién leída bajo el lock; el refresh es defensivo (ya no debería haber copia vieja en sesión).
             if (entityManager != null && entityManager.contains(p)) entityManager.refresh(p);
             // Dueño releído con el lock tomado (pudo cambiar entre la lectura sin lock y el lock).
             if (!pedidoPorProducto.get(p.getId()).equals(p.getEmpresaId())) {
@@ -372,6 +375,24 @@ public class StockReservationService {
         }
         limpiarMarcas(pedidos);
         log.info("Reservas liberadas en lote para {} pedidos del grupo ({} productos)", pedidos.size(), ids.size());
+    }
+
+    /**
+     * Con el producto ya cargado en la sesión (vía los ítems del pedido) con un {@code @Version} viejo, Hibernate valida
+     * la versión al bloquear en lote y lanza StaleObjectState ANTES de que un refresh posterior pueda corregirlo
+     * (carrera entre dos grupos que comparten producto). Se sueltan esas copias (sin escribir: ningún producto está sucio
+     * en estos caminos) para que el {@code FOR UPDATE} cargue la fila actual. Los ítems conservan una referencia
+     * desvinculada (solo se lee su id).
+     */
+    private void soltarCopiasDeSesion(Collection<Pedido> pedidos) {
+        if (entityManager == null) return;
+        for (Pedido ped : pedidos) {
+            if (ped.getItems() == null) continue;
+            for (PedidoItem item : ped.getItems()) {
+                Producto ref = item.getProducto();
+                if (ref != null && entityManager.contains(ref)) entityManager.detach(ref);
+            }
+        }
     }
 
     private static void limpiarMarcas(List<Pedido> pedidos) {

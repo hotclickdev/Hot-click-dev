@@ -179,4 +179,22 @@ class StockReservationLoteGrupoTest {
         servicio.liberarReservasDeGrupoBloqueado(List.of());
         verifyNoInteractions(repo);
     }
+
+    @Test
+    @DisplayName("antes del lock en lote se sueltan las copias de producto de la sesión (evita @Version viejo)")
+    void sueltaCopiasAntesDelLock() {
+        jakarta.persistence.EntityManager em = mock(jakarta.persistence.EntityManager.class);
+        ReflectionTestUtils.setField(servicio, "entityManager", em);
+        Producto a = prod(1, 10, 3, 1);
+        Pedido p = pedido(1, 1, new long[][]{{1, 1}});
+        when(em.contains(a)).thenReturn(true);
+        stubDuenos();
+        when(repo.findAllByIdsForUpdate(anyList())).thenReturn(List.of(a));
+
+        servicio.liberarReservasDeGrupoBloqueado(List.of(p));
+
+        InOrder o = inOrder(em, repo);
+        o.verify(em).detach(a);
+        o.verify(repo).findAllByIdsForUpdate(anyList());
+    }
 }
