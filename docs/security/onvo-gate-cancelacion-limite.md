@@ -114,10 +114,20 @@ un cobro posterior va a reembolso, no confirma). Si la intención no se puede gu
   grupo siga pendiente (ahora releído bajo lock). Un fallo del lote revierte la transacción del llamador.
   `liberarReservas` sigue en el panel `CERRADO`, `PaymentService`, `ReservaTiendaVencidaService`,
   `PaymentOrderConfirmationService` y `PedidoService` (CANCELADO sin pago).
-- Checkout: `PaymentCheckoutRequest.items` admite como máximo 50 líneas (`@Size`, igual que `SelfCheckoutService` y
-  `StorefrontPedidoDTO`); acota los pedidos del grupo y los productos bloqueados.
-- Pendiente (fuera de alcance, no corregido): DELETE de pedido sin guard ni lock; resto de llamadores de
-  `liberarReservas` listados arriba (siguen por pedido y con `catch` por línea).
+- Orden global Pago → Pedidos → Productos en el resto de caminos que liberan reserva (`PedidoGrupoService#bloquearPedidos`:
+  `FOR UPDATE ORDER BY id` de exactamente esos pedidos + refresh; luego `liberarReservasDeGrupoBloqueado`, sin `catch`):
+  `PedidoService#cambiarEstado` (CANCELADO libera solo ESE pedido, con el pago antes que él cuando existe),
+  `PaymentService` (fallo de `crearSesion`: el pago aún no existe; el error informado sigue siendo el de la sesión y un
+  fallo al liberar queda como suprimido; `PaymentService#liberarReservas(Pedido)` usa el mismo camino),
+  `PaymentOrderConfirmationService#pasarARevisionPorSobreventa` y `ReservaTiendaVencidaService` (un lote por empresa:
+  pedidos bloqueados y revalidados `PENDIENTE` bajo lock, un solo lock de productos; si algo falla, ningún pedido del
+  lote queda cancelado). `OnvoCapturaService` usa `PedidoGrupoService#bloquearGrupo` (un solo helper).
+  `StockReservationService#liberarReservas` ya no tiene llamadores en main.
+- Tope de 50 productos distintos: `PaymentCheckoutRequest.items` (`@Size`, igual que `SelfCheckoutService` y
+  `StorefrontPedidoDTO`), `ManualPedidoDTO.items` y `cartStore` del frontend (`addItem` devuelve `false` al llegar al
+  tope). No se tocó POS (`PosVentaDTO`) ni `VentaRequestDTO`: ventas de caja sin grupo de pago ni reservas del checkout.
+- Pendiente (fuera de alcance, no corregido): DELETE de pedido sin guard ni lock;
+  `SinpeComprobantePersistenceService` (UPDATE sin condición de estado, sin llamadores en main).
 - EntityManager obligatorio (`@PersistenceContext`, sin fallback): si falta `EntityManagerFactory` la app no arranca
   (`CacheEvictEmpresaSinIdTest#sinJpaNoArranca`). El bloqueo del pago usa `findByIdForUpdate(...).orElseThrow()` + flush
   + refresh; ya no hay `orElse(pago)` (fail-closed: sin fila bloqueada no se decide).
