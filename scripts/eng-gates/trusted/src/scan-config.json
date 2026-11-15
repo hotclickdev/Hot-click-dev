@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "status": "__UNSET__",
+  "gitleaks": { "version": "8.30.1", "sha256": "__UNSET__", "configSha256": "__UNSET__" },
+  "corpusManifestSha256": "__UNSET__",
+  "_notes": "Configuración del ESCANEO (vive en D). No contiene head, aprobación ni el propio commit D (sería autorreferencia irrealizable): D lo fija W (DETECTOR_SHA) y se verifica con git. Plantilla NO activa: todo UNSET => exit 2."
+}

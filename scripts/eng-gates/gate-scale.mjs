@@ -12,6 +12,8 @@ import {
   parseUnifiedDiff,
 } from './lib.mjs';
 import { evaluateScale, scanScaleDiff } from './scale.mjs';
+import { resolveParse, sha256Text } from './java-loop-map.mjs';
+import { execFileSync } from 'node:child_process';
 import { permalink, postLineReview, upsertPrComment } from './github.mjs';
 
 const base = process.env.BASE_SHA;
@@ -33,8 +35,28 @@ if (changed.length === 0 && !skip) {
   process.exit(0);
 }
 
-const findings = scanScaleDiff(parseUnifiedDiff(changed.length ? gitUnifiedDiff(base, head, changed) : ''));
+const parser = await resolveParse();
+const fileTexts = {};
+for (const filePath of changed.filter((f) => f.replaceAll('\\', '/').endsWith('.java') && !f.includes('/src/test/'))) {
+  try {
+    // Archivo exacto de HEAD: blob id de git + SHA-256 del contenido leído de ese blob.
+    const blob = execFileSync('git', ['rev-parse', '--verify', `${head}:${filePath}`], { encoding: 'utf8' }).trim();
+    const text = execFileSync('git', ['cat-file', 'blob', blob], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
+    fileTexts[filePath] = { text, hash: sha256Text(text), blob, ref: head };
+    console.log(`SCALE1 source ${filePath} blob=${blob} sha256=${fileTexts[filePath].hash}`);
+  } catch (err) {
+    // Archivo borrado o ilegible: sin texto → p1-java-parser (missing-source) si hay líneas agregadas.
+    fileTexts[filePath] = { error: String(err.message || err).split('\n')[0] };
+  }
+}
+const findings = scanScaleDiff(
+  parseUnifiedDiff(changed.length ? gitUnifiedDiff(base, head, changed) : ''),
+  { parse: parser.ok ? parser.parse : undefined, fileTexts, parserError: parser.ok ? undefined : parser.error },
+);
 const verdict = evaluateScale({ findings, skip });
+if (!parser.ok && findings.some((item) => item.rule === 'p1-java-parser')) {
+  console.error(`SCALE1 parser: ${parser.error}`);
+}
 
 console.log(`SCALE1: ${verdict.ok ? 'PASS' : 'FAIL'} — ${verdict.reason}`);
 for (const item of findings) {

@@ -1,0 +1,4 @@
+# Config de confianza de gitleaks (fuera del head). Reglas por defecto de 8.30.1, sin allowlists.
+title = "e4-trusted"
+[extend]
+useDefault = true
