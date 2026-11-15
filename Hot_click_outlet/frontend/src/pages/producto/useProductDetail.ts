@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { TFunction } from 'i18next'
 import { productService, normalizeProduct } from '@/services/productService'
 import useCartStore from '@/store/cartStore'
+import { avisarSiTopeCarrito } from '@/store/avisarTopeCarrito'
 import useRecentlyViewedStore from '@/store/recentlyViewedStore'
 import { useToast } from '@/components/ui/Toast'
 import { analytics } from '@/utils/analytics'
@@ -237,11 +238,12 @@ export function useProductDetail(id: string | undefined, t: TFunction) {
           tallaSeleccionada: tallaSeleccionada || personalizacion.tallaSeleccionada,
         }
       : undefined
-    addItem({
+    const agregado = addItem({
       ...normalizeProduct(productoActual),
       tallaSeleccionada,
       personalizacion: pers,
     } as Producto, quantity)
+    if (!avisarSiTopeCarrito(agregado, (m) => toast({ message: m, type: 'error' }))) return
     if (!conAviso) return
     // Figma 45:1607: en móvil la ficha no tiene header ni barra inferior, así que la hoja es el camino al carrito.
     if (globalThis.matchMedia?.(MEDIA_MOVIL).matches) {
