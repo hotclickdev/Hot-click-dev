@@ -67,12 +67,13 @@ public class PosVentaService {
 
     @Transactional
     public Pedido crearVenta(PosVentaDTO dto, Long usuarioId, Long empresaId, String correo) {
+        // Tope y cantidades se validan ANTES de leer la base (fail-fast, sin consultas con 51+ líneas).
+        exigirCantidadesValidas(dto);
         Usuario cliente = resolverCliente(dto.getClienteId());
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
         Bodega bodega = resolverBodega(dto.getBodegaId(), empresaId);
         TurnoCaja turno = exigirTurnoAbierto(usuarioId, empresaId);
-        exigirCantidadesValidas(dto);
 
         Pedido pedido = armarPedido(dto, cliente, bodega, empresa);
         TotalesPos totales = cargarItemsYStock(dto, pedido, correo);
@@ -240,9 +241,9 @@ public class PosVentaService {
      */
     @Transactional(readOnly = true)
     public java.util.Map<String, Object> cotizarCobro(PosVentaDTO dto, Long empresaId) {
+        exigirCantidadesValidas(dto);
         Empresa empresa = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
-        exigirCantidadesValidas(dto);
         long subtotal = 0;
         List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva = new ArrayList<>();
         for (PosVentaDTO.Item itemDto : dto.getItems()) {

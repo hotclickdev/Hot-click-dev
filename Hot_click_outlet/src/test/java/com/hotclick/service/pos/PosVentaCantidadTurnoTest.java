@@ -216,6 +216,13 @@ class PosVentaCantidadTurnoTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("El pedido no puede tener más de " + PaymentCheckoutRequest.MAX_ITEMS + " productos distintos");
         sinEfectos();
+        sinLecturasDeBase();
+    }
+
+    /** El tope corre antes de consultar la base: ningún repositorio ni servicio de stock/turno se toca. */
+    private void sinLecturasDeBase() {
+        org.mockito.Mockito.verifyNoInteractions(empresaRepository, bodegaRepository, productoRepository,
+            pedidoRepository, stockService, turnoCajaService, usuarioRepository, ventaTurnoRepository);
     }
 
     @Test
@@ -224,6 +231,7 @@ class PosVentaCantidadTurnoTest {
         assertThatThrownBy(() -> service.cotizarCobro(ventaConLineas(PaymentCheckoutRequest.MAX_ITEMS + 1), 1L))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage(PosVentaService.MENSAJE_MAX_LINEAS_POS);
+        sinLecturasDeBase();
     }
 
     @Test
