@@ -27,6 +27,8 @@ public class ManualPedidoDTO {
     private String notas;
 
     @NotEmpty(message = "El pedido debe tener al menos un producto")
+    // Mismo tope que PaymentCheckoutRequest.MAX_ITEMS (50): acota los productos bloqueados por pedido.
+    @jakarta.validation.constraints.Size(max = 50, message = "El pedido no puede tener más de 50 productos distintos")
     @Valid
     private List<ItemDTO> items;
 
