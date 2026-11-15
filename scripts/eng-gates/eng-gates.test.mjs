@@ -333,19 +333,29 @@ test('DOC1 collects java 21 and flyway >= 130 from this repo', () => {
   assert.equal(readme.includes('V1–V56'), false);
 });
 
-test('SCALE1 fails unbounded findAll and N+1 in controllers', () => {
-  const findings = scanScaleDiff(parseUnifiedDiff([
-    '--- a/Hot_click_outlet/src/main/java/com/hotclick/controller/FooController.java',
-    '+++ b/Hot_click_outlet/src/main/java/com/hotclick/controller/FooController.java',
-    '@@ -1,4 +1,8 @@',
-    '     @GetMapping("/items")',
-    '+    public List<Item> list() {',
-    '+        return repo.findAll();',
-    '+        for (Item i : items) { repo.findById(i.getId()); }',
-    '+        new RestTemplate().getForObject(url, String.class);',
-    '     }',
+test('SCALE1 fails unbounded findAll and N+1 in controllers', async () => {
+  const { parse } = await import('java-parser');
+  const { sha256Text } = await import('./java-loop-map.mjs');
+  const path = 'Hot_click_outlet/src/main/java/com/hotclick/controller/FooController.java';
+  const source = [
+    'package com.hotclick.controller;',
+    'class FooController {',
+    '    @GetMapping("/items")',
+    '    public List<Item> list() {',
+    '        return repo.findAll();',
+    '        for (Item i : items) { repo.findById(i.getId()); }',
+    '        new RestTemplate().getForObject(url, String.class);',
+    '    }',
+    '}',
     '',
-  ].join('\n')));
+  ].join('\n');
+  const lines = source.replace(/\n$/, '').split('\n');
+  const findings = scanScaleDiff(parseUnifiedDiff([
+    '--- /dev/null',
+    `+++ b/${path}`,
+    `@@ -0,0 +1,${lines.length} @@`,
+    ...lines.map((line) => `+${line}`),
+  ].join('\n')), { parse, fileTexts: { [path]: { text: source, hash: sha256Text(source) } } });
   const rules = new Set(findings.map((item) => item.rule));
   assert.ok(rules.has('p1-findall-controller') || rules.has('p1-list-no-page'));
   assert.ok(rules.has('p1-nplus1'));

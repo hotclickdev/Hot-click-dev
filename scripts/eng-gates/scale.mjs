@@ -2,11 +2,10 @@
  * SCALE1 — heurísticas de escalabilidad sobre un unified diff (PR)
  * y un scan semanal de hotspots (tamaño + findAll).
  */
+import { TRIVIAL_CALL, analyzeJavaFile } from './java-loop-map.mjs';
 
 const LIST_LIMIT = /Pageable|Page<|PageRequest|PageImpl|\.limit\s*\(|LIMIT\s+\d+|setMaxResults|slice\s*\(|MAX_\w*LINEAS|MAX_\w*IMPORT|MAX_LIST_/;
 const FIND_ALL = /(?<![A-Za-z])findAll\s*\(/;
-const LOOP = /\bfor\s*\(|\.forEach\s*\(|\.map\s*\(/;
-const DB_CALL = /\.(findAll|findBy|findOne|getBy|save|saveAll|delete|deleteBy)\s*\(/;
 /** Seeders y backfills: save en loop no es N+1 de request path. */
 const SKIP_NPLUS1_PATH = /\/(?:config\/DataSeeder|service\/inventario\/InventarioPaqueteService)\.java$/;
 const BLOCKING = /Thread\.sleep\s*\(|RestTemplate|\.block\s*\(|HttpURLConnection|openStream\s*\(|CompletableFuture\.[a-zA-Z]*\s*\([^)]*\)\s*\.\s*(get|join)\s*\(/;
@@ -46,19 +45,63 @@ function addedCount(hunk) {
   return hunk.lines.filter((line) => line.type === 'add').length;
 }
 
-export function scanScaleDiff(diffFiles) {
+export function scanScaleDiff(diffFiles, options = {}) {
   const findings = [];
+  const fileTexts = options.fileTexts || {};
+  const parse = options.parse;
 
   for (const file of diffFiles) {
     const layer = layerOf(file.path);
     const java = isJava(file.path);
     const ts = isTs(file.path);
+    const addedLines = [];
+    for (const hunk of file.hunks) {
+      for (const line of hunk.lines) {
+        if (line.type === 'add') addedLines.push(line);
+      }
+    }
+    const addedLineSet = new Set(addedLines.map((line) => line.newLine));
+    const ast = java && addedLines.length
+      ? javaAstFor(file.path, fileTexts[file.path], parse)
+      : null;
+    if (ast && ast.status !== 'ok') {
+      findings.push(item('fail', 'p1-java-parser', file.path, addedLines[0] || { newLine: 1 },
+        ast.error || ast.status,
+        `Parser Java sobre el archivo completo no pudo mapear loops (${ast.status}) — se mantiene el bloqueo`,
+        'Sin fallback de llaves/hunk ni skip. Corregí el parse o entregá el archivo y su SHA-256 exactos de HEAD.'));
+    }
 
+    if (ast && ast.status === 'ok') {
+      for (const loop of ast.loops) {
+        const intersects = addedLines.some((line) => (
+          line.newLine >= loop.startLine && line.newLine <= loop.endLine
+        ));
+        if (!intersects) continue;
+        if (loop.ambiguous) {
+          findings.push(item('fail', 'p1-java-parser', file.path, { newLine: loop.startLine },
+            (loop.source || `loop ${loop.kind}`).split('\n')[0],
+            `Ambigüedad: ${loop.kind} con trabajo en líneas ${loop.startLine}-${loop.endLine} sin invocación identificable — se mantiene el bloqueo`,
+            'Sin fallback permisivo. Revisión humana del lambda/referencia.'));
+          continue;
+        }
+        if (!loop.hasPerItemWork || loop.hasBound) continue;
+        // Origen: cabecera del loop agregada (loop nuevo) o loop preexistente con líneas nuevas en su cuerpo.
+        const headerAdded = addedLineSet.has(loop.startLine);
+        const newWork = [...new Set(loop.workCalls
+          .filter((c) => addedLineSet.has(c.startLine) && !TRIVIAL_CALL.test(c.name))
+          .map((c) => c.name))];
+        const origin = headerAdded
+          ? 'loop nuevo'
+          : `loop preexistente; trabajo por ítem nuevo: ${newWork.length ? newWork.join(', ') : 'ninguna llamada nueva no trivial (cambio en el cuerpo)'}`;
+        findings.push(item('fail', 'p1-unbounded-loop-work', file.path, { newLine: loop.startLine },
+          (loop.source || '').split('\n')[0],
+          `Iteración sin cota demostrable localmente (${loop.kind}${loop.iterationMethod ? ':' + loop.iterationMethod : ''}; ${loop.boundEvidence}; ${origin}) con trabajo por ítem (P1)`,
+          'Diagnóstico, no falso positivo de ubicación: acotá la colección o el lote (Pageable/limit) o demostrá la cota en revisión. El análisis es intraprocedural.'));
+      }
+    }
     for (const hunk of file.hunks) {
       const hunkText = collectHunkText(hunk);
       const hasLimit = LIST_LIMIT.test(hunkText) || PAGEABLE_PARAM.test(hunkText);
-      const hasLoop = LOOP.test(hunkText);
-      const addedDb = hunk.lines.some((line) => line.type === 'add' && DB_CALL.test(line.text));
 
       for (const line of hunk.lines) {
         if (line.type !== 'add' || hunkLooksLikeComment(line.text)) continue;
@@ -80,11 +123,27 @@ export function scanScaleDiff(diffFiles) {
             'Usá Pageable o un maxResults. Ver ProductoController (catálogo ya pagina).'));
         }
 
-        if (java && hasLoop && addedDb && DB_CALL.test(line.text)
-            && !SKIP_NPLUS1_PATH.test(file.path.replaceAll('\\', '/'))) {
-          findings.push(item('fail', 'p1-nplus1', file.path, line, line.text,
-            'Posible N+1: llamada DB dentro de un hunk con for/forEach (P1)',
-            'Batch (findByIdIn), join fetch o @EntityGraph. No queries por item.'));
+        if (java && !SKIP_NPLUS1_PATH.test(file.path.replaceAll('\\', '/'))) {
+          if (!ast || ast.status !== 'ok') {
+            // p1-java-parser ya bloquea el archivo; sin heurístico de hunk (era la fuente del FP de ubicación).
+          } else {
+            // Llamadas DB por CST (identificador del método/receptor), no por regex del texto: ignora strings y comentarios.
+            const calls = ast.dbCallsAt(line.newLine);
+            const lineCtx = ast.lineContext(line.newLine);
+            if (calls.length && lineCtx.ambiguous) {
+              findings.push(item('fail', 'p1-java-parser', file.path, line, line.text,
+                'Ambigüedad al mapear la llamada DB a ancestros loop/lambda — se mantiene el bloqueo',
+                'Sin fallback de hunk ni skip.'));
+            } else if (calls.length && (lineCtx.inLoop || lineCtx.inIterationLambda)) {
+              const innermost = lineCtx.ancestors[lineCtx.ancestors.length - 1];
+              const bounded = lineCtx.ancestors.length > 0 && lineCtx.ancestors.every((a) => a.hasBound);
+              findings.push(item('fail', 'p1-nplus1', file.path, line, line.text,
+                bounded
+                  ? `Llamada DB por ítem (${calls.map((c) => c.name).join(', ')}) en loop con cota visible (${innermost?.boundEvidence}) — el costo DB/red por ítem es real (P1)`
+                  : `Posible N+1: llamada DB (${calls.map((c) => c.name).join(', ')}) dentro de ${innermost?.kind || 'loop'} sin cota demostrable (P1)`,
+                'Batch (findByIdIn), join fetch o @EntityGraph. No queries por item.'));
+            }
+          }
         }
 
         if (java && layer === 'controller' && BLOCKING.test(line.text)) {
@@ -115,6 +174,13 @@ export function scanScaleDiff(diffFiles) {
   }
 
   return dedupe(findings);
+}
+
+function javaAstFor(path, rec, parse) {
+  if (!rec || rec.text == null) {
+    return { ok: false, status: 'missing-source', error: 'falta el archivo completo en HEAD para el parser Java' };
+  }
+  return analyzeJavaFile(rec.text, { parse, expectedHash: rec.hash });
 }
 
 function item(severity, rule, path, line, snippet, title, hint) {

@@ -1,8 +1,12 @@
 // E4 COMPLETO en contexto de confianza (adaptador fuera del repo; D no se modifica).
 // - Código: SOLO los blobs de scripts/eng-gates/ del commit D verificado (copiados byte a byte).
-// - Datos: árbol del head exportado (head-data.mjs). El overlay = head exportado SIN su
-//   scripts/eng-gates/ (y sin node_modules del head) + scripts/eng-gates/ de D + node_modules de D.
+// - Datos: árbol del head exportado (head-data.mjs). El overlay = head exportado SIN su código de
+//   scripts/eng-gates/ (y sin node_modules del head) + código de D + node_modules de D.
 //   Así REPO_ROOT (ola3-lib/commit-gate) y el cwd (lib.mjs) apuntan a DATOS del head, no a D.
+// - r6: el REGISTRO de excepciones (scripts/eng-gates/e4-secret-exceptions.json) se lee de D, NO del head:
+//   es el único JSON que el detector parsea y decide con él, así que el head no puede aportar ni alterar
+//   entradas (se descarta el del head y se copia el blob de D). El resto de datos de scripts/eng-gates
+//   (otros JSON, fixtures) siguen viniendo del head como datos que E4 no usa para decidir.
 // - analyzeCommitGate + formatVerdict de D, skip=false y skipFlyway=false SIEMPRE (sin labels).
 // - Sin Maven/pnpm/tests: el plan (javaTests/FE) se publica en la procedencia y los tests corren
 //   en el job NO privilegiado del caller; su check es obligatorio en el cierre.
@@ -18,8 +22,10 @@ import { verifyDetectorCheckout, resolveRange } from './stages.mjs';
 
 const ENG = 'scripts/eng-gates';
 // Bajo scripts/eng-gates: CÓDIGO viene SOLO de D (lo del head se descarta, nunca se importa);
-// DATOS (registro e4-secret-exceptions.json, fixtures, baselines) vienen del HEAD como datos.
+// DATOS (fixtures, baselines, otros JSON) vienen del HEAD como datos; EXCEPCIÓN r6: el registro de excepciones viene de D (DETECTOR_DATA).
+export const DETECTOR_DATA = Object.freeze(['e4-secret-exceptions.json']);
 export const isEngCode = (p) => /\.(mjs|js|cjs|ts|mts|cts|node|sh)$/.test(p) || /(^|\/)package(-lock)?\.json$/.test(p) || /(^|\/)node_modules(\/|$)/.test(p);
+export const fromDetector = (p) => isEngCode(p) || DETECTOR_DATA.includes(p); // relativo a scripts/eng-gates/
 const sha256 = (b) => createHash('sha256').update(b).digest('hex');
 export const PENDING_REASON_PREFIX = 'entrada pending inactiva hasta aprobación';
 
@@ -27,14 +33,14 @@ export function buildOverlay({ gitDir, head, detectorDir, detectorCommit, limits
   const d = verifyDetectorCheckout(detectorDir, detectorCommit);
   if (d === head) throw new Error('detector: D no puede ser el head');
   const tree = readTree(gitDir, head, limits);
-  const dataTree = tree.filter((t) => !/(^|\/)node_modules\//.test(t.path) && !(t.path.startsWith(`${ENG}/`) && isEngCode(t.path.slice(ENG.length + 1))));
+  const dataTree = tree.filter((t) => !/(^|\/)node_modules\//.test(t.path) && !(t.path.startsWith(`${ENG}/`) && fromDetector(t.path.slice(ENG.length + 1))));
   const root = exportTreeAsData(gitDir, head, dataTree, limits);
   // Código de D: ls-tree del commit D (no del working tree) y blobs byte a byte.
   const dls = gitData(detectorDir, ['ls-tree', '-r', '-z', '--full-tree', d, `${ENG}/`]).toString().split('\0').filter(Boolean);
   let n = 0;
   for (const rec of dls) {
     const [meta, path] = rec.split('\t'); const [mode, type, blob] = meta.split(' ');
-    if (!isEngCode(path.slice(ENG.length + 1))) continue; // datos de D no: los datos son del head
+    if (!fromDetector(path.slice(ENG.length + 1))) continue; // otros datos de D no: son del head (salvo el registro de excepciones)
     if (type !== 'blob' || (mode !== '100644' && mode !== '100755')) throw new Error(`detector: entrada no permitida ${path}`);
     const dest = resolve(root, ...path.split('/'));
     if (!dest.startsWith(root + sep)) throw new Error('detector: ruta fuera del overlay');
