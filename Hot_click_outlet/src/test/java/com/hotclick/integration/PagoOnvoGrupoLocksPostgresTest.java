@@ -139,6 +139,8 @@ class PagoOnvoGrupoLocksPostgresTest extends BaseIntegrationTest {
     @Autowired private ProductoRepository productoRepository;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private PagoRepository pagoRepository;
+    @Autowired private com.hotclick.service.payment.PagoExpiradoCancelador pagoExpiradoCancelador;
+    @Autowired private com.hotclick.service.payment.PaymentFailureHandler paymentFailureHandler;
     @Value("${hotclick.billing.lock-timeout-ms}") private int lockTimeoutMs;
 
     private Empresa empresa;
@@ -681,6 +683,70 @@ class PagoOnvoGrupoLocksPostgresTest extends BaseIntegrationTest {
             assertLiberado(cancela, prods, extraEsperado(prods));
             assertCoherente(confirma, prods);
             assertThat(pagoDe(confirma).getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        }
+    }
+
+    // ── TTL y marcarFallido con liberación de grupo ──────────────────────────────
+
+    @Test
+    @DisplayName("ttlCancelaSoloPendienteYLiberaGrupoExactoUnaVez")
+    void ttlCancelaSoloPendienteYLiberaGrupoExactoUnaVez() {
+        List<Producto> prods = productos(4);
+        Grupo g = grupo(prods, TRES_POR_TRES);
+        // El 3.er pedido ya no es PENDIENTE (TTL no lo toca ni libera su reserva).
+        Long idTercero = g.pedidos().get(2).getId();
+        jdbcTemplate.update("UPDATE hot_click_pedido_tb SET estado_pedido = 'PENDIENTE_COMPROBANTE' WHERE id_pedido = ?", idTercero);
+        Long pagoId = pagoDe(g).getId();
+
+        assertThat(pagoExpiradoCancelador.cancelar(pagoId)).isTrue();
+        assertThat(pagoExpiradoCancelador.cancelar(pagoId)).isFalse();
+
+        assertThat(estadoPedido(g.pedidos().get(0).getId())).isEqualTo(Constants.PEDIDO_CANCELADO);
+        assertThat(estadoPedido(g.pedidos().get(1).getId())).isEqualTo(Constants.PEDIDO_CANCELADO);
+        assertThat(estadoPedido(idTercero)).isEqualTo(Constants.PEDIDO_PENDIENTE_COMPROBANTE);
+        // Reserva restante = EXTRA + lo que sigue reservando el 3.er pedido {0:1, 3:4, 2:2}.
+        Map<Long, Integer> tercero = Map.of(prods.get(0).getId(), 1, prods.get(3).getId(), 4, prods.get(2).getId(), 2);
+        for (Producto p : prods) assertThat(reservado(p)).isEqualTo(EXTRA + tercero.getOrDefault(p.getId(), 0));
+        for (Producto p : prods) assertThat(stockActual(p)).isEqualTo(STOCK);
+    }
+
+    @Test
+    @DisplayName("marcarFallidoCancelaLosTresPendientesYLiberaGrupoExactoUnaVez")
+    void marcarFallidoCancelaLosTresPendientesYLiberaGrupoExactoUnaVez() {
+        List<Producto> prods = productos(4);
+        Grupo g = grupo(prods, TRES_POR_TRES);
+        jdbcTemplate.update("UPDATE hot_click_pedido_tb SET estado_pedido = 'PENDIENTE_APROBACION' WHERE id_pedido = ?",
+            g.pedidos().get(2).getId());
+
+        new TransactionTemplate(txManager).executeWithoutResult(s -> {
+            paymentFailureHandler.marcarFallido(pagoDe(g), "rechazado");
+        });
+        new TransactionTemplate(txManager).executeWithoutResult(s -> {
+            paymentFailureHandler.marcarFallido(pagoDe(g), "rechazado"); // repetido: no libera otra vez
+        });
+
+        for (Pedido p : g.pedidos()) assertThat(estadoPedido(p.getId())).isEqualTo(Constants.PEDIDO_CANCELADO);
+        assertThat(pagoDe(g).getEstadoPago()).isEqualTo(Constants.PAGO_FALLIDO);
+        for (Producto p : prods) assertThat(reservado(p)).isEqualTo(EXTRA);
+    }
+
+    @Test
+    @DisplayName("gruposCruzadosTtlVsFallidoVsLiberacionSinDeadlockNiOptimisticLock")
+    void gruposCruzadosTtlVsFallidoVsLiberacionSinDeadlockNiOptimisticLock() throws Exception {
+        for (int ronda = 0; ronda < 6; ronda++) {
+            List<Producto> prods = productos(6);
+            Grupo a = grupo(prods, new int[][][]{{{5, 1}, {3, 1}}, {{3, 2}, {1, 1}}, {{5, 2}, {0, 1}}});
+            Grupo b = grupo(prods, new int[][][]{{{3, 1}, {5, 1}}, {{5, 3}, {1, 2}}, {{3, 1}, {2, 1}}});
+            Grupo c = grupo(prods, new int[][][]{{{5, 1}, {3, 2}}, {{1, 1}, {3, 1}}});
+            intencion(c);
+            List<Throwable> errores = correrJuntos(List.of(
+                () -> pagoExpiradoCancelador.cancelar(pagoDe(a).getId()),
+                () -> { new TransactionTemplate(txManager).executeWithoutResult(s ->
+                    paymentFailureHandler.marcarFallido(pagoDe(b), "rechazado")); return null; },
+                () -> capturar(c)));
+            assertThat(errores).as("ronda %d", ronda).containsOnlyNulls();
+            for (Producto p : prods) assertThat(reservado(p)).as("ronda %d producto %d", ronda, p.getId()).isEqualTo(EXTRA);
+            for (Producto p : prods) assertThat(stockActual(p)).isEqualTo(STOCK);
         }
     }
 }
