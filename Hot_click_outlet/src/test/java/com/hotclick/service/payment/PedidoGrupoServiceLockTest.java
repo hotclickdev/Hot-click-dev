@@ -3,6 +3,7 @@ package com.hotclick.service.payment;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
+import com.hotclick.service.suscripcion.LockTimeoutPorFila;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -93,5 +94,28 @@ class PedidoGrupoServiceLockTest {
         assertThat(svc.bloquearPedidos(List.of())).isEmpty();
         verifyNoInteractions(repo);
         assertThatThrownBy(() -> svc.bloquearPedidos(List.of(new Pedido()))).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("bloquearGrupo y bloquearPedidos: SET LOCAL lock_timeout antes del flush y del FOR UPDATE")
+    void lockTimeoutAntesDelForUpdate() {
+        LockTimeoutPorFila timeout = mock(LockTimeoutPorFila.class);
+        ReflectionTestUtils.setField(svc, "lockTimeout", timeout);
+        Pedido a = pedido(1, "g"), b = pedido(2, "g");
+        when(repo.findByGrupoPagoForUpdateOrderById("g")).thenReturn(List.of(a, b));
+        when(repo.findAllByIdForUpdateOrderById(List.of(1L, 2L))).thenReturn(List.of(a, b));
+
+        svc.bloquearGrupo(a);
+        InOrder grupo = inOrder(timeout, em, repo);
+        grupo.verify(timeout).aplicar();
+        grupo.verify(em).flush();
+        grupo.verify(repo).findByGrupoPagoForUpdateOrderById("g");
+
+        clearInvocations(timeout, em, repo);
+        svc.bloquearPedidos(List.of(a, b));
+        InOrder pedidos = inOrder(timeout, em, repo);
+        pedidos.verify(timeout).aplicar();
+        pedidos.verify(em).flush();
+        pedidos.verify(repo).findAllByIdForUpdateOrderById(List.of(1L, 2L));
     }
 }

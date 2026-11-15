@@ -19,6 +19,8 @@ public class PedidoGrupoService {
     private final PedidoRepository pedidoRepository;
     private final PagoRepository pagoRepository;
     @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.suscripcion.LockTimeoutPorFila lockTimeout;
 
     public PedidoGrupoService(PedidoRepository pedidoRepository, PagoRepository pagoRepository) {
         this.pedidoRepository = pedidoRepository;
@@ -43,6 +45,7 @@ public class PedidoGrupoService {
      */
     public List<Pedido> bloquearGrupo(Pedido base) {
         if (base == null) return List.of();
+        if (lockTimeout != null) lockTimeout.aplicar();
         if (entityManager != null) entityManager.flush();
         String grupo = base.getGrupoPago();
         List<Pedido> bloqueados = (grupo == null || grupo.isBlank())
@@ -71,6 +74,7 @@ public class PedidoGrupoService {
             if (!ids.contains(p.getId())) ids.add(p.getId());
         }
         java.util.Collections.sort(ids);
+        if (lockTimeout != null) lockTimeout.aplicar();
         if (entityManager != null) entityManager.flush();
         List<Pedido> bloqueados = pedidoRepository.findAllByIdForUpdateOrderById(ids);
         if (bloqueados.size() != ids.size()) {

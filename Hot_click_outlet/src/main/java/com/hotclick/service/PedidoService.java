@@ -54,6 +54,8 @@ public class PedidoService {
     // locks de la cancelación depende del flush + refresh con lock; sin EntityManager no hay camino alternativo.
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
+    @Autowired(required = false)
+    private com.hotclick.service.suscripcion.LockTimeoutPorFila lockTimeout;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -274,6 +276,7 @@ public class PedidoService {
      * actualizarla: se relee (refresh) ya con el lock tomado para decidir con el estado actual.
      */
     private Pedido bloquearPedido(Long id, boolean refrescar) {
+        if (lockTimeout != null) lockTimeout.aplicar();
         if (refrescar && entityManager == null) {
             // Fail-closed: nunca decidir la cancelación con una copia vieja del pedido (solo pasa fuera de Spring).
             throw new IllegalStateException("PedidoService sin EntityManager: no se puede releer el pedido bloqueado");

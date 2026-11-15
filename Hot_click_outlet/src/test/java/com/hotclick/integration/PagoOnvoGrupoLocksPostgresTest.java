@@ -874,4 +874,61 @@ class PagoOnvoGrupoLocksPostgresTest extends BaseIntegrationTest {
             for (Producto p : prods) assertThat(reservado(p)).isEqualTo(EXTRA + resto.getOrDefault(p.getId(), 0));
         }
     }
+
+    @Test
+    @DisplayName("lockTimeoutEnRollbackDeCheckoutRevierteYReintentoLibera")
+    void lockTimeoutEnRollbackDeCheckoutRevierteYReintentoLibera() throws Exception {
+        List<Producto> prods = productos(4);
+        Grupo g = grupo(prods, TRES_POR_TRES);
+        sinPago(g);
+        Pedido uno = g.pedidos().get(0);
+        Future<?> futuro;
+        try (Connection retenedor = conexionAparte(); Statement st = retenedor.createStatement()) {
+            st.executeQuery("SELECT 1 FROM hot_click_pedido_tb WHERE id_pedido = " + uno.getId() + " FOR UPDATE").close();
+            futuro = hilos.submit(() -> paymentService.liberarReservas(pedidoRepository.findById(uno.getId()).orElseThrow()));
+            Throwable error = causaHasta(futuro, (lockTimeoutMs + 4000) / 1000 + 2);
+            assertThat(esLockTimeout(error)).as("55P03 en rollback de checkout, no espera indefinida: %s", error).isTrue();
+            retenedor.rollback();
+        }
+        assertThat(pedidosConReserva(g)).isEqualTo(g.pedidos().size());
+        for (Producto p : prods) assertThat(reservado(p)).isEqualTo(EXTRA + g.cantidades().getOrDefault(p.getId(), 0));
+        paymentService.liberarReservas(pedidoRepository.findById(uno.getId()).orElseThrow());
+        assertThat(pedidoRepository.findById(uno.getId()).orElseThrow().getStockReservadoEn()).isNull();
+        paymentService.liberarReservas(pedidoRepository.findById(uno.getId()).orElseThrow()); // idempotente
+    }
+
+    @Test
+    @DisplayName("lockTimeoutEnPanelCancelarSinPagoRevierteYReintentoCancela")
+    void lockTimeoutEnPanelCancelarSinPagoRevierteYReintentoCancela() throws Exception {
+        List<Producto> prods = productos(4);
+        Grupo g = grupo(prods, TRES_POR_TRES);
+        sinPago(g);
+        Long unico = g.pedidos().get(0).getId();
+        Map<Long, Integer> reservadoAntes = new HashMap<>();
+        for (Producto p : prods) reservadoAntes.put(p.getId(), reservado(p));
+        Future<?> futuro;
+        try (Connection retenedor = conexionAparte(); Statement st = retenedor.createStatement()) {
+            st.executeQuery("SELECT 1 FROM hot_click_pedido_tb WHERE id_pedido = " + unico + " FOR UPDATE").close();
+            futuro = hilos.submit(() -> { pedidoService.cambiarEstado(unico, Constants.PEDIDO_CANCELADO, null); return null; });
+            Throwable error = causaHasta(futuro, (lockTimeoutMs + 4000) / 1000 + 2);
+            assertThat(esLockTimeout(error)).as("55P03 en cancelación de panel, no espera indefinida: %s", error).isTrue();
+            retenedor.rollback();
+        }
+        assertThat(estadoPedido(unico)).isEqualTo(Constants.PEDIDO_PENDIENTE);
+        for (Producto p : prods) assertThat(reservado(p)).isEqualTo(reservadoAntes.get(p.getId()));
+        pedidoService.cambiarEstado(unico, Constants.PEDIDO_CANCELADO, null);
+        assertThat(estadoPedido(unico)).isEqualTo(Constants.PEDIDO_CANCELADO);
+        assertThat(pedidoRepository.findById(unico).orElseThrow().getStockReservadoEn()).isNull();
+    }
+
+    private static Throwable causaHasta(Future<?> f, long segundos) throws Exception {
+        try {
+            f.get(segundos, TimeUnit.SECONDS);
+            return null;
+        } catch (java.util.concurrent.TimeoutException e) {
+            return e;
+        } catch (ExecutionException e) {
+            return e.getCause();
+        }
+    }
 }
