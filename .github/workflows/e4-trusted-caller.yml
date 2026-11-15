@@ -2,7 +2,7 @@
 # privilegios (Maven/pnpm del head; nunca es el verificador). Su blob exacto se fija en la
 # política (caller.blob); cualquier edición o renombre => origen inválido o check de tests ausente
 # (testsCheckName) => rojo en el cierre. El job de tests depende de e4 (plan de D) y no recibe token.
-# 06a339d27c1239a178ef949224eac9ab6d9d0ea0 sin sustituir hace que GitHub rechace el workflow (fail-closed): `uses` no admite expresiones.
+# caed9945fdfe50d2326d7fbcd770c7ac93d5306a sin sustituir hace que GitHub rechace el workflow (fail-closed): `uses` no admite expresiones.
 name: E4 — Commit-gate (r4 fase A)
 on:
   pull_request:
@@ -13,7 +13,7 @@ permissions:
 jobs:
   e4:
     name: E4 Commit-gate VEREDICTO (r4 fase A)
-    uses: hotclickdev/Hot-click-dev/.github/workflows/e4-trusted.yml@06a339d27c1239a178ef949224eac9ab6d9d0ea0
+    uses: hotclickdev/Hot-click-dev/.github/workflows/e4-trusted.yml@caed9945fdfe50d2326d7fbcd770c7ac93d5306a
   tests:
     name: E4 tests tocados (r4 fase A)   # = policy.testsCheckName (nombre de prueba; no sustituye el caller definitivo)
     needs: e4
