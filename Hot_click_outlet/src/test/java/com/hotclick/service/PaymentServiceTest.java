@@ -101,6 +101,16 @@ class PaymentServiceTest {
             .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
                 .map(id -> productoRepository.findByIdForUpdate(id))
                 .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
+        org.mockito.Mockito.lenient().when(productoRepository.findAllByIdsForUpdate(org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
+                .map(id -> productoRepository.findByIdForUpdate(id))
+                .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
+        org.mockito.Mockito.lenient().when(pedidoRepository.findAllByIdForUpdateOrderById(org.mockito.ArgumentMatchers.anyCollection()))
+            .thenAnswer(inv -> ((java.util.Collection<Long>) inv.getArgument(0)).stream()
+                .map(pedidosPorId::get).filter(java.util.Objects::nonNull).toList());
+        // fix2: la liberación de grupo (TTL, marcarFallido) bloquea el pedido por id antes de los productos.
+        org.mockito.Mockito.lenient().when(pedidoRepository.findByIdForUpdate(org.mockito.ArgumentMatchers.any()))
+            .thenAnswer(inv -> java.util.Optional.ofNullable(ultimoPedido));
         org.mockito.Mockito.lenient().when(productoRepository.findDuenoByIds(org.mockito.ArgumentMatchers.anyList()))
             .thenAnswer(inv -> {
                 java.util.List<DuenoProducto> duenos = new java.util.ArrayList<>();
@@ -440,9 +450,8 @@ class PaymentServiceTest {
 
         service.cancelarPorUsuario("ORD-CANCEL-001", CORREO);
 
-        ArgumentCaptor<Producto> prodCaptor = ArgumentCaptor.forClass(Producto.class);
-        verify(productoRepository).save(prodCaptor.capture());
-        assertThat(prodCaptor.getValue().getStockReservado()).isEqualTo(0);
+        // SCALE1: el producto está managed (lock FOR UPDATE); el dirty checking lo persiste, sin save por ítem.
+        assertThat(testProducto.getStockReservado()).isEqualTo(0);
         verify(notificacionEmailService).enviarPagoFallido(any(), anyString());
     }
 
@@ -517,9 +526,8 @@ class PaymentServiceTest {
             list.stream().anyMatch(p -> Constants.PAGO_CANCELADO.equals(p.getEstadoPago()))));
         verify(pedidoRepository).saveAll(argThat((List<Pedido> list) ->
             list.stream().anyMatch(p -> Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido()))));
-        ArgumentCaptor<Producto> captor = ArgumentCaptor.forClass(Producto.class);
-        verify(productoRepository).save(captor.capture());
-        assertThat(captor.getValue().getStockReservado()).isEqualTo(0);
+        // SCALE1: dirty checking, sin save por ítem; se verifica el estado resultante.
+        assertThat(testProducto.getStockReservado()).isEqualTo(0);
     }
 
     @Test
@@ -548,9 +556,8 @@ class PaymentServiceTest {
 
         service.liberarReservas(pedido);
 
-        ArgumentCaptor<Producto> captor = ArgumentCaptor.forClass(Producto.class);
-        verify(productoRepository).save(captor.capture());
-        assertThat(captor.getValue().getStockReservado()).isEqualTo(0);
+        // SCALE1: dirty checking, sin save por ítem; se verifica el estado resultante.
+        assertThat(testProducto.getStockReservado()).isEqualTo(0);
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
@@ -564,6 +571,7 @@ class PaymentServiceTest {
         when(pedidoRepository.save(any())).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             if (p.getId() == null) p.setId(100L);
+            pedidosPorId.put(p.getId(), p);
             if (p.getItems() == null) p.setItems(new ArrayList<>());
             return p;
         });
@@ -583,8 +591,12 @@ class PaymentServiceTest {
         return req;
     }
 
+    private Pedido ultimoPedido;
+    private final java.util.Map<Long, Pedido> pedidosPorId = new java.util.HashMap<>();
+
     private Pedido buildPedido(String estado) {
         Pedido p = new Pedido();
+        ultimoPedido = p;
         p.setId(1L);
         p.setNumeroPedido("ORD-TEST-001");
         p.setStockReservadoEn(java.time.LocalDateTime.now()); // ALTO-01: pedido de checkout que reservó
@@ -595,6 +607,7 @@ class PaymentServiceTest {
         p.setCostoEnvio(0);
         p.setTotalPedido(25000);
         p.setItems(new ArrayList<>());
+        pedidosPorId.put(p.getId(), p);
         return p;
     }
 

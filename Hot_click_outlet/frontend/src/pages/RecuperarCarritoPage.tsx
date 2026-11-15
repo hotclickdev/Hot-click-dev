@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import Spinner from '@/components/ui/Spinner'
 import { abandonedCartService } from '@/services/abandonedCartService'
-import useCartStore from '@/store/cartStore'
+import useCartStore, { MENSAJE_MAX_LINEAS_CARRITO } from '@/store/cartStore'
 import { formatPrice } from '@/utils/format'
 import { useToast } from '@/components/ui/Toast'
 import { BotonPago, IconoEstado } from '@/pages/pago/PiezasPago'
@@ -50,23 +50,26 @@ export default function RecuperarCarritoPage() {
     if (!token) return
     setAdding(true)
     // R4: stock real del carrito guardado (99 solo si no llegó); un agotado (0) no se vuelve a agregar.
+    let tope = false
     items
       .filter((item) => item.stock !== 0)
-      .forEach((item) =>
-        addItem({
+      .forEach((item) => {
+        const ok = addItem({
           id:        item.productoId,
           nombre:    item.nombre,
           precio:    item.precio,
           imagenUrl: item.imagenUrl,
           stock:     topeStock(item.stock),
         } as unknown as Producto, item.cantidad ?? 1)
-      )
+        if (!ok) tope = true
+      })
     try {
       await abandonedCartService.deleteAbandonedCartByToken(token)
     } catch (err) {
       console.error('[RecuperarCarrito] no se pudo descartar el carrito abandonado', err)
     }
-    toast({ message: t('recuperarCarrito.addedToast', { count: items.length }), type: 'success' })
+    if (tope) toast({ message: MENSAJE_MAX_LINEAS_CARRITO, type: 'error' })
+    else toast({ message: t('recuperarCarrito.addedToast', { count: items.length }), type: 'success' })
     navigate('/carrito')
   }
 

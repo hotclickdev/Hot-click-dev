@@ -8,7 +8,7 @@ import type { Producto } from '@/types/producto'
 export type PropsCarritoRecuperable = {
   showCartRecovery: boolean
   recoveryCart: CarritoRecuperable | null
-  addItem: (product: Producto, qty?: number) => void
+  addItem: (product: Producto, qty?: number) => boolean
   onCloseCart: () => void
   onDoneCart: () => void
 }

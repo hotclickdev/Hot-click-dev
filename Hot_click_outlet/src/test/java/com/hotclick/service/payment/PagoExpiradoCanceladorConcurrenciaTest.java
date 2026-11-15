@@ -51,19 +51,21 @@ class PagoExpiradoCanceladorConcurrenciaTest {
         pedido.setId(1L);
         pedido.setNumeroPedido("HC-TEST-2");
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedido.setStockReservadoEn(java.time.LocalDateTime.now());
         Pago pago = new Pago();
         pago.setId(20L);
         pago.setEstadoPago(Constants.PAGO_PENDIENTE);
         pago.setPedido(pedido);
         when(pagoRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(pago));
-        when(grupo.delGrupo(pedido)).thenReturn(List.of(pedido));
+        when(grupo.bloquearGrupo(pedido)).thenReturn(List.of(pedido));
 
         assertThat(cancelador.cancelar(20L)).isTrue();
         assertThat(cancelador.cancelar(20L)).isFalse();
 
         verify(pagoRepository, times(2)).findByIdForUpdate(20L);
         verify(pagoRepository, never()).findById(any());
-        verify(stock, times(1)).liberarReservas(pedido);
+        verify(stock, times(1)).liberarReservasDeGrupoBloqueado(List.of(pedido));
+        verify(stock, never()).liberarReservas(any());
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
     }

@@ -1,5 +1,7 @@
 import HojaInferior from '@/components/comprador/HojaInferior'
 import { BotonPago } from '@/pages/pago/PiezasPago'
+import { useToast } from '@/components/ui/Toast'
+import { MENSAJE_MAX_LINEAS_CARRITO } from '@/store/cartStore'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 
@@ -20,18 +22,22 @@ export type CarritoRecuperable = {
 type CartModalProps = {
   open: boolean
   cart: CarritoRecuperable | null
-  addItem: (product: Producto, qty?: number) => void
+  addItem: (product: Producto, qty?: number) => boolean
   onClose: () => void
   onDone: () => void
 }
 
 /** Recuperar el carrito guardado al iniciar sesión (derivado de Figma `29:2036`, en hoja inferior `45:1612`). */
 export default function CartModal({ open, cart, addItem, onClose, onDone }: CartModalProps) {
+  const toast = useToast()
   const restore = async () => {
-    cart?.items?.forEach((item) =>
-      addItem({ id: item.productoId, nombre: item.nombre, precio: item.precio,
+    let tope = false
+    cart?.items?.forEach((item) => {
+      const ok = addItem({ id: item.productoId, nombre: item.nombre, precio: item.precio,
                 imagenUrl: item.imagenUrl, stock: item.stock ?? item.cantidad ?? 1 } as Producto, item.cantidad ?? 1)
-    )
+      if (!ok) tope = true
+    })
+    if (tope) toast({ message: MENSAJE_MAX_LINEAS_CARRITO, type: 'error' })
     try {
       const { abandonedCartService: svc } = await import('@/services/abandonedCartService')
       await svc.deleteAbandonedCart(cart?.id as Id)

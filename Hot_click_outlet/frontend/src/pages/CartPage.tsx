@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import MainLayout from '@/layouts/MainLayout'
 import useCartStore from '@/store/cartStore'
+import { avisarSiTopeCarrito } from '@/store/avisarTopeCarrito'
 import useAuthStore from '@/store/authStore'
 import useChatStore from '@/store/chatStore'
 import useWishlistStore from '@/store/wishlistStore'
@@ -115,7 +116,7 @@ export default function CartPage() {
   }
 
   function agregarSugerencia(producto: Producto) {
-    addItem(producto)
+    if (!avisarSiTopeCarrito(addItem(producto), (m) => toast({ message: m, type: 'error' }))) return
     toast({ message: t('product.added', { name: producto.nombre }), type: 'success' })
   }
 

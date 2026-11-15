@@ -171,9 +171,12 @@ public class PaymentOrderConfirmationService {
     /** M-08: grupo a revisión, reservas liberadas (sin stock negativo), pago para reembolso. Sin PII en el log. */
     private void pasarARevisionPorSobreventa(Pago pago, List<Pedido> grupo) {
         StringBuilder numeros = new StringBuilder();
+        // fix2: Pago ya en juego → pedidos del grupo FOR UPDATE ORDER BY id → un solo lock de productos ordenado → escrituras.
+        pedidoGrupoService.bloquearPedidos(grupo);
+        stockReservationService.liberarReservasDeGrupoBloqueado(
+            grupo.stream().filter(p -> p.getStockReservadoEn() != null).toList());
         for (Pedido pedido : grupo) {
             pedido.setEstadoPedido(Constants.PEDIDO_REVISION_SOBREVENTA);
-            stockReservationService.liberarReservas(pedido);
             if (numeros.length() > 0) numeros.append(',');
             numeros.append(pedido.getNumeroPedido());
         }

@@ -192,6 +192,29 @@ public class PedidoPagoManualService {
             && Constants.ENVIO_RETIRO.equalsIgnoreCase(pedido.getMetodoEnvio() == null ? "" : pedido.getMetodoEnvio().trim());
     }
 
+    /**
+     * fix2 (orden de locks Pago → Pedido): quien cambia el estado del pedido a PAGADO (o cobra al retirar) bloquea el
+     * Pago del grupo ANTES del FOR UPDATE del pedido, igual que la captura y la cancelación. Con el pago ya bloqueado se
+     * releen los pedidos del grupo (se leyeron antes del lock). Sin pago devuelve vacío y no bloquea nada. Debe correr
+     * en la transacción del llamador.
+     */
+    public Optional<Pago> bloquearPagoAntesDelPedido(Pedido previo) {
+        Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(previo).map(this::bloquearPago);
+        if (pagoOpt.isPresent()) {
+            for (Pedido p : pedidoGrupoService.delGrupo(previo)) {
+                if (entityManager.contains(p)) entityManager.refresh(p);
+            }
+        }
+        return pagoOpt;
+    }
+
+    /** 400 si el pago es de pasarela (misma regla y mensaje que {@code pagoSinPasarela}); lo llama el panel sin lock de pedido. */
+    public void rechazarSiPasarela(Pago pago) {
+        if (!esPagoManual(pago)) {
+            throw new IllegalArgumentException(String.format(MENSAJE_PAGO_PASARELA, normalizarMetodo(pago.getProveedor())));
+        }
+    }
+
     /** El Pago del grupo, si existe; 400 si es de pasarela (tarjeta). */
     private Optional<Pago> pagoSinPasarela(Pedido pedido) {
         Optional<Pago> pagoOpt = pedidoGrupoService.pagoDelGrupo(pedido).map(this::bloquearPago);
