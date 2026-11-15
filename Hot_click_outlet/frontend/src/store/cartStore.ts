@@ -13,6 +13,10 @@ function conPrecioEfectivo<T extends Parameters<typeof precioUnitarioEfectivo>[0
   return { ...item, precio: precioUnitarioEfectivo(item) }
 }
 
+/** Tope de productos distintos por pedido: igual que el backend (PaymentCheckoutRequest.MAX_ITEMS = 50). */
+export const MAX_LINEAS_CARRITO = 50
+export const MENSAJE_MAX_LINEAS_CARRITO = `El pedido no puede tener más de ${MAX_LINEAS_CARRITO} productos distintos`
+
 type ProductoConExtras = Producto & {
   tallaSeleccionada?: string
   personalizacion?: PersonalizacionCarrito
@@ -24,7 +28,8 @@ type CartState = {
   cartUpdatedAt: number | null
   cupon: CuponCarrito | null
   setCupon: (cupon: CuponCarrito | null) => void
-  addItem: (product: ProductoConExtras, qty?: number) => void
+  /** false si no se agregó porque el carrito ya tiene MAX_LINEAS_CARRITO productos distintos. */
+  addItem: (product: ProductoConExtras, qty?: number) => boolean
   removeItem: (id: Id, cartLineId?: string) => void
   updateQuantity: (id: Id, cantidad: number, cartLineId?: string) => void
   clearCart: () => void
@@ -53,6 +58,12 @@ const useCartStore = create<CartState>()(
         const { items } = get()
         const esPersonalizado = Boolean(product.personalizacion) || product.esPersonalizado === true
 
+        // Una línea nueva (personalizada, o producto que aún no está) no puede pasar del tope; sumar cantidad sí.
+        const esLineaNueva = esPersonalizado && product.personalizacion
+          ? true
+          : !items.some((i) => mismaLinea(i, product.id as Id))
+        if (esLineaNueva && items.length >= MAX_LINEAS_CARRITO) return false
+
         if (esPersonalizado && product.personalizacion) {
           const cartLineId = product.cartLineId ?? crypto.randomUUID()
           set({
@@ -68,7 +79,7 @@ const useCartStore = create<CartState>()(
             cartUpdatedAt: Date.now(),
           })
           analytics.addToCart(product)
-          return
+          return true
         }
 
         const existing = items.find((i) => mismaLinea(i, product.id as Id))
@@ -88,6 +99,7 @@ const useCartStore = create<CartState>()(
           })
         }
         analytics.addToCart(product)
+        return true
       },
 
       removeItem: (id, cartLineId) => {
