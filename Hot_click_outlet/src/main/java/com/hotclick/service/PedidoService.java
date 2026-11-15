@@ -50,6 +50,12 @@ public class PedidoService {
     @Autowired private com.hotclick.service.pedido.PedidoManualEntregaStockService manualEntregaStock;
     @org.springframework.context.annotation.Lazy @Autowired
     private com.hotclick.service.payment.PaymentUserCancellationService pagoCancelacion;
+    // Dependencia OBLIGATORIA: @PersistenceContext hace fallar el arranque si no hay EntityManagerFactory. La fase sin
+    // locks de la cancelación depende del flush + refresh con lock; sin EntityManager no hay camino alternativo.
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+    @Autowired(required = false)
+    private com.hotclick.service.suscripcion.LockTimeoutPorFila lockTimeout;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -103,7 +109,7 @@ public class PedidoService {
     }
 
     /** Cambio de estado sin referencia de pago (Telegram/copiloto): PAGADO manual queda rechazado (400). */
-    @Transactional
+    @Transactional(noRollbackFor = com.hotclick.exception.CancelacionSolicitadaRegistradaException.class)
     public Pedido cambiarEstado(Long id, String nuevoEstado, String nota) {
         return cambiarEstado(id, nuevoEstado, nota, null);
     }
@@ -119,11 +125,23 @@ public class PedidoService {
      *   <li>Efectivo + retiro: {@code PENDIENTE_COMPROBANTE → ENTREGADO} registra el cobro.</li>
      * </ul>
      */
-    @Transactional
+    // fix2: CancelacionSolicitadaRegistradaException no revierte: solo se lanza después de guardar la intención de
+    // cancelar en el pago (V238) y sin otros cambios en esta transacción, para que esa intención quede durable.
+    @Transactional(noRollbackFor = com.hotclick.exception.CancelacionSolicitadaRegistradaException.class)
     public Pedido cambiarEstado(Long id, String estadoSolicitado, String nota, String referenciaPago) {
+        // fix2 (orden de locks): cancelar cierra el pago ONVO ANTES de bloquear el pedido. La intención se confirma
+        // antes de la red, la red corre sin locks y el pago se bloquea antes que el pedido (mismo orden que la captura).
+        var cierre = cerrarPagoAntesDelLock(id, estadoSolicitado);
         // QA5 MEDIO: FOR UPDATE serializa los PUT paralelos; el segundo ya ve el estado nuevo y no repite efectos.
-        Pedido pedido = pedidoRepository.findByIdForUpdate(id)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        // fix2 (orden Pago → Pedido): PAGADO manual y cobro al retirar bloquean el pago ANTES que el pedido; un pago de
+        // pasarela se rechaza (400) sin haber tomado el lock del pedido (antes: Pedido → Pago, deadlock con la captura).
+        boolean pagoPrimero = bloquearPagoAntesDelPedido(id, estadoSolicitado);
+        Pedido pedido = bloquearPedido(id, cierre != null || pagoPrimero);
+        if (cierre == com.hotclick.service.payment.PaymentUserCancellationService.CierrePanel.CANCELADO_CON_COBRO) {
+            // El cobro llegó antes de confirmar: la captura ya canceló el pedido, liberó la reserva y dejó el pago en
+            // REEMBOLSO_PENDIENTE. No se repiten efectos.
+            return sinCambios(pedido);
+        }
         String nuevoEstado = PedidoEstadoMaquina.validarEstado(estadoSolicitado);
         String estadoActual = PedidoEstadoMaquina.normalizarActual(pedido.getEstadoPedido());
         boolean mismoEstado = nuevoEstado.equals(estadoActual);
@@ -163,12 +181,16 @@ public class PedidoService {
         boolean liberarReserva = Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado
             && RESERVA_ACTIVA.contains(estadoActual);
         // QA MEDIO: cancelar desde el panel cierra antes el link/intent ONVO (fail-closed, 409 si no se confirma).
-        if (Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado) {
+        // Respaldo (la fase previa no corrió: el pedido cambió entre la lectura sin lock y el lock). Con el pedido ya
+        // bloqueado NO se llama a ONVO ni se captura (invertiría pago → pedido): con pago, 409 reintentable.
+        if (Constants.PEDIDO_CANCELADO.equals(nuevoEstado) && !mismoEstado && cierre == null) {
             pagoCancelacion.cerrarPagoOnvoAntesDeCancelar(pedido);
         }
         pedido.setEstadoPedido(nuevoEstado);
-        if (liberarReserva) {
-            stockReservationService.liberarReservas(pedido);
+        if (liberarReserva && pedido.getStockReservadoEn() != null) {
+            // fix2: el pedido ya está bloqueado (FOR UPDATE) y, si hubo pago, el pago antes que él. Un solo lock de
+            // productos ordenado, sin catch por línea. Solo ESTE pedido (no se amplía la cancelación al grupo).
+            stockReservationService.liberarReservasDeGrupoBloqueado(List.of(pedido));
         }
         // P-07: pedido manual entregado → descuenta stock una sola vez (idempotente por stockDescontadoEn).
         if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado) && !mismoEstado) {
@@ -187,6 +209,85 @@ public class PedidoService {
         }
         if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)) {
             n8nWebhookService.notificarPedidoEntregado(pedido);
+        }
+        return pedido;
+    }
+
+    /**
+     * fix2: fase sin locks de la cancelación desde el panel. Solo corre si se pide CANCELADO, el pedido existe y la
+     * transición es válida con el estado leído sin lock; si no, devuelve null y decide el camino normal bajo lock.
+     */
+    private com.hotclick.service.payment.PaymentUserCancellationService.CierrePanel cerrarPagoAntesDelLock(
+            Long id, String estadoSolicitado) {
+        if (pagoCancelacion == null || id == null) return null;
+        String nuevo;
+        try {
+            nuevo = PedidoEstadoMaquina.validarEstado(estadoSolicitado);
+        } catch (RuntimeException e) {
+            return null;
+        }
+        if (!Constants.PEDIDO_CANCELADO.equals(nuevo)) return null;
+        Pedido previo = pedidoRepository.findById(id).orElse(null);
+        if (previo == null) return null;
+        String actual = PedidoEstadoMaquina.normalizarActual(previo.getEstadoPedido());
+        if (Constants.PEDIDO_CANCELADO.equals(actual)) return null;
+        try {
+            PedidoEstadoMaquina.verificarTransicion(actual, Constants.PEDIDO_CANCELADO);
+        } catch (RuntimeException e) {
+            return null;
+        }
+        return pagoCancelacion.cerrarPagoOnvoAntesDeCancelarSinLocks(previo);
+    }
+
+    /**
+     * @return true si bloqueó el pago del grupo (el pedido leído sin lock queda en la sesión: hay que releerlo bajo lock).
+     */
+    private boolean bloquearPagoAntesDelPedido(Long id, String estadoSolicitado) {
+        if (id == null) return false;
+        String nuevo;
+        try {
+            nuevo = PedidoEstadoMaquina.validarEstado(estadoSolicitado);
+        } catch (RuntimeException e) {
+            return false;
+        }
+        boolean pagado = Constants.PEDIDO_PAGADO.equals(nuevo);
+        boolean entregado = Constants.PEDIDO_ENTREGADO.equals(nuevo);
+        if (!pagado && !entregado) return false;
+        Pedido previo = pedidoRepository.findById(id).orElse(null);
+        if (previo == null) return false; // bloquearPedido responde 404
+        if (entregado && !(Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(
+                PedidoEstadoMaquina.normalizarActual(previo.getEstadoPedido()))
+                && PedidoPagoManualService.esEfectivoConRetiro(previo))) {
+            return false;
+        }
+        var pago = pedidoPagoManualService.bloquearPagoAntesDelPedido(previo);
+        if (pagado && pago.isPresent()) {
+            // Mismo criterio que el resto del método: PAGADO sobre PAGADO ya verificado es idempotente (no confirma).
+            boolean mismoEstado = Constants.PEDIDO_PAGADO.equals(PedidoEstadoMaquina.normalizarActual(previo.getEstadoPedido()));
+            if (!mismoEstado || !despachoVerificador.pagoVerificado(previo)) {
+                pedidoPagoManualService.rechazarSiPasarela(pago.get()); // 400 sin haber tomado el lock del pedido
+            }
+        }
+        return pago.isPresent();
+    }
+
+    /**
+     * FOR UPDATE del pedido. Si la fase previa ya lo cargó en la sesión, el SELECT con lock devuelve esa misma copia sin
+     * actualizarla: se relee (refresh) ya con el lock tomado para decidir con el estado actual.
+     */
+    private Pedido bloquearPedido(Long id, boolean refrescar) {
+        if (lockTimeout != null) lockTimeout.aplicar();
+        if (refrescar && entityManager == null) {
+            // Fail-closed: nunca decidir la cancelación con una copia vieja del pedido (solo pasa fuera de Spring).
+            throw new IllegalStateException("PedidoService sin EntityManager: no se puede releer el pedido bloqueado");
+        }
+        // Los cambios de la fase previa (p. ej. la captura que canceló el pedido) se escriben antes de releer.
+        if (refrescar) entityManager.flush();
+        Pedido pedido = pedidoRepository.findByIdForUpdate(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado"));
+        if (refrescar) {
+            // findByIdForUpdate ya tomó el lock; si devolvió la copia de la sesión, se relee con el lock tomado.
+            entityManager.refresh(pedido);
         }
         return pedido;
     }

@@ -197,7 +197,9 @@ public class TelegramFlujoService {
         accionHandler.proponerAccion(v, accion);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    // fix2: igual que PedidoService.cambiarEstado, la cancelación registrada (intención guardada) no se revierte.
+    @Transactional(propagation = Propagation.REQUIRES_NEW,
+        noRollbackFor = com.hotclick.exception.CancelacionSolicitadaRegistradaException.class)
     public Pedido cambiarEstadoPedidoTx(Long pedidoId, String nuevoEstado, String nota) {
         return pedidoService.cambiarEstado(pedidoId, nuevoEstado, nota);
     }

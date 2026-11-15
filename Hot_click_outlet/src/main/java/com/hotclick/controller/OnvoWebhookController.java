@@ -3,6 +3,7 @@ package com.hotclick.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.payment.OnvoPaymentProvider;
+import com.hotclick.payment.OnvoPaymentProvider.Verificacion;
 import com.hotclick.service.OnvoService;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.service.suscripcion.OnvoBillingWebhookHandler;
@@ -137,7 +138,16 @@ public class OnvoWebhookController {
                     // ONVO no manda id de evento: dedupe por tipo + data.id.
                     boolean pos = posQrVentaService != null
                         && posQrVentaService.confirmarSinpeOnvoPorWebhook(intentId, claveEvento(type, intentId));
-                    log.info("[onvo-webhook] payment-intent.succeeded {} posCerrado={}", intentId, pos);
+                    log.info("[onvo-webhook] payment-intent.succeeded {} posCerrado={}", OnvoService.enmascarar(intentId), pos);
+                    if (!pos) {
+                        // MEDIO: venta en línea cuyo checkout-session.succeeded no llegó (o llegó antes de que la
+                        // sesión figurara pagada). Misma captura idempotente que el webhook de sesión y la limpieza.
+                        Verificacion v = onvoPaymentProvider.procesarIntentVentaOnline(intentId, "webhook");
+                        if (v != null && v != Verificacion.NO_ENCONTRADO) {
+                            ResponseEntity<Map<String, String>> resp = respuestaVerificacion(v, type);
+                            if (resp != null) return resp;
+                        }
+                    }
                 }
                 case "payment-intent.deferred" ->
                     // Espera de aprobación (flujo SINPE): no es pago; se sigue esperando succeeded.
