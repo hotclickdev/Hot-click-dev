@@ -58,7 +58,7 @@ class OnvoLimpiezaCapturadoWebhookTest extends BaseIntegrationTest {
 
     private static final String SESION = "cs_limpcapt_sesion01";
     private static final String INTENT = "pi_limpcapt_intent01";
-    private static final String SECRET = "limpieza-capturado-prueba";
+    private static final String SECRET = java.util.UUID.randomUUID().toString();
 
     @MockitoBean private OnvoService onvoService;
 
