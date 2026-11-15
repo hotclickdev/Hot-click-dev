@@ -185,4 +185,51 @@ class PosVentaCantidadTurnoTest {
         assertThat(p.getTotalPedido()).isEqualTo(10000);
         verify(turnoCajaService).actualizarTotales(77L, "EFECTIVO", 10000);
     }
+
+    private PosVentaDTO ventaConLineas(int n) {
+        PosVentaDTO dto = new PosVentaDTO();
+        dto.setMetodoPago("EFECTIVO");
+        List<PosVentaDTO.Item> items = new java.util.ArrayList<>();
+        for (int k = 0; k < n; k++) {
+            PosVentaDTO.Item item = new PosVentaDTO.Item();
+            item.setProductoId(10L);
+            item.setCantidad(1);
+            items.add(item);
+        }
+        dto.setItems(items);
+        return dto;
+    }
+
+    @Test
+    @DisplayName("Tope: el número es 50, igual que PR 553")
+    void topeEs50() {
+        assertThat(PosVentaService.MAX_LINEAS_POS).isEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("Tope: 51 líneas en crearVenta → IllegalArgumentException (400), sin efectos")
+    void crearVenta_masDe50Lineas_rechaza() {
+        assertThatThrownBy(() -> service.crearVenta(ventaConLineas(51), 5L, 1L, "caja@test.cr"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("El pedido no puede tener más de 50 productos distintos");
+        sinEfectos();
+    }
+
+    @Test
+    @DisplayName("Tope: 51 líneas en cotizarCobro → IllegalArgumentException")
+    void cotizar_masDe50Lineas_rechaza() {
+        assertThatThrownBy(() -> service.cotizarCobro(ventaConLineas(51), 1L))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage(PosVentaService.MENSAJE_MAX_LINEAS_POS);
+    }
+
+    @Test
+    @DisplayName("Tope: exactamente 50 líneas no se rechaza por el tope")
+    void crearVenta_50Lineas_noRechazaPorTope() {
+        try {
+            service.crearVenta(ventaConLineas(50), 5L, 1L, "caja@test.cr");
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage() == null ? "" : e.getMessage()).doesNotContain("productos distintos");
+        }
+    }
 }

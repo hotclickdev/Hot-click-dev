@@ -186,13 +186,25 @@ export function descomponer(monto: number) {
   return r
 }
 
+/** Mismo tope (50) que el carrito web (MAX_LINEAS_CARRITO) y que PosVentaService.MAX_LINEAS_POS. */
+export const MAX_LINEAS_POS = 50
+export const MENSAJE_MAX_LINEAS_POS = `El pedido no puede tener más de ${MAX_LINEAS_POS} productos distintos`
+
+/** true si agregar este producto crearía una línea nueva por encima del tope. */
+export function excedeTopeLineasPos(prev: ItemCarritoPos[], producto: ProductoEntradaCarrito): boolean {
+  const id = producto.id ?? producto.idProducto
+  return !prev.some(i => i.id === id) && prev.length >= MAX_LINEAS_POS
+}
+
 /**
  * Agrega un producto al carrito POS o incrementa cantidad si ya está.
+ * Si es una línea nueva y ya hay MAX_LINEAS_POS, devuelve el carrito sin cambios.
  */
 export function agregarProductoAlCarrito(prev: ItemCarritoPos[], producto: ProductoEntradaCarrito): ItemCarritoPos[] {
   const id = producto.id ?? producto.idProducto
   const ex = prev.find(i => i.id === id)
   if (ex) return prev.map(i => i.id === id ? { ...i, cantidad: i.cantidad + 1 } : i)
+  if (excedeTopeLineasPos(prev, producto)) return prev
   return [...prev, {
     id,
     nombre:        producto.nombreProducto ?? producto.nombre,

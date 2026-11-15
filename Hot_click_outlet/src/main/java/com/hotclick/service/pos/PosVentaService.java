@@ -56,6 +56,15 @@ public class PosVentaService {
     @Autowired private ClienteMostradorResolver clienteMostradorResolver;
     @Autowired private com.hotclick.repository.PosVentaTurnoRepository ventaTurnoRepository;
 
+    /**
+     * Tope de líneas por venta POS. Mismo número (50) que el de PR 553 en PaymentCheckoutRequest.MAX_ITEMS,
+     * StorefrontPedidoDTO, ManualPedidoDTO y SelfCheckoutService.MAX_LINEAS_POR_PEDIDO; no se referencia
+     * esa constante porque aún no está en master. Al mergear PR 553, unificar.
+     */
+    public static final int MAX_LINEAS_POS = 50;
+    public static final String MENSAJE_MAX_LINEAS_POS =
+        "El pedido no puede tener más de " + MAX_LINEAS_POS + " productos distintos";
+
     @Transactional
     public Pedido crearVenta(PosVentaDTO dto, Long usuarioId, Long empresaId, String correo) {
         Usuario cliente = resolverCliente(dto.getClienteId());
@@ -308,6 +317,10 @@ public class PosVentaService {
     private static void exigirCantidadesValidas(PosVentaDTO dto) {
         if (dto.getItems() == null || dto.getItems().isEmpty()) {
             throw new IllegalArgumentException("La venta no tiene productos.");
+        }
+        // Mismo tope (50) que PaymentCheckoutRequest, StorefrontPedidoDTO, ManualPedidoDTO y SelfCheckoutService.
+        if (dto.getItems().size() > MAX_LINEAS_POS) {
+            throw new IllegalArgumentException(MENSAJE_MAX_LINEAS_POS);
         }
         for (PosVentaDTO.Item item : dto.getItems()) {
             if (item == null) throw new IllegalArgumentException("La venta tiene un producto vacío.");
