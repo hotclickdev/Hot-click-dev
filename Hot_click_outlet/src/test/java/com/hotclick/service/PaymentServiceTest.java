@@ -450,9 +450,8 @@ class PaymentServiceTest {
 
         service.cancelarPorUsuario("ORD-CANCEL-001", CORREO);
 
-        ArgumentCaptor<Producto> prodCaptor = ArgumentCaptor.forClass(Producto.class);
-        verify(productoRepository).save(prodCaptor.capture());
-        assertThat(prodCaptor.getValue().getStockReservado()).isEqualTo(0);
+        // SCALE1: el producto está managed (lock FOR UPDATE); el dirty checking lo persiste, sin save por ítem.
+        assertThat(testProducto.getStockReservado()).isEqualTo(0);
         verify(notificacionEmailService).enviarPagoFallido(any(), anyString());
     }
 
@@ -527,9 +526,8 @@ class PaymentServiceTest {
             list.stream().anyMatch(p -> Constants.PAGO_CANCELADO.equals(p.getEstadoPago()))));
         verify(pedidoRepository).saveAll(argThat((List<Pedido> list) ->
             list.stream().anyMatch(p -> Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido()))));
-        ArgumentCaptor<Producto> captor = ArgumentCaptor.forClass(Producto.class);
-        verify(productoRepository).save(captor.capture());
-        assertThat(captor.getValue().getStockReservado()).isEqualTo(0);
+        // SCALE1: dirty checking, sin save por ítem; se verifica el estado resultante.
+        assertThat(testProducto.getStockReservado()).isEqualTo(0);
     }
 
     @Test
@@ -558,9 +556,8 @@ class PaymentServiceTest {
 
         service.liberarReservas(pedido);
 
-        ArgumentCaptor<Producto> captor = ArgumentCaptor.forClass(Producto.class);
-        verify(productoRepository).save(captor.capture());
-        assertThat(captor.getValue().getStockReservado()).isEqualTo(0);
+        // SCALE1: dirty checking, sin save por ítem; se verifica el estado resultante.
+        assertThat(testProducto.getStockReservado()).isEqualTo(0);
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────

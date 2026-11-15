@@ -152,13 +152,12 @@ class StockReservationLoteGrupoTest {
     }
 
     @Test
-    @DisplayName("sin catch genérico: un error del save se propaga")
+    @DisplayName("sin catch genérico: un error al bloquear los productos se propaga")
     void errorSePropaga() {
         Producto a = prod(1, 10, 3, 1);
         Pedido p = pedido(1, 1, new long[][]{{1, 1}});
         stubDuenos();
-        when(repo.findAllByIdsForUpdate(anyList())).thenReturn(List.of(a));
-        when(repo.save(any())).thenThrow(new IllegalStateException("db"));
+        when(repo.findAllByIdsForUpdate(anyList())).thenThrow(new IllegalStateException("db"));
 
         assertThatThrownBy(() -> servicio.liberarReservasDeGrupoBloqueado(List.of(p)))
             .isInstanceOf(IllegalStateException.class).hasMessage("db");
