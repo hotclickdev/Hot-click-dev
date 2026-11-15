@@ -354,6 +354,21 @@ class PagoOnvoGrupoLocksPostgresTest extends BaseIntegrationTest {
         }
     }
 
+    private static int esperandoLock(Connection excluida) throws SQLException {
+        int pid;
+        try (Statement st = excluida.createStatement(); java.sql.ResultSet rs = st.executeQuery("SELECT pg_backend_pid()")) {
+            rs.next();
+            pid = rs.getInt(1);
+        }
+        try (Connection c = DriverManager.getConnection(urlEsquema(), usuario, clave);
+             Statement st = c.createStatement();
+             java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM pg_stat_activity WHERE datname = current_database() "
+                 + "AND wait_event_type = 'Lock' AND pid <> " + pid)) {
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
     private static boolean esDeadlock(Throwable t) {
         for (Throwable c = t; c != null; c = c.getCause()) {
             if (c instanceof SQLException s && "40P01".equals(s.getSQLState())) return true;
@@ -569,23 +584,68 @@ class PagoOnvoGrupoLocksPostgresTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("carreraCapturaVsPanelPagadoDocumentaInversionSinEstadoMixto")
-    void carreraCapturaVsPanelPagadoDocumentaInversionSinEstadoMixto() throws Exception {
+    @DisplayName("carreraCapturaVsPanelPagadoPanelPierdeCon400SinDeadlock")
+    void carreraCapturaVsPanelPagadoPanelPierdeCon400SinDeadlock() throws Exception {
+        for (int ronda = 0; ronda < 5; ronda++) {
+            List<Producto> prods = productos(4);
+            Grupo g = grupo(prods, TRES_POR_TRES);
+            intencion(g);
+            List<Throwable> errores = correrJuntos(List.of(
+                () -> capturar(g),
+                () -> { pedidoService.cambiarEstado(g.principal().getId(), Constants.PEDIDO_PAGADO, null); return null; }));
+            // Orden Pago → Pedido en el panel: ya no hay inversión. La captura NO cae por esa carrera y el panel
+            // pierde siempre con 400 (pasarela), nunca por deadlock.
+            assertThat(errores.get(0)).as("ronda %d: la captura termina bien", ronda).isNull();
+            assertThat(errores.get(1)).as("ronda %d: panel PAGADO rechazado", ronda).isInstanceOf(IllegalArgumentException.class);
+            assertThat(esDeadlock(errores.get(1))).isFalse();
+            assertLiberado(g, prods, extraEsperado(prods));
+            for (Producto p : prods) assertThat(stockActual(p)).isEqualTo(STOCK);
+        }
+    }
+
+    @Test
+    @DisplayName("panelPagadoBloqueaPagoAntesQuePedidoYRechazaPasarelaSinLockDePedido")
+    void panelPagadoBloqueaPagoAntesQuePedidoYRechazaPasarelaSinLockDePedido() throws Exception {
         List<Producto> prods = productos(4);
         Grupo g = grupo(prods, TRES_POR_TRES);
-        intencion(g);
-        List<Throwable> errores = correrJuntos(List.of(
-            () -> capturar(g),
-            () -> { pedidoService.cambiarEstado(g.principal().getId(), Constants.PEDIDO_PAGADO, null); return null; }));
-        // Inversión Pedido→Pago del panel (preexistente, fuera de alcance): se espera 400 (pasarela) o deadlock.
-        // El panel NUNCA debe terminar con éxito sobre un pedido ONVO sin cobro verificado.
-        assertThat(errores.get(1)).as("panel PAGADO rechazado (400) o abortado por deadlock").isNotNull();
-        if (errores.get(0) != null) {
-            assertThat(esDeadlock(errores.get(0))).as("la captura solo puede caer por deadlock").isTrue();
-            capturar(g); // reintento del webhook
+        Long pagoId = pagoDe(g).getId();
+        Future<?> panel;
+        try (Connection a = conexionAparte(); Statement st = a.createStatement()) {
+            st.executeQuery("SELECT 1 FROM hot_click_pago_tb WHERE id_pago = " + pagoId + " FOR UPDATE").close();
+            panel = hilos.submit(() -> pedidoService.cambiarEstado(g.principal().getId(), Constants.PEDIDO_PAGADO, null));
+            long hasta = System.currentTimeMillis() + Math.max(1000, lockTimeoutMs - 2000);
+            int esperando = 0;
+            while (System.currentTimeMillis() < hasta && (esperando = esperandoLock(a)) == 0) Thread.sleep(50);
+            assertThat(esperando).as("el panel espera el lock del PAGO").isPositive();
+            // El panel NO tiene ningún pedido del grupo: otra conexión los toma sin esperar.
+            for (Pedido p : g.pedidos()) {
+                st.executeQuery("SELECT 1 FROM hot_click_pedido_tb WHERE id_pedido = " + p.getId() + " FOR UPDATE NOWAIT").close();
+            }
+            a.rollback();
         }
-        assertLiberado(g, prods, extraEsperado(prods));
-        for (Producto p : prods) assertThat(stockActual(p)).isEqualTo(STOCK);
+        assertThat(causa(panel)).isInstanceOf(IllegalArgumentException.class);
+        for (Pedido p : g.pedidos()) assertThat(estadoPedido(p.getId())).isEqualTo(Constants.PEDIDO_PENDIENTE);
+        assertThat(pagoDe(g).getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
+    }
+
+    @Test
+    @DisplayName("panelPagadoManualEfectivoSigueFuncionandoConPagoPrimero")
+    void panelPagadoManualEfectivoSigueFuncionandoConPagoPrimero() {
+        List<Producto> prods = productos(4);
+        Grupo g = grupo(prods, TRES_POR_TRES);
+        jdbcTemplate.update("UPDATE hot_click_pedido_tb SET metodo_pago = 'EFECTIVO' WHERE grupo_pago = ?",
+            g.principal().getGrupoPago());
+        jdbcTemplate.update("UPDATE hot_click_pago_tb SET proveedor = ? WHERE id_pago = ?",
+            Constants.PROVEEDOR_MANUAL, pagoDe(g).getId());
+
+        pedidoService.cambiarEstado(g.principal().getId(), Constants.PEDIDO_PAGADO, null, "Ref Caja 1");
+
+        for (Pedido p : g.pedidos()) assertThat(estadoPedido(p.getId())).isEqualTo(Constants.PEDIDO_PAGADO);
+        assertThat(pagoDe(g).getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
+        for (Producto p : prods) {
+            assertThat(reservado(p)).isEqualTo(EXTRA);
+            assertThat(stockActual(p)).isEqualTo(STOCK - g.cantidades().getOrDefault(p.getId(), 0));
+        }
     }
 
     // ── 5: grupos con productos cruzados ─────────────────────────────────────────

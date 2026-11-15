@@ -131,7 +131,10 @@ public class PedidoService {
         // antes de la red, la red corre sin locks y el pago se bloquea antes que el pedido (mismo orden que la captura).
         var cierre = cerrarPagoAntesDelLock(id, estadoSolicitado);
         // QA5 MEDIO: FOR UPDATE serializa los PUT paralelos; el segundo ya ve el estado nuevo y no repite efectos.
-        Pedido pedido = bloquearPedido(id, cierre != null);
+        // fix2 (orden Pago → Pedido): PAGADO manual y cobro al retirar bloquean el pago ANTES que el pedido; un pago de
+        // pasarela se rechaza (400) sin haber tomado el lock del pedido (antes: Pedido → Pago, deadlock con la captura).
+        boolean pagoPrimero = bloquearPagoAntesDelPedido(id, estadoSolicitado);
+        Pedido pedido = bloquearPedido(id, cierre != null || pagoPrimero);
         if (cierre == com.hotclick.service.payment.PaymentUserCancellationService.CierrePanel.CANCELADO_CON_COBRO) {
             // El cobro llegó antes de confirmar: la captura ya canceló el pedido, liberó la reserva y dejó el pago en
             // REEMBOLSO_PENDIENTE. No se repiten efectos.
@@ -230,6 +233,38 @@ public class PedidoService {
             return null;
         }
         return pagoCancelacion.cerrarPagoOnvoAntesDeCancelarSinLocks(previo);
+    }
+
+    /**
+     * @return true si bloqueó el pago del grupo (el pedido leído sin lock queda en la sesión: hay que releerlo bajo lock).
+     */
+    private boolean bloquearPagoAntesDelPedido(Long id, String estadoSolicitado) {
+        if (id == null) return false;
+        String nuevo;
+        try {
+            nuevo = PedidoEstadoMaquina.validarEstado(estadoSolicitado);
+        } catch (RuntimeException e) {
+            return false;
+        }
+        boolean pagado = Constants.PEDIDO_PAGADO.equals(nuevo);
+        boolean entregado = Constants.PEDIDO_ENTREGADO.equals(nuevo);
+        if (!pagado && !entregado) return false;
+        Pedido previo = pedidoRepository.findById(id).orElse(null);
+        if (previo == null) return false; // bloquearPedido responde 404
+        if (entregado && !(Constants.PEDIDO_PENDIENTE_COMPROBANTE.equals(
+                PedidoEstadoMaquina.normalizarActual(previo.getEstadoPedido()))
+                && PedidoPagoManualService.esEfectivoConRetiro(previo))) {
+            return false;
+        }
+        var pago = pedidoPagoManualService.bloquearPagoAntesDelPedido(previo);
+        if (pagado && pago.isPresent()) {
+            // Mismo criterio que el resto del método: PAGADO sobre PAGADO ya verificado es idempotente (no confirma).
+            boolean mismoEstado = Constants.PEDIDO_PAGADO.equals(PedidoEstadoMaquina.normalizarActual(previo.getEstadoPedido()));
+            if (!mismoEstado || !despachoVerificador.pagoVerificado(previo)) {
+                pedidoPagoManualService.rechazarSiPasarela(pago.get()); // 400 sin haber tomado el lock del pedido
+            }
+        }
+        return pago.isPresent();
     }
 
     /**

@@ -98,9 +98,15 @@ un cobro posterior va a reembolso, no confirma). Si la intención no se puede gu
   `CERRADO`. Pruebas: unitarias (`OnvoCancelacionGrupoLocksTest`, `StockReservationLoteGrupoTest`) y contratos PG
   `PagoOnvoGrupoLocksPostgresTest` (**escritos, no ejecutados**: sin PostgreSQL desechable local; fuera del `-Dtest` de
   `ci.yml` y del gate `fix2-pg-surefire.py`).
-- Pendiente (fuera de alcance, no corregido): el panel → `PAGADO` toma Pedido → Pago (inversión preexistente; deadlock
-  posible contra captura/cancelación con cobro, hoy termina en 400 o abortado); el orden de productos de TTL y
-  `marcarFallido` sigue siendo por pedido; el checkout no tiene `@Size` en items, por lo que G·I del grupo no está acotado.
+- Panel → `PAGADO` y cobro al retirar (efectivo): `PedidoService#cambiarEstado` bloquea el Pago del grupo ANTES del
+  `FOR UPDATE` del pedido (`PedidoPagoManualService#bloquearPagoAntesDelPedido`, que además relee los pedidos del grupo).
+  Si el pago es de pasarela y la transición no es un PAGADO→PAGADO ya verificado, responde 400 sin haber tomado el lock del
+  pedido (`rechazarSiPasarela`). Ya no hay inversión Pedido→Pago contra captura/cancelación; el cobro manual sigue igual.
+- Productos ya cargados en la sesión: antes del `FOR UPDATE` en lote (liberación de grupo y `productosSinStock` de la
+  confirmación) se sueltan las copias de la sesión, porque Hibernate valida el `@Version` viejo al bloquear y fallaba con
+  `ObjectOptimisticLockingFailureException` entre dos grupos que comparten producto.
+- Pendiente (fuera de alcance, no corregido): TTL y `marcarFallido` (ver más abajo si ya migraron); el
+  `ReservaSospechosaLiberador`; DELETE de pedido sin guard ni lock.
 - EntityManager obligatorio (`@PersistenceContext`, sin fallback): si falta `EntityManagerFactory` la app no arranca
   (`CacheEvictEmpresaSinIdTest#sinJpaNoArranca`). El bloqueo del pago usa `findByIdForUpdate(...).orElseThrow()` + flush
   + refresh; ya no hay `orElse(pago)` (fail-closed: sin fila bloqueada no se decide).
