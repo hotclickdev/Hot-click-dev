@@ -60,6 +60,8 @@ class PaymentExpirationCleanupOnvoTest {
         pedido.setId(10L);
         pedido.setNumeroPedido("ORD-ONVO");
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedido.setStockReservadoEn(LocalDateTime.now());
+        org.mockito.Mockito.lenient().when(pedidoRepository.findByIdForUpdate(10L)).thenReturn(java.util.Optional.of(pedido));
 
         pagoOnvo = new Pago();
         pagoOnvo.setId(20L);
@@ -83,7 +85,7 @@ class PaymentExpirationCleanupOnvoTest {
     private void noCancela() {
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     @Test
@@ -162,7 +164,7 @@ class PaymentExpirationCleanupOnvoTest {
         service.ejecutar();
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
     }
 
     @Test
@@ -216,7 +218,7 @@ class PaymentExpirationCleanupOnvoTest {
         service.ejecutar();
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
         verify(onvo, never()).expirarCheckoutSession(any());
     }
 
@@ -232,7 +234,7 @@ class PaymentExpirationCleanupOnvoTest {
         providerReal(onvo);
         service.ejecutar();
         assertThat(pagoOnvo.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
     }
 
     @Test

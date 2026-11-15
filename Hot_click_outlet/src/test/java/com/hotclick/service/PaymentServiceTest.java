@@ -101,6 +101,13 @@ class PaymentServiceTest {
             .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
                 .map(id -> productoRepository.findByIdForUpdate(id))
                 .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
+        org.mockito.Mockito.lenient().when(productoRepository.findAllByIdsForUpdate(org.mockito.ArgumentMatchers.anyList()))
+            .thenAnswer(inv -> ((java.util.List<Long>) inv.getArgument(0)).stream()
+                .map(id -> productoRepository.findByIdForUpdate(id))
+                .filter(o -> o != null).flatMap(java.util.Optional::stream).toList());
+        // fix2: la liberación de grupo (TTL, marcarFallido) bloquea el pedido por id antes de los productos.
+        org.mockito.Mockito.lenient().when(pedidoRepository.findByIdForUpdate(org.mockito.ArgumentMatchers.any()))
+            .thenAnswer(inv -> java.util.Optional.ofNullable(ultimoPedido));
         org.mockito.Mockito.lenient().when(productoRepository.findDuenoByIds(org.mockito.ArgumentMatchers.anyList()))
             .thenAnswer(inv -> {
                 java.util.List<DuenoProducto> duenos = new java.util.ArrayList<>();
@@ -583,8 +590,11 @@ class PaymentServiceTest {
         return req;
     }
 
+    private Pedido ultimoPedido;
+
     private Pedido buildPedido(String estado) {
         Pedido p = new Pedido();
+        ultimoPedido = p;
         p.setId(1L);
         p.setNumeroPedido("ORD-TEST-001");
         p.setStockReservadoEn(java.time.LocalDateTime.now()); // ALTO-01: pedido de checkout que reservó

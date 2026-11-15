@@ -81,6 +81,8 @@ class PaymentExpirationCleanupCapturadoTest {
         pedido.setId(10L);
         pedido.setNumeroPedido("ORD-CAPT");
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedido.setStockReservadoEn(LocalDateTime.now());
+        org.mockito.Mockito.lenient().when(pedidoRepository.findByIdForUpdate(10L)).thenReturn(java.util.Optional.of(pedido));
 
         pago = new Pago();
         pago.setId(20L);
@@ -129,13 +131,13 @@ class PaymentExpirationCleanupCapturadoTest {
     private void noCambia() {
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     private void cancelado() {
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-        verify(stockReservationService).liberarReservas(pedido);
+        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(pedido));
     }
 
     @Test
@@ -152,7 +154,7 @@ class PaymentExpirationCleanupCapturadoTest {
         verify(captura, times(1)).capturarVerificado(eq(SESION), anyString(), eq("cleanup"));
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PAGADO);
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
         verify(onvo, never()).expirarCheckoutSession(any());
         verify(onvo, never()).expirarCheckoutSessionTipado(any());
     }
@@ -171,7 +173,7 @@ class PaymentExpirationCleanupCapturadoTest {
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_REVISION_SOBREVENTA);
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
         assertThat(provider.revisarCobroAntesDeCancelar(SESION, "cleanup"))
             .isEqualTo(OnvoPaymentProvider.CobroIntent.REEMBOLSO_PENDIENTE);
     }
@@ -267,7 +269,7 @@ class PaymentExpirationCleanupCapturadoTest {
         service.ejecutar();
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     @Test
@@ -309,7 +311,7 @@ class PaymentExpirationCleanupCapturadoTest {
         verify(captura, times(1)).capturarVerificado(eq(SESION), anyString(), eq("cleanup"));
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CAPTURADO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     @Test
@@ -322,7 +324,7 @@ class PaymentExpirationCleanupCapturadoTest {
             .when(captura).capturarVerificado(eq(SESION), anyString(), eq("cleanup"));
         service.ejecutar();
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);
-        verify(stockReservationService, never()).liberarReservas(any());
+        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     @Test

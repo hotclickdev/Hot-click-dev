@@ -105,8 +105,19 @@ un cobro posterior va a reembolso, no confirma). Si la intención no se puede gu
 - Productos ya cargados en la sesión: antes del `FOR UPDATE` en lote (liberación de grupo y `productosSinStock` de la
   confirmación) se sueltan las copias de la sesión, porque Hibernate valida el `@Version` viejo al bloquear y fallaba con
   `ObjectOptimisticLockingFailureException` entre dos grupos que comparten producto.
-- Pendiente (fuera de alcance, no corregido): TTL y `marcarFallido` (ver más abajo si ya migraron); el
-  `ReservaSospechosaLiberador`; DELETE de pedido sin guard ni lock.
+- TTL (`PagoExpiradoCancelador#cerrar`: expiración y rechazo), `PaymentFailureHandler#marcarFallido` y
+  `ReservaSospechosaLiberador`: con el pago ya bloqueado (`FOR UPDATE` o UPDATE condicional) usan
+  `PedidoGrupoService#bloquearGrupo` (pedidos `FOR UPDATE ORDER BY id` + refresh) y
+  `liberarReservasDeGrupoBloqueado` (un solo lock de productos ordenado), sin el `catch` por línea de `liberarReservas`.
+  Filtros intactos: el TTL solo cancela `PEDIDO_PENDIENTE`; `marcarFallido` cancela PENDIENTE, PENDIENTE_COMPROBANTE y
+  PENDIENTE_APROBACION y libera todo pedido del grupo con `stockReservadoEn`; el liberador sospechoso exige que todo el
+  grupo siga pendiente (ahora releído bajo lock). Un fallo del lote revierte la transacción del llamador.
+  `liberarReservas` sigue en el panel `CERRADO`, `PaymentService`, `ReservaTiendaVencidaService`,
+  `PaymentOrderConfirmationService` y `PedidoService` (CANCELADO sin pago).
+- Checkout: `PaymentCheckoutRequest.items` admite como máximo 50 líneas (`@Size`, igual que `SelfCheckoutService` y
+  `StorefrontPedidoDTO`); acota los pedidos del grupo y los productos bloqueados.
+- Pendiente (fuera de alcance, no corregido): DELETE de pedido sin guard ni lock; resto de llamadores de
+  `liberarReservas` listados arriba (siguen por pedido y con `catch` por línea).
 - EntityManager obligatorio (`@PersistenceContext`, sin fallback): si falta `EntityManagerFactory` la app no arranca
   (`CacheEvictEmpresaSinIdTest#sinJpaNoArranca`). El bloqueo del pago usa `findByIdForUpdate(...).orElseThrow()` + flush
   + refresh; ya no hay `orElse(pago)` (fail-closed: sin fila bloqueada no se decide).

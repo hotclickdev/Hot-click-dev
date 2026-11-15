@@ -82,16 +82,18 @@ public class ReservaSospechosaLiberador {
     private boolean liberarSiCorresponde(Long id, LocalDateTime ahora) {
         Pago pago = pagoRepository.findByIdForUpdate(id).orElse(null);
         if (pago == null || !sigueVencido(pago, ahora)) return false;
-        List<Pedido> grupo = pedidoGrupoService.delGrupo(pago.getPedido());
+        // fix2: orden Pago (ya bloqueado) → pedidos del grupo FOR UPDATE ORDER BY id → productos en UN lock ordenado.
+        List<Pedido> grupo = pedidoGrupoService.bloquearGrupo(pago.getPedido());
         // Algún pedido ya avanzó (comprobante subido, pagado, etc.): no se toca.
         if (grupo.stream().anyMatch(p -> !esPendiente(p.getEstadoPedido()))) {
             return false;
         }
         pago.setEstadoPago(Constants.PAGO_CANCELADO);
         pago.setFechaActualizacion(ahora);
+        stockReservationService.liberarReservasDeGrupoBloqueado(
+            grupo.stream().filter(p -> p.getStockReservadoEn() != null).toList());
         for (Pedido pedido : grupo) {
             pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
-            stockReservationService.liberarReservas(pedido);
         }
         return true;
     }

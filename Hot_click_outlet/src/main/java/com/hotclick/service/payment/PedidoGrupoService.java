@@ -18,6 +18,7 @@ public class PedidoGrupoService {
 
     private final PedidoRepository pedidoRepository;
     private final PagoRepository pagoRepository;
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
 
     public PedidoGrupoService(PedidoRepository pedidoRepository, PagoRepository pagoRepository) {
         this.pedidoRepository = pedidoRepository;
@@ -31,6 +32,29 @@ public class PedidoGrupoService {
         if (grupo == null || grupo.isBlank()) return List.of(pedido);
         List<Pedido> grupoPedidos = pedidoRepository.findByGrupoPagoOrderByIdAsc(grupo);
         return grupoPedidos.isEmpty() ? List.of(pedido) : grupoPedidos;
+    }
+
+    /**
+     * fix2 (locks entre procesos): bloquea los pedidos del grupo con {@code FOR UPDATE ORDER BY id} (sin grupo, solo el
+     * pedido por id) y los relee bajo el lock. Para quien YA tiene el Pago bloqueado y va a liberar reservas del grupo:
+     * orden Pago → Pedidos → Productos. Fail-closed: si el pedido base no aparece en el resultado, aborta. Los cambios
+     * pendientes de la sesión se escriben antes de releer (el refresh los descartaría). Sin EntityManager (solo
+     * construcción manual en pruebas) no hay sesión que releer.
+     */
+    public List<Pedido> bloquearGrupo(Pedido base) {
+        if (base == null) return List.of();
+        if (entityManager != null) entityManager.flush();
+        String grupo = base.getGrupoPago();
+        List<Pedido> bloqueados = (grupo == null || grupo.isBlank())
+            ? pedidoRepository.findByIdForUpdate(base.getId()).map(List::of).orElse(List.of())
+            : pedidoRepository.findByGrupoPagoForUpdateOrderById(grupo);
+        if (bloqueados.stream().noneMatch(p -> java.util.Objects.equals(p.getId(), base.getId()))) {
+            throw new IllegalStateException("Pedido " + base.getId() + " ausente al bloquear su grupo");
+        }
+        if (entityManager != null) {
+            for (Pedido p : bloqueados) entityManager.refresh(p);
+        }
+        return bloqueados;
     }
 
     /** El Pago vive en el subpedido principal; desde cualquier subpedido se llega a él. */

@@ -108,6 +108,7 @@ class OnvoRechazoServiceTest {
         pedido.setId(1L);
         pedido.setNumeroPedido("HC-RECH-1");
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+        pedido.setStockReservadoEn(java.time.LocalDateTime.now());
         Pago pago = new Pago();
         pago.setId(30L);
         pago.setEstadoPago(Constants.PAGO_PENDIENTE);
@@ -115,7 +116,7 @@ class OnvoRechazoServiceTest {
         // Simula el FOR UPDATE: el lock de fila se toma al leer y se suelta al terminar cada llamada.
         ReentrantLock fila = new ReentrantLock();
         when(pagoRepository.findByIdForUpdate(30L)).thenAnswer(i -> { fila.lock(); return Optional.of(pago); });
-        when(grupo.delGrupo(pedido)).thenReturn(List.of(pedido));
+        when(grupo.bloquearGrupo(pedido)).thenReturn(List.of(pedido));
 
         int hilos = 8;
         ExecutorService pool = Executors.newFixedThreadPool(hilos);
@@ -135,11 +136,11 @@ class OnvoRechazoServiceTest {
         pool.shutdown();
 
         assertThat(cerrados.get()).isEqualTo(1);
-        verify(stock, times(1)).liberarReservas(pedido);
+        verify(stock, times(1)).liberarReservasDeGrupoBloqueado(List.of(pedido));
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_FALLIDO);
         assertThat(pedido.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
         // Un pago ya FALLIDO no vuelve a cancelarse por TTL.
         assertThat(real.cancelar(30L)).isFalse();
-        verify(stock, times(1)).liberarReservas(pedido);
+        verify(stock, times(1)).liberarReservasDeGrupoBloqueado(List.of(pedido));
     }
 }
