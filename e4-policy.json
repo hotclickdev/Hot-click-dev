@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "status": "ACTIVE",
+  "repository": "hotclickdev/Hot-click-dev",
+  "pullNumber": 555,
+  "mode": "no-exceptions",
+  "candidateHeadSha": null,
+  "approverActorId": 279566055,
+  "approverLogin": "hotclickdev",
+  "approvalCommentId": null,
+  "verifierCommit": "91242ff1d510ad5b339149a1a06672447f94b62c",
+  "fixture": null,
+  "validity": {
+    "kind": "untilPullMerged",
+    "pullNumber": 555
+  },
+  "trustedReusable": {
+    "path": "hotclickdev/Hot-click-dev/.github/workflows/e4-trusted.yml",
+    "sha": "a1bb1fdfe72360c97e120eeb33842ffabe178d38"
+  },
+  "caller": {
+    "path": ".github/workflows/e4-trusted-caller.yml",
+    "blob": "a3495e66c84f2e319906853326e3e47d0bee77eb"
+  },
+  "gitleaks": {
+    "version": "8.30.1",
+    "sha256": "88f91962aa2f93ac6ab281d553b9e125f5197bbbce38f9f2437f7299c32e5509",
+    "configSha256": "f968fe9f1b7c533209f864beafce8fbf4a7aa25e41a8d8b2d17f65e1881e5252"
+  },
+  "corpusManifestSha256": "9eae88e06385ab7adc919fd21d1b830540e004a6171f06e0a497d0d680bce25a",
+  "checkRunName": "Trusted E4 VEREDICTO / scan",
+  "detectorCommit": "91242ff1d510ad5b339149a1a06672447f94b62c",
+  "testsCheckName": "Trusted E4 tests tocados",
+  "_notes": "P DE PRUEBA r6.2 atada al PR 555 (draft, NUNCA se mergea), mode no-exceptions, ACTIVE solo para acreditar la lectura de P y el paso de modo de W. D detectorCommit=91242ff1d510ad5b339149a1a06672447f94b62c, W trustedReusable.sha=a1bb1fdfe72360c97e120eeb33842ffabe178d38, caller.blob=a3495e66c84f2e319906853326e3e47d0bee77eb, V verifierCommit=D. El run sigue en rojo: scan-config de D no está activo y FIXED_BLOCK sigue activo. Vive solo en el commit huérfano de refs/heads/e4-policy. RETIRO OBLIGATORIO al terminar la prueba: un commit con status RETIRED y cerrar el PR 555 SIN merge (ver RETIRO-P.md)."
+}
