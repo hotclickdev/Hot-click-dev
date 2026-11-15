@@ -73,6 +73,8 @@ class OnvoGateCancelacionVias404Test {
     void setUp() {
         pedido = new Pedido();
         pedido.setId(31L);
+        pedido.setStockReservadoEn(LocalDateTime.now(Constants.ZONA_CR));
+        org.mockito.Mockito.lenient().when(pedidoRepository.findByIdForUpdate(31L)).thenReturn(Optional.of(pedido));
         pedido.setNumeroPedido("ORD-G404");
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         pago = new Pago();
@@ -268,7 +270,7 @@ class OnvoGateCancelacionVias404Test {
         assertThat(liberador(stock).liberarVencidas(1L, LocalDateTime.now(Constants.ZONA_CR))).isZero();
 
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
-        verify(stock, never()).liberarReservas(any());
+        verify(stock, never()).liberarReservasDeGrupoBloqueado(any());
         verify(onvo, never()).obtenerCheckoutSession(anyString());
         verify(onvo, never()).obtenerPaymentIntent(anyString());
     }
@@ -281,7 +283,7 @@ class OnvoGateCancelacionVias404Test {
         StockReservationService stock = mock(StockReservationService.class);
         assertThat(liberador(stock).liberarVencidas(1L, LocalDateTime.now(Constants.ZONA_CR))).isZero();
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_PENDIENTE);
-        verify(stock, never()).liberarReservas(any());
+        verify(stock, never()).liberarReservasDeGrupoBloqueado(any());
     }
 
     @Test
@@ -291,7 +293,7 @@ class OnvoGateCancelacionVias404Test {
         StockReservationService stock = mock(StockReservationService.class);
         assertThat(liberador(stock).liberarVencidas(1L, LocalDateTime.now(Constants.ZONA_CR))).isEqualTo(1);
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_CANCELADO);
-        verify(stock).liberarReservas(pedido);
+        verify(stock).liberarReservasDeGrupoBloqueado(List.of(pedido));
     }
 
     // ── Gate: sesión abierta y requires_confirmation (BAJO) ──────────────────────────────────────────────────────
