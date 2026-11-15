@@ -30,7 +30,7 @@ final class PublicChatSynonymExpander {
     private static final String REGALO = "regalo";
 
     static List<String> expandSynonyms(List<String> terms) {
-        Map<String, List<String>> syn = new HashMap<>(Map.ofEntries(
+        Map<String, List<String>> syn = new HashMap<String, List<String>>(Map.<String, List<String>>ofEntries(
             Map.entry("sala",       List.of(LIVING,"sofa","sala","mueble")),
             Map.entry(LIVING,     List.of("sala","sofa","mueble")),
             Map.entry(COCINA,     List.of("kitchen",COCINA,COMEDOR,"utensilios")),

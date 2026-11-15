@@ -17,6 +17,13 @@ export const PLAN_PRECIOS: Record<ClavePlan, { comisionPct: number }> = {
   NEGOCIO_PLUS: { comisionPct: 6 },
 }
 
+/**
+ * Moneda de los planes sin contradicción: los productos se venden en colones; la mensualidad del plan (precioUsd del
+ * backend, el mismo monto que cobra ONVO) es en dólares. Lo usan /planes y Admin › Planes.
+ */
+export const TEXTO_MONEDA_PLANES =
+  'Tus productos se venden en colones. La mensualidad del plan se cobra en dólares (USD), con tarjeta, por ONVO.'
+
 const miles = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
 export const colones = (n: number) => `₡${miles(n)}`

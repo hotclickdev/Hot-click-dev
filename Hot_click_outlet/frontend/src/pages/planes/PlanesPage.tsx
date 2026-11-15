@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import api from '@/services/api'
-import { PLAN_PRECIOS, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
+import { PLAN_PRECIOS, TEXTO_MONEDA_PLANES, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 
 type PlanApi = {
   nombre: string
@@ -35,7 +35,7 @@ const PLANES: PlanVista[] = [
 type Fila = { etiqueta: string; valor: (p: PlanApi) => string }
 
 const respaldo = (p: PlanApi) => PLAN_PRECIOS[p.nombre as ClavePlan]
-/** USD desde config del backend (precioUsd); el precioMensual en colones ya no se muestra. */
+/** USD desde config del backend (precioUsd, el monto que cobra ONVO); null → «Mensualidad en dólares». Nunca precioMensual (colones). */
 const mensualDe = (p: PlanApi) => (p as { precioUsd?: number | null }).precioUsd ?? null
 const comisionDe = (p: PlanApi) => Number(p.comisionPorcentaje ?? respaldo(p)?.comisionPct ?? 0)
 /** V185: sin mínimo por venta; si un backend viejo manda 700 se ignora. */
@@ -60,7 +60,7 @@ const FILAS: Fila[] = [
 
 const POR_QUE = [
   { titulo: 'Tu tienda sigue siendo tuya', texto: 'Seguí vendiendo en tu local, en tu feria o en tus redes. HotClick suma compradores que hoy no te encuentran.' },
-  { titulo: 'Hecho para Costa Rica', texto: 'Precios en colones, envíos dentro del país y pagos con tarjeta procesados con ONVO.' },
+  { titulo: 'Hecho para Costa Rica', texto: `Envíos dentro del país. ${TEXTO_MONEDA_PLANES}` },
   { titulo: 'Cobrá en persona con la misma cuenta', texto: 'La caja (POS) viene incluida en todos los planes.' },
   { titulo: 'Reglas claras', texto: 'Antes de registrarte ves cuánto pagás de mensualidad y de comisión. No hay costos escondidos.' },
 ]

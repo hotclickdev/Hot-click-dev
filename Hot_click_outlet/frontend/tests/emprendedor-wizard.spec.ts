@@ -277,7 +277,8 @@ test.describe('Wizard conversacional Emprendedor', () => {
     })
   }
 
-  test('cambiar plan: paso 1 elegir plan con mock API', async ({ page }) => {
+  /** Mock de /billing/planes con el contrato actual: precioUsd (config que cobra ONVO) junto al precioMensual legado. */
+  async function abrirCambiarPlan(page: Page, planes: Record<string, unknown>[]) {
     await page.route('**/api/**', async (route: Route) => {
       const path = new URL(route.request().url()).pathname
       if (path.includes('/tenant/info')) {
@@ -292,14 +293,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({
-            success: true,
-            data: [
-              { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0 },
-              { id: 2, nombre: 'PYME', precioMensual: 9900 },
-              { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900 },
-            ],
-          }),
+          body: JSON.stringify({ success: true, data: planes }),
         })
         return
       }
@@ -324,12 +318,42 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await page.goto('/emprendedor/opciones/plan', { waitUntil: 'domcontentloaded' })
     await expect(page.getByText('Paso 1 de 3')).toBeVisible({ timeout: 20_000 })
     await expect(page.getByRole('heading', { name: 'Elegí tu plan' })).toBeVisible()
+  }
+
+  async function elegirPymeYContinuar(page: Page) {
     await expect(page.getByRole('button', { name: 'Mejorar a PYME' })).toBeVisible()
     await page.getByRole('button', { name: 'Mejorar a PYME' }).click()
     await page.getByRole('button', { name: 'Continuar' }).click()
     await expect(page.getByText('Paso 2 de 3')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Confirmá el cambio' })).toBeVisible()
-    await expect(page.getByText('₡9.900/mes').first()).toBeVisible()
+  }
+
+  test('cambiar plan: paso 1 elegir plan con mock API', async ({ page }) => {
+    await abrirCambiarPlan(page, [
+      { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0, precioUsd: 9 },
+      { id: 2, nombre: 'PYME', precioMensual: 9900, precioUsd: 24 },
+      { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900, precioUsd: 49 },
+    ])
+    await expect(page.getByText('US$9/mes').first()).toBeVisible()
+    await expect(page.getByText('Precio de lista').first()).toBeVisible()
+    await expect(page.getByText('US$49/mes').first()).toBeVisible()
+    await elegirPymeYContinuar(page)
+    // La mensualidad es la de ONVO en USD (precioUsd), no los colones legados de precioMensual.
+    await expect(page.getByText('US$24/mes').first()).toBeVisible()
+    await expect(page.getByText(/₡\s?9\.900/)).toHaveCount(0)
+  })
+
+  test('cambiar plan: sin precioUsd no inventa monto ni muestra colones', async ({ page }) => {
+    await abrirCambiarPlan(page, [
+      { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0 },
+      { id: 2, nombre: 'PYME', precioMensual: 9900 },
+      { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900 },
+    ])
+    await elegirPymeYContinuar(page)
+    await expect(page.getByText('Mensualidad en dólares').first()).toBeVisible()
+    await expect(page.getByText(/₡\s?(9\.900|24\.900)/)).toHaveCount(0)
+    await expect(page.getByText(/US\$(9|24|49)\/mes/)).toHaveCount(0)
+    await expect(page.getByText('Precio de lista')).toHaveCount(0)
   })
 
   test('encargos: cotizar abre pasos de respuesta', async ({ page }) => {
