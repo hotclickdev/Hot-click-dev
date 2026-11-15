@@ -39,8 +39,6 @@ class OnvoCapturaServiceTest {
     @Mock PedidoGrupoService pedidoGrupoService;
     @Mock com.hotclick.service.payment.StockReservationService stockReservationService;
     @Mock com.hotclick.service.payment.AvisoReembolsoPendienteService avisoReembolso;
-    @Mock com.hotclick.repository.PedidoRepository pedidoRepository;
-    @Mock jakarta.persistence.EntityManager entityManager;
     @InjectMocks OnvoCapturaService captura;
 
     private Pago pago;
@@ -128,7 +126,7 @@ class OnvoCapturaServiceTest {
         pago.setId(7L);
         pago.setPedido(pedido);
         when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido));
-        when(pedidoRepository.findByIdForUpdate(70L)).thenReturn(Optional.of(pedido));
+        when(pedidoGrupoService.bloquearGrupo(pedido)).thenReturn(List.of(pedido));
         when(pagoRepository.cancelacionSolicitadaEnBase(7L))
             .thenReturn(Optional.of(java.time.LocalDateTime.now(Constants.ZONA_CR)));
 
@@ -162,7 +160,7 @@ class OnvoCapturaServiceTest {
         pago.setId(9L);
         pago.setPedido(pedido);
         when(pedidoGrupoService.delGrupo(pedido)).thenReturn(List.of(pedido));
-        when(pedidoRepository.findByIdForUpdate(90L)).thenReturn(Optional.of(pedido));
+        when(pedidoGrupoService.bloquearGrupo(pedido)).thenReturn(List.of(pedido));
 
         assertThat(captura.registrarCobroSobreCancelacionExplicita(pago, "cancelacion")).isTrue();
         assertThat(pago.getEstadoPago()).isEqualTo(Constants.PAGO_REEMBOLSO_PENDIENTE);

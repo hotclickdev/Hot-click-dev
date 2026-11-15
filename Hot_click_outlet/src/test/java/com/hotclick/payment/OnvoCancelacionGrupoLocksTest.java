@@ -3,14 +3,12 @@ package com.hotclick.payment;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PagoRepository;
-import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.payment.PedidoGrupoService;
 import com.hotclick.service.payment.StockReservationService;
 import com.hotclick.service.suscripcion.LockTimeoutPorFila;
 import com.hotclick.utils.Constants;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +22,6 @@ import org.mockito.quality.Strictness;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,8 +44,6 @@ class OnvoCancelacionGrupoLocksTest {
     @Mock PaymentService paymentService;
     @Mock PedidoGrupoService pedidoGrupoService;
     @Mock StockReservationService stockReservationService;
-    @Mock PedidoRepository pedidoRepository;
-    @Mock EntityManager entityManager;
     @Mock LockTimeoutPorFila lockTimeout;
     @InjectMocks OnvoCapturaService captura;
 
@@ -76,11 +71,11 @@ class OnvoCancelacionGrupoLocksTest {
         pago.setMerchantToken("cs_1");
         pago.setPedido(p1);
         when(webhookEventRepository.existsByMerchantTokenAndEventoTipo(anyString(), anyString())).thenReturn(false);
-        when(pedidoRepository.findByGrupoPagoForUpdateOrderById("grp-1")).thenReturn(List.of(p1, p2, p3));
+        when(pedidoGrupoService.bloquearGrupo(p1)).thenReturn(List.of(p1, p2, p3));
     }
 
     @Test
-    @DisplayName("orden: timeout → flush → lock pedidos por grupo → refresh → UN lock de productos → CANCELADO; sin liberarReservas")
+    @DisplayName("orden: timeout → bloquearGrupo (pedidos por id) → UN lock de productos → CANCELADO; sin liberarReservas")
     void ordenDeLlamadas() {
         // Aserto de orden: al liberar, ningún pedido está cancelado todavía (las escrituras van después).
         org.mockito.Mockito.doAnswer(inv -> {
@@ -90,13 +85,9 @@ class OnvoCancelacionGrupoLocksTest {
 
         assertThat(captura.registrarCobroSobreCancelacionExplicita(pago, "cancelacion")).isTrue();
 
-        InOrder o = inOrder(lockTimeout, entityManager, pedidoRepository, stockReservationService);
+        InOrder o = inOrder(lockTimeout, pedidoGrupoService, stockReservationService);
         o.verify(lockTimeout).aplicar();
-        o.verify(entityManager).flush();
-        o.verify(pedidoRepository).findByGrupoPagoForUpdateOrderById("grp-1");
-        o.verify(entityManager).refresh(p1);
-        o.verify(entityManager).refresh(p2);
-        o.verify(entityManager).refresh(p3);
+        o.verify(pedidoGrupoService).bloquearGrupo(p1);
         o.verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(p1, p2));
         verify(stockReservationService, org.mockito.Mockito.times(1)).liberarReservasDeGrupoBloqueado(any());
         verify(stockReservationService, never()).liberarReservas(any());
@@ -119,33 +110,6 @@ class OnvoCancelacionGrupoLocksTest {
     }
 
     @Test
-    @DisplayName("sin grupo bloquea solo el pedido por id")
-    void sinGrupo() {
-        Pedido solo = pedido(9, Constants.PEDIDO_PENDIENTE, true);
-        solo.setGrupoPago(null);
-        pago.setPedido(solo);
-        when(pedidoRepository.findByIdForUpdate(9L)).thenReturn(Optional.of(solo));
-
-        captura.registrarCobroSobreCancelacionExplicita(pago, "cancelacion");
-
-        verify(pedidoRepository, never()).findByGrupoPagoForUpdateOrderById(any());
-        verify(stockReservationService).liberarReservasDeGrupoBloqueado(List.of(solo));
-        assertThat(solo.getEstadoPedido()).isEqualTo(Constants.PEDIDO_CANCELADO);
-    }
-
-    @Test
-    @DisplayName("fail-closed: pedido base ausente del lock → excepción, sin liberar ni cancelar")
-    void pedidoAusenteAborta() {
-        when(pedidoRepository.findByGrupoPagoForUpdateOrderById("grp-1")).thenReturn(List.of(p2, p3));
-
-        assertThatThrownBy(() -> captura.registrarCobroSobreCancelacionExplicita(pago, "cancelacion"))
-            .isInstanceOf(IllegalStateException.class);
-
-        verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
-        assertThat(p2.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE_APROBACION);
-    }
-
-    @Test
     @DisplayName("sin catch genérico: si la liberación falla se propaga y ningún pedido queda CANCELADO ni el pago en reembolso")
     void falloSePropaga() {
         doThrow(new IllegalStateException("boom")).when(stockReservationService).liberarReservasDeGrupoBloqueado(any());
@@ -159,15 +123,15 @@ class OnvoCancelacionGrupoLocksTest {
     }
 
     @Test
-    @DisplayName("un lock_timeout/deadlock del lock de pedidos se propaga (sin reintentos locales): una sola consulta")
+    @DisplayName("un lock_timeout/deadlock al bloquear el grupo se propaga (sin reintentos locales): una sola llamada")
     void sinReintentosLocales() {
-        when(pedidoRepository.findByGrupoPagoForUpdateOrderById("grp-1"))
+        when(pedidoGrupoService.bloquearGrupo(p1))
             .thenThrow(new org.springframework.dao.CannotAcquireLockException("lock timeout"));
 
         assertThatThrownBy(() -> captura.registrarCobroSobreCancelacionExplicita(pago, "cancelacion"))
             .isInstanceOf(org.springframework.dao.CannotAcquireLockException.class);
 
-        verify(pedidoRepository, org.mockito.Mockito.times(1)).findByGrupoPagoForUpdateOrderById("grp-1");
+        verify(pedidoGrupoService, org.mockito.Mockito.times(1)).bloquearGrupo(p1);
         verify(stockReservationService, never()).liberarReservasDeGrupoBloqueado(any());
     }
 }
