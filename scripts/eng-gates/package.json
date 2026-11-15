@@ -1,0 +1,13 @@
+{
+  "name": "hotclick-eng-gates",
+  "private": true,
+  "type": "module",
+  "description": "Parsers y tests de los eng-gates. java-parser (prettier-java/JHipster) con lodash parcheado.",
+  "dependencies": {
+    "java-parser": "3.0.1"
+  },
+  "overrides": {
+    "lodash": "4.18.1",
+    "lodash-es": "4.18.1"
+  }
+}

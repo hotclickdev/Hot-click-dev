@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describeSecretLine, loadExceptionRegistry, matchSecretException } from './e4-secret-exceptions.mjs';
 
 export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const MIGRATION_DIR = 'Hot_click_outlet/src/main/resources/db/migration';
@@ -436,8 +437,26 @@ export function isDocsAuditPath(filePath) {
   return /\/docs\//.test(n) || /\.md$/i.test(n);
 }
 
-export function scanCommitBlockers({ changedFiles, diffText }) {
+/**
+ * @param {object} opts
+ * @param {object} [opts.fileTexts] ruta → texto exacto de HEAD (string o { text }); sin él, ninguna excepción E4 aplica.
+ * @param {Function} [opts.parse] parser Java establecido (java-parser) para verificar la constante; sin él, fail-closed.
+ * @param {Function|null} [opts.approvalVerifier] fuente de aprobación independiente; por defecto ninguna (fail-closed).
+ * @param {string} [opts.prAuthor] autor del PR (rechazo de autoaprobación).
+ * @param {object[]} [opts.audit] recibe un registro por cada hallazgo de secreto evaluado contra excepciones.
+ */
+export function scanCommitBlockers({
+  changedFiles, diffText, secretExceptions, now, fileTexts: fileTextsOpt, parse, approvalVerifier, prAuthor, audit,
+} = {}) {
   const findings = [];
+  const secretRegistry = loadExceptionRegistry(secretExceptions);
+  const exceptionNow = now || new Date();
+  const fileTexts = fileTextsOpt || {};
+  const textOf = (path) => {
+    const rec = fileTexts[path];
+    if (typeof rec === 'string') return rec;
+    return typeof rec?.text === 'string' ? rec.text : undefined;
+  };
   for (const file of changedFiles || []) {
     const normalized = file.replaceAll('\\', '/');
     if (isSelfScanPath(normalized)) continue;
@@ -478,12 +497,33 @@ export function scanCommitBlockers({ changedFiles, diffText }) {
       }
       if (SECRET_RE.test(line) && !/\.example$/.test(file.path)) {
         SECRET_RE.lastIndex = 0;
-        findings.push({
-          id: 'secret',
-          path: file.path,
-          title: 'Posible secreto en el diff',
-          snippet: redactSecrets(line).trim().slice(0, 160),
-        });
+        const described = describeSecretLine(line);
+        const match = described.ok
+          ? { ...described, path: file.path }
+          : null;
+        const decision = match
+          ? matchSecretException({
+            registry: secretRegistry,
+            match,
+            now: exceptionNow,
+            fileText: textOf(file.path),
+            parse,
+            verifyApproval: approvalVerifier,
+            prAuthor,
+          })
+          : { suppress: false, audit: null };
+        if (Array.isArray(audit) && decision.audit) audit.push(decision.audit);
+        if (!decision.suppress) {
+          findings.push({
+            id: 'secret',
+            path: file.path,
+            title: 'Posible secreto en el diff',
+            snippet: redactSecrets(line).trim().slice(0, 160),
+            exception: decision.pendingReview
+              ? { status: 'pending', ...decision.pendingReview }
+              : undefined,
+          });
+        }
       }
       SECRET_RE.lastIndex = 0;
     }

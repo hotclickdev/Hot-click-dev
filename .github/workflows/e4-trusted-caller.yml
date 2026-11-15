@@ -1,0 +1,39 @@
+# PLANTILLA NO INSTALADA. Caller en el PR: job e4 (reusable de confianza) + job de tests SIN
+# privilegios (Maven/pnpm del head; nunca es el verificador). Su blob exacto se fija en la
+# política (caller.blob); cualquier edición o renombre => origen inválido o check de tests ausente
+# (testsCheckName) => rojo en el cierre. El job de tests depende de e4 (plan de D) y no recibe token.
+# a1bb1fdfe72360c97e120eeb33842ffabe178d38 sin sustituir hace que GitHub rechace el workflow (fail-closed): `uses` no admite expresiones.
+name: Trusted E4 caller
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  e4:
+    name: Trusted E4 VEREDICTO
+    uses: hotclickdev/Hot-click-dev/.github/workflows/e4-trusted.yml@a1bb1fdfe72360c97e120eeb33842ffabe178d38
+  tests:
+    name: Trusted E4 tests tocados   # = policy.testsCheckName (nombre estable)
+    needs: e4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions: {}
+    env:
+      JAVA_TESTS: ${{ needs.e4.outputs.java_tests }}
+      RUN_FE: ${{ needs.e4.outputs.fe }}
+    # C3: setup-java y setup-node fijados por SHA (verificados con git ls-remote contra el tag oficial).
+    # Pendiente aparte: Maven/corepack reproducibles.
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with: { ref: "${{ github.event.pull_request.head.sha }}", persist-credentials: false }
+      - uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5.3.0
+        with: { distribution: temurin, java-version: "21" }
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with: { node-version: "22", package-manager-cache: false }
+      - name: tests tocados (código del head, sin token ni secretos)
+        run: |
+          set -euo pipefail
+          if [ -n "$JAVA_TESTS" ]; then (cd Hot_click_outlet && ../maven/bin/mvn -B -q -Dtest="$JAVA_TESTS" -Dsurefire.failIfNoSpecifiedTests=true test); fi
+          if [ "$RUN_FE" = "true" ]; then (cd Hot_click_outlet/frontend && corepack pnpm install --frozen-lockfile --ignore-scripts && corepack pnpm test -- --run); fi
