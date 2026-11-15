@@ -370,8 +370,8 @@ public class StockReservationService {
             Producto producto = porId.get(id);
             if (Boolean.TRUE.equals(producto.getEsPersonalizado())) continue; // nunca reservó stock
             int reservado = producto.getStockReservado() == null ? 0 : producto.getStockReservado();
+            // SCALE1: producto managed (findAllByIdsForUpdate, misma TX); dirty checking persiste en el flush, sin save por ítem.
             producto.setStockReservado((int) Math.max(0L, reservado - cantidades.get(id)));
-            productoRepository.save(producto);
         }
         limpiarMarcas(pedidos);
         log.info("Reservas liberadas en lote para {} pedidos del grupo ({} productos)", pedidos.size(), ids.size());

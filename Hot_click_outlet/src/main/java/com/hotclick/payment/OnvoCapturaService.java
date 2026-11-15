@@ -171,11 +171,11 @@ public class OnvoCapturaService {
         pagoBloqueado.setEstadoPago(Constants.PAGO_REEMBOLSO_PENDIENTE);
         pagoBloqueado.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         if (avisoReembolso != null) avisoReembolso.registrarPendiente(pagoBloqueado);
-        pagoRepository.save(pagoBloqueado);
+        // SCALE1: pago (bloqueado FOR UPDATE por quien llama) y evento (persistido en registrar()) están managed en
+        // esta TX MANDATORY; el dirty checking los escribe en el flush del commit, sin save explícito.
         evento.setProcesado(true);
         evento.setProcesadoEn(LocalDateTime.now(Constants.ZONA_CR));
         evento.setErrorProcesamiento("Cobro de ONVO sobre cancelación explícita: reembolso pendiente");
-        webhookEventRepository.save(evento);
         log.error("[ALERTA-PAGO] ONVO cobró un pedido que se pidió cancelar; queda para reembolso del admin: sessionId={}",
             OnvoService.enmascarar(sesion));
         return true;
