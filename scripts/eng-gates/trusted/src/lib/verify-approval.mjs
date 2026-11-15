@@ -10,6 +10,7 @@ export function expectedApprovalBody(policy) {
 // live = { rest: {status, json}, gql: {ok, json}, pull: {status, json}, now: ISO }
 export function verifyApproval(policy, live) {
   const r = [];
+  if (policy?.mode !== 'live-exception') return verdict(['approval: mode != live-exception (en no-exceptions no hay aprobación)']); // r6.1
   if (!live || !live.rest || !live.gql || !live.pull) return verdict(['approval: lecturas en vivo ausentes']);
   const { rest, gql } = live;
   if (rest.status === 404) return verdict(['approval: comentario original borrado o inexistente (= revocado)']);

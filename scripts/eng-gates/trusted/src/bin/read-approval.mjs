@@ -5,7 +5,7 @@
 import { writeFileSync } from 'node:fs';
 import { loadPolicyAsData } from '../lib/policy-source.mjs';
 import { verifyPolicy } from '../lib/verify-policy.mjs';
-import { fetchApprovalRaw } from '../lib/approval-live.mjs';
+import { fetchApprovalRaw, NO_APPROVAL_REASON } from '../lib/approval-live.mjs';
 import { readOnlyClient } from '../lib/github-read.mjs';
 import { isMain, runMain } from '../lib/cli.mjs';
 
@@ -13,6 +13,7 @@ export async function readApproval(a, client) {
   const P = loadPolicyAsData(a['policy-git'], a['policy-commit'], {});
   const pv = verifyPolicy(P.policy);
   if (!pv.ok) return { ok: false, reasons: pv.reasons };
+  if (P.policy.mode !== 'live-exception') return { ok: false, reasons: [NO_APPROVAL_REASON] }; // r6.1 (d): en no-exceptions el lector no lee nada
   const raw = await fetchApprovalRaw(P.policy, client);
   return { ok: true, raw };
 }

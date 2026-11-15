@@ -11,7 +11,8 @@
 // - Sin Maven/pnpm/tests: el plan (javaTests/FE) se publica en la procedencia y los tests corren
 //   en el job NO privilegiado del caller; su check es obligatorio en el cierre.
 // - Corpus: bloqueos E4 esperados del manifiesto se clasifican (classifyE4).
-// - Excepción: solo con aprobación EN VIVO OK (readApprovalLive) y huella+blob de P exactos.
+// - Excepción: solo en mode live-exception, con aprobación EN VIVO OK (readApprovalLive) y huella+blob de P exactos.
+// - r6.1: mode no-exceptions => applyLiveException NO se invoca en el camino del escaneo; ningún bloqueo 'secret' se quita.
 import { mkdirSync, writeFileSync, rmSync, symlinkSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -57,6 +58,8 @@ export function buildOverlay({ gitDir, head, detectorDir, detectorCommit, limits
 // Excepción del fixture: suprime EXACTAMENTE un bloqueo 'secret' del fixture si todo coincide.
 export function applyLiveException({ blockers, secretAudit, policy, approval, treeByPath, head }) {
   const reasons = [];
+  // r6.1 (a): en no-exceptions NINGUNA excepción aplica, ni forzando la llamada con el registro de D en approved y un verificador honesto.
+  if (policy?.mode !== 'live-exception') return { applied: false, reasons: ['excepción: mode != live-exception (no-exceptions: ninguna excepción puede quitar un bloqueo)'], blockers };
   if (!policy || policy.candidateHeadSha !== head) reasons.push('excepción: head escaneado != candidateHeadSha de P');
   const fx = policy?.fixture;
   if (!approval || approval.ok !== true) reasons.push(`excepción: aprobación en vivo no OK (${approval == null ? 'null' : (approval.reasons ?? []).join('; ')})`);
@@ -104,7 +107,8 @@ export async function stageE4Full({ gitDir, base, head, manifest, detectorDir, d
     const nonCorpus = analysis.blockers.filter((b) => !corpusC.corpus.includes(b));
     // Todo motivo de classifyE4 que no sea 'bloqueo de producto' (manifiesto inválido, esperado ausente) falla.
     const corpusMissing = corpusC.reasons.filter((r) => !r.startsWith('e4: bloqueo ') || r.includes('esperado ausente'));
-    const exc = (nonCorpus.some((b) => b.id === 'secret' && b.path === policy?.fixture?.path))
+    // r6.1: applyLiveException SOLO se invoca en live-exception; en no-exceptions todo bloqueo (también 'secret') se conserva.
+    const exc = (policy?.mode === 'live-exception' && nonCorpus.some((b) => b.id === 'secret' && b.path === policy?.fixture?.path))
       ? applyLiveException({ blockers: nonCorpus, secretAudit: analysis.secretAudit, policy, approval, treeByPath, head })
       : { applied: false, reasons: [], blockers: nonCorpus };
     const remaining = exc.blockers;

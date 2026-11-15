@@ -29,5 +29,10 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Instalar parser Java de eng-gates
+        # Lockfile con integridad; sin scripts de instalación (ningún paquete los declara).
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/eng-gates
+
+
       - name: Unit tests de los gates
         run: node --test scripts/eng-gates/*.test.mjs

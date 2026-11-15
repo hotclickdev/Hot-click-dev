@@ -25,10 +25,14 @@ function complete(pages, field, label, r) {
   return all;
 }
 
-export function verifyOrigin(policy, data) {
+// r6.1: `headArg` = head contra el que se cierra (--head en no-exceptions). Sin headArg, solo live-exception (candidateHeadSha de P).
+// TODO lo que deba coincidir con ese head (PR vivo, runs, attempts, jobs, checks) se compara contra `head`.
+export function verifyOrigin(policy, data, headArg) {
   const r = [];
   if (!data) return verdict(['origin: datos ausentes']);
-  const head = policy.candidateHeadSha, repo = policy.repository;
+  const head = headArg ?? (policy.mode === 'live-exception' ? policy.candidateHeadSha : null), repo = policy.repository;
+  if (!/^[0-9a-f]{40}$/.test(head ?? '')) return verdict(['origin: head de cierre ausente o inválido']);
+  if (policy.mode === 'live-exception' && head !== policy.candidateHeadSha) return verdict(['origin: head != candidateHeadSha de P (live-exception)']);
   const crUrl = (id) => `https://api.github.com/repos/${repo}/check-runs/${id}`;
   if (data.prLive?.number !== policy.pullNumber) r.push('origin: PR vivo no coincide');
   if (data.prLive?.head_sha !== head) r.push('origin: head vivo del PR != SHA candidato (head movido)');

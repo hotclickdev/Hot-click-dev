@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "__UNSET__",
-  "gitleaks": { "version": "8.30.1", "sha256": "__UNSET__", "configSha256": "__UNSET__" },
-  "corpusManifestSha256": "__UNSET__",
-  "_notes": "Configuración del ESCANEO (vive en D). No contiene head, aprobación ni el propio commit D (sería autorreferencia irrealizable): D lo fija W (DETECTOR_SHA) y se verifica con git. Plantilla NO activa: todo UNSET => exit 2."
+  "gitleaks": { "version": "8.30.1", "sha256": "88f91962aa2f93ac6ab281d553b9e125f5197bbbce38f9f2437f7299c32e5509", "configSha256": "f968fe9f1b7c533209f864beafce8fbf4a7aa25e41a8d8b2d17f65e1881e5252" },
+  "corpusManifestSha256": "9eae88e06385ab7adc919fd21d1b830540e004a6171f06e0a497d0d680bce25a",
+  "_notes": "Configuración del ESCANEO (vive en D). r6.2: pines de gitleaks (binario 8.30.1 y gitleaks-trusted.toml) y corpusManifestSha256 (manifiesto actual, AÚN con expectedFindings/expectedE4 __UNSET__) rellenados con valores derivados; coherentes con p-de-prueba/e4-policy.json. status sigue __UNSET__ hasta que Seguridad dé el manifiesto definitivo (si el manifiesto cambia, corpusManifestSha256 cambia). No contiene head, aprobación ni el propio commit D (sería autorreferencia irrealizable): D lo fija W (DETECTOR_SHA) y se verifica con git. Con status __UNSET__ => exit 2 (fail-closed)."
 }

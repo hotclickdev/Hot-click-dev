@@ -13,7 +13,11 @@ export const MAX_RAW_AGE_MS = 15 * 60 * 1000;
 export const canon = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((y) => [y, x[y]])) : x));
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 
+// r6.1 (a)/(d): la aprobación en vivo SOLO existe en live-exception. En no-exceptions no se lee, no se evalúa ni se acepta.
+export const NO_APPROVAL_REASON = 'approval: mode != live-exception (en no-exceptions no hay lector ni aprobación)';
+
 export async function fetchApprovalRaw(policy, client, now = new Date().toISOString()) {
+  if (policy?.mode !== 'live-exception') throw new Error(NO_APPROVAL_REASON);
   const rest = await client.get(`/repos/${policy.repository}/issues/comments/${policy.approvalCommentId}`);
   // PR (solo GET): la vigencia es "hasta mergear" sobre el head exacto; se lee siempre, también si el comentario falla.
   const pull = await client.get(`/repos/${policy.repository}/pulls/${policy.pullNumber}`);
@@ -26,6 +30,7 @@ export async function fetchApprovalRaw(policy, client, now = new Date().toISOStr
 export function evaluateApproval(policy, raw, now = new Date().toISOString()) {
   const pv = verifyPolicy(policy);
   if (!pv.ok) return { ok: false, reasons: pv.reasons };
+  if (policy.mode !== 'live-exception') return { ok: false, reasons: [NO_APPROVAL_REASON] };
   if (!raw || raw.schemaVersion !== 1 || raw.commentId !== policy.approvalCommentId) return { ok: false, reasons: ['approval: lectura en vivo ausente o de otro comentario'] };
   const age = Date.parse(now) - Date.parse(raw.fetchedAt);
   const r = [];
@@ -40,6 +45,7 @@ export function evaluateApproval(policy, raw, now = new Date().toISOString()) {
 export async function readApprovalLive(policy, client, now = new Date().toISOString()) {
   const pv = verifyPolicy(policy);
   if (!pv.ok) return { ok: false, reasons: pv.reasons };
+  if (policy.mode !== 'live-exception') return { ok: false, reasons: [NO_APPROVAL_REASON] };
   let raw;
   try { raw = await fetchApprovalRaw(policy, client, now); } catch (e) { return { ok: false, reasons: [`approval: error de lectura (${e.message})`] }; }
   return { ...evaluateApproval(policy, raw, now), raw };

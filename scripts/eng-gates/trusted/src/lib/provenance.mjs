@@ -10,13 +10,14 @@ const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 
 export function buildProvenance(x) {
   const body = { schemaVersion: 1, head: x.head, base: x.base, detectorCommit: x.detectorCommit, policyCommit: x.policyCommit, policyBlob: x.policyBlob,
-    policySha256: x.policySha256, manifestSha256: x.manifestSha256, approval: x.approval ? { ok: x.approval.ok === true, commentId: x.approval.commentId ?? null, responsesSha256: x.approval.responsesSha256 ?? null } : null,
+    policySha256: x.policySha256, manifestSha256: x.manifestSha256, mode: x.mode ?? null, approval: x.approval ? { ok: x.approval.ok === true, commentId: x.approval.commentId ?? null, responsesSha256: x.approval.responsesSha256 ?? null } : null,
     stages: (x.stages ?? []).map((s) => ({ stage: s.stage, ran: s.ran === true, ok: s.ok === true })), e4: x.e4 ?? null, fixedBlock: x.fixedBlock ?? null, ok: x.ok === true };
   return { ...body, digest: sha256(canon(body)) };
 }
 export const annotationLine = (prov) => `::notice title=${PROV_TITLE}::${JSON.stringify(prov)}`;
 
-// exp = { head, detectorCommit, policyCommit, policyBlob, policySha256, manifestSha256, commentId, exceptionRequired }
+// exp = { head, detectorCommit, policyCommit, policyBlob, policySha256, manifestSha256, mode, commentId, exceptionRequired }
+// r6.1: la procedencia lleva `mode` y el head que se cierra (exp.head: --head en no-exceptions, candidateHeadSha en live-exception).
 export function verifyProvenance(annotationsPages, exp) {
   const r = [];
   if (!Array.isArray(annotationsPages) || annotationsPages.some((p) => !Array.isArray(p) )) return ['provenance: anotaciones ilegibles (error/paginación => fail-closed)'];
@@ -32,6 +33,8 @@ export function verifyProvenance(annotationsPages, exp) {
   if (st.length !== REQUIRED_STAGES.length) r.push('provenance: etapas extra/duplicadas');
   if (p?.fixedBlock !== null) r.push('provenance: bloqueo fijo presente');
   if (p?.ok !== true) r.push('provenance: escaneo no OK');
+  if (p?.mode !== exp.mode) r.push('provenance: mode distinto del de P');
+  if (exp.mode === 'no-exceptions' && (p?.approval !== null || p?.e4?.exception !== null)) r.push('provenance: no-exceptions con aprobación o excepción registrada');
   if (exp.exceptionRequired) {
     if (p?.approval?.ok !== true || p?.approval?.commentId !== exp.commentId) r.push('provenance: aprobación no OK en el escaneo');
     if (p?.e4?.exception?.commentId !== exp.commentId) r.push('provenance: excepción no registrada');
