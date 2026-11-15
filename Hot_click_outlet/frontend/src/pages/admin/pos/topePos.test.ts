@@ -37,4 +37,13 @@ describe('tope de líneas del POS', () => {
     expect(r).toHaveLength(MAX_LINEAS_CARRITO)
     expect(r.find(i => i.id === 3)?.cantidad).toBe(2)
   })
+
+  it('excedeTopeLineasPos: con el carrito lleno, un producto que ya está en el carrito NO excede', () => {
+    const prev = carrito(MAX_LINEAS_CARRITO)
+    expect(excedeTopeLineasPos(prev, { id: 3, nombre: 'P3', precioVenta: 100 } as never)).toBe(false)
+  })
+
+  it('excedeTopeLineasPos: con una línea menos que el tope, un producto nuevo no excede', () => {
+    expect(excedeTopeLineasPos(carrito(MAX_LINEAS_CARRITO - 1), { id: 999, nombre: 'X', precioVenta: 1 } as never)).toBe(false)
+  })
 })
