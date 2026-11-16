@@ -38,6 +38,8 @@ class PedidoControllerCatalogoIdorTest {
     private MockMvc mvc;
     private PedidoService pedidoService;
     private CompanyScope scope;
+    private ProductoRepository repo;
+    private EmpresaRepository empresaRepo;
 
     private static Producto producto(Long id, Long empresaId, int venta, int compra) {
         Empresa e = new Empresa();
@@ -75,7 +77,7 @@ class PedidoControllerCatalogoIdorTest {
         when(empresaRepo.findById(NEGOCIO_A)).thenReturn(Optional.of(empresaA));
 
         scope = mock(CompanyScope.class);
-        when(scope.getCurrentEmpresaIdOrOwn()).thenReturn(NEGOCIO_A);
+        when(scope.requireEmpresaIdOrAdmin()).thenReturn(NEGOCIO_A);
         pedidoService = mock(PedidoService.class);
         when(pedidoService.crearPedido(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -84,7 +86,10 @@ class PedidoControllerCatalogoIdorTest {
         ReflectionTestUtils.setField(c, "pedidoService", pedidoService);
         ReflectionTestUtils.setField(c, "productoRepository", repo);
         ReflectionTestUtils.setField(c, "empresaRepository", empresaRepo);
-        mvc = MockMvcBuilders.standaloneSetup(c).build();
+        mvc = MockMvcBuilders.standaloneSetup(c)
+            .setControllerAdvice(new com.hotclick.config.GlobalExceptionHandler()).build();
+        this.repo = repo;
+        this.empresaRepo = empresaRepo;
     }
 
     private MvcResult crear(Long productoId) throws Exception {
@@ -119,9 +124,31 @@ class PedidoControllerCatalogoIdorTest {
     @Test
     @DisplayName("ADMIN de plataforma (empresa del scope null) conserva el catálogo global")
     void adminPlataforma_ve_catalogoGlobal() throws Exception {
-        when(scope.getCurrentEmpresaIdOrOwn()).thenReturn(null);
+        when(scope.requireEmpresaIdOrAdmin()).thenReturn(null);
         MvcResult r = crear(PRODUCTO_DE_B);
         assertThat(r.getResponse().getStatus()).isEqualTo(200);
         verify(pedidoService).crearPedido(any());
+    }
+
+    @Test
+    @DisplayName("EMPRENDEDOR sin empresa (require lanza) → 403, sin pedido y sin findById global")
+    void sinEmpresa_403_sinPedidoNiCatalogoGlobal() throws Exception {
+        when(scope.requireEmpresaIdOrAdmin()).thenThrow(new com.hotclick.exception.EmpresaRequeridaException());
+        MvcResult r = crear(PRODUCTO_DE_B);
+        assertThat(r.getResponse().getStatus()).isEqualTo(403);
+        assertThat(r.getResponse().getContentAsString()).doesNotContain("777");
+        verify(pedidoService, never()).crearPedido(any());
+        verify(repo, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("Id de scope sin fila Empresa → rechazo (fail-closed), no 200 con datos ajenos ni catálogo global")
+    void empresaNoCarga_rechazo_noFallaAbierto() throws Exception {
+        when(scope.requireEmpresaIdOrAdmin()).thenReturn(5L); // 5 no existe en empresaRepo
+        MvcResult r = crear(PRODUCTO_DE_B);
+        assertThat(r.getResponse().getStatus()).isEqualTo(403);
+        assertThat(r.getResponse().getContentAsString()).doesNotContain("777");
+        verify(pedidoService, never()).crearPedido(any());
+        verify(repo, never()).findById(any());
     }
 }
