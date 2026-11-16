@@ -52,6 +52,11 @@ public class SuscripcionBillingService {
         Empresa empresa = empresaRepo.findById(empresaId)
             .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
+        // QA final 15-nov: un negocio sin aprobar no recibe trial; falla cerrado antes de tocar nada, como cambiar-plan.
+        if (com.hotclick.exception.EmpresaPendienteAprobacionException.ESTADO.equals(empresa.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.EmpresaPendienteAprobacionException();
+        }
+
         Optional<Suscripcion> existente = suscripcionRepo.findActivaByEmpresaId(empresaId);
         if (existente.isPresent()) {
             return existente.get();
@@ -235,8 +240,20 @@ public class SuscripcionBillingService {
         Empresa empresa = sub.getEmpresa();
         String nombre = nombrePlan(sub, empresa);
         boolean cobroExterno = idPresente(sub.getOnvoSubscriptionId()) || idPresente(sub.getStripeSubscriptionId());
+        // QA final U1c-c: trial ONVO con tarjeta. La reconciliación deja la sub ACTIVO con la factura $0 del trial,
+        // pero trial_end sigue en el futuro y todavía no hubo ningún cobro real: se cancela por el camino normal
+        // (cancelarPorNegocio en ONVO), no por solicitud. Un plan cobrado de verdad ya pasó su trial_end.
+        if (enTrialSinCobro(sub)) return false;
         return SuscripcionOnvoChangeService.cancelacionDePlanPagado(
             nombre, sub.getEstado(), empresa == null ? null : empresa.getEstadoPlan(), cobroExterno);
+    }
+
+    /** Sub ONVO/Stripe con trial_end futuro (hora CR): el período en curso es el trial, sin cobro real. */
+    static boolean enTrialSinCobro(Suscripcion sub) {
+        LocalDate fin = sub.getTrialEnd();
+        return fin != null && fin.isAfter(LocalDate.now(Constants.ZONA_CR))
+            && (idPresente(sub.getOnvoSubscriptionId()) || idPresente(sub.getStripeSubscriptionId()))
+            && !"PAST_DUE".equalsIgnoreCase(sub.getEstado());
     }
 
     private static String nombrePlan(Suscripcion sub, Empresa empresa) {
