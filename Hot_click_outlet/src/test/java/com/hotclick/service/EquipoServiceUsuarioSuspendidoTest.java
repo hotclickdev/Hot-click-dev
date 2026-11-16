@@ -58,7 +58,7 @@ class EquipoServiceUsuarioSuspendidoTest {
         existente.setCorreo("susp@test.cr");
         existente.setEstado(estado);
         when(usuarioRepository.findByCorreo("susp@test.cr")).thenReturn(Optional.of(existente));
-        equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "x", "00000000", "LECTOR");
+        equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "00000000", "LECTOR");
     }
 
     @Test
@@ -68,7 +68,7 @@ class EquipoServiceUsuarioSuspendidoTest {
             .isInstanceOf(IllegalArgumentException.class);
         verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
         verify(usuarioRepository, never()).save(any(Usuario.class));
-        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), any());
+        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test
@@ -94,12 +94,12 @@ class EquipoServiceUsuarioSuspendidoTest {
         existente.setEstado(Constants.ESTADO_ELIMINADO);
         when(usuarioRepository.findByCorreo("susp@test.cr")).thenReturn(Optional.of(existente));
 
-        assertThatThrownBy(() -> equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "x", "00000000", "LECTOR"))
+        assertThatThrownBy(() -> equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "00000000", "LECTOR"))
             .isInstanceOf(IllegalArgumentException.class);
 
         verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
         verify(usuarioRepository, never()).save(any(Usuario.class));
-        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), any());
+        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
         org.assertj.core.api.Assertions.assertThat(existente.getRoles()).isNullOrEmpty();
         org.assertj.core.api.Assertions.assertThat(existente.getEmpresa()).isNull();
         org.assertj.core.api.Assertions.assertThat(existente.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);

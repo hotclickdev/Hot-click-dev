@@ -16,6 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EmailVerificationService {
 
+    static final String MSG_CUENTA_NO_ENCONTRADA = "No se encontró una cuenta para ese correo";
+
+    private static boolean esVacio(String s) {
+        return s == null || s.isBlank();
+    }
+
     @Autowired private OtpService otpService;
     @Autowired private UsuarioService usuarioService;
 
@@ -38,7 +44,13 @@ public class EmailVerificationService {
             } else if (pendiente.getEstado() != null && pendiente.getEstado() == Constants.ESTADO_ACTIVO) {
                 throw new IllegalArgumentException("El correo ya está registrado");
             } else {
-                // Cuenta existe pero está PENDIENTE → reenviar código
+                // Cuenta existe pero está PENDIENTE → reenviar código. Si quedó sin hash (alta anterior al
+                // chequeo de contraseña), se guarda el hash nuevo (ya viene BCrypt desde el handler); nunca se
+                // sobrescribe un hash existente, así quien reinicia el alta ajena no cambia su contraseña.
+                if (esVacio(pendiente.getContrasenaHash()) && !esVacio(usuario.getContrasenaHash())) {
+                    pendiente.setContrasenaHash(usuario.getContrasenaHash());
+                    usuarioService.guardar(pendiente);
+                }
                 otpService.enviarOtp(pendiente, Constants.OTP_TIPO_REGISTRO);
                 return;
             }
@@ -54,7 +66,7 @@ public class EmailVerificationService {
     @Transactional
     public Usuario verificarYRegistrar(String correo, String codigoPlano) {
         Usuario usuario = usuarioService.buscarPorCorreo(correo.trim().toLowerCase(Locale.ROOT))
-                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró una cuenta para ese correo"));
+                .orElseThrow(() -> new RecursoNoEncontradoException(MSG_CUENTA_NO_ENCONTRADA));
 
         if (usuario.getEstado() != null && usuario.getEstado() == Constants.ESTADO_ACTIVO) {
             throw new IllegalStateException("La cuenta ya está verificada. Podés iniciar sesión.");
@@ -62,7 +74,8 @@ public class EmailVerificationService {
 
         // Cuenta sin credencial (alta anterior al chequeo de contraseña): no se activa ni emite token.
         if (usuario.getContrasenaHash() == null || usuario.getContrasenaHash().isBlank()) {
-            throw new IllegalStateException("No se pudo completar el registro. Iniciá el registro de nuevo.");
+            // Mismo mensaje que cuenta inexistente: no revela que la cuenta existe ni que le falta hash.
+            throw new RecursoNoEncontradoException(MSG_CUENTA_NO_ENCONTRADA);
         }
 
         CodigoOtp otp = otpService.verificarOtp(usuario, Constants.OTP_TIPO_REGISTRO, codigoPlano);

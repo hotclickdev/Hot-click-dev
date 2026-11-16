@@ -119,6 +119,7 @@ public class WebAuthnController {
             auth.setEmpresaSlug(empresaSlug);
             auth.setEmpresaNombre(empresaNom);
             auth.setPermisos(perms);
+            authSupport.aplicarRolEquipo(auth, usuario.getId(), activa.id(), perms);
             return ResponseEntity.ok(auth);
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", "Autenticación WebAuthn fallida"));

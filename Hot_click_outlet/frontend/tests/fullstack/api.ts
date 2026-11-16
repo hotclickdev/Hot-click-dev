@@ -78,15 +78,6 @@ export async function bodegaYProducto(api: APIRequestContext, h: Headers,
   return { bodegaId, productoId, precio }
 }
 
-/** Miembro de equipo (EDITOR/LECTOR) en el negocio del token. Clave efímera derivada de la QA. */
-export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' | 'LECTOR') {
-  const correo = `e2e.${rol.toLowerCase()}.${sufijo()}@hotclick.test`
-  const contrasena = `${claveQa()}-${rol}`
-  const r = await api.post('/api/empresa/equipo', { headers: h, data: { nombre: `E2E ${rol}`, correo, password: contrasena, rolEnEmpresa: rol } })
-  expect(r.ok(), await r.text()).toBeTruthy()
-  return { correo, contrasena }
-}
-
 /** SQL contra la BD efímera de E2E (solo si E2E_DATABASE_URL está; en CI apunta al service postgres). */
 export const conSql = !!process.env.E2E_DATABASE_URL
 /**
@@ -101,6 +92,25 @@ export function sql(q: string, vars: Record<string, string> = {}): string {
     args.push('-v', `${k}=${v}`)
   }
   return execFileSync('psql', [...args, '-f', '-'], { input: q, encoding: 'utf8' }).trim()
+}
+
+/**
+ * Miembro de equipo (EDITOR/LECTOR) en el negocio del token.
+ * La API de invitación NO acepta contraseña (el invitado recibe un secreto aleatorio). Para poder
+ * iniciar sesión en E2E, tras crearlo se copia a esa fila el hash de una cuenta QA (clave = E2E_QA_PASSWORD)
+ * con UPDATE directo sobre la BD efímera de E2E (E2E_DATABASE_URL). Ese camino solo existe en este helper
+ * de test: no hay endpoint ni perfil nuevo en el backend, así que producción no cambia.
+ */
+export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' | 'LECTOR') {
+  if (!conSql) throw new Error('miembro() requiere E2E_DATABASE_URL para fijar la clave del invitado en la BD de E2E')
+  const correo = `e2e.${rol.toLowerCase()}.${sufijo()}@hotclick.test`
+  const r = await api.post('/api/empresa/equipo', { headers: h, data: { nombre: `E2E ${rol}`, correo, rolEnEmpresa: rol } })
+  expect(r.ok(), await r.text()).toBeTruthy()
+  const filas = sql(
+    `UPDATE hot_click_usuario_tb SET contrasena_hash = (SELECT contrasena_hash FROM hot_click_usuario_tb WHERE correo = :'qa') WHERE correo = :'correo' RETURNING 1`,
+    { qa: QA.PYME, correo })
+  expect(filas, 'se fijó la clave del invitado en la BD de E2E').toBe('1')
+  return { correo, contrasena: claveQa() }
 }
 
 /** Login por la UI (dos pasos: correo → Continuar → contraseña). Devuelve la respuesta del POST. */

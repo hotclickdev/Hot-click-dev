@@ -66,15 +66,15 @@ public class NotificacionNegocioEmailSender {
 
     /**
      * Enviada al nuevo miembro cuando el emprendedor lo agrega al equipo.
-     * Si passwordPlano != null es un usuario nuevo y se incluyen las credenciales.
-     * Si passwordPlano == null es un usuario existente que se suma a otro negocio.
+     * Si cuentaNueva es true el correo lleva el enlace para definir la contraseña (nunca la contraseña).
+     * Si es false es un usuario existente que se suma a otro negocio.
      */
     public void enviarInvitacionMiembro(String correo, String nombre, String rolEnEmpresa,
-                                 String nombreEmpresa, String passwordPlano) {
+                                 String nombreEmpresa, boolean cuentaNueva) {
         try {
             resendEmailService.send(correo,
                 "Te invitaron al equipo de " + emailLayoutHelper.esc(nombreEmpresa) + " en HotClick",
-                negocioEmailBuilder.buildInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, passwordPlano));
+                negocioEmailBuilder.buildInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, cuentaNueva));
             log.info("Email invitación miembro enviado");
         } catch (Exception e) {
             log.error("No se pudo enviar email de invitación: {}", e.getClass().getSimpleName());

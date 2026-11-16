@@ -137,8 +137,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
             throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
         }
-        // QA8: un negocio sin aprobar no elige ni paga plan (fail-closed, antes de tocar ONVO).
-        if (EmpresaPendienteAprobacionException.ESTADO.equals(empresa.getEstadoEmpresa())) {
+        // QA8 + riesgos 15-nov: un negocio sin aprobar (pendiente, rechazado u otro no ACTIVO) no elige ni paga plan (fail-closed, antes de tocar ONVO).
+        if (EmpresaPendienteAprobacionException.noAprobada(empresa.getEstadoEmpresa())) {
             throw new EmpresaPendienteAprobacionException();
         }
         return cambiarPlanInterno(empresa, planId);
@@ -1109,6 +1109,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (sub.getOnvoSubNuevaPendiente() == null) sub.setPlanPendiente(null);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
+        // Cobro real verificado (el verificador exige monto > 0): el plan ya no es trial; trial_end queda vencido.
+        sub.vencerTrialPorCobroReal(LocalDate.now(Constants.ZONA_CR));
         // MEDIO Seguridad (Opción A): un cobro no deshace una cancelación al vencer; se conserva y queda alerta.
         conservarCancelacionAlVencer(sub, onvoSubId, "cobro");
         sub.setFechaFin(fin);
@@ -1126,7 +1128,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         empresaRepo.save(empresa);
         evictTenant(empresa.getId());
         anotarLedger(empresa, sub, BillingLedger.TIPO_COBRO_OK,
-            referenciaLedger, "Pago ONVO verificado");
+            referenciaLedger, "Pago ONVO verificado", montoCobradoCentavos(plan.getNombre()));
         log.info("[billing-onvo] Webhook verificado activó empresa={} plan={} fin={}", empresa.getId(), plan.getNombre(), fin);
     }
 
@@ -1367,12 +1369,28 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         return ref != null && OnvoBillingClient.idValido(ref);
     }
 
+    /**
+     * Monto cobrado (centavos) de un COBRO_OK verificado. El verificador de ONVO solo acepta el cobro si su monto es
+     * IGUAL al precio completo configurado del plan (sin prorrateo), así que ese precio es el importe cobrado. null si
+     * no hay precio configurado o no cabe en la columna: no se inventa un monto.
+     */
+    private Integer montoCobradoCentavos(String planNombre) {
+        if (preciosPlanes == null) return null;
+        Long centavos = preciosPlanes.precioUsd(planNombre).map(PrecioPlanOnvo::enUnidadMenor).orElse(null);
+        return centavos != null && centavos > 0 && centavos <= Integer.MAX_VALUE ? centavos.intValue() : null;
+    }
+
     private void anotarLedger(Empresa empresa, Suscripcion sub, String tipo, String ref, String detalle) {
+        anotarLedger(empresa, sub, tipo, ref, detalle, null);
+    }
+
+    private void anotarLedger(Empresa empresa, Suscripcion sub, String tipo, String ref, String detalle,
+                              Integer montoCentavos) {
         if (ledgerWriter == null) return;
         // Fail-closed: sin moneda configurada no se escribe el ledger (ni cae al "crc" de la entidad) y la operación
         // se revierte y se reintenta (transitorio), en vez de dejar COBRO_FALLIDO/CANCELACION con una moneda falsa.
         String moneda = monedaLedgerOFalla(tipo);
-        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, null, moneda, detalle);
+        ledgerWriter.registrar(empresa, sub, tipo, BillingLedger.PROVEEDOR_ONVO, ref, montoCentavos, moneda, detalle);
     }
 
     /** Moneda configurada para el ledger ONVO; sin ella lanza una excepción controlada (con alerta sin PII). */

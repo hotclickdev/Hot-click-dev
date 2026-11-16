@@ -1,5 +1,6 @@
 package com.hotclick.service.suscripcion;
 
+import com.hotclick.exception.EmpresaPendienteAprobacionException;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Suscripcion;
 import com.hotclick.repository.EmpresaRepository;
@@ -73,13 +74,14 @@ public class TrialTarjetaService {
         this.changeService = changeService;
     }
 
-    /** Un TRIAL Emprendedor vigente de un negocio aprobado y al día: el único caso que puede agregar tarjeta. */
+    /** Un TRIAL Emprendedor vigente de un negocio aprobado (estado ACTIVO): el único caso que puede agregar tarjeta. */
     static boolean elegible(Empresa e, LocalDate hoy) {
         if (e == null || !TrialEmprendedorService.tuvoTrial(e)) return false;
         if (!Constants.ESTADO_PLAN_TRIAL.equals(e.getEstadoPlan())) return false;
         if (e.getTrialEmprendedorHasta() == null || e.getTrialEmprendedorHasta().isBefore(hoy)) return false;
-        String estadoEmpresa = e.getEstadoEmpresa();
-        return !SuspensionImpago.estaSuspendida(estadoEmpresa) && !"PENDIENTE_APROBACION".equals(estadoEmpresa);
+        // Riesgos 15-nov: misma regla fail-closed que el trial legado y cambiar-plan (PR 570): solo ACTIVO. Cubre
+        // pendiente, rechazado, inactivo, bloqueado, suspendido por impago o extensión, desconocido y nulo.
+        return !EmpresaPendienteAprobacionException.noAprobada(e.getEstadoEmpresa());
     }
 
     /** Estado para el panel: sin datos de ONVO ni de otros negocios, solo lo que la UI necesita. */

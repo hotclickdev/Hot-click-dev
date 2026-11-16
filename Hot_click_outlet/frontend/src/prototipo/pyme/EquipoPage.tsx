@@ -18,7 +18,6 @@ import {
   FORMULARIO_EQUIPO_VACIO,
   ROL_CONFIG,
   ROLES_ASIGNABLES,
-  generatePassword,
   mensajeErrorEquipo,
   type FormularioEquipo,
   type MiembroEquipo,
@@ -305,7 +304,6 @@ function FormularioInvitar({
       const { data } = await equipoService.invitar({
         nombre: form.nombre.trim(),
         correo: form.correo.trim(),
-        password: form.password,
         ...(form.telefono.trim() && { telefono: form.telefono.trim() }),
         rolEnEmpresa: form.rolEnEmpresa,
       })
@@ -377,20 +375,6 @@ function FormularioInvitar({
               onChange={(v) => setCampo('telefono', v)}
               placeholder="8888-0000"
             />
-            <Campo
-              etiqueta="Contraseña temporal"
-              type="password"
-              value={form.password}
-              onChange={(v) => setCampo('password', v)}
-              placeholder="Mínimo 6 caracteres"
-            />
-            <button
-              type="button"
-              className="text-xs font-semibold text-hc-primary"
-              onClick={() => setCampo('password', generatePassword())}
-            >
-              Generar contraseña segura
-            </button>
           </>
         ) : null}
         {idPaso === 'rol' ? (
@@ -439,7 +423,7 @@ function ResumenInvitacion({ form }: { form: FormularioEquipo }) {
         Rol: <span className="text-hc-text">{rol}</span>
       </p>
       <p className="mt-2 text-xs text-hc-muted">
-        Recibirá acceso con la contraseña temporal que definiste.
+        Recibirá un correo para crear su propia contraseña con un código de un solo uso.
       </p>
     </div>
   )

@@ -95,7 +95,7 @@ public class NegocioEmailBuilder {
     }
 
     public String buildInvitacionMiembro(String correo, String nombre, String rolEnEmpresa,
-                                         String nombreEmpresa, String passwordPlano) {
+                                         String nombreEmpresa, boolean cuentaNueva) {
         String rolLabel = switch (rolEnEmpresa) {
             case "EDITOR" -> "Editor — puede editar productos y pedidos";
             case "LECTOR" -> "Lector — solo visualización";
@@ -105,20 +105,22 @@ public class NegocioEmailBuilder {
         };
 
         String credencialesBlock;
-        if (passwordPlano != null) {
-            credencialesBlock = "<div style='background:#F8F9FB;border:1px solid #E4E7EC;border-radius:12px;padding:20px;margin:20px 0'>"
-                + "<p style='margin:0 0 12px;font-weight:700;color:#14171C'>Tus credenciales de acceso</p>"
-                + "<table style='width:100%;border-collapse:collapse'>"
-                + "<tr><td style='color:#4D5560;padding:4px 0;width:110px;font-size:14px'>Correo:</td>"
-                + "<td style=\"color:#14171C;font-family:'IBM Plex Mono',monospace;font-size:14px\">" + layout.esc(correo) + "</td></tr>"
-                + "<tr><td style='color:#4D5560;padding:4px 0;font-size:14px'>Contraseña:</td>"
-                + "<td style=\"color:#9A6700;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px\">" + layout.esc(passwordPlano) + "</td></tr>"
-                + "</table>"
-                + "<p style='margin:12px 0 0;font-size:12px;color:#6E7682'>Te recomendamos cambiar la contraseña al ingresar desde Configuración → Seguridad.</p>"
-                + "</div>";
+        String ctaUrl;
+        String ctaTexto;
+        if (cuentaNueva) {
+            // Nunca se manda una contraseña por correo: el invitado la define él mismo con el flujo de recuperación
+            // (código de 6 dígitos de un solo uso, que vence y llega a este mismo correo).
+            credencialesBlock = "<p style='color:#4D5560;background:#F8F9FB;border:1px solid #E4E7EC;border-radius:10px;padding:14px;margin:16px 0;font-size:14px;line-height:1.6'>"
+                + "Creamos tu cuenta con el correo <strong style='color:#14171C'>" + layout.esc(correo) + "</strong>. "
+                + "Para definir tu contraseña, entrá a «Definir mi contraseña», escribí ese correo y pedí tu código de verificación: "
+                + "es de un solo uso y vence a los pocos minutos.</p>";
+            ctaUrl = layout.urlSitio("/recuperar-contrasena");
+            ctaTexto = "Definir mi contraseña";
         } else {
             credencialesBlock = "<p style='color:#4D5560;background:#F8F9FB;border:1px solid #E4E7EC;border-radius:10px;padding:14px;margin:16px 0;font-size:14px'>"
                 + "Ingresá con tu correo <strong style='color:#14171C'>" + layout.esc(correo) + "</strong> y tu contraseña habitual.</p>";
+            ctaUrl = layout.urlSitio("/login");
+            ctaTexto = "Ingresar al panel";
         }
 
         return layout.abrirHtml()
@@ -131,7 +133,7 @@ public class NegocioEmailBuilder {
             + "<p style='margin:0;color:#1747A8;font-weight:700'>" + layout.esc(rolLabel) + "</p>"
             + "</div>"
             + credencialesBlock
-            + layout.cta(layout.urlSitio("/login"), "Ingresar al panel")
+            + layout.cta(ctaUrl, ctaTexto)
             + layout.footer("¿Tenés alguna pregunta?");
     }
 
