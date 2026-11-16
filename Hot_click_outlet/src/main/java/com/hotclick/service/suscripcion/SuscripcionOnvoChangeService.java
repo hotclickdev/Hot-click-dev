@@ -137,8 +137,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (SuspensionImpago.estaSuspendida(empresa.getEstadoEmpresa())) {
             throw new IllegalStateException(SuspensionImpago.MSG_SOLO_PAGO);
         }
-        // QA8: un negocio sin aprobar no elige ni paga plan (fail-closed, antes de tocar ONVO).
-        if (EmpresaPendienteAprobacionException.ESTADO.equals(empresa.getEstadoEmpresa())) {
+        // QA8 + riesgos 15-nov: un negocio sin aprobar (pendiente, rechazado u otro no ACTIVO) no elige ni paga plan (fail-closed, antes de tocar ONVO).
+        if (EmpresaPendienteAprobacionException.noAprobada(empresa.getEstadoEmpresa())) {
             throw new EmpresaPendienteAprobacionException();
         }
         return cambiarPlanInterno(empresa, planId);

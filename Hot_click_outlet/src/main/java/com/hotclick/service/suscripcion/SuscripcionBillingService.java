@@ -52,8 +52,8 @@ public class SuscripcionBillingService {
         Empresa empresa = empresaRepo.findById(empresaId)
             .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
-        // QA final 15-nov: un negocio sin aprobar no recibe trial; falla cerrado antes de tocar nada, como cambiar-plan.
-        if (com.hotclick.exception.EmpresaPendienteAprobacionException.ESTADO.equals(empresa.getEstadoEmpresa())) {
+        // Riesgos 15-nov: negocio no aprobado (pendiente, rechazado, etc.) -> 409 antes de leer o escribir nada.
+        if (com.hotclick.exception.EmpresaPendienteAprobacionException.noAprobada(empresa.getEstadoEmpresa())) {
             throw new com.hotclick.exception.EmpresaPendienteAprobacionException();
         }
 
