@@ -85,7 +85,7 @@ public class PrecioPlanOnvo {
         return null;
     }
 
-    private static Long enUnidadMenor(BigDecimal precio) {
+    static Long enUnidadMenor(BigDecimal precio) {
         try {
             return precio.movePointRight(DECIMALES_UNIDAD_MENOR).setScale(0, RoundingMode.UNNECESSARY).longValueExact();
         } catch (ArithmeticException e) {
