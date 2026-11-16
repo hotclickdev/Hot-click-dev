@@ -32,6 +32,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -58,6 +59,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -144,6 +146,9 @@ class PagoOnvoCancelacionLocksPostgresTest extends BaseIntegrationTest {
 
     @MockitoBean private OnvoService onvoService;
 
+    @Autowired @org.springframework.beans.factory.annotation.Qualifier("taskExecutor") private Executor taskExecutor;
+    @Autowired @org.springframework.beans.factory.annotation.Qualifier("avisoReembolsoExecutor") private Executor avisoReembolsoExecutor;
+
     @Autowired private PaymentService paymentService;
     @Autowired private PedidoService pedidoService;
     @Autowired private TelegramFlujoService telegramFlujoService;
@@ -197,11 +202,55 @@ class PagoOnvoCancelacionLocksPostgresTest extends BaseIntegrationTest {
     }
 
     @AfterEach
-    void limpiar() {
+    void limpiar() throws Exception {
         hilos.shutdownNow();
-        jdbcTemplate.execute("TRUNCATE hot_click_webhook_event_tb, hot_click_pago_tb, hot_click_pedido_item_tb, "
-            + "hot_click_pedido_tb, hot_click_producto_tb, hot_click_categoria_tb, hot_click_bodega_tb, "
-            + "hot_click_empresa_tb CASCADE");
+        hilos.awaitTermination(10, TimeUnit.SECONDS);
+        // Las tareas @Async reales (p. ej. AvisoReposicionService tras un cambio de stock) siguen escribiendo en
+        // suscripcion_reposicion/producto: si el TRUNCATE corre en paralelo, Postgres detecta un deadlock. No se
+        // mockean (el test sigue ejercitando el contexto real): se espera a que los pools queden ociosos.
+        esperarPoolsAsyncOciosos();
+        truncarSinDeadlock();
+    }
+
+    private void esperarPoolsAsyncOciosos() throws InterruptedException {
+        long limite = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        int ociosasSeguidas = 0;
+        while (ociosasSeguidas < 3) { // 3 lecturas seguidas: cubre el instante entre «sale de la cola» y «activa»
+            boolean ocioso = true;
+            for (Executor e : List.of(taskExecutor, avisoReembolsoExecutor)) {
+                if (e instanceof ThreadPoolTaskExecutor pool) {
+                    ocioso &= pool.getActiveCount() == 0 && pool.getThreadPoolExecutor().getQueue().isEmpty();
+                }
+            }
+            ociosasSeguidas = ocioso ? ociosasSeguidas + 1 : 0;
+            assertThat(System.nanoTime()).as("los pools @Async deben quedar ociosos antes de limpiar").isLessThan(limite);
+            Thread.sleep(50);
+        }
+    }
+
+    /**
+     * Un único TRUNCATE con todas las tablas (un solo orden de locks, no hay ciclo posible entre tablas) y
+     * lock_timeout para fallar rápido y con mensaje claro en vez de colgarse. Si aun así un hilo ajeno gana la
+     * carrera (deadlock 40P01 / lock_timeout 55P03) se reintenta: la limpieza no es lo que el test mide.
+     */
+    private void truncarSinDeadlock() {
+        TransactionTemplate tx = new TransactionTemplate(txManager);
+        RuntimeException ultimo = null;
+        for (int intento = 1; intento <= 5; intento++) {
+            try {
+                tx.executeWithoutResult(st -> {
+                    jdbcTemplate.execute("SET LOCAL lock_timeout = '5s'");
+                    jdbcTemplate.execute("TRUNCATE hot_click_webhook_event_tb, hot_click_pago_tb, "
+                        + "hot_click_pedido_item_tb, hot_click_pedido_tb, hot_click_producto_tb, "
+                        + "hot_click_categoria_tb, hot_click_bodega_tb, hot_click_empresa_tb CASCADE");
+                });
+                return;
+            } catch (RuntimeException e) {
+                ultimo = e;
+                try { Thread.sleep(200L * intento); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+            }
+        }
+        throw ultimo;
     }
 
     // ── Fixtures ───────────────────────────────────────────────────────────────
