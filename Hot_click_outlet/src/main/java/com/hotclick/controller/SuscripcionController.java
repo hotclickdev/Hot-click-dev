@@ -46,6 +46,7 @@ public class SuscripcionController {
     @org.springframework.beans.factory.annotation.Autowired
     private com.hotclick.service.suscripcion.PlanesActivosLector planesActivos;
 
+
     /** BAJO seguridad: cada reconciliación consulta ONVO; tope por empresa (mismo RateLimiter de AiCopilot). */
     static final int RECONCILIAR_MAX = 6;
     static final int RECONCILIAR_VENTANA_SEG = 60;
@@ -113,7 +114,7 @@ public class SuscripcionController {
         return ResponseEntity.ok(suscripcionService.getFacturas(empresaId, pagina));
     }
 
-    /** 409 EMPRESA_PENDIENTE_APROBACION: misma forma en cambiar-plan y en el trial legado. */
+    /** 409 EMPRESA_PENDIENTE_APROBACION: negocio no aprobado (pendiente, rechazado, etc.); misma forma en cambiar-plan y en el trial legado. */
     private static ResponseEntity<Map<String, Object>> pendienteAprobacion() {
         return ResponseEntity.status(409).body(Map.of(
             KEY_ERROR, com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
