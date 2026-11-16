@@ -102,5 +102,14 @@ class EquipoServiceCorreoVerificadoTest {
         equipoService.invitar(5L, "Ya Existe", "ya@test.cr", "x", "00000000", "LECTOR");
 
         assertThat(existente.getCorreoVerificado()).isTrue();
+        verify(notificacionEmailService).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.eq(false));
+    }
+
+    @Test
+    @DisplayName("Riesgos 15-nov: invitado nuevo -> el correo es de cuenta nueva (enlace para definir contraseña), sin la contraseña")
+    void nuevoRecibeCorreoDeCuentaNueva() {
+        invitarYCapturar("nuevo-enlace@test.cr", "EDITOR");
+        verify(notificacionEmailService).enviarInvitacionMiembro(
+            org.mockito.ArgumentMatchers.eq("nuevo-enlace@test.cr"), any(), any(), any(), org.mockito.ArgumentMatchers.eq(true));
     }
 }

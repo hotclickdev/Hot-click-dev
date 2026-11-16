@@ -126,7 +126,7 @@ public class EquipoService {
         usuarioRepository.save(u);
         reactivarOCrearMembresia(u, empresa, rolEnEmpresa);
         notificacionEmailService.enviarInvitacionMiembro(
-            u.getCorreo(), u.getNombre(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null), null);
+            u.getCorreo(), u.getNombre(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null), false);
     }
 
     /**
@@ -167,7 +167,7 @@ public class EquipoService {
         Usuario saved = usuarioRepository.save(nuevo);
         miembroEmpresaRepository.save(new MiembroEmpresa(saved, empresa, rolEnEmpresa));
         notificacionEmailService.enviarInvitacionMiembro(
-            correoNorm, saved.getNombre(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null), password);
+            correoNorm, saved.getNombre(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null), true);
     }
 
     private void reactivarOCrearMembresia(Usuario u, Empresa empresa, String rolEnEmpresa) {
