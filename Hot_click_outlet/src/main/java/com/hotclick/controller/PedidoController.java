@@ -3,6 +3,7 @@ package com.hotclick.controller;
 import com.hotclick.controller.pedido.PedidoAccessGuard;
 import com.hotclick.controller.pedido.PedidoTenantResponder;
 import com.hotclick.dto.ManualPedidoDTO;
+import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Empresa;
@@ -87,9 +88,17 @@ public class PedidoController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPRENDEDOR')")
     public ResponseEntity<ResponseDTO> crearPedido(@RequestBody Pedido pedido) {
+        if (pedido.getItems() != null && pedido.getItems().size() > PaymentCheckoutRequest.MAX_ITEMS) {
+            // Antes de cualquier lectura a BD (empresaDelScope / catálogo): acota el trabajo por request.
+            return ResponseEntity.badRequest()
+                .body(ResponseDTO.error("El pedido no puede tener más de " + PaymentCheckoutRequest.MAX_ITEMS + " productos distintos"));
+        }
         try {
+            pedido.setId(null); // el body es la entidad: nunca actualizar un pedido existente por id del cliente
             pedido.setEmpresa(empresaDelScope());
             pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
+            // El origen lo decide el servidor (igual que /manual): un panel no puede declarar POS/ONLINE.
+            pedido.setOrigen(com.hotclick.model.OrigenPedido.MANUAL.codigo());
             recalcularDesdeCatalogo(pedido);
             Pedido nuevo = pedidoService.crearPedido(pedido);
             return ResponseEntity.ok(ResponseDTO.success(com.hotclick.service.pedido.PedidoManualEntregaStockService.mensajeConAvisos("Pedido creado", nuevo), nuevo));
