@@ -2,6 +2,7 @@ package com.hotclick.service.pos;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -77,6 +78,10 @@ public class PosQrSessionService {
                             String notas, Long clienteId, Long bodegaId, boolean facturaElectronica) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío");
+        }
+        // Tope de líneas ANTES de cualquier lectura de stock o de la base.
+        if (items.size() > PaymentCheckoutRequest.MAX_ITEMS) {
+            throw new IllegalArgumentException(PosVentaService.MENSAJE_MAX_LINEAS_POS);
         }
         if (!PosQrMetodos.SINPE.equals(metodoPago) && !PosQrMetodos.TARJETA.equals(metodoPago)) {
             throw new IllegalArgumentException("Método de pago debe ser SINPE o TARJETA");

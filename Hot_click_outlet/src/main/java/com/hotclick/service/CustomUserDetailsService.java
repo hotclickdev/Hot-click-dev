@@ -39,6 +39,12 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new DisabledException("Cuenta no activa");
         }
 
+        // Sin hash no hay credencial: fail-closed (el filtro lo trata como cuenta no activa → 401 limpio).
+        if (usuario.getContrasenaHash() == null || usuario.getContrasenaHash().isBlank()) {
+            log.warn("Cuenta id={} sin contraseña almacenada: no se autentica", usuario.getId());
+            throw new DisabledException("Cuenta sin credenciales");
+        }
+
         List<GrantedAuthority> authorities = new ArrayList<>();
 
         usuario.getRoles().forEach(rol ->

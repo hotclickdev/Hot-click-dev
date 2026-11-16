@@ -8,6 +8,8 @@ import usePosStore from '@/store/posStore'
 import type { Id, JsonBody } from '@/types/api'
 import {
   agregarProductoAlCarrito,
+  excedeTopeLineasPos,
+  MENSAJE_MAX_LINEAS_POS,
   mensajeErrorPos,
   qrDataDesdeRespuesta,
   statusErrorPos,
@@ -117,8 +119,12 @@ export function useAdminPOS() {
   }, [])
 
   const agregarProducto = useCallback((producto: ProductoEntradaCarrito) => {
+    if (excedeTopeLineasPos(cartItems, producto)) {
+      showToast(MENSAJE_MAX_LINEAS_POS, 'error')
+      return
+    }
     setCartItems(prev => agregarProductoAlCarrito(prev, producto))
-  }, [])
+  }, [cartItems, showToast])
 
   const setCantidad = (id: Id | undefined, val: string | number) => {
     const n = Math.max(1, Number.parseInt(String(val)) || 1)
