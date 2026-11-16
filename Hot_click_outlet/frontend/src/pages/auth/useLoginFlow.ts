@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { getAvailableModes, MODE_PREF_KEY } from '@/utils/modes'
+import { rolUiDesdeRespuesta, permisosUiDesdeRespuesta } from '@/utils/rolEquipo'
 import { useTranslation } from 'react-i18next'
 import { authService } from '@/services/authService'
 import useAuthStore from '@/store/authStore'
@@ -254,7 +255,9 @@ export function useLoginFlow() {
     if (data.empresaId) {
       await useTenantStore.getState().loadTenantInfo()
     }
-    const modes = getAvailableModes(data.rol ?? '', data.permisos ?? [], {
+    // Rol de UI: un miembro CAJERO llega con rol EMPRENDEDOR (JWT) y rolEquipo=CAJERO → solo Caja.
+    const rolUi = rolUiDesdeRespuesta(data.rol ?? null, data.rolEquipo ?? null) ?? ''
+    const modes = getAvailableModes(rolUi, permisosUiDesdeRespuesta(data), {
       empresaSlug: data.empresaSlug,
       planNombre: useTenantStore.getState().planNombre,
     })
@@ -292,7 +295,7 @@ export function useLoginFlow() {
     // el selector de modo (Sistema/Caja) tras cada login, como en el mockup
     // aprobado — a diferencia de ADMIN/GERENTE/SUPERVISOR, no tiene un
     // switcher visible dentro del panel para volver a cambiarlo.
-    if (data.rol !== 'EMPRENDEDOR') {
+    if (rolUi !== 'EMPRENDEDOR') {
       const savedPref = localStorage.getItem(MODE_PREF_KEY)
       if (savedPref) {
         const saved = modes.find(m => m.id === savedPref)
