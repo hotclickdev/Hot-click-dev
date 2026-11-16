@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -93,9 +94,11 @@ public class PedidoController {
             return ResponseEntity.badRequest()
                 .body(ResponseDTO.error("El pedido no puede tener más de " + PaymentCheckoutRequest.MAX_ITEMS + " productos distintos"));
         }
+        // Fail-closed, fuera del try: sin negocio → 403 (EmpresaRequeridaException); no caer al catálogo global.
+        Empresa empresa = empresaDelScope();
         try {
             pedido.setId(null); // el body es la entidad: nunca actualizar un pedido existente por id del cliente
-            pedido.setEmpresa(empresaDelScope());
+            pedido.setEmpresa(empresa);
             pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
             // El origen lo decide el servidor (igual que /manual): un panel no puede declarar POS/ONLINE.
             pedido.setOrigen(com.hotclick.model.OrigenPedido.MANUAL.codigo());
@@ -118,16 +121,24 @@ public class PedidoController {
         }
         int subtotal = 0;
         int costoTotalProductos = 0;
+        // null solo para ADMIN de plataforma (pedido sin negocio): catálogo global, mismo criterio que empresaDelScope().
+        Long empresaId = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
         for (PedidoItem item : items) {
             if (item.getProducto() == null || item.getProducto().getId() == null) {
                 throw new IllegalArgumentException("Cada item debe indicar un producto válido");
             }
-            Producto producto = productoRepository.findById(item.getProducto().getId())
-                .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Producto no encontrado", "productoId=" + item.getProducto().getId()));
+            Long productoId = item.getProducto().getId();
+            // IDOR: un producto de otro negocio es «no encontrado» (no se filtra su costo ni se toca su stock).
+            // tenant-global-ok: empresaId null solo ADMIN de plataforma
+            Optional<Producto> encontrado = empresaId != null
+                ? productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                : productoRepository.findById(productoId);
+            Producto producto = encontrado.orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Producto no encontrado", "productoId=" + item.getProducto().getId()));
             int cantidad = item.getCantidad() != null && item.getCantidad() > 0 ? item.getCantidad() : 1;
             int precio = producto.getPrecioVenta()  != null ? producto.getPrecioVenta()  : 0;
             int costo  = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
 
+            item.setId(null); // el body no puede reutilizar/actualizar un PedidoItem existente
             item.setPedido(pedido);
             item.setProducto(producto);
             item.setCantidad(cantidad);
@@ -320,9 +331,12 @@ public class PedidoController {
     }
 
     private Empresa empresaDelScope() {
-        Long eid = companyScope.getCurrentEmpresaIdOrOwn();
-        // tenant-global-ok: resuelve la entidad Empresa del scope; null no amplía ningún listado
-        return eid != null ? empresaRepository.findById(eid).orElse(null) : null;
+        // 403 si no hay negocio; null SOLO para ADMIN de plataforma sin impersonar (catálogo global).
+        Long eid = companyScope.requireEmpresaIdOrAdmin();
+        if (eid == null) return null;
+        // Fail-closed: id de scope sin fila Empresa → rechazo (nunca null, que degradaría al catálogo global).
+        // tenant-global-ok: resuelve la entidad Empresa del scope
+        return empresaRepository.findById(eid).orElseThrow(com.hotclick.exception.EmpresaRequeridaException::new);
     }
 
     private Object listarConDetalles() {
