@@ -37,6 +37,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE p.id IN :ids AND p.empresa.id = :empresaId ORDER BY p.id")
     List<Producto> findAllByIdsAndEmpresaForUpdate(@Param("ids") List<Long> ids, @Param("empresaId") Long empresaId);
 
+    /** Producto solo si pertenece al negocio indicado (IDOR entre negocios: otro dueño = no encontrado). */
+    @Query("SELECT p FROM Producto p WHERE p.id = :id AND p.empresa.id = :empresaId")
+    Optional<Producto> findByIdAndEmpresaId(@Param("id") Long id, @Param("empresaId") Long empresaId);
+
     Optional<Producto> findBySku(String sku);
 
     @Query("SELECT COALESCE(MAX(p.numeroLocal), 0) FROM Producto p WHERE p.empresa.id = :empresaId")
