@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { syncSentryUser } from '@/utils/sentryClient'
 import { identifyUser, resetAnalyticsUser } from '@/utils/analytics'
 import { ADMIN_ROLES, esUsuarioSistema } from '@/utils/sistemaUser'
+import { rolUiDesdeRespuesta, permisosUiDesdeRespuesta } from '@/utils/rolEquipo'
 import type { AuthResponse, JwtClaims, RolUsuario } from '@/types/auth'
 import type { Id } from '@/types/api'
 
@@ -19,6 +20,7 @@ type SesionGuardada = {
   empresaNombre: string | null
   permissions: string[]
   roles: string[]
+  rolEquipo?: string | null
   correoVerificado: boolean
 }
 
@@ -33,6 +35,8 @@ type AuthState = {
   empresaNombre: string | null
   permissions: string[]
   roles: string[]
+  /** Rol de equipo real (el JWT lleva EMPRENDEDOR para todo miembro). Solo para la UI; el servidor decide por BD. */
+  rolEquipo: string | null
   correoVerificado: boolean
   impersonando: boolean
   /** Sesión de soporte: LECTURA por defecto; ESCRITURA tras pedirla con motivo (vence sola). */
@@ -80,6 +84,7 @@ const useAuthStore = create<AuthState>()(
       empresaNombre: null,
       permissions:   [],
       roles:         [],
+      rolEquipo:     null,
       correoVerificado: false,
       impersonando:  false,
       impersonacionModo: null,
@@ -97,8 +102,10 @@ const useAuthStore = create<AuthState>()(
         const claims      = parseJwtClaims(data.accessToken)
         const empresaId   = data.empresaId   ?? claims.empresaId   ?? null
         const empresaSlug = data.empresaSlug ?? claims.empresaSlug ?? null
-        const permissions = data.permisos ?? claims.permisos ?? []
-        const rol         = data.rol ?? claims.rol ?? null
+        // El rol Spring del JWT es EMPRENDEDOR para todo miembro; la UI ramifica por el rol de equipo (CAJERO → solo POS).
+        const rolEquipo   = data.rolEquipo ?? null
+        const permissions = permisosUiDesdeRespuesta(data, claims.permisos)
+        const rol         = rolUiDesdeRespuesta(data.rol ?? claims.rol ?? null, rolEquipo)
 
         set({
           token:        data.accessToken,
@@ -111,6 +118,7 @@ const useAuthStore = create<AuthState>()(
           empresaNombre: data.empresaNombre ?? null,
           permissions:  Array.isArray(permissions) ? permissions : [],
           roles:        rol ? [rol] : [],
+          rolEquipo,
           correoVerificado: data.correoVerificado === true,
           impersonando:  false,
           impersonacionModo: null,
@@ -157,6 +165,7 @@ const useAuthStore = create<AuthState>()(
           empresaNombre: null,
           permissions:  [],
           roles:        [],
+          rolEquipo:    null,
           correoVerificado: false,
           impersonando:  false,
           impersonacionModo: null,
@@ -171,7 +180,7 @@ const useAuthStore = create<AuthState>()(
           token: state.token, userId: state.userId,
           userEmail: state.userEmail, userRole: state.userRole, userName: state.userName,
           empresaId: state.empresaId, empresaSlug: state.empresaSlug, empresaNombre: state.empresaNombre,
-          permissions: state.permissions, roles: state.roles,
+          permissions: state.permissions, roles: state.roles, rolEquipo: state.rolEquipo,
           correoVerificado: state.correoVerificado,
         }
         const permissions = data.permisos ?? []
@@ -191,6 +200,7 @@ const useAuthStore = create<AuthState>()(
           empresaNombre: data.empresaNombre ?? null,
           permissions:   Array.isArray(permissions) ? permissions : [],
           roles:         rol ? [rol] : [],
+          rolEquipo:     null,
         })
       },
 
@@ -219,6 +229,7 @@ const useAuthStore = create<AuthState>()(
         empresaNombre: state.empresaNombre,
         permissions: state.permissions,
         roles: state.roles,
+        rolEquipo: state.rolEquipo,
         correoVerificado: state.correoVerificado,
         impersonando: state.impersonando,
         impersonacionModo: state.impersonacionModo,
