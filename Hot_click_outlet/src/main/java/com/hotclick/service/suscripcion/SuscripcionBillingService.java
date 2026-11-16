@@ -52,6 +52,11 @@ public class SuscripcionBillingService {
         Empresa empresa = empresaRepo.findById(empresaId)
             .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
+        // Riesgos 15-nov: negocio no aprobado (pendiente, rechazado, etc.) -> 409 antes de leer o escribir nada.
+        if (com.hotclick.exception.EmpresaPendienteAprobacionException.noAprobada(empresa.getEstadoEmpresa())) {
+            throw new com.hotclick.exception.EmpresaPendienteAprobacionException();
+        }
+
         Optional<Suscripcion> existente = suscripcionRepo.findActivaByEmpresaId(empresaId);
         if (existente.isPresent()) {
             return existente.get();

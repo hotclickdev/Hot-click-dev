@@ -117,7 +117,13 @@ public class SuscripcionController {
         Long empresaId = TenantContext.get();
         if (empresaId == null) return ResponseEntity.status(401).build();
         if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario(); // QA3-012
-        suscripcionService.iniciarTrial(empresaId);
+        try {
+            suscripcionService.iniciarTrial(empresaId);
+        } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
+            return ResponseEntity.status(409).body(Map.of(
+                "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
+                "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
+        }
         return ResponseEntity.ok(Map.of("status", "ok", "mensaje", "Trial iniciado por 14 días"));
     }
 
