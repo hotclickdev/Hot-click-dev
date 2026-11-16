@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { abortarSiOnvoLive, auth, registrarNegocio, type Negocio } from './api'
+import { abortarSiOnvoLive, aprobarNegocio, auth, conSql, registrarNegocio, type Negocio } from './api'
 
 /**
  * Flujos 1 y 6 de la simulación final: alta de negocio + cancelación de la prueba (trial).
@@ -29,6 +29,9 @@ test.describe.serial('Flujos 1 y 6 — alta de negocio y cancelación del trial'
   })
 
   test('6. trial: inicia → cancelar al vencer marca cancelarAlVencer → cancelar inmediata cierra la prueba', async ({ request }) => {
+    // Según el cupo del entorno el negocio nuevo puede quedar PENDIENTE_APROBACION (409 al iniciar el trial): se emula la
+    // aprobación del admin en la BD efímera para que el resultado no dependa del cupo.
+    if (conSql) aprobarNegocio(n.empresaId)
     const h = auth(n.sesion)
     const ini = await request.post('/api/billing/trial', { headers: h })
     expect(ini.ok(), `POST /api/billing/trial → ${ini.status()} ${await ini.text()}`).toBeTruthy()
