@@ -1,26 +1,150 @@
-package com.hotclick.exception;
+package com.hotclick.service.auth;
 
-/**
- * QA8: el negocio está PENDIENTE_APROBACION; no puede elegir ni pagar un plan hasta que HotClick lo apruebe.
- * Fail-closed: 409 EMPRESA_PENDIENTE_APROBACION, no se crea cobro ONVO ni cambia el plan.
- */
-public class EmpresaPendienteAprobacionException extends RuntimeException {
-    public static final String ESTADO = "PENDIENTE_APROBACION";
-    public static final String CODIGO = "EMPRESA_PENDIENTE_APROBACION";
-    public static final String MENSAJE = "Tu negocio está en revisión; podrás elegir plan cuando lo aprobemos.";
+import com.hotclick.service.telegram.TelegramTexto;
+import com.hotclick.dto.AuthResponse;
+import com.hotclick.dto.ResponseDTO;
+import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.model.Empresa;
+import com.hotclick.model.MiembroEmpresa;
+import com.hotclick.model.Usuario;
+import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.MiembroEmpresaRepository;
+import com.hotclick.security.JwtUtil;
+import com.hotclick.service.RefreshTokenService;
+import com.hotclick.service.UsuarioService;
+import com.hotclick.utils.EmpresaNombre;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 
-    /** Único estado aprobado para elegir plan o iniciar trial. */
-    public static final String ESTADO_APROBADO = "ACTIVO";
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-    /**
-     * Fail-closed (riesgos 15-nov): PENDIENTE_APROBACION, RECHAZADO, INACTIVO, BLOQUEADO, SUSPENDIDO o cualquier
-     * estado desconocido/nulo no está aprobado. Idempotente: cubre PENDIENTE igual que el chequeo previo.
-     */
-    public static boolean noAprobada(String estadoEmpresa) {
-        return !ESTADO_APROBADO.equals(estadoEmpresa);
+@Service
+public class AuthTenantSwitchHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthTenantSwitchHandler.class);
+
+    @Autowired private UsuarioService              usuarioService;
+    @Autowired private JwtUtil                     jwtUtil;
+    @Autowired private RefreshTokenService         refreshTokenService;
+    @Autowired private MiembroEmpresaRepository    miembroEmpresaRepository;
+    @Autowired private EmpresaRepository           empresaRepository;
+    @Autowired private AuthSupport                 authSupport;
+
+    // P1-03: RolMembresia lee Usuario.roles (lazy); sin transacción daba LazyInitializationException.
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<?> cambiarNegocio(Map<String, Object> body, HttpServletRequest request,
+                                            jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            Usuario currentUser = authSupport.usuarioFromRequest(request);
+            Long empresaId = Long.parseLong(body.get("empresaId").toString());
+            // La membresía es la única fuente de verdad sobre pertenencia Y rol en
+            // ESE negocio — currentUser.getRoles() es el rol global de la cuenta y
+            // puede no coincidir con el rol que el usuario tiene en esta empresa.
+            MiembroEmpresa membresia = miembroEmpresaRepository
+                .findByUsuarioIdAndEmpresaIdAndEstado(currentUser.getId(), empresaId, 1)
+                .orElse(null);
+            if (membresia == null)
+                return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
+            Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
+            String rol = RolMembresia.paraJwt(membresia, currentUser);
+            String accessToken = jwtUtil.generateToken(currentUser.getCorreo(), currentUser.getId(), rol, empresaId, empresa.getSlug());
+            entregarRefresh(response, refreshTokenService.crear(currentUser, empresaId));
+            String nombre = currentUser.getNombre() != null ? currentUser.getNombre() : currentUser.getCorreo().split("@")[0];
+            AuthResponse resp = new AuthResponse(accessToken, null, currentUser.getId(), currentUser.getCorreo(), rol, nombre);
+            resp.setEmpresaId(empresaId);
+            resp.setEmpresaSlug(empresa.getSlug());
+            resp.setEmpresaNombre(empresa.getNombreEmpresa());
+            AuthSupport.aplicarRolEquipo(resp, membresia, authSupport.permisosDe(currentUser.getId()));
+            return ResponseEntity.ok(ResponseDTO.success("Negocio cambiado", resp));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("[cambiar-negocio] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
+            return ResponseEntity.status(500).body(ResponseDTO.error("Error al cambiar de negocio"));
+        }
     }
 
-    public EmpresaPendienteAprobacionException() {
-        super(MENSAJE);
+    public ResponseEntity<?> misNegocios(HttpServletRequest request) {
+        try {
+            Usuario currentUser = authSupport.usuarioFromRequest(request);
+            List<Map<String, Object>> empresas = miembroEmpresaRepository
+                .findByUsuarioIdAndEstado(currentUser.getId(), 1)
+                .stream().map(m -> {
+                    Map<String, Object> e = new HashMap<>();
+                    e.put("id",            m.getEmpresa().getId());
+                    e.put("nombre",        EmpresaNombre.mostrar(m.getEmpresa(), m.getEmpresa().getNombreEmpresa()));
+                    e.put("logoUrl",       m.getEmpresa().getLogoUrl());
+                    e.put("slug",          m.getEmpresa().getSlug());
+                    e.put("estadoEmpresa", m.getEmpresa().getEstadoEmpresa());
+                    e.put("rol",           m.getRolEnEmpresa());
+                    return e;
+                }).toList();
+            return ResponseEntity.ok(ResponseDTO.success("Negocios", empresas));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ResponseDTO.error("Error al cargar negocios"));
+        }
+    }
+
+    // P1-03: RolMembresia lee Usuario.roles (lazy); sin transacción daba LazyInitializationException.
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<?> seleccionarEmpresa(Map<String, Object> body,
+                                                jakarta.servlet.http.HttpServletResponse response) {
+        String tempToken = (String) body.get("tempToken");
+        Object empresaIdRaw = body.get("empresaId");
+        if (tempToken == null || empresaIdRaw == null)
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Datos incompletos"));
+        try {
+            if (!jwtUtil.isEmpresaSelectionToken(tempToken))
+                return ResponseEntity.status(401).body(ResponseDTO.error("Token inválido o expirado"));
+            Long userId    = jwtUtil.extractUserId(tempToken);
+            Long empresaId = Long.parseLong(empresaIdRaw.toString());
+            Usuario usuario = usuarioService.buscarPorId(userId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+            // Cuenta que dejó de estar activa entre la contraseña y la selección: sin tokens y sin revelar el estado.
+            authSupport.exigirCuentaActiva(usuario);
+            MiembroEmpresa membresia = miembroEmpresaRepository
+                .findByUsuarioIdAndEmpresaIdAndEstado(userId, empresaId, 1)
+                .orElse(null);
+            if (membresia == null)
+                return ResponseEntity.status(403).body(ResponseDTO.error("No tenés acceso a ese negocio"));
+            Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Negocio no encontrado"));
+            // Generar JWT apuntando a la empresa seleccionada, con el rol QUE TIENE
+            // en esa empresa (no el rol global de la cuenta)
+            String rol          = RolMembresia.paraJwt(membresia, usuario);
+            String accessToken = jwtUtil.generateToken(usuario.getCorreo(), userId, rol, empresaId, empresa.getSlug());
+            entregarRefresh(response, refreshTokenService.crear(usuario, empresaId));
+            String nombre      = usuario.getNombre() != null ? usuario.getNombre() : usuario.getCorreo().split("@")[0];
+            AuthResponse resp  = new AuthResponse(accessToken, null, userId, usuario.getCorreo(), rol, nombre);
+            resp.setEmpresaId(empresaId);
+            resp.setEmpresaSlug(empresa.getSlug());
+            resp.setEmpresaNombre(empresa.getNombreEmpresa());
+            AuthSupport.aplicarRolEquipo(resp, membresia, authSupport.permisosDe(userId));
+            return ResponseEntity.ok(resp);
+        } catch (CuentaNoActivaException e) {
+            return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
+        } catch (Exception e) {
+            log.error("[seleccionar-empresa] {}", e.getClass().getSimpleName(), TelegramTexto.paraLog(e));
+            return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
+        }
+    }
+
+    /**
+     * P1-03: antes se creaba un refresh nuevo (revocando el de la cookie) sin entregarlo, y el
+     * siguiente refresh se tomaba como reuso. Ahora la cookie se reemplaza por el token atado al negocio.
+     */
+    private void entregarRefresh(jakarta.servlet.http.HttpServletResponse response, com.hotclick.model.RefreshToken rt) {
+        if (response != null && rt != null && rt.getRawToken() != null) {
+            refreshTokenService.writeCookie(response, rt.getRawToken());
+        }
     }
 }
