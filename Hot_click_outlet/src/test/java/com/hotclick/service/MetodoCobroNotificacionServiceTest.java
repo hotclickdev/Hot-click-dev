@@ -59,7 +59,7 @@ class MetodoCobroNotificacionServiceTest {
     void texto_solo_mascara() {
         String texto = MetodoCobroNotificacionService.textoAviso("SINPE Móvil", "••••-1111");
         assertThat(texto).contains("••••-1111");
-        assertThat(texto).doesNotContain("00000003");
+        assertThat(texto).doesNotContain("00001111");
     }
 
     private static Empresa empresa() {
