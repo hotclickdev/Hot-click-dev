@@ -43,6 +43,16 @@ public class SuscripcionController {
     @org.springframework.beans.factory.annotation.Autowired
     private com.hotclick.service.suscripcion.PlanesActivosLector planesActivos;
 
+    private static final String K_ERROR = "error";
+    private static final String K_CODIGO = "codigo";
+
+    /** 409 EMPRESA_PENDIENTE_APROBACION: negocio no aprobado (pendiente, rechazado, etc.); sin datos extra. */
+    private static ResponseEntity<Map<String, Object>> empresaPendienteAprobacion() {
+        return ResponseEntity.status(409).body(Map.of(
+            K_ERROR, com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
+            K_CODIGO, com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
+    }
+
     /** BAJO seguridad: cada reconciliación consulta ONVO; tope por empresa (mismo RateLimiter de AiCopilot). */
     static final int RECONCILIAR_MAX = 6;
     static final int RECONCILIAR_VENTANA_SEG = 60;
@@ -120,9 +130,7 @@ public class SuscripcionController {
         try {
             suscripcionService.iniciarTrial(empresaId);
         } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
-            return ResponseEntity.status(409).body(Map.of(
-                "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
-                "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
+            return empresaPendienteAprobacion();
         }
         return ResponseEntity.ok(Map.of("status", "ok", "mensaje", "Trial iniciado por 14 días"));
     }
@@ -225,9 +233,7 @@ public class SuscripcionController {
             out.putIfAbsent("proveedor", "ONVO");
             return ResponseEntity.ok(out);
         } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
-            return ResponseEntity.status(409).body(Map.of(
-                "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
-                "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
+            return empresaPendienteAprobacion();
         } catch (com.hotclick.exception.PlanSinPrecioException e) {
             return planSinPrecio(e);
         } catch (com.hotclick.exception.PriceIdOnvoFaltanteException e) {
