@@ -95,13 +95,13 @@ export function sql(q: string, vars: Record<string, string> = {}): string {
 }
 
 /**
- * Miembro de equipo (EDITOR/LECTOR) en el negocio del token.
+ * Miembro de equipo (EDITOR/LECTOR/CAJERO) en el negocio del token.
  * La API de invitación NO acepta contraseña (el invitado recibe un secreto aleatorio). Para poder
  * iniciar sesión en E2E, tras crearlo se copia a esa fila el hash de una cuenta QA (clave = E2E_QA_PASSWORD)
  * con UPDATE directo sobre la BD efímera de E2E (E2E_DATABASE_URL). Ese camino solo existe en este helper
  * de test: no hay endpoint ni perfil nuevo en el backend, así que producción no cambia.
  */
-export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' | 'LECTOR') {
+export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' | 'LECTOR' | 'CAJERO') {
   if (!conSql) throw new Error('miembro() requiere E2E_DATABASE_URL para fijar la clave del invitado en la BD de E2E')
   const correo = `e2e.${rol.toLowerCase()}.${sufijo()}@hotclick.test`
   const r = await api.post('/api/empresa/equipo', { headers: h, data: { nombre: `E2E ${rol}`, correo, rolEnEmpresa: rol } })

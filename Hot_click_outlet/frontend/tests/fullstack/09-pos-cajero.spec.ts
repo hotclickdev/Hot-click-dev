@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { QA, auth, bodegaYProducto, login, sufijo } from './api'
+import { QA, auth, bodegaYProducto, login, miembro, sufijo } from './api'
 
 /**
  * Flujo 4 de la simulación final: POS operado por un CAJERO (rol de equipo) en el negocio PYME.
@@ -13,13 +13,8 @@ test.describe.serial('Flujo 4 — POS con cajero', () => {
   test.beforeAll(async ({ request }) => {
     const dueno = auth(await login(request, QA.PYME))
     ;({ bodegaId, productoId } = await bodegaYProducto(request, dueno, { stock: 30 }))
-    const correo = `e2e.cajero.${sufijo()}@hotclick.test`
-    const contrasena = `E2e-${sufijo()}-Cj1!`
-    const r = await request.post('/api/empresa/equipo', {
-      headers: dueno, data: { nombre: 'Cajero E2E', correo, password: contrasena, rolEnEmpresa: 'CAJERO' },
-    })
-    expect(r.ok(), await r.text()).toBeTruthy()
-    cajero = { correo, contrasena }
+    // La invitación no acepta contraseña: el helper fija la clave del cajero en la BD de E2E.
+    cajero = await miembro(request, dueno, 'CAJERO')
   })
 
   test('el cajero abre turno, vende en efectivo y cierra su turno', async ({ request }) => {
@@ -53,7 +48,7 @@ test.describe.serial('Flujo 4 — POS con cajero', () => {
       const r = await request[met](url, { headers: h })
       expect([401, 403], `${met} ${url} → ${r.status()}`).toContain(r.status())
     }
-    const eq = await request.post('/api/empresa/equipo', { headers: h, data: { nombre: 'X', correo: `x.${sufijo()}@hotclick.test`, password: `E2e-${sufijo()}-Aa1!`, rolEnEmpresa: 'LECTOR' } })
+    const eq = await request.post('/api/empresa/equipo', { headers: h, data: { nombre: 'X', correo: `x.${sufijo()}@hotclick.test`, rolEnEmpresa: 'LECTOR' } })
     expect([401, 403]).toContain(eq.status())
   })
 })
