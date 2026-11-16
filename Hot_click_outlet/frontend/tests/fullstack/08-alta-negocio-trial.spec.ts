@@ -30,7 +30,8 @@ test.describe.serial('Flujos 1 y 6 — alta de negocio y cancelación del trial'
 
   test('6. trial: inicia → cancelar al vencer marca cancelarAlVencer → cancelar inmediata cierra la prueba', async ({ request }) => {
     const h = auth(n.sesion)
-    expect((await request.post('/api/billing/trial', { headers: h })).ok()).toBeTruthy()
+    const ini = await request.post('/api/billing/trial', { headers: h })
+    expect(ini.ok(), `POST /api/billing/trial → ${ini.status()} ${await ini.text()}`).toBeTruthy()
     let info = await (await request.get('/api/tenant/info', { headers: h })).json()
     expect(info.estadoPlan).toBe('TRIAL')
 
