@@ -68,7 +68,7 @@ class EquipoServiceUsuarioSuspendidoTest {
             .isInstanceOf(IllegalArgumentException.class);
         verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
         verify(usuarioRepository, never()).save(any(Usuario.class));
-        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), any());
+        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test
@@ -99,7 +99,7 @@ class EquipoServiceUsuarioSuspendidoTest {
 
         verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
         verify(usuarioRepository, never()).save(any(Usuario.class));
-        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), any());
+        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
         org.assertj.core.api.Assertions.assertThat(existente.getRoles()).isNullOrEmpty();
         org.assertj.core.api.Assertions.assertThat(existente.getEmpresa()).isNull();
         org.assertj.core.api.Assertions.assertThat(existente.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);

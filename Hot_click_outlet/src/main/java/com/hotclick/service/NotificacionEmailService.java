@@ -224,9 +224,9 @@ public class NotificacionEmailService {
 
     public void enviarInvitacionMiembro(String correo, String nombre, String rolEnEmpresa,
 
-                                        String nombreEmpresa, String passwordPlano) {
+                                        String nombreEmpresa, boolean cuentaNueva) {
 
-        negocioEmailSender.enviarInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, passwordPlano);
+        negocioEmailSender.enviarInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, cuentaNueva);
 
     }
 
