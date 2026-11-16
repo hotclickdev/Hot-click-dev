@@ -61,6 +61,7 @@ public class AuthTenantSwitchHandler {
             resp.setEmpresaId(empresaId);
             resp.setEmpresaSlug(empresa.getSlug());
             resp.setEmpresaNombre(empresa.getNombreEmpresa());
+            AuthSupport.aplicarRolEquipo(resp, membresia, authSupport.permisosDe(currentUser.getId()));
             return ResponseEntity.ok(ResponseDTO.success("Negocio cambiado", resp));
         } catch (SecurityException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error(e.getMessage()));
@@ -127,6 +128,7 @@ public class AuthTenantSwitchHandler {
             resp.setEmpresaId(empresaId);
             resp.setEmpresaSlug(empresa.getSlug());
             resp.setEmpresaNombre(empresa.getNombreEmpresa());
+            AuthSupport.aplicarRolEquipo(resp, membresia, authSupport.permisosDe(userId));
             return ResponseEntity.ok(resp);
         } catch (CuentaNoActivaException e) {
             return ResponseEntity.status(401).body(ResponseDTO.error("Token expirado o inválido"));
