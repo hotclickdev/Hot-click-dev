@@ -110,6 +110,13 @@ public class SuscripcionController {
         return ResponseEntity.ok(suscripcionService.getFacturas(empresaId, pagina));
     }
 
+    /** 409 EMPRESA_PENDIENTE_APROBACION: misma forma en cambiar-plan y en el trial legado. */
+    private static ResponseEntity<Map<String, Object>> pendienteAprobacion() {
+        return ResponseEntity.status(409).body(Map.of(
+            "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
+            "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
+    }
+
     /** Inicia trial de 14 días para la empresa (solo si no tiene suscripción activa). */
     @PostMapping("/trial")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
@@ -120,9 +127,7 @@ public class SuscripcionController {
         try {
             suscripcionService.iniciarTrial(empresaId);
         } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
-            return ResponseEntity.status(409).body(Map.of(
-                "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
-                "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
+            return pendienteAprobacion();
         }
         return ResponseEntity.ok(Map.of("status", "ok", "mensaje", "Trial iniciado por 14 días"));
     }
@@ -225,9 +230,7 @@ public class SuscripcionController {
             out.putIfAbsent("proveedor", "ONVO");
             return ResponseEntity.ok(out);
         } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
-            return ResponseEntity.status(409).body(Map.of(
-                "error", com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
-                "codigo", com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
+            return pendienteAprobacion();
         } catch (com.hotclick.exception.PlanSinPrecioException e) {
             return planSinPrecio(e);
         } catch (com.hotclick.exception.PriceIdOnvoFaltanteException e) {
