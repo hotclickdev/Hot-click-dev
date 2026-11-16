@@ -75,7 +75,7 @@ public class EmailLayoutHelper {
     public String wordmark(boolean sobreOscuro) {
         String hot   = sobreOscuro ? "#F0524A" : "#E73B33";
         String click = sobreOscuro ? "#FFFFFF" : "#1747A8";
-        return "<img src=\"https://hotclick.lat/brand/hotclick-isotipo.png\" alt=\"HotClick\" width=\"34\" height=\"27\""
+        return "<img src=\"" + esc(urlSitio("/brand/hotclick-isotipo.png")) + "\" alt=\"HotClick\" width=\"34\" height=\"27\""
              + " style=\"display:inline-block;vertical-align:middle;margin-right:8px;border:0\">"
              + "<span style=\"font-family:" + F_DISPLAY + ";font-weight:800;font-size:20px;letter-spacing:-0.5px;vertical-align:middle\">"
              + "<span style=\"color:" + hot + "\">Hot</span><span style=\"color:" + click + "\">Click</span></span>";
@@ -159,7 +159,7 @@ public class EmailLayoutHelper {
                    + com.hotclick.utils.SoporteTelefono.texto(telefonoSoporte) + "</a> o respondé este correo.</p>"
                  : " Respondé este correo y te ayudamos.</p>")
              + "<p style=\"margin:0;color:#6E7682;font-size:12px;line-height:17px\">HotClick · Marketplace de emprendedores de Costa Rica · "
-             + "<a href=\"https://hotclick.lat\" style=\"color:#6E7682;text-decoration:none\">hotclick.lat</a></p>"
+             + "<a href=\"" + esc(urlSitio("")) + "\" style=\"color:#6E7682;text-decoration:none\">hotclick.lat</a></p>"
              + "</td></tr></table></td></tr></table></body></html>";
     }
 
