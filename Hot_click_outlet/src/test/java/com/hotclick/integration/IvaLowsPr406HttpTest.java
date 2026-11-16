@@ -70,7 +70,7 @@ class IvaLowsPr406HttpTest extends BaseIntegrationTest {
         Bodega bodega = new Bodega();
         bodega.setNombreBodega("Despacho Iva Lows B");
         bodega.setDireccionExacta("Calle 1");
-        bodega.setTelefono("88880000");
+        bodega.setTelefono("00000006");
         bodega.setHorarioApertura(LocalTime.of(8, 0));
         bodega.setHorarioCierre(LocalTime.of(18, 0));
         bodega.setAdminCliente(adminUser);

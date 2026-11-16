@@ -8,9 +8,9 @@ import { posService } from './posService'
 
 describe('posService.iniciarSinpeOnvoQr', () => {
   it('manda identificación, tipo y teléfono del pagador', async () => {
-    await posService.iniciarSinpeOnvoQr('tok', '01-0000-0000', 0, '+50680000000')
+    await posService.iniciarSinpeOnvoQr('tok', '01-0000-0000', 0, '+50600000001')
     expect(post).toHaveBeenCalledWith('/pos/qr/pago/tok/sinpe-onvo', {
-      identificacion: '01-0000-0000', tipoIdentificacion: 0, telefono: '+50680000000',
+      identificacion: '01-0000-0000', tipoIdentificacion: 0, telefono: '+50600000001',
     })
   })
 })

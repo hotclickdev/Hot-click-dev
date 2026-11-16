@@ -23,7 +23,7 @@ class PosSinpeOnvoServiceTest {
 
     private static final String DESTINO = "DESTINO_ONVO_PRUEBA";
     private static final String IDENT = "01-0000-0000";
-    private static final String TEL = "8000 0000";
+    private static final String TEL = "0000 0001";
     private static final LocalDateTime AHORA = LocalDateTime.of(2026, 1, 1, 10, 0);
 
     private OnvoService onvo;

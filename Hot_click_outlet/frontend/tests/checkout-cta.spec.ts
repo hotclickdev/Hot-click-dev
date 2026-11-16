@@ -33,7 +33,7 @@ async function seedPedido(page: Page) {
 /** Pasos 1 y 2 del checkout móvil (Figma 28:1083 y 29:1248) hasta llegar al pago. */
 async function llegarAlPago(page: Page) {
   await page.getByLabel('Correo').fill('ana@example.com')
-  await page.getByLabel('Teléfono (WhatsApp)').fill('88881234')
+  await page.getByLabel('Teléfono (WhatsApp)').fill('00000002')
   await page.getByLabel('Nombre completo').fill('Ana Pérez')
   await page.getByRole('button', { name: 'Continuar a entrega' }).click()
   await page.getByLabel('Provincia').selectOption('San José')
@@ -82,7 +82,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await seedPedido(page)
     await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
     await page.getByLabel('Correo').fill('ana@example.com')
-    await page.getByLabel('Teléfono (WhatsApp)').fill('88881234')
+    await page.getByLabel('Teléfono (WhatsApp)').fill('00000002')
     await page.getByLabel('Nombre completo').fill('Ana Pérez')
     await page.getByRole('button', { name: 'Continuar a entrega' }).click()
 
@@ -167,7 +167,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
       const url = route.request().url()
       llamadas.push(`${route.request().method()} ${new URL(url).pathname}`)
       if (url.includes('/public/checkout-config')) {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sinpeManual: true, sinpeDestino: '8888-0000' }) })
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sinpeManual: true, sinpeDestino: '0000-0006' }) })
         return
       }
       // P-01: /sinpe/guest-checkout crea el intent ONVO; el destino y el monto salen del servidor.
@@ -176,7 +176,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: { proveedor: 'SINPE', numeroPedido: 'ORD-TEST-1', total: 5000, sinpeDestino: '8888-0000', redirectUrl: null } }),
+          body: JSON.stringify({ success: true, data: { proveedor: 'SINPE', numeroPedido: 'ORD-TEST-1', total: 5000, sinpeDestino: '0000-0006', redirectUrl: null } }),
         })
         return
       }
@@ -192,7 +192,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
 
     await expect.poll(() => capturado.cuerpo).not.toBeNull()
     expect(llamadas.some((l) => l.includes('/comprobante'))).toBe(false)
-    await expect(page.getByText('8888-0000').first()).toBeVisible()
+    await expect(page.getByText('0000-0006').first()).toBeVisible()
     // B17: la dirección viaja aparte para que el pedido la guarde y el correo diga «Enviamos a …».
     expect(String(capturado.cuerpo?.direccionEntrega)).toContain('Barrio Escalante, casa 12')
     expect(String(capturado.cuerpo?.direccionEntrega)).toContain('Escazú')
@@ -206,7 +206,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await expect(page).toHaveURL(/[?&]paso=1\b/)
 
     await page.getByLabel('Correo').fill('ana@example.com')
-    await page.getByLabel('Teléfono (WhatsApp)').fill('88881234')
+    await page.getByLabel('Teléfono (WhatsApp)').fill('00000002')
     await page.getByLabel('Nombre completo').fill('Ana Pérez')
     await page.getByRole('button', { name: 'Continuar a entrega' }).click()
     await expect(page).toHaveURL(/[?&]paso=2\b/)

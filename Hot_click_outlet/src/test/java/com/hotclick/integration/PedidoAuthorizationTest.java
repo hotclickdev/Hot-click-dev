@@ -40,7 +40,7 @@ class PedidoAuthorizationTest extends BaseIntegrationTest {
         testBodega = new Bodega();
         testBodega.setNombreBodega("Bodega Test");
         testBodega.setDireccionExacta("Calle Test 123");
-        testBodega.setTelefono("88887777");
+        testBodega.setTelefono("00000004");
         testBodega.setHorarioApertura(LocalTime.of(8, 0));
         testBodega.setHorarioCierre(LocalTime.of(17, 0));
         testBodega.setAdminCliente(adminUser);

@@ -70,7 +70,7 @@ class PosAnulacionConcurrenciaTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega Conc");
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("22223333");
+        b.setTelefono("00000009");
         b.setAdminCliente(adminUser);
         b.setEmpresa(empresa);
         b.setEstado(Constants.ESTADO_ACTIVO);

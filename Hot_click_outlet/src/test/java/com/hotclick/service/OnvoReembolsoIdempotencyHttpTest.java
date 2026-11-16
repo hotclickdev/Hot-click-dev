@@ -74,7 +74,7 @@ class OnvoReembolsoIdempotencyHttpTest {
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
             () -> onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-7", CLAVE_IDEM, 900_000L));
         String motivo = OnvoService.motivoOnvo(e.getResponseBodyAsString());
-        assertThat(motivo).contains("cannot be refunded").doesNotContain(intent).doesNotContain("88887777").contains("***");
+        assertThat(motivo).contains("cannot be refunded").doesNotContain(intent).doesNotContain("00000004").contains("***");
         assertThat(OnvoService.motivoOnvo(null)).isEqualTo("(sin detalle)");
         assertThat(OnvoService.motivoOnvo("<html>boom</html>")).isEqualTo("(sin detalle)");
     }

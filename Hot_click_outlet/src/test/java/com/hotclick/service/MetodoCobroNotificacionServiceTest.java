@@ -36,7 +36,7 @@ class MetodoCobroNotificacionServiceTest {
 
         service.avisarCambioPendiente(empresa(), usuario(), "SINPE Móvil", "••••-1111");
 
-        verify(twilioSmsClient).enviar(eq("50688887777"), anyString());
+        verify(twilioSmsClient).enviar(eq("50600000004"), anyString());
         verify(whatsAppMessageSender, never()).enviarTextoFijo(any(), any(), any(), any());
         verify(negocioEmailSender, never()).enviarCambioCobroPendiente(any(), any(), any(), any());
     }
@@ -49,7 +49,7 @@ class MetodoCobroNotificacionServiceTest {
         service.avisarCambioPendiente(empresa(), usuario(), "SINPE Móvil", "••••-1111");
 
         verify(twilioSmsClient, never()).enviar(any(), any());
-        verify(whatsAppMessageSender).enviarTextoFijo(eq("8888-7777"), eq(9L), eq(4L), anyString());
+        verify(whatsAppMessageSender).enviarTextoFijo(eq("0000-0004"), eq(9L), eq(4L), anyString());
         verify(negocioEmailSender).enviarCambioCobroPendiente(
                 eq("ana@taller.cr"), eq("Ana"), eq("SINPE Móvil"), eq("••••-1111"));
     }
@@ -59,13 +59,13 @@ class MetodoCobroNotificacionServiceTest {
     void texto_solo_mascara() {
         String texto = MetodoCobroNotificacionService.textoAviso("SINPE Móvil", "••••-1111");
         assertThat(texto).contains("••••-1111");
-        assertThat(texto).doesNotContain("88881111");
+        assertThat(texto).doesNotContain("00000003");
     }
 
     private static Empresa empresa() {
         Empresa e = new Empresa();
         e.setId(9L);
-        e.setTelefonoEmpresa("22223333");
+        e.setTelefonoEmpresa("00000009");
         return e;
     }
 
@@ -74,7 +74,7 @@ class MetodoCobroNotificacionServiceTest {
         u.setId(4L);
         u.setNombre("Ana");
         u.setCorreo("ana@taller.cr");
-        u.setTelefono("8888-7777");
+        u.setTelefono("0000-0004");
         return u;
     }
 }

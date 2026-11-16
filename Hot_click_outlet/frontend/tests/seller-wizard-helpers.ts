@@ -105,7 +105,7 @@ export async function entrarSeller(
             id: 1,
             nombreComercial: 'Demo',
             nombreEmpresa: 'Demo',
-            numeroWhatsapp: '88880000',
+            numeroWhatsapp: '00000006',
             descripcion: '',
           },
         }),
