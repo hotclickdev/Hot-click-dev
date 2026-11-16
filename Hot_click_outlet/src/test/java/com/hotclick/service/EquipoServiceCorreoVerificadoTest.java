@@ -65,7 +65,7 @@ class EquipoServiceCorreoVerificadoTest {
 
     private Usuario invitarYCapturar(String correo, String rolEnEmpresa) {
         when(usuarioRepository.findByCorreo(correo)).thenReturn(Optional.empty());
-        equipoService.invitar(5L, "Ana Perez", correo, "Temporal1!", "88887777", rolEnEmpresa);
+        equipoService.invitar(5L, "Ana Perez", correo, "88887777", rolEnEmpresa);
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
         return captor.getValue();
@@ -99,7 +99,7 @@ class EquipoServiceCorreoVerificadoTest {
         when(miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(77L, 5L)).thenReturn(Optional.empty());
         when(miembroEmpresaRepository.save(any(MiembroEmpresa.class))).thenAnswer(i -> i.getArgument(0));
 
-        equipoService.invitar(5L, "Ya Existe", "ya@test.cr", "x", "00000000", "LECTOR");
+        equipoService.invitar(5L, "Ya Existe", "ya@test.cr", "00000000", "LECTOR");
 
         assertThat(existente.getCorreoVerificado()).isTrue();
         verify(notificacionEmailService).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.eq(false));

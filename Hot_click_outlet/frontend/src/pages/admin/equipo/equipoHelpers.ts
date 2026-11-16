@@ -5,7 +5,6 @@ export type RolEquipoConfig = { label: string; color: string; desc: string }
 export type FormularioEquipo = {
   nombre: string
   correo: string
-  password: string
   telefono: string
   rolEnEmpresa: string
 }
@@ -52,15 +51,8 @@ export const ROLES_ASIGNABLES = ['EDITOR', 'LECTOR', 'CAJERO']
 export const FORMULARIO_EQUIPO_VACIO: FormularioEquipo = {
   nombre: '',
   correo: '',
-  password: '',
   telefono: '',
   rolEnEmpresa: 'EDITOR',
-}
-
-export function generatePassword(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%'
-  const bytes = crypto.getRandomValues(new Uint8Array(14))
-  return Array.from(bytes, (b) => chars[b % chars.length]).join('')
 }
 
 export function mensajeErrorEquipo(err: unknown, fallback: string): string {

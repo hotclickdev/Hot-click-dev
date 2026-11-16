@@ -58,7 +58,7 @@ class EquipoServiceUsuarioSuspendidoTest {
         existente.setCorreo("susp@test.cr");
         existente.setEstado(estado);
         when(usuarioRepository.findByCorreo("susp@test.cr")).thenReturn(Optional.of(existente));
-        equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "x", "00000000", "LECTOR");
+        equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "00000000", "LECTOR");
     }
 
     @Test
@@ -94,7 +94,7 @@ class EquipoServiceUsuarioSuspendidoTest {
         existente.setEstado(Constants.ESTADO_ELIMINADO);
         when(usuarioRepository.findByCorreo("susp@test.cr")).thenReturn(Optional.of(existente));
 
-        assertThatThrownBy(() -> equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "x", "00000000", "LECTOR"))
+        assertThatThrownBy(() -> equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "00000000", "LECTOR"))
             .isInstanceOf(IllegalArgumentException.class);
 
         verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));

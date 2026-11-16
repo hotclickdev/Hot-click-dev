@@ -51,7 +51,7 @@ public class EquipoService {
      */
     @Transactional
     public void invitar(Long empresaId, String nombre, String correoNorm,
-                        String password, String telefono, String rolEnEmpresa) {
+                        String telefono, String rolEnEmpresa) {
         if (empresaId == null) throw new com.hotclick.exception.EmpresaRequeridaException();
         Empresa empresa = empresaRepository.findByIdForUpdate(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
@@ -63,7 +63,7 @@ public class EquipoService {
             agregarExistente(existente.get(), empresa, rolMiembro, rolEnEmpresa);
             return;
         }
-        crearNuevo(empresa, rolMiembro, nombre, correoNorm, password, telefono, rolEnEmpresa);
+        crearNuevo(empresa, rolMiembro, nombre, correoNorm, telefono, rolEnEmpresa);
     }
 
     public Map<String, Object> cambiarRol(Long usuarioId, Long empresaId, String nuevoRol) {
@@ -146,7 +146,7 @@ public class EquipoService {
     }
 
     private void crearNuevo(Empresa empresa, com.hotclick.model.Rol rolMiembro, String nombre,
-                            String correoNorm, String password, String telefono, String rolEnEmpresa) {
+                            String correoNorm, String telefono, String rolEnEmpresa) {
         String[] partes = partirNombreCompleto(nombre);
         Usuario nuevo = new Usuario();
         nuevo.setNombre(partes[0]);
@@ -154,7 +154,9 @@ public class EquipoService {
         nuevo.setApellidoMaterno(partes[2]);
         nuevo.setIdentificacion("ADM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
         nuevo.setCorreo(correoNorm);
-        nuevo.setContrasenaHash(passwordEncoder.encode(password));
+        // Quien invita NO define la contraseña: secreto aleatorio que nadie conoce ni se devuelve ni se loguea.
+        // El invitado entra con el código de un solo uso de /recuperar-contrasena.
+        nuevo.setContrasenaHash(passwordEncoder.encode(EmpresaAdminService.generarPasswordTemporal()));
         nuevo.setTelefono(telefono);
         nuevo.setEstado(Constants.ESTADO_ACTIVO);
         // QA3 (seguridad): el correo del invitado no está probado, lo escribió quien invita. El default de
