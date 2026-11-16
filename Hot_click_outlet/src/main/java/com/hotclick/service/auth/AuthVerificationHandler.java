@@ -55,6 +55,7 @@ public class AuthVerificationHandler {
     }
 
     static final String MSG_GENERICO = "No se pudo enviar el código. Revisá tus datos e intentá de nuevo.";
+    static final String MSG_CONTRASENA_REQUERIDA = "La contraseña es requerida";
     static final String MSG_CONTRASENA = "La contraseña puede tener como máximo 128 caracteres";
 
     /**
@@ -69,11 +70,15 @@ public class AuthVerificationHandler {
         return msg;
     }
 
-    /** Alta nueva (trae contraseña): exige 18 años y hashea. Reenvío solo con correo: no. */
+    /**
+     * Alta (siempre trae contraseña): exige 18 años y hashea. Sin contraseña se rechaza antes de tocar la
+     * base y de enviar el OTP (no depende de si el correo existe, así no filtra cuentas). El reenvío del
+     * código tiene su propio endpoint (/auth/reenviar-verificacion).
+     */
     private void prepararAltaSiAplica(Usuario usuario) {
         String clave = usuario.getContrasenaHash();
         if (clave == null || clave.isBlank()) {
-            return;
+            throw new IllegalArgumentException(MSG_CONTRASENA_REQUERIDA);
         }
         if (clave.length() > AuthSupport.CONTRASENA_MAX) {
             throw new IllegalArgumentException(MSG_CONTRASENA);
