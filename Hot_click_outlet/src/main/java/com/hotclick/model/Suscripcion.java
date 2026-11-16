@@ -132,6 +132,15 @@ public class Suscripcion {
     public void setFechaFin(LocalDate v) { this.fechaFin = v; }
     public LocalDate getTrialEnd() { return trialEnd; }
     public void setTrialEnd(LocalDate v) { this.trialEnd = v; }
+
+    /**
+     * Un cobro real (COBRO_OK con monto &gt; 0) vence el trial: si trial_end sigue vigente (hoy o futuro) pasa a ayer.
+     * No lo anula: la fecha queda como historial para que no se pueda pedir un segundo trial. Un trial_end ya pasado
+     * o nulo no se toca.
+     */
+    public void vencerTrialPorCobroReal(LocalDate hoy) {
+        if (trialEnd != null && !trialEnd.isBefore(hoy)) this.trialEnd = hoy.minusDays(1);
+    }
     public Boolean getCancelarAlVencer() { return cancelarAlVencer; }
     public void setCancelarAlVencer(Boolean v) { this.cancelarAlVencer = v; }
     public LocalDate getFechaCancelacion() { return fechaCancelacion; }
