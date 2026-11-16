@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -109,12 +110,19 @@ public class PedidoController {
         }
         int subtotal = 0;
         int costoTotalProductos = 0;
+        // null solo para ADMIN de plataforma (pedido sin negocio): catálogo global, mismo criterio que empresaDelScope().
+        Long empresaId = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
         for (PedidoItem item : items) {
             if (item.getProducto() == null || item.getProducto().getId() == null) {
                 throw new IllegalArgumentException("Cada item debe indicar un producto válido");
             }
-            Producto producto = productoRepository.findById(item.getProducto().getId())
-                .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Producto no encontrado", "productoId=" + item.getProducto().getId()));
+            Long productoId = item.getProducto().getId();
+            // IDOR: un producto de otro negocio es «no encontrado» (no se filtra su costo ni se toca su stock).
+            // tenant-global-ok: empresaId null solo ADMIN de plataforma
+            Optional<Producto> encontrado = empresaId != null
+                ? productoRepository.findByIdAndEmpresaId(productoId, empresaId)
+                : productoRepository.findById(productoId);
+            Producto producto = encontrado.orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Producto no encontrado", "productoId=" + item.getProducto().getId()));
             int cantidad = item.getCantidad() != null && item.getCantidad() > 0 ? item.getCantidad() : 1;
             int precio = producto.getPrecioVenta()  != null ? producto.getPrecioVenta()  : 0;
             int costo  = producto.getPrecioCompra() != null ? producto.getPrecioCompra() : 0;
