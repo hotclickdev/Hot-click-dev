@@ -74,7 +74,7 @@ class RolesLectorDenyPorDefectoTest extends BaseIntegrationTest {
         m.put("POST /api/cupones/solicitar", json(post("/api/cupones/solicitar"), "{}"));
         m.put("POST /api/categorias", json(post("/api/categorias"), "{}"));
         m.put("PUT /api/categorias/{id}", json(put("/api/categorias/999999"), "{}"));
-        m.put("POST /api/metodos-cobro", json(post("/api/metodos-cobro"), "{\"tipo\":\"SINPE\",\"dato\":\"88887777\"}"));
+        m.put("POST /api/metodos-cobro", json(post("/api/metodos-cobro"), "{\"tipo\":\"SINPE\",\"dato\":\"00000000\"}"));
         m.put("PUT /api/metodos-cobro/{id}", json(put("/api/metodos-cobro/999999"), "{}"));
         m.put("PUT /api/metodos-cobro/{id}/predeterminado", put("/api/metodos-cobro/999999/predeterminado"));
         m.put("POST /api/productos", json(post("/api/productos"), "{}"));
