@@ -24,6 +24,9 @@ import java.util.*;
 @RequestMapping("/api/billing")
 public class SuscripcionController {
 
+    private static final String KEY_ERROR = "error";
+    private static final String KEY_CODIGO = "codigo";
+
     private static final Logger log = LoggerFactory.getLogger(SuscripcionController.class);
 
     private final SuscripcionService suscripcionService;
@@ -43,15 +46,6 @@ public class SuscripcionController {
     @org.springframework.beans.factory.annotation.Autowired
     private com.hotclick.service.suscripcion.PlanesActivosLector planesActivos;
 
-    private static final String K_ERROR = "error";
-    private static final String K_CODIGO = "codigo";
-
-    /** 409 EMPRESA_PENDIENTE_APROBACION: negocio no aprobado (pendiente, rechazado, etc.); sin datos extra. */
-    private static ResponseEntity<Map<String, Object>> empresaPendienteAprobacion() {
-        return ResponseEntity.status(409).body(Map.of(
-            K_ERROR, com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
-            K_CODIGO, com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
-    }
 
     /** BAJO seguridad: cada reconciliación consulta ONVO; tope por empresa (mismo RateLimiter de AiCopilot). */
     static final int RECONCILIAR_MAX = 6;
@@ -120,6 +114,13 @@ public class SuscripcionController {
         return ResponseEntity.ok(suscripcionService.getFacturas(empresaId, pagina));
     }
 
+    /** 409 EMPRESA_PENDIENTE_APROBACION: negocio no aprobado (pendiente, rechazado, etc.); misma forma en cambiar-plan y en el trial legado. */
+    private static ResponseEntity<Map<String, Object>> pendienteAprobacion() {
+        return ResponseEntity.status(409).body(Map.of(
+            KEY_ERROR, com.hotclick.exception.EmpresaPendienteAprobacionException.MENSAJE,
+            KEY_CODIGO, com.hotclick.exception.EmpresaPendienteAprobacionException.CODIGO));
+    }
+
     /** Inicia trial de 14 días para la empresa (solo si no tiene suscripción activa). */
     @PostMapping("/trial")
     @PreAuthorize("hasAnyRole('EMPRENDEDOR', 'ADMIN')")
@@ -130,7 +131,7 @@ public class SuscripcionController {
         try {
             suscripcionService.iniciarTrial(empresaId);
         } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
-            return empresaPendienteAprobacion();
+            return pendienteAprobacion();
         }
         return ResponseEntity.ok(Map.of("status", "ok", "mensaje", "Trial iniciado por 14 días"));
     }
@@ -157,9 +158,9 @@ public class SuscripcionController {
             return ResponseEntity.ok(Map.of("portalUrl", url));
         } catch (StripeException e) {
             log.error("[billing] Error creando portal empresa={}: {}", empresaId, e.getMessage());
-            return ResponseEntity.status(502).body(Map.of("error", "Error con Stripe"));
+            return ResponseEntity.status(502).body(Map.of(KEY_ERROR, "Error con Stripe"));
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
+            return ResponseEntity.badRequest().body(Map.of(KEY_ERROR, MSG_SOLICITUD));
         }
     }
 
@@ -178,21 +179,21 @@ public class SuscripcionController {
         } catch (com.hotclick.exception.CancelacionOnvoNoDisponibleException e) {
             // MEDIO Seguridad (Opción A): ONVO no confirmó la cancelación; no se cambió nada local.
             return ResponseEntity.status(503).body(Map.of(
-                "error", com.hotclick.exception.CancelacionOnvoNoDisponibleException.MENSAJE,
-                "codigo", com.hotclick.exception.CancelacionOnvoNoDisponibleException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.CancelacionOnvoNoDisponibleException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.CancelacionOnvoNoDisponibleException.CODIGO));
         } catch (com.hotclick.exception.CancelacionConSubidaPendienteException e) {
             return ResponseEntity.status(409).body(Map.of(
-                "error", com.hotclick.exception.CancelacionConSubidaPendienteException.MENSAJE,
-                "codigo", com.hotclick.exception.CancelacionConSubidaPendienteException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.CancelacionConSubidaPendienteException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.CancelacionConSubidaPendienteException.CODIGO));
         } catch (com.hotclick.exception.CambioPlanRequiereSolicitudException e) {
             return ResponseEntity.status(422).body(Map.of(
-                "error", com.hotclick.exception.CambioPlanRequiereSolicitudException.MENSAJE,
-                "codigo", com.hotclick.exception.CambioPlanRequiereSolicitudException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.CambioPlanRequiereSolicitudException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.CambioPlanRequiereSolicitudException.CODIGO));
         } catch (StripeException e) {
             log.error("[billing] Error cancelando empresa={}: {}", empresaId, e.getMessage());
-            return ResponseEntity.status(502).body(Map.of("error", "Error con Stripe"));
+            return ResponseEntity.status(502).body(Map.of(KEY_ERROR, "Error con Stripe"));
         } catch (NoSuchElementException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
+            return ResponseEntity.badRequest().body(Map.of(KEY_ERROR, MSG_SOLICITUD));
         }
     }
 
@@ -224,7 +225,7 @@ public class SuscripcionController {
             if (exigeCorreoVerificado(plan)) {
                 Usuario usuario = authSupport.usuarioFromRequest(request);
                 if (!Boolean.TRUE.equals(usuario.getCorreoVerificado())) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Verificá tu correo antes de activar un plan de pago"));
+                    return ResponseEntity.badRequest().body(Map.of(KEY_ERROR, "Verificá tu correo antes de activar un plan de pago"));
                 }
             }
             // Auditor 5 S-01: alta/cambio por ONVO (fail-closed sin llave). El plan local solo cambia
@@ -233,7 +234,7 @@ public class SuscripcionController {
             out.putIfAbsent("proveedor", "ONVO");
             return ResponseEntity.ok(out);
         } catch (com.hotclick.exception.EmpresaPendienteAprobacionException e) {
-            return empresaPendienteAprobacion();
+            return pendienteAprobacion();
         } catch (com.hotclick.exception.PlanSinPrecioException e) {
             return planSinPrecio(e);
         } catch (com.hotclick.exception.PriceIdOnvoFaltanteException e) {
@@ -242,54 +243,54 @@ public class SuscripcionController {
             return cobroNoDisponible();
         } catch (com.hotclick.exception.AltaOnvoEnCursoException e) {
             return ResponseEntity.status(409).body(Map.of(
-                "error", com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE,
-                "codigo", com.hotclick.exception.AltaOnvoEnCursoException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.AltaOnvoEnCursoException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.AltaOnvoEnCursoException.CODIGO));
         } catch (com.hotclick.exception.PlanNoDisponibleException e) {
-            return ResponseEntity.status(409).body(Map.of("error", com.hotclick.exception.PlanNoDisponibleException.MENSAJE, "codigo", "PLAN_SIN_PRECIO"));
+            return ResponseEntity.status(409).body(Map.of(KEY_ERROR, com.hotclick.exception.PlanNoDisponibleException.MENSAJE, KEY_CODIGO, "PLAN_SIN_PRECIO"));
         } catch (com.hotclick.exception.PlanYaActivoException e) {
             // QA3-022: mismo plan activo → 409 con código claro (antes 400 genérico).
             return ResponseEntity.status(409).body(Map.of(
-                "error", com.hotclick.exception.PlanYaActivoException.MENSAJE,
-                "codigo", com.hotclick.exception.PlanYaActivoException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.PlanYaActivoException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.PlanYaActivoException.CODIGO));
         } catch (com.hotclick.exception.TrialConMetodoPagoException e) {
             return ResponseEntity.status(422).body(Map.of(
-                "error", com.hotclick.exception.TrialConMetodoPagoException.MENSAJE,
-                "codigo", com.hotclick.exception.TrialConMetodoPagoException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.TrialConMetodoPagoException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.TrialConMetodoPagoException.CODIGO));
         } catch (com.hotclick.exception.CambioPlanRequiereSolicitudException e) {
             // Suscripción cobrada: solo subir a Negocio Plus es directo; lo demás va por solicitud.
             return ResponseEntity.status(422).body(Map.of(
-                "error", com.hotclick.exception.CambioPlanRequiereSolicitudException.MENSAJE,
-                "codigo", com.hotclick.exception.CambioPlanRequiereSolicitudException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.CambioPlanRequiereSolicitudException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.CambioPlanRequiereSolicitudException.CODIGO));
         } catch (com.hotclick.exception.CancelacionOnvoNoDisponibleException e) {
             // MEDIO Seguridad (Opción A): bajar a Emprendedor sin confirmación de ONVO; no se cambió nada local.
             return ResponseEntity.status(503).body(Map.of(
-                "error", com.hotclick.exception.CancelacionOnvoNoDisponibleException.MENSAJE,
-                "codigo", com.hotclick.exception.CancelacionOnvoNoDisponibleException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.CancelacionOnvoNoDisponibleException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.CancelacionOnvoNoDisponibleException.CODIGO));
         } catch (com.hotclick.exception.ReemplazoOnvoNoDisponibleException e) {
             // ALTO-02b: ONVO no respondió al crear la suscripción nueva; la vieja quedó intacta.
             return ResponseEntity.status(503).body(Map.of(
-                "error", com.hotclick.exception.ReemplazoOnvoNoDisponibleException.MENSAJE,
-                "codigo", com.hotclick.exception.ReemplazoOnvoNoDisponibleException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.ReemplazoOnvoNoDisponibleException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.ReemplazoOnvoNoDisponibleException.CODIGO));
         } catch (com.hotclick.exception.OnvoSolicitudRechazadaException e) {
             // ALTO-02: rechazo de ONVO o bug de cliente → 422 claro; nada se cobró ni cambió.
             return ResponseEntity.status(422).body(Map.of(
-                "error", com.hotclick.exception.OnvoSolicitudRechazadaException.MENSAJE,
-                "codigo", com.hotclick.exception.OnvoSolicitudRechazadaException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.OnvoSolicitudRechazadaException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.OnvoSolicitudRechazadaException.CODIGO));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
+            return ResponseEntity.badRequest().body(Map.of(KEY_ERROR, MSG_SOLICITUD));
         } catch (SecurityException e) {
-            return ResponseEntity.status(401).body(Map.of("error", MSG_SESION));
+            return ResponseEntity.status(401).body(Map.of(KEY_ERROR, MSG_SESION));
         } catch (Exception e) {
             log.error("[billing] Error cambiando plan empresa={}: {}", empresaId, e.getMessage());
-            return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
+            return ResponseEntity.status(502).body(Map.of(KEY_ERROR, "Error con la pasarela de pago"));
         }
     }
 
     /** ALTO-02b: falta ONVO_PRICE_ID_{PLAN}; fail-closed, nada se cobró ni cambió. */
     private static ResponseEntity<Map<String, Object>> priceIdFaltante() {
         return ResponseEntity.status(503).body(Map.of(
-            "error", com.hotclick.exception.PriceIdOnvoFaltanteException.MENSAJE,
-            "codigo", com.hotclick.exception.PriceIdOnvoFaltanteException.CODIGO));
+            KEY_ERROR, com.hotclick.exception.PriceIdOnvoFaltanteException.MENSAJE,
+            KEY_CODIGO, com.hotclick.exception.PriceIdOnvoFaltanteException.CODIGO));
     }
 
     /**
@@ -311,13 +312,13 @@ public class SuscripcionController {
             return ResponseEntity.ok(out);
         } catch (com.hotclick.exception.OnvoSolicitudRechazadaException e) {
             return ResponseEntity.status(422).body(Map.of(
-                "error", com.hotclick.exception.OnvoSolicitudRechazadaException.MENSAJE,
-                "codigo", com.hotclick.exception.OnvoSolicitudRechazadaException.CODIGO));
+                KEY_ERROR, com.hotclick.exception.OnvoSolicitudRechazadaException.MENSAJE,
+                KEY_CODIGO, com.hotclick.exception.OnvoSolicitudRechazadaException.CODIGO));
         } catch (IllegalArgumentException | IllegalStateException | NoSuchElementException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", MSG_SOLICITUD));
+            return ResponseEntity.badRequest().body(Map.of(KEY_ERROR, MSG_SOLICITUD));
         } catch (Exception e) {
             log.error("[billing] Error completando pago empresa={}: {}", empresaId, e.getClass().getSimpleName());
-            return ResponseEntity.status(502).body(Map.of("error", "Error con la pasarela de pago"));
+            return ResponseEntity.status(502).body(Map.of(KEY_ERROR, "Error con la pasarela de pago"));
         }
     }
 
@@ -334,17 +335,17 @@ public class SuscripcionController {
         if (rateLimiter != null && !rateLimiter.tryAcquire("empresa:" + empresaId + ":billing:reconciliar",
                 RECONCILIAR_MAX, RECONCILIAR_VENTANA_SEG)) {
             return ResponseEntity.status(429).body(Map.of("status", "pendiente",
-                "error", "Ya estamos revisando tu pago. Esperá un minuto antes de volver a consultar."));
+                KEY_ERROR, "Ya estamos revisando tu pago. Esperá un minuto antes de volver a consultar."));
         }
         if (reconciliacion == null) {
-            return ResponseEntity.status(503).body(Map.of("error", "No pudimos confirmar el pago ahora. Probá de nuevo en unos minutos."));
+            return ResponseEntity.status(503).body(Map.of(KEY_ERROR, "No pudimos confirmar el pago ahora. Probá de nuevo en unos minutos."));
         }
         return switch (reconciliacion.reconciliarEmpresa(empresaId)) {
             case ACTIVADA -> ResponseEntity.ok(Map.of("status", "activado"));
             case SIN_CONFIRMAR -> ResponseEntity.ok(Map.of("status", "pendiente",
                 "mensaje", "Todavía no vemos el pago confirmado en ONVO. Tu plan se activa apenas se confirme."));
             case IGNORADA -> ResponseEntity.ok(Map.of("status", "sin_pago_pendiente"));
-            case ONVO_NO_DISPONIBLE -> ResponseEntity.status(503).body(Map.of("error",
+            case ONVO_NO_DISPONIBLE -> ResponseEntity.status(503).body(Map.of(KEY_ERROR,
                 "ONVO no respondió y no cambiamos nada. Probá de nuevo en unos minutos."));
         };
     }
@@ -387,20 +388,20 @@ public class SuscripcionController {
 
     private static <T> ResponseEntity<T> cobroNoDisponible() {
         @SuppressWarnings("unchecked")
-        T body = (T) Map.of("error", com.hotclick.exception.CobroPlanNoDisponibleException.MENSAJE,
-            "codigo", com.hotclick.exception.CobroPlanNoDisponibleException.CODIGO);
+        T body = (T) Map.of(KEY_ERROR, com.hotclick.exception.CobroPlanNoDisponibleException.MENSAJE,
+            KEY_CODIGO, com.hotclick.exception.CobroPlanNoDisponibleException.CODIGO);
         return ResponseEntity.status(409).body(body);
     }
 
     private static <T> ResponseEntity<T> planSinPrecio(com.hotclick.exception.PlanSinPrecioException e) {
         @SuppressWarnings("unchecked")
-        T body = (T) Map.of("error", com.hotclick.exception.PlanSinPrecioException.MENSAJE, "codigo", com.hotclick.exception.PlanSinPrecioException.CODIGO, "plan", e.getPlan());
+        T body = (T) Map.of(KEY_ERROR, com.hotclick.exception.PlanSinPrecioException.MENSAJE, KEY_CODIGO, com.hotclick.exception.PlanSinPrecioException.CODIGO, "plan", e.getPlan());
         return ResponseEntity.status(409).body(body);
     }
 
     private static <T> ResponseEntity<T> soloPropietario() {
         @SuppressWarnings("unchecked")
-        T body = (T) Map.of("error", com.hotclick.security.PropietarioGuard.MSG);
+        T body = (T) Map.of(KEY_ERROR, com.hotclick.security.PropietarioGuard.MSG);
         return ResponseEntity.status(403).body(body);
     }
 }
