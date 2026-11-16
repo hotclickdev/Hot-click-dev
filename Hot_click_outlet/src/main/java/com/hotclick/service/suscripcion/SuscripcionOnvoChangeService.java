@@ -1109,6 +1109,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (sub.getOnvoSubNuevaPendiente() == null) sub.setPlanPendiente(null);
         sub.setOnvoPriceId(onvoBilling.getPriceIdForPlan(planNombre));
         sub.setEstado("ACTIVO");
+        // Cobro real verificado (el verificador exige monto > 0): el plan ya no es trial; trial_end queda vencido.
+        sub.vencerTrialPorCobroReal(LocalDate.now(Constants.ZONA_CR));
         // MEDIO Seguridad (Opción A): un cobro no deshace una cancelación al vencer; se conserva y queda alerta.
         conservarCancelacionAlVencer(sub, onvoSubId, "cobro");
         sub.setFechaFin(fin);
