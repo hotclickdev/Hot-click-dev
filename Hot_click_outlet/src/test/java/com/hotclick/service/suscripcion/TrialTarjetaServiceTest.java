@@ -113,9 +113,18 @@ class TrialTarjetaServiceTest {
     }
 
     @ParameterizedTest(name = "estado de empresa {0} no es elegible")
-    @ValueSource(strings = {"PENDIENTE_APROBACION", "SUSPENDIDO_IMPAGO", "EXTENSION_IMPAGO"})
+    @ValueSource(strings = {"PENDIENTE_APROBACION", "SUSPENDIDO_IMPAGO", "EXTENSION_IMPAGO", "RECHAZADO", "INACTIVO", "BLOQUEADO", "SUSPENDIDO", "DESCONOCIDO"})
     void empresaNoVigenteNoElegible(String estadoEmpresa) {
         empresa.setEstadoEmpresa(estadoEmpresa);
+        assertThat(service.estado(10L).elegible()).isFalse();
+        assertThatThrownBy(() -> service.iniciar(10L)).isInstanceOf(TrialTarjetaService.NoDisponibleException.class);
+        verifyNoInteractions(changeService);
+    }
+
+    @Test
+    @DisplayName("Estado de empresa nulo: no elegible (fail-closed, igual que el trial legado)")
+    void estadoEmpresaNuloNoElegible() {
+        empresa.setEstadoEmpresa(null);
         assertThat(service.estado(10L).elegible()).isFalse();
         assertThatThrownBy(() -> service.iniciar(10L)).isInstanceOf(TrialTarjetaService.NoDisponibleException.class);
         verifyNoInteractions(changeService);
