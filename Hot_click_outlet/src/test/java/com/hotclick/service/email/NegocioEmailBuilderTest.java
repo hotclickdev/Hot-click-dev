@@ -60,4 +60,65 @@ class NegocioEmailBuilderTest {
         assertThat(sinCupo).contains("Sin cupo de 3 meses gratis");
         assertThat(conCupo + ultimo + sinCupo).doesNotContain("cupo gratis");
     }
+
+    private NegocioEmailBuilder conAppUrl(String appUrl) {
+        EmailLayoutHelper l = new EmailLayoutHelper();
+        if (appUrl != null) ReflectionTestUtils.setField(l, "appUrl", appUrl);
+        NegocioEmailBuilder b = new NegocioEmailBuilder();
+        ReflectionTestUtils.setField(b, "layout", l);
+        return b;
+    }
+
+    @Test
+    @DisplayName("QA W2-1: negocio pendiente => «en revisión», sin «tienda está lista» ni «Ya podés entrar»")
+    void bienvenidaPendienteDiceEnRevision() {
+        String html = builder.buildBienvenidaEmprendedor("Ana", "Café Luz", true);
+        assertThat(html).contains("Recibimos tu negocio").contains("en revisión").contains("te avisaremos")
+            .doesNotContain("Tu tienda está lista").doesNotContain("Ya podés entrar");
+        assertThat(builder.asuntoBienvenidaEmprendedor("Café Luz", true))
+            .contains("Recibimos tu negocio").doesNotContain("lista");
+    }
+
+    @Test
+    @DisplayName("QA W2-1: negocio activo => mantiene el texto de tienda lista")
+    void bienvenidaActivaDiceLista() {
+        String html = builder.buildBienvenidaEmprendedor("Ana", "Café Luz", false);
+        assertThat(html).contains("Tu tienda está lista").contains("Ya podés entrar").doesNotContain("en revisión");
+        assertThat(builder.asuntoBienvenidaEmprendedor("Café Luz", false)).contains("Tu tienda está lista");
+    }
+
+    private java.util.List<String> todosLosCorreosConEnlace(NegocioEmailBuilder b) {
+        return java.util.List.of(
+            b.buildBienvenidaEmprendedor("Ana", "X", true),
+            b.buildBienvenidaEmprendedor("Ana", "X", false),
+            b.buildAprobacionNegocio("Ana", "X"),
+            b.buildModeracionAprobada("Ana", "Producto", "X"),
+            b.buildModeracionRechazada("Ana", "Producto", "X", "m"),
+            b.buildProductoModerado("Ana", "X", true, "n"),
+            b.buildCambioCobroPendiente("Ana", "IBAN", "****1"),
+            b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", null),
+            b.buildCuponBienvenida("C1"),
+            b.buildResenaResultado("Ana", true, "X"));
+    }
+
+    @Test
+    @DisplayName("QA W2-2: los enlaces usan app.url (QA/staging) y no apuntan a producción")
+    void enlacesUsanAppUrlConfigurada() {
+        for (String html : todosLosCorreosConEnlace(conAppUrl("https://qa.example.test/"))) {
+            assertThat(html).contains("href=\"https://qa.example.test/").doesNotContain("href=\"https://hotclick.lat/");
+        }
+        assertThat(conAppUrl("https://qa.example.test").buildAprobacionNegocio("Ana", "X"))
+            .contains("href=\"https://qa.example.test/admin\"");
+    }
+
+    @Test
+    @DisplayName("QA W2-2: sin app.url configurada (o en blanco) los enlaces siguen en https://hotclick.lat")
+    void enlacesPorDefectoHotclickLat() {
+        for (String appUrl : new String[] {null, " "}) {
+            NegocioEmailBuilder b = conAppUrl(appUrl);
+            assertThat(b.buildBienvenidaEmprendedor("Ana", "X", true)).contains("href=\"https://hotclick.lat/admin\"");
+            assertThat(b.buildCuponBienvenida("C1")).contains("href=\"https://hotclick.lat/productos\"");
+            assertThat(b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", null)).contains("href=\"https://hotclick.lat/login\"");
+        }
+    }
 }

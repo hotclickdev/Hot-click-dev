@@ -26,17 +26,28 @@ public class NegocioEmailBuilder {
                 "Usalo en cualquier producto del catálogo al pagar.")
             + layout.abrirCuerpo()
             + layout.codigoDestacado("Tu código", layout.esc(codigo), EmailLayoutHelper.FONDO_ALERTA, false)
-            + layout.cta("https://hotclick.lat/productos", "Usar mi cupón")
+            + layout.cta(layout.urlSitio("/productos"), "Usar mi cupón")
             + layout.notaPequena("Válido para una sola compra, una vez por persona. Ingresalo en el campo «¿Tenés un cupón?» al pagar.")
             + layout.footer("¿Dudas?");
     }
 
-    public String buildBienvenidaEmprendedor(String nombre, String nombreEmpresa) {
+    /** Asunto de la bienvenida: no dice «lista» si el negocio aún espera aprobación. */
+    public String asuntoBienvenidaEmprendedor(String nombreEmpresa, boolean pendienteAprobacion) {
+        return (pendienteAprobacion ? "Recibimos tu negocio en HotClick — " : "Tu tienda está lista en HotClick — ")
+            + layout.esc(nombreEmpresa);
+    }
+
+    public String buildBienvenidaEmprendedor(String nombre, String nombreEmpresa, boolean pendienteAprobacion) {
+        String titulo = pendienteAprobacion ? "Recibimos tu negocio" : "Tu tienda está lista";
+        String sub = pendienteAprobacion ? "Lo estamos revisando" : "Bienvenido a la comunidad de emprendedores";
+        String intro = pendienteAprobacion
+            ? "quedó registrado en HotClick y está en revisión. Todavía no se publica: te avisaremos por correo cuando lo aprobemos. Mientras tanto podés entrar a tu panel y ir preparando tu tienda."
+            : "quedó registrado en HotClick. Ya podés entrar a tu panel y empezar a configurar tu tienda.";
         return layout.abrirHtml()
-            + layout.header("Tu tienda está lista", "Bienvenido a la comunidad de emprendedores")
+            + layout.header(titulo, sub)
             + layout.abrirCuerpo()
             + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
-            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Tu negocio <strong style='color:#14171C'>" + layout.esc(nombreEmpresa) + "</strong> quedó registrado en HotClick. Ya podés entrar a tu panel y empezar a configurar tu tienda.</p>"
+            + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Tu negocio <strong style='color:#14171C'>" + layout.esc(nombreEmpresa) + "</strong> " + intro + "</p>"
             + "<div style='background:#EFF4FE;border:1px solid #C2D5F9;border-radius:12px;padding:20px;margin-bottom:24px'>"
             + "<p style='margin:0 0 10px;font-weight:700;color:#14171C'>Próximos pasos:</p>"
             + "<ul style='margin:0;padding-left:20px;color:#4D5560;line-height:1.8;font-size:14px'>"
@@ -45,7 +56,7 @@ public class NegocioEmailBuilder {
             + "<li>Invitá a tu equipo de administración</li>"
             + "</ul>"
             + "</div>"
-            + layout.cta("https://hotclick.lat/admin", "Ir a mi panel")
+            + layout.cta(layout.urlSitio("/admin"), "Ir a mi panel")
             + layout.footer("¿Tenés dudas para arrancar?");
     }
 
@@ -59,7 +70,7 @@ public class NegocioEmailBuilder {
             + "<p style='margin:0 0 10px;font-weight:700;color:#178A50'>Tu tienda ya está en línea</p>"
             + "<p style='margin:0;color:#14171C;line-height:1.7;font-size:14px'>Podés activar la visibilidad, agregar más productos y configurar tu perfil desde el panel de administración.</p>"
             + "</div>"
-            + layout.cta("https://hotclick.lat/admin", "Ver mi panel")
+            + layout.cta(layout.urlSitio("/admin"), "Ver mi panel")
             + layout.footer("¿Tenés alguna pregunta?");
     }
 
@@ -120,7 +131,7 @@ public class NegocioEmailBuilder {
             + "<p style='margin:0;color:#1747A8;font-weight:700'>" + layout.esc(rolLabel) + "</p>"
             + "</div>"
             + credencialesBlock
-            + layout.cta("https://hotclick.lat/login", "Ingresar al panel")
+            + layout.cta(layout.urlSitio("/login"), "Ingresar al panel")
             + layout.footer("¿Tenés alguna pregunta?");
     }
 
@@ -168,7 +179,7 @@ public class NegocioEmailBuilder {
             + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
             + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Revisamos <strong style='color:#14171C'>"
             + layout.esc(nombreItem) + "</strong> y quedó aprobado.</p>"
-            + layout.cta("https://hotclick.lat/admin", "Ver mi panel")
+            + layout.cta(layout.urlSitio("/admin"), "Ver mi panel")
             + layout.footer("¿Tenés alguna pregunta?");
     }
 
@@ -186,7 +197,7 @@ public class NegocioEmailBuilder {
             + layout.esc(nombreItem) + "</strong> y por ahora no quedó aprobado.</p>"
             + motivoHtml
             + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Podés corregirlo y volver a enviarlo, o escribirnos si tenés dudas.</p>"
-            + layout.cta("https://hotclick.lat/admin", "Ir al panel")
+            + layout.cta(layout.urlSitio("/admin"), "Ir al panel")
             + layout.footer("¿Querés que lo revisemos juntos?");
     }
 
@@ -199,7 +210,7 @@ public class NegocioEmailBuilder {
                 + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>Publicamos tu reseña"
                 + (productoNombre != null ? " de <strong style='color:#14171C'>" + layout.esc(productoNombre) + "</strong>" : "")
                 + ". Gracias por ayudar a otros compradores.</p>"
-                + layout.cta("https://hotclick.lat/productos", "Seguir comprando")
+                + layout.cta(layout.urlSitio("/productos"), "Seguir comprando")
                 + layout.footer("¿Tenés alguna pregunta?");
         }
         return layout.abrirHtml()
@@ -229,7 +240,7 @@ public class NegocioEmailBuilder {
             + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
             + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>" + cuerpo + "</p>"
             + notasHtml
-            + layout.cta("https://hotclick.lat/admin", "Ir al panel")
+            + layout.cta(layout.urlSitio("/admin"), "Ir al panel")
             + layout.footer("¿Querés que lo revisemos juntos?");
     }
 
@@ -241,7 +252,7 @@ public class NegocioEmailBuilder {
             + "<p style='margin:0 0 16px;color:#4D5560;font-size:14px;line-height:1.6'>"
             + "Pediste cambiar tu " + layout.esc(tipoCuenta) + " a <strong style='color:#14171C'>"
             + layout.esc(mascaraNueva) + "</strong>. La cuenta vigente no cambia hasta que HotClick lo apruebe.</p>"
-            + layout.cta("https://hotclick.lat/admin", "Ver métodos de cobro")
+            + layout.cta(layout.urlSitio("/admin"), "Ver métodos de cobro")
             + layout.footer("Si no fuiste vos, escribinos ya.");
     }
 }

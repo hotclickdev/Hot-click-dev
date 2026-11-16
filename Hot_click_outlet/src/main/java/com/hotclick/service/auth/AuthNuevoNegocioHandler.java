@@ -73,7 +73,8 @@ public class AuthNuevoNegocioHandler {
 
             notificacionEmailService.enviarBienvenidaEmprendedor(
                 currentUser.getCorreo(), currentUser.getNombre(),
-                alta.empresa().getNombreComercial());
+                alta.empresa().getNombreComercial(),
+                "PENDIENTE_APROBACION".equals(alta.empresa().getEstadoEmpresa()));
             altaEmprendedorNotificador.notificar(
                 alta.empresa().getNombreComercial(), alta.empresa().getCorreoEmpresa(),
                 alta.cupo());
