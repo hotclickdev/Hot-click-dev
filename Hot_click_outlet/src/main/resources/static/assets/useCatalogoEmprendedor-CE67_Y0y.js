@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-DQNgl32c.js";function t(){return e()}export{t};
