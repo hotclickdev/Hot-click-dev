@@ -188,7 +188,7 @@ public class EmpresaAdminService {
         empresa(id);   // 404 si no existe
         String correoNorm = correo.trim().toLowerCase(java.util.Locale.ROOT);
         String telefonoNorm = (telefono != null && !telefono.isBlank()) ? telefono : "00000000";
-        equipoService.invitar(id, nombre, correoNorm, generarPasswordTemporal(), telefonoNorm, rolEnEmpresa);
+        equipoService.invitar(id, nombre, correoNorm, telefonoNorm, rolEnEmpresa);
         auditoriaAdminRegistroService.registrarSiAdmin("EQUIPO_INVITAR", "MIEMBRO_EMPRESA", null, id,
             "Invitación a " + correoNorm + " como " + rolEnEmpresa);
     }
@@ -221,7 +221,7 @@ public class EmpresaAdminService {
      * una mayúscula, una minúscula y un dígito y mezcla las posiciones (Fisher-Yates).
      * Nunca se loguea.
      */
-    static String generarPasswordTemporal() {
+    public static String generarPasswordTemporal() {
         char[] c = new char[LARGO_PASSWORD_TEMPORAL];
         c[0] = elegir(LETRAS_MAYUSCULAS);
         c[1] = elegir(LETRAS_MINUSCULAS);

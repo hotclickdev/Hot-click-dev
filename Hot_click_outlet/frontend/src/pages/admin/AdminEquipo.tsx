@@ -15,7 +15,6 @@ import {
   type MiembroEquipo,
 } from './equipo/equipoHelpers'
 import type { Id } from '@/types/api'
-import { cumplePoliticaContrasena } from '@/utils/politicaContrasena'
 
 export default function AdminEquipo() {
   const toast = useToast()
@@ -27,7 +26,6 @@ export default function AdminEquipo() {
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [confirmId, setConfirmId] = useState<Id | null>(null)
-  const [showPwd, setShowPwd] = useState(false)
 
   async function obtenerMiembros() {
     const { data } = await equipoService.getAll()
@@ -57,7 +55,6 @@ export default function AdminEquipo() {
     const e: Record<string, string> = {}
     if (!form.nombre.trim()) e.nombre = 'Nombre requerido'
     if (!isValidEmail(form.correo)) e.correo = 'Correo inválido'
-    if (!cumplePoliticaContrasena(form.password)) e.password = 'Mínimo 8 caracteres, una mayúscula y un número'
     return e
   }
 
@@ -77,7 +74,6 @@ export default function AdminEquipo() {
       await equipoService.invitar({
         nombre: form.nombre.trim(),
         correo: form.correo.trim(),
-        password: form.password,
         ...(form.telefono.trim() && { telefono: form.telefono.trim() }),
         rolEnEmpresa: form.rolEnEmpresa,
       })
@@ -174,9 +170,7 @@ export default function AdminEquipo() {
           form={form}
           errors={errors}
           saving={saving}
-          showPwd={showPwd}
           onChange={patchForm}
-          onShowPwd={setShowPwd}
           onCancel={() => { setShowForm(false); setErrors({}) }}
           onSubmit={invitar}
         />

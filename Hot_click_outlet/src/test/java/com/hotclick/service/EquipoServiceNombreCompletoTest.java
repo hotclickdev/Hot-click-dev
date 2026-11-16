@@ -57,7 +57,7 @@ class EquipoServiceNombreCompletoTest {
         empresa.setNombreEmpresa("Tienda QA3");
         empresa.setId(9L);
         when(empresaRepository.findByIdForUpdate(9L)).thenReturn(Optional.of(empresa));
-        equipoService.invitar(9L, nombreCompleto, "n@test.cr", "Temporal1!", "88887777", "EDITOR");
+        equipoService.invitar(9L, nombreCompleto, "n@test.cr", "00000000", "EDITOR");
         ArgumentCaptor<Usuario> c = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(c.capture());
         return c.getValue();

@@ -56,7 +56,6 @@ public class EquipoController {
             empresaId,
             body.get("nombre"),
             body.get("correo").trim().toLowerCase(java.util.Locale.ROOT),
-            body.get("password"),
             body.getOrDefault("telefono", "00000000"),
             rolEnEmpresa);
         return ResponseEntity.ok(ResponseDTO.success("Miembro agregado al equipo como " + rolEnEmpresa, null));
@@ -100,7 +99,7 @@ public class EquipoController {
         ResponseEntity<ResponseDTO> invalido = validarInvitacion(body);
         if (invalido != null) return invalido;
         equipoService.invitar(empresaId, body.get("nombre"),
-            body.get("correo").trim().toLowerCase(java.util.Locale.ROOT), body.get("password"),
+            body.get("correo").trim().toLowerCase(java.util.Locale.ROOT),
             body.getOrDefault("telefono", "00000000"), CAJERO);
         return ResponseEntity.ok(ResponseDTO.success("Miembro agregado al equipo como " + CAJERO, null));
     }
@@ -135,9 +134,7 @@ public class EquipoController {
         if (body.get("correo") == null || body.get("correo").isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El correo es requerido"));
         }
-        if (!com.hotclick.service.auth.AuthSupport.cumplePoliticaContrasena(body.get("password"))) {
-            return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.service.auth.AuthSupport.MENSAJE_POLITICA_CONTRASENA));
-        }
+        // La contraseña ya no es parte de la API: si llega "password" se ignora (nunca se usa).
         String rolEnEmpresa = body.getOrDefault("rolEnEmpresa", "EDITOR");
         if (!ROLES_PERMITIDOS.contains(rolEnEmpresa)) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(MSG_ROL_INVALIDO));
