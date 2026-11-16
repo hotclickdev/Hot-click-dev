@@ -107,7 +107,7 @@ class AltaSinClaveTest {
         when(usuarioService.buscarPorCorreo("zombi@test.cr")).thenReturn(Optional.of(zombi));
 
         assertThatThrownBy(() -> verificacion.verificarYRegistrar("zombi@test.cr", "123456"))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(com.hotclick.exception.RecursoNoEncontradoException.class);
         verify(usuarioService, never()).activarUsuario(any());
         verifyNoInteractions(otpService);
     }
