@@ -40,6 +40,8 @@ public class AdminAsignarController {
     @Autowired private PasswordEncoder   passwordEncoder;
     @Autowired private CompanyScope      companyScope;
     @Autowired private EmpresaRepository empresaRepository;
+    // El DTO se arma en código (no llega por @Valid @RequestBody): sus restricciones se validan a mano.
+    @Autowired private jakarta.validation.Validator validator;
 
     static final int MIN_CARACTERES_Q = 3;
     static final int MAX_RESULTADOS = 20;
@@ -194,6 +196,16 @@ public class AdminAsignarController {
                 return item;
             }).toList();
             dto.setItems(items);
+
+            // Bean Validation no corre sobre un DTO armado aquí: sin esto el tope de ítems (MAX_ITEMS) no se aplicaba.
+            // Va antes de leer la empresa y de llamar al servicio que bloquea productos.
+            String errores = validator.validate(dto).stream()
+                .map(jakarta.validation.ConstraintViolation::getMessage)
+                .sorted()
+                .collect(java.util.stream.Collectors.joining("; "));
+            if (!errores.isEmpty()) {
+                return ResponseEntity.badRequest().body(ResponseDTO.error(errores));
+            }
 
             // tenant-global-ok: carga la empresa propia por id (o ninguna si es ADMIN), no lista nada
             com.hotclick.model.Empresa empresa = eid != null ? empresaRepository.findById(eid).orElse(null) : null;
