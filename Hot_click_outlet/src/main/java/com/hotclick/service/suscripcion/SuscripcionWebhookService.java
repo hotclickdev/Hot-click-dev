@@ -87,6 +87,8 @@ public class SuscripcionWebhookService {
             sub.setStripeSubscriptionId(stripeSubId);
             sub.setEstado("ACTIVO");
             sub.setFechaFin(periodoFin);
+            // Solo un cobro real vence el trial; una factura de 0 (trial) no.
+            if (montoCentavos > 0) sub.vencerTrialPorCobroReal(LocalDate.now(Constants.ZONA_CR));
             suscripcionRepo.save(sub);
 
             Empresa empresa = sub.getEmpresa();
