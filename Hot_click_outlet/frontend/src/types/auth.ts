@@ -15,6 +15,10 @@ export type AuthResponse = {
   empresaSlug?: string | null
   empresaNombre?: string | null
   permisos?: string[]
+  /** Rol de equipo en el negocio activo (PROPIETARIO, ADMIN, EDITOR, LECTOR, CAJERO). No es el rol Spring `rol`. */
+  rolEquipo?: string | null
+  /** Permisos reales del miembro en el negocio activo (CAJERO: solo POS). */
+  permisosEquipo?: string[] | null
   correoVerificado?: boolean
   /** Solo en «Ver como el negocio»: modo de la sesión de soporte. */
   modo?: 'LECTURA' | 'ESCRITURA'

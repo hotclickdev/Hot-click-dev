@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-Bg1x-Toi.js";function t(){return e()}export{t};
