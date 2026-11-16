@@ -45,7 +45,7 @@ class LogPiiNegocioEmailTest {
 
     private void todos() {
         sender.enviarCuponBienvenida(CORREO, "C1");
-        sender.enviarBienvenidaEmprendedor(CORREO, "Ana", "Tienda");
+        sender.enviarBienvenidaEmprendedor(CORREO, "Ana", "Tienda", true);
         sender.enviarAprobacionNegocio(CORREO, "Ana", "Tienda");
         sender.enviarRechazoNegocio(CORREO, "Ana", "Tienda", "m");
         sender.enviarInvitacionMiembro(CORREO, "Ana", "EDITOR", "Tienda", null);
