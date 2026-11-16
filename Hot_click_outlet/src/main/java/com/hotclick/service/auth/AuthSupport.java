@@ -187,7 +187,29 @@ public class AuthSupport {
         resp.setEmpresaNombre(empresaNombre);
         resp.setPermisos(permisos);
         resp.setCorreoVerificado(usuario.getCorreoVerificado());
+        aplicarRolEquipo(resp, usuario.getId(), empresaId, permisos);
         return resp;
+    }
+
+    /**
+     * Campos aditivos {@code rolEquipo}/{@code permisosEquipo} según la membresía activa en el negocio de la sesión
+     * (la misma que miran los interceptores del cajero). No toca {@code rol}, {@code permisos} ni el JWT.
+     * Sin negocio o sin membresía (p. ej. ADMIN de plataforma, dueño antiguo sin fila) quedan nulos.
+     */
+    public void aplicarRolEquipo(AuthResponse resp, Long usuarioId, Long empresaId, List<String> permisos) {
+        if (empresaId == null || usuarioId == null || miembroEmpresaRepository == null) return;
+        try {
+            miembroEmpresaRepository.findByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1)
+                .ifPresent(m -> aplicarRolEquipo(resp, m, permisos));
+        } catch (DataAccessException ex) {
+            log.warn("No se pudo leer la membresía userId={}: {}", usuarioId, ex.getClass().getSimpleName());
+        }
+    }
+
+    public static void aplicarRolEquipo(AuthResponse resp, com.hotclick.model.MiembroEmpresa m, List<String> permisos) {
+        String rolEquipo = RolMembresia.rolEquipo(m);
+        resp.setRolEquipo(rolEquipo);
+        resp.setPermisosEquipo(rolEquipo == null ? null : RolMembresia.permisosEquipo(rolEquipo, permisos));
     }
 
     /**
