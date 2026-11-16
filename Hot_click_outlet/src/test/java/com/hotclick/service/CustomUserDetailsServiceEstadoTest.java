@@ -62,4 +62,15 @@ class CustomUserDetailsServiceEstadoTest {
         assertThat(ud.getUsername()).isEqualTo("estado@test.cr");
         assertThat(ud.isEnabled()).isTrue();
     }
+
+    @Test
+    @DisplayName("hash nulo o vacío → DisabledException (fail-closed), no IllegalArgumentException")
+    void sinHashSeRechazaLimpio() {
+        Usuario u = conEstado(1);
+        for (String hash : new String[] {null, "", "  "}) {
+            u.setContrasenaHash(hash);
+            assertThatThrownBy(() -> service.loadUserByUsername("estado@test.cr"))
+                .isInstanceOf(DisabledException.class);
+        }
+    }
 }

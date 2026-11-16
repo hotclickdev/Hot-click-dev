@@ -1,7 +1,9 @@
 package com.hotclick.service;
 
+import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.VentaRequestDTO;
 import com.hotclick.exception.RecursoNoEncontradoException;
+import com.hotclick.service.pos.PosVentaService;
 import com.hotclick.service.producto.BodegaTenantGuard;
 import com.hotclick.exception.StockInsuficienteException;
 import com.hotclick.model.*;
@@ -44,6 +46,10 @@ public class VentaService {
     public Pedido crearVenta(VentaRequestDTO dto, String correoOperador, Long empresaId) {
         if (dto.getItems() == null || dto.getItems().isEmpty()) {
             throw new IllegalArgumentException("Debe agregar al menos un producto");
+        }
+        // Tope de líneas en el servicio (también lo llama TelegramFlujoService), antes de leer la base.
+        if (dto.getItems().size() > PaymentCheckoutRequest.MAX_ITEMS) {
+            throw new IllegalArgumentException(PosVentaService.MENSAJE_MAX_LINEAS_POS);
         }
         if (empresaId == null) {
             throw new IllegalStateException("No se pudo determinar la empresa del usuario actual");

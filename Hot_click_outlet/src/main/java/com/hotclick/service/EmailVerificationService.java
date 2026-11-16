@@ -60,6 +60,11 @@ public class EmailVerificationService {
             throw new IllegalStateException("La cuenta ya está verificada. Podés iniciar sesión.");
         }
 
+        // Cuenta sin credencial (alta anterior al chequeo de contraseña): no se activa ni emite token.
+        if (usuario.getContrasenaHash() == null || usuario.getContrasenaHash().isBlank()) {
+            throw new IllegalStateException("No se pudo completar el registro. Iniciá el registro de nuevo.");
+        }
+
         CodigoOtp otp = otpService.verificarOtp(usuario, Constants.OTP_TIPO_REGISTRO, codigoPlano);
         otpService.marcarUsado(otp);
         usuarioService.activarUsuario(usuario.getId());

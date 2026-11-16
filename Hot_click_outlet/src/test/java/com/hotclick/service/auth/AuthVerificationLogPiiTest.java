@@ -52,7 +52,11 @@ class AuthVerificationLogPiiTest {
         doThrow(new DataIntegrityViolationException("could not execute statement",
                 new RuntimeException(detalle))).when(emailVerificationService).iniciarRegistro(any());
 
-        var res = handler.sendVerification(new Usuario(), null, new MockHttpServletRequest());
+        // El alta exige contraseña (QA final: alta-sin-clave): se manda una válida para llegar al INSERT.
+        Usuario u = new Usuario();
+        u.setContrasenaHash("Segura123");
+        u.setDeclaraMayoriaEdad(true);
+        var res = handler.sendVerification(u, null, new MockHttpServletRequest());
 
         assertThat(res.getStatusCode().value()).isEqualTo(400);
         assertThat(appender.list).isNotEmpty();
