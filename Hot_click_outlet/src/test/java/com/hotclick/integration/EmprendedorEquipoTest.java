@@ -266,7 +266,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     void invitar_passwordDelInvitador_noSirveParaLogin() throws Exception {
         String correo = "sinclave-invitador@test.cr";
         String body = "{\"nombre\":\"Sin Clave\",\"correo\":\"" + correo + "\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88009911\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000000\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -276,6 +276,39 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"correo\":\"" + correo + "\",\"contrasena\":\"Pass1234!\"}"))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Invitar: el hash NO corresponde a password, correo, teléfono, nombre ni vacío, y el login falla con todos")
+    void invitar_hashNoEsNingunValorPrevisible_loginFalla() throws Exception {
+        String correo = "hash-previsible@test.cr";
+        String nombre = "Hash Previsible";
+        String telefono = "00000000";
+        String password = "Pass1234!";
+        String body = "{\"nombre\":\"" + nombre + "\",\"correo\":\"" + correo + "\","
+            + "\"password\":\"" + password + "\",\"telefono\":\"" + telefono + "\"}";
+        mockMvc.perform(post("/api/empresa/equipo")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isOk());
+
+        String hash = usuarioRepository.findByCorreo(correo).orElseThrow().getContrasenaHash();
+        org.junit.jupiter.api.Assertions.assertNotNull(hash);
+        int intentosLogin = 0;
+        for (String secreto : new String[] {password, correo, telefono, "", nombre, "Hash", "Previsible"}) {
+            org.junit.jupiter.api.Assertions.assertFalse(passwordEncoder.matches(secreto, hash),
+                "el hash coincide con un valor previsible: '" + secreto + "'");
+            // El login se prueba solo con los primeros 5 (a partir del 6.º falla el bloqueo por fuerza bruta
+            // y taparía una regresión); el hash se comprueba contra todos.
+            if (++intentosLogin > 5) continue;
+            int st = mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"correo\":\"" + correo + "\",\"contrasena\":\"" + secreto + "\"}"))
+                .andReturn().getResponse().getStatus();
+            org.junit.jupiter.api.Assertions.assertTrue(st >= 400 && st < 500,
+                "login debía fallar con '" + secreto + "' pero respondió " + st);
+        }
     }
 
     @Test
