@@ -41,6 +41,7 @@ public class EmailLayoutHelper {
     private static final String TABLA       = "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"";
     private static final String TABLA_ANCHA = "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"";
 
+    private static final String IMG_SRC = "<img src=\"";
     private static final String RASTREO_CORREOS = "https://rastreo.correos.go.cr/?codigo=";
 
     private static final String BORDE = "#E4E7EC";
@@ -75,7 +76,7 @@ public class EmailLayoutHelper {
     public String wordmark(boolean sobreOscuro) {
         String hot   = sobreOscuro ? "#F0524A" : "#E73B33";
         String click = sobreOscuro ? "#FFFFFF" : "#1747A8";
-        return "<img src=\"" + esc(urlSitio("/brand/hotclick-isotipo.png")) + "\" alt=\"HotClick\" width=\"34\" height=\"27\""
+        return IMG_SRC + esc(urlSitio("/brand/hotclick-isotipo.png")) + "\" alt=\"HotClick\" width=\"34\" height=\"27\""
              + " style=\"display:inline-block;vertical-align:middle;margin-right:8px;border:0\">"
              + "<span style=\"font-family:" + F_DISPLAY + ";font-weight:800;font-size:20px;letter-spacing:-0.5px;vertical-align:middle\">"
              + "<span style=\"color:" + hot + "\">Hot</span><span style=\"color:" + click + "\">Click</span></span>";
@@ -109,7 +110,7 @@ public class EmailLayoutHelper {
              + TABLA + "><tr>"
              + "<td width=\"48\" height=\"48\" align=\"center\" valign=\"middle\""
              + " style=\"width:48px;height:48px;background:" + fondo + ";border-radius:24px\">"
-             + "<img src=\"" + iconoUrl(icono) + "\" width=\"24\" height=\"24\" alt=\"\""
+             + IMG_SRC + iconoUrl(icono) + "\" width=\"24\" height=\"24\" alt=\"\""
              + " style=\"display:block;border:0;margin:0 auto\">"
              + "</td></tr></table>"
              + titulo(titulo, sub, "10px")
@@ -183,7 +184,7 @@ public class EmailLayoutHelper {
     /** Fila de producto: miniatura de 56, nombre, detalle y precio. Los textos deben llegar escapados. */
     public String filaProducto(String imgUrl, String nombre, String detalle, String precio) {
         String img = (imgUrl != null && !imgUrl.isBlank())
-            ? "<img src=\"" + esc(imgUrl) + "\" width=\"56\" height=\"56\" alt=\"\" style=\"display:block;border-radius:8px;border:0;object-fit:cover\">"
+            ? IMG_SRC + esc(imgUrl) + "\" width=\"56\" height=\"56\" alt=\"\" style=\"display:block;border-radius:8px;border:0;object-fit:cover\">"
             : "<div style=\"width:56px;height:56px;border-radius:8px;background:#F1F3F6\"></div>";
         return "<tr><td width=\"68\" style=\"padding:6px 0 6px 16px;vertical-align:middle\">" + img + "</td>"
              + "<td style=\"padding:6px 8px 6px 12px;vertical-align:middle\">"
@@ -249,7 +250,7 @@ public class EmailLayoutHelper {
         return TABLA_ANCHA
              + " style=\"background:#EFF4FE;border-radius:10px;border-collapse:separate;margin:0 0 18px\">"
              + "<tr><td width=\"18\" valign=\"top\" style=\"padding:13px 0 12px 16px\">"
-             + "<img src=\"" + iconoUrl(icono) + "\" width=\"18\" height=\"18\" alt=\"\" style=\"display:block;border:0\"></td>"
+             + IMG_SRC + iconoUrl(icono) + "\" width=\"18\" height=\"18\" alt=\"\" style=\"display:block;border:0\"></td>"
              + "<td style=\"padding:12px 16px 12px 10px;color:#1747A8;font-size:14px;line-height:20px\">" + texto + "</td></tr></table>";
     }
 
@@ -269,7 +270,7 @@ public class EmailLayoutHelper {
             boolean esActual = i == actual;
             String fondo = fondoPaso(hecho, esActual);
             String interior = hecho
-                ? "<img src=\"" + iconoUrl("check-blanco") + "\" width=\"14\" height=\"14\" alt=\"\" style=\"display:block;border:0;margin:0 auto\">"
+                ? IMG_SRC + iconoUrl("check-blanco") + "\" width=\"14\" height=\"14\" alt=\"\" style=\"display:block;border:0;margin:0 auto\">"
                 : "&nbsp;";
             String color = esActual || hecho ? "#14171C" : "#6E7682";
             String peso = esActual ? "700" : "500";
