@@ -175,7 +175,7 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
     void cajeroCreaClienteYTicketEnSuNegocioAunqueMandeOtraEmpresa() throws Exception {
         int[] st = new int[1];
         // en su negocio
-        Long cli = Long.valueOf(json(postJson("/api/crm/clientes", "{\"nombre\":\"Ana Caja\",\"telefono\":\"88880001\"}"),
+        Long cli = Long.valueOf(json(postJson("/api/crm/clientes", "{\"nombre\":\"Ana Caja\",\"telefono\":\"00000000\"}"),
             tCajeroA, st).read("$.data.id").toString());
         assertThat(st[0]).isBetween(200, 201);
         assertThat(clienteEmpresaRepository.findByEmpresaIdAndUsuarioId(empA.getId(), cli)).isPresent();
@@ -186,7 +186,7 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
 
         // cajero de B mandando la empresa de A en el body: queda en B (la empresa sale del token)
         String otra = "\"empresaId\":\"" + empA.getId() + "\",\"rol\":\"ADMIN\",\"rolEnEmpresa\":\"PROPIETARIO\",\"estado\":\"0\"";
-        Long cliB = Long.valueOf(json(postJson("/api/crm/clientes", "{\"nombre\":\"Beto\",\"telefono\":\"88880002\"," + otra + "}"),
+        Long cliB = Long.valueOf(json(postJson("/api/crm/clientes", "{\"nombre\":\"Beto\",\"telefono\":\"00000001\"," + otra + "}"),
             tCajeroB, st).read("$.data.id").toString());
         assertThat(st[0]).isBetween(200, 201);
         assertThat(clienteEmpresaRepository.findByEmpresaIdAndUsuarioId(empB.getId(), cliB)).isPresent();
@@ -207,7 +207,7 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
     @Test
     void cajeroNoEditaNiBorraClientesNiVeTickets() throws Exception {
         int[] st = new int[1];
-        String id = json(postJson("/api/crm/clientes", "{\"nombre\":\"Cora\",\"telefono\":\"88880003\"}"),
+        String id = json(postJson("/api/crm/clientes", "{\"nombre\":\"Cora\",\"telefono\":\"00000002\"}"),
             tDuenoA, st).read("$.data.id").toString();
         assertThat(st(put("/api/crm/clientes/" + id).contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"X\"}"),
             tCajeroA)).isEqualTo(403);
@@ -228,13 +228,13 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
     @Test
     void cajeroBuscaClientesEnmascaradosYConMinimoDeTresCaracteres() throws Exception {
         int[] st = new int[1];
-        json(postJson("/api/crm/clientes", "{\"nombre\":\"Zoila Mask\",\"telefono\":\"88123456\",\"correo\":\"zoila.mask@test.cr\"}"),
+        json(postJson("/api/crm/clientes", "{\"nombre\":\"Zoila Mask\",\"telefono\":\"00000003\",\"correo\":\"zoila.mask@test.cr\"}"),
             tDuenoA, st);
         var cajero = json(get("/api/crm/clientes/buscar").param("q", "Zoila"), tCajeroA, st);
         assertThat(st[0]).isEqualTo(200);
         String correo = cajero.read("$.data[0].correo"), tel = cajero.read("$.data[0].telefono");
         assertThat(correo).isNotEqualTo("zoila.mask@test.cr").doesNotContain("zoila.mask");
-        assertThat(tel).isNotEqualTo("88123456");
+        assertThat(tel).isNotEqualTo("00000003");
         assertThat(json(get("/api/crm/clientes/buscar").param("q", "Zo"), tCajeroA, st).read("$.data.length()", Integer.class))
             .isZero();
         // el cajero de otro negocio no lo encuentra
@@ -245,7 +245,7 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
     @Test
     void duenoSinPlanCrmSigueBuscandoYCajeroRecibeEnmascarado() throws Exception {
         int[] st = new int[1];
-        json(postJson("/api/crm/clientes", "{\"nombre\":\"Paula Plan\",\"telefono\":\"88765432\",\"correo\":\"paula.plan@test.cr\"}"),
+        json(postJson("/api/crm/clientes", "{\"nombre\":\"Paula Plan\",\"telefono\":\"00000004\",\"correo\":\"paula.plan@test.cr\"}"),
             tDuenoA, st);
         // el negocio de prueba no tiene plan CRM: el listado completo sí queda bloqueado
         assertThat(st(get("/api/crm/clientes"), tDuenoA)).isEqualTo(403);
@@ -255,7 +255,7 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
         var cajero = json(get("/api/crm/clientes/buscar").param("q", "Paula"), tCajeroA, st);
         assertThat(st[0]).isEqualTo(200);
         assertThat((String) cajero.read("$.data[0].correo")).doesNotContain("paula.plan");
-        assertThat((String) cajero.read("$.data[0].telefono")).isNotEqualTo("88765432");
+        assertThat((String) cajero.read("$.data[0].telefono")).isNotEqualTo("00000004");
     }
 
     private static final byte[] PNG = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0x0D};

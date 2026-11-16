@@ -104,7 +104,7 @@ class RolesLectorSoloLecturaTest extends BaseIntegrationTest {
 
     @Test
     void lectorLeeProductosPedidosYCobrosEnmascarados() throws Exception {
-        String r = mockMvc.perform(json(post("/api/metodos-cobro"), "{\"tipo\":\"SINPE\",\"dato\":\"88887777\"}")
+        String r = mockMvc.perform(json(post("/api/metodos-cobro"), "{\"tipo\":\"SINPE\",\"dato\":\"00000000\"}")
             .header("Authorization", tokenDueno)).andReturn().getResponse().getContentAsString();
         assertThat(r).contains("\"id\"");
         assertThat(mockMvc.perform(get("/api/pedidos").header("Authorization", tokenLector)).andReturn().getResponse().getStatus()).isEqualTo(200);
