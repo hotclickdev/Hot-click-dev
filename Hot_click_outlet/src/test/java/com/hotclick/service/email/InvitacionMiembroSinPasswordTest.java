@@ -10,7 +10,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Riesgos 15-nov — correo de invitación de equipo: sin contraseña, con enlace para definirla")
 class InvitacionMiembroSinPasswordTest {
 
-    private static final String SECRETO = "Zx9Qw3Er7Ty5";
     private final NegocioEmailBuilder builder = new NegocioEmailBuilder();
 
     @BeforeEach
@@ -22,7 +21,7 @@ class InvitacionMiembroSinPasswordTest {
     @DisplayName("cuenta nueva: no hay contraseña en claro y el CTA lleva a /recuperar-contrasena")
     void cuentaNuevaSinPassword() {
         String html = builder.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "Tienda", true);
-        assertThat(html).doesNotContain(SECRETO).doesNotContain("Contraseña:");
+        assertThat(html).doesNotContain("Contraseña:");
         assertThat(html).contains("/recuperar-contrasena").contains("a@b.com");
     }
 
