@@ -80,6 +80,32 @@ class BillingOnvoS02Test {
     }
 
     @Test
+    @DisplayName("ledger-monto: COBRO_OK guarda el monto cobrado (precio completo del plan, en centavos)")
+    void cobroOkGuardaMontoCobrado() {
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        PlanRepository planes = mock(PlanRepository.class);
+        Suscripcion sub = prepararPago(subs, planes);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        servicioConLedger(subs, planes, ledger)
+            .procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0008", null);
+        verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clinv0008"), eq(4900), eq("usd"), any());
+    }
+
+    @Test
+    @DisplayName("ledger-monto: sin precio configurado el monto queda null (no se inventa)")
+    void cobroOkSinPrecioNoInventaMonto() {
+        SuscripcionRepository subs = mock(SuscripcionRepository.class);
+        PlanRepository planes = mock(PlanRepository.class);
+        Suscripcion sub = prepararPago(subs, planes);
+        BillingLedgerWriter ledger = mock(BillingLedgerWriter.class);
+        SuscripcionOnvoChangeService svc = servicioConLedger(subs, planes, ledger);
+        org.springframework.test.util.ReflectionTestUtils.setField(svc, "preciosPlanes",
+            new PreciosPlanesConfig("9", "24", "", "usd"));
+        svc.procesarPagoOnvoVerificado("clsub", "NEGOCIO_PLUS", LocalDate.of(2026, 12, 1), "clinv0009", null);
+        verify(ledger).registrar(any(), eq(sub), eq("COBRO_OK"), eq("ONVO"), eq("clinv0009"), isNull(), eq("usd"), any());
+    }
+
+    @Test
     @DisplayName("B2: el ledger referencia el id de la factura (una por cobro), no el de la suscripción")
     void ledgerReferenciaLaFactura() {
         SuscripcionRepository subs = mock(SuscripcionRepository.class);
