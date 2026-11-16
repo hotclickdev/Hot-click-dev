@@ -1,5 +1,6 @@
 import type { Id } from '@/types/api'
 import { formatMiles } from '@/utils/format'
+import { MAX_LINEAS_CARRITO, MENSAJE_MAX_LINEAS_CARRITO } from '@/store/cartStore'
 
 export type DenominacionPos = {
   v: number
@@ -186,13 +187,25 @@ export function descomponer(monto: number) {
   return r
 }
 
+/** Tope del POS: alias de las constantes compartidas del carrito web (PaymentCheckoutRequest.MAX_ITEMS en backend). */
+export const MAX_LINEAS_POS = MAX_LINEAS_CARRITO
+export const MENSAJE_MAX_LINEAS_POS = MENSAJE_MAX_LINEAS_CARRITO
+
+/** true si agregar este producto crearía una línea nueva por encima del tope. */
+export function excedeTopeLineasPos(prev: ItemCarritoPos[], producto: ProductoEntradaCarrito): boolean {
+  const id = producto.id ?? producto.idProducto
+  return !prev.some(i => i.id === id) && prev.length >= MAX_LINEAS_POS
+}
+
 /**
  * Agrega un producto al carrito POS o incrementa cantidad si ya está.
+ * Si es una línea nueva y ya hay MAX_LINEAS_POS, devuelve el carrito sin cambios.
  */
 export function agregarProductoAlCarrito(prev: ItemCarritoPos[], producto: ProductoEntradaCarrito): ItemCarritoPos[] {
   const id = producto.id ?? producto.idProducto
   const ex = prev.find(i => i.id === id)
   if (ex) return prev.map(i => i.id === id ? { ...i, cantidad: i.cantidad + 1 } : i)
+  if (excedeTopeLineasPos(prev, producto)) return prev
   return [...prev, {
     id,
     nombre:        producto.nombreProducto ?? producto.nombre,

@@ -30,10 +30,10 @@ public class NotificacionNegocioEmailSender {
         }
     }
 
-    public void enviarBienvenidaEmprendedor(String correo, String nombre, String nombreEmpresa) {
+    public void enviarBienvenidaEmprendedor(String correo, String nombre, String nombreEmpresa, boolean pendienteAprobacion) {
         try {
-            resendEmailService.send(correo, "Tu tienda está lista en HotClick — " + emailLayoutHelper.esc(nombreEmpresa),
-                negocioEmailBuilder.buildBienvenidaEmprendedor(nombre, nombreEmpresa));
+            resendEmailService.send(correo, negocioEmailBuilder.asuntoBienvenidaEmprendedor(nombreEmpresa, pendienteAprobacion),
+                negocioEmailBuilder.buildBienvenidaEmprendedor(nombre, nombreEmpresa, pendienteAprobacion));
             log.info("Email bienvenida emprendedor enviado");
         } catch (Exception e) {
             log.error("No se pudo enviar email de bienvenida: {}", e.getClass().getSimpleName());

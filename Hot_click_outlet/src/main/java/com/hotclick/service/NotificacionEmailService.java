@@ -180,9 +180,9 @@ public class NotificacionEmailService {
 
     @Async
 
-    public void enviarBienvenidaEmprendedor(String correo, String nombre, String nombreEmpresa) {
+    public void enviarBienvenidaEmprendedor(String correo, String nombre, String nombreEmpresa, boolean pendienteAprobacion) {
 
-        negocioEmailSender.enviarBienvenidaEmprendedor(correo, nombre, nombreEmpresa);
+        negocioEmailSender.enviarBienvenidaEmprendedor(correo, nombre, nombreEmpresa, pendienteAprobacion);
 
     }
 

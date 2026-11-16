@@ -1,5 +1,6 @@
 package com.hotclick.service.pos;
 
+import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PosVentaDTO;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
@@ -13,6 +14,7 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.service.SelfCheckoutService;
 import com.hotclick.service.StockService;
 import com.hotclick.service.TelegramNotificacionClienteService;
 import com.hotclick.service.TurnoCajaService;
@@ -184,5 +186,61 @@ class PosVentaCantidadTurnoTest {
         Pedido p = service.crearVenta(venta(2), 5L, 1L, "caja@test.cr");
         assertThat(p.getTotalPedido()).isEqualTo(10000);
         verify(turnoCajaService).actualizarTotales(77L, "EFECTIVO", 10000);
+    }
+
+    private PosVentaDTO ventaConLineas(int n) {
+        PosVentaDTO dto = new PosVentaDTO();
+        dto.setMetodoPago("EFECTIVO");
+        List<PosVentaDTO.Item> items = new java.util.ArrayList<>();
+        for (int k = 0; k < n; k++) {
+            PosVentaDTO.Item item = new PosVentaDTO.Item();
+            item.setProductoId(10L);
+            item.setCantidad(1);
+            items.add(item);
+        }
+        dto.setItems(items);
+        return dto;
+    }
+
+    @Test
+    @DisplayName("Tope: el POS usa la constante compartida de PR 553 (PaymentCheckoutRequest.MAX_ITEMS)")
+    void topeEsConstanteCompartida() {
+        assertThat(PosVentaService.MAX_LINEAS_POS).isEqualTo(PaymentCheckoutRequest.MAX_ITEMS);
+        assertThat(PosVentaService.MAX_LINEAS_POS).isEqualTo(SelfCheckoutService.MAX_LINEAS_POR_PEDIDO);
+    }
+
+    @Test
+    @DisplayName("Tope: 51 líneas en crearVenta → IllegalArgumentException (400), sin efectos")
+    void crearVenta_masDe50Lineas_rechaza() {
+        assertThatThrownBy(() -> service.crearVenta(ventaConLineas(PaymentCheckoutRequest.MAX_ITEMS + 1), 5L, 1L, "caja@test.cr"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("El pedido no puede tener más de " + PaymentCheckoutRequest.MAX_ITEMS + " productos distintos");
+        sinEfectos();
+        sinLecturasDeBase();
+    }
+
+    /** El tope corre antes de consultar la base: ningún repositorio ni servicio de stock/turno se toca. */
+    private void sinLecturasDeBase() {
+        org.mockito.Mockito.verifyNoInteractions(empresaRepository, bodegaRepository, productoRepository,
+            pedidoRepository, stockService, turnoCajaService, usuarioRepository, ventaTurnoRepository);
+    }
+
+    @Test
+    @DisplayName("Tope: 51 líneas en cotizarCobro → IllegalArgumentException")
+    void cotizar_masDe50Lineas_rechaza() {
+        assertThatThrownBy(() -> service.cotizarCobro(ventaConLineas(PaymentCheckoutRequest.MAX_ITEMS + 1), 1L))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage(PosVentaService.MENSAJE_MAX_LINEAS_POS);
+        sinLecturasDeBase();
+    }
+
+    @Test
+    @DisplayName("Tope: exactamente 50 líneas no se rechaza por el tope")
+    void crearVenta_50Lineas_noRechazaPorTope() {
+        try {
+            service.crearVenta(ventaConLineas(PaymentCheckoutRequest.MAX_ITEMS), 5L, 1L, "caja@test.cr");
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage() == null ? "" : e.getMessage()).doesNotContain("productos distintos");
+        }
     }
 }

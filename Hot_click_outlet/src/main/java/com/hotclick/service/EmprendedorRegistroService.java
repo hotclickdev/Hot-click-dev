@@ -144,7 +144,8 @@ public class EmprendedorRegistroService {
         notificacionEmailService.enviarBienvenidaEmprendedor(
             saved.getCorreo(),
             saved.getNombre(),
-            nombreComercial
+            nombreComercial,
+            "PENDIENTE_APROBACION".equals(empresa.getEstadoEmpresa())
         );
         altaEmprendedorNotificador.notificar(nombreComercial, empresa.getCorreoEmpresa(), alta);
 
@@ -237,7 +238,8 @@ public class EmprendedorRegistroService {
 
         notificacionEmailService.enviarBienvenidaEmprendedor(
             saved.getCorreo(), saved.getNombre(),
-            empresa.getNombreComercial());
+            empresa.getNombreComercial(),
+            "PENDIENTE_APROBACION".equals(empresa.getEstadoEmpresa()));
         altaEmprendedorNotificador.notificar(
             empresa.getNombreComercial(), empresa.getCorreoEmpresa(), alta);
 
