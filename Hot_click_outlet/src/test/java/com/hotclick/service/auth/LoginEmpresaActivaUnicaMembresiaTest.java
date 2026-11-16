@@ -119,7 +119,8 @@ class LoginEmpresaActivaUnicaMembresiaTest {
         u.setEmpresa(principal);
         AuthResponse r = authSupport.buildAuthResponse(u);
         assertThat(r.getEmpresaId()).isEqualTo(5L);
-        verifyNoInteractions(miembros);
+        // La resolución del negocio no escanea membresías; solo se lee la del negocio activo para rolEquipo.
+        verify(miembros, never()).findByUsuarioIdAndEstado(anyLong(), anyInt());
     }
 
     @Test

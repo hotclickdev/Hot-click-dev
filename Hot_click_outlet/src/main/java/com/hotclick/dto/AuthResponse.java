@@ -16,6 +16,10 @@ public class AuthResponse {
     private String       empresaNombre;
     private List<String> permisos;
     private Boolean      correoVerificado;
+    /** Rol de equipo en el negocio activo (PROPIETARIO, ADMIN, EDITOR, LECTOR, CAJERO). No es el rol Spring ({@code rol}). */
+    private String       rolEquipo;
+    /** Permisos reales del miembro en el negocio activo (CAJERO: solo POS). Aditivo; {@code permisos} no cambia. */
+    private List<String> permisosEquipo;
 
     public AuthResponse() {}
 
@@ -53,4 +57,8 @@ public class AuthResponse {
     public void setPermisos(List<String> permisos)    { this.permisos = permisos; }
     public Boolean getCorreoVerificado()                        { return correoVerificado; }
     public void setCorreoVerificado(Boolean correoVerificado)   { this.correoVerificado = correoVerificado; }
+    public String getRolEquipo()                      { return rolEquipo; }
+    public void setRolEquipo(String rolEquipo)        { this.rolEquipo = rolEquipo; }
+    public List<String> getPermisosEquipo()           { return permisosEquipo; }
+    public void setPermisosEquipo(List<String> p)     { this.permisosEquipo = p; }
 }

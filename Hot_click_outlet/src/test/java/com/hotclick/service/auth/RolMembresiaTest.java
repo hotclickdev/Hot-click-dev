@@ -57,4 +57,23 @@ class RolMembresiaTest {
         u.setRoles(List.of(rol));
         return u;
     }
+
+    @Test
+    @DisplayName("rolEquipo expone el rol de equipo real; el JWT sigue en EMPRENDEDOR")
+    void rolEquipo_exponeRolRealSinTocarJwt() {
+        assertThat(RolMembresia.rolEquipo(membresia("CAJERO"))).isEqualTo("CAJERO");
+        assertThat(RolMembresia.rolEquipo(membresia("PROPIETARIO"))).isEqualTo("PROPIETARIO");
+        assertThat(RolMembresia.rolEquipo(membresia("EDITOR"))).isEqualTo("EDITOR");
+        assertThat(RolMembresia.rolEquipo(null)).isNull();
+        assertThat(RolMembresia.paraJwt(membresia("CAJERO"), usuario("EMPRENDEDOR"))).isEqualTo(Constants.ROL_EMPRENDEDOR);
+    }
+
+    @Test
+    @DisplayName("permisosEquipo: CAJERO solo POS; el resto conserva los permisos")
+    void permisosEquipo_cajeroSoloPos() {
+        List<String> todos = List.of("pos.usar", "pos.caja.abrir", "orders.view", "products.create", "finances.view");
+        assertThat(RolMembresia.permisosEquipo("CAJERO", todos)).containsExactly("pos.usar", "pos.caja.abrir");
+        assertThat(RolMembresia.permisosEquipo("PROPIETARIO", todos)).isEqualTo(todos);
+        assertThat(RolMembresia.permisosEquipo("CAJERO", null)).isEmpty();
+    }
 }
