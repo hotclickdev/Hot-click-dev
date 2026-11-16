@@ -246,6 +246,14 @@ public class PosAnulacionService {
         List<PedidoItem> items = pedido.getItems() != null ? pedido.getItems() : List.of();
         for (PedidoItem item : items) {
             if (item.getProducto() == null || item.getCantidad() == null || item.getCantidad() <= 0) continue;
+            // IDOR: una línea heredada con producto de OTRO negocio nunca suma stock ajeno.
+            Long duenoProducto = item.getProducto().getEmpresaId();
+            Long empresaPedido = pedido.getEmpresa() != null ? pedido.getEmpresa().getId() : null;
+            if (duenoProducto != null && !duenoProducto.equals(empresaPedido)) {
+                log.warn("[POS] {} de venta {}: producto {} es de otro negocio, no se repone stock", tipo, pedido.getId(),
+                    item.getProducto().getId());
+                continue;
+            }
             try {
                 stockService.ajustarEntradaConReferencia(item.getProducto().getId(), item.getCantidad(),
                     tipo + " " + pedido.getNumeroPedido(), pedido.getNumeroPedido(),

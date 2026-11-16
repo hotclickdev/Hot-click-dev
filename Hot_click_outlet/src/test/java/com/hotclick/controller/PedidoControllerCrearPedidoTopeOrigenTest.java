@@ -66,7 +66,11 @@ class PedidoControllerCrearPedidoTopeOrigenTest {
     }
 
     private void stubProductos() {
-        when(productoRepository.findById(any())).thenAnswer(inv -> {
+        com.hotclick.model.Empresa emp = new com.hotclick.model.Empresa();
+        emp.setId(1L);
+        when(companyScope.requireEmpresaIdOrAdmin()).thenReturn(1L);
+        when(empresaRepository.findById(1L)).thenReturn(Optional.of(emp));
+        when(productoRepository.findByIdAndEmpresaId(any(), org.mockito.ArgumentMatchers.eq(1L))).thenAnswer(inv -> {
             Producto prod = new Producto();
             prod.setId(inv.getArgument(0));
             prod.setPrecioVenta(100);
@@ -101,6 +105,7 @@ class PedidoControllerCrearPedidoTopeOrigenTest {
         Pedido body = pedidoConItems(1);
         body.setOrigen(OrigenPedido.POS.codigo());
         body.setId(999L);
+        body.getItems().get(0).setId(777L); // un PedidoItem existente del cliente no se reutiliza
 
         controller.crearPedido(body);
 
@@ -108,5 +113,6 @@ class PedidoControllerCrearPedidoTopeOrigenTest {
         verify(pedidoService).crearPedido(cap.capture());
         assertEquals(OrigenPedido.MANUAL.codigo(), cap.getValue().getOrigen());
         assertNull(cap.getValue().getId());
+        assertNull(cap.getValue().getItems().get(0).getId());
     }
 }
