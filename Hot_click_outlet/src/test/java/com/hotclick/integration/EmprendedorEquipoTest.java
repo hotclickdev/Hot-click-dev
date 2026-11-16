@@ -260,30 +260,66 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
             .andExpect(status().isBadRequest());
     }
 
-    // ── T-EQ-011: Invitar con password < 6 chars → 400 ───────────────────────
+    // ── Riesgo 15-nov: quien invita NO define la contraseña del invitado ──────
     @Test
-    @DisplayName("T-EQ-011 | BÁSICO — Invitar con password menor a 6 caracteres → 400")
-    void invitar_passwordCorta_400() throws Exception {
-        String body = "{\"nombre\":\"Short Pass\",\"correo\":\"short@test.cr\",\"password\":\"123\"}";
+    @DisplayName("Invitar con password en el body: se ignora y el login con esa clave falla (401)")
+    void invitar_passwordDelInvitador_noSirveParaLogin() throws Exception {
+        String correo = "sinclave-invitador@test.cr";
+        String body = "{\"nombre\":\"Sin Clave\",\"correo\":\"" + correo + "\","
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000000\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk());
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"" + correo + "\",\"contrasena\":\"Pass1234!\"}"))
+            .andExpect(status().isUnauthorized());
     }
 
-    // ── BAJO: invitar exige la política del registro (8 + mayúscula + número) ──
-    @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.ValueSource(strings = {"Abcdef1", "abcdefg1", "Abcdefgh"})
-    void invitar_claveFueraDePolitica_400(String clave) throws Exception {
-        String body = "{\"nombre\":\"Pol\",\"correo\":\"pol@test.cr\",\"password\":\"" + clave + "\"}";
+    @Test
+    @DisplayName("Invitar: el hash NO corresponde a password, correo, teléfono, nombre ni vacío, y el login falla con todos")
+    void invitar_hashNoEsNingunValorPrevisible_loginFalla() throws Exception {
+        String correo = "hash-previsible@test.cr";
+        String nombre = "Hash Previsible";
+        String telefono = "00000000";
+        String password = "Pass1234!";
+        String body = "{\"nombre\":\"" + nombre + "\",\"correo\":\"" + correo + "\","
+            + "\"password\":\"" + password + "\",\"telefono\":\"" + telefono + "\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
-            .andExpect(status().isBadRequest())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message")
-                .value(com.hotclick.service.auth.AuthSupport.MENSAJE_POLITICA_CONTRASENA));
+            .andExpect(status().isOk());
+
+        String hash = usuarioRepository.findByCorreo(correo).orElseThrow().getContrasenaHash();
+        org.junit.jupiter.api.Assertions.assertNotNull(hash);
+        int intentosLogin = 0;
+        for (String secreto : new String[] {password, correo, telefono, "", nombre, "Hash", "Previsible"}) {
+            org.junit.jupiter.api.Assertions.assertFalse(passwordEncoder.matches(secreto, hash),
+                "el hash coincide con un valor previsible: '" + secreto + "'");
+            // El login se prueba solo con los primeros 5 (a partir del 6.º falla el bloqueo por fuerza bruta
+            // y taparía una regresión); el hash se comprueba contra todos.
+            if (++intentosLogin > 5) continue;
+            int st = mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"correo\":\"" + correo + "\",\"contrasena\":\"" + secreto + "\"}"))
+                .andReturn().getResponse().getStatus();
+            org.junit.jupiter.api.Assertions.assertTrue(st >= 400 && st < 500,
+                "login debía fallar con '" + secreto + "' pero respondió " + st);
+        }
+    }
+
+    @Test
+    @DisplayName("Invitar sin password en el body → 200 (ya no es parte de la API)")
+    void invitar_sinPassword_200() throws Exception {
+        String body = "{\"nombre\":\"Sin Pass\",\"correo\":\"sinpass@test.cr\"}";
+        mockMvc.perform(post("/api/empresa/equipo")
+                .header("Authorization", tokenEmp)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isOk());
     }
 
     // ── T-EQ-012: Invitar correo ya registrado → 400 ─────────────────────────
