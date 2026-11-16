@@ -7,6 +7,7 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.PedidoService;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,14 +99,26 @@ class PedidoControllerCatalogoIdorTest {
         return mvc.perform(post("/api/pedidos").contentType(MediaType.APPLICATION_JSON).content(json)).andReturn();
     }
 
+    /**
+     * El costo/precioCompra del producto ajeno (777) no puede aparecer en ningún campo de la respuesta. Se verifica por
+     * campo (JSON path), no por subcadena: «777» aparece de forma legítima en milisegundos de un timestamp o en ids.
+     */
+    private static void assertSinDatosDelProductoAjeno(String body) {
+        assertThat(body).doesNotContain("\"costoUnitarioMomento\":777").doesNotContain("\"precioCompra\":777");
+        if (body == null || body.isBlank() || !body.trim().startsWith("{")) return;
+        for (String campo : List.of("precioCompra", "costoUnitarioMomento")) {
+            List<Object> valores = JsonPath.read(body, "$.." + campo);
+            assertThat(valores).as("la respuesta no debe exponer el campo " + campo).isEmpty();
+        }
+    }
+
     @Test
     @DisplayName("Producto de OTRO negocio → 4xx, sin crear pedido y sin filtrar costo/precioCompra")
     void productoAjeno_rechazadoSinFiltrarDatos() throws Exception {
         MvcResult r = crear(PRODUCTO_DE_B);
         String body = r.getResponse().getContentAsString();
         // (i) exposición: costoUnitarioMomento (777*... ) y precioCompra del producto ajeno en la respuesta
-        assertThat(body).as("respuesta no debe contener costoUnitarioMomento=777").doesNotContain("\"costoUnitarioMomento\":777");
-        assertThat(body).as("respuesta no debe contener precioCompra=777").doesNotContain("\"precioCompra\":777");
+        assertSinDatosDelProductoAjeno(body);
         assertThat(r.getResponse().getStatus()).as("estado HTTP").isIn(400, 404);
         verify(pedidoService, never()).crearPedido(any());
     }
@@ -136,7 +150,7 @@ class PedidoControllerCatalogoIdorTest {
         when(scope.requireEmpresaIdOrAdmin()).thenThrow(new com.hotclick.exception.EmpresaRequeridaException());
         MvcResult r = crear(PRODUCTO_DE_B);
         assertThat(r.getResponse().getStatus()).isEqualTo(403);
-        assertThat(r.getResponse().getContentAsString()).doesNotContain("777");
+        assertSinDatosDelProductoAjeno(r.getResponse().getContentAsString());
         verify(pedidoService, never()).crearPedido(any());
         verify(repo, never()).findById(any());
     }
@@ -147,7 +161,7 @@ class PedidoControllerCatalogoIdorTest {
         when(scope.requireEmpresaIdOrAdmin()).thenReturn(5L); // 5 no existe en empresaRepo
         MvcResult r = crear(PRODUCTO_DE_B);
         assertThat(r.getResponse().getStatus()).isEqualTo(403);
-        assertThat(r.getResponse().getContentAsString()).doesNotContain("777");
+        assertSinDatosDelProductoAjeno(r.getResponse().getContentAsString());
         verify(pedidoService, never()).crearPedido(any());
         verify(repo, never()).findById(any());
     }
