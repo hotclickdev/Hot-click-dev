@@ -6,6 +6,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.InvitacionEquipo;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Rol;
+import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.InvitacionEquipoRepository;
@@ -53,6 +54,7 @@ public class InvitacionEquipoService {
     @Autowired private SesionesUsuarioService sesionesUsuarioService;
     @Autowired private OtpService otpService;
     @Autowired private com.hotclick.repository.WebAuthnCredentialRepository webAuthnCredentialRepository;
+    @Autowired private com.hotclick.repository.TelegramVinculacionRepository telegramVinculacionRepository;
 
     public static String tokenNuevo() {
         byte[] b = new byte[32];
@@ -79,14 +81,14 @@ public class InvitacionEquipoService {
         r.put("correo", inv.getCorreo());
         // "Hay una cuenta ACTIVA con la que puede iniciar sesión". Una cuenta ELIMINADA define contraseña nueva.
         // findByCorreo ya ignora ELIMINADAS: una fila ELIMINADA no cuenta como cuenta con la que iniciar sesión.
-        r.put("cuentaExiste", usuarioRepository.findByCorreo(inv.getCorreo())
-            .map(u -> Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado())).orElse(false));
+        Optional<Usuario> viva = usuarioRepository.findByCorreo(inv.getCorreo());
+        r.put("cuentaExiste", viva.isPresent() && Integer.valueOf(Constants.ESTADO_ACTIVO).equals(viva.get().getEstado()));
         return r;
     }
 
     /**
      * El portador del token (dueño del correo) define su contraseña. Sin usuario: se crea. ACTIVO: 409 (inicia sesión).
-     * ELIMINADO por salida del equipo (motivo SALIDA_EQUIPO): se reactiva el MISMO usuario con la contraseña
+     * ELIMINADO por salida del equipo (motivo SALIDA_EQUIPO, que solo se fija a cuentas ACTIVAS sin motivo): se reactiva el MISMO usuario con la contraseña
      * nueva; se cortan sesiones y refresh tokens; no se recuperan membresías ni roles viejos (solo la de este negocio).
      * SUSPENDIDO, INACTIVO, PENDIENTE y ELIMINADO con motivo distinto de SALIDA_EQUIPO (incluido NULL): 410, nunca se
      * reactivan (fail-closed). Al reactivar se invalidan OTP de todos los tipos, 2FA/TOTP y passkeys.
@@ -169,7 +171,12 @@ public class InvitacionEquipoService {
         u.setIntentosFallidos(0);
         u.setMotivoEliminacion(null);
         invalidarCredencialesPendientes(u);
-        if (u.getRoles().stream().noneMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()))) u.getRoles().add(rol);
+        // Roles globales viejos (ADMIN, etc.) no vuelven: la cuenta reactivada queda SOLO como EMPRENDEDOR.
+        u.getRoles().clear();
+        u.getRoles().add(rol);
+        // Identidad externa y bot ligados a la cuenta anterior tampoco sirven: Clerk se desliga y Telegram se revoca.
+        u.setClerkUserId(null);
+        revocarTelegram(u);
         // La empresa anterior puede ser un negocio del que ya no es miembro: se reasigna al que invita.
         boolean empresaVigente = u.getEmpresa() != null
             && miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), u.getEmpresa().getId(), 1);
@@ -177,6 +184,34 @@ public class InvitacionEquipoService {
         usuarioRepository.save(u);
         activarMembresia(u, empresa, inv);
         sesionesUsuarioService.cortarSesiones(u);
+    }
+
+    private void revocarTelegram(Usuario u) {
+        Optional<TelegramVinculacion> vinculo = telegramVinculacionRepository.findByUsuarioId(u.getId());
+        if (vinculo.isEmpty()) return;
+        TelegramVinculacion v = vinculo.get();
+        v.setEstado(TelegramVinculacion.REVOCADA);
+        v.setChatId(null);
+        v.setContexto(null);
+        telegramVinculacionRepository.save(v);
+    }
+
+    /** Crea y guarda UNA invitación pendiente y devuelve el token en claro (solo se guarda su hash). */
+    String emitir(Empresa empresa, String nombre, String correoNorm, String telefono, String rolEnEmpresa,
+                  Long invitaUsuarioId, LocalDateTime ahora) {
+        String token = tokenNuevo();
+        InvitacionEquipo inv = new InvitacionEquipo();
+        inv.setEmpresa(empresa);
+        inv.setCorreo(correoNorm);
+        inv.setNombre(nombre.trim());
+        inv.setTelefono(telefono);
+        inv.setRolEnEmpresa(rolEnEmpresa);
+        inv.setTokenHash(hashToken(token));
+        inv.setFechaCreacion(ahora);
+        inv.setVenceEn(ahora.plusDays(DIAS_VIGENCIA));
+        inv.setUsuarioInvitaId(invitaUsuarioId);
+        invitaciones.save(inv);
+        return token;
     }
 
     private void activarMembresia(Usuario u, Empresa empresa, InvitacionEquipo inv) {

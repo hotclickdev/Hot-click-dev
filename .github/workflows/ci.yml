@@ -107,6 +107,36 @@ jobs:
         if: always()
         run: python3 scripts/ci/qa-alta-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.service.QaAltaPymeTestPostgresTest.xml
 
+      # PR 583: concurrencia de aceptar-invitacion (dos aceptaciones a la vez) en PostgreSQL real. Paso APARTE, sin
+      # failIfNoSpecifiedTests=false; gate fail-on-skip. Mismo servicio Postgres de este job (schema propio del test).
+      - name: "Autotest gate invitacion PG"
+        if: always()
+        run: python3 -m unittest scripts/ci/test_invitacion_concurrente_pg_surefire.py
+
+      - name: "Marca de inicio invitacion PG"
+        if: always()
+        run: |
+          rm -f Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.InvitacionEquipoConcurrentePostgresTest.xml
+          touch "$RUNNER_TEMP/invitacion-pg-inicio"
+
+      - name: InvitacionEquipoConcurrentePostgresTest (dos aceptaciones simultaneas)
+        if: always()
+        run: mvn -f Hot_click_outlet/pom.xml -Dtest=InvitacionEquipoConcurrentePostgresTest test --no-transfer-progress
+        env:
+          HC_PG_TEST_URL: jdbc:postgresql://127.0.0.1:5432/hotclick_qa_alta?user=hotclick_qa&password=hotclick_qa
+
+      - name: "Gate invitacion PG: corrio, fresco, 1 caso, 0 skipped/fallos/errores"
+        if: always()
+        run: python3 scripts/ci/invitacion-concurrente-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.InvitacionEquipoConcurrentePostgresTest.xml "$RUNNER_TEMP/invitacion-pg-inicio"
+
+      - name: Reporte Surefire invitacion (sin secretos)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: invitacion-pg-surefire
+          path: Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.InvitacionEquipoConcurrentePostgresTest.xml
+          if-no-files-found: error
+
       - name: Reporte Surefire (sin secretos)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -34,6 +34,7 @@ public class EquipoService {
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private InvitacionEquipoRepository invitacionRepository;
     @Autowired private SesionesUsuarioService sesionesUsuarioService;
+    @Autowired private InvitacionEquipoService invitacionEquipoService;
 
     public List<Map<String, Object>> listar(Long empresaId) {
         return miembroEmpresaRepository.findByEmpresaIdAndEstado(empresaId, 1).stream()
@@ -72,21 +73,10 @@ public class EquipoService {
         if (existente.isPresent() && !puedeInvitarseCuentaExistente(existente.get(), empresa)) {
             return;
         }
-        String token = InvitacionEquipoService.tokenNuevo();
-        InvitacionEquipo inv = new InvitacionEquipo();
-        inv.setEmpresa(empresa);
-        inv.setCorreo(correoNorm);
-        inv.setNombre(nombre.trim());
-        inv.setTelefono(telefono);
-        inv.setRolEnEmpresa(rolEnEmpresa);
-        inv.setTokenHash(InvitacionEquipoService.hashToken(token));
-        inv.setFechaCreacion(ahora);
-        inv.setVenceEn(ahora.plusDays(InvitacionEquipoService.DIAS_VIGENCIA));
-        inv.setUsuarioInvitaId(invitaUsuarioId);
         // SCALE1: no hay N+1. Es UNA invitación (un INSERT y un correo, sin bucle); la empresa ya viene cargada por
         // findByIdForUpdate y EmpresaNombre.mostrar solo lee sus columnas; de `existente` solo se leen id/estado/motivo
-        // (sin tocar roles ni otras colecciones lazy).
-        invitacionRepository.save(inv);
+        // (sin tocar roles ni otras colecciones lazy). El INSERT vive en InvitacionEquipoService.emitir.
+        String token = invitacionEquipoService.emitir(empresa, nombre, correoNorm, telefono, rolEnEmpresa, invitaUsuarioId, ahora);
         notificacionEmailService.enviarInvitacionMiembro(
             correoNorm, nombre.trim(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null),
             // Cuenta nueva (true) = la persona tiene que definir una contraseña: no existe cuenta, o está ELIMINADA
@@ -143,6 +133,10 @@ public class EquipoService {
         miembroEmpresaRepository.save(m);
         if (miembroEmpresaRepository.countEmpresasByUsuarioId(usuarioId) == 0) {
             usuarioRepository.findById(usuarioId).ifPresent(u -> {
+                // Solo una cuenta ACTIVA y sin motivo se marca SALIDA_EQUIPO. Eliminada por admin, bloqueada,
+                // suspendida, inactiva o con cualquier motivo previo: se conserva tal cual (solo se quitó la membresía);
+                // si no, la salida "lavaría" la decisión del admin y la invitación reactivaría la cuenta.
+                if (!esActiva(u) || u.getMotivoEliminacion() != null) return;
                 u.setEstado(Constants.ESTADO_ELIMINADO);
                 u.setMotivoEliminacion(Constants.MOTIVO_ELIMINACION_SALIDA_EQUIPO);
                 usuarioRepository.save(u);
