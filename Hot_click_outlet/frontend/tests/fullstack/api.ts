@@ -191,54 +191,59 @@ export function aprobarNegocio(empresaId: number): void {
  * Exige el correo verificado (como el cupo real): llamar a verificarCorreo(correo) antes.
  */
 export function aprobarNegocioConTrialCupo(empresaId: number, correo: string): void {
-  const v = { id: String(empresaId), correo }
-  // Una sola transacción. Puesto: primer hueco, o MAX(pos)+1 si el recuento de huecos no devuelve fila.
-  sql(
-    `BEGIN;
-UPDATE hot_click_cupo_emprendedor_tb SET usados = usados + 1 WHERE id = 1 AND usados < limite;
-UPDATE hot_click_usuario_tb SET correo_verificado = true WHERE lower(correo) = lower(:'correo');
-UPDATE hot_click_empresa_tb SET
-  estado_empresa = 'ACTIVO',
-  estado_plan = 'TRIAL',
-  plan_saas = 'EMPRENDEDOR',
-  fk_id_plan = COALESCE(
-    (SELECT id_plan FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR'),
-    fk_id_plan),
-  trial_hasta = ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90,
-  fecha_venc_plan = ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90,
-  trial_emprendedor_hasta = ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90,
-  trial_emprendedor_pos = COALESCE(
-    (SELECT MIN(c.n) FROM (
-        SELECT 1 AS n
-        UNION ALL
-        SELECT trial_emprendedor_pos + 1 FROM hot_click_empresa_tb WHERE trial_emprendedor_pos IS NOT NULL
-      ) c
-      WHERE NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e WHERE e.trial_emprendedor_pos = c.n)),
-    (SELECT COALESCE(MAX(trial_emprendedor_pos), 0) + 1 FROM hot_click_empresa_tb)),
-  trial_emprendedor_titular_usuario = COALESCE(
-    (SELECT u.id_usuario FROM hot_click_usuario_tb u WHERE lower(u.correo) = lower(:'correo') LIMIT 1),
-    (SELECT m.fk_id_usuario FROM hot_click_miembro_empresa_tb m
-      WHERE m.fk_id_empresa = :'id'::bigint AND m.rol_en_empresa = 'PROPIETARIO' ORDER BY m.fk_id_usuario LIMIT 1)),
-  trial_emprendedor_titular_correo = lower(:'correo')
-WHERE id_empresa = :'id'::bigint;
-SELECT CASE
-  WHEN NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint)
-    THEN CAST('aprobarNegocioConTrialCupo: no existe la empresa' AS int)
-  WHEN (SELECT estado_plan FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint) IS DISTINCT FROM 'TRIAL'
-    THEN CAST('aprobarNegocioConTrialCupo: el UPDATE no aplicó a la empresa' AS int)
-  WHEN (SELECT trial_emprendedor_pos FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint) IS NULL
-    THEN CAST('aprobarNegocioConTrialCupo: no hay puesto libre' AS int)
-  WHEN (SELECT fk_id_plan FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint) IS NULL
-    THEN CAST('aprobarNegocioConTrialCupo: no está el plan EMPRENDEDOR' AS int)
-  WHEN (SELECT trial_emprendedor_titular_usuario FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint) IS NULL
-    THEN CAST('aprobarNegocioConTrialCupo: no se encontró el usuario titular' AS int)
-  ELSE 1 END;
-INSERT INTO hot_click_suscripcion_tb (fk_id_empresa, fk_id_plan, estado, fecha_inicio, trial_end)
-SELECT :'id'::bigint, id_plan, 'TRIAL',
-  ((now() AT TIME ZONE 'America/Costa_Rica')::date),
-  ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90
-FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR';
-COMMIT;`,
-    v,
+  const id = String(empresaId)
+  if (!/^[0-9]+$/.test(id)) throw new Error(`empresaId inválido`)
+  // Sentencias sueltas, mismo estilo que aprobarNegocio/verificarCorreo (evita rarezas de psql con un script largo).
+  const existe = sql(`SELECT id_empresa FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint`, { id })
+  if (!existe) throw new Error(`aprobarNegocioConTrialCupo: no existe la empresa ${id} en la BD de E2E`)
+  sql(`UPDATE hot_click_usuario_tb SET correo_verificado = true WHERE lower(correo) = lower(:'correo')`, { correo })
+  sql(`UPDATE hot_click_cupo_emprendedor_tb SET usados = usados + 1 WHERE id = 1 AND usados < limite`)
+  const puesto = sql(
+    `SELECT COALESCE(
+        (SELECT MIN(c.n) FROM (
+            SELECT 1 AS n
+            UNION ALL
+            SELECT trial_emprendedor_pos + 1 FROM hot_click_empresa_tb WHERE trial_emprendedor_pos IS NOT NULL
+          ) c
+          WHERE NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e WHERE e.trial_emprendedor_pos = c.n)),
+        (SELECT COALESCE(MAX(trial_emprendedor_pos), 0) + 1 FROM hot_click_empresa_tb)
+      )`,
   )
+  if (!puesto) throw new Error('aprobarNegocioConTrialCupo: no hay puesto libre')
+  const plan = sql(`SELECT id_plan FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR'`)
+  if (!plan) throw new Error('aprobarNegocioConTrialCupo: no está el plan EMPRENDEDOR')
+  const titular = sql(
+    `SELECT COALESCE(
+        (SELECT u.id_usuario FROM hot_click_usuario_tb u WHERE lower(u.correo) = lower(:'correo') LIMIT 1),
+        (SELECT m.fk_id_usuario FROM hot_click_miembro_empresa_tb m
+          WHERE m.fk_id_empresa = :'id'::bigint AND m.rol_en_empresa = 'PROPIETARIO'
+          ORDER BY m.fk_id_usuario LIMIT 1)
+      )`,
+    { id, correo },
+  )
+  if (!titular) throw new Error('aprobarNegocioConTrialCupo: no se encontró el usuario titular')
+  const filas = sql(
+    `UPDATE hot_click_empresa_tb SET
+        estado_empresa = 'ACTIVO', estado_plan = 'TRIAL', plan_saas = 'EMPRENDEDOR',
+        fk_id_plan = :'plan'::bigint,
+        trial_hasta = CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90,
+        fecha_venc_plan = CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90,
+        trial_emprendedor_hasta = CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90,
+        trial_emprendedor_pos = :'puesto'::integer,
+        trial_emprendedor_titular_usuario = :'titular'::bigint,
+        trial_emprendedor_titular_correo = lower(:'correo')
+      WHERE id_empresa = :'id'::bigint
+      RETURNING id_empresa`,
+    { id, correo, plan, puesto, titular },
+  )
+  if (!filas) throw new Error('aprobarNegocioConTrialCupo: el UPDATE no aplicó a la empresa')
+  const sub = sql(
+    `INSERT INTO hot_click_suscripcion_tb (fk_id_empresa, fk_id_plan, estado, fecha_inicio, trial_end)
+      SELECT :'id'::bigint, :'plan'::bigint, 'TRIAL',
+        CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date),
+        CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90
+      RETURNING id_suscripcion`,
+    { id, plan },
+  )
+  if (!sub) throw new Error('aprobarNegocioConTrialCupo: no se insertó la suscripción local TRIAL')
 }
