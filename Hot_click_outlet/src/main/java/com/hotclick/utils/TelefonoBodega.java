@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  * ({@code nuevaBodegaHelpers.ts}) y se guarda como {@code +} y solo dígitos.
  * <ul>
  *   <li>Costa Rica: {@code +506} y 8 dígitos. Sin {@code +}, 8 dígitos se toman como un número
- *       local de Costa Rica (formularios que mandan {@code 8812-0034}).</li>
+ *       local de Costa Rica (formularios que mandan {@code 0000-0001}).</li>
  *   <li>Otro código de país: con {@code +}, de 8 a 15 dígitos (largo E.164) y sin empezar en 0.</li>
  *   <li>Solo se aceptan dígitos, espacios, guiones, puntos y paréntesis; cualquier otra cosa
  *       (letras, HTML) es inválida.</li>
@@ -30,7 +30,7 @@ public final class TelefonoBodega {
     private TelefonoBodega() {}
 
     /**
-     * Devuelve el teléfono normalizado ({@code +50688881234}).
+     * Devuelve el teléfono normalizado ({@code +50600000001}).
      *
      * @throws IllegalArgumentException con {@link #MENSAJE_OBLIGATORIO} o {@link #MENSAJE_INVALIDO}
      */

@@ -34,7 +34,7 @@ public class SentryRedaccionPii implements SentryOptions.BeforeSendCallback {
     private static final Pattern IBAN_CR = Pattern.compile("(?i)\\bCR\\s?(?:\\d\\s?){19}\\d\\b");
     /** Cédula CR: física 0-0000-0000 / 9 dígitos, jurídica 3-101-000000, DIMEX 11-12 dígitos. */
     private static final Pattern CEDULA = Pattern.compile("\\b\\d{1,2}-\\d{3,4}-\\d{4,6}\\b|\\b\\d{9,12}\\b");
-    /** Teléfono: +506 8888-8888, 8888 8888, 88888888 y similares. */
+    /** Teléfono: +506 0000-0001, 0000 0001, 00000001 y similares. */
     private static final Pattern TELEFONO = Pattern.compile("(?:\\+\\d{1,3}[\\s-]?)?\\b\\d{4}[\\s-]?\\d{4}\\b");
 
     public static String redactar(String s) {

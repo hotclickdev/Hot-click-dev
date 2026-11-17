@@ -73,7 +73,7 @@ export default function PhoneField({
           id: idCampo,
           'aria-required': required || undefined,
           'aria-invalid': error ? true : undefined,
-          // Pyme: pegar «+506 8888-1234» borraba el número; se normaliza a +506 + 8 dígitos.
+          // Pyme: pegar «+506 0000-0001» borraba el número; se normaliza a +506 + 8 dígitos.
           onPaste: (ev) => {
             const normal = pegadoTelefonoCR(ev.clipboardData.getData('text'))
             if (normal && onChange) {
