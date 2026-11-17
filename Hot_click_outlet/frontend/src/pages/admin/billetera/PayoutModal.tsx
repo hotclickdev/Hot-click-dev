@@ -65,7 +65,7 @@ export default function PayoutModal({ onClose, onSaved }: { onClose: () => void;
             <label htmlFor="bil-sinpe" className="block text-xs text-hc-muted mb-1">Número SINPE (8 dígitos)</label>
             <input id="bil-sinpe"
               type="tel" maxLength={8} className="input-base w-full mb-4"
-              placeholder="88001234"
+              placeholder="00000001"
               value={form.destinoSinpe} onChange={set('destinoSinpe')}
             />
           </>

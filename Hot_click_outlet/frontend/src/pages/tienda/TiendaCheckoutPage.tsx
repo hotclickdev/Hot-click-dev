@@ -174,7 +174,7 @@ export default function TiendaCheckoutPage() {
                 {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.campoCorreo} required type="email" autoComplete="email" value={form.correoCliente} onChange={(v) => set('correoCliente', v)} placeholder="juan@ejemplo.com" />}
               </Campo>
               <Campo etiqueta="Teléfono">
-                {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.campoTelefono} required type="tel" autoComplete="tel" value={form.telefonoCliente} onChange={(v) => set('telefonoCliente', v)} placeholder="8888-8888" />}
+                {({ id }) => <Entrada id={id} icono={ICONOS_CHECKOUT.campoTelefono} required type="tel" autoComplete="tel" value={form.telefonoCliente} onChange={(v) => set('telefonoCliente', v)} placeholder="0000-0001" />}
               </Campo>
             </div>
           </fieldset>

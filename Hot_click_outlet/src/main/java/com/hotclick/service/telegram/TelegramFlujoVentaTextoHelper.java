@@ -134,7 +134,7 @@ class TelegramFlujoVentaTextoHelper {
     private void manejarClienteNuevo(TelegramVinculacion v, Long empresaId, TelegramFlujoEstado e, String texto) {
         String[] nombreTel = separarNombreTelefono(texto);
         if (nombreTel[0].isBlank()) {
-            bot.enviarMensaje(v.getChatId(), "Necesito al menos el nombre (ej: _Ana Mora 8888-8888_).");
+            bot.enviarMensaje(v.getChatId(), "Necesito al menos el nombre (ej: _Ana Mora 0000-0001_).");
             return;
         }
         try {

@@ -121,7 +121,7 @@ public class EmpresaPerfilService {
         }
     }
 
-    static final String MSG_WHATSAPP = "El WhatsApp solo puede tener números (8 dígitos, ej. 8888-1234).";
+    static final String MSG_WHATSAPP = "El WhatsApp solo puede tener números (8 dígitos, ej. 0000-0001).";
 
     /** Pyme: WhatsApp aceptaba texto («QA-TEST abc»). Vacío → null; 8 dígitos CR o 506+8 (solo dígitos); o internacional +E.164. */
     static String normalizarWhatsapp(String valor) {
