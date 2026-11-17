@@ -39,7 +39,7 @@ describe('registro Pyme: opcional y errores legibles', () => {
     expect(telefonoOpcional('+506')).toBeUndefined()
     expect(telefonoOpcional('+506 ')).toBeUndefined()
     expect(telefonoOpcional('')).toBeUndefined()
-    expect(telefonoOpcional('+50688881234')).toBe('+50688881234')
+    expect(telefonoOpcional('+50600000002')).toBe('+50600000002')
     expect(errorRegistroLegible('telefonoAdmin: formato inválido')).toBe('Teléfono personal: formato inválido')
   })
   it('ATV no viene premarcado', async () => {

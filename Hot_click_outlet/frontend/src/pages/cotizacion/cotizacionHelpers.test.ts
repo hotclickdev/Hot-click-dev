@@ -37,7 +37,7 @@ describe('bloque PARA', () => {
   })
 
   it('conserva teléfono, dirección y contacto principal', () => {
-    expect(datosDelCliente({ cliente: { telefono: '2222-0000', direccion: 'San José', contactoPrincipal: 'Luis' } }).detalle)
-      .toBe('2222-0000 · San José · Attn: Luis')
+    expect(datosDelCliente({ cliente: { telefono: '0000-0005', direccion: 'San José', contactoPrincipal: 'Luis' } }).detalle)
+      .toBe('0000-0005 · San José · Attn: Luis')
   })
 })

@@ -33,7 +33,7 @@ test('checkout de tienda paga por ONVO y no usa el alta sin pago', async ({ page
   // Formulario: completa lo requerido y reintenta.
   await page.getByPlaceholder('Juan Pérez').fill('Ana Mora')
   await page.getByPlaceholder('juan@ejemplo.com').fill('ana@example.com')
-  await page.getByPlaceholder('8888-8888').fill('88888888')
+  await page.getByPlaceholder('8888-8888').fill('00000000')
   await page.getByRole('radio', { name: 'Retiro en tienda' }).check()
   await page.getByRole('button', { name: /Confirmar pedido/ }).click()
   await expect(page.getByRole('heading', { name: 'ONVO mock' })).toBeVisible()

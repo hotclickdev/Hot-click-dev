@@ -31,7 +31,7 @@ describe('initSentry', () => {
 
 describe('depurarPii', () => {
   it('redacta correo, cédula y teléfono', () => {
-    expect(redactarTexto('a ana@x.com c 1-1234-5678 t +506 8888-8888 j 3101123456')).toBe(
+    expect(redactarTexto('a ana@x.com c 1-1234-5678 t +506 0000-0000 j 3101123456')).toBe(
       'a [correo] c [cedula] t [telefono] j [cedula]',
     )
   })
@@ -54,11 +54,11 @@ describe('depurarPii', () => {
         url: 'https://h/api/x?correo=ana@x.com',
         headers: { Authorization: 'Bearer abc' },
         cookies: { sesion: 'x' },
-        data: { telefono: '88888888' },
+        data: { telefono: '00000000' },
         query_string: 'correo=ana@x.com',
       },
       exception: { values: [{ value: 'cedula 112345678' }] },
-      breadcrumbs: [{ message: 'tel 8888 8888', data: { correo: 'ana@x.com' } }],
+      breadcrumbs: [{ message: 'tel 0000 0000', data: { correo: 'ana@x.com' } }],
       extra: { body: { email: 'ana@x.com' } },
       tags: { t: 'ana@x.com' },
     } as unknown as ErrorEvent
@@ -66,7 +66,7 @@ describe('depurarPii', () => {
     const json = JSON.stringify(r)
     expect(json).not.toContain('ana@x.com')
     expect(json).not.toContain('Bearer')
-    expect(json).not.toContain('88888888')
+    expect(json).not.toContain('00000000')
     expect(json).not.toContain('112345678')
     expect(json).not.toContain('1.2.3.4')
     expect(r.user).toEqual({ id: '7' })

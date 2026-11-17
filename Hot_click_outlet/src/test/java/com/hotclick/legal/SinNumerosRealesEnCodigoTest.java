@@ -67,16 +67,16 @@ class SinNumerosRealesEnCodigoTest {
 
     @Test
     void laVariableAceptaFormatosComunes() {
-        assertThat(prohibidos("8888-8888, +506 8888 8889,50688888890, x")).containsExactlyInAnyOrder("88888888", "88888889", "88888890");
+        assertThat(prohibidos("0000-0000, +506 0000 0001,50600000002, x")).containsExactlyInAnyOrder("00000000", "00000001", "00000002");
         assertThat(prohibidos(null)).isEmpty();
     }
 
     @Test
     void elDetectorReconoceFormatosComunes() {
         List<String> h = new ArrayList<>();
-        Matcher m = TELEFONO.matcher("+506 8888-8888 / 50688888889 / 8888 8888");
+        Matcher m = TELEFONO.matcher("+506 0000-0000 / 50600000001 / 0000 0000");
         while (m.find()) h.add(m.group(1) + m.group(2));
-        assertThat(h).containsExactly("88888888", "88888889", "88888888");
+        assertThat(h).containsExactly("00000000", "00000001", "00000000");
     }
 
     private static boolean revisable(Path f) {

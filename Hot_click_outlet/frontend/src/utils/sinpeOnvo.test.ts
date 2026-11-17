@@ -7,10 +7,10 @@ describe('sinpeOnvo', () => {
     expect(tipoSinpeInicial(false)).toBe(0)
   })
   it('datosSinpeOnvo arma el body o devuelve null (fail-closed)', () => {
-    expect(datosSinpeOnvo(' 01-0000-0000 ', 0, '8000-0000')).toEqual({
-      identificacion: '01-0000-0000', tipoIdentificacion: 0, telefono: '+50680000000',
+    expect(datosSinpeOnvo(' 01-0000-0000 ', 0, '0000-0001')).toEqual({
+      identificacion: '01-0000-0000', tipoIdentificacion: 0, telefono: '+50600000001',
     })
     expect(datosSinpeOnvo('01-0000-0000', 0, '')).toBeNull()
-    expect(datosSinpeOnvo('01-0000-0000', 1, '80000000')).toBeNull()
+    expect(datosSinpeOnvo('01-0000-0000', 1, '00000001')).toBeNull()
   })
 })

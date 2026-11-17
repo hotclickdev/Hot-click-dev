@@ -33,7 +33,7 @@ class NegociosPublicosTest extends BaseIntegrationTest {
             return categoriaRepository.saveAndFlush(c);
         });
         Empresa cafe = empresa("Café Bruma Test", "cafe-bruma-test", "GRATUITO", true);
-        cafe.setNumeroWhatsapp("50688887777");
+        cafe.setNumeroWhatsapp("50600000004");
         cafe.setInstagram("@cafe.bruma");
         empresaRepository.saveAndFlush(cafe);
         producto("Café molido", "SKU-NEG-1", cafe);
@@ -83,7 +83,7 @@ class NegociosPublicosTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$[0].productos", is(1)))
             .andExpect(jsonPath("$[0].whatsapp").doesNotExist())
             .andExpect(jsonPath("$[0].instagram").doesNotExist())
-            .andExpect(content().string(not(containsString("50688887777"))))
+            .andExpect(content().string(not(containsString("50600000004"))))
             .andExpect(content().string(not(containsString("cafe.bruma"))));
     }
 
@@ -111,7 +111,7 @@ class NegociosPublicosTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega " + sku);
         b.setDireccionExacta("Calle Test 1");
-        b.setTelefono("88880000");
+        b.setTelefono("00000006");
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));
         b.setHorarioCierre(java.time.LocalTime.of(18, 0));
         b.setAdminCliente(adminUser);

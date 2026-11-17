@@ -15,7 +15,7 @@ const producto = (id: number, nombre: string, precio: number) => ({
   imagenUrl: null, empresaNombre: 'Casa Luna 506', empresaSlug: 'demo', descripcion: 'Hecho a mano en San Jos\u00e9.',
 })
 const PRODUCTOS = [producto(1, 'Taza personalizada con nombre', 7900), producto(2, 'Bolso de cuero caf\u00e9', 24500), producto(3, 'Sill\u00f3n de sala verde', 32000)]
-const EMPRESA = { slug: 'demo', nombreComercial: 'Casa Luna 506', tagline: 'Hogar y accesorios', whatsapp: '50688887777', zonaEnvio: 'todo el pa\u00eds' }
+const EMPRESA = { slug: 'demo', nombreComercial: 'Casa Luna 506', tagline: 'Hogar y accesorios', whatsapp: '50600000004', zonaEnvio: 'todo el pa\u00eds' }
 const CATEGORIAS = [{ id: 1, nombreCategoria: 'Hogar', nombre: 'Hogar' }, { id: 2, nombreCategoria: 'Accesorios', nombre: 'Accesorios' }]
 
 function datosDe(path: string): unknown {

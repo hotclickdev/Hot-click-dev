@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("[SEGURIDAD] Campos internos de Producto y Bodega fuera de la API pública")
 class ProductoCamposInternosTest extends BaseIntegrationTest {
 
-    private static final String TELEFONO_BODEGA  = "61234567";
+    private static final String TELEFONO_BODEGA  = "00000008";
     private static final String CORREO_BODEGA    = "bodega-secreta@test.cr";
     private static final String ENCARGADO_BODEGA = "Encargado Secreto";
     private static final String DIRECCION_BODEGA = "Calle Secreta 123";

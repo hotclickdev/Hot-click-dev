@@ -51,10 +51,10 @@ describe('urlInstagram', () => {
 })
 
 describe('contactoVisible (regla: contacto directo solo con plan PYME o NEGOCIO_PLUS)', () => {
-  const datos = { whatsapp: '+506 8888-0506', instagram: ' @casaluna506 ' }
+  const datos = { whatsapp: '+506 0000-0007', instagram: ' @casaluna506 ' }
 
   it('con contactoDirecto del backend devuelve WhatsApp en dígitos e Instagram', () => {
-    expect(contactoVisible({ ...datos, contactoDirecto: true })).toEqual({ whatsapp: '50688880506', instagram: '@casaluna506' })
+    expect(contactoVisible({ ...datos, contactoDirecto: true })).toEqual({ whatsapp: '50600000007', instagram: '@casaluna506' })
   })
 
   it('emprendedor (false) o sin la marca: no hay contacto aunque llegue el dato', () => {

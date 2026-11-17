@@ -78,11 +78,11 @@ class BodegaEscrituraSeguridadTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Comprador: crear, importar, editar y borrar → 403 y no cambia nada")
     void comprador_403() throws Exception {
-        crear(userToken, "{\"nombreBodega\":\"X\",\"direccionExacta\":\"Y\",\"telefono\":\"88881234\"}")
+        crear(userToken, "{\"nombreBodega\":\"X\",\"direccionExacta\":\"Y\",\"telefono\":\"00000002\"}")
             .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/bodegas/bulk").header("Authorization", userToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("[{\"nombreBodega\":\"X\",\"direccionExacta\":\"Y\",\"telefono\":\"88881234\"}]"))
+                .content("[{\"nombreBodega\":\"X\",\"direccionExacta\":\"Y\",\"telefono\":\"00000002\"}]"))
             .andExpect(status().isForbidden());
         actualizar(userToken, bodegaB, "{\"nombreBodega\":\"Hackeada\"}").andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/bodegas/" + bodegaB.getId()).header("Authorization", userToken))
@@ -97,24 +97,24 @@ class BodegaEscrituraSeguridadTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Emprendedor: la empresa sale de la sesión aunque el body pida otra")
     void emprendedor_empresaDeLaSesion() throws Exception {
-        crear(tokenA, "{\"nombreBodega\":\"Mía\",\"direccionExacta\":\"San José\",\"telefono\":\"+506 8888-1234\","
+        crear(tokenA, "{\"nombreBodega\":\"Mía\",\"direccionExacta\":\"San José\",\"telefono\":\"+506 0000-0002\","
                 + "\"empresaId\":\"" + empresaB.getId() + "\",\"empresa\":\"" + empresaB.getId() + "\"}")
             .andExpect(status().isOk());
 
         Bodega creada = bodegaRepository.findAll().stream()
             .filter(b -> "Mía".equals(b.getNombreBodega())).findFirst().orElseThrow();
         assertThat(creada.getEmpresaId()).isEqualTo(empresaA.getId());
-        assertThat(creada.getTelefono()).isEqualTo("+50688881234");
+        assertThat(creada.getTelefono()).isEqualTo("+50600000002");
     }
 
     @Test
     @DisplayName("Emprendedor sin empresa en la sesión: crear e importar → 403")
     void emprendedorSinEmpresa_403() throws Exception {
-        crear(tokenSinEmpresa, "{\"nombreBodega\":\"X\",\"direccionExacta\":\"Y\",\"telefono\":\"88881234\"}")
+        crear(tokenSinEmpresa, "{\"nombreBodega\":\"X\",\"direccionExacta\":\"Y\",\"telefono\":\"00000002\"}")
             .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/bodegas/bulk").header("Authorization", tokenSinEmpresa)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("[{\"nombreBodega\":\"X\",\"direccionExacta\":\"Y\",\"telefono\":\"88881234\"}]"))
+                .content("[{\"nombreBodega\":\"X\",\"direccionExacta\":\"Y\",\"telefono\":\"00000002\"}]"))
             .andExpect(status().isForbidden());
         assertThat(bodegaRepository.count()).isEqualTo(1);
     }
@@ -122,20 +122,20 @@ class BodegaEscrituraSeguridadTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Otra empresa: editar o borrar una bodega ajena → 403 (antes 400) y no cambia")
     void otraEmpresa_403() throws Exception {
-        actualizar(tokenA, bodegaB, "{\"nombreBodega\":\"Hackeada\",\"telefono\":\"88880000\"}")
+        actualizar(tokenA, bodegaB, "{\"nombreBodega\":\"Hackeada\",\"telefono\":\"00000006\"}")
             .andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/bodegas/" + bodegaB.getId()).header("Authorization", tokenA))
             .andExpect(status().isForbidden());
         Bodega b = bodegaRepository.findById(bodegaB.getId()).orElseThrow();
         assertThat(b.getNombreBodega()).isEqualTo("Bodega Beta");
-        assertThat(b.getTelefono()).isEqualTo("88881111");
+        assertThat(b.getTelefono()).isEqualTo("00000003");
         assertThat(b.getEstado()).isEqualTo(Constants.ESTADO_ACTIVO);
     }
 
     @Test
     @DisplayName("IT Admin: puede crear (bodega sin empresa, como antes) y editar cualquiera")
     void admin_puede() throws Exception {
-        crear(adminToken, "{\"nombreBodega\":\"Central\",\"direccionExacta\":\"Heredia\",\"telefono\":\"22223333\"}")
+        crear(adminToken, "{\"nombreBodega\":\"Central\",\"direccionExacta\":\"Heredia\",\"telefono\":\"00000009\"}")
             .andExpect(status().isOk());
         actualizar(adminToken, bodegaB, "{\"telefono\":\"+1 305 555 1234\"}").andExpect(status().isOk());
         assertThat(bodegaRepository.findById(bodegaB.getId()).orElseThrow().getTelefono()).isEqualTo("+13055551234");
@@ -144,7 +144,7 @@ class BodegaEscrituraSeguridadTest extends BaseIntegrationTest {
     // ── SEC-08: teléfono ─────────────────────────────────────────────────────
 
     @ParameterizedTest(name = "crear con teléfono {0} → 400")
-    @ValueSource(strings = {"abc", "<b>x</b>", "+506 8888 123", "123456789012345678901234567890123", "' OR 1=1 --"})
+    @ValueSource(strings = {"abc", "<b>x</b>", "+506 0000 000", "123456789012345678901234567890123", "' OR 1=1 --"})
     void crear_telefonoInvalido_400(String telefono) throws Exception {
         crear(tokenA, "{\"nombreBodega\":\"Mala\",\"direccionExacta\":\"Y\",\"telefono\":\"" + telefono + "\"}")
             .andExpect(status().isBadRequest())
@@ -162,10 +162,10 @@ class BodegaEscrituraSeguridadTest extends BaseIntegrationTest {
         actualizar(tokenA, bodegaA, "{\"telefono\":\"" + "9".repeat(25) + "\"}")
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value(TelefonoBodega.MENSAJE_INVALIDO));
-        assertThat(bodegaRepository.findById(bodegaA.getId()).orElseThrow().getTelefono()).isEqualTo("88881111");
+        assertThat(bodegaRepository.findById(bodegaA.getId()).orElseThrow().getTelefono()).isEqualTo("00000003");
 
-        actualizar(tokenA, bodegaA, "{\"telefono\":\"8812-0034\"}").andExpect(status().isOk());
-        assertThat(bodegaRepository.findById(bodegaA.getId()).orElseThrow().getTelefono()).isEqualTo("+50688120034");
+        actualizar(tokenA, bodegaA, "{\"telefono\":\"0000-0012\"}").andExpect(status().isOk());
+        assertThat(bodegaRepository.findById(bodegaA.getId()).orElseThrow().getTelefono()).isEqualTo("+50600000012");
     }
 
     @Test
@@ -173,7 +173,7 @@ class BodegaEscrituraSeguridadTest extends BaseIntegrationTest {
     void bulk_omiteTelefonosInvalidos() throws Exception {
         mockMvc.perform(post("/api/bodegas/bulk").header("Authorization", tokenA)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("[{\"nombreBodega\":\"Buena\",\"direccionExacta\":\"Y\",\"telefono\":\"+50688881234\"},"
+                .content("[{\"nombreBodega\":\"Buena\",\"direccionExacta\":\"Y\",\"telefono\":\"+50600000002\"},"
                     + "{\"nombreBodega\":\"Mala\",\"direccionExacta\":\"Y\",\"telefono\":\"<b>x</b>\"}]"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.ok").value(1))
@@ -181,7 +181,7 @@ class BodegaEscrituraSeguridadTest extends BaseIntegrationTest {
         List<Bodega> deA = bodegaRepository.findAll().stream()
             .filter(b -> empresaA.getId().equals(b.getEmpresaId())).toList();
         assertThat(deA).extracting(Bodega::getNombreBodega).containsExactly("Buena");
-        assertThat(deA.get(0).getTelefono()).isEqualTo("+50688881234");
+        assertThat(deA.get(0).getTelefono()).isEqualTo("+50600000002");
     }
 
     private ResultActions crear(String token, String json) throws Exception {
@@ -208,7 +208,7 @@ class BodegaEscrituraSeguridadTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega(nombre);
         b.setDireccionExacta("Calle Bodegas 1");
-        b.setTelefono("88881111");
+        b.setTelefono("00000003");
         b.setCorreoContacto("contacto-" + nombre.replace(' ', '-').toLowerCase() + "@test.cr");
         b.setAdminCliente(adminUser);
         b.setEmpresa(empresa);

@@ -28,7 +28,7 @@ const USUARIO = {
   id: 7,
   nombre: 'María Rojas Solano',
   correo: 'maria.rojas@correo.com',
-  telefono: '8888-1234',
+  telefono: '0000-0002',
 }
 
 const IDS_PRODUCTO: Record<string, number> = { 'Sérum facial de día': 501, 'Zapatos running rojo': 502 }

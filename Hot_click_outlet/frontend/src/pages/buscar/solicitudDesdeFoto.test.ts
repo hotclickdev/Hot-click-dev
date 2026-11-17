@@ -17,7 +17,7 @@ describe('descripcionSolicitudFoto', () => {
 describe('telefonoSolicitudFoto', () => {
   it('normaliza el número local y rechaza uno corto', async () => {
     const { telefonoSolicitudFoto } = await import('./solicitudDesdeFoto')
-    expect(telefonoSolicitudFoto('8888 8888')).toBe('+50688888888')
+    expect(telefonoSolicitudFoto('0000 0000')).toBe('+50600000000')
     expect(telefonoSolicitudFoto('123')).toBeNull()
   })
 })
