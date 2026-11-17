@@ -13,6 +13,8 @@ const EMPRESA = {
   colorSecundario: '#152B5E',
   colorAcento: '#1747A8',
   whatsapp: VENDEDOR_WA_FAKE,
+  // Con punto de retiro el checkout ofrece «Retiro en tienda»; sin él solo hay envío a domicilio.
+  retiro: { nombre: 'Demo Store', provincia: 'San José', canton: 'Escazú', direccion: 'Barrio Escalante' },
 }
 
 async function mockTiendaDemo(page: Page) {
@@ -44,19 +46,19 @@ test.describe('Checkout tienda pública', () => {
     await mockTiendaDemo(page)
     await page.goto('/tienda/demo/checkout', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Finalizar pedido' })).toBeVisible()
-    await expect(page.getByText('Pedido de Demo Store en HotClick')).toBeVisible()
 
-    const direccion = page.getByLabel(/Dirección de entrega/)
+    // Con envío a domicilio la dirección son las «Señas exactas» (provincia, cantón y distrito son selectores).
+    const direccion = page.getByLabel('Señas exactas')
     await expect(direccion).toBeVisible()
     await expect(direccion).toHaveAttribute('required', '')
 
-    const telefono = page.getByLabel(/Teléfono/)
+    const telefono = page.getByLabel('Teléfono', { exact: true })
     await expect(telefono).toBeVisible()
     await expect(telefono).toHaveAttribute('required', '')
 
     await page.getByLabel('Nombre completo').fill('Ana Pérez')
     await page.getByLabel('Correo electrónico').fill('ana@ejemplo.com')
-    await page.getByLabel(/Dirección de entrega/).fill('San José, Barrio Escalante, casa 12')
+    await direccion.fill('Barrio Escalante, casa 12')
     await telefono.fill('1234567')
     await page.getByRole('button', { name: 'Confirmar pedido' }).click()
     await expect(page.getByText('Indicá un teléfono de contacto (mínimo 8 dígitos).')).toBeVisible()
@@ -65,7 +67,7 @@ test.describe('Checkout tienda pública', () => {
     await expect(direccion).toHaveCount(0)
 
     await page.getByText('Envío a domicilio').click()
-    await expect(page.getByLabel(/Dirección de entrega/)).toBeVisible()
+    await expect(page.getByLabel('Señas exactas')).toBeVisible()
 
     await page.goto('/tienda/demo/checkout/exito?orden=ORD-TEST123', { waitUntil: 'domcontentloaded' })
     await expect(page.getByText('ORD-TEST123')).toBeVisible()
@@ -80,10 +82,11 @@ test('el pedido de tienda exige teléfono en DTO y no inventa 00000000', () => {
   const dto = readFileSync(join(raiz, 'src/main/java/com/hotclick/dto/StorefrontPedidoDTO.java'), 'utf8')
   const servicio = readFileSync(join(raiz, 'src/main/java/com/hotclick/controller/storefront/StorefrontGuestOrderService.java'), 'utf8')
   const pagina = readFileSync(join(raiz, 'frontend/src/pages/tienda/TiendaCheckoutPage.tsx'), 'utf8')
+  const exito = readFileSync(join(raiz, 'frontend/src/pages/tienda/TiendaSuccessPage.tsx'), 'utf8')
   expect(dto).toContain('TELEFONO_MIN_DIGITOS')
   expect(dto).toContain('@NotBlank(message = "El teléfono de contacto es requerido")')
   expect(servicio).not.toContain('00000000')
-  expect(pagina).toContain("tiendaService.crearPedido(slug as string, { ...form, items: itemsParaPedido() })")
+  expect(pagina).toContain("tiendaService.crearPedido(slug as string, { ...form, ...destino, notas, items: itemsParaPedido() })")
   expect(pagina).toContain('vaciarCarrito()')
-  expect(pagina).toContain('Pedido de {empresa?.nombreComercial ?? slug} en HotClick')
+  expect(exito).toContain('Pedido de {nombre} en HotClick')
 })

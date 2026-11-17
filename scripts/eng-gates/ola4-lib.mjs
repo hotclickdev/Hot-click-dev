@@ -22,6 +22,8 @@ export const CI_E2E_SPECS = [
   'tests/emprendedor-wizard.spec.ts',
   'tests/seller-qa-escape-remap.spec.ts',
   'tests/seller-wizard-remap.spec.ts',
+  'tests/plataforma-consola.spec.ts',
+  'tests/trial-tarjeta.spec.ts',
 ];
 
 export const SKIP_LABELS = {
