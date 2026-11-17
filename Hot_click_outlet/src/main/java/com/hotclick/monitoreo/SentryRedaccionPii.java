@@ -39,7 +39,9 @@ public class SentryRedaccionPii implements SentryOptions.BeforeSendCallback {
 
     public static String redactar(String s) {
         if (s == null) return null;
-        String r = BEARER.matcher(s).replaceAll("Bearer [token]");
+        // Rutas con token de enlace (tienda rápida, invitación de equipo): 4 caracteres + «…», igual que los logs.
+        String r = com.hotclick.security.RutaLogSegura.enmascarar(s);
+        r = BEARER.matcher(r).replaceAll("Bearer [token]");
         r = BASIC.matcher(r).replaceAll("Basic [token]");
         r = TOKEN_BOT.matcher(r).replaceAll("[token]");
         r = CLAVE_SK_PK.matcher(r).replaceAll("[token]");
@@ -86,6 +88,7 @@ public class SentryRedaccionPii implements SentryOptions.BeforeSendCallback {
                 new HashMap<>(b.getData()).forEach((k, v) -> b.setData(k, redactarValor(v)));
             }
         }
+        if (event.getTransaction() != null) event.setTransaction(redactar(event.getTransaction()));
         event.setUser(null);
         Map<String, String> tags = event.getTags();
         if (tags != null) {

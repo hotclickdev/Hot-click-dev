@@ -279,29 +279,20 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Invitar: el hash NO corresponde a password, correo, teléfono, nombre ni vacío, y el login falla con todos")
-    void invitar_hashNoEsNingunValorPrevisible_loginFalla() throws Exception {
+    @DisplayName("Invitar no crea el Usuario: no hay hash que adivinar y el login con valores previsibles falla")
+    void invitar_noCreaUsuario_loginFalla() throws Exception {
         String correo = "hash-previsible@test.cr";
-        String nombre = "Hash Previsible";
-        String telefono = "00000000";
-        String password = "Pass1234!";
-        String body = "{\"nombre\":\"" + nombre + "\",\"correo\":\"" + correo + "\","
-            + "\"password\":\"" + password + "\",\"telefono\":\"" + telefono + "\"}";
+        String body = "{\"nombre\":\"Hash Previsible\",\"correo\":\"" + correo + "\","
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000000\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk());
 
-        String hash = usuarioRepository.findByCorreo(correo).orElseThrow().getContrasenaHash();
-        org.junit.jupiter.api.Assertions.assertNotNull(hash);
-        int intentosLogin = 0;
-        for (String secreto : new String[] {password, correo, telefono, "", nombre, "Hash", "Previsible"}) {
-            org.junit.jupiter.api.Assertions.assertFalse(passwordEncoder.matches(secreto, hash),
-                "el hash coincide con un valor previsible: '" + secreto + "'");
-            // El login se prueba solo con los primeros 5 (a partir del 6.º falla el bloqueo por fuerza bruta
-            // y taparía una regresión); el hash se comprueba contra todos.
-            if (++intentosLogin > 5) continue;
+        org.junit.jupiter.api.Assertions.assertTrue(usuarioRepository.findByCorreo(correo).isEmpty(),
+            "invitar no debe crear el Usuario hasta que acepte");
+        for (String secreto : new String[] {"Pass1234!", correo, "00000000", "Hash Previsible"}) {
             int st = mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{\"correo\":\"" + correo + "\",\"contrasena\":\"" + secreto + "\"}"))
@@ -324,15 +315,16 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
 
     // ── T-EQ-012: Invitar correo ya registrado → 400 ─────────────────────────
     @Test
-    @DisplayName("T-EQ-012 | BÁSICO — Invitar correo ya registrado → 400")
-    void invitar_correoYaRegistrado_400() throws Exception {
+    @DisplayName("T-EQ-012 | Invitar correo ya registrado → 200 \"Invitación enviada\" (no se filtra que existe) y no entra al equipo")
+    void invitar_correoYaRegistrado_200() throws Exception {
         String body = "{\"nombre\":\"Duplicado\",\"correo\":\"" + adminCliente.getCorreo() + "\","
             + "\"password\":\"Pass1234!\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Invitación enviada"));
     }
 
     // ── T-EQ-013: Emprendedor puede eliminar miembro de su empresa → 200 ─────
@@ -387,8 +379,8 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
 
     // ── T-EQ-018: Miembro invitado aparece en la lista del equipo ─────────────
     @Test
-    @DisplayName("T-EQ-018 | BÁSICO — Miembro invitado aparece en la lista del equipo")
-    void invitado_aparece_enListado() throws Exception {
+    @DisplayName("T-EQ-018 | Miembro invitado NO aparece en la lista hasta aceptar; luego sí")
+    void invitado_aparece_enListado_soloTrasAceptar() throws Exception {
         String correoNuevo = "miembro-list@test.cr";
         String bodyInvite = "{\"nombre\":\"List Member\",\"correo\":\"" + correoNuevo + "\","
             + "\"password\":\"Pass1234!\",\"telefono\":\"00000003\"}";
@@ -397,6 +389,13 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bodyInvite))
             .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/empresa/equipo")
+                .header("Authorization", tokenEmp))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data[?(@.correo == '" + correoNuevo + "')]").doesNotExist());
+
+        aceptarCuentaNueva(correoNuevo, "Clave12345");
 
         mockMvc.perform(get("/api/empresa/equipo")
                 .header("Authorization", tokenEmp))
@@ -416,6 +415,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk());
+        aceptarCuentaNueva(correo, "Clave12345");
 
         Usuario nuevo = usuarioRepository.findByCorreo(correo)
             .orElseThrow(() -> new AssertionError("Usuario no encontrado"));
@@ -466,6 +466,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk());
+        aceptarCuentaNueva("juan-perez@test.cr", "Clave12345");
 
         Usuario juan = usuarioRepository.findByCorreo("juan-perez@test.cr")
             .orElseThrow(() -> new AssertionError("Usuario no encontrado"));
@@ -484,17 +485,19 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk());
+        aceptarCuentaNueva("solo-nombre@test.cr", "Clave12345");
 
         Usuario solo = usuarioRepository.findByCorreo("solo-nombre@test.cr")
             .orElseThrow(() -> new AssertionError("Usuario no encontrado"));
         org.junit.jupiter.api.Assertions.assertEquals("Miembro", solo.getApellidoPaterno());
     }
 
-    // ── T-EQ-025: Miembro eliminado (soft-delete) NO se reactiva al re-invitarlo ──
-    // Antes (#384) un ELIMINADO con membresía previa reingresaba; quedaba sin poder iniciar sesión (el login rechaza el
-    // estado 3) y además se le añadían rol y empresa. La reactivación de eliminados queda para post-lanzamiento.
+    // ── T-EQ-025: Miembro eliminado (soft-delete) NO se reactiva al re-invitarlo (solo al aceptar) ──
+    // Antes (#384) un ELIMINADO con membresía previa reingresaba al invitar; quedaba sin poder iniciar sesión (el login
+    // rechaza el estado 3). Ahora invitar() solo emite la invitación (cuentaNueva=true); la reactivación con contraseña
+    // nueva ocurre al aceptar el token (ver InvitacionEquipoReinvitarEliminadoTest).
     @Test
-    @DisplayName("T-EQ-025 | BÁSICO — Re-invitar correo de miembro eliminado se rechaza (400) y no lo reactiva")
+    @DisplayName("T-EQ-025 | Re-invitar a un eliminado: misma respuesta (200 \"Invitación enviada\"), se emite invitación pero NO se reactiva")
     void eliminado_noSeReactivaAlReinvitar() throws Exception {
         mockMvc.perform(delete("/api/empresa/equipo/" + adminCliente.getId())
                 .header("Authorization", tokenEmp))
@@ -508,10 +511,15 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(bodyReinvite))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.message").value("Invitación enviada"));
 
         org.junit.jupiter.api.Assertions.assertEquals(Constants.ESTADO_ELIMINADO,
             usuarioRepository.findById(adminCliente.getId()).orElseThrow().getEstado());
+        org.mockito.Mockito.verify(notificacionEmailService).enviarInvitacionMiembro(
+            org.mockito.ArgumentMatchers.eq(adminCliente.getCorreo()), org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq(true), org.mockito.ArgumentMatchers.any());
     }
 
     // ── ADMIN en ROLES_PERMITIDOS es rol de equipo del negocio, NO el rol de plataforma ──
@@ -526,11 +534,20 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
             .andExpect(status().isOk());
+        aceptarCuentaNueva(correo, "Clave12345");
 
         Usuario nuevo = usuarioRepository.findByCorreo(correo).orElseThrow();
         org.assertj.core.api.Assertions.assertThat(nuevo.getRoles())
             .extracting(r -> r.getNombreRol())
             .containsExactly(Constants.ROL_EMPRENDEDOR);
+    }
+
+    private void aceptarCuentaNueva(String correo, String contrasena) throws Exception {
+        String token = tokenInvitacionEnviadoA(correo);
+        mockMvc.perform(post("/api/auth/equipo-invitacion/aceptar-cuenta-nueva")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\",\"contrasena\":\"" + contrasena + "\"}"))
+            .andExpect(status().isOk());
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

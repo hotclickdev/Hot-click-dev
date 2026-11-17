@@ -79,6 +79,7 @@ class CuentaTitularCierreCacheTest {
         assertThat(cache.getIfPresent(CORREO)).as("UserDetails del correo previo sigue en caché").isNull();
         assertThat(u.getCorreo()).isEqualTo("cerrada.41@invalid.hotclick.lat");
         assertThat(u.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
+        assertThat(u.getMotivoEliminacion()).isEqualTo("BORRADO_DATOS");
         assertThat(u.getSesionesInvalidadasEn()).isNotNull();
         verify(refreshTokenService).revocarTodosDeUsuario(u);
         verify(usuarioRepository, org.mockito.Mockito.atLeastOnce()).save(u);

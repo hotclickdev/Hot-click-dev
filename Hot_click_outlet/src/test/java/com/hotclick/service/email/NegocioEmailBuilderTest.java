@@ -96,7 +96,7 @@ class NegocioEmailBuilderTest {
             b.buildModeracionRechazada("Ana", "Producto", "X", "m"),
             b.buildProductoModerado("Ana", "X", true, "n"),
             b.buildCambioCobroPendiente("Ana", "IBAN", "****1"),
-            b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", false),
+            b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", false, "tk"),
             b.buildCuponBienvenida("C1"),
             b.buildResenaResultado("Ana", true, "X"));
     }
@@ -118,7 +118,7 @@ class NegocioEmailBuilderTest {
             NegocioEmailBuilder b = conAppUrl(appUrl);
             assertThat(b.buildBienvenidaEmprendedor("Ana", "X", true)).contains("href=\"https://hotclick.lat/admin\"");
             assertThat(b.buildCuponBienvenida("C1")).contains("href=\"https://hotclick.lat/productos\"");
-            assertThat(b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", false)).contains("href=\"https://hotclick.lat/login\"");
+            assertThat(b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", false, "tk")).contains("href=\"https://hotclick.lat/equipo/invitacion#t=tk\"");
         }
     }
 }

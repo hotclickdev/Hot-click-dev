@@ -14,9 +14,22 @@ import java.util.List;
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    /** Carga empresa + roles con JOIN FETCH (crítico para autenticación y CompanyScope con open-in-view=false). */
-    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa LEFT JOIN FETCH u.roles WHERE u.correo = :correo")
+    /**
+     * Carga empresa + roles con JOIN FETCH (crítico para autenticación y CompanyScope con open-in-view=false).
+     * IGNORA las filas ELIMINADAS (estado 3): el índice único parcial permite una ELIMINADA y una viva con el mismo
+     * correo, y sin este filtro la consulta devolvía 2 filas (500). La reactivación por SALIDA_EQUIPO usa
+     * {@link #findEliminadoByCorreo}.
+     */
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa LEFT JOIN FETCH u.roles "
+         + "WHERE u.correo = :correo AND u.estado <> 3")
     Optional<Usuario> findByCorreo(@Param("correo") String correo);
+
+    /** Fila ELIMINADA más reciente de ese correo (puede haber varias). Solo para el camino de reactivación. */
+    Optional<Usuario> findFirstByCorreoAndEstadoOrderByIdDesc(String correo, Integer estado);
+
+    default Optional<Usuario> findEliminadoByCorreo(String correo) {
+        return findFirstByCorreoAndEstadoOrderByIdDesc(correo, 3);
+    }
 
     /** G1b: busqueda del correo sin distinguir mayusculas (sin indice nuevo; solo en el checkout manual). */
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.empresa WHERE LOWER(u.correo) = LOWER(:correo)")

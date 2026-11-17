@@ -212,7 +212,7 @@ public class NotificacionEmailService {
 
     /**
 
-     * Enviada al nuevo miembro cuando el emprendedor lo agrega al equipo.
+     * Enviada a quien invitan al equipo: enlace de un solo uso para ACEPTAR (no entra hasta aceptar).
 
      * Si passwordPlano != null es un usuario nuevo y se incluyen las credenciales.
 
@@ -224,9 +224,9 @@ public class NotificacionEmailService {
 
     public void enviarInvitacionMiembro(String correo, String nombre, String rolEnEmpresa,
 
-                                        String nombreEmpresa, boolean cuentaNueva) {
+                                        String nombreEmpresa, boolean cuentaNueva, String token) {
 
-        negocioEmailSender.enviarInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, cuentaNueva);
+        negocioEmailSender.enviarInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, cuentaNueva, token);
 
     }
 

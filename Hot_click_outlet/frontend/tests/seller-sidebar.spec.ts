@@ -71,7 +71,7 @@ test.describe('Sidebar PYME y Negocio Plus', () => {
     await expect(nav.getByRole('group', { name: 'Inventario' })).toBeVisible()
     await expect(nav.getByRole('group', { name: 'Negocio' })).toBeVisible()
 
-    await expect(nav.getByRole('link', { name: 'Caja (POS)' })).toHaveAttribute('href', '/admin/pos')
+    await expect(nav.getByRole('link', { name: 'Caja (POS)' })).toHaveAttribute('href', '/pyme/pos')
     await expect(nav.getByRole('link', { name: 'Pedidos' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Tienda' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Mis Bodegas' })).toBeVisible()
@@ -87,7 +87,7 @@ test.describe('Sidebar PYME y Negocio Plus', () => {
     await entrarVendedor(page, 'NEGOCIO_PLUS', '/negocio-plus')
     const nav = sidebar(page)
 
-    await expect(nav.getByRole('link', { name: 'Caja (POS)' })).toHaveAttribute('href', '/admin/pos')
+    await expect(nav.getByRole('link', { name: 'Caja (POS)' })).toHaveAttribute('href', '/negocio-plus/pos')
     await expect(nav.getByRole('link', { name: 'Pedidos' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Mis Bodegas' })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Sucursales' })).toBeVisible()

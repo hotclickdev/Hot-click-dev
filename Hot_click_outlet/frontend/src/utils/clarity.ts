@@ -1,4 +1,5 @@
 import { getCookieConsent } from '@/utils/cookieConsent'
+import { llevaTokenInvitacion } from '@/utils/sanitizarUrl'
 
 const CLARITY_ID = import.meta.env.VITE_CLARITY_ID
 
@@ -12,6 +13,9 @@ export function initClarity() {
   if (!CLARITY_ID || document.getElementById('hc-clarity')) return
   const consent = getCookieConsent()
   if (!consent?.analytics) return
+  // Clarity lee location.href tal cual y no deja reescribirlo: si por cualquier motivo la URL todavía lleva un token de
+  // invitación (replaceState falló), no se carga en esta página.
+  if (llevaTokenInvitacion(globalThis.location?.href ?? '')) return
 
   const script = document.createElement('script')
   script.id = 'hc-clarity'

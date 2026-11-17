@@ -26,6 +26,7 @@ describe('initSentry', () => {
     const opts = vi.mocked(Sentry.init).mock.calls[0][0]!
     expect(opts.sendDefaultPii).toBe(false)
     expect(typeof opts.beforeSend).toBe('function')
+    expect(typeof opts.beforeSendTransaction).toBe('function') // tracing de pageload y spans XHR
   })
 })
 

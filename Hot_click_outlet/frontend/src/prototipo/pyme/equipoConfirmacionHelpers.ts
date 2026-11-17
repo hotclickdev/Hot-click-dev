@@ -17,6 +17,6 @@ export function esMiembroVisibleEnLista(m: Pick<MiembroEquipo, 'estado'>): boole
 }
 
 export function mensajeExitoInvitacion(nombre?: string | null): string {
-  const quien = nombre?.trim() || 'El miembro'
-  return `${quien} ya puede entrar con la contraseña temporal.`
+  const quien = nombre?.trim() || 'La persona'
+  return `${quien} recibe un correo para aceptar la invitación. Aparece en el equipo cuando acepte; si sale del equipo, hay que volver a invitarla.`
 }

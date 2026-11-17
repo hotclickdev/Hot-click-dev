@@ -18,17 +18,18 @@ class InvitacionMiembroSinPasswordTest {
     }
 
     @Test
-    @DisplayName("cuenta nueva: no hay contraseña en claro y el CTA lleva a /recuperar-contrasena")
+    @DisplayName("cuenta nueva: invita a ACEPTAR con enlace de un solo uso, sin contraseña ni 'ya tenés acceso'")
     void cuentaNuevaSinPassword() {
-        String html = builder.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "Tienda", true);
-        assertThat(html).doesNotContain("Contraseña:");
-        assertThat(html).contains("/recuperar-contrasena").contains("a@b.com");
+        String html = builder.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "Tienda", true, "tok123");
+        assertThat(html).doesNotContain("Contraseña:").doesNotContain("Ya tenés acceso").doesNotContain("Te agregaron");
+        assertThat(html).contains("/equipo/invitacion#t=tok123").contains("definir tu propia contraseña").contains("un solo uso");
     }
 
     @Test
-    @DisplayName("cuenta existente: sigue yendo a /login con su contraseña habitual")
-    void cuentaExistenteVaALogin() {
-        String html = builder.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "Tienda", false);
-        assertThat(html).contains("/login").contains("contraseña habitual").doesNotContain("/recuperar-contrasena");
+    @DisplayName("cuenta existente: también enlace de aceptación, pide iniciar sesión y no dice que ya entró")
+    void cuentaExistenteAceptaConEnlace() {
+        String html = builder.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "Tienda", false, "tok123");
+        assertThat(html).contains("/equipo/invitacion#t=tok123").contains("iniciá sesión")
+            .doesNotContain("contraseña habitual").doesNotContain("Ya tenés acceso").doesNotContain("Te agregaron");
     }
 }

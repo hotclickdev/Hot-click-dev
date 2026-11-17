@@ -3,6 +3,8 @@ package com.hotclick.service;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Rol;
 import com.hotclick.model.Usuario;
+import com.hotclick.model.InvitacionEquipo;
+import com.hotclick.repository.InvitacionEquipoRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
@@ -27,20 +29,20 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** QA3-P02: el nombre completo de la invitación se parte con el apellido al final, no la primera palabra sola como nombre. */
+/** QA3-P02: el nombre completo de la invitación se parte con el apellido al final; ahora el Usuario se crea al aceptar. */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("QA3-P02 — EquipoService.invitar: partición de nombre y apellido")
+@DisplayName("QA3-P02 — InvitacionEquipoService.aceptarCuentaNueva: partición de nombre y apellido")
 class EquipoServiceNombreCompletoTest {
 
     @Mock UsuarioRepository usuarioRepository;
     @Mock RolRepository rolRepository;
     @Mock PasswordEncoder passwordEncoder;
     @Mock MiembroEmpresaRepository miembroEmpresaRepository;
-    @Mock NotificacionEmailService notificacionEmailService;
     @Mock TenantService tenantService;
     @Mock com.hotclick.repository.EmpresaRepository empresaRepository;
-    @InjectMocks EquipoService equipoService;
+    @Mock InvitacionEquipoRepository invitaciones;
+    @InjectMocks InvitacionEquipoService servicio;
 
     @BeforeEach
     void setUp() {
@@ -50,6 +52,7 @@ class EquipoServiceNombreCompletoTest {
         when(passwordEncoder.encode(anyString())).thenReturn("hash");
         when(usuarioRepository.findByCorreo(anyString())).thenReturn(Optional.empty());
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+        when(invitaciones.consumir(any(), any())).thenReturn(1);
     }
 
     private Usuario invitar(String nombreCompleto) {
@@ -57,7 +60,14 @@ class EquipoServiceNombreCompletoTest {
         empresa.setNombreEmpresa("Tienda QA3");
         empresa.setId(9L);
         when(empresaRepository.findByIdForUpdate(9L)).thenReturn(Optional.of(empresa));
-        equipoService.invitar(9L, nombreCompleto, "n@test.cr", "00000000", "EDITOR");
+        InvitacionEquipo inv = new InvitacionEquipo();
+        inv.setEmpresa(empresa);
+        inv.setCorreo("n@test.cr");
+        inv.setNombre(nombreCompleto);
+        inv.setRolEnEmpresa("EDITOR");
+        inv.setVenceEn(java.time.LocalDateTime.now().plusDays(1));
+        when(invitaciones.findByTokenHash(anyString())).thenReturn(Optional.of(inv));
+        servicio.aceptarCuentaNueva("tok", "Clave1234");
         ArgumentCaptor<Usuario> c = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(c.capture());
         return c.getValue();

@@ -95,7 +95,7 @@ public class NegocioEmailBuilder {
     }
 
     public String buildInvitacionMiembro(String correo, String nombre, String rolEnEmpresa,
-                                         String nombreEmpresa, boolean cuentaNueva) {
+                                         String nombreEmpresa, boolean cuentaNueva, String token) {
         String rolLabel = switch (rolEnEmpresa) {
             case "EDITOR" -> "Editor — puede editar productos y pedidos";
             case "LECTOR" -> "Lector — solo visualización";
@@ -104,36 +104,27 @@ public class NegocioEmailBuilder {
             default -> rolEnEmpresa;
         };
 
-        String credencialesBlock;
-        String ctaUrl;
-        String ctaTexto;
-        if (cuentaNueva) {
-            // Nunca se manda una contraseña por correo: el invitado la define él mismo con el flujo de recuperación
-            // (código de 6 dígitos de un solo uso, que vence y llega a este mismo correo).
-            credencialesBlock = "<p style='color:#4D5560;background:#F8F9FB;border:1px solid #E4E7EC;border-radius:10px;padding:14px;margin:16px 0;font-size:14px;line-height:1.6'>"
-                + "Creamos tu cuenta con el correo <strong style='color:#14171C'>" + layout.esc(correo) + "</strong>. "
-                + "Para definir tu contraseña, entrá a «Definir mi contraseña», escribí ese correo y pedí tu código de verificación: "
-                + "es de un solo uso y vence a los pocos minutos.</p>";
-            ctaUrl = layout.urlSitio("/recuperar-contrasena");
-            ctaTexto = "Definir mi contraseña";
-        } else {
-            credencialesBlock = "<p style='color:#4D5560;background:#F8F9FB;border:1px solid #E4E7EC;border-radius:10px;padding:14px;margin:16px 0;font-size:14px'>"
-                + "Ingresá con tu correo <strong style='color:#14171C'>" + layout.esc(correo) + "</strong> y tu contraseña habitual.</p>";
-            ctaUrl = layout.urlSitio("/login");
-            ctaTexto = "Ingresar al panel";
-        }
+        // Nada de contraseñas por correo, ni de quien invita: el enlace es de un solo uso, vence a los 7 días y solo
+        // sirve para el correo invitado. Hasta aceptar, la persona no forma parte del equipo.
+        String pasoBlock = "<p style='color:#4D5560;background:#F8F9FB;border:1px solid #E4E7EC;border-radius:10px;padding:14px;margin:16px 0;font-size:14px;line-height:1.6'>"
+            + (cuentaNueva
+                ? "Al aceptar vas a crear tu cuenta con el correo <strong style='color:#14171C'>" + layout.esc(correo) + "</strong> y definir tu propia contraseña."
+                : "Para aceptar, iniciá sesión con tu cuenta de <strong style='color:#14171C'>" + layout.esc(correo) + "</strong>.")
+            + " El enlace es de un solo uso y vence en 7 días. Si no esperabas esta invitación, ignorá este correo.</p>";
+        // Token en el fragmento (#t=): no viaja al servidor, a logs ni a analítica; la SPA lo lee y lo limpia.
+        String ctaUrl = layout.urlSitio("/equipo/invitacion") + "#t=" + token;
 
         return layout.abrirHtml()
-            + layout.header("Te agregaron a un equipo", "Ya tenés acceso al panel del negocio")
+            + layout.header("Te invitaron a un equipo", "Aceptá la invitación para entrar al panel del negocio")
             + layout.abrirCuerpo()
             + "<p style='margin:0 0 6px;color:#14171C;font-size:16px'>Hola, <strong>" + layout.esc(nombre) + "</strong>.</p>"
-            + "<p style='margin:0 0 20px;color:#4D5560;font-size:14px;line-height:1.6'>Fuiste invitado al negocio <strong style='color:#14171C'>" + layout.esc(nombreEmpresa) + "</strong> en HotClick.</p>"
+            + "<p style='margin:0 0 20px;color:#4D5560;font-size:14px;line-height:1.6'>Te invitaron a sumarte al negocio <strong style='color:#14171C'>" + layout.esc(nombreEmpresa) + "</strong> en HotClick.</p>"
             + "<div style='background:#EFF4FE;border:1px solid #C2D5F9;border-radius:12px;padding:16px;margin-bottom:4px'>"
-            + "<p style='margin:0 0 6px;color:#4D5560;font-size:13px'>Tu rol asignado</p>"
+            + "<p style='margin:0 0 6px;color:#4D5560;font-size:13px'>Rol propuesto</p>"
             + "<p style='margin:0;color:#1747A8;font-weight:700'>" + layout.esc(rolLabel) + "</p>"
             + "</div>"
-            + credencialesBlock
-            + layout.cta(ctaUrl, ctaTexto)
+            + pasoBlock
+            + layout.cta(ctaUrl, "Aceptar invitación")
             + layout.footer("¿Tenés alguna pregunta?");
     }
 

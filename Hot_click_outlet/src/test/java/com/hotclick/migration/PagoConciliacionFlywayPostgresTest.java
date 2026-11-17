@@ -25,6 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * la MISMA configuración que la app (classpath:db/migration, validate-on-migrate, sin out-of-order). V237 y V238 se
  * aplican desde los archivos reales del classpath, no copias.
  *
+ * <p><b>Target 238.</b> Todas las migraciones de este test se limitan a {@link #OBJETIVO} (V238): el schema es sintético
+ * y solo tiene hot_click_pago_tb, así que V239+ (p. ej. con REFERENCES a hot_click_empresa_tb) no pueden aplicarse aquí.
+ * Esas migraciones se prueban en la cadena completa (FlywayBaseVacia...).
+ *
  * <p><b>No equivale al historial.</b> Solo prueba que V237/V238 son aditivas sobre una tabla mínima. La cadena completa
  * SÍ tiene receta propia: {@code com.hotclick.config.FlywayBaseVaciaPostgresTest} (+ JpaValidate y Otp), por el camino
  * {@code hotclick.flyway.base-vacia.enabled}: esquema base equivalente a V1 (db/base-vacia, no el V1 literal de prod) +
@@ -75,6 +79,9 @@ class PagoConciliacionFlywayPostgresTest {
             + "VALUES ('CANCELADO', 'ONVO', 'cs_hist_v236', 1000, TIMESTAMP '2026-01-01 10:00:00')");
     }
 
+    /** Última migración que este schema sintético puede aplicar. */
+    private static final String OBJETIVO = "238";
+
     /** Misma configuración Flyway que application.properties, con baseline en el V236 sintético. */
     private Flyway flyway(String target) {
         var conf = Flyway.configure()
@@ -108,7 +115,7 @@ class PagoConciliacionFlywayPostgresTest {
         assertThat(tablasEnSchema()).isZero();
         v236Sintetico();
 
-        MigrateResult r = flyway(null).migrate();
+        MigrateResult r = flyway(OBJETIVO).migrate();
 
         assertThat(r.success).isTrue();
         assertThat(r.migrationsExecuted).isEqualTo(2);
@@ -124,19 +131,19 @@ class PagoConciliacionFlywayPostgresTest {
     @DisplayName("validateYSegundoMigrateSinReaplicar")
     void validateYSegundoMigrateSinReaplicar() {
         v236Sintetico();
-        flyway(null).migrate();
+        flyway(OBJETIVO).migrate();
         var antes = historial();
 
-        var v = flyway(null).validateWithResult();
+        var v = flyway(OBJETIVO).validateWithResult();
         assertThat(v.validationSuccessful).as("validate: %s", v.errorDetails).isTrue();
-        MigrateResult segundo = flyway(null).migrate();
+        MigrateResult segundo = flyway(OBJETIVO).migrate();
 
         assertThat(segundo.success).isTrue();
         assertThat(segundo.migrationsExecuted).isZero();
         assertThat(historial()).isEqualTo(antes);
-        MigrationInfo actual = flyway(null).info().current();
+        MigrationInfo actual = flyway(OBJETIVO).info().current();
         assertThat(actual.getVersion().getVersion()).isEqualTo("238");
-        assertThat(Arrays.stream(flyway(null).info().pending())).isEmpty();
+        assertThat(Arrays.stream(flyway(OBJETIVO).info().pending())).isEmpty();
     }
 
     @Test
@@ -147,7 +154,7 @@ class PagoConciliacionFlywayPostgresTest {
         assertThat(hasta237.migrationsExecuted).isEqualTo(1);
         assertThat(columnas()).containsKey("onvo_payment_intent_id").doesNotContainKey("conciliacion_intentos");
 
-        MigrateResult resto = flyway(null).migrate();
+        MigrateResult resto = flyway(OBJETIVO).migrate();
 
         assertThat(resto.migrations.stream().map(m -> m.version).toList()).containsExactly("238");
         assertThat(columnas()).containsKeys(COLUMNAS_V237_V238.toArray(String[]::new));
@@ -157,7 +164,7 @@ class PagoConciliacionFlywayPostgresTest {
     @DisplayName("columnasNullableIndicesYSinBackfill")
     void columnasNullableIndicesYSinBackfill() {
         v236Sintetico();
-        flyway(null).migrate();
+        flyway(OBJETIVO).migrate();
 
         Map<String, Map<String, Object>> cols = columnas();
         for (String c : COLUMNAS_V237_V238) {

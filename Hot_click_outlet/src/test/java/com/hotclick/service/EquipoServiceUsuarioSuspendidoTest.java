@@ -1,12 +1,12 @@
 package com.hotclick.service;
 
 import com.hotclick.model.Empresa;
+import com.hotclick.model.InvitacionEquipo;
 import com.hotclick.model.MiembroEmpresa;
-import com.hotclick.model.Rol;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.InvitacionEquipoRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
-import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,100 +18,130 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** agregarExistente no validaba el estado: un usuario suspendido (4), inactivo o eliminado entraba al equipo. */
+/**
+ * Una cuenta existente SUSPENDIDA, INACTIVA o PENDIENTE no recibe invitación usable. Una ELIMINADA sí (la reactiva su
+ * propio token al aceptar, no invitar()). Quien invita NO ve ningún error distinto: invitar() retorna normal.
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("EquipoService.invitar — un usuario existente que no está activo no entra al equipo")
+@DisplayName("EquipoService.invitar — suspendida/inactiva/pendiente: sin token; eliminada: invitación pendiente sin reactivar")
 class EquipoServiceUsuarioSuspendidoTest {
 
     @Mock UsuarioRepository usuarioRepository;
-    @Mock RolRepository rolRepository;
     @Mock MiembroEmpresaRepository miembroEmpresaRepository;
     @Mock NotificacionEmailService notificacionEmailService;
     @Mock TenantService tenantService;
     @Mock EmpresaRepository empresaRepository;
+    @Mock InvitacionEquipoRepository invitacionRepository;
     @InjectMocks EquipoService equipoService;
+
+    /** Real (no mock): emitir() sigue guardando la invitación con hash y vigencia sobre el repositorio mock. */
+    private InvitacionEquipoService invitacionEquipoService;
 
     @BeforeEach
     void setUp() {
+        invitacionEquipoService = new InvitacionEquipoService();
+        ReflectionTestUtils.setField(invitacionEquipoService, "invitaciones", invitacionRepository);
+        ReflectionTestUtils.setField(equipoService, "invitacionEquipoService", invitacionEquipoService);
         Empresa empresa = new Empresa();
         empresa.setId(5L);
         when(empresaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(empresa));
-        Rol rol = new Rol();
-        rol.setNombreRol(Constants.ROL_EMPRENDEDOR);
-        when(rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)).thenReturn(Optional.of(rol));
         when(miembroEmpresaRepository.countEmpresasByUsuarioId(77L)).thenReturn(1L);
     }
 
-    private void invitarConEstado(int estado) {
-        Usuario existente = new Usuario();
-        existente.setId(77L);
-        existente.setCorreo("susp@test.cr");
-        existente.setEstado(estado);
-        when(usuarioRepository.findByCorreo("susp@test.cr")).thenReturn(Optional.of(existente));
-        equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "00000000", "LECTOR");
+    private Usuario existente(int estado) {
+        Usuario u = new Usuario();
+        u.setId(77L);
+        u.setCorreo("susp@test.cr");
+        u.setEstado(estado);
+        when(usuarioRepository.findByCorreo("susp@test.cr")).thenReturn(Optional.of(u));
+        return u;
     }
 
-    @Test
-    @DisplayName("suspendido (4): se rechaza y no se crea la membresía ni se envía correo")
-    void suspendidoRechazado() {
-        assertThatThrownBy(() -> invitarConEstado(Constants.ESTADO_SUSPENDIDO))
-            .isInstanceOf(IllegalArgumentException.class);
+    private void sinInvitacionNiCorreo() {
+        verify(invitacionRepository, never()).save(any(InvitacionEquipo.class));
         verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
         verify(usuarioRepository, never()).save(any(Usuario.class));
-        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
+        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
-    @DisplayName("eliminado (3) sin membresía previa en este equipo, inactivo (2) y pendiente (5): también se rechazan")
-    void eliminadoEInactivoRechazados() {
-        assertThatThrownBy(() -> invitarConEstado(Constants.ESTADO_ELIMINADO)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> invitarConEstado(Constants.ESTADO_INACTIVO)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> invitarConEstado(Constants.ESTADO_PENDIENTE)).isInstanceOf(IllegalArgumentException.class);
-        verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
+    @DisplayName("suspendido (4), inactivo (2), pendiente (5): no lanza error, no hay token ni correo ni reactivación")
+    void noActivosSinErrorNiToken() {
+        for (int estado : new int[] {Constants.ESTADO_SUSPENDIDO,
+                Constants.ESTADO_INACTIVO, Constants.ESTADO_PENDIENTE}) {
+            Usuario u = existente(estado);
+            assertThatCode(() -> equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "00000000", "LECTOR"))
+                .doesNotThrowAnyException();
+            org.assertj.core.api.Assertions.assertThat(u.getEstado()).isEqualTo(estado);
+        }
+        sinInvitacionNiCorreo();
     }
 
     @Test
-    @DisplayName("eliminado (3) con membresía previa en ESTE equipo: ya NO reingresa; no se le añade rol ni empresa")
-    void eliminadoConMembresiaPreviaYaNoReingresa() {
-        MiembroEmpresa previo = new MiembroEmpresa(new Usuario(), new Empresa(), "EDITOR");
-        previo.setEstado(0);
-        when(miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(77L, 5L)).thenReturn(Optional.of(previo));
-        when(miembroEmpresaRepository.save(any(MiembroEmpresa.class))).thenAnswer(i -> i.getArgument(0));
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
-        Usuario existente = new Usuario();
-        existente.setId(77L);
-        existente.setCorreo("susp@test.cr");
-        existente.setEstado(Constants.ESTADO_ELIMINADO);
-        when(usuarioRepository.findByCorreo("susp@test.cr")).thenReturn(Optional.of(existente));
-
-        assertThatThrownBy(() -> equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "00000000", "LECTOR"))
-            .isInstanceOf(IllegalArgumentException.class);
-
+    @DisplayName("eliminado (3): recibe invitación pendiente y correo con cuentaNueva=true, sin reactivar ni crear membresía")
+    void eliminadoRecibeInvitacionSinReactivar() {
+        Usuario u = existente(Constants.ESTADO_ELIMINADO);
+        u.setMotivoEliminacion(Constants.MOTIVO_ELIMINACION_SALIDA_EQUIPO);
+        equipoService.invitar(5L, "Eli Minado", "susp@test.cr", "00000000", "LECTOR");
+        verify(invitacionRepository).save(any(InvitacionEquipo.class));
+        verify(notificacionEmailService).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.eq(true), any());
         verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
         verify(usuarioRepository, never()).save(any(Usuario.class));
-        verify(notificacionEmailService, never()).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
-        org.assertj.core.api.Assertions.assertThat(existente.getRoles()).isNullOrEmpty();
-        org.assertj.core.api.Assertions.assertThat(existente.getEmpresa()).isNull();
-        org.assertj.core.api.Assertions.assertThat(existente.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
+        org.assertj.core.api.Assertions.assertThat(u.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
     }
 
     @Test
-    @DisplayName("activo (1): sigue entrando")
-    void activoEntra() {
-        when(miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(77L, 5L)).thenReturn(Optional.empty());
-        when(miembroEmpresaRepository.save(any(MiembroEmpresa.class))).thenAnswer(i -> i.getArgument(0));
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
-        invitarConEstado(Constants.ESTADO_ACTIVO);
-        verify(miembroEmpresaRepository).save(any(MiembroEmpresa.class));
+    @DisplayName("eliminado (3) con motivo NULL (fila anterior), ADMIN, BORRADO_DATOS o basura: fail-closed, sin token ni correo")
+    void eliminadoSinMotivoDeSalidaNoRecibeToken() {
+        for (String motivo : new String[] {null, Constants.MOTIVO_ELIMINACION_ADMIN,
+                Constants.MOTIVO_ELIMINACION_BORRADO_DATOS, "basura"}) {
+            Usuario u = existente(Constants.ESTADO_ELIMINADO);
+            u.setMotivoEliminacion(motivo);
+            assertThatCode(() -> equipoService.invitar(5L, "Eli Minado", "susp@test.cr", "00000000", "LECTOR"))
+                .doesNotThrowAnyException();
+            org.assertj.core.api.Assertions.assertThat(u.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
+        }
+        sinInvitacionNiCorreo();
+    }
+
+    @Test
+    @DisplayName("ya es miembro activo de este equipo: sin error y sin token que lo 'vuelva a agregar'")
+    void yaMiembroSinToken() {
+        existente(Constants.ESTADO_ACTIVO);
+        when(miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(77L, 5L, 1)).thenReturn(true);
+        assertThatCode(() -> equipoService.invitar(5L, "Ya Miembro", "susp@test.cr", "00000000", "LECTOR"))
+            .doesNotThrowAnyException();
+        sinInvitacionNiCorreo();
+    }
+
+    @Test
+    @DisplayName("en el tope de 20 negocios: sin error y sin token")
+    void topeNegociosSinToken() {
+        existente(Constants.ESTADO_ACTIVO);
+        when(miembroEmpresaRepository.countEmpresasByUsuarioId(77L)).thenReturn(20L);
+        assertThatCode(() -> equipoService.invitar(5L, "Tope Veinte", "susp@test.cr", "00000000", "LECTOR"))
+            .doesNotThrowAnyException();
+        sinInvitacionNiCorreo();
+    }
+
+    @Test
+    @DisplayName("activo (1) con cupo: se emite la invitación, pero todavía NO se crea membresía")
+    void activoRecibeInvitacionPendiente() {
+        existente(Constants.ESTADO_ACTIVO);
+        equipoService.invitar(5L, "Ac Tivo", "susp@test.cr", "00000000", "LECTOR");
+        verify(invitacionRepository).save(any(InvitacionEquipo.class));
+        verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
     }
 }

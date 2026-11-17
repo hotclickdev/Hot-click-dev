@@ -1,5 +1,6 @@
 import type { ErrorEvent } from '@sentry/react'
 import * as Sentry from '@sentry/react'
+import { sanitizarEventoSentry } from '@/utils/sanitizarUrl'
 
 const IGNORE_ERRORS = [
   'ResizeObserver loop',
@@ -71,6 +72,7 @@ function redactarRegistro(obj: Record<string, unknown> | undefined) {
  */
 export function depurarPii(event: ErrorEvent): ErrorEvent | null {
   try {
+    sanitizarEventoSentry(event as Parameters<typeof sanitizarEventoSentry>[0]) // token de invitación fuera de URLs
     if (event.user) event.user = event.user.id != null ? { id: String(event.user.id) } : undefined
     if (event.request) {
       delete event.request.headers
@@ -114,6 +116,29 @@ export function beforeSend(event: ErrorEvent): ErrorEvent | null {
   return hasAppFrame ? depurarPii(event) : null
 }
 
+/**
+ * Transacciones (tracing de pageload/navegación) y sus spans XHR/fetch: sin token de invitación en la URL de la
+ * página (`transaction`, `request.url`) ni en la de las llamadas (`/api/.../equipo-invitacion/<token>`, query).
+ * Falla cerrada: si algo sale mal, la transacción se descarta.
+ */
+/** Evento de transacción que recibe `beforeSendTransaction` (el SDK no lo exporta con nombre propio). */
+export type TransactionEvent = Parameters<NonNullable<Sentry.BrowserOptions['beforeSendTransaction']>>[0]
+
+export function beforeSendTransaction(event: TransactionEvent): TransactionEvent | null {
+  try {
+    sanitizarEventoSentry(event as unknown as Parameters<typeof sanitizarEventoSentry>[0])
+    if (event.request) {
+      delete event.request.headers
+      delete event.request.cookies
+      delete event.request.query_string
+      delete event.request.data
+    }
+    return event
+  } catch {
+    return null
+  }
+}
+
 /** Devuelve true solo si inicializó Sentry (requiere VITE_SENTRY_DSN no vacío). */
 export function initSentry(dsn: string | undefined = import.meta.env.VITE_SENTRY_DSN): boolean {
   if (!dsn || !String(dsn).trim()) return false
@@ -127,6 +152,7 @@ export function initSentry(dsn: string | undefined = import.meta.env.VITE_SENTRY
     ignoreErrors: IGNORE_ERRORS,
     denyUrls: DENY_URLS,
     beforeSend,
+    beforeSendTransaction,
   })
   return true
 }

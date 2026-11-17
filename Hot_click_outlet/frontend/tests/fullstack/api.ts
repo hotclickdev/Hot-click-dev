@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test'
 
@@ -96,20 +97,24 @@ export function sql(q: string, vars: Record<string, string> = {}): string {
 
 /**
  * Miembro de equipo (EDITOR/LECTOR/CAJERO) en el negocio del token.
- * La API de invitación NO acepta contraseña (el invitado recibe un secreto aleatorio). Para poder
- * iniciar sesión en E2E, tras crearlo se copia a esa fila el hash de una cuenta QA (clave = E2E_QA_PASSWORD)
- * con UPDATE directo sobre la BD efímera de E2E (E2E_DATABASE_URL). Ese camino solo existe en este helper
- * de test: no hay endpoint ni perfil nuevo en el backend, así que producción no cambia.
+ * Invitar solo crea una invitación PENDIENTE (el token viaja por correo y en la BD solo queda su hash). En E2E no hay
+ * buzón: tras invitar se reemplaza el hash de esa invitación por el de un token conocido (UPDATE directo sobre la BD
+ * efímera E2E_DATABASE_URL, solo en este helper de test) y se acepta por el endpoint público de cuenta nueva con la
+ * clave QA. Así el invitado queda como miembro real, sin tocar el backend.
  */
 export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' | 'LECTOR' | 'CAJERO') {
-  if (!conSql) throw new Error('miembro() requiere E2E_DATABASE_URL para fijar la clave del invitado en la BD de E2E')
+  if (!conSql) throw new Error('miembro() requiere E2E_DATABASE_URL para fijar el token de la invitación en la BD de E2E')
   const correo = `e2e.${rol.toLowerCase()}.${sufijo()}@hotclick.test`
   const r = await api.post('/api/empresa/equipo', { headers: h, data: { nombre: `E2E ${rol}`, correo, rolEnEmpresa: rol } })
   expect(r.ok(), await r.text()).toBeTruthy()
+  const token = randomBytes(24).toString('base64url')
+  const hash = createHash('sha256').update(token).digest('hex')
   const filas = sql(
-    `UPDATE hot_click_usuario_tb SET contrasena_hash = (SELECT contrasena_hash FROM hot_click_usuario_tb WHERE correo = :'qa') WHERE correo = :'correo' RETURNING 1`,
-    { qa: QA.PYME, correo })
-  expect(filas, 'se fijó la clave del invitado en la BD de E2E').toBe('1')
+    `UPDATE hot_click_invitacion_equipo_tb SET token_hash = :'hash' WHERE correo = :'correo' AND usado_en IS NULL AND revocado_en IS NULL RETURNING 1`,
+    { hash, correo })
+  expect(filas, 'hay una invitación pendiente para el invitado').toBe('1')
+  const ok = await api.post('/api/auth/equipo-invitacion/aceptar-cuenta-nueva', { data: { token, contrasena: claveQa() } })
+  expect(ok.ok(), await ok.text()).toBeTruthy()
   return { correo, contrasena: claveQa() }
 }
 

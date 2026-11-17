@@ -28,13 +28,13 @@ describe('equipoConfirmacionHelpers', () => {
 
   it('mensajeExitoInvitacion usa el nombre o un fallback', () => {
     expect(mensajeExitoInvitacion('María')).toBe(
-      'María ya puede entrar con la contraseña temporal.',
+      'María recibe un correo para aceptar la invitación. Aparece en el equipo cuando acepte; si sale del equipo, hay que volver a invitarla.',
     )
     expect(mensajeExitoInvitacion('  ')).toBe(
-      'El miembro ya puede entrar con la contraseña temporal.',
+      'La persona recibe un correo para aceptar la invitación. Aparece en el equipo cuando acepte; si sale del equipo, hay que volver a invitarla.',
     )
     expect(mensajeExitoInvitacion(null)).toBe(
-      'El miembro ya puede entrar con la contraseña temporal.',
+      'La persona recibe un correo para aceptar la invitación. Aparece en el equipo cuando acepte; si sale del equipo, hay que volver a invitarla.',
     )
   })
 })

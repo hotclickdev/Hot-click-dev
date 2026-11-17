@@ -1,5 +1,6 @@
 import { addAdapter, EVENTO, setAnalyticsConsent, type PropsAnalitica } from '@/utils/analytics'
 import { getCookieConsent } from '@/utils/cookieConsent'
+import { sanitizarPath, sanitizarUrl, ubicacionSegura } from '@/utils/sanitizarUrl'
 
 const GA4_ID = import.meta.env.VITE_GA4_ID
 
@@ -25,6 +26,23 @@ const GA4_EVENT_MAP: Record<string, string> = {
   [EVENTO.BUSQUEDA]: 'search',
 }
 
+/**
+ * gtag manda `location.href` por su cuenta si no se le dice otra cosa: en `config` y en cada `event` se fijan
+ * `page_location` Y `page_path` ya sanitizados (sin hash ni token de invitación). Un valor que ya trae el llamador
+ * (p. ej. page_path de trackPageView) también se sanitiza.
+ */
+export function conUbicacionSegura(args: unknown[]): unknown[] {
+  const [cmd, , params] = args
+  if (cmd !== 'config' && cmd !== 'event') return args
+  const base = (params && typeof params === 'object' ? params : {}) as Record<string, unknown>
+  const seg = ubicacionSegura()
+  const out = { ...base }
+  out.page_location = typeof base.page_location === 'string' ? sanitizarUrl(base.page_location) : seg.page_location
+  out.page_path = typeof base.page_path === 'string' ? sanitizarPath(base.page_path) : seg.page_path
+  const resto = args.slice(0, 2)
+  return [...resto, out]
+}
+
 function injectGtag(id: string) {
   if (document.getElementById('hc-gtag')) return
   const script = document.createElement('script')
@@ -36,7 +54,7 @@ function injectGtag(id: string) {
   const g = gtagGlobal()
   g.dataLayer = g.dataLayer ?? []
   g.gtag = (...args: unknown[]) => {
-    g.dataLayer?.push(args)
+    g.dataLayer?.push(conUbicacionSegura(args))
   }
   g.gtag('js', new Date())
   g.gtag('config', id, { send_page_view: false })
@@ -86,5 +104,5 @@ export function initGA4() {
 export function trackPageView(path: string) {
   const gtag = gtagGlobal().gtag
   if (!GA4_ID || !gtag) return
-  gtag('event', 'page_view', { page_path: path })
+  gtag('event', 'page_view', { page_path: sanitizarUrl(path), page_location: ubicacionSegura().page_location })
 }

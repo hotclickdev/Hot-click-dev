@@ -91,6 +91,7 @@ public class AdminUsuarioService {
             throw new IllegalArgumentException("El usuario no está eliminado");
         }
         usuario.setEstado(Constants.ESTADO_ACTIVO);
+        usuario.setMotivoEliminacion(null);
         usuarioRepository.save(usuario);
     }
 
@@ -130,6 +131,12 @@ public class AdminUsuarioService {
     private void setEstado(Long id, int estado) {
         Usuario usuario = usuario(id);
         usuario.setEstado(estado);
+        // Motivo: ELIMINADO desde aquí es siempre decisión de admin (no reinvitable); al volver a ACTIVO se limpia.
+        if (estado == Constants.ESTADO_ELIMINADO) {
+            usuario.setMotivoEliminacion(Constants.MOTIVO_ELIMINACION_ADMIN);
+        } else if (estado == Constants.ESTADO_ACTIVO) {
+            usuario.setMotivoEliminacion(null);
+        }
         usuarioRepository.save(usuario);
         // Cualquier estado distinto de activo (eliminado, rechazado, inactivo) corta las sesiones vivas.
         if (estado != Constants.ESTADO_ACTIVO) {

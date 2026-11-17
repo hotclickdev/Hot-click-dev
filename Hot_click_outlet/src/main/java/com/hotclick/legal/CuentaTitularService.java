@@ -64,6 +64,7 @@ public class CuentaTitularService {
         usuario.setFotoPerfilUrl(null);
         usuario.setClerkUserId(null);
         usuario.setEstado(Constants.ESTADO_ELIMINADO);
+        usuario.setMotivoEliminacion(Constants.MOTIVO_ELIMINACION_BORRADO_DATOS);
         usuarioRepository.save(usuario);
         // Marca sesionesInvalidadasEn, revoca los refresh tokens e invalida la caché (correo previo y nuevo).
         sesionesUsuarioService.cortarSesiones(usuario, correoPrevio);

@@ -3,16 +3,16 @@ package com.hotclick.service;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.InvitacionEquipo;
 import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.EmpresaRepository;
+import com.hotclick.repository.InvitacionEquipoRepository;
 import com.hotclick.repository.MiembroEmpresaRepository;
-import com.hotclick.repository.RolRepository;
 import com.hotclick.repository.UsuarioRepository;
 import com.hotclick.utils.Constants;
 import com.hotclick.utils.EmpresaNombre;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class EquipoService {
@@ -29,13 +28,13 @@ public class EquipoService {
     static final int MAX_EMPRESAS_POR_USUARIO = 20;
 
     @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private RolRepository rolRepository;
-    @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private NotificacionEmailService notificacionEmailService;
     @Autowired private TenantService tenantService;
     @Autowired private EmpresaRepository empresaRepository;
+    @Autowired private InvitacionEquipoRepository invitacionRepository;
     @Autowired private SesionesUsuarioService sesionesUsuarioService;
+    @Autowired private InvitacionEquipoService invitacionEquipoService;
 
     public List<Map<String, Object>> listar(Long empresaId) {
         return miembroEmpresaRepository.findByEmpresaIdAndEstado(empresaId, 1).stream()
@@ -44,26 +43,61 @@ public class EquipoService {
     }
 
     /**
-     * Invita al equipo de {@code empresaId}. La empresa destino se resuelve UNA vez, con lock pesimista hasta el
-     * commit, y esa misma instancia se usa para el cupo del plan y para el alta del miembro: dos invitaciones
-     * simultáneas no pueden pasar el mismo conteo (TOCTOU) y el miembro nunca cae en un negocio distinto al
-     * del límite evaluado. El llamador debe haber verificado que el usuario puede gestionar {@code empresaId}.
+     * Invita al equipo de {@code empresaId}. NUNCA agrega al miembro ni crea el Usuario: solo emite una invitación
+     * pendiente de un solo uso que la persona acepta con el enlace del correo. El resultado es indistinguible para
+     * quien invita (exista o no la cuenta, ya sea miembro, esté suspendida/inactiva o en el tope de negocios): en esos casos no
+     * se emite invitación usable y no se manda correo, pero tampoco se lanza ningún error. La empresa se resuelve UNA
+     * vez con lock pesimista (cupo del plan sin TOCTOU). El llamador debe haber verificado que puede gestionar
+     * {@code empresaId}.
      */
     @Transactional
     public void invitar(Long empresaId, String nombre, String correoNorm,
                         String telefono, String rolEnEmpresa) {
+        invitar(empresaId, nombre, correoNorm, telefono, rolEnEmpresa, null);
+    }
+
+    @Transactional
+    public void invitar(Long empresaId, String nombre, String correoNorm,
+                        String telefono, String rolEnEmpresa, Long invitaUsuarioId) {
         if (empresaId == null) throw new com.hotclick.exception.EmpresaRequeridaException();
         Empresa empresa = empresaRepository.findByIdForUpdate(empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Empresa no encontrada"));
-        tenantService.verificarLimiteUsuariosEquipo(empresa.getId());
-        var rolMiembro = rolRepository.findByNombreRol(Constants.ROL_EMPRENDEDOR)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Rol EMPRENDEDOR no configurado"));
-        Optional<Usuario> existente = usuarioRepository.findByCorreo(correoNorm);
-        if (existente.isPresent()) {
-            agregarExistente(existente.get(), empresa, rolMiembro, rolEnEmpresa);
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        long pendientes = invitacionRepository.contarPendientesExcluyendoCorreo(empresa.getId(), correoNorm, ahora);
+        tenantService.verificarLimiteUsuariosEquipo(empresa.getId(), pendientes);
+        // La invitación viva anterior de este correo y negocio deja de servir, se emita o no una nueva.
+        invitacionRepository.revocarPendientes(empresa.getId(), correoNorm, ahora);
+        // findByCorreo ignora ELIMINADAS; el camino de reactivación (SALIDA_EQUIPO) las busca aparte.
+        Optional<Usuario> existente = usuarioRepository.findByCorreo(correoNorm)
+            .or(() -> usuarioRepository.findEliminadoByCorreo(correoNorm));
+        if (existente.isPresent() && !puedeInvitarseCuentaExistente(existente.get(), empresa)) {
             return;
         }
-        crearNuevo(empresa, rolMiembro, nombre, correoNorm, telefono, rolEnEmpresa);
+        // SCALE1: no hay N+1. Es UNA invitación (un INSERT y un correo, sin bucle); la empresa ya viene cargada por
+        // findByIdForUpdate y EmpresaNombre.mostrar solo lee sus columnas; de `existente` solo se leen id/estado/motivo
+        // (sin tocar roles ni otras colecciones lazy). El INSERT vive en InvitacionEquipoService.emitir.
+        String token = invitacionEquipoService.emitir(empresa, nombre, correoNorm, telefono, rolEnEmpresa, invitaUsuarioId, ahora);
+        notificacionEmailService.enviarInvitacionMiembro(
+            correoNorm, nombre.trim(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null),
+            // Cuenta nueva (true) = la persona tiene que definir una contraseña: no existe cuenta, o está ELIMINADA
+            // y no puede iniciar sesión. false solo si es una cuenta ACTIVA que entra con su contraseña habitual.
+            existente.isEmpty() || !esActiva(existente.get()), token);
+    }
+
+    private static boolean esActiva(Usuario u) {
+        return Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado());
+    }
+
+    /**
+     * Cuenta existente: ACTIVA, o ELIMINADA con motivo SALIDA_EQUIPO (la reactiva su propio token al aceptar, no
+     * invitar()). ELIMINADA por admin / borrado de datos / motivo NULL (filas anteriores), SUSPENDIDA, INACTIVA y
+     * PENDIENTE no reciben invitación usable ni se reactivan; el dueño ve la misma respuesta (fail-closed). Además no
+     * debe ser miembro activo de este equipo y debe tener cupo de negocios.
+     */
+    private boolean puedeInvitarseCuentaExistente(Usuario u, Empresa empresa) {
+        return (esActiva(u) || InvitacionEquipoService.eliminadaPorSalidaDeEquipo(u))
+            && !miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), empresa.getId(), 1)
+            && miembroEmpresaRepository.countEmpresasByUsuarioId(u.getId()) < MAX_EMPRESAS_POR_USUARIO;
     }
 
     public Map<String, Object> cambiarRol(Long usuarioId, Long empresaId, String nuevoRol) {
@@ -99,34 +133,16 @@ public class EquipoService {
         miembroEmpresaRepository.save(m);
         if (miembroEmpresaRepository.countEmpresasByUsuarioId(usuarioId) == 0) {
             usuarioRepository.findById(usuarioId).ifPresent(u -> {
+                // Solo una cuenta ACTIVA y sin motivo se marca SALIDA_EQUIPO. Eliminada por admin, bloqueada,
+                // suspendida, inactiva o con cualquier motivo previo: se conserva tal cual (solo se quitó la membresía);
+                // si no, la salida "lavaría" la decisión del admin y la invitación reactivaría la cuenta.
+                if (!esActiva(u) || u.getMotivoEliminacion() != null) return;
                 u.setEstado(Constants.ESTADO_ELIMINADO);
+                u.setMotivoEliminacion(Constants.MOTIVO_ELIMINACION_SALIDA_EQUIPO);
                 usuarioRepository.save(u);
                 sesionesUsuarioService.cortarSesiones(u);
             });
         }
-    }
-
-    private void agregarExistente(Usuario u, Empresa empresa, com.hotclick.model.Rol rolMiembro, String rolEnEmpresa) {
-        // Solo cuentas activas (estado 1). Eliminado (3), suspendido (4), inactivo (2) y pendiente (5) no entran, ni
-        // siquiera quien ya fue miembro de este equipo: reingresar a un ELIMINADO lo dejaba sin poder iniciar sesión
-        // (el login rechaza el estado 3) y además se le añadían rol y empresa. La reactivación queda para post-lanzamiento.
-        if (!Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado())) {
-            throw new IllegalArgumentException("Este usuario no está activo y no se puede agregar al equipo");
-        }
-        if (miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), empresa.getId(), 1)) {
-            throw new IllegalArgumentException("Este usuario ya es miembro activo de tu equipo");
-        }
-        if (miembroEmpresaRepository.countEmpresasByUsuarioId(u.getId()) >= MAX_EMPRESAS_POR_USUARIO) {
-            throw new IllegalArgumentException(
-                "El usuario ya pertenece al máximo de " + MAX_EMPRESAS_POR_USUARIO + " negocios permitidos");
-        }
-        boolean tieneRol = u.getRoles().stream().anyMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()));
-        if (!tieneRol) u.getRoles().add(rolMiembro);
-        if (u.getEmpresa() == null) u.setEmpresa(empresa);
-        usuarioRepository.save(u);
-        reactivarOCrearMembresia(u, empresa, rolEnEmpresa);
-        notificacionEmailService.enviarInvitacionMiembro(
-            u.getCorreo(), u.getNombre(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null), false);
     }
 
     /**
@@ -143,46 +159,6 @@ public class EquipoService {
         if (p.length == 3) return new String[] {p[0] + " " + p[1], p[2], null};
         String nombre = String.join(" ", java.util.Arrays.copyOfRange(p, 0, p.length - 2));
         return new String[] {nombre, p[p.length - 2], p[p.length - 1]};
-    }
-
-    private void crearNuevo(Empresa empresa, com.hotclick.model.Rol rolMiembro, String nombre,
-                            String correoNorm, String telefono, String rolEnEmpresa) {
-        String[] partes = partirNombreCompleto(nombre);
-        Usuario nuevo = new Usuario();
-        nuevo.setNombre(partes[0]);
-        nuevo.setApellidoPaterno(partes[1]);
-        nuevo.setApellidoMaterno(partes[2]);
-        nuevo.setIdentificacion("ADM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
-        nuevo.setCorreo(correoNorm);
-        // Quien invita NO define la contraseña: secreto aleatorio que nadie conoce ni se devuelve ni se loguea.
-        // El invitado entra con el código de un solo uso de /recuperar-contrasena.
-        nuevo.setContrasenaHash(passwordEncoder.encode(EmpresaAdminService.generarPasswordTemporal()));
-        nuevo.setTelefono(telefono);
-        nuevo.setEstado(Constants.ESTADO_ACTIVO);
-        // QA3 (seguridad): el correo del invitado no está probado, lo escribió quien invita. El default de
-        // Usuario es true; sin esto el LECTOR/EDITOR invitado pasaría los gates de "correo verificado".
-        nuevo.setCorreoVerificado(false);
-        nuevo.setIntentosFallidos(0);
-        nuevo.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));
-        nuevo.setEmpresa(empresa);
-        nuevo.getRoles().add(rolMiembro);
-        Usuario saved = usuarioRepository.save(nuevo);
-        miembroEmpresaRepository.save(new MiembroEmpresa(saved, empresa, rolEnEmpresa));
-        notificacionEmailService.enviarInvitacionMiembro(
-            correoNorm, saved.getNombre(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null), true);
-    }
-
-    private void reactivarOCrearMembresia(Usuario u, Empresa empresa, String rolEnEmpresa) {
-        Optional<MiembroEmpresa> previo = miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(u.getId(), empresa.getId());
-        if (previo.isPresent()) {
-            MiembroEmpresa m = previo.get();
-            m.setEstado(1);
-            m.setRolEnEmpresa(rolEnEmpresa);
-            m.setFechaIngreso(LocalDateTime.now(Constants.ZONA_CR));
-            miembroEmpresaRepository.save(m);
-            return;
-        }
-        miembroEmpresaRepository.save(new MiembroEmpresa(u, empresa, rolEnEmpresa));
     }
 
     private Map<String, Object> filaMiembro(MiembroEmpresa m) {

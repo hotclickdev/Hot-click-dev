@@ -37,6 +37,11 @@ public class Constants {
     public static final int ESTADO_ACTIVO     = 1;
     public static final int ESTADO_INACTIVO   = 2;
     public static final int ESTADO_ELIMINADO  = 3;
+
+    /** Por qué una cuenta quedó en ESTADO_ELIMINADO (columna motivo_eliminacion). Solo SALIDA_EQUIPO se puede reinvitar. */
+    public static final String MOTIVO_ELIMINACION_SALIDA_EQUIPO = "SALIDA_EQUIPO";
+    public static final String MOTIVO_ELIMINACION_ADMIN = "ADMIN";
+    public static final String MOTIVO_ELIMINACION_BORRADO_DATOS = "BORRADO_DATOS";
     public static final int ESTADO_SUSPENDIDO = 4;
     public static final int ESTADO_PENDIENTE  = 5; // correo sin verificar
 

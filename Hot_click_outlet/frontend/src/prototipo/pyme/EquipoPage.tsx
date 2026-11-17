@@ -137,8 +137,8 @@ export default function EquipoPage() {
             {mostrarForm ? (
               <FormularioInvitar
                 onCerrar={() => setMostrarForm(false)}
-                onInvitado={(nuevo) => {
-                  setMiembros((prev) => [...prev, nuevo])
+                onInvitado={() => {
+                  // La invitación queda pendiente: el listado solo muestra a quien ya aceptó.
                   setMostrarForm(false)
                 }}
               />
@@ -317,7 +317,7 @@ function FormularioInvitar({
       }
       setMiembroCreado(creado)
     } catch (err: unknown) {
-      toast({ message: mensajeErrorEquipo(err, 'Error al agregar miembro'), type: 'error' })
+      toast({ message: mensajeErrorEquipo(err, 'Error al enviar la invitación'), type: 'error' })
     } finally {
       setGuardando(false)
     }

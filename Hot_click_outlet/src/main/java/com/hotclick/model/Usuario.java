@@ -36,6 +36,10 @@ public class Usuario extends BaseEntity {
     @Column(name = "telefono", nullable = false, length = 20)
     private String telefono;
 
+    /** Por qué está ELIMINADA (SALIDA_EQUIPO, ADMIN, BORRADO_DATOS). NULL = desconocido: fail-closed, no se reactiva. */
+    @Column(name = "motivo_eliminacion", length = 40)
+    private String motivoEliminacion;
+
     @Column(name = "telefono_alterno", length = 20)
     private String telefonoAlterno;
 
@@ -229,6 +233,9 @@ public class Usuario extends BaseEntity {
 
     public Boolean getCorreoVerificado() { return correoVerificado; }
     public void setCorreoVerificado(Boolean correoVerificado) { this.correoVerificado = correoVerificado; }
+
+    public String getMotivoEliminacion() { return motivoEliminacion; }
+    public void setMotivoEliminacion(String motivoEliminacion) { this.motivoEliminacion = motivoEliminacion; }
 
     public Boolean getTwoFactorEnabled() { return twoFactorEnabled; }
     public void setTwoFactorEnabled(Boolean twoFactorEnabled) { this.twoFactorEnabled = twoFactorEnabled; }

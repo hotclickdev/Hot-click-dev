@@ -77,16 +77,14 @@ export default function AdminEquipo() {
         ...(form.telefono.trim() && { telefono: form.telefono.trim() }),
         rolEnEmpresa: form.rolEnEmpresa,
       })
-      toast({
-        message: `Miembro agregado como ${ROL_CONFIG[form.rolEnEmpresa]?.label ?? form.rolEnEmpresa}`,
-        type: 'success',
-      })
+      // Misma respuesta exista o no la cuenta: el listado solo muestra a quien ya aceptó.
+      toast({ message: 'Invitación enviada', type: 'success' })
       setForm(FORMULARIO_EQUIPO_VACIO)
       setErrors({})
       setShowForm(false)
       cargar()
     } catch (err: unknown) {
-      toast({ message: mensajeErrorEquipo(err, 'Error al agregar miembro'), type: 'error' })
+      toast({ message: mensajeErrorEquipo(err, 'Error al enviar la invitación'), type: 'error' })
     } finally {
       setSaving(false)
     }
@@ -159,7 +157,7 @@ export default function AdminEquipo() {
           className="px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80 inline-flex items-center"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
         >
-          {showForm ? 'Cancelar' : <TextoMas>Agregar miembro</TextoMas>}
+          {showForm ? 'Cancelar' : <TextoMas>Invitar miembro</TextoMas>}
         </button>
       </div>
 

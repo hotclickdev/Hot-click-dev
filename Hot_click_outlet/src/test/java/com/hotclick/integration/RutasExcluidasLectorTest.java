@@ -28,6 +28,9 @@ class RutasExcluidasLectorTest extends BaseIntegrationTest {
         // Revisadas 2026-10-25: auth/cuenta propia, comprador, público, webhooks; /api/sinpe/admin/** exige ADMIN.
         "DELETE /api/public/shopping-assistant/session/{sesionId}",
         "POST /api/auth/2fa/activate",
+        // Público: el token de invitación ES la credencial; no es una escritura de vendedor.
+        "POST /api/auth/equipo-invitacion/aceptar-cuenta-nueva",
+        "POST /api/auth/equipo-invitacion/consultar",
         "POST /api/auth/2fa/disable",
         "POST /api/auth/2fa/email/activate",
         "POST /api/auth/2fa/email/disable",
