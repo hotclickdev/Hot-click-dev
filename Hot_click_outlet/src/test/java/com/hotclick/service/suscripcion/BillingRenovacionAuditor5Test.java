@@ -226,27 +226,23 @@ class BillingRenovacionAuditor5Test {
 
         private Plan plan(String n) { Plan p = new Plan(); p.setNombre(n); return p; }
 
-        @Test @DisplayName("S-07: el trial usa el plan configurado (PYME), no PRO ni el primero que aparezca")
-        void trialUsaPlanConfigurado() {
+        @Test @DisplayName("S-07 (hoy inalcanzable): el set de elegibles está vacío; se rechaza sin tocar planes ni guardar")
+        void trialLegadoRechazaAntesDeMirarPlan() {
             Empresa e = new Empresa();
-            when(empresaRepo.findById(7L)).thenReturn(Optional.of(e));
+            when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(e));
             when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.empty());
-            when(planRepo.findByNombre("PYME")).thenReturn(Optional.of(plan("PYME")));
-            Suscripcion s = service.iniciarTrial(7L);
-            assertThat(s.getPlan().getNombre()).isEqualTo("PYME");
-            assertThat(e.getPlan().getNombre()).isEqualTo("PYME");
-            verify(planRepo, never()).findAll();
-            verify(planRepo, never()).findByNombre("PRO");
+            assertThatThrownBy(() -> service.iniciarTrial(7L)).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("prueba gratuita");
+            verifyNoInteractions(planRepo);
+            verify(suscripcionRepo, never()).save(any());
+            verify(empresaRepo, never()).save(any());
         }
 
-        @Test @DisplayName("S-07: si el plan configurado no existe, falla en vez de asignar uno arbitrario")
-        void sinPlanConfiguradoFalla() {
-            when(empresaRepo.findById(7L)).thenReturn(Optional.of(new Empresa()));
-            when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.empty());
-            when(planRepo.findByNombre("PYME")).thenReturn(Optional.empty());
+        @Test @DisplayName("Empresa inexistente → RecursoNoEncontradoException (con FOR UPDATE)")
+        void empresaInexistente() {
+            when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.empty());
             assertThatThrownBy(() -> service.iniciarTrial(7L)).isInstanceOf(RecursoNoEncontradoException.class);
-            verify(planRepo, never()).findAll();
-            verify(suscripcionRepo, never()).save(any());
+            verify(empresaRepo, never()).findById(any());
         }
     }
 

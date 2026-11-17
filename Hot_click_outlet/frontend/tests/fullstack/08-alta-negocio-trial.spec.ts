@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { abortarSiOnvoLive, aprobarNegocio, auth, conSql, registrarNegocio, type Negocio } from './api'
+import { abortarSiOnvoLive, aprobarNegocioConTrialCupo, auth, conSql, registrarNegocio, verificarCorreo, type Negocio } from './api'
 
 /**
  * Flujos 1 y 6 de la simulación final: alta de negocio + cancelación de la prueba (trial).
+ * Ambos usan el trial de 90 días del plan Emprendedor con cupo (tope 70, asignado al aprobar), NO el endpoint legado
+ * de 14 días POST /api/billing/trial, que no otorga trial a nadie (fail-closed).
  * Negocio NUEVO por corrida (no toca las cuentas QA). Sin cobro: el trial local no pasa por ONVO.
  */
 test.describe.serial('Flujos 1 y 6 — alta de negocio y cancelación del trial', () => {
@@ -28,13 +30,20 @@ test.describe.serial('Flujos 1 y 6 — alta de negocio y cancelación del trial'
     expect(r.status()).toBeLessThan(500)
   })
 
-  test('6. trial: inicia → cancelar al vencer marca cancelarAlVencer → cancelar inmediata cierra la prueba', async ({ request }) => {
-    // Según el cupo del entorno el negocio nuevo puede quedar PENDIENTE_APROBACION (409 al iniciar el trial): se emula la
-    // aprobación del admin en la BD efímera para que el resultado no dependa del cupo.
-    if (conSql) aprobarNegocio(n.empresaId)
+  test('6. trial de 90 días con cupo → cancelar al vencer marca cancelarAlVencer → cancelar inmediata cierra la prueba', async ({ request }) => {
+    // Sin login admin en el workflow: se emula en la BD efímera la aprobación con cupo (trial de 90 días + suscripción local).
+    test.skip(!conSql, 'requiere E2E_DATABASE_URL para emular la aprobación con cupo')
     const h = auth(n.sesion)
-    const ini = await request.post('/api/billing/trial', { headers: h })
-    expect(ini.ok(), `POST /api/billing/trial → ${ini.status()} ${await ini.text()}`).toBeTruthy()
+    // El trial legado de 14 días ya no otorga nada: sin puesto (PENDIENTE_CUPO) el POST se rechaza.
+    const legado = await request.post('/api/billing/trial', { headers: h })
+    expect(legado.status(), `POST /api/billing/trial → ${legado.status()}`).toBeGreaterThanOrEqual(400)
+    expect(legado.status()).toBeLessThan(500)
+    verificarCorreo(n.correo)
+    aprobarNegocioConTrialCupo(n.empresaId, n.correo)
+    // El SQL no evicta tenantInfo (TTL 30s, ya cacheado en el flujo 1). Este POST es idempotente:
+    // devuelve la suscripción activa, no otorga 14 días, y @CacheEvict deja ver el TRIAL fresco.
+    const idem = await request.post('/api/billing/trial', { headers: h })
+    expect(idem.ok(), `POST /api/billing/trial (idempotente) → ${idem.status()} ${await idem.text()}`).toBeTruthy()
     let info = await (await request.get('/api/tenant/info', { headers: h })).json()
     expect(info.estadoPlan).toBe('TRIAL')
 

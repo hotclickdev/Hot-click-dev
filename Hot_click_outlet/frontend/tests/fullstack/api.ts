@@ -179,3 +179,72 @@ export function verificarCorreo(correo: string): void {
 export function aprobarNegocio(empresaId: number): void {
   sql(`UPDATE hot_click_empresa_tb SET estado_empresa = 'ACTIVO' WHERE id_empresa = :'id'::bigint`, { id: String(empresaId) })
 }
+
+/**
+ * Emula el resultado de APROBAR un negocio CON cupo (trial Emprendedor de 90 días), en la BD efímera de E2E, sin login admin:
+ * lo mismo que dejan CupoEmprendedorAprobacionService + CupoEmprendedorService.aplicarTrial (estado ACTIVO, estado_plan TRIAL,
+ * plan EMPRENDEDOR, fechas hoy CR + 90, puesto libre y titular).
+ * El contador `usados` se incrementa si `usados < limite`; si ya está lleno por el backfill de V127 (cuenta empresas,
+ * no puestos asignados), se sigue igual con el primer puesto libre y no se reutiliza el de otro negocio.
+ * Además inserta la suscripción local TRIAL del plan EMPRENDEDOR (sin ids ONVO/Stripe) que aplicarTrial no crea y que
+ * `cancelar` exige. No es una vía de producción ni afloja el guard de POST /api/billing/trial.
+ * Exige el correo verificado (como el cupo real): llamar a verificarCorreo(correo) antes.
+ */
+export function aprobarNegocioConTrialCupo(empresaId: number, correo: string): void {
+  const id = String(empresaId)
+  if (!/^[0-9]+$/.test(id)) throw new Error(`empresaId inválido`)
+  // Sentencias sueltas, mismo estilo que aprobarNegocio/verificarCorreo (evita rarezas de psql con un script largo).
+  const existe = sql(`SELECT id_empresa FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint`, { id })
+  if (!existe) throw new Error(`aprobarNegocioConTrialCupo: no existe la empresa ${id} en la BD de E2E`)
+  sql(`UPDATE hot_click_usuario_tb SET correo_verificado = true WHERE lower(correo) = lower(:'correo')`, { correo })
+  sql(`UPDATE hot_click_cupo_emprendedor_tb SET usados = usados + 1 WHERE id = 1 AND usados < limite`)
+  const puesto = sql(
+    `SELECT COALESCE(
+        (SELECT MIN(c.n) FROM (
+            SELECT 1 AS n
+            UNION ALL
+            SELECT trial_emprendedor_pos + 1 FROM hot_click_empresa_tb WHERE trial_emprendedor_pos IS NOT NULL
+          ) c
+          WHERE NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e WHERE e.trial_emprendedor_pos = c.n)),
+        (SELECT COALESCE(MAX(trial_emprendedor_pos), 0) + 1 FROM hot_click_empresa_tb)
+      )`,
+  )
+  if (!puesto) throw new Error('aprobarNegocioConTrialCupo: no hay puesto libre')
+  const plan = sql(`SELECT id_plan FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR'`)
+  if (!plan) throw new Error('aprobarNegocioConTrialCupo: no está el plan EMPRENDEDOR')
+  const titular = sql(
+    `SELECT COALESCE(
+        (SELECT u.id_usuario FROM hot_click_usuario_tb u WHERE lower(u.correo) = lower(:'correo') LIMIT 1),
+        (SELECT m.fk_id_usuario FROM hot_click_miembro_empresa_tb m
+          WHERE m.fk_id_empresa = :'id'::bigint AND m.rol_en_empresa = 'PROPIETARIO'
+          ORDER BY m.fk_id_usuario LIMIT 1)
+      )`,
+    { id, correo },
+  )
+  if (!titular) throw new Error('aprobarNegocioConTrialCupo: no se encontró el usuario titular')
+  const filas = sql(
+    `UPDATE hot_click_empresa_tb SET
+        estado_empresa = 'ACTIVO', estado_plan = 'TRIAL', plan_saas = 'EMPRENDEDOR',
+        fk_id_plan = :'plan'::bigint,
+        trial_hasta = CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90,
+        fecha_venc_plan = CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90,
+        trial_emprendedor_hasta = CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90,
+        trial_emprendedor_pos = :'puesto'::integer,
+        trial_emprendedor_titular_usuario = :'titular'::bigint,
+        trial_emprendedor_titular_correo = lower(:'correo')
+      WHERE id_empresa = :'id'::bigint
+      RETURNING id_empresa`,
+    { id, correo, plan, puesto, titular },
+  )
+  if (!filas) throw new Error('aprobarNegocioConTrialCupo: el UPDATE no aplicó a la empresa')
+  const sub = sql(
+    `INSERT INTO hot_click_suscripcion_tb (fk_id_empresa, fk_id_plan, estado, fecha_inicio, trial_end, cancelar_al_vencer, fecha_creacion, fecha_actualizacion)
+      SELECT :'id'::bigint, :'plan'::bigint, 'TRIAL',
+        CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date),
+        CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90,
+        false, now(), now()
+      RETURNING id_suscripcion`,
+    { id, plan },
+  )
+  if (!sub) throw new Error('aprobarNegocioConTrialCupo: no se insertó la suscripción local TRIAL')
+}

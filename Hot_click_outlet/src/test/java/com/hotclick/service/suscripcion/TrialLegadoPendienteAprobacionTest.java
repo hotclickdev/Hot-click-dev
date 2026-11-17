@@ -56,7 +56,7 @@ class TrialLegadoPendienteAprobacionTest {
         when(planes.findByNombre("PYME")).thenReturn(Optional.of(pyme));
         empresa = new Empresa();
         empresa.setId(7L);
-        when(empresas.findById(7L)).thenReturn(Optional.of(empresa));
+        when(empresas.findByIdForUpdate(7L)).thenReturn(Optional.of(empresa));
         when(subs.findActivaByEmpresaId(7L)).thenReturn(Optional.empty());
         svc = new SuscripcionBillingService();
         ReflectionTestUtils.setField(svc, "suscripcionRepo", subs);
@@ -83,18 +83,18 @@ class TrialLegadoPendienteAprobacionTest {
     }
 
     @Test
-    @DisplayName("ACTIVO → comportamiento actual: crea suscripción TRIAL PYME 14 días y marca la empresa")
-    void activo_siguePermitido() {
+    @DisplayName("ACTIVO (estado_plan por defecto) → ya NO crea trial legado: rechaza sin escribir (fail-closed)")
+    void activo_yaNoRecibeTrialLegado() {
         empresa.setEstadoEmpresa("ACTIVO");
 
-        Suscripcion s = svc.iniciarTrial(7L);
+        assertThatThrownBy(() -> svc.iniciarTrial(7L)).isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("prueba gratuita");
 
-        assertThat(s.getEstado()).isEqualTo("TRIAL");
-        assertThat(s.getPlan().getNombre()).isEqualTo("PYME");
-        verify(subs).save(any(Suscripcion.class));
-        verify(empresas).save(empresa);
-        assertThat(empresa.getEstadoPlan()).isEqualTo("TRIAL");
-        assertThat(empresa.getTrialHasta()).isNotNull();
+        verify(subs, never()).save(any());
+        verify(empresas, never()).save(any());
+        verify(empresas).findByIdForUpdate(7L);
+        verify(empresas, never()).findById(any());
+        assertThat(empresa.getTrialHasta()).isNull();
     }
 
     @Test

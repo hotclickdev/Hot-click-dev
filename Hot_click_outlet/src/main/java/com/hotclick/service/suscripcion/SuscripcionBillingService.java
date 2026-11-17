@@ -46,10 +46,18 @@ public class SuscripcionBillingService {
     @Autowired @Lazy
     private SuscripcionBillingService self;
 
+    /**
+     * estado_plan elegibles para un trial NUEVO de 14 días (PYME). Vacío a propósito: el único trial gratis es el de
+     * 90 días del plan Emprendedor, asignado al aprobar el negocio si hay puesto (CupoEmprendedorAprobacionService).
+     * Si algún día existe un estado legado legítimo, se agrega aquí de forma explícita.
+     */
+    static final java.util.Set<String> ESTADOS_ELEGIBLES_TRIAL_LEGADO = java.util.Set.of();
+
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
     public Suscripcion iniciarTrial(Long empresaId) {
-        Empresa empresa = empresaRepo.findById(empresaId)
+        // FOR UPDATE: dos POST simultáneos se serializan en la misma fila de empresa.
+        Empresa empresa = empresaRepo.findByIdForUpdate(empresaId)
             .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
 
         // Riesgos 15-nov: negocio no aprobado (pendiente, rechazado, etc.) -> 409 antes de leer o escribir nada.
@@ -57,9 +65,19 @@ public class SuscripcionBillingService {
             throw new com.hotclick.exception.EmpresaPendienteAprobacionException();
         }
 
+        // Idempotente: si ya hay suscripción activa se devuelve, sin otorgar días nuevos.
         Optional<Suscripcion> existente = suscripcionRepo.findActivaByEmpresaId(empresaId);
         if (existente.isPresent()) {
             return existente.get();
+        }
+
+        // Tope de 70, fail-closed: solo un estado_plan listado explícitamente puede recibir un trial NUEVO de 14 días.
+        // Comparación exacta (sensible a mayúsculas); null o desconocido => rechazo. Quien ya tuvo puesto de trial
+        // Emprendedor nunca recibe el legado, aunque su estado estuviera en la lista.
+        if (empresa.getEstadoPlan() == null
+            || !ESTADOS_ELEGIBLES_TRIAL_LEGADO.contains(empresa.getEstadoPlan())
+            || empresa.getTrialEmprendedorPos() != null) {
+            throw new IllegalStateException("Este negocio no puede iniciar una prueba gratuita; elegí un plan de pago.");
         }
         // P10-03: un solo trial por empresa. Sin esto, al expirar (o cancelar) se podía pedir otro.
         if (suscripcionRepo.existsByEmpresa_IdAndTrialEndIsNotNull(empresaId)) {
