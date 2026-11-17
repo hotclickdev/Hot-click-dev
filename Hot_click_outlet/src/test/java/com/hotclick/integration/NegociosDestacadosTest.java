@@ -51,7 +51,7 @@ class NegociosDestacadosTest extends BaseIntegrationTest {
     @DisplayName("Sin destacados curados aplica D1: planes pagos primero, foto resuelta y sin contacto")
     void criterioProvisorio() throws Exception {
         Empresa emp = empresa("Café Bruma", "cafe-bruma-dest", "GRATUITO", true, "ACTIVO");
-        emp.setNumeroWhatsapp("50688887777");
+        emp.setNumeroWhatsapp("50600000004");
         empresaRepository.saveAndFlush(emp);
         producto("Café", "SKU-D-1", emp, true, "/img/cafe.jpg");
         Empresa pyme = empresa("Luna Pyme", "luna-pyme-dest", "PYME", true, "ACTIVO");
@@ -68,7 +68,7 @@ class NegociosDestacadosTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$[1].fotoPortada", is("/img/cafe.jpg")))
             .andExpect(jsonPath("$[1].logoUrl", is("")))
             .andExpect(jsonPath("$[1].provincia", is("San José")))
-            .andExpect(content().string(not(containsString("50688887777"))));
+            .andExpect(content().string(not(containsString("50600000004"))));
     }
 
     @Test
@@ -167,7 +167,7 @@ class NegociosDestacadosTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega " + sku);
         b.setDireccionExacta("Calle Test 1");
-        b.setTelefono("88880000");
+        b.setTelefono("00000006");
         b.setProvincia("San José");
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));
         b.setHorarioCierre(java.time.LocalTime.of(18, 0));

@@ -107,7 +107,7 @@ class StorefrontPedidoInvitadoTopesTest extends BaseIntegrationTest {
 
     private MockHttpServletRequestBuilder pedido(String slug, String correo, String ip, String items) {
         String body = """
-            {"nombreCliente":"Ana QA","correoCliente":"%s","telefonoCliente":"88887777",
+            {"nombreCliente":"Ana QA","correoCliente":"%s","telefonoCliente":"00000004",
              "direccionEntrega":"San José, centro","metodoPago":"SINPE_MOVIL","metodoEnvio":"DOMICILIO","provincia":"San José","canton":"San José",
              "items":%s}
             """.formatted(correo, items);
@@ -129,7 +129,7 @@ class StorefrontPedidoInvitadoTopesTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega " + slug);
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("61234567");
+        b.setTelefono("00000008");
         b.setProvincia("San José");
         b.setCanton("Escazú");
         b.setPermiteRetiroCliente(false);

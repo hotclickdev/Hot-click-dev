@@ -49,7 +49,7 @@ class CrmAdminTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega CRM");
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("22223333");
+        b.setTelefono("00000009");
         b.setAdminCliente(adminUser);
         b.setEmpresa(empresa);
         b.setEstado(Constants.ESTADO_ACTIVO);
@@ -146,7 +146,7 @@ class CrmAdminTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/admin/crm/compradores/" + testUser.getId()).header("Authorization", adminToken))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.correo").value("t***@hotclick.cr"))
-            .andExpect(jsonPath("$.data.telefono").value("••••8888"))
+            .andExpect(jsonPath("$.data.telefono").value("••••0000"))
             .andExpect(jsonPath("$.data.resumen.pedidos").value(2))
             .andExpect(jsonPath("$.data.resumen.pedidosPagados").value(1))
             .andExpect(jsonPath("$.data.resumen.totalPagado").value(60000))

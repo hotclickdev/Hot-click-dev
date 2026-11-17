@@ -38,7 +38,7 @@ class PedidoEstadoPendienteComprobanteTest extends BaseIntegrationTest {
         bodega = new Bodega();
         bodega.setNombreBodega("Bodega SINPE");
         bodega.setDireccionExacta("Heredia");
-        bodega.setTelefono("22225555");
+        bodega.setTelefono("00000015");
         bodega.setAdminCliente(adminUser);
         bodega.setEstado(Constants.ESTADO_ACTIVO);
         bodega = bodegaRepository.saveAndFlush(bodega);

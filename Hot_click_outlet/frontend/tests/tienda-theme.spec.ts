@@ -11,7 +11,7 @@ const EMPRESA = {
   colorSecundario: '#152B5E',
   colorAcento: '#1747A8',
   tagline: 'Todo empieza con un click.',
-  whatsapp: '50688887777',
+  whatsapp: '50600000004',
   footerTexto: 'Hecho en Costa Rica',
 }
 

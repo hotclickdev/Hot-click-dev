@@ -80,7 +80,7 @@ class CorreoCuentaAntiguaMayusculasTest {
         fila.setEmpresa(new Empresa());
 
         assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(svc, "aplicarDatos", fila,
-                "Cliente Antiguo", "1-2345-6789", ENTRADA, "8888-0000"))
+                "Cliente Antiguo", "1-2345-6789", ENTRADA, "0000-0006"))
             .hasMessage("Ese correo no está disponible. Usá otro.");
     }
 
@@ -103,7 +103,7 @@ class CorreoCuentaAntiguaMayusculasTest {
         fila.setEmpresa(e);
 
         assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(svc, "aplicarDatos", fila,
-                "Cliente Antiguo", "1-2345-6789", ENTRADA, "8888-0000"))
+                "Cliente Antiguo", "1-2345-6789", ENTRADA, "0000-0006"))
             .hasMessage("Ese correo no está disponible. Usá otro.");
     }
 

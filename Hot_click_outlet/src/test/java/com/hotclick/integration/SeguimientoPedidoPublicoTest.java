@@ -48,7 +48,7 @@ class SeguimientoPedidoPublicoTest extends BaseIntegrationTest {
     void setUpPedidos() {
         comprador = crearUsuario(CORREO_COMPRADOR, "Invitado", obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1));
         comprador.setIdentificacion("GUEST-abc123def4567");
-        comprador.setTelefono("87654321");
+        comprador.setTelefono("00000017");
         comprador = usuarioRepository.saveAndFlush(comprador);
 
         casaLuna = new Empresa();
@@ -131,7 +131,7 @@ class SeguimientoPedidoPublicoTest extends BaseIntegrationTest {
             .doesNotContain("costoTotalProductos", "utilidadBruta", "margenGanancia", "precioCompra",
                 "costoUnitario", "utilidadItem", "\"id\"", "idPedido", "sku", "SKU-INTERNO-777", "numeroLocal",
                 "grupoPago", "GP-SEGUIMIENTO-TEST-01", "tokenSeguimiento", paquete1.getTokenSeguimiento(),
-                "usuarioFinal", CORREO_COMPRADOR, "87654321", "GUEST-", DIRECCION_BODEGA,
+                "usuarioFinal", CORREO_COMPRADOR, "00000017", "GUEST-", DIRECCION_BODEGA,
                 "ventas@casaluna.cr", "metodoPago", "SINPE", "ORD-10483", "notas");
     }
 
@@ -200,7 +200,7 @@ class SeguimientoPedidoPublicoTest extends BaseIntegrationTest {
         b.setNombreBodega(nombre);
         b.setProvincia(provincia);
         b.setDireccionExacta(DIRECCION_BODEGA);
-        b.setTelefono("22223333");
+        b.setTelefono("00000009");
         b.setHorarioApertura(LocalTime.of(8, 0));
         b.setHorarioCierre(LocalTime.of(17, 0));
         b.setAdminCliente(adminUser);

@@ -11,7 +11,7 @@ const PRODUCTO = {
   id: 1, nombreProducto: NOMBRE, precioVenta: 12500, stockActual: 3,
   empresaNombre: TIENDA, empresaSlug: 'larga', descripcion: `${PALABRA} ${PALABRA}`,
 }
-const EMPRESA = { slug: 'larga', nombreComercial: TIENDA, tagline: PALABRA, descripcion: PALABRA, zonaEnvio: PALABRA, whatsapp: '50688887777' }
+const EMPRESA = { slug: 'larga', nombreComercial: TIENDA, tagline: PALABRA, descripcion: PALABRA, zonaEnvio: PALABRA, whatsapp: '50600000004' }
 const ANCHOS = [390, 1440]
 
 async function simularApi(page: Page, { estado = 200, carrito = false, favorito = false } = {}) {

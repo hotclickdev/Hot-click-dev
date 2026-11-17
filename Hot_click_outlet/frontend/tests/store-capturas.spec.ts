@@ -12,7 +12,7 @@ const color = (c: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg
 
 const EMPRESA = {
   slug: 'casa-luna', nombreComercial: 'Casa Luna 506', colorPrimario: '#E73B33',
-  tagline: 'Hogar y accesorios hechos con cariño en San José', whatsapp: '50688887777', instagram: '@casaluna506',
+  tagline: 'Hogar y accesorios hechos con cariño en San José', whatsapp: '50600000004', instagram: '@casaluna506',
   zonaEnvio: 'todo el país', descripcion: 'Somos un taller familiar en San José. Hacemos piezas de hogar y accesorios a mano, con materiales locales y entregas en todo el país.',
   categoriaNegocio: 'Hogar y accesorios', enHotclickDesde: '2026-09-14', facturaElectronica: true,
   retiro: { provincia: 'San José', canton: 'San José', direccion: 'Barrio Escalante', horarioApertura: '09:00:00', horarioCierre: '18:00:00' },

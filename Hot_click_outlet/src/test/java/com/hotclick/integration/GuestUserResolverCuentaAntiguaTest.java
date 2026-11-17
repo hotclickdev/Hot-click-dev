@@ -55,7 +55,7 @@ class GuestUserResolverCuentaAntiguaTest extends BaseIntegrationTest {
     @DisplayName("Correo nuevo (sin cuenta): se crea un único invitado con el correo normalizado")
     void correoNuevoCreaInvitadoNormalizado() {
         obtenerOCrearRol(Constants.ROL_USUARIO_FINAL, 1);
-        Usuario g = resolver.resolve(" Nuevo.Cliente@X.COM ", "8888-1111");
+        Usuario g = resolver.resolve(" Nuevo.Cliente@X.COM ", "0000-0003");
         assertThat(g.getCorreo()).isEqualTo("nuevo.cliente@x.com");
         assertThat(resolver.resolve("nuevo.cliente@x.com", null).getId()).isEqualTo(g.getId());
         assertThat(total("nuevo.cliente@x.com")).isEqualTo(1);
