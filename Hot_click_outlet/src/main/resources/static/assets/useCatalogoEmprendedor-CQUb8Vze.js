@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-BETXe_yb.js";function t(){return e()}export{t};
