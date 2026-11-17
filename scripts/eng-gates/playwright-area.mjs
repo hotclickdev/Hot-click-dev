@@ -2,8 +2,10 @@
 /**
  * E5 — Playwright area selection on frontend PRs.
  * Elige specs pos-* / seller-* / checkout-* según path prefixes.
- * Default: dry-run (lista) + smoke si existe y hay browsers.
- * Soft-fail + comentario si no hay deps de browser. No alarga el budget de CI.
+ * Default: dry-run (lista). Con E5_EXECUTE=1 (lo setea playwright-area.yml) emite
+ * `run_specs`: las specs MOCK seleccionadas (sin fullstack/, pending/ ni smoke, sin las
+ * que ya corre `test:e2e:ci`, tope RUN_CAP) que el workflow ejecuta de verdad y que
+ * ponen el job en rojo si fallan.
  */
 
 import { existsSync, readdirSync } from 'node:fs';
@@ -52,6 +54,18 @@ function gitChangedFilesFromEnv() {
   }
 }
 
+export const RUN_CAP = 4;
+
+/** Specs mock ejecutables: excluye fullstack/pending/smoke y las ya cubiertas por test:e2e:ci. */
+export function mockRunnableSpecs(specs, cap = RUN_CAP) {
+  const eligible = (specs || []).filter(
+    (spec) => !/^(fullstack|pending)\//.test(spec)
+      && spec !== 'smoke.spec.ts'
+      && !CI_E2E_SPECS.some((ci) => ci === `tests/${spec}`),
+  );
+  return { run: eligible.slice(0, cap), omitted: eligible.slice(cap) };
+}
+
 export function browsersAvailable(cwd = join(REPO_ROOT, 'Hot_click_outlet', 'frontend')) {
   const probe = spawnSync('pnpm', ['exec', 'playwright', 'install', '--dry-run'], {
     cwd,
@@ -89,7 +103,9 @@ export function buildPrComment(selection, meta) {
     `Modo: **${meta.mode}** · browsers: **${meta.browsers ? 'sí' : 'no'}**`,
     meta.note || '',
     '',
-    'No instala browsers por default (budget de CI). `ci.yml` ya corre `test:e2e:ci`.',
+    meta.mode === 'run'
+      ? 'Las specs marcadas como ejecutadas corren de verdad en este job (rojo si fallan). `ci.yml` sigue corriendo `test:e2e:ci`.'
+      : 'Sin ejecución en este modo. `ci.yml` ya corre `test:e2e:ci`.',
     'Marker sticky: `hotclick-e5-playwright-area`.',
   );
   return lines.filter((line) => line !== undefined).join('\n');
@@ -105,9 +121,17 @@ export function runPlaywrightArea(opts = {}) {
   const wantRun = opts.forceRun || process.env.E5_RUN === '1';
   const browsers = opts.browsers != null ? opts.browsers : (wantRun && browsersAvailable());
   const smokeExists = existsSync(join(REPO_ROOT, 'Hot_click_outlet', 'frontend', 'tests', 'smoke.spec.ts'));
+  const execute = opts.execute != null ? opts.execute : process.env.E5_EXECUTE === '1';
+  const { run: runSpecs, omitted } = mockRunnableSpecs(selection.specs, opts.cap || RUN_CAP);
   let mode = 'dry-run';
   let note = 'Lista únicamente (sin browsers). Soft-pass.';
-  if (wantRun && browsers && selection.specs.length) {
+  if (execute && runSpecs.length) {
+    mode = 'run';
+    note = `Ejecuta ${runSpecs.length} spec(s) mock (cap ${opts.cap || RUN_CAP}, workers 1): ${runSpecs.join(', ')}.`
+      + (omitted.length ? ` Fuera del cap: ${omitted.join(', ')}.` : '');
+  } else if (execute) {
+    note = 'Sin specs mock nuevas que ejecutar (las ya cubiertas corren en `test:e2e:ci`).';
+  } else if (wantRun && browsers && selection.specs.length) {
     mode = 'subset';
     note = `Correría ${selection.specs.length} specs (cap ${opts.cap || 4}).`;
   } else if (wantRun && !browsers) {
@@ -116,22 +140,29 @@ export function runPlaywrightArea(opts = {}) {
   } else if (smokeExists && selection.areas.length) {
     note = 'Dry-run + `test:e2e:smoke` existe (`tests/smoke.spec.ts`). No se corre aquí salvo `E5_RUN=1`.';
   }
-  return { skipped: false, selection, mode, browsers: Boolean(browsers), note, smokeExists };
+  return { skipped: false, selection, mode, browsers: Boolean(browsers), note, smokeExists, runSpecs };
 }
 
-export function commentSmokeFailure() {
-  const body = [
-    '## E5 — Playwright smoke falló',
-    '',
-    'Se subió artifact `e5-playwright-*` (screenshots / report).',
-    'Job en soft-fail: no bloquea merge. Revisá el artifact.',
-  ].join('\n');
+export function commentSmokeFailure(kind = 'smoke') {
+  const body = kind === 'run'
+    ? [
+      '## E5 — specs Playwright mock fallaron',
+      '',
+      'Se subió artifact `e5-playwright-*` (screenshots / report).',
+      'Este job es bloqueante: corregí las specs o el código antes de mergear.',
+    ].join('\n')
+    : [
+      '## E5 — Playwright smoke falló',
+      '',
+      'Se subió artifact `e5-playwright-*` (screenshots / report).',
+      'Job en soft-fail: no bloquea merge. Revisá el artifact.',
+    ].join('\n');
   upsertPrComment('hotclick-e5-playwright-fail', body);
 }
 
 function main() {
   if (process.env.E5_COMMENT_FAIL === '1') {
-    commentSmokeFailure();
+    commentSmokeFailure(process.env.E5_FAIL_KIND === 'run' ? 'run' : 'smoke');
     return;
   }
   const result = runPlaywrightArea();
@@ -152,6 +183,7 @@ function main() {
     mode: result.mode,
     areas: result.selection.areas.join(','),
     specs: result.selection.specs.join(' '),
+    run_specs: result.mode === 'run' ? result.runSpecs.join(' ') : '',
     soft: result.mode === 'soft-fail' || result.mode === 'dry-run' ? 'true' : 'false',
   });
 }
