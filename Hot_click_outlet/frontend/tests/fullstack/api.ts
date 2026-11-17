@@ -183,7 +183,9 @@ export function aprobarNegocio(empresaId: number): void {
 /**
  * Emula el resultado de APROBAR un negocio CON cupo (trial Emprendedor de 90 días), en la BD efímera de E2E, sin login admin:
  * lo mismo que dejan CupoEmprendedorAprobacionService + CupoEmprendedorService.aplicarTrial (estado ACTIVO, estado_plan TRIAL,
- * plan EMPRENDEDOR, fechas hoy CR + 90, puesto y titular, y un lugar menos en el cupo con la guarda `usados < limite`).
+ * plan EMPRENDEDOR, fechas hoy CR + 90, puesto libre y titular).
+ * El contador `usados` se incrementa si `usados < limite`; si ya está lleno por el backfill de V127 (cuenta empresas,
+ * no puestos asignados), se sigue igual con el primer puesto libre y no se reutiliza el de otro negocio.
  * Además inserta la suscripción local TRIAL del plan EMPRENDEDOR (sin ids ONVO/Stripe) que aplicarTrial no crea y que
  * `cancelar` exige. No es una vía de producción ni afloja el guard de POST /api/billing/trial.
  * Exige el correo verificado (como el cupo real): llamar a verificarCorreo(correo) antes.
@@ -193,12 +195,7 @@ export function aprobarNegocioConTrialCupo(empresaId: number, correo: string): v
   // Una sola transacción: si falla el UPDATE/INSERT se revierte también el cupo. Las variables van por psql (:'var').
   sql(
     `BEGIN;
-WITH reserva AS (
-  UPDATE hot_click_cupo_emprendedor_tb SET usados = usados + 1 WHERE id = 1 AND usados < limite RETURNING usados
-)
-SELECT CASE WHEN EXISTS (SELECT 1 FROM reserva) THEN 1
-  ELSE CAST('aprobarNegocioConTrialCupo: el cupo Emprendedor del entorno está lleno; no se reutiliza el puesto de otro negocio' AS int)
-END;
+UPDATE hot_click_cupo_emprendedor_tb SET usados = usados + 1 WHERE id = 1 AND usados < limite;
 WITH hoy AS (SELECT ((now() AT TIME ZONE 'America/Costa_Rica')::date) AS d),
 puesto AS (
   SELECT MIN(c.n) AS n FROM (SELECT 1 AS n UNION ALL SELECT trial_emprendedor_pos + 1 FROM hot_click_empresa_tb WHERE trial_emprendedor_pos IS NOT NULL) c
