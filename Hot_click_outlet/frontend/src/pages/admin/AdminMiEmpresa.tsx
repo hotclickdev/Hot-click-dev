@@ -6,6 +6,7 @@ import EmpresaHeader from './mi-empresa/EmpresaHeader'
 import VisibilidadCard from './mi-empresa/VisibilidadCard'
 import PerfilForm from './mi-empresa/PerfilForm'
 import RegimenIvaCard from './mi-empresa/RegimenIvaCard'
+import CertificadoFirmaCard from './mi-empresa/CertificadoFirmaCard'
 import type { RegimenIva } from './mi-empresa/regimenIva'
 import {
   MAX_FOTOS,
@@ -173,6 +174,43 @@ export default function AdminMiEmpresa() {
     }
   }
 
+  async function subirCertP12(file: File) {
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      await empresaService.uploadCertP12(fd)
+      // El backend puede limpiar el PIN si no corresponde al archivo nuevo: se relee solo el estado.
+      const { data } = await empresaService.getPerfil()
+      const perfil = unwrapEmpresa(data)
+      setEmpresa(e => ({
+        ...e!,
+        tieneCertP12: perfil?.tieneCertP12 ?? true,
+        tienePinCert: perfil?.tienePinCert ?? false,
+        configuracionFiscalCompleta: perfil?.configuracionFiscalCompleta,
+      }))
+      toast({ message: 'Certificado subido. Ingrese el PIN para terminar.', type: 'success' })
+    } catch (err: unknown) {
+      toast({ message: mensajeErrorEmpresa(err, 'No pudimos subir el certificado'), type: 'error' })
+    }
+  }
+
+  async function guardarPinCert(pin: string): Promise<boolean> {
+    try {
+      const { data } = await empresaService.guardarPinCert(pin)
+      const perfil = unwrapEmpresa(data)
+      setEmpresa(e => ({
+        ...e!,
+        tienePinCert: perfil?.tienePinCert ?? true,
+        configuracionFiscalCompleta: perfil?.configuracionFiscalCompleta,
+      }))
+      toast({ message: 'PIN del certificado guardado', type: 'success' })
+      return true
+    } catch (err: unknown) {
+      toast({ message: mensajeErrorEmpresa(err, 'No pudimos guardar el PIN'), type: 'error' })
+      return false
+    }
+  }
+
   const isDirty = useMemo(() => {
     if (!savedFormRef.current) return false
     const saved = savedFormRef.current
@@ -216,6 +254,13 @@ export default function AdminMiEmpresa() {
           motivoBloqueo={motivoBloqueoCuentaMiEmpresa(empresa.estadoEmpresa)}
         />
         <RegimenIvaCard regimen={empresa.regimenIva} canEdit={canEdit} onGuardar={guardarRegimenIva} />
+        <CertificadoFirmaCard
+          tieneCert={empresa.tieneCertP12 === true}
+          tienePin={empresa.tienePinCert === true}
+          canEdit={canEdit}
+          onSubirCert={subirCertP12}
+          onGuardarPin={guardarPinCert}
+        />
         <PerfilForm
           form={form}
           setForm={setForm}

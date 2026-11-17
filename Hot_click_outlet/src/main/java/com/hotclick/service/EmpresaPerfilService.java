@@ -28,6 +28,7 @@ public class EmpresaPerfilService {
     @Autowired private ImageModerationService imageModerationService;
     @Autowired private SancionPlataformaRepository sancionRepo;
     @Autowired private AuditoriaAdminRegistroService auditoria;
+    @Autowired private FirmaDigitalService firmaDigitalService;
 
     /** Flag M4: permite cambiar el régimen de IVA de una empresa. APAGADO por defecto (sin OK, no se enciende). */
     @org.springframework.beans.factory.annotation.Value("${hotclick.iva.cambio-regimen.enabled:false}")
@@ -57,11 +58,61 @@ public class EmpresaPerfilService {
 
     public void subirCertP12(Long empresaId, MultipartFile file) throws java.io.IOException {
         String path = supabaseStorageService.subirCertificado(file, empresaId);
+        byte[] nuevo = file.getBytes();
         empresaRepository.findById(empresaId).ifPresent(e -> {
             e.setCertP12Path(path);
+            // Un PIN guardado solo sirve si abre el archivo nuevo; si no, se limpia y la UI lo pide otra vez.
+            if (e.getPinCertEnc() != null && !e.getPinCertEnc().isBlank() && !pinGuardadoAbre(e, path, nuevo)) {
+                e.setPinCertEnc(null);
+                log.info("[empresa/cert-p12] PIN anterior no corresponde al .p12 nuevo; se limpió empresa={}", empresaId);
+            }
             empresaRepository.save(e);
         });
-        log.info("[empresa/cert-p12] Cert subido empresa={}: {}", empresaId, path);
+        firmaDigitalService.invalidarCache(empresaId);
+        log.info("[empresa/cert-p12] Cert subido empresa={}", empresaId);
+    }
+
+    private boolean pinGuardadoAbre(Empresa e, String path, byte[] p12) {
+        try {
+            FirmaDigitalService.cargar(path, p12, encryptionService.decrypt(e.getPinCertEnc()).toCharArray());
+            return true;
+        } catch (RuntimeException ex) {
+            return false; // sin mensaje: puede repetir el PIN
+        }
+    }
+
+    static final String MSG_PIN_FORMATO =
+        "El PIN debe tener 4 dígitos (llaves anteriores) o 14 caracteres (llaves nuevas).";
+    static final String MSG_PIN_4_DIGITOS = "El PIN de 4 caracteres debe tener solo dígitos (0-9).";
+    static final String MSG_SIN_P12 = "Subí primero el certificado de firma (.p12).";
+
+    /** Guarda cifrado el PIN del .p12. La prueba decisiva es que abra el archivo de la empresa. Nunca se loguea ni se devuelve. */
+    public Map<String, Object> guardarPinCert(Long empresaId, String pin) {
+        validarFormatoPin(pin);
+        Empresa e = empresa(empresaId);
+        if (e.getCertP12Path() == null || e.getCertP12Path().isBlank()) {
+            throw new IllegalArgumentException(MSG_SIN_P12);
+        }
+        byte[] p12 = supabaseStorageService.leerPrivado(e.getCertP12Path());
+        if (p12 == null || p12.length == 0) {
+            throw new com.hotclick.service.hacienda.HaciendaConfiguracionException(
+                "No pudimos leer el certificado de firma. Volvé a subir el .p12.");
+        }
+        // cargar() borra el char[] y no repite el PIN en su mensaje.
+        FirmaDigitalService.cargar(e.getCertP12Path(), p12, pin.toCharArray());
+        e.setPinCertEnc(encryptionService.encrypt(pin));
+        empresaRepository.save(e);
+        firmaDigitalService.invalidarCache(empresaId);
+        log.info("[empresa/pin-cert] PIN del certificado guardado empresa={}", empresaId);
+        return toSafeMap(e);
+    }
+
+    static void validarFormatoPin(String pin) {
+        if (pin == null || pin.isBlank()) throw new IllegalArgumentException("Ingresá el PIN del certificado.");
+        if (pin.length() != 4 && pin.length() != 14) throw new IllegalArgumentException(MSG_PIN_FORMATO);
+        if (pin.length() == 4 && !pin.chars().allMatch(c -> c >= '0' && c <= '9')) {
+            throw new IllegalArgumentException(MSG_PIN_4_DIGITOS);
+        }
     }
 
     static final String MSG_WHATSAPP = "El WhatsApp solo puede tener números (8 dígitos, ej. 8888-1234).";
@@ -257,6 +308,7 @@ public class EmpresaPerfilService {
         m.put("ambienteHacienda", e.getAmbienteHacienda());
         m.put("tieneCertP12", e.getCertP12Path() != null && !e.getCertP12Path().isBlank());
         m.put("tieneClaveHacienda", e.getClaveHaciendaEnc() != null && !e.getClaveHaciendaEnc().isBlank());
+        m.put("tienePinCert", e.getPinCertEnc() != null && !e.getPinCertEnc().isBlank());
         m.put("configuracionFiscalCompleta", e.isConfiguracionFiscalCompleta());
         m.put("inscritoHacienda", Boolean.TRUE.equals(e.getInscritoHacienda()));
         m.put("nombreHacienda", e.getNombreHacienda());

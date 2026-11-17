@@ -16,6 +16,10 @@ export type EmpresaPerfil = {
   id: Id
   /** M4: SIMPLIFICADO (IVA se suma con factura) o TRADICIONAL (precio con IVA incluido). */
   regimenIva?: string
+  /** Solo banderas: la ruta del .p12 y el PIN nunca llegan al navegador. */
+  tieneCertP12?: boolean
+  tienePinCert?: boolean
+  configuracionFiscalCompleta?: boolean
   nombreEmpresa?: string
   nombreComercial?: string
   slug?: string

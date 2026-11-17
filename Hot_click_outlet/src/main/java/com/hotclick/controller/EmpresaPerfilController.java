@@ -60,6 +60,25 @@ public class EmpresaPerfilController {
         }
     }
 
+    @PutMapping("/pin-cert")
+    public ResponseEntity<ResponseDTO> guardarPinCert(@RequestBody Map<String, String> body) {
+        Long empresaId = empresaIdO403();
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario();
+        try {
+            return ResponseEntity.ok(ResponseDTO.success("PIN del certificado guardado",
+                empresaPerfilService.guardarPinCert(empresaId, body == null ? null : body.get("pin"))));
+        } catch (IllegalArgumentException | com.hotclick.service.hacienda.HaciendaConfiguracionException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            throw e;
+        } catch (Exception e) {
+            // Sin mensaje ni stack: no se arriesga a repetir el PIN en el log.
+            log.error("[empresa/pin-cert] Error inesperado ({})", e.getClass().getSimpleName());
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("No pudimos guardar el PIN. Intente de nuevo."));
+        }
+    }
+
     @PutMapping
     public ResponseEntity<ResponseDTO> update(@RequestBody Map<String, String> body) {
         Long empresaId = empresaIdO403();
