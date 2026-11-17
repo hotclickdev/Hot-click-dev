@@ -146,6 +146,7 @@ public class SpaController {
         "/login",
         "/logout",
         "/recuperar-contrasena",
+        "/equipo/invitacion/*",
         "/registrar-negocio",
         "/sso-callback",
         "/sso-complete",

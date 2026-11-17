@@ -48,7 +48,7 @@ class LogPiiNegocioEmailTest {
         sender.enviarBienvenidaEmprendedor(CORREO, "Ana", "Tienda", true);
         sender.enviarAprobacionNegocio(CORREO, "Ana", "Tienda");
         sender.enviarRechazoNegocio(CORREO, "Ana", "Tienda", "m");
-        sender.enviarInvitacionMiembro(CORREO, "Ana", "EDITOR", "Tienda", false);
+        sender.enviarInvitacionMiembro(CORREO, "Ana", "EDITOR", "Tienda", false, "tok-inv");
         sender.enviarAltaEmprendedorAdmin(ADMIN, "Tienda", CORREO, false, null);
         sender.enviarModeracionAprobada(CORREO, "Ana", "Producto", "x");
         sender.enviarModeracionRechazada(CORREO, "Ana", "Producto", "x", "m");

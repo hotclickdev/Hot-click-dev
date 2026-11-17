@@ -26,7 +26,7 @@ export default function EquipoInviteForm({
       className="rounded-xl p-5 space-y-4"
       style={{ backgroundColor: 'var(--hc-surface)', border: '1px solid var(--hc-border)' }}
     >
-      <h2 className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Nuevo miembro</h2>
+      <h2 className="font-semibold text-sm" style={{ color: 'var(--hc-text)' }}>Invitar al equipo</h2>
 
       <div>
         <p className="text-xs font-medium block mb-2" style={{ color: 'var(--hc-muted)' }}>Rol en el negocio</p>
@@ -84,7 +84,7 @@ export default function EquipoInviteForm({
           />
         </EquipoField>
         <p className="text-xs" style={{ color: 'var(--hc-muted)' }}>
-          La persona invitada recibirá un correo para crear su propia contraseña con un código de un solo uso.
+          La persona recibe un correo con un enlace de un solo uso para aceptar la invitación (vence en 7 días). No entra al equipo hasta que acepte. Si después sale del equipo, hay que volver a invitarla.
         </p>
         <EquipoField label="Teléfono (opcional)">
           <PhoneField
@@ -109,7 +109,7 @@ export default function EquipoInviteForm({
           className="px-4 py-2 rounded-xl text-sm font-medium disabled:opacity-50"
           style={{ backgroundColor: 'var(--hc-accent)', color: '#fff' }}
         >
-          {saving ? 'Guardando…' : 'Agregar miembro'}
+          {saving ? 'Enviando…' : 'Enviar invitación'}
         </button>
       </div>
     </form>

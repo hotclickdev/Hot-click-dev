@@ -131,4 +131,13 @@ public abstract class BaseIntegrationTest {
     protected String tokenPara(Usuario usuario, String rol) {
         return "Bearer " + jwtUtil.generateToken(usuario.getCorreo(), usuario.getId(), rol);
     }
+
+    /** Último token de invitación de equipo que se "envió" por correo (mock) a {@code correo}; falla si no hubo. */
+    protected String tokenInvitacionEnviadoA(String correo) {
+        org.mockito.ArgumentCaptor<String> t = org.mockito.ArgumentCaptor.forClass(String.class);
+        org.mockito.Mockito.verify(notificacionEmailService, org.mockito.Mockito.atLeastOnce()).enviarInvitacionMiembro(
+            org.mockito.ArgumentMatchers.eq(correo), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyBoolean(), t.capture());
+        return t.getAllValues().get(t.getAllValues().size() - 1);
+    }
 }

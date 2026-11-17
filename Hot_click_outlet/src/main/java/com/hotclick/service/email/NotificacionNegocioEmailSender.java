@@ -70,11 +70,11 @@ public class NotificacionNegocioEmailSender {
      * Si es false es un usuario existente que se suma a otro negocio.
      */
     public void enviarInvitacionMiembro(String correo, String nombre, String rolEnEmpresa,
-                                 String nombreEmpresa, boolean cuentaNueva) {
+                                 String nombreEmpresa, boolean cuentaNueva, String token) {
         try {
             resendEmailService.send(correo,
                 "Te invitaron al equipo de " + emailLayoutHelper.esc(nombreEmpresa) + " en HotClick",
-                negocioEmailBuilder.buildInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, cuentaNueva));
+                negocioEmailBuilder.buildInvitacionMiembro(correo, nombre, rolEnEmpresa, nombreEmpresa, cuentaNueva, token));
             log.info("Email invitación miembro enviado");
         } catch (Exception e) {
             log.error("No se pudo enviar email de invitación: {}", e.getClass().getSimpleName());

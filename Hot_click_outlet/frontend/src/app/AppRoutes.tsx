@@ -56,6 +56,7 @@ const WishlistPage = lazy(() => import('@/pages/WishlistPage'))
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
 const RecuperarContrasenaPage = lazy(() => import('@/pages/auth/recuperar/RecuperarContrasenaPage'))
+const AceptarInvitacionEquipoPage = lazy(() => import('@/pages/auth/AceptarInvitacionEquipoPage'))
 const NosotrosPage = lazy(() => import('@/pages/NosotrosPage'))
 const AyudaPage = lazy(() => import('@/pages/AyudaPage'))
 const ContactoPage = lazy(() => import('@/pages/ContactoPage'))
@@ -142,6 +143,7 @@ export default function AppRoutes() {
         <Route path="/sso-complete" element={<RequiereClerk><SSOComplete /></RequiereClerk>} />
       </Route>
       <Route path="/recuperar-contrasena" element={<RecuperarContrasenaPage />} />
+      <Route path="/equipo/invitacion/:token" element={<AceptarInvitacionEquipoPage />} />
       <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
       <Route path="/registro-empresa/activar-plan" element={<ActivarPlanPage />} />
       <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />

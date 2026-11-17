@@ -22,6 +22,8 @@ import java.util.Set;
 public class EquipoController {
 
     private static final Set<String> ROLES_PERMITIDOS = Set.of("EDITOR", "LECTOR", "ADMIN", "CAJERO");
+    /** Misma respuesta exista o no la cuenta, ya sea miembro o no: evita enumerar correos. */
+    static final String MSG_INVITACION_ENVIADA = "Invitación enviada";
     private static final String CAJERO = "CAJERO";
     private static final String MSG_ROL_INVALIDO = "Rol inválido. Valores aceptados: EDITOR, LECTOR, ADMIN, CAJERO";
 
@@ -57,8 +59,8 @@ public class EquipoController {
             body.get("nombre"),
             body.get("correo").trim().toLowerCase(java.util.Locale.ROOT),
             body.getOrDefault("telefono", "00000000"),
-            rolEnEmpresa);
-        return ResponseEntity.ok(ResponseDTO.success("Miembro agregado al equipo como " + rolEnEmpresa, null));
+            rolEnEmpresa, companyScope.getCurrentUserId());
+        return ResponseEntity.ok(ResponseDTO.success(MSG_INVITACION_ENVIADA, null));
     }
 
     @PutMapping("/{id}/rol")
@@ -100,8 +102,8 @@ public class EquipoController {
         if (invalido != null) return invalido;
         equipoService.invitar(empresaId, body.get("nombre"),
             body.get("correo").trim().toLowerCase(java.util.Locale.ROOT),
-            body.getOrDefault("telefono", "00000000"), CAJERO);
-        return ResponseEntity.ok(ResponseDTO.success("Miembro agregado al equipo como " + CAJERO, null));
+            body.getOrDefault("telefono", "00000000"), CAJERO, companyScope.getCurrentUserId());
+        return ResponseEntity.ok(ResponseDTO.success(MSG_INVITACION_ENVIADA, null));
     }
 
     /** Pasar a CAJERO a un miembro existente: solo el PROPIETARIO y nunca sobre sí mismo (ni al propietario/ADMIN). */

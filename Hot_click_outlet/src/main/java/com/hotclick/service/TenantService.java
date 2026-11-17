@@ -121,7 +121,12 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public void verificarLimiteUsuariosEquipo(Long empresaId) {
-        long uso = usuarioRepo.countMiembrosActivosByEmpresaId(empresaId);
+        verificarLimiteUsuariosEquipo(empresaId, 0L);
+    }
+
+    /** Cupo con invitaciones pendientes vigentes: cada una ocupa un lugar para no pasarse del plan al aceptar. */
+    public void verificarLimiteUsuariosEquipo(Long empresaId, long pendientes) {
+        long uso = usuarioRepo.countMiembrosActivosByEmpresaId(empresaId) + pendientes;
         limitChecker.verificarLimiteUsuariosEquipo(empresaId, uso);
     }
 
