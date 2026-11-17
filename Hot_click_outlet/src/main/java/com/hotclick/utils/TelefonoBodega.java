@@ -30,7 +30,7 @@ public final class TelefonoBodega {
     private TelefonoBodega() {}
 
     /**
-     * Devuelve el teléfono normalizado ({@code +50688881234}).
+     * Devuelve el teléfono normalizado ({@code +50600000001}).
      *
      * @throws IllegalArgumentException con {@link #MENSAJE_OBLIGATORIO} o {@link #MENSAJE_INVALIDO}
      */

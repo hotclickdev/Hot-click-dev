@@ -85,7 +85,7 @@ class TelegramFlujoVentaCallbackHelper {
         } else if ("clinew".equals(sub)) {
             e.setP(P_VTA_CLIENTE_NUEVO);
             support.guardar(v, e);
-            bot.enviarMensaje(v.getChatId(), "Escribí el nombre y teléfono del cliente (ej: _Ana Mora 8888-8888_):");
+            bot.enviarMensaje(v.getChatId(), "Escribí el nombre y teléfono del cliente (ej: _Ana Mora 0000-0001_):");
         } else if ("nocli".equals(sub)) {
             e.setCli(null);
             confirm.mostrarResumenVenta(v, empresaId, e);

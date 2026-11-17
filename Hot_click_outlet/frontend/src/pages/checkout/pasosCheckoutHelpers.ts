@@ -6,7 +6,7 @@ export function digitosTelefono(valor: string): string {
   return digitosTelefonoCR(valor)
 }
 
-/** `8888-1234` para mostrar (formato único, `utils/telefono`); el valor guardado conserva el prefijo del país. */
+/** `0000-0001` para mostrar (formato único, `utils/telefono`); el valor guardado conserva el prefijo del país. */
 export function formatoTelefonoCampo(valor: string): string {
   return formatTelefonoCR(digitosTelefonoCR(valor))
 }

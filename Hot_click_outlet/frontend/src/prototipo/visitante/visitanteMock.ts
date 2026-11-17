@@ -168,7 +168,7 @@ export type MetodoPagoVisitante = {
 
 export const METODOS_PAGO_VISITANTE: MetodoPagoVisitante[] = [
   { id: 'visa', titulo: 'Visa •••• 4412', detalle: 'Vence 08/28', inicial: 'V', principal: true },
-  { id: 'sinpe', titulo: 'SINPE Móvil', detalle: '8888-0000', inicial: 'S' },
+  { id: 'sinpe', titulo: 'SINPE Móvil', detalle: '0000-0001', inicial: 'S' },
 ]
 
 export type NotificacionVisitante = {

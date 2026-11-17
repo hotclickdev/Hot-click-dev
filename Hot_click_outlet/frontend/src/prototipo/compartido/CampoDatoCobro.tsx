@@ -43,7 +43,7 @@ function etiquetaDato(tipo: TipoMetodoCobro): string {
 }
 
 function placeholderDato(tipo: TipoMetodoCobro): string {
-  if (tipo === 'sinpe') return '8888-0000'
+  if (tipo === 'sinpe') return '0000-0001'
   if (tipo === 'iban') return 'CR21 0000…'
   return '•••• 4412'
 }

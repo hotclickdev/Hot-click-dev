@@ -195,7 +195,7 @@ public class CrmAdminService {
         return correo.charAt(0) + "***" + correo.substring(at);
     }
 
-    /** Deja solo los últimos 4 dígitos: «88881234» → «••••1234». */
+    /** Deja solo los últimos 4 dígitos: «00000001» → «••••0001». */
     static String enmascararTelefono(String tel) {
         if (tel == null) return null;
         String d = tel.replaceAll("\\D", "");
