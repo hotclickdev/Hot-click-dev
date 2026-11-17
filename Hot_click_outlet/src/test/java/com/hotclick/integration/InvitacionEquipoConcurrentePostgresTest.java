@@ -30,8 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Ejecuta el SQL REAL de {@code InvitacionEquipoRepository.consumir} (se lee de su {@code @Query}, no se copia) y la
  * regla del servicio ({@code consumir != 1 → 410}) en dos transacciones concurrentes sobre un schema propio. Opt-in:
- * {@code HC_PG_TEST_URL=jdbc:postgresql://host:puerto/db?user=…} (lo corre el job {@code qa-alta-pg} de ci.yml, con su
- * gate {@code scripts/ci/invitacion-concurrente-pg-surefire.py}: cero skipped; NO apuntar al Postgres de QA).
+ * {@code HC_PG_TEST_URL=jdbc:postgresql://host:puerto/db?user=…} (lo corre el job {@code onvo-alta-pg} de ci.yml, tras los
+ * pasos del PIN cert, con su gate de cero skipped/fallos/errores {@code scripts/ci/invitacion-concurrente-pg-surefire.py}:
+ * exige el XML fresco, el número exacto de @Test y sus nombres; NO apuntar al Postgres de QA).
  * El schema temporal se crea y se borra aquí. La regla {@code != 1} del servicio, sin base, la fija
  * {@code InvitacionEquipoConsumirUnitTest}.
  */

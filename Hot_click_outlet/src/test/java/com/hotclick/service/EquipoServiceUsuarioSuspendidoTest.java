@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
@@ -45,8 +46,14 @@ class EquipoServiceUsuarioSuspendidoTest {
     @Mock InvitacionEquipoRepository invitacionRepository;
     @InjectMocks EquipoService equipoService;
 
+    /** Real (no mock): emitir() sigue guardando la invitación con hash y vigencia sobre el repositorio mock. */
+    private InvitacionEquipoService invitacionEquipoService;
+
     @BeforeEach
     void setUp() {
+        invitacionEquipoService = new InvitacionEquipoService();
+        ReflectionTestUtils.setField(invitacionEquipoService, "invitaciones", invitacionRepository);
+        ReflectionTestUtils.setField(equipoService, "invitacionEquipoService", invitacionEquipoService);
         Empresa empresa = new Empresa();
         empresa.setId(5L);
         when(empresaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(empresa));
