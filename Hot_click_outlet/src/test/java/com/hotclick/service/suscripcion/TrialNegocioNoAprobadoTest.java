@@ -48,12 +48,14 @@ class TrialNegocioNoAprobadoTest {
         org.springframework.test.util.ReflectionTestUtils.setField(billing, "suscripcionRepo", subRepo);
         org.springframework.test.util.ReflectionTestUtils.setField(billing, "empresaRepo", empRepo);
         org.springframework.test.util.ReflectionTestUtils.setField(billing, "planRepo", planRepo);
-        when(empRepo.findById(7L)).thenReturn(Optional.of(empresa(estado)));
+        when(empRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(empresa(estado)));
 
         assertThatThrownBy(() -> billing.iniciarTrial(7L)).isInstanceOf(EmpresaPendienteAprobacionException.class);
         verify(subRepo, never()).save(any());
         verify(empRepo, never()).save(any());
         verifyNoInteractions(planRepo);
+        verify(empRepo).findByIdForUpdate(7L);
+        verify(empRepo, never()).findById(any());
     }
 
     @ParameterizedTest
@@ -96,7 +98,7 @@ class TrialNegocioNoAprobadoTest {
         org.springframework.test.util.ReflectionTestUtils.setField(billing, "suscripcionRepo", subRepo);
         org.springframework.test.util.ReflectionTestUtils.setField(billing, "empresaRepo", empRepo);
         com.hotclick.model.Suscripcion existente = new com.hotclick.model.Suscripcion();
-        when(empRepo.findById(7L)).thenReturn(Optional.of(empresa("ACTIVO")));
+        when(empRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(empresa("ACTIVO")));
         when(subRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.of(existente));
 
         assertThat(billing.iniciarTrial(7L)).isSameAs(existente);

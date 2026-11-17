@@ -179,3 +179,49 @@ export function verificarCorreo(correo: string): void {
 export function aprobarNegocio(empresaId: number): void {
   sql(`UPDATE hot_click_empresa_tb SET estado_empresa = 'ACTIVO' WHERE id_empresa = :'id'::bigint`, { id: String(empresaId) })
 }
+
+/**
+ * Emula el resultado de APROBAR un negocio CON cupo (trial Emprendedor de 90 días), en la BD efímera de E2E, sin login admin:
+ * lo mismo que dejan CupoEmprendedorAprobacionService + CupoEmprendedorService.aplicarTrial (estado ACTIVO, estado_plan TRIAL,
+ * plan EMPRENDEDOR, fechas hoy CR + 90, puesto y titular, y un lugar menos en el cupo con la guarda `usados < limite`).
+ * Además inserta la suscripción local TRIAL del plan EMPRENDEDOR (sin ids ONVO/Stripe) que aplicarTrial no crea y que
+ * `cancelar` exige. No es una vía de producción ni afloja el guard de POST /api/billing/trial.
+ * Exige el correo verificado (como el cupo real): llamar a verificarCorreo(correo) antes.
+ */
+export function aprobarNegocioConTrialCupo(empresaId: number, correo: string): void {
+  const v = { id: String(empresaId), correo }
+  // Una sola transacción: si falla el UPDATE/INSERT se revierte también el cupo. Las variables van por psql (:'var').
+  sql(
+    `BEGIN;
+WITH reserva AS (
+  UPDATE hot_click_cupo_emprendedor_tb SET usados = usados + 1 WHERE id = 1 AND usados < limite RETURNING usados
+)
+SELECT CASE WHEN EXISTS (SELECT 1 FROM reserva) THEN 1
+  ELSE CAST('aprobarNegocioConTrialCupo: el cupo Emprendedor del entorno está lleno; no se reutiliza el puesto de otro negocio' AS int)
+END;
+WITH hoy AS (SELECT ((now() AT TIME ZONE 'America/Costa_Rica')::date) AS d),
+puesto AS (
+  SELECT MIN(c.n) AS n FROM (SELECT 1 AS n UNION ALL SELECT trial_emprendedor_pos + 1 FROM hot_click_empresa_tb WHERE trial_emprendedor_pos IS NOT NULL) c
+  WHERE NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e WHERE e.trial_emprendedor_pos = c.n)
+),
+plan AS (SELECT id_plan FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR'),
+titular AS (SELECT id_usuario FROM hot_click_usuario_tb WHERE correo = :'correo' AND correo_verificado = true)
+UPDATE hot_click_empresa_tb SET
+  estado_empresa = 'ACTIVO', estado_plan = 'TRIAL', plan_saas = 'EMPRENDEDOR',
+  fk_id_plan = (SELECT id_plan FROM plan),
+  trial_hasta = (SELECT d + 90 FROM hoy), fecha_venc_plan = (SELECT d + 90 FROM hoy), trial_emprendedor_hasta = (SELECT d + 90 FROM hoy),
+  trial_emprendedor_pos = (SELECT n FROM puesto),
+  trial_emprendedor_titular_usuario = (SELECT id_usuario FROM titular),
+  trial_emprendedor_titular_correo = lower(:'correo')
+WHERE id_empresa = :'id'::bigint;
+SELECT CASE WHEN trial_emprendedor_pos IS NULL OR fk_id_plan IS NULL OR trial_emprendedor_titular_usuario IS NULL
+  THEN CAST('aprobarNegocioConTrialCupo: no se pudo asignar plan, puesto o titular (correo verificado)' AS int)
+  ELSE 1 END
+FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint;
+INSERT INTO hot_click_suscripcion_tb (fk_id_empresa, fk_id_plan, estado, fecha_inicio, trial_end)
+SELECT :'id'::bigint, id_plan, 'TRIAL', ((now() AT TIME ZONE 'America/Costa_Rica')::date), ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90
+FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR';
+COMMIT;`,
+    v,
+  )
+}

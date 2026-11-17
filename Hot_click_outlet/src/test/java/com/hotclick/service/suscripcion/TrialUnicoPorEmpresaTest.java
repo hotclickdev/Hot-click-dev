@@ -29,13 +29,14 @@ class TrialUnicoPorEmpresaTest {
 
     @Test
     void segundoTrial_rechazado() {
-        when(empresaRepo.findById(7L)).thenReturn(Optional.of(new Empresa()));
+        when(empresaRepo.findByIdForUpdate(7L)).thenReturn(Optional.of(new Empresa()));
         when(suscripcionRepo.findActivaByEmpresaId(7L)).thenReturn(Optional.empty());
-        when(suscripcionRepo.existsByEmpresa_IdAndTrialEndIsNotNull(7L)).thenReturn(true);
 
+        // Con el set de elegibles vacío el rechazo ocurre antes de llegar al chequeo de "ya usó su prueba"
+        // (que queda como defensa si un día se agrega un estado elegible).
         assertThatThrownBy(() -> service.iniciarTrial(7L))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("ya usó");
+            .hasMessageContaining("prueba gratuita");
         verify(suscripcionRepo, never()).save(any());
         verify(empresaRepo, never()).save(any());
     }
