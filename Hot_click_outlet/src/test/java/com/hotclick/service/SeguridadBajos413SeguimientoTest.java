@@ -167,7 +167,7 @@ class SeguridadBajos413SeguimientoTest {
     @Test
     @DisplayName("5. teléfono con dígitos: se conservan solo los dígitos")
     void telefonoConDigitosSeLimpia() {
-        assertThat(crearInvitadoConTelefono("+506 8888-1111").getTelefono()).isEqualTo("50688881111");
+        assertThat(crearInvitadoConTelefono("+506 0000-0003").getTelefono()).isEqualTo("50600000003");
     }
 
     @Test

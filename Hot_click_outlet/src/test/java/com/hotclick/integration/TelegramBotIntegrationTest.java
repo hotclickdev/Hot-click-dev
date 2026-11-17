@@ -845,7 +845,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega TG");
         b.setDireccionExacta("Calle Test 1");
-        b.setTelefono("88880000");
+        b.setTelefono("00000006");
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));
         b.setHorarioCierre(java.time.LocalTime.of(18, 0));
         b.setAdminCliente(adminUser);

@@ -59,7 +59,7 @@ class AuthNegocioIncompletoTest extends BaseIntegrationTest {
     void sinEmpresa_codigoEmpresaRequerida() throws Exception {
         mockMvc.perform(post("/api/bodegas").header("Authorization", tokenSinEmpresa)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombreBodega\":\"B\",\"telefono\":\"88880000\",\"direccionExacta\":\"x\"}"))
+                .content("{\"nombreBodega\":\"B\",\"telefono\":\"00000006\",\"direccionExacta\":\"x\"}"))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.data.codigo").value("EMPRESA_REQUERIDA"));
         mockMvc.perform(get("/api/empresa/perfil").header("Authorization", tokenSinEmpresa))
@@ -74,7 +74,7 @@ class AuthNegocioIncompletoTest extends BaseIntegrationTest {
     @DisplayName("registro-empresa con correo que ya tiene cuenta → 409 CORREO_YA_REGISTRADO con el siguiente paso")
     void registro_correoExistente_409() throws Exception {
         mockMvc.perform(post("/api/auth/registro-empresa").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombreEmpresa\":\"Tienda X\",\"correoEmpresa\":\"tiendax@test.cr\",\"telefonoEmpresa\":\"22224444\","
+                .content("{\"nombreEmpresa\":\"Tienda X\",\"correoEmpresa\":\"tiendax@test.cr\",\"telefonoEmpresa\":\"00000011\","
                     + "\"nombreAdmin\":\"Ana\",\"correoAdmin\":\"incompleto@test.cr\",\"passwordAdmin\":\"Clave1234!\","
                     + "\"declaraMayoriaEdad\":true,\"turnstileToken\":\"ok\"}"))
             .andExpect(status().isConflict())
@@ -90,7 +90,7 @@ class AuthNegocioIncompletoTest extends BaseIntegrationTest {
         RegistroEmpresaDTO dto = new RegistroEmpresaDTO();
         dto.setNombreEmpresa("Tienda Atomica");
         dto.setCorreoEmpresa("atomica@test.cr");
-        dto.setTelefonoEmpresa("22224444");
+        dto.setTelefonoEmpresa("00000011");
         dto.setNombreAdmin("Ana Atomica");
         dto.setCorreoAdmin("admin-atomica@test.cr");
         dto.setPasswordAdmin("Clave1234!");

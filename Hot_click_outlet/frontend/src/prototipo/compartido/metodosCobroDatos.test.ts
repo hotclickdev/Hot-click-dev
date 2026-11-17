@@ -59,13 +59,13 @@ describe('decidirFuenteMetodosCobro', () => {
 describe('validarDatoMetodo', () => {
   it('exige 8 dígitos en SINPE', () => {
     expect(validarDatoMetodo('sinpe', '8888')).toMatch(/8 dígitos/)
-    expect(validarDatoMetodo('sinpe', '88880000')).toBeNull()
+    expect(validarDatoMetodo('sinpe', '00000006')).toBeNull()
   })
 })
 
 describe('mascaraDesdeDato', () => {
   it('enmascara SINPE e IBAN sin mostrar el número completo', () => {
-    expect(mascaraDesdeDato('sinpe', '88880000')).toBe('••••-0000')
+    expect(mascaraDesdeDato('sinpe', '00000000')).toBe('••••-0000')
     expect(mascaraDesdeDato('iban', 'CR21000012344521')).toContain('****')
   })
 })

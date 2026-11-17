@@ -9,7 +9,7 @@ const EMPRESA = {
   colorSecundario: '#134E4A',
   colorAcento: '#0F766E',
   tagline: 'Hogar y accesorios hechos con cariño en San José',
-  whatsapp: '50688887777',
+  whatsapp: '50600000004',
   instagram: '@casaluna506',
   zonaEnvio: 'todo el país',
   descripcion: 'Somos un taller familiar en San José.',
@@ -63,7 +63,7 @@ test.describe('STORE — perfil del negocio', () => {
     await expect(page.getByRole('button', { name: 'Compartir Casa Luna 506' })).toBeVisible()
     await expect(page.getByText('En HotClick desde sept. 2026')).toBeVisible()
     await expect(page.getByText('Emite factura electrónica')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', /wa\.me\/50688887777/)
+    await expect(page.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', /wa\.me\/50600000004/)
     await expect(page.getByRole('link', { name: 'Instagram' })).toHaveAttribute('href', 'https://instagram.com/casaluna506')
     await expect(page.getByRole('heading', { name: 'Productos (2)' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Cómo comprarle' })).toBeVisible()
@@ -82,9 +82,9 @@ test.describe('STORE — perfil del negocio', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Casa Luna 506' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'WhatsApp' })).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Instagram' })).toHaveCount(0)
-    await expect(page.locator('a[href*="wa.me/50688887777"], a[href*="instagram.com"]')).toHaveCount(0)
+    await expect(page.locator('a[href*="wa.me/50600000004"], a[href*="instagram.com"]')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Compartir', exact: true })).toBeVisible()
-    await expect(page.locator('script[type="application/ld+json"]', { hasText: '50688887777' })).toHaveCount(0)
+    await expect(page.locator('script[type="application/ld+json"]', { hasText: '50600000004' })).toHaveCount(0)
   })
 
   test('escritorio: conserva el header de la tienda y muestra el catálogo', async ({ page }) => {

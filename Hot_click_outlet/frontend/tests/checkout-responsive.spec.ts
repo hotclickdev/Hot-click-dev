@@ -44,7 +44,7 @@ async function llenarDatosYEntrega(page: Page, movil: boolean, conSesion = false
     await page.getByLabel('Correo').fill('ana@example.com')
     await page.getByLabel('Nombre completo').fill('Ana Pérez')
   }
-  await page.getByLabel('Teléfono (WhatsApp)').fill('88881234')
+  await page.getByLabel('Teléfono (WhatsApp)').fill('00000002')
   if (movil) await page.getByRole('button', { name: 'Continuar a entrega' }).click()
   await page.getByLabel('Provincia').selectOption('San José')
   await page.getByLabel('Cantón').selectOption('Escazú')

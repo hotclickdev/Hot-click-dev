@@ -134,9 +134,9 @@ class EmprendedorPerfilTest extends BaseIntegrationTest {
         mockMvc.perform(put("/api/empresa/perfil")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"numeroWhatsapp\":\"50688001122\"}"))
+                .content("{\"numeroWhatsapp\":\"50600000013\"}"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.numeroWhatsapp").value("50688001122"));
+            .andExpect(jsonPath("$.data.numeroWhatsapp").value("50600000013"));
     }
 
     // ── T-PF-009: ADMIN_CLIENTE no puede actualizar perfil → 403 ─────────────
@@ -220,11 +220,11 @@ class EmprendedorPerfilTest extends BaseIntegrationTest {
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombreComercial\":\"Multi Update\",\"colorPrimario\":\"#00FF00\","
-                    + "\"numeroWhatsapp\":\"50699887766\",\"descripcion\":\"Multi test\"}"))
+                    + "\"numeroWhatsapp\":\"50600000031\",\"descripcion\":\"Multi test\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.nombreComercial").value("Multi Update"))
             .andExpect(jsonPath("$.data.colorPrimario").value("#00FF00"))
-            .andExpect(jsonPath("$.data.numeroWhatsapp").value("50699887766"));
+            .andExpect(jsonPath("$.data.numeroWhatsapp").value("50600000031"));
     }
 
     // ── T-PF-017: Update persiste y se refleja en el GET siguiente ────────────
@@ -250,9 +250,9 @@ class EmprendedorPerfilTest extends BaseIntegrationTest {
         mockMvc.perform(put("/api/empresa/perfil")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"telefonoEmpresa\":\"22334455\"}"))
+                .content("{\"telefonoEmpresa\":\"00000014\"}"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.telefonoEmpresa").value("22334455"));
+            .andExpect(jsonPath("$.data.telefonoEmpresa").value("00000014"));
     }
 
     // ── T-PF-019: Sin token en update de perfil → 401 ────────────────────────

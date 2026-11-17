@@ -53,7 +53,7 @@ class WhatsAppMessageSenderTest {
 
         sender.enviar(usuario(), 3L, "ORD-1", WaPlantilla.CONFIRMACION_CALIDO, Map.of());
 
-        verify(metaApiClient).llamarMetaApi("50688887777", "Hola pedido");
+        verify(metaApiClient).llamarMetaApi("50600000004", "Hola pedido");
         ArgumentCaptor<WaMensajeLog> captor = ArgumentCaptor.forClass(WaMensajeLog.class);
         verify(logRepo).save(captor.capture());
         assertThat(captor.getValue().getEstado()).isEqualTo("ENVIADO");
@@ -63,7 +63,7 @@ class WhatsAppMessageSenderTest {
     private static Usuario usuario() {
         Usuario u = new Usuario();
         u.setId(8L);
-        u.setTelefono("8888-7777");
+        u.setTelefono("0000-0004");
         return u;
     }
 }

@@ -15,19 +15,19 @@ class PedidoDetailMapperClienteTest {
         Pedido p = new Pedido();
         p.setUsuarioFinal(proxy);
         p.setClienteNombre("Ana Mora");
-        p.setClienteTel("88887777");
+        p.setClienteTel("00000004");
         assertThat(PedidoDetailMapper.nombreCliente(p)).isEqualTo("Ana Mora");
-        assertThat(PedidoDetailMapper.telefonoCliente(p)).isEqualTo("88887777");
+        assertThat(PedidoDetailMapper.telefonoCliente(p)).isEqualTo("00000004");
     }
 
     @Test
     void sinDatosDeInvitadoUsaLaCuenta() {
         Usuario u = new Usuario();
         u.setNombre("Luis");
-        u.setTelefono("61234567");
+        u.setTelefono("00000008");
         Pedido p = new Pedido();
         p.setUsuarioFinal(u);
         assertThat(PedidoDetailMapper.nombreCliente(p)).isEqualTo("Luis");
-        assertThat(PedidoDetailMapper.telefonoCliente(p)).isEqualTo("61234567");
+        assertThat(PedidoDetailMapper.telefonoCliente(p)).isEqualTo("00000008");
     }
 }

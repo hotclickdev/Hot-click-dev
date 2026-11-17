@@ -84,7 +84,7 @@ test.describe('Mi cuenta', () => {
   test('datos y seguridad: muestra los datos, el interruptor de 2 pasos y abre cambiar contraseña', async ({ page }) => {
     await ir(page, '/perfil?vista=seguridad')
     await expect(page.getByText('María Rojas Solano')).toBeVisible()
-    await expect(page.getByText('8888-1234')).toBeVisible()
+    await expect(page.getByText('0000-0002')).toBeVisible()
     const dosPasos = page.getByRole('switch', { name: 'Verificación en dos pasos' })
     await expect(dosPasos).toHaveAttribute('aria-checked', 'true')
     // Solo el administrador puede cambiarla (regla previa): para un comprador queda de solo lectura.

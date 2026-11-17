@@ -21,7 +21,7 @@ test.describe.serial('Compra — QA5', () => {
   const invitado = (extra: Record<string, unknown>) => ({
     provider: 'ONVO',
     guestEmail: `qa5.e2e.${Date.now()}@example.test`,
-    guestPhone: '88887777',
+    guestPhone: '00000004',
     direccionEntrega: 'San José, Calle prueba 1, casa azul',
     items: [{ productoId: tienda.productoId, cantidad: 1 }],
     ...extra,

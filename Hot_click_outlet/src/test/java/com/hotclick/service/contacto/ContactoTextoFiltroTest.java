@@ -17,24 +17,24 @@ class ContactoTextoFiltroTest {
 
     @ParameterizedTest(name = "oculta: {0}")
     @ValueSource(strings = {
-        "Escribime al 8888-8888",
-        "Escribime al 8888 8888",
-        "Escribime al 8888.8888",
-        "Escribime al 88888888",
-        "Escribime al 2222-3333",
-        "Escribime al +506 8888-8888",
-        "Escribime al +50688888888",
-        "Escribime al (506) 8888 8888",
-        "Escribime al 506 8888-8888",
-        "Escribime al 8 8 8 8 8 8 8 8",
-        "Escribime al 8.8.8.8.8.8.8.8",
+        "Escribime al 8000-0001",
+        "Escribime al 8000 0001",
+        "Escribime al 8000.0001",
+        "Escribime al 80000001",
+        "Escribime al 2000-0001",
+        "Escribime al +506 8000-0001",
+        "Escribime al +50680000001",
+        "Escribime al (506) 8000 0001",
+        "Escribime al 506 8000-0001",
+        "Escribime al 8 0 0 0 0 0 0 0",
+        "Escribime al 8.0.0.0.0.0.0.0",
         "Escribime al 1234567",
         "Escribime al +1 305 555 1234",
         "Escribime a ventas@casaluna.cr",
         "Escribime a ventas arroba gmail punto com",
         "Seguinos en @casaluna506",
-        "Pedidos por wa.me/50688888888",
-        "Pedidos por https://wa.me/50688888888?text=hola",
+        "Pedidos por wa.me/50680000001",
+        "Pedidos por https://wa.me/50680000001?text=hola",
         "Mirá instagram.com/casaluna506",
         "Mirá https://www.instagram.com/casaluna506/",
         "Mirá tiktok.com/@casaluna",
@@ -44,7 +44,7 @@ class ContactoTextoFiltroTest {
         "Visitá www.casaluna.com",
         "Visitá casaluna.com",
         "Visitá https://casaluna.store/catalogo",
-        "Llamá: tel:88888888",
+        "Llamá: tel:80000001",
         "Correo mailto:ventas@casaluna.cr",
     })
     void oculta(String texto) {
@@ -82,7 +82,7 @@ class ContactoTextoFiltroTest {
     @Test
     @DisplayName("Ejemplo completo: solo cambia el contacto, el resto del texto queda igual")
     void ejemploCompleto() {
-        String antes = "Bolso de cuero ₡17.500. Medidas 30x20 cm. Pedidos al 8888-8888 o @casaluna506.";
+        String antes = "Bolso de cuero ₡17.500. Medidas 30x20 cm. Pedidos al 8000-0001 o @casaluna506.";
         assertThat(ContactoTextoFiltro.ocultar(antes))
             .isEqualTo("Bolso de cuero ₡17.500. Medidas 30x20 cm. Pedidos al " + OCULTO + " o " + OCULTO + ".");
     }
@@ -90,7 +90,7 @@ class ContactoTextoFiltroTest {
     @Test
     @DisplayName("HTML del editor: el enlace externo pierde el href, las imágenes y el formato quedan")
     void html() {
-        String antes = "<p>Bolso <strong>₡17.500</strong></p><p><a href=\"https://wa.me/50688888888\" target=\"_blank\">Escribime</a>"
+        String antes = "<p>Bolso <strong>₡17.500</strong></p><p><a href=\"https://wa.me/50680000001\" target=\"_blank\">Escribime</a>"
             + " al 8888&nbsp;8888</p><img src=\"https://pub-1.r2.dev/foto.jpg\"><a href=\"/productos/3\">Ver otro</a>";
         String r = ContactoTextoFiltro.ocultar(antes);
         assertThat(r).contains("<p>Bolso <strong>₡17.500</strong></p>", "<a>Escribime</a>", "al " + OCULTO,
@@ -134,7 +134,7 @@ class ContactoTextoFiltroTest {
         "https://www.facebook.com/casaluna",
         "https://vimeo.com/casaluna",
         "https://casaluna.com/video",
-        "https://wa.me/50688888888",
+        "https://wa.me/50680000001",
         "no es un enlace",
     })
     void videoDescartado(String url) {
@@ -215,21 +215,21 @@ class ContactoTextoFiltroTest {
     @DisplayName("Lo que pasa del tope no se publica; lo de antes se sigue filtrando")
     void textoSobreElTope_seCortaYOculta() {
         String relleno = "Mesa de roble macizo. ".repeat(1_000);
-        String texto = "WA 8888-8888. " + relleno + "Escribime al 8777-6655 o a ventas@casaluna.cr";
+        String texto = "WA 8000-0001. " + relleno + "Escribime al 8000-0002 o a ventas@casaluna.cr";
         assertThat(texto.length()).isGreaterThan(ContactoTextoFiltro.MAX_TEXTO);
 
         String resultado = ContactoTextoFiltro.ocultar(texto);
 
         assertThat(resultado).startsWith("WA " + OCULTO + ". Mesa de roble").endsWith(" " + OCULTO)
-            .doesNotContain("8888-8888").doesNotContain("8777-6655").doesNotContain("ventas@");
+            .doesNotContain("8000-0001").doesNotContain("8000-0002").doesNotContain("ventas@");
         assertThat(resultado.length()).isLessThan(texto.length());
     }
 
     @Test
     @DisplayName("Bajo el tope, un contacto al final de un texto largo se oculta")
     void textoLargoBajoElTope_contactoAlFinal() {
-        String texto = "a".repeat(9_000) + " Escribime a ventas@casaluna.cr o al 8777-6655";
-        assertThat(ContactoTextoFiltro.ocultar(texto)).doesNotContain("ventas@").doesNotContain("8777-6655")
+        String texto = "a".repeat(9_000) + " Escribime a ventas@casaluna.cr o al 8000-0002";
+        assertThat(ContactoTextoFiltro.ocultar(texto)).doesNotContain("ventas@").doesNotContain("8000-0002")
             .startsWith("a".repeat(9_000));
     }
 
@@ -244,9 +244,9 @@ class ContactoTextoFiltroTest {
     @Test
     @DisplayName("Muchos '<a' sin cerrar: el contacto del final se oculta y no es cuadrático")
     void etiquetasSinCerrar() {
-        String texto = "<a ".repeat(5_000) + "WA 8888-8888 <b>ok</b>";
+        String texto = "<a ".repeat(5_000) + "WA 8000-0001 <b>ok</b>";
         String resultado = assertTimeoutPreemptively(Duration.ofSeconds(1), () -> ContactoTextoFiltro.ocultar(texto));
-        assertThat(resultado).doesNotContain("8888-8888").endsWith("WA " + OCULTO + " <b>ok</b>");
+        assertThat(resultado).doesNotContain("8000-0001").endsWith("WA " + OCULTO + " <b>ok</b>");
     }
 
     @ParameterizedTest(name = "subdominios: {0}")

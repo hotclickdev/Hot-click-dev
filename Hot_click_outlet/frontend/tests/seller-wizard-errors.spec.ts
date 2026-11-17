@@ -83,8 +83,8 @@ test.describe('Wizard errores / edge PYME', () => {
     await expect(page.getByRole('alert')).toHaveText('El teléfono es obligatorio.')
     // Click (no solo focus): deja el cursor después del +506 que precarga PhoneField.
     await page.getByLabel('Teléfono de la bodega').click()
-    await page.keyboard.type('88881234')
-    await expect(page.getByLabel('Teléfono de la bodega')).toHaveValue('+506 8888-1234')
+    await page.keyboard.type('00000002')
+    await expect(page.getByLabel('Teléfono de la bodega')).toHaveValue('+506 0000-0002')
     await continuar.click()
     await expect(page.getByText('Paso 4 de 4')).toBeVisible()
     await page.getByRole('button', { name: 'Guardar bodega' }).click()
@@ -92,7 +92,7 @@ test.describe('Wizard errores / edge PYME', () => {
     expect(cuerpo).toMatchObject({
       nombreBodega: 'Bodega Central',
       direccionExacta: 'San José, Costa Rica',
-      telefono: '+50688881234',
+      telefono: '+50600000002',
     })
   })
 })

@@ -12,8 +12,8 @@ class WhatsappNegocioTest {
             .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> EmpresaPerfilService.normalizarWhatsapp("8888"))
             .isInstanceOf(IllegalArgumentException.class);
-        assertThat(EmpresaPerfilService.normalizarWhatsapp("+506 8888-1234")).isEqualTo("50688881234");
-        assertThat(EmpresaPerfilService.normalizarWhatsapp("88881234")).isEqualTo("88881234");
+        assertThat(EmpresaPerfilService.normalizarWhatsapp("+506 0000-0002")).isEqualTo("50600000002");
+        assertThat(EmpresaPerfilService.normalizarWhatsapp("00000002")).isEqualTo("00000002");
         assertThat(EmpresaPerfilService.normalizarWhatsapp("+1 305 555 1234")).isEqualTo("+13055551234");
         assertThat(EmpresaPerfilService.normalizarWhatsapp(" ")).isNull();
     }

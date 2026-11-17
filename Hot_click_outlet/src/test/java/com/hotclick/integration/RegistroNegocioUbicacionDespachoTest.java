@@ -79,7 +79,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
         assertThat(bodega.getProvincia()).isEqualTo("SAN JOSE");
         assertThat(bodega.getCanton()).isEqualTo("SANTA ANA");
         assertThat(bodega.getDireccionExacta()).isEqualTo("100 m norte del parque");
-        assertThat(bodega.getTelefono()).isEqualTo("22224444");
+        assertThat(bodega.getTelefono()).isEqualTo("00000011");
         assertThat(bodega.getPermiteRetiroCliente()).isTrue();
         assertThat(bodegaVentaOnlineDe(empresaId)).isEqualTo(bodega.getId());
         assertThat(ubicacionDespachoService.empresaTieneUbicacion(empresaId)).isTrue();
@@ -111,7 +111,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
     void upgrade_conUbicacion_creaBodega() throws Exception {
         String body = """
             {"nombreEmpresa":"Upgrade Ubic","correoEmpresa":"upgrade-ubic@test.cr",
-             "telefonoEmpresa":"22225555","provincia":"Heredia","canton":"Belén",
+             "telefonoEmpresa":"00000015","provincia":"Heredia","canton":"Belén",
              "direccionExacta":"Del Automercado 100 m sur","permiteRetiroCliente":false}
             """;
         mockMvc.perform(post("/api/auth/upgrade-emprendedor")
@@ -217,7 +217,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
         RegistroEmpresaDTO dto = new RegistroEmpresaDTO();
         dto.setNombreEmpresa("Tienda Ubicación");
         dto.setCorreoEmpresa(correo);
-        dto.setTelefonoEmpresa("22224444");
+        dto.setTelefonoEmpresa("00000011");
         dto.setNombreAdmin("Ana Ubicación");
         dto.setCorreoAdmin("admin-" + correo);
         dto.setPasswordAdmin("Clave1234!");
@@ -238,7 +238,7 @@ class RegistroNegocioUbicacionDespachoTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega Listar");
         b.setDireccionExacta("Centro de Belén");
-        b.setTelefono("88887777");
+        b.setTelefono("00000004");
         b.setProvincia("HEREDIA");
         b.setCanton("BELEN");
         b.setPermiteRetiroCliente(true);

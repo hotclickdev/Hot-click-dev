@@ -45,7 +45,7 @@ class EmpresaPerfilServiceTest {
         e.setId(1L);
         e.setNombreComercial("Viejo");
         e.setDescripcion("No borrar [FOTOS][][/FOTOS]");
-        e.setNumeroWhatsapp("50611111111");
+        e.setNumeroWhatsapp("50600000030");
         e.setColorAcento("#1747A8");
         when(empresaRepository.findById(1L)).thenReturn(Optional.of(e));
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -53,7 +53,7 @@ class EmpresaPerfilServiceTest {
         Map<String, String> body = new LinkedHashMap<>();
         body.put("nombreComercial", "Café de Ana");
         body.put("tagline", "Café de especialidad");
-        body.put("numeroWhatsapp", "50688887777");
+        body.put("numeroWhatsapp", "50600000004");
         body.put("footerTexto", "Hecho en Pérez Zeledón");
         body.put("colorAcento", "#0EA5E9");
         body.put("ogImagenUrl", "https://cdn.example/portada.jpg");
@@ -62,7 +62,7 @@ class EmpresaPerfilServiceTest {
 
         assertThat(e.getNombreComercial()).isEqualTo("Café de Ana");
         assertThat(e.getTagline()).isEqualTo("Café de especialidad");
-        assertThat(e.getNumeroWhatsapp()).isEqualTo("50688887777");
+        assertThat(e.getNumeroWhatsapp()).isEqualTo("50600000004");
         assertThat(e.getFooterTexto()).isEqualTo("Hecho en Pérez Zeledón");
         assertThat(e.getColorAcento()).isEqualTo("#0EA5E9");
         assertThat(e.getDescripcion()).isEqualTo("No borrar [FOTOS][][/FOTOS]");
