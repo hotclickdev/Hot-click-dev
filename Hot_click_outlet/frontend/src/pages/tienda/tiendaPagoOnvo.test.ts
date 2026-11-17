@@ -14,7 +14,7 @@ describe('QA5 ALTO: checkout de tienda por ONVO', () => {
   })
   it('arma el mismo payload de /payments/checkout', () => {
     const p = payloadCheckoutTienda({
-      correoCliente: ' a@b.cr ', telefonoCliente: '88888888', direccionEntrega: 'Casa', metodoEnvio: 'DOMICILIO',
+      correoCliente: ' a@b.cr ', telefonoCliente: '00000000', direccionEntrega: 'Casa', metodoEnvio: 'DOMICILIO',
       provincia: 'San José', canton: 'Escazú', notas: '', items: [{ productoId: 1, cantidad: 2 }],
     }, 'ONVO', true)
     expect(p).toMatchObject({ provider: 'ONVO', metodoEnvio: 'ENVIO_NORMAL_GAM', guestEmail: 'a@b.cr', items: [{ productoId: 1, cantidad: 2 }] })

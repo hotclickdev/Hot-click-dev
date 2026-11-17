@@ -73,11 +73,11 @@ test.describe('Servicios HOT', () => {
     await presupuesto.getByText('₡25.000 – ₡50.000').click()
     await expect(page.getByRole('textbox', { name: 'Otro monto' })).toHaveCount(0)
     await expect(presupuesto.getByRole('radio', { name: '₡25.000 – ₡50.000' })).toBeChecked()
-    await page.getByLabel('Tu WhatsApp').fill('8888 8888')
+    await page.getByLabel('Tu WhatsApp').fill('0000 0000')
     await page.getByRole('button', { name: 'Enviar solicitud' }).click()
 
     await expect(page.getByRole('heading', { name: '¡Solicitud enviada!' })).toBeVisible()
-    expect(cuerpo).toMatchObject({ descripcion: 'Una lámpara de pie de madera', presupuesto: '₡25.000 – ₡50.000', telefonoContacto: '+50688888888' })
+    expect(cuerpo).toMatchObject({ descripcion: 'Una lámpara de pie de madera', presupuesto: '₡25.000 – ₡50.000', telefonoContacto: '+50600000000' })
     await expect(page.getByRole('link', { name: 'Ver mis solicitudes' })).toHaveAttribute('href', '/servicios?vista=solicitudes')
   })
 

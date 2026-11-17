@@ -40,7 +40,7 @@ class PedidoPruebaMetricasTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega PMET");
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("88880001");
+        b.setTelefono("00000016");
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));
         b.setHorarioCierre(java.time.LocalTime.of(18, 0));
         b.setAdminCliente(adminUser);

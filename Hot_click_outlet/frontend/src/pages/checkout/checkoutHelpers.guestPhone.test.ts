@@ -11,10 +11,10 @@ describe('validateGuestPhone', () => {
   it('exige 8 dígitos para envío', () => {
     expect(validateGuestPhone('', 'ENVIO_NORMAL_GAM', t)).toBe('checkout.phoneRequired')
     expect(validateGuestPhone('8888', 'ENVIO_NORMAL_GAM', t)).toBe('checkout.phoneInvalid')
-    expect(validateGuestPhone('88887777', 'ENVIO_NORMAL_GAM', t)).toBe('')
+    expect(validateGuestPhone('00000004', 'ENVIO_NORMAL_GAM', t)).toBe('')
   })
 
   it('validatePhone exige dígitos CR', () => {
-    expect(validatePhone('50688887777', t)).toBe('')
+    expect(validatePhone('50600000004', t)).toBe('')
   })
 })

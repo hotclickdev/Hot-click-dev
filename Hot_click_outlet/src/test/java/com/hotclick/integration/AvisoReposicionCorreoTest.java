@@ -67,7 +67,7 @@ class AvisoReposicionCorreoTest extends BaseIntegrationTest {
         bodega = new Bodega();
         bodega.setNombreBodega("Bodega Repo");
         bodega.setDireccionExacta("Calle Test Repo");
-        bodega.setTelefono("88880000");
+        bodega.setTelefono("00000006");
         bodega.setHorarioApertura(java.time.LocalTime.of(8, 0));
         bodega.setHorarioCierre(java.time.LocalTime.of(18, 0));
         bodega.setAdminCliente(adminUser);
