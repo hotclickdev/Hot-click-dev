@@ -57,6 +57,15 @@ public class SuscripcionBillingService {
             throw new com.hotclick.exception.EmpresaPendienteAprobacionException();
         }
 
+        // Tope de 70: este trial legado de 14 días no es una vía para entrar gratis sin cupo. Un negocio sin puesto
+        // (REQUIERE_MEMBRESIA: el 71 en adelante) o que aún espera puesto (PENDIENTE_CUPO) paga; uno que ya tuvo puesto
+        // de trial Emprendedor ya usó su prueba (y no se le pisan sus 90 días ni su plan).
+        if (Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA.equals(empresa.getEstadoPlan())
+            || Constants.ESTADO_PLAN_PENDIENTE_CUPO.equals(empresa.getEstadoPlan())
+            || empresa.getTrialEmprendedorPos() != null) {
+            throw new IllegalStateException("Este negocio no puede iniciar una prueba gratuita; elegí un plan de pago.");
+        }
+
         Optional<Suscripcion> existente = suscripcionRepo.findActivaByEmpresaId(empresaId);
         if (existente.isPresent()) {
             return existente.get();
