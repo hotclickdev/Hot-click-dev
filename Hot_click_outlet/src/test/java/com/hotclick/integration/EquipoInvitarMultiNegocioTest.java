@@ -69,7 +69,7 @@ class EquipoInvitarMultiNegocioTest extends BaseIntegrationTest {
     }
 
     private static final String BODY = "{\"nombre\":\"Nueva Persona Prueba\",\"correo\":\"mn-nuevo@test.cr\","
-        + "\"password\":\"Pass1234!\",\"telefono\":\"88001122\",\"rolEnEmpresa\":\"LECTOR\"}";
+        + "\"password\":\"Pass1234!\",\"telefono\":\"00000000\",\"rolEnEmpresa\":\"LECTOR\"}";
 
     @Test
     @DisplayName("dueño de A y B con el token en B: el miembro entra en B (con cupo) y no en A (llena)")

@@ -18,7 +18,7 @@ describe('errorWhatsappNegocio (Pyme)', () => {
     const { errorWhatsappNegocio } = await import('./datosNegocioHelpers')
     expect(errorWhatsappNegocio('QA-TEST abc')).not.toBeNull()
     expect(errorWhatsappNegocio('8888')).not.toBeNull()
-    expect(errorWhatsappNegocio('+506 8888-1234')).toBeNull()
+    expect(errorWhatsappNegocio('+506 0000-0002')).toBeNull()
     expect(errorWhatsappNegocio('')).toBeNull()
   })
 })

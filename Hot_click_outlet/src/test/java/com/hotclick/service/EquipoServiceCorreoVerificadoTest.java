@@ -65,7 +65,7 @@ class EquipoServiceCorreoVerificadoTest {
 
     private Usuario invitarYCapturar(String correo, String rolEnEmpresa) {
         when(usuarioRepository.findByCorreo(correo)).thenReturn(Optional.empty());
-        equipoService.invitar(5L, "Ana Perez", correo, "88887777", rolEnEmpresa);
+        equipoService.invitar(5L, "Ana Perez", correo, "00000000", rolEnEmpresa);
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
         return captor.getValue();

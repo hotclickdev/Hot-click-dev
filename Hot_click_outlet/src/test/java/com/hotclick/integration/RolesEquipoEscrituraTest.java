@@ -63,7 +63,7 @@ class RolesEquipoEscrituraTest extends BaseIntegrationTest {
         return "Bearer " + jwtUtil.generateToken(u.getCorreo(), u.getId(), Constants.ROL_EMPRENDEDOR, emp.getId(), emp.getSlug());
     }
 
-    private static final String COBRO = "{\"tipo\":\"SINPE\",\"dato\":\"88887777\"}";
+    private static final String COBRO = "{\"tipo\":\"SINPE\",\"dato\":\"00000000\"}";
 
     private Map<String, MockHttpServletRequestBuilder> escrituras(Long metodoId) {
         Map<String, MockHttpServletRequestBuilder> m = new LinkedHashMap<>();

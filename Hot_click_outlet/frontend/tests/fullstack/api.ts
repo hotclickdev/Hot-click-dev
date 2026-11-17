@@ -50,7 +50,7 @@ export async function bodegaYProducto(api: APIRequestContext, h: Headers,
   o: { visible?: boolean; retiro?: boolean; precio?: number; stock?: number } = {}) {
   const bod = await api.post('/api/bodegas', {
     headers: h,
-    data: { nombreBodega: `Bodega E2E ${sufijo()}`, direccionExacta: 'Calle prueba 1', telefono: '88887777', provincia: 'San José', canton: 'San José' },
+    data: { nombreBodega: `Bodega E2E ${sufijo()}`, direccionExacta: 'Calle prueba 1', telefono: '00000004', provincia: 'San José', canton: 'San José' },
   })
   let bodegaId: number
   if (!bod.ok() && (await bod.text()).includes('LIMIT_REACHED')) {

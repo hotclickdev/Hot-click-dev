@@ -56,7 +56,7 @@ class PropietarioWalletGuardTest extends BaseIntegrationTest {
 
     @Test
     void lectorYEditorNoBorranNiRetiran() throws Exception {
-        String payout = "{\"monto\":1000,\"metodo\":\"SINPE\",\"destinoSinpe\":\"88888888\",\"nombreTitular\":\"X\"}";
+        String payout = "{\"monto\":1000,\"metodo\":\"SINPE\",\"destinoSinpe\":\"00000000\",\"nombreTitular\":\"X\"}";
         for (String t : new String[]{tokenLector, tokenEditor}) {
             mockMvc.perform(post("/api/admin/reset-datos").header("Authorization", t)).andExpect(status().isForbidden());
             mockMvc.perform(post("/api/wallet/payout").header("Authorization", t)

@@ -31,7 +31,7 @@ class LogPiiSinpeTest {
 
     private static final String NOMBRE = "Ana Mora Solis";
     private static final String CEDULA = "1-1111-1111";
-    private static final String TELEFONO = "88881234";
+    private static final String TELEFONO = "00000002";
     private static final String CORREO = "ana.mora@test.cr";
 
     private Logger logger;

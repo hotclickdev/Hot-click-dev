@@ -116,7 +116,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     @DisplayName("T-EQ-006 | BÁSICO — Emprendedor puede invitar nuevo miembro al equipo → 200")
     void emprendedor_invitaMiembro_200() throws Exception {
         String body = "{\"nombre\":\"Nuevo Miembro\",\"correo\":\"miembro-nuevo@test.cr\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88001122\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000000\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -134,7 +134,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     @DisplayName("T-EQ-007 | QA3-012 — EDITOR no puede invitar (ni a un ADMIN) → 403 por rol, no por límite")
     void adminCliente_cannotInvitar_403() throws Exception {
         String body = "{\"nombre\":\"Hack Miembro\",\"correo\":\"hack@test.cr\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88001133\",\"rolEnEmpresa\":\"ADMIN\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000001\",\"rolEnEmpresa\":\"ADMIN\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenAdminCliente)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -228,7 +228,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     @DisplayName("T-EQ-008 | BÁSICO — USUARIO_FINAL no puede invitar miembros → 403")
     void usuarioFinal_cannotInvitar_403() throws Exception {
         String body = "{\"nombre\":\"Hack\",\"correo\":\"hack2@test.cr\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88001144\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000002\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", userToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -391,7 +391,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     void invitado_aparece_enListado() throws Exception {
         String correoNuevo = "miembro-list@test.cr";
         String bodyInvite = "{\"nombre\":\"List Member\",\"correo\":\"" + correoNuevo + "\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88119900\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000003\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -410,7 +410,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     void invitado_tieneRol_ADMIN_CLIENTE() throws Exception {
         String correo = "rol-check@test.cr";
         String body   = "{\"nombre\":\"Rol Check\",\"correo\":\"" + correo + "\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88330044\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000004\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -460,7 +460,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     @DisplayName("T-EQ-023 | BÁSICO — Nombre con apellido se separa correctamente al invitar")
     void invitar_nombreConApellido_200() throws Exception {
         String body = "{\"nombre\":\"Juan Perez\",\"correo\":\"juan-perez@test.cr\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88221133\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000005\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -478,7 +478,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     @DisplayName("T-EQ-024 | BÁSICO — Nombre sin apellido usa 'Miembro' como apellido default")
     void invitar_nombreSinApellido_apellidoDefault() throws Exception {
         String body = "{\"nombre\":\"Solo\",\"correo\":\"solo-nombre@test.cr\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88661177\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000006\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -503,7 +503,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
             usuarioRepository.findById(adminCliente.getId()).orElseThrow().getEstado());
 
         String bodyReinvite = "{\"nombre\":\"Re-invite\",\"correo\":\"" + adminCliente.getCorreo() + "\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88001122\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000000\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -520,7 +520,7 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
     void invitarConRolEquipoAdmin_noEscalaAPlataforma() throws Exception {
         String correo = "equipo-admin@test.cr";
         String body = "{\"nombre\":\"Equipo Admin\",\"correo\":\"" + correo + "\","
-            + "\"password\":\"Pass1234!\",\"telefono\":\"88330055\",\"rolEnEmpresa\":\"ADMIN\"}";
+            + "\"password\":\"Pass1234!\",\"telefono\":\"00000007\",\"rolEnEmpresa\":\"ADMIN\"}";
         mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tokenEmp)
                 .contentType(MediaType.APPLICATION_JSON)

@@ -49,7 +49,7 @@ class ReclamoConfirmacionPagoTest extends BaseIntegrationTest {
         bodega = new Bodega();
         bodega.setNombreBodega("Bodega Reclamo");
         bodega.setDireccionExacta("San José");
-        bodega.setTelefono("22224444");
+        bodega.setTelefono("00000011");
         bodega.setAdminCliente(adminUser);
         bodega.setEstado(Constants.ESTADO_ACTIVO);
         bodega = bodegaRepository.saveAndFlush(bodega);

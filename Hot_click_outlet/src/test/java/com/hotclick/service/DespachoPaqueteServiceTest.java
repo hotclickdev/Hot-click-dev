@@ -29,11 +29,11 @@ class DespachoPaqueteServiceTest {
     @Test
     void leeNombreTelefonoYDireccionDeLasNotasDelCheckout() {
         Map<String, String> campos = DespachoPaqueteService.leerNotas(
-            "Nombre: Ana Solís | Teléfono: 8888-0000 | Dirección: San José, Escazú · Del Centro 200 m sur");
+            "Nombre: Ana Solís | Teléfono: 0000-0006 | Dirección: San José, Escazú · Del Centro 200 m sur");
 
         assertThat(campos)
             .containsEntry("Nombre", "Ana Solís")
-            .containsEntry("Teléfono", "8888-0000")
+            .containsEntry("Teléfono", "0000-0006")
             .containsEntry("Dirección", "San José, Escazú · Del Centro 200 m sur");
         assertThat(DespachoPaqueteService.leerNotas(null)).isEmpty();
         assertThat(DespachoPaqueteService.leerNotas("texto libre sin campos")).isEmpty();
@@ -47,7 +47,7 @@ class DespachoPaqueteServiceTest {
         Pedido propio = pedido(1L, 1, empresa(9L, "Casa Luna 506"), compra);
         propio.setTotalPedido(33400);
         propio.setCostoEnvio(4000);
-        propio.setNotas("Nombre: Ana Solís | Teléfono: 8888-0000 | Dirección: Escazú");
+        propio.setNotas("Nombre: Ana Solís | Teléfono: 0000-0006 | Dirección: Escazú");
         Pedido bruma = pedido(2L, 2, empresa(7L, "Bruma Café"), compra);
         Pedido ceiba = pedido(3L, 3, empresa(8L, "Taller Ceiba"), compra);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(propio));
@@ -63,7 +63,7 @@ class DespachoPaqueteServiceTest {
         assertThat(dto.cantidadPaquetes()).isEqualTo(3);
         assertThat(dto.negocio()).isEqualTo("Casa Luna 506");
         assertThat(dto.otrosNegocios()).containsExactly("Bruma Café", "Taller Ceiba");
-        assertThat(dto.cliente().telefono()).isEqualTo("8888-0000");
+        assertThat(dto.cliente().telefono()).isEqualTo("0000-0006");
         assertThat(dto.pago().venta()).isEqualTo(29400);
         assertThat(dto.pago().envio()).isEqualTo(4000);
         assertThat(dto.pago().comision()).isEqualTo(2646);

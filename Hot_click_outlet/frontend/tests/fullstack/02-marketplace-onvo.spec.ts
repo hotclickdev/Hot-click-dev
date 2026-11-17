@@ -28,7 +28,7 @@ test.describe('Flujo 2 — marketplace + ONVO', () => {
       data: {
         provider: 'ONVO',
         guestEmail: 'comprador.e2e@example.test',
-        guestPhone: '88887777',
+        guestPhone: '00000004',
         metodoEnvio: 'ENVIO_NORMAL_GAM',
         provincia: 'San José', canton: 'San José', // envío a domicilio exige destino (#448)
         direccionEntrega: 'San José, Calle prueba 1, casa azul',

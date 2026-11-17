@@ -270,25 +270,25 @@ class AsistenteCuotaDiariaTest {
         Empresa e = new Empresa();
         e.setId(7L);
         e.setSlug("casa-luna");
-        e.setNumeroWhatsapp("8888-1234");
+        e.setNumeroWhatsapp("0000-0002");
         when(empresas.findById(7L)).thenReturn(Optional.of(e));
 
         planDe(7, "PYME");
-        var pyme = cuota(0, 1, 1, 1, 1, 1, "7000-0000").reservar(7L, false, null);
+        var pyme = cuota(0, 1, 1, 1, 1, 1, "0000-0022").reservar(7L, false, null);
         assertThat(pyme.acciones()).extracting(AccionChat::url)
-            .containsExactly("/tienda/casa-luna", "https://wa.me/50688881234");
+            .containsExactly("/tienda/casa-luna", "https://wa.me/50600000002");
 
         planDe(7, "EMPRENDEDOR");
-        var emp = cuota(0, 1, 1, 1, 1, 1, "7000-0000").reservar(7L, false, null);
+        var emp = cuota(0, 1, 1, 1, 1, 1, "0000-0022").reservar(7L, false, null);
         assertThat(emp.acciones()).extracting(AccionChat::url)
-            .containsExactly("/tienda/casa-luna", "https://wa.me/50670000000");
+            .containsExactly("/tienda/casa-luna", "https://wa.me/50600000022");
 
         planDe(7, null);
         var sinNada = cuota(0, 1, 1, 1, 1, 1, "").reservar(7L, false, null);
         assertThat(sinNada.acciones()).extracting(AccionChat::tipo).containsExactly(AccionChat.BUSCAR);
 
-        var mkt = cuota(0, 1, 1, 1, 1, 1, "7000-0000").reservar(null, true, null);
+        var mkt = cuota(0, 1, 1, 1, 1, 1, "0000-0022").reservar(null, true, null);
         assertThat(mkt.acciones()).extracting(AccionChat::url)
-            .containsExactly("/productos", "https://wa.me/50670000000");
+            .containsExactly("/productos", "https://wa.me/50600000022");
     }
 }

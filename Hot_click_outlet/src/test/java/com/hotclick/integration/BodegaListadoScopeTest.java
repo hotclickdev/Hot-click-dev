@@ -144,7 +144,7 @@ class BodegaListadoScopeTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega(nombre);
         b.setDireccionExacta("Calle Bodegas 1");
-        b.setTelefono("88881111");
+        b.setTelefono("00000003");
         b.setCorreoContacto("contacto-" + nombre.replace(' ', '-').toLowerCase() + "@test.cr");
         b.setAdminCliente(adminUser);
         b.setEmpresa(empresa);
