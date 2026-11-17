@@ -70,12 +70,31 @@ test.describe('Wizard errores / edge PYME', () => {
         }),
       })
     })
+    // División IGN mínima: el hook la pide a GET /api/division-territorial.
+    await page.route('**/api/division-territorial', async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [{
+            nombre: 'San José',
+            cantones: [{ nombre: 'San José', distritos: ['Carmen', 'Merced'] }],
+          }],
+        }),
+      })
+    })
     await expectPaso(page, '/pyme/bodegas/nueva', 'Paso 1 de 4', 'Nombre de la bodega')
     const continuar = page.getByRole('button', { name: 'Continuar' })
     await page.getByLabel('Nombre de la bodega').fill('Bodega Central')
     await continuar.click()
     await expect(page.getByText('Paso 2 de 4')).toBeVisible()
-    await page.getByLabel('Ubicación').fill('San José, Costa Rica')
+    await expect(page.getByRole('heading', { name: 'Ubicación de despacho' })).toBeVisible()
+    await page.getByRole('combobox', { name: /^Provincia/ }).selectOption('San José')
+    await page.getByRole('combobox', { name: /^Cantón/ }).selectOption('San José')
+    await expect(page.getByText('No se pudo cargar la división del IGN')).toHaveCount(0)
+    await page.getByRole('combobox', { name: /^Distrito/ }).selectOption('Carmen')
+    await page.getByLabel('Dirección exacta', { exact: true }).fill('San José, Costa Rica')
     await continuar.click()
     await expect(page.getByText('Paso 3 de 4')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Teléfono' })).toBeVisible()
@@ -87,11 +106,17 @@ test.describe('Wizard errores / edge PYME', () => {
     await expect(page.getByLabel('Teléfono de la bodega')).toHaveValue('+506 0000-0002')
     await continuar.click()
     await expect(page.getByText('Paso 4 de 4')).toBeVisible()
+    // Guardia anti doble clic: el último paso ignora clics los primeros 600 ms (ARMADO_FINAL_MS).
+    await page.waitForTimeout(700)
     await page.getByRole('button', { name: 'Guardar bodega' }).click()
     await expect(page.getByText('Has alcanzado el límite de bodegas de tu plan (2/2).')).toBeVisible()
     expect(cuerpo).toMatchObject({
       nombreBodega: 'Bodega Central',
+      provincia: 'San José',
+      canton: 'San José',
+      distrito: 'Carmen',
       direccionExacta: 'San José, Costa Rica',
+      permiteRetiroCliente: 'false',
       telefono: '+50600000002',
     })
   })
