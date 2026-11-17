@@ -128,7 +128,7 @@ Contexto enviado: `PAGO_EXITO:Tarjeta:HC-2024-001`
 Si el usuario ya tenía datos registrados (`nombre`, `telefono`, `direccion`), el auto-query los confirma:
 
 ```
-"Mis datos son: nombre: Juan, teléfono: 8888-1234. ¿Están correctos y qué sigue?"
+"Mis datos son: nombre: Juan, teléfono: 0000-0001. ¿Están correctos y qué sigue?"
 ```
 
 Si no hay datos previos, pregunta dirección y teléfono para coordinar la entrega.

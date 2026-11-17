@@ -373,7 +373,7 @@ function FormularioInvitar({
               type="tel"
               value={form.telefono}
               onChange={(v) => setCampo('telefono', v)}
-              placeholder="8888-0000"
+              placeholder="0000-0001"
             />
           </>
         ) : null}

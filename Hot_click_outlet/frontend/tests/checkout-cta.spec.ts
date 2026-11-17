@@ -12,6 +12,21 @@ async function mockApis(page: Page) {
   })
 }
 
+/** /public/checkout-config con la forma que lee el cliente (sin envelope); el resto de /api/** responde vacío. */
+async function mockApisConConfig(page: Page, config: Record<string, unknown>) {
+  await page.route('**/api/**', async (route) => {
+    const body = route.request().url().includes('/public/checkout-config')
+      ? config
+      : { success: true, data: [] }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+  })
+}
+
+/** Consentimiento de datos (hay otro checkbox: factura electrónica, no es el de consentimiento). */
+function consentimiento(page: Page) {
+  return page.getByRole('checkbox', { name: /Autorizo el tratamiento/ })
+}
+
 async function seedPedido(page: Page) {
   await page.addInitScript(() => {
     localStorage.setItem('hotclick-cookie-consent', JSON.stringify({
@@ -61,7 +76,8 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
   })
 
   test('pago real primero: SINPE y tarjeta por la pasarela; sin pago exprés falso', async ({ page }) => {
-    await mockApis(page)
+    // Fail-closed: sin tarjetaOnvo / sinpeManual el UI muestra «Próximamente»; aquí se publica ONVO.
+    await mockApisConConfig(page, { tarjetaOnvo: true })
     await seedPedido(page)
     await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
     await llegarAlPago(page)
@@ -134,7 +150,7 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await llegarAlPago(page)
 
     await page.getByRole('radio', { name: /^Tarjeta/ }).click()
-    await page.getByRole('checkbox').check()
+    await consentimiento(page).check()
     await page.getByRole('button', { name: /^Pagar ₡/ }).click()
 
     const alerta = page.getByRole('alert')
@@ -187,7 +203,10 @@ test.describe('Checkout en tres pasos (Figma 28:1083, 29:1248, 29:1344)', () => 
     await llegarAlPago(page)
 
     await expect(page.locator('input[type=file]')).toHaveCount(0)
-    await page.getByRole('checkbox').check()
+    // Flujo SINPE manual: identificación (tipo 0, física nacional) y número SINPE del comprador (datos ficticios).
+    await page.getByLabel('Identificación (con guiones)').fill('01-0000-0000')
+    await page.getByLabel('Tu número SINPE Móvil').fill('00000003')
+    await consentimiento(page).check()
     await page.getByRole('button', { name: /^Pagar ₡/ }).click()
 
     await expect.poll(() => capturado.cuerpo).not.toBeNull()

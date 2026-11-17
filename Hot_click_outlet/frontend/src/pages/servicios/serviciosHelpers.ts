@@ -80,7 +80,7 @@ export const CLASE_CAMPO =
 
 /**
  * Teléfono de contacto como lo recibe el backend, con prefijo de país. Quien escribe solo el número local
- * (8888 8888) queda como +506; quien empieza con "+" conserva su país.
+ * (0000 0001) queda como +506; quien empieza con "+" conserva su país.
  */
 export function normalizarTelefono(texto: string): string {
   const digitos = texto.replace(/\D/g, '')

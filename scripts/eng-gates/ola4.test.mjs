@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   extractControllerRoutes,
   extractFrontendApiPaths,
@@ -12,6 +14,7 @@ import {
   redactFindingValue,
   routeMatches,
   scanDocSecrets,
+  REPO_ROOT,
   selectPlaywrightSpecs,
 } from './ola4-lib.mjs';
 import { buildIssueBody as buildFlakeBody, inferPassesFromSiblings, runFlakeHunter } from './flake-hunter.mjs';
@@ -24,7 +27,7 @@ import {
   findUncovered,
   runIdorGap,
 } from './idor-suite-gap.mjs';
-import { buildPrComment, runPlaywrightArea } from './playwright-area.mjs';
+import { buildPrComment, mockRunnableSpecs, runPlaywrightArea } from './playwright-area.mjs';
 
 describe('ola4-lib parsers', () => {
   it('aplana keys i18n y namespace', () => {
@@ -262,5 +265,82 @@ describe('E5 playwright-area', () => {
     const body = buildPrComment(result.selection, { mode: result.mode, browsers: false, note: result.note });
     assert.ok(body.includes('checkout-cta.spec.ts'));
     assert.ok(body.includes('hotclick-e5') || body.includes('E5'));
+  });
+
+  it('modo run: ejecuta solo specs mock nuevas, con cap y sin fullstack/pending/smoke/ya-en-CI', () => {
+    const r = runPlaywrightArea({
+      changedFiles: ['Hot_click_outlet/frontend/src/pages/checkout/CheckoutPage.tsx'],
+      specNames: ['checkout-cta.spec.ts', 'descubri-pago.spec.ts', 'pago-loading.spec.ts', 'fullstack/x.spec.ts', 'pending/y.spec.ts', 'smoke.spec.ts'],
+      browsers: false,
+      execute: true,
+    });
+    assert.equal(r.mode, 'run');
+    assert.deepEqual(r.runSpecs, ['checkout-cta.spec.ts', 'pago-loading.spec.ts']);
+    const cap = mockRunnableSpecs(['a.spec.ts', 'b.spec.ts', 'c.spec.ts', 'd.spec.ts', 'e.spec.ts'], 4);
+    assert.equal(cap.run.length, 4);
+    assert.deepEqual(cap.omitted, ['e.spec.ts']);
+  });
+
+  it('E5_EXECUTE=1 (env del workflow) activa modo run; sin env queda dry-run', () => {
+    const args = {
+      changedFiles: ['Hot_click_outlet/frontend/src/pages/checkout/CheckoutPage.tsx'],
+      specNames: ['checkout-cta.spec.ts'],
+      browsers: false,
+    };
+    const prev = process.env.E5_EXECUTE;
+    try {
+      process.env.E5_EXECUTE = '1';
+      assert.equal(runPlaywrightArea(args).mode, 'run');
+      delete process.env.E5_EXECUTE;
+      assert.equal(runPlaywrightArea(args).mode, 'dry-run');
+    } finally {
+      if (prev === undefined) delete process.env.E5_EXECUTE; else process.env.E5_EXECUTE = prev;
+    }
+    const wf = readFileSync(join(REPO_ROOT, '.github/workflows/playwright-area.yml'), 'utf8');
+    assert.match(wf, /E5_EXECUTE: \$\{\{ github\.event_name == 'pull_request' && '1'/);
+  });
+
+  it('workflow E5 ejecuta de verdad las specs mock (no solo lista) y es bloqueante', () => {
+    const wf = readFileSync(join(REPO_ROOT, '.github/workflows/playwright-area.yml'), 'utf8');
+    assert.match(wf, /E5_EXECUTE:/);
+    const m = wf.match(/- name: Specs Playwright mock \(E5\)[\s\S]*?(?=\n      - name:|\n*$)/);
+    assert.ok(m, 'falta el paso de ejecución de specs mock');
+    assert.match(m[0], /playwright test/);
+    assert.match(m[0], /--workers=1/);
+    assert.match(m[0], /steps\.area\.outputs\.run_specs/);
+    assert.doesNotMatch(m[0], /continue-on-error/);
+    assert.match(wf, /paths:\s*\n\s*- 'Hot_click_outlet\/frontend\/\*\*'/);
+    const ci = readFileSync(join(REPO_ROOT, '.github/workflows/ci.yml'), 'utf8');
+    assert.match(ci, /run: pnpm test:e2e:ci/);
+  });
+
+  it('workflow E5: actions fijadas a SHA (sin tags flotantes) y SHAs exactos', () => {
+    const wf = readFileSync(join(REPO_ROOT, '.github/workflows/playwright-area.yml'), 'utf8');
+    const PIN = {
+      'pnpm/action-setup': ['73e46992e05b19abd31f2f3c20e0e7370d762115', 'v6', 2],
+      'actions/setup-node': ['249970729cb0ef3589644e2896645e5dc5ba9c38', 'v6', 1],
+      'actions/upload-artifact': ['ea165f8d65b6e75b540449e92b4886f43607fa02', 'v4', 1],
+    };
+    for (const [action, [sha, tag, n]] of Object.entries(PIN)) {
+      const usos = [...wf.matchAll(new RegExp(`uses:\\s*${action}@(\\S+)(?: # (\\S+))?`, 'g'))];
+      assert.equal(usos.length, n, `${action}: se esperaban ${n} usos`);
+      for (const u of usos) {
+        assert.equal(u[1], sha, `${action} debe estar fijada al SHA ${sha}`);
+        assert.equal(u[2], tag, `${action} debe llevar el comentario # ${tag}`);
+      }
+    }
+    for (const u of wf.matchAll(/uses:\s*([^@\s]+)@(\S+)/g)) {
+      assert.match(u[2], /^[0-9a-f]{40}$/, `${u[1]} no puede usar un tag flotante (${u[2]})`);
+    }
+  });
+
+  it('workflow E5: «Comentar fallo specs mock» usa failure() && steps.run.outcome == failure', () => {
+    const wf = readFileSync(join(REPO_ROOT, '.github/workflows/playwright-area.yml'), 'utf8');
+    const m = wf.match(/- name: Comentar fallo specs mock[\s\S]*?(?=\n      - name:|\n*$)/);
+    assert.ok(m, 'falta el paso Comentar fallo specs mock');
+    assert.match(m[0], /\n        if: \$\{\{ failure\(\) && steps\.run\.outcome == 'failure' \}\}\n/);
+    assert.match(m[0], /E5_FAIL_KIND: 'run'/);
+    const art = wf.match(/- name: Artifact screenshots[\s\S]*?(?=\n      - name:|\n*$)/);
+    assert.match(art[0], /if: \$\{\{ failure\(\) \|\|/);
   });
 });

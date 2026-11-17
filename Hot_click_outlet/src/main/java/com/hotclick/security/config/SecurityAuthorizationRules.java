@@ -203,6 +203,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(PUT,  "/api/empresa/perfil/fiscal").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            .requestMatchers(PUT, "/api/empresa/perfil/pin-cert").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/portada").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             // Gestión de equipo — accesible para EMPRENDEDOR de la misma empresa

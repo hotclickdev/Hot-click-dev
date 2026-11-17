@@ -47,7 +47,7 @@ const VALIDACIONES_API = new Set([
   'La ubicación del mapa no es válida',
 ])
 
-/** Valor de PhoneField (`+50688881234`, `+506 8888-1234`…) → `+` y solo dígitos; vacío si no hay número. */
+/** Valor de PhoneField (`+50600000001`, `+506 0000-0001`…) → `+` y solo dígitos; vacío si no hay número. */
 export function normalizarTelefonoBodega(valor: string | null | undefined): string {
   const digitos = (valor ?? '').replace(/\D/g, '')
   return digitos ? `+${digitos}` : ''

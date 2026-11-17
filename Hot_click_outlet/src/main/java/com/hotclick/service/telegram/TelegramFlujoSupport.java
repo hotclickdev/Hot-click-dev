@@ -113,7 +113,7 @@ public class TelegramFlujoSupport {
         return (nombre + " " + apellido).trim();
     }
 
-    /** "Ana Mora 8888-8888" → ["Ana Mora", "8888-8888"]; sin teléfono → ["texto completo", null]. */
+    /** "Ana Mora 0000-0001" → ["Ana Mora", "0000-0001"]; sin teléfono → ["texto completo", null]. */
     public static String[] separarNombreTelefono(String texto) {
         String limpio = texto.trim();
         java.util.regex.Matcher m = java.util.regex.Pattern
