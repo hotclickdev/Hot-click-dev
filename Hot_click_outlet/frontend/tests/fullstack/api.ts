@@ -192,41 +192,51 @@ export function aprobarNegocio(empresaId: number): void {
  */
 export function aprobarNegocioConTrialCupo(empresaId: number, correo: string): void {
   const v = { id: String(empresaId), correo }
-  // Una sola transacción: si falla el UPDATE/INSERT se revierte también el cupo. Las variables van por psql (:'var').
+  // Una sola transacción. Puesto: primer hueco, o MAX(pos)+1 si el recuento de huecos no devuelve fila.
   sql(
     `BEGIN;
 UPDATE hot_click_cupo_emprendedor_tb SET usados = usados + 1 WHERE id = 1 AND usados < limite;
 UPDATE hot_click_usuario_tb SET correo_verificado = true WHERE lower(correo) = lower(:'correo');
-WITH fechas AS (SELECT ((now() AT TIME ZONE 'America/Costa_Rica')::date) AS d),
-puesto AS (
-  SELECT MIN(c.n) AS n FROM (SELECT 1 AS n UNION ALL SELECT trial_emprendedor_pos + 1 FROM hot_click_empresa_tb WHERE trial_emprendedor_pos IS NOT NULL) c
-  WHERE NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e WHERE e.trial_emprendedor_pos = c.n)
-),
-plan_emp AS (SELECT id_plan FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR'),
-titular AS (
-  SELECT id_usuario FROM (
-    SELECT u.id_usuario AS id_usuario, 1 AS pri FROM hot_click_usuario_tb u WHERE lower(u.correo) = lower(:'correo')
-    UNION ALL
-    SELECT m.fk_id_usuario, 2 FROM hot_click_miembro_empresa_tb m
-     WHERE m.fk_id_empresa = :'id'::bigint AND m.rol_en_empresa = 'PROPIETARIO'
-  ) t ORDER BY pri LIMIT 1
-)
 UPDATE hot_click_empresa_tb SET
-  estado_empresa = 'ACTIVO', estado_plan = 'TRIAL', plan_saas = 'EMPRENDEDOR',
-  fk_id_plan = COALESCE((SELECT id_plan FROM plan_emp), fk_id_plan),
-  trial_hasta = (SELECT d + 90 FROM fechas), fecha_venc_plan = (SELECT d + 90 FROM fechas), trial_emprendedor_hasta = (SELECT d + 90 FROM fechas),
-  trial_emprendedor_pos = (SELECT n FROM puesto),
-  trial_emprendedor_titular_usuario = (SELECT id_usuario FROM titular),
+  estado_empresa = 'ACTIVO',
+  estado_plan = 'TRIAL',
+  plan_saas = 'EMPRENDEDOR',
+  fk_id_plan = COALESCE(
+    (SELECT id_plan FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR'),
+    fk_id_plan),
+  trial_hasta = ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90,
+  fecha_venc_plan = ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90,
+  trial_emprendedor_hasta = ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90,
+  trial_emprendedor_pos = COALESCE(
+    (SELECT MIN(c.n) FROM (
+        SELECT 1 AS n
+        UNION ALL
+        SELECT trial_emprendedor_pos + 1 FROM hot_click_empresa_tb WHERE trial_emprendedor_pos IS NOT NULL
+      ) c
+      WHERE NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb e WHERE e.trial_emprendedor_pos = c.n)),
+    (SELECT COALESCE(MAX(trial_emprendedor_pos), 0) + 1 FROM hot_click_empresa_tb)),
+  trial_emprendedor_titular_usuario = COALESCE(
+    (SELECT u.id_usuario FROM hot_click_usuario_tb u WHERE lower(u.correo) = lower(:'correo') LIMIT 1),
+    (SELECT m.fk_id_usuario FROM hot_click_miembro_empresa_tb m
+      WHERE m.fk_id_empresa = :'id'::bigint AND m.rol_en_empresa = 'PROPIETARIO' ORDER BY m.fk_id_usuario LIMIT 1)),
   trial_emprendedor_titular_correo = lower(:'correo')
 WHERE id_empresa = :'id'::bigint;
 SELECT CASE
-  WHEN trial_emprendedor_pos IS NULL THEN CAST('aprobarNegocioConTrialCupo: no hay puesto libre' AS int)
-  WHEN fk_id_plan IS NULL THEN CAST('aprobarNegocioConTrialCupo: no está el plan EMPRENDEDOR' AS int)
-  WHEN trial_emprendedor_titular_usuario IS NULL THEN CAST('aprobarNegocioConTrialCupo: no se encontró el usuario titular' AS int)
-  ELSE 1 END
-FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint;
+  WHEN NOT EXISTS (SELECT 1 FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint)
+    THEN CAST('aprobarNegocioConTrialCupo: no existe la empresa' AS int)
+  WHEN (SELECT estado_plan FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint) IS DISTINCT FROM 'TRIAL'
+    THEN CAST('aprobarNegocioConTrialCupo: el UPDATE no aplicó a la empresa' AS int)
+  WHEN (SELECT trial_emprendedor_pos FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint) IS NULL
+    THEN CAST('aprobarNegocioConTrialCupo: no hay puesto libre' AS int)
+  WHEN (SELECT fk_id_plan FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint) IS NULL
+    THEN CAST('aprobarNegocioConTrialCupo: no está el plan EMPRENDEDOR' AS int)
+  WHEN (SELECT trial_emprendedor_titular_usuario FROM hot_click_empresa_tb WHERE id_empresa = :'id'::bigint) IS NULL
+    THEN CAST('aprobarNegocioConTrialCupo: no se encontró el usuario titular' AS int)
+  ELSE 1 END;
 INSERT INTO hot_click_suscripcion_tb (fk_id_empresa, fk_id_plan, estado, fecha_inicio, trial_end)
-SELECT :'id'::bigint, id_plan, 'TRIAL', ((now() AT TIME ZONE 'America/Costa_Rica')::date), ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90
+SELECT :'id'::bigint, id_plan, 'TRIAL',
+  ((now() AT TIME ZONE 'America/Costa_Rica')::date),
+  ((now() AT TIME ZONE 'America/Costa_Rica')::date) + 90
 FROM hot_click_plan_tb WHERE nombre = 'EMPRENDEDOR';
 COMMIT;`,
     v,
