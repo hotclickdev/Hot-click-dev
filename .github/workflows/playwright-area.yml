@@ -24,7 +24,7 @@ jobs:
   select:
     name: E5 Playwright area
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -44,7 +44,40 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          # Modo run: emite run_specs (specs mock nuevas, cap 4) que se ejecutan abajo.
+          E5_EXECUTE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
         run: node scripts/eng-gates/playwright-area.mjs
+
+      - name: Setup pnpm (specs mock E5)
+        if: ${{ steps.area.outputs.run_specs != '' }}
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.1.2
+
+      - name: Instalar frontend (specs mock E5)
+        if: ${{ steps.area.outputs.run_specs != '' }}
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Playwright Chromium (specs mock E5)
+        if: ${{ steps.area.outputs.run_specs != '' }}
+        working-directory: Hot_click_outlet/frontend
+        run: pnpm exec playwright install chromium --with-deps
+
+      # Ejecución REAL, bloqueante (sin continue-on-error). Solo specs mock (playwright.config.ts,
+      # Vite + red mockeada); nunca fullstack/backend. Puerto 3019 para no chocar con 3000.
+      - name: Specs Playwright mock (E5)
+        id: run
+        if: ${{ steps.area.outputs.run_specs != '' }}
+        working-directory: Hot_click_outlet/frontend
+        timeout-minutes: 15
+        env:
+          CI: 'true'
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3019
+          E5_RUN_SPECS: ${{ steps.area.outputs.run_specs }}
+        run: |
+          # shellcheck disable=SC2086
+          pnpm exec playwright test $(printf 'tests/%s ' $E5_RUN_SPECS) --workers=1
 
       - name: Setup pnpm (solo smoke opt-in)
         if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
@@ -73,7 +106,7 @@ jobs:
         continue-on-error: true
 
       - name: Artifact screenshots / report
-        if: ${{ failure() || steps.smoke.outcome == 'failure' }}
+        if: ${{ failure() || steps.run.outcome == 'failure' || steps.smoke.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
         with:
           name: e5-playwright-${{ github.event.pull_request.number || github.run_id }}
@@ -89,4 +122,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           E5_COMMENT_FAIL: '1'
+        run: node scripts/eng-gates/playwright-area.mjs
+
+      - name: Comentar fallo specs mock (bloqueante)
+        if: ${{ steps.run.outcome == 'failure' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          E5_COMMENT_FAIL: '1'
+          E5_FAIL_KIND: 'run'
         run: node scripts/eng-gates/playwright-area.mjs
