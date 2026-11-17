@@ -238,11 +238,11 @@ export function aprobarNegocioConTrialCupo(empresaId: number, correo: string): v
   )
   if (!filas) throw new Error('aprobarNegocioConTrialCupo: el UPDATE no aplicó a la empresa')
   const sub = sql(
-    `INSERT INTO hot_click_suscripcion_tb (fk_id_empresa, fk_id_plan, estado, fecha_inicio, trial_end, cancelar_al_vencer)
+    `INSERT INTO hot_click_suscripcion_tb (fk_id_empresa, fk_id_plan, estado, fecha_inicio, trial_end, cancelar_al_vencer, fecha_creacion, fecha_actualizacion)
       SELECT :'id'::bigint, :'plan'::bigint, 'TRIAL',
         CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date),
         CAST(now() AT TIME ZONE 'America/Costa_Rica' AS date) + 90,
-        false
+        false, now(), now()
       RETURNING id_suscripcion`,
     { id, plan },
   )
