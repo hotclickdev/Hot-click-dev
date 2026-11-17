@@ -492,11 +492,12 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
         org.junit.jupiter.api.Assertions.assertEquals("Miembro", solo.getApellidoPaterno());
     }
 
-    // ── T-EQ-025: Miembro eliminado (soft-delete) NO se reactiva al re-invitarlo ──
-    // Antes (#384) un ELIMINADO con membresía previa reingresaba; quedaba sin poder iniciar sesión (el login rechaza el
-    // estado 3) y además se le añadían rol y empresa. La reactivación de eliminados queda para post-lanzamiento.
+    // ── T-EQ-025: Miembro eliminado (soft-delete) NO se reactiva al re-invitarlo (solo al aceptar) ──
+    // Antes (#384) un ELIMINADO con membresía previa reingresaba al invitar; quedaba sin poder iniciar sesión (el login
+    // rechaza el estado 3). Ahora invitar() solo emite la invitación (cuentaNueva=true); la reactivación con contraseña
+    // nueva ocurre al aceptar el token (ver InvitacionEquipoReinvitarEliminadoTest).
     @Test
-    @DisplayName("T-EQ-025 | Re-invitar a un eliminado: misma respuesta (200 \"Invitación enviada\"), no se reactiva ni hay token")
+    @DisplayName("T-EQ-025 | Re-invitar a un eliminado: misma respuesta (200 \"Invitación enviada\"), se emite invitación pero NO se reactiva")
     void eliminado_noSeReactivaAlReinvitar() throws Exception {
         mockMvc.perform(delete("/api/empresa/equipo/" + adminCliente.getId())
                 .header("Authorization", tokenEmp))
@@ -515,10 +516,10 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
 
         org.junit.jupiter.api.Assertions.assertEquals(Constants.ESTADO_ELIMINADO,
             usuarioRepository.findById(adminCliente.getId()).orElseThrow().getEstado());
-        org.mockito.Mockito.verify(notificacionEmailService, org.mockito.Mockito.never()).enviarInvitacionMiembro(
+        org.mockito.Mockito.verify(notificacionEmailService).enviarInvitacionMiembro(
             org.mockito.ArgumentMatchers.eq(adminCliente.getCorreo()), org.mockito.ArgumentMatchers.any(),
             org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
-            org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.any());
+            org.mockito.ArgumentMatchers.eq(true), org.mockito.ArgumentMatchers.any());
     }
 
     // ── ADMIN en ROLES_PERMITIDOS es rol de equipo del negocio, NO el rol de plataforma ──

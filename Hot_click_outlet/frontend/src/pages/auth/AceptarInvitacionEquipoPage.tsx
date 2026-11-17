@@ -126,7 +126,7 @@ export default function AceptarInvitacionEquipoPage() {
               <p className="text-xs text-hc-n-600">Mínimo 8 caracteres, con una mayúscula y un número.</p>
               <button type="submit" disabled={enviando || !contrasenaAceptable(contrasena, inv.correo) || !repetir}
                 className="rounded-xl bg-hc-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-                {enviando ? 'Creando cuenta…' : 'Crear cuenta y aceptar'}
+                {enviando ? 'Guardando…' : 'Definir contraseña y aceptar'}
               </button>
             </form>
           )}

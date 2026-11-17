@@ -50,6 +50,7 @@ public class InvitacionEquipoService {
     @Autowired private MiembroEmpresaRepository miembroEmpresaRepository;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private TenantService tenantService;
+    @Autowired private SesionesUsuarioService sesionesUsuarioService;
 
     public static String tokenNuevo() {
         byte[] b = new byte[32];
@@ -74,23 +75,41 @@ public class InvitacionEquipoService {
         r.put("negocio", EmpresaNombre.mostrar(inv.getEmpresa(), null));
         r.put("rolEnEmpresa", inv.getRolEnEmpresa());
         r.put("correo", inv.getCorreo());
-        r.put("cuentaExiste", usuarioRepository.findByCorreo(inv.getCorreo()).isPresent());
+        // "Hay una cuenta ACTIVA con la que puede iniciar sesión". Una cuenta ELIMINADA define contraseña nueva.
+        r.put("cuentaExiste", usuarioRepository.findByCorreo(inv.getCorreo())
+            .map(u -> Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado())).orElse(false));
         return r;
     }
 
-    /** Cuenta nueva: el portador del token (dueño del correo) define su contraseña; recién ahí se crea el usuario. */
+    /**
+     * El portador del token (dueño del correo) define su contraseña. Sin usuario: se crea. ACTIVO: 409 (inicia sesión).
+     * ELIMINADO (estado 3, incluye a quien salió de su único negocio): se reactiva el MISMO usuario con la contraseña
+     * nueva; se cortan sesiones y refresh tokens; no se recuperan membresías ni roles viejos (solo la de este negocio).
+     * SUSPENDIDO (bloqueo de admin), INACTIVO y PENDIENTE: 410, nunca se reactivan. No hay columna que distinga
+     * ELIMINADO por equipo de ELIMINADO por admin. Sesiones: cortarSesiones cubre sesiones y refresh tokens; los
+     * OTP / restablecimientos pendientes no tienen API de invalidación directa y no se tocan.
+     */
     @Transactional
     public void aceptarCuentaNueva(String token, String contrasena) {
         InvitacionEquipo inv = vigente(token);
-        if (usuarioRepository.findByCorreo(inv.getCorreo()).isPresent()) {
-            throw new EnlaceNoVigenteException(HttpStatus.CONFLICT,
-                "Ya existe una cuenta con este correo: iniciá sesión y aceptá la invitación.");
+        Optional<Usuario> existente = usuarioRepository.findByCorreo(inv.getCorreo());
+        if (existente.isPresent()) {
+            Integer estado = existente.get().getEstado();
+            if (Integer.valueOf(Constants.ESTADO_ACTIVO).equals(estado)) {
+                throw new EnlaceNoVigenteException(HttpStatus.CONFLICT,
+                    "Ya existe una cuenta con este correo: iniciá sesión y aceptá la invitación.");
+            }
+            if (!Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(estado)) throw noValida();
         }
         String falta = AuthSupport.faltantePoliticaContrasena(contrasena);
         if (falta != null) throw new IllegalArgumentException(falta);
         Empresa empresa = bloquearEmpresaConCupo(inv);
         Rol rol = rolEmprendedor();
         consumir(inv);
+        if (existente.isPresent()) {
+            reactivarEliminado(existente.get(), inv, empresa, rol, contrasena);
+            return;
+        }
         String[] partes = EquipoService.partirNombreCompleto(inv.getNombre());
         Usuario nuevo = new Usuario();
         nuevo.setNombre(partes[0]);
@@ -109,6 +128,37 @@ public class InvitacionEquipoService {
         nuevo.getRoles().add(rol);
         Usuario saved = usuarioRepository.save(nuevo);
         miembroEmpresaRepository.save(new MiembroEmpresa(saved, empresa, inv.getRolEnEmpresa()));
+    }
+
+    private void reactivarEliminado(Usuario u, InvitacionEquipo inv, Empresa empresa, Rol rol, String contrasena) {
+        if (miembroEmpresaRepository.countEmpresasByUsuarioId(u.getId()) >= EquipoService.MAX_EMPRESAS_POR_USUARIO) {
+            throw noValida();
+        }
+        u.setContrasenaHash(passwordEncoder.encode(contrasena));
+        u.setEstado(Constants.ESTADO_ACTIVO);
+        u.setCorreoVerificado(true);
+        u.setIntentosFallidos(0);
+        if (u.getRoles().stream().noneMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()))) u.getRoles().add(rol);
+        // La empresa anterior puede ser un negocio del que ya no es miembro: se reasigna al que invita.
+        boolean empresaVigente = u.getEmpresa() != null
+            && miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), u.getEmpresa().getId(), 1);
+        if (!empresaVigente) u.setEmpresa(empresa);
+        usuarioRepository.save(u);
+        activarMembresia(u, empresa, inv);
+        sesionesUsuarioService.cortarSesiones(u);
+    }
+
+    private void activarMembresia(Usuario u, Empresa empresa, InvitacionEquipo inv) {
+        Optional<MiembroEmpresa> previo = miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(u.getId(), empresa.getId());
+        if (previo.isPresent()) {
+            MiembroEmpresa m = previo.get();
+            m.setEstado(1);
+            m.setRolEnEmpresa(inv.getRolEnEmpresa());
+            m.setFechaIngreso(LocalDateTime.now(Constants.ZONA_CR));
+            miembroEmpresaRepository.save(m);
+        } else {
+            miembroEmpresaRepository.save(new MiembroEmpresa(u, empresa, inv.getRolEnEmpresa()));
+        }
     }
 
     /** Cuenta existente: solo la puede aceptar quien está autenticado como el correo de la invitación. */
@@ -130,16 +180,7 @@ public class InvitacionEquipoService {
         if (u.getRoles().stream().noneMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()))) u.getRoles().add(rol);
         if (u.getEmpresa() == null) u.setEmpresa(empresa);
         usuarioRepository.save(u);
-        Optional<MiembroEmpresa> previo = miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(u.getId(), empresa.getId());
-        if (previo.isPresent()) {
-            MiembroEmpresa m = previo.get();
-            m.setEstado(1);
-            m.setRolEnEmpresa(inv.getRolEnEmpresa());
-            m.setFechaIngreso(LocalDateTime.now(Constants.ZONA_CR));
-            miembroEmpresaRepository.save(m);
-        } else {
-            miembroEmpresaRepository.save(new MiembroEmpresa(u, empresa, inv.getRolEnEmpresa()));
-        }
+        activarMembresia(u, empresa, inv);
     }
 
     private InvitacionEquipo vigente(String token) {

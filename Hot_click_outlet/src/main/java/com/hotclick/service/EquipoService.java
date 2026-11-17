@@ -44,7 +44,7 @@ public class EquipoService {
     /**
      * Invita al equipo de {@code empresaId}. NUNCA agrega al miembro ni crea el Usuario: solo emite una invitación
      * pendiente de un solo uso que la persona acepta con el enlace del correo. El resultado es indistinguible para
-     * quien invita (exista o no la cuenta, ya sea miembro, esté inactiva o en el tope de negocios): en esos casos no
+     * quien invita (exista o no la cuenta, ya sea miembro, esté suspendida/inactiva o en el tope de negocios): en esos casos no
      * se emite invitación usable y no se manda correo, pero tampoco se lanza ningún error. La empresa se resuelve UNA
      * vez con lock pesimista (cupo del plan sin TOCTOU). El llamador debe haber verificado que puede gestionar
      * {@code empresaId}.
@@ -84,12 +84,24 @@ public class EquipoService {
         invitacionRepository.save(inv);
         notificacionEmailService.enviarInvitacionMiembro(
             correoNorm, nombre.trim(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null),
-            existente.isEmpty(), token);
+            // Cuenta nueva (true) = la persona tiene que definir una contraseña: no existe cuenta, o está ELIMINADA
+            // y no puede iniciar sesión. false solo si es una cuenta ACTIVA que entra con su contraseña habitual.
+            existente.isEmpty() || !esActiva(existente.get()), token);
     }
 
-    /** Cuenta existente: solo ACTIVA, que aún no sea miembro activo de este equipo y con cupo de negocios. */
+    private static boolean esActiva(Usuario u) {
+        return Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado());
+    }
+
+    /**
+     * Cuenta existente: ACTIVA, o ELIMINADA (estado 3, incluye a quien salió de su único negocio: la reactiva su
+     * propio token al aceptar, no invitar()). SUSPENDIDA (bloqueo de admin), INACTIVA y PENDIENTE no reciben
+     * invitación usable ni se reactivan; el dueño ve la misma respuesta. No hay columna que distinga ELIMINADA por
+     * equipo de ELIMINADA por admin: ambas son el estado 3. Además no debe ser miembro activo de este equipo y debe
+     * tener cupo de negocios.
+     */
     private boolean puedeInvitarseCuentaExistente(Usuario u, Empresa empresa) {
-        return Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado())
+        return (esActiva(u) || Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(u.getEstado()))
             && !miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), empresa.getId(), 1)
             && miembroEmpresaRepository.countEmpresasByUsuarioId(u.getId()) < MAX_EMPRESAS_POR_USUARIO;
     }

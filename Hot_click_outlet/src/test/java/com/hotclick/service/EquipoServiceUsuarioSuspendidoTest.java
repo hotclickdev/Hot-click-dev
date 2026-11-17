@@ -29,12 +29,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Una cuenta existente que no está activa no recibe invitación usable (la reactivación queda para post-lanzamiento),
- * pero quien invita NO ve ningún error distinto: invitar() retorna normal (no se puede enumerar el estado de la cuenta).
+ * Una cuenta existente SUSPENDIDA, INACTIVA o PENDIENTE no recibe invitación usable. Una ELIMINADA sí (la reactiva su
+ * propio token al aceptar, no invitar()). Quien invita NO ve ningún error distinto: invitar() retorna normal.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("EquipoService.invitar — cuenta no activa: sin error, sin token, sin reactivar")
+@DisplayName("EquipoService.invitar — suspendida/inactiva/pendiente: sin token; eliminada: invitación pendiente sin reactivar")
 class EquipoServiceUsuarioSuspendidoTest {
 
     @Mock UsuarioRepository usuarioRepository;
@@ -70,9 +70,9 @@ class EquipoServiceUsuarioSuspendidoTest {
     }
 
     @Test
-    @DisplayName("suspendido (4), eliminado (3), inactivo (2), pendiente (5): no lanza error, no hay token ni correo ni reactivación")
+    @DisplayName("suspendido (4), inactivo (2), pendiente (5): no lanza error, no hay token ni correo ni reactivación")
     void noActivosSinErrorNiToken() {
-        for (int estado : new int[] {Constants.ESTADO_SUSPENDIDO, Constants.ESTADO_ELIMINADO,
+        for (int estado : new int[] {Constants.ESTADO_SUSPENDIDO,
                 Constants.ESTADO_INACTIVO, Constants.ESTADO_PENDIENTE}) {
             Usuario u = existente(estado);
             assertThatCode(() -> equipoService.invitar(5L, "Susp Endido", "susp@test.cr", "00000000", "LECTOR"))
@@ -80,6 +80,18 @@ class EquipoServiceUsuarioSuspendidoTest {
             org.assertj.core.api.Assertions.assertThat(u.getEstado()).isEqualTo(estado);
         }
         sinInvitacionNiCorreo();
+    }
+
+    @Test
+    @DisplayName("eliminado (3): recibe invitación pendiente y correo con cuentaNueva=true, sin reactivar ni crear membresía")
+    void eliminadoRecibeInvitacionSinReactivar() {
+        Usuario u = existente(Constants.ESTADO_ELIMINADO);
+        equipoService.invitar(5L, "Eli Minado", "susp@test.cr", "00000000", "LECTOR");
+        verify(invitacionRepository).save(any(InvitacionEquipo.class));
+        verify(notificacionEmailService).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.eq(true), any());
+        verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+        org.assertj.core.api.Assertions.assertThat(u.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
     }
 
     @Test
