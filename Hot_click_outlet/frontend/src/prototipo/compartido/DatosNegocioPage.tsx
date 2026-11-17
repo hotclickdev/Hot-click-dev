@@ -5,6 +5,7 @@ import { empresaService } from '@/services/empresaService'
 import { digitosTelefonoCR } from '@/utils/telefono'
 import { unwrapEmpresa } from '@/pages/admin/mi-empresa/miEmpresaHelpers'
 import { guardarExtrasLocal, limpiarExtrasLocal } from '@/prototipo/emprendedor/data/negocioExtras'
+import { CertificadoNegocioSeccion } from './CertificadoNegocioSeccion'
 import FormularioPorPasos from './FormularioPorPasos'
 import type { PasoFormulario } from './formularioPorPasosHelpers'
 import { Campo, Chip, EncabezadoPagina } from './ui'
@@ -149,6 +150,7 @@ export function DatosNegocioPage({
           ) : null}
         </FormularioPorPasos>
       ) : null}
+      <CertificadoNegocioSeccion />
     </>
   )
 

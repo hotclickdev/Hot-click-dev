@@ -39,4 +39,5 @@ export const empresaService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   updateFiscal: (body: JsonBody) => api.put('/empresa/perfil/fiscal', body),
+  guardarPinCert: (pin: string) => api.put('/empresa/perfil/pin-cert', { pin }),
 }

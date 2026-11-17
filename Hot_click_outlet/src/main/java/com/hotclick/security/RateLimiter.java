@@ -190,6 +190,38 @@ public class RateLimiter {
         }
     }
 
+    /**
+     * FAIL-CLOSED: cuenta un evento y devuelve el contador de la ventana. Si la BD no responde LANZA
+     * (no devuelve 0): quien lo use debe negar el intento.
+     */
+    public int registrarEstricto(String key, int windowSeconds) {
+        long now = Instant.now().getEpochSecond();
+        return incrementarYContar(key, now, now + windowSeconds, windowSeconds);
+    }
+
+    /**
+     * FAIL-CLOSED: segundos que faltan para que el bucket deje de bloquear (0 si no hay fila vigente).
+     * Lee {@code expires_at}. Si la BD no responde LANZA.
+     */
+    public long segundosRestantesEstricto(String key) {
+        long now = Instant.now().getEpochSecond();
+        var filas = jdbc.queryForList("SELECT expires_at FROM hot_click_rate_limit_tb WHERE bucket_key = ?", key);
+        if (filas.isEmpty()) return 0;
+        long expira = ((Number) filas.get(0).get("expires_at")).longValue();
+        return Math.max(0, expira - now);
+    }
+
+    /** FAIL-CLOSED: true si el bucket tiene {@code max} o más eventos en su ventana vigente. Si la BD no responde LANZA. */
+    public boolean alcanzoLimiteEstricto(String key, int max, int windowSeconds) {
+        long now = Instant.now().getEpochSecond();
+        var filas = jdbc.queryForList(
+            "SELECT window_start, count FROM hot_click_rate_limit_tb WHERE bucket_key = ?", key);
+        if (filas.isEmpty()) return false;
+        long inicio = ((Number) filas.get(0).get("window_start")).longValue();
+        int  cuenta = ((Number) filas.get(0).get("count")).intValue();
+        return inicio + windowSeconds > now && cuenta >= max;
+    }
+
     /** Borra el bucket (p. ej. al autenticarse bien, para que los tropiezos viejos no cuenten). */
     public void liberar(String key) {
         try {
@@ -197,6 +229,15 @@ public class RateLimiter {
         } catch (Exception e) {
             log.warn("[RATE-LIMIT] DB unavailable al liberar: {}", e.getClass().getName());
         }
+    }
+
+    /**
+     * FAIL-CLOSED: borra el bucket y LANZA si la BD no responde. Para quien reservó un cupo con
+     * {@link #registrarEstricto}: si el DELETE falla el cupo queda consumido (seguro, no se abre ninguna brecha).
+     * {@link #liberar} sigue siendo fail-open para el resto (login/2FA).
+     */
+    public void liberarEstricto(String key) {
+        jdbc.update("DELETE FROM hot_click_rate_limit_tb WHERE bucket_key = ?", key);
     }
 
     /** Borra todos los buckets cuya llave empieza con {@code prefijo} (p. ej. los de IP de un usuario al desbloquearlo). */

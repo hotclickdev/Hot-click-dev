@@ -113,12 +113,15 @@ class EmpresaPerfilServiceTest {
         Empresa e = empresaBase(5L);
         e.setClaveHaciendaEnc("enc-secreto");
         e.setCertP12Path("certs/5.p12");
+        e.setPinCertEnc("enc-pin");
         when(empresaRepository.findById(5L)).thenReturn(Optional.of(e));
 
         Map<String, Object> out = service.obtener(5L);
 
         assertThat(out.get("tieneClaveHacienda")).isEqualTo(true);
         assertThat(out.get("tieneCertP12")).isEqualTo(true);
+        assertThat(out.get("tienePinCert")).isEqualTo(true);
+        assertThat(out).doesNotContainKey("pinCertEnc").doesNotContainKey("pin");
         assertThat(out).doesNotContainKey("claveHaciendaEnc");
         assertThat(out).doesNotContainKey("certP12Path");
     }
