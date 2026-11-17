@@ -52,8 +52,16 @@ export async function bodegaYProducto(api: APIRequestContext, h: Headers,
     headers: h,
     data: { nombreBodega: `Bodega E2E ${sufijo()}`, direccionExacta: 'Calle prueba 1', telefono: '00000004', provincia: 'San José', canton: 'San José' },
   })
-  expect(bod.ok(), await bod.text()).toBeTruthy()
-  const bodegaId: number = (await bod.json()).data.id
+  let bodegaId: number
+  if (!bod.ok() && (await bod.text()).includes('LIMIT_REACHED')) {
+    // El plan limita bodegas y las corridas repetidas las agotan: se reutiliza una existente del mismo negocio.
+    const lista = (await (await api.get('/api/bodegas', { headers: h })).json()).data
+    bodegaId = (Array.isArray(lista) ? lista : lista?.content)?.[0]?.id
+    expect(bodegaId, 'bodega existente').toBeTruthy()
+  } else {
+    expect(bod.ok(), await bod.text()).toBeTruthy()
+    bodegaId = (await bod.json()).data.id
+  }
   if (o.retiro) {
     const r = await api.put(`/api/bodegas/${bodegaId}`, { headers: h, data: { permiteRetiroCliente: 'true' } })
     expect(r.ok(), await r.text()).toBeTruthy()
@@ -87,13 +95,13 @@ export function sql(q: string, vars: Record<string, string> = {}): string {
 }
 
 /**
- * Miembro de equipo (EDITOR/LECTOR) en el negocio del token.
+ * Miembro de equipo (EDITOR/LECTOR/CAJERO) en el negocio del token.
  * La API de invitación NO acepta contraseña (el invitado recibe un secreto aleatorio). Para poder
  * iniciar sesión en E2E, tras crearlo se copia a esa fila el hash de una cuenta QA (clave = E2E_QA_PASSWORD)
  * con UPDATE directo sobre la BD efímera de E2E (E2E_DATABASE_URL). Ese camino solo existe en este helper
  * de test: no hay endpoint ni perfil nuevo en el backend, así que producción no cambia.
  */
-export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' | 'LECTOR') {
+export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' | 'LECTOR' | 'CAJERO') {
   if (!conSql) throw new Error('miembro() requiere E2E_DATABASE_URL para fijar la clave del invitado en la BD de E2E')
   const correo = `e2e.${rol.toLowerCase()}.${sufijo()}@hotclick.test`
   const r = await api.post('/api/empresa/equipo', { headers: h, data: { nombre: `E2E ${rol}`, correo, rolEnEmpresa: rol } })
@@ -122,4 +130,52 @@ export async function loginUi(page: Page, correo: string, contrasena = claveQa()
   expect(r.status()).toBe(200)
   await expect(page).not.toHaveURL(/\/login(\?|$)/)
   return r
+}
+
+// ───────────────────────── Suite «simulación final en sandbox» (08–11) ─────────────────────────
+
+/**
+ * Guarda anti-live: aborta si CUALQUIER variable del entorno del test trae una llave ONVO live.
+ * (La llave nunca llega a la spec: solo se comprueba el prefijo, sin imprimir el valor.)
+ */
+export function abortarSiOnvoLive(): void {
+  for (const [k, v] of Object.entries(process.env)) {
+    if (/^onvo_live_/i.test(v ?? '')) throw new Error(`ABORTADO: ${k} contiene una llave ONVO live. Solo onvo_test_ / sandbox.`)
+  }
+}
+
+/** true si el backend del sandbox corre con llave ONVO de prueba (lo marca scripts/e2e-sandbox.sh o el workflow). */
+export const conOnvoPrueba = process.env.E2E_ONVO_MODO === 'prueba'
+/** true si además hay ONVO_PRICE_ID_PYME / ONVO_PRICE_ID_NEGOCIO_PLUS de prueba en el backend (cobros reales de sandbox). */
+export const conPreciosOnvo = conOnvoPrueba && process.env.E2E_ONVO_PRECIOS === 'listo'
+
+export type Negocio = { correo: string; contrasena: string; empresaId: number; sesion: Sesion }
+
+/** Flujo 1 — alta de negocio por /api/auth/registro-empresa (público). El negocio nace EMPRENDEDOR. */
+export async function registrarNegocio(api: APIRequestContext, etiqueta = 'Negocio'): Promise<Negocio> {
+  const s = sufijo()
+  const correo = `e2e.${etiqueta.toLowerCase()}.${s}@example.test`
+  const contrasena = `E2e-${s}-Aa1!`
+  const reg = await api.post('/api/auth/registro-empresa', {
+    data: {
+      nombreEmpresa: `${etiqueta} E2E ${s}`, nombreAdmin: 'Admin E2E', correoAdmin: correo, passwordAdmin: contrasena,
+      declaraMayoriaEdad: true, provincia: 'San José', canton: 'San José', direccionExacta: 'Calle prueba 1',
+    },
+  })
+  expect(reg.status(), await reg.text()).toBe(200)
+  const body = await reg.json()
+  const empresaId: number = body.data.empresaId
+  expect(empresaId, 'empresaId').toBeGreaterThan(0)
+  const sesion = await login(api, correo, contrasena)
+  return { correo, contrasena, empresaId, sesion }
+}
+
+/** Marca el correo del admin como verificado en la BD efímera (el plan de pago lo exige). Solo con E2E_DATABASE_URL. */
+export function verificarCorreo(correo: string): void {
+  sql(`UPDATE hot_click_usuario_tb SET correo_verificado = true WHERE correo = :'correo'`, { correo })
+}
+
+/** Emula la aprobación del admin (PENDIENTE_APROBACION → ACTIVO) en la BD efímera: un negocio sin aprobar no elige plan. */
+export function aprobarNegocio(empresaId: number): void {
+  sql(`UPDATE hot_click_empresa_tb SET estado_empresa = 'ACTIVO' WHERE id_empresa = :'id'::bigint`, { id: String(empresaId) })
 }
