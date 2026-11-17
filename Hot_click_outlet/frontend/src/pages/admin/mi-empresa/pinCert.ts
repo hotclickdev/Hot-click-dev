@@ -10,3 +10,14 @@ export function validarFormatoPin(pin: string): string | null {
   if (pin.length === 4 && !/^\d{4}$/.test(pin)) return MSG_PIN_4_DIGITOS
   return null
 }
+
+/**
+ * Tarjeta del certificado/PIN: solo el PROPIETARIO o el ADMIN de plataforma (igual que el backend, PropietarioGuard).
+ * Un EDITOR/ADMIN de equipo conserva userRole EMPRENDEDOR, por eso se mira rolEquipo. Dueños viejos sin rolEquipo
+ * (null) y con userRole EMPRENDEDOR siguen viéndola por compatibilidad.
+ */
+export function puedeGestionarCertificado(userRole: string | null, rolEquipo: string | null): boolean {
+  if (userRole === 'ADMIN') return true
+  if (userRole !== 'EMPRENDEDOR') return false
+  return rolEquipo == null || rolEquipo === 'PROPIETARIO'
+}

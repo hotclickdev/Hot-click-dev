@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import CertificadoFirmaCard from './CertificadoFirmaCard'
-import { MSG_PIN_4_DIGITOS, MSG_PIN_FORMATO, MSG_PIN_VACIO, validarFormatoPin } from './pinCert'
+import { MSG_PIN_4_DIGITOS, MSG_PIN_FORMATO, MSG_PIN_VACIO, puedeGestionarCertificado, validarFormatoPin } from './pinCert'
 
 const props = { tieneCert: true, tienePin: false, canEdit: true, onSubirCert: () => {}, onGuardarPin: () => true }
 
@@ -33,6 +33,7 @@ describe('CertificadoFirmaCard', () => {
   it('con permiso muestra inputs, el PIN vacío y tipo password', () => {
     const html = renderToStaticMarkup(createElement(CertificadoFirmaCard, props))
     expect(html).toContain('type="password"')
+    expect(html).toContain('autoComplete="new-password"')
     expect(html).toContain('accept=".p12"')
     expect(html).toContain('falta guardarlo')
     expect(html).toContain('subido')
@@ -49,5 +50,27 @@ describe('CertificadoFirmaCard', () => {
     expect(html).not.toContain('<input')
     expect(html).not.toContain('<button')
     expect(html).toContain('guardado')
+  })
+})
+
+describe('quién ve la tarjeta del PIN', () => {
+  it('PROPIETARIO, ADMIN de plataforma y dueño antiguo sin rolEquipo sí', () => {
+    expect(puedeGestionarCertificado('EMPRENDEDOR', 'PROPIETARIO')).toBe(true)
+    expect(puedeGestionarCertificado('ADMIN', null)).toBe(true)
+    expect(puedeGestionarCertificado('EMPRENDEDOR', null)).toBe(true)
+  })
+
+  it('EDITOR, LECTOR, ADMIN de equipo y CAJERO no (aunque userRole sea EMPRENDEDOR)', () => {
+    for (const r of ['EDITOR', 'LECTOR', 'ADMIN', 'CAJERO']) {
+      expect(puedeGestionarCertificado('EMPRENDEDOR', r)).toBe(false)
+    }
+    expect(puedeGestionarCertificado('CAJERO', null)).toBe(false)
+  })
+
+  it('con rol EDITOR la tarjeta no muestra inputs', () => {
+    const canEdit = puedeGestionarCertificado('EMPRENDEDOR', 'EDITOR')
+    const html = renderToStaticMarkup(createElement(CertificadoFirmaCard, { ...props, canEdit }))
+    expect(html).not.toContain('<input')
+    expect(html).not.toContain('type="password"')
   })
 })

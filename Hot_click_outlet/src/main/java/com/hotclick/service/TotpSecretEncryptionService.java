@@ -40,6 +40,8 @@ public class TotpSecretEncryptionService {
     private static final int     IV_LEN    = 12;   // 96-bit IV recommended for GCM
     private static final int     TAG_BITS  = 128;  // 128-bit authentication tag
 
+    private static final byte[]  AAD_PIN   = "hotclick-pin-cert".getBytes(StandardCharsets.UTF_8);
+
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${totp.encryption.key:}")
@@ -68,6 +70,19 @@ public class TotpSecretEncryptionService {
      * Returns ENC:... if a key is configured; plaintext with a warning otherwise.
      */
     public String encrypt(String plaintext) {
+        return encrypt(plaintext, null);
+    }
+
+    /** PIN del .p12: misma clave AES-GCM pero con AAD fijo; un blob de TOTP no descifra como PIN ni al revés. */
+    public String encryptPin(String pin) {
+        return encrypt(pin, AAD_PIN);
+    }
+
+    public String decryptPin(String stored) {
+        return decrypt(stored, AAD_PIN);
+    }
+
+    private String encrypt(String plaintext, byte[] aad) {
         if (plaintext == null) return null;
         SecretKey key = resolveKey();
         if (key == null) {
@@ -78,6 +93,7 @@ public class TotpSecretEncryptionService {
             byte[] iv         = generateIv();
             Cipher cipher     = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_BITS, iv));
+            if (aad != null) cipher.updateAAD(aad);
             byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
 
             // Combine IV + ciphertext-with-tag into a single blob
@@ -97,6 +113,10 @@ public class TotpSecretEncryptionService {
      * Throws if the key is required but not configured.
      */
     public String decrypt(String stored) {
+        return decrypt(stored, null);
+    }
+
+    private String decrypt(String stored, byte[] aad) {
         if (stored == null) return null;
         if (!stored.startsWith(PREFIX)) {
             // Legacy plaintext — return as-is
@@ -115,6 +135,7 @@ public class TotpSecretEncryptionService {
 
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_BITS, iv));
+            if (aad != null) cipher.updateAAD(aad);
             return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
         } catch (Exception e) {
             log.error("[2FA] Decryption failed — key mismatch or corrupt ciphertext: {}", e.getMessage());

@@ -35,7 +35,7 @@ class FirmaDigitalServiceTest {
     @DisplayName("con certificado firma XAdES y cachea el KeyStore por empresa")
     void firmaYCachea() {
         when(storage.leerPrivado("certificados/1/x.p12")).thenReturn(CertificadoDePrueba.obtener().p12);
-        when(cifrado.decrypt("pin-cifrado")).thenReturn(CertificadoDePrueba.PIN);
+        when(cifrado.decryptPin("pin-cifrado")).thenReturn(CertificadoDePrueba.PIN);
         Empresa e = empresa();
 
         String firmado = service.firmar(XML, e);
@@ -49,7 +49,7 @@ class FirmaDigitalServiceTest {
     @DisplayName("PIN incorrecto da un mensaje claro")
     void pinIncorrecto() {
         when(storage.leerPrivado(anyString())).thenReturn(CertificadoDePrueba.obtener().p12);
-        when(cifrado.decrypt(anyString())).thenReturn("otro-pin-malo");
+        when(cifrado.decryptPin(anyString())).thenReturn("otro-pin-malo");
         assertThatThrownBy(() -> service.firmar(XML, empresa()))
             .isInstanceOf(HaciendaConfiguracionException.class)
             .hasMessageContaining("PIN");

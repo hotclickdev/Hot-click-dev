@@ -27,6 +27,8 @@ public class EmpresaPerfilController {
     @Autowired private CompanyScope companyScope;
     @Autowired private EmpresaPerfilService empresaPerfilService;
     @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
+    @Autowired private com.hotclick.security.PinCertIntentosLimiter pinLimiter;
+    @Autowired private com.hotclick.security.ClientIpResolver clientIpResolver;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> get() {
@@ -60,14 +62,39 @@ public class EmpresaPerfilController {
         }
     }
 
+    static final String MSG_DEMASIADOS = "Demasiados intentos. Intente de nuevo más tarde.";
+
     @PutMapping("/pin-cert")
-    public ResponseEntity<ResponseDTO> guardarPinCert(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ResponseDTO> guardarPinCert(@RequestBody Map<String, String> body,
+                                                      jakarta.servlet.http.HttpServletRequest request) {
+        // empresaId SIEMPRE de la sesión: cualquier id en el body se ignora.
         Long empresaId = empresaIdO403();
         if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
         if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario();
+        Long usuarioId = companyScope.getCurrentUserId();
+        String ip = clientIpResolver.resolve(request);
         try {
-            return ResponseEntity.ok(ResponseDTO.success("PIN del certificado guardado",
-                empresaPerfilService.guardarPinCert(empresaId, body == null ? null : body.get("pin"))));
+            long bloqueo = pinLimiter.segundosBloqueado(empresaId, usuarioId, ip);
+            if (bloqueo > 0) return tooMany(bloqueo);
+        } catch (Exception e) {
+            // Fail-closed: sin poder contar intentos no se prueba ningún PIN.
+            log.warn("[empresa/pin-cert] límite de intentos no disponible ({})", e.getClass().getSimpleName());
+            return ResponseEntity.status(503).header("Retry-After", "60")
+                .body(ResponseDTO.error("No pudimos verificar el límite de intentos. Intente de nuevo más tarde."));
+        }
+        try {
+            Map<String, Object> data = empresaPerfilService.guardarPinCert(empresaId, body == null ? null : body.get("pin"));
+            pinLimiter.registrarExito(empresaId, usuarioId, ip);
+            return ResponseEntity.ok(ResponseDTO.success("PIN del certificado guardado", data));
+        } catch (com.hotclick.service.hacienda.PinCertIncorrectoException e) {
+            try {
+                pinLimiter.registrarFallo(empresaId, usuarioId, ip);
+            } catch (Exception ex) {
+                log.warn("[empresa/pin-cert] no se pudo contar el intento ({})", ex.getClass().getSimpleName());
+                return ResponseEntity.status(503).header("Retry-After", "60")
+                    .body(ResponseDTO.error("No pudimos verificar el límite de intentos. Intente de nuevo más tarde."));
+            }
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | com.hotclick.service.hacienda.HaciendaConfiguracionException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
@@ -77,6 +104,11 @@ public class EmpresaPerfilController {
             log.error("[empresa/pin-cert] Error inesperado ({})", e.getClass().getSimpleName());
             return ResponseEntity.internalServerError().body(ResponseDTO.error("No pudimos guardar el PIN. Intente de nuevo."));
         }
+    }
+
+    private static ResponseEntity<ResponseDTO> tooMany(long segundos) {
+        return ResponseEntity.status(429).header("Retry-After", String.valueOf(segundos))
+            .body(ResponseDTO.error(MSG_DEMASIADOS));
     }
 
     @PutMapping

@@ -22,10 +22,12 @@ import {
   type ErroresPerfil,
   type FormularioEmpresa,
 } from './mi-empresa/miEmpresaHelpers'
+import { puedeGestionarCertificado } from './mi-empresa/pinCert'
 
 export default function AdminMiEmpresa() {
   const toast = useToast()
   const userRole = useAuthStore(s => s.userRole)
+  const rolEquipo = useAuthStore(s => s.rolEquipo)
   const [empresa, setEmpresa] = useState<EmpresaPerfil | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -257,7 +259,7 @@ export default function AdminMiEmpresa() {
         <CertificadoFirmaCard
           tieneCert={empresa.tieneCertP12 === true}
           tienePin={empresa.tienePinCert === true}
-          canEdit={canEdit}
+          canEdit={puedeGestionarCertificado(userRole, rolEquipo)}
           onSubirCert={subirCertP12}
           onGuardarPin={guardarPinCert}
         />

@@ -74,7 +74,7 @@ public class EmpresaPerfilService {
 
     private boolean pinGuardadoAbre(Empresa e, String path, byte[] p12) {
         try {
-            FirmaDigitalService.cargar(path, p12, encryptionService.decrypt(e.getPinCertEnc()).toCharArray());
+            FirmaDigitalService.cargar(path, p12, encryptionService.decryptPin(e.getPinCertEnc()).toCharArray());
             return true;
         } catch (RuntimeException ex) {
             return false; // sin mensaje: puede repetir el PIN
@@ -100,7 +100,13 @@ public class EmpresaPerfilService {
         }
         // cargar() borra el char[] y no repite el PIN en su mensaje.
         FirmaDigitalService.cargar(e.getCertP12Path(), p12, pin.toCharArray());
-        e.setPinCertEnc(encryptionService.encrypt(pin));
+        String cifrado = encryptionService.encryptPin(pin);
+        // Fail-closed: sin clave, encrypt devuelve el texto plano. Nunca se persiste eso.
+        if (cifrado == null || !cifrado.startsWith("ENC:")) {
+            throw new com.hotclick.service.hacienda.HaciendaConfiguracionException(
+                "No pudimos guardar el PIN de forma segura. Contacte a soporte.");
+        }
+        e.setPinCertEnc(cifrado);
         empresaRepository.save(e);
         firmaDigitalService.invalidarCache(empresaId);
         log.info("[empresa/pin-cert] PIN del certificado guardado empresa={}", empresaId);

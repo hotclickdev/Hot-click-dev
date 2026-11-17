@@ -101,27 +101,44 @@ class EmpresaPerfilServicePinCertTest {
     void pin14Correcto() throws Exception {
         assertThat(PIN_14).hasSize(14);
         conP12(p12Con(PIN_14));
-        when(encryptionService.encrypt(PIN_14)).thenReturn("enc-x");
+        when(encryptionService.encryptPin(PIN_14)).thenReturn("ENC:x");
 
         Map<String, Object> out = service.guardarPinCert(7L, PIN_14);
 
-        assertThat(empresa.getPinCertEnc()).isEqualTo("enc-x");
+        assertThat(empresa.getPinCertEnc()).isEqualTo("ENC:x");
         assertThat(out.get("tienePinCert")).isEqualTo(true);
         assertThat(out).doesNotContainKeys("pin", "pinCertEnc", "certP12Path");
-        assertThat(out.toString()).doesNotContain(PIN_14).doesNotContain("enc-x").doesNotContain(RUTA);
+        assertThat(out.toString()).doesNotContain(PIN_14).doesNotContain("ENC:x").doesNotContain(RUTA);
         verify(empresaRepository).save(empresa);
         verify(firmaDigitalService).invalidarCache(7L);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @ValueSource(strings = {PIN_14, "sin-prefijo"})
+    @DisplayName("Cifrado fail-closed: si encryptPin no devuelve ENC:, no se persiste y no queda el PIN en la entidad")
+    void cifradoSinPrefijoSeRechaza(String devuelto) throws Exception {
+        conP12(p12Con(PIN_14));
+        when(encryptionService.encryptPin(PIN_14)).thenReturn(devuelto);
+
+        assertThatThrownBy(() -> service.guardarPinCert(7L, PIN_14))
+            .isInstanceOf(HaciendaConfiguracionException.class)
+            .hasMessageNotContaining(PIN_14);
+
+        assertThat(empresa.getPinCertEnc()).isNull();
+        verify(empresaRepository, never()).save(any(Empresa.class));
+        verify(firmaDigitalService, never()).invalidarCache(any());
     }
 
     @Test
     @DisplayName("PIN de 4 dígitos (llave vieja) que abre el .p12 se acepta")
     void pin4Correcto() throws Exception {
         conP12(p12Con(PIN_4));
-        when(encryptionService.encrypt(PIN_4)).thenReturn("enc-4");
+        when(encryptionService.encryptPin(PIN_4)).thenReturn("ENC:4");
 
         Map<String, Object> out = service.guardarPinCert(7L, PIN_4);
 
-        assertThat(empresa.getPinCertEnc()).isEqualTo("enc-4");
+        assertThat(empresa.getPinCertEnc()).isEqualTo("ENC:4");
         assertThat(out.get("tienePinCert")).isEqualTo(true);
         verify(firmaDigitalService).invalidarCache(7L);
     }
@@ -137,7 +154,7 @@ class EmpresaPerfilServicePinCertTest {
             .hasMessageContaining("PIN")
             .satisfies(e -> assertThat(e.getMessage()).doesNotContain(malo));
         assertThat(empresa.getPinCertEnc()).isNull();
-        verify(encryptionService, never()).encrypt(anyString());
+        verify(encryptionService, never()).encryptPin(anyString());
         verify(empresaRepository, never()).save(any());
         verify(firmaDigitalService, never()).invalidarCache(any());
     }
@@ -148,7 +165,7 @@ class EmpresaPerfilServicePinCertTest {
         assertThatThrownBy(() -> service.guardarPinCert(7L, PIN_4))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("Subí primero el certificado de firma (.p12).");
-        verify(encryptionService, never()).encrypt(anyString());
+        verify(encryptionService, never()).encryptPin(anyString());
         verify(supabaseStorageService, never()).leerPrivado(anyString());
     }
 
@@ -162,14 +179,14 @@ class EmpresaPerfilServicePinCertTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("PIN");
         verify(supabaseStorageService, never()).leerPrivado(anyString());
-        verify(encryptionService, never()).encrypt(anyString());
+        verify(encryptionService, never()).encryptPin(anyString());
     }
 
     @Test
     @DisplayName("PIN nulo se rechaza")
     void pinNulo() {
         assertThatThrownBy(() -> service.guardarPinCert(7L, null)).isInstanceOf(IllegalArgumentException.class);
-        verify(encryptionService, never()).encrypt(anyString());
+        verify(encryptionService, never()).encryptPin(anyString());
     }
 
     @Test
@@ -195,7 +212,7 @@ class EmpresaPerfilServicePinCertTest {
     @DisplayName("Subir un .p12 invalida el cache y conserva el PIN si todavía abre el archivo")
     void subirConservaPinValido() throws Exception {
         empresa.setPinCertEnc("enc-viejo");
-        when(encryptionService.decrypt("enc-viejo")).thenReturn(CertificadoDePrueba.PIN);
+        when(encryptionService.decryptPin("enc-viejo")).thenReturn(CertificadoDePrueba.PIN);
         MultipartFile file = mock(MultipartFile.class);
         when(file.getBytes()).thenReturn(CertificadoDePrueba.obtener().p12);
         when(supabaseStorageService.subirCertificado(file, 7L)).thenReturn(RUTA);
@@ -211,7 +228,7 @@ class EmpresaPerfilServicePinCertTest {
     @DisplayName("Subir un .p12 distinto: el cert queda, el PIN viejo se limpia y tienePinCert=false")
     void subirLimpiaPinQueNoAbre() throws Exception {
         empresa.setPinCertEnc("enc-viejo");
-        when(encryptionService.decrypt("enc-viejo")).thenReturn(CertificadoDePrueba.PIN);
+        when(encryptionService.decryptPin("enc-viejo")).thenReturn(CertificadoDePrueba.PIN);
         MultipartFile file = mock(MultipartFile.class);
         when(file.getBytes()).thenReturn(p12Con(PIN_4));
         when(supabaseStorageService.subirCertificado(file, 7L)).thenReturn(RUTA);
@@ -234,7 +251,7 @@ class EmpresaPerfilServicePinCertTest {
 
         service.subirCertP12(7L, file);
 
-        verify(encryptionService, never()).decrypt(anyString());
+        verify(encryptionService, never()).decryptPin(anyString());
         verify(firmaDigitalService).invalidarCache(7L);
     }
 }
