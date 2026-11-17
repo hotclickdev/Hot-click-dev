@@ -63,7 +63,7 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
         String body = mockMvc.perform(post(ADMIN_API).header("Authorization", adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(Map.of("negocio", negocio, "persona", "Ana Mora",
-                    "telefono", "88887777", "dias", 30))))
+                    "telefono", "00000004", "dias", 30))))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         return json.readTree(body).path("data");
@@ -72,13 +72,13 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
     private String aceptarBody(boolean acepto, String correo) throws Exception {
         return json.writeValueAsString(Map.of("acepto", acepto, "versionLegal", TiendaRapidaReglas.VERSION_LEGAL,
             "persona", "Ana Mora Solís", "cedula", "112340567", "correo", correo,
-            "telefono", "88887777", "clave", "clave-segura-1"));
+            "telefono", "00000004", "clave", "clave-segura-1"));
     }
 
     @Test
     @DisplayName("Solo el admin de plataforma crea, regenera y revoca (comprador y emprendedor → 403)")
     void soloAdmin() throws Exception {
-        String cuerpo = json.writeValueAsString(Map.of("negocio", "X", "persona", "Y Z", "telefono", "88887777", "dias", 30));
+        String cuerpo = json.writeValueAsString(Map.of("negocio", "X", "persona", "Y Z", "telefono", "00000004", "dias", 30));
         mockMvc.perform(post(ADMIN_API).header("Authorization", userToken)
             .contentType(MediaType.APPLICATION_JSON).content(cuerpo)).andExpect(status().isForbidden());
         Usuario emp = crearUsuario("emp-nr@test.cr", "Emp NR", obtenerOCrearRol(Constants.ROL_EMPRENDEDOR, 5));
@@ -209,7 +209,7 @@ class NegocioRapidoAsignacionTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega Ana");
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("88887777");
+        b.setTelefono("00000004");
         b.setCorreoContacto("bodega-nr@test.cr");
         b.setAdminCliente(dueno);
         b.setEmpresa(empresa);

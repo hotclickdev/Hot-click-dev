@@ -109,7 +109,7 @@ class CupoEmprendedorDemoProdArranqueTest {
         dueno.setCorreo("dueno.prod@correo.com");
         dueno.setApellidoPaterno("Test");
         dueno.setIdentificacion("duenoprod");
-        dueno.setTelefono("88888888");
+        dueno.setTelefono("00000000");
         dueno.setContrasenaHash("no-usado");
         dueno.setEstado(Constants.ESTADO_ACTIVO);
         dueno.setIntentosFallidos(0);

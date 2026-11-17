@@ -23,14 +23,14 @@ class PublicChatContactoTest {
     /** Valores ficticios: nunca un número real en tests. */
     private static final String SOPORTE_FAKE = "+000 0000 0000";
     private static final String HOTCLICK_WA = "00000000000";
-    private static final String VENDEDOR_WA = "88888888";
+    private static final String VENDEDOR_WA = "00000005";
 
     @ParameterizedTest(name = "plan {0} → {1}")
     @CsvSource({
         "EMPRENDEDOR, 00000000000",
         "GRATUITO, 00000000000",
-        "PYME, 88888888",
-        "NEGOCIO_PLUS, 88888888",
+        "PYME, 00000005",
+        "NEGOCIO_PLUS, 00000005",
     })
     void numeroSegunPlan(String plan, String esperado) {
         assertThat(PublicChatClaudeClient.whatsappVisible(VENDEDOR_WA, plan, HOTCLICK_WA)).isEqualTo(esperado);

@@ -13,8 +13,8 @@ test.describe.serial('Roles — LECTOR en recolección', () => {
     const s = await login(request, lector.correo, lector.contrasena)
     const res = await request.post('/api/recolecciones', {
       headers: auth(s),
-      data: { zona: 'GAM', direccionRecoleccion: 'San José centro', contactoRecoleccion: 'E2E', telefonoRecoleccion: '88887777',
-        direccionEntrega: 'Heredia centro', contactoEntrega: 'E2E', telefonoEntrega: '88887777' },
+      data: { zona: 'GAM', direccionRecoleccion: 'San José centro', contactoRecoleccion: 'E2E', telefonoRecoleccion: '00000004',
+        direccionEntrega: 'Heredia centro', contactoEntrega: 'E2E', telefonoEntrega: '00000004' },
     })
     expect(res.status()).toBe(403)
     expect((await res.json()).message).toMatch(/solo de visualizaci/i)
@@ -37,7 +37,7 @@ test.describe.serial('Roles — LECTOR en recolección', () => {
         for (const campo of await page.locator('main input:visible, main textarea:visible').all()) {
           const tipo = await campo.getAttribute('type')
           if (['checkbox', 'radio', 'hidden', 'search', 'file'].includes(tipo ?? '') || (await campo.inputValue())) continue
-          await campo.fill(tipo === 'tel' ? '88887777' : tipo === 'number' ? '1' : tipo === 'date' ? '2030-01-15' : 'Dato E2E 1')
+          await campo.fill(tipo === 'tel' ? '00000004' : tipo === 'number' ? '1' : tipo === 'date' ? '2030-01-15' : 'Dato E2E 1')
         }
         for (const sel of await page.locator('main select:visible').all()) await sel.selectOption({ index: 1 }).catch(() => {})
         const boton = page.getByRole('button', { name: /continuar|enviar|solicitar|confirmar/i }).first()

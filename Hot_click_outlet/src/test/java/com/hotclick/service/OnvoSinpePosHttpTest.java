@@ -39,20 +39,20 @@ class OnvoSinpePosHttpTest {
             .andExpect(jsonPath("$.type").value("mobile_number"))
             .andExpect(jsonPath("$.mobileNumber.identification").value(IDENT))
             .andExpect(jsonPath("$.mobileNumber.identificationType").value(0))
-            .andExpect(jsonPath("$.mobileNumber.number").value("+50680000000"))
+            .andExpect(jsonPath("$.mobileNumber.number").value("+50600000001"))
             .andExpect(jsonPath("$.billing.name").value("Cliente"))
             .andRespond(withSuccess("{\"id\":\"pm_1\"}", MediaType.APPLICATION_JSON));
 
-        assertThat(onvo.crearMetodoPagoSinpePos(IDENT, 0, " 8000-0000 ", null).id()).isEqualTo("pm_1");
+        assertThat(onvo.crearMetodoPagoSinpePos(IDENT, 0, " 0000-0001 ", null).id()).isEqualTo("pm_1");
         server.verify();
     }
 
     @Test
     @DisplayName("Identificación, tipo o número inválidos: no llama a ONVO (fail-closed)")
     void validaAntesDeLlamar() {
-        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos("1-111-111", 0, "80000000", null))
+        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos("1-111-111", 0, "00000001", null))
             .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos(IDENT, 6, "80000000", null))
+        assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos(IDENT, 6, "00000001", null))
             .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> onvo.crearMetodoPagoSinpePos(IDENT, 0, null, null))
             .isInstanceOf(IllegalArgumentException.class);
@@ -64,13 +64,13 @@ class OnvoSinpePosHttpTest {
     @Test
     @DisplayName("Normalización del número SINPE")
     void normalizaNumero() {
-        assertThat(OnvoService.normalizarNumeroSinpe("80000000")).isEqualTo("+50680000000");
-        assertThat(OnvoService.normalizarNumeroSinpe("+506 8000 0000")).isEqualTo("+50680000000");
-        assertThat(OnvoService.normalizarNumeroSinpe("506-8000-0000")).isEqualTo("+50680000000");
-        assertThat(OnvoService.normalizarNumeroSinpe("+50680000000")).hasSize(12);
+        assertThat(OnvoService.normalizarNumeroSinpe("00000001")).isEqualTo("+50600000001");
+        assertThat(OnvoService.normalizarNumeroSinpe("+506 0000 0001")).isEqualTo("+50600000001");
+        assertThat(OnvoService.normalizarNumeroSinpe("506-0000-0001")).isEqualTo("+50600000001");
+        assertThat(OnvoService.normalizarNumeroSinpe("+50600000001")).hasSize(12);
         assertThat(OnvoService.normalizarNumeroSinpe("8000000")).isNull();
         assertThat(OnvoService.normalizarNumeroSinpe("800000000")).isNull();
-        assertThat(OnvoService.normalizarNumeroSinpe("+1 8000 0000")).isNull();
+        assertThat(OnvoService.normalizarNumeroSinpe("+1 0000 0001")).isNull();
         assertThat(OnvoService.normalizarNumeroSinpe("8000abcd")).isNull();
         assertThat(OnvoService.normalizarNumeroSinpe("")).isNull();
         assertThat(OnvoService.normalizarNumeroSinpe(null)).isNull();

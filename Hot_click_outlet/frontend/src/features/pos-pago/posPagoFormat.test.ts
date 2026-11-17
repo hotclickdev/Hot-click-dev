@@ -75,20 +75,20 @@ describe('identificacionSinpeValida (enum ONVO 0-5/9)', () => {
 
 describe('normalizarNumeroSinpe', () => {
   it('normaliza a +506 y 8 dígitos', () => {
-    expect(normalizarNumeroSinpe('8000 0000')).toBe('+50680000000')
-    expect(normalizarNumeroSinpe('8000-0000')).toBe('+50680000000')
-    expect(normalizarNumeroSinpe('+506 8000-0000')).toBe('+50680000000')
-    expect(normalizarNumeroSinpe('50680000000')).toBe('+50680000000')
+    expect(normalizarNumeroSinpe('0000 0001')).toBe('+50600000001')
+    expect(normalizarNumeroSinpe('0000-0001')).toBe('+50600000001')
+    expect(normalizarNumeroSinpe('+506 0000-0001')).toBe('+50600000001')
+    expect(normalizarNumeroSinpe('50600000001')).toBe('+50600000001')
   })
   it('rechaza lo que no queda en 8 dígitos', () => {
-    for (const v of ['8000000', '800000000', '+1 8000 0000', '8000abcd', '', null]) {
+    for (const v of ['8000000', '800000000', '+1 0000 0001', '8000abcd', '', null]) {
       expect(normalizarNumeroSinpe(v)).toBeNull()
     }
   })
 })
 
 describe('sinpeNumeroVisible', () => {
-  it('quita el prefijo +506 y usa el formato único 8888-1234', () => {
+  it('quita el prefijo +506 y usa el formato único 0000-0002', () => {
     expect(sinpeNumeroVisible('+506 0000-0000')).toBe('0000-0000')
     expect(sinpeNumeroVisible('50600000000')).toBe('0000-0000')
     expect(sinpeNumeroVisible('0000-0000')).toBe('0000-0000')

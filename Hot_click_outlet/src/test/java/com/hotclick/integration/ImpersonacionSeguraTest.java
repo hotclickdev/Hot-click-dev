@@ -208,7 +208,7 @@ class ImpersonacionSeguraTest extends BaseIntegrationTest {
     private ResultActions crearBodega(String token) throws Exception {
         return mockMvc.perform(post("/api/bodegas").header("Authorization", token)
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"nombreBodega\":\"Soporte\",\"direccionExacta\":\"Y\",\"telefono\":\"88881234\"}"));
+            .content("{\"nombreBodega\":\"Soporte\",\"direccionExacta\":\"Y\",\"telefono\":\"00000002\"}"));
     }
 
     private ResultActions pedirEscritura(String token, String motivo) throws Exception {

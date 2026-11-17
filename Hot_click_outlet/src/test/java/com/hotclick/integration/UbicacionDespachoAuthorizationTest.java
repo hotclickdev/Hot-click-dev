@@ -112,7 +112,7 @@ class UbicacionDespachoAuthorizationTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega Ubicación");
         b.setDireccionExacta("100 m norte del parque");
-        b.setTelefono("88887777");
+        b.setTelefono("00000004");
         b.setProvincia(provincia);
         b.setCanton(canton);
         b.setHorarioApertura(LocalTime.of(8, 0));

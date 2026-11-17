@@ -19,7 +19,7 @@ import { MENSAJE_UBICACION_INCOMPLETA } from './ubicacionDespachoHelpers'
 
 const FORM_COMPLETO: FormBodega = {
   nombre: ' Bodega Central ',
-  telefono: '+506 8888-8888',
+  telefono: '+506 0000-0000',
   encargado: '',
   ubicacion: {
     provincia: 'San José',
@@ -47,10 +47,10 @@ describe('validarTelefonoBodega', () => {
   })
 
   it('Costa Rica: exige exactamente 8 dígitos locales', () => {
-    expect(validarTelefonoBodega('+50688881234')).toBeNull()
-    expect(validarTelefonoBodega('+506 8888-1234')).toBeNull()
-    expect(validarTelefonoBodega('+5068888123')).toBe(TELEFONO_INVALIDO)
-    expect(validarTelefonoBodega('+506888812345')).toBe(TELEFONO_INVALIDO)
+    expect(validarTelefonoBodega('+50600000002')).toBeNull()
+    expect(validarTelefonoBodega('+506 0000-0002')).toBeNull()
+    expect(validarTelefonoBodega('+5060000000')).toBe(TELEFONO_INVALIDO)
+    expect(validarTelefonoBodega('+506000000002')).toBe(TELEFONO_INVALIDO)
   })
 
   it('otro código de país: largo E.164 (8 a 15 dígitos)', () => {
@@ -60,8 +60,8 @@ describe('validarTelefonoBodega', () => {
   })
 
   it('QA-B01-1: sin el +506 los primeros dígitos no son un código de país → inválido', () => {
-    expect(validarTelefonoBodega('+88881234')).toBe(TELEFONO_INVALIDO)
-    expect(validarTelefonoBodega('+8888-1234')).toBe(TELEFONO_INVALIDO)
+    expect(validarTelefonoBodega('+00000002')).toBe(TELEFONO_INVALIDO)
+    expect(validarTelefonoBodega('+0000-0002')).toBe(TELEFONO_INVALIDO)
     expect(validarTelefonoBodega('+2222333344')).toBe(TELEFONO_INVALIDO)
     expect(validarTelefonoBodega('+34612345678')).toBeNull()
     expect(validarTelefonoBodega('+50760001234')).toBeNull()
@@ -71,7 +71,7 @@ describe('validarTelefonoBodega', () => {
 
 describe('normalizarTelefonoBodega', () => {
   it('deja + y dígitos (cabe en la columna de 20)', () => {
-    expect(normalizarTelefonoBodega('+506 8888-1234')).toBe('+50688881234')
+    expect(normalizarTelefonoBodega('+506 0000-0002')).toBe('+50600000002')
     expect(normalizarTelefonoBodega('  ')).toBe('')
   })
 })
@@ -103,7 +103,7 @@ describe('payloadCrearBodega', () => {
   it('arma el cuerpo de POST /api/bodegas con la ubicación de despacho y el teléfono normalizado', () => {
     expect(payloadCrearBodega(FORM_COMPLETO)).toEqual({
       nombreBodega: 'Bodega Central',
-      telefono: '+50688888888',
+      telefono: '+50600000000',
       provincia: 'San José',
       canton: 'Escazú',
       direccionExacta: 'Frente al parque',
@@ -124,7 +124,7 @@ describe('crearBodegaVendedor', () => {
     await crearBodegaVendedor(FORM_COMPLETO)
     expect(create).toHaveBeenCalledWith({
       nombreBodega: 'Bodega Central',
-      telefono: '+50688888888',
+      telefono: '+50600000000',
       provincia: 'San José',
       canton: 'Escazú',
       direccionExacta: 'Frente al parque',
