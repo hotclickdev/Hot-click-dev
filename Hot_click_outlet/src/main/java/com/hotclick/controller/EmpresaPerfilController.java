@@ -73,27 +73,29 @@ public class EmpresaPerfilController {
         if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario();
         Long usuarioId = companyScope.getCurrentUserId();
         String ip = clientIpResolver.resolve(request);
+        // 1) RESERVA atómica del intento ANTES de tocar el .p12 (y antes de validar el formato: un formato inválido
+        //    también consume cupo). Nada se cuenta después: no hay ventana entre revisar y contar.
         try {
-            long bloqueo = pinLimiter.segundosBloqueado(empresaId, usuarioId, ip);
+            long bloqueo = pinLimiter.reservarIntento(empresaId, usuarioId, ip);
             if (bloqueo > 0) return tooMany(bloqueo);
         } catch (Exception e) {
-            // Fail-closed: sin poder contar intentos no se prueba ningún PIN.
+            // Fail-closed: sin poder escribir el conteo no se abre el .p12 ni se prueba ningún PIN.
             log.warn("[empresa/pin-cert] límite de intentos no disponible ({})", e.getClass().getSimpleName());
             return ResponseEntity.status(503).header("Retry-After", "60")
                 .body(ResponseDTO.error("No pudimos verificar el límite de intentos. Intente de nuevo más tarde."));
         }
+        // 2) Solo con cupo reservado se prueba el PIN.
         try {
             Map<String, Object> data = empresaPerfilService.guardarPinCert(empresaId, body == null ? null : body.get("pin"));
-            pinLimiter.registrarExito(empresaId, usuarioId, ip);
+            try {
+                pinLimiter.liberarReserva(empresaId, usuarioId, ip);
+            } catch (Exception ex) {
+                // El PIN ya quedó guardado. Si no se pudo devolver el cupo queda consumido: seguro (no abre brecha).
+                log.warn("[empresa/pin-cert] no se pudo liberar el cupo reservado ({})", ex.getClass().getSimpleName());
+            }
             return ResponseEntity.ok(ResponseDTO.success("PIN del certificado guardado", data));
         } catch (com.hotclick.service.hacienda.PinCertIncorrectoException e) {
-            try {
-                pinLimiter.registrarFallo(empresaId, usuarioId, ip);
-            } catch (Exception ex) {
-                log.warn("[empresa/pin-cert] no se pudo contar el intento ({})", ex.getClass().getSimpleName());
-                return ResponseEntity.status(503).header("Retry-After", "60")
-                    .body(ResponseDTO.error("No pudimos verificar el límite de intentos. Intente de nuevo más tarde."));
-            }
+            // Ya contado al reservar: NO se vuelve a incrementar aquí.
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException | com.hotclick.service.hacienda.HaciendaConfiguracionException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));

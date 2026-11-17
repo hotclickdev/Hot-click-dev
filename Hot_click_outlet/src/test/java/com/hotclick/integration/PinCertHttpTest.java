@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
@@ -203,5 +205,74 @@ class PinCertHttpTest extends BaseIntegrationTest {
         } finally {
             jdbcTemplate.execute("ALTER TABLE hot_click_rate_limit_tb_x RENAME TO hot_click_rate_limit_tb");
         }
+    }
+
+    // ── Reserva atómica antes de cargar(): el formato inválido también cuenta ──────────────────────
+
+    @Test
+    @DisplayName("PIN-HTTP-9 | 5 formatos inválidos (vacío, corto, largo, 4 no dígitos) consumen cupo: el 6.º da 429 aunque el PIN sea correcto y NO se abre el .p12")
+    void formatoInvalidoCuentaParaElTope() throws Exception {
+        String[] malos = {"{\"pin\":\"\"}", "{\"pin\":\"123\"}", "{\"pin\":\"abcd\"}",
+            "{\"pin\":\"123456789012345\"}", "{}"};
+        for (int i = 0; i < malos.length; i++) {
+            assertThat(estado(tokenDueno, malos[i])).as("formato inválido %d", i + 1).isEqualTo(400);
+        }
+        MvcResult r6 = mockMvc.perform(pin(tokenDueno, "{\"pin\":\"" + PIN_OK + "\"}")).andReturn();
+        assertThat(r6.getResponse().getStatus()).isEqualTo(429);
+        assertThat(r6.getResponse().getContentAsString()).contains("Demasiados intentos");
+        verify(supabaseStorageService, never()).leerPrivado(anyString()); // ni el 6.º ni los de formato abrieron el .p12
+        assertThat(pinEnBD(empA.getId())).isNull();
+    }
+
+    @Test
+    @DisplayName("PIN-HTTP-10 | el contador se reserva UNA vez por pedido (PIN incorrecto no suma dos veces): 5 incorrectos pasan, el 6.º no")
+    void noDobleConteo() throws Exception {
+        for (int i = 1; i <= 5; i++) assertThat(estado(tokenDueno, "{\"pin\":\"" + PIN_MAL + "\"}")).as("intento %d", i).isEqualTo(400);
+        Integer fail = jdbcTemplate.queryForObject(
+            "SELECT count FROM hot_click_rate_limit_tb WHERE bucket_key = ?", Integer.class, "pincert:fail:emp:" + empA.getId());
+        assertThat(fail).isEqualTo(5);
+    }
+
+    // ── X-Forwarded-For: la IP del tope sale de ClientIpResolver, no del header crudo ──────────────
+
+    @Test
+    @DisplayName("PIN-HTTP-11 | peer público: un X-Forwarded-For distinto en cada pedido NO evade el eje IP (se ignora el header)")
+    void xffNoEvadeEjeIp_peerNoConfiable() throws Exception {
+        String[] tokens = {tokenDueno, tokenDueno, tokenDueno, tokenDuenoB, tokenDuenoB};
+        for (int i = 0; i < 5; i++) {
+            final String xff = "10.9.8." + (i + 1);
+            assertThat(mockMvc.perform(pin(tokens[i], "{\"pin\":\"" + PIN_MAL + "\"}")
+                .with(rq -> { rq.setRemoteAddr("203.0.113.9"); return rq; }).header("X-Forwarded-For", xff))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+        }
+        // empresa A (3) y B (2) y usuarios: ningún otro eje llegó a 5; solo el eje IP del peer real
+        assertThat(mockMvc.perform(pin(tokenDueno, "{\"pin\":\"" + PIN_MAL + "\"}")
+            .with(rq -> { rq.setRemoteAddr("203.0.113.9"); return rq; }).header("X-Forwarded-For", "192.0.2.77"))
+            .andReturn().getResponse().getStatus()).isEqualTo(429);
+        assertThat(jdbcTemplate.queryForObject("SELECT count FROM hot_click_rate_limit_tb WHERE bucket_key LIKE 'pincert:fail:ip:%'",
+            Integer.class)).isGreaterThanOrEqualTo(5);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM hot_click_rate_limit_tb WHERE bucket_key LIKE 'pincert:fail:ip:%'",
+            Integer.class)).isEqualTo(1); // una sola llave de IP: nunca se usó el header crudo
+    }
+
+    @Test
+    @DisplayName("PIN-HTTP-12 | peer de confianza: el cliente es la última entrada no confiable del XFF; una entrada falsa a la izquierda no cambia el eje IP")
+    void xffDeProxyConfiable_usaResolver() throws Exception {
+        String[] tokens = {tokenDueno, tokenDueno, tokenDueno, tokenDuenoB, tokenDuenoB};
+        for (int i = 0; i < 5; i++) {
+            final String xff = "1.1.1." + (i + 1) + ", 198.51.100.50"; // lo de la izquierda lo puede escribir el cliente
+            assertThat(mockMvc.perform(pin(tokens[i], "{\"pin\":\"" + PIN_MAL + "\"}")
+                .with(rq -> { rq.setRemoteAddr("127.0.0.1"); return rq; }).header("X-Forwarded-For", xff))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+        }
+        // mismo cliente real (.50) con otra firma falsa a la izquierda: bloqueado por IP
+        assertThat(mockMvc.perform(pin(tokenDuenoB, "{\"pin\":\"" + PIN_MAL + "\"}")
+            .with(rq -> { rq.setRemoteAddr("127.0.0.1"); return rq; }).header("X-Forwarded-For", "8.8.8.8, 198.51.100.50"))
+            .andReturn().getResponse().getStatus()).isEqualTo(429);
+        // otro cliente real (.51) con otra empresa/usuario con cupo: pasa a probar el PIN
+        String otro = miembro("pinhttp-otro@test.cr", "PROPIETARIO", empresa("pinhttp-c"));
+        assertThat(mockMvc.perform(pin(otro, "{\"pin\":\"" + PIN_MAL + "\"}")
+            .with(rq -> { rq.setRemoteAddr("127.0.0.1"); return rq; }).header("X-Forwarded-For", "198.51.100.51"))
+            .andReturn().getResponse().getStatus()).isEqualTo(400);
     }
 }

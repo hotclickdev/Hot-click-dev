@@ -231,6 +231,15 @@ public class RateLimiter {
         }
     }
 
+    /**
+     * FAIL-CLOSED: borra el bucket y LANZA si la BD no responde. Para quien reservó un cupo con
+     * {@link #registrarEstricto}: si el DELETE falla el cupo queda consumido (seguro, no se abre ninguna brecha).
+     * {@link #liberar} sigue siendo fail-open para el resto (login/2FA).
+     */
+    public void liberarEstricto(String key) {
+        jdbc.update("DELETE FROM hot_click_rate_limit_tb WHERE bucket_key = ?", key);
+    }
+
     /** Borra todos los buckets cuya llave empieza con {@code prefijo} (p. ej. los de IP de un usuario al desbloquearlo). */
     public void liberarPrefijo(String prefijo) {
         try {
