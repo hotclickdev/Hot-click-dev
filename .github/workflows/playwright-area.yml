@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node 22
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '22'
 
@@ -50,7 +50,7 @@ jobs:
 
       - name: Setup pnpm (specs mock E5)
         if: ${{ steps.area.outputs.run_specs != '' }}
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: 11.1.2
 
@@ -81,7 +81,7 @@ jobs:
 
       - name: Setup pnpm (solo smoke opt-in)
         if: ${{ inputs.run_smoke == true || inputs.run_smoke == 'true' }}
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: 11.1.2
 
@@ -107,7 +107,7 @@ jobs:
 
       - name: Artifact screenshots / report
         if: ${{ failure() || steps.run.outcome == 'failure' || steps.smoke.outcome == 'failure' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: e5-playwright-${{ github.event.pull_request.number || github.run_id }}
           path: |
@@ -125,7 +125,7 @@ jobs:
         run: node scripts/eng-gates/playwright-area.mjs
 
       - name: Comentar fallo specs mock (bloqueante)
-        if: ${{ steps.run.outcome == 'failure' }}
+        if: ${{ failure() && steps.run.outcome == 'failure' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

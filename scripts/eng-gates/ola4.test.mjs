@@ -313,4 +313,34 @@ describe('E5 playwright-area', () => {
     const ci = readFileSync(join(REPO_ROOT, '.github/workflows/ci.yml'), 'utf8');
     assert.match(ci, /run: pnpm test:e2e:ci/);
   });
+
+  it('workflow E5: actions fijadas a SHA (sin tags flotantes) y SHAs exactos', () => {
+    const wf = readFileSync(join(REPO_ROOT, '.github/workflows/playwright-area.yml'), 'utf8');
+    const PIN = {
+      'pnpm/action-setup': ['73e46992e05b19abd31f2f3c20e0e7370d762115', 'v6', 2],
+      'actions/setup-node': ['249970729cb0ef3589644e2896645e5dc5ba9c38', 'v6', 1],
+      'actions/upload-artifact': ['ea165f8d65b6e75b540449e92b4886f43607fa02', 'v4', 1],
+    };
+    for (const [action, [sha, tag, n]] of Object.entries(PIN)) {
+      const usos = [...wf.matchAll(new RegExp(`uses:\\s*${action}@(\\S+)(?: # (\\S+))?`, 'g'))];
+      assert.equal(usos.length, n, `${action}: se esperaban ${n} usos`);
+      for (const u of usos) {
+        assert.equal(u[1], sha, `${action} debe estar fijada al SHA ${sha}`);
+        assert.equal(u[2], tag, `${action} debe llevar el comentario # ${tag}`);
+      }
+    }
+    for (const u of wf.matchAll(/uses:\s*([^@\s]+)@(\S+)/g)) {
+      assert.match(u[2], /^[0-9a-f]{40}$/, `${u[1]} no puede usar un tag flotante (${u[2]})`);
+    }
+  });
+
+  it('workflow E5: «Comentar fallo specs mock» usa failure() && steps.run.outcome == failure', () => {
+    const wf = readFileSync(join(REPO_ROOT, '.github/workflows/playwright-area.yml'), 'utf8');
+    const m = wf.match(/- name: Comentar fallo specs mock[\s\S]*?(?=\n      - name:|\n*$)/);
+    assert.ok(m, 'falta el paso Comentar fallo specs mock');
+    assert.match(m[0], /\n        if: \$\{\{ failure\(\) && steps\.run\.outcome == 'failure' \}\}\n/);
+    assert.match(m[0], /E5_FAIL_KIND: 'run'/);
+    const art = wf.match(/- name: Artifact screenshots[\s\S]*?(?=\n      - name:|\n*$)/);
+    assert.match(art[0], /if: \$\{\{ failure\(\) \|\|/);
+  });
 });
