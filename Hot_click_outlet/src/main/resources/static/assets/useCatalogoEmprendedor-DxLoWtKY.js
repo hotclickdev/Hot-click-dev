@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-BTfH_Rno.js";function t(){return e()}export{t};
