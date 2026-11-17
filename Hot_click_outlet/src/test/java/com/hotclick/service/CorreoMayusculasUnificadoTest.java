@@ -55,7 +55,7 @@ class CorreoMayusculasUnificadoTest {
         ReflectionTestUtils.setField(r, "rolRepository", mock(RolRepository.class));
         ReflectionTestUtils.setField(r, "passwordEncoder", enc);
 
-        Usuario u = r.resolve(MIXTO, "8888-0000");
+        Usuario u = r.resolve(MIXTO, "0000-0006");
 
         verify(repo).findByCorreo(NORMAL);
         assertThat(u.getCorreo()).isEqualTo(NORMAL);
@@ -103,7 +103,7 @@ class CorreoMayusculasUnificadoTest {
         e.setSlug("tienda-fict");
         StorefrontPedidoDTO dto = new StorefrontPedidoDTO();
         dto.setCorreoCliente(MIXTO);
-        dto.setTelefonoCliente("8888-0000");
+        dto.setTelefonoCliente("0000-0006");
         dto.setItems(List.of(new StorefrontPedidoDTO.ItemDTO(1L, 1)));
 
         try {

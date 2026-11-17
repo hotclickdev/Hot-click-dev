@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 @DisplayName("Logs WhatsApp sin PII")
 class LogPiiWhatsAppTest {
 
-    private static final String TELEFONO = "88881234";
+    private static final String TELEFONO = "00000002";
     private static final String TEXTO = "Hola Ana Mora, tu pedido va en camino";
 
     private final WhatsAppMetaApiClient meta = mock(WhatsAppMetaApiClient.class);

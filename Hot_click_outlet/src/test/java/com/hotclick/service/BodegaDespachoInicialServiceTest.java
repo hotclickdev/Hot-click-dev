@@ -87,9 +87,9 @@ class BodegaDespachoInicialServiceTest {
     @Test
     @DisplayName("crear guarda la bodega con nombre, teléfono del negocio y la liga como venta online")
     void crear_ligaBodegaVentaOnline() {
-        Empresa empresa = empresa("Tienda Tica", "22223333");
+        Empresa empresa = empresa("Tienda Tica", "00000009");
         Usuario admin = new Usuario();
-        admin.setTelefono("88887777");
+        admin.setTelefono("00000004");
         when(bodegaRepository.save(any(Bodega.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Bodega b = service.crear(empresa, admin,
@@ -97,7 +97,7 @@ class BodegaDespachoInicialServiceTest {
 
         verify(tenantService).verificarLimiteBodegas(7L);
         assertThat(b.getNombreBodega()).isEqualTo("Despacho Tienda Tica");
-        assertThat(b.getTelefono()).isEqualTo("22223333");
+        assertThat(b.getTelefono()).isEqualTo("00000009");
         assertThat(b.getPermiteRetiroCliente()).isTrue();
         assertThat(b.getEstado()).isEqualTo(Constants.ESTADO_ACTIVO);
         assertThat(b.getAdminCliente()).isSameAs(admin);
@@ -109,13 +109,13 @@ class BodegaDespachoInicialServiceTest {
     @DisplayName("Sin teléfono del negocio usa el del propietario")
     void crear_sinTelefonoNegocio_usaDelPropietario() {
         Usuario admin = new Usuario();
-        admin.setTelefono("88887777");
+        admin.setTelefono("00000004");
         when(bodegaRepository.save(any(Bodega.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Bodega b = service.crear(empresa("Tienda", null), admin,
             new UbicacionDespachoAlta("HEREDIA", "BELEN", "Centro", false, null));
 
-        assertThat(b.getTelefono()).isEqualTo("88887777");
+        assertThat(b.getTelefono()).isEqualTo("00000004");
     }
 
     @Test
@@ -124,7 +124,7 @@ class BodegaDespachoInicialServiceTest {
         doThrow(new PlanLimitException("límite", "bodegas", "upgrade"))
             .when(tenantService).verificarLimiteBodegas(7L);
         var ubicacion = new UbicacionDespachoAlta("HEREDIA", "BELEN", "Centro", false, null);
-        Empresa empresa = empresa("Tienda", "22223333");
+        Empresa empresa = empresa("Tienda", "00000009");
 
         assertThatThrownBy(() -> service.crear(empresa, new Usuario(), ubicacion))
             .isInstanceOf(PlanLimitException.class);

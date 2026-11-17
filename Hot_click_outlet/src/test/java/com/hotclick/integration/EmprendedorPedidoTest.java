@@ -435,7 +435,7 @@ class EmprendedorPedidoTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega(nombre);
         b.setDireccionExacta("Calle Ped 1");
-        b.setTelefono("77770000");
+        b.setTelefono("00000010");
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));
         b.setHorarioCierre(java.time.LocalTime.of(18, 0));
         b.setAdminCliente(admin);

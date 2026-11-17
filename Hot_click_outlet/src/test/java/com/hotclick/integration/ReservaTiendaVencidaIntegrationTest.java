@@ -57,7 +57,7 @@ class ReservaTiendaVencidaIntegrationTest extends BaseIntegrationTest {
 
     private org.springframework.test.web.servlet.ResultActions pedir(String slug, Producto p, String metodo) throws Exception {
         String body = """
-            {"nombreCliente":"Ana QA","correoCliente":"ana-%s@test.cr","telefonoCliente":"88887777",
+            {"nombreCliente":"Ana QA","correoCliente":"ana-%s@test.cr","telefonoCliente":"00000004",
              "direccionEntrega":"San José, centro","metodoPago":"%s","metodoEnvio":"DOMICILIO","provincia":"San José","canton":"San José",
              "items":[{"productoId":%d,"cantidad":1}]}
             """.formatted(slug, metodo, p.getId());
@@ -78,7 +78,7 @@ class ReservaTiendaVencidaIntegrationTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega " + slug);
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("61234567");
+        b.setTelefono("00000008");
         b.setProvincia("San José");
         b.setCanton("Escazú");
         b.setPermiteRetiroCliente(false);

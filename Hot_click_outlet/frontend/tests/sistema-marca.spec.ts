@@ -20,7 +20,7 @@ const PERFIL = {
   nombreEmpresa: 'Demo',
   nombreComercial: 'Café de Ana',
   tagline: 'Tostado en Pérez Zeledón',
-  numeroWhatsapp: '50688887777',
+  numeroWhatsapp: '50600000004',
   colorPrimario: '#E73B33',
   colorSecundario: '#152B5E',
   colorAcento: '#1747A8',
@@ -83,7 +83,7 @@ test.describe('Sistema — marca de la tienda', () => {
     const nombre = page.getByLabel('Nombre comercial')
     await expect(nombre).toHaveValue('Café de Ana')
     await expect(page.getByLabel('Frase bajo el nombre')).toHaveValue('Tostado en Pérez Zeledón')
-    await expect(page.getByLabel('WhatsApp')).toHaveValue('50688887777')
+    await expect(page.getByLabel('WhatsApp')).toHaveValue('50600000004')
     await expect(page.getByLabel('Nombre comercial')).not.toHaveValue('HotClick')
     await expect(page.getByText('Tu tienda de electrónica y tecnología en Costa Rica')).toHaveCount(0)
 

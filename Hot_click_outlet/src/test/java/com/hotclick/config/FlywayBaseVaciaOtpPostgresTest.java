@@ -110,7 +110,7 @@ class FlywayBaseVaciaOtpPostgresTest {
                 jdbc.update("INSERT INTO hot_click_usuario_tb (identificacion, nombre, apellido_paterno, correo, telefono, "
                     + "contrasena_hash, fk_id_estado, correo_verificado, puntos_fidelidad, limite_credito, saldo_credito, "
                     + "total_compras_hist, num_pedidos_hist, intentos_fallidos, two_factor_enabled, fecha_registro) "
-                    + "VALUES ('900000001', 'QA', 'Otp', ?, '80000000', 'x', 1, true, 0, 0, 0, 0, 0, 0, false, now())", CORREO);
+                    + "VALUES ('900000001', 'QA', 'Otp', ?, '00000001', 'x', 1, true, 0, 0, 0, 0, 0, 0, false, now())", CORREO);
 
                 // forgot-password: resuelve RESET_PASSWORD, guarda el OTP y llama al mailer.
                 ctx.getBean(PasswordResetService.class).enviarCodigo(CORREO);

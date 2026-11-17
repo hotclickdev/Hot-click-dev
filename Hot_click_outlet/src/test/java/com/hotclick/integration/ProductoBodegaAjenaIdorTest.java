@@ -205,7 +205,7 @@ class ProductoBodegaAjenaIdorTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega(nombre);
         b.setDireccionExacta("Calle Test 1");
-        b.setTelefono("88880000");
+        b.setTelefono("00000006");
         b.setProvincia(provincia);
         b.setCanton(canton);
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));

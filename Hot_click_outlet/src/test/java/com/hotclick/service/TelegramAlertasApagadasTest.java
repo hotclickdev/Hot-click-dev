@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class TelegramAlertasApagadasTest {
 
     private static final String TOKEN_FALSO = "123456789:AAH-fake_token-for_tests";
-    private static final String MENSAJE = "Pedido de cliente@correo.test +50688887777";
+    private static final String MENSAJE = "Pedido de cliente@correo.test +50600000004";
 
     private RestTemplate restTemplate;
     private TelegramService service;
@@ -56,7 +56,7 @@ class TelegramAlertasApagadasTest {
         for (ILoggingEvent e : logs.list) {
             assertThat(e.getFormattedMessage())
                 .doesNotContain(TOKEN_FALSO).doesNotContain("cliente@correo.test")
-                .doesNotContain("50688887777").doesNotContain("-100777");
+                .doesNotContain("50600000004").doesNotContain("-100777");
         }
     }
 

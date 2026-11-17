@@ -245,7 +245,7 @@ class PedidoManualScopeTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega " + e.getSlug());
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("22223333");
+        b.setTelefono("00000009");
         b.setAdminCliente(adminUser);
         b.setEmpresa(e);
         b.setEstado(Constants.ESTADO_ACTIVO);

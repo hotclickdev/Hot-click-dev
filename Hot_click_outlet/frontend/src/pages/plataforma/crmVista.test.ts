@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { contactosDe, filtrarContactos, mensajePrevio, type Contacto } from './crmVista'
 
 const filas: Contacto[] = [
-  { empresaId: '1', persona: 'Ana Solís', correo: 'ana@taller.test', negocio: 'Ana', telefono: '88880000', estado: 'Activo', enProceso: false, genera: 1000, pagado: 1000, pendiente: 0 },
+  { empresaId: '1', persona: 'Ana Solís', correo: 'ana@taller.test', negocio: 'Ana', telefono: '00000006', estado: 'Activo', enProceso: false, genera: 1000, pagado: 1000, pendiente: 0 },
   { empresaId: '2', persona: 'Sin nombre todavía', correo: '', negocio: 'Taller', telefono: '', estado: 'En proceso', enProceso: true, genera: 0, pagado: 0, pendiente: 0 },
-  { empresaId: '3', persona: 'Luis Mora', correo: 'luis@taller.test', negocio: 'Luis', telefono: '88881111', estado: 'Activo', enProceso: false, genera: 9000, pagado: 9000, pendiente: 0 },
+  { empresaId: '3', persona: 'Luis Mora', correo: 'luis@taller.test', negocio: 'Luis', telefono: '00000003', estado: 'Activo', enProceso: false, genera: 9000, pagado: 9000, pendiente: 0 },
 ]
 
 describe('crm de la consola', () => {

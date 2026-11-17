@@ -16,7 +16,7 @@ class MetodoCobroFormatoTest {
 
     @Test
     void mascara_sinpe_e_iban() {
-        assertThat(MetodoCobroFormato.mascara("SINPE", "88880000")).isEqualTo("••••-0000");
+        assertThat(MetodoCobroFormato.mascara("SINPE", "00000000")).isEqualTo("••••-0000");
         assertThat(MetodoCobroFormato.mascara("IBAN", "CR21000012344521")).contains("****");
         assertThat(MetodoCobroFormato.mascara("IBAN", "CR21000012344521")).isEqualTo("CR21 **** 4521");
     }
@@ -62,8 +62,8 @@ class MetodoCobroFormatoTest {
 
     @Test
     void limpiar_sinpe_quita_no_digitos() {
-        assertThat(MetodoCobroFormato.limpiarDestino(MetodoCobro.TIPO_SINPE, "8888-0000"))
-                .isEqualTo("88880000");
+        assertThat(MetodoCobroFormato.limpiarDestino(MetodoCobro.TIPO_SINPE, "0000-0000"))
+                .isEqualTo("00000000");
     }
 
     @Test
@@ -127,7 +127,7 @@ class MetodoCobroFormatoTest {
     void nombre_nota_y_mascara_sin_tipo_no_npe() {
         assertThat(MetodoCobroFormato.nombre(null)).isEmpty();
         assertThat(MetodoCobroFormato.nota(null)).isEmpty();
-        assertThat(MetodoCobroFormato.mascara(null, "88880000")).isEqualTo("88880000");
+        assertThat(MetodoCobroFormato.mascara(null, "00000000")).isEqualTo("00000000");
         assertThat(MetodoCobroFormato.mascara(MetodoCobro.TIPO_SINPE, null)).isEmpty();
     }
 }

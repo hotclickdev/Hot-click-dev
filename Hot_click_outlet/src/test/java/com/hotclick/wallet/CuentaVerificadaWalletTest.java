@@ -22,7 +22,7 @@ class CuentaVerificadaWalletTest {
     private static MetodoCobro cuenta(String tipo, boolean enRevision, LocalDateTime alta) {
         MetodoCobro m = new MetodoCobro();
         m.setTipo(tipo);
-        m.setDestino("88880000");
+        m.setDestino("00000006");
         m.setEnRevision(enRevision);
         m.setActivo(true);
         m.setFechaCreacion(alta);

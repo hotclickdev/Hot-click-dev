@@ -13,7 +13,7 @@ const base: DatosPasos = {
   requiereEntrega: true,
   telefono: '',
   guestEmail: 'ana@example.com',
-  guestPhone: '88881234',
+  guestPhone: '00000002',
   nombre: 'Ana',
   direccion: 'Barrio Escalante, casa 12',
   provincia: 'San José',
@@ -48,6 +48,6 @@ describe('pasoMaximoCheckout (R3)', () => {
   })
   it('con sesión solo pide teléfono si hay envío', () => {
     expect(pasoMaximoCheckout({ ...base, conSesion: true, telefono: '' }, validadores)).toBe(1)
-    expect(pasoMaximoCheckout({ ...base, conSesion: true, telefono: '+50688881234' }, validadores)).toBe(3)
+    expect(pasoMaximoCheckout({ ...base, conSesion: true, telefono: '+50600000002' }, validadores)).toBe(3)
   })
 })

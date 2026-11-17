@@ -21,7 +21,7 @@ test.describe.serial('Flujo 3 — POS con turno', () => {
     // Datos semilla propios del negocio: bodega + producto.
     const bod = await request.post('/api/bodegas', {
       headers: h,
-      data: { nombreBodega: `Bodega E2E ${sufijo()}`, direccionExacta: 'Calle prueba 1', telefono: '88887777', provincia: 'San José', canton: 'San José' },
+      data: { nombreBodega: `Bodega E2E ${sufijo()}`, direccionExacta: 'Calle prueba 1', telefono: '00000004', provincia: 'San José', canton: 'San José' },
     })
     let bodegaId: number | undefined = bod.ok() ? (await bod.json()).data.id : undefined
     if (!bodegaId) {
