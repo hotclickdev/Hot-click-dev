@@ -175,7 +175,7 @@ function FormBodega({ form, setForm, saving, onCancel, onSave }: {
         </FormGroup>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <FormGroup label="Teléfono">
-            <StyledInput value={form.telefono} onChange={set('telefono')} placeholder="8812-0034" />
+            <StyledInput value={form.telefono} onChange={set('telefono')} placeholder="0000-0001" />
           </FormGroup>
           <FormGroup label="Encargado">
             <StyledInput value={form.encargadoNombre} onChange={set('encargadoNombre')} placeholder="Nombre" />
