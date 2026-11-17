@@ -155,7 +155,7 @@ class EnvioConfigAdminTest extends BaseIntegrationTest {
         String zona = (provincia != null ? ",\"provincia\":\"" + provincia + "\"" : "")
             + (canton != null ? ",\"canton\":\"" + canton + "\"" : "");
         return """
-            {"nombreCliente":"Ana QA","correoCliente":"ana-%s@test.cr","telefonoCliente":"88887777",
+            {"nombreCliente":"Ana QA","correoCliente":"ana-%s@test.cr","telefonoCliente":"00000004",
              "direccionEntrega":"%s","metodoPago":"SINPE_MOVIL","metodoEnvio":"DOMICILIO"%s,
              "items":[{"productoId":%d,"cantidad":1}]}
             """.formatted(slug, direccion, zona, p.getId());
@@ -165,7 +165,7 @@ class EnvioConfigAdminTest extends BaseIntegrationTest {
         String zona = (provincia != null ? ",\"provincia\":\"" + provincia + "\"" : "")
             + (canton != null ? ",\"canton\":\"" + canton + "\"" : "");
         String body = """
-            {"nombreCliente":"Ana QA","correoCliente":"ana-%s-%d@test.cr","telefonoCliente":"88887777",
+            {"nombreCliente":"Ana QA","correoCliente":"ana-%s-%d@test.cr","telefonoCliente":"00000004",
              "direccionEntrega":"Del parque 100 m norte","metodoPago":"SINPE_MOVIL","metodoEnvio":"DOMICILIO"%s,
              "items":[{"productoId":%d,"cantidad":1}]}
             """.formatted(slug, n, zona, p.getId());
@@ -189,7 +189,7 @@ class EnvioConfigAdminTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega " + slug);
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("61234567");
+        b.setTelefono("00000008");
         b.setProvincia("San José");
         b.setCanton("Escazú");
         b.setPermiteRetiroCliente(false);

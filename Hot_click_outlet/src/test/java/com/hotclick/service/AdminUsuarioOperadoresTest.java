@@ -45,7 +45,7 @@ class AdminUsuarioOperadoresTest {
         usuario.setApellidoPaterno("Admin");
         usuario.setCorreo("admin@hotclick.test");
         usuario.setIdentificacion("1-1111-1111");
-        usuario.setTelefono("88880000");
+        usuario.setTelefono("00000006");
         usuario.setRoles(List.of(rol));
         return usuario;
     }

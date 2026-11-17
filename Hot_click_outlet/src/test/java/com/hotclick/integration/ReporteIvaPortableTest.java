@@ -58,7 +58,7 @@ class ReporteIvaPortableTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega Rep IVA");
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("22223333");
+        b.setTelefono("00000009");
         b.setHorarioApertura(java.time.LocalTime.of(8, 0));
         b.setHorarioCierre(java.time.LocalTime.of(18, 0));
         b.setAdminCliente(adminUser);

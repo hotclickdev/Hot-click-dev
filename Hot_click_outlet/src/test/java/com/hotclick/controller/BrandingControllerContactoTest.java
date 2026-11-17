@@ -32,14 +32,14 @@ class BrandingControllerContactoTest {
 
         assertThat(body).isNotNull();
         assertThat(body.get("contactoDirecto")).isEqualTo(conContacto);
-        assertThat(body.get("whatsapp")).isEqualTo(conContacto ? "50688880506" : null);
+        assertThat(body.get("whatsapp")).isEqualTo(conContacto ? "50600000007" : null);
         assertThat(body.get("nombreComercial")).isEqualTo("Casa Luna 506");
     }
 
     @Test
     @DisplayName("El mapa del panel de ADMIN no se toca: sigue trayendo el WhatsApp")
     void mapaAdmin_sinCambios() {
-        assertThat(BrandingController.toBrandingMap(empresa()).get("whatsapp")).isEqualTo("50688880506");
+        assertThat(BrandingController.toBrandingMap(empresa()).get("whatsapp")).isEqualTo("50600000007");
     }
 
     private static BrandingController controller(String plan) {
@@ -58,7 +58,7 @@ class BrandingControllerContactoTest {
         e.setId(77L);
         e.setSlug("casa-luna-506");
         e.setNombreComercial("Casa Luna 506");
-        e.setNumeroWhatsapp("50688880506");
+        e.setNumeroWhatsapp("50600000007");
         return e;
     }
 }

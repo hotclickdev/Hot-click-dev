@@ -33,20 +33,20 @@ class StorefrontInfoMapperContactoTest {
         Map<String, Object> info = mapper.info(empresa());
 
         assertThat(info.get("contactoDirecto")).isEqualTo(conContacto);
-        assertThat(info.get("whatsapp")).isEqualTo(conContacto ? "50688880506" : "");
+        assertThat(info.get("whatsapp")).isEqualTo(conContacto ? "50680000003" : "");
         assertThat(info.get("instagram")).isEqualTo(conContacto ? "casaluna506" : "");
         // El resto de la vitrina no cambia con el plan
         assertThat(info.get("descripcion")).isEqualTo("Taller familiar");
         assertThat(info.get("nombreComercial")).isEqualTo("Casa Luna 506");
-        assertThat(info.toString()).doesNotContain("tienda@casaluna.cr", "22223333");
+        assertThat(info.toString()).doesNotContain("tienda@casaluna.cr", "20000001");
         // Texto libre: sin plan pago, teléfono, @usuario y enlaces salen enmascarados; precios intactos
         if (conContacto) {
-            assertThat(info.get("tagline")).isEqualTo("Pedidos al 8888-8888 · desde ₡17.500");
-            assertThat(info.get("footerTexto")).isEqualTo("Síganos en @casaluna506 o wa.me/50688888888");
+            assertThat(info.get("tagline")).isEqualTo("Pedidos al 8000-0001 · desde ₡17.500");
+            assertThat(info.get("footerTexto")).isEqualTo("Síganos en @casaluna506 o wa.me/50680000001");
         } else {
             assertThat(info.get("tagline")).isEqualTo("Pedidos al [contacto oculto] · desde ₡17.500");
             assertThat(info.get("footerTexto")).isEqualTo("Síganos en [contacto oculto] o [contacto oculto]");
-            assertThat(info.toString()).doesNotContain("8888-8888", "@casaluna506", "wa.me");
+            assertThat(info.toString()).doesNotContain("8000-0001", "@casaluna506", "wa.me");
         }
     }
 
@@ -55,13 +55,13 @@ class StorefrontInfoMapperContactoTest {
         e.setId(77L);
         e.setSlug("casa-luna-506");
         e.setNombreComercial("Casa Luna 506");
-        e.setNumeroWhatsapp("50688880506");
+        e.setNumeroWhatsapp("50680000003");
         e.setInstagram("casaluna506");
         e.setCorreoEmpresa("tienda@casaluna.cr");
-        e.setTelefonoEmpresa("22223333");
+        e.setTelefonoEmpresa("20000001");
         e.setDescripcion("Taller familiar");
-        e.setTagline("Pedidos al 8888-8888 · desde ₡17.500");
-        e.setFooterTexto("Síganos en @casaluna506 o wa.me/50688888888");
+        e.setTagline("Pedidos al 8000-0001 · desde ₡17.500");
+        e.setFooterTexto("Síganos en @casaluna506 o wa.me/50680000001");
         return e;
     }
 }

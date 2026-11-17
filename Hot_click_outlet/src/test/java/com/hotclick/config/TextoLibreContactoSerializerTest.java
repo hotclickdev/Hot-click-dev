@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("[NEGOCIO] Texto libre del vendedor: contacto oculto en la salida pública según plan")
 class TextoLibreContactoSerializerTest {
 
-    private static final String DESC = "Mesa de pino 200x90 cm, ₡17.500. Pedidos al 8888-8888 o @casaluna506.";
+    private static final String DESC = "Mesa de pino 200x90 cm, ₡17.500. Pedidos al 8000-0001 o @casaluna506.";
     private static final String DESC_OCULTA = "Mesa de pino 200x90 cm, ₡17.500. Pedidos al [contacto oculto] o [contacto oculto].";
 
     @ParameterizedTest(name = "plan {0} → texto con contacto visible={1}")
@@ -36,7 +36,7 @@ class TextoLibreContactoSerializerTest {
         JsonNode json = serializar(producto("https://www.instagram.com/casaluna506/"), false, plan);
 
         assertThat(json.get("descripcionCorta").asText()).isEqualTo(conContacto ? DESC : DESC_OCULTA);
-        assertThat(json.get("talla").asText()).isEqualTo(conContacto ? "Única · WhatsApp 8888 8888" : "Única · WhatsApp [contacto oculto]");
+        assertThat(json.get("talla").asText()).isEqualTo(conContacto ? "Única · WhatsApp 8000 0001" : "Única · WhatsApp [contacto oculto]");
         assertThat(json.get("especificaciones").asText())
             .isEqualTo(conContacto ? "<p>Escríbanos a <b>ventas@casaluna.cr</b></p>" : "<p>Escríbanos a <b>[contacto oculto]</b></p>");
         assertThat(json.get("modelo").asText()).isEqualTo("modelo 2026");
@@ -45,7 +45,7 @@ class TextoLibreContactoSerializerTest {
             assertThat(json.get("videoUrl").asText()).isEqualTo("https://www.instagram.com/casaluna506/");
         } else {
             assertThat(json.has("videoUrl")).isFalse();
-            assertThat(json.toString()).doesNotContain("8888-8888", "casaluna506", "ventas@casaluna.cr");
+            assertThat(json.toString()).doesNotContain("8000-0001", "casaluna506", "ventas@casaluna.cr");
         }
     }
 
@@ -72,10 +72,10 @@ class TextoLibreContactoSerializerTest {
 
         EncargoPersonalizado encargo = new EncargoPersonalizado();
         encargo.setEmpresa(empresa);
-        encargo.setMensajeVendedor("Listo, coordinemos al +506 8888-8888");
+        encargo.setMensajeVendedor("Listo, coordinemos al +506 8000-0001");
         JsonNode jEncargo = serializar(encargo, false, plan);
         assertThat(jEncargo.get("mensajeVendedor").asText())
-            .isEqualTo(conContacto ? "Listo, coordinemos al +506 8888-8888" : "Listo, coordinemos al [contacto oculto]");
+            .isEqualTo(conContacto ? "Listo, coordinemos al +506 8000-0001" : "Listo, coordinemos al [contacto oculto]");
 
         Cotizacion cot = new Cotizacion();
         cot.setEmpresa(empresa);
@@ -102,7 +102,7 @@ class TextoLibreContactoSerializerTest {
         p.setNombreProducto("Mesa Luna");
         p.setDescripcionCorta(DESC);
         p.setEspecificaciones("<p>Escríbanos a <b>ventas@casaluna.cr</b></p>");
-        p.setTalla("Única · WhatsApp 8888 8888");
+        p.setTalla("Única · WhatsApp 8000 0001");
         p.setModelo("modelo 2026");
         p.setVideoUrl(video);
         return p;

@@ -80,7 +80,7 @@ class StorefrontPedidoDTOTest {
     @DisplayName("teléfono con 8 dígitos y guiones → válido")
     void telefonoFormateado_valido() {
         StorefrontPedidoDTO dto = pedidoBase(StorefrontPedidoDTO.ENVIO_RETIRO);
-        dto.setTelefonoCliente("8888-8888");
+        dto.setTelefonoCliente("0000-0000");
 
         assertThat(validator.validate(dto)).isEmpty();
     }
@@ -89,7 +89,7 @@ class StorefrontPedidoDTOTest {
         StorefrontPedidoDTO dto = new StorefrontPedidoDTO();
         dto.setNombreCliente("Ana Pérez");
         dto.setCorreoCliente("ana@ejemplo.com");
-        dto.setTelefonoCliente("88888888");
+        dto.setTelefonoCliente("00000000");
         dto.setMetodoPago("SINPE_MOVIL");
         dto.setMetodoEnvio(metodoEnvio);
         dto.setItems(List.of(new StorefrontPedidoDTO.ItemDTO(1L, 1)));

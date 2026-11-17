@@ -17,15 +17,15 @@ describe('asistente: botones del aviso de límite diario', () => {
   it('acepta buscar con ruta interna y whatsapp por wa.me', () => {
     expect(accionSegura({ tipo: 'buscar', label: 'Buscar productos', url: '/tienda/casa-luna' }))
       .toEqual({ tipo: 'buscar', label: 'Buscar productos', url: '/tienda/casa-luna' })
-    expect(accionSegura({ tipo: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/50688881234' }))
-      .toEqual({ tipo: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/50688881234' })
+    expect(accionSegura({ tipo: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/50600000002' }))
+      .toEqual({ tipo: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/50600000002' })
   })
 
   it('descarta URLs ajenas, protocolo relativo, javascript: y tipos desconocidos', () => {
     expect(accionSegura({ tipo: 'buscar', label: 'x', url: '//evil.test/a' })).toBeNull()
     expect(accionSegura({ tipo: 'buscar', label: 'x', url: 'https://evil.test' })).toBeNull()
     expect(accionSegura({ tipo: 'whatsapp', label: 'x', url: 'javascript:alert(1)' })).toBeNull()
-    expect(accionSegura({ tipo: 'whatsapp', label: 'x', url: 'https://evil.test/50688881234' })).toBeNull()
+    expect(accionSegura({ tipo: 'whatsapp', label: 'x', url: 'https://evil.test/50600000002' })).toBeNull()
     expect(accionSegura({ tipo: 'otro', label: 'x', url: '/ok' })).toBeNull()
     expect(accionSegura({ tipo: 'buscar', label: ' ', url: '/ok' })).toBeNull()
     expect(accionSegura(undefined)).toBeNull()

@@ -19,7 +19,7 @@ describe('payloads con turnstileToken', () => {
   it('solicitudEspecial append turnstileToken al FormData', async () => {
     await enviarSolicitudEspecial({
       nombre: 'Luis',
-      whatsapp: '88888888',
+      whatsapp: '00000000',
       turnstileToken: 'tok-esp-1',
     })
     expect(postMock).toHaveBeenCalledWith(
@@ -35,12 +35,12 @@ describe('payloads con turnstileToken', () => {
   it('servicioService.crear incluye turnstileToken en el body', async () => {
     await servicioService.crear({
       descripcion: 'Busco un monitor',
-      telefonoContacto: '88887777',
+      telefonoContacto: '00000004',
       turnstileToken: 'tok-svc-1',
     })
     expect(postMock).toHaveBeenCalledWith('/servicios', {
       descripcion: 'Busco un monitor',
-      telefonoContacto: '88887777',
+      telefonoContacto: '00000004',
       turnstileToken: 'tok-svc-1',
     })
   })

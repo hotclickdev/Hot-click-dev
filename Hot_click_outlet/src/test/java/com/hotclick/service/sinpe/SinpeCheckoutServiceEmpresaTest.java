@@ -146,7 +146,7 @@ class SinpeCheckoutServiceEmpresaTest {
         req.setProvider("SINPE");
         req.setSinpeIdentificacion("01-1234-5678");
         req.setSinpeTipoIdentificacion(0);
-        req.setSinpeTelefono("80000000");
+        req.setSinpeTelefono("00000001");
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
         item.setCantidad(1);
@@ -210,7 +210,7 @@ class SinpeCheckoutServiceEmpresaTest {
         req.setProvider("SINPE");
         req.setSinpeIdentificacion("01-1234-5678");
         req.setSinpeTipoIdentificacion(0);
-        req.setSinpeTelefono("80000000");
+        req.setSinpeTelefono("00000001");
         PaymentCheckoutRequest.ItemDTO item = new PaymentCheckoutRequest.ItemDTO();
         item.setProductoId(10L);
         item.setCantidad(2);
