@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -152,18 +153,17 @@ class NoEncontradoSinDatosTest {
     }
 
     @Test
-    @DisplayName("SuscripcionBillingService.iniciarTrial: plan de trial no configurado → genérico sin el nombre del plan")
+    @DisplayName("SuscripcionBillingService.iniciarTrial: rechazo fail-closed → mensaje genérico, sin leer el plan de trial")
     void trialPlan() {
         EmpresaRepository empresas = mock(EmpresaRepository.class);
-        when(empresas.findById(anyLong())).thenReturn(Optional.of(new Empresa()));
+        when(empresas.findByIdForUpdate(anyLong())).thenReturn(Optional.of(new Empresa()));
         SuscripcionRepository subs = mock(SuscripcionRepository.class);
         when(subs.findActivaByEmpresaId(anyLong())).thenReturn(Optional.empty());
         PlanRepository planes = mock(PlanRepository.class);
-        when(planes.findByNombre(anyString())).thenReturn(Optional.empty());
         Throwable t = catchThrowable(() -> billing(empresas, subs, planes).iniciarTrial(1L));
-        assertThat(alCliente(t)).isEqualTo(ErrorPublico.GENERICO);
+        assertThat(t).isInstanceOf(IllegalStateException.class);
         assertThat(t.getMessage()).doesNotContain(PLAN_TRIAL);
-        assertThat(logs()).contains(PLAN_TRIAL);
+        verifyNoInteractions(planes);
     }
 
     @Test
