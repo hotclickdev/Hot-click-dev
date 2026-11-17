@@ -76,12 +76,12 @@ export default function PerfilForm({
               disabled={!canEdit}
             />
           </Field>
-          <Field label="WhatsApp" hint="Formato: 50688880000 (código país + número)">
+          <Field label="WhatsApp" hint="Formato: 50600000001 (código país + número)">
             <input
               value={form.numeroWhatsapp}
               onChange={patch('numeroWhatsapp')}
               disabled={!canEdit}
-              placeholder="50688880000"
+              placeholder="50600000001"
               className="w-full px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-60"
               style={{ backgroundColor: 'var(--hc-surface-2)', border: '1px solid var(--hc-border)', color: 'var(--hc-text)' }}
             />

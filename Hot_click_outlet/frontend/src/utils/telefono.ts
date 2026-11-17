@@ -1,6 +1,6 @@
 /**
- * Formato único de teléfonos de Costa Rica para mostrar: `8888-1234` (decisión R2, 2-oct-2026).
- * El valor guardado no cambia (`+50688881234` en el checkout); esto es solo presentación.
+ * Formato único de teléfonos de Costa Rica para mostrar: `0000-0001` (decisión R2, 2-oct-2026).
+ * El valor guardado no cambia (`+50600000001` en el checkout); esto es solo presentación.
  */
 
 export const PREFIJO_CR = '+506'
@@ -14,7 +14,7 @@ export function digitosTelefonoCR(valor: string | null | undefined): string {
 }
 
 /**
- * `8888-1234`. Con menos de 8 dígitos (mientras se escribe) agrega el guion después del cuarto.
+ * `0000-0001`. Con menos de 8 dígitos (mientras se escribe) agrega el guion después del cuarto.
  * Si el valor no es un número de Costa Rica (más de 8 dígitos sin prefijo 506), se devuelve tal cual.
  */
 export function formatTelefonoCR(valor: string | null | undefined): string {

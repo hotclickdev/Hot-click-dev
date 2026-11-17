@@ -243,6 +243,32 @@ jobs:
             Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.PagoOnvoGrupoLocksPostgresTest.xml
           if-no-files-found: error
 
+      # PR 584: carrera "revisar el tope / contar el fallo" del PIN del .p12 (reserva atomica antes de cargar()).
+      # Paso APARTE de los -Dtest= con gates de arriba; sin failIfNoSpecifiedTests=false; gate fail-on-skip.
+      - name: "Marca de inicio PIN cert (carrera)"
+        if: always()
+        run: |
+          rm -f Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.security.PinCertReservaConcurrentePostgresTest.xml
+          touch "$RUNNER_TEMP/pincert-pg-inicio"
+
+      - name: PinCertReservaConcurrentePostgresTest (20 hilos, maximo 5 PIN probados)
+        if: always()
+        run: mvn -f Hot_click_outlet/pom.xml -Dtest=PinCertReservaConcurrentePostgresTest test --no-transfer-progress
+        env:
+          HC_PG_TEST_URL: jdbc:postgresql://127.0.0.1:5432/hotclick_qa_alta?user=hotclick_qa&password=hotclick_qa
+
+      - name: "Gate PIN cert PG: corrio, fresco, 1 caso, 0 skipped/fallos/errores"
+        if: always()
+        run: python3 scripts/ci/pincert-carrera-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.security.PinCertReservaConcurrentePostgresTest.xml "$RUNNER_TEMP/pincert-pg-inicio"
+
+      - name: Reporte Surefire PIN cert (sin secretos)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pincert-pg-surefire
+          path: Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.security.PinCertReservaConcurrentePostgresTest.xml
+          if-no-files-found: error
+
   frontend:
     name: Build React
     runs-on: ubuntu-latest

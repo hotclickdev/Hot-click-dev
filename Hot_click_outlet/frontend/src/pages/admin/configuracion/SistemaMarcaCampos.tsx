@@ -45,7 +45,7 @@ export default function SistemaMarcaCampos({ form, setForm, errors, uploading, o
           style={INPUT}
         />
       </Field>
-      <Field label="WhatsApp" error={errors.numeroWhatsapp} hint="Código de país + número, ej. 50688880000">
+      <Field label="WhatsApp" error={errors.numeroWhatsapp} hint="Código de país + número, ej. 50600000001">
         <input
           id="marca-whatsapp"
           aria-label="WhatsApp"

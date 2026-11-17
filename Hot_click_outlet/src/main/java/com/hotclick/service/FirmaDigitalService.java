@@ -66,7 +66,7 @@ public class FirmaDigitalService {
             throw new HaciendaConfiguracionException(
                 "No pudimos leer el certificado de firma. Volvé a subir el .p12.");
         }
-        char[] pin = cifrado.decrypt(empresa.getPinCertEnc()).toCharArray();
+        char[] pin = cifrado.decryptPin(empresa.getPinCertEnc()).toCharArray();
         Credencial nueva = cargar(empresa.getCertP12Path(), p12, pin);
         keyStoreCache.put(empresa.getId(), nueva);
         return nueva;
@@ -86,8 +86,7 @@ public class FirmaDigitalService {
         } catch (HaciendaConfiguracionException e) {
             throw e;
         } catch (Exception e) {
-            throw new HaciendaConfiguracionException(
-                "No pudimos abrir el certificado .p12. Revisá que el PIN sea el correcto.");
+            throw new com.hotclick.service.hacienda.PinCertIncorrectoException();
         } finally {
             java.util.Arrays.fill(pin, '\0');
         }

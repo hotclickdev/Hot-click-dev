@@ -27,6 +27,8 @@ public class EmpresaPerfilController {
     @Autowired private CompanyScope companyScope;
     @Autowired private EmpresaPerfilService empresaPerfilService;
     @Autowired private com.hotclick.security.PropietarioGuard propietarioGuard;
+    @Autowired private com.hotclick.security.PinCertIntentosLimiter pinLimiter;
+    @Autowired private com.hotclick.security.ClientIpResolver clientIpResolver;
 
     @GetMapping
     public ResponseEntity<ResponseDTO> get() {
@@ -58,6 +60,57 @@ public class EmpresaPerfilController {
             log.error("[empresa/cert-p12] Error: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(ResponseDTO.error("Error al subir el certificado"));
         }
+    }
+
+    static final String MSG_DEMASIADOS = "Demasiados intentos. Intente de nuevo más tarde.";
+
+    @PutMapping("/pin-cert")
+    public ResponseEntity<ResponseDTO> guardarPinCert(@RequestBody Map<String, String> body,
+                                                      jakarta.servlet.http.HttpServletRequest request) {
+        // empresaId SIEMPRE de la sesión: cualquier id en el body se ignora.
+        Long empresaId = empresaIdO403();
+        if (empresaId == null) return ResponseEntity.status(403).body(ResponseDTO.error("Sin empresa asociada", java.util.Map.of("codigo", com.hotclick.exception.EmpresaRequeridaException.CODIGO)));
+        if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario();
+        Long usuarioId = companyScope.getCurrentUserId();
+        String ip = clientIpResolver.resolve(request);
+        // 1) RESERVA atómica del intento ANTES de tocar el .p12 (y antes de validar el formato: un formato inválido
+        //    también consume cupo). Nada se cuenta después: no hay ventana entre revisar y contar.
+        try {
+            long bloqueo = pinLimiter.reservarIntento(empresaId, usuarioId, ip);
+            if (bloqueo > 0) return tooMany(bloqueo);
+        } catch (Exception e) {
+            // Fail-closed: sin poder escribir el conteo no se abre el .p12 ni se prueba ningún PIN.
+            log.warn("[empresa/pin-cert] límite de intentos no disponible ({})", e.getClass().getSimpleName());
+            return ResponseEntity.status(503).header("Retry-After", "60")
+                .body(ResponseDTO.error("No pudimos verificar el límite de intentos. Intente de nuevo más tarde."));
+        }
+        // 2) Solo con cupo reservado se prueba el PIN.
+        try {
+            Map<String, Object> data = empresaPerfilService.guardarPinCert(empresaId, body == null ? null : body.get("pin"));
+            try {
+                pinLimiter.liberarReserva(empresaId, usuarioId, ip);
+            } catch (Exception ex) {
+                // El PIN ya quedó guardado. Si no se pudo devolver el cupo queda consumido: seguro (no abre brecha).
+                log.warn("[empresa/pin-cert] no se pudo liberar el cupo reservado ({})", ex.getClass().getSimpleName());
+            }
+            return ResponseEntity.ok(ResponseDTO.success("PIN del certificado guardado", data));
+        } catch (com.hotclick.service.hacienda.PinCertIncorrectoException e) {
+            // Ya contado al reservar: NO se vuelve a incrementar aquí.
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (IllegalArgumentException | com.hotclick.service.hacienda.HaciendaConfiguracionException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        } catch (com.hotclick.exception.RecursoNoEncontradoException e) {
+            throw e;
+        } catch (Exception e) {
+            // Sin mensaje ni stack: no se arriesga a repetir el PIN en el log.
+            log.error("[empresa/pin-cert] Error inesperado ({})", e.getClass().getSimpleName());
+            return ResponseEntity.internalServerError().body(ResponseDTO.error("No pudimos guardar el PIN. Intente de nuevo."));
+        }
+    }
+
+    private static ResponseEntity<ResponseDTO> tooMany(long segundos) {
+        return ResponseEntity.status(429).header("Retry-After", String.valueOf(segundos))
+            .body(ResponseDTO.error(MSG_DEMASIADOS));
     }
 
     @PutMapping

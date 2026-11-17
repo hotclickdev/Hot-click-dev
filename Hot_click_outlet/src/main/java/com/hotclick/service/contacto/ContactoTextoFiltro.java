@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  * Se aplica solo en la salida pública y solo si el plan no tiene contacto directo
  * ({@link ContactoPublicoPolicy}); lo guardado y los paneles no cambian.
  *
- * <p>Qué oculta: teléfonos (CR 8888-8888, +506, dígitos separados, 7 o más dígitos seguidos), correos,
+ * <p>Qué oculta: teléfonos (CR 0000-0001, +506, dígitos separados, 7 o más dígitos seguidos), correos,
  * @usuarios, enlaces a WhatsApp/Instagram/TikTok/Facebook/Telegram y cualquier enlace externo.
  * Qué respeta: montos (₡17.500, ₡1.250.000, 4000-5000 colones), medidas (200x90 cm), años y rangos
  * de años (modelo 2026, 2025-2026), tallas (40 41 42 43) y enlaces a hotclick.lat.
@@ -75,7 +75,7 @@ public final class ContactoTextoFiltro {
 
     private static final Pattern TEL_INTERNACIONAL = Pattern.compile("(?<![\\w+])\\+\\s?\\d{1,3}(?:[\\s.\\-()]*\\d){7,12}(?!\\d)");
     private static final Pattern TEL_506 = Pattern.compile("(?<!\\d)\\(?506\\)?[\\s.\\-]?[245678]\\d{3}[\\s.\\-]?\\d{4}(?!\\d)");
-    /** 8 dígitos de CR (2xxx fijo, 4/5/6/7/8 celular o VoIP): 8888-8888, 8888 8888, 8888.8888, 88888888. */
+    /** 8 dígitos de CR (2xxx fijo, 4/5/6/7/8 celular o VoIP): 0000-0001, 0000 0001, 0000.0001, 00000001. */
     private static final Pattern TEL_CR = Pattern.compile("(?<![\\d.,])([245678]\\d{3})[\\s.\\-]?(\\d{4})(?![\\d])");
     /** Dígitos sueltos separados: "8 8 8 8 8 8 8 8", "8.8.8.8.8.8.8". */
     private static final Pattern DIGITOS_SEPARADOS = Pattern.compile("(?<![\\d.,])\\d(?:[\\s.\\-]\\d){6,}(?![\\d])");

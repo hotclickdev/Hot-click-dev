@@ -50,7 +50,7 @@ export const CAMPOS_NUEVO_CLIENTE: CampoNuevoCliente[] = [
   { key: 'nombre', label: 'Nombre *', placeholder: 'Juan', type: 'text' },
   { key: 'apellido', label: 'Apellido', placeholder: 'Pérez', type: 'text' },
   { key: 'correo', label: 'Correo', placeholder: 'juan@ejemplo.com', type: 'email' },
-  { key: 'telefono', label: 'Teléfono', placeholder: '88887777', type: 'tel' },
+  { key: 'telefono', label: 'Teléfono', placeholder: '00000001', type: 'tel' },
 ]
 
 /** Tabs buscar / crear del paso cliente. */
