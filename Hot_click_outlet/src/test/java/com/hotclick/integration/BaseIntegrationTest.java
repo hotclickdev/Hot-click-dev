@@ -120,7 +120,7 @@ public abstract class BaseIntegrationTest {
         u.setNombre(nombre);
         u.setApellidoPaterno("Test");
         u.setIdentificacion(correo.replaceAll("[^a-zA-Z0-9]", "").substring(0, Math.min(20, correo.replaceAll("[^a-zA-Z0-9]", "").length())));
-        u.setTelefono("88888888");
+        u.setTelefono("00000000");
         u.setContrasenaHash(passwordEncoder.encode("Test1234!"));
         u.setEstado(Constants.ESTADO_ACTIVO);
         u.setIntentosFallidos(0);

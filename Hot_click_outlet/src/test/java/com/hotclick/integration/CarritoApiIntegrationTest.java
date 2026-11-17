@@ -88,7 +88,7 @@ class CarritoApiIntegrationTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega("Bodega " + slug);
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("61234567");
+        b.setTelefono("00000008");
         b.setProvincia("San José");
         b.setCanton("Escazú");
         b.setPermiteRetiroCliente(false);

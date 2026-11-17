@@ -122,7 +122,7 @@ describe('NP-18 controles de estado del vendedor', () => {
 describe('NP-18 contacto del cliente', () => {
   it('«—» y vacío cuentan como sin dato', async () => {
     const { contacto } = await import('./pedidosVendedorApi')
-    expect(contacto('88887777')).toBe('88887777')
+    expect(contacto('00000004')).toBe('00000004')
     expect(contacto('—')).toBeUndefined()
     expect(contacto('')).toBeUndefined()
   })

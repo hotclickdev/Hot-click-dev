@@ -31,7 +31,7 @@ class SelfCheckoutContactoTest {
         Empresa e = new Empresa();
         e.setId(77L);
         e.setNombreComercial("Casa Luna 506");
-        e.setNumeroWhatsapp("50688880506");
+        e.setNumeroWhatsapp("50600000007");
         e.setPlan(p);
         Mesa mesa = new Mesa();
         mesa.setEmpresa(e);
@@ -45,7 +45,7 @@ class SelfCheckoutContactoTest {
 
         Map<String, Object> info = servicio.getMesaInfo("tok");
 
-        assertThat(info.get("numeroWhatsapp")).isEqualTo(conContacto ? "50688880506" : null);
+        assertThat(info.get("numeroWhatsapp")).isEqualTo(conContacto ? "50600000007" : null);
         assertThat(info.get("empresaNombre")).isEqualTo("Casa Luna 506");
     }
 }

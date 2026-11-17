@@ -6,17 +6,17 @@ const t = i18n.getFixedT('es')
 
 describe('teléfono de contacto', () => {
   it('agrega +506 al número local de ocho dígitos', () => {
-    expect(normalizarTelefono('8888 8888')).toBe('+50688888888')
-    expect(normalizarTelefono('8888-8888')).toBe('+50688888888')
+    expect(normalizarTelefono('0000 0000')).toBe('+50600000000')
+    expect(normalizarTelefono('0000-0000')).toBe('+50600000000')
   })
 
   it('conserva el país de quien escribe el prefijo', () => {
     expect(normalizarTelefono('+1 305 555 0100')).toBe('+13055550100')
-    expect(normalizarTelefono('+506 8888 8888')).toBe('+50688888888')
+    expect(normalizarTelefono('+506 0000 0000')).toBe('+50600000000')
   })
 
   it('no duplica el 506 cuando ya viene sin el signo más', () => {
-    expect(normalizarTelefono('506 8888 8888')).toBe('+50688888888')
+    expect(normalizarTelefono('506 0000 0000')).toBe('+50600000000')
   })
 })
 

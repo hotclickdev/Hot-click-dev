@@ -150,10 +150,10 @@ class RecoleccionServiceTest {
         req.setZona(ZonaLogistica.GAM);
         req.setDireccionRecoleccion("Bodega, San José centro");
         req.setContactoRecoleccion("Ana");
-        req.setTelefonoRecoleccion("88881111");
+        req.setTelefonoRecoleccion("00000003");
         req.setDireccionEntrega("Cliente en Escazú");
         req.setContactoEntrega("Luis");
-        req.setTelefonoEntrega("88882222");
+        req.setTelefonoEntrega("00000026");
         return req;
     }
 
@@ -165,10 +165,10 @@ class RecoleccionServiceTest {
         s.setZona(ZonaLogistica.GAM);
         s.setDireccionRecoleccion("Bodega");
         s.setContactoRecoleccion("Ana");
-        s.setTelefonoRecoleccion("88881111");
+        s.setTelefonoRecoleccion("00000003");
         s.setDireccionEntrega("Cliente");
         s.setContactoEntrega("Luis");
-        s.setTelefonoEntrega("88882222");
+        s.setTelefonoEntrega("00000026");
         return s;
     }
 }

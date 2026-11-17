@@ -70,11 +70,11 @@ class OnvoReembolsoIdempotencyHttpTest {
         String intent = "pi_" + "abcd" + "1234567890" + "wxyz";
         server.expect(requestTo(API + "/refunds"))
             .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
-                .body("{\"statusCode\":400,\"message\":[\"Payment intent " + intent + " cannot be refunded\",\"tel 8" + "8887777\"],\"error\":\"Bad Request\"}"));
+                .body("{\"statusCode\":400,\"message\":[\"Payment intent " + intent + " cannot be refunded\",\"tel 0" + "0000004\"],\"error\":\"Bad Request\"}"));
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
             () -> onvo.crearReembolso("pi_test_1", "Reembolso pedido HC-7", CLAVE_IDEM, 900_000L));
         String motivo = OnvoService.motivoOnvo(e.getResponseBodyAsString());
-        assertThat(motivo).contains("cannot be refunded").doesNotContain(intent).doesNotContain("88887777").contains("***");
+        assertThat(motivo).contains("cannot be refunded").doesNotContain(intent).doesNotContain("00000004").contains("***");
         assertThat(OnvoService.motivoOnvo(null)).isEqualTo("(sin detalle)");
         assertThat(OnvoService.motivoOnvo("<html>boom</html>")).isEqualTo("(sin detalle)");
     }

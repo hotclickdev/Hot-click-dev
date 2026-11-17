@@ -64,7 +64,7 @@ describe('leerRespuestaFoto · cupo diario agotado', () => {
       mensaje: 'Llegaste al límite de consultas con el asistente por hoy.',
       acciones: [
         { tipo: 'buscar', label: 'Buscar productos', url: '/productos' },
-        { tipo: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/50688887777' },
+        { tipo: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/50600000010' },
         { tipo: 'whatsapp', label: 'Malo', url: 'javascript:alert(1)' },
       ],
     })

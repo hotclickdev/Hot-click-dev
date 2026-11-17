@@ -18,8 +18,8 @@ class TiendaRapidaReglasTest {
 
     @Test
     void elTelefonoDeCostaRicaQuedaEnOchoDigitos() {
-        assertThat(TiendaRapidaReglas.telefono("8888-0000")).isEqualTo("88880000");
-        assertThat(TiendaRapidaReglas.telefono("+506 8888 0000")).isEqualTo("88880000");
+        assertThat(TiendaRapidaReglas.telefono("0000-0006")).isEqualTo("00000006");
+        assertThat(TiendaRapidaReglas.telefono("+506 0000 0006")).isEqualTo("00000006");
         assertThatThrownBy(() -> TiendaRapidaReglas.telefono("123"))
             .isInstanceOf(IllegalArgumentException.class);
     }

@@ -66,7 +66,7 @@ class MetodoCobroServiceTest {
 
         MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
         req.setTipo("sinpe");
-        req.setDato("8888-0000");
+        req.setDato("0000-0000");
 
         var dto = service.crear(req);
 
@@ -75,7 +75,7 @@ class MetodoCobroServiceTest {
         assertThat(dto.isPredeterminado()).isTrue();
         ArgumentCaptor<MetodoCobro> cap = ArgumentCaptor.forClass(MetodoCobro.class);
         verify(repo).save(cap.capture());
-        assertThat(cap.getValue().getDestino()).isEqualTo("88880000");
+        assertThat(cap.getValue().getDestino()).isEqualTo("00000000");
         assertThat(cap.getValue().getTipo()).isEqualTo(MetodoCobro.TIPO_SINPE);
         // seg-altos-2 (d): el alta SINPE queda pendiente de aprobación
         verify(cambioService).solicitarAlta(cap.getValue());
@@ -135,7 +135,7 @@ class MetodoCobroServiceTest {
         m.setId(1L);
         m.setEmpresa(empresa);
         m.setTipo(MetodoCobro.TIPO_SINPE);
-        m.setDestino("88880000");
+        m.setDestino("00000000");
         m.setMascara("••••-0000");
         m.setPredeterminado(true);
         when(repo.findActivosByEmpresaId(9L)).thenReturn(List.of(m));
@@ -173,7 +173,7 @@ class MetodoCobroServiceTest {
 
         MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
         req.setTipo("sinpe");
-        req.setDato("88880000");
+        req.setDato("00000000");
 
         assertThatThrownBy(() -> service.crear(req))
                 .isInstanceOf(IllegalStateException.class)
@@ -189,7 +189,7 @@ class MetodoCobroServiceTest {
 
         MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
         req.setTipo("sinpe");
-        req.setDato("88880000");
+        req.setDato("00000000");
 
         assertThatThrownBy(() -> service.crear(req))
                 .isInstanceOf(RecursoNoEncontradoException.class)
@@ -231,7 +231,7 @@ class MetodoCobroServiceTest {
     @Test
     @DisplayName("marcar predeterminado de otra empresa lo bloquea el scope")
     void marcar_predeterminado_tenant_ajeno() {
-        MetodoCobro m = metodoActivo(2L, MetodoCobro.TIPO_SINPE, "88880000", "8888-0000");
+        MetodoCobro m = metodoActivo(2L, MetodoCobro.TIPO_SINPE, "00000000", "0000-0000");
         when(repo.findActivoById(2L)).thenReturn(Optional.of(m));
         doThrow(new TenantAccessDeniedException("Sin acceso a esta empresa"))
                 .when(companyScope).assertCanAccess(9L);

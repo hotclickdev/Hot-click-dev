@@ -22,7 +22,7 @@ class ContactoTextoPublicoTest {
         ContactoTextoPublico.ocultarFilasProducto(List.of(fila));
 
         assertThat(fila.get("descripcion_corta")).isEqualTo(conContacto
-            ? "Sofá 200x90 cm a ₡17.500, pedidos 8888-8888"
+            ? "Sofá 200x90 cm a ₡17.500, pedidos 8000-0001"
             : "Sofá 200x90 cm a ₡17.500, pedidos [contacto oculto]");
         assertThat(fila.get("como_usar")).isEqualTo(conContacto ? "Ver tiktok.com/@casaluna" : "Ver [contacto oculto]");
         assertThat(fila.get("precio_venta")).isEqualTo(17500);
@@ -41,7 +41,7 @@ class ContactoTextoPublicoTest {
         Map<String, Object> f = new HashMap<>();
         f.put("plan_empresa", plan);
         f.put("nombre_producto", "Sofá Luna");
-        f.put("descripcion_corta", "Sofá 200x90 cm a ₡17.500, pedidos 8888-8888");
+        f.put("descripcion_corta", "Sofá 200x90 cm a ₡17.500, pedidos 8000-0001");
         f.put("como_usar", "Ver tiktok.com/@casaluna");
         f.put("precio_venta", 17500);
         return f;

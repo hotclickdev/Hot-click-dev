@@ -376,7 +376,7 @@ test.describe('Wizard conversacional Emprendedor', () => {
                 productoNombre: 'Encargo test',
                 nombreCliente: 'Ana',
                 email: 'ana@test.com',
-                telefono: '88888888',
+                telefono: '00000000',
                 estado: 'PENDIENTE',
                 notas: 'Quiero azul',
                 modoPrecio: 'COTIZACION',

@@ -21,7 +21,7 @@ describe('erroresDatos', () => {
   })
 
   it('no devuelve errores con datos válidos', () => {
-    expect(erroresDatos({ correo: 'ana@correo.cr', telefono: '8888 7777', nombre: 'Ana Mora' }, t)).toEqual({})
+    expect(erroresDatos({ correo: 'ana@correo.cr', telefono: '0000 0004', nombre: 'Ana Mora' }, t)).toEqual({})
   })
 })
 

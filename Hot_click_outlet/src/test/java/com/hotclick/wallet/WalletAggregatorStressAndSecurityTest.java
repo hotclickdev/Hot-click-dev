@@ -78,7 +78,7 @@ class WalletAggregatorStressAndSecurityTest extends BaseIntegrationTest {
         com.hotclick.model.MetodoCobro cuenta = new com.hotclick.model.MetodoCobro();
         cuenta.setEmpresa(e);
         cuenta.setTipo(com.hotclick.model.MetodoCobro.TIPO_SINPE);
-        cuenta.setDestino("88888888");
+        cuenta.setDestino("00000000");
         cuenta.setMascara("••••-8888");
         cuenta.setActivo(true);
         cuenta.setFechaCreacion(LocalDateTime.now().minusMonths(2));
@@ -123,7 +123,7 @@ class WalletAggregatorStressAndSecurityTest extends BaseIntegrationTest {
         // V169: el destino sale de la cuenta de cobro verificada; aquí una cuenta en memoria.
         com.hotclick.model.MetodoCobro cuenta = new com.hotclick.model.MetodoCobro();
         cuenta.setTipo(com.hotclick.model.MetodoCobro.TIPO_SINPE);
-        cuenta.setDestino("88888888");
+        cuenta.setDestino("00000000");
         PayoutRequest pr = payoutRequestService.retenerYCrear(
             EMPRESA_PAYOUT, 10_000L, PayoutRequest.LIQ_MANUAL, cuenta, "retiro test");
         Long payoutId = pr.getId();

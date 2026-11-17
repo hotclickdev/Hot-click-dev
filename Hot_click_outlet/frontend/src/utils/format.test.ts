@@ -47,7 +47,7 @@ describe('textos al comprador usan formatPrice', () => {
   })
 
   it('presupuesto y cotización de encargos', () => {
-    const encargo = { presupuestoTipo: 'RANGO', presupuestoMin: 5000, presupuestoMax: 12500, telefono: '8888-1234', nombreCliente: 'Ana', tokenPublico: 't' } as Encargo
+    const encargo = { presupuestoTipo: 'RANGO', presupuestoMin: 5000, presupuestoMax: 12500, telefono: '0000-0002', nombreCliente: 'Ana', tokenPublico: 't' } as Encargo
     expect(etiquetaPresupuestoCliente(encargo)).toBe('₡5.000 – ₡12.500')
     expect(decodeURIComponent(linkWhatsAppCotizacion(encargo, 6200) ?? '')).toContain('cotizado en ₡6.200.')
   })

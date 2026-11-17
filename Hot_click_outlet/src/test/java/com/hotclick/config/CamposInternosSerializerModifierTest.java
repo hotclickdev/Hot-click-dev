@@ -47,7 +47,7 @@ class CamposInternosSerializerModifierTest {
         esperados.add("direccionExacta");
         assertThat(campos(json)).containsExactlyInAnyOrderElementsOf(esperados);
         assertThat(campos(json)).doesNotContainAnyElementsOf(SENSIBLES);
-        assertThat(json.toString()).doesNotContain("61234567", "bodega-secreta@test.cr", "Encargado Secreto", "9.93333333");
+        assertThat(json.toString()).doesNotContain("00000008", "bodega-secreta@test.cr", "Encargado Secreto", "9.93333333");
     }
 
     @Test
@@ -56,7 +56,7 @@ class CamposInternosSerializerModifierTest {
         JsonNode json = serializar(bodegaCompleta(false), true);
 
         assertThat(campos(json)).containsAll(SENSIBLES).contains("direccionExacta");
-        assertThat(json.get("telefono").asText()).isEqualTo("61234567");
+        assertThat(json.get("telefono").asText()).isEqualTo("00000008");
         assertThat(json.get("encargadoNombre").asText()).isEqualTo("Encargado Secreto");
     }
 
@@ -71,10 +71,10 @@ class CamposInternosSerializerModifierTest {
         assertThat(json.get("nombreComercial").asText()).isEqualTo("Casa Luna 506");
         if (planPago) {
             assertThat(campos(json)).containsAll(CamposInternosSerializerModifier.EMPRESA_CONTACTO);
-            assertThat(json.get("numeroWhatsapp").asText()).isEqualTo("50688880506");
+            assertThat(json.get("numeroWhatsapp").asText()).isEqualTo("50600000007");
         } else {
             assertThat(campos(json)).doesNotContainAnyElementsOf(CamposInternosSerializerModifier.EMPRESA_CONTACTO);
-            assertThat(json.toString()).doesNotContain("50688880506", "22223333", "tienda@casaluna.cr", "casaluna506");
+            assertThat(json.toString()).doesNotContain("50600000007", "00000009", "tienda@casaluna.cr", "casaluna506");
         }
     }
 
@@ -96,8 +96,8 @@ class CamposInternosSerializerModifierTest {
         Empresa e = new Empresa();
         e.setId(42L);
         e.setNombreComercial("Casa Luna 506");
-        e.setNumeroWhatsapp("50688880506");
-        e.setTelefonoEmpresa("22223333");
+        e.setNumeroWhatsapp("50600000007");
+        e.setTelefonoEmpresa("00000009");
         e.setCorreoEmpresa("tienda@casaluna.cr");
         e.setInstagram("casaluna506");
         return e;
@@ -123,7 +123,7 @@ class CamposInternosSerializerModifierTest {
         b.setId(7L);
         b.setNombreBodega("Bodega Centro");
         b.setDireccionExacta("Calle Secreta 123");
-        b.setTelefono("61234567");
+        b.setTelefono("00000008");
         b.setCorreoContacto("bodega-secreta@test.cr");
         b.setEncargadoNombre("Encargado Secreto");
         b.setCapacidadMaxima(500);

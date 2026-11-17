@@ -112,7 +112,7 @@ class MisPedidosCompradorTest extends BaseIntegrationTest {
         Bodega b = new Bodega();
         b.setNombreBodega(nombre);
         b.setDireccionExacta("Calle 1");
-        b.setTelefono("77770000");
+        b.setTelefono("00000010");
         b.setProvincia(provincia);
         b.setAdminCliente(adminUser);
         b.setEmpresa(empresa);

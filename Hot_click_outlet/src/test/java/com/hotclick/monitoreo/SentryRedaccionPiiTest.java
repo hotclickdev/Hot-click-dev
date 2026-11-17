@@ -22,19 +22,19 @@ class SentryRedaccionPiiTest {
     void redactaCorreoTelefonoYCedulaEnMensajeExcepcionYExtras() {
         SentryEvent ev = new SentryEvent();
         Message m = new Message();
-        m.setMessage("cliente ana.p@correo.com tel +506 8888-7777 ced 1-1234-5678");
+        m.setMessage("cliente ana.p@correo.com tel +506 0000-0004 ced 1-1234-5678");
         ev.setMessage(m);
         SentryException ex = new SentryException();
-        ex.setValue("fallo para 304560789 / 88887777");
+        ex.setValue("fallo para 304560789 / 00000004");
         ev.setExceptions(List.of(ex));
         ev.setExtra("contacto", "x@y.cr");
         ev.setExtra("pedido", 42);
 
         SentryEvent out = cb.execute(ev, new Hint());
 
-        assertThat(out.getMessage().getMessage()).doesNotContain("ana.p@correo.com", "8888-7777", "1-1234-5678")
+        assertThat(out.getMessage().getMessage()).doesNotContain("ana.p@correo.com", "0000-0004", "1-1234-5678")
                 .contains("[correo]", "[telefono]", "[cedula]");
-        assertThat(out.getExceptions().get(0).getValue()).doesNotContain("304560789", "88887777");
+        assertThat(out.getExceptions().get(0).getValue()).doesNotContain("304560789", "00000004");
         assertThat(out.getExtras().get("contacto")).isEqualTo("[correo]");
         assertThat(out.getExtras().get("pedido")).isEqualTo("42");
     }
@@ -50,7 +50,7 @@ class SentryRedaccionPiiTest {
         SentryEvent ev = new SentryEvent();
         Breadcrumb b = new Breadcrumb();
         b.setMessage("login ana@x.com");
-        b.setData("tel", "8888-7777");
+        b.setData("tel", "0000-0004");
         ev.setBreadcrumbs(List.of(b));
 
         Breadcrumb out = cb.execute(ev, new Hint()).getBreadcrumbs().get(0);

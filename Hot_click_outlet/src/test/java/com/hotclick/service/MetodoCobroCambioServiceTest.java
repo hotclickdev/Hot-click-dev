@@ -60,12 +60,12 @@ class MetodoCobroCambioServiceTest {
         usuario = new Usuario();
         usuario.setId(4L);
         usuario.setNombre("Ana");
-        usuario.setTelefono("88887777");
+        usuario.setTelefono("00000004");
         metodo = new MetodoCobro();
         metodo.setId(2L);
         metodo.setEmpresa(empresa);
         metodo.setTipo(MetodoCobro.TIPO_SINPE);
-        metodo.setDestino("88880000");
+        metodo.setDestino("00000000");
         metodo.setMascara("••••-0000");
         metodo.setActivo(true);
     }
@@ -82,12 +82,12 @@ class MetodoCobroCambioServiceTest {
 
         MetodoCobroCreateRequest req = new MetodoCobroCreateRequest();
         req.setTipo("sinpe");
-        req.setDato("8888-1111");
+        req.setDato("0000-0003");
 
         var dto = service.solicitarCambio(2L, req);
 
         verify(companyScope).assertCanAccess(9L);
-        assertThat(metodo.getDestino()).isEqualTo("88880000");
+        assertThat(metodo.getDestino()).isEqualTo("00000000");
         assertThat(metodo.isEnRevision()).isTrue();
         assertThat(dto.getMascara()).isEqualTo("••••-0000");
         assertThat(dto.isEnRevision()).isTrue();
@@ -100,9 +100,9 @@ class MetodoCobroCambioServiceTest {
         assertThat(sol.getIdEntidad()).isEqualTo(2L);
         MetodoCobroCambioSnapshot snap = objectMapper.readValue(
                 sol.getDatosSnapshot(), MetodoCobroCambioSnapshot.class);
-        assertThat(snap.getDestinoNuevo()).isEqualTo("88881111");
-        assertThat(snap.getMascaraNueva()).isEqualTo("••••-1111");
-        verify(notificacionService).avisarCambioPendiente(eq(empresa), eq(usuario), eq("SINPE Móvil"), eq("••••-1111"));
+        assertThat(snap.getDestinoNuevo()).isEqualTo("00000003");
+        assertThat(snap.getMascaraNueva()).isEqualTo("••••-0003");
+        verify(notificacionService).avisarCambioPendiente(eq(empresa), eq(usuario), eq("SINPE Móvil"), eq("••••-0003"));
         verify(metodoRepo, never()).delete(any());
     }
 
@@ -115,8 +115,8 @@ class MetodoCobroCambioServiceTest {
         sol.setUsuarioPide(usuario);
         MetodoCobroCambioSnapshot snap = new MetodoCobroCambioSnapshot();
         snap.setTipo("SINPE");
-        snap.setDestinoNuevo("88881111");
-        snap.setMascaraNueva("••••-1111");
+        snap.setDestinoNuevo("00000003");
+        snap.setMascaraNueva("••••-0003");
         snap.setMascaraActual("••••-0000");
         sol.setDatosSnapshot(objectMapper.writeValueAsString(snap));
         when(solicitudRepo.findPendientesConEmpresa("PENDIENTE", MetodoCobro.TIPO_SOLICITUD))
@@ -125,10 +125,10 @@ class MetodoCobroCambioServiceTest {
         List<MetodoCobroCambioPendienteDto> lista = service.listarPendientes();
 
         assertThat(lista).hasSize(1);
-        assertThat(lista.get(0).getMascaraNueva()).isEqualTo("••••-1111");
+        assertThat(lista.get(0).getMascaraNueva()).isEqualTo("••••-0003");
         assertThat(lista.get(0).getMascaraActual()).isEqualTo("••••-0000");
         String json = objectMapper.writeValueAsString(lista.get(0));
-        assertThat(json).doesNotContain("88881111");
+        assertThat(json).doesNotContain("00000003");
         assertThat(json).doesNotContain("destinoNuevo");
     }
 
@@ -138,8 +138,8 @@ class MetodoCobroCambioServiceTest {
         SolicitudAprobacion sol = solicitudPendiente();
         MetodoCobroCambioSnapshot snap = new MetodoCobroCambioSnapshot();
         snap.setTipo("SINPE");
-        snap.setDestinoNuevo("88881111");
-        snap.setMascaraNueva("••••-1111");
+        snap.setDestinoNuevo("00000003");
+        snap.setMascaraNueva("••••-0003");
         sol.setDatosSnapshot(objectMapper.writeValueAsString(snap));
         when(solicitudRepo.findById(11L)).thenReturn(Optional.of(sol));
         when(metodoRepo.findActivoById(2L)).thenReturn(Optional.of(metodo));
@@ -147,8 +147,8 @@ class MetodoCobroCambioServiceTest {
 
         service.aprobar(11L);
 
-        assertThat(metodo.getDestino()).isEqualTo("88881111");
-        assertThat(metodo.getMascara()).isEqualTo("••••-1111");
+        assertThat(metodo.getDestino()).isEqualTo("00000003");
+        assertThat(metodo.getMascara()).isEqualTo("••••-0003");
         assertThat(metodo.isEnRevision()).isFalse();
         assertThat(sol.getEstadoSolicitud()).isEqualTo("APROBADO");
         // aprobar() ya no llama assertCanAccess: SolicitudAdminGuard (ADMIN o TRUST vía
@@ -167,7 +167,7 @@ class MetodoCobroCambioServiceTest {
 
         service.rechazar(11L, "dato no coincide");
 
-        assertThat(metodo.getDestino()).isEqualTo("88880000");
+        assertThat(metodo.getDestino()).isEqualTo("00000000");
         assertThat(metodo.isEnRevision()).isFalse();
         assertThat(sol.getEstadoSolicitud()).isEqualTo("RECHAZADO");
     }

@@ -63,7 +63,7 @@ class SinpeOnvoMarketplaceServiceTest {
         when(onvo.isPagosDisponibles()).thenReturn(true);
         when(onvo.isMockMode()).thenReturn(false);
         when(onvo.modoEsperado()).thenReturn("live");
-        when(onvo.sinpeDestino()).thenReturn("8888-0000");
+        when(onvo.sinpeDestino()).thenReturn("0000-0006");
         when(eventos.save(any())).thenAnswer(i -> i.getArgument(0));
         pedido = new Pedido();
         pedido.setNumeroPedido("HC-1");
@@ -217,11 +217,11 @@ class SinpeOnvoMarketplaceServiceTest {
     @Test
     @DisplayName("iniciar: identificación con guiones mín. 12; monto exacto; ONVOPI y plazo interno guardados antes de confirmar")
     void iniciar() {
-        assertThatThrownBy(() -> s.iniciar(pago, "112345678", 0, "80000000")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> s.iniciar(pago, "112345678", 0, "00000001")).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> s.iniciar(pago, "01-1234-5678", 0, "abc")).isInstanceOf(IllegalArgumentException.class);
         when(onvo.crearPaymentIntent(eq(12500), any(), any())).thenReturn(new OnvoService.OnvoPaymentIntent("pi_9"));
-        when(onvo.crearMetodoPagoSinpePos("01-1234-5678", 0, "80000000", null)).thenReturn(new OnvoService.OnvoPaymentMethod("pm_1"));
-        LocalDateTime plazo = s.iniciar(pago, "01-1234-5678", 0, "80000000");
+        when(onvo.crearMetodoPagoSinpePos("01-1234-5678", 0, "00000001", null)).thenReturn(new OnvoService.OnvoPaymentMethod("pm_1"));
+        LocalDateTime plazo = s.iniciar(pago, "01-1234-5678", 0, "00000001");
         assertThat(pago.getMerchantToken()).isEqualTo("ONVOPI:pi_9");
         assertThat(pago.getPlazoInternoSinpe()).isEqualTo(plazo)
             .isEqualTo(LocalDateTime.of(2026, 10, 25, 12, 15));
@@ -247,7 +247,7 @@ class SinpeOnvoMarketplaceServiceTest {
     void sinPlazo() {
         s.setTimeoutMinutosParaTest("");
         assertThat(s.destinoDisponible()).isEmpty();
-        assertThatThrownBy(() -> s.iniciar(pago, "01-1234-5678", 0, "80000000")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> s.iniciar(pago, "01-1234-5678", 0, "00000001")).isInstanceOf(IllegalStateException.class);
         verify(onvo, never()).crearPaymentIntent(anyInt(), any(), any());
     }
 
