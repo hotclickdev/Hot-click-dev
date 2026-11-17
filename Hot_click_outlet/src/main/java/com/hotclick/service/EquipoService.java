@@ -66,7 +66,9 @@ public class EquipoService {
         tenantService.verificarLimiteUsuariosEquipo(empresa.getId(), pendientes);
         // La invitación viva anterior de este correo y negocio deja de servir, se emita o no una nueva.
         invitacionRepository.revocarPendientes(empresa.getId(), correoNorm, ahora);
-        Optional<Usuario> existente = usuarioRepository.findByCorreo(correoNorm);
+        // findByCorreo ignora ELIMINADAS; el camino de reactivación (SALIDA_EQUIPO) las busca aparte.
+        Optional<Usuario> existente = usuarioRepository.findByCorreo(correoNorm)
+            .or(() -> usuarioRepository.findEliminadoByCorreo(correoNorm));
         if (existente.isPresent() && !puedeInvitarseCuentaExistente(existente.get(), empresa)) {
             return;
         }
@@ -81,6 +83,9 @@ public class EquipoService {
         inv.setFechaCreacion(ahora);
         inv.setVenceEn(ahora.plusDays(InvitacionEquipoService.DIAS_VIGENCIA));
         inv.setUsuarioInvitaId(invitaUsuarioId);
+        // SCALE1: no hay N+1. Es UNA invitación (un INSERT y un correo, sin bucle); la empresa ya viene cargada por
+        // findByIdForUpdate y EmpresaNombre.mostrar solo lee sus columnas; de `existente` solo se leen id/estado/motivo
+        // (sin tocar roles ni otras colecciones lazy).
         invitacionRepository.save(inv);
         notificacionEmailService.enviarInvitacionMiembro(
             correoNorm, nombre.trim(), rolEnEmpresa, EmpresaNombre.mostrar(empresa, null),
@@ -94,14 +99,13 @@ public class EquipoService {
     }
 
     /**
-     * Cuenta existente: ACTIVA, o ELIMINADA (estado 3, incluye a quien salió de su único negocio: la reactiva su
-     * propio token al aceptar, no invitar()). SUSPENDIDA (bloqueo de admin), INACTIVA y PENDIENTE no reciben
-     * invitación usable ni se reactivan; el dueño ve la misma respuesta. No hay columna que distinga ELIMINADA por
-     * equipo de ELIMINADA por admin: ambas son el estado 3. Además no debe ser miembro activo de este equipo y debe
-     * tener cupo de negocios.
+     * Cuenta existente: ACTIVA, o ELIMINADA con motivo SALIDA_EQUIPO (la reactiva su propio token al aceptar, no
+     * invitar()). ELIMINADA por admin / borrado de datos / motivo NULL (filas anteriores), SUSPENDIDA, INACTIVA y
+     * PENDIENTE no reciben invitación usable ni se reactivan; el dueño ve la misma respuesta (fail-closed). Además no
+     * debe ser miembro activo de este equipo y debe tener cupo de negocios.
      */
     private boolean puedeInvitarseCuentaExistente(Usuario u, Empresa empresa) {
-        return (esActiva(u) || Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(u.getEstado()))
+        return (esActiva(u) || InvitacionEquipoService.eliminadaPorSalidaDeEquipo(u))
             && !miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(u.getId(), empresa.getId(), 1)
             && miembroEmpresaRepository.countEmpresasByUsuarioId(u.getId()) < MAX_EMPRESAS_POR_USUARIO;
     }
@@ -140,6 +144,7 @@ public class EquipoService {
         if (miembroEmpresaRepository.countEmpresasByUsuarioId(usuarioId) == 0) {
             usuarioRepository.findById(usuarioId).ifPresent(u -> {
                 u.setEstado(Constants.ESTADO_ELIMINADO);
+                u.setMotivoEliminacion(Constants.MOTIVO_ELIMINACION_SALIDA_EQUIPO);
                 usuarioRepository.save(u);
                 sesionesUsuarioService.cortarSesiones(u);
             });

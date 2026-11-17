@@ -111,7 +111,8 @@ public class NegocioEmailBuilder {
                 ? "Al aceptar vas a crear tu cuenta con el correo <strong style='color:#14171C'>" + layout.esc(correo) + "</strong> y definir tu propia contraseña."
                 : "Para aceptar, iniciá sesión con tu cuenta de <strong style='color:#14171C'>" + layout.esc(correo) + "</strong>.")
             + " El enlace es de un solo uso y vence en 7 días. Si no esperabas esta invitación, ignorá este correo.</p>";
-        String ctaUrl = layout.urlSitio("/equipo/invitacion/" + token);
+        // Token en el fragmento (#t=): no viaja al servidor, a logs ni a analítica; la SPA lo lee y lo limpia.
+        String ctaUrl = layout.urlSitio("/equipo/invitacion") + "#t=" + token;
 
         return layout.abrirHtml()
             + layout.header("Te invitaron a un equipo", "Aceptá la invitación para entrar al panel del negocio")

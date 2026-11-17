@@ -86,12 +86,27 @@ class EquipoServiceUsuarioSuspendidoTest {
     @DisplayName("eliminado (3): recibe invitación pendiente y correo con cuentaNueva=true, sin reactivar ni crear membresía")
     void eliminadoRecibeInvitacionSinReactivar() {
         Usuario u = existente(Constants.ESTADO_ELIMINADO);
+        u.setMotivoEliminacion(Constants.MOTIVO_ELIMINACION_SALIDA_EQUIPO);
         equipoService.invitar(5L, "Eli Minado", "susp@test.cr", "00000000", "LECTOR");
         verify(invitacionRepository).save(any(InvitacionEquipo.class));
         verify(notificacionEmailService).enviarInvitacionMiembro(any(), any(), any(), any(), org.mockito.ArgumentMatchers.eq(true), any());
         verify(miembroEmpresaRepository, never()).save(any(MiembroEmpresa.class));
         verify(usuarioRepository, never()).save(any(Usuario.class));
         org.assertj.core.api.Assertions.assertThat(u.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
+    }
+
+    @Test
+    @DisplayName("eliminado (3) con motivo NULL (fila anterior), ADMIN, BORRADO_DATOS o basura: fail-closed, sin token ni correo")
+    void eliminadoSinMotivoDeSalidaNoRecibeToken() {
+        for (String motivo : new String[] {null, Constants.MOTIVO_ELIMINACION_ADMIN,
+                Constants.MOTIVO_ELIMINACION_BORRADO_DATOS, "basura"}) {
+            Usuario u = existente(Constants.ESTADO_ELIMINADO);
+            u.setMotivoEliminacion(motivo);
+            assertThatCode(() -> equipoService.invitar(5L, "Eli Minado", "susp@test.cr", "00000000", "LECTOR"))
+                .doesNotThrowAnyException();
+            org.assertj.core.api.Assertions.assertThat(u.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
+        }
+        sinInvitacionNiCorreo();
     }
 
     @Test

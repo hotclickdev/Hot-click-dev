@@ -51,6 +51,8 @@ public class InvitacionEquipoService {
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private TenantService tenantService;
     @Autowired private SesionesUsuarioService sesionesUsuarioService;
+    @Autowired private OtpService otpService;
+    @Autowired private com.hotclick.repository.WebAuthnCredentialRepository webAuthnCredentialRepository;
 
     public static String tokenNuevo() {
         byte[] b = new byte[32];
@@ -76,6 +78,7 @@ public class InvitacionEquipoService {
         r.put("rolEnEmpresa", inv.getRolEnEmpresa());
         r.put("correo", inv.getCorreo());
         // "Hay una cuenta ACTIVA con la que puede iniciar sesión". Una cuenta ELIMINADA define contraseña nueva.
+        // findByCorreo ya ignora ELIMINADAS: una fila ELIMINADA no cuenta como cuenta con la que iniciar sesión.
         r.put("cuentaExiste", usuarioRepository.findByCorreo(inv.getCorreo())
             .map(u -> Integer.valueOf(Constants.ESTADO_ACTIVO).equals(u.getEstado())).orElse(false));
         return r;
@@ -83,23 +86,24 @@ public class InvitacionEquipoService {
 
     /**
      * El portador del token (dueño del correo) define su contraseña. Sin usuario: se crea. ACTIVO: 409 (inicia sesión).
-     * ELIMINADO (estado 3, incluye a quien salió de su único negocio): se reactiva el MISMO usuario con la contraseña
+     * ELIMINADO por salida del equipo (motivo SALIDA_EQUIPO): se reactiva el MISMO usuario con la contraseña
      * nueva; se cortan sesiones y refresh tokens; no se recuperan membresías ni roles viejos (solo la de este negocio).
-     * SUSPENDIDO (bloqueo de admin), INACTIVO y PENDIENTE: 410, nunca se reactivan. No hay columna que distinga
-     * ELIMINADO por equipo de ELIMINADO por admin. Sesiones: cortarSesiones cubre sesiones y refresh tokens; los
-     * OTP / restablecimientos pendientes no tienen API de invalidación directa y no se tocan.
+     * SUSPENDIDO, INACTIVO, PENDIENTE y ELIMINADO con motivo distinto de SALIDA_EQUIPO (incluido NULL): 410, nunca se
+     * reactivan (fail-closed). Al reactivar se invalidan OTP de todos los tipos, 2FA/TOTP y passkeys.
      */
     @Transactional
     public void aceptarCuentaNueva(String token, String contrasena) {
         InvitacionEquipo inv = vigente(token);
-        Optional<Usuario> existente = usuarioRepository.findByCorreo(inv.getCorreo());
+        // Viva primero; si no hay, la ELIMINADA (reactivación por SALIDA_EQUIPO). findByCorreo ignora ELIMINADAS.
+        Optional<Usuario> existente = usuarioRepository.findByCorreo(inv.getCorreo())
+            .or(() -> usuarioRepository.findEliminadoByCorreo(inv.getCorreo()));
         if (existente.isPresent()) {
             Integer estado = existente.get().getEstado();
             if (Integer.valueOf(Constants.ESTADO_ACTIVO).equals(estado)) {
                 throw new EnlaceNoVigenteException(HttpStatus.CONFLICT,
                     "Ya existe una cuenta con este correo: iniciá sesión y aceptá la invitación.");
             }
-            if (!Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(estado)) throw noValida();
+            if (!eliminadaPorSalidaDeEquipo(existente.get())) throw noValida();
         }
         String falta = AuthSupport.faltantePoliticaContrasena(contrasena);
         if (falta != null) throw new IllegalArgumentException(falta);
@@ -130,6 +134,31 @@ public class InvitacionEquipoService {
         miembroEmpresaRepository.save(new MiembroEmpresa(saved, empresa, inv.getRolEnEmpresa()));
     }
 
+    /**
+     * Regla fail-closed única (invitar y aceptar): solo se emite invitación usable y solo se reactiva una cuenta
+     * ELIMINADA cuyo motivo_eliminacion es EXACTAMENTE SALIDA_EQUIPO. NULL (filas anteriores) u otro valor = no.
+     */
+    public static boolean eliminadaPorSalidaDeEquipo(Usuario u) {
+        return u != null && Integer.valueOf(Constants.ESTADO_ELIMINADO).equals(u.getEstado())
+            && Constants.MOTIVO_ELIMINACION_SALIDA_EQUIPO.equals(u.getMotivoEliminacion());
+    }
+
+    /**
+     * Al reactivar, nada emitido antes sirve: OTP de todos los tipos (reset de contraseña, verificación de correo,
+     * 2FA por correo, y cualquier tipo futuro como un cambio de correo), 2FA/TOTP completo y passkeys.
+     */
+    private void invalidarCredencialesPendientes(Usuario u) {
+        otpService.invalidarTodosDeUsuario(u);
+        u.setTwoFactorEnabled(false);
+        u.setTwoFactorSecret(null);
+        u.setTwoFactorPendingSecret(null);
+        u.setRecoveryCodes(null);
+        u.setTwoFactorMethods(null);
+        u.setTotpLastUsedOtp(null);
+        u.setTotpLastUsedAt(null);
+        webAuthnCredentialRepository.deleteByUsuario_Id(u.getId());
+    }
+
     private void reactivarEliminado(Usuario u, InvitacionEquipo inv, Empresa empresa, Rol rol, String contrasena) {
         if (miembroEmpresaRepository.countEmpresasByUsuarioId(u.getId()) >= EquipoService.MAX_EMPRESAS_POR_USUARIO) {
             throw noValida();
@@ -138,6 +167,8 @@ public class InvitacionEquipoService {
         u.setEstado(Constants.ESTADO_ACTIVO);
         u.setCorreoVerificado(true);
         u.setIntentosFallidos(0);
+        u.setMotivoEliminacion(null);
+        invalidarCredencialesPendientes(u);
         if (u.getRoles().stream().noneMatch(r -> Constants.ROL_EMPRENDEDOR.equals(r.getNombreRol()))) u.getRoles().add(rol);
         // La empresa anterior puede ser un negocio del que ya no es miembro: se reasigna al que invita.
         boolean empresaVigente = u.getEmpresa() != null

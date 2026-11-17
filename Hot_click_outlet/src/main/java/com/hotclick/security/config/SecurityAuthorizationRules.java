@@ -31,6 +31,11 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/auth/2fa/**").authenticated()
             .requestMatchers("/api/auth/verificar-correo-negocio").permitAll()
             .requestMatchers(POST, "/api/auth/reenviar-codigo-negocio").authenticated()
+            // Invitación de equipo: el token (en el BODY, nunca en el path) ES la credencial; públicos explícitos
+            .requestMatchers(POST, "/api/auth/equipo-invitacion/consultar").permitAll()
+            .requestMatchers(POST, "/api/auth/equipo-invitacion/aceptar-cuenta-nueva").permitAll()
+            // Aceptar con cuenta existente exige sesión (el servicio además exige que sea el correo invitado)
+            .requestMatchers(POST, "/api/equipo-invitaciones/aceptar").authenticated()
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/health").permitAll()
             .requestMatchers("/api/webhooks/**").permitAll()
@@ -298,7 +303,7 @@ final class SecurityAuthorizationRules {
                 // Páginas del panel de plataforma (solo HTML del SPA): los datos van por /api/admin/**, que sigue ADMIN.
                 "/plataforma", "/plataforma/**",
                 "/nosotros", "/productos", "/productos/**", "/descubri", "/categorias", "/buscar/foto", "/informacion", "/contacto",
-                "/carrito", "/login", "/logout", "/recuperar-contrasena", "/equipo/invitacion/*", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
+                "/carrito", "/login", "/logout", "/recuperar-contrasena", "/equipo/invitacion", "/equipo/invitacion/*", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan", "/planes", "/vender",
                 "/emprendimientos", "/emprendimientos/*", "/negocios",

@@ -4373,7 +4373,7 @@ ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS plazo_interno_sinpe TIMES
 -- al vencer vuelve a 'SUSPENDIDO_IMPAGO'. La bitácora (admin, motivo, hora) va en hot_click_auditoria_admin_tb.
 CREATE TABLE IF NOT EXISTS hot_click_suspension_extension_tb (
     id_extension      BIGSERIAL    PRIMARY KEY,
-    fk_id_empresa     BIGINT       NOT NULL REFERENCES hot_click_empresa_tb (id_empresa) ON DELETE CASCADE,
+    fk_id_empresa     BIGINT       NOT NULL REFERENCES hot_click_empresa_tb (id_empresa),
     suscripcion_id    BIGINT       NOT NULL,
     gracia_desde      TIMESTAMP    NOT NULL,
     gracia_hasta      TIMESTAMP    NOT NULL,
@@ -4682,3 +4682,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_invitacion_equipo_token_hash
 CREATE UNIQUE INDEX IF NOT EXISTS uq_invitacion_equipo_pendiente
     ON hot_click_invitacion_equipo_tb (fk_id_empresa, correo)
     WHERE usado_en IS NULL AND revocado_en IS NULL;
+
+-- V240__usuario_motivo_eliminacion.sql
+ALTER TABLE hot_click_usuario_tb ADD COLUMN IF NOT EXISTS motivo_eliminacion VARCHAR(40);

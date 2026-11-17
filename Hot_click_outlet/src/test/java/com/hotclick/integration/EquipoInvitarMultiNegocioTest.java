@@ -87,8 +87,8 @@ class EquipoInvitarMultiNegocioTest extends BaseIntegrationTest {
             .andExpect(status().isOk());
         // Invitar no agrega a nadie: el miembro entra al aceptar, y entra en la empresa de la invitación (B).
         assertThat(usuarioRepository.findByCorreo("mn-nuevo@test.cr")).isEmpty();
-        mockMvc.perform(post("/api/auth/equipo-invitacion/" + tokenInvitacionEnviadoA("mn-nuevo@test.cr") + "/aceptar-cuenta-nueva")
-                .contentType(MediaType.APPLICATION_JSON).content("{\"contrasena\":\"Clave12345\"}"))
+        mockMvc.perform(post("/api/auth/equipo-invitacion/aceptar-cuenta-nueva")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"" + tokenInvitacionEnviadoA("mn-nuevo@test.cr") + "\",\"contrasena\":\"Clave12345\"}"))
             .andExpect(status().isOk());
 
         Usuario nuevo = usuarioRepository.findByCorreo("mn-nuevo@test.cr").orElseThrow();

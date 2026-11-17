@@ -77,6 +77,7 @@ class SesionesAlDesactivarCuentaTest {
     void adminEliminar() {
         adminService.eliminar(31L);
         assertThat(usuario.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
+        assertThat(usuario.getMotivoEliminacion()).isEqualTo("ADMIN");
         assertSesionesCortadas();
     }
 
@@ -85,6 +86,7 @@ class SesionesAlDesactivarCuentaTest {
     void adminRechazar() {
         adminService.rechazar(31L);
         assertThat(usuario.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
+        assertThat(usuario.getMotivoEliminacion()).isEqualTo("ADMIN");
         assertSesionesCortadas();
     }
 
@@ -123,6 +125,7 @@ class SesionesAlDesactivarCuentaTest {
         equipoService.eliminar(31L, 5L, 1L);
 
         assertThat(usuario.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
+        assertThat(usuario.getMotivoEliminacion()).isEqualTo("SALIDA_EQUIPO");
         assertSesionesCortadas();
     }
 
@@ -136,6 +139,7 @@ class SesionesAlDesactivarCuentaTest {
         equipoService.eliminar(31L, 5L, 1L);
 
         assertThat(usuario.getEstado()).isEqualTo(Constants.ESTADO_ACTIVO);
+        assertThat(usuario.getMotivoEliminacion()).isNull();
         verify(refreshTokenService, never()).revocarTodosDeUsuario(any());
     }
 }

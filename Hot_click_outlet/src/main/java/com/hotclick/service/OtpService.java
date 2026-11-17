@@ -125,6 +125,12 @@ public class OtpService {
         return true;
     }
 
+    /** Invalida todo OTP pendiente o verificado-sin-canjear del usuario, de todos los tipos. */
+    public void invalidarTodosDeUsuario(Usuario usuario) {
+        codigoOtpRepository.invalidarTodosDeUsuario(usuario);
+        codigoOtpRepository.darDeBajaTodosLosVerificados(usuario, Constants.ESTADO_ACTIVO, Constants.ESTADO_INACTIVO);
+    }
+
     /**
      * Marca el OTP como usado (consumed). Llamar después de verificarOtp exitoso.
      */

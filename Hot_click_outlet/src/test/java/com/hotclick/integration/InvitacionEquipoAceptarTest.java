@@ -85,14 +85,15 @@ class InvitacionEquipoAceptarTest extends BaseIntegrationTest {
     }
 
     private int aceptarNueva(String token, String contrasena) throws Exception {
-        return mockMvc.perform(post("/api/auth/equipo-invitacion/" + token + "/aceptar-cuenta-nueva")
-                .contentType(MediaType.APPLICATION_JSON).content("{\"contrasena\":\"" + contrasena + "\"}"))
+        return mockMvc.perform(post("/api/auth/equipo-invitacion/aceptar-cuenta-nueva")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"" + token + "\",\"contrasena\":\"" + contrasena + "\"}"))
             .andReturn().getResponse().getStatus();
     }
 
     private int aceptarExistente(String token, Usuario como) throws Exception {
-        return mockMvc.perform(post("/api/equipo-invitaciones/" + token + "/aceptar")
-                .header("Authorization", tokenPara(como, Constants.ROL_EMPRENDEDOR)))
+        return mockMvc.perform(post("/api/equipo-invitaciones/aceptar")
+                .header("Authorization", tokenPara(como, Constants.ROL_EMPRENDEDOR))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"" + token + "\"}"))
             .andReturn().getResponse().getStatus();
     }
 
@@ -164,7 +165,7 @@ class InvitacionEquipoAceptarTest extends BaseIntegrationTest {
     @Test
     @DisplayName("sin sesión no se acepta como cuenta existente (401)")
     void aceptarExistenteSinSesion() throws Exception {
-        mockMvc.perform(post("/api/equipo-invitaciones/cualquiera/aceptar")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/equipo-invitaciones/aceptar").contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"cualquiera\"}")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -210,7 +211,7 @@ class InvitacionEquipoAceptarTest extends BaseIntegrationTest {
         String correo = "inv-acc-vence@test.cr";
         invitar(correo);
         String token = tokenInvitacionEnviadoA(correo);
-        jdbcTemplate.update("UPDATE hot_click_invitacion_equipo_tb SET vence_en = ?", LocalDateTime.now().minusMinutes(1));
+        jdbcTemplate.update("UPDATE hot_click_invitacion_equipo_tb SET vence_en = ?", LocalDateTime.now(Constants.ZONA_CR).minusMinutes(1));
         assertThat(aceptarNueva(token, "Clave12345")).isEqualTo(410);
         assertThat(usuarioRepository.findByCorreo(correo)).isEmpty();
     }
@@ -254,11 +255,11 @@ class InvitacionEquipoAceptarTest extends BaseIntegrationTest {
         String correo = "inv-acc-consulta@test.cr";
         invitar(correo);
         String token = tokenInvitacionEnviadoA(correo);
-        mockMvc.perform(get("/api/auth/equipo-invitacion/" + token))
+        mockMvc.perform(post("/api/auth/equipo-invitacion/consultar").contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"" + token + "\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.rolEnEmpresa").value("EDITOR"))
             .andExpect(jsonPath("$.data.cuentaExiste").value(false));
-        mockMvc.perform(get("/api/auth/equipo-invitacion/no-existe-123")).andExpect(status().isGone());
+        mockMvc.perform(post("/api/auth/equipo-invitacion/consultar").contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"no-existe-123\"}")).andExpect(status().isGone());
     }
 
     @Test

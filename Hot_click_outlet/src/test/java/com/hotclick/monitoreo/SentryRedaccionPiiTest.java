@@ -157,4 +157,24 @@ class SentryRedaccionPiiTest {
         assertThat(SentryRedaccionPii.redactar("aws " + "AK" + "IA" + "X".repeat(16) + " fin"))
                 .isEqualTo("aws [token] fin");
     }
+
+    @Test
+    void enmascaraTokenDeInvitacionEnUrlDeRequestMensajeYTransaccion() {
+        String t = "AbCd" + "EfGhIjKlMnOpQrStUvWxYz0123456789abc";
+        String resto = t.substring(4);
+        SentryEvent ev = new SentryEvent();
+        Request req = new Request();
+        req.setUrl("https://hotclick.lat/api/auth/equipo-invitacion/" + t + "/aceptar-cuenta-nueva");
+        ev.setRequest(req);
+        ev.setTransaction("POST /api/equipo-invitaciones/" + t + "/aceptar");
+        Message m = new Message();
+        m.setMessage("falla en /equipo/invitacion/" + t);
+        ev.setMessage(m);
+
+        SentryEvent out = cb.execute(ev, new Hint());
+
+        assertThat(out.getRequest().getUrl()).contains("/equipo-invitacion/AbCd…").doesNotContain(resto);
+        assertThat(out.getTransaction()).doesNotContain(resto);
+        assertThat(out.getMessage().getMessage()).doesNotContain(resto);
+    }
 }

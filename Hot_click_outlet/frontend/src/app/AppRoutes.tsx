@@ -143,7 +143,9 @@ export default function AppRoutes() {
         <Route path="/sso-complete" element={<RequiereClerk><SSOComplete /></RequiereClerk>} />
       </Route>
       <Route path="/recuperar-contrasena" element={<RecuperarContrasenaPage />} />
-      <Route path="/equipo/invitacion/:token" element={<AceptarInvitacionEquipoPage />} />
+      <Route path="/equipo/invitacion" element={<AceptarInvitacionEquipoPage />} />
+      {/* Enlaces viejos con el token en el path: la página lo descarta (capturarTokenDeUrl limpia la barra) */}
+      <Route path="/equipo/invitacion/*" element={<AceptarInvitacionEquipoPage />} />
       <Route path="/registro-empresa" element={<RegistroEmpresaPage />} />
       <Route path="/registro-empresa/activar-plan" element={<ActivarPlanPage />} />
       <Route path="/registrar-negocio" element={<ProtectedRoute><RegistrarNegocioPage /></ProtectedRoute>} />

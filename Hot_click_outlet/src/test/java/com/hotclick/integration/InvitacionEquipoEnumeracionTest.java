@@ -16,7 +16,10 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -80,19 +83,33 @@ class InvitacionEquipoEnumeracionTest extends BaseIntegrationTest {
         return usuarioRepository.saveAndFlush(u);
     }
 
-    /** Status + cuerpo crudo sin el timestamp (lo único que cambia entre llamadas). */
+    /** Headers que no cambian entre llamadas iguales (se excluyen Date y Set-Cookie/sesión, que sí varían). */
+    private static final Set<String> HEADERS_VARIABLES = Set.of("date", "set-cookie", "expires", "x-request-id", "traceparent");
+
+    /**
+     * Status + HEADERS estables (nombre y valores, ordenados) + cuerpo crudo sin el timestamp (lo único que cambia
+     * entre llamadas). Indistinguible también por headers: ni un Content-Length distinto ni un header extra delata
+     * si la cuenta existe.
+     */
     private String respuesta(String correo, String rolEnEmpresa) throws Exception {
+        // 6 invitaciones seguidas desde la misma IP superan el tope de POST /api/empresa/equipo (5/60s): se limpia el cupo.
+        jdbcTemplate.update("DELETE FROM hot_click_rate_limit_tb");
         MockHttpServletResponse r = mockMvc.perform(post("/api/empresa/equipo")
                 .header("Authorization", tDueno).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombre\":\"Invitada Prueba\",\"correo\":\"" + correo + "\",\"telefono\":\"00000000\",\"rolEnEmpresa\":\""
                     + rolEnEmpresa + "\"}"))
             .andReturn().getResponse();
         r.setCharacterEncoding("UTF-8");
-        return r.getStatus() + "|" + r.getContentAsString().replaceAll("\"timestamp\"\\s*:\\s*\"[^\"]*\"", "\"timestamp\":\"-\"");
+        Map<String, List<String>> headers = new TreeMap<>();
+        for (String nombre : r.getHeaderNames()) {
+            if (HEADERS_VARIABLES.contains(nombre.toLowerCase(java.util.Locale.ROOT))) continue;
+            headers.put(nombre.toLowerCase(java.util.Locale.ROOT), r.getHeaders(nombre));
+        }
+        return r.getStatus() + "|" + headers + "|" + r.getContentAsString().replaceAll("\"timestamp\"\\s*:\\s*\"[^\"]*\"", "\"timestamp\":\"-\"");
     }
 
     @Test
-    @DisplayName("la respuesta es idéntica (status y cuerpo) para: correo inexistente, cuenta activa ajena, ya miembro, eliminada, suspendida, inactiva")
+    @DisplayName("la respuesta es idéntica (status, headers y cuerpo) para: correo inexistente, cuenta activa ajena, ya miembro, eliminada, suspendida, inactiva")
     void respuestaIdenticaExistaONoLaCuenta() throws Exception {
         cuentaConEstado("inv-enum-activa@test.cr", Constants.ESTADO_ACTIVO);
         cuentaConEstado("inv-enum-eliminada@test.cr", Constants.ESTADO_ELIMINADO);
@@ -108,7 +125,7 @@ class InvitacionEquipoEnumeracionTest extends BaseIntegrationTest {
         r.put("inactiva", respuesta("inv-enum-inactiva@test.cr", "EDITOR"));
 
         String esperada = r.get("inexistente");
-        assertThat(esperada).startsWith("200|").contains("Invitación enviada");
+        assertThat(esperada).startsWith("200|").contains("Invitación enviada").contains("content-type");
         r.forEach((caso, cuerpo) -> assertThat(cuerpo).as("respuesta del caso " + caso).isEqualTo(esperada));
     }
 

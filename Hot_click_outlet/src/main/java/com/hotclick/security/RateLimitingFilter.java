@@ -42,6 +42,11 @@ import java.util.Map;
  *   /api/auth/reenviar-verificacion → 3 / 300s
  *   /api/auth/refresh            → 30 / 60s
  *   /api/auth/change-password    →  5 / 300s
+ *   /api/empresa/equipo          →  5 / 60s   (invitar al equipo, incluye CAJERO: cada POST puede mandar un correo;
+ *                                              sin tope se bombardea una dirección)
+ *   /api/auth/equipo-invitacion/** → 10 / 60s (consultar + aceptar-cuenta-nueva comparten UN bucket por IP + prefijo:
+ *                                              cambiar el token o el body no abre otro cupo)
+ *   /api/equipo-invitaciones/**  → 10 / 60s   (aceptar con sesión; un bucket por IP + prefijo)
  *
  *   General
  *   ────────────────────────────────────────────
@@ -65,6 +70,8 @@ import java.util.Map;
  *   /api/gift-cards/validar        →  30 / 60s  (además 10 / 60s por usuario, fail-closed, en el controlador)
  *   /api/public/pedidos/seguimiento/** → 20 / 60s
  *   /api/public/tienda-rapida/**   →  20 / 60s
+ *   /api/auth/equipo-invitacion/** →  20 / 60s  (no hay GET hoy; por si alguien lo agrega o prueba el path viejo)
+ *   /api/equipo-invitaciones/**    →  20 / 60s
  *   /api/public/**                 →  60 / 60s
  *   /api/tienda/**                 → 120 / 60s
  *   /api/productos/**              → 120 / 60s
@@ -146,6 +153,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         Map.entry("/api/auth/reenviar-verificacion", new Limit(3, 300)),
         Map.entry("/api/auth/refresh",            new Limit(30,   60)),
         Map.entry("/api/auth/change-password",    new Limit(5,   300)),
+        // Invitar al equipo (envía un correo con enlace): frena el bombardeo de una dirección, como forgot-password
+        Map.entry("/api/empresa/equipo",          new Limit(5,    60)),
         // General
         Map.entry("/api/contacto",                new Limit(5,    60)),
         Map.entry("/api/telegram/vincular",       new Limit(5,    60)),
@@ -192,6 +201,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new PrefixLimit("/api/productos/", "/avisar-reposicion", 5, 60),
         // Pedido de tienda propia (público, crea usuario invitado y pedido)
         new PrefixLimit("/api/tienda/", "/pedidos", 5, 60),
+        // Invitación de equipo (token en el body): un bucket por IP + prefijo, cambiar token/body no abre cupo
+        new PrefixLimit("/api/auth/equipo-invitacion/", null, 10, 60),
+        new PrefixLimit("/api/equipo-invitaciones/", null, 10, 60),
         // Completar la tienda rápida por token
         new PrefixLimit("/api/public/tienda-rapida/", null, 5, 60),
         // P8-02: WhatsApp manual del CRM (sale del número de la plataforma): 20/hora por IP
@@ -217,6 +229,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/public/pedidos/seguimiento",  20,  60),
         // PUB-09: lectura del enlace de tienda rapida por token (un SELECT por request).
         new GetLimit("/api/public/tienda-rapida",        20,  60),
+        // Invitación de equipo: hoy solo POST; el tope GET cubre cualquier GET futuro o el path viejo con token.
+        new GetLimit("/api/auth/equipo-invitacion",      20,  60),
+        new GetLimit("/api/equipo-invitaciones",         20,  60),
         // BAJO: búsqueda pública del marketplace (full-text + Buy Box por request): scraping barato sin tope.
         new GetLimit("/api/marketplace/buscar",          60,  60),
         new GetLimit("/api/marketplace/productos",      120,  60),

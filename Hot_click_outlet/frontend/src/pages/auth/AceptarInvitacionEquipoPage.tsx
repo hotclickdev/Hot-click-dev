@@ -1,9 +1,12 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Seo from '@/components/seo/Seo'
 import api from '@/services/api'
 import useAuthStore from '@/store/authStore'
 import { contrasenaAceptable } from './recuperar/recuperarHelpers'
+import { capturarTokenDeUrl, guardarParaLogin, olvidarToken, tomarToken } from '@/utils/invitacionToken'
+import { rutaLoginConRetorno } from '@/utils/authRedirect'
+import { RUTA_INVITACION } from '@/utils/sanitizarUrl'
 
 type Invitacion = { negocio: string; rolEnEmpresa: string; correo: string; cuentaExiste: boolean }
 
@@ -16,21 +19,36 @@ function mensajeError(err: unknown, porDefecto: string): string {
   return m || porDefecto
 }
 
-/** Aceptar una invitación al equipo con el enlace de un solo uso del correo (cuenta nueva o existente). */
+/**
+ * Aceptar una invitación al equipo con el enlace de un solo uso del correo (cuenta nueva o existente).
+ * El token llega en el fragmento (`#t=`), se guarda en memoria y se borra de la barra YA; viaja solo en el body de la API.
+ */
 export default function AceptarInvitacionEquipoPage() {
-  const { token = '' } = useParams()
+  const [token, setToken] = useState<string | null>(() => { capturarTokenDeUrl(); return tomarToken() })
   const navigate = useNavigate()
   const sesionCorreo = useAuthStore((s) => s.userEmail)
   const [inv, setInv] = useState<Invitacion | null>(null)
-  const [estado, setEstado] = useState<'cargando' | 'invalida' | 'lista' | 'hecho'>('cargando')
+  const [estado, setEstado] = useState<'cargando' | 'invalida' | 'lista' | 'hecho'>(token ? 'cargando' : 'invalida')
   const [contrasena, setContrasena] = useState('')
   const [repetir, setRepetir] = useState('')
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const yendoALogin = useRef(false)
+
+  // Un enlace pegado con la página ya abierta cambia solo el hash: se lee otra vez y se limpia igual.
+  useEffect(() => {
+    const alCambiarHash = () => { if (capturarTokenDeUrl()) setToken(tomarToken()) }
+    globalThis.addEventListener('hashchange', alCambiarHash)
+    return () => globalThis.removeEventListener('hashchange', alCambiarHash)
+  }, [])
+
+  // Al salir de la página no queda el token en memoria ni en sessionStorage (salvo el salto a /login, ya guardado).
+  useEffect(() => () => { if (!yendoALogin.current) olvidarToken() }, [])
 
   useEffect(() => {
+    if (!token) return // enlace sin token: el estado inicial ya es 'invalida'
     let cancelado = false
-    api.get(`/auth/equipo-invitacion/${encodeURIComponent(token)}`)
+    api.post('/auth/equipo-invitacion/consultar', { token })
       .then((r) => {
         if (cancelado) return
         setInv((r.data as { data: Invitacion }).data)
@@ -42,11 +60,12 @@ export default function AceptarInvitacionEquipoPage() {
 
   async function aceptarNueva(e: FormEvent) {
     e.preventDefault()
-    if (!inv) return
+    if (!inv || !token) return
     if (contrasena !== repetir) { setError('Las contraseñas no coinciden'); return }
     setEnviando(true); setError('')
     try {
-      await api.post(`/auth/equipo-invitacion/${encodeURIComponent(token)}/aceptar-cuenta-nueva`, { contrasena })
+      await api.post('/auth/equipo-invitacion/aceptar-cuenta-nueva', { token, contrasena })
+      olvidarToken()
       setEstado('hecho')
     } catch (err) {
       setError(mensajeError(err, 'No pudimos aceptar la invitación'))
@@ -55,10 +74,18 @@ export default function AceptarInvitacionEquipoPage() {
     }
   }
 
+  function irALogin() {
+    if (token) guardarParaLogin(token) // sessionStorage de un solo uso: NUNCA en path ni query
+    yendoALogin.current = true
+    navigate(rutaLoginConRetorno(RUTA_INVITACION))
+  }
+
   async function aceptarExistente() {
+    if (!token) return
     setEnviando(true); setError('')
     try {
-      await api.post(`/equipo-invitaciones/${encodeURIComponent(token)}/aceptar`)
+      await api.post('/equipo-invitaciones/aceptar', { token })
+      olvidarToken()
       setEstado('hecho')
     } catch (err) {
       setError(mensajeError(err, 'No pudimos aceptar la invitación'))
@@ -105,10 +132,10 @@ export default function AceptarInvitacionEquipoPage() {
                 <p className="text-sm text-hc-n-700">
                   Para aceptar, iniciá sesión con tu cuenta de <strong>{inv.correo}</strong>.
                 </p>
-                <Link to={`/login?redirect=${encodeURIComponent(`/equipo/invitacion/${token}`)}`}
+                <button type="button" onClick={irALogin}
                   className="rounded-xl bg-hc-blue-600 px-4 py-2 text-center text-sm font-medium text-white">
                   Iniciar sesión
-                </Link>
+                </button>
               </>
             )
           ) : (

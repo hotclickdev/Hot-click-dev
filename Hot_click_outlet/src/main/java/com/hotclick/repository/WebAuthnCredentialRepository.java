@@ -13,5 +13,7 @@ public interface WebAuthnCredentialRepository extends JpaRepository<WebAuthnCred
 
     boolean existsByUsuario_Id(Long userId);
 
+    void deleteByUsuario_Id(Long userId);
+
     void deleteByCredentialId(String credentialId);
 }

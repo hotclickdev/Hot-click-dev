@@ -30,6 +30,21 @@ public interface CodigoOtpRepository extends JpaRepository<CodigoOtp, Long> {
            "WHERE o.usuario = :usuario AND o.tipoOtp.nombre = :tipo AND o.activeFlag = true")
     void invalidarOtpsAnteriores(@Param("usuario") Usuario usuario, @Param("tipo") String tipo);
 
+    /** Apaga TODOS los OTP activos del usuario, de cualquier tipo (REGISTRO, RESET_PASSWORD, 2FA_LOGIN, ...). */
+    @Modifying
+    @Transactional
+    @Query("UPDATE CodigoOtp o SET o.activeFlag = false WHERE o.usuario = :usuario AND o.activeFlag = true")
+    int invalidarTodosDeUsuario(@Param("usuario") Usuario usuario);
+
+    /** Da de baja TODOS los OTP ya verificados y sin canjear del usuario, de cualquier tipo. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE CodigoOtp o SET o.estado = :estadoCanjeado " +
+           "WHERE o.usuario = :usuario AND o.usedAt IS NOT NULL AND o.estado = :estadoVigente")
+    int darDeBajaTodosLosVerificados(@Param("usuario") Usuario usuario,
+                                     @Param("estadoVigente") Integer estadoVigente,
+                                     @Param("estadoCanjeado") Integer estadoCanjeado);
+
     @Modifying
     @Transactional
     @Query("UPDATE CodigoOtp o SET o.attempts = o.attempts + 1 WHERE o.idOtpCode = :id")

@@ -544,9 +544,9 @@ class EmprendedorEquipoTest extends BaseIntegrationTest {
 
     private void aceptarCuentaNueva(String correo, String contrasena) throws Exception {
         String token = tokenInvitacionEnviadoA(correo);
-        mockMvc.perform(post("/api/auth/equipo-invitacion/" + token + "/aceptar-cuenta-nueva")
+        mockMvc.perform(post("/api/auth/equipo-invitacion/aceptar-cuenta-nueva")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"contrasena\":\"" + contrasena + "\"}"))
+                .content("{\"token\":\"" + token + "\",\"contrasena\":\"" + contrasena + "\"}"))
             .andExpect(status().isOk());
     }
 

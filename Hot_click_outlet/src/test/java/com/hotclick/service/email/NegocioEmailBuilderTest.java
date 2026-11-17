@@ -118,7 +118,7 @@ class NegocioEmailBuilderTest {
             NegocioEmailBuilder b = conAppUrl(appUrl);
             assertThat(b.buildBienvenidaEmprendedor("Ana", "X", true)).contains("href=\"https://hotclick.lat/admin\"");
             assertThat(b.buildCuponBienvenida("C1")).contains("href=\"https://hotclick.lat/productos\"");
-            assertThat(b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", false, "tk")).contains("href=\"https://hotclick.lat/equipo/invitacion/tk\"");
+            assertThat(b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", false, "tk")).contains("href=\"https://hotclick.lat/equipo/invitacion#t=tk\"");
         }
     }
 }

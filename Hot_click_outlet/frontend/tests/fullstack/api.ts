@@ -113,7 +113,7 @@ export async function miembro(api: APIRequestContext, h: Headers, rol: 'EDITOR' 
     `UPDATE hot_click_invitacion_equipo_tb SET token_hash = :'hash' WHERE correo = :'correo' AND usado_en IS NULL AND revocado_en IS NULL RETURNING 1`,
     { hash, correo })
   expect(filas, 'hay una invitación pendiente para el invitado').toBe('1')
-  const ok = await api.post(`/api/auth/equipo-invitacion/${token}/aceptar-cuenta-nueva`, { data: { contrasena: claveQa() } })
+  const ok = await api.post('/api/auth/equipo-invitacion/aceptar-cuenta-nueva', { data: { token, contrasena: claveQa() } })
   expect(ok.ok(), await ok.text()).toBeTruthy()
   return { correo, contrasena: claveQa() }
 }

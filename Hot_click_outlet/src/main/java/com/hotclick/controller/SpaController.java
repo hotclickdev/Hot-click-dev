@@ -146,7 +146,8 @@ public class SpaController {
         "/login",
         "/logout",
         "/recuperar-contrasena",
-        "/equipo/invitacion/*",
+        "/equipo/invitacion",
+        "/equipo/invitacion/*", // enlaces viejos con el token en el path: la SPA lo descarta (no lo usa)
         "/registrar-negocio",
         "/sso-callback",
         "/sso-complete",

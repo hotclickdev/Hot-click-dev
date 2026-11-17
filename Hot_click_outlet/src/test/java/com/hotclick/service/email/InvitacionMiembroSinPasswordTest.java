@@ -22,14 +22,14 @@ class InvitacionMiembroSinPasswordTest {
     void cuentaNuevaSinPassword() {
         String html = builder.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "Tienda", true, "tok123");
         assertThat(html).doesNotContain("Contraseña:").doesNotContain("Ya tenés acceso").doesNotContain("Te agregaron");
-        assertThat(html).contains("/equipo/invitacion/tok123").contains("definir tu propia contraseña").contains("un solo uso");
+        assertThat(html).contains("/equipo/invitacion#t=tok123").contains("definir tu propia contraseña").contains("un solo uso");
     }
 
     @Test
     @DisplayName("cuenta existente: también enlace de aceptación, pide iniciar sesión y no dice que ya entró")
     void cuentaExistenteAceptaConEnlace() {
         String html = builder.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "Tienda", false, "tok123");
-        assertThat(html).contains("/equipo/invitacion/tok123").contains("iniciá sesión")
+        assertThat(html).contains("/equipo/invitacion#t=tok123").contains("iniciá sesión")
             .doesNotContain("contraseña habitual").doesNotContain("Ya tenés acceso").doesNotContain("Te agregaron");
     }
 }

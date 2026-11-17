@@ -86,8 +86,8 @@ class InvitacionEquipoReinvitarEliminadoTest extends BaseIntegrationTest {
     }
 
     private int aceptarNueva(String token, String contrasena) throws Exception {
-        return mockMvc.perform(post("/api/auth/equipo-invitacion/" + token + "/aceptar-cuenta-nueva")
-                .contentType(MediaType.APPLICATION_JSON).content("{\"contrasena\":\"" + contrasena + "\"}"))
+        return mockMvc.perform(post("/api/auth/equipo-invitacion/aceptar-cuenta-nueva")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"" + token + "\",\"contrasena\":\"" + contrasena + "\"}"))
             .andReturn().getResponse().getStatus();
     }
 
@@ -145,7 +145,7 @@ class InvitacionEquipoReinvitarEliminadoTest extends BaseIntegrationTest {
         String token = tokenInvitacionEnviadoA(u.getCorreo());
         assertThat(token).isNotEqualTo(previo);
 
-        mockMvc.perform(get("/api/auth/equipo-invitacion/" + token))
+        mockMvc.perform(post("/api/auth/equipo-invitacion/consultar").contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"" + token + "\"}"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.data.cuentaExiste").value(false));
 
         assertThat(aceptarNueva(token, NUEVA)).isEqualTo(200);
