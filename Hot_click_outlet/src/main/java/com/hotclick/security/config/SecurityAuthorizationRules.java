@@ -307,6 +307,8 @@ final class SecurityAuthorizationRules {
                 "/carrito", "/login", "/logout", "/recuperar-contrasena", "/equipo/invitacion", "/equipo/invitacion/*", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan", "/planes", "/vender",
+                // Landing estática de demo para negocios (LandingParaNegociosController + static/para-negocios).
+                "/para-negocios", "/para-negocios/**",
                 "/emprendimientos", "/emprendimientos/*", "/negocios",
                 "/comprar", "/comprar/**",
                 "/tiendas", "/tiendas/**",

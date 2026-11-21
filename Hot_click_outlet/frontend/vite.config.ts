@@ -95,7 +95,10 @@ export default defineConfig({
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,png}', '*.svg'],
         // email/: íconos de los correos, no son de la app. Si un precache falla, el SW no se instala (QA-PROD-2).
-        globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**', 'email/**'],
+        // para-negocios/: landing estática servida por Spring (LandingParaNegociosController), no es de la app.
+        globIgnores: ['**/node_modules/**', 'brand/**', 'admin/**', 'email/**', 'para-negocios/**'],
+        // Sin esto, el SW respondería /para-negocios con el index.html de la SPA.
+        navigateFallbackDenylist: [/^\/para-negocios(\/|$)/],
         runtimeCaching: [
           // /api/inventario → NetworkOnly: lookup de barcode y stock deben ser en vivo.
           // Cachear aquí mostraría cantidades o matches obsoletos en captura offline.
