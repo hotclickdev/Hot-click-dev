@@ -287,6 +287,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/**").authenticated()
             // Rutas del SPA React (frontend)
             .requestMatchers("/error", "/error/**").permitAll()
+            // Landing estática de demo para negocios (LandingParaNegociosController + static/para-negocios): solo lectura.
+            .requestMatchers(GET, "/para-negocios", "/para-negocios/**").permitAll()
             .requestMatchers("/sw.js", "/manifest.webmanifest", "/workbox-*.js",
                 "/registerSW.js", "/vite.svg", "/robots.txt", "/llms.txt", "/opensearch.xml").permitAll()
             // Íconos de los correos (EmailLayoutHelper): públicos para Gmail. Antes daban 401, y como el
@@ -307,8 +309,6 @@ final class SecurityAuthorizationRules {
                 "/carrito", "/login", "/logout", "/recuperar-contrasena", "/equipo/invitacion", "/equipo/invitacion/*", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
                 "/para-emprendedores", "/para-pymes", "/negocio-plus-plan", "/planes", "/vender",
-                // Landing estática de demo para negocios (LandingParaNegociosController + static/para-negocios).
-                "/para-negocios", "/para-negocios/**",
                 "/emprendimientos", "/emprendimientos/*", "/negocios",
                 "/comprar", "/comprar/**",
                 "/tiendas", "/tiendas/**",

@@ -55,7 +55,7 @@ class LandingParaNegociosControllerTest {
 
     @Test
     void precios_igualesALaConfiguracionDePlanes() throws Exception {
-        String p = plantillaReal().split("var ES=")[0];
+        String p = plantillaReal();
         assertThat(p).contains("<td>9 %</td><td>7,5 %</td><td>6 %</td>");
         assertThat(p).doesNotContain("₡700", "mínimo");
     }
