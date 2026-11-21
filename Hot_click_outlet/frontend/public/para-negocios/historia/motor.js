@@ -9,10 +9,12 @@
   /* Carpeta de motor.js: las voces están en <carpeta>/audio/<def.voice>.mp3 */
   var BASE = ((document.currentScript && document.currentScript.src) || '').replace(/[^\/]*$/, '');
   var CSS = '' +
-    '.hs-snd{margin-left:auto;position:relative;display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px 0 10px;border-radius:999px;border:1px solid var(--line-strong,rgba(255,255,255,.28));background:transparent;color:inherit;cursor:pointer;font:500 10px/1 var(--mono,"IBM Plex Mono",monospace);letter-spacing:.08em;text-transform:uppercase}' +
-    '.hs-snd svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}' +
+    '.hs-snd{margin-left:auto;position:relative;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 18px 0 14px;border-radius:999px;border:1px solid var(--red,#D02A23);background:var(--red,#D02A23);color:#fff;cursor:pointer;font:600 12px/1 var(--mono,"IBM Plex Mono",monospace);letter-spacing:.08em;text-transform:uppercase;box-shadow:0 0 0 0 rgba(208,42,35,.55);animation:hs-snd-pulse 2.2s ease-out infinite}' +
+    '@keyframes hs-snd-pulse{0%{box-shadow:0 0 0 0 rgba(208,42,35,.55)}70%{box-shadow:0 0 0 12px rgba(208,42,35,0)}100%{box-shadow:0 0 0 0 rgba(208,42,35,0)}}' +
+    '@media (prefers-reduced-motion: reduce){.hs-snd{animation:none}}' +
+    '.hs-snd svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}' +
     '.hs-snd .i-on{display:none}.hs-snd.on .i-on{display:block}.hs-snd.on .i-off{display:none}' +
-    '.hs-snd.on{background:var(--red,#D02A23);border-color:var(--red,#D02A23);color:#fff}' +
+    '.hs-snd.on{background:transparent;border-color:var(--line-strong,rgba(255,255,255,.28));color:inherit;animation:none}' +
     '.hs-snd.miss{opacity:.45}.hs-snd[hidden]{display:none}.hs-snd:not([hidden])+.hs-capbtn{margin-left:0}' +
     '.hs-snd-tip{position:absolute;top:calc(100% + 8px);right:0;z-index:5;white-space:nowrap;padding:6px 10px;border-radius:8px;background:var(--card-2,#232831);color:var(--fg,#F4F6F9);font:500 10px/1 var(--mono,"IBM Plex Mono",monospace);letter-spacing:.06em;text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .2s}' +
     '.hs-snd.tip .hs-snd-tip{opacity:1}' +
@@ -82,7 +84,7 @@
     '.hs-err{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;color:var(--muted,#9AA1AE)}';
 
   var UI = {
-    es: { a: 'Problema · sin HotClick', b: 'Solución · con HotClick', pa: 'Problema', pb: 'Solución', leg: 'Qué significa cada sobre', cap: 'Frases', snd: 'Escuchar la historia con voz', sndT: 'Escuchar', sndOn: 'Con voz', sndMiss: 'Voz en preparación', pp: 'Reproducir o pausar', prev: 'Paso anterior', next: 'Paso siguiente', err: 'No se pudo cargar la animación. Revisá tu conexión y recargá la página.', lg: { q: 'Pedido', ok: 'Aprobado', no: 'Rechazado', pay: 'Pago', bell: 'Aviso', ban: 'Agotado', rep: 'Reporte', warn: 'Alerta de stock' } },
+    es: { a: 'Problema · sin HotClick', b: 'Solución · con HotClick', pa: 'Problema', pb: 'Solución', leg: 'Qué significa cada sobre', cap: 'Frases', snd: 'Escuchar la historia con voz', sndT: 'Tocá para escuchar', sndOn: 'Con voz', sndMiss: 'Voz en preparación', pp: 'Reproducir o pausar', prev: 'Paso anterior', next: 'Paso siguiente', err: 'No se pudo cargar la animación. Revisá tu conexión y recargá la página.', lg: { q: 'Pedido', ok: 'Aprobado', no: 'Rechazado', pay: 'Pago', bell: 'Aviso', ban: 'Agotado', rep: 'Reporte', warn: 'Alerta de stock' } },
     en: { a: 'Problem · without HotClick', b: 'Solution · with HotClick', pa: 'Problem', pb: 'Solution', leg: 'What each envelope means', cap: 'Captions', pp: 'Play or pause', prev: 'Previous step', next: 'Next step', err: 'The animation could not load. Check your connection and reload.', lg: { q: 'Request', ok: 'Approved', no: 'Rejected', pay: 'Payment', bell: 'Alert', ban: 'Sold out', rep: 'Report', warn: 'Stock alert' } },
     pt: { a: 'Problema · sem HotClick', b: 'Solução · com HotClick', pa: 'Problema', pb: 'Solução', leg: 'O que significa cada envelope', cap: 'Legendas', pp: 'Reproduzir ou pausar', prev: 'Passo anterior', next: 'Próximo passo', err: 'Não foi possível carregar a animação. Verifique a conexão e recarregue.', lg: { q: 'Pedido', ok: 'Aprovado', no: 'Recusado', pay: 'Pagamento', bell: 'Aviso', ban: 'Esgotado', rep: 'Relatório', warn: 'Alerta de estoque' } }
   };

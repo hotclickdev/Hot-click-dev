@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -32,6 +33,10 @@ public class LandingParaNegociosController {
     static final String RUTA = "/para-negocios";
     static final String MARCA_WA = "__SOPORTE_WA__";
     static final String MARCA_TEXTO = "__SOPORTE_TEXTO__";
+    static final String MARCA_CALENDARIO = "__DEMO_CALENDARIO__";
+    /** Página de reservas de Google Calendar (con o sin /calendar, con o sin ?gv=true). */
+    private static final Pattern CALENDARIO = Pattern.compile(
+        "^https://calendar\\.google\\.com/(?:calendar/)?appointments/schedules/([A-Za-z0-9_-]{10,200})(?:\\?gv=true)?$");
     private static final Pattern ENLACE_WA = Pattern.compile("https://wa\\.me/" + MARCA_WA + "\\?text=[^\"]*");
 
     @Value("classpath:/landing/para-negocios.html")
@@ -40,11 +45,25 @@ public class LandingParaNegociosController {
     @Value("${hotclick.soporte.telefono:}")
     private String telefonoSoporte;
 
+    /** Sin default: vacío o inválido ⇒ no se inserta el calendario y queda el botón de WhatsApp. */
+    @Value("${hotclick.demo.calendario-url:}")
+    private String calendarioUrl;
+
     private volatile String html;
 
     @PostConstruct
     void cargar() throws IOException {
-        html = render(new String(plantilla.getInputStream().readAllBytes(), StandardCharsets.UTF_8), telefonoSoporte);
+        html = render(new String(plantilla.getInputStream().readAllBytes(), StandardCharsets.UTF_8), telefonoSoporte, calendarioUrl);
+    }
+
+    static String render(String plantilla, String telefono, String calendario) {
+        return render(plantilla, telefono).replace(MARCA_CALENDARIO, calendarioEmbebible(calendario));
+    }
+
+    /** URL para el iframe (formato de inserción de Google, {@code ?gv=true}); "" si no es una página de reservas de Google. */
+    static String calendarioEmbebible(String url) {
+        Matcher m = CALENDARIO.matcher(url == null ? "" : url.trim());
+        return m.matches() ? "https://calendar.google.com/calendar/appointments/schedules/" + m.group(1) + "?gv=true" : "";
     }
 
     static String render(String plantilla, String telefono) {

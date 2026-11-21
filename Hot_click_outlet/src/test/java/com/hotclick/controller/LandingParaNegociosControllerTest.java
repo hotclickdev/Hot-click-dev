@@ -61,6 +61,27 @@ class LandingParaNegociosControllerTest {
     }
 
     @Test
+    void calendario_soloPaginasDeReservasDeGoogle() {
+        String id = "AcZssZ0abcdefGHIJ_klm-123";
+        String esperado = "https://calendar.google.com/calendar/appointments/schedules/" + id + "?gv=true";
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://calendar.google.com/appointments/schedules/" + id)).isEqualTo(esperado);
+        assertThat(LandingParaNegociosController.calendarioEmbebible(" " + esperado + " ")).isEqualTo(esperado);
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://evil.example/appointments/schedules/" + id)).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://calendar.google.com/calendar/appointments/schedules/x\"onload=\"y")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible(null)).isEmpty();
+    }
+
+    @Test
+    void calendario_seInsertaEnDataGcal() throws Exception {
+        String id = "AcZssZ0abcdefGHIJ_klm-123";
+        String html = LandingParaNegociosController.render(plantillaReal(), "", "https://calendar.google.com/appointments/schedules/" + id);
+        assertThat(html).contains("data-gcal=\"https://calendar.google.com/calendar/appointments/schedules/" + id + "?gv=true\"")
+            .doesNotContain(LandingParaNegociosController.MARCA_CALENDARIO);
+        assertThat(LandingParaNegociosController.render(plantillaReal(), "", "")).contains("data-gcal=\"\"");
+    }
+
+    @Test
     void idiomas_soloLosDelSitio() throws Exception {
         String p = plantillaReal();
         assertThat(p).contains("<option value=\"es\">", "<option value=\"en\">", "<option value=\"pt\">");
