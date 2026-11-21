@@ -61,6 +61,13 @@ class LandingParaNegociosControllerTest {
     }
 
     @Test
+    void idiomas_soloLosDelSitio() throws Exception {
+        String p = plantillaReal();
+        assertThat(p).contains("<option value=\"es\">", "<option value=\"en\">", "<option value=\"pt\">");
+        assertThat(p).doesNotContain("<option value=\"fr\">", "<option value=\"de\">", "<option value=\"zh\">");
+    }
+
+    @Test
     void conBarraFinal_redirigeALaRutaCanonica() throws Exception {
         var r = controller("").conBarra();
         assertThat(r.getStatusCode()).isEqualTo(HttpStatus.MOVED_PERMANENTLY);
