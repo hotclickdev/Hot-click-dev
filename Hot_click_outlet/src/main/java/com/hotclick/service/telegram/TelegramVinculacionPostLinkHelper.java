@@ -35,9 +35,7 @@ class TelegramVinculacionPostLinkHelper {
                     bot.enviarMensaje(viejo,
                         "Esta cuenta de HotClick se vinculó a otro Telegram. Este chat ya no tiene acceso.");
                 }
-                otra.setEstado(TelegramVinculacion.REVOCADA);
-                otra.setChatId(null);
-                otra.setContexto(null);
+                otra.revocar();
                 vinculacionRepository.save(otra);
             });
     }

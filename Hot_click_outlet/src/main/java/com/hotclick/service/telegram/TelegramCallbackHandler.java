@@ -82,7 +82,7 @@ public class TelegramCallbackHandler {
             case "inv"      -> datosQuery.mostrarInventario(v);
             case "inv:mod"  -> stockCheck.mostrarListaModificar(v, 0);
             case "ventas"   -> datosQuery.responderConDatos(v, datosQuery::mensajeVentasHoy);
-            case "fin"      -> datosQuery.responderConDatos(v, datosQuery::mensajeFinanzasMes);
+            case "fin"      -> datosQuery.mostrarFinanzasMes(v);
             case "chkok"    -> {
                 v.setContexto(null);
                 vinculacionRepository.save(v);

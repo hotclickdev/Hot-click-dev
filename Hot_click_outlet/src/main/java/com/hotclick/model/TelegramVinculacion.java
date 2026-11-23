@@ -95,6 +95,18 @@ public class TelegramVinculacion {
     public LocalDateTime getPausadoHasta() { return pausadoHasta; }
     public void setPausadoHasta(LocalDateTime pausadoHasta) { this.pausadoHasta = pausadoHasta; }
 
+    /**
+     * Única rutina de revocación: corta el vínculo y borra chat, contexto y código (con su vencimiento),
+     * para que un código viejo nunca pueda reactivarlo.
+     */
+    public void revocar() {
+        this.estado = REVOCADA;
+        this.chatId = null;
+        this.contexto = null;
+        this.codigo = null;
+        this.codigoExpira = null;
+    }
+
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 

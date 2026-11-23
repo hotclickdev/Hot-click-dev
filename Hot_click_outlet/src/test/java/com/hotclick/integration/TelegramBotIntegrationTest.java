@@ -594,6 +594,8 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         TelegramVinculacion v = vinculacionRepository.findByUsuarioId(duenno.getId()).orElseThrow();
         assertThat(v.getEstado()).isEqualTo(TelegramVinculacion.REVOCADA);
         assertThat(v.getChatId()).isNull();
+        assertThat(v.getCodigo()).isNull();
+        assertThat(v.getCodigoExpira()).isNull();
 
         clearInvocations(bot);
         postUpdate(callback(CHAT_ID, "inv"));

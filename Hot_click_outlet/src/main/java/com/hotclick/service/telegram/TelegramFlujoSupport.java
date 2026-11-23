@@ -52,6 +52,19 @@ public class TelegramFlujoSupport {
             .orElse(false);
     }
 
+    /**
+     * Dueño del negocio: con membresía activa, solo el rol PROPIETARIO (un ADMIN/CAJERO/LECTOR
+     * invitado también tiene usuario.empresaId = esa empresa y NO es dueño). Sin fila de
+     * membresía cuenta el dueño directo legado (usuario.empresaId).
+     */
+    public boolean esDueno(Usuario usuario, Long empresaId) {
+        if (usuario == null || empresaId == null) return false;
+        return miembroEmpresaRepository
+            .findByUsuarioIdAndEmpresaIdAndEstado(usuario.getId(), empresaId, 1)
+            .map(m -> "PROPIETARIO".equals(m.getRolEnEmpresa()))
+            .orElseGet(() -> empresaId.equals(usuario.getEmpresaId()));
+    }
+
     /** true si NO puede gestionar (y ya se le avisó). */
     public boolean denegarSiNoGestiona(TelegramVinculacion v, Long empresaId) {
         if (esPropietarioOAdmin(v.getUsuario(), empresaId)) return false;

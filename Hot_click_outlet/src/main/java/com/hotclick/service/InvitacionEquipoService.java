@@ -190,9 +190,7 @@ public class InvitacionEquipoService {
         Optional<TelegramVinculacion> vinculo = telegramVinculacionRepository.findByUsuarioId(u.getId());
         if (vinculo.isEmpty()) return;
         TelegramVinculacion v = vinculo.get();
-        v.setEstado(TelegramVinculacion.REVOCADA);
-        v.setChatId(null);
-        v.setContexto(null);
+        v.revocar();
         telegramVinculacionRepository.save(v);
     }
 

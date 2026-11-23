@@ -2,7 +2,6 @@ package com.hotclick.service;
 
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
-import com.hotclick.model.Usuario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -54,7 +53,6 @@ public class ModeracionAdminAvisoService {
         if (pedido == null) return;
         enviar("🛒 *NUEVA VENTA*\n\n"
             + "*Negocio:* " + esc(nombreEmpresa(pedido.getEmpresa())) + "\n"
-            + "*Cliente:* " + esc(nombreCliente(pedido.getUsuarioFinal())) + "\n"
             + "*Pedido:* " + esc(pedido.getNumeroPedido() != null ? pedido.getNumeroPedido() : "—") + "\n"
             + "*Total:* ₡" + String.format("%,d", pedido.getTotalPedido() != null ? pedido.getTotalPedido() : 0) + "\n"
             + "*Pago:* " + esc(pedido.getMetodoPago() != null ? pedido.getMetodoPago() : "—") + "\n"
@@ -76,12 +74,6 @@ public class ModeracionAdminAvisoService {
             return empresa.getNombreComercial();
         }
         return empresa.getNombreEmpresa() != null ? empresa.getNombreEmpresa() : "Empresa";
-    }
-
-    private static String nombreCliente(Usuario cliente) {
-        if (cliente == null) return "Mostrador";
-        if (cliente.getNombre() != null && !cliente.getNombre().isBlank()) return cliente.getNombre();
-        return cliente.getCorreo() != null ? cliente.getCorreo() : "Cliente";
     }
 
     private static String esc(String s) {

@@ -42,7 +42,8 @@ public class TelegramVinculacionService {
 
         Optional<TelegramVinculacion> opt = vinculacionRepository.findByCodigo(codigo);
         if (opt.isEmpty() || opt.get().getCodigoExpira() == null
-                || opt.get().getCodigoExpira().isBefore(LocalDateTime.now(Constants.ZONA_CR))) {
+                || opt.get().getCodigoExpira().isBefore(LocalDateTime.now(Constants.ZONA_CR))
+                || TelegramVinculacion.REVOCADA.equals(opt.get().getEstado())) {
             bot.enviarMensaje(chatId, "El código no existe o ya venció (dura 10 minutos). Generá uno nuevo desde Configuración → Telegram en el panel.");
             return;
         }
@@ -75,9 +76,7 @@ public class TelegramVinculacionService {
 
     public void desvincular(TelegramVinculacion v) {
         Long chatId = v.getChatId();
-        v.setEstado(TelegramVinculacion.REVOCADA);
-        v.setChatId(null);
-        v.setContexto(null);
+        v.revocar();
         vinculacionRepository.save(v);
         bot.enviarMensaje(chatId, "Listo, tu Telegram quedó desvinculado. Podés volver a conectarlo cuando querás desde Configuración → Telegram en el panel.");
     }

@@ -18,12 +18,14 @@ final class TelegramMenuOpciones {
             + "(ej: _¿cuál producto se vende más?_) y te respondo con los datos reales del negocio.";
     }
 
-    static List<List<Map<String, Object>>> teclado(boolean gestiona, boolean crm, boolean variasEmpresas) {
+    static List<List<Map<String, Object>>> teclado(boolean gestiona, boolean crm, boolean variasEmpresas, boolean esDueno) {
         List<List<Map<String, Object>>> teclado = new ArrayList<>();
         teclado.add(List.of(
             TelegramClienteBotService.boton("📦 Inventario", "inv"),
             TelegramClienteBotService.boton("💰 Ventas de hoy", "ventas")));
-        teclado.add(List.of(TelegramClienteBotService.boton("📊 Finanzas del mes", "fin")));
+        if (esDueno) {
+            teclado.add(List.of(TelegramClienteBotService.boton("📊 Finanzas del mes", "fin")));
+        }
         if (gestiona) {
             teclado.add(List.of(TelegramClienteBotService.boton("🛒 Nueva venta", "vta:new")));
             teclado.add(List.of(
