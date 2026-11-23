@@ -70,4 +70,35 @@ class QaCuentasSeederTest {
         verify(usuarioRepository, never()).save(any());
         verify(passwordEncoder, never()).encode(anyString());
     }
+
+    @Test
+    @DisplayName("Base recién migrada (HOTCLICK id=1, secuencia sin avanzar): alinea la secuencia y las empresas QA quedan con id > 1")
+    void alineaSecuenciaAntesDeInsertar() {
+        seeder.setAppUrl("http://localhost:8080");
+        env.put("QA_DEFAULT_PASSWORD", "Corta1!");
+        var plan = new com.hotclick.model.Plan();
+        plan.setNombre("EMPRENDEDOR");
+        when(planRepository.findByNombre(anyString())).thenReturn(java.util.Optional.of(plan));
+        when(passwordEncoder.encode(anyString())).thenReturn("hash");
+        when(usuarioRepository.findByCorreo(anyString())).thenReturn(java.util.Optional.empty());
+        when(usuarioRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(rolRepository.findByNombreRol(anyString())).thenReturn(java.util.Optional.empty());
+
+        // Simula Postgres: la secuencia arranca en 1 aunque id=1 ya existe; save() falla hasta que se alinea.
+        long[] siguiente = {1};
+        when(empresaRepository.alinearSecuenciaId()).thenAnswer(i -> { siguiente[0] = 2; return 2L; });
+        java.util.List<Long> ids = new java.util.ArrayList<>();
+        when(empresaRepository.save(any())).thenAnswer(i -> {
+            if (siguiente[0] == 1) throw new IllegalStateException("duplicate key id_empresa=1");
+            com.hotclick.model.Empresa e = i.getArgument(0);
+            e.setId(siguiente[0]++);
+            ids.add(e.getId());
+            return e;
+        });
+
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> seeder.run(mock(ApplicationArguments.class)));
+
+        org.assertj.core.api.Assertions.assertThat(ids).hasSize(6).allMatch(id -> id > 1);
+        verify(empresaRepository, org.mockito.Mockito.times(6)).alinearSecuenciaId();
+    }
 }

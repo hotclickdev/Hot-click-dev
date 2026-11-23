@@ -114,6 +114,8 @@ public class QaCuentasSeeder implements ApplicationRunner {
         if (clave == null) return;
         Plan plan = planRepository.findByNombre(nombrePlan).orElse(null);
         if (plan == null) return;
+        // Base recién migrada: la empresa HOTCLICK id=1 existe pero la secuencia IDENTITY no avanzó.
+        empresaRepository.alinearSecuenciaId();
         Empresa empresa = nuevaEmpresa(correo, apellido, slug, plan);
         Usuario usuario = nuevoUsuario(correo, apellido, identificacion, empresa, clave);
         miembroEmpresaRepository.save(new MiembroEmpresa(usuario, empresa, "PROPIETARIO"));

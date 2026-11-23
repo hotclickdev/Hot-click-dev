@@ -35,6 +35,7 @@ public class EquipoService {
     @Autowired private InvitacionEquipoRepository invitacionRepository;
     @Autowired private SesionesUsuarioService sesionesUsuarioService;
     @Autowired private InvitacionEquipoService invitacionEquipoService;
+    @Autowired private com.hotclick.service.telegram.TelegramRevocacionMiembro telegramRevocacionMiembro;
 
     public List<Map<String, Object>> listar(Long empresaId) {
         return miembroEmpresaRepository.findByEmpresaIdAndEstado(empresaId, 1).stream()
@@ -129,6 +130,9 @@ public class EquipoService {
         if ("PROPIETARIO".equals(m.getRolEnEmpresa())) {
             throw new IllegalArgumentException("No puedes eliminar al propietario del negocio");
         }
+        // O6: el bot de Telegram se corta ANTES de desactivar la membresía (revocar() exige membresía activa).
+        // Solo bloquea/limpia esta empresa; las otras empresas del usuario no se tocan.
+        telegramRevocacionMiembro.revocar(usuarioId, empresaId);
         m.setEstado(0);
         miembroEmpresaRepository.save(m);
         if (miembroEmpresaRepository.countEmpresasByUsuarioId(usuarioId) == 0) {

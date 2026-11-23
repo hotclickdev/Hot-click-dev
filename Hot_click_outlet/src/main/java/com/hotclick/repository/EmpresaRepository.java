@@ -19,6 +19,17 @@ import java.util.Optional;
 @Repository
 public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
+    /**
+     * Alinea la secuencia IDENTITY de empresa con el mayor id existente (solo Postgres).
+     * Para bases recién migradas donde se insertó una fila con id explícito (p. ej. HOTCLICK id=1)
+     * sin avanzar la secuencia. El próximo id será max(id)+1.
+     */
+    @Query(nativeQuery = true, value =
+        "SELECT setval(pg_get_serial_sequence('hot_click_empresa_tb','id_empresa'), "
+        + "COALESCE((SELECT MAX(id_empresa) FROM hot_click_empresa_tb), 0) + 1, false)")
+    Long alinearSecuenciaId();
+
+
     Optional<Empresa> findBySlug(String slug);
 
     /**

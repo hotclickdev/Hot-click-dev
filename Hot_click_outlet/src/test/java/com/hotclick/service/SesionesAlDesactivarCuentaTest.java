@@ -45,6 +45,7 @@ class SesionesAlDesactivarCuentaTest {
     @Mock RolRepository rolRepository;
     @Mock RefreshTokenService refreshTokenService;
     @Mock MiembroEmpresaRepository miembroEmpresaRepository;
+    @Mock com.hotclick.service.telegram.TelegramRevocacionMiembro telegramRevocacionMiembro;
     private final Cache<String, UserDetails> userDetailsCache = Caffeine.newBuilder().build();
     @Spy SesionesUsuarioService sesiones = new SesionesUsuarioService();
     @InjectMocks AdminUsuarioService adminService;
@@ -123,6 +124,7 @@ class SesionesAlDesactivarCuentaTest {
         when(miembroEmpresaRepository.countEmpresasByUsuarioId(31L)).thenReturn(0L);
 
         equipoService.eliminar(31L, 5L, 1L);
+        verify(telegramRevocacionMiembro).revocar(31L, 5L);
 
         assertThat(usuario.getEstado()).isEqualTo(Constants.ESTADO_ELIMINADO);
         assertThat(usuario.getMotivoEliminacion()).isEqualTo("SALIDA_EQUIPO");
@@ -137,6 +139,7 @@ class SesionesAlDesactivarCuentaTest {
         when(miembroEmpresaRepository.countEmpresasByUsuarioId(31L)).thenReturn(1L);
 
         equipoService.eliminar(31L, 5L, 1L);
+        verify(telegramRevocacionMiembro).revocar(31L, 5L);
 
         assertThat(usuario.getEstado()).isEqualTo(Constants.ESTADO_ACTIVO);
         assertThat(usuario.getMotivoEliminacion()).isNull();
