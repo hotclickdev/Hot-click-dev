@@ -154,6 +154,27 @@ public class SupabaseStorageService {
         throw e;
     }
 
+    /** F2: validación (extensión, magic bytes, tamaño) no es falla de S3: se relanza tal cual → 400, sin log de circuito. */
+    private String subirCertificadoFallback(MultipartFile file, Long empresaId, IllegalArgumentException e) {
+        throw e;
+    }
+
+    private String subirXmlPrivadoFallback(byte[] xml, String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    private String subirImagenPrivadaFallback(MultipartFile file, String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    private byte[] leerPrivadoFallback(String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    private String subirImagenBytesFallback(byte[] bytes, String extension, String carpeta, IllegalArgumentException e) {
+        throw e;
+    }
+
     private String subirImagenFallback(MultipartFile file, String carpeta, Throwable t) {
         log.error("[s3-circuit] OPEN subirImagen carpeta={}: {}", carpeta, t.getMessage());
         throw new IntegracionExternaException("s3", IntegracionExternaException.Tipo.IO_ERROR,
