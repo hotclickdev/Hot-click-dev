@@ -10,7 +10,6 @@ Allow: /emprendimientos
 Allow: /comprar
 Allow: /tiendas
 Allow: /emprende
-Allow: /para-negocios
 Allow: /para-pymes
 Allow: /negocio-plus-plan
 Allow: /llms.txt
