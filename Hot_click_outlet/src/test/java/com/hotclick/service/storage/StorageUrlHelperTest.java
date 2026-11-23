@@ -29,4 +29,18 @@ class StorageUrlHelperTest {
         assertThat(ImageProxyPaths.hostPermitido(AWS + "/productos/a.jpg", AWS)).isTrue();
         assertThat(ImageProxyPaths.hostPermitido(OCI + "/a.jpg", AWS)).isFalse();
     }
+
+    @Test
+    void barraFinalDeLaUrlPublicaSeNormaliza() {
+        for (String base : new String[]{AWS, OCI}) {
+            String esperado = base + "/productos/a.jpg";
+            assertThat(StorageUrlHelper.urlPublica(base, "productos/a.jpg")).isEqualTo(esperado);
+            assertThat(StorageUrlHelper.urlPublica(base + "/", "productos/a.jpg")).isEqualTo(esperado);
+            assertThat(StorageUrlHelper.urlPublica(base + "///", "/productos/a.jpg")).isEqualTo(esperado);
+            assertThat(StorageUrlHelper.sinBarraFinal(base + "//")).isEqualTo(base);
+            assertThat(ImageProxyPaths.hostPermitido(
+                    StorageUrlHelper.urlPublica(base + "/", "a.jpg"), base + "/")).isTrue();
+        }
+        assertThat(StorageUrlHelper.sinBarraFinal(null)).isEmpty();
+    }
 }

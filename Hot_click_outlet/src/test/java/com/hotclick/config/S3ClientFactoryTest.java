@@ -13,6 +13,7 @@ import java.net.URI;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class S3ClientFactoryTest {
 
@@ -81,6 +82,95 @@ class S3ClientFactoryTest {
     void sinEndpointClientNoTieneOverride() {
         try (S3Client c = S3ClientFactory.client("us-east-2", "", null, CREDS)) {
             assertThat(c.serviceClientConfiguration().endpointOverride()).isEmpty();
+        }
+    }
+
+    @Test
+    void endpointHttpsValidoPasa() {
+        assertThat(S3ClientFactory.endpointUri("HTTPS://host.example.com:8443/base")).isNotNull();
+        assertThat(S3ClientFactory.endpointUri(OCI)).isEqualTo(URI.create(OCI));
+    }
+
+    @Test
+    void endpointInvalidoFallaSinRepetirElValor() {
+        String[] malos = {
+                "http://ejemplo.example.com",
+                "ftp://ejemplo.example.com",
+                "https://",
+                "https:///ruta",
+                "https://usuario:SECRETO@ejemplo.example.com",
+                "https://usuario@ejemplo.example.com",
+                "https://ejemplo.example.com?x=1",
+                "https://ejemplo.example.com/#frag",
+                "ejemplo.example.com",
+                "/ruta/relativa",
+                "https://eje mplo.example.com"
+        };
+        for (String ep : malos) {
+            assertThatThrownBy(() -> S3ClientFactory.endpointUri(ep))
+                    .as(ep).isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("AWS_S3_ENDPOINT")
+                    .hasMessageNotContaining("SECRETO");
+            assertThatThrownBy(() -> S3ClientFactory.client("us-east-1", ep, null, CREDS))
+                    .as(ep).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> S3ClientFactory.presigner("us-east-1", ep, null, CREDS))
+                    .as(ep).isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Test
+    void endpointVacioSigueSiendoAws() {
+        for (String ep : new String[]{null, "", "   "}) {
+            assertThat(S3ClientFactory.endpointUri(ep)).isNull();
+        }
+    }
+
+    @Test
+    void pathStyleValidoSeRespetaConYSinEndpoint() {
+        assertThat(S3ClientFactory.pathStyle(OCI, " TRUE ")).isTrue();
+        assertThat(S3ClientFactory.pathStyle(OCI, "False")).isFalse();
+        assertThat(S3ClientFactory.pathStyle(OCI, null)).isTrue();
+        assertThat(S3ClientFactory.pathStyle(OCI, "  ")).isTrue();
+        assertThat(S3ClientFactory.pathStyle("", "true")).isFalse();
+        assertThat(S3ClientFactory.pathStyle("", "false")).isFalse();
+        assertThat(S3ClientFactory.pathStyle(null, null)).isFalse();
+    }
+
+    @Test
+    void pathStyleInvalidoFallaConYSinEndpoint() {
+        for (String flag : new String[]{"yes", "1", "foo", "tru"}) {
+            for (String ep : new String[]{OCI, "", null}) {
+                assertThatThrownBy(() -> S3ClientFactory.pathStyle(ep, flag))
+                        .as(flag + "/" + ep).isInstanceOf(IllegalArgumentException.class)
+                        .hasMessageContaining("AWS_S3_PATH_STYLE");
+                assertThatThrownBy(() -> S3ClientFactory.client("us-east-1", ep, flag, CREDS))
+                        .isInstanceOf(IllegalArgumentException.class);
+                assertThatThrownBy(() -> S3ClientFactory.presigner("us-east-1", ep, flag, CREDS))
+                        .isInstanceOf(IllegalArgumentException.class);
+            }
+        }
+    }
+
+    @Test
+    void publicObjectAclVacioOUnsetEsTrue() {
+        for (String v : new String[]{null, "", "  ", "true", "TRUE", " True "}) {
+            assertThat(S3ClientFactory.publicObjectAcl(v)).as("[" + v + "]").isTrue();
+        }
+    }
+
+    @Test
+    void publicObjectAclFalseExplicitoEsFalse() {
+        assertThat(S3ClientFactory.publicObjectAcl("false")).isFalse();
+        assertThat(S3ClientFactory.publicObjectAcl("FALSE")).isFalse();
+        assertThat(S3ClientFactory.publicObjectAcl(" False ")).isFalse();
+    }
+
+    @Test
+    void publicObjectAclInvalidoFalla() {
+        for (String v : new String[]{"yes", "1", "foo", "0"}) {
+            assertThatThrownBy(() -> S3ClientFactory.publicObjectAcl(v))
+                    .as(v).isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("AWS_S3_PUBLIC_OBJECT_ACL");
         }
     }
 }
