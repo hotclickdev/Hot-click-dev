@@ -37,6 +37,9 @@ public class LandingParaNegociosController {
     /** Página de reservas de Google Calendar (con o sin /calendar, con o sin ?gv=true). */
     private static final Pattern CALENDARIO = Pattern.compile(
         "^https://calendar\\.google\\.com/(?:calendar/)?appointments/schedules/([A-Za-z0-9_-]{10,200})(?:\\?gv=true)?$");
+    /** Evento público de Cal.com: {@code https://cal.com/<usuario>/<evento>} (también app.cal.com; se descarta la query). */
+    private static final Pattern CAL_COM = Pattern.compile(
+        "^https://(?:app\\.)?cal\\.com/([A-Za-z0-9][A-Za-z0-9_.-]{0,63})/([A-Za-z0-9][A-Za-z0-9_-]{0,99})/?(?:\\?[^\"'<>\\s]*)?$");
     private static final Pattern ENLACE_WA = Pattern.compile("https://wa\\.me/" + MARCA_WA + "\\?text=[^\"]*");
 
     @Value("classpath:/landing/para-negocios.html")
@@ -45,7 +48,7 @@ public class LandingParaNegociosController {
     @Value("${hotclick.soporte.telefono:}")
     private String telefonoSoporte;
 
-    /** Sin default: vacío o inválido ⇒ no se inserta el calendario y queda el botón de WhatsApp. */
+    /** Google Calendar o Cal.com. Sin default: vacío o inválido ⇒ no se inserta el calendario y queda el botón de WhatsApp. */
     @Value("${hotclick.demo.calendario-url:}")
     private String calendarioUrl;
 
@@ -60,10 +63,22 @@ public class LandingParaNegociosController {
         return render(plantilla, telefono).replace(MARCA_CALENDARIO, calendarioEmbebible(calendario));
     }
 
-    /** URL para el iframe (formato de inserción de Google, {@code ?gv=true}); "" si no es una página de reservas de Google. */
+    /**
+     * URL para el iframe, reconstruida desde partes validadas (nunca se copia la entrada tal cual):
+     * Google ⇒ {@code .../appointments/schedules/<id>?gv=true}; Cal.com ⇒ {@code https://cal.com/<usuario>/<evento>?layout=month_view}
+     * (el tema claro u oscuro lo agrega el JS). "" si no es ninguna de las dos.
+     */
     static String calendarioEmbebible(String url) {
-        Matcher m = CALENDARIO.matcher(url == null ? "" : url.trim());
-        return m.matches() ? "https://calendar.google.com/calendar/appointments/schedules/" + m.group(1) + "?gv=true" : "";
+        String u = url == null ? "" : url.trim();
+        Matcher g = CALENDARIO.matcher(u);
+        if (g.matches()) {
+            return "https://calendar.google.com/calendar/appointments/schedules/" + g.group(1) + "?gv=true";
+        }
+        Matcher c = CAL_COM.matcher(u);
+        if (c.matches() && !c.group(1).contains("..")) {
+            return "https://cal.com/" + c.group(1) + "/" + c.group(2) + "?layout=month_view";
+        }
+        return "";
     }
 
     static String render(String plantilla, String telefono) {

@@ -551,6 +551,8 @@ p{margin:0}
 .cal-embed{max-width:980px;margin:clamp(28px,5vw,56px) auto 0;background:var(--page);border-radius:22px;color:var(--fg);overflow:hidden}
 .cal-embed.g{background:#fff}
 .cal-embed iframe{display:block;width:100%;height:720px;border:0}
+.cal-embed.c iframe{height:620px}
+@media (max-width:760px){.cal-embed.c iframe{height:1080px}}
 .cal-wait{padding:48px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;color:var(--muted)}
 .cal-wait p{max-width:44ch;font-size:18px}
 .cal-open{text-align:center;margin-top:14px}
@@ -1468,7 +1470,7 @@ footer a:hover{color:var(--fg)}
       <p class="lockup"><span class="logo logo-lg"><svg viewBox="0 0 600 480" aria-hidden="true"><use href="#hc-iso"/></svg><span><span class="hot">Hot</span><span class="click">Click</span></span></span></p>
       <h2>Elegí un día.<br>Te mostramos HotClick con tu negocio.</h2>
 
-      <div class="cal-embed" id="cal-embed" data-gcal="__DEMO_CALENDARIO__">
+      <div class="cal-embed" id="cal-embed" data-cal="__DEMO_CALENDARIO__">
         <div class="cal-wait" id="cal-wait">
           <p>Escribinos por WhatsApp y coordinamos tu demo de 30 minutos por Google Meet.</p>
           <a class="pill pill-red" href="https://wa.me/__SOPORTE_WA__?text=Hola%2C%20quiero%20una%20demo%20de%20HotClick%20para%20mi%20negocio.">Escribir por WhatsApp</a>

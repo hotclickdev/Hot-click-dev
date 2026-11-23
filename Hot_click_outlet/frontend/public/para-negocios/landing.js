@@ -684,13 +684,16 @@
   if(document.fonts&&document.fonts.ready) document.fonts.ready.then(measure);
   measure(); run();
 }();;
-/* CALENDARIO DE RESERVAS (Google Calendar con Google Meet).
-   El enlace lo pone el servidor (HOTCLICK_DEMO_CALENDARIO_URL) en data-gcal de #cal-embed, ya validado.
+/* CALENDARIO DE RESERVAS (Cal.com o Google Calendar; la reunión es por Google Meet).
+   El enlace lo pone el servidor (HOTCLICK_DEMO_CALENDARIO_URL) en data-cal de #cal-embed, ya validado.
+   Cal.com va en iframe simple (sin su embed.js) y sigue el tema claro/oscuro de la página.
    Sin enlace, queda el mensaje para escribir por WhatsApp. */
-var GCAL_URL = (function () {
-  var b = document.getElementById("cal-embed"), u = b ? (b.getAttribute("data-gcal") || "") : "";
-  return /^https:\/\/calendar\.google\.com\/calendar\/appointments\/schedules\/[A-Za-z0-9_-]+\?gv=true$/.test(u) ? u : "";
+var CAL_URL = (function () {
+  var b = document.getElementById("cal-embed"), u = b ? (b.getAttribute("data-cal") || "") : "";
+  return (/^https:\/\/calendar\.google\.com\/calendar\/appointments\/schedules\/[A-Za-z0-9_-]+\?gv=true$/.test(u) ||
+          /^https:\/\/cal\.com\/[A-Za-z0-9][A-Za-z0-9_.-]*\/[A-Za-z0-9][A-Za-z0-9_-]*\?layout=month_view$/.test(u)) ? u : "";
 })();
+var CAL_GOOGLE = CAL_URL.indexOf("https://calendar.google.com/") === 0;
 
 /* MINI QUIZ: filtra negocios antes de agendar o pagar.
    PAY_URL: página para abrir la cuenta y pagar el plan. POR CONFIRMAR.
@@ -729,16 +732,19 @@ var QUIZ_BLOQUEADOS = ["comida", "salud", "regulado"];
 
 (function(){
   var box = document.getElementById("cal-embed"), wait = document.getElementById("cal-wait");
-  if (!box || !GCAL_URL) return;
+  if (!box || !CAL_URL) return;
+  var root = document.documentElement;
+  function src() { return CAL_GOOGLE ? CAL_URL : CAL_URL + "&theme=" + (root.getAttribute("data-theme") === "light" ? "light" : "dark"); }
   var load = function () {
     if (box.getAttribute("data-on")) return;
-    box.setAttribute("data-on", "1"); if (wait) wait.remove(); box.classList.add("g");
+    box.setAttribute("data-on", "1"); if (wait) wait.remove(); box.classList.add(CAL_GOOGLE ? "g" : "c");
     var fr = document.createElement("iframe");
-    fr.src = GCAL_URL; fr.title = "Agenda de demos de HotClick"; fr.loading = "lazy";
+    fr.src = src(); fr.title = "Agenda de demos de HotClick"; fr.loading = "lazy";
     fr.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-storage-access-by-user-activation");
     fr.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
     box.appendChild(fr);
-    var a = document.getElementById("cal-open"); if (a) { a.href = GCAL_URL.replace(/\?gv=true$/, ""); a.hidden = false; }
+    var a = document.getElementById("cal-open"); if (a) { a.href = CAL_URL.replace(/\?.*$/, ""); a.hidden = false; }
+    if (!CAL_GOOGLE && "MutationObserver" in window) new MutationObserver(function () { if (fr.src !== src()) fr.src = src(); }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
   };
   if ("IntersectionObserver" in window) new IntersectionObserver(function (es, o) { if (es[0].isIntersecting) { o.disconnect(); load(); } }, { rootMargin: "600px 0px" }).observe(box);
   else load();

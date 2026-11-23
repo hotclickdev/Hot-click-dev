@@ -76,9 +76,32 @@ class LandingParaNegociosControllerTest {
     void calendario_seInsertaEnDataGcal() throws Exception {
         String id = "AcZssZ0abcdefGHIJ_klm-123";
         String html = LandingParaNegociosController.render(plantillaReal(), "", "https://calendar.google.com/appointments/schedules/" + id);
-        assertThat(html).contains("data-gcal=\"https://calendar.google.com/calendar/appointments/schedules/" + id + "?gv=true\"")
+        assertThat(html).contains("data-cal=\"https://calendar.google.com/calendar/appointments/schedules/" + id + "?gv=true\"")
             .doesNotContain(LandingParaNegociosController.MARCA_CALENDARIO);
-        assertThat(LandingParaNegociosController.render(plantillaReal(), "", "")).contains("data-gcal=\"\"");
+        assertThat(LandingParaNegociosController.render(plantillaReal(), "", "")).contains("data-cal=\"\"");
+        assertThat(LandingParaNegociosController.render(plantillaReal(), "", "https://cal.com/hotclick/demo"))
+            .contains("data-cal=\"https://cal.com/hotclick/demo?layout=month_view\"");
+    }
+
+    @Test
+    void calendario_calCom_seReconstruyeSinCopiarLaEntrada() {
+        String esperado = "https://cal.com/hotclick/demo-30?layout=month_view";
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/hotclick/demo-30")).isEqualTo(esperado);
+        assertThat(LandingParaNegociosController.calendarioEmbebible(" https://cal.com/hotclick/demo-30/ ")).isEqualTo(esperado);
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://app.cal.com/hotclick/demo-30?month=2026-12")).isEqualTo(esperado);
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/andres.z/demo")).isEqualTo("https://cal.com/andres.z/demo?layout=month_view");
+    }
+
+    @Test
+    void calendario_calCom_rechazaOtrosDominiosYAtaques() {
+        assertThat(LandingParaNegociosController.calendarioEmbebible("http://cal.com/hotclick/demo")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com.evil.example/hotclick/demo")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://evilcal.com/hotclick/demo")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/hotclick")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/../demo")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/hotclick/demo\"onload=\"x")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/hotclick/demo?x=\"><script>")).isEmpty();
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/hotclick/demo/extra")).isEmpty();
     }
 
     @Test
