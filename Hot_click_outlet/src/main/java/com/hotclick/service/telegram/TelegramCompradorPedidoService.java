@@ -8,6 +8,7 @@ import com.hotclick.model.PedidoEntrega;
 import com.hotclick.model.Producto;
 import com.hotclick.model.TelegramCompradorSesion;
 import com.hotclick.repository.BodegaRepository;
+import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.PedidoEntregaRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.ProductoRepository;
@@ -44,6 +45,8 @@ public class TelegramCompradorPedidoService {
     public static final String MSG_NO_DISPONIBLE =
         "Los pedidos por Telegram todavía no están disponibles. Podés comprar desde la tienda en línea.";
 
+    static final String MSG_TIENDA_NO_DISPONIBLE = "Esta tienda no está disponible por ahora. No se puede comprar.";
+
     /** Resultado de iniciar el pago: mensaje de error apto para el comprador, o el enlace de pago. */
     public record Inicio(boolean ok, String mensaje, String numeroPedido, String urlPago, int total) {
         static Inicio error(String m) { return new Inicio(false, m, null, null, 0); }
@@ -53,6 +56,7 @@ public class TelegramCompradorPedidoService {
     @Autowired private OnvoService onvoService;
     @Autowired private ProductoRepository productoRepository;
     @Autowired private BodegaRepository bodegaRepository;
+    @Autowired private EmpresaRepository empresaRepository;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private PedidoEntregaRepository entregaRepository;
     @Autowired private PedidoGrupoService pedidoGrupoService;
@@ -130,11 +134,18 @@ public class TelegramCompradorPedidoService {
 
     /** Revalida cada producto contra la empresa de la sesión (IDOR) y su disponibilidad antes de reservar. */
     String revisarCarrito(Long empresaId, TelegramCompradorCtx c) {
+        if (!tiendaApta(empresaId)) return MSG_TIENDA_NO_DISPONIBLE;
         if (productoRepository.contarDeTiendasPausadas(c.carrito.keySet()) > 0) {
             return "Esta tienda está pausada por ahora. No se puede comprar.";
         }
         return TelegramCompradorPedidoMapeos.revisarCarrito(c.carrito,
             id -> productoRepository.findByIdAndEmpresaId(id, empresaId).orElse(null));
+    }
+
+    /** La tienda de la sesión debe seguir apta (pública, activa, no pausada, no de prueba) al momento de pagar. */
+    private boolean tiendaApta(Long empresaId) {
+        return empresaId != null
+            && empresaRepository.findById(empresaId).filter(TelegramCompradorService::tiendaPublica).isPresent();
     }
 
     private static String mensajePublico(RuntimeException e) {

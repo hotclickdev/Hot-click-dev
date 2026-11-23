@@ -465,6 +465,49 @@ class TelegramCompradorFlujoIntegrationTest extends BaseIntegrationTest {
         }
     }
 
+    @Test
+    @DisplayName("B2b: tienda marcada es_prueba con la sesión ya abierta no puede pagar (sin pedido ni sesión ONVO)")
+    void tiendaDePruebaAMitadNoPaga() throws Exception {
+        texto("/start t_tienda-comprador");
+        callback("c:q:" + producto.getId() + ":1");
+        callback("c:go");
+        callback("c:e:R");
+        datosComprador();
+        assertThat(sesionRepository.findByChatId(CHAT).orElseThrow().getPaso()).isEqualTo("RESUMEN");
+        empresa.setEsPrueba(true);
+        empresaRepository.saveAndFlush(empresa);
+        clearInvocations(bot); // la bienvenida menciona «modo de prueba» de los pagos; acá solo importa la respuesta a c:pay
+        callback("c:pay");
+        assertThat(pedidoRepository.count()).isZero();
+        assertThat(pagoRepository.findAll()).isEmpty();
+        var s = sesionRepository.findByChatId(CHAT).orElseThrow();
+        assertThat(s.getPaso()).isEqualTo("RESUMEN");
+        assertThat(s.getPedidoId()).isNull();
+        verify(bot, never()).enviarMensaje(eq(CHAT), argThat((String m) -> m != null && m.toLowerCase().contains("prueba")));
+        verify(bot, never()).enviarMensaje(eq(CHAT), argThat((String m) -> m != null && m.toLowerCase().contains("prueba")), anyList());
+    }
+
+    @Test
+    @DisplayName("D3b: con el flag apagado c:x (cancelar por botón) sigue permitido y borra el contexto")
+    void flagApagadoPermiteCancelarPorBoton() throws Exception {
+        texto("/start t_tienda-comprador");
+        callback("c:q:" + producto.getId() + ":1");
+        callback("c:go");
+        callback("c:e:R");
+        texto("María Mora");
+        assertThat(sesionRepository.findByChatId(CHAT).orElseThrow().getPaso()).isEqualTo("TELEFONO");
+        Object bean = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(pedidoServicioComprador);
+        org.springframework.test.util.ReflectionTestUtils.setField(bean, "habilitado", false);
+        try {
+            callback("c:x");
+            var cerrada = sesionRepository.findByChatId(CHAT).orElseThrow();
+            assertThat(cerrada.getPaso()).isEqualTo("CATALOGO");
+            assertThat(cerrada.getContexto()).isNull();
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(bean, "habilitado", true);
+        }
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private long armarPedidoRetiroHastaPago() throws Exception {

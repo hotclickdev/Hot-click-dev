@@ -81,6 +81,15 @@ class TelegramCompradorEndurecimientoTest {
         when(productos.findEmpresaIdByProductoId(productoAjeno)).thenReturn(Optional.of(ajena));
         var servicio = new TelegramCompradorPedidoService();
         ReflectionTestUtils.setField(servicio, "productoRepository", productos);
+        var empresas = mock(com.hotclick.repository.EmpresaRepository.class);
+        for (long id : new long[] {propia, ajena}) {
+            var apta = new Empresa();
+            apta.setId(id);
+            apta.setEstadoEmpresa("ACTIVO");
+            apta.setVisibilidadPublica(true);
+            when(empresas.findById(id)).thenReturn(Optional.of(apta));
+        }
+        ReflectionTestUtils.setField(servicio, "empresaRepository", empresas);
 
         var ctx = new TelegramCompradorCtx();
         ctx.carrito.put(productoAjeno, 1);
