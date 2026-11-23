@@ -61,7 +61,7 @@ public class ImageProxyController {
         if (!ImageProxyPaths.esSeguro(cleanPath)) {
             return ResponseEntity.badRequest().build();
         }
-        String imageUrl  = s3PublicUrl + "/" + cleanPath;
+        String imageUrl  = com.hotclick.service.storage.StorageUrlHelper.urlPublica(s3PublicUrl, cleanPath);
         if (!ImageProxyPaths.hostPermitido(imageUrl, s3PublicUrl)) {
             return ResponseEntity.badRequest().build();
         }
