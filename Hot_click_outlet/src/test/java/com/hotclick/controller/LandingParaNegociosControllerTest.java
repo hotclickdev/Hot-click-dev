@@ -100,7 +100,7 @@ class LandingParaNegociosControllerTest {
             while (m.find()) {
                 vistos++;
                 String w = m.group().toLowerCase(java.util.Locale.ROOT);
-                assertThat(w).as(m.group()).containsAnyOf("emprendedor", "empreendedor");
+                assertThat(w).as(m.group()).containsAnyOf("emprendedor", "empreendedor", "entrepreneur");
                 assertThat(w).as(m.group()).containsAnyOf("primeros 70", "first 70", "primeiros 70");
             }
         }
