@@ -31,16 +31,35 @@ export function textoPrimerosNegocios(limite?: number | null): string {
     : 'los primeros negocios'
 }
 
-function copyEmprendedor(limite?: number | null): PlanLandingCopy {
+/** Datos del backend que completan el copy de Emprendedor; todos opcionales (sin dato, el texto no inventa cifras). */
+export type DatosCupoCopy = {
+  /** «3 meses», de `periodoGratis` en /public/emprende/cupos. */
+  periodo?: string | null
+  /** Mensualidad USD de lista, de `mensualidadUsdSinCupo`. */
+  mensualUsd?: number | null
+}
+
+/** «sin mensualidad por 3 meses» o, sin dato, «sin mensualidad por un período». */
+function textoSinMensualidad(periodo?: string | null): string {
+  const p = periodo?.trim()
+  return p ? `sin mensualidad por ${p}` : 'sin mensualidad por un período'
+}
+
+function copyEmprendedor(limite?: number | null, datos: DatosCupoCopy = {}): PlanLandingCopy {
   const primeros = textoPrimerosNegocios(limite)
+  const sinMensualidad = textoSinMensualidad(datos.periodo)
+  const porPeriodo = sinMensualidad.replace('sin mensualidad ', '')
+  // «US$9/mes» si el backend mandó monto; si no, «mensualidad en dólares» (nunca se inventa un monto).
+  const despues = textoMensualidad(datos.mensualUsd).replace(/^M/, 'm')
+  const comision = textoComision(EMP.comisionPct)
   return {
     planId: 'emprendedor',
     tono: 'artesanal',
     query: 'emprendedor',
     eyebrow: 'Para empezar',
     headline: 'Publicá y cobrá en HotClick',
-    // Gratis o US$/mes depende del cupo: PlanLandingLayout lo arma con datos del backend.
-    subheadline: `Gratis para ${primeros}; después, mensualidad en dólares.`,
+    // Sin mensualidad o US$/mes depende del cupo: PlanLandingLayout arma la línea de precio con datos del backend.
+    subheadline: `${sinMensualidad[0].toUpperCase()}${sinMensualidad.slice(1)} para ${primeros}; después, ${despues} + ${comision}, sin mínimo.`,
     precio: `${textoMensualidad()} · ${textoComision(EMP.comisionPct)}`,
     ctaLabel: 'Crear mi negocio',
     paraQuienSi: [
@@ -52,8 +71,8 @@ function copyEmprendedor(limite?: number | null): PlanLandingCopy {
       'Ya tenés equipo y varias bodegas — mirá PYME',
     ],
     faq: [
-      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: `Mientras haya cupo gratis, no. Pagás ${textoComision(EMP.comisionPct)}, sin mínimo. Si el cupo ya se llenó, la mensualidad es en dólares y la ves acá antes de pagar.` },
-      { pregunta: '¿Hay cupo limitado?', respuesta: `Sí, ${primeros} entran gratis. Después, Emprendedor tiene mensualidad en dólares.` },
+      { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: `Mientras haya cupo, no: no pagás mensualidad ${porPeriodo} y solo pagás ${comision}, sin mínimo. Después, o si el cupo ya se llenó, pagás ${despues} + ${comision}. La mensualidad la ves antes de pagar.` },
+      { pregunta: '¿Hay cupo limitado?', respuesta: `Sí, ${primeros} no pagan mensualidad ${porPeriodo}. Terminado ese período, Emprendedor paga ${despues} + ${comision}. Los productos se venden en colones; la mensualidad se cobra en dólares.` },
     ],
   }
 }
@@ -66,7 +85,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     query: 'pyme',
     eyebrow: 'Para crecer',
     headline: 'Operá el negocio en un solo panel',
-    subheadline: 'Equipo, inventario y caja, con mensualidad en dólares.',
+    subheadline: 'Equipo, inventario y caja. Mensualidad en dólares más comisión por venta, sin mínimo.',
     precio: `${textoMensualidad()} + ${textoComision(PYME.comisionPct)}`,
     ctaLabel: 'Suscribirme a PYME',
     paraQuienSi: [
@@ -78,7 +97,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       'Recién arrancás y vendés poco — probá Emprendedor',
     ],
     faq: [
-      { pregunta: '¿Por qué pagar si el otro plan es gratis?', respuesta: `El gratis se queda en 50 productos y sin compras. PYME suma equipo, compras, gift cards e IA. Comisión: ${textoComision(PYME.comisionPct)}, sin mínimo.` },
+      { pregunta: '¿Por qué pagar PYME si Emprendedor casi no cuesta al empezar?', respuesta: `El período sin mensualidad de Emprendedor es temporal y con cupo limitado; después también tiene mensualidad. Emprendedor se queda en menos productos y sin compras, y PYME suma equipo, compras, gift cards e IA. Comisión de PYME: ${textoComision(PYME.comisionPct)}, sin mínimo.` },
       { pregunta: '¿Cuándo se activa mi suscripción?', respuesta: 'Al confirmar el pago con la pasarela, tu plan PYME queda activo de inmediato.' },
     ],
   },
@@ -88,7 +107,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     query: 'negocio-plus',
     eyebrow: 'Para operar en serio',
     headline: 'Todas las sucursales en un panel',
-    subheadline: 'Pedidos por local, equipo sin tope y CRM.',
+    subheadline: 'Pedidos por local, equipo sin tope y CRM. Mensualidad en dólares más comisión por venta, sin mínimo.',
     precio: `${textoMensualidad()} + ${textoComision(PLUS.comisionPct)}`,
     ctaLabel: 'Suscribirme a Negocio Plus',
     paraQuienSi: [
@@ -110,6 +129,6 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
  * Copy de una landing con el cupo real del backend. Solo Emprendedor menciona el cupo; las demás salen tal cual.
  * Sin `limite` devuelve el texto de respaldo (sin número).
  */
-export function copyLanding(planId: LandingPlanId, limite?: number | null): PlanLandingCopy {
-  return planId === 'emprendedor' ? copyEmprendedor(limite) : PLAN_LANDING_COPY[planId]
+export function copyLanding(planId: LandingPlanId, limite?: number | null, datos?: DatosCupoCopy): PlanLandingCopy {
+  return planId === 'emprendedor' ? copyEmprendedor(limite, datos) : PLAN_LANDING_COPY[planId]
 }

@@ -102,6 +102,9 @@ public class ProductoFeedController {
             fallback.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
             sitemapUrl(fallback, appUrl + "/", "1.0", "daily", hoy);
             sitemapUrl(fallback, appUrl + "/productos", "0.9", "daily", hoy);
+            sitemapUrl(fallback, appUrl + "/emprende", "0.8", "weekly", hoy);
+            sitemapUrl(fallback, appUrl + "/para-pymes", "0.7", "weekly", hoy);
+            sitemapUrl(fallback, appUrl + "/negocio-plus-plan", "0.7", "weekly", hoy);
             fallback.append("</urlset>");
             return ResponseEntity.status(HttpStatus.OK)
                     .contentType(MediaType.parseMediaType("application/xml;charset=UTF-8"))
