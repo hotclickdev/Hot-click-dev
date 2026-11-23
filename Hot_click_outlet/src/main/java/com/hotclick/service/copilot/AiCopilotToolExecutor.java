@@ -25,8 +25,9 @@ public class AiCopilotToolExecutor {
     // El panel usa las mismas tools de consulta; las de mutación (proponer_*)
     // solo se exponen en Telegram con confirmación por botón.
 
-    public String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario, boolean puedeGestionar) {
-        return toolDefinitions.buildSystemPromptConTools(empresaId, empresa, nombreUsuario, puedeGestionar);
+    public String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario,
+                                          boolean puedeGestionar, boolean esDueno) {
+        return toolDefinitions.buildSystemPromptConTools(empresaId, empresa, nombreUsuario, puedeGestionar, esDueno);
     }
 
     public List<Map<String, Object>> buildTools(Long empresaId, boolean puedeGestionar, boolean esDueno) {

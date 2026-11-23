@@ -52,7 +52,7 @@ public class AiCopilotSyncChatService {
             throws java.io.IOException, InterruptedException {
         List<Map<String, Object>> messages = requestBuilder.buildMessages(empresaId, userMessage);
         String systemPrompt = toolExecutor.buildSystemPromptConTools(
-            empresaId, empresa, nombreUsuario, puedeGestionar);
+            empresaId, empresa, nombreUsuario, puedeGestionar, esDueno);
         List<Map<String, Object>> tools = toolExecutor.buildTools(empresaId, puedeGestionar, esDueno);
         return claudeClient.ejecutarLoopClaude(empresaId, systemPrompt, messages, tools, esDueno);
     }

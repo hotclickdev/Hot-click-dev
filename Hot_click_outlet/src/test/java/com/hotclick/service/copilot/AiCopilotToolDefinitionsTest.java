@@ -1,5 +1,6 @@
 package com.hotclick.service.copilot;
 
+import com.hotclick.model.Empresa;
 import com.hotclick.service.TenantService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,6 +64,28 @@ class AiCopilotToolDefinitionsTest {
     void finanzasExigeTambienElFeature() {
         when(tenantService.tieneFeature(anyString())).thenReturn(false);
         assertThat(nombres(defs.buildTools(1L, true, true))).doesNotContain("consultar_finanzas");
+    }
+
+    @Test
+    @DisplayName("System prompt: solo el dueño (con plan de reportes) ve consultar_finanzas; LECTOR y ex-miembro no")
+    void promptFinanzasSoloParaElDueno() {
+        when(tenantService.tieneFeature(anyString())).thenReturn(true);
+        String dueno = defs.buildSystemPromptConTools(1L, new Empresa(), null, false, true);
+        assertThat(dueno).contains("consultar_finanzas").contains("finanzas");
+        // LECTOR y ex-miembro: el controller calcula esDueno=false (ver AiCopilotRolResolverTest)
+        String lector = defs.buildSystemPromptConTools(1L, new Empresa(), null, false, false);
+        assertThat(lector).doesNotContain("consultar_finanzas").doesNotContain("llamá consultar")
+            .doesNotContain("finanzas");
+        String admin = defs.buildSystemPromptConTools(1L, new Empresa(), null, true, false);
+        assertThat(admin).doesNotContain("consultar_finanzas").doesNotContain("finanzas");
+    }
+
+    @Test
+    @DisplayName("System prompt: el dueño sin feature «reportes» tampoco ve consultar_finanzas")
+    void promptDuenoSinFeature() {
+        when(tenantService.tieneFeature(anyString())).thenReturn(false);
+        assertThat(defs.buildSystemPromptConTools(1L, new Empresa(), null, false, true))
+            .doesNotContain("consultar_finanzas");
     }
 
     private static List<String> nombres(List<Map<String, Object>> tools) {
