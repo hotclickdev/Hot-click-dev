@@ -39,7 +39,8 @@ class OnvoAltaMarketplacePostgresTest {
                 estado_empresa VARCHAR(30) NOT NULL,
                 visibilidad_publica BOOLEAN NOT NULL,
                 estado_plan VARCHAR(20),
-                slug VARCHAR(80))
+                slug VARCHAR(80),
+                es_prueba BOOLEAN NOT NULL DEFAULT FALSE)
             """);
         jdbc.execute("""
             CREATE TABLE hot_click_producto_tb (
@@ -81,14 +82,30 @@ class OnvoAltaMarketplacePostgresTest {
         producto("Visible", alDia);
         producto("Trial visible", trial);
 
-        var nombres = jdbc.queryForList(
+        var nombres = listado();
+
+        assertThat(nombres).contains("Visible", "Trial visible").doesNotContain("Oculto");
+    }
+
+    @Test
+    @DisplayName("ocultaEmpresaDePrueba")
+    void ocultaEmpresaDePrueba() {
+        Long real = empresa("ACTIVO", true, "ACTIVO", "real");
+        Long prueba = empresa("ACTIVO", true, "ACTIVO", "de-prueba");
+        jdbc.update("UPDATE hot_click_empresa_tb SET es_prueba = TRUE WHERE id_empresa = ?", prueba);
+        producto("Producto real", real);
+        producto("Producto de prueba", prueba);
+
+        assertThat(listado()).contains("Producto real").doesNotContain("Producto de prueba");
+    }
+
+    private java.util.List<String> listado() {
+        return jdbc.queryForList(
             "SELECT p.nombre_producto FROM hot_click_producto_tb p "
                 + "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa "
                 + "WHERE p.fk_id_estado = 1 AND p.visible_catalogo = TRUE AND p.vendido = FALSE AND "
                 + CatalogoPublicoGate.SQL_LISTADO,
             String.class);
-
-        assertThat(nombres).contains("Visible", "Trial visible").doesNotContain("Oculto");
     }
 
     @Test
