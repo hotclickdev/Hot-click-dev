@@ -49,7 +49,7 @@
     '.hs-dots button.b::after{background:var(--hs-ok)}.hs-dots button.done::after{transform:none;opacity:.5}.hs-dots button.cur::after{transform:scaleX(var(--p,0));opacity:1}' +
     '.hs-t{min-width:5.4em;text-align:right;color:var(--soft,#7C8492);font:500 11px/1 var(--mono,"IBM Plex Mono",monospace)}' +
     '@media (max-width:640px){.hs-t{display:none}.hs-ctl>button{width:32px;height:32px}.hs-prog{gap:8px}.hs-lbl{font-size:9px;letter-spacing:.08em}}' +
-    '.hs-cap p .w{opacity:.3;transition:opacity .18s ease}.hs-cap p .w.on{opacity:1}' +
+    '.hs-cap p .w{opacity:.3;transition:opacity .18s ease,color .12s ease}.hs-cap p .w.on{opacity:1}.hs-cap p .w.now{color:var(--red-bright,#F0524A)}' +
     '.hs-leg{margin-top:12px}.hs-leg summary{display:inline-flex;align-items:center;gap:8px;cursor:pointer;list-style:none;color:var(--soft,#7C8492);font:500 10px/1 var(--mono,"IBM Plex Mono",monospace);letter-spacing:.1em;text-transform:uppercase}' +
     '.hs-leg summary::-webkit-details-marker{display:none}.hs-leg summary::before{content:"+";display:grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--line-strong,rgba(255,255,255,.28));font-size:12px}.hs-leg[open] summary::before{content:"\\2212"}' +
     '.hs-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.hs-legend span{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:999px;padding:4px 10px 4px 4px;font-size:12px;color:var(--muted,#9AA1AE)}.hs-legend svg{width:34px;height:24px}' +
@@ -438,7 +438,7 @@
           else capP.textContent = VW[j].map(function (w) { return w[0]; }).join(' ');
         } else { var c = def.cap[L] || def.cap.es; capP.textContent = c[k] || ''; }
       }
-      function capWords(s) { for (var n = 0; n < capWs.length; n++) { var on = s >= capWs[n][1] - .05; if (capWs[n][0].classList.contains('on') !== on) capWs[n][0].classList.toggle('on', on); } }
+      function capWords(s) { var cur = -1; for (var n = 0; n < capWs.length; n++) { var on = s >= capWs[n][1] - .05; if (on) cur = n; if (capWs[n][0].classList.contains('on') !== on) capWs[n][0].classList.toggle('on', on); } for (var k = 0; k < capWs.length; k++) { var now = k === cur; if (capWs[k][0].classList.contains('now') !== now) capWs[k][0].classList.toggle('now', now); } }
       gsap.ticker.add(ui);
       /* Voz en off (opcional): un MP3 por historia. La animación sigue a la voz:
          def.voiceMarks = segundo del audio donde empieza cada uno de los 16 pasos (sin marcas: reparto proporcional). */
