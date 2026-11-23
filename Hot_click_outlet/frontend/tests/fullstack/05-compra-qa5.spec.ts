@@ -4,11 +4,12 @@ import { QA, auth, bodegaYProducto, login, loginUi } from './api'
 /**
  * Compra (QA5). Tienda vendedora = negocio QA NEGOCIO_PLUS (empresa != 1).
  * Guest-checkout tiene 3/60s por IP: este archivo hace 2 llamadas (y 02 hace 1). No agregar más.
- * Sin ONVO de prueba en el backend el checkout termina en "ONVO no está configurado" DESPUÉS de validar
- * bodega/paquetes, así que QA5-002 se verifica igual; el 200 de punta a punta (QA5-003) requiere la llave.
+ * Sin llave ONVO el backend (perfil dev) usa el checkout mock: valida bodega/paquetes, crea el pedido y el pago
+ * PENDIENTE y responde 200, así que QA5-002/003 y E2E-CMP-01 se verifican igual con o sin llave de prueba.
+ * El fail-closed de producción ("ONVO no está configurado") lo cubren los tests Java (OnvoPaymentProviderModoSimuladoTest,
+ * OnvoArranqueProdGuardTest), no este E2E.
  */
 const conOnvo = process.env.E2E_ONVO_MODO === 'prueba'
-const ONVO_OFF = /ONVO no está configurado/
 
 test.describe.serial('Compra — QA5', () => {
   let tienda: { bodegaId: number; productoId: number; precio: number }
@@ -44,8 +45,8 @@ test.describe.serial('Compra — QA5', () => {
     const body = await res.json()
     expect(body.message ?? '').not.toMatch(/La bodega elegida no es de la tienda/)
     expect(res.status()).not.toBe(500)
-    if (conOnvo) expect(res.status(), body.message).toBe(200)
-    else expect(body.message).toMatch(ONVO_OFF)
+    expect(res.status(), body.message).toBe(200)
+    expect(body.success).toBe(true)
   })
 
   test('QA5-003: checkout con bodega propia devuelve 200, sin 500 de FK del pago', async ({ request }) => {
@@ -53,11 +54,6 @@ test.describe.serial('Compra — QA5', () => {
     const body = await res.json()
     expect(res.status(), body.message).not.toBe(500)
     expect(JSON.stringify(body)).not.toMatch(/fkey|foreign key|HOT_CLICK_PEDIDO_TB/i)
-    if (!conOnvo) {
-      // Sin llave no se llega a insertar el pago: queda validado solo hasta el fail-closed de ONVO.
-      expect(body.message).toMatch(ONVO_OFF)
-      return
-    }
     expect(res.status(), body.message).toBe(200)
     expect(body.success).toBe(true)
   })
@@ -97,12 +93,12 @@ test.describe.serial('Compra — QA5', () => {
     })
     const body = await res.json()
     expect(res.status(), body.message).not.toBe(500)
-    if (!conOnvo) expect(body.message).toMatch(ONVO_OFF)
-    else expect(res.status()).toBe(200)
+    expect(res.status(), body.message).toBe(200)
+    expect(body.success).toBe(true)
   })
 
   test('Retiro + SINPE (ONVO): el pedido aparece en Mis pedidos', async ({ request }) => {
-    test.skip(!conOnvo, 'Requiere ONVO de prueba (E2E_ONVO_SECRET_KEY onvo_test_): sin llave ningún checkout llega a crear el pedido')
+    test.skip(!conOnvo, 'Requiere ONVO de prueba (E2E_ONVO_SECRET_KEY onvo_test_): sin llave el checkout es mock (pedido PENDIENTE) y no se comprueba el flujo ONVO de prueba')
     // Con llave, la única cuenta con sesión disponible es de negocio (registro roto: E2E-REG-01) → choca con E2E-CMP-01.
     test.fail(true, 'Bloqueado por E2E-CMP-01 / E2E-REG-01 (no hay comprador puro en el seed)')
     const s = await login(request, QA.PYME)

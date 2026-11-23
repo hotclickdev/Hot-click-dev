@@ -69,7 +69,7 @@ public class AiCopilotService {
 
     /** Panel admin y resumen ejecutivo: Claude + tools de consulta, respuesta por SSE. */
     @CircuitBreaker(name = "claude", fallbackMethod = "chatStreamFallback")
-    public void chatStream(Long empresaId, String userMessage, SseEmitter emitter) {
+    public void chatStream(Long empresaId, String userMessage, SseEmitter emitter, boolean esDueno) {
         Long tenantId = TenantContext.get();
         if (empresaId == null) {
             streamProcessor.sendError(emitter, "Seleccioná un negocio para usar el copilot.");
@@ -92,7 +92,7 @@ public class AiCopilotService {
                 messageStore.saveMsg(empresa, "assistant", "Mock response", 0);
                 return;
             }
-            emitirRespuestaClaude(empresaId, empresa, userMessage, emitter, tenantId);
+            emitirRespuestaClaude(empresaId, empresa, userMessage, emitter, tenantId, esDueno);
         } catch (IntegracionExternaException e) {
             throw e;
         } catch (Exception e) {
@@ -103,11 +103,12 @@ public class AiCopilotService {
     }
 
     private void emitirRespuestaClaude(Long empresaId, Empresa empresa, String userMessage,
-                                       SseEmitter emitter, Long tenantId) {
+                                       SseEmitter emitter, Long tenantId, boolean esDueno) {
         try {
             // Panel web: sin tools de mutación (no hay botones de confirmar como en Telegram).
+            // esDueno lo calcula el controller en el hilo del request (rol real, nunca del cliente).
             AiCopilotClaudeClient.ResultadoLoopClaude loop =
-                syncChatService.completarConClaude(empresaId, empresa, userMessage, null, false);
+                syncChatService.completarConClaude(empresaId, empresa, userMessage, null, false, esDueno);
             if (loop == null) {
                 throw new IntegracionExternaException("claude-api",
                     IntegracionExternaException.Tipo.IO_ERROR, tenantId,
@@ -147,8 +148,9 @@ public class AiCopilotService {
     public record ChatConAccionesResultado(String texto, AccionPropuestaTelegram accionPropuesta) {}
 
     public ChatConAccionesResultado chatSyncConAcciones(Long empresaId, String userMessage,
-                                                         String nombreUsuario, boolean puedeGestionar) {
-        return syncChatService.chatSyncConAcciones(empresaId, userMessage, nombreUsuario, puedeGestionar);
+                                                         String nombreUsuario, boolean puedeGestionar,
+                                                         boolean esDueno) {
+        return syncChatService.chatSyncConAcciones(empresaId, userMessage, nombreUsuario, puedeGestionar, esDueno);
     }
 
     public String crossSellCliente(Long empresaId, Long clienteId) {
@@ -157,7 +159,7 @@ public class AiCopilotService {
 
     /** Resilience4j exige el fallback en la misma clase que {@link #chatStream}. */
     @SuppressWarnings("unused")
-    private void chatStreamFallback(Long empresaId, String userMessage, SseEmitter emitter, Throwable t) {
+    private void chatStreamFallback(Long empresaId, String userMessage, SseEmitter emitter, boolean esDueno, Throwable t) {
         streamProcessor.chatStreamFallback(empresaId, userMessage, emitter, t);
     }
 }

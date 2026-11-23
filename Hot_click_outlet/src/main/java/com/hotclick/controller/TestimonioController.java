@@ -106,10 +106,8 @@ public class TestimonioController {
             Integer calificacion = calObj instanceof Number n ? n.intValue() : null;
 
             var t = testimonioService.crearTestimonio(userDetails.getUsername(), comentario, imagenUrl, calificacion);
-            telegramService.enviar(String.format(
-                "💬 *NUEVO TESTIMONIO*\n\n*Usuario:* %s\n*Comentario:* %s",
-                userDetails.getUsername(),
-                comentario.length() > 200 ? comentario.substring(0, 200) + "..." : comentario));
+            // Ley 8968: sin usuario ni comentario en el chat ops; se modera desde el panel.
+            telegramService.enviar("💬 *Nuevo testimonio pendiente de aprobación*");
             return ResponseEntity.ok(ResponseDTO.success("Testimonio enviado, pendiente de aprobación", t));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));
@@ -145,12 +143,7 @@ public class TestimonioController {
             String imagenUrl = (String) body.get("imagenUrl");
 
             var t = testimonioService.crearResena(userDetails.getUsername(), comentario, imagenUrl, productoId, calificacion);
-            telegramService.enviar(String.format(
-                "⭐ *NUEVA RESEÑA*\n\n*Usuario:* %s\n*Producto ID:* %s\n*Calificación:* %s/5\n*Comentario:* %s",
-                userDetails.getUsername(),
-                productoId != null ? productoId : "—",
-                calificacion != null ? calificacion : "—",
-                comentario.length() > 200 ? comentario.substring(0, 200) + "..." : comentario));
+            telegramService.enviar("⭐ *Nueva reseña pendiente de aprobación*");
             return ResponseEntity.ok(ResponseDTO.success("Reseña enviada, pendiente de aprobación", t));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(com.hotclick.utils.ErrorPublico.mensaje(e)));

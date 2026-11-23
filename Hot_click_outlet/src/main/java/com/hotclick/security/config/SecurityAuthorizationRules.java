@@ -49,6 +49,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/pos/qr/pago/*/stripe").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/intent").permitAll()
             .requestMatchers(POST, "/api/pos/qr/pago/*/sinpe-onvo").permitAll()
+            // Retiro por Telegram: canje autenticado (cajero con pos.usar, admin o emprendedor); nunca permitAll
+            .requestMatchers(POST, "/api/pos/retiro-telegram/canjear").hasAnyAuthority(
+                "ROLE_" + Constants.ROL_ADMIN, "ROLE_" + Constants.ROL_EMPRENDEDOR, "pos.usar")
             // Compra sin registro (invitados)
             .requestMatchers(POST, "/api/payments/guest-checkout").permitAll()
             .requestMatchers(POST, "/api/payments/guest/cancel/*").permitAll()
@@ -149,6 +152,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/public/tienda-rapida/**").permitAll()
             // Seguimiento de pedido sin cuenta — solo lectura por token aleatorio (nunca por id)
             .requestMatchers(GET,  "/api/public/pedidos/seguimiento/*").permitAll()
+            // Estado de retiro por token aleatorio — solo {estado, tienda}
+            .requestMatchers(GET,  "/api/public/retiro/*").permitAll()
             .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/aprobar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/rechazar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)

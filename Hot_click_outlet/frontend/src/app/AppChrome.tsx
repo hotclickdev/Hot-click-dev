@@ -65,6 +65,8 @@ export function ScrollToTop() {
   useEffect(() => () => cancelarScroll.current(), [])
 
   useEffect(() => {
+    // /r/{token}: QR de retiro. El token es un secreto de un solo uso: no va a analítica ni a tracking.
+    if (pathname.startsWith('/r/')) return
     captureAttributionFromLocation(search, pathname)
     trackPageView(pathname)
     if (!pathname.startsWith('/admin') && !pathname.startsWith('/plataforma') && !pathname.startsWith('/pos')) analytics.visita()

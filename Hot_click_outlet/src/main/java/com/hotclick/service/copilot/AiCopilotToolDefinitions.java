@@ -38,7 +38,18 @@ class AiCopilotToolDefinitions {
     @Autowired private AiCopilotContextBuilder contextBuilder;
     @Autowired private TenantService tenantService;
 
-    String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario, boolean puedeGestionar) {
+    String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario,
+                                     boolean puedeGestionar, boolean esDueno) {
+        // La tool de finanzas solo existe para el dueño con el plan que la incluye (ver buildTools):
+        // al resto el prompt no la nombra ni presenta «finanzas» como dato consultable.
+        boolean finanzasDisponibles = esDueno && tieneFeatureReportes(empresaId);
+        String datosConsultables = finanzasDisponibles
+            ? "(inventario, ventas, finanzas, clientes, reporte operativo, proyección, marca, catálogo público)"
+            : "(inventario, ventas, clientes, reporte operativo, proyección, marca, catálogo público)";
+        String reglaFinanzas = finanzasDisponibles
+            ? "Si preguntan ganancia, margen, IVA o cómo van de plata, llamá consultar_finanzas."
+            : "Las cifras de ganancia, margen o IVA no las consultás por acá: si las piden, avisá en una línea que no tenés esa información disponible en este chat.";
+
         String nombreNegocio = EmpresaNombre.mostrar(empresa, "tu negocio");
         String kpis = contextBuilder.getKpiContext(empresaId);
         String saludo = nombreUsuario != null && !nombreUsuario.isBlank()
@@ -93,11 +104,9 @@ class AiCopilotToolDefinitions {
             Sos el Copilot de HOTCLICK, el asistente de negocio de "%s". Respondés en
             español con el vos costarricense: directo, concreto y accionable. %s
 
-            Tenés herramientas para consultar datos reales del negocio (inventario,
-            ventas, finanzas, clientes, reporte operativo, proyección, marca, catálogo público).
+            Tenés herramientas para consultar datos reales del negocio %s.
             Nunca inventés cifras. Si piden inventario, ventas, reporte, qué reponer,
-            qué no se vende o comparar precios, LLAMÁ la herramienta. Si preguntan
-            ganancia, margen, IVA o cómo van de plata, llamá consultar_finanzas.
+            qué no se vende o comparar precios, LLAMÁ la herramienta. %s
             Si preguntan proyección, "si sigo así" o reordenar, llamá proyeccion_negocio.
             Si preguntan por la marca, ficha o visibilidad, llamá perfil_marca.
             Respondé con las cifras que devolvió y UNA acción concreta. Nada de
@@ -139,10 +148,10 @@ class AiCopilotToolDefinitions {
             - Respondés solo sobre este negocio; si la pregunta es ajena, redirigís amablemente
             - Si preguntan por productos personalizados, encargos o cotizaciones: orientá al alta
               en productos/nuevo/personalizado y a la bandeja de encargos; no inventes precios de cotización
-            """.formatted(nombreNegocio, saludo, reglaAcciones, kpis);
+            """.formatted(nombreNegocio, saludo, datosConsultables, reglaFinanzas, reglaAcciones, kpis);
     }
 
-    List<Map<String, Object>> buildTools(Long empresaId, boolean puedeGestionar) {
+    List<Map<String, Object>> buildTools(Long empresaId, boolean puedeGestionar, boolean esDueno) {
         List<Map<String, Object>> tools = new ArrayList<>();
         tools.add(toolDef("consultar_inventario",
             "Consulta el estado del catálogo: cuántos productos activos y unidades en stock hay, y cuáles productos tienen stock crítico (bajo el mínimo).",
@@ -174,7 +183,8 @@ class AiCopilotToolDefinitions {
             "Consulta la lista de clientes del negocio: cuántos son y sus nombres. Usar cuando pregunten cuáles/cuántos son sus clientes.",
             Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
 
-        if (tieneFeatureReportes(empresaId)) {
+        // Finanzas: solo el dueño (PROPIETARIO). puedeGestionar incluye ADMIN y NO basta.
+        if (esDueno && tieneFeatureReportes(empresaId)) {
             tools.add(toolDef("consultar_finanzas",
                 "Consulta KPIs financieros del negocio para un período: ventas totales, costo de mercadería vendida (CMV), ganancia neta, margen, IVA. Usar si preguntan ganancia, margen, IVA o cómo van de plata.",
                 Map.of(JSON_TYPE, JSON_OBJECT,

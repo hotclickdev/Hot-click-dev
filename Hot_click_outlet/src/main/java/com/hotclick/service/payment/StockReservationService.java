@@ -405,6 +405,7 @@ public class StockReservationService {
         if (!Boolean.TRUE.equals(p.getVisibleCatalogo())) return false;
         com.hotclick.model.Empresa e = p.getEmpresa();
         return e == null || ("ACTIVO".equals(e.getEstadoEmpresa())
+            && !e.isEsPrueba()
             && Boolean.TRUE.equals(e.getVisibilidadPublica())
             && com.hotclick.catalogo.CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()));
     }

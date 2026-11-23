@@ -49,22 +49,39 @@ class AiCopilotServiceChatStreamTest {
         when(aiQuotaService.verificarYReservar(7L)).thenReturn(true);
         when(syncChatService.claudeDisponible()).thenReturn(true);
         when(empresaRepository.findById(7L)).thenReturn(Optional.of(empresa));
-        when(syncChatService.completarConClaude(eq(7L), eq(empresa), eq("ventas de hoy"), isNull(), eq(false)))
+        when(syncChatService.completarConClaude(eq(7L), eq(empresa), eq("ventas de hoy"), isNull(), eq(false), eq(false)))
             .thenReturn(new AiCopilotClaudeClient.ResultadoLoopClaude("Hoy ₡50.000", 10, 20, null));
         when(streamProcessor.startHeartbeat(emitter)).thenReturn(() -> { });
 
-        service.chatStream(7L, "ventas de hoy", emitter);
+        service.chatStream(7L, "ventas de hoy", emitter, false);
 
-        verify(syncChatService).completarConClaude(7L, empresa, "ventas de hoy", null, false);
+        verify(syncChatService).completarConClaude(7L, empresa, "ventas de hoy", null, false, false);
         verify(streamProcessor).streamText(emitter, "Hoy ₡50.000");
         verify(messageStore).saveMsg(empresa, "assistant", "Hoy ₡50.000", 20);
+    }
+
+    @Test
+    @DisplayName("Panel: esDueno=true solo se propaga cuando el controller lo calculó (dueño); false para el resto")
+    void chatStream_propagaEsDueno() throws Exception {
+        Empresa empresa = new Empresa();
+        SseEmitter emitter = new SseEmitter();
+        when(aiQuotaService.verificarYReservar(7L)).thenReturn(true);
+        when(syncChatService.claudeDisponible()).thenReturn(true);
+        when(empresaRepository.findById(7L)).thenReturn(Optional.of(empresa));
+        when(syncChatService.completarConClaude(eq(7L), eq(empresa), eq("ganancia"), isNull(), eq(false), eq(true)))
+            .thenReturn(new AiCopilotClaudeClient.ResultadoLoopClaude("ok", 1, 2, null));
+        when(streamProcessor.startHeartbeat(emitter)).thenReturn(() -> { });
+
+        service.chatStream(7L, "ganancia", emitter, true);
+
+        verify(syncChatService).completarConClaude(7L, empresa, "ganancia", null, false, true);
     }
 
     @Test
     @DisplayName("Sin empresaId no consulta Claude ni la BD")
     void chatStream_sinTenant_noNpe() {
         SseEmitter emitter = new SseEmitter();
-        service.chatStream(null, "ventas de hoy", emitter);
+        service.chatStream(null, "ventas de hoy", emitter, false);
         verify(streamProcessor).sendError(emitter, "Seleccioná un negocio para usar el copilot.");
         verify(empresaRepository, org.mockito.Mockito.never()).findById(org.mockito.ArgumentMatchers.any());
     }

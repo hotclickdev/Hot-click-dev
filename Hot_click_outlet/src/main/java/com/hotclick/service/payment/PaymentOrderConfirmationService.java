@@ -168,6 +168,18 @@ public class PaymentOrderConfirmationService {
         return true;
     }
 
+    /**
+     * F1: pedido de tienda cobrado a mano sin fila de Pago: consume la reserva (stock_actual, stock_reservado,
+     * movimiento VENTA) con el mismo método que la captura. Idempotente por {@code stockDescontadoEn}; sin reserva
+     * (MANUAL) no hace nada. El llamador tiene el pedido bloqueado y ya descartó la sobreventa.
+     */
+    @Transactional
+    public void consumirReservaPagoManual(Pedido pedido, Object paymentServiceSelf, ApplicationEventPublisher eventPublisher) {
+        if (pedido == null || pedido.getStockReservadoEn() == null || pedido.getStockDescontadoEn() != null) return;
+        Hibernate.initialize(pedido.getItems());
+        stockReservationService.confirmAndConsumeStock(pedido, paymentServiceSelf, eventPublisher);
+    }
+
     /** M-08: grupo a revisión, reservas liberadas (sin stock negativo), pago para reembolso. Sin PII en el log. */
     private void pasarARevisionPorSobreventa(Pago pago, List<Pedido> grupo) {
         StringBuilder numeros = new StringBuilder();

@@ -25,11 +25,12 @@ public class TelegramMenuBuilder {
         if (empresaId == null) return;
 
         boolean gestiona = flujoSupport.esPropietarioOAdmin(v.getUsuario(), empresaId);
+        boolean esDueno = flujoSupport.esDueno(v.getUsuario(), empresaId);
         boolean varias = miembroEmpresaRepository.countEmpresasByUsuarioId(v.getUsuario().getId()) > 1;
         String nombre = datosQuery.nombreEmpresa(empresaId);
         bot.enviarMensaje(v.getChatId(),
             TelegramMenuOpciones.texto(datosQuery.esc(nombre), planConsulta.tieneIa(empresaId)),
-            TelegramMenuOpciones.teclado(gestiona, planConsulta.tieneCrm(empresaId), varias));
+            TelegramMenuOpciones.teclado(gestiona, planConsulta.tieneCrm(empresaId), varias, esDueno));
     }
 
     /** Botones rápidos tras cada respuesta libre de la IA — cubren los seguimientos

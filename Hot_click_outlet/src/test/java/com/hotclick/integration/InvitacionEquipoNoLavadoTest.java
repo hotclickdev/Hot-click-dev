@@ -192,6 +192,8 @@ class InvitacionEquipoNoLavadoTest extends BaseIntegrationTest {
         v.setUsuario(u);
         v.setChatId(123456789L);
         v.setEstado(TelegramVinculacion.ACTIVA);
+        v.setCodigo("ABCD2345"); // código vivo: la reactivación también tiene que borrarlo
+        v.setCodigoExpira(LocalDateTime.now().plusMinutes(5));
         telegramRepository.saveAndFlush(v);
 
         duenoLoSaca(u);
@@ -207,5 +209,7 @@ class InvitacionEquipoNoLavadoTest extends BaseIntegrationTest {
         TelegramVinculacion t = telegramRepository.findByUsuarioId(u.getId()).orElseThrow();
         assertThat(t.getEstado()).isEqualTo(TelegramVinculacion.REVOCADA);
         assertThat(t.getChatId()).isNull();
+        assertThat(t.getCodigo()).isNull();
+        assertThat(t.getCodigoExpira()).isNull();
     }
 }

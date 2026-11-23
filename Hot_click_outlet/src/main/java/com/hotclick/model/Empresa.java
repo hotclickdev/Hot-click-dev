@@ -79,6 +79,10 @@ public class Empresa {
     @Column(name = "visibilidad_publica", nullable = false)
     private Boolean visibilidadPublica = true;
 
+    /** Tienda interna de prueba (V241): no sale en sitemap, directorio ni vitrinas públicas. */
+    @Column(name = "es_prueba", nullable = false)
+    private boolean esPrueba = false;
+
     /** Carrusel del inicio: negocio destacado por el superadmin (V173). Solo se destacan negocios activos. */
     @Column(name = "destacado", nullable = false)
     private Boolean destacado = false;
@@ -334,6 +338,9 @@ public class Empresa {
 
     public Boolean getVisibilidadPublica() { return visibilidadPublica; }
     public void setVisibilidadPublica(Boolean visibilidadPublica) { this.visibilidadPublica = visibilidadPublica; }
+
+    public boolean isEsPrueba() { return esPrueba; }
+    public void setEsPrueba(boolean esPrueba) { this.esPrueba = esPrueba; }
 
     public boolean isTiendaPausada() { return Boolean.TRUE.equals(tiendaPausada); }
     public void setTiendaPausada(Boolean tiendaPausada) { this.tiendaPausada = Boolean.TRUE.equals(tiendaPausada); }

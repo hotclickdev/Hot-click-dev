@@ -37,6 +37,10 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -89,6 +93,9 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
         when(onvoService.isMockMode()).thenReturn(true);
         when(onvoService.isPagosDisponibles()).thenReturn(true);
         when(onvoService.modoEsperado()).thenReturn("live");
+        // En modo simulado OnvoService no llama a ONVO: devuelve una sesión con el successUrl (nunca un cobro).
+        lenient().when(onvoService.crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap()))
+            .thenAnswer(i -> new OnvoService.OnvoCheckoutSession("onvo_mock_1", i.getArgument(2)));
         doReturn(Map.of()).when(onvoService).obtenerCheckoutSession(any());
         doReturn(Map.of()).when(onvoService).obtenerPaymentIntent(any());
 
@@ -211,6 +218,9 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Tarjeta por ONVO sin llave: responde error y no confirma nada")
     void onvoSinLlave() throws Exception {
+        // Ni llave ni simulación (p. ej. producción sin ONVO_SECRET_KEY): el checkout falla cerrado.
+        when(onvoService.isMockMode()).thenReturn(false);
+        when(onvoService.isPagosDisponibles()).thenReturn(false);
         checkoutInvitado("/api/payments/guest-checkout", "ONVO").andExpect(status().is4xxClientError());
         sinPagadoNiCorreo();
     }
@@ -224,7 +234,9 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
             """.formatted(bodega.getId(), Constants.ENVIO_RETIRO, producto.getId());
         mockMvc.perform(post("/api/payments/checkout").header("Authorization", userToken)
                 .contentType(MediaType.APPLICATION_JSON).content(body))
-            .andExpect(status().is4xxClientError());
+            // Un código inexistente no descuenta nada: el pedido queda PENDIENTE (sesión simulada), nunca pagado.
+            .andExpect(status().is2xxSuccessful());
+        assertThat(pedidoRepository.findAll()).allSatisfy(p -> assertThat(p.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE));
         sinPagadoNiCorreo();
     }
 

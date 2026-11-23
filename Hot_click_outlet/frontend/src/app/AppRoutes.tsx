@@ -90,6 +90,7 @@ const PymeLandingPage = lazy(() => import('@/pages/planes/PymeLandingPage'))
 const NegocioPlusLandingPage = lazy(() => import('@/pages/planes/NegocioPlusLandingPage'))
 const ModeSelector = lazy(() => import('@/pages/auth/ModeSelector'))
 const POSPagoPage = lazy(() => import('@/pages/pos/POSPagoPage'))
+const RetiroPedidoPage = lazy(() => import('@/pages/pos/RetiroPedidoPage'))
 const SelfCheckoutPage = lazy(() => import('@/pages/SelfCheckoutPage'))
 const RegistrarNegocioPage = lazy(() => import('@/pages/RegistrarNegocioPage'))
 const RegistroEmpresaPage = lazy(() => import('@/pages/RegistroEmpresaPage'))
@@ -220,6 +221,7 @@ export default function AppRoutes() {
       </Route>
 
       <Route path="/pos/pago/:token" element={<POSPagoPage />} />
+      <Route path="/r/:token" element={<RetiroPedidoPage />} />
       <Route path="/checkout/qr/:token" element={<SelfCheckoutPage />} />
       <Route path="/tienda/:slug" element={<TiendaLayout />}>
         <Route index element={<TiendaHomePage />} />

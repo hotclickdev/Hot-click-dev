@@ -1,1 +1,0 @@
-function e(e,t){return e?.periodoGratis?.trim()||t(`emprende.periodoFallback`)}export{e as t};

@@ -193,6 +193,11 @@ public class SpaSeoSupport {
         return injectPagina(html, title, desc, "/servicios/digitalizar-inventario", "index, follow", json);
     }
 
+    /** Landing de vendedor (/emprende, /para-pymes, /planes…): title, description, canonical y og:url de su ruta. */
+    public String injectLandingPlan(String html, String title, String desc, String path) {
+        return injectPagina(html, title, desc, path, "index, follow", null);
+    }
+
     public String injectNoindex(String html, String title, String desc, String path) {
         return injectPagina(html, title, desc, path, "noindex, follow", null);
     }

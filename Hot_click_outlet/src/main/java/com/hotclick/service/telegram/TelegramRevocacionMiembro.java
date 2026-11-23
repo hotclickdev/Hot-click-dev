@@ -47,7 +47,7 @@ public class TelegramRevocacionMiembro {
         if (v != null && empresaId.equals(v.getEmpresaActivaId())) {
             v.setEmpresaActivaId(null);
             v.setContexto(null);
-            vinculacionRepository.save(v);
+            vinculacionRepository.limpiarEmpresaActiva(v.getId(), empresaId);
         }
         auditoria.registrar("TELEGRAM_REVOCAR_MIEMBRO", "USUARIO", usuarioId, empresaId,
             "Acceso por Telegram del usuario " + usuarioId + " a la empresa " + empresaId

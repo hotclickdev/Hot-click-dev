@@ -87,9 +87,10 @@ public class PedidoService {
 
         String cliente = nombreClienteTelegram(saved);
         String metodo = saved.getMetodoPago() != null ? saved.getMetodoPago() : "—";
+        // Ley 8968: el chat ops no recibe el nombre del cliente (el bot del negocio sí, abajo).
         telegramService.enviar(String.format(
-                "🛒 *NUEVA COMPRA*\n\n*Cliente:* %s\n*Pedido:* %s\n*Total:* ₡%,d\n*Pago:* %s\n*Estado:* %s",
-                TelegramTexto.escaparMarkdown(cliente), TelegramTexto.escaparMarkdown(saved.getNumeroPedido()),
+                "🛒 *NUEVA COMPRA*\n\n*Pedido:* %s\n*Total:* ₡%,d\n*Pago:* %s\n*Estado:* %s",
+                TelegramTexto.escaparMarkdown(saved.getNumeroPedido()),
                 saved.getTotalPedido() != null ? saved.getTotalPedido() : 0,
                 TelegramTexto.escaparMarkdown(metodo), TelegramTexto.escaparMarkdown(saved.getEstadoPedido())));
         if (saved.getEmpresa() != null) {

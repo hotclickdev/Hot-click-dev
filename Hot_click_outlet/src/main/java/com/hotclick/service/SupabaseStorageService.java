@@ -33,8 +33,15 @@ public class SupabaseStorageService {
     private String publicUrl;
 
     public SupabaseStorageService(S3Client s3Client) {
+        this(s3Client, "");
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public SupabaseStorageService(S3Client s3Client,
+                                  @Value("${aws.s3.public-object-acl:}") String publicObjectAclFlag) {
+        boolean publicObjectAcl = com.hotclick.config.S3ClientFactory.publicObjectAcl(publicObjectAclFlag);
         this.validator = new StorageImageValidator();
-        this.uploadHelper = new StorageUploadHelper(s3Client, this.validator);
+        this.uploadHelper = new StorageUploadHelper(s3Client, this.validator, publicObjectAcl);
     }
 
     @CircuitBreaker(name = "s3", fallbackMethod = "subirCertificadoFallback")
@@ -143,8 +150,47 @@ public class SupabaseStorageService {
         throw e;
     }
 
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
     private String subirImagenDescargadaFallback(byte[] bytes, String urlOrigen, String contentTypeHint, String carpeta,
                                                  IllegalArgumentException e) {
+        throw e;
+    }
+
+    /** F2: validación (extensión, magic bytes, tamaño) no es falla de S3: se relanza tal cual → 400, sin log de circuito. */
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private String subirCertificadoFallback(MultipartFile file, Long empresaId, IllegalArgumentException e) {
+        throw e;
+    }
+
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private String subirXmlPrivadoFallback(byte[] xml, String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private String subirImagenPrivadaFallback(MultipartFile file, String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private byte[] leerPrivadoFallback(String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private String subirImagenBytesFallback(byte[] bytes, String extension, String carpeta, IllegalArgumentException e) {
         throw e;
     }
 
@@ -173,7 +219,7 @@ public class SupabaseStorageService {
     public String claveDeComprobante(String guardado) {
         if (guardado == null || guardado.isBlank()) return null;
         if (!guardado.startsWith("http://") && !guardado.startsWith("https://")) return guardado;
-        String base = publicUrl == null ? "" : publicUrl.replaceAll("/+$", "") + "/";
+        String base = publicUrl == null ? "" : com.hotclick.service.storage.StorageUrlHelper.sinBarraFinal(publicUrl) + "/";
         return !base.equals("/") && guardado.startsWith(base) ? guardado.substring(base.length()) : null;
     }
 

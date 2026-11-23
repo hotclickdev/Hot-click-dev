@@ -7,6 +7,8 @@ import com.hotclick.repository.BlogEntradaRepository;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.ProductoRepository;
 import com.hotclick.seo.SeoPublicoService;
+import com.hotclick.service.suscripcion.PreciosPlanesConfig;
+import com.hotclick.service.suscripcion.TrialEmprendedorConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.Optional;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -44,6 +48,12 @@ public class SpaController {
 
     @Autowired
     private SeoPublicoService seoPublicoService;
+
+    @Autowired
+    private PreciosPlanesConfig preciosPlanes;
+
+    @Autowired
+    private TrialEmprendedorConfig trialEmprendedor;
 
     @Value("classpath:/static/index.html")
     private Resource indexHtmlResource;
@@ -136,6 +146,48 @@ public class SpaController {
         return html(spaSeoSupport.injectDigitalizarInventario(indexHtmlContent));
     }
 
+    // ── Landings de planes: title, description y canonical propios en el HTML inicial ─────────────────────────────
+    // Los montos salen de la config del backend (PreciosPlanesConfig, TrialEmprendedorConfig), no del código.
+
+    @GetMapping(value = "/emprende", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> emprendePage() {
+        return landing("Plan Emprendedor: publicá y cobrá en HotClick | HotClick", descEmprende(), "/emprende");
+    }
+
+    /** Alias viejo de /emprende: 301 para que haya una sola URL indexable. */
+    @GetMapping(value = {"/para-emprendedores", "/para-emprendedores/"})
+    public ResponseEntity<Void> paraEmprendedoresAlias(HttpServletRequest request) {
+        String query = request.getQueryString();
+        return ResponseEntity.status(org.springframework.http.HttpStatus.MOVED_PERMANENTLY)
+            .header("Location", "/emprende" + (query == null || query.isBlank() ? "" : "?" + query))
+            .build();
+    }
+
+    @GetMapping(value = "/para-pymes", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> pymePage() {
+        return landing("PYME: operá tu negocio en un solo panel | HotClick",
+            "Plan PYME: " + mensualidad("PYME") + " + 7,5% por venta, sin mínimo. Equipo, inventario y caja en un solo panel. "
+                + NOTA_MONEDA, "/para-pymes");
+    }
+
+    @GetMapping(value = "/negocio-plus-plan", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> negocioPlusPage() {
+        return landing("Negocio Plus: todas tus sucursales en un panel | HotClick",
+            "Plan Negocio Plus: " + mensualidad("NEGOCIO_PLUS") + " + 6% por venta, sin mínimo. Pedidos por local, equipo sin tope y CRM. "
+                + NOTA_MONEDA, "/negocio-plus-plan");
+    }
+
+    @GetMapping(value = "/planes", produces = MediaType.TEXT_HTML_VALUE)
+    @ResponseBody
+    public ResponseEntity<String> planesPage() {
+        return landing("Planes para vender en HotClick | HotClick",
+            "Compará Emprendedor (" + mensualidad("EMPRENDEDOR") + " + 9%), PYME (" + mensualidad("PYME") + " + 7,5%) y Negocio Plus ("
+                + mensualidad("NEGOCIO_PLUS") + " + 6%) por venta, sin mínimo. " + NOTA_MONEDA, "/planes");
+    }
+
     @GetMapping(value = {
         "/",
         "/productos",
@@ -174,11 +226,6 @@ public class SpaController {
         "/sin-conexion",
         "/servicios",
         "/blog",
-        "/emprende",
-        "/para-emprendedores",
-        "/para-pymes",
-        "/negocio-plus-plan",
-        "/planes",
         "/vender",
         "/emprendimientos",
         "/emprendimientos/{slug}",
@@ -190,6 +237,7 @@ public class SpaController {
         "/admin/proveedores",
         "/recuperar-carrito/{id}",
         "/encargo/{token}",
+        "/r/{token}", // QR de retiro de pedidos de Telegram (página mínima, sin datos personales)
         "/cotizacion/{token}",
         "/seguimiento/{token}",
         "/admin",
@@ -223,6 +271,31 @@ public class SpaController {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static final String NOTA_MONEDA = "Productos en colones; la mensualidad se cobra en dólares.";
+
+    private ResponseEntity<String> landing(String title, String desc, String path) {
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+            .header("Content-Language", "es-CR")
+            .body(spaSeoSupport.injectLandingPlan(indexHtmlContent, title, desc, path));
+    }
+
+    /** «US$24/mes» si hay precio publicable en la config; si no, «mensualidad en dólares» (sin inventar monto). */
+    private String mensualidad(String plan) {
+        Optional<BigDecimal> usd = preciosPlanes == null ? Optional.empty() : preciosPlanes.precioPublicoUsd(plan);
+        return usd.map(v -> "US$" + v.stripTrailingZeros().toPlainString() + "/mes").orElse("mensualidad en dólares");
+    }
+
+    private String descEmprende() {
+        String base = "Plan Emprendedor: ";
+        String despues = mensualidad("EMPRENDEDOR") + " + 9% por venta, sin mínimo. ";
+        if (trialEmprendedor == null || trialEmprendedor.cupo() <= 0) {
+            return base + despues + NOTA_MONEDA;
+        }
+        return base + trialEmprendedor.periodoGratis() + " sin mensualidad para los primeros " + trialEmprendedor.cupo()
+            + " negocios; después " + despues + NOTA_MONEDA;
+    }
 
     private ResponseEntity<String> serveSpa() {
         return html(indexHtmlContent);

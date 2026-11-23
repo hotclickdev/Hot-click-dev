@@ -57,9 +57,11 @@ describe('regresión: los locales no traen el cupo fijo', () => {
     const t = traductor(es)
     const primeros = primerosNegocios({ limite: 25 }, t)
     for (const clave of ['emprende.sub', 'emprende.heroPrecioLinea', 'emprende.metaDescription', 'pyme.comparativaNota']) {
-      const texto = t(clave, { primeros, comision: 9 })
+      const texto = t(clave, { primeros, comision: 9, periodo: '3 meses' })
       expect(texto, clave).toContain('los primeros 25 negocios')
+      expect(texto, clave).toContain('3 meses')
       expect(texto, clave).not.toContain('70')
+      expect(texto, clave).not.toMatch(/gratis/i)
     }
   })
 })

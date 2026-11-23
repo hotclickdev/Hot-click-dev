@@ -10,6 +10,7 @@ import { useBaseCaja } from './baseCaja'
 import type { PosStep, PosTurno } from './posHelpers'
 import { posUi } from './posApariencia'
 import PosReporteModal from './PosReporteModal'
+import PosRetiroTelegramModal from './PosRetiroTelegramModal'
 
 /**
  * Chrome utilitario de la caja. El título “Caja (POS)” vive en StepVenta (Figma 71:128).
@@ -25,6 +26,7 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
   const baseCaja = useBaseCaja()
   const empresaNombre = useAuthStore((s) => s.empresaNombre)
   const [reporteAbierto, setReporteAbierto] = useState(false)
+  const [retiroAbierto, setRetiroAbierto] = useState(false)
   const enVenta = step === 'venta'
   const labels: Record<string, string> = {
     apertura: t('pos.header.stepApertura'),
@@ -86,6 +88,15 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
 
       <button
         type="button"
+        onClick={() => setRetiroAbierto(true)}
+        className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)]"
+        style={chipSec}
+      >
+        {t('pos.retiroTg.boton')}
+      </button>
+
+      <button
+        type="button"
         onClick={() => setReporteAbierto(true)}
         className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:bg-[var(--hc-surface-2)]"
         style={chipSec}
@@ -108,6 +119,8 @@ export default function POSHeader({ userName, turno, step, mostrarVolverSistema 
           ) : null}
         </div>
       </div>
+
+      <PosRetiroTelegramModal open={retiroAbierto} onClose={() => setRetiroAbierto(false)} />
 
       <PosReporteModal
         open={reporteAbierto}
