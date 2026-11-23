@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -77,6 +78,20 @@ class CertP12InvalidoTest {
             .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> storage.subirImagenBytes(new byte[]{1}, "exe", "productos"))
             .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("servicio: subirXmlPrivado / leerPrivado inválidos propagan la IllegalArgumentException tal cual (mata P2/P4)")
+    void xmlYLecturaPrivadaPropagaValidacion() {
+        assertThatThrownBy(() -> storage.subirXmlPrivado(new byte[0], "privado/x.xml"))
+            .isExactlyInstanceOf(IllegalArgumentException.class).hasMessage("El XML está vacío");
+        assertThatThrownBy(() -> storage.subirXmlPrivado(null, "privado/x.xml"))
+            .isExactlyInstanceOf(IllegalArgumentException.class).hasMessage("El XML está vacío");
+        for (String clave : new String[]{null, "  ", "a/../b", "/abs/x"}) {
+            assertThatThrownBy(() -> storage.leerPrivado(clave))
+                .isExactlyInstanceOf(IllegalArgumentException.class).hasMessage("La ruta del archivo no es válida");
+        }
+        verifyNoInteractions(s3Client);
     }
 
     @Test
