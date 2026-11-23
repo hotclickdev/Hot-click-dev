@@ -33,8 +33,14 @@ public class SupabaseStorageService {
     private String publicUrl;
 
     public SupabaseStorageService(S3Client s3Client) {
+        this(s3Client, true);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public SupabaseStorageService(S3Client s3Client,
+                                  @Value("${aws.s3.public-object-acl:true}") boolean publicObjectAcl) {
         this.validator = new StorageImageValidator();
-        this.uploadHelper = new StorageUploadHelper(s3Client, this.validator);
+        this.uploadHelper = new StorageUploadHelper(s3Client, this.validator, publicObjectAcl);
     }
 
     @CircuitBreaker(name = "s3", fallbackMethod = "subirCertificadoFallback")

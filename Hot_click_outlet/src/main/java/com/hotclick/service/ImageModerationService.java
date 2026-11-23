@@ -53,6 +53,11 @@ public class ImageModerationService {
             .build();
     }
 
+    /** Para tests: cliente inyectado (el fail-open no debe depender de AWS real). */
+    ImageModerationService(RekognitionClient rekognition) {
+        this.rekognition = rekognition;
+    }
+
     public record ModerationResult(boolean safe, String reason) {}
 
     /**
