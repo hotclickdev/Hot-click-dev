@@ -139,6 +139,11 @@ public class PaymentService {
         return orderConfirmationService.confirmarPedido(pago, this, eventPublisher);
     }
 
+    /** F1: consume la reserva de un pedido de tienda cobrado a mano sin Pago previo (idempotente). */
+    public void consumirReservaPagoManual(Pedido pedido) {
+        orderConfirmationService.consumirReservaPagoManual(pedido, this, eventPublisher);
+    }
+
     /** Chequeo de sobreventa para un pago manual registrado sin Pago previo (no confirma). */
     public boolean revisarSobreventa(Pago pago) {
         return orderConfirmationService.revisarSobreventa(pago);
