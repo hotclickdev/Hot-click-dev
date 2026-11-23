@@ -30,6 +30,19 @@ public class SpaSeoSupport {
     private static final String HOME_LD_START = "<!-- HC_HOME_LD_START -->";
     private static final String HOME_LD_END = "<!-- HC_HOME_LD_END -->";
     private static final String ROBOTS_INDEX = "index, follow, max-snippet:-1, max-image-preview:large";
+    private static final String SITIO = "HOTCLICK";
+    private static final String ROBOTS_INDEX_SIMPLE = "index, follow";
+    private static final String RUTA_PRODUCTOS = "/productos/";
+    private static final String RUTA_TIENDA = "/tienda/";
+    private static final String RUTA_OG_IMAGE = "/og-image.png";
+    private static final String MIGA_INICIO = "Inicio";
+    private static final String JSON_GRAPH_INI = "{\"@context\":\"https://schema.org\",\"@graph\":[";
+    private static final String JSON_MIGAS_INI = "{\"@type\":\"BreadcrumbList\",\"itemListElement\":[";
+    private static final String JSON_SEP_URL = "\",\"url\":\"";
+    private static final String JSON_SEP_DESC = "\",\"description\":\"";
+    private static final String H1_P = "</h1><p>";
+    private static final String META_CIERRE = "\" />\n";
+    private static final String SALTO_INDENT = "\n    ";
 
     private final TestimonioRepository testimonioRepository;
     private final ContactoTextoPublico contactoTexto;
@@ -51,57 +64,69 @@ public class SpaSeoSupport {
      * {@code empresa} es el negocio dueño (puede ser null si no se pudo cargar); si es de prueba la ficha va noindex y sin schema.
      */
     public String injectProductMeta(String html, Producto p, Empresa empresa) {
-        String path = "/productos/" + p.getId();
+        String path = RUTA_PRODUCTOS + p.getId();
         if (empresa != null && empresa.isEsPrueba()) {
             return injectNoindexPrueba(html, path);
         }
-        String nombre = p.getTituloProducto() != null && !p.getTituloProducto().isBlank()
-            ? p.getTituloProducto() : p.getNombreProducto();
-
-        String metaTitle = p.getMetaTitle() != null && !p.getMetaTitle().isBlank()
-            ? p.getMetaTitle() : buildProductTitle(nombre, p);
-
-        String metaDesc = p.getMetaDescription() != null && !p.getMetaDescription().isBlank()
-            ? p.getMetaDescription() : buildProductDescription(nombre, p);
+        String nombre = nombreProducto(p);
+        Long empresaId = p.getEmpresaId();
 
         // Plan sin contacto directo: sin teléfonos, correos ni enlaces externos en las meta públicas.
-        nombre = contactoTexto.texto(p.getEmpresaId(), nombre);
-        metaTitle = contactoTexto.texto(p.getEmpresaId(), metaTitle);
-        metaDesc = contactoTexto.texto(p.getEmpresaId(), metaDesc);
+        String metaTitle = contactoTexto.texto(empresaId, tituloMeta(p, nombre));
+        String metaDesc = contactoTexto.texto(empresaId, descripcionMeta(p, nombre));
+        nombre = contactoTexto.texto(empresaId, nombre);
 
-        String imagen = urlHttp(p.getImagenPrincipalUrl()) ? p.getImagenPrincipalUrl() : appUrl + "/og-image.png";
+        String imagen = urlHttp(p.getImagenPrincipalUrl()) ? p.getImagenPrincipalUrl() : appUrl + RUTA_OG_IMAGE;
         String url = appUrl + path;
-
         String corta = p.getDescripcionCorta() != null && !p.getDescripcionCorta().isBlank()
-            ? contactoTexto.texto(p.getEmpresaId(), p.getDescripcionCorta()) : null;
+            ? contactoTexto.texto(empresaId, p.getDescripcionCorta()) : null;
         String marca = nombreMarca(p, empresa);
 
-        long ratingCount = Optional.ofNullable(testimonioRepository.countAprobadosConCalificacion(p.getId())).orElse(0L);
-        Double ratingAvg = ratingCount > 0 ? testimonioRepository.avgCalificacion(p.getId()) : null;
-
-        String json = "{\"@context\":\"https://schema.org\",\"@graph\":["
-            + jsonProducto(p, nombre, corta, imagen, url, marca, ratingAvg, ratingCount) + ","
-            + migasProducto(url, nombre) + "]}";
-
+        String json = jsonFichaProducto(p, nombre, corta, imagen, url, marca);
         StringBuilder seoBlock = new StringBuilder(SEO_START).append('\n')
-            .append(metasPagina(metaTitle, metaDesc, ROBOTS_INDEX, url, "product", imagen, "HOTCLICK", nombre + " — HOTCLICK Costa Rica"))
+            .append(metasPagina(metaTitle, metaDesc, ROBOTS_INDEX, url, "product", imagen, SITIO, nombre + " — HOTCLICK Costa Rica"))
             .append("\n    <script type=\"application/ld+json\" data-hc-ssr=\"1\">\n    ").append(json).append("\n    </script>\n    ")
             .append(SEO_END);
+        return render(html, seoBlock.toString(), cuerpoProducto(p, nombre, corta, marca));
+    }
 
-        String disponible = stockDisponible(p) > 0 ? "Disponible" : "Agotado";
+    private static String nombreProducto(Producto p) {
+        return p.getTituloProducto() != null && !p.getTituloProducto().isBlank()
+            ? p.getTituloProducto() : p.getNombreProducto();
+    }
+
+    private String tituloMeta(Producto p, String nombre) {
+        return p.getMetaTitle() != null && !p.getMetaTitle().isBlank() ? p.getMetaTitle() : buildProductTitle(nombre, p);
+    }
+
+    private String descripcionMeta(Producto p, String nombre) {
+        return p.getMetaDescription() != null && !p.getMetaDescription().isBlank()
+            ? p.getMetaDescription() : buildProductDescription(nombre, p);
+    }
+
+    private String jsonFichaProducto(Producto p, String nombre, String corta, String imagen, String url, String marca) {
+        long ratingCount = Optional.ofNullable(testimonioRepository.countAprobadosConCalificacion(p.getId())).orElse(0L);
+        Double ratingAvg = ratingCount > 0 ? testimonioRepository.avgCalificacion(p.getId()) : null;
+        return JSON_GRAPH_INI
+            + jsonProducto(p, nombre, corta, imagen, url, marca, ratingAvg, ratingCount) + ","
+            + migasProducto(url, nombre) + "]}";
+    }
+
+    private static String cuerpoProducto(Producto p, String nombre, String corta, String marca) {
         StringBuilder cuerpo = new StringBuilder("<h1>").append(xe(nombre)).append("</h1>");
         if (corta != null) cuerpo.append("<p>").append(xe(corta)).append("</p>");
         if (p.getPrecioVenta() != null && p.getPrecioVenta() > 0) {
+            String disponible = stockDisponible(p) > 0 ? "Disponible" : "Agotado";
             cuerpo.append("<p>Precio: ").append(xe(FormatoColones.colones(p.getPrecioVenta()))).append(" · ").append(disponible).append("</p>");
         }
         if (marca != null && !marca.isBlank()) cuerpo.append("<p>Marca: ").append(xe(marca)).append("</p>");
         cuerpo.append("<p>Envío a todo Costa Rica con HOTCLICK.</p>");
-        return render(html, seoBlock.toString(), cuerpo.toString());
+        return cuerpo.toString();
     }
 
     /** Página de negocio o producto de prueba pedida por URL: noindex, sin schema ni hreflang, sin datos del negocio. */
     public String injectNoindexPrueba(String html, String path) {
-        return injectPagina(html, "HOTCLICK", "Página no disponible para buscadores.", path, "noindex, nofollow", null);
+        return injectPagina(html, SITIO, "Página no disponible para buscadores.", path, "noindex, nofollow", null);
     }
 
     public String buildProductTitle(String nombre, Producto p) {
@@ -128,31 +153,31 @@ public class SpaSeoSupport {
             : titulo;
         if (desc.length() > 155) desc = desc.substring(0, 152) + "...";
 
-        String imagen = urlHttp(e.getImagenUrl()) ? e.getImagenUrl() : appUrl + "/og-image.png";
+        String imagen = urlHttp(e.getImagenUrl()) ? e.getImagenUrl() : appUrl + RUTA_OG_IMAGE;
         String url = appUrl + "/blog/" + (e.getSlug() != null ? e.getSlug() : e.getId());
 
         String seoBlock = SEO_START + "\n"
-            + metasPagina(title, desc, "index, follow", url, "article", imagen, "HOTCLICK", titulo) + "\n    "
+            + metasPagina(title, desc, ROBOTS_INDEX_SIMPLE, url, "article", imagen, SITIO, titulo) + SALTO_INDENT
             + SEO_END;
-        String cuerpo = "<h1>" + xe(titulo) + "</h1><p>" + xe(desc) + "</p>";
+        String cuerpo = "<h1>" + xe(titulo) + H1_P + xe(desc) + "</p>";
         return render(html, seoBlock, cuerpo);
     }
 
     public String injectTiendaMeta(String html, Empresa empresa, String requestPath) {
         if (empresa.isEsPrueba()) {
-            return injectNoindexPrueba(html, "/tienda/" + empresa.getSlug());
+            return injectNoindexPrueba(html, RUTA_TIENDA + empresa.getSlug());
         }
         String productoId = idProductoTienda(empresa.getSlug(), requestPath);
         if (productoId != null) {
             return injectPagina(html,
                 "Producto | HOTCLICK",
                 "Ficha del producto en HotClick.",
-                "/productos/" + productoId,
-                "index, follow",
+                RUTA_PRODUCTOS + productoId,
+                ROBOTS_INDEX_SIMPLE,
                 null);
         }
         if (esRutaPrivadaTienda(requestPath)) {
-            return injectPagina(html, "Tienda | HOTCLICK", "Carrito de la tienda.", "/tienda/" + empresa.getSlug(), "noindex, follow", null);
+            return injectPagina(html, "Tienda | HOTCLICK", "Carrito de la tienda.", RUTA_TIENDA + empresa.getSlug(), "noindex, follow", null);
         }
         return injectTiendaHome(html, empresa);
     }
@@ -161,7 +186,7 @@ public class SpaSeoSupport {
         String title = sector.nombre() + " en Costa Rica — comprá en línea | HotClick";
         String desc = recortar(sector.descripcion(), 155);
         String path = "/comprar/" + sector.slug();
-        return injectPagina(html, title, desc, path, "index, follow", jsonSector(sector, desc, path));
+        return injectPagina(html, title, desc, path, ROBOTS_INDEX_SIMPLE, jsonSector(sector, desc, path));
     }
 
     public String injectProvincia(String html, ProvinciaSeo provincia) {
@@ -169,7 +194,7 @@ public class SpaSeoSupport {
         String desc = "Tiendas en línea de emprendedores, pymes y negocios en " + provincia.nombre()
             + ", Costa Rica. Comprá en HotClick con envío a todo el país.";
         String path = "/tiendas/" + provincia.slug();
-        return injectPagina(html, title, desc, path, "index, follow", jsonProvincia(title, desc, provincia));
+        return injectPagina(html, title, desc, path, ROBOTS_INDEX_SIMPLE, jsonProvincia(title, desc, provincia));
     }
 
     public String injectBuscarProducto(String html) {
@@ -177,7 +202,7 @@ public class SpaSeoSupport {
         String desc = "Si no está en el catálogo, HotClick lo busca entre emprendedores, pymes y negocios. El servicio es gratis.";
         String json = servicioConFaq("Búsqueda de producto", desc, "/servicios/buscar-producto",
             "¿Cómo encuentra HotClick un producto que no está publicado?");
-        return injectPagina(html, title, desc, "/servicios/buscar-producto", "index, follow", json);
+        return injectPagina(html, title, desc, "/servicios/buscar-producto", ROBOTS_INDEX_SIMPLE, json);
     }
 
     public String injectDigitalizarInventario(String html) {
@@ -185,20 +210,20 @@ public class SpaSeoSupport {
         String desc = "HotClick digitaliza el inventario en tu local: códigos, SKU y etiquetas para productos sin código de barras.";
         String json = servicioConFaq("Digitalización de inventario", desc, "/servicios/digitalizar-inventario",
             "¿Qué es digitalizar el inventario?");
-        return injectPagina(html, title, desc, "/servicios/digitalizar-inventario", "index, follow", json);
+        return injectPagina(html, title, desc, "/servicios/digitalizar-inventario", ROBOTS_INDEX_SIMPLE, json);
     }
 
     /** Landing de vendedor (/emprende, /para-pymes, /planes…): title, description, canonical y og:url de su ruta. */
     public String injectLandingPlan(String html, String title, String desc, String path) {
         String url = appUrl + path;
         String pagina = "{\"@type\":\"WebPage\",\"name\":\"" + escJson(titular(title))
-            + "\",\"description\":\"" + escJson(desc) + "\",\"url\":\"" + escJson(url)
+            + JSON_SEP_DESC + escJson(desc) + JSON_SEP_URL + escJson(url)
             + "\",\"inLanguage\":\"es-CR\",\"isPartOf\":{\"@type\":\"WebSite\",\"name\":\"HOTCLICK\",\"url\":\""
             + escJson(appUrl + "/") + "\"}}";
-        String migas = "{\"@type\":\"BreadcrumbList\",\"itemListElement\":["
-            + miga(1, "Inicio", appUrl + "/") + "," + miga(2, titular(title), url) + "]}";
-        String json = "{\"@context\":\"https://schema.org\",\"@graph\":[" + pagina + "," + migas + "]}";
-        return injectPagina(html, title, desc, path, "index, follow", json);
+        String migas = JSON_MIGAS_INI
+            + miga(1, MIGA_INICIO, appUrl + "/") + "," + miga(2, titular(title), url) + "]}";
+        String json = JSON_GRAPH_INI + pagina + "," + migas + "]}";
+        return injectPagina(html, title, desc, path, ROBOTS_INDEX_SIMPLE, json);
     }
 
     public String injectNoindex(String html, String title, String desc, String path) {
@@ -207,13 +232,13 @@ public class SpaSeoSupport {
 
     /** Meta noindex para PDP inexistente (acompaña HTTP 404). */
     public String injectProductNotFoundMeta(String html, String id) {
-        String url = appUrl + "/productos/" + (id != null ? id : "");
+        String url = appUrl + RUTA_PRODUCTOS + (id != null ? id : "");
         String title = "Producto no encontrado | HOTCLICK";
         String desc = "Este producto no está disponible en HotClick.";
         String seoBlock = SEO_START + "\n"
-            + metasPagina(title, desc, "noindex, follow", url, "website", appUrl + "/og-image.png", "HOTCLICK", null) + "\n    "
+            + metasPagina(title, desc, "noindex, follow", url, "website", appUrl + RUTA_OG_IMAGE, SITIO, null) + SALTO_INDENT
             + SEO_END;
-        return render(html, seoBlock, "<h1>" + xe(title) + "</h1><p>" + xe(desc) + "</p>");
+        return render(html, seoBlock, "<h1>" + xe(title) + H1_P + xe(desc) + "</p>");
     }
 
     /**
@@ -251,7 +276,7 @@ public class SpaSeoSupport {
     }
 
     private String injectTiendaHome(String html, Empresa empresa) {
-        String path = "/tienda/" + empresa.getSlug();
+        String path = RUTA_TIENDA + empresa.getSlug();
         if (empresa.isEsPrueba()) {
             return injectNoindexPrueba(html, path);
         }
@@ -266,27 +291,27 @@ public class SpaSeoSupport {
         String url = appUrl + path;
         // Solo datos reales: nombre, url, imagen y país. Sin dirección ni contacto del vendedor.
         String tienda = "{\"@type\":\"OnlineStore\",\"name\":\"" + escJson(nombre)
-            + "\",\"url\":\"" + escJson(url)
+            + JSON_SEP_URL + escJson(url)
             + "\",\"image\":\"" + escJson(imagen)
-            + "\",\"description\":\"" + escJson(desc)
+            + JSON_SEP_DESC + escJson(desc)
             + "\",\"areaServed\":{\"@type\":\"Country\",\"name\":\"Costa Rica\"}}";
-        String migas = "{\"@type\":\"BreadcrumbList\",\"itemListElement\":["
-            + miga(1, "Inicio", appUrl + "/") + ","
+        String migas = JSON_MIGAS_INI
+            + miga(1, MIGA_INICIO, appUrl + "/") + ","
             + miga(2, "Negocios", appUrl + "/emprendimientos") + ","
             + miga(3, nombre, url) + "]}";
-        String json = "{\"@context\":\"https://schema.org\",\"@graph\":[" + tienda + "," + migas + "]}";
-        String cuerpo = "<h1>" + xe(nombre) + "</h1><p>" + xe(desc) + "</p>"
+        String json = JSON_GRAPH_INI + tienda + "," + migas + "]}";
+        String cuerpo = "<h1>" + xe(nombre) + H1_P + xe(desc) + "</p>"
             + "<p>Tienda en línea en Costa Rica, con envío a todo el país por HOTCLICK.</p>";
-        return paginaCore(html, title, desc, path, "index, follow", json, imagen, nombre, cuerpo);
+        return paginaCore(html, title, desc, path, ROBOTS_INDEX_SIMPLE, json, imagen, nombre, cuerpo);
     }
 
     private String injectPagina(String html, String title, String description, String path, String robots, String jsonLd) {
-        return injectPagina(html, title, description, path, robots, jsonLd, appUrl + "/og-image.png", "HOTCLICK");
+        return injectPagina(html, title, description, path, robots, jsonLd, appUrl + RUTA_OG_IMAGE, SITIO);
     }
 
     private String injectPagina(String html, String title, String description, String path, String robots,
                                 String jsonLd, String imagen, String siteName) {
-        String cuerpo = "<h1>" + xe(titular(title)) + "</h1><p>" + xe(description) + "</p>"
+        String cuerpo = "<h1>" + xe(titular(title)) + H1_P + xe(description) + "</p>"
             + "<p><a href=\"/\">Inicio</a> · <a href=\"/productos\">Productos</a></p>";
         return paginaCore(html, title, description, path, robots, jsonLd, imagen, siteName, cuerpo);
     }
@@ -299,7 +324,7 @@ public class SpaSeoSupport {
             : "\n    <script type=\"application/ld+json\" data-hc-ssr=\"1\">\n    " + jsonLd + "\n    </script>";
         String seoBlock = SEO_START + "\n"
             + metasPagina(title, description, robots, url, "website", imagen, siteName, null)
-            + extra + "\n    " + SEO_END;
+            + extra + SALTO_INDENT + SEO_END;
         return render(html, seoBlock, cuerpo);
     }
 
@@ -308,28 +333,28 @@ public class SpaSeoSupport {
                                String imagen, String siteName, String imageAlt) {
         StringBuilder sb = new StringBuilder()
             .append("    <title>").append(xe(title)).append("</title>\n")
-            .append("    <meta name=\"description\" content=\"").append(xa(description)).append("\" />\n")
-            .append("    <meta name=\"robots\" content=\"").append(xa(robots)).append("\" />\n")
-            .append("    <link rel=\"canonical\" href=\"").append(xa(url)).append("\" />\n");
-        if (!robots.startsWith("noindex")) {
+            .append("    <meta name=\"description\" content=\"").append(xa(description)).append(META_CIERRE)
+            .append("    <meta name=\"robots\" content=\"").append(xa(robots)).append(META_CIERRE)
+            .append("    <link rel=\"canonical\" href=\"").append(xa(url)).append(META_CIERRE);
+        if (robots != null && !robots.startsWith("noindex")) {
             // Un solo idioma real (es-CR): sin URLs /en ni /pt. x-default y es-CR apuntan a ESTA página.
-            sb.append("    <link rel=\"alternate\" hreflang=\"es-CR\" href=\"").append(xa(url)).append("\" />\n")
-              .append("    <link rel=\"alternate\" hreflang=\"x-default\" href=\"").append(xa(url)).append("\" />\n");
+            sb.append("    <link rel=\"alternate\" hreflang=\"es-CR\" href=\"").append(xa(url)).append(META_CIERRE)
+              .append("    <link rel=\"alternate\" hreflang=\"x-default\" href=\"").append(xa(url)).append(META_CIERRE);
         }
-        sb.append("    <meta property=\"og:title\" content=\"").append(xa(title)).append("\" />\n")
-          .append("    <meta property=\"og:description\" content=\"").append(xa(description)).append("\" />\n")
-          .append("    <meta property=\"og:type\" content=\"").append(xa(ogType)).append("\" />\n")
-          .append("    <meta property=\"og:url\" content=\"").append(xa(url)).append("\" />\n")
-          .append("    <meta property=\"og:image\" content=\"").append(xa(imagen)).append("\" />\n");
+        sb.append("    <meta property=\"og:title\" content=\"").append(xa(title)).append(META_CIERRE)
+          .append("    <meta property=\"og:description\" content=\"").append(xa(description)).append(META_CIERRE)
+          .append("    <meta property=\"og:type\" content=\"").append(xa(ogType)).append(META_CIERRE)
+          .append("    <meta property=\"og:url\" content=\"").append(xa(url)).append(META_CIERRE)
+          .append("    <meta property=\"og:image\" content=\"").append(xa(imagen)).append(META_CIERRE);
         if (imageAlt != null) {
-            sb.append("    <meta property=\"og:image:alt\" content=\"").append(xa(imageAlt)).append("\" />\n");
+            sb.append("    <meta property=\"og:image:alt\" content=\"").append(xa(imageAlt)).append(META_CIERRE);
         }
         sb.append("    <meta property=\"og:locale\" content=\"es_CR\" />\n")
-          .append("    <meta property=\"og:site_name\" content=\"").append(xa(siteName)).append("\" />\n")
+          .append("    <meta property=\"og:site_name\" content=\"").append(xa(siteName)).append(META_CIERRE)
           .append("    <meta name=\"twitter:card\" content=\"summary_large_image\" />\n")
           .append("    <meta name=\"twitter:site\" content=\"@hotclickcr\" />\n")
-          .append("    <meta name=\"twitter:title\" content=\"").append(xa(title)).append("\" />\n")
-          .append("    <meta name=\"twitter:description\" content=\"").append(xa(description)).append("\" />\n")
+          .append("    <meta name=\"twitter:title\" content=\"").append(xa(title)).append(META_CIERRE)
+          .append("    <meta name=\"twitter:description\" content=\"").append(xa(description)).append(META_CIERRE)
           .append("    <meta name=\"twitter:image\" content=\"").append(xa(imagen)).append("\" />");
         return sb.toString();
     }
@@ -391,7 +416,7 @@ public class SpaSeoSupport {
 
     private String jsonSector(SectorDetalle sector, String desc, String path) {
         String url = appUrl + path;
-        return "{\"@context\":\"https://schema.org\",\"@graph\":["
+        return JSON_GRAPH_INI
             + coleccion(sector.nombre(), desc, url) + ","
             + migas(url, sector.nombre()) + ","
             + listaProductos(sector) + "]}";
@@ -401,28 +426,28 @@ public class SpaSeoSupport {
         String area = "{\"@type\":\"AdministrativeArea\",\"name\":\"" + escJson(provincia.nombre())
             + "\",\"containedInPlace\":{\"@type\":\"Country\",\"name\":\"Costa Rica\"}}";
         return "{\"@context\":\"https://schema.org\",\"@type\":\"CollectionPage\",\"name\":\""
-            + escJson(title) + "\",\"description\":\"" + escJson(desc) + "\",\"areaServed\":" + area + "}";
+            + escJson(title) + JSON_SEP_DESC + escJson(desc) + "\",\"areaServed\":" + area + "}";
     }
 
     private String servicioConFaq(String nombre, String desc, String path, String pregunta) {
         String servicio = "{\"@type\":\"Service\",\"name\":\"" + escJson(nombre)
-            + "\",\"description\":\"" + escJson(desc)
-            + "\",\"url\":\"" + escJson(appUrl + path)
+            + JSON_SEP_DESC + escJson(desc)
+            + JSON_SEP_URL + escJson(appUrl + path)
             + "\",\"provider\":{\"@type\":\"Organization\",\"name\":\"HOTCLICK\",\"url\":\"" + escJson(appUrl + "/")
             + "\"},\"areaServed\":{\"@type\":\"Country\",\"name\":\"Costa Rica\"}}";
         String faq = "{\"@type\":\"FAQPage\",\"mainEntity\":[{\"@type\":\"Question\",\"name\":\""
             + escJson(pregunta) + "\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"" + escJson(desc) + "\"}}]}";
-        return "{\"@context\":\"https://schema.org\",\"@graph\":[" + servicio + "," + faq + "]}";
+        return JSON_GRAPH_INI + servicio + "," + faq + "]}";
     }
 
     private static String coleccion(String nombre, String desc, String url) {
         return "{\"@type\":\"CollectionPage\",\"name\":\"" + escJson(nombre)
-            + "\",\"description\":\"" + escJson(desc) + "\",\"url\":\"" + escJson(url) + "\"}";
+            + JSON_SEP_DESC + escJson(desc) + JSON_SEP_URL + escJson(url) + "\"}";
     }
 
     private String migas(String url, String nombre) {
-        return "{\"@type\":\"BreadcrumbList\",\"itemListElement\":["
-            + miga(1, "Inicio", appUrl + "/") + ","
+        return JSON_MIGAS_INI
+            + miga(1, MIGA_INICIO, appUrl + "/") + ","
             + miga(2, "Productos", appUrl + "/productos") + ","
             + miga(3, nombre, url) + "]}";
     }
@@ -441,7 +466,7 @@ public class SpaSeoSupport {
             mostrados++;
             items.append("{\"@type\":\"ListItem\",\"position\":").append(mostrados)
                 .append(",\"name\":\"").append(escJson(producto.nombre()))
-                .append("\",\"url\":\"").append(escJson(appUrl + "/productos/" + producto.id())).append("\"}");
+                .append(JSON_SEP_URL).append(escJson(appUrl + RUTA_PRODUCTOS + producto.id())).append("\"}");
         }
         return "{\"@type\":\"ItemList\",\"name\":\"" + escJson(sector.nombre() + " en Costa Rica")
             + "\",\"numberOfItems\":" + mostrados + ",\"itemListElement\":[" + items + "]}";
@@ -449,7 +474,7 @@ public class SpaSeoSupport {
 
     private static String idProductoTienda(String slug, String path) {
         if (path == null || slug == null) return null;
-        String marca = "/tienda/" + slug + "/producto/";
+        String marca = RUTA_TIENDA + slug + "/producto/";
         int i = path.indexOf(marca);
         if (i < 0) return null;
         String resto = path.substring(i + marca.length()).replaceAll("/$", "");
@@ -474,7 +499,7 @@ public class SpaSeoSupport {
         if (empresa.getLogoUrl() != null && !empresa.getLogoUrl().isBlank()) {
             return empresa.getLogoUrl();
         }
-        return appUrl + "/og-image.png";
+        return appUrl + RUTA_OG_IMAGE;
     }
 
     /** Reemplaza el bloque meta, el texto visible sin JS y quita el JSON-LD exclusivo de la home. */

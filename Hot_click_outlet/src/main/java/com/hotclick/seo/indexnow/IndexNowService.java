@@ -101,7 +101,7 @@ public class IndexNowService {
             String host = URI.create(appUrl).getHost();
             StringBuilder lista = new StringBuilder();
             for (String u : urls) {
-                if (lista.length() > 0) lista.append(',');
+                if (!lista.isEmpty()) lista.append(',');
                 lista.append('"').append(u.replace("\\", "\\\\").replace("\"", "\\\"")).append('"');
             }
             String body = "{\"host\":\"" + host + "\",\"key\":\"" + clave + "\",\"keyLocation\":\""

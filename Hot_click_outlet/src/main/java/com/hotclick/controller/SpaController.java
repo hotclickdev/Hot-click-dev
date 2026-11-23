@@ -75,10 +75,7 @@ public class SpaController {
             long productId = Long.parseLong(id);
             return productoRepository.findById(productId)
                 .filter(p -> p.getEstado() != null && p.getEstado() == 1)
-                .map(p -> ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                    .header("Content-Language", "es-CR")
-                    .body(spaSeoSupport.injectProductMeta(indexHtmlContent, p, empresaDe(p))))
+                .map(p -> htmlSeo(spaSeoSupport.injectProductMeta(indexHtmlContent, p, empresaDe(p))))
                 .orElseGet(() -> serveNotFound(id));
         } catch (NumberFormatException e) {
             return serveNotFound(id);
@@ -95,10 +92,7 @@ public class SpaController {
         if (!Boolean.TRUE.equals(e.getPublicado()) || e.getEstado() == null || e.getEstado() != 1) {
             return serveSpa();
         }
-        return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                    .header("Content-Language", "es-CR")
-            .body(spaSeoSupport.injectBlogMeta(indexHtmlContent, e));
+        return htmlSeo(spaSeoSupport.injectBlogMeta(indexHtmlContent, e));
     }
 
     /**
@@ -114,10 +108,7 @@ public class SpaController {
             .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa())
                 && Boolean.TRUE.equals(e.getVisibilidadPublica())
                 && CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()))
-            .<ResponseEntity<String>>map(e -> ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                    .header("Content-Language", "es-CR")
-                .body(spaSeoSupport.injectTiendaMeta(indexHtmlContent, e, request.getRequestURI())))
+            .<ResponseEntity<String>>map(e -> htmlSeo(spaSeoSupport.injectTiendaMeta(indexHtmlContent, e, request.getRequestURI())))
             .orElseGet(this::serveSpa);
     }
 
@@ -280,10 +271,7 @@ public class SpaController {
     private static final String NOTA_MONEDA = "Productos en colones; la mensualidad se cobra en dólares.";
 
     private ResponseEntity<String> landing(String title, String desc, String path) {
-        return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                    .header("Content-Language", "es-CR")
-            .body(spaSeoSupport.injectLandingPlan(indexHtmlContent, title, desc, path));
+        return htmlSeo(spaSeoSupport.injectLandingPlan(indexHtmlContent, title, desc, path));
     }
 
     /** «US$24/mes» si hay precio publicable en la config; si no, «mensualidad en dólares» (sin inventar monto). */
@@ -312,25 +300,34 @@ public class SpaController {
         return html(indexHtmlContent);
     }
 
+    private static final MediaType HTML_UTF8 = MediaType.parseMediaType("text/html;charset=UTF-8");
+    private static final String HEADER_CONTENT_LANGUAGE = "Content-Language";
+    private static final String IDIOMA_CR = "es-CR";
+
     private ResponseEntity<String> html(String body) {
+        return htmlSeo(body);
+    }
+
+    /** 200 con text/html UTF-8 y Content-Language es-CR. */
+    private ResponseEntity<String> htmlSeo(String body) {
         return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                    .header("Content-Language", "es-CR")
+            .contentType(HTML_UTF8)
+            .header(HEADER_CONTENT_LANGUAGE, IDIOMA_CR)
             .body(body);
     }
 
     private ResponseEntity<String> htmlNoIndex(String title, String desc, String path) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
-            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                    .header("Content-Language", "es-CR")
+            .contentType(HTML_UTF8)
+            .header(HEADER_CONTENT_LANGUAGE, IDIOMA_CR)
             .body(spaSeoSupport.injectNoindex(indexHtmlContent, title, desc, path));
     }
 
     /** Soft-404 de producto: HTTP 404 + SPA con noindex para que el cliente muestre UI. */
     private ResponseEntity<String> serveNotFound(String id) {
         return ResponseEntity.status(404)
-            .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                    .header("Content-Language", "es-CR")
+            .contentType(HTML_UTF8)
+            .header(HEADER_CONTENT_LANGUAGE, IDIOMA_CR)
             .body(spaSeoSupport.injectProductNotFoundMeta(indexHtmlContent, id));
     }
 }

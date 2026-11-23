@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "hot_click_blog_entrada_tb")
+@EntityListeners(com.hotclick.seo.indexnow.BlogEntradaIndexNowListener.class)
 public class BlogEntrada {
 
     @Id
