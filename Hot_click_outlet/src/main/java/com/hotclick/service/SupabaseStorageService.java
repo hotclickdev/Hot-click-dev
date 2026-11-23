@@ -150,8 +150,47 @@ public class SupabaseStorageService {
         throw e;
     }
 
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
     private String subirImagenDescargadaFallback(byte[] bytes, String urlOrigen, String contentTypeHint, String carpeta,
                                                  IllegalArgumentException e) {
+        throw e;
+    }
+
+    /** F2: validación (extensión, magic bytes, tamaño) no es falla de S3: se relanza tal cual → 400, sin log de circuito. */
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private String subirCertificadoFallback(MultipartFile file, Long empresaId, IllegalArgumentException e) {
+        throw e;
+    }
+
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private String subirXmlPrivadoFallback(byte[] xml, String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private String subirImagenPrivadaFallback(MultipartFile file, String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private byte[] leerPrivadoFallback(String key, IllegalArgumentException e) {
+        throw e;
+    }
+
+    // Resilience4j exige que la firma del fallback copie los parámetros del método original más la
+    // excepción; los parámetros "no usados" deben quedarse o el fallback no se resuelve (java:S1172).
+    @SuppressWarnings("java:S1172")
+    private String subirImagenBytesFallback(byte[] bytes, String extension, String carpeta, IllegalArgumentException e) {
         throw e;
     }
 
