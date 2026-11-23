@@ -1,4 +1,4 @@
--- V241 (23-nov-2026): pedidos del COMPRADOR por Telegram (bot de la tienda). Aditiva e idempotente.
+-- V243 (23-nov-2026): pedidos del COMPRADOR por Telegram (bot de la tienda). Aditiva e idempotente.
 --  * sesion de comprador por chat (carrito/paso en JSON; NO es una cuenta del panel)
 --  * ubicacion de entrega estructurada del pedido (fuente, enlace normalizado, lat/lng) sin tocar direccion_entrega
 --  * token de retiro en tienda: opaco, de un solo uso, vence a las 4 h del pago confirmado

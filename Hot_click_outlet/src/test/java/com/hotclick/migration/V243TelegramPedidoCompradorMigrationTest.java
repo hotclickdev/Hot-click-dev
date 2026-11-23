@@ -20,10 +20,10 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("V241 pedidos del comprador por Telegram: aditiva, idempotente y alineada con las entidades")
-class V241TelegramPedidoCompradorMigrationTest {
+@DisplayName("V243 pedidos del comprador por Telegram: aditiva, idempotente y alineada con las entidades")
+class V243TelegramPedidoCompradorMigrationTest {
 
-    private static final String RUTA = "src/main/resources/db/migration/V241__telegram_pedido_comprador.sql";
+    private static final String RUTA = "src/main/resources/db/migration/V243__telegram_pedido_comprador.sql";
 
     @Test
     @DisplayName("se ejecuta dos veces sin error (IF NOT EXISTS) y no borra nada")
@@ -44,10 +44,10 @@ class V241TelegramPedidoCompradorMigrationTest {
     }
 
     @Test
-    @DisplayName("Actualizado.sql lleva el mismo bloque V241")
+    @DisplayName("Actualizado.sql lleva el mismo bloque V243")
     void actualizadoLoLleva() throws Exception {
         String a = Files.readString(Path.of("Actualizado.sql"));
-        assertThat(a).contains("V241 (23-nov-2026)").contains("uq_pedido_retiro_token").contains("hot_click_pedido_entrega_tb");
+        assertThat(a).contains("V243 (23-nov-2026)").contains("uq_pedido_retiro_token").contains("hot_click_pedido_entrega_tb");
     }
 
     private static Set<String> columnas(Connection c, String tabla) throws Exception {
