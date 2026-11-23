@@ -145,7 +145,7 @@ public class TelegramCompradorService {
 
     static boolean tiendaPublica(Empresa e) {
         return e != null && "ACTIVO".equals(e.getEstadoEmpresa()) && Boolean.TRUE.equals(e.getVisibilidadPublica())
-            && !e.isEsPrueba() && !e.isTiendaPausada() && !e.isCobrosPausados() && CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan());
+            && !e.isEsPrueba() && !e.isTiendaPausada() && !e.isCobrosPausados() && CatalogoPublicoGate.empresaPublicable(e);
     }
 
     public void procesarTexto(long chatId, String texto) {

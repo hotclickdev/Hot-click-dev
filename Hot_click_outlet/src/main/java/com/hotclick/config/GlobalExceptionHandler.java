@@ -100,6 +100,13 @@ public class GlobalExceptionHandler {
             java.util.Map.of("codigo", com.hotclick.exception.ReactivacionSinPagoException.CODIGO)));
     }
 
+    /** Alta por fases: fase no cumplida (409 con código). */
+    @ExceptionHandler(com.hotclick.exception.AltaFasesException.class)
+    public ResponseEntity<ResponseDTO> handleAltaFases(com.hotclick.exception.AltaFasesException ex) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage(),
+            java.util.Map.of("codigo", ex.getCodigo())));
+    }
+
     /** Aprobar un Emprendedor cuyo propietario no verificó su correo: 409, sin consumir puesto de trial. */
     @ExceptionHandler(com.hotclick.exception.CupoEmprendedorCorreoNoVerificadoException.class)
     public ResponseEntity<ResponseDTO> handleCupoCorreoNoVerificado(com.hotclick.exception.CupoEmprendedorCorreoNoVerificadoException ex) {

@@ -17,17 +17,30 @@ public final class CatalogoPublicoGate {
         return !Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA.equals(estadoPlan);
     }
 
+    /**
+     * Alta por fases (V244): el negocio solo se publica y vende en línea si {@code venta_online_habilitada}
+     * (cuenta ONVO ACTIVA para negocios nuevos; TRUE para los existentes). Predicado único en memoria.
+     */
+    public static boolean ventaOnlineHabilitada(com.hotclick.model.Empresa e) {
+        return e == null || e.isVentaOnlineHabilitada();
+    }
+
+    /** Membresía confirmada Y alta por fases completa: el único predicado «empresa publicable» en memoria. */
+    public static boolean empresaPublicable(com.hotclick.model.Empresa e) {
+        return e == null || (membresiaConfirmada(e.getEstadoPlan()) && e.isVentaOnlineHabilitada());
+    }
+
     /** Alias {@code e} en SQL nativo. */
     public static final String NATIVA_E =
-        "(e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA')";
+        "((e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA') AND e.venta_online_habilitada = TRUE)";
 
     /** Alias {@code emp} en el SQL del chat y del RAG. */
     public static final String NATIVA_EMP =
-        "(emp.estado_plan IS NULL OR emp.estado_plan <> 'REQUIERE_MEMBRESIA')";
+        "((emp.estado_plan IS NULL OR emp.estado_plan <> 'REQUIERE_MEMBRESIA') AND emp.venta_online_habilitada = TRUE)";
 
     /** Alias {@code e} en JPQL. */
     public static final String JPQL_E =
-        "(e.estadoPlan IS NULL OR e.estadoPlan <> 'REQUIERE_MEMBRESIA')";
+        "((e.estadoPlan IS NULL OR e.estadoPlan <> 'REQUIERE_MEMBRESIA') AND e.ventaOnlineHabilitada = true)";
 
     /** WHERE de listado (alias e): activa, visible y con membresía confirmada o sin ese estado. */
     public static final String SQL_LISTADO =

@@ -29,7 +29,7 @@ public class EmpresaService {
         return empresaRepository.findBySlug(slug.trim())
             .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa()))
             .filter(e -> Boolean.TRUE.equals(e.getVisibilidadPublica()))
-            .filter(e -> CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()))
+            .filter(e -> CatalogoPublicoGate.empresaPublicable(e))
             .map(Empresa::getId);
     }
 }

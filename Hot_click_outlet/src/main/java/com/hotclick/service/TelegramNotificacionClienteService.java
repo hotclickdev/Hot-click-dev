@@ -183,6 +183,16 @@ public class TelegramNotificacionClienteService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /** Aviso de texto libre a los Telegram vinculados del negocio (alta por fases). Nunca lanza. */
+    public void notificarTexto(Long empresaId, String texto) {
+        if (!bot.isConfigured() || empresaId == null || texto == null || texto.isBlank()) return;
+        try {
+            enviarATodos(empresaId, texto);
+        } catch (Exception e) {
+            log.error("[telegram-notif] fallo aviso de texto empresa={} — {}", empresaId, e.getClass().getSimpleName());
+        }
+    }
+
     private void enviarATodos(Long empresaId, String texto) {
         Set<Long> chats = new HashSet<>();
         for (TelegramVinculacion v : vinculacionRepository.findActivasPorEmpresa(empresaId)) {

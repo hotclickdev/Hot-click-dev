@@ -4743,3 +4743,42 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_retiro_token_pedido
 -- barrido de vencidos
 CREATE INDEX IF NOT EXISTS idx_pedido_retiro_token_barrido
     ON hot_click_pedido_retiro_token_tb (estado, expira);
+
+-- ===== V244 / V245 (alta por fases, destino del dinero) =====
+-- V244 (23-nov-2026): alta de negocios por fases (registro -> productos -> ONVO -> revision HotClick -> publicada).
+-- Aditiva e idempotente. NO despublica nada: los negocios existentes quedan alta_por_fases=FALSE (legacy) y
+-- venta_online_habilitada=TRUE, o sea exactamente como estaban.
+--  * alta_por_fases: TRUE solo para negocios registrados despues del deploy (los marca el codigo, no esta migracion).
+--  * venta_online_habilitada: predicado unico de "puede publicarse y cobrar en linea". Lo mantiene AltaFasesService.
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS alta_por_fases BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS venta_online_habilitada BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- Seguimiento de la cuenta conectada ONVO (avisos idempotentes; ver AltaFasesAvisoService).
+ALTER TABLE hot_click_empresa_cuenta_onvo_tb ADD COLUMN IF NOT EXISTS activada_en TIMESTAMP;
+ALTER TABLE hot_click_empresa_cuenta_onvo_tb ADD COLUMN IF NOT EXISTS revision_aviso_en TIMESTAMP;
+ALTER TABLE hot_click_empresa_cuenta_onvo_tb ADD COLUMN IF NOT EXISTS perdida_desde TIMESTAMP;
+ALTER TABLE hot_click_empresa_cuenta_onvo_tb ADD COLUMN IF NOT EXISTS avisos_perdida INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE hot_click_empresa_cuenta_onvo_tb ADD COLUMN IF NOT EXISTS ultimo_aviso_perdida_en TIMESTAMP;
+ALTER TABLE hot_click_empresa_cuenta_onvo_tb ADD COLUMN IF NOT EXISTS recuperada_aviso_pendiente BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Cuentas que hoy ya estan ACTIVAS: se anota desde cuando (no se avisa nada al admin por ellas).
+UPDATE hot_click_empresa_cuenta_onvo_tb
+   SET activada_en = COALESCE(activada_en, actualizado_en), revision_aviso_en = COALESCE(revision_aviso_en, actualizado_en)
+ WHERE estado = 'ACTIVA' AND activada_en IS NULL;
+
+CREATE INDEX IF NOT EXISTS ix_empresa_cuenta_onvo_perdida
+    ON hot_click_empresa_cuenta_onvo_tb (perdida_desde) WHERE perdida_desde IS NOT NULL;
+CREATE INDEX IF NOT EXISTS ix_empresa_alta_por_fases
+    ON hot_click_empresa_tb (alta_por_fases) WHERE alta_por_fases = TRUE;
+-- V245 (23-nov-2026): a donde fue el dinero de cada pago en linea (SUBCUENTA del negocio vs PLATAFORMA) y el
+-- saldo por reintegrar de los pagos que cayeron a la cuenta principal de HotClick. Aditiva e idempotente.
+--  * destino_dinero: SUBCUENTA | PLATAFORMA | NULL (pago anterior a V245 o proveedor sin ONVO: sin registro).
+--  * reintegro_estado: NULL (no aplica / historico sin rastreo) | NO_REINTEGRADO | REINTEGRADO.
+-- Los pagos historicos NO se marcan por defecto: ver docs/alta-negocio-fases/MIGRACION_NEGOCIOS_EXISTENTES.md.
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS destino_dinero VARCHAR(12);
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS destino_cuenta_onvo VARCHAR(100);
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS reintegro_estado VARCHAR(20);
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS reintegrado_por VARCHAR(120);
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS reintegrado_en TIMESTAMP;
+ALTER TABLE hot_click_pago_tb ADD COLUMN IF NOT EXISTS reintegro_nota VARCHAR(300);
+CREATE INDEX IF NOT EXISTS ix_pago_reintegro_estado ON hot_click_pago_tb (reintegro_estado) WHERE reintegro_estado IS NOT NULL;

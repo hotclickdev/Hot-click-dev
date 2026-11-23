@@ -208,6 +208,7 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, "/api/public/**").permitAll()
             .requestMatchers(GET, "/sitemap.xml").permitAll()
             // Perfil de empresa — solo lectura para todos los roles de la empresa; escritura solo EMPRENDEDOR
+            .requestMatchers("/api/empresa/alta-negocio/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(GET,  "/api/empresa/perfil").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)

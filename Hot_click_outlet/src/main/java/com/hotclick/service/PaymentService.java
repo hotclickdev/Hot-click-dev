@@ -56,6 +56,8 @@ public class PaymentService {
     @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
 
+    @Autowired(required = false) private com.hotclick.service.alta.AltaFasesService altaFases;
+
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
         checkoutValidator.validateCartNotEmpty(req);
@@ -93,6 +95,10 @@ public class PaymentService {
 
         PaymentSession session;
         try {
+            // Alta por fases: todo cobro en línea exige negocio con venta en línea habilitada (también en grupos multi-negocio).
+            if (altaFases != null && ("ONVO".equalsIgnoreCase(provider) || "STRIPE".equalsIgnoreCase(provider))) {
+                for (Pedido paquete : grupo.pedidos()) altaFases.exigirCobroEnLinea(paquete.getEmpresa());
+            }
             session = providerFactory.get(provider)
                 .crearSesion(CheckoutGrupoFactory.paraCobro(principal, grupo.totalCobro()), usuario);
         } catch (RuntimeException e) {

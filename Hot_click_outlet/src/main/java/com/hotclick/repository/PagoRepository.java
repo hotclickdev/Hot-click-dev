@@ -292,4 +292,20 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     List<Pago> reclamarSinpeOnvoCerrados(@Param("proveedor") String proveedor, @Param("prefijo") String prefijo,
                                          @Param("desde") LocalDateTime desde,
                                          org.springframework.data.domain.Pageable pagina);
+
+    /** V245: cobros capturados que cayeron a la plataforma (o ya reintegrados), más recientes primero. */
+    @Query("SELECT p FROM Pago p JOIN FETCH p.pedido ped LEFT JOIN FETCH ped.empresa "
+        + "WHERE p.reintegroEstado IS NOT NULL AND p.estadoPago = :capturado ORDER BY p.id DESC")
+    List<Pago> pagosConReintegro(@Param("capturado") String capturado, Pageable pageable);
+
+    @Query("SELECT p.id FROM Pago p JOIN p.pedido ped WHERE ped.empresa.id = :empresaId "
+        + "AND p.reintegroEstado = 'NO_REINTEGRADO' AND p.estadoPago = :capturado ORDER BY p.id")
+    List<Long> idsPendientesDeReintegroPorEmpresa(@Param("empresaId") Long empresaId, @Param("capturado") String capturado);
+
+    /** Marca REINTEGRADO solo si seguía NO_REINTEGRADO (idempotente: 0 filas = ya estaba o no aplica). */
+    @Modifying
+    @Query("UPDATE Pago p SET p.reintegroEstado = 'REINTEGRADO', p.reintegradoPor = :por, p.reintegradoEn = :ahora, "
+        + "p.reintegroNota = :nota WHERE p.id = :id AND p.reintegroEstado = 'NO_REINTEGRADO' AND p.estadoPago = :capturado")
+    int marcarReintegrado(@Param("id") Long id, @Param("por") String por, @Param("ahora") LocalDateTime ahora,
+                          @Param("nota") String nota, @Param("capturado") String capturado);
 }
