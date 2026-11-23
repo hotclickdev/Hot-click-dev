@@ -8,6 +8,7 @@ import EmprendeHub from './emprende/EmprendeHub'
 import EmprendeLanding from './emprende/EmprendeLanding'
 import useCupoEmprende from './emprende/useCupoEmprende'
 import { primerosNegocios } from './emprende/primerosNegocios'
+import { periodoGratis } from './emprende/periodoGratis'
 
 /** Visitante ve la landing; dueño ya logueado ve el checklist de Sistema. */
 export default function EmprendePage() {
@@ -22,7 +23,7 @@ export default function EmprendePage() {
     <MainLayout>
       <Helmet>
         <title>{t('emprende.metaTitle')}</title>
-        <meta name="description" content={t('emprende.metaDescription', { primeros: primerosNegocios(cupo, t) })} />
+        <meta name="description" content={t('emprende.metaDescription', { primeros: primerosNegocios(cupo, t), periodo: periodoGratis(cupo, t) })} />
       </Helmet>
       {yaEsDuenio ? <EmprendeHub /> : <EmprendeLanding />}
     </MainLayout>
