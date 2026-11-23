@@ -35,6 +35,8 @@ public class EmpresaAprobacionService {
     @Autowired private UbicacionDespachoService      ubicacionDespachoService;
     @Autowired private CupoEmprendedorAprobacionService cupoEmprendedorAprobacionService;
     @Autowired(required = false) private QaAltaPymeTestService qaAltaPymeTest;
+    /** Alta por fases (V244): un negocio nuevo solo se aprueba con su cuenta ONVO ACTIVA. */
+    @Autowired(required = false) private com.hotclick.service.alta.AltaFasesService altaFases;
 
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
@@ -46,6 +48,7 @@ public class EmpresaAprobacionService {
         if (com.hotclick.service.suscripcion.SuspensionImpago.estaSuspendida(e.getEstadoEmpresa())) {
             throw new com.hotclick.exception.ReactivacionSinPagoException();
         }
+        if (altaFases != null) altaFases.exigirListoParaAprobar(e);
         ubicacionDespachoService.exigirParaPublicar(empresaId);
         // El fixture QA ya consumido no entra al cupo ni al trial: queda oculto hasta el cobro TEST del flujo existente.
         boolean qaCobro = qaAltaPymeTest != null && qaAltaPymeTest.empresaConCobroPymeTest(e);
@@ -57,6 +60,7 @@ public class EmpresaAprobacionService {
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         e.setEstadoEmpresa("ACTIVO");
         e.setVisibilidadPublica(visibleAlAprobar(qaCobro, cupo));
+        if (altaFases != null) altaFases.aplicarEnEmpresa(e);
         if (Constants.ESTADO_PLAN_PRUEBA_CERRADA.equals(e.getEstadoPlan())) {
             e.setEstadoPlan("ACTIVO");
             e.setFechaVencPlan(null);

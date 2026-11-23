@@ -27,6 +27,10 @@ public class SolicitudAprobacionMapper {
         this.solicitudOfertaSnapshotReader = solicitudOfertaSnapshotReader;
     }
 
+    /** Alta por fases (opcional): suma fase y estado de la cuenta ONVO a la cola de aprobación. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.alta.AltaFasesService altaFases;
+
     public Map<String, Object> toMap(Empresa empresa) {
         Map<String, Object> map = new HashMap<>();
         map.put("id", empresa.getId());
@@ -39,6 +43,13 @@ public class SolicitudAprobacionMapper {
         map.put("planSaas", empresa.getPlanSaas());
         map.put("estadoEmpresa", empresa.getEstadoEmpresa());
         map.put("fechaRegistro", empresa.getFechaRegistro());
+        if (altaFases != null && empresa.isAltaPorFases()) {
+            Map<String, Object> alta = altaFases.estadoDe(empresa.getId());
+            map.put("altaPorFases", true);
+            map.put("fase", alta.get("fase"));
+            map.put("cuentaOnvo", alta.get("cuentaOnvo"));
+            map.put("productosActivos", alta.get("productosActivos"));
+        }
 
         List<Usuario> miembros = usuarioRepository.findByEmpresaIdConRoles(empresa.getId());
         miembros.stream()

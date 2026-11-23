@@ -105,6 +105,26 @@ public class NotificacionNegocioEmailSender {
         }
     }
 
+    /**
+     * Aviso transaccional simple (alta por fases): título, un párrafo y un botón opcional. Los textos dinámicos se
+     * escapan acá. Nunca lanza: un fallo de correo no frena el proceso que avisa.
+     */
+    public void enviarAvisoSimple(String correo, String asunto, String titulo, String parrafo, String ctaUrl, String ctaLabel) {
+        if (correo == null || correo.isBlank()) return;
+        try {
+            String html = emailLayoutHelper.abrirHtml()
+                + emailLayoutHelper.header(emailLayoutHelper.esc(titulo), "")
+                + emailLayoutHelper.abrirCuerpo()
+                + "<p style='margin:0 0 24px;color:#4D5560;font-size:14px;line-height:1.6'>" + emailLayoutHelper.esc(parrafo) + "</p>"
+                + (ctaUrl != null && !ctaUrl.isBlank() ? emailLayoutHelper.cta(ctaUrl, emailLayoutHelper.esc(ctaLabel)) : "")
+                + emailLayoutHelper.footer("¿Tiene alguna pregunta?");
+            resendEmailService.send(correo, asunto, html);
+            log.info("Email de aviso de alta enviado");
+        } catch (Exception e) {
+            log.error("No se pudo enviar email de aviso de alta: {}", e.getClass().getSimpleName());
+        }
+    }
+
     public void enviarModeracionAprobada(String correo, String nombre, String tipoLabel, String nombreItem) {
         try {
             resendEmailService.send(correo,

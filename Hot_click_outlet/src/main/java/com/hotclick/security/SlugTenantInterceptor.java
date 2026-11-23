@@ -72,7 +72,8 @@ public class SlugTenantInterceptor implements HandlerInterceptor {
         if (empresa == null
                 || !"ACTIVO".equals(empresa.getEstadoEmpresa())
                 || !Boolean.TRUE.equals(empresa.getVisibilidadPublica())
-                || MembresiaPlan.sinConfirmar(empresa.getEstadoPlan())) {
+                || MembresiaPlan.sinConfirmar(empresa.getEstadoPlan())
+                || !empresa.isVentaOnlineHabilitada()) {
             respond404(response);
             return false;
         }

@@ -46,6 +46,14 @@ public class CuentaOnvoService {
     private final int lote;
     private Clock clock = Clock.systemDefaultZone();
 
+    /** Alta por fases (opcionales: sin ellos el servicio se comporta como antes de V244). */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.alta.AltaFasesService altaFases;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.alta.AltaFasesAvisoService avisos;
+    @Value("${onvo.cuentas.onboarding-hosts-permitidos:onvopay.com,onvo.cr}")
+    private String hostsOnboardingPermitidos = com.hotclick.service.alta.OnboardingUrlPolicy.HOSTS_POR_DEFECTO;
+
     public CuentaOnvoService(EmpresaCuentaOnvoRepository repo, EmpresaRepository empresaRepository,
                              OnvoCuentaConectadaClient client, PlatformTransactionManager txManager,
                              @Value("${payments.onvo.enabled:false}") boolean habilitado,
@@ -64,6 +72,13 @@ public class CuentaOnvoService {
 
     void setClock(Clock clock) { this.clock = clock; }
 
+    /** Solo para pruebas unitarias (en producción los inyecta Spring). */
+    void setAltaFases(com.hotclick.service.alta.AltaFasesService altaFases,
+                      com.hotclick.service.alta.AltaFasesAvisoService avisos) {
+        this.altaFases = altaFases;
+        this.avisos = avisos;
+    }
+
     /**
      * Se llama dentro de la transacción del registro: deja la fila PENDIENTE_ONVO (outbox) y,
      * después del commit, intenta crear la cuenta en ONVO. Nunca lanza hacia el registro.
@@ -72,6 +87,7 @@ public class CuentaOnvoService {
         if (empresa == null || empresa.getId() == null) return;
         Long empresaId = empresa.getId();
         try {
+            if (altaFases != null) altaFases.alRegistrar(empresa);
             if (repo.findByEmpresaId(empresaId).isEmpty()) {
                 EmpresaCuentaOnvo c = new EmpresaCuentaOnvo();
                 c.setEmpresaId(empresaId);
@@ -155,9 +171,11 @@ public class CuentaOnvoService {
 
     /** GET del estado; si sigue en onboarding y el enlace venció, lo regenera (POST onboarding-link). */
     public String consultar(Long cuentaId) {
-        return tx.execute(s -> {
+        java.util.List<Runnable> despues = new java.util.ArrayList<>();
+        String resultado = tx.execute(s -> {
             EmpresaCuentaOnvo c = repo.findById(cuentaId).orElse(null);
             if (c == null || c.getOnvoAccountId() == null) return c == null ? null : c.getEstado();
+            String previo = c.getEstado();
             try {
                 OnvoCuentaConectadaClient.CuentaEstado st = client.consultar(c.getOnvoAccountId());
                 c.setOnvoStatus(st.status());
@@ -171,9 +189,60 @@ public class CuentaOnvoService {
             if (EmpresaCuentaOnvo.PENDIENTE_ONBOARDING.equals(c.getEstado()) && onboardingVencido(c)) {
                 regenerar(c);
             }
+            registrarTransicion(c, previo, despues);
             repo.save(c);
+            if (altaFases != null) altaFases.sincronizar(c.getEmpresaId(), c);
             return c.getEstado();
         });
+        ejecutarDespues(despues);
+        return resultado;
+    }
+
+    /** Avisos fuera de la transacción (correo/Telegram): se ejecutan ya sin conexión de BD retenida. */
+    private static void ejecutarDespues(java.util.List<Runnable> despues) {
+        int i = 0;
+        while (i < despues.size()) {
+            despues.get(i++).run();
+        }
+    }
+
+    /**
+     * Transiciones de la cuenta (dentro de la transacción de {@link #consultar}):
+     * primera vez ACTIVA, aviso único a HotClick, pérdida (ACTIVA → otro) y recuperación.
+     * Los avisos se despachan después del commit y solo si este llamador ganó el claim.
+     */
+    private void registrarTransicion(EmpresaCuentaOnvo c, String previo, java.util.List<Runnable> despues) {
+        boolean activa = EmpresaCuentaOnvo.ACTIVA.equals(c.getEstado());
+        LocalDateTime ahora = ahora();
+        if (activa) {
+            if (c.getActivadaEn() == null) c.setActivadaEn(ahora);
+            if (c.getPerdidaDesde() != null) {
+                c.setPerdidaDesde(null);
+                c.setRecuperadaAvisoPendiente(true);
+            }
+            reclamarRevision(c, ahora, despues);
+        } else if (EmpresaCuentaOnvo.ACTIVA.equals(previo) && c.getPerdidaDesde() == null) {
+            c.setPerdidaDesde(ahora);
+            c.setAvisosPerdida(0);
+            c.setUltimoAvisoPerdidaEn(null);
+            c.setRecuperadaAvisoPendiente(false);
+            log.warn("[onvo-cuentas] Cuenta perdió ACTIVA empresa={} estado={}", c.getEmpresaId(), c.getEstado());
+        }
+    }
+
+    /** Negocio por fases pendiente de aprobación con cuenta ACTIVA: avisa al admin UNA vez (claim atómico en BD). */
+    private void reclamarRevision(EmpresaCuentaOnvo c, LocalDateTime ahora, java.util.List<Runnable> despues) {
+        if (altaFases == null || avisos == null || c.getRevisionAvisoEn() != null) return;
+        Empresa e = empresaRepository.findById(c.getEmpresaId()).orElse(null);
+        if (e == null || !e.isAltaPorFases() || !"PENDIENTE_APROBACION".equals(e.getEstadoEmpresa())) return;
+        int ganado = repo.reclamarAvisoRevision(c.getId(), ahora);
+        // Gane o no el claim, la entidad refleja que ya está reclamado (evita que el save lo borre).
+        c.setRevisionAvisoEn(ahora);
+        if (ganado == 1) {
+            Long empresaId = e.getId();
+            String nombre = businessName(e);
+            despues.add(() -> avisos.avisarRevisionListaAdmin(empresaId, nombre));
+        }
     }
 
     private void regenerar(EmpresaCuentaOnvo c) {
@@ -240,4 +309,46 @@ public class CuentaOnvoService {
     }
 
     private LocalDateTime ahora() { return LocalDateTime.now(clock); }
+
+    /**
+     * Enlace de ONVO para que el dueño llene sus datos y verifique el depósito. Si venció, se regenera.
+     * Solo devuelve https de dominios ONVO permitidos; vacío si no hay o no se pudo (no hay enlace inventado).
+     */
+    public Optional<String> onboardingUrlParaDueno(Long empresaId) {
+        if (empresaId == null || !habilitado) return Optional.empty();
+        EmpresaCuentaOnvo existente = repo.findByEmpresaId(empresaId).orElse(null);
+        if (existente != null && EmpresaCuentaOnvo.ACTIVA.equals(existente.getEstado()) && existente.getPerdidaDesde() == null) {
+            return Optional.empty();
+        }
+        if (existente == null || existente.getOnvoAccountId() == null) {
+            if (existente == null) {
+                EmpresaCuentaOnvo nueva = new EmpresaCuentaOnvo();
+                nueva.setEmpresaId(empresaId);
+                try { repo.save(nueva); } catch (RuntimeException e) { return Optional.empty(); }
+            }
+            intentarCrearSeguro(empresaId);
+        } else if (onboardingVencido(existente)) {
+            tx.execute(s -> {
+                EmpresaCuentaOnvo c = repo.findById(existente.getId()).orElse(null);
+                if (c != null && c.getOnvoAccountId() != null && onboardingVencido(c)) {
+                    // A pedido del dueño: no toca el estado de la cuenta (a diferencia del poller, que puede pasarla a EN_APROBACION).
+                    try {
+                        String url = client.regenerarOnboarding(c.getOnvoAccountId());
+                        c.setOnboardingUrl(url);
+                        c.setOnboardingExpiraEn(url != null ? ahora().plus(vigenciaOnboarding) : null);
+                    } catch (OnvoCuentaConectadaClient.OnboardingCompletadoException e) {
+                        c.setOnboardingUrl(null);
+                        c.setOnboardingExpiraEn(null);
+                    } catch (RuntimeException e) {
+                        c.setOnboardingUrl(null);
+                        c.setUltimoError("Enlace de onboarding no se pudo regenerar: " + e.getClass().getSimpleName());
+                    }
+                    repo.save(c);
+                }
+                return null;
+            });
+        }
+        return onboardingUrlVigente(empresaId)
+            .filter(u -> com.hotclick.service.alta.OnboardingUrlPolicy.esPermitida(u, hostsOnboardingPermitidos));
+    }
 }

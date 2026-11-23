@@ -43,6 +43,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
     @Autowired private OnvoCapturaService     onvoCapturaService;
     @Autowired private com.hotclick.service.payment.PedidoStatusTokenService pedidoStatusTokenService;
     @Autowired(required = false) private com.hotclick.service.onvo.cuenta.CuentaOnvoService cuentaOnvoService;
+    @Autowired(required = false) private com.hotclick.service.alta.AltaFasesService altaFases;
 
     @Override
     public String getNombre() {
@@ -62,10 +63,13 @@ public class OnvoPaymentProvider implements PaymentProvider {
                 new IllegalStateException("ONVO_SECRET_KEY"));
         }
 
-        if (pedido.getEmpresa() != null && pedido.getEmpresa().isCobrosPausados()) {
-            // Sin sesión ni intención en ONVO: el comprador elige efectivo o contra entrega.
+        // Fail-closed (alta por fases): sin sesión ni intención en ONVO si el negocio está pausado, no tiene venta en línea
+        // habilitada o su cuenta conectada no está ACTIVA. El comprador elige efectivo o contra entrega.
+        if (altaFases != null) {
+            altaFases.exigirCobroEnLinea(pedido.getEmpresa());
+        } else if (pedido.getEmpresa() != null && pedido.getEmpresa().isCobrosPausados()) {
             throw new IllegalArgumentException(
-                "Este negocio no acepta pagos en línea por ahora. Elegí otra forma de pago.");
+                "Este negocio no acepta pagos en línea por ahora. Elija otra forma de pago.");
         }
 
         String descripcion = "Pedido HOTCLICK " + pedido.getNumeroPedido();
@@ -91,7 +95,9 @@ public class OnvoPaymentProvider implements PaymentProvider {
 
         log.info("[onvo] Checkout session creada: {} pedido={}", OnvoService.enmascarar(session.id()), pedido.getNumeroPedido());
 
-        return new PaymentSession(session.id(), session.url());
+        // V245: se registra a dónde va el dinero. PLATAFORMA = cuenta principal de HotClick, sin split.
+        String destino = onBehalfOf == null ? com.hotclick.model.Pago.DESTINO_PLATAFORMA : com.hotclick.model.Pago.DESTINO_SUBCUENTA;
+        return new PaymentSession(session.id(), session.url(), null, false, destino, onBehalfOf);
     }
 
     /**

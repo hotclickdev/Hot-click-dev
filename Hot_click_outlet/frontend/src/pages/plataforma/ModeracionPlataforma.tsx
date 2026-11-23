@@ -5,20 +5,23 @@ import { reporteProductoService } from '@/services/moderacionService'
 import { testimonioService } from '@/services/testimonioService'
 import { filasDe, idSeguro, texto, type Fila } from './normalizar'
 import { IconoDominio } from './iconos'
+import RevisionHotClick from './RevisionHotClick'
 import { Aviso, Carga, Chip, Encabezado, FilaDecision, Marco, MarcoIcono, Segmento, TARJETA } from './piezas'
 
 export default function ModeracionPlataforma() {
   const navigate = useNavigate()
-  const reportes = useLocation().pathname.endsWith('/reportes')
+  const ruta = useLocation().pathname
+  const reportes = ruta.endsWith('/reportes')
+  const revision = ruta.endsWith('/revision')
   return (
     <div className="flex flex-col gap-4">
       <Encabezado titulo="Revisar" detalle="Cola: un negocio pide entrar, una oferta, una cuenta para cobrar o un testimonio. Reportes: un comprador marcó un producto y hay que decidir si se retira." />
       <Segmento
-        opciones={[{ id: 'cola', label: 'Cola' }, { id: 'reportes', label: 'Reportes' }]}
-        valor={reportes ? 'reportes' : 'cola'}
-        onChange={(id) => navigate(id === 'reportes' ? '/plataforma/moderacion/reportes' : '/plataforma/moderacion')}
+        opciones={[{ id: 'cola', label: 'Cola' }, { id: 'revision', label: 'Revisión HotClick' }, { id: 'reportes', label: 'Reportes' }]}
+        valor={reportes ? 'reportes' : revision ? 'revision' : 'cola'}
+        onChange={(id) => navigate(id === 'reportes' ? '/plataforma/moderacion/reportes' : id === 'revision' ? '/plataforma/moderacion/revision' : '/plataforma/moderacion')}
       />
-      {reportes ? <Reportes /> : <Cola />}
+      {reportes ? <Reportes /> : revision ? <RevisionHotClick /> : <Cola />}
     </div>
   )
 }

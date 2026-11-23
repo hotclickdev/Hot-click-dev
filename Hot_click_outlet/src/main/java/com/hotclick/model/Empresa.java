@@ -83,6 +83,18 @@ public class Empresa {
     @Column(name = "es_prueba", nullable = false)
     private boolean esPrueba = false;
 
+    /** V244: negocio registrado bajo el alta por fases (nuevo). FALSE = negocio existente (legacy), sin cambios. */
+    @Column(name = "alta_por_fases", nullable = false)
+    private boolean altaPorFases = false;
+
+    /**
+     * V244: predicado único de "puede publicarse y cobrar en línea". TRUE por defecto (legacy). En el alta por fases
+     * arranca FALSE y solo sube cuando la cuenta conectada ONVO queda ACTIVA; baja si se pierde. Lo mantiene
+     * {@code AltaFasesService}; el catálogo, la búsqueda, el sitemap y los cobros lo exigen.
+     */
+    @Column(name = "venta_online_habilitada", nullable = false)
+    private boolean ventaOnlineHabilitada = true;
+
     /** Carrusel del inicio: negocio destacado por el superadmin (V173). Solo se destacan negocios activos. */
     @Column(name = "destacado", nullable = false)
     private Boolean destacado = false;
@@ -338,6 +350,11 @@ public class Empresa {
 
     public Boolean getVisibilidadPublica() { return visibilidadPublica; }
     public void setVisibilidadPublica(Boolean visibilidadPublica) { this.visibilidadPublica = visibilidadPublica; }
+
+    public boolean isAltaPorFases() { return altaPorFases; }
+    public void setAltaPorFases(boolean altaPorFases) { this.altaPorFases = altaPorFases; }
+    public boolean isVentaOnlineHabilitada() { return ventaOnlineHabilitada; }
+    public void setVentaOnlineHabilitada(boolean v) { this.ventaOnlineHabilitada = v; }
 
     public boolean isEsPrueba() { return esPrueba; }
     public void setEsPrueba(boolean esPrueba) { this.esPrueba = esPrueba; }

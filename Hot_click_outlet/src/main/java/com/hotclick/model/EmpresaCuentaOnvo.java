@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 /** Cuenta conectada ONVO (marketplace) de una empresa. Solo {@link #ACTIVA} habilita onBehalfOf. */
 @Entity
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "hot_click_empresa_cuenta_onvo_tb")
 public class EmpresaCuentaOnvo {
 
@@ -54,10 +55,46 @@ public class EmpresaCuentaOnvo {
     @Column(name = "actualizado_en", nullable = false)
     private LocalDateTime actualizadoEn = LocalDateTime.now();
 
+    /** V244: primera vez que ONVO la confirmó ACTIVA (NULL = nunca). */
+    @Column(name = "activada_en")
+    private LocalDateTime activadaEn;
+
+    /** V244: claim del aviso único «listo para revisión HotClick» al admin (NULL = aún no avisado). */
+    @Column(name = "revision_aviso_en")
+    private LocalDateTime revisionAvisoEn;
+
+    /** V244: desde cuándo la cuenta dejó de estar ACTIVA habiendo estado activa (NULL = no está perdida). */
+    @Column(name = "perdida_desde")
+    private LocalDateTime perdidaDesde;
+
+    /** V244: avisos de pérdida ya enviados (el primero + recordatorios). */
+    @Column(name = "avisos_perdida", nullable = false)
+    private int avisosPerdida;
+
+    @Column(name = "ultimo_aviso_perdida_en")
+    private LocalDateTime ultimoAvisoPerdidaEn;
+
+    /** V244: la cuenta volvió a ACTIVA tras una pérdida y falta avisar «cobros reanudados» (una sola vez). */
+    @Column(name = "recuperada_aviso_pendiente", nullable = false)
+    private boolean recuperadaAvisoPendiente;
+
     @PreUpdate
     void alActualizar() { actualizadoEn = LocalDateTime.now(); }
 
     public boolean isActiva() { return ACTIVA.equals(estado) && onvoAccountId != null && !onvoAccountId.isBlank(); }
+
+    public LocalDateTime getActivadaEn() { return activadaEn; }
+    public void setActivadaEn(LocalDateTime v) { this.activadaEn = v; }
+    public LocalDateTime getRevisionAvisoEn() { return revisionAvisoEn; }
+    public void setRevisionAvisoEn(LocalDateTime v) { this.revisionAvisoEn = v; }
+    public LocalDateTime getPerdidaDesde() { return perdidaDesde; }
+    public void setPerdidaDesde(LocalDateTime v) { this.perdidaDesde = v; }
+    public int getAvisosPerdida() { return avisosPerdida; }
+    public void setAvisosPerdida(int v) { this.avisosPerdida = v; }
+    public LocalDateTime getUltimoAvisoPerdidaEn() { return ultimoAvisoPerdidaEn; }
+    public void setUltimoAvisoPerdidaEn(LocalDateTime v) { this.ultimoAvisoPerdidaEn = v; }
+    public boolean isRecuperadaAvisoPendiente() { return recuperadaAvisoPendiente; }
+    public void setRecuperadaAvisoPendiente(boolean v) { this.recuperadaAvisoPendiente = v; }
 
     public Long getId() { return id; }
     public Long getEmpresaId() { return empresaId; }

@@ -21,10 +21,10 @@ public class ContactoTextoPublico {
     public static final String SQL_NEGOCIO_PRODUCTO =
         "(SELECT COALESCE(NULLIF(TRIM(e.nombre_comercial), ''), e.nombre_empresa) FROM hot_click_empresa_tb e"
             + " WHERE e.id_empresa = p.fk_id_empresa AND e.visibilidad_publica = TRUE AND e.slug IS NOT NULL"
-            + " AND (e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA')) AS empresa_nombre,"
+            + " AND " + com.hotclick.catalogo.CatalogoPublicoGate.NATIVA_E + ") AS empresa_nombre,"
             + " (SELECT e.slug FROM hot_click_empresa_tb e"
             + " WHERE e.id_empresa = p.fk_id_empresa AND e.visibilidad_publica = TRUE"
-            + " AND (e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA')) AS empresa_slug";
+            + " AND " + com.hotclick.catalogo.CatalogoPublicoGate.NATIVA_E + ") AS empresa_slug";
 
     public static final String SQL_PLAN_PRODUCTO =
         "(SELECT COALESCE(pl.nombre, e.plan_saas) FROM hot_click_empresa_tb e"

@@ -63,6 +63,7 @@ public class SinpeOnvoMarketplaceService {
     @Autowired private PaymentFailureHandler paymentFailureHandler;
     @Lazy @Autowired private PaymentService paymentService;
     @Autowired(required = false) private OnvoService onvoService;
+    @Autowired(required = false) private com.hotclick.service.alta.AltaFasesService altaFases;
 
     /** Proxy propio: confirmarPorWebhook y el reclamo abren su transacción aunque se llamen desde este bean. */
     @Lazy @Autowired(required = false) private SinpeOnvoMarketplaceService self;
@@ -124,6 +125,13 @@ public class SinpeOnvoMarketplaceService {
         if (destinoDisponible().isEmpty() || pago.getMonto() == null || pago.getMonto() <= 0) {
             throw new IllegalStateException(MSG_NO_DISPONIBLE);
         }
+        // Alta por fases: SINPE por ONVO cobra a la cuenta de la plataforma; un negocio sin venta en línea no cobra por acá.
+        if (altaFases != null && pago.getPedido() != null) {
+            for (Pedido paquete : pedidoGrupoService.delGrupo(pago.getPedido())) altaFases.exigirCobroEnLinea(paquete.getEmpresa());
+        }
+        // V245: este cobro no usa onBehalfOf: el dinero entra a la cuenta de HotClick y queda por reintegrar al negocio.
+        pago.setDestinoDinero(Pago.DESTINO_PLATAFORMA);
+        if (pago.getPedido() != null && pago.getPedido().getEmpresa() != null) pago.setReintegroEstado(Pago.REINTEGRO_PENDIENTE);
         Map<String, String> metadata = new LinkedHashMap<>();
         metadata.put("origen", "marketplace-sinpe");
         metadata.put("pagoId", String.valueOf(pago.getId()));

@@ -36,6 +36,20 @@ public class PaymentRecordFactory {
         pago.setCompra(pedido.getCompra());
         pago.setUsuario(usuario);
         pago.setEstado(Constants.ESTADO_ACTIVO);
+        registrarDestinoDinero(pago, session, pedido);
         return pagoRepository.save(pago);
+    }
+
+    /**
+     * V245: destino del dinero. Un cobro que cayó a la plataforma de un negocio queda NO_REINTEGRADO (saldo por
+     * reintegrar al negocio); los de la propia plataforma (sin empresa) y los de subcuenta no deben nada.
+     */
+    public static void registrarDestinoDinero(Pago pago, PaymentSession session, Pedido pedido) {
+        if (session.destinoDinero() == null) return;
+        pago.setDestinoDinero(session.destinoDinero());
+        pago.setDestinoCuentaOnvo(session.destinoCuentaOnvo());
+        if (Pago.DESTINO_PLATAFORMA.equals(session.destinoDinero()) && pedido != null && pedido.getEmpresa() != null) {
+            pago.setReintegroEstado(Pago.REINTEGRO_PENDIENTE);
+        }
     }
 }

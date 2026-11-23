@@ -42,6 +42,7 @@ public class PosSinpeOnvoService {
 
     @Autowired private PosQrSesionRepository posQrRepo;
     @Autowired(required = false) private OnvoService onvoService;
+    @Autowired(required = false) private com.hotclick.service.alta.AltaFasesService altaFases;
 
     /** Minutos que el intent queda abierto; sin valor válido (≥1) el SINPE del POS no se inicia. */
     @Value("${pos.sinpe-onvo.timeout-minutos:}")
@@ -117,6 +118,10 @@ public class PosSinpeOnvoService {
         }
         // Suscripción impaga (día 9+) o tienda no activa: fail-closed, no se cobra.
         if (sesion.getEmpresa() == null || !"ACTIVO".equals(sesion.getEmpresa().getEstadoEmpresa())) {
+            throw new IllegalStateException(MSG_TIENDA_NO_VENDE);
+        }
+        // Alta por fases: el cobro SINPE por ONVO es en línea; el POS en efectivo no pasa por acá y sigue igual.
+        if (altaFases != null && !altaFases.puedeCobrarEnLinea(sesion.getEmpresa())) {
             throw new IllegalStateException(MSG_TIENDA_NO_VENDE);
         }
         if (!PosQrMetodos.habilitado(sesion, PosQrMetodos.SINPE)) {

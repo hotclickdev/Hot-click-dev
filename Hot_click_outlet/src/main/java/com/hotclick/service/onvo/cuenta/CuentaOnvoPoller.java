@@ -14,10 +14,20 @@ public class CuentaOnvoPoller {
 
     public CuentaOnvoPoller(CuentaOnvoService service) { this.service = service; }
 
+    /** Opcional: seguimiento de cuentas perdidas (alta por fases). Corre bajo el mismo lock del poller. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.alta.AltaFasesSeguimientoService seguimiento;
+
+    /** Opcional: migración de negocios existentes al flujo por fases. Solo actúa con el flag apagado por defecto en true. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.alta.AltaFasesMigracionExistentesService migracion;
+
     @Scheduled(fixedDelayString = "${onvo.cuentas.poller.intervalo-ms:600000}",
                initialDelayString = "${onvo.cuentas.poller.retraso-inicial-ms:120000}")
     @SchedulerLock(name = "onvo_cuentas_conectadas_poller", lockAtMostFor = "PT9M", lockAtLeastFor = "PT30S")
     public void ejecutar() {
         service.ciclo();
+        if (seguimiento != null) seguimiento.ciclo();
+        if (migracion != null) migracion.ciclo();
     }
 }

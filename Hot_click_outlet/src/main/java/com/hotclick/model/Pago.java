@@ -259,4 +259,43 @@ public class Pago extends BaseEntity {
 
     public Compra getCompra() { return compra; }
     public void setCompra(Compra compra) { this.compra = compra; }
+
+    /** V245: a dónde fue el dinero de un cobro en línea: {@code SUBCUENTA} (onBehalfOf) o {@code PLATAFORMA}. NULL = sin registro. */
+    @Column(name = "destino_dinero", length = 12)
+    private String destinoDinero;
+
+    /** V245: id de la cuenta conectada ONVO usada como destino (solo SUBCUENTA). No es un dato personal. */
+    @Column(name = "destino_cuenta_onvo", length = 100)
+    private String destinoCuentaOnvo;
+
+    /** V245: NULL (no aplica) | NO_REINTEGRADO | REINTEGRADO. Solo los cobros que cayeron a PLATAFORMA lo llevan. */
+    @Column(name = "reintegro_estado", length = 20)
+    private String reintegroEstado;
+
+    @Column(name = "reintegrado_por", length = 120)
+    private String reintegradoPor;
+
+    @Column(name = "reintegrado_en")
+    private LocalDateTime reintegradoEn;
+
+    @Column(name = "reintegro_nota", length = 300)
+    private String reintegroNota;
+
+    public static final String DESTINO_SUBCUENTA = "SUBCUENTA";
+    public static final String DESTINO_PLATAFORMA = "PLATAFORMA";
+    public static final String REINTEGRO_PENDIENTE = "NO_REINTEGRADO";
+    public static final String REINTEGRO_HECHO = "REINTEGRADO";
+
+    public String getDestinoDinero() { return destinoDinero; }
+    public void setDestinoDinero(String v) { this.destinoDinero = v; }
+    public String getDestinoCuentaOnvo() { return destinoCuentaOnvo; }
+    public void setDestinoCuentaOnvo(String v) { this.destinoCuentaOnvo = v; }
+    public String getReintegroEstado() { return reintegroEstado; }
+    public void setReintegroEstado(String v) { this.reintegroEstado = v; }
+    public String getReintegradoPor() { return reintegradoPor; }
+    public void setReintegradoPor(String v) { this.reintegradoPor = v; }
+    public LocalDateTime getReintegradoEn() { return reintegradoEn; }
+    public void setReintegradoEn(LocalDateTime v) { this.reintegradoEn = v; }
+    public String getReintegroNota() { return reintegroNota; }
+    public void setReintegroNota(String v) { this.reintegroNota = v; }
 }

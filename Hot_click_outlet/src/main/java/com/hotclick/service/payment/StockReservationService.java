@@ -407,7 +407,7 @@ public class StockReservationService {
         return e == null || ("ACTIVO".equals(e.getEstadoEmpresa())
             && !e.isEsPrueba()
             && Boolean.TRUE.equals(e.getVisibilidadPublica())
-            && com.hotclick.catalogo.CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()));
+            && com.hotclick.catalogo.CatalogoPublicoGate.empresaPublicable(e));
     }
 
     private List<Producto> bloquearFilas(List<Long> ids, Long empresaId) {

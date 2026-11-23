@@ -109,7 +109,7 @@ public class SpaController {
         return empresaRepository.findBySlug(slug)
             .filter(e -> "ACTIVO".equals(e.getEstadoEmpresa())
                 && Boolean.TRUE.equals(e.getVisibilidadPublica())
-                && CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()))
+                && CatalogoPublicoGate.empresaPublicable(e))
             .<ResponseEntity<String>>map(e -> ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
                 .body(spaSeoSupport.injectTiendaMeta(indexHtmlContent, e, request.getRequestURI())))
