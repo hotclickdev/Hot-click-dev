@@ -7,7 +7,8 @@ import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.utils.Constants;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,12 +33,24 @@ public class ReintegroPlataformaService {
     private final PagoRepository pagoRepository;
     private final AuditoriaAdminRegistroService auditoria;
 
-    public ReintegroPlataformaService(PagoRepository pagoRepository, AuditoriaAdminRegistroService auditoria) {
+    /** Transacción corta por pago (null en tests unitarios: se ejecuta directo). */
+    private final TransactionTemplate tx;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ReintegroPlataformaService(PagoRepository pagoRepository, AuditoriaAdminRegistroService auditoria,
+                                      PlatformTransactionManager txManager) {
         this.pagoRepository = pagoRepository;
         this.auditoria = auditoria;
+        this.tx = new TransactionTemplate(txManager);
     }
 
-    @Transactional(readOnly = true)
+    ReintegroPlataformaService(PagoRepository pagoRepository, AuditoriaAdminRegistroService auditoria) {
+        this.pagoRepository = pagoRepository;
+        this.auditoria = auditoria;
+        this.tx = null;
+    }
+
+    /** Lectura acotada (MAX_PAGOS) con pedido y empresa ya cargados por JOIN FETCH: no necesita transacción abierta. */
     public List<Map<String, Object>> resumenPorNegocio() {
         Map<String, Map<String, Object>> grupos = new LinkedHashMap<>();
         for (Pago p : pagoRepository.pagosConReintegro(Constants.PAGO_CAPTURADO, PageRequest.of(0, MAX_PAGOS))) {
@@ -83,8 +96,13 @@ public class ReintegroPlataformaService {
     }
 
     /** Marca un cobro como reintegrado. Repetirlo no cambia nada ni duplica la auditoría. */
-    @Transactional
     public Resultado marcarReintegrado(Long pagoId, String actor, String nota) {
+        if (tx == null) return marcarUno(pagoId, actor, nota);
+        return tx.execute(s -> marcarUno(pagoId, actor, nota));
+    }
+
+    /** UPDATE condicional + auditoría en una transacción corta, sin I/O externo. */
+    private Resultado marcarUno(Long pagoId, String actor, String nota) {
         String notaLimpia = limpiarNota(nota);
         int cambiado = pagoRepository.marcarReintegrado(pagoId, actorSeguro(actor), LocalDateTime.now(Constants.ZONA_CR),
             notaLimpia, Constants.PAGO_CAPTURADO);
@@ -100,7 +118,6 @@ public class ReintegroPlataformaService {
     }
 
     /** Marca todos los cobros pendientes de un negocio. Devuelve cuántos cambiaron. */
-    @Transactional
     public int marcarReintegradoNegocio(Long empresaId, String actor, String nota) {
         int n = 0;
         for (Long id : pagoRepository.idsPendientesDeReintegroPorEmpresa(empresaId, Constants.PAGO_CAPTURADO)) {

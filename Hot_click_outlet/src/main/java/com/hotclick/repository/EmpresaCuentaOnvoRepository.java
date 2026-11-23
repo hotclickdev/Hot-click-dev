@@ -15,6 +15,8 @@ import java.util.Optional;
 
 public interface EmpresaCuentaOnvoRepository extends JpaRepository<EmpresaCuentaOnvo, Long> {
     Optional<EmpresaCuentaOnvo> findByEmpresaId(Long empresaId);
+
+    List<EmpresaCuentaOnvo> findByEmpresaIdIn(Collection<Long> empresaIds);
     List<EmpresaCuentaOnvo> findByEstadoInOrderByActualizadoEnAsc(Collection<String> estados, Pageable pageable);
 
     List<EmpresaCuentaOnvo> findByPerdidaDesdeIsNotNullOrderByActualizadoEnAsc(Pageable pageable);
@@ -44,4 +46,15 @@ public interface EmpresaCuentaOnvoRepository extends JpaRepository<EmpresaCuenta
     @Query("SELECT e FROM Empresa e, EmpresaCuentaOnvo c WHERE c.empresaId = e.id AND e.altaPorFases = true "
         + "AND e.estadoEmpresa = 'PENDIENTE_APROBACION' AND c.estado = 'ACTIVA' ORDER BY c.activadaEn ASC, e.id ASC")
     List<Empresa> negociosEnRevision(Pageable pageable);
+
+    /** Negocios existentes (no por fases), ACTIVOS y sin cuenta ONVO ACTIVA: candidatos a migrar al flujo por fases. */
+    @Query("SELECT e.id FROM Empresa e WHERE e.altaPorFases = false AND e.estadoEmpresa = 'ACTIVO' "
+        + "AND NOT EXISTS (SELECT 1 FROM EmpresaCuentaOnvo c WHERE c.empresaId = e.id AND c.estado = 'ACTIVA') ORDER BY e.id")
+    List<Long> idsExistentesParaMigrar(Pageable pageable);
+
+    /** Idempotente: solo toca los que siguen siendo existentes y ACTIVOS. */
+    @Modifying
+    @Query("UPDATE Empresa e SET e.altaPorFases = true, e.ventaOnlineHabilitada = false "
+        + "WHERE e.id IN :ids AND e.altaPorFases = false AND e.estadoEmpresa = 'ACTIVO'")
+    int migrarAFases(@Param("ids") Collection<Long> ids);
 }

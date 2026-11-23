@@ -15,6 +15,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -120,7 +121,8 @@ public class AltaFasesService {
         if (e.isAltaPorFases() && e.getId() != null) {
             // Negocio por fases: además de la cuenta ACTIVA, tiene que estar aprobado (ACTIVO). Nada de cobrar en borrador.
             if (!"ACTIVO".equals(e.getEstadoEmpresa())) throw new IllegalArgumentException(MSG_SIN_COBRO_ONLINE);
-            boolean activa = cuentaRepository.findByEmpresaId(e.getId()).map(EmpresaCuentaOnvo::isActiva).orElse(false);
+            EmpresaCuentaOnvo cuenta = cuentaRepository.findByEmpresaId(e.getId()).orElse(null);
+            boolean activa = cuenta != null && cuenta.isActiva();
             if (!activa) throw new IllegalArgumentException(MSG_SIN_COBRO_ONLINE);
         }
     }
@@ -148,7 +150,11 @@ public class AltaFasesService {
     public Map<String, Object> estadoDe(Long empresaId) {
         Empresa e = empresaRepository.findById(empresaId).orElseThrow();
         EmpresaCuentaOnvo c = cuentaRepository.findByEmpresaId(empresaId).orElse(null);
-        long productos = productoRepository.countProductosActivosByEmpresaId(empresaId);
+        return armarEstado(e, c, productoRepository.countProductosActivosByEmpresaId(empresaId));
+    }
+
+    /** Arma el estado a partir de datos ya leídos (lo comparten el panel del dueño y la cola admin en lote). */
+    static Map<String, Object> armarEstado(Empresa e, EmpresaCuentaOnvo c, long productos) {
         boolean activa = c != null && c.isActiva();
         Fase fase = faseDe(e.isAltaPorFases(), e.getEstadoEmpresa(), e.isVentaOnlineHabilitada(), activa, productos);
         boolean perdida = c != null && c.getPerdidaDesde() != null && !activa;
@@ -168,12 +174,12 @@ public class AltaFasesService {
         return m;
     }
 
-    private void limpiarCaches(Long empresaId) {
+    void limpiarCaches(Long empresaId) {
         CacheManager cm = cacheManager.getIfAvailable();
         if (cm == null) return;
         try {
             Cache tenant = cm.getCache("tenantInfo");
-            if (tenant != null) tenant.evict(empresaId);
+            if (tenant != null) { if (empresaId == null) tenant.clear(); else tenant.evict(empresaId); }
             Cache pub = cm.getCache("productos-publicos");
             if (pub != null) pub.clear();
         } catch (RuntimeException ex) {

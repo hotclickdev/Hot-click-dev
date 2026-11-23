@@ -309,6 +309,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT COUNT(p) FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1")
     long countProductosActivosByEmpresaId(@Param("empresaId") Long empresaId);
 
+    /** Conteo de productos activos por negocio en una sola consulta: filas {@code [empresaId, cantidad]}. */
+    @Query("SELECT p.empresa.id, COUNT(p) FROM Producto p WHERE p.empresa.id IN :ids AND p.estado = 1 GROUP BY p.empresa.id")
+    List<Object[]> contarActivosPorEmpresa(@Param("ids") java.util.Collection<Long> ids);
+
     @Query("SELECT COUNT(p) FROM Producto p WHERE p.empresa.id = :empresaId AND p.stockActual <= p.stockMinimo AND p.estado = 1")
     long countProductosConStockBajoByEmpresaId(@Param("empresaId") Long empresaId);
 

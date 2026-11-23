@@ -101,7 +101,7 @@ class AltaFasesSeguridadTest {
     @ParameterizedTest(name = "{0} → 403 en cola de revisión")
     @ValueSource(strings = {"ROLE_EMPRENDEDOR", "ROLE_CLIENTE", "ROLE_MIEMBRO", "ROLE_FINANCE"})
     void revisionSoloAdmin(String rol) {
-        ProxyFactory f = new ProxyFactory(new AdminAltaFasesController(mock(EmpresaCuentaOnvoRepository.class), altaFases));
+        ProxyFactory f = new ProxyFactory(new AdminAltaFasesController(mock(EmpresaCuentaOnvoRepository.class), altaFases, mock(com.hotclick.service.alta.AltaFasesColaService.class)));
         f.setProxyTargetClass(true);
         f.addAdvisor(AuthorizationManagerBeforeMethodInterceptor.preAuthorize());
         AdminAltaFasesController proxy = (AdminAltaFasesController) f.getProxy();
