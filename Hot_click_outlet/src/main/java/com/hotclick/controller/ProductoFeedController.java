@@ -103,6 +103,7 @@ public class ProductoFeedController {
             sitemapUrl(fallback, appUrl + "/", "1.0", "daily", hoy);
             sitemapUrl(fallback, appUrl + "/productos", "0.9", "daily", hoy);
             sitemapUrl(fallback, appUrl + "/emprende", "0.8", "weekly", hoy);
+            sitemapUrl(fallback, appUrl + "/para-negocios", "0.8", "weekly", hoy);
             sitemapUrl(fallback, appUrl + "/para-pymes", "0.7", "weekly", hoy);
             sitemapUrl(fallback, appUrl + "/negocio-plus-plan", "0.7", "weekly", hoy);
             fallback.append("</urlset>");
@@ -126,6 +127,7 @@ public class ProductoFeedController {
         sitemapUrl(xml, appUrl + "/", "1.0", "daily", hoy);
         sitemapUrl(xml, appUrl + "/productos", "0.9", "daily", hoy);
         sitemapUrl(xml, appUrl + "/emprende", "0.8", "weekly", hoy);
+        sitemapUrl(xml, appUrl + "/para-negocios", "0.8", "weekly", hoy);
         sitemapUrl(xml, appUrl + "/emprendimientos", "0.6", "weekly", hoy);
         sitemapUrl(xml, appUrl + "/nosotros", "0.5", "monthly", hoy);
         sitemapUrl(xml, appUrl + "/contacto", "0.5", "monthly", hoy);

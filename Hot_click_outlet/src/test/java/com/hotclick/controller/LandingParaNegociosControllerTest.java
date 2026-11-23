@@ -61,6 +61,20 @@ class LandingParaNegociosControllerTest {
     }
 
     @Test
+    void mensualidad_enDolares_yNoEnColonesViejos() throws Exception {
+        java.nio.file.Path jsPath = java.nio.file.Path.of("frontend/public/para-negocios/landing.js");
+        if (!java.nio.file.Files.exists(jsPath)) {
+            jsPath = java.nio.file.Path.of("Hot_click_outlet/frontend/public/para-negocios/landing.js");
+        }
+        String js = java.nio.file.Files.readString(jsPath);
+        for (String texto : new String[] {plantillaReal(), js}) {
+            assertThat(texto).doesNotContain("₡12.900", "₡12,900", "₡28.900", "₡28,900", "₡0 al mes", "₡0 per month",
+                "₡0 por mês", "₡0 a month", "<b>₡0</b>", "<td>₡0</td>");
+        }
+        assertThat(plantillaReal()).contains("<td>US$9</td><td>US$24</td><td>US$49</td>", "90 días gratis", "primeros 70 negocios");
+    }
+
+    @Test
     void calendario_soloPaginasDeReservasDeGoogle() {
         String id = "AcZssZ0abcdefGHIJ_klm-123";
         String esperado = "https://calendar.google.com/calendar/appointments/schedules/" + id + "?gv=true";

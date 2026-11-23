@@ -30,7 +30,7 @@ class ProductoFeedSitemapLandingsTest {
     }
 
     @Test
-    void sitemap_incluyeLandingsDeVendedorSinParaNegocios() {
+    void sitemap_incluyeLandingsDeVendedorYParaNegocios() {
         SeoPublicoService seo = mock(SeoPublicoService.class);
         when(seo.rutasSitemap()).thenReturn(List.of("/tienda/cafe-del-valle"));
 
@@ -40,8 +40,8 @@ class ProductoFeedSitemapLandingsTest {
             .contains("<loc>https://hotclick.lat/emprende</loc>")
             .contains("<loc>https://hotclick.lat/para-pymes</loc>")
             .contains("<loc>https://hotclick.lat/negocio-plus-plan</loc>")
-            .contains("/tienda/cafe-del-valle")
-            .doesNotContain("/para-negocios");
+            .contains("<loc>https://hotclick.lat/para-negocios</loc>")
+            .contains("/tienda/cafe-del-valle");
     }
 
     @Test
@@ -54,6 +54,6 @@ class ProductoFeedSitemapLandingsTest {
 
         String xml = c.sitemap().getBody();
 
-        assertThat(xml).contains("/emprende", "/para-pymes", "/negocio-plus-plan").doesNotContain("/para-negocios");
+        assertThat(xml).contains("/emprende", "/para-pymes", "/negocio-plus-plan", "/para-negocios");
     }
 }
