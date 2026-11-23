@@ -84,13 +84,23 @@ public class SeoPublicoService {
     }
 
     private SectorDetalle detalle(SectorResumen resumen) {
-        List<ProductoSeo> productos = productoRepository
+        List<ProductoSeo> candidatos = productoRepository
             .findProductosDeSector(resumen.slug(), PageRequest.of(0, SeoIndexacion.MAX_PRODUCTOS_LANDING))
             .stream()
             .map(SeoPublicoService::producto)
             .toList();
+        List<ProductoSeo> productos = sinProductosDePrueba(candidatos);
         String descripcion = resumen.nombre() + " en Costa Rica: comprá en línea en HotClick a emprendedores, pymes y negocios, con envío a todo el país.";
         return new SectorDetalle(resumen.slug(), resumen.nombre(), descripcion, resumen.cantidad(), productos);
+    }
+
+    /** Quita de la landing los productos de negocios es_prueba (la consulta del catálogo no los filtra). */
+    private List<ProductoSeo> sinProductosDePrueba(List<ProductoSeo> productos) {
+        if (productos.isEmpty()) return productos;
+        java.util.Set<Long> prueba = new java.util.HashSet<>(empresaRepository.findIdsProductosDeEmpresasPrueba(
+            productos.stream().map(ProductoSeo::id).toList()));
+        if (prueba.isEmpty()) return productos;
+        return productos.stream().filter(p -> !prueba.contains(p.id())).toList();
     }
 
     private static TiendaSeo sinProvinciaCruda(TiendaSeo tienda, String provinciaNombre) {

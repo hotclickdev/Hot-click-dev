@@ -10,10 +10,6 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- Preconnects críticos -->
-    <!-- hreflang — solo locales reales; UI i18n no tiene URLs en/pt separadas -->
-    <link rel="alternate" hreflang="es-CR" href="https://hotclick.lat/" />
-    <link rel="alternate" hreflang="x-default" href="https://hotclick.lat/" />
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://nkevwfcjhjaawtdqquns.supabase.co" crossorigin />
@@ -31,6 +27,9 @@
     <meta name="description" content="Comprá en línea en Costa Rica a emprendedores, pymes y negocios. Envío a todo el país, pago con SINPE Móvil o tarjeta y soporte local por WhatsApp." />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <link rel="canonical" href="https://hotclick.lat/" />
+    <!-- hreflang — solo locales reales; UI i18n no tiene URLs en/pt separadas. El servidor lo reescribe con la URL de cada página -->
+    <link rel="alternate" hreflang="es-CR" href="https://hotclick.lat/" />
+    <link rel="alternate" hreflang="x-default" href="https://hotclick.lat/" />
     <meta property="og:title" content="HOTCLICK — Tienda en línea para comprar en Costa Rica" />
     <meta property="og:description" content="Productos de emprendedores, pymes y negocios de Costa Rica en un solo lugar. Envío a todo el país, SINPE Móvil o tarjeta." />
     <meta property="og:type" content="website" />
@@ -56,7 +55,8 @@
     <meta name="ICBM" content="9.748917, -83.753428" />
     <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="HOTCLICK" />
 
-    <!-- Structured Data: OnlineStore + Organization -->
+    <!-- HC_HOME_LD_START -->
+    <!-- Structured Data: OnlineStore + Organization (solo home: el servidor lo quita de fichas, tiendas y landings) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -199,8 +199,10 @@
       ]
     }
     </script>
+    <!-- HC_HOME_LD_END -->
   </head>
   <body>
+    <!-- HC_SEO_BODY_START -->
     <noscript>
       <main style="max-width:900px;margin:0 auto;padding:24px;font-family:sans-serif;color:#111;line-height:1.6">
         <h1>HOTCLICK — Tienda en línea para comprar en Costa Rica</h1>
@@ -275,6 +277,7 @@
         </ul>
       </main>
     </noscript>
+    <!-- HC_SEO_BODY_END -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

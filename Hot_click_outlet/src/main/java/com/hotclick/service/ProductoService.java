@@ -25,6 +25,11 @@ public class ProductoService {
     @Autowired private ProductoCacheEvictor cacheEvictor;
     @Autowired private ProductoWriteOperations writeOperations;
     @Autowired private ProductoUpdater productoUpdater;
+    @Autowired(required = false) private com.hotclick.seo.indexnow.IndexNowService indexNow;
+
+    private void avisarIndexNow(Long id) {
+        if (indexNow != null) indexNow.notificarProducto(id);
+    }
 
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo) {
@@ -35,11 +40,15 @@ public class ProductoService {
         key = "#empresa != null && #empresa.id != null ? #empresa.id.toString() : 'global'")
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto, String adminCorreo, Empresa empresa) {
-        return writeOperations.crearProducto(this, dto, adminCorreo, empresa);
+        Producto creado = writeOperations.crearProducto(this, dto, adminCorreo, empresa);
+        avisarIndexNow(creado != null ? creado.getId() : null);
+        return creado;
     }
 
     public Producto actualizarProducto(Long id, ProductoRequestDTO dto, String adminCorreo) {
-        return productoUpdater.actualizarProducto(this, id, dto, adminCorreo);
+        Producto actualizado = productoUpdater.actualizarProducto(this, id, dto, adminCorreo);
+        avisarIndexNow(id);
+        return actualizado;
     }
 
     public void evictProductosPublicos() {
@@ -48,6 +57,7 @@ public class ProductoService {
 
     public void eliminarProducto(Long id) {
         writeOperations.eliminarProducto(id);
+        avisarIndexNow(id);
     }
 
     public Producto toggleDestacado(Long id, Boolean valor) {
