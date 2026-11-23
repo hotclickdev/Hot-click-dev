@@ -5,6 +5,8 @@ import { normalizarCodigoBarras } from './barcodeHid'
 type Props = {
   onScan: (codigo: string) => void
   onClose: () => void
+  /** QR con URL/token: no se le quitan guiones ni espacios internos (solo trim). */
+  crudo?: boolean
 }
 
 const ERROR_CAMARA = 'No se pudo abrir la cámara. Revisá el permiso o usá la pistola.'
@@ -14,7 +16,7 @@ const ERROR_DETECTOR = 'Tu navegador no puede leer códigos con la cámara. Usá
  * Cámara fullscreen: BarcodeDetector nativo (Chrome) o ZXing en Android sin API nativa.
  * Un solo código válido; callbacks vía ref para no reiniciar el stream.
  */
-export default function BarcodeCameraScan({ onScan, onClose }: Props) {
+export default function BarcodeCameraScan({ onScan, onClose, crudo = false }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState<string | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -57,7 +59,7 @@ export default function BarcodeCameraScan({ onScan, onClose }: Props) {
           isAlive: () => alive.current && !cerrado.current,
           onRaw: (raw) => {
             if (cerrado.current) return
-            const code = normalizarCodigoBarras(raw)
+            const code = crudo ? (raw.trim() || null) : normalizarCodigoBarras(raw)
             if (!code) return
             cerrado.current = true
             liberarCamara()
@@ -82,7 +84,7 @@ export default function BarcodeCameraScan({ onScan, onClose }: Props) {
       alive.current = false
       liberarCamara()
     }
-  }, [])
+  }, [crudo])
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: '#000' }}>

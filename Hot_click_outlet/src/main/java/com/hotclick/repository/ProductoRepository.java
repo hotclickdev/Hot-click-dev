@@ -18,6 +18,16 @@ import java.util.Optional;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     /** SEC-02: empresa duenia del producto, sin cargar la entidad. */
+    /**
+     * Catálogo del bot de Telegram del comprador: SOLO productos de la empresa, activos, visibles, con stock
+     * disponible (stockActual - stockReservado > 0), sin «a cotizar» ni personalizados (se cobran a ₡ distintos).
+     */
+    @Query("SELECT p FROM Producto p WHERE p.empresa.id = :empresaId AND p.estado = 1 AND p.visibleCatalogo = true "
+         + "AND (p.vendido IS NULL OR p.vendido = false) AND (p.esPersonalizado IS NULL OR p.esPersonalizado = false) "
+         + "AND p.precioVenta IS NOT NULL AND p.precioVenta > 0 AND (p.stockActual - COALESCE(p.stockReservado, 0)) > 0 "
+         + "ORDER BY p.nombreProducto, p.id")
+    Page<Producto> catalogoTelegram(@Param("empresaId") Long empresaId, Pageable pageable);
+
     @Query("SELECT p.empresa.id FROM Producto p WHERE p.id = :id")
     Optional<Long> findEmpresaIdByProductoId(@Param("id") Long id);
 

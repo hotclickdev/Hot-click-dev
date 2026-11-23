@@ -190,6 +190,7 @@ public class SpaController {
         "/admin/proveedores",
         "/recuperar-carrito/{id}",
         "/encargo/{token}",
+        "/r/{token}", // QR de retiro de pedidos de Telegram (página mínima, sin datos personales)
         "/cotizacion/{token}",
         "/seguimiento/{token}",
         "/admin",

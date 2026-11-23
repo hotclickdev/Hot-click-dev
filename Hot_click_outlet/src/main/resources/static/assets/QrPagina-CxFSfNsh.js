@@ -1,0 +1,1 @@
+import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{s as t}from"./vendor-clerk-D8Xu90H0.js";var n=e(t(),1);function r({children:e}){return(0,n.jsx)(`div`,{className:`hc-figma-ui min-h-dvh bg-hc-n-50`,children:(0,n.jsx)(`main`,{className:`mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-hc-n-50`,children:e})})}export{r as t};

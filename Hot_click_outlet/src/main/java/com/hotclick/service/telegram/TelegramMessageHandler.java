@@ -21,6 +21,7 @@ public class TelegramMessageHandler {
     @Autowired private TelegramFlujoService          telegramFlujoService;
     @Autowired private TelegramMessageRoutingHelper  routing;
     @Autowired private TelegramAbusoService         abuso;
+    @Autowired private TelegramCompradorService     compradores;
 
     public void procesarMensaje(JsonNode msg) {
         long chatId = msg.path("chat").path("id").asLong(0);
@@ -37,6 +38,12 @@ public class TelegramMessageHandler {
             return;
         }
 
+        // La ubicación nativa solo se acepta en el paso de entrega del COMPRADOR; un chat del panel la ignora.
+        if (msg.has("location")) {
+            if (previa.isEmpty()) compradores.procesarUbicacion(chatId, msg.get("location"));
+            return;
+        }
+
         if (routing.rechazarMediaNoTexto(chatId, msg)) return;
 
         String texto = msg.path("text").asText("").trim();
@@ -48,7 +55,9 @@ public class TelegramMessageHandler {
 
         Optional<TelegramVinculacion> opt = vinculacion.vinculacionActiva(chatId);
         if (opt.isEmpty()) {
-            bot.enviarMensaje(chatId, TelegramVinculacionService.MENSAJE_NO_VINCULADO);
+            // Chat NO vinculado: solo el flujo de pedido del comprador (si ya abrió una tienda); nada del negocio.
+            if (compradores.tieneSesionActiva(chatId)) compradores.procesarTexto(chatId, texto);
+            else bot.enviarMensaje(chatId, TelegramVinculacionService.MENSAJE_NO_VINCULADO);
             return;
         }
         TelegramVinculacion v = opt.get();

@@ -3418,6 +3418,30 @@
       "historial": "Histórico",
       "reportar": "Reportar"
     },
+    "retiroTg": {
+      "boton": "Pedido Telegram",
+      "titulo": "Entregar pedido do Telegram",
+      "ayuda": "Escaneie o QR do cliente ou cole o código. Cada QR é usado uma única vez.",
+      "campo": "Código ou link do QR",
+      "escanear": "Escanear com a câmera",
+      "entregar": "Entregar",
+      "cerrar": "Fechar",
+      "entregado": "Pedido {{numero}} entregue",
+      "comprador": "Em nome de {{nombre}}",
+      "invalido": "Este código não é válido, já foi usado ou expirou.",
+      "error": "Não foi possível entregar este pedido. Confira em Pedidos."
+    },
+    "retiroPagina": {
+      "titulo": "Pedido para retirar",
+      "tienda": "Retire seu pedido em {{tienda}}",
+      "ayuda": "Mostre este QR no caixa. Vale por 4 horas após o pagamento e é usado uma única vez.",
+      "PENDIENTE": "Pronto para retirar",
+      "PRESENTADO": "Este pedido já foi entregue",
+      "VENCIDO": "Este código expirou",
+      "INVALIDO": "Este código não é válido",
+      "cargando": "Carregando…",
+      "qrAlt": "Código QR para retirar o pedido"
+    },
     "reporte": {
       "botonAria": "Reportar um erro do POS",
       "bannerTitulo": "Quer reportar este erro?",

@@ -1,0 +1,157 @@
+package com.hotclick.service.retiro;
+
+import com.hotclick.model.Pedido;
+import com.hotclick.model.PedidoItem;
+import com.hotclick.model.PedidoRetiroToken;
+import com.hotclick.repository.PedidoRepository;
+import com.hotclick.repository.PedidoRetiroTokenRepository;
+import com.hotclick.service.PedidoService;
+import com.hotclick.utils.Constants;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * QR de retiro en tienda de un pedido ya pagado (flujo del comprador por Telegram).
+ * El token es opaco (32 bytes aleatorios) y el QR solo contiene {@code https://{app.url}/r/{token}}:
+ * nombre, teléfono, productos, precios y dirección viven en el servidor. Un solo uso, vigencia
+ * {@value #HORAS_VIGENCIA_POR_DEFECTO} h desde el pago confirmado.
+ */
+@Service
+public class PedidoRetiroTokenService {
+
+    private static final Logger log = LoggerFactory.getLogger(PedidoRetiroTokenService.class);
+    public static final int HORAS_VIGENCIA_POR_DEFECTO = 4;
+    private static final Pattern TOKEN_VALIDO = Pattern.compile("[A-Za-z0-9_-]{32,64}");
+    private static final Pattern TOKEN_EN_URL = Pattern.compile("/r/([A-Za-z0-9_-]{32,64})(?:[/?#].*)?$");
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    @Autowired private PedidoRetiroTokenRepository tokenRepository;
+    @Autowired private PedidoRepository pedidoRepository;
+    @Autowired private PedidoService pedidoService;
+
+    @Value("${app.url:http://localhost:8080}")
+    private String appUrl;
+
+    @Value("${telegram.comprador.retiro-horas:" + HORAS_VIGENCIA_POR_DEFECTO + "}")
+    private int horasVigencia = HORAS_VIGENCIA_POR_DEFECTO;
+
+    /** Resultado del canje: sin datos del pedido cuando no es válido (no filtra qué falló). */
+    public record Canje(boolean valido, String numeroPedido, String comprador, List<Linea> items) {
+        public record Linea(String producto, int cantidad) {}
+        static Canje invalido() { return new Canje(false, null, null, List.of()); }
+    }
+
+    /** Estado público mínimo del token (página /r/{token}): sin ítems ni datos personales. */
+    public record InfoPublica(String estado, String tienda) {}
+
+    public static String nuevoToken() {
+        byte[] b = new byte[32];
+        RANDOM.nextBytes(b);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+    }
+
+    public static boolean formatoValido(String token) {
+        return token != null && TOKEN_VALIDO.matcher(token).matches();
+    }
+
+    /** Acepta el token solo o la URL completa del QR; null si no tiene el formato esperado. */
+    public static String extraerToken(String entrada) {
+        if (entrada == null) return null;
+        String t = entrada.trim();
+        if (formatoValido(t)) return t;
+        Matcher m = TOKEN_EN_URL.matcher(t);
+        return m.find() ? m.group(1) : null;
+    }
+
+    public String urlPublica(String token) {
+        String base = appUrl == null ? "" : appUrl.replaceAll("/+$", "");
+        return base + "/r/" + token;
+    }
+
+    /** Idempotente: un pedido tiene un solo token. La vigencia corre desde ahora (= pago confirmado). */
+    @Transactional
+    public PedidoRetiroToken emitir(Pedido pedido) {
+        Optional<PedidoRetiroToken> previo = tokenRepository.findByPedidoId(pedido.getId());
+        if (previo.isPresent()) return previo.get();
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        PedidoRetiroToken t = new PedidoRetiroToken();
+        t.setToken(nuevoToken());
+        t.setPedidoId(pedido.getId());
+        t.setEmpresaId(pedido.getEmpresaId());
+        t.setEstado(PedidoRetiroToken.PENDIENTE);
+        t.setFechaCreacion(ahora);
+        t.setExpira(ahora.plusHours(Math.max(1, horasVigencia)));
+        return tokenRepository.save(t);
+    }
+
+    /**
+     * Canje atómico: el UPDATE condicional (PENDIENTE, vigente, misma empresa) decide; solo el ganador ve los ítems.
+     * Si marcar el pedido como entregado falla, todo se revierte y el QR sigue vigente.
+     */
+    @Transactional
+    public Canje canjear(String entrada, Long empresaCajeroId, Long usuarioId) {
+        String token = extraerToken(entrada);
+        if (token == null || empresaCajeroId == null) return Canje.invalido();
+        int filas = tokenRepository.canjear(token, empresaCajeroId, usuarioId, LocalDateTime.now(Constants.ZONA_CR));
+        if (filas != 1) return Canje.invalido();
+        PedidoRetiroToken t = tokenRepository.findByToken(token).orElseThrow();
+        Pedido pedido = pedidoRepository.findById(t.getPedidoId()).orElseThrow();
+        if (!empresaCajeroId.equals(pedido.getEmpresaId())) {
+            throw new IllegalStateException("Pedido de otra empresa"); // no debería pasar: revierte el canje
+        }
+        Pedido entregado = pedidoService.cambiarEstado(pedido.getId(), Constants.PEDIDO_ENTREGADO, null);
+        List<Canje.Linea> lineas = entregado.getItems().stream()
+            .filter(i -> i.getEstado() == null || i.getEstado() == Constants.ESTADO_ACTIVO)
+            .map(PedidoRetiroTokenService::linea).toList();
+        log.info("[retiro-qr] pedido {} entregado por QR", entregado.getNumeroPedido());
+        return new Canje(true, entregado.getNumeroPedido(), entregado.getClienteNombre(), lineas);
+    }
+
+    private static Canje.Linea linea(PedidoItem i) {
+        String nombre = i.getProducto() != null ? i.getProducto().getNombreProducto() : "Producto";
+        return new Canje.Linea(nombre, i.getCantidad() != null ? i.getCantidad() : 0);
+    }
+
+    @Transactional(readOnly = true)
+    public InfoPublica infoPublica(String token) {
+        if (!formatoValido(token)) return new InfoPublica("INVALIDO", null);
+        Optional<PedidoRetiroToken> t = tokenRepository.findByToken(token);
+        if (t.isEmpty()) return new InfoPublica("INVALIDO", null);
+        String estado = t.get().getEstado();
+        if (PedidoRetiroToken.PENDIENTE.equals(estado)
+                && !t.get().getExpira().isAfter(LocalDateTime.now(Constants.ZONA_CR))) {
+            estado = PedidoRetiroToken.VENCIDO;
+        }
+        String tienda = pedidoRepository.findById(t.get().getPedidoId())
+            .map(p -> com.hotclick.utils.EmpresaNombre.mostrar(p.getEmpresa(), "HotClick")).orElse(null);
+        return new InfoPublica(estado, tienda);
+    }
+
+    @Scheduled(fixedRate = 10 * 60 * 1000)
+    @SchedulerLock(name = "retiro_token_vencidos", lockAtMostFor = "PT5M", lockAtLeastFor = "PT30S")
+    @Transactional
+    public void barridoVencidos() {
+        int n = marcarVencidos(LocalDateTime.now(Constants.ZONA_CR));
+        if (n > 0) log.info("[retiro-qr] {} QR de retiro vencidos (el stock ya cobrado no se libera)", n);
+    }
+
+    /** Solo vence el QR: el stock de un pedido pagado ya se consumió. */
+    @Transactional
+    public int marcarVencidos(LocalDateTime ahora) {
+        return tokenRepository.marcarVencidos(ahora);
+    }
+}

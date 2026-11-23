@@ -31,6 +31,7 @@ class TelegramMessageRoutingHelper {
     @Autowired private TelegramFlujoService          telegramFlujoService;
     @Autowired @Lazy private TelegramBotUpdateService self;
     @Autowired private TelegramPlanConsulta planConsulta;
+    @Autowired private TelegramCompradorService compradores;
 
     boolean rechazarMediaNoTexto(long chatId, JsonNode msg) {
         for (String campo : CAMPOS_NO_TEXTO) {
@@ -46,11 +47,19 @@ class TelegramMessageRoutingHelper {
     boolean manejarStart(long chatId, JsonNode msg, String texto) {
         if (!texto.startsWith("/start")) return false;
         String codigo = texto.length() > 6 ? texto.substring(6).trim() : "";
-        if (!codigo.isEmpty()) {
+        if (TelegramCompradorService.esStartTienda(codigo)) {
+            // /start t_{slug}: modo COMPRADOR. Un chat vinculado al panel conserva el menú del negocio (no se mezclan roles).
+            if (vinculacion.vinculacionActiva(chatId).isPresent()) {
+                bot.enviarMensaje(chatId, "Este chat está vinculado a tu cuenta del negocio. Para pedir como cliente usá otro Telegram.");
+            } else {
+                compradores.iniciarDesdeStart(chatId, codigo);
+            }
+        } else if (!codigo.isEmpty()) {
             vinculacion.vincular(chatId, msg.path("from").path("username").asText(null), codigo);
         } else {
             Optional<TelegramVinculacion> v = vinculacion.vinculacionActiva(chatId);
             if (v.isPresent()) menuBuilder.mostrarMenu(v.get());
+            else if (compradores.tieneSesionActiva(chatId)) compradores.procesarTexto(chatId, "/ayuda");
             else bot.enviarMensaje(chatId, TelegramVinculacionService.MENSAJE_NO_VINCULADO);
         }
         return true;

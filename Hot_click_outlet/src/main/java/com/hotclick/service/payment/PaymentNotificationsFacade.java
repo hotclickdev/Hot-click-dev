@@ -28,6 +28,8 @@ public class PaymentNotificationsFacade {
     @Autowired private N8nWebhookService        n8nWebhookService;
     @Autowired private WebhookDispatcherService webhookDispatcher;
     @Autowired private AggregatorService        aggregatorService;
+    @Autowired(required = false) @org.springframework.context.annotation.Lazy
+    private com.hotclick.service.telegram.TelegramCompradorAvisos telegramCompradorAvisos;
     @Autowired(required = false) private PostHogCaptureService postHogCaptureService;
     @Autowired(required = false) private com.hotclick.service.analytics.MetaConversionApiService metaConversionApiService;
     @Autowired(required = false) private com.hotclick.service.analytics.Ga4MeasurementProtocolService ga4MeasurementProtocolService;
@@ -72,6 +74,8 @@ public class PaymentNotificationsFacade {
         n8nWebhookService.notificarPedidoNuevo(pedido);
         webhookDispatcher.dispatch(empresaId, "pedido.pagado", datos);
         capturarPedidoPagado(pedido, pago);
+        // Pedido iniciado por el bot de Telegram del comprador: avisa al comprador (y su QR de retiro) y al bot del negocio.
+        if (telegramCompradorAvisos != null) telegramCompradorAvisos.alPagar(pedido.getId());
         log.info("Pedido {} confirmado PAGADO via {}", datos.get("numeroPedido"), datos.get("proveedor"));
     }
 

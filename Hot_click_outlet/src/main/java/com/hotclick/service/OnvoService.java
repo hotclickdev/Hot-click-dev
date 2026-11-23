@@ -134,6 +134,15 @@ public class OnvoService {
     public boolean isPagosDisponibles() { return pagosDisponibles; }
 
     /**
+     * Fail-closed para canales nuevos (bot de Telegram del comprador): solo cobra con el modo SIMULADO de dev/test
+     * o con una llave {@code onvo_test_}. Llave live, llave vacía o pagos no disponibles = false (no se cobra).
+     */
+    public boolean esSandbox() {
+        if (!pagosDisponibles) return false;
+        return mockMode || esLlaveDePrueba();
+    }
+
+    /**
      * Destino SINPE Móvil de ONVO desde la configuración (la API de ONVO no lo devuelve). Fail-closed: vacío
      * si falta o no tiene forma de teléfono; quien lo use debe tratar el vacío como «SINPE no disponible».
      */

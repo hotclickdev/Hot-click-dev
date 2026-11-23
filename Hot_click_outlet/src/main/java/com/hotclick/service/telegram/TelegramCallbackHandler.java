@@ -27,6 +27,7 @@ public class TelegramCallbackHandler {
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private TelegramFlujoService          telegramFlujoService;
     @Autowired private TelegramAbusoService          abuso;
+    @Autowired private TelegramCompradorService      compradores;
 
     public void procesarCallback(JsonNode cb) {
         long chatId = cb.path("message").path("chat").path("id").asLong(0);
@@ -37,7 +38,12 @@ public class TelegramCallbackHandler {
 
         Optional<TelegramVinculacion> opt = vinculacion.vinculacionActiva(chatId);
         if (opt.isEmpty()) {
-            bot.enviarMensaje(chatId, TelegramVinculacionService.MENSAJE_NO_VINCULADO);
+            // Chat NO vinculado: solo botones del pedido del comprador ("c:"). inv, fin, vta:, prd:, cli:… no existen acá.
+            if (data.startsWith(TelegramCompradorService.PREFIJO_CALLBACK) && !abuso.rechazarSiInyeccion(chatId, data)) {
+                compradores.procesarCallback(chatId, data);
+            } else {
+                bot.enviarMensaje(chatId, TelegramVinculacionService.MENSAJE_NO_VINCULADO);
+            }
             return;
         }
         TelegramVinculacion v = opt.get();
