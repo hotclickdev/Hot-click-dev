@@ -39,10 +39,11 @@ class SpaTiendaMembresiaTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/tienda/secreta");
 
+        when(seo.injectNoindex(any(), any(), any(), any())).thenReturn("<html>noindex</html>");
+
         String body = controller.tiendaPage("secreta", request).getBody();
 
-        assertThat(body).isEqualTo("<html>base</html>");
-        assertThat(body).doesNotContain("Tienda Secreta");
+        assertThat(body).isEqualTo("<html>noindex</html>");
         verify(seo, never()).injectTiendaMeta(any(), any(), any());
     }
 }

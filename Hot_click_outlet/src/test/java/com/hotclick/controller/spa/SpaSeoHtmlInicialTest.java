@@ -143,6 +143,30 @@ class SpaSeoHtmlInicialTest {
     }
 
     @Test
+    void separadoresU2028YU2029NoSalenCrudosEnElJsonLd() {
+        String raw = "uno\u2028dos\u2029tres";
+        Producto p = producto(raw, 1000, 1);
+        p.setDescripcionCorta(raw);
+        p.setMarcaTexto(raw);
+        Empresa e = empresa(false);
+        e.setTagline(raw);
+        for (String html : new String[] {
+            seo.injectProductMeta(INDEX, p, e),
+            seo.injectTiendaMeta(INDEX, e, "/tienda/mi-tienda")}) {
+            String marca = "application/ld+json\" data-hc-ssr=\"1\">";
+            int ini = html.indexOf(marca);
+            assertThat(ini).isGreaterThanOrEqualTo(0);
+            while (ini >= 0) {
+                int desde = ini + marca.length();
+                String json = html.substring(desde, html.indexOf("</script>", desde));
+                assertThat(json).doesNotContain("\u2028").doesNotContain("\u2029");
+                ini = html.indexOf(marca, desde);
+            }
+            assertThat(html).contains("uno\\u2028dos\\u2029tres");
+        }
+    }
+
+    @Test
     void productoDeTiendaDePruebaVaNoindexSinSchema() {
         String html = seo.injectProductMeta(INDEX, producto("Taza", 2000, 1), empresa(true));
         assertThat(html).contains("noindex").doesNotContain("\"@type\":\"Product\"").doesNotContain("\"Offer\"")
@@ -203,6 +227,7 @@ class SpaSeoHtmlInicialTest {
         p.setEstado(1);
         p.setEmpresa(e);
         when(productos.findById(620L)).thenReturn(Optional.of(p));
+        when(productos.esPublicable(620L)).thenReturn(true);
         when(empresas.findById(7L)).thenReturn(Optional.of(e));
         SpaController c = new SpaController();
         ReflectionTestUtils.setField(c, "productoRepository", productos);

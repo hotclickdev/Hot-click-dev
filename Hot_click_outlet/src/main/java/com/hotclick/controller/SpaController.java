@@ -75,6 +75,8 @@ public class SpaController {
             long productId = Long.parseLong(id);
             return productoRepository.findById(productId)
                 .filter(p -> p.getEstado() != null && p.getEstado() == 1)
+                // Mismo gate que GET /api/productos/{id} (IDOR-10): oculto, tienda suspendida/privada/sin membresía → 404 sin datos.
+                .filter(p -> productoRepository.esPublicable(p.getId()))
                 .map(p -> htmlSeo(spaSeoSupport.injectProductMeta(indexHtmlContent, p, empresaDe(p))))
                 .orElseGet(() -> serveNotFound(id));
         } catch (NumberFormatException e) {
@@ -98,7 +100,7 @@ public class SpaController {
     /**
      * Tienda pública de un emprendedor: /tienda/{slug} y todas sus sub-rutas.
      * Inyecta meta tags con el branding del negocio para crawlers y redes sociales.
-     * Si el slug no existe o la empresa no es pública devuelve la SPA sin meta tags especiales.
+     * Si el slug no existe o la empresa no es pública: 404 + noindex, sin datos del negocio ni portada indexable.
      */
     @GetMapping(value = {"/tienda/{slug}", "/tienda/{slug}/**"},
                 produces = MediaType.TEXT_HTML_VALUE)
@@ -109,7 +111,8 @@ public class SpaController {
                 && Boolean.TRUE.equals(e.getVisibilidadPublica())
                 && CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()))
             .<ResponseEntity<String>>map(e -> htmlSeo(spaSeoSupport.injectTiendaMeta(indexHtmlContent, e, request.getRequestURI())))
-            .orElseGet(this::serveSpa);
+            .orElseGet(() -> htmlNoIndex("Tienda no disponible | HOTCLICK",
+                "Esta tienda no está disponible en HotClick.", "/tienda/" + slug));
     }
 
     @GetMapping(value = "/comprar/{slug}", produces = MediaType.TEXT_HTML_VALUE)
