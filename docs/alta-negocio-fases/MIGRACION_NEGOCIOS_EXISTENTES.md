@@ -2,7 +2,22 @@
 
 Al desplegar V244/V245 **no cambia nada** para los negocios que ya existen: quedan `alta_por_fases = FALSE` y
 `venta_online_habilitada = TRUE`, publicados y cobrando como hoy. Los scripts de abajo son opcionales, se corren a mano
-y **despublican / cambian dinero**, por eso no están en Flyway ni detrás de un flag automático. Hacer respaldo antes.
+y **despublican / cambian dinero**, por eso no están en Flyway. Hacer respaldo antes.
+
+## 0. Migración automática detrás de flag (APAGADA por defecto)
+
+`hotclick.alta-fases.migrar-existentes` (env `HOTCLICK_ALTA_FASES_MIGRAR_EXISTENTES`, **por defecto `false`**) es un flag
+distinto del de negocios nuevos (`hotclick.alta-fases.enabled`). Con `migrar-existentes=false` nada cambia para los existentes
+(el job no lee ni escribe). Para que actúe se necesitan **los dos en true**.
+
+- Qué hace (`AltaFasesMigracionExistentesService`, corre dentro del poller de cuentas ONVO, con su ShedLock): toma lotes de
+  `hotclick.alta-fases.migrar-lote` (100, máx. 500) negocios `ACTIVO`, `alta_por_fases=FALSE` y sin cuenta ONVO `ACTIVA`, y les
+  pone `alta_por_fases=TRUE`, `venta_online_habilitada=FALSE`. Es idempotente: un negocio ya migrado deja de ser candidato.
+- Efecto: **despublica** esos negocios hasta que su cuenta ONVO quede ACTIVA (el poller los rehabilita solo). Los que ya tienen
+  cuenta ACTIVA no se tocan.
+- Antes de encenderlo: correr el diagnóstico (§1), avisar a los dueños y respaldar. Para apagarlo de nuevo: flag en `false`
+  (no revierte lo migrado; ver reversión en §2).
+- Los scripts SQL de abajo siguen sirviendo para migrar solo ids elegidos o para revertir.
 
 ## 1. Diagnóstico (solo lectura)
 

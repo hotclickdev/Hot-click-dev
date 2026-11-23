@@ -59,6 +59,8 @@ tiene la cuenta ACTIVA (también al reactivar desde el cambio de estado del admi
 | Negocio **existente** | sin cambios | sin cambios |
 | Pérdida de cuenta ACTIVA (cualquier negocio) | pausa cobros y publicación, alerta y recordatorios | igual (es protección de dinero, no depende del flag) |
 
+Migrar los existentes es otro flag, `hotclick.alta-fases.migrar-existentes` (**false** por defecto; ver `MIGRACION_NEGOCIOS_EXISTENTES.md`).
+
 Los negocios existentes **no se tocan** al desplegar: V244 los deja `alta_por_fases=FALSE` y
 `venta_online_habilitada=TRUE`. Llevarlos al flujo nuevo es una decisión aparte: ver
 [`MIGRACION_NEGOCIOS_EXISTENTES.md`](MIGRACION_NEGOCIOS_EXISTENTES.md).
