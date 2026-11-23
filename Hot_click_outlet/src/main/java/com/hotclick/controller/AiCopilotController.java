@@ -42,6 +42,7 @@ public class AiCopilotController {
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
     @Autowired private com.hotclick.service.TextModerationService textModerationService;
     @Autowired private AiCopilotStreamProcessor streamProcessor;
+    @Autowired private com.hotclick.service.copilot.AiCopilotRolResolver rolResolver;
 
     /** SSE streaming chat endpoint. */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -136,9 +137,11 @@ public class AiCopilotController {
     }
 
     private void lanzarChat(SseEmitter emitter, Long empresaId, String message) {
+        // Rol real, en el hilo del request: el hilo SSE no tiene SecurityContext.
+        final boolean esDueno = rolResolver.esDuenoActual(empresaId);
         sseExecutor.execute(() -> {
             try {
-                aiCopilotService.chatStream(empresaId, message, emitter);
+                aiCopilotService.chatStream(empresaId, message, emitter, esDueno);
             } catch (Exception e) {
                 log.error("[AI] stream copilot falló empresaId={}", empresaId, e);
                 Sentry.captureException(e);

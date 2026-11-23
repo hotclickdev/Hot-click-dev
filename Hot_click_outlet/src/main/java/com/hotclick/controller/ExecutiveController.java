@@ -37,6 +37,7 @@ public class ExecutiveController {
     @Autowired private AiQuotaService            aiQuotaService;
     @Autowired private CompanyScope              companyScope;
     @Autowired private TenantService             tenantService;
+    @Autowired private com.hotclick.service.copilot.AiCopilotRolResolver rolResolver;
     @Autowired @Qualifier("sseExecutor") private Executor sseExecutor;
 
     @GetMapping("/dashboard")
@@ -80,7 +81,9 @@ public class ExecutiveController {
 
         SseEmitter emitter = new SseEmitter(120_000L);
         emitter.onTimeout(emitter::complete);
-        sseExecutor.execute(() -> aiCopilotService.chatStream(empresaId, prompt, emitter));
+        // Rol real, en el hilo del request: el hilo SSE no tiene SecurityContext.
+        final boolean esDueno = rolResolver.esDuenoActual(empresaId);
+        sseExecutor.execute(() -> aiCopilotService.chatStream(empresaId, prompt, emitter, esDueno));
         return emitter;
     }
 

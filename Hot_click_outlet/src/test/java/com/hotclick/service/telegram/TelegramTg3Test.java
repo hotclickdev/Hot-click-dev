@@ -138,6 +138,9 @@ class TelegramTg3Test {
         when(repo.findByCodigo(anyString())).thenReturn(Optional.empty());
         ReflectionTestUtils.setField(svc, "vinculacionRepository", repo);
         ReflectionTestUtils.setField(svc, "bot", mock(TelegramClienteBotService.class));
+        TelegramVinculacionCanje canje = new TelegramVinculacionCanje();
+        ReflectionTestUtils.setField(canje, "vinculacionRepository", repo);
+        ReflectionTestUtils.setField(svc, "canjeAtomico", canje);
         svc.vincular(90L, "u", "ab3k-9xyz");
         verify(repo).findByCodigo("AB3K9XYZ");
     }

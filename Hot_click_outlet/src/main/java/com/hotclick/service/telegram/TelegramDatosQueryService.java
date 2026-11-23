@@ -41,6 +41,18 @@ public class TelegramDatosQueryService {
         }
     }
 
+    /** Finanzas del mes: solo el dueño del negocio (el botón viejo o un replay no las exponen). */
+    public void mostrarFinanzasMes(TelegramVinculacion v) {
+        Long empresaId = empresaContext.empresaValidada(v);
+        if (empresaId == null) return;
+        if (!flujoSupport.esDueno(v.getUsuario(), empresaId)) {
+            bot.enviarMensaje(v.getChatId(), "Solo el dueño del negocio puede ver las finanzas.",
+                TelegramTeclado.soloMenu());
+            return;
+        }
+        responderConDatos(v, this::mensajeFinanzasMes);
+    }
+
     /** Resumen de inventario; si el usuario puede gestionar, ofrece modificar unidades. */
     public void mostrarInventario(TelegramVinculacion v) {
         Long empresaId = empresaContext.empresaValidada(v);

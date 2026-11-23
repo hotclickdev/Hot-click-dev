@@ -74,7 +74,8 @@ public class TelegramEmpresaContextService {
         Long usuarioId = v.getUsuario().getId();
         if (empresaId != null) {
             boolean esMiembro = (miembroEmpresaRepository.existsByUsuarioIdAndEmpresaIdAndEstado(usuarioId, empresaId, 1)
-                || empresaId.equals(v.getUsuario().getEmpresaId()))
+                || (empresaId.equals(v.getUsuario().getEmpresaId())
+                    && miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(usuarioId, empresaId).isEmpty()))
                 && !bloqueoRepository.existsByUsuarioIdAndEmpresaId(usuarioId, empresaId);
             if (esMiembro) return empresaId;
             v.setEmpresaActivaId(null);

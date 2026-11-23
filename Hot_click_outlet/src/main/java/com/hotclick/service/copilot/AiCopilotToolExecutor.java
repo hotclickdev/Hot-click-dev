@@ -25,12 +25,13 @@ public class AiCopilotToolExecutor {
     // El panel usa las mismas tools de consulta; las de mutación (proponer_*)
     // solo se exponen en Telegram con confirmación por botón.
 
-    public String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario, boolean puedeGestionar) {
-        return toolDefinitions.buildSystemPromptConTools(empresaId, empresa, nombreUsuario, puedeGestionar);
+    public String buildSystemPromptConTools(Long empresaId, Empresa empresa, String nombreUsuario,
+                                          boolean puedeGestionar, boolean esDueno) {
+        return toolDefinitions.buildSystemPromptConTools(empresaId, empresa, nombreUsuario, puedeGestionar, esDueno);
     }
 
-    public List<Map<String, Object>> buildTools(Long empresaId, boolean puedeGestionar) {
-        return toolDefinitions.buildTools(empresaId, puedeGestionar);
+    public List<Map<String, Object>> buildTools(Long empresaId, boolean puedeGestionar, boolean esDueno) {
+        return toolDefinitions.buildTools(empresaId, puedeGestionar, esDueno);
     }
 
     /** Verifica el feature "reportes" sin depender del TenantContext ambiente — el webhook de Telegram es público y no lo setea. */
@@ -43,7 +44,11 @@ public class AiCopilotToolExecutor {
         return toolDefinitions.toolDef(name, description, parameters);
     }
 
-    public String ejecutarTool(Long empresaId, String nombre, JsonNode args, AccionPropuestaTelegram[] accionHolder) {
+    public String ejecutarTool(Long empresaId, String nombre, JsonNode args, AccionPropuestaTelegram[] accionHolder,
+                               boolean esDueno) {
+        if ("consultar_finanzas".equals(nombre) && !esDueno) {
+            return "Las finanzas del negocio solo las puede consultar el dueño.";
+        }
         try {
             return switch (nombre) {
                 case "consultar_inventario" -> contextBuilder.getInventarioData(empresaId);

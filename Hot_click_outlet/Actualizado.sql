@@ -4688,3 +4688,6 @@ ALTER TABLE hot_click_usuario_tb ADD COLUMN IF NOT EXISTS motivo_eliminacion VAR
 
 -- V241__empresa_es_prueba.sql
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS es_prueba BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- V242__telegram_vinculacion_version.sql
+ALTER TABLE hot_click_telegram_vinculacion_tb ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;

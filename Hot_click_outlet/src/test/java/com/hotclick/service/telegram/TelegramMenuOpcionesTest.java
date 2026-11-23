@@ -11,7 +11,7 @@ class TelegramMenuOpcionesTest {
 
     @Test
     void miembroSinGestionNoVeAltas() {
-        List<List<Map<String, Object>>> teclado = TelegramMenuOpciones.teclado(false, true, false);
+        List<List<Map<String, Object>>> teclado = TelegramMenuOpciones.teclado(false, true, false, false);
         String datos = teclado.toString();
         assertThat(datos).doesNotContain("prd:new");
         assertThat(datos).doesNotContain("prd:pers");
@@ -21,7 +21,7 @@ class TelegramMenuOpcionesTest {
 
     @Test
     void sinCrmNoVeClientes() {
-        String datos = TelegramMenuOpciones.teclado(true, false, false).toString();
+        String datos = TelegramMenuOpciones.teclado(true, false, false, true).toString();
         assertThat(datos).contains("prd:new");
         assertThat(datos).contains("prd:pers");
         assertThat(datos).doesNotContain("cli:pg:0");
@@ -31,5 +31,11 @@ class TelegramMenuOpcionesTest {
     void sinIaElTextoNoInvitaAPreguntar() {
         assertThat(TelegramMenuOpciones.texto("Bruma", false)).doesNotContain("pregunta libre");
         assertThat(TelegramMenuOpciones.texto("Bruma", true)).contains("pregunta libre");
+    }
+
+    @Test
+    void finanzasSoloSeOfrecenAlDueno() {
+        assertThat(TelegramMenuOpciones.teclado(true, true, true, false).toString()).doesNotContain("fin");
+        assertThat(TelegramMenuOpciones.teclado(true, true, true, true).toString()).contains("fin");
     }
 }
