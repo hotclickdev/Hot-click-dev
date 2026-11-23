@@ -9,6 +9,9 @@ import useTenantStore from '@/store/tenantStore'
 import GlobalSearch from '@/components/admin/GlobalSearch'
 import TrialBanner from '@/components/TrialBanner'
 import OfflineBanner from '@/components/OfflineBanner'
+import AltaFasesPanel from '@/features/alta-negocio/AltaFasesPanel'
+import { useAltaNegocio } from '@/features/alta-negocio/useAltaNegocio'
+import { mostrarPanelAlta } from '@/features/alta-negocio/altaFases'
 import ImpersonacionBanner from '@/components/ImpersonacionBanner'
 import AppTour from '@/components/ui/AppTour'
 import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
@@ -43,6 +46,9 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
   const clearTenant = useTenantStore((s) => s.clear)
   const estadoEmpresa = useTenantStore((s) => s.estadoEmpresa)
   const estadoPlan = useTenantStore((s) => s.estadoPlan)
+  const rolUsuario = useAuthStore((s) => s.userRole)
+  const alta = useAltaNegocio(rolUsuario === 'EMPRENDEDOR')
+  const panelAlta = mostrarPanelAlta(alta.estado)
   const visibilidadPublica = useTenantStore((s) => s.visibilidadPublica)
   const [drawerOpen,    setDrawerOpen]    = useState(false)
   const [searchOpen,    setSearchOpen]    = useState(false)
@@ -165,8 +171,12 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
           transition={{ duration: 0.2 }}
           className="flex-1 overflow-y-auto px-4 py-4 md:pt-6 md:px-6 lg:px-8"
         >
-          {/* Banner: negocio pendiente de aprobación */}
-          {estadoEmpresa === 'PENDIENTE_APROBACION' && estadoPlan !== 'PRUEBA_CERRADA' && (
+          {/* Alta por fases: negocio nuevo en espera o con la cuenta ONVO perdida (reemplaza el aviso genérico) */}
+          {panelAlta && alta.estado && (
+            <AltaFasesPanel estado={alta.estado} ocupado={alta.ocupado} error={alta.error} onIrAOnvo={() => void alta.irAOnvo()} />
+          )}
+          {/* Banner: negocio pendiente de aprobación (negocios existentes, sin alta por fases) */}
+          {!panelAlta && estadoEmpresa === 'PENDIENTE_APROBACION' && estadoPlan !== 'PRUEBA_CERRADA' && (
             <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded-xl text-sm"
               style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>
               <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -194,6 +194,7 @@ export default function AppRoutes() {
         <Route path="compradores/:id" element={<CompradorPlataforma />} />
         <Route path="moderacion" element={<ModeracionPlataforma />} />
         <Route path="moderacion/reportes" element={<ModeracionPlataforma />} />
+        <Route path="moderacion/revision" element={<ModeracionPlataforma />} />
         <Route path="dinero" element={<DineroPlataforma />} />
         <Route path="dinero/:vista" element={<DineroPlataforma />} />
         <Route path="crm" element={<CrmLayout />}>

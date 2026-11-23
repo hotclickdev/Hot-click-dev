@@ -7,6 +7,7 @@ import { consolaService, objetoDe } from './consola'
 import { campoLista, filasDe, idSeguro, texto, type Fila } from './normalizar'
 import ImpagoPlataforma from './ImpagoPlataforma'
 import CambiosPlanPlataforma from './CambiosPlanPlataforma'
+import ReintegrosPlataforma from './ReintegrosPlataforma'
 import { Aviso, Carga, Chip, Encabezado, FilaDecision, Marco, Metrica, Segmento, TARJETA } from './piezas'
 import { formatPrice } from '@/utils/format'
 
@@ -17,6 +18,7 @@ const VISTAS = [
   { id: 'suscripciones', label: 'Suscripciones', to: '/plataforma/dinero/suscripciones' },
   { id: 'impago', label: 'Impago', to: '/plataforma/dinero/impago' },
   { id: 'cambios-plan', label: 'Cambios de plan', to: '/plataforma/dinero/cambios-plan' },
+  { id: 'reintegros', label: 'Por reintegrar', to: '/plataforma/dinero/reintegros' },
 ]
 
 export default function DineroPlataforma() {
@@ -40,6 +42,7 @@ export default function DineroPlataforma() {
       {vista === 'cobros' && <Cobros />}
       {vista === 'impago' && <ImpagoPlataforma />}
       {vista === 'cambios-plan' && <CambiosPlanPlataforma />}
+      {vista === 'reintegros' && <ReintegrosPlataforma />}
     </div>
   )
 }
