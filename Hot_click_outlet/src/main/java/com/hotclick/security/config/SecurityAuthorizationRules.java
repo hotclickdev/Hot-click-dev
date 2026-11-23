@@ -311,7 +311,7 @@ final class SecurityAuthorizationRules {
                 "/nosotros", "/productos", "/productos/**", "/descubri", "/categorias", "/buscar/foto", "/informacion", "/contacto",
                 "/carrito", "/login", "/logout", "/recuperar-contrasena", "/equipo/invitacion", "/equipo/invitacion/*", "/registro", "/registro-empresa", "/perfil", "/perfil/**", "/mis-pedidos",
                 "/wishlist", "/blog", "/blog/**", "/emprende",
-                "/para-emprendedores", "/para-pymes", "/negocio-plus-plan", "/planes", "/vender",
+                "/para-emprendedores", "/para-emprendedores/", "/para-pymes", "/negocio-plus-plan", "/planes", "/vender",
                 "/emprendimientos", "/emprendimientos/*", "/negocios",
                 "/comprar", "/comprar/**",
                 "/tiendas", "/tiendas/**",
