@@ -19,6 +19,11 @@ import java.util.Locale;
 public class BlogController {
 
     @Autowired private BlogEntradaRepository repo;
+    @Autowired(required = false) private com.hotclick.seo.indexnow.IndexNowService indexNow;
+
+    private void avisarIndexNow(BlogEntrada e) {
+        if (indexNow != null && e != null) indexNow.notificarArticulo(e.getSlug());
+    }
     @Autowired private InputSanitizer sanitizer;
     @Autowired private com.hotclick.service.TextModerationService textModerationService;
 
@@ -68,7 +73,9 @@ public class BlogController {
         if (Boolean.TRUE.equals(entrada.getPublicado())) {
             entrada.setFechaPublicacion(LocalDateTime.now(Constants.ZONA_CR));
         }
-        return ResponseEntity.ok(ResponseDTO.success("Creado", repo.save(entrada)));
+        BlogEntrada guardada = repo.save(entrada);
+        avisarIndexNow(guardada);
+        return ResponseEntity.ok(ResponseDTO.success("Creado", guardada));
     }
 
     @PutMapping("/{id}")
@@ -83,7 +90,9 @@ public class BlogController {
         if (Boolean.TRUE.equals(datos.publicado()) && wasDraft) {
             e.setFechaPublicacion(LocalDateTime.now(Constants.ZONA_CR));
         }
-        return ResponseEntity.ok(ResponseDTO.success("Actualizado", repo.save(e)));
+        BlogEntrada guardada = repo.save(e);
+        avisarIndexNow(guardada);
+        return ResponseEntity.ok(ResponseDTO.success("Actualizado", guardada));
     }
 
     private boolean textoPermitido(BlogEntradaDatos datos) {
@@ -104,6 +113,7 @@ public class BlogController {
         BlogEntrada e = repo.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("No encontrado"));
         e.setEstado(0);
         repo.save(e);
+        avisarIndexNow(e);
         return ResponseEntity.ok(ResponseDTO.success("Eliminado", null));
     }
 

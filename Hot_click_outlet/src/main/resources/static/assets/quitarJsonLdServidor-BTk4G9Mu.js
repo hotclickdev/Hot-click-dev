@@ -1,0 +1,1 @@
+import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{x as t}from"./vendor-clerk-D8Xu90H0.js";var n=e(t(),1);function r(e=!0){(0,n.useEffect)(()=>{e&&document.querySelectorAll(`script[type="application/ld+json"][data-hc-ssr]`).forEach(e=>e.remove())},[e])}export{r as t};

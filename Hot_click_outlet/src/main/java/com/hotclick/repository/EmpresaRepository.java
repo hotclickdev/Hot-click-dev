@@ -41,6 +41,16 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
         "ORDER BY 2")
     List<Object[]> findTiendasPublicasSeo();
 
+    /**
+     * Ids (de entre los dados) de productos que pertenecen a un negocio es_prueba.
+     * Las landings de sector los descartan sin tocar la consulta del catálogo.
+     */
+    @Query(nativeQuery = true, value =
+        "SELECT p.id_producto FROM hot_click_producto_tb p " +
+        "INNER JOIN hot_click_empresa_tb e ON e.id_empresa = p.fk_id_empresa " +
+        "WHERE e.es_prueba = TRUE AND p.id_producto IN (:ids)")
+    List<Long> findIdsProductosDeEmpresasPrueba(@org.springframework.data.repository.query.Param("ids") java.util.Collection<Long> ids);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM Empresa e WHERE e.id = :id")
     Optional<Empresa> findByIdForUpdate(@Param("id") Long id);

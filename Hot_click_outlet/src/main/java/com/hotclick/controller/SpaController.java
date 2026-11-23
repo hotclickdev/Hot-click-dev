@@ -2,6 +2,8 @@ package com.hotclick.controller;
 
 import com.hotclick.catalogo.CatalogoPublicoGate;
 import com.hotclick.model.BlogEntrada;
+import com.hotclick.model.Empresa;
+import com.hotclick.model.Producto;
 import com.hotclick.controller.spa.SpaSeoSupport;
 import com.hotclick.repository.BlogEntradaRepository;
 import com.hotclick.repository.EmpresaRepository;
@@ -75,7 +77,8 @@ public class SpaController {
                 .filter(p -> p.getEstado() != null && p.getEstado() == 1)
                 .map(p -> ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-                    .body(spaSeoSupport.injectProductMeta(indexHtmlContent, p)))
+                    .header("Content-Language", "es-CR")
+                    .body(spaSeoSupport.injectProductMeta(indexHtmlContent, p, empresaDe(p))))
                 .orElseGet(() -> serveNotFound(id));
         } catch (NumberFormatException e) {
             return serveNotFound(id);
@@ -94,6 +97,7 @@ public class SpaController {
         }
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+                    .header("Content-Language", "es-CR")
             .body(spaSeoSupport.injectBlogMeta(indexHtmlContent, e));
     }
 
@@ -112,6 +116,7 @@ public class SpaController {
                 && CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan()))
             .<ResponseEntity<String>>map(e -> ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+                    .header("Content-Language", "es-CR")
                 .body(spaSeoSupport.injectTiendaMeta(indexHtmlContent, e, request.getRequestURI())))
             .orElseGet(this::serveSpa);
     }
@@ -277,7 +282,7 @@ public class SpaController {
     private ResponseEntity<String> landing(String title, String desc, String path) {
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
-            .header("Content-Language", "es-CR")
+                    .header("Content-Language", "es-CR")
             .body(spaSeoSupport.injectLandingPlan(indexHtmlContent, title, desc, path));
     }
 
@@ -297,6 +302,12 @@ public class SpaController {
             + " negocios; después " + despues + NOTA_MONEDA;
     }
 
+    /** Negocio dueño del producto (la relación del producto es lazy y no se puede leer fuera de sesión). */
+    private Empresa empresaDe(Producto p) {
+        Long id = p.getEmpresaId();
+        return id == null ? null : empresaRepository.findById(id).orElse(null);
+    }
+
     private ResponseEntity<String> serveSpa() {
         return html(indexHtmlContent);
     }
@@ -304,12 +315,14 @@ public class SpaController {
     private ResponseEntity<String> html(String body) {
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+                    .header("Content-Language", "es-CR")
             .body(body);
     }
 
     private ResponseEntity<String> htmlNoIndex(String title, String desc, String path) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
             .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+                    .header("Content-Language", "es-CR")
             .body(spaSeoSupport.injectNoindex(indexHtmlContent, title, desc, path));
     }
 
@@ -317,6 +330,7 @@ public class SpaController {
     private ResponseEntity<String> serveNotFound(String id) {
         return ResponseEntity.status(404)
             .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
+                    .header("Content-Language", "es-CR")
             .body(spaSeoSupport.injectProductNotFoundMeta(indexHtmlContent, id));
     }
 }

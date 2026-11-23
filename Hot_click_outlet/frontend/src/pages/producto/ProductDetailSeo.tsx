@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import Seo from '@/components/seo/Seo'
 import { generateProductJsonLd, generateBreadcrumbJsonLd } from '@/utils/jsonLd'
+import { useQuitarJsonLdServidor } from '@/utils/quitarJsonLdServidor'
 import type { Producto } from '@/types/producto'
 
 type ProductDetailSeoProps = {
@@ -10,6 +11,7 @@ type ProductDetailSeoProps = {
 }
 
 export default function ProductDetailSeo({ product, seoTitle, seoDescription }: ProductDetailSeoProps) {
+  useQuitarJsonLdServidor()
   return (
     <>
       <Seo

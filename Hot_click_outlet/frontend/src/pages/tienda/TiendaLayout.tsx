@@ -5,6 +5,7 @@ import tiendaService from '@/services/tiendaService'
 import useTiendaStore from '@/store/tiendaStore'
 import Seo from '@/components/seo/Seo'
 import { generateLocalBusinessJsonLd } from '@/utils/jsonLd'
+import QuitarJsonLdServidor from '@/components/seo/QuitarJsonLdServidor'
 import { estiloMarcaTienda } from './tiendaTheme'
 import { contactoVisible } from './tiendaHelpers'
 import TiendaHeader from './TiendaHeader'
@@ -74,6 +75,8 @@ export default function TiendaLayout() {
         />
       )}
       {empresa && !esTransaccional && !productoEnRuta && (
+        <>
+        <QuitarJsonLdServidor />
         <Helmet>
           <script type="application/ld+json">
             {JSON.stringify(generateLocalBusinessJsonLd({
@@ -87,6 +90,7 @@ export default function TiendaLayout() {
             }))}
           </script>
         </Helmet>
+        </>
       )}
       {/* Al pagar no se repite el bloque de la tienda: el nombre va junto a cada producto del resumen. */}
       {!pathname.includes('/checkout') && (
