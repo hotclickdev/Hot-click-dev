@@ -15,6 +15,7 @@ HOTCLICK (hotclick.lat) es la tienda en línea de Costa Rica para comprar a empr
 - Emprendedor: https://hotclick.lat/emprende
 - PYME: https://hotclick.lat/para-pymes
 - Negocio con varios locales: https://hotclick.lat/negocio-plus-plan
+- Para negocios con local (demo de 30 minutos; Emprendedor 90 días gratis para los primeros 70 negocios y luego US$9/mes, PyME US$24/mes, Negocio Plus US$49/mes; comisión 9 % / 7,5 % / 6 %; los productos se venden en colones y la mensualidad se cobra en dólares con tarjeta): https://hotclick.lat/para-negocios
 - Tienda de un negocio: https://hotclick.lat/tienda/{slug}
 - Digitalizar inventario en el local (códigos, SKU y etiquetas): https://hotclick.lat/servicios/digitalizar-inventario
 

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 480" width="440" height="480"><g transform="translate(-150.00,4.00) scale(2.02575) translate(-4,-4)" ><defs>
+<linearGradient id="L4-hc-rojo" gradientUnits="userSpaceOnUse" x1="83.51" y1="67.26" x2="194.80" y2="179.72"><stop offset="0.000" stop-color="#ff1525"/><stop offset="0.333" stop-color="#e70d1f"/><stop offset="0.667" stop-color="#cb061f"/><stop offset="1.000" stop-color="#a7021d"/></linearGradient>
+<linearGradient id="L4-hc-azul" gradientUnits="userSpaceOnUse" x1="210.61" y1="27.63" x2="230.24" y2="232.22"><stop offset="0.000" stop-color="#0167df"/><stop offset="0.333" stop-color="#0057c7"/><stop offset="0.667" stop-color="#0045aa"/><stop offset="1.000" stop-color="#013386"/></linearGradient>
+<linearGradient id="L4-hc-rayas" gradientUnits="userSpaceOnUse" x1="8.50" y1="155.88" x2="86.50" y2="155.88"><stop offset="0.000" stop-color="#d60e1a"/><stop offset="1.000" stop-color="#e81621"/></linearGradient>
+<linearGradient id="L4-hc-mezcla-op" gradientUnits="userSpaceOnUse" x1="104.48" y1="138.11" x2="225.77" y2="91.57"><stop offset="0.000" stop-color="#ffffff" stop-opacity="1.000"/><stop offset="1.000" stop-color="#ffffff" stop-opacity="0.000"/></linearGradient>
+<linearGradient id="L4-hc-sombra" gradientUnits="userSpaceOnUse" x1="149.82" y1="168.26" x2="163.85" y2="188.64"><stop offset="0.000" stop-color="#08164a" stop-opacity="0.885"/><stop offset="1.000" stop-color="#08164a" stop-opacity="0.000"/></linearGradient>
+<clipPath id="L4-hc-clip-c"><path d="M170.65 86.41A4.55 4.55 0 0 1 172.84 82.68L273.74 21.67A4.02 4.02 0 0 1 279.84 25.04L280.73 77.72A8.59 8.59 0 0 1 276.92 85.00L218.29 124.23A0.50 0.50 0 0 0 218.07 124.64L217.19 171.34A0.95 0.95 0 0 0 218.60 172.18L251.97 153.44A8.99 8.99 0 0 1 261.43 153.85L292.80 175.18A2.61 2.61 0 0 1 292.74 179.54L207.54 234.05A6.04 6.04 0 0 1 200.64 233.77L166.61 207.96A0.23 0.23 0 0 1 166.52 207.76Z"/></clipPath>
+<mask id="L4-hc-mask-mezcla" maskUnits="userSpaceOnUse" x="0" y="0" width="300" height="240"><polygon points="-179.65,395.08 479.29,-58.56 252.47,-388.03 -406.47,65.61" fill="url(#L4-hc-mezcla-op)"/><polygon points="218.08,121.27 300.00,64.87 300.00,134.38 218.08,134.38" fill="url(#L4-hc-mezcla-op)"/></mask>
+</defs>
+
+<path id="L4-H" d="M99.95 44.69A0.64 0.64 0 0 1 100.24 44.16L160.29 6.12A4.24 4.24 0 0 1 166.79 9.70L166.82 82.00L174.00 92.00L190.00 78.00L190.00 140.60L151.07 167.40A2.87 2.87 0 0 0 149.83 169.77L149.97 231.75A3.38 3.38 0 0 1 144.54 234.44L99.24 199.67A2.45 2.45 0 0 1 98.28 197.70Z" fill="url(#L4-hc-rojo)"/>
+<g id="L4-C">
+<path d="M170.65 86.41A4.55 4.55 0 0 1 172.84 82.68L273.74 21.67A4.02 4.02 0 0 1 279.84 25.04L280.73 77.72A8.59 8.59 0 0 1 276.92 85.00L218.29 124.23A0.50 0.50 0 0 0 218.07 124.64L217.19 171.34A0.95 0.95 0 0 0 218.60 172.18L251.97 153.44A8.99 8.99 0 0 1 261.43 153.85L292.80 175.18A2.61 2.61 0 0 1 292.74 179.54L207.54 234.05A6.04 6.04 0 0 1 200.64 233.77L166.61 207.96A0.23 0.23 0 0 1 166.52 207.76Z" fill="url(#L4-hc-azul)"/>
+<g clip-path="url(#L4-hc-clip-c)">
+<rect id="L4-mezcla" x="0" y="0" width="300" height="240" fill="url(#L4-hc-rojo)" mask="url(#L4-hc-mask-mezcla)"/>
+<polygon id="L4-sombra" points="140.00,175.02 218.08,121.27 218.08,260.00 140.00,260.00" fill="url(#L4-hc-sombra)"/>
+</g>
+</g>
+</g></svg>

@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', '../src/main/resources/static']),
+  // public/para-negocios: landing estática (GSAP minificado + scripts de página), no es código de la app.
+  globalIgnores(['dist', '../src/main/resources/static', 'public/para-negocios']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
