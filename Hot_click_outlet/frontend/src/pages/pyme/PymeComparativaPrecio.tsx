@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
 import useCupoEmprende from '../emprende/useCupoEmprende'
 import { primerosNegocios } from '../emprende/primerosNegocios'
+import { periodoGratis } from '../emprende/periodoGratis'
 
 const copy = PLAN_LANDING_COPY.pyme
 // copy.precio ya viene aprobado con los montos correctos: mensualidad en dólares + comisión, sin mínimo (config/planesPrecios)
@@ -24,7 +25,7 @@ export default function PymeComparativaPrecio() {
         <p className="text-base sm:text-lg font-medium">+ {comisionVenta}</p>
       </div>
       <p className="text-sm max-w-2xl" style={{ color: 'var(--hc-text)', fontFamily: 'var(--hc-font-mono)' }}>
-        {t('pyme.comparativaNota', { primeros: primerosNegocios(cupo, t) })}
+        {t('pyme.comparativaNota', { primeros: primerosNegocios(cupo, t), periodo: periodoGratis(cupo, t) })}
       </p>
     </div>
   )

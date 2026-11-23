@@ -4,12 +4,14 @@ import { motion } from 'framer-motion'
 import { PLAN_EMPRENDEDOR } from './emprendePrecios'
 import useCupoEmprende from './useCupoEmprende'
 import { primerosNegocios } from './primerosNegocios'
+import { periodoGratis } from './periodoGratis'
 
 /** Hero de /emprende. Visitante ve la propuesta completa; dueño ya logueado ve una versión corta. */
 export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
   const { t } = useTranslation()
   const { cupo } = useCupoEmprende()
   const primeros = primerosNegocios(cupo, t)
+  const periodo = periodoGratis(cupo, t)
 
   if (yaEsDuenio) {
     return (
@@ -54,7 +56,7 @@ export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
         className="text-lg leading-relaxed mb-4 max-w-xl"
         style={{ color: 'var(--hc-muted)' }}
       >
-        {t('emprende.sub', { primeros })}
+        {t('emprende.sub', { primeros, periodo })}
       </motion.p>
       <motion.p
         initial={{ opacity: 0 }}
@@ -66,6 +68,7 @@ export default function EmprendeHero({ yaEsDuenio }: { yaEsDuenio: boolean }) {
         {t('emprende.heroPrecioLinea', {
           comision: PLAN_EMPRENDEDOR.comisionPct,
           primeros,
+          periodo,
         })}
       </motion.p>
       <motion.div

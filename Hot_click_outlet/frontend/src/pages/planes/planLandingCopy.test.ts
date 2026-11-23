@@ -24,6 +24,30 @@ describe('planLandingCopy: el cupo de Emprendedor no va fijo', () => {
     }
   })
 
+  it('ya no promete «gratis» a secas: período sin mensualidad con cupo y precio posterior', () => {
+    const copy = copyLanding('emprendedor', 25, { periodo: '3 meses', mensualUsd: 9 })
+    expect(copy.subheadline).toBe('Sin mensualidad por 3 meses para los primeros 25 negocios; después, US$9/mes + 9% por venta, sin mínimo.')
+    const texto = textoEmprendedor(copy)
+    expect(texto).not.toMatch(/gratis/i)
+    expect(texto).toContain('US$9/mes')
+    expect(texto).toMatch(/sin mensualidad por 3 meses/i)
+  })
+
+  it('sin datos del backend no inventa período ni monto', () => {
+    const texto = textoEmprendedor(copyLanding('emprendedor'))
+    expect(texto).toMatch(/sin mensualidad por un período/i)
+    expect(texto).toContain('mensualidad en dólares')
+    expect(texto).not.toMatch(/US\$\d|gratis|\d+ (meses|días)/i)
+  })
+
+  it('el FAQ de PYME explica que el período sin mensualidad es temporal y con cupo', () => {
+    const faq = PLAN_LANDING_COPY.pyme.faq[0]
+    expect(faq.pregunta).not.toMatch(/gratis/i)
+    expect(faq.respuesta).toMatch(/temporal/)
+    expect(faq.respuesta).toMatch(/cupo limitado/)
+    expect(faq.respuesta).toMatch(/mensualidad/)
+  })
+
   it('PYME y Negocio Plus no cambian con el cupo', () => {
     expect(copyLanding('pyme', 25)).toBe(PLAN_LANDING_COPY.pyme)
     expect(copyLanding('plus', 25)).toBe(PLAN_LANDING_COPY.plus)

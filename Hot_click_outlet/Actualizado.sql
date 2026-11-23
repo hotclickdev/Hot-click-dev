@@ -4686,6 +4686,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_invitacion_equipo_pendiente
 -- V240__usuario_motivo_eliminacion.sql
 ALTER TABLE hot_click_usuario_tb ADD COLUMN IF NOT EXISTS motivo_eliminacion VARCHAR(40);
 
+-- V241__empresa_es_prueba.sql
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS es_prueba BOOLEAN NOT NULL DEFAULT FALSE;
+
 -- ═══ V243 (23-nov-2026): pedidos del comprador por Telegram ═══
 --  * ubicacion de entrega estructurada del pedido (fuente, enlace normalizado, lat/lng) sin tocar direccion_entrega
 --  * token de retiro en tienda: opaco, de un solo uso, vence a las 4 h del pago confirmado
