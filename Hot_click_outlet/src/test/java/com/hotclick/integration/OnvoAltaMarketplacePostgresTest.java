@@ -39,6 +39,7 @@ class OnvoAltaMarketplacePostgresTest {
                 estado_empresa VARCHAR(30) NOT NULL,
                 visibilidad_publica BOOLEAN NOT NULL,
                 estado_plan VARCHAR(20),
+                venta_online_habilitada BOOLEAN NOT NULL DEFAULT TRUE,
                 slug VARCHAR(80))
             """);
         jdbc.execute("""
@@ -89,6 +90,25 @@ class OnvoAltaMarketplacePostgresTest {
             String.class);
 
         assertThat(nombres).contains("Visible", "Trial visible").doesNotContain("Oculto");
+    }
+
+    @Test
+    @DisplayName("ocultaVentaOnlineDeshabilitada")
+    void ocultaVentaOnlineDeshabilitada() {
+        Long habilitada = empresa("ACTIVO", true, "ACTIVO", "venta-on");
+        Long deshabilitada = empresa("ACTIVO", true, "ACTIVO", "venta-off");
+        jdbc.update("UPDATE hot_click_empresa_tb SET venta_online_habilitada = FALSE WHERE id_empresa = ?", deshabilitada);
+        producto("Con venta online", habilitada);
+        producto("Sin venta online", deshabilitada);
+
+        var nombres = jdbc.queryForList(
+            "SELECT p.nombre_producto FROM hot_click_producto_tb p "
+                + "INNER JOIN hot_click_empresa_tb e ON p.fk_id_empresa = e.id_empresa "
+                + "WHERE p.fk_id_estado = 1 AND p.visible_catalogo = TRUE AND p.vendido = FALSE AND "
+                + CatalogoPublicoGate.SQL_LISTADO,
+            String.class);
+
+        assertThat(nombres).contains("Con venta online").doesNotContain("Sin venta online");
     }
 
     @Test

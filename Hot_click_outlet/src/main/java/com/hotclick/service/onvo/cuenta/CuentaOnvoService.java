@@ -198,11 +198,6 @@ public class CuentaOnvoService {
         return resultado;
     }
 
-    /**
-     * Transiciones de la cuenta (dentro de la transacción de {@link #consultar}):
-     * primera vez ACTIVA, aviso único a HotClick, pérdida (ACTIVA → otro) y recuperación.
-     * Los avisos se despachan después del commit y solo si este llamador ganó el claim.
-     */
     /** Avisos fuera de la transacción (correo/Telegram): se ejecutan ya sin conexión de BD retenida. */
     private static void ejecutarDespues(java.util.List<Runnable> despues) {
         int i = 0;
@@ -211,6 +206,11 @@ public class CuentaOnvoService {
         }
     }
 
+    /**
+     * Transiciones de la cuenta (dentro de la transacción de {@link #consultar}):
+     * primera vez ACTIVA, aviso único a HotClick, pérdida (ACTIVA → otro) y recuperación.
+     * Los avisos se despachan después del commit y solo si este llamador ganó el claim.
+     */
     private void registrarTransicion(EmpresaCuentaOnvo c, String previo, java.util.List<Runnable> despues) {
         boolean activa = EmpresaCuentaOnvo.ACTIVA.equals(c.getEstado());
         LocalDateTime ahora = ahora();
