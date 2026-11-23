@@ -17,7 +17,6 @@ import com.hotclick.service.OnvoService;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.payment.GuestCancelTokenService;
 import com.hotclick.service.payment.PedidoGrupoService;
-import com.hotclick.service.payment.StockReservationService;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,6 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -84,7 +82,7 @@ public class TelegramCompradorPedidoService {
         String error = revisarCarrito(empresaId, c);
         if (error != null) return Inicio.error(error);
 
-        PaymentCheckoutRequest req = armarRequest(c);
+        PaymentCheckoutRequest req = TelegramCompradorPedidoMapeos.armarRequest(c);
         // El anti-bot de reservas identifica al invitado por IP; en el webhook la IP es la de Telegram (la misma
         // para todos los compradores). Sin request en el hilo cae al id del usuario invitado: un identificador por comprador.
         RequestAttributes previo = RequestContextHolder.getRequestAttributes();
@@ -97,7 +95,8 @@ public class TelegramCompradorPedidoService {
         } catch (com.hotclick.exception.StockInsuficienteException e) {
             return Inicio.error("Se agotó el stock de alguno de los productos. Revisá tu carrito.");
         } catch (IllegalArgumentException | IllegalStateException | com.hotclick.exception.RecursoNoEncontradoException e) {
-            log.info("[telegram-comprador] checkout rechazado ({})", e.getClass().getSimpleName());
+            log.info("[telegram-comprador] checkout rechazado ({}: {})", e.getClass().getSimpleName(),
+                TelegramCompradorPedidoMapeos.recortar(String.valueOf(e.getMessage()).replaceAll("[\\r\\n]+", " "), 200));
             return Inicio.error(mensajePublico(e));
         } catch (RuntimeException e) {
             log.warn("[telegram-comprador] checkout falló ({})", e.getClass().getSimpleName());
@@ -115,13 +114,10 @@ public class TelegramCompradorPedidoService {
             throw new IllegalStateException("Sin enlace de pago");
         }
         Pedido principal = pedidoRepository.findById(resp.getPedidoId()).orElseThrow();
-        for (Pedido p : pedidoGrupoService.delGrupo(principal)) {
-            p.setClienteNombre(c.nombre);
-            p.setClienteTel(c.telefono);
-            p.setNotas("Pedido por Telegram");
-            pedidoRepository.save(p);
-            if (c.esDomicilio()) guardarEntrega(p, c);
-        }
+        List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
+        List<PedidoEntrega> entregas = TelegramCompradorPedidoMapeos.aplicarComprador(grupo, c);
+        pedidoRepository.saveAll(grupo);
+        if (!entregas.isEmpty()) entregaRepository.saveAll(entregas);
         TelegramCompradorSesion s = sesionRepository.findByChatId(chatId).orElseThrow();
         s.setPedidoId(principal.getId());
         s.setPaso(TelegramCompradorService.ESPERANDO_PAGO);
@@ -132,72 +128,13 @@ public class TelegramCompradorPedidoService {
         return new Inicio(true, null, resp.getNumeroPedido(), resp.getRedirectUrl(), resp.getTotal() != null ? resp.getTotal() : 0);
     }
 
-    private void guardarEntrega(Pedido p, TelegramCompradorCtx c) {
-        PedidoEntrega e = new PedidoEntrega();
-        e.setPedidoId(p.getId());
-        e.setFuente(c.fuente != null ? c.fuente : PedidoEntrega.TEXTO);
-        e.setDireccionTexto(recortar(c.direccionTexto, 500));
-        e.setUrlNormalizada(recortar(c.url, 500));
-        e.setLat(c.lat);
-        e.setLng(c.lng);
-        e.setFechaCreacion(LocalDateTime.now(Constants.ZONA_CR));
-        entregaRepository.save(e);
-    }
-
-    static PaymentCheckoutRequest armarRequest(TelegramCompradorCtx c) {
-        PaymentCheckoutRequest req = new PaymentCheckoutRequest();
-        req.setProvider(Constants.PROVEEDOR_ONVO);
-        req.setGuestEmail(c.correo);
-        req.setGuestPhone(c.telefono);
-        req.setNotas("Pedido por Telegram");
-        List<PaymentCheckoutRequest.ItemDTO> items = new ArrayList<>();
-        c.carrito.forEach((id, n) -> {
-            PaymentCheckoutRequest.ItemDTO i = new PaymentCheckoutRequest.ItemDTO();
-            i.setProductoId(id);
-            i.setCantidad(n);
-            items.add(i);
-        });
-        req.setItems(items);
-        if (c.esDomicilio()) {
-            // ENVIO_A_DOMICILIO es solo del panel; el checkout público usa Envío Normal y el servidor decide GAM / fuera del GAM.
-            req.setMetodoEnvio("ENVIO_NORMAL_GAM");
-            req.setProvincia(c.provincia);
-            req.setCanton(c.canton);
-            req.setDireccionEntrega(direccionParaEntrega(c));
-        } else {
-            req.setMetodoEnvio(Constants.ENVIO_RETIRO);
-        }
-        return req;
-    }
-
-    /** Texto que verá el negocio en el pedido: señas, o el enlace / pin que dio el comprador. */
-    static String direccionParaEntrega(TelegramCompradorCtx c) {
-        StringBuilder sb = new StringBuilder();
-        if (c.direccionTexto != null && !c.direccionTexto.isBlank()) sb.append(c.direccionTexto.trim());
-        if (c.url != null && !c.url.isBlank()) {
-            if (sb.length() > 0) sb.append(" — ");
-            sb.append(c.url);
-        }
-        if (sb.length() == 0) sb.append("Ubicación indicada por Telegram");
-        return sb.toString();
-    }
-
     /** Revalida cada producto contra la empresa de la sesión (IDOR) y su disponibilidad antes de reservar. */
     String revisarCarrito(Long empresaId, TelegramCompradorCtx c) {
         if (productoRepository.contarDeTiendasPausadas(c.carrito.keySet()) > 0) {
             return "Esta tienda está pausada por ahora. No se puede comprar.";
         }
-        for (var e : c.carrito.entrySet()) {
-            Producto p = productoRepository.findByIdAndEmpresaId(e.getKey(), empresaId).orElse(null);
-            if (p == null || !StockReservationService.esPublicableEnMemoria(p) || Boolean.TRUE.equals(p.getVendido())
-                    || p.esACotizar() || Boolean.TRUE.equals(p.getEsPersonalizado())) {
-                return "Alguno de los productos ya no está disponible. Revisá tu carrito.";
-            }
-            if (p.getStockDisponible() < e.getValue()) {
-                return "No hay stock suficiente de «" + TelegramTexto.escaparMarkdown(p.getNombreProducto()) + "». Revisá tu carrito.";
-            }
-        }
-        return null;
+        return TelegramCompradorPedidoMapeos.revisarCarrito(c.carrito,
+            id -> productoRepository.findByIdAndEmpresaId(id, empresaId).orElse(null));
     }
 
     private static String mensajePublico(RuntimeException e) {
@@ -219,7 +156,4 @@ public class TelegramCompradorPedidoService {
         }
     }
 
-    private static String recortar(String s, int max) {
-        return s == null ? null : (s.length() <= max ? s : s.substring(0, max));
-    }
 }

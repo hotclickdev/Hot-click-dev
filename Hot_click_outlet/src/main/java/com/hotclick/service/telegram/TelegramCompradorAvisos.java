@@ -2,7 +2,6 @@ package com.hotclick.service.telegram;
 
 import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoEntrega;
-import com.hotclick.model.PedidoRetiroToken;
 import com.hotclick.model.TelegramCompradorSesion;
 import com.hotclick.repository.PedidoEntregaRepository;
 import com.hotclick.repository.PedidoRepository;
@@ -24,7 +23,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,19 +74,15 @@ public class TelegramCompradorAvisos {
         if (s == null || !TelegramCompradorService.ESPERANDO_PAGO.equals(s.getPaso())) return null;
         Pedido principal = pedidoRepository.findById(pedidoId).orElse(null);
         if (principal == null) return null;
-        s.setPaso(TelegramCompradorService.PAGADO);
-        s.setUltimaActividad(LocalDateTime.now(Constants.ZONA_CR));
-        sesionRepository.save(s);
+        // Transición atómica: si el webhook y la reconciliación coinciden, solo uno avisa.
+        if (sesionRepository.cambiarPaso(s.getId(), TelegramCompradorService.ESPERANDO_PAGO,
+                TelegramCompradorService.PAGADO, LocalDateTime.now(Constants.ZONA_CR)) != 1) return null;
 
         List<Pedido> grupo = pedidoGrupoService.delGrupo(principal);
         boolean retiro = Constants.ENVIO_RETIRO.equals(principal.getMetodoEnvio());
-        List<String> urls = new ArrayList<>();
-        if (retiro) {
-            for (Pedido p : grupo) {
-                PedidoRetiroToken t = retiroService.emitir(p);
-                urls.add(retiroService.urlPublica(t.getToken()));
-            }
-        }
+        List<String> urls = retiro
+            ? TelegramCompradorAvisoMapeos.urlsQr(retiroService.emitirGrupo(grupo), retiroService::urlPublica)
+            : List.of();
         String detalle = retiro ? "Entrega: *retiro en tienda* (el comprador muestra un QR en caja)"
             : detalleDomicilio(principal);
         int total = grupo.stream().mapToInt(p -> p.getTotalPedido() != null ? p.getTotalPedido() : 0).sum();
@@ -115,12 +109,10 @@ public class TelegramCompradorAvisos {
         StringBuilder t = new StringBuilder("✅ *¡Pago recibido!*\n\nPedido *").append(TelegramTexto.escaparMarkdown(a.numero()))
             .append("* en *").append(TelegramTexto.escaparMarkdown(a.tienda())).append("* por ")
             .append(FormatoColones.colones(a.total())).append(".\n\n");
-        List<List<Map<String, Object>>> teclado = new ArrayList<>();
+        List<List<Map<String, Object>>> teclado = List.of();
         if (a.retiro()) {
             t.append("Para retirar, mostrá el código QR en caja. Vale por *4 horas* y se puede usar *una sola vez*.");
-            for (String url : a.urlsQr()) {
-                teclado.add(List.of(Map.of("text", "📱 Ver mi QR de retiro", "url", url)));
-            }
+            teclado = TelegramCompradorAvisoMapeos.tecladoQr(a.urlsQr());
         } else {
             t.append("La tienda te va a contactar para coordinar la entrega. ¡Gracias por tu compra!");
         }
@@ -142,40 +134,37 @@ public class TelegramCompradorAvisos {
 
     /** @return cuántas sesiones se cerraron por vencimiento. */
     public int reconciliar(LocalDateTime ahora) {
-        int cerradas = 0;
         TransactionTemplate tx = new TransactionTemplate(transactionManager);
-        for (TelegramCompradorSesion s : sesionRepository.findTop200ByPasoOrderByUltimaActividadAsc(TelegramCompradorService.ESPERANDO_PAGO)) {
-            try {
-                Pedido p = s.getPedidoId() == null ? null : pedidoRepository.findById(s.getPedidoId()).orElse(null);
-                if (p != null && PAGADOS.contains(p.getEstadoPedido())) {
-                    alPagar(p.getId());
-                } else if (p == null || Constants.PEDIDO_CANCELADO.equals(p.getEstadoPedido())) {
+        List<TelegramCompradorSesion> pendientes = sesionRepository.findTop200ByPasoOrderByUltimaActividadAsc(TelegramCompradorService.ESPERANDO_PAGO);
+        Map<Long, Pedido> pedidos = TelegramCompradorAvisoMapeos.porId(
+            pedidoRepository.findAllById(TelegramCompradorAvisoMapeos.pedidoIds(pendientes)));
+        int cerradas = TelegramCompradorAvisoMapeos.recorrer(pendientes, pedidos, PAGADOS, Constants.PEDIDO_CANCELADO,
+            id -> {
+                try { alPagar(id); }
+                catch (RuntimeException e) { log.warn("[telegram-comprador] reconciliar sesión falló ({})", e.getClass().getSimpleName()); }
+            },
+            s -> {
+                try {
                     Long chatId = s.getChatId();
                     Boolean cerro = tx.execute(st -> cerrarVencida(s.getId()));
                     if (Boolean.TRUE.equals(cerro)) {
-                        cerradas++;
                         bot.enviarMensaje(chatId, "⌛ Tu pedido venció sin pagarse y liberé los productos. "
                             + "Si querés, armá uno nuevo.", List.of(List.of(
                                 TelegramClienteBotService.boton("🛍️ Ver productos", TelegramCompradorService.CB_CATALOGO))));
+                        return true;
                     }
+                } catch (RuntimeException e) {
+                    log.warn("[telegram-comprador] reconciliar sesión falló ({})", e.getClass().getSimpleName());
                 }
-            } catch (RuntimeException e) {
-                log.warn("[telegram-comprador] reconciliar sesión falló ({})", e.getClass().getSimpleName());
-            }
-        }
+                return false;
+            });
         Integer borradas = tx.execute(st -> sesionRepository.borrarInactivas(ahora.minusHours(24)));
         if (borradas != null && borradas > 0) log.info("[telegram-comprador] {} sesiones abandonadas borradas", borradas);
         return cerradas;
     }
 
     private boolean cerrarVencida(Long sesionId) {
-        TelegramCompradorSesion s = sesionRepository.findById(sesionId).orElse(null);
-        if (s == null || !TelegramCompradorService.ESPERANDO_PAGO.equals(s.getPaso())) return false;
-        s.setPaso(TelegramCompradorService.CATALOGO);
-        s.setPedidoId(null);
-        s.setContexto(null);
-        s.setUltimaActividad(LocalDateTime.now(Constants.ZONA_CR));
-        sesionRepository.save(s);
-        return true;
+        return sesionRepository.cerrarVencida(sesionId, TelegramCompradorService.ESPERANDO_PAGO,
+            TelegramCompradorService.CATALOGO, LocalDateTime.now(Constants.ZONA_CR)) == 1;
     }
 }

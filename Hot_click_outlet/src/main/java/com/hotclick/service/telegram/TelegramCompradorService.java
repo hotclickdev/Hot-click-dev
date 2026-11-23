@@ -3,6 +3,7 @@ package com.hotclick.service.telegram;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotclick.catalogo.CatalogoPublicoGate;
 import com.hotclick.model.Empresa;
+import com.hotclick.model.Pedido;
 import com.hotclick.model.PedidoEntrega;
 import com.hotclick.model.Producto;
 import com.hotclick.model.TelegramCompradorSesion;
@@ -284,16 +285,9 @@ public class TelegramCompradorService {
     }
 
     private List<TelegramCompradorUi.Linea> lineas(TelegramCompradorSesion s, TelegramCompradorCtx c) {
-        List<TelegramCompradorUi.Linea> out = new ArrayList<>();
-        boolean cambio = false;
-        for (var it = c.carrito.entrySet().iterator(); it.hasNext(); ) {
-            var e = it.next();
-            Producto p = productoDeLaTienda(s, e.getKey());
-            if (p == null) { it.remove(); cambio = true; continue; }
-            out.add(new TelegramCompradorUi.Linea(p.getId(), p.getNombreProducto(), e.getValue(), OrderPricingService.precioEfectivo(p)));
-        }
-        if (cambio) guardar(s, c);
-        return out;
+        TelegramCompradorLineas.Resultado r = TelegramCompradorLineas.armar(c, id -> productoDeLaTienda(s, id));
+        if (r.cambio()) guardar(s, c);
+        return r.lineas();
     }
 
     private void mostrarCarrito(TelegramCompradorSesion s, TelegramCompradorCtx c) {
@@ -348,7 +342,7 @@ public class TelegramCompradorService {
     private void recibirTelefono(TelegramCompradorSesion s, TelegramCompradorCtx c, String t) {
         String tel = telefonoCr(t);
         if (tel == null) {
-            bot.enviarMensaje(s.getChatId(), "Ese teléfono no es válido. Escribí los 8 dígitos (ej: 8888 8888).");
+            bot.enviarMensaje(s.getChatId(), "Ese teléfono no es válido. Escribí los 8 dígitos (ej: 0000 0001).");
             return;
         }
         c.telefono = tel;
@@ -478,7 +472,8 @@ public class TelegramCompradorService {
             return;
         }
         if (ESPERANDO_PAGO.equals(s.getPaso()) && s.getPedidoId() != null) {
-            String numero = pedidoRepository.findById(s.getPedidoId()).map(p -> p.getNumeroPedido()).orElse(null);
+            Pedido pedido = pedidoRepository.findById(s.getPedidoId()).orElse(null);
+            String numero = pedido == null ? null : pedido.getNumeroPedido();
             if (numero == null || !pedidoService.cancelarNoPagado(numero)) {
                 bot.enviarMensaje(s.getChatId(), "No pude cancelar el pedido ahora. Si ya pagaste, comunicate con la tienda; si no, la reserva se libera sola al vencer.");
                 return;

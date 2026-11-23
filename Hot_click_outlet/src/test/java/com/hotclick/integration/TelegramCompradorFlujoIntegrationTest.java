@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = "telegram.comprador.habilitado=true")
 class TelegramCompradorFlujoIntegrationTest extends BaseIntegrationTest {
 
-    private static final String SECRET = "test-webhook-secret";
+    private static final String TOKEN_WEBHOOK = "test-webhook-secret";
     private static final long CHAT = 700_001L;
 
     @MockitoBean TelegramClienteBotService bot;
@@ -72,7 +72,7 @@ class TelegramCompradorFlujoIntegrationTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         when(bot.isConfigured()).thenReturn(true);
-        when(bot.validarSecret(SECRET)).thenReturn(true);
+        when(bot.validarSecret(TOKEN_WEBHOOK)).thenReturn(true);
         when(rateLimit.permitidoPorRateLimit(anyLong())).thenReturn(true);
         empresa = crearEmpresa("Tienda Comprador", "tienda-comprador");
         ajena = crearEmpresa("Tienda Ajena", "tienda-ajena");
@@ -421,7 +421,7 @@ class TelegramCompradorFlujoIntegrationTest extends BaseIntegrationTest {
 
     private void enviar(String body) throws Exception {
         mockMvc.perform(post("/api/webhooks/telegram")
-                .header("X-Telegram-Bot-Api-Secret-Token", SECRET)
+                .header("X-Telegram-Bot-Api-Secret-Token", TOKEN_WEBHOOK)
                 .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk());
     }

@@ -1,8 +1,8 @@
 package com.hotclick.service.retiro;
 
 import com.hotclick.model.Pedido;
-import com.hotclick.model.PedidoItem;
 import com.hotclick.model.PedidoRetiroToken;
+import com.hotclick.repository.PedidoItemRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.PedidoRetiroTokenRepository;
 import com.hotclick.service.PedidoService;
@@ -42,6 +42,7 @@ public class PedidoRetiroTokenService {
     @Autowired private PedidoRetiroTokenRepository tokenRepository;
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private PedidoService pedidoService;
+    @Autowired private PedidoItemRepository itemRepository;
 
     @Value("${app.url:http://localhost:8080}")
     private String appUrl;
@@ -85,17 +86,19 @@ public class PedidoRetiroTokenService {
     /** Idempotente: un pedido tiene un solo token. La vigencia corre desde ahora (= pago confirmado). */
     @Transactional
     public PedidoRetiroToken emitir(Pedido pedido) {
-        Optional<PedidoRetiroToken> previo = tokenRepository.findByPedidoId(pedido.getId());
-        if (previo.isPresent()) return previo.get();
-        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
-        PedidoRetiroToken t = new PedidoRetiroToken();
-        t.setToken(nuevoToken());
-        t.setPedidoId(pedido.getId());
-        t.setEmpresaId(pedido.getEmpresaId());
-        t.setEstado(PedidoRetiroToken.PENDIENTE);
-        t.setFechaCreacion(ahora);
-        t.setExpira(ahora.plusHours(Math.max(1, horasVigencia)));
-        return tokenRepository.save(t);
+        return emitirGrupo(List.of(pedido)).get(0);
+    }
+
+    /** Un token por pedido del grupo en una lectura y una escritura en lote (sin consultas por pedido). */
+    @Transactional
+    public List<PedidoRetiroToken> emitirGrupo(List<Pedido> pedidos) {
+        List<PedidoRetiroToken> existentes = tokenRepository.findByPedidoIdIn(RetiroTokenMapeos.ids(pedidos));
+        List<PedidoRetiroToken> nuevos = RetiroTokenMapeos.faltantes(
+            pedidos, existentes, LocalDateTime.now(Constants.ZONA_CR), horasVigencia);
+        if (nuevos.isEmpty()) return existentes;
+        List<PedidoRetiroToken> todos = new java.util.ArrayList<>(existentes);
+        todos.addAll(tokenRepository.saveAll(nuevos));
+        return todos;
     }
 
     /**
@@ -114,16 +117,9 @@ public class PedidoRetiroTokenService {
             throw new IllegalStateException("Pedido de otra empresa"); // no debería pasar: revierte el canje
         }
         Pedido entregado = pedidoService.cambiarEstado(pedido.getId(), Constants.PEDIDO_ENTREGADO, null);
-        List<Canje.Linea> lineas = entregado.getItems().stream()
-            .filter(i -> i.getEstado() == null || i.getEstado() == Constants.ESTADO_ACTIVO)
-            .map(PedidoRetiroTokenService::linea).toList();
+        List<Canje.Linea> lineas = RetiroTokenMapeos.lineas(itemRepository.findConProductoByPedidoId(entregado.getId()));
         log.info("[retiro-qr] pedido {} entregado por QR", entregado.getNumeroPedido());
         return new Canje(true, entregado.getNumeroPedido(), entregado.getClienteNombre(), lineas);
-    }
-
-    private static Canje.Linea linea(PedidoItem i) {
-        String nombre = i.getProducto() != null ? i.getProducto().getNombreProducto() : "Producto";
-        return new Canje.Linea(nombre, i.getCantidad() != null ? i.getCantidad() : 0);
     }
 
     @Transactional(readOnly = true)
@@ -136,8 +132,8 @@ public class PedidoRetiroTokenService {
                 && !t.get().getExpira().isAfter(LocalDateTime.now(Constants.ZONA_CR))) {
             estado = PedidoRetiroToken.VENCIDO;
         }
-        String tienda = pedidoRepository.findById(t.get().getPedidoId())
-            .map(p -> com.hotclick.utils.EmpresaNombre.mostrar(p.getEmpresa(), "HotClick")).orElse(null);
+        Pedido pedido = pedidoRepository.findById(t.get().getPedidoId()).orElse(null);
+        String tienda = pedido == null ? null : com.hotclick.utils.EmpresaNombre.mostrar(pedido.getEmpresa(), "HotClick");
         return new InfoPublica(estado, tienda);
     }
 

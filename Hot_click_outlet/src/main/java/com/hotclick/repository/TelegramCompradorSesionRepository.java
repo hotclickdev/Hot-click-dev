@@ -21,6 +21,20 @@ public interface TelegramCompradorSesionRepository extends JpaRepository<Telegra
     /** Sesiones con pago pendiente (para reconciliar contra el estado del pedido). */
     List<TelegramCompradorSesion> findTop200ByPasoOrderByUltimaActividadAsc(String paso);
 
+    /** Transición atómica ESPERANDO_PAGO → PAGADO: 1 solo ganador aunque el webhook y la reconciliación coincidan. */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE TelegramCompradorSesion s SET s.paso = :hacia, s.ultimaActividad = :ahora "
+         + "WHERE s.id = :id AND s.paso = :desde")
+    int cambiarPaso(@Param("id") Long id, @Param("desde") String desde, @Param("hacia") String hacia,
+                    @Param("ahora") LocalDateTime ahora);
+
+    /** Pedido vencido sin pagar: la sesión vuelve al catálogo sin pedido ni contexto (solo si seguía esperando pago). */
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE TelegramCompradorSesion s SET s.paso = :hacia, s.pedidoId = NULL, s.contexto = NULL, "
+         + "s.ultimaActividad = :ahora WHERE s.id = :id AND s.paso = :desde")
+    int cerrarVencida(@Param("id") Long id, @Param("desde") String desde, @Param("hacia") String hacia,
+                      @Param("ahora") LocalDateTime ahora);
+
     /** Sesiones sin actividad desde {@code corte} y sin pedido en curso (carrito abandonado): se borran. */
     @Modifying
     @Query("DELETE FROM TelegramCompradorSesion s WHERE s.ultimaActividad < :corte AND s.pedidoId IS NULL")

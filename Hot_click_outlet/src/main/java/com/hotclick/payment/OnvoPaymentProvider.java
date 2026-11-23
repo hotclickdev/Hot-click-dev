@@ -54,7 +54,8 @@ public class OnvoPaymentProvider implements PaymentProvider {
      */
     @Override
     public PaymentSession crearSesion(Pedido pedido, Usuario usuario) throws Exception {
-        if (onvoService.isMockMode() || !onvoService.isPagosDisponibles()) {
+        // Mock (dev/test sin llave, no cobra) sí crea sesión simulada: crearCheckoutSession no llama a ONVO.
+        if (!onvoService.isPagosDisponibles()) {
             throw new IllegalStateException(
                 "ONVO no está configurado. " +
                 "Añade ONVO_SECRET_KEY (onvo_test_secret_key_...) al entorno para procesar pagos con tarjeta.",

@@ -18,5 +18,9 @@ public interface PedidoItemRepository extends JpaRepository<PedidoItem, Long> {
         """)
     Optional<PedidoItem> findParaConsola(@Param("id") Long id);
 
+    /** Ítems del pedido con el producto ya cargado (una sola consulta; el canje de retiro no toca proxies lazy). */
+    @Query("SELECT i FROM PedidoItem i JOIN FETCH i.producto WHERE i.pedido.id = :pedidoId")
+    java.util.List<PedidoItem> findConProductoByPedidoId(@Param("pedidoId") Long pedidoId);
+
     long countBySinInventarioTrue();
 }

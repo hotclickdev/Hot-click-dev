@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,6 +18,8 @@ public interface PedidoRetiroTokenRepository extends JpaRepository<PedidoRetiroT
     Optional<PedidoRetiroToken> findByToken(String token);
 
     Optional<PedidoRetiroToken> findByPedidoId(Long pedidoId);
+
+    List<PedidoRetiroToken> findByPedidoIdIn(Collection<Long> pedidoIds);
 
     /**
      * Canje atómico y de un solo uso: solo gana quien encuentra el token PENDIENTE, vigente y de SU empresa.
