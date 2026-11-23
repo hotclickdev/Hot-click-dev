@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,7 @@ public class PedidoRetiroTokenService {
     @Autowired private PedidoRepository pedidoRepository;
     @Autowired private PedidoService pedidoService;
     @Autowired private PedidoItemRepository itemRepository;
+    @Autowired private ApplicationEventPublisher eventos;
 
     @Value("${app.url:http://localhost:8080}")
     private String appUrl;
@@ -145,9 +147,16 @@ public class PedidoRetiroTokenService {
         if (n > 0) log.info("[retiro-qr] {} QR de retiro vencidos (el stock ya cobrado no se libera)", n);
     }
 
-    /** Solo vence el QR: el stock de un pedido pagado ya se consumió. */
+    /**
+     * Solo vence el QR: el stock de un pedido pagado ya se consumió y el pedido sigue pagado (se entrega en tienda igual).
+     * Publica {@link RetiroVencidoEvent} para avisar al comprador DESPUÉS del commit; un fallo del aviso no revierte el VENCIDO.
+     * Un segundo barrido ya no encuentra esos QR PENDIENTES, así que no vuelve a avisar.
+     */
     @Transactional
     public int marcarVencidos(LocalDateTime ahora) {
-        return tokenRepository.marcarVencidos(ahora);
+        List<Long> pedidoIds = tokenRepository.findPedidoIdsVencidos(ahora);
+        int n = tokenRepository.marcarVencidos(ahora);
+        if (n > 0 && !pedidoIds.isEmpty()) eventos.publishEvent(new RetiroVencidoEvent(pedidoIds));
+        return n;
     }
 }

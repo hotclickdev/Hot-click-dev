@@ -31,5 +31,5 @@ public final class CatalogoPublicoGate {
 
     /** WHERE de listado (alias e): activa, visible y con membresía confirmada o sin ese estado. */
     public static final String SQL_LISTADO =
-        "e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND " + NATIVA_E;
+        "e.estado_empresa = 'ACTIVO' AND e.visibilidad_publica = TRUE AND e.es_prueba = FALSE AND " + NATIVA_E;
 }

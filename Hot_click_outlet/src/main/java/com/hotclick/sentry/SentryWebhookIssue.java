@@ -1,5 +1,6 @@
 package com.hotclick.sentry;
 
+import com.hotclick.monitoreo.SentryRedaccionPii;
 import com.hotclick.service.telegram.TelegramTexto;
 
 import java.util.List;
@@ -45,11 +46,11 @@ public final class SentryWebhookIssue {
         return new SentryWebhookIssue(
                 action,
                 texto(issue.get("id")),
-                textoO(issue.get("title"), "Error desconocido"),
+                SentryRedaccionPii.redactar(textoO(issue.get("title"), "Error desconocido")),
                 textoO(issue.get("level"), "error").toUpperCase(Locale.ROOT),
                 texto(issue.get("permalink")),
-                texto(issue.get("culprit")),
-                valorMetadata(issue.get("metadata")),
+                SentryRedaccionPii.redactar(texto(issue.get("culprit"))),
+                SentryRedaccionPii.redactar(valorMetadata(issue.get("metadata"))),
                 environmentDe(issue));
     }
 

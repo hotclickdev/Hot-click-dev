@@ -48,6 +48,23 @@ class WebhookSentryPayloadTest {
     }
 
     @Test
+    @DisplayName("el título con IP, correo o teléfono sale redactado hacia Telegram y logs")
+    void tituloSeRedactaDePii() {
+        Map<String, Object> body = Map.of(
+                "action", "created",
+                "data", Map.of("issue", Map.of(
+                        "id", "45",
+                        "title", "Login fallido desde 190.10.20.30 para ana@correo.com tel 8888-1234",
+                        "level", "error",
+                        "culprit", "AuthController en 10.0.0.7")));
+        SentryWebhookIssue issue = SentryWebhookIssue.from(body);
+        assertThat(issue.titulo()).doesNotContain("190.10.20.30", "ana@correo.com", "8888-1234")
+            .contains("[ip]", "[correo]", "[telefono]");
+        assertThat(issue.mensajeTelegram()).doesNotContain("190.10.20.30", "ana@correo.com");
+        assertThat(issue.culprit()).doesNotContain("10.0.0.7");
+    }
+
+    @Test
     @DisplayName("environment en tags tipo tupla")
     void environmentDesdeTags() {
         Map<String, Object> body = Map.of(

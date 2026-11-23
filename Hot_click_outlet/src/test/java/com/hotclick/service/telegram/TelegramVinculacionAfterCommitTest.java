@@ -137,4 +137,66 @@ class TelegramVinculacionAfterCommitTest {
         servicio.vincular(555L, "alguien", "ABCD2345");
         verify(postLink).enviarBienvenidaYMenu(eq(555L), any(), any());
     }
+
+    @Test
+    @DisplayName("el bot lanza en el afterCommit: el canje igual commitea y no se propaga la excepción")
+    void falloDelBotEnAfterCommitNoRompeElCanje() {
+        doAnswer(i -> { throw new IllegalStateException("telegram caído: dato-sensible-123"); })
+            .when(bot).enviarMensaje(eq(88L), anyString());
+
+        org.assertj.core.api.Assertions.assertThatCode(() -> exterior.executeWithoutResult(st ->
+            servicio.vincular(555L, "alguien", "ABCD2345"))).doesNotThrowAnyException();
+
+        verify(bot).enviarMensaje(eq(88L), anyString()); // se intentó
+        verify(vr).canjearCodigo(eq(11L), eq("ABCD2345"), anyLong(), any(), any()); // el canje no se revirtió por el aviso
+    }
+
+    @Test
+    @DisplayName("sin transacción el bot lanza: se atrapa (rama directa) y no se propaga")
+    void falloDelBotSinTransaccionSeAtrapa() {
+        doAnswer(i -> { throw new IllegalStateException("boom"); }).when(postLink).enviarBienvenidaYMenu(anyLong(), any(), any());
+
+        org.assertj.core.api.Assertions.assertThatCode(() -> servicio.vincular(555L, "alguien", "ABCD2345"))
+            .doesNotThrowAnyException();
+        verify(postLink).enviarBienvenidaYMenu(eq(555L), any(), any());
+    }
+
+    @Test
+    @DisplayName("desvincular dentro de una tx: el mensaje sale tras el commit y fuera de transacción; con rollback no sale")
+    void desvincularEnviaTrasElCommit() {
+        TelegramVinculacion v = vinculacionActiva();
+        exterior.executeWithoutResult(st -> {
+            servicio.desvincular(v);
+            verify(vr).revocarPorId(11L);
+            verify(bot, never()).enviarMensaje(eq(88L), anyString());
+        });
+        verify(bot).enviarMensaje(eq(88L), org.mockito.ArgumentMatchers.contains("desvinculado"));
+        assertThat(txActivaAlEnviar).containsExactly(false);
+
+        org.mockito.Mockito.clearInvocations(bot);
+        exterior.executeWithoutResult(st -> {
+            servicio.desvincular(vinculacionActiva());
+            st.setRollbackOnly();
+        });
+        verify(bot, never()).enviarMensaje(eq(88L), anyString());
+    }
+
+    @Test
+    @DisplayName("desvincular sin transacción envía ya, y si el bot lanza se atrapa")
+    void desvincularSinTransaccionAtrapaFallo() {
+        servicio.desvincular(vinculacionActiva());
+        verify(bot).enviarMensaje(eq(88L), org.mockito.ArgumentMatchers.contains("desvinculado"));
+
+        doAnswer(i -> { throw new IllegalStateException("boom"); }).when(bot).enviarMensaje(eq(88L), anyString());
+        org.assertj.core.api.Assertions.assertThatCode(() -> servicio.desvincular(vinculacionActiva()))
+            .doesNotThrowAnyException();
+    }
+
+    private static TelegramVinculacion vinculacionActiva() {
+        TelegramVinculacion v = new TelegramVinculacion();
+        v.setId(11L);
+        v.setChatId(88L);
+        v.setEstado(TelegramVinculacion.ACTIVA);
+        return v;
+    }
 }

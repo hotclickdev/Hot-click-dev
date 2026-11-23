@@ -18,6 +18,9 @@ public interface TelegramCompradorSesionRepository extends JpaRepository<Telegra
 
     Optional<TelegramCompradorSesion> findFirstByPedidoId(Long pedidoId);
 
+    /** Sesiones ligadas a un lote de pedidos (aviso de QR vencido, una sola consulta). */
+    List<TelegramCompradorSesion> findByPedidoIdIn(java.util.Collection<Long> pedidoIds);
+
     /** Sesiones con pago pendiente (para reconciliar contra el estado del pedido). */
     List<TelegramCompradorSesion> findTop200ByPasoOrderByUltimaActividadAsc(String paso);
 

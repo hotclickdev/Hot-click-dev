@@ -6,6 +6,7 @@ import com.hotclick.security.SecurityEventSeverity;
 import com.hotclick.service.ResendEmailService;
 import com.hotclick.service.TelegramService;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.IpEnmascarada;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,12 +62,13 @@ public class SecurityAlertNotifier {
             alert.setCreatedAt(LocalDateTime.now(Constants.ZONA_CR));
             alertRepo.save(alert);
 
+            // La IP completa queda solo en la tabla de alertas (panel admin); logs, correo y Telegram la llevan enmascarada.
             log.warn("[SEC-ALERT] type={} severity={} ip={} userId={} msg={}",
-                alertType, severity, ip, userId, message);
+                alertType, severity, IpEnmascarada.enmascarar(ip), userId, IpEnmascarada.enmascararEnTexto(message));
 
             if (severity == SecurityEventSeverity.CRITICAL || severity == SecurityEventSeverity.HIGH) {
                 notificarPorEmail(alertType, severity, ip, message, details);
-                telegramService.enviar(severity + " " + alertType + "\n" + message);
+                telegramService.enviar(severity + " " + alertType + "\n" + IpEnmascarada.enmascararEnTexto(message));
             }
         } catch (Exception e) {
             log.error("[SEC-ALERT] Failed to persist alert type={}: {}", alertType, e.getMessage());
@@ -85,11 +87,11 @@ public class SecurityAlertNotifier {
                     "<tr><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Severidad</td>" +
                     "<td style='padding:6px 12px'>" + severity + "</td></tr>" +
                     "<tr style='background:#f9fafb'><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>IP</td>" +
-                    "<td style='padding:6px 12px'>" + (ip != null ? ip : "—") + "</td></tr>" +
+                    "<td style='padding:6px 12px'>" + (ip != null ? IpEnmascarada.enmascarar(ip) : "—") + "</td></tr>" +
                     "<tr><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Mensaje</td>" +
-                    "<td style='padding:6px 12px'>" + message + "</td></tr>" +
+                    "<td style='padding:6px 12px'>" + IpEnmascarada.enmascararEnTexto(message) + "</td></tr>" +
                     "<tr style='background:#f9fafb'><td style='padding:6px 12px;font-weight:bold;color:#6b7280'>Detalle</td>" +
-                    "<td style='padding:6px 12px'>" + details + "</td></tr>" +
+                    "<td style='padding:6px 12px'>" + IpEnmascarada.enmascararEnTexto(details) + "</td></tr>" +
                     "</table>" +
                     "<p style='margin-top:16px;color:#6b7280;font-size:12px'>Ver todas las alertas en " +
                     "<a href='https://hotclick.lat/admin/security'>Security Center</a></p>" +

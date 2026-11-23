@@ -101,6 +101,73 @@ class TelegramCompradorEndurecimientoTest {
         org.mockito.Mockito.verify(productos, org.mockito.Mockito.never()).findEmpresaIdByProductoId(org.mockito.ArgumentMatchers.any());
     }
 
+    // ── tiendaApta (vía revisarCarrito / iniciarPago), aislado del contexto de integración ──
+
+    private static Empresa empresaConEstado(long id, boolean esPrueba, boolean visible, String estado) {
+        var e = new Empresa();
+        e.setId(id);
+        e.setEstadoEmpresa(estado);
+        e.setVisibilidadPublica(visible);
+        e.setEsPrueba(esPrueba);
+        return e;
+    }
+
+    private static TelegramCompradorPedidoService servicioConEmpresa(Optional<Empresa> empresa,
+            ProductoRepository productos, PedidoRepository pedidos) {
+        var empresas = mock(com.hotclick.repository.EmpresaRepository.class);
+        when(empresas.findById(anyLong())).thenReturn(empresa);
+        var onvo = mock(OnvoService.class);
+        when(onvo.esSandbox()).thenReturn(true);
+        var servicio = new TelegramCompradorPedidoService();
+        ReflectionTestUtils.setField(servicio, "empresaRepository", empresas);
+        ReflectionTestUtils.setField(servicio, "productoRepository", productos);
+        ReflectionTestUtils.setField(servicio, "pedidoRepository", pedidos);
+        ReflectionTestUtils.setField(servicio, "onvoService", onvo);
+        ReflectionTestUtils.setField(servicio, "habilitado", true);
+        return servicio;
+    }
+
+    @Test
+    @DisplayName("tiendaApta: empresa inexistente, es_prueba, no pública o inactiva → mensaje genérico y sin pedido")
+    void tiendaNoAptaDaMensajeGenericoYNoCreaPedido() {
+        var casos = java.util.List.of(
+            Optional.<Empresa>empty(),
+            Optional.of(empresaConEstado(10L, true, true, "ACTIVO")),    // es_prueba
+            Optional.of(empresaConEstado(10L, false, false, "ACTIVO")),  // no pública
+            Optional.of(empresaConEstado(10L, false, true, "INACTIVO")));
+        for (Optional<Empresa> caso : casos) {
+            var productos = mock(ProductoRepository.class);
+            var pedidos = mock(PedidoRepository.class);
+            var servicio = servicioConEmpresa(caso, productos, pedidos);
+            var ctx = new TelegramCompradorCtx();
+            ctx.carrito.put(1L, 1);
+
+            assertThat(servicio.revisarCarrito(10L, ctx)).isEqualTo(TelegramCompradorPedidoService.MSG_TIENDA_NO_DISPONIBLE);
+
+            var s = new TelegramCompradorSesion();
+            s.setEmpresaId(10L);
+            var inicio = servicio.iniciarPago(s, ctx);
+            assertThat(inicio.ok()).isFalse();
+            verifyNoInteractions(productos, pedidos);
+        }
+        // empresaId nulo tampoco es apta (no consulta la base).
+        var servicio = servicioConEmpresa(Optional.empty(), mock(ProductoRepository.class), mock(PedidoRepository.class));
+        var ctx = new TelegramCompradorCtx();
+        ctx.carrito.put(1L, 1);
+        assertThat(servicio.revisarCarrito(null, ctx)).isEqualTo(TelegramCompradorPedidoService.MSG_TIENDA_NO_DISPONIBLE);
+    }
+
+    @Test
+    @DisplayName("tiendaApta: una tienda pública y activa sí pasa a revisar los productos")
+    void tiendaAptaContinuaConLosProductos() {
+        var productos = mock(ProductoRepository.class);
+        var servicio = servicioConEmpresa(Optional.of(empresaConEstado(10L, false, true, "ACTIVO")), productos, mock(PedidoRepository.class));
+        var ctx = new TelegramCompradorCtx();
+        ctx.carrito.put(1L, 1);
+        servicio.revisarCarrito(10L, ctx);
+        verify(productos).contarDeTiendasPausadas(any());
+    }
+
     // ── M7b: el canje revalida la empresa del pedido ─────────────────────────
 
     @Test
