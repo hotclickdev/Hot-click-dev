@@ -64,7 +64,7 @@ class AiCopilotRolResolverTest {
     @Test
     @DisplayName("PROPIETARIO activo → true")
     void propietario() {
-        autenticar("dueno@x.com");
+        autenticar("dueno@test.invalid");
         membresiaActiva(usuario(1, 7L), "PROPIETARIO");
         assertThat(resolver.esDuenoActual(7L)).isTrue();
     }
@@ -72,7 +72,7 @@ class AiCopilotRolResolverTest {
     @Test
     @DisplayName("LECTOR activo → false")
     void lector() {
-        autenticar("lector@x.com");
+        autenticar("lector@test.invalid");
         membresiaActiva(usuario(2, 7L), "LECTOR");
         assertThat(resolver.esDuenoActual(7L)).isFalse();
     }
@@ -80,7 +80,7 @@ class AiCopilotRolResolverTest {
     @Test
     @DisplayName("Ex-miembro (fila estado 0, conserva usuario.empresaId) → false")
     void exMiembro() {
-        autenticar("ex@x.com");
+        autenticar("ex@test.invalid");
         Usuario u = usuario(3, 7L);
         when(miembros.findByUsuarioIdAndEmpresaIdAndEstado(eq(u.getId()), anyLong(), eq(1))).thenReturn(Optional.empty());
         when(miembros.findByUsuarioIdAndEmpresaId(u.getId(), 7L))
@@ -91,7 +91,7 @@ class AiCopilotRolResolverTest {
     @Test
     @DisplayName("Dueño legado sin ninguna fila de membresía → true")
     void duenoLegado() {
-        autenticar("legado@x.com");
+        autenticar("legado@test.invalid");
         Usuario u = usuario(4, 7L);
         when(miembros.findByUsuarioIdAndEmpresaIdAndEstado(eq(u.getId()), anyLong(), eq(1))).thenReturn(Optional.empty());
         when(miembros.findByUsuarioIdAndEmpresaId(u.getId(), 7L)).thenReturn(Optional.empty());
@@ -102,7 +102,7 @@ class AiCopilotRolResolverTest {
     @DisplayName("Fail-closed: sin autenticación, usuario inexistente o sin empresa → false")
     void failClosed() {
         assertThat(resolver.esDuenoActual(7L)).isFalse();
-        autenticar("nadie@x.com");
+        autenticar("nadie@test.invalid");
         when(usuarios.findByCorreo(any())).thenReturn(Optional.empty());
         assertThat(resolver.esDuenoActual(7L)).isFalse();
         assertThat(resolver.esDuenoActual(null)).isFalse();

@@ -13,7 +13,7 @@ import java.util.Optional;
 
 /**
  * Canje atómico del código de vinculación. Solo toca la base: ninguna llamada a Telegram vive aquí, así la
- * transacción es corta y los avisos salen DESPUÉS del commit (los hace {@link TelegramVinculacionService}).
+ * transacción es corta y los avisos los hace {@link TelegramVinculacionService} en afterCommit de la transacción exterior (o de inmediato si no hay).
  *
  * <p>El UPDATE condicional ({@code codigo = ? AND codigo_expira > ahora AND estado <> 'REVOCADA'}) toma el lock de la
  * fila: una revocación ya committeada deja 0 filas (no se reactiva) y dos canjes del mismo código no ganan los dos.

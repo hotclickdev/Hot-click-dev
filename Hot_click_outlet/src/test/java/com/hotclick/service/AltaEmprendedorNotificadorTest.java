@@ -52,12 +52,12 @@ class AltaEmprendedorNotificadorTest {
         ResultadoAltaCupo alta = ResultadoAltaCupo.gratis(CupoEmprendedorEstado.of(3, 70));
         doThrow(new RuntimeException("telegram caído")).when(telegramService).enviar(anyString());
 
-        notificador.notificar("Local Norte", "norte@correo.com", alta);
+        notificador.notificar("Local Norte", "norte@test.invalid", alta);
 
         verify(telegramService).enviar(contains("Local Norte"));
-        verify(telegramService, never()).enviar(contains("norte@correo.com"));
+        verify(telegramService, never()).enviar(contains("norte@test.invalid"));
         verify(notificacionEmailService).enviarAltaEmprendedorAAdminIT(
-            eq("Local Norte"), eq("norte@correo.com"), eq(true), any());
+            eq("Local Norte"), eq("norte@test.invalid"), eq(true), any());
     }
 
     @Test
@@ -113,10 +113,10 @@ class AltaEmprendedorNotificadorTest {
     @DisplayName("Alta pendiente: usa el correo de alta pendiente, no el de «sin cupo / requiere membresía»")
     void notificaAltaPendiente() {
         ResultadoAltaCupo alta = ResultadoAltaCupo.pendiente(CupoEmprendedorEstado.of(3, 70));
-        notificador.notificar("Local Norte", "norte@correo.com", alta);
+        notificador.notificar("Local Norte", "norte@test.invalid", alta);
 
         verify(notificacionEmailService).enviarAltaEmprendedorPendienteAAdminIT(
-            eq("Local Norte"), eq("norte@correo.com"), any());
+            eq("Local Norte"), eq("norte@test.invalid"), any());
         org.mockito.Mockito.verify(notificacionEmailService, org.mockito.Mockito.never())
             .enviarAltaEmprendedorAAdminIT(anyString(), anyString(), org.mockito.ArgumentMatchers.anyBoolean(), any());
     }
