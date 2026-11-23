@@ -75,24 +75,29 @@ public class TelegramVinculacionService {
     /** Ejecuta {@code accion} fuera de cualquier transacción: tras el commit si hay una activa; si no, ahora. */
     private void despuesDelCommit(Runnable accion) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            accion.run();
+            ejecutarSinPropagar(accion);
             return;
         }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override public void afterCommit() {
-                try {
-                    if (transactionManager == null) {
-                        accion.run();
-                    } else {
-                        TransactionTemplate fuera = new TransactionTemplate(transactionManager);
-                        fuera.setPropagationBehavior(TransactionDefinition.PROPAGATION_NOT_SUPPORTED);
-                        fuera.executeWithoutResult(st -> accion.run());
-                    }
-                } catch (RuntimeException ex) {
-                    LOG.warn("Telegram: fallo al enviar los avisos de vinculación ({})", ex.getClass().getSimpleName());
+                if (transactionManager == null) {
+                    ejecutarSinPropagar(accion);
+                } else {
+                    TransactionTemplate fuera = new TransactionTemplate(transactionManager);
+                    fuera.setPropagationBehavior(TransactionDefinition.PROPAGATION_NOT_SUPPORTED);
+                    ejecutarSinPropagar(() -> fuera.executeWithoutResult(st -> accion.run()));
                 }
             }
         });
+    }
+
+    /** Un aviso fallido nunca revierte ni rompe el canje/desvínculo. Solo el tipo de la excepción al log (puede traer datos). */
+    private static void ejecutarSinPropagar(Runnable accion) {
+        try {
+            accion.run();
+        } catch (RuntimeException ex) {
+            LOG.warn("Telegram: fallo al enviar los avisos de vinculación ({})", ex.getClass().getSimpleName());
+        }
     }
 
     private void avisarChatReemplazado(Long chatAnterior, long chatNuevo) {
@@ -105,6 +110,8 @@ public class TelegramVinculacionService {
         Long chatId = v.getChatId();
         v.revocar();
         vinculacionRepository.revocarPorId(v.getId());
-        bot.enviarMensaje(chatId, "Listo, tu Telegram quedó desvinculado. Podés volver a conectarlo cuando querás desde Configuración → Telegram en el panel.");
+        // Tras el commit (si el llamador tiene transacción): sin I/O de red con la fila de la vinculación bloqueada.
+        despuesDelCommit(() -> bot.enviarMensaje(chatId,
+            "Listo, tu Telegram quedó desvinculado. Podés volver a conectarlo cuando querás desde Configuración → Telegram en el panel."));
     }
 }

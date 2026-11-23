@@ -41,6 +41,7 @@ public class SentryRedaccionPii implements SentryOptions.BeforeSendCallback {
         if (s == null) return null;
         // Rutas con token de enlace (tienda rápida, invitación de equipo): 4 caracteres + «…», igual que los logs.
         String r = com.hotclick.security.RutaLogSegura.enmascarar(s);
+        r = com.hotclick.utils.IpEnmascarada.redactarEnTexto(r);
         r = BEARER.matcher(r).replaceAll("Bearer [token]");
         r = BASIC.matcher(r).replaceAll("Basic [token]");
         r = TOKEN_BOT.matcher(r).replaceAll("[token]");

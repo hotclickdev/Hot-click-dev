@@ -31,6 +31,10 @@ public interface PedidoRetiroTokenRepository extends JpaRepository<PedidoRetiroT
     int canjear(@Param("token") String token, @Param("empresaId") Long empresaId,
                 @Param("usuarioId") Long usuarioId, @Param("ahora") LocalDateTime ahora);
 
+    /** Pedidos cuyo QR sigue PENDIENTE pero ya venció: se leen antes de marcarlos para poder avisar al comprador. */
+    @Query("SELECT t.pedidoId FROM PedidoRetiroToken t WHERE t.estado = 'PENDIENTE' AND t.expira <= :ahora")
+    List<Long> findPedidoIdsVencidos(@Param("ahora") LocalDateTime ahora);
+
     /** Marca VENCIDO los QR no usados cuya vigencia terminó (el stock ya cobrado no se libera). */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE PedidoRetiroToken t SET t.estado = 'VENCIDO' WHERE t.estado = 'PENDIENTE' AND t.expira <= :ahora")

@@ -20,10 +20,10 @@ public class ContactoTextoPublico {
     /** Nombre visible (misma regla que {@code EmpresaNombre.mostrar}) y slug, solo si el negocio es público. */
     public static final String SQL_NEGOCIO_PRODUCTO =
         "(SELECT COALESCE(NULLIF(TRIM(e.nombre_comercial), ''), e.nombre_empresa) FROM hot_click_empresa_tb e"
-            + " WHERE e.id_empresa = p.fk_id_empresa AND e.visibilidad_publica = TRUE AND e.slug IS NOT NULL"
+            + " WHERE e.id_empresa = p.fk_id_empresa AND e.visibilidad_publica = TRUE AND e.es_prueba = FALSE AND e.slug IS NOT NULL"
             + " AND (e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA')) AS empresa_nombre,"
             + " (SELECT e.slug FROM hot_click_empresa_tb e"
-            + " WHERE e.id_empresa = p.fk_id_empresa AND e.visibilidad_publica = TRUE"
+            + " WHERE e.id_empresa = p.fk_id_empresa AND e.visibilidad_publica = TRUE AND e.es_prueba = FALSE"
             + " AND (e.estado_plan IS NULL OR e.estado_plan <> 'REQUIERE_MEMBRESIA')) AS empresa_slug";
 
     public static final String SQL_PLAN_PRODUCTO =

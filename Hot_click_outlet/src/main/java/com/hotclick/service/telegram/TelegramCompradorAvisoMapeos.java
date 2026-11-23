@@ -64,4 +64,17 @@ final class TelegramCompradorAvisoMapeos {
         }
         return cerradas;
     }
+
+    /** Aplica {@code accion} una vez por chat distinto (sin repetir aunque haya varias sesiones); cuenta los que salieron bien. */
+    static int paraCadaChat(List<TelegramCompradorSesion> sesiones, Predicate<Long> accion) {
+        Set<Long> vistos = new java.util.LinkedHashSet<>();
+        for (TelegramCompradorSesion s : sesiones) {
+            if (s.getChatId() != null) vistos.add(s.getChatId());
+        }
+        int ok = 0;
+        for (Long chatId : vistos) {
+            if (accion.test(chatId)) ok++;
+        }
+        return ok;
+    }
 }

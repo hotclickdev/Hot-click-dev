@@ -238,6 +238,60 @@ class TelegramCompradorFlujoIntegrationTest extends BaseIntegrationTest {
         assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockActual()).isEqualTo(3);
     }
 
+    @Test
+    @DisplayName("QR vencido: el barrido avisa al comprador una sola vez, sin PII; el pedido sigue PAGADO y el stock no se libera")
+    void qrVencidoAvisaAlCompradorSinTocarPedidoNiStock() throws Exception {
+        long pedidoId = armarPedidoRetiroHastaPago();
+        confirmarPago(pedidoId);
+        String estadoAntes = pedidoRepository.findById(pedidoId).orElseThrow().getEstadoPedido();
+        PedidoRetiroToken t = tokenRepository.findByPedidoId(pedidoId).orElseThrow();
+        t.setExpira(LocalDateTime.now(Constants.ZONA_CR).minusMinutes(1));
+        tokenRepository.saveAndFlush(t);
+        clearInvocations(bot);
+
+        // marcarVencidos es lo que ejecuta el barrido programado (barridoVencidos va con ShedLock y puede quedar bloqueado en el test).
+        assertThat(retiroService.marcarVencidos(LocalDateTime.now(Constants.ZONA_CR))).isEqualTo(1);
+
+        assertThat(tokenRepository.findByToken(t.getToken()).orElseThrow().getEstado()).isEqualTo(PedidoRetiroToken.VENCIDO);
+        assertThat(pedidoRepository.findById(pedidoId).orElseThrow().getEstadoPedido()).isEqualTo(estadoAntes);
+        assertThat(estadoAntes).isNotEqualTo(Constants.PEDIDO_CANCELADO).isNotEqualTo(Constants.PEDIDO_ENTREGADO);
+        Producto p = productoRepository.findById(producto.getId()).orElseThrow();
+        assertThat(p.getStockActual()).isEqualTo(3);
+        assertThat(p.getStockReservado()).isEqualTo(0);
+        ArgumentCaptor<String> texto = ArgumentCaptor.forClass(String.class);
+        verify(bot, times(1)).enviarMensaje(eq(CHAT), texto.capture());
+        assertThat(texto.getValue()).contains("venció").contains("4 horas").contains("sigue pagado")
+            .doesNotContain("María").doesNotContain("Mora").doesNotContain("comprador@").doesNotContain("00000001")
+            .doesNotContain(t.getToken());
+
+        // Segundo barrido: ya no hay QR PENDIENTES vencidos, no se vuelve a avisar.
+        assertThat(retiroService.marcarVencidos(LocalDateTime.now(Constants.ZONA_CR))).isEqualTo(0);
+        verify(bot, times(1)).enviarMensaje(eq(CHAT), anyString());
+    }
+
+    @Test
+    @DisplayName("QR vencido: si el bot falla el barrido no lanza y el token queda VENCIDO; sin sesión tampoco falla")
+    void qrVencidoConBotCaidoNoRevierte() throws Exception {
+        long pedidoId = armarPedidoRetiroHastaPago();
+        confirmarPago(pedidoId);
+        PedidoRetiroToken t = tokenRepository.findByPedidoId(pedidoId).orElseThrow();
+        t.setExpira(LocalDateTime.now(Constants.ZONA_CR).minusMinutes(1));
+        tokenRepository.saveAndFlush(t);
+        doThrow(new IllegalStateException("telegram caído")).when(bot).enviarMensaje(eq(CHAT), anyString());
+
+        assertThat(retiroService.marcarVencidos(LocalDateTime.now(Constants.ZONA_CR))).isEqualTo(1);
+        assertThat(tokenRepository.findByToken(t.getToken()).orElseThrow().getEstado()).isEqualTo(PedidoRetiroToken.VENCIDO);
+
+        // Sin sesión ligada al pedido (p. ej. pedido que no vino de Telegram): nada que avisar y no falla.
+        sesionRepository.deleteAll();
+        PedidoRetiroToken t2 = tokenRepository.findByPedidoId(pedidoId).orElseThrow();
+        t2.setEstado(PedidoRetiroToken.PENDIENTE);
+        tokenRepository.saveAndFlush(t2);
+        clearInvocations(bot);
+        assertThat(retiroService.marcarVencidos(LocalDateTime.now(Constants.ZONA_CR))).isEqualTo(1);
+        verify(bot, never()).enviarMensaje(anyLong(), anyString());
+    }
+
     // ── Sin pago: se libera ──────────────────────────────────────────────────
 
     @Test

@@ -40,7 +40,7 @@ public final class CatalogoChatSql {
 
     public static String filtroEmpresa(boolean marketplace) {
         if (marketplace) {
-            return "(p.fk_id_empresa IS NULL OR (emp.estado_empresa = 'ACTIVO' AND emp.visibilidad_publica = TRUE AND "
+            return "(p.fk_id_empresa IS NULL OR (emp.estado_empresa = 'ACTIVO' AND emp.visibilidad_publica = TRUE AND emp.es_prueba = FALSE AND "
                 + com.hotclick.catalogo.CatalogoPublicoGate.NATIVA_EMP + "))";
         }
         return "p.fk_id_empresa = ?";
