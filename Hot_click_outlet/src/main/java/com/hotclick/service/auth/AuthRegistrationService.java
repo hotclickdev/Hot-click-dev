@@ -70,10 +70,23 @@ public class AuthRegistrationService {
             Usuario nuevo = usuarioService.registrarSolicitud(usuario);
             // Ley 8968: el chat ops no recibe nombre, correo ni teléfono; el detalle se ve en el panel.
             telegramService.enviar("👤 *Nuevo registro pendiente de aprobación*");
+            enviarCodigoVerificacion(nuevo);
             return ResponseEntity.ok(ResponseDTO.success(
                 MENSAJE_REGISTRO_PENDIENTE, nuevo));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(mensajeSeguro(e, "No se pudo completar el registro. Revisá los datos e intentá de nuevo.")));
+        }
+    }
+
+    /**
+     * O7 (QA final 23-nov): la respuesta promete «Verificá tu correo», así que se emite el OTP de registro.
+     * Si el envío falla, la cuenta ya existe: no se revierte; la persona puede pedir otro con /auth/reenviar-verificacion.
+     */
+    private void enviarCodigoVerificacion(Usuario nuevo) {
+        try {
+            otpService.enviarOtp(nuevo, Constants.OTP_TIPO_REGISTRO);
+        } catch (Exception e) {
+            log.warn("[register] no se pudo enviar el código de verificación: {}", e.getClass().getSimpleName());
         }
     }
 

@@ -31,6 +31,7 @@ import java.util.Map;
  * Restricciones de seguridad aplicadas:
  *   - Empresa debe tener estado_empresa = 'ACTIVO'
  *   - Empresa debe tener visibilidad_publica = true
+ *   - Empresa no puede ser de prueba (es_prueba = true): nunca se sirve al público
  *   - estado_plan no puede ser REQUIERE_MEMBRESIA (membresía sin confirmar)
  *   Cualquier incumplimiento → 404 (no revelar existencia de empresas inactivas).
  */
@@ -61,7 +62,7 @@ public class SlugTenantInterceptor implements HandlerInterceptor {
         String slug = pathVars.get("slug");
         Empresa empresa = empresaRepository.findBySlug(slug).orElse(null);
 
-        if (empresa != null && "ACTIVO".equals(empresa.getEstadoEmpresa()) && empresa.isTiendaPausada()) {
+        if (empresa != null && !empresa.isEsPrueba() && "ACTIVO".equals(empresa.getEstadoEmpresa()) && empresa.isTiendaPausada()) {
             response.setStatus(HttpStatus.GONE.value());
             response.setContentType("application/json");
             response.getWriter().write(
@@ -72,6 +73,7 @@ public class SlugTenantInterceptor implements HandlerInterceptor {
         if (empresa == null
                 || !"ACTIVO".equals(empresa.getEstadoEmpresa())
                 || !Boolean.TRUE.equals(empresa.getVisibilidadPublica())
+                || empresa.isEsPrueba()
                 || MembresiaPlan.sinConfirmar(empresa.getEstadoPlan())) {
             respond404(response);
             return false;
