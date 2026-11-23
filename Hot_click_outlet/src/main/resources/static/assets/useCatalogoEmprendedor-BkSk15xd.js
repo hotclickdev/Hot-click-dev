@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-DZiC-Bli.js";function t(){return e()}export{t};

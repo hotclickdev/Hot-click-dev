@@ -3418,6 +3418,30 @@
       "historial": "History",
       "reportar": "Report"
     },
+    "retiroTg": {
+      "boton": "Telegram order",
+      "titulo": "Hand over a Telegram order",
+      "ayuda": "Scan the customer's QR or paste the code. Each QR works only once.",
+      "campo": "QR code or link",
+      "escanear": "Scan with camera",
+      "entregar": "Hand over",
+      "cerrar": "Close",
+      "entregado": "Order {{numero}} handed over",
+      "comprador": "For {{nombre}}",
+      "invalido": "This code is not valid, was already used, or expired.",
+      "error": "This order could not be handed over. Check it in Orders."
+    },
+    "retiroPagina": {
+      "titulo": "Pickup order",
+      "tienda": "Pick up your order at {{tienda}}",
+      "ayuda": "Show this QR code at the counter. It is valid for 4 hours after payment and works only once.",
+      "PENDIENTE": "Ready for pickup",
+      "PRESENTADO": "This order was already handed over",
+      "VENCIDO": "This code has expired",
+      "INVALIDO": "This code is not valid",
+      "cargando": "Loading…",
+      "qrAlt": "QR code to pick up the order"
+    },
     "reporte": {
       "botonAria": "Report a POS error",
       "bannerTitulo": "Want to report this error?",

@@ -163,8 +163,8 @@ async function mockCajaConQr(page: Page) {
           data: {
             token: 'tokentarjetaqr01',
             total: 5000,
-            metodoPago: 'TARJETA',
-            sinpeNumero: '',
+            metodoPago: 'SINPE',
+            sinpeNumero: '0000-0001',
           },
         }),
       })
@@ -225,18 +225,19 @@ async function mockCajaConQr(page: Page) {
   }, AUTH)
 }
 
-test.describe('POS — QR de tarjeta', () => {
-  test('cobrar con tarjeta muestra el código QR con el enlace de pago', async ({ page }) => {
+test.describe('POS — QR de SINPE', () => {
+  // Desde V186 el POS solo genera QR de cobro para SINPE; tarjeta registra la venta directo.
+  test('cobrar con SINPE muestra el código QR con el enlace de pago', async ({ page }) => {
     await mockCajaConQr(page)
     await abrirCajaConMouse(page)
 
     await page.getByRole('button', { name: /Cobrar/i }).first().click()
     await expect(page.getByText('Método de pago')).toBeVisible()
-    await page.getByRole('button', { name: 'Tarjeta' }).click()
+    await page.getByRole('button', { name: 'SINPE' }).click()
     await page.getByRole('button', { name: 'Generar QR de pago' }).click()
 
-    await expect(page.getByText('Pago con tarjeta')).toBeVisible()
-    await expect(page.getByText(/escanee el código/i)).toBeVisible()
+    await expect(page.getByText('Pago SINPE Móvil')).toBeVisible()
+    await expect(page.getByText(/escanee y pague con SINPE/i)).toBeVisible()
     await expect(page.getByText('Total a cobrar')).toBeVisible()
     await expect(page.getByRole('img', { name: 'Código QR de pago' })).toBeVisible()
     const enlace = page.getByRole('link', { name: /Abrir enlace de pago/i })

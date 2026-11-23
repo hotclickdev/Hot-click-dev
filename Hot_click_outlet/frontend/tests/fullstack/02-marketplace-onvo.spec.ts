@@ -3,8 +3,10 @@ import { test, expect } from '@playwright/test'
 /**
  * Flujo 2: compra en marketplace y checkout ONVO.
  * Datos: catálogo semilla del perfil dev (hotclick.seed.catalogo-local=true).
- * Sin ONVO_SECRET_KEY (onvo_test_) en el backend el backend debe fallar cerrado: no crea cobro ni marca pagado.
- * Con el secreto de prueba se valida que se crea el intento ONVO. Nunca una llave live.
+ * Sin ONVO_SECRET_KEY el backend (perfil dev) usa el checkout MOCK: sesión simulada onvo_mock_*, pedido PENDIENTE,
+ * redirect a /pago/exito, no llama a ONVO ni cobra. Con onvo_test_ se valida el intento ONVO de prueba. Nunca una llave live.
+ * El fail-closed de producción ("ONVO no está configurado") NO se prueba aquí (el E2E usa perfil dev): lo cubren
+ * OnvoPaymentProviderModoSimuladoTest.sinPagosFallaCerrado y OnvoArranqueProdGuardTest.
  * Ojo: /api/payments/guest-checkout tiene rate limit 3/60s por IP → una sola llamada por corrida.
  */
 // El workflow pasa la llave solo al backend y marca E2E_ONVO_MODO=prueba; la spec nunca ve la llave.
@@ -21,7 +23,7 @@ test.describe('Flujo 2 — marketplace + ONVO', () => {
     await expect(page.getByText(p!.nombreProducto).first()).toBeVisible()
   })
 
-  test('guest checkout ONVO: fail-closed sin llave, intento creado con llave de prueba', async ({ request }) => {
+  test('guest checkout ONVO: sesión mock PENDIENTE sin llave, intento creado con llave de prueba', async ({ request }) => {
     const prods = (await (await request.get('/api/productos?size=5')).json()).data.content as Array<{ id: number; stockActual: number }>
     const p = prods.find((x) => x.stockActual > 0)!
     const res = await request.post('/api/payments/guest-checkout', {
@@ -36,13 +38,15 @@ test.describe('Flujo 2 — marketplace + ONVO', () => {
       },
     })
     const body = await res.json()
-    if (!conOnvo) {
-      expect(res.ok()).toBeFalsy()
-      expect(body.success).toBe(false)
-      expect(body.message).toMatch(/ONVO no está configurado/)
-      return
-    }
     expect(res.ok(), JSON.stringify(body.message)).toBeTruthy()
     expect(body.success).toBe(true)
+    if (!conOnvo) {
+      // Mock de dev/test: no marca pagado ni llama a ONVO (el externalId onvo_mock_* no viaja en este endpoint).
+      expect(body.data.proveedor).toBe('ONVO')
+      expect(body.data.estadoPago).toBe('PENDIENTE')
+      expect(body.data.numeroPedido).toBeTruthy()
+      expect(body.data.pedidoId).toBeTruthy()
+      expect(body.data.redirectUrl).toContain('/pago/exito')
+    }
   })
 })
