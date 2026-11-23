@@ -7,7 +7,7 @@ con clave QA efímera enmascarada) y Vite con proxy `/api` → backend.
 | Spec | Flujo | Sin secretos | Con secretos de prueba |
 |---|---|---|---|
 | 01-auth | login local UI/API, 401 genérico, pk_test, registro | corre; registro = `test.fail` (bug E2E-REG-01) | `E2E_CLERK_SECRET_KEY` (sk_test_) + `E2E_CLERK_USER_EMAIL` → spec Clerk (hoy placeholder; requiere `@clerk/testing`) |
-| 02-marketplace-onvo | catálogo + ficha + guest checkout | checkout fail-closed ("ONVO no está configurado") | `E2E_ONVO_SECRET_KEY` (solo `onvo_test_`; otra se descarta) → intento ONVO creado |
+| 02-marketplace-onvo | catálogo + ficha + guest checkout | sin secretos: checkout mock de dev (sesión simulada, PENDIENTE, redirect a `/pago/exito`, no cobra). El fail-closed de producción ("ONVO no está configurado") lo cubren los tests Java `OnvoPaymentProviderModoSimuladoTest` y `OnvoArranqueProdGuardTest`, no este E2E (perfil dev) | `E2E_ONVO_SECRET_KEY` (solo `onvo_test_`; otra se descarta) → intento ONVO de prueba |
 | 03-pos-turno | abrir/reutilizar turno, bodega, producto, venta efectivo, totales, cierre, 401 sin token | corre completo | — |
 | 04-suscripciones | 3 planes, plan activo por cuenta QA, checkout de plan 409 sin cambiar plan | corre completo (cobro de planes fail-closed por diseño) | — |
 
@@ -24,7 +24,7 @@ Cuando se arregle, el `test.fail` pasará a "unexpected pass" y hay que quitarlo
 
 | Spec | Cubre |
 |---|---|
-| `05-compra-qa5` | QA5-002 (bodega default vs tienda ≠ empresa 1), QA5-003 (sin 500 de FK; 200 solo con ONVO de prueba), login sin CSP + `/mis-pedidos` sin rebote, envío normal preseleccionado, Retiro+SINPE en Mis pedidos (solo con ONVO) |
+| `05-compra-qa5` | QA5-002 (bodega default vs tienda ≠ empresa 1), QA5-003 (200 y sin 500 de FK, también con el mock sin llave), login sin CSP + `/mis-pedidos` sin rebote, envío normal preseleccionado, Retiro+SINPE en Mis pedidos (solo con ONVO) |
 | `06-roles-lector` | LECTOR en recolección: backend 403 con mensaje; UI no se rompe y muestra el 403 |
 | `07-pos-qr-sinpe` | Turno obligatorio, confirmar-sinpe 401/403/400, historial de caja, QR vencido (necesita `E2E_DATABASE_URL`) |
 
