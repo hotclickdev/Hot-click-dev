@@ -121,6 +121,7 @@ public class PedidoPagoManualService {
         Usuario actor = companyScope.getCurrentUser();
         if (pagoOpt.isEmpty()) {
             sobreventa = paymentService.revisarSobreventa(registrarPagoManual(pedido, metodo, actor));
+            if (!sobreventa) consumirReservaSinPago(pedido);
         }
         if (sobreventa) {
             // MED-2: cobro sin stock. El punto común ya dejó el grupo en revisión y el pago en
@@ -164,6 +165,7 @@ public class PedidoPagoManualService {
         if (pagoOpt.isEmpty()) {
             sobreventa = paymentService.revisarSobreventa(
                 registrarPagoManual(pedido, METODO_EFECTIVO, companyScope.getCurrentUser()));
+            if (!sobreventa) consumirReservaSinPago(pedido);
         }
         if (sobreventa) {
             auditarSobreventa(pedido, estadoAnterior, METODO_EFECTIVO);
@@ -240,6 +242,15 @@ public class PedidoPagoManualService {
         pago.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         pagoRepository.save(pago);
         return paymentService.confirmarPedido(pago) == PaymentOrderConfirmationService.Resultado.SOBREVENTA;
+    }
+
+    /**
+     * F1: pedido de la tienda en efectivo sin Pago previo: el cobro manual consume la reserva (stock_actual,
+     * stock_reservado y movimiento VENTA) por el mismo camino que la captura. Idempotente por
+     * {@code stockDescontadoEn}. Un pedido sin reserva (MANUAL) no se toca: ese descuenta al entregarse (P-07).
+     */
+    private void consumirReservaSinPago(Pedido pedido) {
+        paymentService.consumirReservaPagoManual(pedido);
     }
 
     private void auditarSobreventa(Pedido pedido, String anterior, String metodo) {
