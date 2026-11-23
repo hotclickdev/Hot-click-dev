@@ -34,6 +34,11 @@ class LandingParaNegociosControllerTest {
     }
 
     @Test
+    void enlaceDelCalendarioAbreEnPestanaNuevaSinReferrer() throws Exception {
+        assertThat(plantillaReal()).containsPattern("id=\"cal-open\"[^>]*rel=\"noopener noreferrer\"");
+    }
+
+    @Test
     void conTelefono_llenaWhatsappYTextoVisible() throws Exception {
         String html = controller("0000-0000").pagina().getBody();
         assertThat(html).contains("https://wa.me/50600000000?text=", "<b>0000-0000</b>");
@@ -71,7 +76,47 @@ class LandingParaNegociosControllerTest {
             assertThat(texto).doesNotContain("₡12.900", "₡12,900", "₡28.900", "₡28,900", "₡0 al mes", "₡0 per month",
                 "₡0 por mês", "₡0 a month", "<b>₡0</b>", "<td>₡0</td>");
         }
-        assertThat(plantillaReal()).contains("<td>US$9</td><td>US$24</td><td>US$49</td>", "90 días gratis", "primeros 70 negocios");
+        assertThat(plantillaReal()).contains("<td>US$9</td><td>US$24</td><td>US$49</td>",
+            "90 días gratis para los primeros 70 negocios");
+        assertThat(js).contains(
+            "90 días gratis para los primeros 70 negocios",
+            "90 days free for the first 70 businesses",
+            "90 dias grátis para os primeiros 70 negócios");
+    }
+
+    @Test
+    void noventaDiasGratisSoloEnEmprendedorYNuncaASecas() throws Exception {
+        java.nio.file.Path jsPath = java.nio.file.Path.of("frontend/public/para-negocios/landing.js");
+        if (!java.nio.file.Files.exists(jsPath)) {
+            jsPath = java.nio.file.Path.of("Hot_click_outlet/frontend/public/para-negocios/landing.js");
+        }
+        String js = java.nio.file.Files.readString(jsPath);
+        java.util.regex.Pattern ventana = java.util.regex.Pattern.compile(
+            ".{0,120}90 (días|dias|days).{0,120}",
+            java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE | java.util.regex.Pattern.DOTALL);
+        int vistos = 0;
+        for (String texto : new String[] {plantillaReal(), js}) {
+            java.util.regex.Matcher m = ventana.matcher(texto);
+            while (m.find()) {
+                vistos++;
+                String w = m.group().toLowerCase(java.util.Locale.ROOT);
+                assertThat(w).as(m.group()).containsAnyOf("emprendedor", "empreendedor");
+                assertThat(w).as(m.group()).containsAnyOf("primeros 70", "first 70", "primeiros 70");
+            }
+        }
+        assertThat(vistos).isGreaterThanOrEqualTo(6);
+        String html = plantillaReal();
+        assertThat(html).contains(
+            "Plan PyME · US$24 al mes",
+            "Plan Negocio Plus · US$49 al mes");
+        assertThat(html).doesNotContain("Plan PyME · 90", "Plan Negocio Plus · 90");
+        java.util.regex.Matcher pyme = java.util.regex.Pattern.compile(
+            "data-plan=\"pyme\"[^>]*>.*?</div>", java.util.regex.Pattern.DOTALL).matcher(html);
+        java.util.regex.Matcher plus = java.util.regex.Pattern.compile(
+            "data-plan=\"plus\"[^>]*>.*?</div>", java.util.regex.Pattern.DOTALL).matcher(html);
+        assertThat(pyme.find()).isTrue();
+        assertThat(plus.find()).isTrue();
+        assertThat(pyme.group() + plus.group()).doesNotContain("90 días", "90 days", "90 dias", "gratis", "grátis", "free");
     }
 
     @Test
@@ -103,7 +148,7 @@ class LandingParaNegociosControllerTest {
         assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/hotclick/demo-30")).isEqualTo(esperado);
         assertThat(LandingParaNegociosController.calendarioEmbebible(" https://cal.com/hotclick/demo-30/ ")).isEqualTo(esperado);
         assertThat(LandingParaNegociosController.calendarioEmbebible("https://app.cal.com/hotclick/demo-30?month=2026-12")).isEqualTo(esperado);
-        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/andres.z/demo")).isEqualTo("https://cal.com/andres.z/demo?layout=month_view");
+        assertThat(LandingParaNegociosController.calendarioEmbebible("https://cal.com/equipo.hc/demo")).isEqualTo("https://cal.com/equipo.hc/demo?layout=month_view");
     }
 
     @Test

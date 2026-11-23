@@ -30,6 +30,26 @@ class SecurityAuthorizationRulesTest {
         assertThat(PlatformStaff.ROLES_SIN_TENANT).containsExactly(Constants.ROL_ADMIN);
     }
 
+    @Test
+    @DisplayName("/para-negocios: permitAll solo para GET y HEAD (HEAD daba 401); sin escrituras públicas")
+    void paraNegociosPermiteGetYHeadPeroNoEscrituras() throws Exception {
+        java.nio.file.Path rules = java.nio.file.Path.of(
+            "src/main/java/com/hotclick/security/config/SecurityAuthorizationRules.java");
+        if (!java.nio.file.Files.isRegularFile(rules)) {
+            rules = java.nio.file.Path.of(
+                "Hot_click_outlet/src/main/java/com/hotclick/security/config/SecurityAuthorizationRules.java");
+        }
+        String src = java.nio.file.Files.readString(rules);
+        String rutas = "\"/para-negocios\", \"/para-negocios/**\")";
+        for (String metodo : new String[] {"GET", "HEAD"}) {
+            assertThat(src).contains(".requestMatchers(" + metodo + ", " + rutas + ".permitAll()");
+        }
+        for (String metodo : new String[] {"POST", "PUT", "DELETE", "PATCH"}) {
+            assertThat(src).doesNotContain(".requestMatchers(" + metodo + ", " + rutas);
+        }
+        assertThat(src).doesNotContain(".requestMatchers(" + rutas + ".permitAll()");
+    }
+
     // catch-all /api/admin/** incluye staff además de ADMIN y EMPRENDEDOR:
     // ver SecurityAuthorizationRulesCatchAllTest (integration, golpea el filtro real).
 }
