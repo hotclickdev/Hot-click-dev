@@ -156,7 +156,7 @@ public class SpaController {
     }
 
     /** Alias viejo de /emprende: 301 para que haya una sola URL indexable. */
-    @GetMapping(value = "/para-emprendedores")
+    @GetMapping(value = {"/para-emprendedores", "/para-emprendedores/"})
     public ResponseEntity<Void> paraEmprendedoresAlias(HttpServletRequest request) {
         String query = request.getQueryString();
         return ResponseEntity.status(org.springframework.http.HttpStatus.MOVED_PERMANENTLY)

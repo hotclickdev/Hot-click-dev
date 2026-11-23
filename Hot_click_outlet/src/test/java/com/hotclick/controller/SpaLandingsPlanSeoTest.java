@@ -97,4 +97,11 @@ class SpaLandingsPlanSeoTest {
         assertThat(controller.paraEmprendedoresAlias((HttpServletRequest) request).getHeaders().getFirst("Location"))
             .isEqualTo("/emprende?utm_source=ig");
     }
+
+    @Test
+    void paraEmprendedoresMapeaConYSinBarraFinal() throws Exception {
+        var m = SpaController.class.getMethod("paraEmprendedoresAlias", HttpServletRequest.class);
+        var rutas = m.getAnnotation(org.springframework.web.bind.annotation.GetMapping.class).value();
+        assertThat(rutas).containsExactlyInAnyOrder("/para-emprendedores", "/para-emprendedores/");
+    }
 }
