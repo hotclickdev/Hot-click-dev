@@ -47,7 +47,7 @@ public class AiCopilotClaudeClient {
      * caller decide su propio fallback, igual que antes de este refactor.
      */
     public ResultadoLoopClaude ejecutarLoopClaude(Long empresaId, String systemPrompt,
-            List<Map<String, Object>> messages, List<Map<String, Object>> tools)
+            List<Map<String, Object>> messages, List<Map<String, Object>> tools, boolean esDueno)
             throws IOException, InterruptedException {
         UsoTokens usoTotal = UsoTokens.VACIO;
         String texto = null;
@@ -64,7 +64,7 @@ public class AiCopilotClaudeClient {
             usoTotal = usoTotal.mas(loopHelper.leerUso(node));
 
             if ("tool_use".equals(node.path("stop_reason").asText(""))) {
-                loopHelper.procesarToolUse(empresaId, content, messages, accionHolder);
+                loopHelper.procesarToolUse(empresaId, content, messages, accionHolder, esDueno);
                 continue;
             }
 

@@ -7,8 +7,12 @@ import com.hotclick.service.TelegramClienteBotService;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +27,10 @@ public class TelegramVinculacionService {
     @Autowired private TelegramVinculacionRepository vinculacionRepository;
     @Autowired private TelegramClienteBotService     bot;
     @Autowired private TelegramVinculacionPostLinkHelper postLink;
+    @Autowired private TelegramVinculacionCanje      canjeAtomico;
+    @Autowired(required = false) private PlatformTransactionManager transactionManager;
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(TelegramVinculacionService.class);
 
     public Optional<TelegramVinculacion> vinculacionActiva(long chatId) {
         Optional<TelegramVinculacion> v = vinculacionRepository
@@ -40,31 +48,51 @@ public class TelegramVinculacionService {
             return;
         }
 
-        Optional<TelegramVinculacion> opt = vinculacionRepository.findByCodigo(codigo);
-        if (opt.isEmpty() || opt.get().getCodigoExpira() == null
-                || opt.get().getCodigoExpira().isBefore(LocalDateTime.now(Constants.ZONA_CR))) {
+        // Canje atómico y committeado ANTES de hablar con Telegram (nada de I/O dentro de la transacción).
+        Optional<TelegramVinculacionCanje.Canjeado> canje;
+        try {
+            canje = canjeAtomico.canjear(chatId, username, codigo);
+        } catch (RuntimeException ex) {
+            canje = Optional.empty(); // p. ej. carrera de bloqueo: se trata como código inválido, nunca como vinculado
+        }
+        if (canje.isEmpty()) {
             bot.enviarMensaje(chatId, "El código no existe o ya venció (dura 10 minutos). Generá uno nuevo desde Configuración → Telegram en el panel.");
             return;
         }
 
-        TelegramVinculacion v = opt.get();
+        TelegramVinculacionCanje.Canjeado ganado = canje.get();
+        // Los avisos salen tras el COMMIT (si hay transacción exterior, p. ej. el webhook): sin la fila bloqueada
+        // y sin avisar "vinculado" si esa transacción termina en rollback.
+        despuesDelCommit(() -> {
+            TelegramVinculacion v = ganado.vinculacion();
+            avisarChatReemplazado(ganado.chatAnterior(), chatId);
+            ganado.chatsRevocados().forEach(viejo -> avisarChatReemplazado(viejo, chatId));
+            List<MiembroEmpresa> membresias = postLink.membresiasActivas(v);
+            postLink.enviarBienvenidaYMenu(chatId, v, membresias);
+        });
+    }
 
-        avisarChatReemplazado(v.getChatId(), chatId);
-        postLink.revocarVinculacionesPrevias(chatId, v.getUsuario().getId());
-
-        v.setChatId(chatId);
-        v.setTelegramUsername(username);
-        v.setEstado(TelegramVinculacion.ACTIVA);
-        v.setFechaVinculacion(LocalDateTime.now(Constants.ZONA_CR));
-        v.setCodigo(null);
-        v.setCodigoExpira(null);
-        v.setContexto(null);
-
-        postLink.asignarEmpresaActiva(v);
-        vinculacionRepository.save(v);
-
-        List<MiembroEmpresa> membresias = postLink.membresiasActivas(v);
-        postLink.enviarBienvenidaYMenu(chatId, v, membresias);
+    /** Ejecuta {@code accion} fuera de cualquier transacción: tras el commit si hay una activa; si no, ahora. */
+    private void despuesDelCommit(Runnable accion) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            accion.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override public void afterCommit() {
+                try {
+                    if (transactionManager == null) {
+                        accion.run();
+                    } else {
+                        TransactionTemplate fuera = new TransactionTemplate(transactionManager);
+                        fuera.setPropagationBehavior(TransactionDefinition.PROPAGATION_NOT_SUPPORTED);
+                        fuera.executeWithoutResult(st -> accion.run());
+                    }
+                } catch (RuntimeException ex) {
+                    LOG.warn("Telegram: fallo al enviar los avisos de vinculación ({})", ex.getClass().getSimpleName());
+                }
+            }
+        });
     }
 
     private void avisarChatReemplazado(Long chatAnterior, long chatNuevo) {
@@ -75,10 +103,8 @@ public class TelegramVinculacionService {
 
     public void desvincular(TelegramVinculacion v) {
         Long chatId = v.getChatId();
-        v.setEstado(TelegramVinculacion.REVOCADA);
-        v.setChatId(null);
-        v.setContexto(null);
-        vinculacionRepository.save(v);
+        v.revocar();
+        vinculacionRepository.revocarPorId(v.getId());
         bot.enviarMensaje(chatId, "Listo, tu Telegram quedó desvinculado. Podés volver a conectarlo cuando querás desde Configuración → Telegram en el panel.");
     }
 }

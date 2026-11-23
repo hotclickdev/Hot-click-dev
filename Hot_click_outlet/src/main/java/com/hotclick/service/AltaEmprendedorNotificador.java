@@ -23,7 +23,7 @@ public class AltaEmprendedorNotificador {
 
     @Async
     public void notificar(String nombreEmpresa, String correo, ResultadoAltaCupo resultado) {
-        String texto = armarTexto(nombreEmpresa, correo, resultado);
+        String texto = armarTexto(nombreEmpresa, resultado);
         try {
             telegramService.enviar(texto);
         } catch (Exception ex) {
@@ -42,12 +42,11 @@ public class AltaEmprendedorNotificador {
         }
     }
 
-    static String armarTexto(String nombreEmpresa, String correo, ResultadoAltaCupo resultado) {
+    static String armarTexto(String nombreEmpresa, ResultadoAltaCupo resultado) {
         CupoEmprendedorEstado estado = resultado.estado();
         StringBuilder sb = new StringBuilder();
         sb.append("Nueva alta de emprendimiento\n");
         sb.append("Negocio: ").append(sanitizar(nombreEmpresa)).append('\n');
-        sb.append("Correo: ").append(sanitizar(correo)).append('\n');
         sb.append("Cupos: ").append(estado.usados()).append('/').append(estado.limite()).append('\n');
         if (resultado.qaPymeCobroTest()) {
             sb.append("Excepción QA de un uso: PYME a cobro TEST, sin trial y sin cupo.");

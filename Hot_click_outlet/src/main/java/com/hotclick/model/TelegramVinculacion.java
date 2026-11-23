@@ -65,6 +65,13 @@ public class TelegramVinculacion {
     @Column(name = "fecha_vinculacion")
     private LocalDateTime fechaVinculacion;
 
+    /** Bloqueo optimista: un guardado con la fila vieja (p. ej. tras un canje o una revocación) falla en vez de pisarla. */
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version = 0;
+
+    public Integer getVersion() { return version; }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -94,6 +101,18 @@ public class TelegramVinculacion {
 
     public LocalDateTime getPausadoHasta() { return pausadoHasta; }
     public void setPausadoHasta(LocalDateTime pausadoHasta) { this.pausadoHasta = pausadoHasta; }
+
+    /**
+     * Única rutina de revocación: corta el vínculo y borra chat, contexto y código (con su vencimiento),
+     * para que un código viejo nunca pueda reactivarlo.
+     */
+    public void revocar() {
+        this.estado = REVOCADA;
+        this.chatId = null;
+        this.contexto = null;
+        this.codigo = null;
+        this.codigoExpira = null;
+    }
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }

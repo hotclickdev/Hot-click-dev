@@ -190,10 +190,8 @@ public class InvitacionEquipoService {
         Optional<TelegramVinculacion> vinculo = telegramVinculacionRepository.findByUsuarioId(u.getId());
         if (vinculo.isEmpty()) return;
         TelegramVinculacion v = vinculo.get();
-        v.setEstado(TelegramVinculacion.REVOCADA);
-        v.setChatId(null);
-        v.setContexto(null);
-        telegramVinculacionRepository.save(v);
+        v.revocar();
+        telegramVinculacionRepository.revocarPorId(v.getId());
     }
 
     /** Crea y guarda UNA invitación pendiente y devuelve el token en claro (solo se guarda su hash). */

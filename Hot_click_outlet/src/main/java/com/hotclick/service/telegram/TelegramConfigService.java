@@ -105,12 +105,8 @@ public class TelegramConfigService {
     }
 
     private void revocar(TelegramVinculacion v) {
-        v.setEstado(TelegramVinculacion.REVOCADA);
-        v.setChatId(null);
-        v.setContexto(null);
-        v.setCodigo(null);
-        v.setCodigoExpira(null);
-        vinculacionRepository.save(v);
+        v.revocar();
+        vinculacionRepository.revocarPorId(v.getId());
     }
 
     private String generarCodigoAleatorio() {

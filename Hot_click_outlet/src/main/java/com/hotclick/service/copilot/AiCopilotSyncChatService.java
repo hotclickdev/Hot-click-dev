@@ -48,13 +48,13 @@ public class AiCopilotSyncChatService {
      */
     public AiCopilotClaudeClient.ResultadoLoopClaude completarConClaude(
             Long empresaId, Empresa empresa, String userMessage,
-            String nombreUsuario, boolean puedeGestionar)
+            String nombreUsuario, boolean puedeGestionar, boolean esDueno)
             throws java.io.IOException, InterruptedException {
         List<Map<String, Object>> messages = requestBuilder.buildMessages(empresaId, userMessage);
         String systemPrompt = toolExecutor.buildSystemPromptConTools(
-            empresaId, empresa, nombreUsuario, puedeGestionar);
-        List<Map<String, Object>> tools = toolExecutor.buildTools(empresaId, puedeGestionar);
-        return claudeClient.ejecutarLoopClaude(empresaId, systemPrompt, messages, tools);
+            empresaId, empresa, nombreUsuario, puedeGestionar, esDueno);
+        List<Map<String, Object>> tools = toolExecutor.buildTools(empresaId, puedeGestionar, esDueno);
+        return claudeClient.ejecutarLoopClaude(empresaId, systemPrompt, messages, tools, esDueno);
     }
 
     /**
@@ -72,7 +72,7 @@ public class AiCopilotSyncChatService {
 
     /** Variante con el nombre del usuario que escribe (Telegram) para personalizar el saludo/tono. */
     public String chatSync(Long empresaId, String userMessage, String nombreUsuario) {
-        ChatConAccionesResultado r = chatSyncInterno(empresaId, userMessage, nombreUsuario, false);
+        ChatConAccionesResultado r = chatSyncInterno(empresaId, userMessage, nombreUsuario, false, false); // fail-closed: sin rol, sin finanzas
         return r != null ? r.texto() : null;
     }
 
@@ -82,12 +82,12 @@ public class AiCopilotSyncChatService {
      * proponer una acción — nunca para ejecutarla directamente (ver AccionPropuestaTelegram).
      */
     public ChatConAccionesResultado chatSyncConAcciones(Long empresaId, String userMessage,
-                                                         String nombreUsuario, boolean puedeGestionar) {
-        return chatSyncInterno(empresaId, userMessage, nombreUsuario, puedeGestionar);
+                                                         String nombreUsuario, boolean puedeGestionar, boolean esDueno) {
+        return chatSyncInterno(empresaId, userMessage, nombreUsuario, puedeGestionar, esDueno);
     }
 
     private ChatConAccionesResultado chatSyncInterno(Long empresaId, String userMessage,
-                                                       String nombreUsuario, boolean puedeGestionar) {
+                                                       String nombreUsuario, boolean puedeGestionar, boolean esDueno) {
         if (!aiQuotaService.verificarYReservar(empresaId)) {
             return new ChatConAccionesResultado(
                 "Se agotó la cuota mensual de consultas con IA de tu plan. Podés seguir usando los botones del menú (/menu), que no consumen cuota.",
@@ -105,7 +105,7 @@ public class AiCopilotSyncChatService {
 
         try {
             AiCopilotClaudeClient.ResultadoLoopClaude loop =
-                completarConClaude(empresaId, empresa, userMessage, nombreUsuario, puedeGestionar);
+                completarConClaude(empresaId, empresa, userMessage, nombreUsuario, puedeGestionar, esDueno);
             if (loop == null) return null;
 
             String texto = AiCopilotTextoRespuesta.normalizar(loop.texto(), AiCopilotTextoRespuesta.MAX_CHARS);

@@ -68,11 +68,8 @@ public class AuthRegistrationService {
             // E2E-REG-01: telefono también es NOT NULL (V1) y el registro no lo pide → "" como apellidoPaterno
             usuario.setTelefono(req.getTelefono() != null ? req.getTelefono().trim() : "");
             Usuario nuevo = usuarioService.registrarSolicitud(usuario);
-            telegramService.enviar(String.format(
-                "👤 *NUEVO REGISTRO*\n\n*Nombre:* %s\n*Correo:* %s\n*Teléfono:* %s",
-                nuevo.getNombre(),
-                nuevo.getCorreo(),
-                nuevo.getTelefono() != null && !nuevo.getTelefono().isBlank() ? nuevo.getTelefono() : "—"));
+            // Ley 8968: el chat ops no recibe nombre, correo ni teléfono; el detalle se ve en el panel.
+            telegramService.enviar("👤 *Nuevo registro pendiente de aprobación*");
             return ResponseEntity.ok(ResponseDTO.success(
                 MENSAJE_REGISTRO_PENDIENTE, nuevo));
         } catch (Exception e) {
