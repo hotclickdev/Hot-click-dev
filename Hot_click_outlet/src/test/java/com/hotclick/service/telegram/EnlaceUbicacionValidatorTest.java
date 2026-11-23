@@ -92,4 +92,18 @@ class EnlaceUbicacionValidatorTest {
         assertThat(EnlaceUbicacionValidator.coordenadaValida(0, 0)).isFalse();
         assertThat(EnlaceUbicacionValidator.coordenadaValida(Double.NaN, 1)).isFalse();
     }
+
+    @Test
+    @DisplayName("maps.google.com: solo raíz (pin de WhatsApp) o rutas de mapas; el resto se rechaza")
+    void mapsGoogleComRestringidoARutasDeMapas() {
+        assertThat(EnlaceUbicacionValidator.analizar("https://maps.google.com/?q=9.93,-84.08&ll=9.93,-84.08")).isPresent();
+        assertThat(EnlaceUbicacionValidator.analizar("https://maps.google.com/maps?q=9.93,-84.08")).isPresent();
+        assertThat(EnlaceUbicacionValidator.analizar("https://maps.google.com/maps/place/x/@9.93,-84.08,17z")).isPresent();
+        for (String malo : new String[] {
+                "https://maps.google.com/url?q=https://evil.invalid", "https://maps.google.com/login",
+                "https://maps.google.com/search?q=x", "https://maps.google.com/amp/s/evil.invalid",
+                "https://maps.google.com/mapsx", "https://maps.google.com/maps-evil"}) {
+            assertThat(EnlaceUbicacionValidator.analizar(malo)).as(malo).isEmpty();
+        }
+    }
 }

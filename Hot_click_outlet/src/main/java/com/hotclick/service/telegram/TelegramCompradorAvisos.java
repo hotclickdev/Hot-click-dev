@@ -73,7 +73,7 @@ public class TelegramCompradorAvisos {
         TelegramCompradorSesion s = sesionRepository.findFirstByPedidoId(pedidoId).orElse(null);
         if (s == null || !TelegramCompradorService.ESPERANDO_PAGO.equals(s.getPaso())) return null;
         Pedido principal = pedidoRepository.findById(pedidoId).orElse(null);
-        if (principal == null) return null;
+        if (principal == null || !PAGADOS.contains(principal.getEstadoPedido())) return null; // sin pago confirmado no hay QR ni aviso
         // Transición atómica: si el webhook y la reconciliación coinciden, solo uno avisa.
         if (sesionRepository.cambiarPaso(s.getId(), TelegramCompradorService.ESPERANDO_PAGO,
                 TelegramCompradorService.PAGADO, LocalDateTime.now(Constants.ZONA_CR)) != 1) return null;

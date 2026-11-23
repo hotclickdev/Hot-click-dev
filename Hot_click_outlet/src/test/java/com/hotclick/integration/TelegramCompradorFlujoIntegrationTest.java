@@ -61,6 +61,7 @@ class TelegramCompradorFlujoIntegrationTest extends BaseIntegrationTest {
     @Autowired TelegramCompradorAvisos avisos;
     @Autowired PlatformTransactionManager tm;
     @Autowired com.hotclick.service.payment.GuestCancelTokenService cancelTokens;
+    @Autowired com.hotclick.service.telegram.TelegramCompradorPedidoService pedidoServicioComprador;
 
     private Empresa empresa;
     private Empresa ajena;
@@ -356,6 +357,112 @@ class TelegramCompradorFlujoIntegrationTest extends BaseIntegrationTest {
         assertThat(r.ok()).isFalse();
         assertThat(pedidoRepository.count()).isZero();
         assertThat(productoRepository.findById(producto.getId()).orElseThrow().getStockReservado()).isZero();
+    }
+
+
+    // ── Endurecimiento (revisión de seguridad PR #594) ───────────────────────
+
+    @Test
+    @DisplayName("B2: tienda de prueba (esPrueba) no abre sesión aunque sea pública y activa")
+    void tiendaDePruebaNoAbreSesion() throws Exception {
+        empresa.setEsPrueba(true);
+        empresaRepository.saveAndFlush(empresa);
+        texto("/start t_tienda-comprador");
+        assertThat(sesionRepository.findByChatId(CHAT)).isEmpty();
+        verify(bot).enviarMensaje(eq(CHAT), contains("No encontré esa tienda"));
+        assertThat(todosLosMensajes()).doesNotContain("Camisa");
+    }
+
+    @Test
+    @DisplayName("M10b: tienda que requiere membresía no abre sesión")
+    void tiendaSinMembresiaNoAbreSesion() throws Exception {
+        empresa.setEstadoPlan(Constants.ESTADO_PLAN_REQUIERE_MEMBRESIA);
+        empresaRepository.saveAndFlush(empresa);
+        texto("/start t_tienda-comprador");
+        assertThat(sesionRepository.findByChatId(CHAT)).isEmpty();
+        verify(bot).enviarMensaje(eq(CHAT), contains("No encontré esa tienda"));
+    }
+
+    @Test
+    @DisplayName("M13: con un pedido esperando pago, /start de otra tienda no pisa la sesión ni abre la otra tienda")
+    void unSoloPedidoPendientePorChat() throws Exception {
+        long pedidoId = armarPedidoRetiroHastaPago();
+        texto("/start t_tienda-ajena");
+        var s = sesionRepository.findByChatId(CHAT).orElseThrow();
+        assertThat(s.getEmpresaId()).isEqualTo(empresa.getId());
+        assertThat(s.getPaso()).isEqualTo("ESPERANDO_PAGO");
+        assertThat(s.getPedidoId()).isEqualTo(pedidoId);
+        verify(bot).enviarMensaje(eq(CHAT), contains("Ya tenés un pedido esperando pago"));
+        assertThat(todosLosMensajes()).doesNotContain("Camisa Ajena");
+    }
+
+    @Test
+    @DisplayName("alPagar sin pago confirmado (pedido PENDIENTE): ni QR ni aviso, la sesión sigue esperando")
+    void alPagarSinPagoConfirmadoNoAvisa() throws Exception {
+        long pedidoId = armarPedidoRetiroHastaPago();
+        avisos.alPagar(pedidoId);
+        assertThat(tokenRepository.findByPedidoId(pedidoId)).isEmpty();
+        assertThat(sesionRepository.findByChatId(CHAT).orElseThrow().getPaso()).isEqualTo("ESPERANDO_PAGO");
+        verify(bot, never()).enviarMensaje(eq(CHAT), contains("Pago recibido"), anyList());
+        verifyNoInteractions(notificacionNegocio);
+    }
+
+    @Test
+    @DisplayName("B1: con el flag apagado una sesión abierta no junta datos, carrito ni ubicación; /cancelar sigue")
+    void flagApagadoCortaSesionesAbiertas() throws Exception {
+        // Sesión abierta con el flag encendido: carrito + datos hasta el paso TELEFONO.
+        texto("/start t_tienda-comprador");
+        callback("c:q:" + producto.getId() + ":1");
+        callback("c:go");
+        callback("c:e:R");
+        texto("María Mora");
+        assertThat(sesionRepository.findByChatId(CHAT).orElseThrow().getPaso()).isEqualTo("TELEFONO");
+        String ctxAntes = sesionRepository.findByChatId(CHAT).orElseThrow().getContexto();
+
+        Object bean = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(pedidoServicioComprador);
+        org.springframework.test.util.ReflectionTestUtils.setField(bean, "habilitado", false);
+        try {
+            texto("0000 0001");
+            texto("comprador@test.cr");
+            callback("c:q:" + producto.getId() + ":1");
+            callback("c:pay");
+            ubicacion(9.93, -84.08);
+            var s = sesionRepository.findByChatId(CHAT).orElseThrow();
+            assertThat(s.getPaso()).isEqualTo("TELEFONO");
+            assertThat(s.getContexto()).isEqualTo(ctxAntes);
+            assertThat(s.getContexto()).doesNotContain("0000").doesNotContain("comprador@").doesNotContain("9.93");
+            verify(bot, atLeast(4)).enviarMensaje(eq(CHAT), contains("todavía no están disponibles"));
+
+            texto("/cancelar"); // cancelar no junta datos: sigue permitido
+            var cerrada = sesionRepository.findByChatId(CHAT).orElseThrow();
+            assertThat(cerrada.getPaso()).isEqualTo("CATALOGO");
+            assertThat(cerrada.getContexto()).isNull();
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(bean, "habilitado", true);
+        }
+    }
+
+    @Test
+    @DisplayName("B1: con el flag apagado la ubicación de Telegram en el paso UBICACION no se guarda ni avanza")
+    void flagApagadoIgnoraUbicacion() throws Exception {
+        texto("/start t_tienda-comprador");
+        callback("c:q:" + producto.getId() + ":1");
+        callback("c:go");
+        callback("c:e:D");
+        datosComprador();
+        callback("c:pv:3");
+        texto("Belén");
+        assertThat(sesionRepository.findByChatId(CHAT).orElseThrow().getPaso()).isEqualTo("UBICACION");
+        Object bean = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(pedidoServicioComprador);
+        org.springframework.test.util.ReflectionTestUtils.setField(bean, "habilitado", false);
+        try {
+            ubicacion(9.93, -84.08);
+            var s = sesionRepository.findByChatId(CHAT).orElseThrow();
+            assertThat(s.getPaso()).isEqualTo("UBICACION");
+            assertThat(s.getContexto()).doesNotContain("9.93").doesNotContain("TELEGRAM");
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(bean, "habilitado", true);
+        }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

@@ -100,6 +100,13 @@ public class TelegramCompradorService {
         return m.matches() ? m.group(1).toLowerCase(Locale.ROOT) : null;
     }
 
+    /** Flag apagado (o ONVO no sandbox): avisa y corta, sin tocar el contexto ni el paso. */
+    private boolean sinPagosHabilitados(long chatId) {
+        if (pedidoService.pagosPermitidos()) return false;
+        bot.enviarMensaje(chatId, TelegramCompradorPedidoService.MSG_NO_DISPONIBLE);
+        return true;
+    }
+
     public boolean tieneSesionActiva(long chatId) {
         return sesionRepository.findByChatId(chatId).isPresent();
     }
@@ -138,7 +145,7 @@ public class TelegramCompradorService {
 
     static boolean tiendaPublica(Empresa e) {
         return e != null && "ACTIVO".equals(e.getEstadoEmpresa()) && Boolean.TRUE.equals(e.getVisibilidadPublica())
-            && !e.isTiendaPausada() && !e.isCobrosPausados() && CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan());
+            && !e.isEsPrueba() && !e.isTiendaPausada() && !e.isCobrosPausados() && CatalogoPublicoGate.membresiaConfirmada(e.getEstadoPlan());
     }
 
     public void procesarTexto(long chatId, String texto) {
@@ -150,6 +157,7 @@ public class TelegramCompradorService {
         String t = texto == null ? "" : texto.trim();
         String bajo = t.toLowerCase(Locale.ROOT);
         if (bajo.equals("/cancelar") || bajo.equals("cancelar")) { cancelar(s); return; }
+        if (sinPagosHabilitados(chatId)) return; // flag apagado: no se juntan más datos de sesiones abiertas
         if (bajo.equals("/ayuda") || bajo.equals("/menu") || bajo.equals("/help") || bajo.equals("ayuda") || bajo.equals("menu")) {
             bot.enviarMensaje(chatId, TelegramCompradorUi.ayuda());
             repetirPaso(s);
@@ -171,6 +179,7 @@ public class TelegramCompradorService {
 
     /** message.location de Telegram: SOLO se acepta en el paso de entrega (UBICACION). */
     public void procesarUbicacion(long chatId, JsonNode location) {
+        if (sinPagosHabilitados(chatId)) return;
         TelegramCompradorSesion s = sesionRepository.findByChatId(chatId).orElse(null);
         if (s == null || !UBICACION.equals(s.getPaso())) {
             if (s != null) bot.enviarMensaje(chatId, "Ahora no necesito tu ubicación. Seguí con los botones de tu pedido.");
@@ -200,6 +209,7 @@ public class TelegramCompradorService {
         }
         String[] p = data.split(":");
         if (p.length < 2 || !"c".equals(p[0])) return;
+        if (!"x".equals(p[1]) && sinPagosHabilitados(chatId)) return; // solo cancelar sigue permitido
         TelegramCompradorCtx c = TelegramCompradorCtx.desde(s.getContexto());
         switch (p[1]) {
             case "p" -> { if (enCompra(s)) mostrarCatalogo(s, c, entero(p, 2, 0)); }

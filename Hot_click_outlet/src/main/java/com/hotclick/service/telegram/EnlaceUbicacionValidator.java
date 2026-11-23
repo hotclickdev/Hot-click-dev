@@ -73,7 +73,9 @@ public final class EnlaceUbicacionValidator {
     static String fuentePermitida(String host, String path) {
         return switch (host) {
             case "maps.app.goo.gl" -> path.length() > 1 ? PedidoEntrega.GOOGLE_MAPS : null;
-            case "maps.google.com" -> PedidoEntrega.GOOGLE_MAPS;
+            case "maps.google.com" ->
+                (path.isEmpty() || path.equals("/") || path.equals("/maps") || path.startsWith("/maps/"))
+                    ? PedidoEntrega.GOOGLE_MAPS : null;
             case "goo.gl" -> path.startsWith("/maps") ? PedidoEntrega.GOOGLE_MAPS : null;
             case "www.google.com", "google.com", "google.co.cr", "www.google.co.cr" ->
                 (path.equals("/maps") || path.startsWith("/maps/")) ? PedidoEntrega.GOOGLE_MAPS : null;
