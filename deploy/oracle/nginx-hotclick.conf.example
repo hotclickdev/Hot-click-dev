@@ -1,0 +1,59 @@
+# Plantilla Nginx para la VM Oracle (Nginx en el host, igual que Lightsail; no va en compose).
+# Copiar a /etc/nginx/sites-available/hotclick y reemplazar <DOMINIO>:
+#   - Para la primera prueba usar un subdominio o el dominio definitivo SOLO cuando Andrés autorice el cutover DNS.
+#   - NO reutilizar hotclick.lat hasta que el DNS apunte a la IP de Oracle.
+#
+# Flujo con certbot (ver README-ORACLE.md, paso 7):
+#   1. Instalar este archivo solo con el bloque :80 (el bloque :443 comentado) y recargar nginx.
+#   2. sudo certbot --nginx -d <DOMINIO> -d www.<DOMINIO>   (o certonly --webroot / --nginx)
+#   3. Certbot agrega/ajusta el bloque 443; o descomentar el de abajo si se usa certonly.
+
+# Websocket (si la app lo usa)
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name <DOMINIO> www.<DOMINIO>;
+
+    # Desafío HTTP-01 de Let's Encrypt
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# --- Descomentar tras emitir el certificado (certonly) ---
+# server {
+#     listen 443 ssl;
+#     listen [::]:443 ssl;
+#     http2 on;
+#     server_name <DOMINIO> www.<DOMINIO>;
+#
+#     ssl_certificate     /etc/letsencrypt/live/<DOMINIO>/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/<DOMINIO>/privkey.pem;
+#     include             /etc/letsencrypt/options-ssl-nginx.conf;
+#     ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
+#
+#     client_max_body_size 25m;     # subida de imágenes / archivos
+#
+#     location / {
+#         proxy_pass http://127.0.0.1:8080;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host              $host;
+#         proxy_set_header X-Real-IP         $remote_addr;
+#         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#         proxy_set_header X-Forwarded-Host  $host;
+#         proxy_set_header Upgrade           $http_upgrade;
+#         proxy_set_header Connection        $connection_upgrade;
+#         proxy_read_timeout 120s;
+#         proxy_send_timeout 120s;
+#     }
+# }
