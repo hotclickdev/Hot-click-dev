@@ -65,6 +65,13 @@ public class TelegramVinculacion {
     @Column(name = "fecha_vinculacion")
     private LocalDateTime fechaVinculacion;
 
+    /** Bloqueo optimista: un guardado con la fila vieja (p. ej. tras un canje o una revocación) falla en vez de pisarla. */
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version = 0;
+
+    public Integer getVersion() { return version; }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

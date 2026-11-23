@@ -104,7 +104,8 @@ class TelegramMessageRoutingHelper {
         bot.enviarAccionEscribiendo(chatId);
         String nombreUsuario = v.getUsuario() != null ? v.getUsuario().getNombre() : null;
         boolean puedeGestionar = telegramFlujoService.esPropietarioOAdmin(v.getUsuario(), empresaId);
-        self.responderConIa(chatId, empresaId, texto, nombreUsuario, puedeGestionar);
+        boolean esDueno = telegramFlujoService.esDueno(v.getUsuario(), empresaId);
+        self.responderConIa(chatId, empresaId, texto, nombreUsuario, puedeGestionar, esDueno);
     }
 
     static boolean esMenu(String texto) {

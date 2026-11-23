@@ -59,10 +59,11 @@ public class TelegramBotUpdateService {
      * la ejecuta acá.
      */
     @org.springframework.scheduling.annotation.Async
-    public void responderConIa(Long chatId, Long empresaId, String texto, String nombreUsuario, boolean puedeGestionar) {
+    public void responderConIa(Long chatId, Long empresaId, String texto, String nombreUsuario, boolean puedeGestionar,
+                             boolean esDueno) {
         try {
             AiCopilotService.ChatConAccionesResultado resultado =
-                aiCopilotService.chatSyncConAcciones(empresaId, texto, nombreUsuario, puedeGestionar);
+                aiCopilotService.chatSyncConAcciones(empresaId, texto, nombreUsuario, puedeGestionar, esDueno);
             if (resultado != null) {
                 boolean hayAccionPendiente = resultado.accionPropuesta() != null;
                 bot.enviarMensaje(chatId, resultado.texto(), hayAccionPendiente ? null : menuBuilder.tecladoRespuestaIa(), false);
@@ -79,7 +80,13 @@ public class TelegramBotUpdateService {
             } else if (contieneAlguna(lower, "stock", "inventari", "producto", "agotad")) {
                 datos = datosQueryService.mensajeInventario(empresaId);
             } else if (contieneAlguna(lower, "finanz", "gananc", "utilidad", "ticket")) {
-                datos = datosQueryService.mensajeFinanzasMes(empresaId);
+                if (esDueno) {
+                    datos = datosQueryService.mensajeFinanzasMes(empresaId);
+                } else {
+                    bot.enviarMensaje(chatId, "Las finanzas del negocio solo las puede consultar el dueño.");
+                    vinculacionService.vinculacionActiva(chatId).ifPresent(menuBuilder::mostrarMenu);
+                    return;
+                }
             }
 
             if (datos != null) {

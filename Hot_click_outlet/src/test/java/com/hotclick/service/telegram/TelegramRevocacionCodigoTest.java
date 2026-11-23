@@ -41,12 +41,17 @@ class TelegramRevocacionCodigoTest {
         ReflectionTestUtils.setField(servicio, "vinculacionRepository", vr);
         ReflectionTestUtils.setField(servicio, "bot", bot);
         ReflectionTestUtils.setField(servicio, "postLink", postLink);
+        TelegramVinculacionCanje canje = new TelegramVinculacionCanje();
+        ReflectionTestUtils.setField(canje, "vinculacionRepository", vr);
+        ReflectionTestUtils.setField(canje, "postLink", postLink);
+        ReflectionTestUtils.setField(servicio, "canjeAtomico", canje);
     }
 
     private static TelegramVinculacion vinculo(String estado, Long chatId) {
         Usuario u = new Usuario();
         u.setId(5L);
         TelegramVinculacion v = new TelegramVinculacion();
+        v.setId(11L);
         v.setUsuario(u);
         v.setEstado(estado);
         v.setChatId(chatId);
@@ -78,7 +83,8 @@ class TelegramRevocacionCodigoTest {
         TelegramVinculacion v = vinculo(TelegramVinculacion.ACTIVA, 88L);
         servicio.desvincular(v);
         assertRevocadoLimpio(v);
-        verify(vr).save(v);
+        verify(vr).revocarPorId(11L); // UPDATE atómico: no pisa un canje concurrente ni depende de la versión leída
+        verify(vr, never()).save(any());
         verify(bot).enviarMensaje(eq(88L), anyString());
     }
 
@@ -91,18 +97,34 @@ class TelegramRevocacionCodigoTest {
         ReflectionTestUtils.setField(real, "vinculacionRepository", vr);
         ReflectionTestUtils.setField(real, "bot", bot);
 
-        real.revocarVinculacionesPrevias(99L, 7L);
+        List<Long> aAvisar = real.revocarVinculacionesPrevias(99L, 7L);
 
         assertRevocadoLimpio(otra);
-        verify(vr).save(otra);
-        verify(bot).enviarMensaje(eq(99L), anyString());
+        verify(vr).revocarPorId(11L);
+        assertThat(aAvisar).containsExactly(99L);
+        verify(bot, never()).enviarMensaje(anyLong(), anyString()); // el aviso sale después del commit, no aquí
+    }
+
+    /** Simula el UPDATE condicional de la base: gana (1 fila) y deja la fila ACTIVA sin código. */
+    private void claimGana(TelegramVinculacion v) {
+        when(vr.canjearCodigo(eq(11L), eq("ABCD2345"), anyLong(), any(), any())).thenAnswer(i -> {
+            v.setChatId(i.getArgument(2));
+            v.setTelegramUsername(i.getArgument(3));
+            v.setEstado(TelegramVinculacion.ACTIVA);
+            v.setCodigo(null);
+            v.setCodigoExpira(null);
+            return 1;
+        });
+        when(vr.findById(11L)).thenReturn(Optional.of(v));
+        when(postLink.revocarVinculacionesPrevias(anyLong(), any())).thenReturn(List.of());
     }
 
     @Test
-    @DisplayName("vincular: un código aún vigente sobre un vínculo REVOCADA se rechaza")
+    @DisplayName("vincular: código sobre un vínculo REVOCADA (la base responde 0 filas) se rechaza: ni ACTIVA, ni avisos, ni bienvenida")
     void codigoVigenteSobreRevocadaSeRechaza() {
         TelegramVinculacion v = vinculo(TelegramVinculacion.REVOCADA, null);
         when(vr.findByCodigo("ABCD2345")).thenReturn(Optional.of(v));
+        when(vr.canjearCodigo(anyLong(), anyString(), anyLong(), any(), any())).thenReturn(0);
 
         servicio.vincular(555L, "alguien", "ABCD2345");
 
@@ -110,6 +132,39 @@ class TelegramRevocacionCodigoTest {
         assertThat(v.getChatId()).isNull();
         verify(vr, never()).save(any());
         verify(postLink, never()).revocarVinculacionesPrevias(anyLong(), any());
+        verify(postLink, never()).enviarBienvenidaYMenu(anyLong(), any(), any());
+        verify(bot).enviarMensaje(eq(555L), org.mockito.ArgumentMatchers.contains("no existe o ya venció"));
+    }
+
+    @Test
+    @DisplayName("vincular: código vencido / ya canjeado (claim = 0 filas) → mensaje de inválido y NO se avisa al chat anterior")
+    void claimSinFilasNoQuedaActivaNiAvisa() {
+        TelegramVinculacion v = vinculo(TelegramVinculacion.ACTIVA, 88L);
+        v.setCodigoExpira(LocalDateTime.now().minusMinutes(1));
+        when(vr.findByCodigo("ABCD2345")).thenReturn(Optional.of(v));
+        when(vr.canjearCodigo(anyLong(), anyString(), anyLong(), any(), any())).thenReturn(0);
+
+        servicio.vincular(555L, "alguien", "ABCD2345");
+
+        verify(vr, never()).findById(any());
+        verify(vr, never()).save(any());
+        verify(bot, never()).enviarMensaje(eq(88L), anyString()); // avisarChatReemplazado NO se llama
+        verify(postLink, never()).enviarBienvenidaYMenu(anyLong(), any(), any());
+        verify(bot).enviarMensaje(eq(555L), org.mockito.ArgumentMatchers.contains("no existe o ya venció"));
+    }
+
+    @Test
+    @DisplayName("vincular: si el canje lanza (rollback), se trata como código inválido: sin avisos ni bienvenida")
+    void canjeQueFallaNoAvisaNiBienvenida() {
+        TelegramVinculacion v = vinculo(TelegramVinculacion.ACTIVA, 88L);
+        when(vr.findByCodigo("ABCD2345")).thenReturn(Optional.of(v));
+        when(vr.canjearCodigo(anyLong(), anyString(), anyLong(), any(), any()))
+            .thenThrow(new org.springframework.dao.CannotAcquireLockException("lock"));
+
+        servicio.vincular(555L, "alguien", "ABCD2345");
+
+        verify(bot, never()).enviarMensaje(eq(88L), anyString());
+        verify(postLink, never()).enviarBienvenidaYMenu(anyLong(), any(), any());
         verify(bot).enviarMensaje(eq(555L), org.mockito.ArgumentMatchers.contains("no existe o ya venció"));
     }
 
@@ -118,6 +173,7 @@ class TelegramRevocacionCodigoTest {
     void codigoVigenteSobrePendienteVincula() {
         TelegramVinculacion v = vinculo(TelegramVinculacion.PENDIENTE, null);
         when(vr.findByCodigo("ABCD2345")).thenReturn(Optional.of(v));
+        claimGana(v);
 
         servicio.vincular(555L, "alguien", "abcd-2345");
 
@@ -126,19 +182,25 @@ class TelegramRevocacionCodigoTest {
         assertThat(v.getCodigo()).isNull();
         assertThat(v.getCodigoExpira()).isNull();
         verify(vr).save(v);
+        verify(postLink).enviarBienvenidaYMenu(eq(555L), eq(v), any());
     }
 
     @Test
-    @DisplayName("vincular: re-vincular una ACTIVA con un código nuevo del panel sigue funcionando")
+    @DisplayName("vincular: re-vincular una ACTIVA avisa al chat anterior DESPUÉS del canje (fuera de la transacción)")
     void codigoVigenteSobreActivaRevincula() {
         TelegramVinculacion v = vinculo(TelegramVinculacion.ACTIVA, 88L);
         when(vr.findByCodigo("ABCD2345")).thenReturn(Optional.of(v));
+        claimGana(v);
 
         servicio.vincular(555L, "alguien", "ABCD2345");
 
         assertThat(v.getEstado()).isEqualTo(TelegramVinculacion.ACTIVA);
         assertThat(v.getChatId()).isEqualTo(555L);
         assertThat(v.getCodigo()).isNull();
-        verify(bot).enviarMensaje(eq(88L), anyString()); // aviso al chat anterior
+        org.mockito.InOrder orden = org.mockito.Mockito.inOrder(vr, bot, postLink);
+        orden.verify(vr).canjearCodigo(eq(11L), eq("ABCD2345"), eq(555L), eq("alguien"), any());
+        orden.verify(vr).save(v);
+        orden.verify(bot).enviarMensaje(eq(88L), anyString()); // aviso al chat anterior, tras el canje
+        orden.verify(postLink).enviarBienvenidaYMenu(eq(555L), eq(v), any());
     }
 }

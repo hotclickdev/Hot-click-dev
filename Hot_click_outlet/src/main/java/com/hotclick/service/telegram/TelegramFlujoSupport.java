@@ -45,24 +45,26 @@ public class TelegramFlujoSupport {
      */
     public boolean esPropietarioOAdmin(Usuario usuario, Long empresaId) {
         if (usuario == null || empresaId == null) return false;
-        if (empresaId.equals(usuario.getEmpresaId())) return true;
         return miembroEmpresaRepository
             .findByUsuarioIdAndEmpresaIdAndEstado(usuario.getId(), empresaId, 1)
             .map(m -> "PROPIETARIO".equals(m.getRolEnEmpresa()) || "ADMIN".equals(m.getRolEnEmpresa()))
-            .orElse(false);
+            .orElseGet(() -> empresaId.equals(usuario.getEmpresaId())
+                && miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(usuario.getId(), empresaId).isEmpty());
     }
 
     /**
      * Dueño del negocio: con membresía activa, solo el rol PROPIETARIO (un ADMIN/CAJERO/LECTOR
-     * invitado también tiene usuario.empresaId = esa empresa y NO es dueño). Sin fila de
-     * membresía cuenta el dueño directo legado (usuario.empresaId).
+     * invitado también tiene usuario.empresaId = esa empresa y NO es dueño). El dueño directo legado
+     * (usuario.empresaId) cuenta SOLO si no existe NINGUNA fila de membresía en ningún estado: un ex-miembro
+     * (estado 0) conserva usuario.empresaId pero ya no es dueño.
      */
     public boolean esDueno(Usuario usuario, Long empresaId) {
         if (usuario == null || empresaId == null) return false;
         return miembroEmpresaRepository
             .findByUsuarioIdAndEmpresaIdAndEstado(usuario.getId(), empresaId, 1)
             .map(m -> "PROPIETARIO".equals(m.getRolEnEmpresa()))
-            .orElseGet(() -> empresaId.equals(usuario.getEmpresaId()));
+            .orElseGet(() -> empresaId.equals(usuario.getEmpresaId())
+                && miembroEmpresaRepository.findByUsuarioIdAndEmpresaId(usuario.getId(), empresaId).isEmpty());
     }
 
     /** true si NO puede gestionar (y ya se le avisó). */

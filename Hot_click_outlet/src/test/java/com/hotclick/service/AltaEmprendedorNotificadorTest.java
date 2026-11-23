@@ -120,4 +120,29 @@ class AltaEmprendedorNotificadorTest {
         org.mockito.Mockito.verify(notificacionEmailService, org.mockito.Mockito.never())
             .enviarAltaEmprendedorAAdminIT(anyString(), anyString(), org.mockito.ArgumentMatchers.anyBoolean(), any());
     }
+
+    @Test
+    @DisplayName("M8: el aviso de Telegram no lleva NINGÚN correo (varios canarios, todos los estados) ni nada con forma de correo")
+    void telegramNuncaLlevaCorreo() {
+        String[] correos = {"canario.alta@example.invalid", "otro.canario@example.invalid", "x.y+z@sub.example.invalid"};
+        ResultadoAltaCupo[] altas = {
+            ResultadoAltaCupo.gratis(CupoEmprendedorEstado.of(3, 70)),
+            ResultadoAltaCupo.gratis(CupoEmprendedorEstado.of(70, 70)),
+            ResultadoAltaCupo.pago(CupoEmprendedorEstado.of(70, 70)),
+            ResultadoAltaCupo.pendiente(CupoEmprendedorEstado.of(3, 70)),
+            ResultadoAltaCupo.qaPymeCobroTest(CupoEmprendedorEstado.of(9, 70))};
+        for (String correo : correos) {
+            for (ResultadoAltaCupo alta : altas) notificador.notificar("Negocio Canario", correo, alta);
+        }
+        org.mockito.ArgumentCaptor<String> c = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(telegramService, org.mockito.Mockito.times(correos.length * altas.length)).enviar(c.capture());
+        for (String texto : c.getAllValues()) {
+            for (String correo : correos) {
+                assertThat(texto).doesNotContain(correo);
+                assertThat(texto).doesNotContain(correo.substring(0, correo.indexOf('@')));
+            }
+            assertThat(texto).doesNotContain("@").doesNotContain("example.invalid")
+                .doesNotContainPattern("[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+");
+        }
+    }
 }

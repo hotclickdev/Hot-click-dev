@@ -269,6 +269,36 @@ jobs:
           path: Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.InvitacionEquipoConcurrentePostgresTest.xml
           if-no-files-found: error
 
+      # PR 593 (B1): canje del codigo de vinculacion de Telegram vs revocacion en PostgreSQL real. Paso APARTE, gate
+      # fail-on-skip (XML fresco, 4 casos exactos, 0 skipped/fallos/errores). Mismo servicio Postgres del job; schema propio del test.
+      - name: "Autotest gate telegram canje PG"
+        if: always()
+        run: python3 -m unittest scripts/ci/test_telegram_vinculacion_canje_pg_surefire.py
+
+      - name: "Marca de inicio telegram canje PG"
+        if: always()
+        run: |
+          rm -f Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.TelegramVinculacionCanjeConcurrentePostgresTest.xml
+          touch "$RUNNER_TEMP/telegram-canje-pg-inicio"
+
+      - name: TelegramVinculacionCanjeConcurrentePostgresTest (canje vs revocacion)
+        if: always()
+        run: mvn -f Hot_click_outlet/pom.xml -Dtest=TelegramVinculacionCanjeConcurrentePostgresTest test --no-transfer-progress
+        env:
+          HC_PG_TEST_URL: jdbc:postgresql://127.0.0.1:5432/hotclick_qa_alta?user=hotclick_qa&password=hotclick_qa
+
+      - name: "Gate telegram canje PG: corrio, fresco, 4 casos, 0 skipped/fallos/errores"
+        if: always()
+        run: python3 scripts/ci/telegram-vinculacion-canje-pg-surefire.py Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.TelegramVinculacionCanjeConcurrentePostgresTest.xml "$RUNNER_TEMP/telegram-canje-pg-inicio"
+
+      - name: Reporte Surefire telegram canje (sin secretos)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: telegram-canje-pg-surefire
+          path: Hot_click_outlet/target/surefire-reports/TEST-com.hotclick.integration.TelegramVinculacionCanjeConcurrentePostgresTest.xml
+          if-no-files-found: error
+
   frontend:
     name: Build React
     runs-on: ubuntu-latest

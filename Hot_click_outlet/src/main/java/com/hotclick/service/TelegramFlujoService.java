@@ -87,6 +87,11 @@ public class TelegramFlujoService {
         return support.esPropietarioOAdmin(usuario, empresaId);
     }
 
+    /** Solo el dueño (PROPIETARIO) — ver {@link TelegramFlujoSupport#esDueno}. */
+    public boolean esDueno(Usuario usuario, Long empresaId) {
+        return support.esDueno(usuario, empresaId);
+    }
+
     // ── Entradas desde el router ──────────────────────────────────────────────
 
     /** @return true si el callback era de un flujo de este servicio y fue atendido. */

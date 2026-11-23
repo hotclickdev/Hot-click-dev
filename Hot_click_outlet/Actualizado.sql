@@ -4685,3 +4685,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_invitacion_equipo_pendiente
 
 -- V240__usuario_motivo_eliminacion.sql
 ALTER TABLE hot_click_usuario_tb ADD COLUMN IF NOT EXISTS motivo_eliminacion VARCHAR(40);
+
+-- V242__telegram_vinculacion_version.sql
+ALTER TABLE hot_click_telegram_vinculacion_tb ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;

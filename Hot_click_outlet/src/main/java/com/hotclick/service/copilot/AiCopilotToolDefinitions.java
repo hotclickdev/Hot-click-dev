@@ -142,7 +142,7 @@ class AiCopilotToolDefinitions {
             """.formatted(nombreNegocio, saludo, reglaAcciones, kpis);
     }
 
-    List<Map<String, Object>> buildTools(Long empresaId, boolean puedeGestionar) {
+    List<Map<String, Object>> buildTools(Long empresaId, boolean puedeGestionar, boolean esDueno) {
         List<Map<String, Object>> tools = new ArrayList<>();
         tools.add(toolDef("consultar_inventario",
             "Consulta el estado del catálogo: cuántos productos activos y unidades en stock hay, y cuáles productos tienen stock crítico (bajo el mínimo).",
@@ -174,7 +174,8 @@ class AiCopilotToolDefinitions {
             "Consulta la lista de clientes del negocio: cuántos son y sus nombres. Usar cuando pregunten cuáles/cuántos son sus clientes.",
             Map.of(JSON_TYPE, JSON_OBJECT, JSON_PROPERTIES, Map.of())));
 
-        if (tieneFeatureReportes(empresaId)) {
+        // Finanzas: solo el dueño (PROPIETARIO). puedeGestionar incluye ADMIN y NO basta.
+        if (esDueno && tieneFeatureReportes(empresaId)) {
             tools.add(toolDef("consultar_finanzas",
                 "Consulta KPIs financieros del negocio para un período: ventas totales, costo de mercadería vendida (CMV), ganancia neta, margen, IVA. Usar si preguntan ganancia, margen, IVA o cómo van de plata.",
                 Map.of(JSON_TYPE, JSON_OBJECT,

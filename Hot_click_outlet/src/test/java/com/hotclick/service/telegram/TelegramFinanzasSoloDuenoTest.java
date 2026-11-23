@@ -4,6 +4,8 @@ import com.hotclick.model.MiembroEmpresa;
 import com.hotclick.model.TelegramVinculacion;
 import com.hotclick.model.Usuario;
 import com.hotclick.repository.MiembroEmpresaRepository;
+import com.hotclick.repository.TelegramBloqueoEmpresaRepository;
+import com.hotclick.repository.TelegramVinculacionRepository;
 import com.hotclick.service.TelegramClienteBotService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -83,6 +85,8 @@ class TelegramFinanzasSoloDuenoTest {
     @Test
     @DisplayName("esDueno: el dueño directo (usuario.empresaId) cuenta aunque no tenga fila de membresía")
     void esDuenoDirecto() {
+        // sin NINGUNA fila de membresía (findByUsuarioIdAndEmpresaId vacío, en cualquier estado)
+        when(mr.findByUsuarioIdAndEmpresaId(5L, EMPRESA)).thenReturn(Optional.empty());
         assertThat(soporte.esDueno(usuario(EMPRESA), EMPRESA)).isTrue();
         assertThat(soporte.esDueno(usuario(99L), EMPRESA)).isFalse();
         assertThat(soporte.esDueno(null, EMPRESA)).isFalse();
@@ -134,6 +138,110 @@ class TelegramFinanzasSoloDuenoTest {
 
         datos.mostrarFinanzasMes(v);
 
+        verify(bot).enviarMensaje(eq(CHAT), eq("FINANZAS-REALES"), any());
+    }
+
+    // ── B3: el ex-miembro conserva usuario.empresaId pero ya no es dueño ──────────
+
+    private void exMiembro(String rol) {
+        MiembroEmpresa m = new MiembroEmpresa();
+        m.setRolEnEmpresa(rol);
+        m.setEstado(0); // EquipoService.eliminar deja la fila en estado 0
+        when(mr.findByUsuarioIdAndEmpresaIdAndEstado(5L, EMPRESA, 1)).thenReturn(Optional.empty());
+        when(mr.findByUsuarioIdAndEmpresaId(5L, EMPRESA)).thenReturn(Optional.of(m));
+    }
+
+    @Test
+    @DisplayName("A1: ex-miembro (fila estado 0, usuario.empresaId = empresa) NO es dueño ni gestiona, ni siquiera ex-PROPIETARIO")
+    void exMiembroNoEsDueno() {
+        Usuario u = usuario(EMPRESA);
+        for (String rol : new String[]{"ADMIN", "CAJERO", "LECTOR", "PROPIETARIO"}) {
+            exMiembro(rol);
+            assertThat(soporte.esDueno(u, EMPRESA)).as(rol).isFalse();
+            assertThat(soporte.esPropietarioOAdmin(u, EMPRESA)).as("gestiona " + rol).isFalse();
+            datos.mostrarFinanzasMes(v);
+        }
+        verify(datos, never()).mensajeFinanzasMes(any());
+        verify(bot, never()).enviarMensaje(eq(CHAT), eq("FINANZAS-REALES"), any());
+    }
+
+    @Test
+    @DisplayName("empresaValidada: el empresaId legado no cuenta como membresía si existe una fila de miembro (estado 0)")
+    void empresaValidadaExMiembro() {
+        TelegramEmpresaContextService real = new TelegramEmpresaContextService();
+        TelegramBloqueoEmpresaRepository br = mock(TelegramBloqueoEmpresaRepository.class);
+        ReflectionTestUtils.setField(real, "miembroEmpresaRepository", mr);
+        ReflectionTestUtils.setField(real, "bloqueoRepository", br);
+        ReflectionTestUtils.setField(real, "vinculacionRepository", mock(TelegramVinculacionRepository.class));
+        ReflectionTestUtils.setField(real, "bot", bot);
+        Usuario u = usuario(EMPRESA);
+        v.setEmpresaActivaId(EMPRESA);
+
+        exMiembro("LECTOR");
+        assertThat(real.empresaValidada(v)).isNull();
+        assertThat(v.getEmpresaActivaId()).isNull();
+
+        // sin ninguna fila: el dueño directo legado sigue válido
+        v.setEmpresaActivaId(EMPRESA);
+        when(mr.findByUsuarioIdAndEmpresaId(5L, EMPRESA)).thenReturn(Optional.empty());
+        assertThat(real.empresaValidada(v)).isEqualTo(EMPRESA);
+    }
+
+    // ── M7: el callback «fin» REAL pasa por la guarda de dueño ─────────────────────
+
+    @Test
+    @DisplayName("M7: procesarCallback(\"fin\") de un LECTOR no envía finanzas (si el case llama a responderConDatos directo, falla)")
+    void callbackFinDeLectorNoEnviaFinanzas() throws Exception {
+        usuario(null);
+        conRol("LECTOR");
+        TelegramCallbackHandler handler = new TelegramCallbackHandler();
+        TelegramRateLimitService rate = mock(TelegramRateLimitService.class);
+        TelegramVinculacionService vinc = mock(TelegramVinculacionService.class);
+        TelegramAbusoService abuso = mock(TelegramAbusoService.class);
+        when(rate.permitidoPorRateLimit(CHAT)).thenReturn(true);
+        when(vinc.vinculacionActiva(CHAT)).thenReturn(Optional.of(v));
+        ReflectionTestUtils.setField(handler, "bot", bot);
+        ReflectionTestUtils.setField(handler, "rateLimit", rate);
+        ReflectionTestUtils.setField(handler, "vinculacion", vinc);
+        ReflectionTestUtils.setField(handler, "abuso", abuso);
+        ReflectionTestUtils.setField(handler, "datosQuery", datos);
+        com.fasterxml.jackson.databind.JsonNode cb = new com.fasterxml.jackson.databind.ObjectMapper().readTree(
+            "{\"id\":\"c1\",\"data\":\"fin\",\"message\":{\"message_id\":5,\"chat\":{\"id\":" + CHAT + "}}}");
+
+        try {
+            handler.procesarCallback(cb);
+        } finally {
+            TelegramTurno.cerrarYTomarSiDirty();
+        }
+
+        verify(datos, never()).mensajeFinanzasMes(any());
+        verify(bot, never()).enviarMensaje(eq(CHAT), contains("FINANZAS-REALES"), any());
+        verify(bot).enviarMensaje(eq(CHAT), eq("Solo el dueño del negocio puede ver las finanzas."), any());
+    }
+
+    @Test
+    @DisplayName("M7: el mismo callback «fin» del PROPIETARIO sí recibe las finanzas")
+    void callbackFinDelDuenoRecibeFinanzas() throws Exception {
+        usuario(null);
+        conRol("PROPIETARIO");
+        TelegramCallbackHandler handler = new TelegramCallbackHandler();
+        TelegramRateLimitService rate = mock(TelegramRateLimitService.class);
+        TelegramVinculacionService vinc = mock(TelegramVinculacionService.class);
+        TelegramAbusoService abuso = mock(TelegramAbusoService.class);
+        when(rate.permitidoPorRateLimit(CHAT)).thenReturn(true);
+        when(vinc.vinculacionActiva(CHAT)).thenReturn(Optional.of(v));
+        ReflectionTestUtils.setField(handler, "bot", bot);
+        ReflectionTestUtils.setField(handler, "rateLimit", rate);
+        ReflectionTestUtils.setField(handler, "vinculacion", vinc);
+        ReflectionTestUtils.setField(handler, "abuso", abuso);
+        ReflectionTestUtils.setField(handler, "datosQuery", datos);
+        com.fasterxml.jackson.databind.JsonNode cb = new com.fasterxml.jackson.databind.ObjectMapper().readTree(
+            "{\"id\":\"c1\",\"data\":\"fin\",\"message\":{\"message_id\":5,\"chat\":{\"id\":" + CHAT + "}}}");
+        try {
+            handler.procesarCallback(cb);
+        } finally {
+            TelegramTurno.cerrarYTomarSiDirty();
+        }
         verify(bot).enviarMensaje(eq(CHAT), eq("FINANZAS-REALES"), any());
     }
 }

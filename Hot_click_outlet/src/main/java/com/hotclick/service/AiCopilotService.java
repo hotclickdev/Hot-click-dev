@@ -107,7 +107,7 @@ public class AiCopilotService {
         try {
             // Panel web: sin tools de mutación (no hay botones de confirmar como en Telegram).
             AiCopilotClaudeClient.ResultadoLoopClaude loop =
-                syncChatService.completarConClaude(empresaId, empresa, userMessage, null, false);
+                syncChatService.completarConClaude(empresaId, empresa, userMessage, null, false, false);
             if (loop == null) {
                 throw new IntegracionExternaException("claude-api",
                     IntegracionExternaException.Tipo.IO_ERROR, tenantId,
@@ -147,8 +147,9 @@ public class AiCopilotService {
     public record ChatConAccionesResultado(String texto, AccionPropuestaTelegram accionPropuesta) {}
 
     public ChatConAccionesResultado chatSyncConAcciones(Long empresaId, String userMessage,
-                                                         String nombreUsuario, boolean puedeGestionar) {
-        return syncChatService.chatSyncConAcciones(empresaId, userMessage, nombreUsuario, puedeGestionar);
+                                                         String nombreUsuario, boolean puedeGestionar,
+                                                         boolean esDueno) {
+        return syncChatService.chatSyncConAcciones(empresaId, userMessage, nombreUsuario, puedeGestionar, esDueno);
     }
 
     public String crossSellCliente(Long empresaId, Long clienteId) {

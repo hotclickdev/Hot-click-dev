@@ -394,7 +394,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @DisplayName("IA caída + pregunta de ventas → fallback con los datos de ventas de hoy")
     void textoLibre_iaCaida_fallbackVentas() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID);
-        doReturn(null).when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+        doReturn(null).when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean(), anyBoolean());
 
         postUpdate(mensajeTexto(CHAT_ID, "cuanto vendi hoy?"));
 
@@ -409,7 +409,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
     @DisplayName("IA caída + texto sin intención clara → aviso + menú de botones")
     void textoLibre_iaCaida_sinIntencion_muestraMenu() throws Exception {
         vincularDirecto(duenno, empresa, CHAT_ID);
-        doReturn(null).when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+        doReturn(null).when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean(), anyBoolean());
 
         postUpdate(mensajeTexto(CHAT_ID, "hola que tal"));
 
@@ -429,7 +429,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
                 "Te mandé la confirmación arriba, tocá el botón para aplicarlo.",
                 new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.getId(),
                     Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-TEST-1: ENVIADO → ENTREGADO")))
-            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean(), anyBoolean());
 
         postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-TEST-1 como entregado"));
 
@@ -455,7 +455,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
                 "Te mandé la confirmación arriba, tocá el botón para aplicarlo.",
                 new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.getId(),
                     Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-TEST-9: PENDIENTE → ENTREGADO")))
-            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean(), anyBoolean());
 
         postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-TEST-9 como entregado"));
         verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("Cambiar el pedido ORD-TEST-9"), anyList());
@@ -474,7 +474,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
                 "Te mandé la confirmación arriba, tocá el botón para aplicarlo.",
                 new AccionPropuestaTelegram(AccionPropuestaTelegram.PEDIDO_ESTADO, pedido.getId(),
                     Map.of("nuevoEstado", "ENTREGADO"), "Cambiar el pedido ORD-TEST-2: PENDIENTE → ENTREGADO")))
-            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean(), anyBoolean());
 
         postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-TEST-2 como entregado"));
         verify(bot, timeout(3000)).enviarMensaje(eq(CHAT_ID), contains("Cambiar el pedido ORD-TEST-2"), anyList());
@@ -494,12 +494,12 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         crearMiembro(empleado, empresa, "MIEMBRO");
         vincularDirecto(empleado, empresa, 555_005L);
         doReturn(new AiCopilotService.ChatConAccionesResultado("No puedo hacer eso.", null))
-            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+            .when(aiCopilotService).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean(), anyBoolean());
 
         postUpdate(mensajeTexto(555_005L, "marca el pedido ORD-1 como entregado"));
 
         ArgumentCaptor<Boolean> puedeGestionar = ArgumentCaptor.forClass(Boolean.class);
-        verify(aiCopilotService, timeout(3000)).chatSyncConAcciones(anyLong(), anyString(), anyString(), puedeGestionar.capture());
+        verify(aiCopilotService, timeout(3000)).chatSyncConAcciones(anyLong(), anyString(), anyString(), puedeGestionar.capture(), anyBoolean());
         assertThat(puedeGestionar.getValue()).isFalse();
     }
 
@@ -542,7 +542,7 @@ class TelegramBotIntegrationTest extends BaseIntegrationTest {
         postUpdate(callback(CHAT_ID, "vta:new"));
         postUpdate(mensajeTexto(CHAT_ID, "marca el pedido ORD-1 como entregado"));
 
-        verify(aiCopilotService, never()).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean());
+        verify(aiCopilotService, never()).chatSyncConAcciones(anyLong(), anyString(), anyString(), anyBoolean(), anyBoolean());
     }
 
     /** Siembra directo en BD un borrador FLUJO_ACCION pendiente, como si el usuario ya lo hubiera recibido. */

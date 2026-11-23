@@ -26,18 +26,17 @@ class TelegramVinculacionPostLinkHelper {
     @Autowired @Lazy private TelegramEmpresaContextService empresaContext;
     @Autowired @Lazy private TelegramMenuBuilder     menuBuilder;
 
-    void revocarVinculacionesPrevias(long chatId, Long usuarioId) {
+    /** Revoca (UPDATE atómico) las vinculaciones de OTROS usuarios en ese chat. Devuelve los chats a avisar tras el commit. */
+    List<Long> revocarVinculacionesPrevias(long chatId, Long usuarioId) {
+        List<Long> avisar = new java.util.ArrayList<>();
         vinculacionRepository
             .findByChatIdAndEstadoAndUsuarioIdNot(chatId, TelegramVinculacion.ACTIVA, usuarioId)
             .forEach(otra -> {
-                Long viejo = otra.getChatId();
-                if (viejo != null) {
-                    bot.enviarMensaje(viejo,
-                        "Esta cuenta de HotClick se vinculó a otro Telegram. Este chat ya no tiene acceso.");
-                }
+                if (otra.getChatId() != null) avisar.add(otra.getChatId());
                 otra.revocar();
-                vinculacionRepository.save(otra);
+                vinculacionRepository.revocarPorId(otra.getId());
             });
+        return avisar;
     }
 
     void asignarEmpresaActiva(TelegramVinculacion v) {

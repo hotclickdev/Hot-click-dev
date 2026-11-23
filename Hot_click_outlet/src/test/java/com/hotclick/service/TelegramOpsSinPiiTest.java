@@ -29,10 +29,11 @@ import static org.mockito.Mockito.when;
 @DisplayName("Chat ops de Telegram: sin datos personales")
 class TelegramOpsSinPiiTest {
 
-    private static final String NOMBRE = "María Fernanda Quesada";
-    private static final String CORREO = "maria.quesada@correo.cr";
-    private static final String TELEFONO = "88887777";
-    private static final String COMENTARIO = "Excelente atención de Jimena, mi cédula es 1-2345-6789";
+    // Canarios claramente falsos (.invalid, números de prueba): nunca datos reales.
+    private static final String NOMBRE = "Canaria Prueba Nombrada";
+    private static final String CORREO = "canario.alta@example.invalid";
+    private static final String TELEFONO = "00000001";
+    private static final String COMENTARIO = "Excelente atención de Canario, mi cédula es 0-0000-0000";
 
     private final TelegramService telegram = mock(TelegramService.class);
 
@@ -43,9 +44,12 @@ class TelegramOpsSinPiiTest {
     }
 
     private static void sinPii(String texto) {
-        assertThat(texto).doesNotContain("María").doesNotContain("Quesada").doesNotContain(NOMBRE)
+        assertThat(texto).doesNotContain("Canaria").doesNotContain("Nombrada").doesNotContain(NOMBRE)
             .doesNotContain(CORREO).doesNotContain("@").doesNotContain(TELEFONO)
-            .doesNotContain("Jimena").doesNotContain("cédula").doesNotContain("usuario@");
+            .doesNotContain("Canario").doesNotContain("cédula").doesNotContain("usuario@")
+            .doesNotContain("example.invalid").doesNotContain("0-0000-0000");
+        // Por patrón (no solo el canario fijo): nada con forma de correo.
+        assertThat(texto).doesNotContainPattern("[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+");
     }
 
     @Test

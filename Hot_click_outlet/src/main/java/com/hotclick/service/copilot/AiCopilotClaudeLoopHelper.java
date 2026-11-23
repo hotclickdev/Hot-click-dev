@@ -54,7 +54,7 @@ class AiCopilotClaudeLoopHelper {
 
     /** @return true si hubo tool_use y el loop debe continuar. */
     boolean procesarToolUse(Long empresaId, JsonNode content, List<Map<String, Object>> messages,
-            AccionPropuestaTelegram[] accionHolder) throws IOException {
+            AccionPropuestaTelegram[] accionHolder, boolean esDueno) throws IOException {
         Map<String, Object> assistantMsg = new LinkedHashMap<>();
         assistantMsg.put("role", "assistant");
         assistantMsg.put("content", objectMapper.convertValue(content, Object.class));
@@ -65,7 +65,7 @@ class AiCopilotClaudeLoopHelper {
             if (!"tool_use".equals(block.path("type").asText())) continue;
             String toolUseId = block.path("id").asText();
             String toolName  = block.path("name").asText();
-            String resultado = toolExecutor.ejecutarTool(empresaId, toolName, block.path("input"), accionHolder);
+            String resultado = toolExecutor.ejecutarTool(empresaId, toolName, block.path("input"), accionHolder, esDueno);
             Map<String, Object> tr = new LinkedHashMap<>();
             tr.put("type", "tool_result");
             tr.put("tool_use_id", toolUseId);

@@ -49,13 +49,13 @@ class AiCopilotServiceChatStreamTest {
         when(aiQuotaService.verificarYReservar(7L)).thenReturn(true);
         when(syncChatService.claudeDisponible()).thenReturn(true);
         when(empresaRepository.findById(7L)).thenReturn(Optional.of(empresa));
-        when(syncChatService.completarConClaude(eq(7L), eq(empresa), eq("ventas de hoy"), isNull(), eq(false)))
+        when(syncChatService.completarConClaude(eq(7L), eq(empresa), eq("ventas de hoy"), isNull(), eq(false), eq(false)))
             .thenReturn(new AiCopilotClaudeClient.ResultadoLoopClaude("Hoy ₡50.000", 10, 20, null));
         when(streamProcessor.startHeartbeat(emitter)).thenReturn(() -> { });
 
         service.chatStream(7L, "ventas de hoy", emitter);
 
-        verify(syncChatService).completarConClaude(7L, empresa, "ventas de hoy", null, false);
+        verify(syncChatService).completarConClaude(7L, empresa, "ventas de hoy", null, false, false);
         verify(streamProcessor).streamText(emitter, "Hoy ₡50.000");
         verify(messageStore).saveMsg(empresa, "assistant", "Hoy ₡50.000", 20);
     }
