@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import api from '@/services/api'
+import { mensualidadMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
 import { PLAN_PRECIOS, TEXTO_MONEDA_PLANES, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 
 type PlanApi = {
@@ -67,7 +68,7 @@ const POR_QUE = [
 
 const COMPARACION = [
   { otros: 'Otros marketplaces venden sus propios productos y compiten con vos.', nosotros: 'En HotClick vendés vos.' },
-  { otros: 'Algunas plataformas cobran mensualidad aunque no vendás.', nosotros: `Con el plan Emprendedor solo pagás comisión cuando vendés: ${PLAN_PRECIOS.EMPRENDEDOR.comisionPct}% por venta.` },
+  { otros: 'Algunas plataformas esconden costos hasta que ya estás adentro.', nosotros: `Emprendedor tiene un período sin mensualidad para los primeros negocios (con cupo limitado); después paga mensualidad en dólares + ${PLAN_PRECIOS.EMPRENDEDOR.comisionPct}% por venta, sin mínimo.` },
   { otros: 'Inventario, caja y tienda en línea en tres herramientas separadas.', nosotros: 'Todo en un solo lugar.' },
 ]
 
@@ -91,13 +92,16 @@ export default function PlanesPage() {
     return () => { vivo = false }
   }, [])
 
+  const montos = useMensualidadesPlanes()
+  const descripcionMeta = `Compará Emprendedor (${mensualidadMeta(montos.EMPRENDEDOR)} + ${textoComision(PLAN_PRECIOS.EMPRENDEDOR.comisionPct)}), PYME (${mensualidadMeta(montos.PYME)} + ${textoComision(PLAN_PRECIOS.PYME.comisionPct)}) y Negocio Plus (${mensualidadMeta(montos.NEGOCIO_PLUS)} + ${textoComision(PLAN_PRECIOS.NEGOCIO_PLUS.comisionPct)}). Sin mínimo por venta. Productos en colones; mensualidad en dólares.`
+
   const dePlan = (clave: string) => planes.find((p) => p.nombre === clave)
 
   return (
     <MainLayout>
       <Helmet>
         <title>Planes para vender en HotClick</title>
-        <meta name="description" content="Compará los planes Emprendedor, Pyme y Negocio Plus de HotClick." />
+        <meta name="description" content={descripcionMeta} />
       </Helmet>
       <main className="mx-auto flex max-w-[1200px] flex-col gap-12 px-4 py-8 lg:py-12">
         <header className="flex flex-col gap-3 text-center">

@@ -77,10 +77,17 @@ public class SeoPublicoService {
     @Transactional(readOnly = true)
     public List<String> rutasSitemap() {
         List<String> rutas = new ArrayList<>();
-        for (TiendaSeo tienda : tiendas()) rutas.add("/tienda/" + tienda.slug());
+        for (TiendaSeo tienda : tiendas()) {
+            if (!esTiendaDePrueba(tienda.slug())) rutas.add("/tienda/" + tienda.slug());
+        }
         for (SectorResumen sector : sectores()) rutas.add("/comprar/" + sector.slug());
         for (ProvinciaSeo provincia : provincias()) rutas.add("/tiendas/" + provincia.slug());
         return rutas;
+    }
+
+    /** Tiendas de prueba internas (slug «prueba-andres-*»): no van al sitemap. */
+    static boolean esTiendaDePrueba(String slug) {
+        return slug != null && slug.toLowerCase(java.util.Locale.ROOT).startsWith("prueba-andres-");
     }
 
     private SectorDetalle detalle(SectorResumen resumen) {

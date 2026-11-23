@@ -13,6 +13,7 @@ HOTCLICK (hotclick.lat) es la tienda en línea de Costa Rica para comprar a empr
 ## Para quién vende
 
 - Emprendedor: https://hotclick.lat/emprende
+- Negocios que ya venden (resumen de planes y precios): https://hotclick.lat/para-negocios
 - PYME: https://hotclick.lat/para-pymes
 - Negocio con varios locales: https://hotclick.lat/negocio-plus-plan
 - Tienda de un negocio: https://hotclick.lat/tienda/{slug}
