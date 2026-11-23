@@ -43,6 +43,9 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
     @Value("${aws.s3.bucket:}")
     private String s3Bucket;
 
+    @Value("${aws.s3.endpoint:}")
+    private String s3Endpoint;
+
     @Override
     public void onApplicationEvent(@NonNull ApplicationStartedEvent event) {
         boolean isProduction = appUrl != null
@@ -87,8 +90,13 @@ public class ProductionConfigValidator implements ApplicationListener<Applicatio
                 provider.resolveCredentials();
                 log.info("[SECURITY CONFIG] Instance Profile IAM credentials disponibles para Rekognition.");
             } catch (Exception e) {
-                criticals.add("IAM Instance Profile no disponible — AWS Rekognition (moderación de imágenes) no funcionará. " +
-                    "Verificar que la instancia EC2 tenga hotclick-ec2-role asignado y que incluya rekognition:DetectModerationLabels");
+                if (s3Endpoint != null && !s3Endpoint.isBlank()) {
+                    warnings.add("Almacenamiento fuera de AWS (AWS_S3_ENDPOINT definido) y sin IAM Instance Profile: " +
+                        "la moderación de imágenes con Rekognition quedará fail-open (las imágenes pasan sin moderar).");
+                } else {
+                    criticals.add("IAM Instance Profile no disponible — AWS Rekognition (moderación de imágenes) no funcionará. " +
+                        "Verificar que la instancia EC2 tenga hotclick-ec2-role asignado y que incluya rekognition:DetectModerationLabels");
+                }
             }
         }
 

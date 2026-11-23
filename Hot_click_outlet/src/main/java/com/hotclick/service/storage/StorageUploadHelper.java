@@ -24,10 +24,23 @@ public class StorageUploadHelper {
 
     private final S3Client s3Client;
     private final StorageImageValidator validator;
+    /** false en proveedores sin ACL por objeto (OCI): la lectura pública va por política del bucket. */
+    private final boolean publicObjectAcl;
 
     public StorageUploadHelper(S3Client s3Client, StorageImageValidator validator) {
+        this(s3Client, validator, true);
+    }
+
+    public StorageUploadHelper(S3Client s3Client, StorageImageValidator validator, boolean publicObjectAcl) {
         this.s3Client = s3Client;
         this.validator = validator;
+        this.publicObjectAcl = publicObjectAcl;
+    }
+
+    private PutObjectRequest requestPublico(String bucket, String path, String contentType) {
+        PutObjectRequest.Builder b = PutObjectRequest.builder().bucket(bucket).key(path).contentType(contentType);
+        if (publicObjectAcl) b.acl(ObjectCannedACL.PUBLIC_READ);
+        return b.build();
     }
 
     /**
@@ -131,12 +144,7 @@ public class StorageUploadHelper {
         String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
 
         s3Client.putObject(
-                PutObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(path)
-                        .contentType(contentType)
-                        .acl(ObjectCannedACL.PUBLIC_READ)
-                        .build(),
+                requestPublico(bucket, path, contentType),
                 RequestBody.fromBytes(bytes)
         );
 
@@ -168,12 +176,7 @@ public class StorageUploadHelper {
         String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
 
         s3Client.putObject(
-                PutObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(path)
-                        .contentType(contentType)
-                        .acl(ObjectCannedACL.PUBLIC_READ)
-                        .build(),
+                requestPublico(bucket, path, contentType),
                 RequestBody.fromBytes(bytes)
         );
 
@@ -191,12 +194,7 @@ public class StorageUploadHelper {
 
         String path = carpeta + "/" + UUID.randomUUID() + "." + extension;
         s3Client.putObject(
-                PutObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(path)
-                        .contentType(contentType)
-                        .acl(ObjectCannedACL.PUBLIC_READ)
-                        .build(),
+                requestPublico(bucket, path, contentType),
                 RequestBody.fromBytes(bytes)
         );
 
