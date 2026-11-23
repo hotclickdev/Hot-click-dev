@@ -40,6 +40,16 @@ public final class StorageUrlHelper {
     }
 
     public static String urlPublica(String publicUrl, String path) {
-        return publicUrl + "/" + path;
+        String base = sinBarraFinal(publicUrl);
+        String ruta = path == null ? "" : path.replaceFirst("^/+", "");
+        return base + "/" + ruta;
+    }
+
+    /** Quita las barras finales de una URL base (para concatenar con un solo "/"). */
+    public static String sinBarraFinal(String url) {
+        if (url == null) return "";
+        int end = url.length();
+        while (end > 0 && url.charAt(end - 1) == '/') end--;
+        return url.substring(0, end);
     }
 }
