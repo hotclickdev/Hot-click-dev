@@ -39,7 +39,27 @@ public class ClaudePrecios {
     public static final double SONNET_CACHE_LECTURA_POR_M_DEFECTO = 0.30;
     public static final double SONNET_CACHE_ESCRITURA_POR_M_DEFECTO = 3.75;
 
+    /**
+     * Claude Haiku 5.5 ({@code claude-haiku-5-5}): input US$0.10 · output US$0.50 por MTok (prompts hasta 100K tokens).
+     * Cache de lectura 0.1x del input y escritura 1.25x: asumido, no publicado en la fuente usada; verificar en
+     * platform.claude.com/docs/en/about-claude/pricing antes de usar el costo para facturar.
+     */
+    public static final double HAIKU55_INPUT_POR_M = 0.10;
+    public static final double HAIKU55_OUTPUT_POR_M = 0.50;
+    public static final double HAIKU55_CACHE_LECTURA_POR_M = 0.01;
+    public static final double HAIKU55_CACHE_ESCRITURA_POR_M = 0.125;
+
+    /** Claude Sonnet 5.5 ({@code claude-sonnet-5-5}): input US$2 · output US$10 · cache lectura US$0.10 · escritura 1.25x. */
+    public static final double SONNET55_INPUT_POR_M = 2.00;
+    public static final double SONNET55_OUTPUT_POR_M = 10.00;
+    public static final double SONNET55_CACHE_LECTURA_POR_M = 0.10;
+    public static final double SONNET55_CACHE_ESCRITURA_POR_M = 2.50;
+
     private static final double MILLON = 1_000_000.0;
+    private static final ClaudePrecios HAIKU55 = new ClaudePrecios(HAIKU55_INPUT_POR_M, HAIKU55_OUTPUT_POR_M,
+        HAIKU55_CACHE_LECTURA_POR_M, HAIKU55_CACHE_ESCRITURA_POR_M, null, false);
+    private static final ClaudePrecios SONNET55 = new ClaudePrecios(SONNET55_INPUT_POR_M, SONNET55_OUTPUT_POR_M,
+        SONNET55_CACHE_LECTURA_POR_M, SONNET55_CACHE_ESCRITURA_POR_M, null, false);
     private static final ClaudePrecios SONNET_DEFECTO = new ClaudePrecios(SONNET_INPUT_POR_M_DEFECTO,
         SONNET_OUTPUT_POR_M_DEFECTO, SONNET_CACHE_LECTURA_POR_M_DEFECTO, SONNET_CACHE_ESCRITURA_POR_M_DEFECTO, null, false);
     private static final AtomicReference<ClaudePrecios> ACTUAL = new AtomicReference<>(
@@ -105,10 +125,16 @@ public class ClaudePrecios {
 
     /**
      * Tarifa que corresponde al modelo: Sonnet ({@code ia.precio.sonnet.*}) si el id contiene
-     * "sonnet"; si no, la tarifa principal (Haiku 4.5 por defecto).
+     * "sonnet"; Haiku 5.5 y Sonnet 5.5 ({@code haiku-5} / {@code sonnet-5}) usan tarifa propia fija;
+     * si no, la tarifa principal (Haiku 4.5 por defecto).
      */
     public ClaudePrecios paraModelo(String modelo) {
-        if (sonnet != null && modelo != null && modelo.toLowerCase(java.util.Locale.ROOT).contains("sonnet")) {
+        if (modelo == null) return this;
+        String id = modelo.toLowerCase(java.util.Locale.ROOT);
+        // Generación 5.5 (motor de agentes): tarifa propia, antes que el chequeo genérico de "sonnet".
+        if (id.contains("haiku-5")) return HAIKU55;
+        if (id.contains("sonnet-5")) return SONNET55;
+        if (sonnet != null && id.contains("sonnet")) {
             return sonnet;
         }
         return this;
