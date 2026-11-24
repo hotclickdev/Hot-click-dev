@@ -227,6 +227,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/agente/canales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/agente/canales/*/pausar", "/api/agente/canales/*/reanudar",
                 "/api/agente/canales/*/desconectar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Bandeja de conversaciones de los bots (AG-16): ADMIN (bot de HotClick) / EMPRENDEDOR (su negocio + equipo)
+            .requestMatchers("/api/bandeja", "/api/bandeja/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Sucursales (Negocio Plus) — ADMIN / EMPRENDEDOR; aislamiento por CompanyScope
             .requestMatchers(GET,  "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)

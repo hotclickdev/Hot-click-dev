@@ -83,6 +83,7 @@ class RutasExcluidasLectorTest extends BaseIntegrationTest {
         "POST /api/sinpe/guest/{numeroPedido}/comprobante",
         "POST /api/sinpe/{numeroPedido}/comprobante",
         "POST /api/tienda/{slug}/pedidos",
+        // Webhook de Meta (WhatsApp/Instagram/Messenger): público, autenticado por la firma HMAC de la app, no es de vendedor.
         "POST /api/webhooks/meta",
         "POST /api/webhooks/onvo",
         "POST /api/webhooks/payxpert",

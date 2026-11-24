@@ -19,6 +19,7 @@ const NAV = [
   { id: 'operacion', label: 'Campo', to: '/plataforma/operacion', badge: 'operacion' },
   { id: 'seguridad', label: 'Acceso', to: '/plataforma/seguridad' },
   { id: 'ia', label: 'IA', to: '/plataforma/ia' },
+  { id: 'operacion', label: 'Bandeja', to: '/plataforma/bandeja' },
   { id: 'reglas', label: 'Reglas', to: '/plataforma/reglas' },
 ] as const
 
