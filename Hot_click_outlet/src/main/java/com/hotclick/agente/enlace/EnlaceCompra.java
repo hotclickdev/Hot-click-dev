@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Enlace de compra que envía un bot de IA al cliente (AG-07). El código es un secreto de portador: quien lo tiene
@@ -26,9 +27,9 @@ public class EnlaceCompra {
     @Column(name = "fk_id_empresa")
     private Long empresaId;
 
-    /** Sin FK: la tabla de conversaciones del agente la crea otra historia. */
+    /** Id (UUID) de la conversación del agente. Sin FK: la tabla la crea otra historia. */
     @Column(name = "fk_id_chat_sesion")
-    private Long chatSesionId;
+    private UUID chatSesionId;
 
     @Column(name = "contacto_externo", length = 100)
     private String contactoExterno;
@@ -83,8 +84,8 @@ public class EnlaceCompra {
     public void setCodigo(String codigo) { this.codigo = codigo; }
     public Long getEmpresaId() { return empresaId; }
     public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
-    public Long getChatSesionId() { return chatSesionId; }
-    public void setChatSesionId(Long chatSesionId) { this.chatSesionId = chatSesionId; }
+    public UUID getChatSesionId() { return chatSesionId; }
+    public void setChatSesionId(UUID chatSesionId) { this.chatSesionId = chatSesionId; }
     public String getContactoExterno() { return contactoExterno; }
     public void setContactoExterno(String contactoExterno) { this.contactoExterno = contactoExterno; }
     public String getNombreCliente() { return nombreCliente; }
