@@ -8,6 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.HexFormat;
 
 /**
@@ -31,6 +32,16 @@ public class HasherInterno {
 
     public String codigo(Long empresaId, String codigo) {
         return hmac("k|" + empresaId + "|" + (codigo == null ? "" : codigo.trim().toUpperCase(java.util.Locale.ROOT)));
+    }
+
+    private static final char[] ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
+    private static final int LARGO_CODIGO = 8;
+
+    /** Código de vinculación legible (sin 0/O/1/I), de un solo uso. */
+    public static String codigoAleatorio(SecureRandom random) {
+        StringBuilder sb = new StringBuilder(LARGO_CODIGO);
+        for (int i = 0; i < LARGO_CODIGO; i++) sb.append(ALFABETO[random.nextInt(ALFABETO.length)]);
+        return sb.toString();
     }
 
     public static String ultimos4(String contacto) {

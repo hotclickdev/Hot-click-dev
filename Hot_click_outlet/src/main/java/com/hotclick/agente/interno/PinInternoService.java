@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.regex.Pattern;
 
 /**
  * PIN del modo interno (finanzas y acciones). Se guarda solo con hash (el PasswordEncoder del repo, BCrypt), se
@@ -21,7 +20,6 @@ public class PinInternoService {
     public static final int MAX_FALLOS = 5;
     public static final Duration BLOQUEO = Duration.ofMinutes(15);
     public static final Duration SESION = Duration.ofMinutes(15);
-    private static final Pattern FORMATO = Pattern.compile("^\\d{4,6}$");
 
     public enum Resultado { OK, INCORRECTO, BLOQUEADO, SIN_PIN }
 
@@ -49,25 +47,14 @@ public class PinInternoService {
     }
 
     public static boolean formatoValido(String pin) {
-        return pin != null && FORMATO.matcher(pin).matches();
-    }
-
-    /** Rechaza PIN triviales: todos iguales o secuencias (1234, 4321). */
-    static boolean demasiadoDebil(String pin) {
-        boolean iguales = pin.chars().distinct().count() == 1;
-        boolean asc = true, desc = true;
-        for (int i = 1; i < pin.length(); i++) {
-            if (pin.charAt(i) != pin.charAt(i - 1) + 1) asc = false;
-            if (pin.charAt(i) != pin.charAt(i - 1) - 1) desc = false;
-        }
-        return iguales || asc || desc;
+        return PinPolitica.formatoValido(pin);
     }
 
     /** Define o cambia el PIN del usuario (miembro del negocio). IllegalArgumentException si no cumple. */
     @Transactional
     public void definir(Long usuarioId, Long empresaId, String pin) {
         if (!formatoValido(pin)) throw new IllegalArgumentException("El PIN debe tener de 4 a 6 dígitos");
-        if (demasiadoDebil(pin)) throw new IllegalArgumentException("El PIN es demasiado fácil de adivinar");
+        if (PinPolitica.demasiadoDebil(pin)) throw new IllegalArgumentException("El PIN es demasiado fácil de adivinar");
         vinculaciones.exigirMiembro(usuarioId, empresaId);
         AgenteVinculacion v = repo.findByUsuarioIdAndEmpresaIdAndCanal(usuarioId, empresaId, AgenteVinculacion.CANAL_WHATSAPP)
             .orElseGet(() -> {

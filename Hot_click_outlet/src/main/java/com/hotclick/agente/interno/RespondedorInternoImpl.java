@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * Respondedor del perfil NEGOCIO_INTERNO: llama al motor con las herramientas internas y compone la respuesta.
@@ -64,17 +64,19 @@ public class RespondedorInternoImpl implements RespondedorInterno {
         if (mensaje.texto() == null || mensaje.texto().isBlank()) { enviar(conv, MSG_SOLO_TEXTO); return; }
 
         List<ConversacionActiva.Turno> turnos = conv.historial();
-        List<TurnoConversacion> historial = new ArrayList<>();
-        for (int i = 0; i < turnos.size() - 1; i++) { // el último turno es el mensaje actual
-            ConversacionActiva.Turno t = turnos.get(i);
-            historial.add(ConversacionMensaje.ROL_CLIENTE.equals(t.rol())
-                ? TurnoConversacion.usuario(t.texto()) : TurnoConversacion.asistente(t.texto()));
-        }
+        // El último turno es el mensaje actual: va aparte como entrada.
+        List<TurnoConversacion> historial = IntStream.range(0, turnos.size() - 1)
+            .mapToObj(i -> turnoMotor(turnos.get(i))).toList();
         ContextoHerramienta ctx = new ContextoHerramienta(conv.empresaId(), conv.contacto(), PerfilAgente.NEGOCIO_INTERNO);
         ResultadoAgente r = motor.ejecutar(PerfilAgente.NEGOCIO_INTERNO, ctx, historial, mensaje.texto());
 
         AgenteVinculacion actual = vinculaciones.porId(v.getId());
         enviar(conv, componer(actual, r));
+    }
+
+    private static TurnoConversacion turnoMotor(ConversacionActiva.Turno t) {
+        return ConversacionMensaje.ROL_CLIENTE.equals(t.rol())
+            ? TurnoConversacion.usuario(t.texto()) : TurnoConversacion.asistente(t.texto());
     }
 
     private String componer(AgenteVinculacion v, ResultadoAgente r) {

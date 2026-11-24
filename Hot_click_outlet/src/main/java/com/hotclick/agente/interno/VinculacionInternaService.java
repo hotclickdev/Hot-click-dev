@@ -24,8 +24,6 @@ import java.util.OptionalLong;
 public class VinculacionInternaService implements TelefonoVinculadoResolver {
 
     public static final Duration VIGENCIA_CODIGO = Duration.ofMinutes(10);
-    private static final char[] ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
-    private static final int LARGO_CODIGO = 8;
 
     public enum Activacion { OK, CODIGO_INVALIDO, VENCIDO, USUARIO_INACTIVO, TELEFONO_EN_USO }
 
@@ -60,7 +58,7 @@ public class VinculacionInternaService implements TelefonoVinculadoResolver {
         exigirMiembro(usuarioId, empresaId);
         AgenteVinculacion v = obtenerOCrear(usuarioId, empresaId);
         Instant ahora = clock.instant();
-        String codigo = codigoAleatorio();
+        String codigo = HasherInterno.codigoAleatorio(random);
         v.setCodigoHash(hasher.codigo(empresaId, codigo));
         v.setCodigoExpira(ahora.plus(VIGENCIA_CODIGO));
         if (AgenteVinculacion.REVOCADA.equals(v.getEstado())) {
@@ -158,8 +156,8 @@ public class VinculacionInternaService implements TelefonoVinculadoResolver {
 
     @Override
     public OptionalLong usuarioVinculado(Long empresaId, String remitenteId) {
-        return vinculacionActiva(empresaId, remitenteId)
-            .map(v -> OptionalLong.of(v.getUsuarioId())).orElse(OptionalLong.empty());
+        Optional<AgenteVinculacion> v = vinculacionActiva(empresaId, remitenteId);
+        return v.isPresent() ? OptionalLong.of(v.get().getUsuarioId()) : OptionalLong.empty();
     }
 
     @Transactional(readOnly = true)
@@ -198,12 +196,6 @@ public class VinculacionInternaService implements TelefonoVinculadoResolver {
     void exigirMiembro(Long usuarioId, Long empresaId) {
         if (usuarioId == null || empresaId == null || !usuarios.esMiembroActivoDeEmpresa(usuarioId, empresaId))
             throw new TenantAccessDeniedException("Solo el equipo del negocio puede vincular el bot interno");
-    }
-
-    private String codigoAleatorio() {
-        StringBuilder sb = new StringBuilder(LARGO_CODIGO);
-        for (int i = 0; i < LARGO_CODIGO; i++) sb.append(ALFABETO[random.nextInt(ALFABETO.length)]);
-        return sb.toString();
     }
 
     Instant ahora() { return clock.instant(); }
