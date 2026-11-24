@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-5WR873pg.js";function t(){return e()}export{t};
