@@ -113,6 +113,17 @@ class RespondedorAgenteTest {
     }
 
     @Test
+    void botonRealConTituloVisibleUsaElIdDelBoton() {
+        when(motor.ejecutar(any(), any(), any(), anyString())).thenReturn(resultado("Listo", List.of()));
+        MensajeEntrante boton = new MensajeEntrante(MensajeEntrante.Canal.WHATSAPP, "c1", "WAID-1", null, "wamid.2",
+            "interactive", "Comprar", null, 1L, "comprar:42");
+
+        respondedor.responder(conv(PerfilConversacion.NEGOCIO_VENTAS, 7L), boton);
+
+        verify(motor).ejecutar(eq(PerfilAgente.NEGOCIO_VENTAS), any(), any(), eq("quiero comprar el producto 42"));
+    }
+
+    @Test
     void botonComprarSeConvierteEnEntradaParaElMotor() {
         when(motor.ejecutar(any(), any(), any(), anyString())).thenReturn(resultado("Listo", List.of()));
 

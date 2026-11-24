@@ -57,7 +57,10 @@ public class RespondedorAgente implements AgenteRespondedor {
         ContextoHerramienta contexto = new ContextoHerramienta(conv.empresaId(), conv.contacto(), perfil, null,
             canalDe(conv, mensaje), conv.sesionId());
         String entrada = textoActual(conv, mensaje);
-        Optional<RespuestaBoton> boton = RespuestaBoton.parsear(entrada);
+        // El id del botón (comprar:42, ver:7, persona) llega aparte del título visible.
+        Optional<RespuestaBoton> boton = mensaje != null && mensaje.botonId() != null
+            ? RespuestaBoton.parsear(mensaje.botonId())
+            : RespuestaBoton.parsear(entrada);
         if (boton.isEmpty() && esTituloHablarConPersona(entrada)) {
             boton = Optional.of(new RespuestaBoton(RespuestaBoton.Tipo.HABLAR_CON_PERSONA, null));
         }
