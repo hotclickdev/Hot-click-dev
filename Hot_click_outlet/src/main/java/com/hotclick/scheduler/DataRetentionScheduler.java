@@ -1,6 +1,7 @@
 package com.hotclick.scheduler;
 import com.hotclick.utils.Constants;
 
+import com.hotclick.agente.lead.TipoLead;
 import com.hotclick.repository.IpBloqueadaRepository;
 import com.hotclick.service.EncargoService;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
  *   - hot_click_cola_facturacion_offline_tb:     30 días (estado COMPLETADO o AGOTADO)
  *
  *   - hot_click_embudo_sesion_tb:                90 días (sesión anónima del embudo)
+ *   - hot_click_lead_tb:                         180 días COMPRADOR, 365 días NEGOCIO (AG-27)
  *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
  * Borra en lotes pequeños (LIMIT 500) para no generar un lock masivo en la tabla.
@@ -69,6 +71,7 @@ public class DataRetentionScheduler {
         total += limpiarEmbudoSesiones();
         total += limpiarEnlacesCompra();
         total += limpiarAgenteAcciones();
+        total += limpiarLeads();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -161,6 +164,37 @@ public class DataRetentionScheduler {
             log.warn("[retention] enlace_compra: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
             return 0;
         }
+    }
+
+    /**
+     * AG-27: leads del bot (contacto cifrado + nombre + interés, datos personales Ley 8968). Compradores 6 meses
+     * (180 días), negocios 12 meses (365 días), contados desde su creación.
+     */
+    private int limpiarLeads() {
+        try {
+            int total = 0;
+            LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+            for (TipoLead tipo : TipoLead.values()) {
+                total += borrarLeadsViejos(tipo, ahora.minusDays(tipo.retencionDias()));
+            }
+            return total;
+        } catch (Exception e) {
+            log.warn("[retention] lead: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    private int borrarLeadsViejos(TipoLead tipo, LocalDateTime corte) {
+        int total = 0, n;
+        do {
+            n = jdbc.update(
+                "DELETE FROM hot_click_lead_tb WHERE id_lead IN (" +
+                "SELECT id_lead FROM hot_click_lead_tb WHERE tipo = ? AND creado_en < ? LIMIT 500)",
+                tipo.name(), corte);
+            total += n;
+        } while (n == 500);
+        if (total > 0) log.info("[retention] lead {}: {} eliminados (> {} días)", tipo, total, tipo.retencionDias());
+        return total;
     }
 
     private int limpiarWebhookEvents() {
