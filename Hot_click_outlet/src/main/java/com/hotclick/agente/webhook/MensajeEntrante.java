@@ -12,6 +12,8 @@ package com.hotclick.agente.webhook;
  * @param texto       texto del mensaje o título del botón elegido; null si no aplica (audio, imagen)
  * @param mediaId     adjunto si lo hay: id de media (WhatsApp) o URL temporal (Instagram, Messenger); null si no
  * @param epochSeg    marca de tiempo de Meta en segundos
+ * @param botonId     id del botón o fila elegida (button_reply/list_reply/button.payload/postback/quick_reply);
+ *                    null si el mensaje no viene de un botón. {@code texto} conserva el título visible.
  */
 public record MensajeEntrante(
         Canal canal,
@@ -22,7 +24,14 @@ public record MensajeEntrante(
         String tipo,
         String texto,
         String mediaId,
-        long epochSeg) {
+        long epochSeg,
+        String botonId) {
+
+    /** Compatibilidad: mensaje sin botón. */
+    public MensajeEntrante(Canal canal, String cuentaId, String remitenteId, String nombre, String mensajeId,
+                           String tipo, String texto, String mediaId, long epochSeg) {
+        this(canal, cuentaId, remitenteId, nombre, mensajeId, tipo, texto, mediaId, epochSeg, null);
+    }
 
     public enum Canal { WHATSAPP, INSTAGRAM, MESSENGER }
 
