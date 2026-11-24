@@ -62,11 +62,7 @@ public class EnlaceCompraVinculo {
         if (enlaceId == null || pedidos == null || pedidos.isEmpty()) return;
         EnlaceCompra e = repo.findById(enlaceId).orElse(null);
         if (e == null) return;
-        for (Pedido p : pedidos) {
-            p.setOrigenCanal(e.getCanal());
-            p.setEnlaceCompraId(e.getId());
-        }
-        e.setPedidoId(pedidos.get(0).getId());
+        EnlaceItems.atribuir(e, pedidos);
         repo.save(e);
     }
 

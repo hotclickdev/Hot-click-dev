@@ -3,6 +3,8 @@ package com.hotclick.agente.enlace;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * Ganchos para AG-08 (confirmación de pago) y AG-12 (recordatorios). Esta historia solo los deja listos y probados;
  * quien confirma el pago llama a estos métodos desde su propio flujo.
@@ -42,11 +44,9 @@ public class EnlaceCompraEstadoService {
 
     private void cambiar(Long pedidoId, EnlaceCompraEstado nuevo) {
         if (pedidoId == null) return;
-        for (EnlaceCompra e : repo.findByPedidoIdForUpdate(pedidoId)) {
-            if (e.getEstado() == EnlaceCompraEstado.PAGADO) continue; // PAGADO es terminal
-            e.setEstado(nuevo);
-            reserva.liberar(e); // por si quedó alguna reserva del enlace
-            repo.save(e);
-        }
+        List<EnlaceCompra> cambiados = EnlaceItems.cambiarEstado(repo.findByPedidoIdForUpdate(pedidoId), nuevo);
+        // Por si quedó alguna reserva del enlace (una consulta de productos por enlace; hay uno por pedido).
+        EnlaceItems.paraCada(cambiados, reserva::liberar);
+        repo.saveAll(cambiados);
     }
 }
