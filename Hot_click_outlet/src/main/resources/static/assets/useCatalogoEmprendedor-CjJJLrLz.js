@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-39Flub43.js";function t(){return e()}export{t};
