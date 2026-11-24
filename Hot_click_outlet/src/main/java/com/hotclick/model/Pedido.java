@@ -88,6 +88,14 @@ public class Pedido extends BaseEntity {
     @Column(name = "origen", length = 20)
     private String origen = OrigenPedido.ONLINE.codigo();
 
+    /** V248 (AG-07): canal del bot de IA que originó la venta (WHATSAPP, INSTAGRAM, MESSENGER); null = no vino del bot. */
+    @Column(name = "origen_canal", length = 20)
+    private String origenCanal;
+
+    /** V248 (AG-07): enlace de compra del bot del que nació el pedido. */
+    @Column(name = "fk_id_enlace_compra")
+    private Long enlaceCompraId;
+
     // VARCHAR(30) desde V146: PENDIENTE_COMPROBANTE (21) no cabía en 20.
     @Column(name = "estado_pedido", length = 30)
     private String estadoPedido = "PENDIENTE";
@@ -267,6 +275,11 @@ public class Pedido extends BaseEntity {
 
     public java.time.LocalDateTime getStockRepuestoEn() { return stockRepuestoEn; }
     public void setStockRepuestoEn(java.time.LocalDateTime stockRepuestoEn) { this.stockRepuestoEn = stockRepuestoEn; }
+
+    public String getOrigenCanal() { return origenCanal; }
+    public void setOrigenCanal(String origenCanal) { this.origenCanal = origenCanal; }
+    public Long getEnlaceCompraId() { return enlaceCompraId; }
+    public void setEnlaceCompraId(Long enlaceCompraId) { this.enlaceCompraId = enlaceCompraId; }
 
     public String getOrigen() { return origen; }
     public void setOrigen(String origen) { this.origen = origen; }

@@ -81,6 +81,9 @@ public class GuestCheckoutGuard {
     /** Tope por producto para invitados (solo lectura, lo publica /api/public/checkout-config). */
     public int getMaxPorProducto() { return maxPorProducto; }
 
+    /** Tope de unidades pendientes de pago por IP/correo (lo usa el enlace de compra del bot para no crear carritos que el checkout rechaza). */
+    public int getMaxPendientes() { return maxPendientes; }
+
     public GuestCheckoutGuard(TurnstileFormGuard turnstile, ClientIpResolver ipResolver, PedidoRepository pedidoRepository) {
         this.turnstile = turnstile;
         this.ipResolver = ipResolver;

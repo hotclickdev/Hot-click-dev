@@ -12,6 +12,7 @@ import PasoEntrega from './PasoEntrega'
 import { CodigosCheckout, ConsentimientoDatos, FacturaElectronicaCheckout, MetodosPago, ResumenPagoMovil } from './PasoPago'
 import { CabeceraCompraSegura, IndicadorPasos, PieCheckoutMovil } from './PiezasCheckout'
 import { pasoMaximoCheckout, useVolver } from './pasosCheckoutHelpers'
+import { leerDatosEnlace } from '@/pages/enlace/enlaceCompra'
 import { useCodigosPedido } from './useCodigosPedido'
 import { useEsDesktop } from './useEsDesktop'
 import type { ItemCheckout } from './checkoutHelpers'
@@ -67,13 +68,16 @@ export default function CheckoutLayout({
   const unidades = items.reduce((suma, item) => suma + (item.cantidad ?? 0), 0)
   const ocupado = estado === 'loading' || estado === 'redirecting' || intentos >= maxIntentos
   const requiereEntrega = form.paquetes.some((p) => form.metodoEnvioPorPaquete[p.bodegaId] !== 'RETIRO_EN_TIENDA')
+  // AG-07: con enlace del bot el teléfono es el del WhatsApp y lo completa el servidor: no se exige escribirlo.
+  const telefonoDelEnlace = Boolean(leerDatosEnlace()?.telefonoMascara) && !form.guestPhone.trim()
+  const exigeTelefonoInvitado = requiereEntrega && !telefonoDelEnlace
 
   // R3: `?paso=` no deja saltar pasos (enlace o recarga): se queda en el primer paso incompleto.
   const pasoMaximo = pasoMaximoCheckout(
     {
       conSesion: Boolean(token),
       necesitaDireccion: form.necesitaDireccion,
-      requiereEntrega,
+      requiereEntrega: exigeTelefonoInvitado,
       telefono: form.telefono,
       guestEmail: form.guestEmail,
       guestPhone: form.guestPhone,
@@ -110,7 +114,7 @@ export default function CheckoutLayout({
       return !err
     }
     const errCorreo = form.validateGuestEmail(form.guestEmail)
-    const errTelefono = requiereEntrega ? form.validatePhone(form.guestPhone) : ''
+    const errTelefono = exigeTelefonoInvitado ? form.validatePhone(form.guestPhone) : ''
     const errNombre = form.sinpeNombre.trim() ? '' : t('checkout.f.nombreRequerido')
     form.setGuestEmailError(errCorreo)
     form.setGuestEmailDirty(true)

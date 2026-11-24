@@ -1410,6 +1410,7 @@
     "deliveryData": "Dados de entrega",
     "phoneContact": "Telefone de contato *",
     "phoneHelp": "Para coordenar a entrega com Correos CR",
+    "phoneEnlace": "Usaremos seu WhatsApp terminado em {{mascara}}. Você pode escrever outro número.",
     "addressLabel": "Endereço completo *",
     "addressPlaceholder": "Província, cantão, bairro, instruções adicionais…",
     "paymentMethod": "Método de pagamento",
@@ -2564,6 +2565,22 @@
     "warranty": "Garantia de 40 dias",
     "shipping": "Envio Correos CR",
     "satisfied": "Clientes satisfeitos"
+  },
+  "enlaceCompra": {
+    "title": "Sua compra está pronta",
+    "subtitle": "Reservamos seus produtos por 30 minutos",
+    "notAvailable": "Link indisponível",
+    "expired": "Este link já foi utilizado ou expirou.",
+    "viewProducts": "Ver produtos",
+    "loading": "Abrindo sua compra",
+    "quantity": "Quantidade:",
+    "agotado": "Esgotado",
+    "antes": "Antes {{precio}}",
+    "total": "Total",
+    "pagar": "Ir para o pagamento",
+    "precioCambio": "O preço mudou: antes {{antes}}, agora {{ahora}}.",
+    "stockCambio": "Alguns produtos têm menos unidades ou não estão mais disponíveis.",
+    "nota": "Pague com cartão ou SINPE Móvil. Seu link expira em 24 horas."
   },
   "recuperarCarrito": {
     "title": "Seu pedido salvo",

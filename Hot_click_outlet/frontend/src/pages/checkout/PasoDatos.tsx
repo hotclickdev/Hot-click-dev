@@ -5,6 +5,7 @@ import useAuthStore from '@/store/authStore'
 import { Campo, CampoTexto } from './PiezasCheckout'
 import { formatoTelefonoCampo, telefonoDesdeCampo } from './pasosCheckoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
+import { leerDatosEnlace } from '@/pages/enlace/enlaceCompra'
 import type { CheckoutFormState } from './useCheckoutForm'
 
 type PasoDatosProps = {
@@ -18,10 +19,11 @@ export default function PasoDatos({ form, token, escritorio }: PasoDatosProps) {
   const { t } = useTranslation()
   const correoCuenta = useAuthStore((s) => s.userEmail)
   const separacion = escritorio ? 'gap-[14px]' : 'gap-4'
+  const mascaraEnlace = leerDatosEnlace()?.telefonoMascara ?? ''
 
   const telefono = token
     ? { valor: form.telefono, error: form.telefonoDirty ? form.telefonoError : '', cambiar: (v: string) => { form.setTelefono(v); if (form.telefonoDirty) form.setTelefonoError(form.validatePhone(v)) }, ayuda: t('checkout.phoneHelp') }
-    : { valor: form.guestPhone, error: form.guestPhoneDirty ? form.guestPhoneError : '', cambiar: (v: string) => { form.setGuestPhone(v); form.setGuestPhoneDirty(true); form.setGuestPhoneError(form.validatePhone(v)) }, ayuda: '' }
+    : { valor: form.guestPhone, error: form.guestPhoneDirty ? form.guestPhoneError : '', cambiar: (v: string) => { form.setGuestPhone(v); form.setGuestPhoneDirty(true); form.setGuestPhoneError(form.validatePhone(v)) }, ayuda: mascaraEnlace && !form.guestPhone ? t('checkout.phoneEnlace', { mascara: mascaraEnlace }) : '' }
 
   const campoTelefono = (
     <Campo etiqueta={t('checkout.f.telefono')} error={telefono.error} ayuda={telefono.ayuda || undefined}>

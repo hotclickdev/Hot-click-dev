@@ -71,6 +71,7 @@ const CookiesPage = lazy(() => import('@/pages/CookiesPage'))
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
 const RecuperarCarritoPage = lazy(() => import('@/pages/RecuperarCarritoPage'))
+const EnlaceCompraPage = lazy(() => import('@/pages/EnlaceCompraPage'))
 const ServiciosHotPage = lazy(() => import('@/pages/ServiciosHotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const SinConexionPage = lazy(() => import('@/pages/SinConexionPage'))
@@ -163,6 +164,7 @@ export default function AppRoutes() {
       <Route path="/acuerdo-vendedores" element={<AcuerdoVendedoresPage />} />
       <Route path="/cookies" element={<CookiesPage />} />
       <Route path="/recuperar-carrito/:token" element={<RecuperarCarritoPage />} />
+      <Route path="/c/:codigo" element={<EnlaceCompraPage />} />
       <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
       <Route path="/encargo/:token" element={<EncargoPublicPage />} />
       <Route path="/seguimiento/:token" element={<SeguimientoPedidoPage />} />
