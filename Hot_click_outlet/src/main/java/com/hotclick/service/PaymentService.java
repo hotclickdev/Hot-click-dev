@@ -86,6 +86,7 @@ public class PaymentService {
                 pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
                 pedido.setMetodoPago("GIFT_CARD");
                 pedidoRepository.save(pedido);
+                com.hotclick.agente.pago.PedidoBotEventos.publicarPagado(pedido, eventPublisher);
                 if (s.pricing().gcMonto() > 0) {
                     giftCardService.canjear(s.pricing().gcCodigo(), pedido, s.pricing().gcMonto());
                 }

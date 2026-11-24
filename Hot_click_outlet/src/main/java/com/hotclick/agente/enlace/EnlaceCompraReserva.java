@@ -75,8 +75,9 @@ public class EnlaceCompraReserva {
             liberar(e);
             cambio = true;
         }
-        if (vencer && e.getPedidoId() == null
-            && (e.getEstado() == EnlaceCompraEstado.CREADO || e.getEstado() == EnlaceCompraEstado.ABIERTO)
+        // AG-12: el caller (idsParaVencer) ya dejó fuera los enlaces con pedido pagado; un pedido sin pagar vence igual.
+        if (vencer && (e.getEstado() == EnlaceCompraEstado.CREADO || e.getEstado() == EnlaceCompraEstado.ABIERTO
+                || e.getEstado() == EnlaceCompraEstado.RECHAZADO)
             && !e.getVence().isAfter(ahora)) {
             e.setEstado(EnlaceCompraEstado.VENCIDO);
             cambio = true;
