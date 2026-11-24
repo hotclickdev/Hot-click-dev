@@ -127,4 +127,28 @@ class MetaWebhookParserTest {
             "text", "dato privado", null, 0);
         assertThat(m.toString()).doesNotContain("WAID-CLIENTE", "Ana", "dato privado", "PNID");
     }
+
+    @Test
+    void idDelBotonLlegaEnBotonIdYElTituloEnTexto() throws Exception {
+        List<MensajeEntrante> wa = parsear("""
+            {"object":"whatsapp_business_account","entry":[{"changes":[{"field":"messages","value":{
+              "metadata":{"phone_number_id":"PNID"},
+              "messages":[
+                {"from":"WAID","id":"b1","type":"interactive","interactive":{"type":"button_reply","button_reply":{"id":"comprar:42","title":"Comprar"}}},
+                {"from":"WAID","id":"b2","type":"interactive","interactive":{"type":"list_reply","list_reply":{"id":"ver:7","title":"Leche 1 L"}}},
+                {"from":"WAID","id":"b3","type":"button","button":{"text":"Sí","payload":"persona"}},
+                {"from":"WAID","id":"b4","type":"text","text":{"body":"hola"}}
+              ]}}]}]}
+            """);
+        assertThat(wa).extracting(MensajeEntrante::botonId).containsExactly("comprar:42", "ver:7", "persona", null);
+        assertThat(wa.get(0).texto()).isEqualTo("Comprar");
+
+        List<MensajeEntrante> ig = parsear("""
+            {"object":"instagram","entry":[{"id":"IGID","messaging":[
+              {"sender":{"id":"IGSID"},"recipient":{"id":"IGID"},"timestamp":1,"message":{"mid":"q1","text":"Comprar","quick_reply":{"payload":"comprar:9"}}},
+              {"sender":{"id":"IGSID"},"recipient":{"id":"IGID"},"timestamp":1,"postback":{"mid":"p1","title":"Ver más","payload":"ver:9"}}
+            ]}]}
+            """);
+        assertThat(ig).extracting(MensajeEntrante::botonId).containsExactly("comprar:9", "ver:9");
+    }
 }
