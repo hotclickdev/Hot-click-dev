@@ -10,8 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -79,10 +77,9 @@ public class ConversacionService {
         msg.setFechaCreacion(ahora);
         mensajes.save(msg);
 
-        List<ConversacionMensaje> recientes = new ArrayList<>(mensajes.findTop20BySesionIdOrderByIdDesc(s.getId()));
-        Collections.reverse(recientes);
-        List<ConversacionActiva.Turno> historial = recientes.stream()
-            .map(x -> new ConversacionActiva.Turno(x.getRol(), x.getContenido(), x.getFechaCreacion())).toList();
+        // Una sola consulta (20 filas); la conversión a turnos vive fuera de este servicio.
+        List<ConversacionActiva.Turno> historial = ConversacionActiva.turnosDe(
+            mensajes.findTop20BySesionIdOrderByIdDesc(s.getId()));
 
         return new ConversacionActiva(s.getId(), s.getPerfil(), s.getEmpresaId(), cuenta, s.getContactoExterno(),
             s.getUsuarioId(), s.getModo(), s.getUltimoMensajeCliente(), historial);
