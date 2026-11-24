@@ -1,11 +1,14 @@
 package com.hotclick.agente.ventas;
 
+import com.hotclick.agente.canal.Boton;
 import com.hotclick.agente.canal.CanalMensajeria;
+import com.hotclick.agente.canal.RespuestaBoton;
 import com.hotclick.agente.conversacion.ConversacionActiva;
 import com.hotclick.agente.conversacion.ConversacionMensaje;
 import com.hotclick.agente.conversacion.ConversacionService;
 import com.hotclick.agente.conversacion.PerfilConversacion;
 import com.hotclick.agente.conversacion.spi.AgenteRespondedor;
+import com.hotclick.agente.motor.AccionAgente;
 import com.hotclick.agente.motor.Alcance;
 import com.hotclick.agente.motor.ContextoHerramienta;
 import com.hotclick.agente.motor.MotorAgente;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Responde las conversaciones en modo BOT: llama al motor, guarda el turno del asistente y envía el texto por el
@@ -50,19 +54,56 @@ public class RespondedorAgente implements AgenteRespondedor {
             log.warn("[agente-ventas] {} sin empresa: no se responde", conv);
             return;
         }
-        ContextoHerramienta contexto = new ContextoHerramienta(conv.empresaId(), conv.contacto(), perfil);
-        ResultadoAgente r = motor.ejecutar(perfil, contexto, historialSinActual(conv), textoActual(conv, mensaje));
+        ContextoHerramienta contexto = new ContextoHerramienta(conv.empresaId(), conv.contacto(), perfil, null,
+            canalDe(conv, mensaje), conv.sesionId());
+        String entrada = textoActual(conv, mensaje);
+        Optional<RespuestaBoton> boton = RespuestaBoton.parsear(entrada);
+        if (boton.isEmpty() && esTituloHablarConPersona(entrada)) {
+            boton = Optional.of(new RespuestaBoton(RespuestaBoton.Tipo.HABLAR_CON_PERSONA, null));
+        }
+        if (boton.isPresent()) {
+            switch (boton.get().tipo()) {
+                case HABLAR_CON_PERSONA -> {
+                    // Traspaso directo: no se llama a Claude.
+                    enviar(conv, TEXTO_TRASPASO);
+                    conversaciones.pausarBot(conv.sesionId(), conv.empresaId());
+                    return;
+                }
+                case COMPRAR -> entrada = "quiero comprar el producto " + boton.get().productoId();
+                case VER_MAS -> entrada = "quiero ver más del producto " + boton.get().productoId();
+            }
+        }
+        ResultadoAgente r = motor.ejecutar(perfil, contexto, historialSinActual(conv), entrada);
 
         String texto = r.texto();
         boolean traspaso = r.pasarAPersona();
         if (traspaso && texto.isBlank()) texto = TEXTO_TRASPASO;
+        // Si se creó el enlace y el texto no lo trae, se agrega: el cliente siempre debe recibirlo.
+        String enlace = r.acciones().stream()
+            .filter(a -> a.tipo() == AccionAgente.Tipo.ENLACE_CREADO).map(AccionAgente::dato)
+            .filter(u -> u != null && !u.isBlank()).findFirst().orElse(null);
+        if (enlace != null && !texto.contains(enlace)) texto = (texto.isBlank() ? "" : texto + "\n") + enlace;
         if (texto.isBlank()) return;
 
-        canal.enviarTexto(conv.cuenta(), conv.contacto(), texto);
-        conversaciones.registrarSalienteBot(conv.sesionId(), conv.empresaId(), texto);
+        enviar(conv, texto);
         if (traspaso) {
             conversaciones.pausarBot(conv.sesionId(), conv.empresaId());
         }
+    }
+
+    private void enviar(ConversacionActiva conv, String texto) {
+        canal.enviarTexto(conv.cuenta(), conv.contacto(), texto);
+        conversaciones.registrarSalienteBot(conv.sesionId(), conv.empresaId(), texto);
+    }
+
+    static MensajeEntrante.Canal canalDe(ConversacionActiva conv, MensajeEntrante mensaje) {
+        if (mensaje != null && mensaje.canal() != null) return mensaje.canal();
+        return conv.cuenta() == null ? null : conv.cuenta().getTipo();
+    }
+
+    /** WhatsApp entrega el título del botón, no su id: el de traspaso se reconoce también por su título. */
+    static boolean esTituloHablarConPersona(String texto) {
+        return texto != null && texto.strip().equalsIgnoreCase(Boton.hablarConPersona().titulo());
     }
 
     static PerfilAgente perfilDe(PerfilConversacion p) {

@@ -113,6 +113,55 @@ class RespondedorAgenteTest {
     }
 
     @Test
+    void botonComprarSeConvierteEnEntradaParaElMotor() {
+        when(motor.ejecutar(any(), any(), any(), anyString())).thenReturn(resultado("Listo", List.of()));
+
+        respondedor.responder(conv(PerfilConversacion.NEGOCIO_VENTAS, 7L), msg("comprar:42"));
+
+        verify(motor).ejecutar(eq(PerfilAgente.NEGOCIO_VENTAS), any(), any(), eq("quiero comprar el producto 42"));
+    }
+
+    @Test
+    void botonHablarConPersonaTraspasaSinLlamarAlMotor() {
+        respondedor.responder(conv(PerfilConversacion.NEGOCIO_VENTAS, 7L), msg("persona"));
+
+        verifyNoInteractions(motor);
+        verify(canal).enviarTexto(cuenta, "WAID-1", RespondedorAgente.TEXTO_TRASPASO);
+        verify(conversaciones).pausarBot(sesion, 7L);
+    }
+
+    @Test
+    void tituloDelBotonHablarConPersonaTambienTraspasa() {
+        respondedor.responder(conv(PerfilConversacion.NEGOCIO_VENTAS, 7L), msg("Hablar con persona"));
+
+        verifyNoInteractions(motor);
+        verify(conversaciones).pausarBot(sesion, 7L);
+    }
+
+    @Test
+    void contextoLlevaCanalYSesion() {
+        when(motor.ejecutar(any(), any(), any(), anyString())).thenReturn(resultado("Hola", List.of()));
+
+        respondedor.responder(conv(PerfilConversacion.NEGOCIO_VENTAS, 7L), msg("hola"));
+
+        ArgumentCaptor<com.hotclick.agente.motor.ContextoHerramienta> c =
+            ArgumentCaptor.forClass(com.hotclick.agente.motor.ContextoHerramienta.class);
+        verify(motor).ejecutar(any(), c.capture(), any(), anyString());
+        assertThat(c.getValue().canal()).isEqualTo(MensajeEntrante.Canal.WHATSAPP);
+        assertThat(c.getValue().sesionId()).isEqualTo(sesion);
+    }
+
+    @Test
+    void enlaceCreadoSeAgregaSiElTextoNoLoTrae() {
+        when(motor.ejecutar(any(), any(), any(), anyString())).thenReturn(resultado("Aquí está su compra",
+            List.of(new AccionAgente(AccionAgente.Tipo.ENLACE_CREADO, "https://x/c/abc"))));
+
+        respondedor.responder(conv(PerfilConversacion.NEGOCIO_VENTAS, 7L), msg("sí, comprar"));
+
+        verify(canal).enviarTexto(cuenta, "WAID-1", "Aquí está su compra\nhttps://x/c/abc");
+    }
+
+    @Test
     void perfilHotclickSinEmpresaSiResponde() {
         when(motor.ejecutar(any(), any(), any(), anyString())).thenReturn(resultado("Hola", List.of()));
 

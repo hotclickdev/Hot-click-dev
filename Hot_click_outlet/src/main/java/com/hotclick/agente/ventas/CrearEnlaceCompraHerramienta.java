@@ -7,6 +7,7 @@ import com.hotclick.agente.motor.AccionAgente;
 import com.hotclick.agente.motor.ContextoHerramienta;
 import com.hotclick.agente.motor.HerramientaAgente;
 import com.hotclick.agente.motor.ResultadoHerramienta;
+import com.hotclick.agente.webhook.MensajeEntrante;
 import com.hotclick.service.whatsapp.WhatsAppHelpers;
 import org.springframework.stereotype.Component;
 
@@ -63,9 +64,12 @@ public class CrearEnlaceCompraHerramienta implements HerramientaAgente {
             items.add(new EnlaceCompraService.ItemSolicitado(n.path("productoId").asLong(), n.path("cantidad").asInt()));
         }
         try {
-            String contacto = WhatsAppHelpers.normalizarTelefono(contexto.contactoExterno());
+            if (contexto.canal() == null) return ResultadoHerramienta.error("Canal no disponible; derive a una persona.");
+            // En WhatsApp el contacto es el teléfono (506XXXXXXXX); en Instagram/Messenger es el id del canal.
+            String contacto = contexto.canal() == MensajeEntrante.Canal.WHATSAPP
+                ? WhatsAppHelpers.normalizarTelefono(contexto.contactoExterno()) : contexto.contactoExterno();
             EnlaceCompraService.EnlaceCreado e = enlaces.crear(
-                contexto.empresaId(), null, contacto, null, "WHATSAPP", items);
+                contexto.empresaId(), contexto.sesionId(), contacto, null, contexto.canal().name(), items);
             return ResultadoHerramienta.conAccion(e.resumenChat(),
                 new AccionAgente(AccionAgente.Tipo.ENLACE_CREADO, e.url()));
         } catch (EnlaceCompraException ex) {
