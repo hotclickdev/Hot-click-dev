@@ -13,11 +13,17 @@ public enum PerfilAgente {
     NEGOCIO_VENTAS(Alcance.EMPRESA, Set.of(
         "buscar_productos", "crear_enlace_compra", "consultar_pedido", "consultar_conocimiento", "pasar_a_persona")),
 
-    /** Dueño y personal: herramientas de consulta del copilot (sin mutaciones ni finanzas por este canal). */
+    /**
+     * Dueño y personal (teléfono vinculado): consultas del copilot, finanzas (solo con PIN vigente y rol dueño) y
+     * acciones proponer_* (confirmación explícita y PIN). Los permisos los exigen las propias herramientas
+     * (paquete {@code agente.interno}), no el modelo.
+     */
     NEGOCIO_INTERNO(Alcance.EMPRESA, Set.of(
         "buscar_productos", "pasar_a_persona",
         "consultar_inventario", "consultar_ventas", "recomendaciones", "reporte_negocio",
-        "comparar_catalogo_publico", "proyeccion_negocio", "perfil_marca", "consultar_clientes")),
+        "comparar_catalogo_publico", "proyeccion_negocio", "perfil_marca", "consultar_clientes",
+        "consultar_finanzas", "proponer_cambiar_estado_pedido", "proponer_asignar_guia",
+        "proponer_ajustar_stock", "proponer_aplicar_oferta")),
 
     /** Cuenta de HotClick: todo el marketplace, planes y captación de negocios. */
     HOTCLICK(Alcance.MARKETPLACE, Set.of(

@@ -5,10 +5,10 @@ import java.util.OptionalLong;
 /**
  * Gancho para saber si el remitente de un canal es personal de un negocio (modo interno del bot).
  *
- * <p>PENDIENTE: hoy no existe una vinculación VERIFICADA de teléfono a usuario (Usuario.telefono lo escribe el
- * propio usuario y no sirve como prueba de identidad). Una historia posterior (vinculación por código, como la de
- * Telegram) registrará un bean que implemente esta interfaz. Mientras no haya bean, todo remitente se trata como
- * cliente (NEGOCIO_VENTAS), que es el lado seguro.
+ * <p>Usuario.telefono lo escribe el propio usuario y NO sirve como prueba de identidad. La implementación
+ * ({@code agente.interno.VinculacionInternaService}) usa una vinculación verificada por código de un solo uso
+ * enviado desde el teléfono. Sin bean o sin vinculación ACTIVA, todo remitente se trata como cliente
+ * (NEGOCIO_VENTAS), que es el lado seguro.
  */
 public interface TelefonoVinculadoResolver {
 

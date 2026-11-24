@@ -68,10 +68,33 @@ public class DataRetentionScheduler {
         total += limpiarEncargosViejos();
         total += limpiarEmbudoSesiones();
         total += limpiarEnlacesCompra();
+        total += limpiarAgenteAcciones();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
             log.info("[retention] {} registro(s) eliminado(s) en {}ms", total, ms);
+        }
+    }
+
+    /** AG-21: bitácora del modo interno del bot y vinculaciones revocadas, 90 días. */
+    private int limpiarAgenteAcciones() {
+        try {
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR)
+                    .minusDays(Constants.DIAS_RETENCION_AGENTE_ACCION);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_agente_accion_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_accion_tb WHERE fecha_creacion < ? LIMIT 500)",
+                corte);
+            n += jdbc.update(
+                "DELETE FROM hot_click_agente_vinculacion_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_vinculacion_tb WHERE estado = 'REVOCADA' " +
+                "AND fecha_revocacion < ? LIMIT 500)",
+                corte);
+            if (n > 0) log.info("[retention] agente_accion/vinculacion: {} eliminados (> 90 días)", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] agente_accion: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
         }
     }
 

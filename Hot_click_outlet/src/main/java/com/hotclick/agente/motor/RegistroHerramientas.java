@@ -25,6 +25,10 @@ public class RegistroHerramientas {
         }
         // Solo lectura: puedeGestionar=false y esDueno=false => sin proponer_* ni finanzas.
         for (Map<String, Object> def : copilot.buildTools(null, false, false)) {
+            // Finanzas y proponer_* NUNCA por el adaptador de solo lectura: solo las herramientas del paquete
+            // agente.interno (PIN, rol y confirmación) pueden registrarlas.
+            String nombre = String.valueOf(def.get("name"));
+            if (nombre.startsWith("proponer_") || "consultar_finanzas".equals(nombre)) continue;
             registrar(new CopilotHerramienta(def, copilot));
         }
     }
