@@ -83,6 +83,7 @@ class RutasExcluidasLectorTest extends BaseIntegrationTest {
         "POST /api/sinpe/guest/{numeroPedido}/comprobante",
         "POST /api/sinpe/{numeroPedido}/comprobante",
         "POST /api/tienda/{slug}/pedidos",
+        "POST /api/webhooks/meta", // AG-02: webhook de Meta (WhatsApp/Instagram/Messenger), firma verificada
         "POST /api/webhooks/onvo",
         "POST /api/webhooks/payxpert",
         "POST /api/webhooks/sentry",
