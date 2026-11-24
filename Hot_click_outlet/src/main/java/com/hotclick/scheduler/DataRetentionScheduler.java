@@ -67,6 +67,7 @@ public class DataRetentionScheduler {
         total += marcarEncargosVencidos();
         total += limpiarEncargosViejos();
         total += limpiarEmbudoSesiones();
+        total += limpiarEnlacesCompra();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -118,6 +119,25 @@ public class DataRetentionScheduler {
         } while (n == 500);
         if (total > 0) log.info("[retention] ai_mensaje: {} eliminados (> 30 días)", total);
         return total;
+    }
+
+    /**
+     * AG-07: los enlaces de compra del bot guardan el contacto del cliente (su número de WhatsApp). Se borran 90 días
+     * después de que vencen (ítems en cascada); el pedido conserva la atribución en {@code origen_canal} y su FK al
+     * enlace pasa a NULL (ON DELETE SET NULL). 90 días cubre soporte, reclamos de pago y la ventana de contracargos.
+     */
+    private int limpiarEnlacesCompra() {
+        try {
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(90);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_enlace_compra_tb WHERE id_enlace_compra IN (" +
+                "  SELECT id_enlace_compra FROM hot_click_enlace_compra_tb WHERE vence < ? LIMIT 500)", corte);
+            if (n > 0) log.info("[retention] enlace_compra: {} eliminados (vencidos hace > 90 días)", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] enlace_compra: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
     }
 
     private int limpiarWebhookEvents() {
