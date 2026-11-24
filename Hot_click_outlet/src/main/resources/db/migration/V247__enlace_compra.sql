@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS hot_click_enlace_compra_tb (
     id_enlace_compra       BIGSERIAL PRIMARY KEY,
     codigo                 VARCHAR(64)  NOT NULL,
     fk_id_empresa          BIGINT       REFERENCES hot_click_empresa_tb (id_empresa) ON DELETE SET NULL,
-    fk_id_chat_sesion      BIGINT,
+    fk_id_chat_sesion      UUID,
     contacto_externo       VARCHAR(100),
     nombre_cliente         VARCHAR(120),
     canal                  VARCHAR(20)  NOT NULL,

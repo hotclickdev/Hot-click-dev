@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 class EnlaceCompraServiceTest {
 
     private static final LocalDateTime AHORA = LocalDateTime.of(2026, 12, 7, 10, 0);
+    private static final java.util.UUID SESION = java.util.UUID.fromString("11111111-2222-3333-4444-555555555555");
 
     private EnlaceCompraRepository repo;
     private ProductoRepository productos;
@@ -55,7 +56,7 @@ class EnlaceCompraServiceTest {
         Producto leche = producto(11, tienda, 1500, 10);
         existen(leche);
 
-        EnlaceCreado r = service.crear(7L, 99L, "50600000000", "Ana", "whatsapp", List.of(new ItemSolicitado(11L, 3)));
+        EnlaceCreado r = service.crear(7L, SESION, "50600000000", "Ana", "whatsapp", List.of(new ItemSolicitado(11L, 3)));
 
         assertThat(r.total()).isEqualTo(4500);
         assertThat(r.url()).isEqualTo("https://hotclick.lat/c/" + r.codigo());
@@ -66,6 +67,7 @@ class EnlaceCompraServiceTest {
         verify(repo).save(cap.capture());
         assertThat(cap.getValue().getEstado()).isEqualTo(EnlaceCompraEstado.CREADO);
         assertThat(cap.getValue().getCanal()).isEqualTo("WHATSAPP");
+        assertThat(cap.getValue().getChatSesionId()).isEqualTo(SESION);
         assertThat(cap.getValue().getItems()).hasSize(1);
         assertThat(cap.getValue().getItems().get(0).getPrecioUnitarioCreado()).isEqualTo(1500);
     }

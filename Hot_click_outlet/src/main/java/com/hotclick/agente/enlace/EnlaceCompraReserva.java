@@ -7,9 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * AG-09: la reserva de stock del enlace es la misma que usa el checkout (suma a {@code producto.stock_reservado}),
@@ -30,11 +32,9 @@ public class EnlaceCompraReserva {
 
     /** Un solo SELECT … FOR UPDATE con ids únicos y ordenados (mismo orden que el checkout: sin deadlock). */
     Map<Long, Producto> bloquear(Collection<Long> ids) {
-        List<Long> ordenados = ids.stream().distinct().sorted().toList();
-        Map<Long, Producto> mapa = new HashMap<>();
-        if (ordenados.isEmpty()) return mapa;
-        for (Producto p : productoRepository.findAllByIdsForUpdate(ordenados)) mapa.put(p.getId(), p);
-        return mapa;
+        List<Long> ordenados = new ArrayList<>(new TreeSet<>(ids));
+        if (ordenados.isEmpty()) return new HashMap<>();
+        return EnlaceItems.porId(productoRepository.findAllByIdsForUpdate(ordenados));
     }
 
     void guardarProductos(Collection<Producto> productos) {
@@ -42,26 +42,17 @@ public class EnlaceCompraReserva {
     }
 
     Map<Long, Producto> bloquear(EnlaceCompra e) {
-        return bloquear(e.getItems().stream().map(EnlaceCompraItem::getProductoId).toList());
+        return bloquear(EnlaceItems.idsProducto(e));
     }
 
     /** Devuelve al stock lo que el enlace tenía reservado. Idempotente. Con los productos ya bloqueados. */
     void liberar(EnlaceCompra e, Map<Long, Producto> bloqueados) {
-        for (EnlaceCompraItem i : e.getItems()) {
-            if (i.getCantidadReservada() <= 0) continue;
-            Producto p = bloqueados.get(i.getProductoId());
-            if (p != null) {
-                p.setStockReservado(Math.max(0, p.getStockReservado() - i.getCantidadReservada()));
-                productoRepository.save(p);
-            }
-            i.setCantidadReservada(0);
-        }
-        e.setReservaHasta(null);
+        productoRepository.saveAll(EnlaceItems.devolverReserva(e, bloqueados));
     }
 
     /** Libera la reserva del enlace (el caller ya tiene la transacción y el lock del enlace). */
     void liberar(EnlaceCompra e) {
-        if (e.getItems().stream().noneMatch(i -> i.getCantidadReservada() > 0)) {
+        if (!EnlaceItems.tieneReserva(e)) {
             e.setReservaHasta(null);
             return;
         }
@@ -80,7 +71,7 @@ public class EnlaceCompraReserva {
         boolean reservaVencida = e.getReservaHasta() == null || !e.getReservaHasta().isAfter(ahora);
         boolean terminal = !(e.getEstado() == EnlaceCompraEstado.CREADO || e.getEstado() == EnlaceCompraEstado.ABIERTO
             || e.getEstado() == EnlaceCompraEstado.RECHAZADO);
-        if ((reservaVencida || terminal || vencer) && e.getItems().stream().anyMatch(i -> i.getCantidadReservada() > 0)) {
+        if ((reservaVencida || terminal || vencer) && EnlaceItems.tieneReserva(e)) {
             liberar(e);
             cambio = true;
         }
