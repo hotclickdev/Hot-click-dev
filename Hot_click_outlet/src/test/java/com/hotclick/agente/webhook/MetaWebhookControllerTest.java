@@ -28,8 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class MetaWebhookControllerTest {
 
-    private static final String SECRETO = "secreto-app-prueba";
-    private static final String TOKEN = "token-verificacion-prueba";
+    private static final String CLAVE_APP = "secreto-app-prueba";
+    private static final String VERIFICACION = "token-verificacion-prueba";
     private static final String EVENTO = """
         {"object":"whatsapp_business_account","entry":[{"changes":[{"field":"messages","value":{
           "metadata":{"phone_number_id":"PNID"},
@@ -60,14 +60,14 @@ class MetaWebhookControllerTest {
     void setUp() {
         dedup = mock(MetaEventoDedup.class);
         when(dedup.esNuevo(anyString(), any())).thenReturn(true);
-        firma = new MetaWebhookFirma(SECRETO, TOKEN);
+        firma = new MetaWebhookFirma(CLAVE_APP, VERIFICACION);
         recibidos.clear();
     }
 
     @Test
     void verificacionDeSuscripcionDevuelveElChallenge() throws Exception {
         mvc().perform(get("/api/webhooks/meta")
-                .param("hub.mode", "subscribe").param("hub.verify_token", TOKEN).param("hub.challenge", "12345"))
+                .param("hub.mode", "subscribe").param("hub.verify_token", VERIFICACION).param("hub.challenge", "12345"))
             .andExpect(status().isOk())
             .andExpect(content().string("12345"));
     }
@@ -78,7 +78,7 @@ class MetaWebhookControllerTest {
                 .param("hub.mode", "subscribe").param("hub.verify_token", "malo").param("hub.challenge", "1"))
             .andExpect(status().isForbidden());
         mvc().perform(get("/api/webhooks/meta")
-                .param("hub.mode", "unsubscribe").param("hub.verify_token", TOKEN).param("hub.challenge", "1"))
+                .param("hub.mode", "unsubscribe").param("hub.verify_token", VERIFICACION).param("hub.challenge", "1"))
             .andExpect(status().isForbidden());
     }
 
