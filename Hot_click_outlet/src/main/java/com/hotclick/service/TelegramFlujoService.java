@@ -219,6 +219,12 @@ public class TelegramFlujoService {
         stockService.ajustarAExistencia(productoId, cantidadReal, "telegram-ia", operadorCorreo);
     }
 
+    /** Igual que {@link #ajustarStockTx(Long, int, String)} pero con el origen del ajuste (p. ej. "whatsapp-ia"). */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void ajustarStockTx(Long productoId, int cantidadReal, String origen, String operadorCorreo) {
+        stockService.ajustarAExistencia(productoId, cantidadReal, origen, operadorCorreo);
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void aplicarOfertaTx(Long productoId, boolean enOferta, Integer porcentajeDescuento, Integer precioOferta) {
         productoService.aplicarOferta(productoId, enOferta, porcentajeDescuento, precioOferta);

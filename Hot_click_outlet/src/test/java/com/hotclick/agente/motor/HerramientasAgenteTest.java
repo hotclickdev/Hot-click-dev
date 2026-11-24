@@ -118,8 +118,11 @@ class HerramientasAgenteTest {
     @DisplayName("Listas de tools por perfil: ventas sin internas, interno sin crear_enlace, HOTCLICK con planes y lead")
     void listasPorPerfil() {
         assertThat(PerfilAgente.NEGOCIO_VENTAS.herramientas()).doesNotContain("consultar_ventas", "consultar_inventario");
-        assertThat(PerfilAgente.NEGOCIO_INTERNO.herramientas()).contains("consultar_ventas")
-            .doesNotContain("crear_enlace_compra", "consultar_finanzas", "proponer_ajustar_stock");
+        // AG-20: el interno suma finanzas y proponer_* (con PIN, rol y confirmación en agente.interno).
+        assertThat(PerfilAgente.NEGOCIO_INTERNO.herramientas()).contains("consultar_ventas", "consultar_finanzas",
+            "proponer_ajustar_stock").doesNotContain("crear_enlace_compra");
+        assertThat(PerfilAgente.NEGOCIO_VENTAS.herramientas()).doesNotContain("consultar_finanzas", "proponer_ajustar_stock");
+        assertThat(PerfilAgente.HOTCLICK.herramientas()).doesNotContain("consultar_finanzas", "proponer_ajustar_stock");
         assertThat(PerfilAgente.HOTCLICK.herramientas()).contains("explicar_planes", "registrar_lead");
         for (PerfilAgente p : PerfilAgente.values()) {
             assertThat(p.herramientas()).contains("pasar_a_persona");

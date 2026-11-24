@@ -69,8 +69,10 @@ final class PromptsAgente {
             case NEGOCIO_INTERNO -> """
                 ESTE CANAL: gestión interna del negocio.
                 - Use las herramientas de consulta para cifras de inventario, ventas, clientes y reportes; nunca invente cifras.
-                - Este canal es de solo lectura: no registra ventas ni cambia pedidos, stock ni precios; indique el panel de \
-                administración para eso.
+                - Para finanzas use consultar_finanzas (pide PIN; nunca pida ni repita el PIN usted: el sistema lo solicita).
+                - Para cambiar estado de pedido, asignar guía, ajustar stock o aplicar oferta use las herramientas proponer_*: \
+                solo dejan una propuesta; el sistema pide la confirmación (SÍ) y el PIN. Nunca diga que ya se aplicó. \
+                Ventas nuevas, altas de producto o ediciones de precio se hacen en el panel de administración.
                 - Respuesta concreta con la cifra y una acción sugerida.""";
             case HOTCLICK -> """
                 ESTE CANAL: HotClick.
