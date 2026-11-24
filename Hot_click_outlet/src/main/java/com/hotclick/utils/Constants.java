@@ -132,6 +132,8 @@ public class Constants {
 
     /** Retención de hot_click_embudo_sesion_tb (DataRetentionScheduler). */
     public static final int DIAS_RETENCION_EMBUDO_SESION = 90;
+    /** AG-21: bitácora de acciones del modo interno del bot (y vinculaciones revocadas). */
+    public static final int DIAS_RETENCION_AGENTE_ACCION = 90;
 
     /**
      * Umbral de auto-aprobación de payouts (PayoutAutoApprovalScheduler) — decisión
