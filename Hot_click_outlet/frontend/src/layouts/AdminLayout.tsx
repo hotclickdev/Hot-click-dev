@@ -15,6 +15,7 @@ import MentalModelCoach from '@/components/ui/mentalModel/MentalModelCoach'
 import { esUsuarioSistema, esStaffPlataforma } from '@/utils/sistemaUser'
 import { esPwaStandalone } from '@/utils/pwaDisplay'
 import { RUTA_SISTEMA_VISIBILIDAD } from '@/utils/rutaTienda'
+import { useResumenBandeja } from '@/features/bandeja/useBandeja'
 import { buildSidebarLinks } from './admin/adminSidebarLinks'
 import SidebarContent, { type RoleBadge } from './admin/SidebarContent'
 import AdminMobileHeader from './admin/AdminMobileHeader'
@@ -64,7 +65,13 @@ export default function AdminLayout({ children }: { children?: ReactNode }) {
     return () => globalThis.removeEventListener('keydown', handler)
   }, [])
 
-  const sidebarLinks: SidebarLink[] = buildSidebarLinks(t, userRole, permissions)
+  // AG-18: aviso en el panel — conversaciones de la bandeja asignadas a mí (solo planes con IA)
+  const iaActiva = useTenantStore((s) => s.hasFeature('ai'))
+  const { data: resumenBandeja } = useResumenBandeja(esUsuarioSistema(userRole) && iaActiva)
+  const sidebarLinks: SidebarLink[] = buildSidebarLinks(t, userRole, permissions).map((l) =>
+    l.to === '/admin/bandeja' && (resumenBandeja?.asignadasAMi ?? 0) > 0
+      ? { ...l, badge: resumenBandeja?.asignadasAMi }
+      : l)
   const handleLogout = () => cerrarSesionCompleta
 
   // Cargar estado de empresa para mostrar banners de aprobación / visibilidad

@@ -4843,5 +4843,84 @@
       "titulo": "Tu negocio espera un cupo",
       "detalle": "Estamos revisando tu solicitud de cupo de Emprendedor. Cuando la aprobemos empieza tu prueba y vas a poder agregar tu tarjeta. No te cobramos nada mientras esperás."
     }
+  },
+  "bandeja": {
+    "titulo": "Bandeja",
+    "subtitulo": "Conversaciones de WhatsApp, Instagram y Messenger. Mirá lo que responde el bot y tomá el chat cuando haga falta.",
+    "resumen": "Tenés {{mias}} conversaciones tuyas abiertas y {{sin}} sin asignar.",
+    "filtrosAria": "Filtros de la bandeja",
+    "filtroCanal": "Canal",
+    "filtroEstado": "Estado",
+    "todosCanales": "Todos los canales",
+    "listaAria": "Conversaciones",
+    "paginacionAria": "Paginación de conversaciones",
+    "anterior": "Anterior",
+    "siguiente": "Siguiente",
+    "cargando": "Cargando…",
+    "vacioTitulo": "No hay conversaciones",
+    "vacioMensaje": "Cuando alguien escriba por un canal conectado, la conversación aparece acá.",
+    "elegir": "Elegí una conversación para ver los mensajes.",
+    "sinMensajes": "Sin mensajes todavía",
+    "sinAsignar": "Sin asignar",
+    "atiende": "Atiende: {{nombre}}",
+    "asignadoAMi": "Vos",
+    "asignadoAOtra": "Otra persona del equipo",
+    "detalleAria": "Detalle de la conversación",
+    "hiloAria": "Mensajes de la conversación",
+    "volver": "← Volver a la lista",
+    "responder": "Responder",
+    "ayudaEnviar": "Al responder, el bot se pausa y vos atendés el chat. Ctrl + Enter para enviar.",
+    "avisoVentana": "Pasaron más de 24 horas desde el último mensaje de la persona: el canal ya no permite escribirle. Podés responder cuando ella escriba de nuevo.",
+    "avisoCerrada": "La conversación está cerrada.",
+    "errorGenerico": "No se pudo completar la acción. Intentá de nuevo.",
+    "errorCargar": "No se pudo cargar la bandeja. Intentá de nuevo en un momento.",
+    "vista": {
+      "TODAS": "Todas",
+      "SIN_ASIGNAR": "Sin asignar",
+      "MIAS": "Mías"
+    },
+    "estado": {
+      "ABIERTA": "Abiertas",
+      "CERRADA": "Cerradas"
+    },
+    "canal": {
+      "WHATSAPP": "WhatsApp",
+      "INSTAGRAM": "Instagram",
+      "MESSENGER": "Messenger"
+    },
+    "modo": {
+      "BOT": "Atiende el bot",
+      "PERSONA": "Atiende una persona"
+    },
+    "rol": {
+      "user": "Cliente",
+      "assistant": "Bot",
+      "persona": "Equipo",
+      "system": "Sistema"
+    },
+    "acciones": {
+      "pausarBot": "Pausar bot",
+      "reanudarBot": "Devolver al bot",
+      "tomar": "Tomar",
+      "asignarA": "Asignar a",
+      "elegirPersona": "Elegí una persona",
+      "asignar": "Asignar",
+      "cerrar": "Cerrar",
+      "confirmarCerrar": "Sí, cerrar",
+      "cancelar": "Cancelar",
+      "enviar": "Enviar"
+    },
+    "ok": {
+      "pausada": "Bot pausado. Ahora atendés vos.",
+      "reanudada": "El bot volvió a atender.",
+      "tomada": "Tomaste la conversación.",
+      "asignada": "Conversación asignada.",
+      "cerrada": "Conversación cerrada.",
+      "enviado": "Mensaje enviado."
+    },
+    "menu": {
+      "titulo": "Bandeja",
+      "detalle": "Conversaciones de tus bots"
+    }
   }
 }

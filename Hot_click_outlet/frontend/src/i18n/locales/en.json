@@ -4843,5 +4843,84 @@
       "titulo": "Your business is waiting for a slot",
       "detalle": "We are reviewing your Emprendedor slot request. When approved your trial starts and you can add your card. You are not charged while you wait."
     }
+  },
+  "bandeja": {
+    "titulo": "Inbox",
+    "subtitulo": "WhatsApp, Instagram and Messenger conversations. See what the bot replies and take over the chat when needed.",
+    "resumen": "You have {{mias}} open conversations assigned to you and {{sin}} unassigned.",
+    "filtrosAria": "Inbox filters",
+    "filtroCanal": "Channel",
+    "filtroEstado": "Status",
+    "todosCanales": "All channels",
+    "listaAria": "Conversations",
+    "paginacionAria": "Conversation pagination",
+    "anterior": "Previous",
+    "siguiente": "Next",
+    "cargando": "Loading…",
+    "vacioTitulo": "No conversations",
+    "vacioMensaje": "When someone writes through a connected channel, the conversation shows up here.",
+    "elegir": "Pick a conversation to see its messages.",
+    "sinMensajes": "No messages yet",
+    "sinAsignar": "Unassigned",
+    "atiende": "Handled by: {{nombre}}",
+    "asignadoAMi": "You",
+    "asignadoAOtra": "Another team member",
+    "detalleAria": "Conversation detail",
+    "hiloAria": "Conversation messages",
+    "volver": "← Back to the list",
+    "responder": "Reply",
+    "ayudaEnviar": "When you reply, the bot is paused and you handle the chat. Ctrl + Enter to send.",
+    "avisoVentana": "More than 24 hours have passed since the person's last message: the channel no longer allows writing to them. You can reply when they write again.",
+    "avisoCerrada": "The conversation is closed.",
+    "errorGenerico": "The action could not be completed. Please try again.",
+    "errorCargar": "The inbox could not be loaded. Please try again in a moment.",
+    "vista": {
+      "TODAS": "All",
+      "SIN_ASIGNAR": "Unassigned",
+      "MIAS": "Mine"
+    },
+    "estado": {
+      "ABIERTA": "Open",
+      "CERRADA": "Closed"
+    },
+    "canal": {
+      "WHATSAPP": "WhatsApp",
+      "INSTAGRAM": "Instagram",
+      "MESSENGER": "Messenger"
+    },
+    "modo": {
+      "BOT": "Bot handling",
+      "PERSONA": "Person handling"
+    },
+    "rol": {
+      "user": "Customer",
+      "assistant": "Bot",
+      "persona": "Team",
+      "system": "System"
+    },
+    "acciones": {
+      "pausarBot": "Pause bot",
+      "reanudarBot": "Hand back to bot",
+      "tomar": "Take over",
+      "asignarA": "Assign to",
+      "elegirPersona": "Pick a person",
+      "asignar": "Assign",
+      "cerrar": "Close",
+      "confirmarCerrar": "Yes, close",
+      "cancelar": "Cancel",
+      "enviar": "Send"
+    },
+    "ok": {
+      "pausada": "Bot paused. You are handling it now.",
+      "reanudada": "The bot is handling the chat again.",
+      "tomada": "You took the conversation.",
+      "asignada": "Conversation assigned.",
+      "cerrada": "Conversation closed.",
+      "enviado": "Message sent."
+    },
+    "menu": {
+      "titulo": "Inbox",
+      "detalle": "Conversations from your bots"
+    }
   }
 }

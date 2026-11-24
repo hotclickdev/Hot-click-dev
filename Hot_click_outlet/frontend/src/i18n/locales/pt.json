@@ -4846,5 +4846,84 @@
       "titulo": "Seu negócio aguarda uma vaga",
       "detalle": "Estamos analisando seu pedido de vaga do Emprendedor. Quando aprovado, seu teste começa e você poderá adicionar seu cartão. Nada é cobrado enquanto você espera."
     }
+  },
+  "bandeja": {
+    "titulo": "Caixa de entrada",
+    "subtitulo": "Conversas do WhatsApp, Instagram e Messenger. Veja o que o bot responde e assuma o chat quando precisar.",
+    "resumen": "Você tem {{mias}} conversas abertas atribuídas a você e {{sin}} sem atribuição.",
+    "filtrosAria": "Filtros da caixa de entrada",
+    "filtroCanal": "Canal",
+    "filtroEstado": "Status",
+    "todosCanales": "Todos os canais",
+    "listaAria": "Conversas",
+    "paginacionAria": "Paginação das conversas",
+    "anterior": "Anterior",
+    "siguiente": "Próxima",
+    "cargando": "Carregando…",
+    "vacioTitulo": "Não há conversas",
+    "vacioMensaje": "Quando alguém escrever por um canal conectado, a conversa aparece aqui.",
+    "elegir": "Escolha uma conversa para ver as mensagens.",
+    "sinMensajes": "Ainda sem mensagens",
+    "sinAsignar": "Sem atribuição",
+    "atiende": "Atendido por: {{nombre}}",
+    "asignadoAMi": "Você",
+    "asignadoAOtra": "Outra pessoa da equipe",
+    "detalleAria": "Detalhe da conversa",
+    "hiloAria": "Mensagens da conversa",
+    "volver": "← Voltar à lista",
+    "responder": "Responder",
+    "ayudaEnviar": "Ao responder, o bot é pausado e você atende o chat. Ctrl + Enter para enviar.",
+    "avisoVentana": "Passaram mais de 24 horas desde a última mensagem da pessoa: o canal não permite mais escrever para ela. Você pode responder quando ela escrever de novo.",
+    "avisoCerrada": "A conversa está fechada.",
+    "errorGenerico": "Não foi possível concluir a ação. Tente de novo.",
+    "errorCargar": "Não foi possível carregar a caixa de entrada. Tente de novo em instantes.",
+    "vista": {
+      "TODAS": "Todas",
+      "SIN_ASIGNAR": "Sem atribuição",
+      "MIAS": "Minhas"
+    },
+    "estado": {
+      "ABIERTA": "Abertas",
+      "CERRADA": "Fechadas"
+    },
+    "canal": {
+      "WHATSAPP": "WhatsApp",
+      "INSTAGRAM": "Instagram",
+      "MESSENGER": "Messenger"
+    },
+    "modo": {
+      "BOT": "Bot atendendo",
+      "PERSONA": "Pessoa atendendo"
+    },
+    "rol": {
+      "user": "Cliente",
+      "assistant": "Bot",
+      "persona": "Equipe",
+      "system": "Sistema"
+    },
+    "acciones": {
+      "pausarBot": "Pausar bot",
+      "reanudarBot": "Devolver ao bot",
+      "tomar": "Assumir",
+      "asignarA": "Atribuir a",
+      "elegirPersona": "Escolha uma pessoa",
+      "asignar": "Atribuir",
+      "cerrar": "Fechar",
+      "confirmarCerrar": "Sim, fechar",
+      "cancelar": "Cancelar",
+      "enviar": "Enviar"
+    },
+    "ok": {
+      "pausada": "Bot pausado. Agora você atende.",
+      "reanudada": "O bot voltou a atender.",
+      "tomada": "Você assumiu a conversa.",
+      "asignada": "Conversa atribuída.",
+      "cerrada": "Conversa fechada.",
+      "enviado": "Mensagem enviada."
+    },
+    "menu": {
+      "titulo": "Caixa de entrada",
+      "detalle": "Conversas dos seus bots"
+    }
   }
 }
