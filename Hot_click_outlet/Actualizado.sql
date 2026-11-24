@@ -4751,3 +4751,52 @@ CREATE TABLE IF NOT EXISTS hot_click_canal_evento_procesado_tb (
     creado    TIMESTAMP    NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_canal_evento_procesado_creado ON hot_click_canal_evento_procesado_tb (creado);
+
+-- V245 · AG-03: cuentas de mensajería conectadas
+CREATE TABLE IF NOT EXISTS hot_click_canal_cuenta_tb (
+    id_canal_cuenta     BIGSERIAL    PRIMARY KEY,
+    tipo                VARCHAR(20)  NOT NULL,
+    fk_id_empresa       BIGINT       REFERENCES hot_click_empresa_tb(id_empresa) ON DELETE CASCADE,
+    id_externo          VARCHAR(100) NOT NULL,
+    waba_id             VARCHAR(100),
+    nombre              VARCHAR(150),
+    token_cifrado       TEXT,
+    estado              VARCHAR(20)  NOT NULL DEFAULT 'ACTIVA',
+    fecha_creacion      TIMESTAMP    NOT NULL DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMP    NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_canal_cuenta_tipo   CHECK (tipo IN ('WHATSAPP', 'INSTAGRAM', 'MESSENGER')),
+    CONSTRAINT chk_canal_cuenta_estado CHECK (estado IN ('ACTIVA', 'PAUSADA', 'DESCONECTADA'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_canal_cuenta_tipo_externo ON hot_click_canal_cuenta_tb (tipo, id_externo);
+CREATE INDEX IF NOT EXISTS idx_canal_cuenta_empresa ON hot_click_canal_cuenta_tb (fk_id_empresa);
+
+-- V246 · AG-05: sesión de chat para la bandeja de los bots
+ALTER TABLE hot_click_chat_sesion_tb ALTER COLUMN fk_id_empresa DROP NOT NULL;
+ALTER TABLE hot_click_chat_mensaje_shopping_tb ALTER COLUMN fk_id_empresa DROP NOT NULL;
+
+ALTER TABLE hot_click_chat_sesion_tb
+    ADD COLUMN IF NOT EXISTS fk_id_canal_cuenta BIGINT REFERENCES hot_click_canal_cuenta_tb(id_canal_cuenta) ON DELETE SET NULL;
+ALTER TABLE hot_click_chat_sesion_tb
+    ADD COLUMN IF NOT EXISTS perfil VARCHAR(20) CHECK (perfil IN ('NEGOCIO_VENTAS', 'NEGOCIO_INTERNO', 'HOTCLICK', 'ASESOR_WEB'));
+ALTER TABLE hot_click_chat_sesion_tb ADD COLUMN IF NOT EXISTS contacto_externo VARCHAR(100);
+ALTER TABLE hot_click_chat_sesion_tb
+    ADD COLUMN IF NOT EXISTS modo VARCHAR(10) NOT NULL DEFAULT 'BOT' CHECK (modo IN ('BOT', 'PERSONA'));
+ALTER TABLE hot_click_chat_sesion_tb
+    ADD COLUMN IF NOT EXISTS fk_id_usuario_asignado BIGINT REFERENCES hot_click_usuario_tb(id_usuario) ON DELETE SET NULL;
+ALTER TABLE hot_click_chat_sesion_tb ADD COLUMN IF NOT EXISTS ultimo_mensaje_cliente TIMESTAMPTZ;
+ALTER TABLE hot_click_chat_sesion_tb
+    ADD COLUMN IF NOT EXISTS estado VARCHAR(10) NOT NULL DEFAULT 'ABIERTA' CHECK (estado IN ('ABIERTA', 'CERRADA'));
+
+ALTER TABLE hot_click_chat_sesion_tb DROP CONSTRAINT IF EXISTS chk_chat_sesion_canal;
+ALTER TABLE hot_click_chat_sesion_tb ADD CONSTRAINT chk_chat_sesion_canal
+    CHECK (canal IN ('WEB', 'WHATSAPP', 'QR', 'EMBED', 'INSTAGRAM', 'MESSENGER'));
+ALTER TABLE hot_click_chat_mensaje_shopping_tb DROP CONSTRAINT IF EXISTS chk_chat_msg_rol;
+ALTER TABLE hot_click_chat_mensaje_shopping_tb ADD CONSTRAINT chk_chat_msg_rol
+    CHECK (rol IN ('user', 'assistant', 'system', 'persona'));
+
+-- Una sola conversación abierta por (cuenta, contacto); al cerrarla, el siguiente mensaje abre otra.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_sesion_cuenta_contacto_abierta
+    ON hot_click_chat_sesion_tb (fk_id_canal_cuenta, contacto_externo)
+    WHERE fk_id_canal_cuenta IS NOT NULL AND estado = 'ABIERTA';
+CREATE INDEX IF NOT EXISTS idx_chat_sesion_asignado
+    ON hot_click_chat_sesion_tb (fk_id_usuario_asignado) WHERE fk_id_usuario_asignado IS NOT NULL;

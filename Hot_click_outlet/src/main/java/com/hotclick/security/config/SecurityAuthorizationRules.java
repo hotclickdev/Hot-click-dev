@@ -221,6 +221,10 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST,   "/api/empresa/equipo").hasRole(Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,    "/api/empresa/equipo/*/rol").hasRole(Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole(Constants.ROL_EMPRENDEDOR)
+            // Bots de venta con IA (AG-03): cuentas de WhatsApp/IG/FB conectadas; aislamiento por CompanyScope + feature
+            .requestMatchers(GET,  "/api/agente/canales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/agente/canales/*/pausar", "/api/agente/canales/*/reanudar",
+                "/api/agente/canales/*/desconectar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Sucursales (Negocio Plus) — ADMIN / EMPRENDEDOR; aislamiento por CompanyScope
             .requestMatchers(GET,  "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
