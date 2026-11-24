@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.util.HexFormat;
+import java.util.Locale;
 
 /**
  * Autenticidad del webhook de Meta.
@@ -48,7 +49,7 @@ public class MetaWebhookFirma {
         if (appSecret.length == 0 || cuerpo == null || cabecera == null || !cabecera.startsWith(PREFIJO)) return false;
         byte[] recibida;
         try {
-            recibida = HexFormat.of().parseHex(cabecera.substring(PREFIJO.length()).trim().toLowerCase());
+            recibida = HexFormat.of().parseHex(cabecera.substring(PREFIJO.length()).trim().toLowerCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             return false;
         }
