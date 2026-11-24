@@ -9,6 +9,7 @@ import { guardarUltimoPedido } from '@/utils/ultimoPedido'
 import type { CheckoutPayload } from '@/types/pedido'
 import { proveedorDe } from './pagoPrincipal'
 import { datosSinpeOnvo } from '@/utils/sinpeOnvo'
+import { leerDatosEnlace } from '@/pages/enlace/enlaceCompra'
 
 /** Etiqueta legible del método de envío elegido para un paquete, para el resumen en notas. */
 function opcionesParaLabel(p: PaqueteCheckout, metodo: string): string {
@@ -170,7 +171,9 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     setGuestEmailDirty(true)
     if (eErr) return
 
-    if (requiereEntrega) {
+    // AG-07: con enlace del bot el teléfono es el del WhatsApp; el servidor lo completa (no viaja al navegador).
+    const telefonoDelEnlace = Boolean(leerDatosEnlace()?.telefonoMascara) && !guestPhone.trim()
+    if (requiereEntrega && !telefonoDelEnlace) {
       const pErr = validatePhone(guestPhone)
       setGuestPhoneError(pErr)
       setGuestPhoneDirty(true)
@@ -226,6 +229,8 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       provincia: provincia?.trim() || undefined,
       canton: canton?.trim() || undefined,
       provider,
+      // AG-07/AG-09: el servidor libera la reserva del enlace y vincula pedido ↔ enlace.
+      ...(leerDatosEnlace()?.codigo ? { enlaceCodigo: leerDatosEnlace()?.codigo } : {}),
       ...(sinpeOnvo
         ? {
             sinpeIdentificacion: sinpeOnvo.identificacion,

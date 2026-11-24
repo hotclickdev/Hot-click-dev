@@ -236,6 +236,7 @@ public class SpaController {
         "/admin/compras/nueva",
         "/admin/proveedores",
         "/recuperar-carrito/{id}",
+        "/c/{codigo}", // AG-07: enlace de compra del bot de IA
         "/encargo/{token}",
         "/r/{token}", // QR de retiro de pedidos de Telegram (página mínima, sin datos personales)
         "/cotizacion/{token}",

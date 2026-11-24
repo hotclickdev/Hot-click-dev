@@ -10,8 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -79,13 +77,31 @@ public class ConversacionService {
         msg.setFechaCreacion(ahora);
         mensajes.save(msg);
 
-        List<ConversacionMensaje> recientes = new ArrayList<>(mensajes.findTop20BySesionIdOrderByIdDesc(s.getId()));
-        Collections.reverse(recientes);
-        List<ConversacionActiva.Turno> historial = recientes.stream()
-            .map(x -> new ConversacionActiva.Turno(x.getRol(), x.getContenido(), x.getFechaCreacion())).toList();
+        // Una sola consulta (20 filas); la conversión a turnos vive fuera de este servicio.
+        List<ConversacionActiva.Turno> historial = ConversacionActiva.turnosDe(
+            mensajes.findTop20BySesionIdOrderByIdDesc(s.getId()));
 
         return new ConversacionActiva(s.getId(), s.getPerfil(), s.getEmpresaId(), cuenta, s.getContactoExterno(),
             s.getUsuarioId(), s.getModo(), s.getUltimoMensajeCliente(), historial);
+    }
+
+    /**
+     * Guarda un mensaje saliente del bot (rol assistant) en la conversación y actualiza su último movimiento.
+     * No cambia firmas existentes. La conversación se resuelve con el alcance de empresa dado (404 si es de otra).
+     */
+    @Transactional
+    public void registrarSalienteBot(UUID sesionId, Long empresaScope, String texto) {
+        ConversacionSesion s = deAlcance(sesionId, empresaScope);
+        Instant ahora = clock.instant();
+        ConversacionMensaje msg = new ConversacionMensaje();
+        msg.setSesionId(s.getId());
+        msg.setEmpresaId(s.getEmpresaId());
+        msg.setRol(ConversacionMensaje.ROL_BOT);
+        msg.setContenido(texto == null || texto.isBlank() ? "[sin texto]" : texto);
+        msg.setFechaCreacion(ahora);
+        mensajes.save(msg);
+        s.setUltimoMensajeEn(ahora);
+        sesiones.save(s);
     }
 
     /** Pausa el bot: a partir de ahora el enrutador no lo invoca. */

@@ -19,6 +19,7 @@ import {
 } from './checkoutHelpers'
 import { direccionCompleta, esDestinoGAMEstricto } from './ubicacionesCR'
 import { cargarMontosEnvio, cotizarZonaEnvio, type ZonaEnvio } from '@/config/montosEnvio'
+import { leerDatosEnlace } from '@/pages/enlace/enlaceCompra'
 import { pasoDesdeQuery, type OpcionesPaso } from './pasosCheckoutHelpers'
 import { metodoPagoPrincipal, sinpeDestinoDesdeConfig, sinpeManualDesdeConfig, tarjetaOnvoDesdeConfig } from './pagoPrincipal'
 import type { BodegaRetiro, ItemCheckout, OpcionEnvio, PaqueteCheckout } from './checkoutHelpers'
@@ -289,7 +290,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
 
   // Con sesión el nombre arranca con el de la cuenta (se puede corregir en «Tus datos»).
   const nombreCuenta = useAuthStore((s) => s.userName)
-  const [sinpeNombre, setSinpeNombre] = useState(() => nombreCuenta ?? '')
+  const [sinpeNombre, setSinpeNombre] = useState(() => nombreCuenta ?? leerDatosEnlace()?.nombre ?? '')
   const [sinpeCedula, setSinpeCedula] = useState('')
   const [sinpeTelefono, setSinpeTelefono] = useState('')
   // Cuenta empresa arranca con tipo 3 (cédula jurídica); el resto con 0 (física nacional).

@@ -52,14 +52,19 @@ public class MetaWebhookParser {
                 String tipo = m.path("type").asText("desconocido");
                 String txt = null;
                 String media = null;
+                String boton = null;
                 switch (tipo) {
                     case "text" -> txt = texto(m.path("text").path("body"));
                     case "interactive" -> {
                         JsonNode i = m.path("interactive");
-                        txt = texto(i.path("button_reply").path("title"));
-                        if (txt == null) txt = texto(i.path("list_reply").path("title"));
+                        JsonNode elegido = i.path("button_reply").isObject() ? i.path("button_reply") : i.path("list_reply");
+                        txt = texto(elegido.path("title"));
+                        boton = texto(elegido.path("id"));
                     }
-                    case "button" -> txt = texto(m.path("button").path("text"));
+                    case "button" -> {
+                        txt = texto(m.path("button").path("text"));
+                        boton = texto(m.path("button").path("payload"));
+                    }
                     case "audio", "image", "video", "document", "sticker" -> {
                         media = texto(m.path(tipo).path("id"));
                         txt = texto(m.path(tipo).path("caption"));
@@ -67,7 +72,7 @@ public class MetaWebhookParser {
                     default -> { /* ubicación, contactos, reacciones: solo se registra el tipo */ }
                 }
                 out.add(new MensajeEntrante(Canal.WHATSAPP, cuenta, de, nombreContacto(value, de),
-                        id, tipo, recortar(txt), media, m.path("timestamp").asLong(0)));
+                        id, tipo, recortar(txt), media, m.path("timestamp").asLong(0), idBoton(boton)));
             }
         }
     }
@@ -98,7 +103,8 @@ public class MetaWebhookParser {
                     tipo = adj.get(0).path("type").asText("adjunto");
                     media = texto(adj.get(0).path("payload").path("url"));
                 }
-                out.add(new MensajeEntrante(canal, cuenta, de, null, id, tipo, recortar(txt), media, ts));
+                String boton = idBoton(texto(msg.path("quick_reply").path("payload")));
+                out.add(new MensajeEntrante(canal, cuenta, de, null, id, tipo, recortar(txt), media, ts, boton));
                 continue;
             }
             JsonNode pb = ev.path("postback");
@@ -106,7 +112,8 @@ public class MetaWebhookParser {
                 String id = texto(pb.path("mid"));
                 if (id == null || id.length() > MAX_ID) continue;
                 String txt = texto(pb.path("title"));
-                out.add(new MensajeEntrante(canal, cuenta, de, null, id, "postback", recortar(txt), null, ts));
+                out.add(new MensajeEntrante(canal, cuenta, de, null, id, "postback", recortar(txt), null, ts,
+                        idBoton(texto(pb.path("payload")))));
             }
         }
     }
@@ -115,6 +122,13 @@ public class MetaWebhookParser {
         if (n == null || n.isMissingNode() || n.isNull()) return null;
         String s = n.asText("").trim();
         return s.isEmpty() ? null : s;
+    }
+
+    /** Ids de botón: los arma HotClick (≤ 256 en WhatsApp); uno más largo se descarta. */
+    static final int MAX_BOTON = 256;
+
+    private static String idBoton(String s) {
+        return s == null || s.length() > MAX_BOTON ? null : s;
     }
 
     private static String recortar(String s) {

@@ -40,6 +40,16 @@ public record ConversacionActiva(
         public String toString() { return "Turno[rol=" + rol + "]"; }
     }
 
+    /** Convierte filas recientes (más nuevo primero) en turnos del más antiguo al más reciente. */
+    public static List<Turno> turnosDe(List<ConversacionMensaje> recientesPrimero) {
+        java.util.ArrayList<Turno> turnos = new java.util.ArrayList<>(recientesPrimero.size());
+        for (int i = recientesPrimero.size() - 1; i >= 0; i--) {
+            ConversacionMensaje m = recientesPrimero.get(i);
+            turnos.add(new Turno(m.getRol(), m.getContenido(), m.getFechaCreacion()));
+        }
+        return List.copyOf(turnos);
+    }
+
     public boolean dentroDeVentana() {
         return dentroDeVentana(Instant.now());
     }

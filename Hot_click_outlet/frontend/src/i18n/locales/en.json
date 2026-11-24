@@ -1410,6 +1410,7 @@
     "deliveryData": "Delivery details",
     "phoneContact": "Contact phone *",
     "phoneHelp": "To coordinate delivery with Correos CR",
+    "phoneEnlace": "We will use your WhatsApp ending in {{mascara}}. You can type another number.",
     "addressLabel": "Full address *",
     "addressPlaceholder": "Province, canton, district, additional directions…",
     "paymentMethod": "Payment method",
@@ -2564,6 +2565,22 @@
     "warranty": "40-day warranty",
     "shipping": "Correos CR shipping",
     "satisfied": "Satisfied customers"
+  },
+  "enlaceCompra": {
+    "title": "Your purchase is ready",
+    "subtitle": "We reserved your products for 30 minutes",
+    "notAvailable": "Link not available",
+    "expired": "This link was already used or has expired.",
+    "viewProducts": "View products",
+    "loading": "Opening your purchase",
+    "quantity": "Quantity:",
+    "agotado": "Sold out",
+    "antes": "Was {{precio}}",
+    "total": "Total",
+    "pagar": "Go to payment",
+    "precioCambio": "The price changed: was {{antes}}, now {{ahora}}.",
+    "stockCambio": "Some products have fewer units or are no longer available.",
+    "nota": "Pay by card or SINPE Móvil. Your link expires in 24 hours."
   },
   "recuperarCarrito": {
     "title": "Your saved order",

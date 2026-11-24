@@ -11,8 +11,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,25 +45,92 @@ public class MetaCanalMensajeria implements CanalMensajeria {
 
     @Override
     public String enviarTexto(CanalCuenta cuenta, String destinatario, String texto) {
-        if (cuenta == null || cuenta.getEstado() != EstadoCanal.ACTIVA)
-            throw new IllegalStateException("La cuenta del canal no está activa");
-        if (destinatario == null || destinatario.isBlank() || texto == null || texto.isBlank())
+        validar(cuenta, destinatario);
+        if (texto == null || texto.isBlank())
             throw new IllegalArgumentException("destinatario y texto son obligatorios");
-
-        String token = cuentas.tokenDe(cuenta);
-        if (token == null || token.isBlank()) {
-            log.info("[canal] modo simulado (cuenta {} sin token): mensaje no enviado", cuenta.getId());
-            return "simulado";
-        }
-        boolean wa = cuenta.getTipo() == MensajeEntrante.Canal.WHATSAPP;
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        boolean wa = MensajesInteractivos.esWhatsapp(cuenta.getTipo());
         String cuerpoTexto = recortar(texto, wa ? MAX_WHATSAPP : MAX_SOCIAL);
-        String url = wa ? GRAPH + cuenta.getIdExterno() + "/messages" : GRAPH + "me/messages";
         Map<String, Object> body = wa
             ? Map.of("messaging_product", "whatsapp", "to", destinatario, "type", "text",
                      "text", Map.of("body", cuerpoTexto, "preview_url", false))
             : Map.of("recipient", Map.of("id", destinatario), "messaging_type", "RESPONSE",
                      "message", Map.of("text", cuerpoTexto));
+        return post(cuenta, token, body);
+    }
 
+    @Override
+    public String enviarProducto(CanalCuenta cuenta, String destinatario, TarjetaProducto p) {
+        validar(cuenta, destinatario);
+        if (p == null || p.nombre() == null || p.nombre().isBlank())
+            throw new IllegalArgumentException("el producto y su nombre son obligatorios");
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        Map<String, Object> body = MensajesInteractivos.esWhatsapp(cuenta.getTipo())
+            ? MensajesInteractivos.waProducto(destinatario, p)
+            : MensajesInteractivos.socialProducto(destinatario, p);
+        return conRespaldo(cuenta, destinatario, token, body, MensajesInteractivos.respaldoProducto(p));
+    }
+
+    @Override
+    public String enviarBotones(CanalCuenta cuenta, String destinatario, String texto, List<Boton> botones) {
+        validar(cuenta, destinatario);
+        if (texto == null || texto.isBlank() || botones == null || MensajesInteractivos.botonesValidos(botones, 1).isEmpty())
+            throw new IllegalArgumentException("texto y al menos un botón son obligatorios");
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        Map<String, Object> body = MensajesInteractivos.esWhatsapp(cuenta.getTipo())
+            ? MensajesInteractivos.waBotones(destinatario, texto, botones)
+            : MensajesInteractivos.socialQuickReplies(destinatario, texto, botones);
+        return conRespaldo(cuenta, destinatario, token, body, MensajesInteractivos.respaldoBotones(texto, botones));
+    }
+
+    @Override
+    public String enviarLista(CanalCuenta cuenta, String destinatario, String texto, String textoBoton, List<FilaLista> filas) {
+        validar(cuenta, destinatario);
+        if (texto == null || texto.isBlank() || filas == null || filas.isEmpty())
+            throw new IllegalArgumentException("texto y al menos una fila son obligatorios");
+        String respaldo = MensajesInteractivos.respaldoLista(texto, filas);
+        if (!MensajesInteractivos.esWhatsapp(cuenta.getTipo()))
+            return enviarTexto(cuenta, destinatario, respaldo); // IG/Messenger no tienen lista
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        return conRespaldo(cuenta, destinatario, token,
+            MensajesInteractivos.waLista(destinatario, texto, textoBoton, filas), respaldo);
+    }
+
+    private static void validar(CanalCuenta cuenta, String destinatario) {
+        if (cuenta == null || cuenta.getEstado() != EstadoCanal.ACTIVA)
+            throw new IllegalStateException("La cuenta del canal no está activa");
+        if (destinatario == null || destinatario.isBlank())
+            throw new IllegalArgumentException("destinatario y texto son obligatorios");
+    }
+
+    /** @return token, o null si la cuenta no tiene (modo simulado). */
+    private String tokenOSimulado(CanalCuenta cuenta) {
+        String token = cuentas.tokenDe(cuenta);
+        if (token == null || token.isBlank()) {
+            log.info("[canal] modo simulado (cuenta {} sin token): mensaje no enviado", cuenta.getId());
+            return null;
+        }
+        return token;
+    }
+
+    /** Envía el mensaje rico; si Meta lo rechaza (4xx) reenvía como texto con opciones numeradas. */
+    private String conRespaldo(CanalCuenta cuenta, String destinatario, String token, Map<String, Object> body, String respaldo) {
+        try {
+            return post(cuenta, token, body);
+        } catch (HttpClientErrorException e) {
+            log.warn("[canal] Meta rechazó el mensaje interactivo (cuenta {}, HTTP {}); se envía respaldo en texto",
+                cuenta.getId(), e.getStatusCode().value());
+            return enviarTexto(cuenta, destinatario, respaldo);
+        }
+    }
+
+    private String post(CanalCuenta cuenta, String token, Map<String, Object> body) {
+        boolean wa = MensajesInteractivos.esWhatsapp(cuenta.getTipo());
+        String url = wa ? GRAPH + cuenta.getIdExterno() + "/messages" : GRAPH + "me/messages";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(token);

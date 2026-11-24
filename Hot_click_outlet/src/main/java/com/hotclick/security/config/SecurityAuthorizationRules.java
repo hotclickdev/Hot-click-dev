@@ -154,6 +154,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/public/pedidos/seguimiento/*").permitAll()
             // Estado de retiro por token aleatorio — solo {estado, tienda}
             .requestMatchers(GET,  "/api/public/retiro/*").permitAll()
+            // AG-07: enlace de compra del bot de IA — el código aleatorio (24 caracteres) es la credencial; 404 uniforme
+            .requestMatchers(GET,  "/api/public/enlace/*").permitAll()
             .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/aprobar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/rechazar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
@@ -328,6 +330,7 @@ final class SecurityAuthorizationRules {
                 "/ayuda", "/registro-empresa/activar-plan",
                 "/pos/pago", "/pos/pago/**",
                 "/recuperar-carrito", "/recuperar-carrito/**",
+                "/c/*",
                 "/seguimiento/*",
                 "/servicios", "/servicios/**",
                 "/admin/empresas", "/admin/empresas/**",
