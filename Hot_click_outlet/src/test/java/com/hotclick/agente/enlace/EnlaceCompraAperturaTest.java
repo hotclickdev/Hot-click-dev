@@ -244,11 +244,12 @@ class EnlaceCompraAperturaTest {
     }
 
     @Test
-    void barrido_noVenceUnEnlaceConPedidoEnCurso() {
+    void barrido_unPedidoSinPagarNoImpideLaVentaPerdida() {
+        // AG-12: el query idsParaVencer ya deja fuera los pedidos pagados; uno sin pagar vence a las 24 h.
         enlace.setPedidoId(9L);
         enlace.setEstado(EnlaceCompraEstado.ABIERTO);
-        assertThat(reserva.liberarYVencer(1L, true, enlace.getVence().plusHours(1))).isFalse();
-        assertThat(enlace.getEstado()).isEqualTo(EnlaceCompraEstado.ABIERTO);
+        assertThat(reserva.liberarYVencer(1L, true, enlace.getVence().plusHours(1))).isTrue();
+        assertThat(enlace.getEstado()).isEqualTo(EnlaceCompraEstado.VENCIDO);
     }
 
     @Test

@@ -4930,6 +4930,16 @@ CREATE INDEX IF NOT EXISTS idx_agente_accion_empresa_fecha
     ON hot_click_agente_accion_tb (fk_id_empresa, fecha_creacion DESC);
 CREATE INDEX IF NOT EXISTS idx_agente_accion_fecha ON hot_click_agente_accion_tb (fecha_creacion);
 
+-- V252 (AG-08 / AG-12)
+-- AG-08 / AG-12: pago del enlace de compra y seguimiento (recordatorios).
+-- Aditiva e idempotente: solo columnas nuevas con valor por defecto; no toca datos existentes.
+--   rechazos_pago            cuantos pagos rechazados lleva el enlace (al segundo pasa a persona).
+--   aviso_pendiente          aviso de pago (PAGADO/RECHAZADO) que no salio por estar el cliente fuera de las 24 h.
+--   recordatorio_checkout_en cuando salio el recordatorio 2 (enlace abierto sin pagar); evita repetirlo.
+ALTER TABLE hot_click_enlace_compra_tb ADD COLUMN IF NOT EXISTS rechazos_pago INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE hot_click_enlace_compra_tb ADD COLUMN IF NOT EXISTS aviso_pendiente VARCHAR(20);
+ALTER TABLE hot_click_enlace_compra_tb ADD COLUMN IF NOT EXISTS recordatorio_checkout_en TIMESTAMP;
+
 -- V253: AG-27 — leads del bot sin cuenta (comprador interesado en un negocio, o negocio interesado en vender en HotClick).
 -- fk_id_empresa NULL = lead de HotClick (lo ve el ADMIN); con valor = lead del negocio (lo ve solo ese negocio).
 -- El contacto NO se guarda en claro: hash SHA-256 (deduplicación), últimos 4 dígitos (para mostrar) y el valor

@@ -95,6 +95,8 @@ public class PedidoPagoManualService {
     @Autowired @Lazy private PaymentService paymentService;
     @Autowired private AuditoriaAdminRegistroService auditoria;
     @Autowired private CompanyScope companyScope;
+    /** AG-08: opcional; avisa al cliente del bot cuando el admin confirma un SINPE a mano. */
+    @Autowired(required = false) private org.springframework.context.ApplicationEventPublisher eventPublisher;
     @Autowired private AutocompraNegocioGuard autocompraGuard;
     @PersistenceContext private EntityManager entityManager;
 
@@ -139,6 +141,7 @@ public class PedidoPagoManualService {
         }
 
         pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
+        com.hotclick.agente.pago.PedidoBotEventos.publicarPagado(pedido, eventPublisher);
         String evidencia = referencia != null ? "ref: " + referencia : "comprobante SINPE #" + comprobante.getId();
         auditar(pedido, estadoAnterior, Constants.PEDIDO_PAGADO, metodo, evidencia);
         return false;

@@ -42,6 +42,17 @@ public class EnlaceCompraEstadoService {
         return e.getRecordatoriosEnviados();
     }
 
+    /** AG-12: cuenta el recordatorio 2 (abierto sin pagar) y deja la marca para no repetirlo; devuelve el total. */
+    @Transactional
+    public int registrarRecordatorioCheckout(Long enlaceId, java.time.LocalDateTime ahora) {
+        EnlaceCompra e = repo.findByIdForUpdate(enlaceId).orElse(null);
+        if (e == null) return 0;
+        e.setRecordatoriosEnviados(e.getRecordatoriosEnviados() + 1);
+        e.setRecordatorioCheckoutEn(ahora);
+        repo.save(e);
+        return e.getRecordatoriosEnviados();
+    }
+
     private void cambiar(Long pedidoId, EnlaceCompraEstado nuevo) {
         if (pedidoId == null) return;
         List<EnlaceCompra> cambiados = EnlaceItems.cambiarEstado(repo.findByPedidoIdForUpdate(pedidoId), nuevo);

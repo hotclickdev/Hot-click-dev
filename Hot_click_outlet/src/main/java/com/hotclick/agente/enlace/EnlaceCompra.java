@@ -66,6 +66,18 @@ public class EnlaceCompra {
     @Column(name = "recordatorios_enviados", nullable = false)
     private int recordatoriosEnviados;
 
+    /** AG-08: pagos rechazados de este enlace; al segundo la conversación pasa a una persona. */
+    @Column(name = "rechazos_pago", nullable = false)
+    private int rechazosPago;
+
+    /** AG-08: aviso de pago (PAGADO/RECHAZADO) que no salió por estar el cliente fuera de la ventana de 24 h. */
+    @Column(name = "aviso_pendiente", length = 20)
+    private String avisoPendiente;
+
+    /** AG-12: cuándo salió el recordatorio 2 (abierto sin pagar); null = aún no. */
+    @Column(name = "recordatorio_checkout_en")
+    private LocalDateTime recordatorioCheckoutEn;
+
     @OneToMany(mappedBy = "enlace", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id ASC")
     private List<EnlaceCompraItem> items = new ArrayList<>();
@@ -108,5 +120,11 @@ public class EnlaceCompra {
     public void setReservaHasta(LocalDateTime reservaHasta) { this.reservaHasta = reservaHasta; }
     public int getRecordatoriosEnviados() { return recordatoriosEnviados; }
     public void setRecordatoriosEnviados(int recordatoriosEnviados) { this.recordatoriosEnviados = recordatoriosEnviados; }
+    public int getRechazosPago() { return rechazosPago; }
+    public void setRechazosPago(int rechazosPago) { this.rechazosPago = rechazosPago; }
+    public String getAvisoPendiente() { return avisoPendiente; }
+    public void setAvisoPendiente(String avisoPendiente) { this.avisoPendiente = avisoPendiente; }
+    public LocalDateTime getRecordatorioCheckoutEn() { return recordatorioCheckoutEn; }
+    public void setRecordatorioCheckoutEn(LocalDateTime v) { this.recordatorioCheckoutEn = v; }
     public List<EnlaceCompraItem> getItems() { return items; }
 }

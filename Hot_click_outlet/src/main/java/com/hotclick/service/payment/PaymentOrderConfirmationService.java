@@ -141,6 +141,8 @@ public class PaymentOrderConfirmationService {
             }
             encargoService.marcarPagadosPorPedido(pedido.getId());
             paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
+            // AG-08: solo si el pedido vino de un enlace del bot; el aviso sale después del COMMIT.
+            com.hotclick.agente.pago.PedidoBotEventos.publicarPagado(pedido, eventPublisher);
             posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
         }
         if (!algunoReclamado && canceladoEntreLecturaYReclamo(perdidos)) {
