@@ -44,6 +44,8 @@ public class TotpSecretEncryptionService {
 
     private static final byte[]  AAD_CANAL = "hotclick-canal-token".getBytes(StandardCharsets.UTF_8);
 
+    private static final byte[]  AAD_LEAD  = "hotclick-lead-contacto".getBytes(StandardCharsets.UTF_8);
+
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${totp.encryption.key:}")
@@ -91,6 +93,15 @@ public class TotpSecretEncryptionService {
 
     public String decryptTokenCanal(String stored) {
         return decrypt(stored, AAD_CANAL);
+    }
+
+    /** Contacto de un lead del bot (AG-27): misma clave AES-GCM, AAD propio (no descifra como TOTP, PIN ni token de canal). */
+    public String encryptContactoLead(String contacto) {
+        return encrypt(contacto, AAD_LEAD);
+    }
+
+    public String decryptContactoLead(String stored) {
+        return decrypt(stored, AAD_LEAD);
     }
 
     private String encrypt(String plaintext, byte[] aad) {

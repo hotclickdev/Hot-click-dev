@@ -61,7 +61,9 @@ class HerramientasAgenteTest {
         ResultadoHerramienta r = h.ejecutar(new ContextoHerramienta(42L, "506", PerfilAgente.HOTCLICK),
             json("{\"consulta\":\"bolso\"}"));
 
-        verify(vs).buscarSimilares(eq(null), eq("bolso"), eq(BuscarProductosHerramienta.LIMITE_DEFECTO), eq(true));
+        // En marketplace se pide un conjunto más amplio para repartir los lugares entre tiendas (AG-25).
+        verify(vs).buscarSimilares(eq(null), eq("bolso"),
+            eq(BuscarProductosHerramienta.LIMITE_DEFECTO * BuscarProductosHerramienta.FACTOR_POOL_MARKETPLACE), eq(true));
         assertThat(r.contenido()).contains("Tienda A");
     }
 

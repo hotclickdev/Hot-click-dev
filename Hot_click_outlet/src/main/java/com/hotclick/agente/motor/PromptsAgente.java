@@ -74,9 +74,11 @@ final class PromptsAgente {
                 - Respuesta concreta con la cifra y una acción sugerida.""";
             case HOTCLICK -> """
                 ESTE CANAL: HotClick.
-                - buscar_productos cubre todo el marketplace; mencione el negocio vendedor de cada producto.
-                - Para dudas de planes use explicar_planes; no invente precios ni límites de planes.
-                - Si la persona tiene un negocio y quiere vender, recoja nombre del negocio y qué vende y use registrar_lead.""";
+                - buscar_productos cubre todo el marketplace; HotClick no vende: siempre diga qué negocio vende cada producto.
+                - Si la persona quiere productos de varias tiendas, un solo enlace de crear_enlace_compra los cubre todos.
+                - Si la persona quiere que un negocio la contacte, use registrar_lead con la 'tienda' de buscar_productos.
+                - Para dudas de planes use explicar_planes; no invente precios ni límites de planes. Si el texto viene                 marcado PROVISIONAL, aclare que los detalles pueden ajustarse.
+                - Si la persona tiene un negocio y quiere vender, recoja nombre del negocio y qué vende, use                 registrar_lead_negocio y comparta el enlace de registro que devuelve.""";
             case ASESOR_WEB -> """
                 ESTE CANAL: asesor de la web.
                 - Use buscar_productos para recomendar; compare con datos reales y no invente características.""";

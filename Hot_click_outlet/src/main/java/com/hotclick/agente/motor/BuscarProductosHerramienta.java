@@ -3,12 +3,15 @@ package com.hotclick.agente.motor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.agente.hotclick.RotacionTiendas;
 import com.hotclick.rag.dto.ProductoContexto;
+import com.hotclick.utils.Constants;
 import com.hotclick.rag.service.VectorSearchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,6 +29,8 @@ public class BuscarProductosHerramienta implements HerramientaAgente {
     static final int LIMITE_DEFECTO = 5;
     static final int LIMITE_MAXIMO = 8;
     static final int CONSULTA_MAX = 200;
+    /** Marketplace: se pide un conjunto más amplio para poder repartir los lugares entre tiendas (AG-25). */
+    static final int FACTOR_POOL_MARKETPLACE = 4;
 
     private final VectorSearchService busqueda;
     private final ObjectMapper mapper;
@@ -66,7 +71,12 @@ public class BuscarProductosHerramienta implements HerramientaAgente {
         boolean marketplace = contexto.esMarketplace();
         // Empresa SIEMPRE del contexto del canal. En marketplace se ignora (la query no filtra por empresa).
         Long empresaId = marketplace ? null : contexto.empresaId();
-        List<ProductoContexto> productos = busqueda.buscarSimilares(empresaId, consulta, limite, marketplace);
+        int pedido = marketplace ? limite * FACTOR_POOL_MARKETPLACE : limite;
+        List<ProductoContexto> productos = busqueda.buscarSimilares(empresaId, consulta, pedido, marketplace);
+        if (marketplace && productos != null) {
+            // Rotación justa: la visibilidad ya la aplicó la búsqueda; aquí solo se reparte entre tiendas.
+            productos = RotacionTiendas.rotar(productos, limite, LocalDate.now(Constants.ZONA_CR).toEpochDay());
+        }
         if (productos == null || productos.isEmpty()) {
             return ResultadoHerramienta.ok("{\"productos\":[],\"nota\":\"Sin resultados para esa búsqueda.\"}");
         }

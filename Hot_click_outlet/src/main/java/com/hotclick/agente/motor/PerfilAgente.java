@@ -21,7 +21,8 @@ public enum PerfilAgente {
 
     /** Cuenta de HotClick: todo el marketplace, planes y captación de negocios. */
     HOTCLICK(Alcance.MARKETPLACE, Set.of(
-        "buscar_productos", "explicar_planes", "registrar_lead", "consultar_conocimiento", "pasar_a_persona")),
+        "buscar_productos", "crear_enlace_compra", "explicar_planes", "registrar_lead", "registrar_lead_negocio",
+        "consultar_conocimiento", "pasar_a_persona")),
 
     /** Asesor de la web pública (ficha de producto / tienda). */
     ASESOR_WEB(Alcance.EMPRESA_O_MARKETPLACE, Set.of(
