@@ -88,6 +88,25 @@ public class ConversacionService {
             s.getUsuarioId(), s.getModo(), s.getUltimoMensajeCliente(), historial);
     }
 
+    /**
+     * Guarda un mensaje saliente del bot (rol assistant) en la conversación y actualiza su último movimiento.
+     * No cambia firmas existentes. La conversación se resuelve con el alcance de empresa dado (404 si es de otra).
+     */
+    @Transactional
+    public void registrarSalienteBot(UUID sesionId, Long empresaScope, String texto) {
+        ConversacionSesion s = deAlcance(sesionId, empresaScope);
+        Instant ahora = clock.instant();
+        ConversacionMensaje msg = new ConversacionMensaje();
+        msg.setSesionId(s.getId());
+        msg.setEmpresaId(s.getEmpresaId());
+        msg.setRol(ConversacionMensaje.ROL_BOT);
+        msg.setContenido(texto == null || texto.isBlank() ? "[sin texto]" : texto);
+        msg.setFechaCreacion(ahora);
+        mensajes.save(msg);
+        s.setUltimoMensajeEn(ahora);
+        sesiones.save(s);
+    }
+
     /** Pausa el bot: a partir de ahora el enrutador no lo invoca. */
     @Transactional
     public ConversacionSesion pausarBot(UUID sesionId, Long empresaScope) {
