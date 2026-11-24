@@ -29,13 +29,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Bandeja de conversaciones (AG-16). Aislamiento: {@code empresaScope} es la empresa del llamador, o null solo para
@@ -45,10 +43,9 @@ import java.util.stream.Collectors;
 @Service
 public class BandejaService {
 
-    static final Duration VENTANA = Duration.ofHours(24);
+    static final Duration VENTANA = BandejaMapeo.VENTANA;
     static final int MAX_TEXTO = 1000;
     static final int MAX_PAGINA = 50;
-    static final int MAX_VISTA_PREVIA = 80;
     static final String MSG_VENTANA = "Pasaron más de 24 horas desde el último mensaje de la persona. "
         + "El canal ya no permite escribirle desde acá; esperá a que ella escriba de nuevo.";
 
@@ -89,13 +86,10 @@ public class BandejaService {
         Pageable pageable = PageRequest.of(Math.max(0, pagina), size, Sort.by(Sort.Direction.DESC, "ultimoMensajeEn"));
         Page<ConversacionSesion> p = sesiones.findAll(filtro(scope, usuarioId, vista, canalFiltro, estado), pageable);
 
-        List<UUID> ids = p.getContent().stream().map(ConversacionSesion::getId).toList();
-        Map<UUID, String> previas = ids.isEmpty() ? Map.of() : mensajes.ultimosDe(ids).stream()
-            .collect(Collectors.toMap(ConversacionMensaje::getSesionId, m -> recortar(m.getContenido()), (a, b) -> a));
-        Instant ahora = clock.instant();
-        List<BandejaDtos.Conversacion> items = p.getContent().stream()
-            .map(s -> aDto(s, usuarioId, previas.get(s.getId()), ahora)).toList();
-        return new BandejaDtos.Pagina(items, p.getNumber(), p.getSize(), p.getTotalElements(), p.hasNext());
+        List<UUID> ids = BandejaMapeo.ids(p.getContent());
+        // Una sola consulta para las vistas previas de toda la página (sin consulta por conversación).
+        Map<UUID, String> previas = ids.isEmpty() ? Map.of() : BandejaMapeo.previas(mensajes.ultimosDe(ids));
+        return BandejaMapeo.pagina(p, usuarioId, previas, clock.instant());
     }
 
     public BandejaDtos.Resumen resumen(Long scope, Long usuarioId) {
@@ -108,23 +102,14 @@ public class BandejaService {
         ConversacionSesion s = cargar(id, scope);
         List<ConversacionMensaje> ms = new ArrayList<>(mensajes.findTop200BySesionIdOrderByIdDesc(s.getId()));
         Collections.reverse(ms);
-        List<BandejaDtos.Mensaje> turnos = ms.stream()
-            .map(m -> new BandejaDtos.Mensaje(m.getId(), m.getRol(), m.getContenido(), m.getFechaCreacion())).toList();
-        String previa = ms.isEmpty() ? null : recortar(ms.get(ms.size() - 1).getContenido());
-        return new BandejaDtos.Detalle(aDto(s, usuarioId, previa, clock.instant()), turnos);
+        String previa = ms.isEmpty() ? null : BandejaMapeo.recortar(ms.get(ms.size() - 1).getContenido());
+        return new BandejaDtos.Detalle(aDto(s, usuarioId, previa, clock.instant()), BandejaMapeo.turnos(ms));
     }
 
     /** Personas a quienes se puede asignar: el equipo activo del negocio (y quien llama). */
     public List<BandejaDtos.Miembro> equipo(Long scope, Usuario actual) {
-        Map<Long, BandejaDtos.Miembro> r = new LinkedHashMap<>();
-        if (scope != null) {
-            for (MiembroEmpresa m : miembros.findByEmpresaIdAndEstado(scope, 1)) {
-                Usuario u = m.getUsuario();
-                r.put(u.getId(), new BandejaDtos.Miembro(u.getId(), nombreDe(u)));
-            }
-        }
-        if (actual != null) r.putIfAbsent(actual.getId(), new BandejaDtos.Miembro(actual.getId(), nombreDe(actual)));
-        return r.values().stream().sorted((a, b) -> a.nombre().compareToIgnoreCase(b.nombre())).toList();
+        List<MiembroEmpresa> activos = scope == null ? List.of() : miembros.findByEmpresaIdAndEstado(scope, 1);
+        return BandejaMapeo.equipo(activos, actual);
     }
 
     // ── Acciones ───────────────────────────────────────────────────────────────
@@ -191,7 +176,7 @@ public class BandejaService {
         s.setModo(ModoConversacion.PERSONA);
         s.setUltimoMensajeEn(ahora);
         sesiones.save(s);
-        return new BandejaDtos.Mensaje(m.getId(), m.getRol(), m.getContenido(), m.getFechaCreacion());
+        return BandejaMapeo.mensaje(m);
     }
 
     // ── Internos ───────────────────────────────────────────────────────────────
@@ -225,29 +210,10 @@ public class BandejaService {
     }
 
     static boolean ventanaAbierta(ConversacionSesion s, Instant ahora) {
-        Instant ultimo = s.getUltimoMensajeCliente();
-        return ultimo != null && ultimo.plus(VENTANA).isAfter(ahora);
+        return BandejaMapeo.ventanaAbierta(s, ahora);
     }
 
-    private BandejaDtos.Conversacion aDto(ConversacionSesion s, Long usuarioId, String previa, Instant ahora) {
-        Instant vence = s.getUltimoMensajeCliente() == null ? null : s.getUltimoMensajeCliente().plus(VENTANA);
-        return new BandejaDtos.Conversacion(s.getId(), s.getCanal(),
-            RecursoNoEncontradoException.enmascarar(s.getContactoExterno()), s.getModo().name(), s.getEstado().name(),
-            s.getUsuarioAsignadoId(),
-            s.getUsuarioAsignadoId() != null && s.getUsuarioAsignadoId().equals(usuarioId),
-            previa, s.getUltimoMensajeEn(), ventanaAbierta(s, ahora), vence);
-    }
-
-    private static String recortar(String t) {
-        if (t == null) return "";
-        String x = t.replaceAll("\\s+", " ").trim();
-        return x.length() <= MAX_VISTA_PREVIA ? x : x.substring(0, MAX_VISTA_PREVIA - 1) + "…";
-    }
-
-    private static String nombreDe(Usuario u) {
-        String n = u.getNombre() == null ? "" : u.getNombre().trim();
-        String a = u.getApellidoPaterno() == null ? "" : u.getApellidoPaterno().trim();
-        String r = (n + " " + a).trim();
-        return r.isEmpty() ? "Usuario " + u.getId() : r;
+    private static BandejaDtos.Conversacion aDto(ConversacionSesion s, Long usuarioId, String previa, Instant ahora) {
+        return BandejaMapeo.conversacion(s, usuarioId, previa, ahora);
     }
 }
