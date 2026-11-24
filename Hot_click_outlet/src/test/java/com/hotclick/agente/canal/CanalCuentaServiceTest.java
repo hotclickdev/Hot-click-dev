@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 class CanalCuentaServiceTest {
 
     private static final String CLAVE = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
-    private static final String TOKEN = "TOKEN-DE-PRUEBA-123";
+    private static final String TOKEN_PLANO = "TOKEN_PLANO-DE-PRUEBA-123";
 
     private CanalCuentaRepository repo;
     private CanalCuentaService service;
@@ -47,16 +47,16 @@ class CanalCuentaServiceTest {
 
     @Test
     void tokenSeGuardaCifradoYSeRecuperaEnClaro() {
-        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", "WABA-1", "Tienda", TOKEN);
-        assertThat(c.getTokenCifrado()).startsWith("ENC:").doesNotContain(TOKEN);
-        assertThat(service.tokenDe(c)).isEqualTo(TOKEN);
+        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", "WABA-1", "Tienda", TOKEN_PLANO);
+        assertThat(c.getTokenCifrado()).startsWith("ENC:").doesNotContain(TOKEN_PLANO);
+        assertThat(service.tokenDe(c)).isEqualTo(TOKEN_PLANO);
     }
 
     @Test
     void tokenNuncaApareceEnToStringNiEnDto() {
-        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "Tienda", TOKEN);
-        assertThat(c.toString()).doesNotContain(TOKEN).doesNotContain(c.getTokenCifrado());
-        assertThat(CanalCuentaDto.de(c).toString()).doesNotContain(TOKEN).doesNotContain(c.getTokenCifrado());
+        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "Tienda", TOKEN_PLANO);
+        assertThat(c.toString()).doesNotContain(TOKEN_PLANO).doesNotContain(c.getTokenCifrado());
+        assertThat(CanalCuentaDto.de(c).toString()).doesNotContain(TOKEN_PLANO).doesNotContain(c.getTokenCifrado());
         assertThat(CanalCuentaDto.de(c).tieneToken()).isTrue();
     }
 
@@ -64,21 +64,21 @@ class CanalCuentaServiceTest {
     void tokenDeCanalNoDescifraComoPin() {
         TotpSecretEncryptionService cifrado = new TotpSecretEncryptionService(new MockEnvironment());
         ReflectionTestUtils.setField(cifrado, "encryptionKeyHex", CLAVE);
-        String blob = cifrado.encryptTokenCanal(TOKEN);
+        String blob = cifrado.encryptTokenCanal(TOKEN_PLANO);
         assertThatThrownBy(() -> cifrado.decryptPin(blob)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void noSePuedeSecuestrarUnaCuentaDeOtroNegocio() {
-        service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "A", TOKEN);
+        service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "A", TOKEN_PLANO);
         assertThatThrownBy(() -> service.registrarCuenta(8L, Canal.WHATSAPP, "WAID-1", null, "B", "otro"))
             .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void mismoIdExternoEnOtroTipoEsOtraCuenta() {
-        service.registrarCuenta(7L, Canal.WHATSAPP, "ID-1", null, "A", TOKEN);
-        assertThat(service.registrarCuenta(8L, Canal.INSTAGRAM, "ID-1", null, "B", TOKEN).getEmpresaId()).isEqualTo(8L);
+        service.registrarCuenta(7L, Canal.WHATSAPP, "ID-1", null, "A", TOKEN_PLANO);
+        assertThat(service.registrarCuenta(8L, Canal.INSTAGRAM, "ID-1", null, "B", TOKEN_PLANO).getEmpresaId()).isEqualTo(8L);
     }
 
     @Test
@@ -91,7 +91,7 @@ class CanalCuentaServiceTest {
 
     @Test
     void pausarYDesconectarSoloEnLaPropiaEmpresa() {
-        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "A", TOKEN);
+        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "A", TOKEN_PLANO);
         assertThatThrownBy(() -> service.pausar(c.getId(), 8L)).isInstanceOf(RecursoNoEncontradoException.class);
         assertThatThrownBy(() -> service.desconectar(c.getId(), 8L)).isInstanceOf(RecursoNoEncontradoException.class);
         assertThat(c.getEstado()).isEqualTo(EstadoCanal.ACTIVA);
@@ -104,13 +104,13 @@ class CanalCuentaServiceTest {
 
     @Test
     void adminGlobalPuedeGestionarCualquierCuenta() {
-        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "A", TOKEN);
+        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "A", TOKEN_PLANO);
         assertThat(service.pausar(c.getId(), null).getEstado()).isEqualTo(EstadoCanal.PAUSADA);
     }
 
     @Test
     void desconectadaNoSeReanuda() {
-        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "A", TOKEN);
+        CanalCuenta c = service.registrarCuenta(7L, Canal.WHATSAPP, "WAID-1", null, "A", TOKEN_PLANO);
         service.desconectar(c.getId(), 7L);
         assertThatThrownBy(() -> service.reanudar(c.getId(), 7L)).isInstanceOf(IllegalStateException.class);
     }
