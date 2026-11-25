@@ -243,6 +243,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PUT, "/api/agente/conocimiento/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, "/api/agente/conocimiento/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers("/api/agente/interno/vinculacion", "/api/agente/interno/vinculacion/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Uso del mes del bot (AG-29): conversaciones, cupo, costo de IA y tope; alcance por CompanyScope
+            .requestMatchers(GET, "/api/agente/uso").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Sucursales (Negocio Plus) — ADMIN / EMPRENDEDOR; aislamiento por CompanyScope
             .requestMatchers(GET,  "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)

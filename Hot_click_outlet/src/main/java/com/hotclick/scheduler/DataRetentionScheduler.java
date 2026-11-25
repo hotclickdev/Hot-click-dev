@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -31,6 +32,9 @@ import java.time.LocalDateTime;
  *
  *   - hot_click_embudo_sesion_tb:                90 días (sesión anónima del embudo)
  *   - hot_click_lead_tb:                         180 días COMPRADOR, 365 días NEGOCIO (AG-27)
+ *   - hot_click_agente_conv_mes_tb:              3 meses (conversaciones contadas del cupo, AG-29)
+ *   - hot_click_agente_uso_mes_tb:               24 meses (conversaciones y costo de IA: facturación y métricas, AG-29)
+ *   - hot_click_agente_baja_tb:                  NUNCA se purga (ver limpiarAgenteCupo)
  *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
  * Borra en lotes pequeños (LIMIT 500) para no generar un lock masivo en la tabla.
@@ -72,6 +76,7 @@ public class DataRetentionScheduler {
         total += limpiarEnlacesCompra();
         total += limpiarAgenteAcciones();
         total += limpiarLeads();
+        total += limpiarAgenteCupo();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -194,6 +199,37 @@ public class DataRetentionScheduler {
             total += n;
         } while (n == 500);
         if (total > 0) log.info("[retention] lead {}: {} eliminados (> {} días)", tipo, total, tipo.retencionDias());
+        return total;
+    }
+
+    /**
+     * AG-29: conversaciones contadas del cupo (hash del contacto) 3 meses y uso mensual (conversaciones y costo de IA)
+     * 24 meses, por la columna {@code mes} (primer día del mes). {@code hot_click_agente_baja_tb} NO se purga nunca:
+     * solo guarda el hash del contacto, el canal y la fecha, y la baja (STOP) debe respetarse siempre; borrarla
+     * volvería a enviar recordatorios a quien pidió no recibirlos.
+     */
+    private int limpiarAgenteCupo() {
+        try {
+            LocalDate mesActual = LocalDate.now(Constants.ZONA_CR).withDayOfMonth(1);
+            int total = borrarPorMes("hot_click_agente_conv_mes_tb", mesActual.minusMonths(3));
+            total += borrarPorMes("hot_click_agente_uso_mes_tb", mesActual.minusMonths(24));
+            return total;
+        } catch (Exception e) {
+            log.warn("[retention] agente_cupo: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    /** Nombres de tabla fijos del propio código (nunca entrada externa). Lotes de 500. */
+    private int borrarPorMes(String tabla, LocalDate corte) {
+        int total = 0, n;
+        do {
+            n = jdbc.update(
+                "DELETE FROM " + tabla + " WHERE ctid IN (" +
+                "SELECT ctid FROM " + tabla + " WHERE mes < ? LIMIT 500)", corte);
+            total += n;
+        } while (n == 500);
+        if (total > 0) log.info("[retention] {}: {} eliminados", tabla, total);
         return total;
     }
 

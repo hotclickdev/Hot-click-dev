@@ -82,6 +82,7 @@ public class TenantInfoBuilder {
             case "compras"  -> Boolean.TRUE.equals(plan.getTieneCompras());
             case "reportes" -> Boolean.TRUE.equals(plan.getTieneReportes());
             case "ai"       -> Boolean.TRUE.equals(plan.getTieneAi());
+            case "agente"   -> Boolean.TRUE.equals(plan.getTieneAgente());
             case "api"      -> Boolean.TRUE.equals(plan.getTieneApi());
             case "giftCards" -> Boolean.TRUE.equals(plan.getTieneGiftCards());
             default         -> false;

@@ -54,6 +54,14 @@ public class Plan {
     @Column(name = "tiene_gift_cards", nullable = false)
     private Boolean tieneGiftCards = false;
 
+    /** El plan incluye el bot de ventas con IA (V255). */
+    @Column(name = "tiene_agente", nullable = false)
+    private Boolean tieneAgente = false;
+
+    /** Conversaciones del bot por mes (V255). -1 = ilimitado, 0 = sin cupo. Configurable por UPDATE. */
+    @Column(name = "max_conversaciones_agente", nullable = false)
+    private Integer maxConversacionesAgente = 0;
+
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;
 
@@ -108,6 +116,12 @@ public class Plan {
 
     public Boolean getTieneReportes() { return tieneReportes; }
     public void setTieneReportes(Boolean tieneReportes) { this.tieneReportes = tieneReportes; }
+
+    public Boolean getTieneAgente() { return tieneAgente; }
+    public void setTieneAgente(Boolean tieneAgente) { this.tieneAgente = tieneAgente; }
+
+    public Integer getMaxConversacionesAgente() { return maxConversacionesAgente; }
+    public void setMaxConversacionesAgente(Integer v) { this.maxConversacionesAgente = v; }
 
     public Boolean getTieneAi() { return tieneAi; }
     public void setTieneAi(Boolean tieneAi) { this.tieneAi = tieneAi; }

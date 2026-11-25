@@ -61,6 +61,10 @@ public class ConversacionSesion {
     @Column(name = "ultimo_mensaje_en", nullable = false)
     private Instant ultimoMensajeEn = Instant.now();
 
+    /** Pasó a PERSONA porque el negocio agotó su cupo de conversaciones o su tope de gasto de IA (V255). */
+    @Column(name = "cupo_agotado", nullable = false)
+    private boolean cupoAgotado = false;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 10)
     private EstadoConversacion estado = EstadoConversacion.ABIERTA;
@@ -87,6 +91,8 @@ public class ConversacionSesion {
     public void setUltimoMensajeCliente(Instant v) { this.ultimoMensajeCliente = v; }
     public Instant getUltimoMensajeEn() { return ultimoMensajeEn; }
     public void setUltimoMensajeEn(Instant v) { this.ultimoMensajeEn = v; }
+    public boolean isCupoAgotado() { return cupoAgotado; }
+    public void setCupoAgotado(boolean v) { this.cupoAgotado = v; }
     public EstadoConversacion getEstado() { return estado; }
     public void setEstado(EstadoConversacion estado) { this.estado = estado; }
 
