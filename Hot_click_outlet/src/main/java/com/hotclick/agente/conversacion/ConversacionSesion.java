@@ -69,6 +69,17 @@ public class ConversacionSesion {
     @Column(name = "estado", nullable = false, length = 10)
     private EstadoConversacion estado = EstadoConversacion.ABIERTA;
 
+    /** AG-38 (V257): cuándo se mandó la encuesta de satisfacción al cerrar; no nulo = no se vuelve a mandar. */
+    @Column(name = "encuesta_enviada_en")
+    private Instant encuestaEnviadaEn;
+
+    @Column(name = "encuesta_respondida_en")
+    private Instant encuestaRespondidaEn;
+
+    /** Nota de 1 a 5 que eligió la persona; es lo único que se guarda de su respuesta (sin texto). */
+    @Column(name = "encuesta_nota")
+    private Integer encuestaNota;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public Long getEmpresaId() { return empresaId; }
@@ -95,6 +106,12 @@ public class ConversacionSesion {
     public void setCupoAgotado(boolean v) { this.cupoAgotado = v; }
     public EstadoConversacion getEstado() { return estado; }
     public void setEstado(EstadoConversacion estado) { this.estado = estado; }
+    public Instant getEncuestaEnviadaEn() { return encuestaEnviadaEn; }
+    public void setEncuestaEnviadaEn(Instant v) { this.encuestaEnviadaEn = v; }
+    public Instant getEncuestaRespondidaEn() { return encuestaRespondidaEn; }
+    public void setEncuestaRespondidaEn(Instant v) { this.encuestaRespondidaEn = v; }
+    public Integer getEncuestaNota() { return encuestaNota; }
+    public void setEncuestaNota(Integer v) { this.encuestaNota = v; }
 
     @Override
     public String toString() {

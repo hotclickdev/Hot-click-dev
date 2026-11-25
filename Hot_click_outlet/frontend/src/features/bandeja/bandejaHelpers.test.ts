@@ -13,7 +13,8 @@ import {
 describe('bandeja: filtros', () => {
   it('manda vista, estado, página y tamaño; el canal vacío no se manda', () => {
     expect(paramsDeFiltros(FILTROS_INICIALES, 20)).toEqual({ vista: 'TODAS', estado: 'ABIERTA', pagina: 0, tamano: 20 })
-    expect(paramsDeFiltros({ vista: 'MIAS', canal: 'INSTAGRAM', estado: 'CERRADA', pagina: 2 }, 20))
+    expect(paramsDeFiltros({ ...FILTROS_INICIALES, notaBaja: true }, 20)).toMatchObject({ notaBaja: 'true' })
+    expect(paramsDeFiltros({ vista: 'MIAS', canal: 'INSTAGRAM', estado: 'CERRADA', pagina: 2, notaBaja: false }, 20))
       .toEqual({ vista: 'MIAS', canal: 'INSTAGRAM', estado: 'CERRADA', pagina: 2, tamano: 20 })
   })
 })

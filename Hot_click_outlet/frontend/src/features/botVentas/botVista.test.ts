@@ -11,9 +11,11 @@ import CanalesTab from './CanalesTab'
 import EquipoPinTab from './EquipoPinTab'
 import SimuladorTab from './SimuladorTab'
 import LeadsTab from './LeadsTab'
+import MetricasTab from './MetricasTab'
 import UsoMes from './UsoMes'
 import { CLAVE_BOT } from './useBot'
-import type { UsoBot, CanalBot, ConfigBot, Conocimiento, EstadoVinculacion, Lead } from './botTypes'
+import { rangoPorDefecto } from './botHelpers'
+import type { MetricasBot, RespuestaMetricasBot, UsoBot, CanalBot, ConfigBot, Conocimiento, EstadoVinculacion, Lead } from './botTypes'
 
 const config: ConfigBot = {
   nombreBot: 'Tina', trato: 'TUTEO', emojis: true, activo: true, horarioActivo: true, zona: 'America/Costa_Rica',
@@ -33,14 +35,14 @@ function pantalla(el: ReactElement, semillas: Array<[readonly unknown[], unknown
 }
 
 describe('panel del bot: pestañas', () => {
-  it('es un tablist accesible con las seis secciones y solo la activa en el orden de tabulación', () => {
+  it('es un tablist accesible con las siete secciones y solo la activa en el orden de tabulación', () => {
     const html = pantalla(createElement(BotPage))
     expect(html).toContain('role="tablist"')
-    expect((html.match(/role="tab"/g) ?? []).length).toBe(6)
+    expect((html.match(/role="tab"/g) ?? []).length).toBe(7)
     expect(html).toContain('aria-selected="true"')
-    expect((html.match(/tabindex="-1"/g) ?? []).length).toBe(5)
+    expect((html.match(/tabindex="-1"/g) ?? []).length).toBe(6)
     expect(html).toContain('role="tabpanel"')
-    for (const t of ['Configuración', 'Conocimiento', 'Canales', 'Equipo y PIN', 'Simulador', 'Leads']) {
+    for (const t of ['Configuración', 'Conocimiento', 'Canales', 'Equipo y PIN', 'Simulador', 'Leads', 'Métricas']) {
       expect(html).toContain(t)
     }
   })
@@ -165,5 +167,42 @@ describe('panel del bot: uso del mes', () => {
   it('la pestaña Canales monta el conector de cuentas de Meta', () => {
     const html = pantalla(createElement(CanalesTab), [[['canales'], []]])
     expect(html).toContain('No hay canales conectados')
+  })
+})
+
+const metricas: MetricasBot = {
+  embudo: { conversaciones: 10, enlacesCreados: 6, enlacesAbiertos: 4, enlacesPagados: 2 },
+  porBot: [{ clave: 'NEGOCIO_VENTAS', conversaciones: 10, enlacesCreados: 6, enlacesPagados: 2, conversionPct: 20 }],
+  porCanal: [{ clave: 'WHATSAPP', conversaciones: 10, enlacesCreados: 6, enlacesPagados: 2, conversionPct: 20 }],
+  ventas: { cantidad: 2, totalColones: 25000, porCanal: [{ canal: 'WHATSAPP', cantidad: 2, totalColones: 25000 }] },
+  traspasosAPersona: 3,
+  perdidas: { cantidad: 1, totalColones: 7000 },
+  costos: { costoUsd: 0.5, costoPorVentaUsd: 0.25, conversacionesCobradas: 10 },
+}
+
+describe('panel del bot: métricas', () => {
+  const clave = (r: RespuestaMetricasBot): Array<[readonly unknown[], unknown]> => [[['metricas', r.desde, r.hasta], r]]
+
+  it('muestra el embudo, las tarjetas y la conversión por bot y canal', () => {
+    const hoy = new Date()
+    const rango = rangoPorDefecto(hoy)
+    const r: RespuestaMetricasBot = { ...rango, alcance: 'NEGOCIO', propias: metricas, plataforma: null, alertasMeta: null }
+    const html = pantalla(createElement(MetricasTab), clave(r))
+    expect(html).toContain('Embudo de ventas')
+    expect(html).toContain('Conversión por bot')
+    expect(html).toContain('20.0 %')
+    expect(html).toContain('Pasaron a una persona')
+    expect(html).not.toContain('Total de la plataforma')
+  })
+
+  it('el ADMIN ve también el total de la plataforma y los avisos de Meta', () => {
+    const rango = rangoPorDefecto()
+    const r: RespuestaMetricasBot = {
+      ...rango, alcance: 'HOTCLICK', propias: metricas, plataforma: metricas,
+      alertasMeta: [{ campo: 'account_update', evento: 'DOWNGRADE', limite: null, creadoEn: '2026-12-01T10:00:00Z' }],
+    }
+    const html = pantalla(createElement(MetricasTab), clave(r))
+    expect(html).toContain('Total de la plataforma')
+    expect(html).toContain('DOWNGRADE')
   })
 })

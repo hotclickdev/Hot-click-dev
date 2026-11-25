@@ -4888,7 +4888,8 @@
       "canales": "Canales",
       "equipo": "Equipo y PIN",
       "simulador": "Simulador",
-      "leads": "Leads"
+      "leads": "Leads",
+      "metricas": "Métricas"
     },
     "cargando": "Cargando…",
     "errorCargar": "No pudimos cargar la información. Intentá de nuevo en un momento.",
@@ -5017,6 +5018,52 @@
       "enviar": "Enviar",
       "reiniciar": "Reiniciar"
     },
+    "metricas": {
+      "rangoAria": "Rango de fechas",
+      "desde": "Desde",
+      "hasta": "Hasta",
+      "rangoIncompleto": "Elegí las dos fechas.",
+      "rangoInvalido": "La fecha inicial no puede ser posterior a la final.",
+      "rangoLargo": "El rango máximo es de 366 días.",
+      "embudoTitulo": "Embudo de ventas",
+      "conversaciones": "Conversaciones",
+      "enlacesCreados": "Enlaces de compra creados",
+      "enlacesAbiertos": "Enlaces abiertos",
+      "enlacesPagados": "Enlaces pagados",
+      "ventasCantidad": "Ventas atribuidas al bot",
+      "ventasTotal": "Total vendido por el bot",
+      "traspasos": "Pasaron a una persona",
+      "perdidas": "Ventas perdidas por vencimiento",
+      "perdidasDetalle": "{{n}} enlaces vencieron sin pagar",
+      "costoIA": "Costo de IA",
+      "costoNota": "La IA se registra por mes: suma los meses que tocan el rango.",
+      "costoPorVenta": "Costo por venta",
+      "sinVentas": "Sin ventas",
+      "porBot": "Conversión por bot",
+      "porCanal": "Conversión por canal",
+      "colNombre": "Nombre",
+      "colEnlaces": "Enlaces",
+      "colPagados": "Pagados",
+      "colConversion": "Conversión",
+      "vacio": "Sin datos en este rango.",
+      "alertasTitulo": "Avisos de Meta sobre la cuenta o la calidad del número",
+      "alertasVacio": "Meta no ha enviado avisos.",
+      "alcance": {
+        "NEGOCIO": "Tu negocio",
+        "HOTCLICK": "Bot de HotClick",
+        "PLATAFORMA": "Total de la plataforma"
+      },
+      "bots": {
+        "NEGOCIO_VENTAS": "Bot de ventas del negocio",
+        "HOTCLICK": "Bot de HotClick",
+        "SIN_PERFIL": "Sin bot asignado"
+      },
+      "canales": {
+        "WHATSAPP": "WhatsApp",
+        "INSTAGRAM": "Instagram",
+        "MESSENGER": "Messenger"
+      }
+    },
     "leads": {
       "filtros": "Filtros de leads",
       "tipo": "Tipo",
@@ -5067,6 +5114,9 @@
     "filtroCanal": "Canal",
     "filtroEstado": "Estado",
     "todosCanales": "Todos los canales",
+    "notaBaja": "Solo notas bajas",
+    "notaBajaAyuda": "Chats cerrados cuya encuesta de satisfacción quedó con nota 1 o 2",
+    "nota": "Nota {{n}} de 5",
     "listaAria": "Conversaciones",
     "paginacionAria": "Paginación de conversaciones",
     "anterior": "Anterior",

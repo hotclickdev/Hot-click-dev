@@ -35,6 +35,9 @@ import java.time.LocalDateTime;
  *   - hot_click_agente_conv_mes_tb:              3 meses (conversaciones contadas del cupo, AG-29)
  *   - hot_click_agente_uso_mes_tb:               24 meses (conversaciones y costo de IA: facturación y métricas, AG-29)
  *   - hot_click_agente_baja_tb:                  NUNCA se purga (ver limpiarAgenteCupo)
+ *   - hot_click_agente_alerta_meta_tb:           90 días (avisos de Meta de cuenta y calidad, AG-32)
+ *   - hot_click_agente_resena_aviso_tb:          365 días (guarda de "reseña ya pedida" por pedido, AG-35)
+ *   - encuesta de satisfacción (AG-38):          vive en hot_click_chat_sesion_tb: se borra con la sesión (30 días)
  *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
  * Borra en lotes pequeños (LIMIT 500) para no generar un lock masivo en la tabla.
@@ -77,6 +80,7 @@ public class DataRetentionScheduler {
         total += limpiarAgenteAcciones();
         total += limpiarLeads();
         total += limpiarAgenteCupo();
+        total += limpiarAgenteMetricas();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -216,6 +220,26 @@ public class DataRetentionScheduler {
             return total;
         } catch (Exception e) {
             log.warn("[retention] agente_cupo: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    /** AG-32 y AG-35: avisos de Meta (90 días) y guarda de reseña por pedido (365 días). Lotes de 500. */
+    private int limpiarAgenteMetricas() {
+        try {
+            java.time.OffsetDateTime ahora = java.time.OffsetDateTime.now(Constants.ZONA_CR);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_agente_alerta_meta_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_alerta_meta_tb WHERE creado_en < ? LIMIT 500)",
+                ahora.minusDays(Constants.DIAS_RETENCION_AGENTE_ALERTA_META));
+            n += jdbc.update(
+                "DELETE FROM hot_click_agente_resena_aviso_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_resena_aviso_tb WHERE enviado_en < ? LIMIT 500)",
+                ahora.minusDays(Constants.DIAS_RETENCION_AGENTE_RESENA_AVISO));
+            if (n > 0) log.info("[retention] agente_alerta_meta/resena_aviso: {} eliminados", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] agente_metricas: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
             return 0;
         }
     }

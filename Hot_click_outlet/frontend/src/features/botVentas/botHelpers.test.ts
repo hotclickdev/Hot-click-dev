@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aPedido, cambiarDia, cupoAgotado, porcentajeCupo, errorDeConfig, indiceSiguiente, mensajeDeError, pinValido } from './botHelpers'
+import { anchoBarra, errorDeRango, pasosEmbudo, rangoPorDefecto, aPedido, cambiarDia, cupoAgotado, porcentajeCupo, errorDeConfig, indiceSiguiente, mensajeDeError, pinValido } from './botHelpers'
 import type { ConfigBot } from './botTypes'
 
 const config: ConfigBot = {
@@ -77,5 +77,27 @@ describe('botHelpers', () => {
     expect(cupoAgotado(99, 100)).toBe(false)
     expect(cupoAgotado(999, -1)).toBe(false)
     expect(cupoAgotado(999, null)).toBe(false)
+  })
+})
+
+describe('métricas del bot: ayudas', () => {
+  it('el rango por defecto son los últimos 30 días', () => {
+    expect(rangoPorDefecto(new Date(2026, 11, 10))).toEqual({ desde: '2026-11-11', hasta: '2026-12-10' })
+  })
+
+  it('valida el rango igual que el servidor', () => {
+    expect(errorDeRango('2026-12-01', '2026-12-10')).toBeNull()
+    expect(errorDeRango('', '2026-12-10')).toBe('bot.metricas.rangoIncompleto')
+    expect(errorDeRango('2026-12-10', '2026-12-01')).toBe('bot.metricas.rangoInvalido')
+    expect(errorDeRango('2025-01-01', '2026-12-10')).toBe('bot.metricas.rangoLargo')
+  })
+
+  it('las barras del embudo son proporcionales al paso más grande', () => {
+    expect(anchoBarra(5, 10)).toBe(50)
+    expect(anchoBarra(0, 10)).toBe(0)
+    expect(anchoBarra(1, 1000)).toBe(2)
+    expect(anchoBarra(3, 0)).toBe(0)
+    expect(pasosEmbudo({ conversaciones: 4, enlacesCreados: 3, enlacesAbiertos: 2, enlacesPagados: 1 }).map((p) => p.valor))
+      .toEqual([4, 3, 2, 1])
   })
 })
