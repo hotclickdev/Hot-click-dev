@@ -50,7 +50,8 @@ public class RegistrarLeadHerramienta implements HerramientaAgente {
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
-        String interes = input == null ? "" : input.path("interes").asText("").trim();
+        if (input == null) return ResultadoHerramienta.error("Falta qué le interesa a la persona.");
+        String interes = input.path("interes").asText("").trim();
         if (interes.isEmpty()) return ResultadoHerramienta.error("Falta qué le interesa a la persona.");
         String contacto = ContactoLead.de(contexto);
         if (contacto == null) return ResultadoHerramienta.error("No hay contacto para registrar; derive a una persona.");
