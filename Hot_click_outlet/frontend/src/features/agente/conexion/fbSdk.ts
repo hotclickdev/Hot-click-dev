@@ -117,6 +117,8 @@ export function esperarSesionEmbebida(ms = 120_000): { promesa: Promise<SesionEm
   const promesa = new Promise<SesionEmbebida>((resolve, reject) => {
     const temporizador = window.setTimeout(() => reject(new Error('signup_tiempo')), ms)
     const escuchar = (e: MessageEvent) => {
+      // Solo mensajes de Facebook: cualquier otra ventana se ignora antes de leer los datos.
+      if (!esOrigenFacebook(e.origin)) return
       const r = interpretarMensajeSignup(e.origin, e.data)
       if (r === null) return
       window.clearTimeout(temporizador)
