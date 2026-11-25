@@ -26,13 +26,16 @@ public class EnlaceCompraAperturaService {
     private final EnlaceCompraRepository repo;
     private final EnlaceCompraReserva reserva;
     private final int reservaMinutos;
+    private final int reservaMaxMinutos;
     Supplier<LocalDateTime> reloj = () -> LocalDateTime.now(Constants.ZONA_CR);
 
     public EnlaceCompraAperturaService(EnlaceCompraRepository repo, EnlaceCompraReserva reserva,
-                                       @Value("${hotclick.agente.enlace.reserva-minutos:30}") int reservaMinutos) {
+                                       @Value("${hotclick.agente.enlace.reserva-minutos:30}") int reservaMinutos,
+                                       @Value("${hotclick.agente.enlace.reserva-max-minutos:90}") int reservaMaxMinutos) {
         this.repo = repo;
         this.reserva = reserva;
         this.reservaMinutos = reservaMinutos;
+        this.reservaMaxMinutos = Math.max(reservaMinutos, reservaMaxMinutos);
     }
 
     @Transactional
@@ -49,8 +52,12 @@ public class EnlaceCompraAperturaService {
         // Reabrir renueva: primero se devuelve lo reservado antes y luego se reserva con el stock de ahora.
         reserva.liberar(e, productos);
 
-        EnlaceCompraRecalculo.Resultado r = EnlaceCompraRecalculo.recalcular(e, productos);
-        e.setReservaHasta(EnlaceCompraRecalculo.reservaHasta(r, ahora, reservaMinutos));
+        // H-04: la reserva no se renueva más allá de reservaMaxMinutos desde la primera apertura. Pasado el tope el
+        // enlace sigue abriendo y se revalida precio y stock, pero ya no retiene inventario.
+        LocalDateTime topeReserva = e.getAbierto() == null ? null : e.getAbierto().plusMinutes(reservaMaxMinutos);
+        boolean puedeReservar = topeReserva == null || ahora.isBefore(topeReserva);
+        EnlaceCompraRecalculo.Resultado r = EnlaceCompraRecalculo.recalcular(e, productos, puedeReservar);
+        e.setReservaHasta(EnlaceCompraRecalculo.reservaHasta(r, ahora, reservaMinutos, topeReserva));
         if (r.algunaReserva()) reserva.guardarProductos(productos.values());
         if (e.getAbierto() == null || e.getEstado() == EnlaceCompraEstado.RECHAZADO) e.setAbierto(ahora);
         e.setEstado(EnlaceCompraEstado.ABIERTO);

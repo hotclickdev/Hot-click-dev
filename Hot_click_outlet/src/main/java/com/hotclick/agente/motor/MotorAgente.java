@@ -38,6 +38,17 @@ public class MotorAgente {
 
     private static final Logger log = LoggerFactory.getLogger(MotorAgente.class);
 
+    private static final java.util.regex.Pattern LOG_SEGURO = java.util.regex.Pattern.compile("[A-Za-z0-9_.:-]{1,64}");
+
+    /**
+     * Valores que vienen del modelo (nombre de herramienta, stop_reason, categoría) y van al log: solo caracteres
+     * seguros y largo acotado. Cualquier otra cosa (saltos de línea, texto largo) se registra como «inválido»
+     * para que un modelo manipulado no pueda falsear líneas del log (AG-14 H-06).
+     */
+    public static String paraLog(String valor) {
+        return valor != null && LOG_SEGURO.matcher(valor).matches() ? valor : "<inválido>";
+    }
+
     static final int TEXTO_TURNO_MAX = 2_000;
     static final int RESULTADO_HERRAMIENTA_MAX = 8_000;
     static final String RESPUESTA_MODERACION =
@@ -177,7 +188,7 @@ public class MotorAgente {
                 }
                 case "refusal" -> {
                     log.warn("[agente-motor] empresa={} perfil={} refusal categoria={}", contexto.empresaId(), perfil,
-                        nodo.path("stop_details").path("category").asText("n/d"));
+                        paraLog(nodo.path("stop_details").path("category").asText("n/d")));
                     return derivar(MotivoFin.REFUSAL, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
                 }
                 case "max_tokens" -> {
@@ -186,7 +197,7 @@ public class MotorAgente {
                     return derivar(MotivoFin.MAX_TOKENS, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
                 }
                 default -> {
-                    log.warn("[agente-motor] empresa={} perfil={} stop_reason inesperado={}", contexto.empresaId(), perfil, stop);
+                    log.warn("[agente-motor] empresa={} perfil={} stop_reason inesperado={}", contexto.empresaId(), perfil, paraLog(stop));
                     return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
                 }
             }
@@ -222,7 +233,7 @@ public class MotorAgente {
         Optional<HerramientaAgente> herramienta = op.excluidas().contains(nombre)
             ? Optional.empty() : registro.permitida(perfil, nombre);
         if (herramienta.isEmpty()) {
-            log.warn("[agente-motor] empresa={} perfil={} herramienta no permitida: {}", contexto.empresaId(), perfil, nombre);
+            log.warn("[agente-motor] empresa={} perfil={} herramienta no permitida: {}", contexto.empresaId(), perfil, paraLog(nombre));
             r = ResultadoHerramienta.error("Herramienta no disponible para este asistente.");
         } else if (!input.isObject()) {
             r = ResultadoHerramienta.error("Entrada inválida: se esperaba un objeto JSON.");
@@ -231,7 +242,7 @@ public class MotorAgente {
                 r = herramienta.get().ejecutar(contexto, input);
             } catch (RuntimeException e) {
                 log.warn("[agente-motor] empresa={} perfil={} herramienta={} falló: {}", contexto.empresaId(), perfil,
-                    nombre, e.getClass().getSimpleName());
+                    paraLog(nombre), e.getClass().getSimpleName());
                 r = ResultadoHerramienta.error("No se pudo obtener el dato en este momento.");
             }
         }

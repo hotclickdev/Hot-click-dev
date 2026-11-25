@@ -36,9 +36,19 @@ public class SimuladorService {
     static final String CONTACTO_SIMULADO = "simulador";
     static final Set<String> SIN_HERRAMIENTAS = Set.of("crear_enlace_compra");
 
-    public record Turno(String rol, String texto) {}
+    public record Turno(String rol, String texto) {
+        @Override
+        public String toString() {
+            return "Turno[rol=" + rol + "]";
+        }
+    }
 
-    public record Resultado(String texto, boolean pasoAPersona, String motivoFin, int tokensEntrada, int tokensSalida) {}
+    public record Resultado(String texto, boolean pasoAPersona, String motivoFin, int tokensEntrada, int tokensSalida) {
+        @Override
+        public String toString() {
+            return "Resultado[pasoAPersona=" + pasoAPersona + ", motivoFin=" + motivoFin + "]";
+        }
+    }
 
     /** Tope de uso alcanzado (429). */
     public static class LimiteSimuladorException extends RuntimeException {

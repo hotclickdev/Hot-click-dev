@@ -43,6 +43,12 @@ public class ResumenConversacionService {
     /** resumen y sugerencia en texto plano; disponible=false si no se pudo generar. */
     public record Resultado(boolean disponible, String resumen, String sugerencia) {
         static Resultado noDisponible() { return new Resultado(false, "", ""); }
+
+        /** Sin el resumen ni la sugerencia: citan la conversación del cliente (AG-14 H-07). */
+        @Override
+        public String toString() {
+            return "Resultado[disponible=" + disponible + "]";
+        }
     }
 
     private final BandejaService bandeja;

@@ -22,6 +22,12 @@ public record EnlaceAbiertoDto(
     int totalActual,
     List<Item> items
 ) {
+    /** Sin el nombre ni el teléfono enmascarado del cliente (AG-14 H-07). */
+    @Override
+    public String toString() {
+        return "EnlaceAbiertoDto[items=" + (items == null ? 0 : items.size()) + ", totalActual=" + totalActual + "]";
+    }
+
     public record Item(
         Long productoId,
         String nombre,

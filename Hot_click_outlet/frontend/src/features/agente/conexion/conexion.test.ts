@@ -5,7 +5,7 @@ import '@/i18n'
 import { ToastProvider } from '@/components/ui/Toast'
 import ConectarCuentasMeta from './ConectarCuentasMeta'
 import { mensajeDeConexion } from './conexionHelpers'
-import { interpretarMensajeSignup } from './fbSdk'
+import { debeRecargarPorCsp, interpretarMensajeSignup } from './fbSdk'
 
 describe('interpretarMensajeSignup', () => {
   const fin = JSON.stringify({
@@ -51,5 +51,34 @@ describe('ConectarCuentasMeta', () => {
     expect(html).toContain('Conectar WhatsApp')
     expect(html).toContain('Conectar Instagram y Facebook')
     expect(html).toContain('disabled')
+  })
+})
+
+describe('debeRecargarPorCsp (AG-14 H-08)', () => {
+  function almacenEnMemoria() {
+    const datos = new Map<string, string>()
+    return {
+      getItem: (k: string) => datos.get(k) ?? null,
+      setItem: (k: string, v: string) => void datos.set(k, v),
+      removeItem: (k: string) => void datos.delete(k),
+    }
+  }
+
+  it('recarga una sola vez cuando el SDK se bloquea', () => {
+    const almacen = almacenEnMemoria()
+    expect(debeRecargarPorCsp(almacen)).toBe(true)
+    expect(debeRecargarPorCsp(almacen)).toBe(false)
+  })
+
+  it('sin almacenamiento o con error no recarga (evita bucles)', () => {
+    expect(debeRecargarPorCsp(null)).toBe(false)
+    const roto = {
+      getItem: () => {
+        throw new Error('bloqueado')
+      },
+      setItem: () => undefined,
+      removeItem: () => undefined,
+    }
+    expect(debeRecargarPorCsp(roto)).toBe(false)
   })
 })

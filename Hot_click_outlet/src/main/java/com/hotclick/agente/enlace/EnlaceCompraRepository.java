@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface EnlaceCompraRepository extends JpaRepository<EnlaceCompra, Long> {
 
@@ -54,4 +55,22 @@ public interface EnlaceCompraRepository extends JpaRepository<EnlaceCompra, Long
         + "AND e.chatSesionId IS NOT NULL ORDER BY e.id")
     List<EnlaceCompra> paraRecordatorio2(@Param("limite") LocalDateTime limite, @Param("ahora") LocalDateTime ahora,
                                          Pageable pagina);
+
+    /**
+     * AG-14 H-04: enlaces vigentes sin pedido de una conversación o de un contacto de la tienda, del más viejo al más
+     * nuevo. El contacto se compara con el valor guardado (ya recortado).
+     */
+    @Query("SELECT e.id FROM EnlaceCompra e WHERE e.estado IN ('CREADO','ABIERTO') AND e.pedidoId IS NULL "
+        + "AND e.vence > :ahora AND (e.chatSesionId = :sesion OR (e.empresaId = :empresaId AND e.canal = :canal "
+        + "AND e.contactoExterno = :contacto)) ORDER BY e.creado, e.id")
+    List<Long> idsVigentesSinPedido(@Param("sesion") UUID sesion, @Param("empresaId") Long empresaId,
+                                    @Param("canal") String canal, @Param("contacto") String contacto,
+                                    @Param("ahora") LocalDateTime ahora);
+
+    /** Igual que {@link #idsVigentesSinPedido} para la cuenta de HotClick (sin empresa). */
+    @Query("SELECT e.id FROM EnlaceCompra e WHERE e.estado IN ('CREADO','ABIERTO') AND e.pedidoId IS NULL "
+        + "AND e.vence > :ahora AND (e.chatSesionId = :sesion OR (e.empresaId IS NULL AND e.canal = :canal "
+        + "AND e.contactoExterno = :contacto)) ORDER BY e.creado, e.id")
+    List<Long> idsVigentesSinPedidoHotClick(@Param("sesion") UUID sesion, @Param("canal") String canal,
+                                            @Param("contacto") String contacto, @Param("ahora") LocalDateTime ahora);
 }

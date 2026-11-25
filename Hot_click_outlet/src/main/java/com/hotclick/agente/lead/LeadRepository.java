@@ -25,7 +25,13 @@ public class LeadRepository {
 
     public record Fila(Long id, TipoLead tipo, Long empresaId, String canal, String ultimos4, String contactoCifrado,
                        String nombre, String tipoNegocio, String interes, EstadoLead estado, UUID sesionId,
-                       LocalDateTime creadoEn) {}
+                       LocalDateTime creadoEn) {
+        /** Sin contacto (ni cifrado), nombre ni interés (AG-14 H-07). */
+        @Override
+        public String toString() {
+            return "Fila[id=" + id + ", tipo=" + tipo + ", estado=" + estado + "]";
+        }
+    }
 
     private static final RowMapper<Fila> MAPPER = (rs, i) -> new Fila(
         rs.getLong("id_lead"), TipoLead.valueOf(rs.getString("tipo")), (Long) rs.getObject("fk_id_empresa"),

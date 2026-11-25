@@ -5087,6 +5087,9 @@ CREATE INDEX IF NOT EXISTS idx_agente_alerta_meta_creado ON hot_click_agente_ale
 CREATE INDEX IF NOT EXISTS idx_enlace_compra_empresa_creado ON hot_click_enlace_compra_tb (fk_id_empresa, creado);
 CREATE INDEX IF NOT EXISTS idx_pedido_origen_canal_fecha ON hot_click_pedido_tb (fecha_pedido) WHERE origen_canal IS NOT NULL;
 
+-- V258: AG-14 H-05 — bloqueo creciente del PIN interno (15 min, 1 h, 24 h). Idempotente y aditiva.
+ALTER TABLE hot_click_agente_vinculacion_tb ADD COLUMN IF NOT EXISTS pin_bloqueos_seguidos INTEGER NOT NULL DEFAULT 0;
+
 -- V259: AG-34 / AG-40 — registro de avisos del bot que deben salir UNA sola vez (comprobante por WhatsApp y los
 -- 3 pasos de acompañamiento de un negocio nuevo). La llave (tipo, referencia_id) es la guarda de idempotencia:
 -- no guarda contacto ni texto, solo el tipo de aviso y el id interno (comprobante o lead). Idempotente.
