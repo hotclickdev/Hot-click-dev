@@ -4861,6 +4861,22 @@
       "detalle": "We are reviewing your Emprendedor slot request. When approved your trial starts and you can add your card. You are not charged while you wait."
     }
   },
+  "agenteConexion": {
+    "titulo": "Connect your messaging accounts",
+    "detalle": "Connect your business WhatsApp, Instagram and Facebook so the bot can serve your customers from the inbox.",
+    "conectarWhatsapp": "Connect WhatsApp",
+    "conectarMeta": "Connect Instagram and Facebook",
+    "pendiente": "Pending setup by HotClick",
+    "errorGenerico": "We could not complete the connection. Please try again in a moment.",
+    "cancelado": "The connection was cancelled. You can try again whenever you like.",
+    "exito": "Account connected. You can now see its conversations in the inbox.",
+    "avisoRegistro": "The number needs one last verification step in Meta.",
+    "sinPaginas": "We could not find any Facebook Pages you manage with that account.",
+    "elegirPagina": "Choose the Page you want to connect",
+    "sinInstagram": "no Instagram linked",
+    "conectar": "Connect",
+    "cancelar": "Cancel"
+  },
   "bandeja": {
     "titulo": "Inbox",
     "subtitulo": "WhatsApp, Instagram and Messenger conversations. See what the bot replies and take over the chat when needed.",
