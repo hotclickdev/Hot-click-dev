@@ -4,6 +4,7 @@ import com.hotclick.exception.IntegracionExternaException;
 import com.hotclick.exception.ImagenOcupadaException;
 import com.hotclick.service.storage.StorageImageValidator;
 import com.hotclick.service.storage.StorageUploadHelper;
+import jakarta.annotation.PostConstruct;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
@@ -32,9 +33,18 @@ public class SupabaseStorageService {
     @Value("${aws.s3.public-url}")
     private String publicUrl;
 
+    /** false cuando el proveedor S3-compatible no soporta ACL por objeto (OCI): la lectura pública la da el bucket. */
+    @Value("${aws.s3.public-acl:true}")
+    private boolean publicAcl;
+
     public SupabaseStorageService(S3Client s3Client) {
         this.validator = new StorageImageValidator();
         this.uploadHelper = new StorageUploadHelper(s3Client, this.validator);
+    }
+
+    @PostConstruct
+    void configurarAclPublica() {
+        uploadHelper.setAclPublica(publicAcl);
     }
 
     @CircuitBreaker(name = "s3", fallbackMethod = "subirCertificadoFallback")

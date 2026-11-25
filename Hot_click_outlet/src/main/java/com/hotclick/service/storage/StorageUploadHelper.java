@@ -25,9 +25,20 @@ public class StorageUploadHelper {
     private final S3Client s3Client;
     private final StorageImageValidator validator;
 
+    /** true = imágenes públicas con ACL public-read (AWS). false = la lectura pública la da el bucket (OCI). */
+    private boolean aclPublica = true;
+
     public StorageUploadHelper(S3Client s3Client, StorageImageValidator validator) {
         this.s3Client = s3Client;
         this.validator = validator;
+    }
+
+    public void setAclPublica(boolean aclPublica) {
+        this.aclPublica = aclPublica;
+    }
+
+    private PutObjectRequest.Builder conAclPublica(PutObjectRequest.Builder builder) {
+        return aclPublica ? builder.acl(ObjectCannedACL.PUBLIC_READ) : builder;
     }
 
     /**
@@ -131,11 +142,10 @@ public class StorageUploadHelper {
         String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
 
         s3Client.putObject(
-                PutObjectRequest.builder()
+                conAclPublica(PutObjectRequest.builder()
                         .bucket(bucket)
                         .key(path)
-                        .contentType(contentType)
-                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .contentType(contentType))
                         .build(),
                 RequestBody.fromBytes(bytes)
         );
@@ -168,11 +178,10 @@ public class StorageUploadHelper {
         String path = carpeta + "/" + UUID.randomUUID() + "." + ext;
 
         s3Client.putObject(
-                PutObjectRequest.builder()
+                conAclPublica(PutObjectRequest.builder()
                         .bucket(bucket)
                         .key(path)
-                        .contentType(contentType)
-                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .contentType(contentType))
                         .build(),
                 RequestBody.fromBytes(bytes)
         );
@@ -191,11 +200,10 @@ public class StorageUploadHelper {
 
         String path = carpeta + "/" + UUID.randomUUID() + "." + extension;
         s3Client.putObject(
-                PutObjectRequest.builder()
+                conAclPublica(PutObjectRequest.builder()
                         .bucket(bucket)
                         .key(path)
-                        .contentType(contentType)
-                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .contentType(contentType))
                         .build(),
                 RequestBody.fromBytes(bytes)
         );
