@@ -4861,6 +4861,22 @@
       "detalle": "Estamos revisando tu solicitud de cupo de Emprendedor. Cuando la aprobemos empieza tu prueba y vas a poder agregar tu tarjeta. No te cobramos nada mientras esperás."
     }
   },
+  "agenteConexion": {
+    "titulo": "Conectá tus cuentas de mensajería",
+    "detalle": "Conectá el WhatsApp, el Instagram y el Facebook de tu negocio para que el bot atienda a tus clientes desde la bandeja.",
+    "conectarWhatsapp": "Conectar WhatsApp",
+    "conectarMeta": "Conectar Instagram y Facebook",
+    "pendiente": "Pendiente de configurar por HotClick",
+    "errorGenerico": "No pudimos completar la conexión. Intentá de nuevo en un momento.",
+    "cancelado": "La conexión se canceló. Podés intentarlo otra vez cuando quieras.",
+    "exito": "Cuenta conectada. Ya podés ver sus conversaciones en la bandeja.",
+    "avisoRegistro": "El número necesita un último paso de verificación en Meta.",
+    "sinPaginas": "No encontramos páginas de Facebook que administrés con esa cuenta.",
+    "elegirPagina": "Elegí la página que querés conectar",
+    "sinInstagram": "sin Instagram vinculado",
+    "conectar": "Conectar",
+    "cancelar": "Cancelar"
+  },
   "bandeja": {
     "titulo": "Bandeja",
     "subtitulo": "Conversaciones de WhatsApp, Instagram y Messenger. Mirá lo que responde el bot y tomá el chat cuando haga falta.",

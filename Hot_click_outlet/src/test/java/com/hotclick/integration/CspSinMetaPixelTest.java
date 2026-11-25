@@ -6,20 +6,19 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-/** Meta Pixel apagado (sin publicidad): la CSP no permite sus hosts; solo el iframe de videos de Facebook. */
+/** Meta Pixel apagado (sin publicidad): la CSP no permite el píxel; el SDK del login de Meta (AG-23/AG-30) sí. */
 @DisplayName("CSP sin hosts de Meta Pixel")
 class CspSinMetaPixelTest extends BaseIntegrationTest {
 
     @Test
-    @DisplayName("Ni connect.facebook.net ni facebook.com fuera de frame-src")
+    @DisplayName("Meta solo en script (SDK del login), connect y frame; nunca el píxel ni imágenes")
     void cspSinMeta() throws Exception {
         String csp = mockMvc.perform(get("/api/health")).andReturn().getResponse().getHeader("Content-Security-Policy");
-        assertThat(csp).isNotNull().doesNotContain("connect.facebook.net").doesNotContain("graph.facebook.com")
-            .doesNotContain("*.facebook.com");
+        assertThat(csp).isNotNull().doesNotContain("*.facebook.com").doesNotContain("facebook.com/tr");
         for (String directiva : csp.split(";")) {
-            if (!directiva.trim().startsWith("frame-src")) {
-                assertThat(directiva).as(directiva.trim()).doesNotContain("facebook");
-            }
+            String d = directiva.trim();
+            boolean permitida = d.startsWith("frame-src") || d.startsWith("script-src") || d.startsWith("connect-src");
+            if (!permitida) assertThat(d).as(d).doesNotContain("facebook");
         }
     }
 }
