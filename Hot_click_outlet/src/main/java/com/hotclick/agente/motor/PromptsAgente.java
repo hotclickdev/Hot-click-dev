@@ -1,5 +1,7 @@
 package com.hotclick.agente.motor;
 
+import com.hotclick.agente.idioma.Idioma;
+
 /**
  * Textos de system prompt por perfil (español de Costa Rica). Valores por defecto: los textos reales
  * los dará el dueño. El prompt no lleva datos variables por turno para que el caché de prompt funcione.
@@ -9,6 +11,11 @@ final class PromptsAgente {
     private PromptsAgente() {}
 
     static String construir(PerfilAgente perfil, TonoAgente tono, String nombreNegocio) {
+        return construir(perfil, tono, nombreNegocio, Idioma.ES);
+    }
+
+    /** AG-39: con idioma distinto de español se agrega una instrucción fija; el resto del prompt no cambia. */
+    static String construir(PerfilAgente perfil, TonoAgente tono, String nombreNegocio, Idioma idioma) {
         String negocio = nombreNegocio == null || nombreNegocio.isBlank() ? "el negocio" : nombreNegocio.trim();
         if (perfil == PerfilAgente.RESUMEN_BANDEJA) {
             return resumenBandeja(tono);
@@ -18,6 +25,8 @@ final class PromptsAgente {
         sb.append(estilo(tono)).append("\n\n");
         sb.append(reglasComunes(tono, perfil)).append("\n\n");
         sb.append(reglasPerfil(perfil, tono));
+        String instruccionIdioma = idioma == null ? "" : idioma.instruccionPrompt();
+        if (!instruccionIdioma.isEmpty()) sb.append("\n\n").append(instruccionIdioma);
         return sb.toString();
     }
 

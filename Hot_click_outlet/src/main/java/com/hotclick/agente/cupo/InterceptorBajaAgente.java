@@ -1,6 +1,8 @@
 package com.hotclick.agente.cupo;
 
 import com.hotclick.agente.canal.CanalCuenta;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conversacion.spi.InterceptorMensajeEntrante;
 import com.hotclick.agente.webhook.MensajeEntrante;
 import com.hotclick.model.Empresa;
@@ -30,7 +32,8 @@ public class InterceptorBajaAgente implements InterceptorMensajeEntrante {
     private static final Logger log = LoggerFactory.getLogger(InterceptorBajaAgente.class);
 
     static final Set<String> PALABRAS_BAJA = Set.of(
-        "stop", "baja", "parar", "no quiero mensajes", "no quiero mas mensajes", "no quiero recibir mensajes");
+        "stop", "baja", "parar", "no quiero mensajes", "no quiero mas mensajes", "no quiero recibir mensajes",
+        "unsubscribe", "stop messages", "do not message me", "nao quero mensagens", "parar mensagens");
     static final String PALABRA_ACTIVAR = "activar";
 
     private final AgenteBajaService bajas;
@@ -55,12 +58,12 @@ public class InterceptorBajaAgente implements InterceptorMensajeEntrante {
         try {
             if (baja) {
                 bajas.registrar(empresaId, canal, m.remitenteId());
-                envio.enviar(cuenta, m.remitenteId(), textoBaja(nombreNegocio(empresaId)));
+                envio.enviar(cuenta, m.remitenteId(), TextosFijos.baja(Idioma.deTexto(m.texto()), nombreNegocio(empresaId)));
                 log.info("[agente-baja] contacto dado de baja ({})", m);
                 return true;
             }
             if (!bajas.quitar(empresaId, canal, m.remitenteId())) return false; // no estaba de baja: mensaje normal
-            envio.enviar(cuenta, m.remitenteId(), textoActivar(nombreNegocio(empresaId)));
+            envio.enviar(cuenta, m.remitenteId(), TextosFijos.activar(Idioma.deTexto(m.texto()), nombreNegocio(empresaId)));
             log.info("[agente-baja] contacto reactivado ({})", m);
             return true;
         } catch (RuntimeException e) {
@@ -85,13 +88,10 @@ public class InterceptorBajaAgente implements InterceptorMensajeEntrante {
     }
 
     static String textoBaja(String negocio) {
-        return "Listo, no te vamos a enviar recordatorios ni promociones de " + negocio
-            + ". Si nos escribís, te seguimos respondiendo lo que preguntés. "
-            + "Si querés volver a recibirlos, escribí ACTIVAR.";
+        return TextosFijos.baja(Idioma.ES, negocio);
     }
 
     static String textoActivar(String negocio) {
-        return "Listo, vas a volver a recibir recordatorios de " + negocio
-            + " sobre lo que consultaste. Escribí STOP cuando quieras dejar de recibirlos.";
+        return TextosFijos.activar(Idioma.ES, negocio);
     }
 }

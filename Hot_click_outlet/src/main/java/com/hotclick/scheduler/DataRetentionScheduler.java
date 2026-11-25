@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
  *   - hot_click_lead_tb:                         180 días COMPRADOR, 365 días NEGOCIO (AG-27)
  *   - hot_click_agente_conv_mes_tb:              3 meses (conversaciones contadas del cupo, AG-29)
  *   - hot_click_agente_uso_mes_tb:               24 meses (conversaciones y costo de IA: facturación y métricas, AG-29)
+ *   - hot_click_agente_aviso_unico_tb:           180 días (guarda de idempotencia de avisos del bot, AG-34/AG-40; sin datos personales)
  *   - hot_click_agente_baja_tb:                  NUNCA se purga (ver limpiarAgenteCupo)
  *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
@@ -77,6 +78,7 @@ public class DataRetentionScheduler {
         total += limpiarAgenteAcciones();
         total += limpiarLeads();
         total += limpiarAgenteCupo();
+        total += limpiarAvisosUnicosAgente();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
@@ -200,6 +202,29 @@ public class DataRetentionScheduler {
         } while (n == 500);
         if (total > 0) log.info("[retention] lead {}: {} eliminados (> {} días)", tipo, total, tipo.retencionDias());
         return total;
+    }
+
+    /**
+     * AG-34 / AG-40: la guarda de "un solo aviso" (comprobante, pasos de onboarding) solo hace falta mientras el
+     * evento pueda repetirse o la ventana de 24 h siga abierta; 180 días la cubre con margen. Sin datos personales.
+     */
+    private int limpiarAvisosUnicosAgente() {
+        try {
+            Instant corte = Instant.now().minus(java.time.Duration.ofDays(180));
+            int total = 0, n;
+            do {
+                n = jdbc.update(
+                    "DELETE FROM hot_click_agente_aviso_unico_tb WHERE ctid IN (" +
+                    "SELECT ctid FROM hot_click_agente_aviso_unico_tb WHERE creado_en < ? LIMIT 500)",
+                    java.sql.Timestamp.from(corte));
+                total += n;
+            } while (n == 500);
+            if (total > 0) log.info("[retention] agente_aviso_unico: {} eliminados (> 180 días)", total);
+            return total;
+        } catch (Exception e) {
+            log.warn("[retention] agente_aviso_unico: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
     }
 
     /**
