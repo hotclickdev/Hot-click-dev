@@ -204,6 +204,30 @@ public class MetaGraphCliente {
         return data.isArray() && !data.isEmpty() ? data.get(0).path("id").asText(null) : null;
     }
 
+    // ── notas de voz (AG-13) ─────────────────────────────────────────────────
+
+    /** Metadatos de un adjunto de WhatsApp: URL temporal de descarga, tipo MIME y tamaño (0 si Meta no lo dice). */
+    public record MediaWhatsapp(String url, String mime, long tamano) {
+        /** La URL es temporal pero sirve para descargar: no se imprime. */
+        @Override public String toString() { return "MediaWhatsapp[" + mime + "," + tamano + "]"; }
+    }
+
+    /** {@code GET /{media-id}} con el token de la cuenta: devuelve la URL temporal (nunca se registra). */
+    @CircuitBreaker(name = INTEGRACION)
+    public MediaWhatsapp mediaWhatsapp(String mediaId, String token) {
+        if (mediaId == null || !mediaId.matches("\\d{1,25}")) {
+            throw new IntegracionExternaException(INTEGRACION, IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Id de media inválido");
+        }
+        JsonNode n = llamar(base() + mediaId, HttpMethod.GET, token, null);
+        String url = n.path("url").asText("");
+        if (url.isEmpty()) {
+            throw new IntegracionExternaException(INTEGRACION, IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Graph no devolvió la URL del adjunto");
+        }
+        return new MediaWhatsapp(url, n.path("mime_type").asText(""), n.path("file_size").asLong(0));
+    }
+
     // ── interno ──────────────────────────────────────────────────────────────
 
     private JsonNode llamar(String url, HttpMethod m, String bearer, MultiValueMap<String, String> form) {
