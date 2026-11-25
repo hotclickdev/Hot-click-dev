@@ -41,6 +41,8 @@ public class SinpeCheckoutService {
     @Autowired private com.hotclick.service.pedido.AutocompraNegocioGuard autocompraGuard;
     @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
+    /** AG-07: enlace de compra del bot (libera su reserva antes de reservar para el pedido y vincula pedido ↔ enlace). */
+    @Autowired(required = false) private com.hotclick.agente.enlace.EnlaceCompraVinculo enlaceCompraVinculo;
 
     @Autowired(required = false) private com.hotclick.service.envio.ContraEntregaPolitica contraEntregaPolitica;
     @Autowired(required = false) private SinpeOnvoMarketplaceService sinpeOnvo;
@@ -91,6 +93,7 @@ public class SinpeCheckoutService {
         String sinpeDestino = exigirDestinoSiSinpe(req.getProvider(), sinpeOnvo != null ? sinpeOnvo.destinoDisponible() : "");
         checkoutValidator.validateCartNotEmpty(req);
         CheckoutValidator.exigirDireccionSiHayEnvio(req);
+        Long enlaceCompraId = enlaceCompraVinculo == null ? null : enlaceCompraVinculo.preparar(req).orElse(null);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
         Usuario usuario = guestUserResolver.resolve(emailEfectivo, req.getGuestPhone());
 
@@ -102,6 +105,7 @@ public class SinpeCheckoutService {
             req, reservation, bodegaDefault, proveedorEfectivo, usuario,
             sinpe ? Constants.PEDIDO_PENDIENTE : Constants.PEDIDO_PENDIENTE_COMPROBANTE);
         Pedido principal = grupo.principal();
+        if (enlaceCompraId != null) enlaceCompraVinculo.vincular(enlaceCompraId, grupo.pedidos());
         // G1b: el comprador (con sesion, o invitado identificado por su correo) no puede ser del negocio vendedor.
         autocompraGuard.exigirNoEsDelNegocio(usuario, grupo.pedidos());
         autocompraGuard.exigirCorreoNoEsDelNegocio(emailEfectivo, grupo.pedidos());
