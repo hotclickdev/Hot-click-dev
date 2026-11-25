@@ -147,7 +147,7 @@ class InterceptorInternoTest {
         ConversacionService conversaciones = mock(ConversacionService.class);
         RespondedorDespacho despacho = mock(RespondedorDespacho.class);
         ObjectProvider<com.hotclick.agente.conversacion.spi.InterceptorMensajeEntrante> provider = mock(ObjectProvider.class);
-        when(provider.getIfAvailable()).thenReturn(interceptor);
+        when(provider.orderedStream()).thenAnswer(i -> java.util.stream.Stream.of(interceptor));
         EnrutadorConversaciones enrutador = new EnrutadorConversaciones(cuentas, conversaciones, despacho, provider);
 
         activaConPendiente(AgenteVinculacion.PEND_PIN_FINANZAS, AHORA.plus(Duration.ofMinutes(3)));
