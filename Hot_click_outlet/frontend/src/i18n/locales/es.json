@@ -4889,7 +4889,8 @@
       "equipo": "Equipo y PIN",
       "simulador": "Simulador",
       "leads": "Leads",
-      "metricas": "Métricas"
+      "metricas": "Métricas",
+      "campanas": "Campañas"
     },
     "cargando": "Cargando…",
     "errorCargar": "No pudimos cargar la información. Intentá de nuevo en un momento.",
@@ -5087,6 +5088,115 @@
         "CONTACTADO": "Contactado",
         "CONVERTIDO": "Convertido",
         "DESCARTADO": "Descartado"
+      }
+    },
+    "campanas": {
+      "titulo": "Campañas",
+      "lista": "Campañas",
+      "vacioTitulo": "Todavía no hay campañas",
+      "vacioMensaje": "Creá una campaña con una plantilla aprobada por Meta. Solo la recibe quien aceptó recibir ofertas.",
+      "ver": "Ver",
+      "lanzar": "Lanzar campaña",
+      "lanzada": "Campaña en marcha. Los mensajes salen en lotes.",
+      "cancelar": "Cancelar envíos pendientes",
+      "cancelada": "Campaña cancelada.",
+      "descartar": "Descartar borrador",
+      "estados": {
+        "BORRADOR": "Borrador",
+        "EN_CURSO": "En curso",
+        "COMPLETADA": "Completada",
+        "CANCELADA": "Cancelada"
+      },
+      "segmentos": {
+        "TODOS": "Todos los que aceptaron recibir ofertas",
+        "COMPRADORES_RECIENTES": "Compraron en los últimos días",
+        "INTERES_CATEGORIA": "Interesados en una categoría",
+        "LEADS": "Leads del bot"
+      },
+      "consentimientos": {
+        "titulo": "Quién aceptó recibir ofertas",
+        "resumen": "{{activos}} contactos aceptaron y {{revocados}} se dieron de baja.",
+        "ayuda": "Solo se escribe a quien tocó «Sí, quiero ofertas» en el chat o lo marcó al comprar. Quien escribe STOP no recibe nada más."
+      },
+      "plantillas": {
+        "titulo": "Plantillas de marketing",
+        "ayuda": "Meta revisa cada plantilla antes de que puedas usarla. Puede tardar desde minutos hasta un par de días.",
+        "nueva": "Nueva plantilla",
+        "formulario": "Nueva plantilla de marketing",
+        "nombre": "Nombre técnico",
+        "nombreAyuda": "Solo minúsculas, números y guion bajo. Ejemplo: oferta_diciembre",
+        "texto": "Texto del mensaje",
+        "textoAyuda": "Usá {{v1}}, {{v2}}… para los datos que cambian (por ejemplo el nombre). No puede empezar ni terminar con una variable.",
+        "variableAlBorde": "El texto no puede empezar ni terminar con una variable.",
+        "ejemplo": "Ejemplo para {{n}}",
+        "aviso": "Cada mensaje de marketing lo cobra Meta a tu negocio.",
+        "enviar": "Enviar a Meta",
+        "enviada": "Plantilla enviada a Meta. Quedó pendiente de aprobación.",
+        "vacioTitulo": "Todavía no hay plantillas",
+        "vacioMensaje": "Creá una plantilla para poder lanzar campañas.",
+        "lista": "Plantillas de marketing",
+        "actualizar": "Actualizar estado",
+        "motivo": "Motivo: {{motivo}}",
+        "estados": {
+          "PENDIENTE": "Pendiente de Meta",
+          "APROBADA": "Aprobada",
+          "RECHAZADA": "Rechazada"
+        }
+      },
+      "nueva": {
+        "boton": "Nueva campaña",
+        "formulario": "Nueva campaña",
+        "ayuda": "Se guarda como borrador: no se envía nada hasta que veas el costo estimado y confirmés.",
+        "nombre": "Nombre de la campaña",
+        "plantilla": "Plantilla aprobada",
+        "elegir": "Elegí una opción",
+        "sinAprobadas": "Todavía no tenés plantillas aprobadas por Meta.",
+        "valor": "Valor para {{n}}",
+        "valorAyuda": "Escribí {nombre} para usar el primer nombre de cada cliente.",
+        "segmento": "A quién",
+        "segmentoAyuda": "Siempre se limita a quienes aceptaron recibir ofertas.",
+        "dias": "Ventana en días",
+        "categoria": "Categoría",
+        "guardar": "Guardar borrador",
+        "creada": "Borrador guardado."
+      },
+      "estimacion": {
+        "conConsentimiento": "{{n}} contactos cumplen el segmento y aceptaron ofertas.",
+        "excluidosBaja": "{{n}} se excluyen por haber pedido la baja (STOP).",
+        "excluidosTope": "{{n}} se excluyen porque ya recibieron el máximo de mensajes de la semana.",
+        "permitidos": "Se enviará a {{n}} contactos.",
+        "topeMes": "Te quedan {{resta}} mensajes de marketing este mes (tope de tu plan: {{tope}}).",
+        "costo": "Costo estimado que Meta cobra a tu negocio: {{costo}}",
+        "costoAviso": "Es una estimación según la tarifa de marketing de Meta; el cobro real lo hace Meta a tu cuenta de WhatsApp Business."
+      },
+      "confirmar": {
+        "titulo": "Confirmar envío",
+        "texto": "Vas a enviar a {{n}} contactos por un costo estimado de {{costo}}. ¿Confirmás?",
+        "si": "Sí, enviar"
+      },
+      "metricas": {
+        "titulo": "Resultados de la campaña",
+        "enviados": "Enviados",
+        "entregados": "Entregados",
+        "leidos": "Leídos",
+        "respondidos": "Respondieron",
+        "fallidos": "Fallidos",
+        "omitidos": "Omitidos"
+      },
+      "catalogo": {
+        "titulo": "Catálogo de Meta",
+        "ayuda": "Sincroniza tus productos visibles con tu catálogo de Commerce Manager para que el bot envíe tarjetas con foto y precio en WhatsApp e Instagram.",
+        "idCatalogo": "Id del catálogo",
+        "idAyuda": "Lo ves en Commerce Manager, en los datos del catálogo.",
+        "conectar": "Conectar catálogo",
+        "conectado": "Catálogo conectado.",
+        "estado": "Catálogo {{id}} conectado con {{n}} productos sincronizados.",
+        "ultimaSync": "Última sincronización: {{fecha}}",
+        "error": "La última sincronización falló (código {{codigo}}). Se reintenta cada noche.",
+        "sincronizar": "Sincronizar ahora",
+        "sincronizando": "Sincronizando…",
+        "sincronizado": "Sincronización terminada.",
+        "desconectar": "Desconectar"
       }
     }
   },

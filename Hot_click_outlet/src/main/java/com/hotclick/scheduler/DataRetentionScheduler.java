@@ -36,7 +36,11 @@ import java.time.LocalDateTime;
  *   - hot_click_agente_uso_mes_tb:               24 meses (conversaciones y costo de IA: facturación y métricas, AG-29)
  *   - hot_click_agente_aviso_unico_tb:           180 días (guarda de idempotencia de avisos del bot, AG-34/AG-40; sin datos personales)
  *   - hot_click_agente_baja_tb:                  NUNCA se purga (ver limpiarAgenteCupo)
- *   - hot_click_agente_alerta_meta_tb:           90 días (avisos de Meta de cuenta y calidad, AG-32)
+ *   - hot_click_agente_consentimiento_tb:       REVOCADOS a los 5 años de la revocación (prueba del consentimiento,
+ *                                                AG-36); los ACTIVOS se conservan mientras dure la relación
+ *   - hot_click_agente_campana_tb (+ envíos):    12 meses desde que termina (completada o cancelada, AG-36)
+ *   - hot_click_agente_catalogo_item_tb:         ELIMINADOS a los 30 días (control de sincronización con Meta, AG-37)
+ *   - hot_click_agente_alerta_meta_tb:          90 días (avisos de Meta de cuenta y calidad, AG-32)
  *   - hot_click_agente_resena_aviso_tb:          365 días (guarda de "reseña ya pedida" por pedido, AG-35)
  *   - encuesta de satisfacción (AG-38):          vive en hot_click_chat_sesion_tb: se borra con la sesión (30 días)
  *
@@ -81,6 +85,7 @@ public class DataRetentionScheduler {
         total += limpiarAgenteAcciones();
         total += limpiarLeads();
         total += limpiarAgenteCupo();
+        total += limpiarAgenteCampanas();
         total += limpiarAgenteMetricas();
         total += limpiarAvisosUnicosAgente();
 
@@ -245,6 +250,33 @@ public class DataRetentionScheduler {
             return total;
         } catch (Exception e) {
             log.warn("[retention] agente_cupo: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    /**
+     * AG-36 y AG-37. El consentimiento revocado se guarda 5 años como prueba (ya sin contacto ni nombre). Las campañas
+     * terminadas (con sus envíos, por cascada) 12 meses. Los productos eliminados del catálogo de Meta, 30 días.
+     */
+    private int limpiarAgenteCampanas() {
+        try {
+            Instant ahora = Instant.now();
+            int n = jdbc.update(
+                "DELETE FROM hot_click_agente_consentimiento_tb WHERE id_consentimiento IN (" +
+                "SELECT id_consentimiento FROM hot_click_agente_consentimiento_tb WHERE estado = 'REVOCADO' " +
+                "AND revocado_en < ? LIMIT 500)", java.sql.Timestamp.from(ahora.minus(java.time.Duration.ofDays(5 * 365L))));
+            n += jdbc.update(
+                "DELETE FROM hot_click_agente_campana_tb WHERE id_campana IN (" +
+                "SELECT id_campana FROM hot_click_agente_campana_tb WHERE estado IN ('COMPLETADA', 'CANCELADA') " +
+                "AND finalizada_en < ? LIMIT 500)", java.sql.Timestamp.from(ahora.minus(java.time.Duration.ofDays(365))));
+            n += jdbc.update(
+                "DELETE FROM hot_click_agente_catalogo_item_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_catalogo_item_tb WHERE estado = 'ELIMINADO' " +
+                "AND sincronizado_en < ? LIMIT 500)", java.sql.Timestamp.from(ahora.minus(java.time.Duration.ofDays(30))));
+            if (n > 0) log.info("[retention] agente campañas/consentimientos/catálogo: {} eliminados", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] agente_campanas: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
             return 0;
         }
     }

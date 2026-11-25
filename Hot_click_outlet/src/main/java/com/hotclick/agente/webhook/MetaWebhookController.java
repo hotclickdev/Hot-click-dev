@@ -51,22 +51,32 @@ public class MetaWebhookController {
     private final MetaEventoDedup dedup;
     private final ObjectProvider<MensajeEntranteHandler> handlers;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<EstadoEntranteHandler> estadoHandlers;
     private final ObjectProvider<AlertaCalidadMeta> calidad;
 
     public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
                                  ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper) {
-        this(firma, parser, dedup, handlers, objectMapper, null);
+        this(firma, parser, dedup, handlers, objectMapper, null, null);
     }
 
-    @Autowired
+    /** Con avisos de calidad de Meta (AG-32), sin handlers de estado. */
     public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
                                  ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper,
+                                 ObjectProvider<AlertaCalidadMeta> calidad) {
+        this(firma, parser, dedup, handlers, objectMapper, null, calidad);
+    }
+
+    @Autowired // con varios constructores Spring no elige solo
+    public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
+                                 ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper,
+                                 ObjectProvider<EstadoEntranteHandler> estadoHandlers,
                                  ObjectProvider<AlertaCalidadMeta> calidad) {
         this.firma = firma;
         this.parser = parser;
         this.dedup = dedup;
         this.handlers = handlers;
         this.objectMapper = objectMapper;
+        this.estadoHandlers = estadoHandlers;
         this.calidad = calidad;
     }
 
@@ -124,8 +134,39 @@ public class MetaWebhookController {
         } catch (RuntimeException e) {
             log.error("[meta-webhook] error procesando evento — {}", e.getClass().getSimpleName());
         }
+        try {
+            despacharEstados(parser.parsearEstados(raiz));
+        } catch (RuntimeException e) {
+            log.error("[meta-webhook] error procesando estados — {}", e.getClass().getSimpleName());
+        }
         registrarAvisosDeMeta(raiz);
         return ResponseEntity.ok().build();
+    }
+
+    /** Acuses de entrega/lectura y estado de plantillas. Idempotentes: no pasan por la deduplicación de mensajes. */
+    private void despacharEstados(EstadoEntrante estados) {
+        if (estadoHandlers == null || estados.vacio()) return;
+        List<EstadoEntranteHandler> hs = estadoHandlers.orderedStream().toList();
+        for (EstadoEntrante.EstadoMensaje m : estados.mensajes()) {
+            for (EstadoEntranteHandler h : hs) {
+                try {
+                    h.estado(m);
+                } catch (RuntimeException e) {
+                    log.error("[meta-webhook] handler de estado {} falló — {}",
+                        h.getClass().getSimpleName(), e.getClass().getSimpleName());
+                }
+            }
+        }
+        for (EstadoEntrante.EstadoPlantilla p : estados.plantillas()) {
+            for (EstadoEntranteHandler h : hs) {
+                try {
+                    h.plantilla(p);
+                } catch (RuntimeException e) {
+                    log.error("[meta-webhook] handler de plantilla {} falló — {}",
+                        h.getClass().getSimpleName(), e.getClass().getSimpleName());
+                }
+            }
+        }
     }
 
     /** AG-32: avisos de cuenta o calidad del número (no son mensajes). Un fallo aquí nunca cambia la respuesta a Meta. */

@@ -61,8 +61,16 @@ public class CanalCuentaService {
     }
 
     /** Token en claro, solo para el envío. Nunca devolver ni registrar. */
-    String tokenDe(CanalCuenta cuenta) {
+    public String tokenDe(CanalCuenta cuenta) {
         return cuenta.tieneToken() ? cifrado.decryptTokenCanal(cuenta.getTokenCifrado()) : null;
+    }
+
+    /** Cuenta ACTIVA con token de un tipo para un negocio (la más antigua); vacío si no hay. */
+    @Transactional(readOnly = true)
+    public Optional<CanalCuenta> activaDe(Long empresaId, MensajeEntrante.Canal tipo) {
+        if (empresaId == null) return Optional.empty();
+        return repo.findByEmpresaIdOrderByIdAsc(empresaId).stream()
+            .filter(c -> c.getTipo() == tipo && c.getEstado() == EstadoCanal.ACTIVA && c.tieneToken()).findFirst();
     }
 
     @Transactional(readOnly = true)

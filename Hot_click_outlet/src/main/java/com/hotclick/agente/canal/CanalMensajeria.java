@@ -52,4 +52,44 @@ public interface CanalMensajeria {
                                    com.hotclick.service.whatsapp.PlantillaMeta plantilla, java.util.List<String> parametros) {
         throw new UnsupportedOperationException("El canal no admite plantillas");
     }
+
+    /** Producto de un catálogo de Meta: {@code metaProductoId} solo lo usan Instagram y Messenger (puede ser null). */
+    record ReferenciaCatalogo(String catalogoId, String retailerId, String metaProductoId) { }
+
+    /**
+     * Tarjeta nativa de producto del catálogo de Meta (WhatsApp: mensaje {@code product}; Instagram y Messenger:
+     * plantilla {@code product}). Si el canal no la admite o Meta la rechaza, cae a {@code respaldo} con
+     * {@link #enviarProducto}. Por defecto solo manda el respaldo.
+     */
+    default String enviarProductoCatalogo(CanalCuenta cuenta, String destinatario, ReferenciaCatalogo ref,
+                                          TarjetaProducto respaldo) {
+        return enviarProducto(cuenta, destinatario, respaldo);
+    }
+
+    /**
+     * Varios productos del catálogo en un solo mensaje (WhatsApp {@code product_list}, hasta 30). Por defecto y como
+     * respaldo manda cada tarjeta de {@code respaldos} (máx. 3) con {@link #enviarProducto}.
+     */
+    default String enviarListaProductosCatalogo(CanalCuenta cuenta, String destinatario, String catalogoId,
+                                                String titulo, String cuerpo, java.util.List<String> retailerIds,
+                                                java.util.List<TarjetaProducto> respaldos) {
+        String ultimo = "ok";
+        int n = 0;
+        for (TarjetaProducto t : respaldos == null ? java.util.List.<TarjetaProducto>of() : respaldos) {
+            if (n++ == 3) break;
+            ultimo = enviarProducto(cuenta, destinatario, t);
+        }
+        return ultimo;
+    }
+
+    /**
+     * Plantilla de categoría MARKETING ya aprobada por Meta (solo WhatsApp). Cada envío lo cobra Meta al negocio.
+     * Por defecto no está soportada.
+     * @return id del mensaje (wamid) o "simulado" si la cuenta no tiene token
+     * @throws UnsupportedOperationException si el canal no tiene plantillas
+     */
+    default String enviarPlantillaMarketing(CanalCuenta cuenta, String destinatario, String nombrePlantilla,
+                                            String idioma, java.util.List<String> parametros) {
+        throw new UnsupportedOperationException("El canal no admite plantillas");
+    }
 }

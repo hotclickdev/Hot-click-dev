@@ -6,6 +6,7 @@ import CanalesTab from './CanalesTab'
 import EquipoPinTab from './EquipoPinTab'
 import SimuladorTab from './SimuladorTab'
 import LeadsTab from './LeadsTab'
+import CampanasTab from './CampanasTab'
 import MetricasTab from './MetricasTab'
 import UsoMes from './UsoMes'
 import { indiceSiguiente, PESTANAS, type Pestana } from './botHelpers'
@@ -18,9 +19,10 @@ const PANELES: Record<Pestana, () => React.JSX.Element> = {
   simulador: SimuladorTab,
   leads: LeadsTab,
   metricas: MetricasTab,
+  campanas: CampanasTab,
 }
 
-/** Panel del bot de ventas (AG-19, AG-20, AG-22, AG-27): configuración, conocimiento, canales, equipo, simulador y leads. */
+/** Panel del bot de ventas (AG-19, AG-20, AG-22, AG-27, AG-36): configuración, conocimiento, canales, equipo, simulador, leads y campañas. */
 export default function BotPage({ inicial = 'config' }: Readonly<{ inicial?: Pestana }>) {
   const { t } = useTranslation()
   const [activa, setActiva] = useState<Pestana>(inicial)

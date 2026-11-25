@@ -54,6 +54,17 @@ public class AgenteBajaService implements ListaBajasAgente {
         return n != null && n > 0;
     }
 
+    /**
+     * Los que están de baja entre estos hashes de contacto (el mismo HMAC que guarda esta tabla). Una sola consulta por
+     * lote; lo usan las campañas, que ya tienen el hash y no el contacto en claro.
+     */
+    @Transactional(readOnly = true)
+    public Set<String> hashesDeBaja(Collection<String> hashes) {
+        if (hashes == null || hashes.isEmpty()) return Set.of();
+        return new HashSet<>(nombrado.queryForList("SELECT contacto_hash FROM hot_click_agente_baja_tb "
+            + "WHERE contacto_hash IN (:hashes)", new MapSqlParameterSource("hashes", hashes), String.class));
+    }
+
     /** Una sola consulta para todo el lote. */
     @Override
     @Transactional(readOnly = true)

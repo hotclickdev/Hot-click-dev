@@ -35,12 +35,12 @@ function pantalla(el: ReactElement, semillas: Array<[readonly unknown[], unknown
 }
 
 describe('panel del bot: pestañas', () => {
-  it('es un tablist accesible con las siete secciones y solo la activa en el orden de tabulación', () => {
+  it('es un tablist accesible con las ocho secciones y solo la activa en el orden de tabulación', () => {
     const html = pantalla(createElement(BotPage))
     expect(html).toContain('role="tablist"')
-    expect((html.match(/role="tab"/g) ?? []).length).toBe(7)
+    expect((html.match(/role="tab"/g) ?? []).length).toBe(8)
     expect(html).toContain('aria-selected="true"')
-    expect((html.match(/tabindex="-1"/g) ?? []).length).toBe(6)
+    expect((html.match(/tabindex="-1"/g) ?? []).length).toBe(7)
     expect(html).toContain('role="tabpanel"')
     for (const t of ['Configuración', 'Conocimiento', 'Canales', 'Equipo y PIN', 'Simulador', 'Leads', 'Métricas']) {
       expect(html).toContain(t)
