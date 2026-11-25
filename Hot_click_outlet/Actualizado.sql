@@ -5059,7 +5059,7 @@ CREATE INDEX IF NOT EXISTS idx_agente_baja_empresa ON hot_click_agente_baja_tb (
 -- AG-38: encuesta al cerrar la conversacion (solo WhatsApp). encuesta_enviada_en es la guarda de "una sola vez".
 ALTER TABLE hot_click_chat_sesion_tb ADD COLUMN IF NOT EXISTS encuesta_enviada_en TIMESTAMPTZ;
 ALTER TABLE hot_click_chat_sesion_tb ADD COLUMN IF NOT EXISTS encuesta_respondida_en TIMESTAMPTZ;
-ALTER TABLE hot_click_chat_sesion_tb ADD COLUMN IF NOT EXISTS encuesta_nota SMALLINT CHECK (encuesta_nota BETWEEN 1 AND 5);
+ALTER TABLE hot_click_chat_sesion_tb ADD COLUMN IF NOT EXISTS encuesta_nota INTEGER CHECK (encuesta_nota BETWEEN 1 AND 5);
 CREATE INDEX IF NOT EXISTS idx_chat_sesion_nota_baja
     ON hot_click_chat_sesion_tb (fk_id_empresa, ultimo_mensaje_en DESC) WHERE encuesta_nota IS NOT NULL AND encuesta_nota <= 2;
 
