@@ -6,6 +6,7 @@ import { fotoProducto, nombreVendedor } from '@/components/comprador/productCard
 import { getOptimizedUrl } from '@/utils/imageUtils'
 import { ICONOS_CHAT } from '../iconosChat'
 import { etiquetaPrecioChat, requiereFichaEncargo } from '../chatProductoPrecio'
+import AccionesCarrito from './AccionesCarrito'
 import { MarkdownSpan } from './MarkdownSpan'
 import type { AiChatMensaje, AiChatProducto } from './aiChatHelpers'
 import type { Producto } from '@/types/producto'
@@ -75,7 +76,7 @@ type MensajesHojaProps = {
   enviar: (mensajeDirecto?: string) => void
   setMensajes: Dispatch<SetStateAction<AiChatMensaje[]>>
   removeMsg: (msg: AiChatMensaje) => (list: AiChatMensaje[]) => AiChatMensaje[]
-  handleAdd: (producto: Producto) => void
+  handleAdd: (producto: Producto, cantidad?: number) => void
 }
 
 /** Conversación de la hoja del asistente (Figma `8:244`): burbuja azul del usuario, respuesta en texto, productos y siguientes preguntas. */
@@ -110,6 +111,7 @@ export function MensajesHoja({ mensajes, enviar, setMensajes, removeMsg, handleA
           </p>
         )}
         {m.productos?.map((p, pi) => <ProductoRecomendado key={p.id ?? pi} producto={p} onAdd={handleAdd} />)}
+        {!m.typing && <AccionesCarrito mensaje={m} onAgregar={handleAdd} incluirEnlaces />}
         {opciones.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {opciones.map((opt) => (

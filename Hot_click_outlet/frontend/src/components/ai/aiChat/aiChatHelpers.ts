@@ -50,6 +50,31 @@ export type AiChatAccion = {
   tipo?: string
   label?: string
   url?: string
+  /** AGREGAR_CARRITO: producto validado por el backend y unidades. */
+  productoId?: number
+  cantidad?: number
+}
+
+export const CANTIDAD_MAXIMA_CARRITO = 10
+
+export type AccionCarrito = { producto: AiChatProducto; cantidad: number }
+
+/**
+ * Acciones AGREGAR_CARRITO del asesor: solo las bien formadas (id entero, 1 a 10 unidades) cuyo producto vino en el
+ * mismo mensaje. El backend nunca toca el carrito: la persona aprieta el botón y el front aplica la acción.
+ */
+export function accionesCarrito(m: AiChatMensaje): AccionCarrito[] {
+  const salida: AccionCarrito[] = []
+  for (const a of m.acciones ?? []) {
+    if (a?.tipo !== 'AGREGAR_CARRITO') continue
+    const id = a.productoId
+    const cantidad = a.cantidad
+    if (!Number.isInteger(id) || (id as number) <= 0) continue
+    if (!Number.isInteger(cantidad) || (cantidad as number) < 1 || (cantidad as number) > CANTIDAD_MAXIMA_CARRITO) continue
+    const producto = m.productos?.find(p => p.id === id)
+    if (producto) salida.push({ producto, cantidad: cantidad as number })
+  }
+  return salida
 }
 
 /** Solo rutas internas ("/…") o wa.me por https; cualquier otra URL se descarta. */

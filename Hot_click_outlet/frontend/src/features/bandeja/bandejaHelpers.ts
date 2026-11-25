@@ -1,8 +1,19 @@
-import type { ConversacionBandeja, FiltrosBandeja, MiembroBandeja } from './bandejaTypes'
+import type { ConversacionBandeja, EstadoResumen, FiltrosBandeja, MiembroBandeja, ResumenConversacion } from './bandejaTypes'
 
 /** Refresco periódico (sin websockets): la lista y el hilo abierto se piden cada 10 s. */
 export const INTERVALO_REFRESCO_MS = 10_000
 export const MAX_TEXTO_RESPUESTA = 1000
+
+/** Estado del panel Resumen a partir del resultado de la consulta (puro, para pruebas). */
+export function estadoDeResumen(
+  r: ResumenConversacion | undefined, cargando: boolean, error: string | null,
+): EstadoResumen {
+  if (cargando) return { tipo: 'cargando' }
+  if (error) return { tipo: 'error', mensaje: error }
+  if (!r) return { tipo: 'inactivo' }
+  if (!r.disponible) return { tipo: 'noDisponible' }
+  return { tipo: 'listo', resumen: r.resumen, sugerencia: r.sugerencia }
+}
 
 export const FILTROS_INICIALES: FiltrosBandeja = { vista: 'TODAS', canal: '', estado: 'ABIERTA', pagina: 0 }
 
