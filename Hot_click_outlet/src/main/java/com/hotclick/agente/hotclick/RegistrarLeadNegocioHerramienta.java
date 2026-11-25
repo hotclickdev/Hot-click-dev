@@ -51,8 +51,9 @@ public class RegistrarLeadNegocioHerramienta implements HerramientaAgente {
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
-        String nombre = input == null ? "" : input.path("nombre").asText("").trim();
-        String tipo = input == null ? "" : input.path("tipoNegocio").asText("").trim();
+        if (input == null) return ResultadoHerramienta.error("Falta el nombre o qué vende el negocio.");
+        String nombre = input.path("nombre").asText("").trim();
+        String tipo = input.path("tipoNegocio").asText("").trim();
         if (nombre.isEmpty() || tipo.isEmpty()) return ResultadoHerramienta.error("Falta el nombre o qué vende el negocio.");
         String contacto = RegistrarLeadHerramienta.ContactoLead.de(contexto);
         if (contacto == null) return ResultadoHerramienta.error("No hay contacto para registrar; derive a una persona.");
