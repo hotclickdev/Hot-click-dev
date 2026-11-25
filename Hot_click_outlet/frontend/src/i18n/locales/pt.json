@@ -5032,6 +5032,22 @@
       }
     }
   },
+  "agenteConexion": {
+    "titulo": "Conecte suas contas de mensagens",
+    "detalle": "Conecte o WhatsApp, o Instagram e o Facebook do seu negócio para que o bot atenda seus clientes pela caixa de entrada.",
+    "conectarWhatsapp": "Conectar WhatsApp",
+    "conectarMeta": "Conectar Instagram e Facebook",
+    "pendiente": "Pendente de configuração pela HotClick",
+    "errorGenerico": "Não foi possível concluir a conexão. Tente novamente em instantes.",
+    "cancelado": "A conexão foi cancelada. Você pode tentar de novo quando quiser.",
+    "exito": "Conta conectada. Agora você já vê as conversas na caixa de entrada.",
+    "avisoRegistro": "O número precisa de uma última etapa de verificação na Meta.",
+    "sinPaginas": "Não encontramos páginas do Facebook que você administre com essa conta.",
+    "elegirPagina": "Escolha a página que deseja conectar",
+    "sinInstagram": "sem Instagram vinculado",
+    "conectar": "Conectar",
+    "cancelar": "Cancelar"
+  },
   "bandeja": {
     "titulo": "Caixa de entrada",
     "subtitulo": "Conversas do WhatsApp, Instagram e Messenger. Veja o que o bot responde e assuma o chat quando precisar.",
