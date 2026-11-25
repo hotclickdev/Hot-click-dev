@@ -9,7 +9,13 @@ package com.hotclick.agente.motor;
  */
 public record AccionAgente(Tipo tipo, String dato) {
 
-    public enum Tipo { PASAR_A_PERSONA, ENLACE_CREADO, LEAD_REGISTRADO }
+    public enum Tipo {
+        PASAR_A_PERSONA, ENLACE_CREADO, LEAD_REGISTRADO,
+        /** Asesor web: agregar al carrito del navegador. {@code dato} = JSON {@code {"productoId":n,"cantidad":n}}. */
+        AGREGAR_CARRITO,
+        /** Asesor web: botón al chat (WhatsApp) de la tienda. {@code dato} = URL wa.me ya validada por el backend. */
+        CHAT_TIENDA
+    }
 
     public static AccionAgente pasarAPersona(String motivo) {
         return new AccionAgente(Tipo.PASAR_A_PERSONA, motivo);

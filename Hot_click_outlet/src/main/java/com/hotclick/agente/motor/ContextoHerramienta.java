@@ -14,9 +14,11 @@ import java.util.UUID;
  * @param nombreNegocio   nombre comercial para el prompt; opcional
  * @param canal           canal por el que escribe el cliente; null si no aplica (p. ej. web)
  * @param sesionId        conversación del bot; null si no hay
+ * @param usuarioId       usuario autenticado de la web pública (lo fija el controlador desde la sesión, nunca el
+ *                        modelo); null si el visitante es anónimo o el canal no es la web
  */
 public record ContextoHerramienta(Long empresaId, String contactoExterno, PerfilAgente perfil, String nombreNegocio,
-                                  MensajeEntrante.Canal canal, UUID sesionId) {
+                                  MensajeEntrante.Canal canal, UUID sesionId, Long usuarioId) {
 
     public ContextoHerramienta {
         if (perfil == null) {
@@ -27,12 +29,17 @@ public record ContextoHerramienta(Long empresaId, String contactoExterno, Perfil
         }
     }
 
+    public ContextoHerramienta(Long empresaId, String contactoExterno, PerfilAgente perfil, String nombreNegocio,
+                               MensajeEntrante.Canal canal, UUID sesionId) {
+        this(empresaId, contactoExterno, perfil, nombreNegocio, canal, sesionId, null);
+    }
+
     public ContextoHerramienta(Long empresaId, String contactoExterno, PerfilAgente perfil, String nombreNegocio) {
-        this(empresaId, contactoExterno, perfil, nombreNegocio, null, null);
+        this(empresaId, contactoExterno, perfil, nombreNegocio, null, null, null);
     }
 
     public ContextoHerramienta(Long empresaId, String contactoExterno, PerfilAgente perfil) {
-        this(empresaId, contactoExterno, perfil, null, null, null);
+        this(empresaId, contactoExterno, perfil, null, null, null, null);
     }
 
     /** true si la búsqueda debe cubrir todo el marketplace en vez de una sola empresa. */
