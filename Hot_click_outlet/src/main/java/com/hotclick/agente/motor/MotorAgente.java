@@ -38,6 +38,17 @@ public class MotorAgente {
 
     private static final Logger log = LoggerFactory.getLogger(MotorAgente.class);
 
+    private static final java.util.regex.Pattern LOG_SEGURO = java.util.regex.Pattern.compile("[A-Za-z0-9_.:-]{1,64}");
+
+    /**
+     * Valores que vienen del modelo (nombre de herramienta, stop_reason, categoría) y van al log: solo caracteres
+     * seguros y largo acotado. Cualquier otra cosa (saltos de línea, texto largo) se registra como «inválido»
+     * para que un modelo manipulado no pueda falsear líneas del log (AG-14 H-06).
+     */
+    public static String paraLog(String valor) {
+        return valor != null && LOG_SEGURO.matcher(valor).matches() ? valor : "<inválido>";
+    }
+
     static final int TEXTO_TURNO_MAX = 2_000;
     static final int RESULTADO_HERRAMIENTA_MAX = 8_000;
     static final String RESPUESTA_MODERACION =
@@ -113,13 +124,13 @@ public class MotorAgente {
                 return sinLlamada(ChatLegalGuard.respuesta(motivoLegal), modelo, MotivoFin.MODERACION);
             }
             if (!moderacion.moderar(entrada).safe()) {
-                return sinLlamada(RESPUESTA_MODERACION, modelo, MotivoFin.MODERACION);
+                return sinLlamada(com.hotclick.agente.idioma.TextosFijos.moderacion(op.idioma()), modelo, MotivoFin.MODERACION);
             }
         }
 
         List<HerramientaAgente> herramientas = registro.paraPerfil(perfil).stream()
             .filter(h -> !op.excluidas().contains(h.nombre())).toList();
-        List<Object> system = construirSystem(perfil, contexto, tono);
+        List<Object> system = construirSystem(perfil, contexto, tono, op.idioma());
         List<Map<String, Object>> tools = construirTools(herramientas);
         List<Map<String, Object>> mensajes = construirMensajes(historial, entrada);
 
@@ -130,7 +141,7 @@ public class MotorAgente {
 
         for (int i = 0; i < config.maxIteraciones(); i++) {
             if (System.currentTimeMillis() >= limite) {
-                return derivar(MotivoFin.TIEMPO_AGOTADO, acciones, uso, modelo, llamadas, contexto, tono);
+                return derivar(MotivoFin.TIEMPO_AGOTADO, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
             }
             String cuerpo = serializar(modelo, perfil, system, tools, mensajes);
             ClienteClaude.RespuestaClaude resp;
@@ -141,19 +152,19 @@ public class MotorAgente {
                 // Incluye circuit breaker abierto. Sin mensaje: puede traer datos.
                 log.warn("[agente-motor] empresa={} perfil={} proveedor no disponible: {}",
                     contexto.empresaId(), perfil, e.getClass().getSimpleName());
-                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
+                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
             }
             if (resp == null || resp.status() != 200) {
                 log.warn("[agente-motor] empresa={} perfil={} Claude HTTP {}", contexto.empresaId(), perfil,
                     resp == null ? -1 : resp.status());
-                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
+                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
             }
             JsonNode nodo;
             try {
                 nodo = mapper.readTree(resp.cuerpo());
             } catch (JsonProcessingException e) {
                 log.warn("[agente-motor] empresa={} perfil={} respuesta no es JSON", contexto.empresaId(), perfil);
-                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
+                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
             }
             UsoTokens vuelta = UsoTokens.desdeUsage(nodo.path("usage"));
             uso = uso.mas(vuelta);
@@ -166,33 +177,33 @@ public class MotorAgente {
                 case "end_turn", "stop_sequence" -> {
                     String texto = extraerTexto(contenido);
                     if (texto.isBlank()) {
-                        return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
+                        return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
                     }
                     return resultado(texto, acciones, uso, modelo, MotivoFin.COMPLETO, llamadas);
                 }
                 case "tool_use" -> {
                     if (!procesarToolUse(perfil, contexto, contenido, mensajes, acciones, op)) {
-                        return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
+                        return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
                     }
                 }
                 case "refusal" -> {
                     log.warn("[agente-motor] empresa={} perfil={} refusal categoria={}", contexto.empresaId(), perfil,
-                        nodo.path("stop_details").path("category").asText("n/d"));
-                    return derivar(MotivoFin.REFUSAL, acciones, uso, modelo, llamadas, contexto, tono);
+                        paraLog(nodo.path("stop_details").path("category").asText("n/d")));
+                    return derivar(MotivoFin.REFUSAL, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
                 }
                 case "max_tokens" -> {
                     // No se ejecutan herramientas ni se envía texto cortado a medias.
                     log.warn("[agente-motor] empresa={} perfil={} max_tokens", contexto.empresaId(), perfil);
-                    return derivar(MotivoFin.MAX_TOKENS, acciones, uso, modelo, llamadas, contexto, tono);
+                    return derivar(MotivoFin.MAX_TOKENS, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
                 }
                 default -> {
-                    log.warn("[agente-motor] empresa={} perfil={} stop_reason inesperado={}", contexto.empresaId(), perfil, stop);
-                    return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
+                    log.warn("[agente-motor] empresa={} perfil={} stop_reason inesperado={}", contexto.empresaId(), perfil, paraLog(stop));
+                    return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
                 }
             }
         }
         log.warn("[agente-motor] empresa={} perfil={} tope de iteraciones ({})", contexto.empresaId(), perfil, config.maxIteraciones());
-        return derivar(MotivoFin.TOPE_ITERACIONES, acciones, uso, modelo, llamadas, contexto, tono);
+        return derivar(MotivoFin.TOPE_ITERACIONES, acciones, uso, modelo, llamadas, contexto, tono, op.idioma());
     }
 
     // ── Herramientas ──────────────────────────────────────────────────────────
@@ -222,7 +233,7 @@ public class MotorAgente {
         Optional<HerramientaAgente> herramienta = op.excluidas().contains(nombre)
             ? Optional.empty() : registro.permitida(perfil, nombre);
         if (herramienta.isEmpty()) {
-            log.warn("[agente-motor] empresa={} perfil={} herramienta no permitida: {}", contexto.empresaId(), perfil, nombre);
+            log.warn("[agente-motor] empresa={} perfil={} herramienta no permitida: {}", contexto.empresaId(), perfil, paraLog(nombre));
             r = ResultadoHerramienta.error("Herramienta no disponible para este asistente.");
         } else if (!input.isObject()) {
             r = ResultadoHerramienta.error("Entrada inválida: se esperaba un objeto JSON.");
@@ -231,7 +242,7 @@ public class MotorAgente {
                 r = herramienta.get().ejecutar(contexto, input);
             } catch (RuntimeException e) {
                 log.warn("[agente-motor] empresa={} perfil={} herramienta={} falló: {}", contexto.empresaId(), perfil,
-                    nombre, e.getClass().getSimpleName());
+                    paraLog(nombre), e.getClass().getSimpleName());
                 r = ResultadoHerramienta.error("No se pudo obtener el dato en este momento.");
             }
         }
@@ -254,10 +265,11 @@ public class MotorAgente {
     // ── Request ───────────────────────────────────────────────────────────────
 
     /** System como bloque con cache_control (prefijo estable: tools + system). */
-    private List<Object> construirSystem(PerfilAgente perfil, ContextoHerramienta contexto, TonoAgente tono) {
+    private List<Object> construirSystem(PerfilAgente perfil, ContextoHerramienta contexto, TonoAgente tono,
+                                         com.hotclick.agente.idioma.Idioma idioma) {
         Map<String, Object> bloque = new LinkedHashMap<>();
         bloque.put("type", "text");
-        bloque.put("text", perfil.promptSistema(tono, contexto.nombreNegocio()));
+        bloque.put("text", perfil.promptSistema(tono, contexto.nombreNegocio(), idioma));
         bloque.put("cache_control", Map.of("type", "ephemeral"));
         return List.of(bloque);
     }
@@ -329,14 +341,13 @@ public class MotorAgente {
     // ── Resultados ────────────────────────────────────────────────────────────
 
     private ResultadoAgente derivar(MotivoFin motivo, List<AccionAgente> acciones, UsoTokens uso, String modelo,
-                                    int llamadas, ContextoHerramienta contexto, TonoAgente tono) {
+                                    int llamadas, ContextoHerramienta contexto, TonoAgente tono,
+                                    com.hotclick.agente.idioma.Idioma idioma) {
         List<AccionAgente> todas = new ArrayList<>(acciones);
         if (todas.stream().noneMatch(a -> a.tipo() == AccionAgente.Tipo.PASAR_A_PERSONA)) {
             todas.add(AccionAgente.pasarAPersona("Derivación automática: " + motivo));
         }
-        String texto = tono.segun(
-            "Gracias por escribirnos. Para ayudarle mejor, le paso con una persona del equipo, que le responderá en breve.",
-            "Gracias por escribirnos. Para ayudarte mejor, te paso con una persona del equipo, que te responderá en breve.");
+        String texto = com.hotclick.agente.idioma.TextosFijos.traspaso(idioma, tono.trato() == TonoAgente.Trato.USTED);
         return resultado(texto, todas, uso, modelo, motivo, llamadas);
     }
 

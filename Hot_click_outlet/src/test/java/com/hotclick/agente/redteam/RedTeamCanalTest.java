@@ -1,5 +1,6 @@
 package com.hotclick.agente.redteam;
 
+import com.hotclick.utils.Constants;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.agente.canal.CanalCuenta;
@@ -178,14 +179,47 @@ class RedTeamCanalTest {
         @Test
         @DisplayName("Cuenta de HotClick (sin cupo): pasado el límite el bot deja de llamar a Claude, pero el mensaje se guarda")
         void limitePorConversacionCortaLaLlamada() {
-            when(limitador.tryAcquireEstricto(anyString(), anyInt(), anyInt())).thenReturn(true, true, true, true, false);
+            int[] porMinuto = {0};
+            when(limitador.tryAcquireEstricto(anyString(), anyInt(), anyInt())).thenAnswer(i -> {
+                String llave = i.getArgument(0);
+                return !llave.endsWith(":m") || llave.startsWith("agente:hotclick") || ++porMinuto[0] <= 2;
+            });
             EnrutadorConversaciones e = enrutador(null);
 
             for (int i = 0; i < 3; i++) e.manejar(msg(Canal.INSTAGRAM, "IGSID-1", null, "hola " + i, "mid." + i));
 
-            // 2 buckets por mensaje: el 3.º mensaje cae en el bucket por minuto.
+            // El 3.º mensaje cae en el bucket por minuto de la conversación.
             verify(despacho, times(2)).despachar(any(), any());
             assertThat(guardados).isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("H-01 (global): muchos contactos distintos contra la cuenta de HotClick agotan el tope global; el mensaje queda en la bandeja")
+        void topeGlobalDeHotClick() {
+            when(limitador.tryAcquireEstricto(anyString(), anyInt(), anyInt())).thenAnswer(i ->
+                !"agente:hotclick:m".equals(i.getArgument(0)));
+            EnrutadorConversaciones e = enrutador(null);
+
+            e.manejar(msg(Canal.INSTAGRAM, "IGSID-1", null, "hola", "mid.1"));
+
+            verify(despacho, never()).despachar(any(), any());
+            assertThat(guardados).isEqualTo(1);
+            verify(limitador).tryAcquireEstricto(eq("agente:hotclick:m"), eq(60), eq(60));
+        }
+
+        @Test
+        @DisplayName("El tope global es configurable y no aplica a los negocios (solo cuenta de HotClick)")
+        void topeGlobalConfigurableYSoloHotClick() {
+            when(limitador.tryAcquireEstricto(anyString(), anyInt(), anyInt())).thenReturn(true);
+            EnrutadorConversaciones hotclick = enrutador(null);
+            hotclick.setTopeHotClick(5);
+            hotclick.manejar(msg(Canal.INSTAGRAM, "IGSID-1", null, "hola", "mid.1"));
+            verify(limitador).tryAcquireEstricto(eq("agente:hotclick:m"), eq(5), eq(60));
+
+            org.mockito.Mockito.clearInvocations(limitador);
+            guardadas.clear();
+            enrutador(TIENDA).manejar(msg(Canal.INSTAGRAM, "IGSID-2", null, "hola", "mid.2"));
+            verify(limitador, never()).tryAcquireEstricto(eq("agente:hotclick:m"), anyInt(), anyInt());
         }
 
         @Test
@@ -425,7 +459,7 @@ class RedTeamCanalTest {
         void init() {
             repo = mock(EnlaceCompraRepository.class);
             reserva = mock(EnlaceCompraReserva.class);
-            apertura = new EnlaceCompraAperturaService(repo, reserva, 30);
+            apertura = new EnlaceCompraAperturaService(repo, reserva, 30, 90);
         }
 
         @Test
@@ -477,8 +511,8 @@ class RedTeamCanalTest {
             e.setCanal("WHATSAPP");
             e.setContactoExterno(TEL);
             e.setEstado(estado);
-            e.setCreado(LocalDateTime.now().minusHours(2));
-            e.setVence(LocalDateTime.now().plusHours(horasParaVencer));
+            e.setCreado(LocalDateTime.now(Constants.ZONA_CR).minusHours(2));
+            e.setVence(LocalDateTime.now(Constants.ZONA_CR).plusHours(horasParaVencer));
             return e;
         }
     }

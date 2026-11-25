@@ -59,6 +59,11 @@ export default function ListaConversaciones({
                 <span className="line-clamp-2 text-sm text-hc-muted">{c.ultimoMensaje || t('bandeja.sinMensajes')}</span>
                 <span className="flex flex-wrap items-center gap-2">
                   <InsigniaModo modo={c.modo} />
+                  {c.notaEncuesta != null && (
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ${c.notaEncuesta <= 2 ? 'bg-[var(--hc-danger-bg)] text-[var(--hc-red-700)]' : 'bg-[var(--hc-success-bg)] text-[var(--hc-success-text)]'}`}>
+                      {t('bandeja.nota', { n: c.notaEncuesta })}
+                    </span>
+                  )}
                   {c.cupoAgotado && <InsigniaCupoAgotado />}
                   <span className="text-xs text-hc-muted">
                     {asignado ? t('bandeja.atiende', { nombre: asignado }) : t('bandeja.sinAsignar')}

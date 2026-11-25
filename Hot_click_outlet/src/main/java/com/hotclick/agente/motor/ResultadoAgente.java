@@ -24,6 +24,13 @@ public record ResultadoAgente(String texto, List<AccionAgente> acciones, UsoToke
         uso = uso == null ? UsoTokens.VACIO : uso;
     }
 
+    /** Sin el texto de la respuesta (AG-14 H-07). */
+    @Override
+    public String toString() {
+        return "ResultadoAgente[motivoFin=" + motivoFin + ", acciones=" + acciones.size() + ", iteraciones="
+            + iteraciones + "]";
+    }
+
     public int tokensEntrada() { return uso.entrada(); }
 
     public int tokensSalida() { return uso.salida(); }

@@ -56,6 +56,9 @@ public class PedidoService {
     private jakarta.persistence.EntityManager entityManager;
     @Autowired(required = false)
     private com.hotclick.service.suscripcion.LockTimeoutPorFila lockTimeout;
+    /** AG-35: publica "pedido del bot entregado" (el listener corre después del COMMIT). Opcional: null fuera de Spring. */
+    @Autowired(required = false)
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<Pedido> paquetesDeLaCompra(Pedido pedido) {
@@ -210,6 +213,7 @@ public class PedidoService {
         }
         if (Constants.PEDIDO_ENTREGADO.equals(nuevoEstado)) {
             n8nWebhookService.notificarPedidoEntregado(pedido);
+            com.hotclick.agente.pago.PedidoBotEventos.publicarEntregado(pedido, eventPublisher);
         }
         return pedido;
     }

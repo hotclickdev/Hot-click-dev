@@ -11,5 +11,11 @@ public interface ClienteClaude {
     RespuestaClaude enviar(String cuerpoJson);
 
     /** Respuesta HTTP cruda. */
-    record RespuestaClaude(int status, String cuerpo) {}
+    record RespuestaClaude(int status, String cuerpo) {
+        /** Sin el cuerpo: contiene el texto generado a partir de la conversación del cliente (AG-14 H-07). */
+        @Override
+        public String toString() {
+            return "RespuestaClaude[status=" + status + "]";
+        }
+    }
 }

@@ -147,4 +147,55 @@ class MetaWebhookControllerTest {
                 .header("X-Hub-Signature-256", firmar(malo)).content(malo))
             .andExpect(status().isBadRequest());
     }
+
+    // ── AG-32: avisos de cuenta o calidad del número ───────────────────────────
+
+    private static final String AVISO_CALIDAD = """
+        {"object":"whatsapp_business_account","entry":[{"id":"1","changes":[{"field":"phone_number_quality_update",
+          "value":{"event":"DOWNGRADE","current_limit":"TIER_1K"}}]}]}
+        """;
+
+    private MockMvc mvcConCalidad(com.hotclick.agente.metricas.AlertaCalidadMeta calidad) {
+        @SuppressWarnings("unchecked")
+        ObjectProvider<MensajeEntranteHandler> provider = mock(ObjectProvider.class);
+        when(provider.orderedStream()).thenAnswer(i -> Stream.of((MensajeEntranteHandler) recibidos::add));
+        @SuppressWarnings("unchecked")
+        ObjectProvider<com.hotclick.agente.metricas.AlertaCalidadMeta> cal = mock(ObjectProvider.class);
+        when(cal.getIfAvailable()).thenReturn(calidad);
+        return MockMvcBuilders.standaloneSetup(new MetaWebhookController(firma, new MetaWebhookParser(), dedup, provider,
+            new ObjectMapper(), cal)).build();
+    }
+
+    @Test
+    void avisoDeCalidadFirmadoSeRegistraYSeResponde200() throws Exception {
+        com.hotclick.agente.metricas.AlertaCalidadMeta calidad = mock(com.hotclick.agente.metricas.AlertaCalidadMeta.class);
+
+        mvcConCalidad(calidad).perform(post("/api/webhooks/meta").contentType(MediaType.APPLICATION_JSON)
+                .header("X-Hub-Signature-256", firmar(AVISO_CALIDAD)).content(AVISO_CALIDAD))
+            .andExpect(status().isOk());
+
+        verify(calidad).registrar(any());
+        assertThat(recibidos).isEmpty();
+    }
+
+    @Test
+    void avisoDeCalidadConFirmaInvalidaNoSeRegistra() throws Exception {
+        com.hotclick.agente.metricas.AlertaCalidadMeta calidad = mock(com.hotclick.agente.metricas.AlertaCalidadMeta.class);
+
+        mvcConCalidad(calidad).perform(post("/api/webhooks/meta").contentType(MediaType.APPLICATION_JSON)
+                .header("X-Hub-Signature-256", "sha256=" + "0".repeat(64)).content(AVISO_CALIDAD))
+            .andExpect(status().isForbidden());
+
+        verify(calidad, never()).registrar(any());
+    }
+
+    @Test
+    void siElRegistroDeCalidadFallaIgualSeResponde200() throws Exception {
+        com.hotclick.agente.metricas.AlertaCalidadMeta calidad = mock(com.hotclick.agente.metricas.AlertaCalidadMeta.class);
+        when(calidad.registrar(any())).thenThrow(new IllegalStateException("base"));
+
+        mvcConCalidad(calidad).perform(post("/api/webhooks/meta").contentType(MediaType.APPLICATION_JSON)
+                .header("X-Hub-Signature-256", firmar(AVISO_CALIDAD)).content(AVISO_CALIDAD))
+            .andExpect(status().isOk());
+    }
 }

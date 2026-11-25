@@ -56,7 +56,7 @@ class MetaWebhookEstadosTest {
         };
         when(he.orderedStream()).thenAnswer(i -> handlerDeEstadosFalla ? Stream.of(roto, bueno) : Stream.of(bueno));
         return MockMvcBuilders.standaloneSetup(
-            new MetaWebhookController(firma, new MetaWebhookParser(), dedup, hm, new ObjectMapper(), he)).build();
+            new MetaWebhookController(firma, new MetaWebhookParser(), dedup, hm, new ObjectMapper(), he, null)).build();
     }
 
     private String firmar(String cuerpo) {

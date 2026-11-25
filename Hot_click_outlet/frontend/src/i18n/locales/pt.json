@@ -4892,6 +4892,7 @@
       "equipo": "Equipe e PIN",
       "simulador": "Simulador",
       "leads": "Leads",
+      "metricas": "Métricas",
       "campanas": "Campanhas"
     },
     "cargando": "Carregando…",
@@ -5020,6 +5021,52 @@
       "placeholder": "Ex.: Vocês enviam para Cartago?",
       "enviar": "Enviar",
       "reiniciar": "Reiniciar"
+    },
+    "metricas": {
+      "rangoAria": "Intervalo de datas",
+      "desde": "De",
+      "hasta": "Até",
+      "rangoIncompleto": "Escolha as duas datas.",
+      "rangoInvalido": "A data inicial não pode ser posterior à final.",
+      "rangoLargo": "O intervalo máximo é de 366 dias.",
+      "embudoTitulo": "Funil de vendas",
+      "conversaciones": "Conversas",
+      "enlacesCreados": "Links de compra criados",
+      "enlacesAbiertos": "Links abertos",
+      "enlacesPagados": "Links pagos",
+      "ventasCantidad": "Vendas atribuídas ao bot",
+      "ventasTotal": "Total vendido pelo bot",
+      "traspasos": "Passaram para uma pessoa",
+      "perdidas": "Vendas perdidas por vencimento",
+      "perdidasDetalle": "{{n}} links venceram sem pagamento",
+      "costoIA": "Custo de IA",
+      "costoNota": "A IA é registrada por mês: somam-se os meses que tocam o intervalo.",
+      "costoPorVenta": "Custo por venda",
+      "sinVentas": "Sem vendas",
+      "porBot": "Conversão por bot",
+      "porCanal": "Conversão por canal",
+      "colNombre": "Nome",
+      "colEnlaces": "Links",
+      "colPagados": "Pagos",
+      "colConversion": "Conversão",
+      "vacio": "Sem dados neste intervalo.",
+      "alertasTitulo": "Avisos da Meta sobre a conta ou a qualidade do número",
+      "alertasVacio": "A Meta não enviou avisos.",
+      "alcance": {
+        "NEGOCIO": "Seu negócio",
+        "HOTCLICK": "Bot da HotClick",
+        "PLATAFORMA": "Total da plataforma"
+      },
+      "bots": {
+        "NEGOCIO_VENTAS": "Bot de vendas do negócio",
+        "HOTCLICK": "Bot da HotClick",
+        "SIN_PERFIL": "Sem bot atribuído"
+      },
+      "canales": {
+        "WHATSAPP": "WhatsApp",
+        "INSTAGRAM": "Instagram",
+        "MESSENGER": "Messenger"
+      }
     },
     "leads": {
       "filtros": "Filtros de leads",
@@ -5180,6 +5227,9 @@
     "filtroCanal": "Canal",
     "filtroEstado": "Status",
     "todosCanales": "Todos os canais",
+    "notaBaja": "Só notas baixas",
+    "notaBajaAyuda": "Conversas fechadas cuja pesquisa de satisfação ficou com nota 1 ou 2",
+    "nota": "Nota {{n}} de 5",
     "listaAria": "Conversas",
     "paginacionAria": "Paginação das conversas",
     "anterior": "Anterior",

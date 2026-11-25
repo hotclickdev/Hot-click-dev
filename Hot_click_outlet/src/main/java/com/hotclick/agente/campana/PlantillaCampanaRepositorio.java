@@ -20,7 +20,12 @@ public class PlantillaCampanaRepositorio {
     public enum Estado { PENDIENTE, APROBADA, RECHAZADA }
 
     public record Fila(Long id, Long empresaId, String nombre, String idioma, String cuerpo, String ejemplos,
-                       Estado estado, String metaPlantillaId, String motivoRechazo, Instant creadoEn) { }
+                       Estado estado, String metaPlantillaId, String motivoRechazo, Instant creadoEn) {
+        @Override
+        public String toString() {
+            return "Fila[id=" + id + ", empresa=" + empresaId + ", estado=" + estado + "]";
+        }
+    }
 
     private static final RowMapper<Fila> MAPPER = (rs, i) -> new Fila(
         rs.getLong("id_plantilla"), rs.getLong("fk_id_empresa"), rs.getString("nombre"), rs.getString("idioma"),

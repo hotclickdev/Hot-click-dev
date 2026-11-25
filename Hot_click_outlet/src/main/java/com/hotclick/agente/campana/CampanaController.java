@@ -54,12 +54,22 @@ public class CampanaController {
             return new PlantillaDto(f.id(), f.nombre(), f.idioma(), f.cuerpo(), f.estado().name(), f.motivoRechazo(),
                 f.creadoEn());
         }
+
+        @Override
+        public String toString() {
+            return "PlantillaDto[id=" + id + ", estado=" + estado + "]";
+        }
     }
 
     public record CampanaPedido(String nombre, Long plantillaId, SegmentoDto segmento, List<String> parametros,
                                 Instant programadaPara) { }
 
-    public record PlantillaPedido(String nombre, String cuerpo, List<String> ejemplos) { }
+    public record PlantillaPedido(String nombre, String cuerpo, List<String> ejemplos) {
+        @Override
+        public String toString() {
+            return "PlantillaPedido[" + nombre + "]";
+        }
+    }
 
     public record LanzarPedido(BigDecimal costoConfirmadoUsd) { }
 

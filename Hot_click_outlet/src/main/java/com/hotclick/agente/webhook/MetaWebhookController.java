@@ -2,6 +2,7 @@ package com.hotclick.agente.webhook;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.agente.metricas.AlertaCalidadMeta;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,22 +52,32 @@ public class MetaWebhookController {
     private final ObjectProvider<MensajeEntranteHandler> handlers;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<EstadoEntranteHandler> estadoHandlers;
+    private final ObjectProvider<AlertaCalidadMeta> calidad;
 
     public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
                                  ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper) {
-        this(firma, parser, dedup, handlers, objectMapper, null);
+        this(firma, parser, dedup, handlers, objectMapper, null, null);
     }
 
-    @Autowired // con dos constructores Spring no elige solo
+    /** Con avisos de calidad de Meta (AG-32), sin handlers de estado. */
     public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
                                  ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper,
-                                 ObjectProvider<EstadoEntranteHandler> estadoHandlers) {
+                                 ObjectProvider<AlertaCalidadMeta> calidad) {
+        this(firma, parser, dedup, handlers, objectMapper, null, calidad);
+    }
+
+    @Autowired // con varios constructores Spring no elige solo
+    public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
+                                 ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper,
+                                 ObjectProvider<EstadoEntranteHandler> estadoHandlers,
+                                 ObjectProvider<AlertaCalidadMeta> calidad) {
         this.firma = firma;
         this.parser = parser;
         this.dedup = dedup;
         this.handlers = handlers;
         this.objectMapper = objectMapper;
         this.estadoHandlers = estadoHandlers;
+        this.calidad = calidad;
     }
 
     @GetMapping(value = "/meta", produces = MediaType.TEXT_PLAIN_VALUE)
@@ -128,6 +139,7 @@ public class MetaWebhookController {
         } catch (RuntimeException e) {
             log.error("[meta-webhook] error procesando estados — {}", e.getClass().getSimpleName());
         }
+        registrarAvisosDeMeta(raiz);
         return ResponseEntity.ok().build();
     }
 
@@ -154,6 +166,17 @@ public class MetaWebhookController {
                         h.getClass().getSimpleName(), e.getClass().getSimpleName());
                 }
             }
+        }
+    }
+
+    /** AG-32: avisos de cuenta o calidad del número (no son mensajes). Un fallo aquí nunca cambia la respuesta a Meta. */
+    private void registrarAvisosDeMeta(JsonNode raiz) {
+        AlertaCalidadMeta registrador = calidad == null ? null : calidad.getIfAvailable();
+        if (registrador == null) return;
+        try {
+            registrador.registrar(raiz);
+        } catch (RuntimeException e) {
+            log.error("[meta-webhook] error registrando avisos de Meta — {}", e.getClass().getSimpleName());
         }
     }
 

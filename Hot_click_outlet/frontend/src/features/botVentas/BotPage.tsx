@@ -7,6 +7,7 @@ import EquipoPinTab from './EquipoPinTab'
 import SimuladorTab from './SimuladorTab'
 import LeadsTab from './LeadsTab'
 import CampanasTab from './CampanasTab'
+import MetricasTab from './MetricasTab'
 import UsoMes from './UsoMes'
 import { indiceSiguiente, PESTANAS, type Pestana } from './botHelpers'
 
@@ -17,6 +18,7 @@ const PANELES: Record<Pestana, () => React.JSX.Element> = {
   equipo: EquipoPinTab,
   simulador: SimuladorTab,
   leads: LeadsTab,
+  metricas: MetricasTab,
   campanas: CampanasTab,
 }
 

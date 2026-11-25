@@ -60,6 +60,21 @@ public class EnlaceCompraReserva {
     }
 
     /**
+     * AG-14 H-04: vence un enlace vigente sin pagar y devuelve su reserva (tope de enlaces por contacto). No toca los
+     * que ya tienen pedido ni los que otro hilo cambió de estado.
+     */
+    @Transactional
+    public boolean invalidarSinPagar(Long id) {
+        EnlaceCompra e = repo.findByIdForUpdate(id).orElse(null);
+        if (e == null || e.getPedidoId() != null) return false;
+        if (e.getEstado() != EnlaceCompraEstado.CREADO && e.getEstado() != EnlaceCompraEstado.ABIERTO) return false;
+        liberar(e);
+        e.setEstado(EnlaceCompraEstado.VENCIDO);
+        repo.save(e);
+        return true;
+    }
+
+    /**
      * Barrido del scheduler, una transacción por enlace. Libera la reserva y, si {@code vencer}, marca VENCIDO
      * (solo si sigue sin pedido y en CREADO/ABIERTO: otro hilo pudo haberlo cambiado).
      */

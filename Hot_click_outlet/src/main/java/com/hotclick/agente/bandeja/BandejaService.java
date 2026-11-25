@@ -92,6 +92,19 @@ public class BandejaService {
         return BandejaMapeo.pagina(p, usuarioId, previas, clock.instant());
     }
 
+    /**
+     * AG-38: chats cerrados cuya encuesta de satisfacción quedó con nota baja (1 o 2), del más reciente al más viejo.
+     * Mismo alcance que la bandeja: un negocio solo ve los suyos; el ADMIN, los del bot de HotClick.
+     */
+    public BandejaDtos.Pagina listarNotaBaja(Long scope, Long usuarioId, String canalFiltro, int pagina, int tamano) {
+        int size = Math.max(1, Math.min(tamano, MAX_PAGINA));
+        Pageable pageable = PageRequest.of(Math.max(0, pagina), size, Sort.by(Sort.Direction.DESC, "ultimoMensajeEn"));
+        Page<ConversacionSesion> p = sesiones.findAll(filtroNotaBaja(scope, canalFiltro), pageable);
+        List<UUID> ids = BandejaMapeo.ids(p.getContent());
+        Map<UUID, String> previas = ids.isEmpty() ? Map.of() : BandejaMapeo.previas(mensajes.ultimosDe(ids));
+        return BandejaMapeo.pagina(p, usuarioId, previas, clock.instant());
+    }
+
     public BandejaDtos.Resumen resumen(Long scope, Long usuarioId) {
         long mias = sesiones.count(filtro(scope, usuarioId, Vista.MIAS, null, EstadoConversacion.ABIERTA));
         long sin = sesiones.count(filtro(scope, usuarioId, Vista.SIN_ASIGNAR, null, EstadoConversacion.ABIERTA));
@@ -218,6 +231,22 @@ public class BandejaService {
             }
             if (vista == Vista.SIN_ASIGNAR) ps.add(cb.isNull(root.get("usuarioAsignadoId")));
             if (vista == Vista.MIAS) ps.add(cb.equal(root.get("usuarioAsignadoId"), usuarioId));
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
+
+    private static Specification<ConversacionSesion> filtroNotaBaja(Long scope, String canalFiltro) {
+        return (root, q, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            ps.add(cb.isNotNull(root.get("canalCuentaId")));
+            ps.add(cb.or(cb.isNull(root.get("perfil")),
+                cb.notEqual(root.get("perfil"), PerfilConversacion.NEGOCIO_INTERNO)));
+            ps.add(scope == null ? cb.isNull(root.get("empresaId")) : cb.equal(root.get("empresaId"), scope));
+            ps.add(cb.isNotNull(root.get("encuestaNota")));
+            ps.add(cb.le(root.<Integer>get("encuestaNota"), com.hotclick.agente.metricas.EncuestaService.NOTA_BAJA_MAX));
+            if (canalFiltro != null && !canalFiltro.isBlank()) {
+                ps.add(cb.equal(root.get("canal"), canalFiltro.trim().toUpperCase(Locale.ROOT)));
+            }
             return cb.and(ps.toArray(new Predicate[0]));
         };
     }

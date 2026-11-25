@@ -1,10 +1,12 @@
 package com.hotclick.agente.bandeja;
 
 import com.hotclick.agente.conversacion.EstadoConversacion;
+import com.hotclick.agente.metricas.EncuestaService;
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.exception.TenantAccessDeniedException;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.TenantService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,13 +34,21 @@ public class BandejaController {
     private final BandejaAvisoService aviso;
     private final CompanyScope companyScope;
     private final TenantService tenantService;
+    private final EncuestaService encuesta;
 
     public BandejaController(BandejaService service, BandejaAvisoService aviso, CompanyScope companyScope,
                              TenantService tenantService) {
+        this(service, aviso, companyScope, tenantService, null);
+    }
+
+    @Autowired
+    public BandejaController(BandejaService service, BandejaAvisoService aviso, CompanyScope companyScope,
+                             TenantService tenantService, EncuestaService encuesta) {
         this.service = service;
         this.aviso = aviso;
         this.companyScope = companyScope;
         this.tenantService = tenantService;
+        this.encuesta = encuesta;
     }
 
     @GetMapping
@@ -47,8 +57,14 @@ public class BandejaController {
             @RequestParam(required = false) String canal,
             @RequestParam(defaultValue = "ABIERTA") String estado,
             @RequestParam(defaultValue = "0") int pagina,
-            @RequestParam(defaultValue = "20") int tamano) {
+            @RequestParam(defaultValue = "20") int tamano,
+            @RequestParam(defaultValue = "false") boolean notaBaja) {
         Long scope = alcance();
+        // AG-38: chats con nota baja en la encuesta (siempre cerrados); ignora vista y estado.
+        if (notaBaja) {
+            return ResponseEntity.ok(service.listarNotaBaja(scope, companyScope.getCurrentUserId(), canal(canal),
+                pagina, tamano));
+        }
         return ResponseEntity.ok(service.listar(scope, companyScope.getCurrentUserId(), vista(vista), canal(canal),
             estado(estado), pagina, tamano));
     }
@@ -110,7 +126,10 @@ public class BandejaController {
     @PostMapping("/{id}/cerrar")
     public ResponseEntity<BandejaDtos.Conversacion> cerrar(@PathVariable UUID id) {
         Long scope = alcance();
-        return ResponseEntity.ok(service.cerrar(id, scope, companyScope.getCurrentUserId()));
+        BandejaDtos.Conversacion cerrada = service.cerrar(id, scope, companyScope.getCurrentUserId());
+        // AG-38: encuesta de satisfacción al cerrar (best effort, nunca falla el cierre).
+        if (encuesta != null) encuesta.enviarAlCerrar(id, scope);
+        return ResponseEntity.ok(cerrada);
     }
 
     @ExceptionHandler(BandejaConflictoException.class)

@@ -23,7 +23,34 @@ declare global {
 }
 
 const SDK_URL = 'https://connect.facebook.net/es_LA/sdk.js'
+const CLAVE_RECARGA = 'hotclick:fb-sdk-recarga'
 let sdkPromise: Promise<FbSdk> | null = null
+
+type Almacen = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+
+/**
+ * El servidor solo permite el SDK de Facebook en la CSP de las rutas /admin y /plataforma (AG-14 H-08). La CSP viaja
+ * con el documento: si el usuario llegó al panel por navegación interna desde otra ruta, el navegador bloquea el
+ * script. En ese caso se recarga la página UNA vez (la recarga ya trae la CSP del panel). Devuelve true si debe
+ * recargar; false si ya se intentó o no hay almacenamiento.
+ */
+export function debeRecargarPorCsp(almacen: Almacen | null): boolean {
+  try {
+    if (!almacen || almacen.getItem(CLAVE_RECARGA)) return false
+    almacen.setItem(CLAVE_RECARGA, '1')
+    return true
+  } catch {
+    return false
+  }
+}
+
+function almacenSesion(): Almacen | null {
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
 
 export function cargarSdkFacebook(appId: string, version: string): Promise<FbSdk> {
   if (sdkPromise) return sdkPromise
@@ -35,6 +62,11 @@ export function cargarSdkFacebook(appId: string, version: string): Promise<FbSdk
         return
       }
       window.FB.init({ appId, cookie: false, xfbml: false, version })
+      try {
+        almacenSesion()?.removeItem(CLAVE_RECARGA)
+      } catch {
+        // sin almacenamiento: no pasa nada
+      }
       resolve(window.FB)
     }
     const script = document.createElement('script')
@@ -42,6 +74,10 @@ export function cargarSdkFacebook(appId: string, version: string): Promise<FbSdk
     script.async = true
     script.onerror = () => {
       sdkPromise = null
+      if (debeRecargarPorCsp(almacenSesion())) {
+        window.location.reload()
+        return
+      }
       reject(new Error('fb_sdk'))
     }
     document.head.appendChild(script)

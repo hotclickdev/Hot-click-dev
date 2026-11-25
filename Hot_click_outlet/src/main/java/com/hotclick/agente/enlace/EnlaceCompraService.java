@@ -34,23 +34,31 @@ public class EnlaceCompraService {
 
     /** Respuesta de {@link #crear}: lo que el bot necesita para contestar en el chat. */
     public record EnlaceCreado(String codigo, String url, LocalDateTime vence, int total,
-                               List<Linea> lineas, String resumenChat) { }
+                               List<Linea> lineas, String resumenChat) {
+        /** El código y la URL son la credencial del enlace: nunca van a un log por accidente (AG-14 H-07). */
+        @Override
+        public String toString() {
+            return "EnlaceCreado[total=" + total + ", lineas=" + lineas.size() + "]";
+        }
+    }
 
     private final EnlaceCompraRepository repo;
     private final ProductoRepository productoRepository;
     private final GuestCheckoutGuard guard;
+    private final EnlaceCompraTope tope;
     private final String appUrl;
     private final int vigenciaHoras;
     /** Reloj sustituible en pruebas. */
     Supplier<LocalDateTime> reloj = () -> LocalDateTime.now(Constants.ZONA_CR);
 
     public EnlaceCompraService(EnlaceCompraRepository repo, ProductoRepository productoRepository,
-                               GuestCheckoutGuard guard,
+                               GuestCheckoutGuard guard, EnlaceCompraTope tope,
                                @Value("${app.url:http://localhost:3000}") String appUrl,
                                @Value("${hotclick.agente.enlace.vigencia-horas:24}") int vigenciaHoras) {
         this.repo = repo;
         this.productoRepository = productoRepository;
         this.guard = guard;
+        this.tope = tope;
         this.appUrl = appUrl.endsWith("/") ? appUrl.substring(0, appUrl.length() - 1) : appUrl;
         this.vigenciaHoras = vigenciaHoras;
     }
@@ -77,6 +85,8 @@ public class EnlaceCompraService {
         EnlaceCompraArmado.Armado armado = EnlaceCompraArmado.armar(pedido, productos, empresaId, enlace);
 
         LocalDateTime ahora = reloj.get();
+        // H-04: tope de enlaces vigentes por conversación y contacto; el más viejo sin pagar vence antes de crear.
+        tope.hacerEspacio(empresaId, sesionId, canalNorm, recortar(contacto, 100), ahora);
         String codigo = CodigoEnlace.generar();
         enlace.setCodigo(codigo);
         enlace.setEmpresaId(empresaId);

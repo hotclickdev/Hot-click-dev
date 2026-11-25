@@ -68,6 +68,10 @@ public class AgenteVinculacion {
     @Column(name = "pin_bloqueado_hasta")
     private Instant pinBloqueadoHasta;
 
+    /** Bloqueos seguidos sin un acierto: sube la duración del siguiente bloqueo (AG-14 H-05). */
+    @Column(name = "pin_bloqueos_seguidos", nullable = false)
+    private int pinBloqueosSeguidos;
+
     @Column(name = "pin_sesion_hasta")
     private Instant pinSesionHasta;
 
@@ -111,6 +115,8 @@ public class AgenteVinculacion {
     public void setPinHash(String pinHash) { this.pinHash = pinHash; }
     public int getPinIntentosFallidos() { return pinIntentosFallidos; }
     public void setPinIntentosFallidos(int n) { this.pinIntentosFallidos = n; }
+    public int getPinBloqueosSeguidos() { return pinBloqueosSeguidos; }
+    public void setPinBloqueosSeguidos(int n) { this.pinBloqueosSeguidos = n; }
     public Instant getPinBloqueadoHasta() { return pinBloqueadoHasta; }
     public void setPinBloqueadoHasta(Instant t) { this.pinBloqueadoHasta = t; }
     public Instant getPinSesionHasta() { return pinSesionHasta; }

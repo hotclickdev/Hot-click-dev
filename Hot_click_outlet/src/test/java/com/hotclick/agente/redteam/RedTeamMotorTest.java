@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.agente.enlace.EnlaceCompraRepository;
 import com.hotclick.agente.enlace.EnlaceCompraService;
+import com.hotclick.agente.enlace.EnlaceCompraTope;
 import com.hotclick.agente.motor.BuscarProductosHerramienta;
 import com.hotclick.agente.motor.ClienteClaude;
 import com.hotclick.agente.motor.ConfigMotorAgente;
@@ -95,7 +96,7 @@ class RedTeamMotorTest {
             def("consultar_clientes"), def("consultar_ventas"), def("consultar_finanzas"),
             def("proponer_ajustar_stock")));
         GuardFijo guard = new GuardFijo();
-        EnlaceCompraService enlaceService = new EnlaceCompraService(enlaces, productos, guard.guard, "https://hotclick.lat", 24);
+        EnlaceCompraService enlaceService = new EnlaceCompraService(enlaces, productos, guard.guard, mock(EnlaceCompraTope.class), "https://hotclick.lat", 24);
         List<HerramientaAgente> herramientas = List.of(
             new BuscarProductosHerramienta(busqueda, OM), new PasarAPersonaHerramienta(),
             new CrearEnlaceCompraHerramienta(enlaceService), new ConsultarPedidoHerramienta(pedidos),
@@ -334,6 +335,26 @@ class RedTeamMotorTest {
             assertThat(e.getFormattedMessage()).doesNotContain(TEL_CLIENTE).doesNotContain("texto privado");
         }
         assertThat(toolResult().path("content").asText()).doesNotContain(TEL_CLIENTE).doesNotContain("texto privado");
+    }
+
+    @Test
+    @DisplayName("Log injection (H-06): nombre de herramienta y stop_reason con saltos de línea no llegan al log")
+    void logsSinInyeccionDeLineas() throws Exception {
+        when(cliente.enviar(anyString())).thenReturn(
+            toolUse("herramienta\\n2026-01-01 INFO linea falsa", "{}"),
+            new ClienteClaude.RespuestaClaude(200, "{\"stop_reason\":\"raro\\nFALSO\",\"content\":[],"
+                + "\"usage\":{\"input_tokens\":1,\"output_tokens\":1}}"));
+
+        motor.ejecutar(PerfilAgente.NEGOCIO_VENTAS, ventasA(), List.of(), "hola");
+
+        assertThat(logs.list).isNotEmpty();
+        for (ILoggingEvent e : logs.list) {
+            assertThat(e.getFormattedMessage()).doesNotContain("\n").doesNotContain("\r").doesNotContain("linea falsa")
+                .doesNotContain("FALSO");
+        }
+        assertThat(MotorAgente.paraLog("buscar_productos")).isEqualTo("buscar_productos");
+        assertThat(MotorAgente.paraLog("a".repeat(65))).isEqualTo("<inválido>");
+        assertThat(MotorAgente.paraLog(null)).isEqualTo("<inválido>");
     }
 
     @Test

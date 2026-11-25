@@ -1,4 +1,4 @@
-import type { ConfigBot, DiaHorario, PedidoConfigBot } from './botTypes'
+import type { EmbudoBot, ConfigBot, DiaHorario, PedidoConfigBot } from './botTypes'
 
 export const NOMBRE_MAX = 60
 export const MENSAJE_MAX = 500
@@ -62,7 +62,7 @@ export function formatearFecha(iso: string | null | undefined): string {
   }).format(f)
 }
 
-export const PESTANAS = ['config', 'conocimiento', 'canales', 'equipo', 'simulador', 'leads', 'campanas'] as const
+export const PESTANAS = ['config', 'conocimiento', 'canales', 'equipo', 'simulador', 'leads', 'metricas', 'campanas'] as const
 export type Pestana = (typeof PESTANAS)[number]
 
 /** Índice de la pestaña a la que mueven las flechas, Inicio y Fin (patrón de pestañas WAI-ARIA); null si la tecla no aplica. */
@@ -83,4 +83,44 @@ export function porcentajeCupo(conversaciones: number, cupo: number | null): num
 
 export function cupoAgotado(conversaciones: number, cupo: number | null): boolean {
   return cupo != null && cupo >= 0 && conversaciones >= cupo
+}
+
+const DIA_MS = 86_400_000
+
+/** Fecha local en formato AAAA-MM-DD (lo que espera el servidor). */
+export function aIsoLocal(d: Date): string {
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mes}-${dia}`
+}
+
+/** Últimos 30 días hasta hoy (inclusive). */
+export function rangoPorDefecto(hoy: Date = new Date()): { desde: string; hasta: string } {
+  return { desde: aIsoLocal(new Date(hoy.getTime() - 29 * DIA_MS)), hasta: aIsoLocal(hoy) }
+}
+
+/** Mensaje i18n del problema del rango, o null si se puede consultar (máximo 366 días, igual que el servidor). */
+export function errorDeRango(desde: string, hasta: string): string | null {
+  if (!desde || !hasta) return 'bot.metricas.rangoIncompleto'
+  const d = Date.parse(`${desde}T00:00:00Z`)
+  const h = Date.parse(`${hasta}T00:00:00Z`)
+  if (Number.isNaN(d) || Number.isNaN(h) || d > h) return 'bot.metricas.rangoInvalido'
+  if ((h - d) / DIA_MS > 366) return 'bot.metricas.rangoLargo'
+  return null
+}
+
+/** Ancho (0-100) de una barra del embudo respecto al paso más grande; las barras con valor nunca bajan de 2 %. */
+export function anchoBarra(valor: number, maximo: number): number {
+  if (maximo <= 0 || valor <= 0) return 0
+  return Math.max(2, Math.min(100, Math.round((valor / maximo) * 100)))
+}
+
+/** Los pasos del embudo en orden, con su clave i18n. */
+export function pasosEmbudo(e: EmbudoBot): Array<{ clave: string; valor: number }> {
+  return [
+    { clave: 'conversaciones', valor: e.conversaciones },
+    { clave: 'enlacesCreados', valor: e.enlacesCreados },
+    { clave: 'enlacesAbiertos', valor: e.enlacesAbiertos },
+    { clave: 'enlacesPagados', valor: e.enlacesPagados },
+  ]
 }

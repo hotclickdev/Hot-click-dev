@@ -20,7 +20,7 @@ final class EnlaceCompraRecalculo {
 
     private EnlaceCompraRecalculo() { }
 
-    static Resultado recalcular(EnlaceCompra e, Map<Long, Producto> productos) {
+    static Resultado recalcular(EnlaceCompra e, Map<Long, Producto> productos, boolean reservar) {
         List<EnlaceAbiertoDto.Item> items = new ArrayList<>();
         int totalActual = 0;
         boolean precioCambio = false;
@@ -41,7 +41,7 @@ final class EnlaceCompraRecalculo {
             int cantidad = personalizado ? i.getCantidad() : Math.min(i.getCantidad(), Math.max(0, p.getStockDisponible()));
             if (cantidad < i.getCantidad()) stockCambio = true;
             if (precio != i.getPrecioUnitarioCreado()) precioCambio = true;
-            if (!personalizado && cantidad > 0) {
+            if (reservar && !personalizado && cantidad > 0) {
                 p.setStockReservado(p.getStockReservado() + cantidad);
                 i.setCantidadReservada(cantidad);
                 algunaReserva = true;
@@ -60,7 +60,9 @@ final class EnlaceCompraRecalculo {
     }
 
     /** Hasta cuándo queda reservado el stock; null si no se reservó nada. */
-    static LocalDateTime reservaHasta(Resultado r, LocalDateTime ahora, int minutos) {
-        return r.algunaReserva() ? ahora.plusMinutes(minutos) : null;
+    static LocalDateTime reservaHasta(Resultado r, LocalDateTime ahora, int minutos, LocalDateTime tope) {
+        if (!r.algunaReserva()) return null;
+        LocalDateTime hasta = ahora.plusMinutes(minutos);
+        return tope != null && tope.isBefore(hasta) ? tope : hasta;
     }
 }

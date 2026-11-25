@@ -16,7 +16,12 @@ import java.util.List;
 @RequestMapping("/api/agente/simulador")
 public class SimuladorController {
 
-    public record Pedido(String mensaje, List<SimuladorService.Turno> historial) {}
+    public record Pedido(String mensaje, List<SimuladorService.Turno> historial) {
+        @Override
+        public String toString() {
+            return "Pedido[turnos=" + (historial == null ? 0 : historial.size()) + "]";
+        }
+    }
 
     private final SimuladorService service;
     private final PanelAcceso acceso;

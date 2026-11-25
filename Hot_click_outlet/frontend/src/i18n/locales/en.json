@@ -4889,6 +4889,7 @@
       "equipo": "Team and PIN",
       "simulador": "Simulator",
       "leads": "Leads",
+      "metricas": "Metrics",
       "campanas": "Campaigns"
     },
     "cargando": "Loading…",
@@ -5017,6 +5018,52 @@
       "placeholder": "E.g. Do you ship to Cartago?",
       "enviar": "Send",
       "reiniciar": "Reset"
+    },
+    "metricas": {
+      "rangoAria": "Date range",
+      "desde": "From",
+      "hasta": "To",
+      "rangoIncompleto": "Pick both dates.",
+      "rangoInvalido": "The start date cannot be after the end date.",
+      "rangoLargo": "The maximum range is 366 days.",
+      "embudoTitulo": "Sales funnel",
+      "conversaciones": "Conversations",
+      "enlacesCreados": "Purchase links created",
+      "enlacesAbiertos": "Links opened",
+      "enlacesPagados": "Links paid",
+      "ventasCantidad": "Sales attributed to the bot",
+      "ventasTotal": "Total sold by the bot",
+      "traspasos": "Handed to a person",
+      "perdidas": "Sales lost to expiry",
+      "perdidasDetalle": "{{n}} links expired unpaid",
+      "costoIA": "AI cost",
+      "costoNota": "AI usage is recorded per month: months that touch the range are added up.",
+      "costoPorVenta": "Cost per sale",
+      "sinVentas": "No sales",
+      "porBot": "Conversion by bot",
+      "porCanal": "Conversion by channel",
+      "colNombre": "Name",
+      "colEnlaces": "Links",
+      "colPagados": "Paid",
+      "colConversion": "Conversion",
+      "vacio": "No data in this range.",
+      "alertasTitulo": "Meta notices about the account or number quality",
+      "alertasVacio": "Meta has not sent any notices.",
+      "alcance": {
+        "NEGOCIO": "Your business",
+        "HOTCLICK": "HotClick bot",
+        "PLATAFORMA": "Platform total"
+      },
+      "bots": {
+        "NEGOCIO_VENTAS": "Business sales bot",
+        "HOTCLICK": "HotClick bot",
+        "SIN_PERFIL": "No bot assigned"
+      },
+      "canales": {
+        "WHATSAPP": "WhatsApp",
+        "INSTAGRAM": "Instagram",
+        "MESSENGER": "Messenger"
+      }
     },
     "leads": {
       "filtros": "Lead filters",
@@ -5177,6 +5224,9 @@
     "filtroCanal": "Channel",
     "filtroEstado": "Status",
     "todosCanales": "All channels",
+    "notaBaja": "Low scores only",
+    "notaBajaAyuda": "Closed chats whose satisfaction survey got a 1 or 2",
+    "nota": "Score {{n}} of 5",
     "listaAria": "Conversations",
     "paginacionAria": "Conversation pagination",
     "anterior": "Previous",

@@ -203,6 +203,20 @@ public class MetaCanalMensajeria implements CanalMensajeria {
     }
 
     @Override
+    public String enviarBotonUrl(CanalCuenta cuenta, String destinatario, String texto, String tituloBoton, String url) {
+        validar(cuenta, destinatario);
+        if (texto == null || texto.isBlank() || tituloBoton == null || tituloBoton.isBlank()
+            || url == null || !url.regionMatches(true, 0, "https://", 0, 8))
+            throw new IllegalArgumentException("texto, título y enlace https son obligatorios");
+        String respaldo = texto + "\n" + url;
+        if (!MensajesInteractivos.esWhatsapp(cuenta.getTipo())) return enviarTexto(cuenta, destinatario, respaldo);
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        return conRespaldo(cuenta, destinatario, token,
+            MensajesInteractivos.waBotonUrl(destinatario, texto, tituloBoton, url), respaldo);
+    }
+
+    @Override
     public String enviarLista(CanalCuenta cuenta, String destinatario, String texto, String textoBoton, List<FilaLista> filas) {
         validar(cuenta, destinatario);
         if (texto == null || texto.isBlank() || filas == null || filas.isEmpty())

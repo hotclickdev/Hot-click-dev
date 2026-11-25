@@ -38,7 +38,7 @@ final class BandejaMapeo {
             RecursoNoEncontradoException.enmascarar(s.getContactoExterno()), s.getModo().name(), s.getEstado().name(),
             s.getUsuarioAsignadoId(),
             s.getUsuarioAsignadoId() != null && s.getUsuarioAsignadoId().equals(usuarioId),
-            previa, s.getUltimoMensajeEn(), ventanaAbierta(s, ahora), vence, s.isCupoAgotado());
+            previa, s.getUltimoMensajeEn(), ventanaAbierta(s, ahora), vence, s.isCupoAgotado(), s.getEncuestaNota());
     }
 
     /** Vista previa por conversación a partir del último turno de cada una. */

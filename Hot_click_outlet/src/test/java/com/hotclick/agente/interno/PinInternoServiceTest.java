@@ -91,6 +91,43 @@ class PinInternoServiceTest {
     }
 
     @Test
+    void bloqueoCrecienteYAvisoAlDuenoSoloEnLosLargos() {
+        java.util.List<Duration> avisos = new java.util.ArrayList<>();
+        PinInternoService conAviso = new PinInternoService(memoria.repo,
+            new VinculacionInternaService(memoria.repo, new Equipo().con(USUARIO, EMPRESA).usuarios,
+                new HasherInterno("llave-de-prueba"), reloj),
+            new BCryptPasswordEncoder(4), reloj, (empresa, duracion) -> avisos.add(duracion));
+        AgenteVinculacion v = memoria.filas.get(0);
+        v.setPinHash(encoder.encode(PIN_OK));
+
+        fallar(conAviso, 5);
+        assertThat(v.getPinBloqueadoHasta()).isEqualTo(reloj.instant().plus(Duration.ofMinutes(15)));
+        assertThat(avisos).isEmpty();
+
+        reloj.avanzar(Duration.ofMinutes(16));
+        fallar(conAviso, 5);
+        assertThat(v.getPinBloqueadoHasta()).isEqualTo(reloj.instant().plus(Duration.ofHours(1)));
+        assertThat(avisos).containsExactly(Duration.ofHours(1));
+
+        reloj.avanzar(Duration.ofMinutes(61));
+        fallar(conAviso, 5);
+        assertThat(v.getPinBloqueadoHasta()).isEqualTo(reloj.instant().plus(Duration.ofHours(24)));
+        reloj.avanzar(Duration.ofHours(25));
+        fallar(conAviso, 5);
+        assertThat(v.getPinBloqueadoHasta()).isEqualTo(reloj.instant().plus(Duration.ofHours(24)));
+        assertThat(avisos).containsExactly(Duration.ofHours(1), Duration.ofHours(24), Duration.ofHours(24));
+
+        // Un acierto reinicia la escalera.
+        reloj.avanzar(Duration.ofHours(25));
+        assertThat(conAviso.verificar(idVinculacion, PIN_OK).resultado()).isEqualTo(Resultado.OK);
+        assertThat(v.getPinBloqueosSeguidos()).isZero();
+    }
+
+    private void fallar(PinInternoService servicio, int veces) {
+        for (int i = 0; i < veces; i++) servicio.verificar(idVinculacion, PIN_MAL);
+    }
+
+    @Test
     void unAciertoReiniciaLaCuentaDeFallos() {
         pins.verificar(idVinculacion, PIN_MAL);
         pins.verificar(idVinculacion, PIN_MAL);

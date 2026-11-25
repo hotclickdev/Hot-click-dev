@@ -21,4 +21,11 @@ public final class PedidoBotEventos {
         if (pedido == null || publisher == null || pedido.getEnlaceCompraId() == null) return;
         publisher.publishEvent(new PedidoBotRechazadoEvent(pedido.getId(), pedido.getEnlaceCompraId()));
     }
+
+    /** AG-35: solo pedidos que nacieron de un enlace de compra del bot; el resto de las entregas no dispara nada. */
+    public static void publicarEntregado(Pedido pedido, ApplicationEventPublisher publisher) {
+        if (pedido == null || publisher == null || pedido.getEnlaceCompraId() == null) return;
+        publisher.publishEvent(new com.hotclick.agente.metricas.PedidoBotEntregadoEvent(
+            pedido.getId(), pedido.getEnlaceCompraId()));
+    }
 }

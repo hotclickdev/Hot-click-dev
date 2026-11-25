@@ -13,6 +13,8 @@ import com.hotclick.agente.motor.AccionAgente;
 import com.hotclick.agente.motor.Alcance;
 import com.hotclick.agente.motor.ContextoHerramienta;
 import com.hotclick.agente.motor.MotorAgente;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.motor.OpcionesMotor;
 import com.hotclick.agente.panel.AgenteConfigDto;
 import com.hotclick.agente.panel.AgenteConfigService;
@@ -93,7 +95,8 @@ public class RespondedorAgente implements AgenteRespondedor {
             switch (boton.get().tipo()) {
                 case HABLAR_CON_PERSONA -> {
                     // Traspaso directo: no se llama a Claude.
-                    enviar(conv, fueraDeHorario ? config.mensajeFueraHorario(cfg) : TEXTO_TRASPASO);
+                    enviar(conv, fueraDeHorario ? config.mensajeFueraHorario(cfg)
+                        : textoTraspaso(Idioma.detectar(entrada, textosPreviosCliente(conv))));
                     conversaciones.pausarBot(conv.sesionId(), conv.empresaId());
                     return;
                 }
@@ -101,12 +104,14 @@ public class RespondedorAgente implements AgenteRespondedor {
                 case VER_MAS -> entrada = "quiero ver más del producto " + boton.get().productoId();
             }
         }
+        // AG-39: idioma del cliente (mensaje actual y, si no hay pistas, sus mensajes anteriores). No se guarda.
+        Idioma idioma = Idioma.detectar(entrada, textosPreviosCliente(conv));
         ResultadoAgente r = motor.ejecutar(perfil, contexto, historialSinActual(conv), entrada,
-            OpcionesMotor.conTono(config.tonoDe(cfg)));
+            OpcionesMotor.conTono(config.tonoDe(cfg)).conIdioma(idioma));
 
         String texto = r.texto();
         boolean traspaso = r.pasarAPersona();
-        if (traspaso && texto.isBlank()) texto = TEXTO_TRASPASO;
+        if (traspaso && texto.isBlank()) texto = textoTraspaso(idioma);
         // Fuera de horario el bot sigue vendiendo; solo el traspaso a persona avisa que responden al abrir.
         if (traspaso && fueraDeHorario) texto = config.mensajeFueraHorario(cfg);
         // Si se creó el enlace y el texto no lo trae, se agrega: el cliente siempre debe recibirlo.
@@ -142,6 +147,20 @@ public class RespondedorAgente implements AgenteRespondedor {
         if (t.enviar(conv.cuenta(), conv.contacto(), ids)) {
             conversaciones.registrarSalienteBot(conv.sesionId(), conv.empresaId(), "[Tarjetas de producto]");
         }
+    }
+
+    /** Traspaso fijo: español conserva el texto de siempre; en/pt salen en el idioma detectado. */
+    static String textoTraspaso(Idioma idioma) {
+        return idioma == null || idioma == Idioma.ES ? TEXTO_TRASPASO : TextosFijos.traspaso(idioma, true);
+    }
+
+    /** Mensajes anteriores del cliente, del más reciente al más antiguo (el actual no cuenta). */
+    static List<String> textosPreviosCliente(ConversacionActiva conv) {
+        List<String> out = new ArrayList<>();
+        for (TurnoConversacion t : historialSinActual(conv)) {
+            if (t.rol() == TurnoConversacion.Rol.USUARIO) out.add(0, t.texto());
+        }
+        return out;
     }
 
     private void enviar(ConversacionActiva conv, String texto) {

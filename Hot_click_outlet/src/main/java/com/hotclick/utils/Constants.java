@@ -134,6 +134,10 @@ public class Constants {
     public static final int DIAS_RETENCION_EMBUDO_SESION = 90;
     /** AG-21: bitácora de acciones del modo interno del bot (y vinculaciones revocadas). */
     public static final int DIAS_RETENCION_AGENTE_ACCION = 90;
+    /** AG-32: avisos de Meta sobre la cuenta o la calidad del número (hot_click_agente_alerta_meta_tb). */
+    public static final int DIAS_RETENCION_AGENTE_ALERTA_META = 90;
+    /** AG-35: guarda "reseña ya pedida" por pedido (hot_click_agente_resena_aviso_tb). */
+    public static final int DIAS_RETENCION_AGENTE_RESENA_AVISO = 365;
 
     /**
      * Umbral de auto-aprobación de payouts (PayoutAutoApprovalScheduler) — decisión

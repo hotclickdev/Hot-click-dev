@@ -61,6 +61,11 @@ public enum PerfilAgente {
 
     /** System prompt base del perfil con el tono y el nombre del negocio. Estable entre turnos (cacheable). */
     public String promptSistema(TonoAgente tono, String nombreNegocio) {
-        return PromptsAgente.construir(this, tono == null ? TonoAgente.POR_DEFECTO : tono, nombreNegocio);
+        return promptSistema(tono, nombreNegocio, com.hotclick.agente.idioma.Idioma.ES);
+    }
+
+    /** Igual, con la instrucción de idioma (AG-39). Estable por idioma: tres prefijos cacheables como máximo. */
+    public String promptSistema(TonoAgente tono, String nombreNegocio, com.hotclick.agente.idioma.Idioma idioma) {
+        return PromptsAgente.construir(this, tono == null ? TonoAgente.POR_DEFECTO : tono, nombreNegocio, idioma);
     }
 }
