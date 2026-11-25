@@ -231,6 +231,13 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/bandeja", "/api/bandeja/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Leads del bot (AG-27): negocio ve los suyos, ADMIN los de HotClick; alcance por CompanyScope
             .requestMatchers(GET, "/api/agente/leads", "/api/agente/leads/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Panel del bot (AG-19/AG-22/AG-20): config, conocimiento, simulador y modo interno; alcance por CompanyScope + feature
+            .requestMatchers(GET, "/api/agente/config", "/api/agente/conocimiento").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT, "/api/agente/config").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/agente/conocimiento", "/api/agente/simulador").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT, "/api/agente/conocimiento/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(DELETE, "/api/agente/conocimiento/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers("/api/agente/interno/vinculacion", "/api/agente/interno/vinculacion/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Sucursales (Negocio Plus) — ADMIN / EMPRENDEDOR; aislamiento por CompanyScope
             .requestMatchers(GET,  "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)

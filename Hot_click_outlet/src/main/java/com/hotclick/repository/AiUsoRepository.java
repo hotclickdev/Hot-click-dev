@@ -133,4 +133,17 @@ public interface AiUsoRepository extends JpaRepository<AiUso, Long> {
                           @Param("ts") int tokensSalida,
                           @Param("cl") long tokensCacheLectura,
                           @Param("ce") long tokensCacheEscritura);
+
+    /** Marca el consumo del simulador del panel del bot (AG-22); los tokens ya se contaron en las columnas normales. */
+    @Modifying
+    @Query(value = """
+        INSERT INTO hot_click_ai_uso_tb (fk_id_empresa, anio, mes, llamadas, tokens_entrada, tokens_salida,
+                                         llamadas_simulador, tokens_simulador)
+        VALUES (:empId, :anio, :mes, 0, 0, 0, :ll, :tk)
+        ON CONFLICT (fk_id_empresa, anio, mes) DO UPDATE
+          SET llamadas_simulador = hot_click_ai_uso_tb.llamadas_simulador + :ll,
+              tokens_simulador   = hot_click_ai_uso_tb.tokens_simulador   + :tk
+        """, nativeQuery = true)
+    void sumarSimulador(@Param("empId") Long empresaId, @Param("anio") int anio, @Param("mes") int mes,
+                        @Param("ll") int llamadas, @Param("tk") long tokens);
 }

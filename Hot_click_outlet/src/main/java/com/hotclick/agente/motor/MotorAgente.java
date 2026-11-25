@@ -65,6 +65,17 @@ public class MotorAgente {
 
     public ResultadoAgente ejecutar(PerfilAgente perfil, ContextoHerramienta contexto,
                                     List<TurnoConversacion> historial, String entrada) {
+        return ejecutar(perfil, contexto, historial, entrada, OpcionesMotor.POR_DEFECTO);
+    }
+
+    /**
+     * Igual que la versión base pero con opciones por llamada: tono propio del negocio (AG-19) y herramientas
+     * excluidas (el simulador del panel no puede crear enlaces de compra). {@code null} = valores por defecto.
+     */
+    public ResultadoAgente ejecutar(PerfilAgente perfil, ContextoHerramienta contexto,
+                                    List<TurnoConversacion> historial, String entrada, OpcionesMotor opciones) {
+        OpcionesMotor op = opciones == null ? OpcionesMotor.POR_DEFECTO : opciones;
+        TonoAgente tono = op.tono() == null ? config.tono() : op.tono();
         if (perfil == null || contexto == null || contexto.perfil() != perfil) {
             throw new IllegalArgumentException("El contexto debe corresponder al perfil indicado");
         }
@@ -81,8 +92,9 @@ public class MotorAgente {
             return sinLlamada(RESPUESTA_MODERACION, modelo, MotivoFin.MODERACION);
         }
 
-        List<HerramientaAgente> herramientas = registro.paraPerfil(perfil);
-        List<Object> system = construirSystem(perfil, contexto);
+        List<HerramientaAgente> herramientas = registro.paraPerfil(perfil).stream()
+            .filter(h -> !op.excluidas().contains(h.nombre())).toList();
+        List<Object> system = construirSystem(perfil, contexto, tono);
         List<Map<String, Object>> tools = construirTools(herramientas);
         List<Map<String, Object>> mensajes = construirMensajes(historial, entrada);
 
@@ -93,7 +105,7 @@ public class MotorAgente {
 
         for (int i = 0; i < config.maxIteraciones(); i++) {
             if (System.currentTimeMillis() >= limite) {
-                return derivar(MotivoFin.TIEMPO_AGOTADO, acciones, uso, modelo, llamadas, contexto);
+                return derivar(MotivoFin.TIEMPO_AGOTADO, acciones, uso, modelo, llamadas, contexto, tono);
             }
             String cuerpo = serializar(modelo, perfil, system, tools, mensajes);
             ClienteClaude.RespuestaClaude resp;
@@ -104,19 +116,19 @@ public class MotorAgente {
                 // Incluye circuit breaker abierto. Sin mensaje: puede traer datos.
                 log.warn("[agente-motor] empresa={} perfil={} proveedor no disponible: {}",
                     contexto.empresaId(), perfil, e.getClass().getSimpleName());
-                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto);
+                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
             }
             if (resp == null || resp.status() != 200) {
                 log.warn("[agente-motor] empresa={} perfil={} Claude HTTP {}", contexto.empresaId(), perfil,
                     resp == null ? -1 : resp.status());
-                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto);
+                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
             }
             JsonNode nodo;
             try {
                 nodo = mapper.readTree(resp.cuerpo());
             } catch (JsonProcessingException e) {
                 log.warn("[agente-motor] empresa={} perfil={} respuesta no es JSON", contexto.empresaId(), perfil);
-                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto);
+                return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
             }
             UsoTokens vuelta = UsoTokens.desdeUsage(nodo.path("usage"));
             uso = uso.mas(vuelta);
@@ -128,44 +140,45 @@ public class MotorAgente {
                 case "end_turn", "stop_sequence" -> {
                     String texto = extraerTexto(contenido);
                     if (texto.isBlank()) {
-                        return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto);
+                        return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
                     }
                     return resultado(texto, acciones, uso, modelo, MotivoFin.COMPLETO, llamadas);
                 }
                 case "tool_use" -> {
-                    if (!procesarToolUse(perfil, contexto, contenido, mensajes, acciones)) {
-                        return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto);
+                    if (!procesarToolUse(perfil, contexto, contenido, mensajes, acciones, op)) {
+                        return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
                     }
                 }
                 case "refusal" -> {
                     log.warn("[agente-motor] empresa={} perfil={} refusal categoria={}", contexto.empresaId(), perfil,
                         nodo.path("stop_details").path("category").asText("n/d"));
-                    return derivar(MotivoFin.REFUSAL, acciones, uso, modelo, llamadas, contexto);
+                    return derivar(MotivoFin.REFUSAL, acciones, uso, modelo, llamadas, contexto, tono);
                 }
                 case "max_tokens" -> {
                     // No se ejecutan herramientas ni se envía texto cortado a medias.
                     log.warn("[agente-motor] empresa={} perfil={} max_tokens", contexto.empresaId(), perfil);
-                    return derivar(MotivoFin.MAX_TOKENS, acciones, uso, modelo, llamadas, contexto);
+                    return derivar(MotivoFin.MAX_TOKENS, acciones, uso, modelo, llamadas, contexto, tono);
                 }
                 default -> {
                     log.warn("[agente-motor] empresa={} perfil={} stop_reason inesperado={}", contexto.empresaId(), perfil, stop);
-                    return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto);
+                    return derivar(MotivoFin.ERROR_PROVEEDOR, acciones, uso, modelo, llamadas, contexto, tono);
                 }
             }
         }
         log.warn("[agente-motor] empresa={} perfil={} tope de iteraciones ({})", contexto.empresaId(), perfil, config.maxIteraciones());
-        return derivar(MotivoFin.TOPE_ITERACIONES, acciones, uso, modelo, llamadas, contexto);
+        return derivar(MotivoFin.TOPE_ITERACIONES, acciones, uso, modelo, llamadas, contexto, tono);
     }
 
     // ── Herramientas ──────────────────────────────────────────────────────────
 
     /** @return false si la respuesta decía tool_use pero no traía bloques tool_use. */
     private boolean procesarToolUse(PerfilAgente perfil, ContextoHerramienta contexto, JsonNode contenido,
-                                    List<Map<String, Object>> mensajes, List<AccionAgente> acciones) {
+                                    List<Map<String, Object>> mensajes, List<AccionAgente> acciones,
+                                    OpcionesMotor op) {
         List<Map<String, Object>> resultados = new ArrayList<>();
         for (JsonNode bloque : contenido) {
             if (!"tool_use".equals(bloque.path("type").asText())) continue;
-            resultados.add(ejecutarBloque(perfil, contexto, bloque, acciones));
+            resultados.add(ejecutarBloque(perfil, contexto, bloque, acciones, op));
         }
         if (resultados.isEmpty()) return false;
         // Turno del asistente con TODOS los bloques tal cual (thinking incluido), luego un solo mensaje de resultados.
@@ -175,12 +188,13 @@ public class MotorAgente {
     }
 
     private Map<String, Object> ejecutarBloque(PerfilAgente perfil, ContextoHerramienta contexto, JsonNode bloque,
-                                               List<AccionAgente> acciones) {
+                                               List<AccionAgente> acciones, OpcionesMotor op) {
         String id = bloque.path("id").asText();
         String nombre = bloque.path("name").asText();
         JsonNode input = bloque.path("input");
         ResultadoHerramienta r;
-        Optional<HerramientaAgente> herramienta = registro.permitida(perfil, nombre);
+        Optional<HerramientaAgente> herramienta = op.excluidas().contains(nombre)
+            ? Optional.empty() : registro.permitida(perfil, nombre);
         if (herramienta.isEmpty()) {
             log.warn("[agente-motor] empresa={} perfil={} herramienta no permitida: {}", contexto.empresaId(), perfil, nombre);
             r = ResultadoHerramienta.error("Herramienta no disponible para este asistente.");
@@ -212,10 +226,10 @@ public class MotorAgente {
     // ── Request ───────────────────────────────────────────────────────────────
 
     /** System como bloque con cache_control (prefijo estable: tools + system). */
-    private List<Object> construirSystem(PerfilAgente perfil, ContextoHerramienta contexto) {
+    private List<Object> construirSystem(PerfilAgente perfil, ContextoHerramienta contexto, TonoAgente tono) {
         Map<String, Object> bloque = new LinkedHashMap<>();
         bloque.put("type", "text");
-        bloque.put("text", perfil.promptSistema(config.tono(), contexto.nombreNegocio()));
+        bloque.put("text", perfil.promptSistema(tono, contexto.nombreNegocio()));
         bloque.put("cache_control", Map.of("type", "ephemeral"));
         return List.of(bloque);
     }
@@ -287,12 +301,12 @@ public class MotorAgente {
     // ── Resultados ────────────────────────────────────────────────────────────
 
     private ResultadoAgente derivar(MotivoFin motivo, List<AccionAgente> acciones, UsoTokens uso, String modelo,
-                                    int llamadas, ContextoHerramienta contexto) {
+                                    int llamadas, ContextoHerramienta contexto, TonoAgente tono) {
         List<AccionAgente> todas = new ArrayList<>(acciones);
         if (todas.stream().noneMatch(a -> a.tipo() == AccionAgente.Tipo.PASAR_A_PERSONA)) {
             todas.add(AccionAgente.pasarAPersona("Derivación automática: " + motivo));
         }
-        String texto = config.tono().segun(
+        String texto = tono.segun(
             "Gracias por escribirnos. Para ayudarle mejor, le paso con una persona del equipo, que le responderá en breve.",
             "Gracias por escribirnos. Para ayudarte mejor, te paso con una persona del equipo, que te responderá en breve.");
         return resultado(texto, todas, uso, modelo, motivo, llamadas);

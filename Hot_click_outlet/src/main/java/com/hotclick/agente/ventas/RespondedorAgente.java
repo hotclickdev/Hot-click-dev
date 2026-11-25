@@ -12,6 +12,9 @@ import com.hotclick.agente.motor.AccionAgente;
 import com.hotclick.agente.motor.Alcance;
 import com.hotclick.agente.motor.ContextoHerramienta;
 import com.hotclick.agente.motor.MotorAgente;
+import com.hotclick.agente.motor.OpcionesMotor;
+import com.hotclick.agente.panel.AgenteConfigDto;
+import com.hotclick.agente.panel.AgenteConfigService;
 import com.hotclick.agente.motor.PerfilAgente;
 import com.hotclick.agente.motor.ResultadoAgente;
 import com.hotclick.agente.motor.TurnoConversacion;
@@ -20,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,11 +43,14 @@ public class RespondedorAgente implements AgenteRespondedor {
     private final MotorAgente motor;
     private final CanalMensajeria canal;
     private final ConversacionService conversaciones;
+    private final AgenteConfigService config;
 
-    public RespondedorAgente(MotorAgente motor, CanalMensajeria canal, ConversacionService conversaciones) {
+    public RespondedorAgente(MotorAgente motor, CanalMensajeria canal, ConversacionService conversaciones,
+                             AgenteConfigService config) {
         this.motor = motor;
         this.canal = canal;
         this.conversaciones = conversaciones;
+        this.config = config;
     }
 
     @Override
@@ -54,6 +61,13 @@ public class RespondedorAgente implements AgenteRespondedor {
             log.warn("[agente-ventas] {} sin empresa: no se responde", conv);
             return;
         }
+        // AG-19: tono, activo y horario del negocio (sin configuración: valores por defecto de las propiedades).
+        AgenteConfigDto cfg = config.obtener(conv.empresaId());
+        if (!cfg.activo()) {
+            log.info("[agente-ventas] {} bot desactivado por el negocio: no se responde", conv);
+            return;
+        }
+        boolean fueraDeHorario = config.fueraDeHorario(cfg, Instant.now());
         ContextoHerramienta contexto = new ContextoHerramienta(conv.empresaId(), conv.contacto(), perfil, null,
             canalDe(conv, mensaje), conv.sesionId());
         String entrada = textoActual(conv, mensaje);
@@ -68,7 +82,7 @@ public class RespondedorAgente implements AgenteRespondedor {
             switch (boton.get().tipo()) {
                 case HABLAR_CON_PERSONA -> {
                     // Traspaso directo: no se llama a Claude.
-                    enviar(conv, TEXTO_TRASPASO);
+                    enviar(conv, fueraDeHorario ? config.mensajeFueraHorario(cfg) : TEXTO_TRASPASO);
                     conversaciones.pausarBot(conv.sesionId(), conv.empresaId());
                     return;
                 }
@@ -76,11 +90,14 @@ public class RespondedorAgente implements AgenteRespondedor {
                 case VER_MAS -> entrada = "quiero ver más del producto " + boton.get().productoId();
             }
         }
-        ResultadoAgente r = motor.ejecutar(perfil, contexto, historialSinActual(conv), entrada);
+        ResultadoAgente r = motor.ejecutar(perfil, contexto, historialSinActual(conv), entrada,
+            OpcionesMotor.conTono(config.tonoDe(cfg)));
 
         String texto = r.texto();
         boolean traspaso = r.pasarAPersona();
         if (traspaso && texto.isBlank()) texto = TEXTO_TRASPASO;
+        // Fuera de horario el bot sigue vendiendo; solo el traspaso a persona avisa que responden al abrir.
+        if (traspaso && fueraDeHorario) texto = config.mensajeFueraHorario(cfg);
         // Si se creó el enlace y el texto no lo trae, se agrega: el cliente siempre debe recibirlo.
         String enlace = r.acciones().stream()
             .filter(a -> a.tipo() == AccionAgente.Tipo.ENLACE_CREADO).map(AccionAgente::dato)
