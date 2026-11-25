@@ -293,6 +293,16 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | AG-21 bitácora | Acciones del bot sin rastro, o rastro con datos de clientes | hot_click_agente_accion_tb: usuario, empresa, acción, resultado, id de entidad y fecha; sin texto ni datos del cliente. Retención de 90 días en DataRetentionScheduler | BitacoraAgenteTest | Mitigado (pendiente prod) |
 | AG-20 residual | PIN de 4 dígitos con el hash filtrado es débil fuera de línea; las esperas (confirmación, PIN) viven en BD con vencimiento de 5 min | Se rechazan PIN triviales; la llave AGENTE_INTERNO_PEPPER debe fijarse en producción (sin ella se usa una llave de desarrollo) | n/a | Abierto (bajo) |
 
+## AG-19 / AG-22 panel del bot (rama feat/agente-wa-panel)
+
+| ID | Amenaza | Control | Prueba | Estado |
+|---|---|---|---|---|
+| AG-panel-tenant | El negocio A lee o cambia la configuración o el conocimiento del B, o prueba el bot con el catálogo del B | `/api/agente/config`, `/conocimiento` y `/simulador` toman la empresa de `CompanyScope` (nunca de un parámetro) y exigen la feature "ai"; el conocimiento se filtra por empresa en cada consulta (id ajeno responde 404); ADMIN sin impersonar solo ve el conocimiento de HotClick y no usa config ni simulador (403) | `PanelAgenteControllerTest`, `AgenteConfigServiceTest` | cubierto |
+| AG-panel-lector | Un miembro LECTOR edita el bot, el conocimiento o gasta IA en el simulador | el interceptor de LECTOR niega PUT/POST/DELETE; solo los GET llevan `@PermiteLector` | `PanelAgenteRolesTest` | cubierto |
+| AG-simulador-efectos | El simulador crea conversaciones, enlaces de compra o pedidos, o escribe al cliente por Meta | no usa `CanalMensajeria` ni `ConversacionService`; `crear_enlace_compra` queda excluida del motor y el contacto es ficticio (sin pedidos de nadie); solo consulta catálogo y conocimiento | `SimuladorServiceTest` | cubierto |
+| AG-simulador-costo | Abuso del simulador para gastar IA | tope fail-closed de 20 usos por usuario y 40 por negocio cada 10 min (429), mensaje de 500 caracteres, historial de 20 turnos; el consumo se marca en `llamadas_simulador` y `tokens_simulador` | `SimuladorServiceTest` | cubierto |
+| AG-config-prompt | El nombre del bot o el mensaje fuera de horario inyectan instrucciones al prompt | el nombre solo admite letras, números y puntuación simple (máx. 60); el mensaje fuera de horario nunca entra al prompt (se envía tal cual al cliente) | `AgenteConfigServiceTest` | cubierto |
+
 ## AG-23 / AG-30 conexión de cuentas de Meta desde el panel (rama feat/agente-wa-conexion)
 
 | ID | Amenaza | Mitigación | Prueba | Estado |

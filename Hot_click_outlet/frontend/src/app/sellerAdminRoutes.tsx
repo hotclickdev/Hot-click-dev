@@ -20,6 +20,7 @@ const AdminPlanes = lazy(() => import('@/pages/admin/AdminPlanes'))
 const AdminAyuda = lazy(() => import('@/pages/admin/AdminAyuda'))
 const AdminEquipo = lazy(() => import('@/pages/admin/AdminEquipo'))
 const BandejaPage = lazy(() => import('@/features/bandeja/BandejaPage'))
+const BotPage = lazy(() => import('@/features/botVentas/BotPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 
 function Pagina({ children }: { children: ReactNode }) {
@@ -52,6 +53,7 @@ function rutasProductosPedidos() {
       <Route path="blog" element={<Pagina><AdminBlogRoute /></Pagina>} />
       <Route path="equipo" element={<Pagina><AdminEquipo /></Pagina>} />
       <Route path="bandeja" element={<Pagina><BandejaPage /></Pagina>} />
+      <Route path="bot" element={<Pagina><BotPage /></Pagina>} />
     </>
   )
 }

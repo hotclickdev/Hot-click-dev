@@ -75,18 +75,28 @@ class CanalesSocialesFlujoTest {
             java.util.Collections.reverse(r);
             return r;
         });
-        when(motor.ejecutar(any(), any(), any(), anyString())).thenReturn(
+        when(motor.ejecutar(any(), any(), any(), anyString(), any())).thenReturn(
             new ResultadoAgente("Hola, con gusto te ayudo", List.of(), null, 0, "m", MotivoFin.COMPLETO, 1));
 
         ConversacionService conv = new ConversacionService(sesiones, mensajes, mock(UsuarioRepository.class),
             new SelectorPerfil(null));
         MetaCanalMensajeria canal = new MetaCanalMensajeria(cuentas, http);
-        RespondedorAgente respondedor = new RespondedorAgente(motor, canal, conv);
+        RespondedorAgente respondedor = new RespondedorAgente(motor, canal, conv, configBot());
         @SuppressWarnings("rawtypes")
         ObjectProvider<AgenteRespondedor> proveedor = mock(ObjectProvider.class);
         when(proveedor.getIfAvailable()).thenReturn(respondedor);
         // Llamado directo (sin proxy): el despacho @Async corre en el mismo hilo.
         enrutador = new EnrutadorConversaciones(cuentas, conv, new RespondedorDespacho(proveedor));
+    }
+
+    /** Configuración del negocio por defecto: bot activo, sin horario. */
+    private static com.hotclick.agente.panel.AgenteConfigService configBot() {
+        com.hotclick.agente.panel.AgenteConfigService c = mock(com.hotclick.agente.panel.AgenteConfigService.class);
+        com.hotclick.agente.panel.AgenteConfigDto d = new com.hotclick.agente.panel.AgenteConfigDto(
+            "el asistente virtual", "TUTEO", false, true, false, List.of(), null, null);
+        when(c.obtener(any())).thenReturn(d);
+        when(c.tonoDe(any())).thenReturn(d.tono());
+        return c;
     }
 
     private CanalCuenta cuenta(Canal tipo, String idExterno, String token) {

@@ -23,7 +23,7 @@ public class AgenteCupoConfig {
     private final BigDecimal negocioPlus;
     private final Clock reloj;
 
-    @Autowired
+    @Autowired // con dos constructores Spring no elige solo: sin esto el contexto no arranca
     public AgenteCupoConfig(
             @Value("${agente.tope-usd.emprendedor:3.00}") BigDecimal emprendedor,
             @Value("${agente.tope-usd.pyme:10.00}") BigDecimal pyme,
