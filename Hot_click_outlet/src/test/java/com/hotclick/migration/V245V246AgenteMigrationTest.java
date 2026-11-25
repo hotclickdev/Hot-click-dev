@@ -48,7 +48,9 @@ class V245V246AgenteMigrationTest {
     @Test
     void columnasDeLasEntidadesExistenEnLasMigraciones() throws Exception {
         String sql = Files.readString(Path.of(V245)) + Files.readString(Path.of(V246))
-            + Files.readString(Path.of("src/main/resources/db/migration/V63__chat_sesion_asistente.sql"));
+            + Files.readString(Path.of("src/main/resources/db/migration/V63__chat_sesion_asistente.sql"))
+            // V255 (AG-29) agrega cupo_agotado a la sesión.
+            + Files.readString(Path.of("src/main/resources/db/migration/V255__agente_cupo_y_bajas.sql"));
         for (Class<?> c : new Class<?>[]{CanalCuenta.class, ConversacionSesion.class, ConversacionMensaje.class}) {
             for (Field f : c.getDeclaredFields()) {
                 Column col = f.getAnnotation(Column.class);
