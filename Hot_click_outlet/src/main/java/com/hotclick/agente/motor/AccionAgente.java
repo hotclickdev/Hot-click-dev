@@ -14,7 +14,9 @@ public record AccionAgente(Tipo tipo, String dato) {
         /** Asesor web: agregar al carrito del navegador. {@code dato} = JSON {@code {"productoId":n,"cantidad":n}}. */
         AGREGAR_CARRITO,
         /** Asesor web: botón al chat (WhatsApp) de la tienda. {@code dato} = URL wa.me ya validada por el backend. */
-        CHAT_TIENDA
+        CHAT_TIENDA,
+        /** Tarjetas nativas de producto (AG-37). {@code dato} = ids de producto separados por coma, ya validados como visibles. */
+        MOSTRAR_PRODUCTOS
     }
 
     public static AccionAgente pasarAPersona(String motivo) {

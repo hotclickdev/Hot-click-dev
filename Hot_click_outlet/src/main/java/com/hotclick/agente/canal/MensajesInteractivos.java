@@ -24,6 +24,7 @@ final class MensajesInteractivos {
     static final int WA_MAX_DESC_FILA = 72;
     static final int WA_MAX_CUERPO = 1024;
     static final int WA_MAX_CAPTION = 1024;
+    static final int WA_MAX_PRODUCTOS_LISTA = 30;
     static final int SOCIAL_MAX_TITULO = 80;
     static final int SOCIAL_MAX_PAYLOAD = 1000;
     static final int SOCIAL_MAX_BOTONES = 3;
@@ -118,6 +119,55 @@ final class MensajesInteractivos {
         return waEnvoltorio(to, inter);
     }
 
+    /** Plantilla aprobada por nombre e idioma, con un parámetro de texto por variable del cuerpo. */
+    static Map<String, Object> waPlantilla(String to, String nombre, String idioma, List<String> parametros) {
+        List<Map<String, Object>> params = new ArrayList<>();
+        for (String p : parametros) params.add(Map.of("type", "text", "text", parametroSeguro(p)));
+        Map<String, Object> template = new LinkedHashMap<>();
+        template.put("name", nombre);
+        template.put("language", Map.of("code", idioma));
+        if (!params.isEmpty()) template.put("components", List.of(Map.of("type", "body", "parameters", params)));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("messaging_product", "whatsapp");
+        body.put("to", to);
+        body.put("type", "template");
+        body.put("template", template);
+        return body;
+    }
+
+    /** Meta no admite saltos de línea, tabulaciones ni parámetros vacíos. */
+    static String parametroSeguro(String v) {
+        String s = v == null ? "" : v.replaceAll("[\\r\\n\\t]+", " ").replaceAll(" {2,}", " ").strip();
+        return s.isEmpty() ? "-" : recortar(s, 1024);
+    }
+
+    /** Mensaje de producto único del catálogo: el cuerpo es obligatorio y la imagen sale del catálogo. */
+    static Map<String, Object> waProductoCatalogo(String to, String catalogoId, String retailerId, String cuerpo) {
+        Map<String, Object> inter = new LinkedHashMap<>();
+        inter.put("type", "product");
+        inter.put("body", Map.of("text", recortar(cuerpo, WA_MAX_CUERPO)));
+        inter.put("action", Map.of("catalog_id", catalogoId, "product_retailer_id", retailerId));
+        return waEnvoltorio(to, inter);
+    }
+
+    /** Hasta 30 productos del catálogo en una sección; el encabezado de texto es obligatorio. */
+    static Map<String, Object> waListaProductos(String to, String catalogoId, String titulo, String cuerpo,
+                                                List<String> retailerIds) {
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (String id : retailerIds) {
+            if (id == null || id.isBlank()) continue;
+            if (items.size() == WA_MAX_PRODUCTOS_LISTA) break;
+            items.add(Map.of("product_retailer_id", id));
+        }
+        Map<String, Object> inter = new LinkedHashMap<>();
+        inter.put("type", "product_list");
+        inter.put("header", Map.of("type", "text", "text", recortar(titulo, 60)));
+        inter.put("body", Map.of("text", recortar(cuerpo, WA_MAX_CUERPO)));
+        inter.put("action", Map.of("catalog_id", catalogoId,
+            "sections", List.of(Map.of("title", recortar(titulo, 24), "product_items", items))));
+        return waEnvoltorio(to, inter);
+    }
+
     private static Map<String, Object> waEnvoltorio(String to, Map<String, Object> interactive) {
         return Map.of("messaging_product", "whatsapp", "to", to, "type", "interactive", "interactive", interactive);
     }
@@ -138,6 +188,12 @@ final class MensajesInteractivos {
                 "payload", recortarId(b.id(), SOCIAL_MAX_PAYLOAD)));
         el.put("buttons", bs);
         Map<String, Object> payload = Map.of("template_type", "generic", "elements", List.of(el));
+        return socialEnvoltorio(psid, Map.of("attachment", Map.of("type", "template", "payload", payload)));
+    }
+
+    /** Plantilla {@code product} de Messenger e Instagram: el id es el del producto en Meta, no el retailer id. */
+    static Map<String, Object> socialProductoCatalogo(String psid, String metaProductoId) {
+        Map<String, Object> payload = Map.of("template_type", "product", "elements", List.of(Map.of("id", metaProductoId)));
         return socialEnvoltorio(psid, Map.of("attachment", Map.of("type", "template", "payload", payload)));
     }
 

@@ -45,6 +45,7 @@ public class TotpSecretEncryptionService {
     private static final byte[]  AAD_CANAL = "hotclick-canal-token".getBytes(StandardCharsets.UTF_8);
 
     private static final byte[]  AAD_LEAD  = "hotclick-lead-contacto".getBytes(StandardCharsets.UTF_8);
+    private static final byte[]  AAD_CAMPANA = "hotclick-campana-contacto".getBytes(StandardCharsets.UTF_8);
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -102,6 +103,15 @@ public class TotpSecretEncryptionService {
 
     public String decryptContactoLead(String stored) {
         return decrypt(stored, AAD_LEAD);
+    }
+
+    /** Contacto con consentimiento de campañas (AG-36): misma clave, AAD propio. */
+    public String encryptContactoCampana(String contacto) {
+        return encrypt(contacto, AAD_CAMPANA);
+    }
+
+    public String decryptContactoCampana(String stored) {
+        return decrypt(stored, AAD_CAMPANA);
     }
 
     private String encrypt(String plaintext, byte[] aad) {

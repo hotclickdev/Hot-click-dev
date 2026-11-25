@@ -3,6 +3,7 @@ package com.hotclick.agente.ventas;
 import com.hotclick.agente.canal.Boton;
 import com.hotclick.agente.canal.CanalMensajeria;
 import com.hotclick.agente.canal.RespuestaBoton;
+import com.hotclick.agente.catalogo.TarjetasCatalogoService;
 import com.hotclick.agente.conversacion.ConversacionActiva;
 import com.hotclick.agente.conversacion.ConversacionMensaje;
 import com.hotclick.agente.conversacion.ConversacionService;
@@ -21,6 +22,8 @@ import com.hotclick.agente.motor.TurnoConversacion;
 import com.hotclick.agente.webhook.MensajeEntrante;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -44,13 +47,21 @@ public class RespondedorAgente implements AgenteRespondedor {
     private final CanalMensajeria canal;
     private final ConversacionService conversaciones;
     private final AgenteConfigService config;
+    private final ObjectProvider<TarjetasCatalogoService> tarjetas;
 
     public RespondedorAgente(MotorAgente motor, CanalMensajeria canal, ConversacionService conversaciones,
                              AgenteConfigService config) {
+        this(motor, canal, conversaciones, config, null);
+    }
+
+    @Autowired // con dos constructores Spring no elige solo
+    public RespondedorAgente(MotorAgente motor, CanalMensajeria canal, ConversacionService conversaciones,
+                             AgenteConfigService config, ObjectProvider<TarjetasCatalogoService> tarjetas) {
         this.motor = motor;
         this.canal = canal;
         this.conversaciones = conversaciones;
         this.config = config;
+        this.tarjetas = tarjetas;
     }
 
     @Override
@@ -106,8 +117,30 @@ public class RespondedorAgente implements AgenteRespondedor {
         if (texto.isBlank()) return;
 
         enviar(conv, texto);
+        enviarTarjetas(conv, r);
         if (traspaso) {
             conversaciones.pausarBot(conv.sesionId(), conv.empresaId());
+        }
+    }
+
+    /** AG-37: tarjetas nativas del catálogo de Meta si el bot las pidió; sin catálogo conectado no se envía nada. */
+    private void enviarTarjetas(ConversacionActiva conv, ResultadoAgente r) {
+        TarjetasCatalogoService t = tarjetas == null ? null : tarjetas.getIfAvailable();
+        if (t == null || conv.empresaId() == null) return;
+        List<Long> ids = new ArrayList<>();
+        for (AccionAgente a : r.acciones()) {
+            if (a.tipo() != AccionAgente.Tipo.MOSTRAR_PRODUCTOS || a.dato() == null) continue;
+            for (String s : a.dato().split(",")) {
+                try {
+                    ids.add(Long.parseLong(s.strip()));
+                } catch (NumberFormatException e) {
+                    log.debug("[agente-ventas] id de producto inválido en la acción");
+                }
+            }
+        }
+        if (ids.isEmpty()) return;
+        if (t.enviar(conv.cuenta(), conv.contacto(), ids)) {
+            conversaciones.registrarSalienteBot(conv.sesionId(), conv.empresaId(), "[Tarjetas de producto]");
         }
     }
 

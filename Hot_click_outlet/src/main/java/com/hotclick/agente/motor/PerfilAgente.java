@@ -11,7 +11,8 @@ public enum PerfilAgente {
 
     /** Clientes de un negocio: catálogo de su tienda, sus pedidos (mismo teléfono), conocimiento de la tienda. */
     NEGOCIO_VENTAS(Alcance.EMPRESA, Set.of(
-        "buscar_productos", "crear_enlace_compra", "consultar_pedido", "consultar_conocimiento", "pasar_a_persona")),
+        "buscar_productos", "crear_enlace_compra", "consultar_pedido", "consultar_conocimiento", "pasar_a_persona",
+        "mostrar_productos")),
 
     /**
      * Dueño y personal (teléfono vinculado): consultas del copilot, finanzas (solo con PIN vigente y rol dueño) y

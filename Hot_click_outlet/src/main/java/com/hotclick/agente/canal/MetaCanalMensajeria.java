@@ -13,6 +13,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import com.hotclick.agente.conexion.MetaRechazoException;
+import com.hotclick.exception.IntegracionExternaException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -26,6 +30,7 @@ import java.util.Map;
 public class MetaCanalMensajeria implements CanalMensajeria {
 
     private static final Logger log = LoggerFactory.getLogger(MetaCanalMensajeria.class);
+    private static final String INTEGRACION = "meta-graph";
     static final String VERSION_POR_DEFECTO = "v23.0";
     static final int MAX_WHATSAPP = 4096;
     static final int MAX_SOCIAL = 1000;
@@ -95,6 +100,93 @@ public class MetaCanalMensajeria implements CanalMensajeria {
             ? MensajesInteractivos.waProducto(destinatario, p)
             : MensajesInteractivos.socialProducto(destinatario, p);
         return conRespaldo(cuenta, destinatario, token, body, MensajesInteractivos.respaldoProducto(p));
+    }
+
+    @Override
+    public String enviarProductoCatalogo(CanalCuenta cuenta, String destinatario, ReferenciaCatalogo ref,
+                                         TarjetaProducto respaldo) {
+        validar(cuenta, destinatario);
+        boolean wa = MensajesInteractivos.esWhatsapp(cuenta.getTipo());
+        boolean completa = ref != null && ref.catalogoId() != null && ref.retailerId() != null
+            && (wa || ref.metaProductoId() != null);
+        if (!completa) return enviarProducto(cuenta, destinatario, respaldo);
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        Map<String, Object> body = wa
+            ? MensajesInteractivos.waProductoCatalogo(destinatario, ref.catalogoId(), ref.retailerId(),
+                respaldo == null ? "Mira este producto"
+                    : MensajesInteractivos.textoProducto(respaldo, MensajesInteractivos.WA_MAX_CUERPO))
+            : MensajesInteractivos.socialProductoCatalogo(destinatario, ref.metaProductoId());
+        try {
+            return post(cuenta, token, body);
+        } catch (HttpClientErrorException e) {
+            log.warn("[canal] Meta rechazó la tarjeta del catálogo (cuenta {}, HTTP {}); se usa la tarjeta normal",
+                cuenta.getId(), e.getStatusCode().value());
+            return enviarProducto(cuenta, destinatario, respaldo);
+        }
+    }
+
+    @Override
+    public String enviarListaProductosCatalogo(CanalCuenta cuenta, String destinatario, String catalogoId,
+                                               String titulo, String cuerpo, List<String> retailerIds,
+                                               List<TarjetaProducto> respaldos) {
+        validar(cuenta, destinatario);
+        if (!MensajesInteractivos.esWhatsapp(cuenta.getTipo()) || catalogoId == null || retailerIds == null
+                || retailerIds.isEmpty() || titulo == null || cuerpo == null || cuerpo.isBlank()) {
+            return CanalMensajeria.super.enviarListaProductosCatalogo(
+                cuenta, destinatario, catalogoId, titulo, cuerpo, retailerIds, respaldos);
+        }
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        try {
+            return post(cuenta, token,
+                MensajesInteractivos.waListaProductos(destinatario, catalogoId, titulo, cuerpo, retailerIds));
+        } catch (HttpClientErrorException e) {
+            log.warn("[canal] Meta rechazó la lista de productos (cuenta {}, HTTP {}); se mandan tarjetas normales",
+                cuenta.getId(), e.getStatusCode().value());
+            return CanalMensajeria.super.enviarListaProductosCatalogo(
+                cuenta, destinatario, catalogoId, titulo, cuerpo, retailerIds, respaldos);
+        }
+    }
+
+    /**
+     * Plantilla MARKETING aprobada. 4xx (plantilla no aprobada, número bloqueado, límite de marketing por usuario) se
+     * traduce a {@link MetaRechazoException} con el código de Meta, sin cuerpo; red, 429 y 5xx a
+     * {@link IntegracionExternaException}, para que quien envía decida entre fallar o reintentar.
+     */
+    @Override
+    public String enviarPlantillaMarketing(CanalCuenta cuenta, String destinatario, String nombrePlantilla,
+                                           String idioma, List<String> parametros) {
+        validar(cuenta, destinatario);
+        if (!MensajesInteractivos.esWhatsapp(cuenta.getTipo()))
+            throw new UnsupportedOperationException("Solo WhatsApp tiene plantillas");
+        if (nombrePlantilla == null || nombrePlantilla.isBlank())
+            throw new IllegalArgumentException("la plantilla es obligatoria");
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        try {
+            return post(cuenta, token, MensajesInteractivos.waPlantilla(destinatario, nombrePlantilla,
+                idioma == null || idioma.isBlank() ? "es" : idioma, parametros == null ? List.of() : parametros));
+        } catch (HttpClientErrorException e) {
+            int status = e.getStatusCode().value();
+            if (status == 429) throw new IntegracionExternaException(INTEGRACION,
+                IntegracionExternaException.Tipo.RATE_LIMIT, "Graph HTTP 429");
+            throw new MetaRechazoException(codigoMeta(e, status));
+        } catch (HttpServerErrorException e) {
+            throw new IntegracionExternaException(INTEGRACION, IntegracionExternaException.Tipo.IO_ERROR,
+                "Graph HTTP " + e.getStatusCode().value());
+        } catch (ResourceAccessException e) {
+            throw new IntegracionExternaException(INTEGRACION, IntegracionExternaException.Tipo.TIMEOUT,
+                "Graph sin respuesta");
+        }
+    }
+
+    private static int codigoMeta(HttpClientErrorException e, int status) {
+        try {
+            return JSON.readTree(e.getResponseBodyAsString()).path("error").path("code").asInt(status);
+        } catch (Exception ex) {
+            return status;
+        }
     }
 
     @Override

@@ -127,6 +127,83 @@ public class MetaGraphCliente {
         exigirExito(llamar(base() + paginaId + "/subscribed_apps", HttpMethod.POST, tokenPagina, f));
     }
 
+    // ── plantillas de marketing (AG-36) ──────────────────────────────────────
+
+    /** @param estado PENDING, APPROVED o REJECTED tal como lo devuelve Meta (mayúsculas) */
+    public record PlantillaRemota(String id, String estado, String motivo) { }
+
+    /**
+     * Da de alta una plantilla en la WABA para que Meta la revise: {@code POST /{waba}/message_templates} con el JSON
+     * ya armado (nombre, categoría MARKETING, idioma, componentes). Normalmente queda PENDING.
+     */
+    @CircuitBreaker(name = INTEGRACION)
+    public PlantillaRemota crearPlantilla(String wabaId, String token, Map<String, Object> cuerpo) {
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_JSON);
+        h.setBearerAuth(token);
+        JsonNode n = ejecutar(base() + wabaId + "/message_templates", HttpMethod.POST, new HttpEntity<>(cuerpo, h));
+        String id = n.path("id").asText("");
+        if (id.isEmpty()) {
+            throw new IntegracionExternaException(INTEGRACION, IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Graph no devolvió el id de la plantilla");
+        }
+        return new PlantillaRemota(id, n.path("status").asText("PENDING").toUpperCase(java.util.Locale.ROOT), null);
+    }
+
+    /** Estado actual de una plantilla ({@code GET /{id}?fields=status,rejected_reason}). */
+    @CircuitBreaker(name = INTEGRACION)
+    public PlantillaRemota estadoPlantilla(String plantillaId, String token) {
+        JsonNode n = llamar(base() + plantillaId + "?fields=status,rejected_reason", HttpMethod.GET, token, null);
+        return new PlantillaRemota(plantillaId, n.path("status").asText("PENDING").toUpperCase(java.util.Locale.ROOT),
+            n.path("rejected_reason").asText(null));
+    }
+
+    // ── catálogo de Meta (AG-37) ─────────────────────────────────────────────
+
+    /** Resultado de un lote: productos con error de validación (retailer id) y avisos; sin textos de Meta. */
+    public record ResultadoLote(java.util.Set<String> conError, int enviados) { }
+
+    /** Nombre del catálogo; prueba que el token administra ese catálogo (exige permiso catalog_management). */
+    @CircuitBreaker(name = INTEGRACION)
+    public String nombreCatalogo(String catalogoId, String token) {
+        return llamar(base() + catalogoId + "?fields=name", HttpMethod.GET, token, null).path("name").asText("");
+    }
+
+    /**
+     * Altas, cambios y bajas incrementales: {@code POST /{catalog}/items_batch}. {@code requests} son objetos
+     * {@code {method: UPDATE|DELETE, data: {...}}}; con {@code allow_upsert=true} un UPDATE crea el producto si no existe.
+     */
+    @CircuitBreaker(name = INTEGRACION)
+    public ResultadoLote itemsBatch(String catalogoId, String token, List<Map<String, Object>> requests) {
+        MultiValueMap<String, String> f = new LinkedMultiValueMap<>();
+        f.add("item_type", "PRODUCT_ITEM");
+        f.add("allow_upsert", "true");
+        try {
+            f.add("requests", JSON.writeValueAsString(requests));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IntegracionExternaException(INTEGRACION, IntegracionExternaException.Tipo.RESPUESTA_INVALIDA,
+                "Lote de catálogo no serializable");
+        }
+        JsonNode n = llamar(base() + catalogoId + "/items_batch", HttpMethod.POST, token, f);
+        java.util.Set<String> conError = new java.util.HashSet<>();
+        for (JsonNode v : n.path("validation_status")) {
+            if (v.path("errors").isArray() && !v.path("errors").isEmpty()) {
+                conError.add(v.path("retailer_id").asText(""));
+            }
+        }
+        return new ResultadoLote(conError, requests.size());
+    }
+
+    /** Id del producto en Meta a partir del retailer id (solo dígitos); necesario para tarjetas de Instagram y Messenger. */
+    @CircuitBreaker(name = INTEGRACION)
+    public String productoMetaId(String catalogoId, String token, String retailerId) {
+        if (retailerId == null || !retailerId.matches("\\d{1,20}")) return null;
+        String filtro = "%7B%22retailer_id%22:%7B%22eq%22:%22" + retailerId + "%22%7D%7D";
+        JsonNode n = llamarUri(java.net.URI.create(base() + catalogoId + "/products?fields=id&filter=" + filtro), token);
+        JsonNode data = n.path("data");
+        return data.isArray() && !data.isEmpty() ? data.get(0).path("id").asText(null) : null;
+    }
+
     // ── interno ──────────────────────────────────────────────────────────────
 
     private JsonNode llamar(String url, HttpMethod m, String bearer, MultiValueMap<String, String> form) {
@@ -137,8 +214,19 @@ public class MetaGraphCliente {
     }
 
     private JsonNode ejecutar(String url, HttpMethod m, HttpEntity<?> entidad) {
+        return ejecutar(() -> http.exchange(url, m, entidad, String.class).getBody());
+    }
+
+    /** GET con una URI ya codificada (no se vuelve a codificar): para filtros con llaves y comillas. */
+    private JsonNode llamarUri(java.net.URI uri, String bearer) {
+        HttpHeaders h = new HttpHeaders();
+        h.setBearerAuth(bearer);
+        return ejecutar(() -> http.exchange(uri, HttpMethod.GET, new HttpEntity<>(h), String.class).getBody());
+    }
+
+    private JsonNode ejecutar(java.util.function.Supplier<String> llamada) {
         try {
-            String cuerpo = http.exchange(url, m, entidad, String.class).getBody();
+            String cuerpo = llamada.get();
             return cuerpo == null || cuerpo.isBlank() ? JSON.createObjectNode() : JSON.readTree(cuerpo);
         } catch (HttpStatusCodeException e) {
             int status = e.getStatusCode().value();

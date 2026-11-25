@@ -40,6 +40,45 @@ public class MetaWebhookParser {
         return out;
     }
 
+    /**
+     * Acuses de mensajes enviados ({@code value.statuses[]}) y cambios de estado de plantillas
+     * ({@code field=message_template_status_update}) de WhatsApp. No lanza por datos raros: lo que no entiende lo salta.
+     */
+    public EstadoEntrante parsearEstados(JsonNode raiz) {
+        if (raiz == null || !raiz.isObject() || !"whatsapp_business_account".equals(raiz.path("object").asText(""))) {
+            return EstadoEntrante.VACIO;
+        }
+        List<EstadoEntrante.EstadoMensaje> mensajes = new ArrayList<>();
+        List<EstadoEntrante.EstadoPlantilla> plantillas = new ArrayList<>();
+        for (JsonNode entry : raiz.path("entry")) {
+            for (JsonNode change : entry.path("changes")) {
+                String campo = change.path("field").asText("");
+                JsonNode value = change.path("value");
+                if ("messages".equals(campo)) {
+                    for (JsonNode st : value.path("statuses")) estadoMensaje(st, mensajes);
+                } else if ("message_template_status_update".equals(campo)) {
+                    String id = texto(value.path("message_template_id"));
+                    String evento = texto(value.path("event"));
+                    if (id != null && evento != null && id.length() <= MAX_ID) {
+                        plantillas.add(new EstadoEntrante.EstadoPlantilla(id, texto(value.path("message_template_name")),
+                            evento.toUpperCase(java.util.Locale.ROOT), texto(value.path("reason"))));
+                    }
+                }
+            }
+        }
+        return mensajes.isEmpty() && plantillas.isEmpty() ? EstadoEntrante.VACIO : new EstadoEntrante(mensajes, plantillas);
+    }
+
+    private static void estadoMensaje(JsonNode st, List<EstadoEntrante.EstadoMensaje> out) {
+        String id = texto(st.path("id"));
+        String estado = texto(st.path("status"));
+        if (id == null || estado == null || id.length() > MAX_ID) return;
+        JsonNode errores = st.path("errors");
+        int codigo = errores.isArray() && !errores.isEmpty() ? errores.get(0).path("code").asInt(0) : 0;
+        out.add(new EstadoEntrante.EstadoMensaje(id, estado.toLowerCase(java.util.Locale.ROOT),
+            st.path("timestamp").asLong(0), codigo));
+    }
+
     private void whatsapp(JsonNode entry, List<MensajeEntrante> out) {
         for (JsonNode change : entry.path("changes")) {
             if (!"messages".equals(change.path("field").asText())) continue;

@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -49,14 +50,23 @@ public class MetaWebhookController {
     private final MetaEventoDedup dedup;
     private final ObjectProvider<MensajeEntranteHandler> handlers;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<EstadoEntranteHandler> estadoHandlers;
 
     public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
                                  ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper) {
+        this(firma, parser, dedup, handlers, objectMapper, null);
+    }
+
+    @Autowired // con dos constructores Spring no elige solo
+    public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
+                                 ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper,
+                                 ObjectProvider<EstadoEntranteHandler> estadoHandlers) {
         this.firma = firma;
         this.parser = parser;
         this.dedup = dedup;
         this.handlers = handlers;
         this.objectMapper = objectMapper;
+        this.estadoHandlers = estadoHandlers;
     }
 
     @GetMapping(value = "/meta", produces = MediaType.TEXT_PLAIN_VALUE)
@@ -113,7 +123,38 @@ public class MetaWebhookController {
         } catch (RuntimeException e) {
             log.error("[meta-webhook] error procesando evento — {}", e.getClass().getSimpleName());
         }
+        try {
+            despacharEstados(parser.parsearEstados(raiz));
+        } catch (RuntimeException e) {
+            log.error("[meta-webhook] error procesando estados — {}", e.getClass().getSimpleName());
+        }
         return ResponseEntity.ok().build();
+    }
+
+    /** Acuses de entrega/lectura y estado de plantillas. Idempotentes: no pasan por la deduplicación de mensajes. */
+    private void despacharEstados(EstadoEntrante estados) {
+        if (estadoHandlers == null || estados.vacio()) return;
+        List<EstadoEntranteHandler> hs = estadoHandlers.orderedStream().toList();
+        for (EstadoEntrante.EstadoMensaje m : estados.mensajes()) {
+            for (EstadoEntranteHandler h : hs) {
+                try {
+                    h.estado(m);
+                } catch (RuntimeException e) {
+                    log.error("[meta-webhook] handler de estado {} falló — {}",
+                        h.getClass().getSimpleName(), e.getClass().getSimpleName());
+                }
+            }
+        }
+        for (EstadoEntrante.EstadoPlantilla p : estados.plantillas()) {
+            for (EstadoEntranteHandler h : hs) {
+                try {
+                    h.plantilla(p);
+                } catch (RuntimeException e) {
+                    log.error("[meta-webhook] handler de plantilla {} falló — {}",
+                        h.getClass().getSimpleName(), e.getClass().getSimpleName());
+                }
+            }
+        }
     }
 
     private void despachar(List<MensajeEntrante> mensajes) {

@@ -29,7 +29,7 @@ public class InterceptorBajaAgente implements InterceptorMensajeEntrante {
 
     private static final Logger log = LoggerFactory.getLogger(InterceptorBajaAgente.class);
 
-    static final Set<String> PALABRAS_BAJA = Set.of(
+    public static final Set<String> PALABRAS_BAJA = Set.of(
         "stop", "baja", "parar", "no quiero mensajes", "no quiero mas mensajes", "no quiero recibir mensajes");
     static final String PALABRA_ACTIVAR = "activar";
 
@@ -71,7 +71,7 @@ public class InterceptorBajaAgente implements InterceptorMensajeEntrante {
     }
 
     /** Minúsculas, sin tildes, sin signos y con espacios simples. */
-    static String normalizar(String texto) {
+    public static String normalizar(String texto) {
         String sinTildes = Normalizer.normalize(texto, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
         return sinTildes.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", " ").trim();
     }
