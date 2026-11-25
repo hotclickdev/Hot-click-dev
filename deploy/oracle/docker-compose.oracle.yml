@@ -1,0 +1,93 @@
+# Oracle Cloud Always Free — VM.Standard.A1.Flex (ARM64, 2 OCPU / 12 GB), Ubuntu 24.04 aarch64.
+# Basado en Hot_click_outlet/docker-compose.lightsail.yml. NO es el compose de producción viva.
+#
+# - Postgres arranca VACÍO: volumen nuevo `hotclick_oracle_pgdata` (no se restaura nada de Lightsail/AWS).
+# - 8080 solo en loopback (Nginx del host hace HTTPS y proxy). 5432 NO se publica.
+# - El `.env` va junto a este archivo (deploy/oracle/.env), creado en el servidor desde
+#   .env.oracle.example. Nunca al repo.
+#
+# RAM (12 GB): Postgres 1 GB + app 4 GB (JVM Xmx 3 GB + Chromium headless/metaspace/off-heap)
+#              ≈ 5 GB, quedan ~7 GB para SO, Nginx, Docker y caché de disco.
+#
+# Uso (desde la VM, en este directorio):
+#   docker compose -f docker-compose.oracle.yml up -d      # requiere imagen ya construida (build-arm64.sh) o --build
+#   docker compose -f docker-compose.oracle.yml logs -f app
+
+services:
+  postgres:
+    image: postgres:18-alpine          # tiene linux/arm64
+    platform: linux/arm64
+    container_name: hotclick-postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hotclick}
+      POSTGRES_USER: ${DB_USERNAME:?falta DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?falta DB_PASSWORD}
+    # Sin "ports:" a propósito: solo la red interna de compose ve al Postgres (host `postgres`).
+    volumes:
+      - hotclick_oracle_pgdata:/var/lib/postgresql   # Postgres 18: NO terminar en /data
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - max_connections=100
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    build:
+      context: ../../Hot_click_outlet
+      dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+    platform: linux/arm64
+    image: hot_click_outlet-app:arm64
+    container_name: hotclick
+    env_file: .env
+    # Planes y precios ONVO: sin default a propósito (los valores salen del .env del servidor).
+    environment:
+      # Perfil fijo de producción (debe escribirse exactamente "prod").
+      SPRING_PROFILES_ACTIVE: prod
+      PLANES_MONEDA: ${PLANES_MONEDA:?falta PLANES_MONEDA}
+      ONVO_PRICE_ID_PYME: ${ONVO_PRICE_ID_PYME:?falta ONVO_PRICE_ID_PYME}
+      ONVO_PRICE_ID_NEGOCIO_PLUS: ${ONVO_PRICE_ID_NEGOCIO_PLUS:?falta ONVO_PRICE_ID_NEGOCIO_PLUS}
+      EMPRENDEDOR_PRECIO_MENSUAL_USD: ${EMPRENDEDOR_PRECIO_MENSUAL_USD:?falta EMPRENDEDOR_PRECIO_MENSUAL_USD}
+      PYME_PRECIO_MENSUAL_USD: ${PYME_PRECIO_MENSUAL_USD:?falta PYME_PRECIO_MENSUAL_USD}
+      NEGOCIO_PLUS_PRECIO_MENSUAL_USD: ${NEGOCIO_PLUS_PRECIO_MENSUAL_USD:?falta NEGOCIO_PLUS_PRECIO_MENSUAL_USD}
+    ports:
+      # Solo loopback: Nginx (host) hace proxy a 127.0.0.1:8080. Nunca "8080:8080".
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint:
+      - java
+      - -Xms1g
+      - -Xmx3g
+      - -XX:+UseG1GC
+      - -jar
+      - app.jar
+    restart: unless-stopped
+    mem_limit: 4g
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+volumes:
+  hotclick_oracle_pgdata:
+    name: hotclick_oracle_pgdata    # nuevo → la base arranca vacía
