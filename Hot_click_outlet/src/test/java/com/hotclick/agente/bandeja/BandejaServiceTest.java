@@ -20,6 +20,17 @@ import com.hotclick.repository.MiembroEmpresaRepository;
 import com.hotclick.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.util.List;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -31,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -182,5 +194,54 @@ class BandejaServiceTest {
         assertThat(c.contacto()).isEqualTo("***1234").doesNotContain("5068888");
         assertThat(c.ventanaAbierta()).isTrue();
         assertThat(c.ventanaVenceEn()).isEqualTo(AHORA.minusSeconds(3600).plusSeconds(24 * 3600));
+    }
+
+    // ── AG-38: chats con nota baja ─────────────────────────────────────────────
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    void listarNotaBajaFiltraPorNotaMenorOIgualADosYPorLaEmpresaDelLlamador() {
+        sesion.setEstado(EstadoConversacion.CERRADA);
+        sesion.setEncuestaNota(1);
+        Page<ConversacionSesion> pagina = new PageImpl<>(List.of(sesion));
+        when(sesiones.findAll(any(Specification.class), any(Pageable.class))).thenReturn((Page) pagina);
+        when(mensajes.ultimosDe(any())).thenReturn(List.of());
+
+        BandejaDtos.Pagina p = service.listarNotaBaja(7L, 1L, null, 0, 20);
+
+        assertThat(p.items()).hasSize(1);
+        assertThat(p.items().get(0).notaEncuesta()).isEqualTo(1);
+        ArgumentCaptor<Specification> spec = ArgumentCaptor.forClass(Specification.class);
+        verify(sesiones).findAll(spec.capture(), any(Pageable.class));
+
+        Root<ConversacionSesion> root = mock(Root.class);
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Path<Object> ruta = mock(Path.class);
+        when(root.get(anyString())).thenReturn(ruta);
+        when(root.<Integer>get("encuestaNota")).thenReturn((Path) ruta);
+        when(cb.and(any(Predicate[].class))).thenReturn(mock(Predicate.class));
+        spec.getValue().toPredicate(root, mock(CriteriaQuery.class), cb);
+        verify(cb).le(any(jakarta.persistence.criteria.Expression.class), eq(2));
+        verify(cb, org.mockito.Mockito.atLeast(2)).isNotNull(ruta);
+        verify(cb).equal(ruta, 7L);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    void listarNotaBajaDelAdminSoloAlcanzaLasDeHotClick() {
+        when(sesiones.findAll(any(Specification.class), any(Pageable.class))).thenReturn((Page) new PageImpl<>(List.of()));
+        service.listarNotaBaja(null, 1L, "whatsapp", 0, 20);
+        ArgumentCaptor<Specification> spec = ArgumentCaptor.forClass(Specification.class);
+        verify(sesiones).findAll(spec.capture(), any(Pageable.class));
+
+        Root<ConversacionSesion> root = mock(Root.class);
+        CriteriaBuilder cb = mock(CriteriaBuilder.class);
+        Path<Object> ruta = mock(Path.class);
+        when(root.get(anyString())).thenReturn(ruta);
+        when(cb.and(any(Predicate[].class))).thenReturn(mock(Predicate.class));
+        spec.getValue().toPredicate(root, mock(CriteriaQuery.class), cb);
+
+        verify(cb, org.mockito.Mockito.atLeastOnce()).isNull(ruta);   // empresa null: solo el bot de HotClick
+        verify(cb).equal(ruta, "WHATSAPP");
     }
 }

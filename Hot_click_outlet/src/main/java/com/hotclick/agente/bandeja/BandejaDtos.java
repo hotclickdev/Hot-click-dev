@@ -9,7 +9,7 @@ public final class BandejaDtos {
 
     private BandejaDtos() {}
 
-    /** contacto: enmascarado, solo los últimos 4 caracteres. */
+    /** contacto: enmascarado, solo los últimos 4 caracteres. notaEncuesta: 1 a 5 si la persona respondió la encuesta (AG-38). */
     public record Conversacion(
             UUID id,
             String canal,
@@ -21,7 +21,17 @@ public final class BandejaDtos {
             String ultimoMensaje,
             Instant ultimoMensajeEn,
             boolean ventanaAbierta,
-            Instant ventanaVenceEn) {}
+            Instant ventanaVenceEn,
+            Integer notaEncuesta) {
+
+        /** Sin nota de encuesta (conversación que no la tiene o aún no la responde). */
+        public Conversacion(UUID id, String canal, String contacto, String modo, String estado, Long asignadoAId,
+                            boolean asignadaAMi, String ultimoMensaje, Instant ultimoMensajeEn,
+                            boolean ventanaAbierta, Instant ventanaVenceEn) {
+            this(id, canal, contacto, modo, estado, asignadoAId, asignadaAMi, ultimoMensaje, ultimoMensajeEn,
+                ventanaAbierta, ventanaVenceEn, null);
+        }
+    }
 
     public record Pagina(List<Conversacion> items, int pagina, int tamano, long total, boolean hayMas) {}
 

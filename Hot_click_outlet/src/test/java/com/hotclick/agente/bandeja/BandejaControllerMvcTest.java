@@ -1,5 +1,6 @@
 package com.hotclick.agente.bandeja;
 
+import com.hotclick.agente.metricas.EncuestaService;
 import com.hotclick.config.GlobalExceptionHandler;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.security.CompanyScope;
@@ -116,5 +117,45 @@ class BandejaControllerMvcTest {
         when(scope.requireEmpresaIdOrAdmin()).thenReturn(7L);
         mvc.perform(get("/api/bandeja").param("vista", "otra")).andExpect(status().isBadRequest());
         mvc.perform(get("/api/bandeja").param("canal", "sms")).andExpect(status().isBadRequest());
+    }
+
+    // ── AG-38 ──────────────────────────────────────────────────────────────────
+
+    @Test
+    void notaBajaPideLaVistaDeChatsConNotaBajaDelNegocioDelUsuario() throws Exception {
+        when(scope.requireEmpresaIdOrAdmin()).thenReturn(7L);
+        when(service.listarNotaBaja(eq(7L), eq(1L), eq("WHATSAPP"), eq(0), eq(20)))
+            .thenReturn(new BandejaDtos.Pagina(List.of(), 0, 20, 3, false));
+
+        mvc.perform(get("/api/bandeja").param("notaBaja", "true").param("canal", "whatsapp"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(3));
+        verify(service, never()).listar(any(), any(), any(), any(), any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void cerrarMandaLaEncuestaConElAlcanceDelUsuario() throws Exception {
+        EncuestaService encuesta = mock(EncuestaService.class);
+        MockMvc conEncuesta = MockMvcBuilders.standaloneSetup(new BandejaController(service, aviso, scope, tenant, encuesta))
+            .setControllerAdvice(new GlobalExceptionHandler()).build();
+        when(scope.requireEmpresaIdOrAdmin()).thenReturn(7L);
+        when(service.cerrar(id, 7L, 1L)).thenReturn(new BandejaDtos.Conversacion(id, "WHATSAPP", "***1234", "BOT",
+            "CERRADA", null, false, null, null, false, null));
+
+        conEncuesta.perform(post("/api/bandeja/" + id + "/cerrar")).andExpect(status().isOk());
+
+        verify(encuesta).enviarAlCerrar(id, 7L);
+    }
+
+    @Test
+    void siElCierreEsDeOtroNegocioNoSeMandaLaEncuesta() throws Exception {
+        EncuestaService encuesta = mock(EncuestaService.class);
+        MockMvc conEncuesta = MockMvcBuilders.standaloneSetup(new BandejaController(service, aviso, scope, tenant, encuesta))
+            .setControllerAdvice(new GlobalExceptionHandler()).build();
+        when(scope.requireEmpresaIdOrAdmin()).thenReturn(8L);
+        when(service.cerrar(id, 8L, 1L)).thenThrow(new RecursoNoEncontradoException("Conversación no encontrada"));
+
+        conEncuesta.perform(post("/api/bandeja/" + id + "/cerrar")).andExpect(status().isNotFound());
+
+        verify(encuesta, never()).enviarAlCerrar(any(), any());
     }
 }

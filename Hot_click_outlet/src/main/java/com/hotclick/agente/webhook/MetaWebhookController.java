@@ -2,10 +2,12 @@ package com.hotclick.agente.webhook;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.agente.metricas.AlertaCalidadMeta;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -49,14 +51,23 @@ public class MetaWebhookController {
     private final MetaEventoDedup dedup;
     private final ObjectProvider<MensajeEntranteHandler> handlers;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<AlertaCalidadMeta> calidad;
 
     public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
                                  ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper) {
+        this(firma, parser, dedup, handlers, objectMapper, null);
+    }
+
+    @Autowired
+    public MetaWebhookController(MetaWebhookFirma firma, MetaWebhookParser parser, MetaEventoDedup dedup,
+                                 ObjectProvider<MensajeEntranteHandler> handlers, ObjectMapper objectMapper,
+                                 ObjectProvider<AlertaCalidadMeta> calidad) {
         this.firma = firma;
         this.parser = parser;
         this.dedup = dedup;
         this.handlers = handlers;
         this.objectMapper = objectMapper;
+        this.calidad = calidad;
     }
 
     @GetMapping(value = "/meta", produces = MediaType.TEXT_PLAIN_VALUE)
@@ -113,7 +124,19 @@ public class MetaWebhookController {
         } catch (RuntimeException e) {
             log.error("[meta-webhook] error procesando evento — {}", e.getClass().getSimpleName());
         }
+        registrarAvisosDeMeta(raiz);
         return ResponseEntity.ok().build();
+    }
+
+    /** AG-32: avisos de cuenta o calidad del número (no son mensajes). Un fallo aquí nunca cambia la respuesta a Meta. */
+    private void registrarAvisosDeMeta(JsonNode raiz) {
+        AlertaCalidadMeta registrador = calidad == null ? null : calidad.getIfAvailable();
+        if (registrador == null) return;
+        try {
+            registrador.registrar(raiz);
+        } catch (RuntimeException e) {
+            log.error("[meta-webhook] error registrando avisos de Meta — {}", e.getClass().getSimpleName());
+        }
     }
 
     private void despachar(List<MensajeEntrante> mensajes) {
