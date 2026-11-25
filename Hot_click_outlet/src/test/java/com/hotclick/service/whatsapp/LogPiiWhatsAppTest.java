@@ -31,7 +31,7 @@ class LogPiiWhatsAppTest {
     @BeforeEach
     void armar() {
         ReflectionTestUtils.setField(sender, "metaApiClient", meta);
-        ReflectionTestUtils.setField(sender, "geminiTextClient", mock(WhatsAppGeminiTextClient.class));
+        ReflectionTestUtils.setField(sender, "claudeTextClient", mock(WhatsAppClaudeTextClient.class));
         ReflectionTestUtils.setField(sender, "logRepo", mock(WaMensajeLogRepository.class));
         logger = (Logger) LoggerFactory.getLogger(WhatsAppMessageSender.class);
         appender = new ListAppender<>();

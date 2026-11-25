@@ -21,7 +21,8 @@ public final class BandejaDtos {
             String ultimoMensaje,
             Instant ultimoMensajeEn,
             boolean ventanaAbierta,
-            Instant ventanaVenceEn) {}
+            Instant ventanaVenceEn,
+            boolean cupoAgotado) {}
 
     public record Pagina(List<Conversacion> items, int pagina, int tamano, long total, boolean hayMas) {}
 

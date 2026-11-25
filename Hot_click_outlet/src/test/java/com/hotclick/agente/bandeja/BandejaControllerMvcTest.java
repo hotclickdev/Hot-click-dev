@@ -98,7 +98,7 @@ class BandejaControllerMvcTest {
     void asignarAOtraPersonaAvisaYAsignarseASiMismoNo() throws Exception {
         when(scope.requireEmpresaIdOrAdmin()).thenReturn(7L);
         BandejaDtos.Conversacion c = new BandejaDtos.Conversacion(id, "INSTAGRAM", "***1234", "PERSONA", "ABIERTA",
-            5L, false, null, null, true, null);
+            5L, false, null, null, true, null, false);
         when(service.asignar(id, 7L, 1L, 5L)).thenReturn(c);
         when(service.asignar(id, 7L, 1L, 1L)).thenReturn(c);
 
@@ -116,5 +116,16 @@ class BandejaControllerMvcTest {
         when(scope.requireEmpresaIdOrAdmin()).thenReturn(7L);
         mvc.perform(get("/api/bandeja").param("vista", "otra")).andExpect(status().isBadRequest());
         mvc.perform(get("/api/bandeja").param("canal", "sms")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void responderConRechazoDeMetaEs422ConMensajeClaro() throws Exception {
+        when(scope.requireEmpresaIdOrAdmin()).thenReturn(7L);
+        when(service.responder(id, 7L, "Hola")).thenThrow(new BandejaRechazoCanalException(400));
+
+        mvc.perform(post("/api/bandeja/" + id + "/responder").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"texto\":\"Hola\"}"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Meta rechaz")));
     }
 }

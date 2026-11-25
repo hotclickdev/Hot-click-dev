@@ -37,7 +37,7 @@ class MetaCanalMensajeriaTest {
 
     @Test
     void whatsappUsaPhoneNumberIdYTokenDeLaCuenta() {
-        server.expect(requestTo("https://graph.facebook.com/v19.0/PNID-1/messages"))
+        server.expect(requestTo("https://graph.facebook.com/v23.0/PNID-1/messages"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(header("Authorization", "Bearer TOK-1"))
             .andExpect(jsonPath("$.messaging_product").value("whatsapp"))
@@ -53,7 +53,7 @@ class MetaCanalMensajeriaTest {
     void instagramYMessengerUsanSendApiMeMessages() {
         for (Canal tipo : new Canal[]{Canal.INSTAGRAM, Canal.MESSENGER}) {
             MockRestServiceServer s = MockRestServiceServer.createServer(http);
-            s.expect(requestTo("https://graph.facebook.com/v19.0/me/messages"))
+            s.expect(requestTo("https://graph.facebook.com/v23.0/me/messages"))
                 .andExpect(header("Authorization", "Bearer TOK-2"))
                 .andExpect(jsonPath("$.recipient.id").value("PSID-1"))
                 .andExpect(jsonPath("$.messaging_type").value("RESPONSE"))
@@ -85,5 +85,39 @@ class MetaCanalMensajeriaTest {
         String largo = "x".repeat(2000);
         assertThat(MetaCanalMensajeria.recortar(largo, MetaCanalMensajeria.MAX_SOCIAL)).hasSize(1000).endsWith("…");
         assertThat(MetaCanalMensajeria.recortar("corto", 1000)).isEqualTo("corto");
+    }
+
+    @Test
+    void laVersionDelGraphApiEsConfigurableYCaeAV23SiEsInvalida() {
+        MetaCanalMensajeria v24 = new MetaCanalMensajeria(cuentas, http, "v24.0");
+        server.expect(requestTo("https://graph.facebook.com/v24.0/PNID-1/messages"))
+            .andRespond(withSuccess("{\"messages\":[{\"id\":\"wamid.V\"}]}", MediaType.APPLICATION_JSON));
+        assertThat(v24.enviarTexto(cuenta(Canal.WHATSAPP, EstadoCanal.ACTIVA, "tk-1"), "WAID-1", "hola")).isEqualTo("wamid.V");
+        server.verify();
+
+        assertThat(MetaCanalMensajeria.versionValida("")).isEqualTo("v23.0");
+        assertThat(MetaCanalMensajeria.versionValida(null)).isEqualTo("v23.0");
+        assertThat(MetaCanalMensajeria.versionValida("../evil")).isEqualTo("v23.0");
+        assertThat(MetaCanalMensajeria.versionValida(" V22.0 ")).isEqualTo("v22.0");
+    }
+
+    @Test
+    void enviarPlantillaPorWhatsappArmaElCuerpoDeTemplate() {
+        server.expect(requestTo("https://graph.facebook.com/v23.0/PNID-1/messages"))
+            .andExpect(jsonPath("$.type").value("template"))
+            .andExpect(jsonPath("$.to").value("WAID-1"))
+            .andExpect(jsonPath("$.template.name").value("hotclick_traspaso_asesor_v1"))
+            .andExpect(jsonPath("$.template.components[0].parameters[0].text").value("Ana"))
+            .andRespond(withSuccess("{\"messages\":[{\"id\":\"wamid.T\"}]}", MediaType.APPLICATION_JSON));
+        assertThat(canal.enviarPlantilla(cuenta(Canal.WHATSAPP, EstadoCanal.ACTIVA, "tk-1"), "WAID-1",
+            com.hotclick.service.whatsapp.PlantillaMeta.TRASPASO_ASESOR, java.util.List.of("Ana"))).isEqualTo("wamid.T");
+        server.verify();
+    }
+
+    @Test
+    void enviarPlantillaFueraDeWhatsappNoEstaSoportado() {
+        assertThatThrownBy(() -> canal.enviarPlantilla(cuenta(Canal.INSTAGRAM, EstadoCanal.ACTIVA, "tk-1"), "IGSID-1",
+            com.hotclick.service.whatsapp.PlantillaMeta.TRASPASO_ASESOR, java.util.List.of("Ana")))
+            .isInstanceOf(UnsupportedOperationException.class);
     }
 }

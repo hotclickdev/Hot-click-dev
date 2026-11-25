@@ -41,7 +41,7 @@ describe('bandeja: panel Resumen (AG-17)', () => {
     const detalle: DetalleBandeja = {
       conversacion: {
         id: '1', canal: 'WHATSAPP', contacto: '***1234', modo: 'BOT', estado: 'ABIERTA', asignadoAId: null,
-        asignadaAMi: false, ultimoMensaje: null, ultimoMensajeEn: null, ventanaAbierta: true, ventanaVenceEn: null,
+        asignadaAMi: false, ultimoMensaje: null, ultimoMensajeEn: null, ventanaAbierta: true, ventanaVenceEn: null, cupoAgotado: false,
       },
       mensajes: [],
     }

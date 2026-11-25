@@ -118,7 +118,7 @@ class CanalesSocialesFlujoTest {
     }
 
     private void recorrer(String json, String respuestaSendApi) throws Exception {
-        meta.expect(requestTo("https://graph.facebook.com/v19.0/me/messages"))
+        meta.expect(requestTo("https://graph.facebook.com/v23.0/me/messages"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(header("Authorization", "Bearer TOK-PAGINA"))
             .andExpect(jsonPath("$.messaging_type").value("RESPONSE"))
@@ -133,7 +133,7 @@ class CanalesSocialesFlujoTest {
     void instagramLlegaAlMotorYSeResponde() throws Exception {
         armar();
         cuenta(Canal.INSTAGRAM, "IG-100", "TOK-PAGINA");
-        meta.expect(requestTo("https://graph.facebook.com/v19.0/me/messages"))
+        meta.expect(requestTo("https://graph.facebook.com/v23.0/me/messages"))
             .andExpect(jsonPath("$.recipient.id").value("IGSID-9"))
             .andRespond(withSuccess("{\"recipient_id\":\"IGSID-9\",\"message_id\":\"mid.ig1\"}", MediaType.APPLICATION_JSON));
         enrutadorDe(payload("instagram", "IG-100", "IGSID-9", "mid.1", "precio del bolso?"));

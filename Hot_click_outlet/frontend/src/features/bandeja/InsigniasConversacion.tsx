@@ -25,3 +25,9 @@ export function InsigniaModo({ modo }: Readonly<{ modo: ModoBandeja }>) {
   const { t } = useTranslation()
   return <span className={`${BASE} ${ESTILO_MODO[modo]}`}>{t(`bandeja.modo.${modo}`)}</span>
 }
+
+/** El plan llegó a su cupo: el bot ya no responde en esta conversación. Lleva texto, no solo color. */
+export function InsigniaCupoAgotado() {
+  const { t } = useTranslation()
+  return <span className={`${BASE} bg-[var(--hc-warning-bg)] text-[var(--hc-warning)]`}>{t('bandeja.cupoAgotado')}</span>
+}

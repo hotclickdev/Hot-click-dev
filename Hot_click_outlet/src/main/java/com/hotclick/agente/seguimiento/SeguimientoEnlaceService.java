@@ -32,9 +32,10 @@ import java.util.UUID;
 
 /**
  * AG-12: recordatorios del enlace de compra. Recordatorio 1: enlace CREADO sin abrir pasadas 2 h. Recordatorio 2:
- * enlace ABIERTO sin pagar pasados 30 min. Máximo dos por enlace, solo dentro de la ventana de 24 h, nunca a
- * contactos de baja (STOP) ni a conversaciones atendidas por una persona. Fuera de la ventana NO se envía nada
- * (un recordatorio no justifica una plantilla). Todas las lecturas son por lote; las escrituras van por enlace
+ * enlace ABIERTO sin pagar pasados 30 min. Máximo dos por enlace, nunca a contactos de baja (STOP) ni a
+ * conversaciones atendidas por una persona. Dentro de la ventana de 24 h van como texto libre; fuera, solo el
+ * recordatorio 1 y con la plantilla {@code hotclick_compra_pendiente_v1} (máximo 1 por enlace fuera de ventana: el
+ * contador de recordatorios lo garantiza); el recordatorio 2 nunca sale de la ventana. Todas las lecturas son por lote; las escrituras van por enlace
  * a través de {@link EnlaceCompraEstadoService}, que es transaccional. Los que pasan de 24 h los vence
  * {@code EnlaceCompraVencimientoScheduler} (venta perdida).
  */
@@ -43,6 +44,7 @@ public class SeguimientoEnlaceService {
 
     private static final Logger log = LoggerFactory.getLogger(SeguimientoEnlaceService.class);
     static final int MAX_RECORDATORIOS = 2;
+    static final int MAX_FUERA_DE_VENTANA = 1;
     static final int LOTE = 200;
 
     private final EnlaceCompraRepository enlaces;
@@ -104,16 +106,18 @@ public class SeguimientoEnlaceService {
             if (s == null || s.getModo() == ModoConversacion.PERSONA) return 0;
             CanalCuenta cuenta = s.getCanalCuentaId() == null ? null : cuentaPorId.get(s.getCanalCuentaId());
             if (cuenta == null || cuenta.getEstado() != EstadoCanal.ACTIVA) return 0;
-            if (!EnvioConversacion.dentroDeVentana(s, ahora)) return 0;
             if (deBaja.contains(new ListaBajasAgente.Contacto(s.getEmpresaId(), s.getCanal(), s.getContactoExterno()))) {
                 return 0;
             }
+            boolean dentro = EnvioConversacion.dentroDeVentana(s, ahora);
+            if (!dentro && (numero != 1 || e.getRecordatoriosEnviados() >= MAX_FUERA_DE_VENTANA)) return 0;
             AvisoFueraDeVentana.Tipo tipo = numero == 1
                 ? AvisoFueraDeVentana.Tipo.RECORDATORIO_1 : AvisoFueraDeVentana.Tipo.RECORDATORIO_2;
             Map<String, String> vars = new LinkedHashMap<>();
             vars.put("enlace", appUrl + "/c/" + e.getCodigo());
+            if (e.getNombreCliente() != null && !e.getNombreCliente().isBlank()) vars.put("nombre", e.getNombreCliente().trim());
             EnvioConversacion.Resultado r = envio.enviar(s, cuenta, tipo, texto(e, numero), vars, ahora);
-            if (r != EnvioConversacion.Resultado.ENVIADO) return 0;
+            if (r == EnvioConversacion.Resultado.PENDIENTE) return 0;
             if (numero == 1) estado.registrarRecordatorio(e.getId());
             else estado.registrarRecordatorioCheckout(e.getId(), ahoraCr);
             return 1;

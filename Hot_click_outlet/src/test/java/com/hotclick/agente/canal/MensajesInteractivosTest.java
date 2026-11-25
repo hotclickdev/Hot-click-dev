@@ -23,8 +23,8 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class MensajesInteractivosTest {
 
-    private static final String WA_URL = "https://graph.facebook.com/v19.0/PNID-1/messages";
-    private static final String ME_URL = "https://graph.facebook.com/v19.0/me/messages";
+    private static final String WA_URL = "https://graph.facebook.com/v23.0/PNID-1/messages";
+    private static final String ME_URL = "https://graph.facebook.com/v23.0/me/messages";
 
     private final CanalCuentaService cuentas = mock(CanalCuentaService.class);
     private final RestTemplate http = new RestTemplate();

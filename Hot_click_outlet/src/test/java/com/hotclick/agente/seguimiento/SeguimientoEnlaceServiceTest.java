@@ -185,4 +185,74 @@ class SeguimientoEnlaceServiceTest {
         verify(estado, never()).registrarRecordatorio(1L);
         verify(estado).registrarRecordatorio(3L);
     }
+
+    @Test
+    void recordatorio1FueraDeLaVentanaUsaLaPlantillaYSeRegistraUnaSolaVez() {
+        AvisoFueraDeVentana plantillas = mock(AvisoFueraDeVentana.class);
+        when(plantillas.enviar(any(), anyString(), eq(AvisoFueraDeVentana.Tipo.RECORDATORIO_1), any())).thenReturn(true);
+        servicio = new SeguimientoEnlaceService(enlaces, sesiones, cuentas, estado,
+            new EnvioConversacion(canal, mock(ConversacionService.class), proveedor(plantillas)), proveedor(bajas),
+            120, 30, "https://hotclick.example");
+        conversacion.setUltimoMensajeCliente(AHORA.minus(Duration.ofHours(25)));
+        when(enlaces.paraRecordatorio1(any(), any(), any())).thenReturn(List.of(creadoHaceDosHoras()));
+
+        assertThat(servicio.barrer(AHORA_CR, AHORA)).isEqualTo(1);
+        verify(plantillas).enviar(any(), eq(CONTACTO), eq(AvisoFueraDeVentana.Tipo.RECORDATORIO_1), any());
+        verify(canal, never()).enviarTexto(any(), anyString(), anyString());
+        verify(estado).registrarRecordatorio(1L);
+    }
+
+    @Test
+    void recordatorio1FueraDeLaVentanaSinPlantillaNoRegistraNada() {
+        conversacion.setUltimoMensajeCliente(AHORA.minus(Duration.ofHours(25)));
+        when(enlaces.paraRecordatorio1(any(), any(), any())).thenReturn(List.of(creadoHaceDosHoras()));
+
+        assertThat(servicio.barrer(AHORA_CR, AHORA)).isZero();
+        verify(estado, never()).registrarRecordatorio(any());
+    }
+
+    @Test
+    void recordatorio2NuncaSaleDeLaVentanaNiConPlantilla() {
+        AvisoFueraDeVentana plantillas = mock(AvisoFueraDeVentana.class);
+        when(plantillas.enviar(any(), anyString(), any(), any())).thenReturn(true);
+        servicio = new SeguimientoEnlaceService(enlaces, sesiones, cuentas, estado,
+            new EnvioConversacion(canal, mock(ConversacionService.class), proveedor(plantillas)), proveedor(bajas),
+            120, 30, "https://hotclick.example");
+        conversacion.setUltimoMensajeCliente(AHORA.minus(Duration.ofHours(25)));
+        when(enlaces.paraRecordatorio2(any(), any(), any())).thenReturn(List.of(abiertoHaceMediaHora()));
+
+        assertThat(servicio.barrer(AHORA_CR, AHORA)).isZero();
+        verify(plantillas, never()).enviar(any(), anyString(), any(), any());
+    }
+
+    @Test
+    void maximoUnRecordatorioFueraDeVentanaPorEnlace() {
+        AvisoFueraDeVentana plantillas = mock(AvisoFueraDeVentana.class);
+        when(plantillas.enviar(any(), anyString(), any(), any())).thenReturn(true);
+        servicio = new SeguimientoEnlaceService(enlaces, sesiones, cuentas, estado,
+            new EnvioConversacion(canal, mock(ConversacionService.class), proveedor(plantillas)), proveedor(bajas),
+            120, 30, "https://hotclick.example");
+        conversacion.setUltimoMensajeCliente(AHORA.minus(Duration.ofHours(25)));
+        EnlaceCompra e = creadoHaceDosHoras();
+        e.setRecordatoriosEnviados(1);
+        when(enlaces.paraRecordatorio1(any(), any(), any())).thenReturn(List.of(e));
+
+        assertThat(servicio.barrer(AHORA_CR, AHORA)).isZero();
+        verify(plantillas, never()).enviar(any(), anyString(), any(), any());
+    }
+
+    @Test
+    void contactoDeBajaNoRecibeNiLaPlantillaFueraDeVentana() {
+        AvisoFueraDeVentana plantillas = mock(AvisoFueraDeVentana.class);
+        when(plantillas.enviar(any(), anyString(), any(), any())).thenReturn(true);
+        bajas = contactos -> Set.copyOf(contactos);
+        servicio = new SeguimientoEnlaceService(enlaces, sesiones, cuentas, estado,
+            new EnvioConversacion(canal, mock(ConversacionService.class), proveedor(plantillas)), proveedor(bajas),
+            120, 30, "https://hotclick.example");
+        conversacion.setUltimoMensajeCliente(AHORA.minus(Duration.ofHours(25)));
+        when(enlaces.paraRecordatorio1(any(), any(), any())).thenReturn(List.of(creadoHaceDosHoras()));
+
+        assertThat(servicio.barrer(AHORA_CR, AHORA)).isZero();
+        verify(plantillas, never()).enviar(any(), anyString(), any(), any());
+    }
 }

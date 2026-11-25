@@ -18,6 +18,7 @@ const base: ConversacionBandeja = {
   ultimoMensajeEn: '2026-11-24T20:05:00Z',
   ventanaAbierta: true,
   ventanaVenceEn: '2026-11-25T20:05:00Z',
+  cupoAgotado: false,
 }
 
 const noop = () => {}
@@ -67,6 +68,11 @@ describe('bandeja: lista', () => {
     expect(lista([], { cargando: true })).toContain('Cargando')
   })
 
+  it('con el cupo agotado la fila lleva una insignia con texto; sin cupo agotado no', () => {
+    expect(lista([{ ...base, cupoAgotado: true }])).toContain('Cupo agotado')
+    expect(lista([base])).not.toContain('Cupo agotado')
+  })
+
   it('la paginación solo aparece si hay más o hay anterior', () => {
     expect(lista([base])).not.toContain('Paginación')
     expect(lista([base], { hayMas: true })).toContain('Siguiente')
@@ -110,6 +116,13 @@ describe('bandeja: detalle', () => {
     const html = hilo({ ventanaAbierta: false })
     expect(html).toMatch(/<textarea[^>]*\sdisabled=""/)
     expect(html).toContain('Pasaron más de 24 horas')
+  })
+
+  it('con el cupo agotado el detalle explica que el plan llegó a su cupo', () => {
+    const html = hilo({ cupoAgotado: true })
+    expect(html).toContain('Cupo agotado')
+    expect(html).toContain('El plan llegó a su cupo')
+    expect(hilo()).not.toContain('El plan llegó a su cupo')
   })
 
   it('una conversación cerrada no ofrece acciones ni deja responder', () => {
