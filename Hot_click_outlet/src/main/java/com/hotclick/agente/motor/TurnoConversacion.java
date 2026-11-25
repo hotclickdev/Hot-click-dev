@@ -5,6 +5,12 @@ public record TurnoConversacion(Rol rol, String texto) {
 
     public enum Rol { USUARIO, ASISTENTE }
 
+    /** Sin el texto del turno (AG-14 H-07). */
+    @Override
+    public String toString() {
+        return "TurnoConversacion[rol=" + rol + "]";
+    }
+
     public static TurnoConversacion usuario(String texto) {
         return new TurnoConversacion(Rol.USUARIO, texto);
     }

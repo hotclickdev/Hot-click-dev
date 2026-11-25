@@ -22,11 +22,23 @@ public final class BandejaDtos {
             Instant ultimoMensajeEn,
             boolean ventanaAbierta,
             Instant ventanaVenceEn,
-            boolean cupoAgotado) {}
+            boolean cupoAgotado) {
+
+        /** Sin el contacto ni el último mensaje (AG-14 H-07). */
+        @Override
+        public String toString() {
+            return "Conversacion[canal=" + canal + ", modo=" + modo + ", estado=" + estado + "]";
+        }
+    }
 
     public record Pagina(List<Conversacion> items, int pagina, int tamano, long total, boolean hayMas) {}
 
-    public record Mensaje(Long id, String rol, String texto, Instant fecha) {}
+    public record Mensaje(Long id, String rol, String texto, Instant fecha) {
+        @Override
+        public String toString() {
+            return "Mensaje[id=" + id + ", rol=" + rol + "]";
+        }
+    }
 
     public record Detalle(Conversacion conversacion, List<Mensaje> mensajes) {}
 
@@ -34,7 +46,12 @@ public final class BandejaDtos {
 
     public record Miembro(Long id, String nombre) {}
 
-    public record PedidoResponder(String texto) {}
+    public record PedidoResponder(String texto) {
+        @Override
+        public String toString() {
+            return "PedidoResponder[largo=" + (texto == null ? 0 : texto.length()) + "]";
+        }
+    }
 
     public record PedidoAsignar(Long usuarioId) {}
 }

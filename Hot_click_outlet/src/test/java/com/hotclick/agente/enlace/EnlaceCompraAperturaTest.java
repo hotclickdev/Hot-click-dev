@@ -40,7 +40,7 @@ class EnlaceCompraAperturaTest {
         repo = mock(EnlaceCompraRepository.class);
         productos = mock(ProductoRepository.class);
         reserva = new EnlaceCompraReserva(productos, repo);
-        apertura = new EnlaceCompraAperturaService(repo, reserva, 30);
+        apertura = new EnlaceCompraAperturaService(repo, reserva, 30, 90);
         apertura.reloj = () -> AHORA;
         tienda = empresa(7);
         leche = producto(11, tienda, 1500, 10);
@@ -109,6 +109,38 @@ class EnlaceCompraAperturaTest {
 
         assertThat(leche.getStockReservado()).isEqualTo(3);
         assertThat(enlace.getReservaHasta()).isEqualTo(AHORA.plusMinutes(40));
+    }
+
+    @Test
+    void abrirRepetido_noRenuevaLaReservaMasAllaDelTopeTotal() {
+        apertura.abrir(CODIGO);
+        // 80 min después de la primera apertura: la reserva se renueva pero se corta a los 90 min totales.
+        apertura.reloj = () -> AHORA.plusMinutes(80);
+        apertura.abrir(CODIGO);
+        assertThat(enlace.getReservaHasta()).isEqualTo(AHORA.plusMinutes(90));
+        assertThat(leche.getStockReservado()).isEqualTo(3);
+
+        // Pasado el tope total el enlace abre, revalida, pero ya no retiene inventario.
+        apertura.reloj = () -> AHORA.plusMinutes(95);
+        EnlaceAbiertoDto dto = apertura.abrir(CODIGO).orElseThrow();
+        assertThat(leche.getStockReservado()).isZero();
+        assertThat(enlace.getReservaHasta()).isNull();
+        assertThat(dto.items()).hasSize(1);
+    }
+
+    @Test
+    void invalidarSinPagar_venceYDevuelveLaReservaPeroNoTocaLosQueTienenPedido() {
+        apertura.abrir(CODIGO);
+        assertThat(leche.getStockReservado()).isEqualTo(3);
+        enlace.setPedidoId(99L);
+        assertThat(reserva.invalidarSinPagar(42L)).isFalse();
+        assertThat(enlace.getEstado()).isEqualTo(EnlaceCompraEstado.ABIERTO);
+
+        enlace.setPedidoId(null);
+        assertThat(reserva.invalidarSinPagar(42L)).isTrue();
+        assertThat(enlace.getEstado()).isEqualTo(EnlaceCompraEstado.VENCIDO);
+        assertThat(leche.getStockReservado()).isZero();
+        assertThat(apertura.abrir(CODIGO)).isEmpty();
     }
 
     @Test

@@ -14,6 +14,12 @@ public record LeadDto(Long id, TipoLead tipo, String canal, String contactoEnmas
                       String nombre, String tipoNegocio, String interes, EstadoLead estado, UUID sesionId,
                       LocalDateTime creadoEn) {
 
+    /** Sin contacto, nombre ni interés del lead (AG-14 H-07). */
+    @Override
+    public String toString() {
+        return "LeadDto[id=" + id + ", tipo=" + tipo + ", estado=" + estado + "]";
+    }
+
     static LeadDto de(LeadRepository.Fila f, String contactoClaro) {
         String mascara = f.ultimos4() == null ? null : "****" + f.ultimos4();
         return new LeadDto(f.id(), f.tipo(), f.canal(), mascara, contactoClaro, f.nombre(), f.tipoNegocio(),

@@ -33,6 +33,7 @@ class EnlaceCompraServiceTest {
     private EnlaceCompraRepository repo;
     private ProductoRepository productos;
     private EnlaceCompraService service;
+    private EnlaceCompraTope tope;
     private Empresa tienda;
 
     @BeforeEach
@@ -42,7 +43,8 @@ class EnlaceCompraServiceTest {
         GuestCheckoutGuard guard = mock(GuestCheckoutGuard.class);
         when(guard.getMaxPorProducto()).thenReturn(3);
         when(guard.getMaxPendientes()).thenReturn(6);
-        service = new EnlaceCompraService(repo, productos, guard, "https://hotclick.lat/", 24);
+        tope = mock(EnlaceCompraTope.class);
+        service = new EnlaceCompraService(repo, productos, guard, tope, "https://hotclick.lat/", 24);
         service.reloj = () -> AHORA;
         tienda = empresa(7);
     }
@@ -70,6 +72,22 @@ class EnlaceCompraServiceTest {
         assertThat(cap.getValue().getChatSesionId()).isEqualTo(SESION);
         assertThat(cap.getValue().getItems()).hasSize(1);
         assertThat(cap.getValue().getItems().get(0).getPrecioUnitarioCreado()).isEqualTo(1500);
+    }
+
+    @Test
+    void crea_aplicaElTopeDeEnlacesVigentesAntesDeGuardar() {
+        existen(producto(11, tienda, 1500, 10));
+        service.crear(7L, SESION, "  50600000000  ", "Ana", "whatsapp", List.of(new ItemSolicitado(11L, 1)));
+        org.mockito.InOrder orden = org.mockito.Mockito.inOrder(tope, repo);
+        orden.verify(tope).hacerEspacio(7L, SESION, "WHATSAPP", "50600000000", AHORA);
+        orden.verify(repo).save(any());
+    }
+
+    @Test
+    void creado_toStringNoLlevaElCodigoNiLaUrl() {
+        existen(producto(11, tienda, 1500, 10));
+        EnlaceCreado r = service.crear(7L, SESION, "50600000000", "Ana", "WHATSAPP", List.of(new ItemSolicitado(11L, 1)));
+        assertThat(r.toString()).doesNotContain(r.codigo()).doesNotContain("/c/").doesNotContain("Leche");
     }
 
     @Test

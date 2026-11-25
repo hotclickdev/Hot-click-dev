@@ -40,7 +40,13 @@ public class AsesorWebService {
     static final int MAX_TURNOS = 10;
 
     /** @param productos productos validados de las acciones AGREGAR_CARRITO (para que el front muestre qué agrega). */
-    public record Respuesta(String texto, List<Map<String, Object>> acciones, List<ProductoContexto> productos) {}
+    public record Respuesta(String texto, List<Map<String, Object>> acciones, List<ProductoContexto> productos) {
+        /** Sin el texto del cliente ni del bot (AG-14 H-07). */
+        @Override
+        public String toString() {
+            return "Respuesta[acciones=" + (acciones == null ? 0 : acciones.size()) + "]";
+        }
+    }
 
     private final MotorAgente motor;
     private final VectorSearchService busqueda;

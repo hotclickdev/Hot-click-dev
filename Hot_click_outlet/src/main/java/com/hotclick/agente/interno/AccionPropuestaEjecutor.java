@@ -28,7 +28,12 @@ public class AccionPropuestaEjecutor {
     private static final Logger log = LoggerFactory.getLogger(AccionPropuestaEjecutor.class);
 
     /** @param aplicada true si el cambio se hizo; mensaje: texto plano para el usuario */
-    public record Resultado(boolean aplicada, String mensaje) {}
+    public record Resultado(boolean aplicada, String mensaje) {
+        @Override
+        public String toString() {
+            return "Resultado[aplicada=" + aplicada + "]";
+        }
+    }
 
     private final TelegramFlujoService flujo;
     private final PedidoRepository pedidos;

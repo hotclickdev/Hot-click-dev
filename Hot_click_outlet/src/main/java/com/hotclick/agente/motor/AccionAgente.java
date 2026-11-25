@@ -17,6 +17,12 @@ public record AccionAgente(Tipo tipo, String dato) {
         CHAT_TIENDA
     }
 
+    /** Sin {@code dato}: puede traer la URL de compra o datos del cliente (AG-14 H-07). */
+    @Override
+    public String toString() {
+        return "AccionAgente[tipo=" + tipo + "]";
+    }
+
     public static AccionAgente pasarAPersona(String motivo) {
         return new AccionAgente(Tipo.PASAR_A_PERSONA, motivo);
     }

@@ -108,11 +108,27 @@ public class EnrutadorConversaciones implements MensajeEntranteHandler {
         this.maxPorHora = Math.max(1, maxPorHora);
     }
 
+    private int maxHotClickPorMinuto = 60;
+
+    /**
+     * Tope global de mensajes procesados por minuto para la cuenta de HotClick (sin empresa): muchos contactos
+     * distintos no pasan el límite por conversación, y esa cuenta no tiene cupo ni tope de gasto (AG-14).
+     */
+    @Autowired(required = false)
+    public void setTopeHotClick(@Value("${agente.limite.hotclick-mensajes-por-minuto:60}") int maxPorMinuto) {
+        this.maxHotClickPorMinuto = Math.max(1, maxPorMinuto);
+    }
+
     private boolean dentroDelLimite(ConversacionActiva conv) {
-        if (limitador == null || conv.sesionId() == null) return true;
-        String base = "agente:conv:" + conv.sesionId();
+        if (limitador == null) return true;
         // Fail-closed como los demás topes de costo: si la BD del limitador falla, no se llama a Claude.
-        return limitador.tryAcquireEstricto(base + ":m", maxPorMinuto, 60)
-            && limitador.tryAcquireEstricto(base + ":h", maxPorHora, 3600);
+        if (conv.sesionId() != null) {
+            String base = "agente:conv:" + conv.sesionId();
+            if (!limitador.tryAcquireEstricto(base + ":m", maxPorMinuto, 60)
+                || !limitador.tryAcquireEstricto(base + ":h", maxPorHora, 3600)) return false;
+        }
+        // Se cuenta después del límite por conversación: un contacto ya bloqueado no gasta el tope global.
+        return conv.empresaId() != null
+            || limitador.tryAcquireEstricto("agente:hotclick:m", maxHotClickPorMinuto, 60);
     }
 }
