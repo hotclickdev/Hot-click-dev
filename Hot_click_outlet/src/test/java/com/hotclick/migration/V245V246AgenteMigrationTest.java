@@ -47,15 +47,29 @@ class V245V246AgenteMigrationTest {
 
     @Test
     void columnasDeLasEntidadesExistenEnLasMigraciones() throws Exception {
-        String sql = Files.readString(Path.of(V245)) + Files.readString(Path.of(V246))
-            + Files.readString(Path.of("src/main/resources/db/migration/V63__chat_sesion_asistente.sql"))
-            // V255 (AG-29) agrega cupo_agotado a la sesión.
-            + Files.readString(Path.of("src/main/resources/db/migration/V255__agente_cupo_y_bajas.sql"));
+        // Todas las migraciones de los bots (V244 en adelante) más V63, que creó la sesión de chat.
+        StringBuilder todas = new StringBuilder(Files.readString(Path.of("src/main/resources/db/migration/V63__chat_sesion_asistente.sql")));
+        try (var archivos = Files.list(Path.of("src/main/resources/db/migration"))) {
+            for (Path m : archivos.filter(MigracionesAgente::esDelAgente).sorted().toList()) {
+                todas.append(Files.readString(m));
+            }
+        }
+        String sql = todas.toString();
         for (Class<?> c : new Class<?>[]{CanalCuenta.class, ConversacionSesion.class, ConversacionMensaje.class}) {
             for (Field f : c.getDeclaredFields()) {
                 Column col = f.getAnnotation(Column.class);
                 if (col != null) assertThat(sql).as(c.getSimpleName() + "." + col.name()).contains(col.name());
             }
+        }
+    }
+
+    /** V244+ son las migraciones de los bots de venta con IA. */
+    static final class MigracionesAgente {
+        private MigracionesAgente() {}
+
+        static boolean esDelAgente(Path p) {
+            var m = java.util.regex.Pattern.compile("^V(\\d+)__.*\\.sql$").matcher(p.getFileName().toString());
+            return m.matches() && Integer.parseInt(m.group(1)) >= 244;
         }
     }
 }
