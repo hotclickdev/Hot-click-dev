@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { ConectarCuentasMeta } from '@/features/agente/conexion'
 import { botService } from './botService'
 import type { CanalBot } from './botTypes'
 import { BOTON_SECUNDARIO, CLAVE_BOT, TARJETA, useAccionBot, useConsultaBot } from './useBot'
@@ -7,6 +9,7 @@ import { BOTON_SECUNDARIO, CLAVE_BOT, TARJETA, useAccionBot, useConsultaBot } fr
 /** Cuentas conectadas (WhatsApp, Instagram, Messenger): pausar, reanudar y desconectar. */
 export default function CanalesTab() {
   const { t } = useTranslation()
+  const qc = useQueryClient()
   const q = useConsultaBot(['canales'], botService.canales)
   const [aDesconectar, setADesconectar] = useState<number | null>(null)
   const invalidar = [...CLAVE_BOT, 'canales']
@@ -21,6 +24,7 @@ export default function CanalesTab() {
   return (
     <div className="grid max-w-3xl gap-4">
       <p className="text-sm text-hc-muted">{t('bot.canales.ayuda')}</p>
+      <ConectarCuentasMeta onConectado={async () => { await qc.invalidateQueries({ queryKey: [...CLAVE_BOT, 'canales'] }) }} />
       {q.isLoading && <p role="status" className="text-sm text-hc-muted">{t('bot.cargando')}</p>}
       {q.isError && <p role="alert" className="text-sm text-[var(--hc-danger)]">{t('bot.errorCargar')}</p>}
       {!q.isLoading && !q.isError && items.length === 0 && (

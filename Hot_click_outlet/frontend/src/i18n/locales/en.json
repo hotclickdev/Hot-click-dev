@@ -4867,6 +4867,17 @@
     },
     "titulo": "Sales bot",
     "subtitulo": "Set how your bot serves customers, what it knows about your store and test it before it talks to them.",
+    "uso": {
+      "cargando": "Loading this month's usage…",
+      "titulo": "Usage for {{mes}}",
+      "conversaciones": "{{n}} of {{cupo}} conversations in your plan's quota.",
+      "conversacionesSinCupo": "{{n}} conversations this month (no quota limit).",
+      "progresoAria": "Conversation quota used",
+      "cupoAgotado": "You reached this month's conversation quota: the bot hands new chats to your team until next month or until you change plans.",
+      "noIncluido": "Your plan doesn't include the sales bot.",
+      "costo": "AI cost: {{costo}} of a {{tope}} cap.",
+      "costoSinTope": "AI cost: {{costo}}."
+    },
     "pestanasAria": "Sales bot sections",
     "pestanas": {
       "config": "Settings",

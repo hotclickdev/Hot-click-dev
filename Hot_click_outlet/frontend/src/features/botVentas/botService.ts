@@ -13,9 +13,11 @@ import type {
   ResultadoSimulador,
   TipoLead,
   TurnoSimulador,
+  UsoBot,
 } from './botTypes'
 
 export const botService = {
+  uso: () => api.get<UsoBot>('/agente/uso').then((r) => r.data),
   config: () => api.get<ConfigBot>('/agente/config').then((r) => r.data),
   guardarConfig: (p: PedidoConfigBot) => api.put<ConfigBot>('/agente/config', p).then((r) => r.data),
 

@@ -87,3 +87,13 @@ export type Lead = {
   estado: EstadoLead
   creadoEn: string
 }
+
+/** Uso del mes del bot. cupo: -1 = ilimitado, null = sin cupo. */
+export type UsoBot = {
+  mes: string
+  conversaciones: number
+  cupo: number | null
+  costoUsd: number
+  topeUsd: number | null
+  agenteIncluido: boolean
+}

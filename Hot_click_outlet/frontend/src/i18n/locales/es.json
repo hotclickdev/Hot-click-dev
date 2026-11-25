@@ -4867,6 +4867,17 @@
     },
     "titulo": "Bot de ventas",
     "subtitulo": "Configurá cómo atiende tu bot, qué sabe de tu tienda y probalo antes de que hable con tus clientes.",
+    "uso": {
+      "cargando": "Cargando el uso del mes…",
+      "titulo": "Uso de {{mes}}",
+      "conversaciones": "{{n}} de {{cupo}} conversaciones del cupo de tu plan.",
+      "conversacionesSinCupo": "{{n}} conversaciones este mes (sin límite de cupo).",
+      "progresoAria": "Cupo de conversaciones usado",
+      "cupoAgotado": "Llegaste al cupo de conversaciones del mes: el bot pasa los chats nuevos a tu equipo hasta el próximo mes o hasta que cambiés de plan.",
+      "noIncluido": "Tu plan no incluye el bot de ventas.",
+      "costo": "Costo de IA: {{costo}} de un tope de {{tope}}.",
+      "costoSinTope": "Costo de IA: {{costo}}."
+    },
     "pestanasAria": "Secciones del bot de ventas",
     "pestanas": {
       "config": "Configuración",

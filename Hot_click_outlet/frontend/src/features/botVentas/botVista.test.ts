@@ -11,8 +11,9 @@ import CanalesTab from './CanalesTab'
 import EquipoPinTab from './EquipoPinTab'
 import SimuladorTab from './SimuladorTab'
 import LeadsTab from './LeadsTab'
+import UsoMes from './UsoMes'
 import { CLAVE_BOT } from './useBot'
-import type { CanalBot, ConfigBot, Conocimiento, EstadoVinculacion, Lead } from './botTypes'
+import type { UsoBot, CanalBot, ConfigBot, Conocimiento, EstadoVinculacion, Lead } from './botTypes'
 
 const config: ConfigBot = {
   nombreBot: 'Tina', trato: 'TUTEO', emojis: true, activo: true, horarioActivo: true, zona: 'America/Costa_Rica',
@@ -139,5 +140,30 @@ describe('panel del bot: leads', () => {
 
   it('sin leads muestra el estado vacío', () => {
     expect(pantalla(createElement(LeadsTab), [[['leads', '', '', 0], []]])).toContain('Todavía no hay leads')
+  })
+})
+
+describe('panel del bot: uso del mes', () => {
+  const uso: UsoBot = { mes: '2026-11', conversaciones: 100, cupo: 100, costoUsd: 1.5, topeUsd: 10, agenteIncluido: true }
+
+  it('muestra conversaciones, barra de cupo, costo y tope, y avisa cuando el cupo se agotó', () => {
+    const html = pantalla(createElement(UsoMes), [[['uso'], uso]])
+    expect(html).toContain('100 de 100 conversaciones')
+    expect(html).toContain('role="progressbar"')
+    expect(html).toContain('aria-valuenow="100"')
+    expect(html).toContain('Llegaste al cupo')
+    expect(html).toContain('tope')
+  })
+
+  it('con cupo ilimitado no muestra barra ni aviso de cupo agotado', () => {
+    const html = pantalla(createElement(UsoMes), [[['uso'], { ...uso, cupo: -1, topeUsd: null }]])
+    expect(html).not.toContain('role="progressbar"')
+    expect(html).not.toContain('Llegaste al cupo')
+    expect(html).toContain('sin límite de cupo')
+  })
+
+  it('la pestaña Canales monta el conector de cuentas de Meta', () => {
+    const html = pantalla(createElement(CanalesTab), [[['canales'], []]])
+    expect(html).toContain('No hay canales conectados')
   })
 })

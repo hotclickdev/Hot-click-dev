@@ -73,3 +73,14 @@ export function indiceSiguiente(actual: number, tecla: string, total: number): n
   if (tecla === 'End') return total - 1
   return null
 }
+
+/** Porcentaje (0-100) del cupo usado; null si es ilimitado o no hay cupo. */
+export function porcentajeCupo(conversaciones: number, cupo: number | null): number | null {
+  if (cupo == null || cupo < 0) return null
+  if (cupo === 0) return 100
+  return Math.min(100, Math.round((conversaciones * 100) / cupo))
+}
+
+export function cupoAgotado(conversaciones: number, cupo: number | null): boolean {
+  return cupo != null && cupo >= 0 && conversaciones >= cupo
+}

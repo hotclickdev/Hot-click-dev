@@ -6,6 +6,7 @@ import CanalesTab from './CanalesTab'
 import EquipoPinTab from './EquipoPinTab'
 import SimuladorTab from './SimuladorTab'
 import LeadsTab from './LeadsTab'
+import UsoMes from './UsoMes'
 import { indiceSiguiente, PESTANAS, type Pestana } from './botHelpers'
 
 const PANELES: Record<Pestana, () => React.JSX.Element> = {
@@ -36,6 +37,7 @@ export default function BotPage({ inicial = 'config' }: Readonly<{ inicial?: Pes
     <main className="p-4 sm:p-6" data-mm="bot-ventas">
       <h1 className="font-display text-2xl font-bold text-hc-text">{t('bot.titulo')}</h1>
       <p className="mt-1 text-sm text-hc-muted">{t('bot.subtitulo')}</p>
+      <div className="mt-4 max-w-xl"><UsoMes /></div>
       <div role="tablist" aria-label={t('bot.pestanasAria')} className="mt-4 flex gap-2 overflow-x-auto pb-1">
         {PESTANAS.map((p, i) => (
           <button

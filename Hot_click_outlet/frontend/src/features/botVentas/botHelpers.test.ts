@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aPedido, cambiarDia, errorDeConfig, indiceSiguiente, mensajeDeError, pinValido } from './botHelpers'
+import { aPedido, cambiarDia, cupoAgotado, porcentajeCupo, errorDeConfig, indiceSiguiente, mensajeDeError, pinValido } from './botHelpers'
 import type { ConfigBot } from './botTypes'
 
 const config: ConfigBot = {
@@ -66,5 +66,16 @@ describe('botHelpers', () => {
     expect(mensajeDeError({ response: { status: 429, data: { message: 'Muchas pruebas' } } }, 'x')).toBe('Muchas pruebas')
     expect(mensajeDeError({ response: { status: 500, data: { message: 'SQL roto' } } }, 'genérico')).toBe('genérico')
     expect(mensajeDeError(null, 'genérico')).toBe('genérico')
+  })
+
+  it('calcula el porcentaje del cupo y cuándo se agotó', () => {
+    expect(porcentajeCupo(50, 100)).toBe(50)
+    expect(porcentajeCupo(150, 100)).toBe(100)
+    expect(porcentajeCupo(5, -1)).toBeNull()
+    expect(porcentajeCupo(5, null)).toBeNull()
+    expect(cupoAgotado(100, 100)).toBe(true)
+    expect(cupoAgotado(99, 100)).toBe(false)
+    expect(cupoAgotado(999, -1)).toBe(false)
+    expect(cupoAgotado(999, null)).toBe(false)
   })
 })
