@@ -72,6 +72,21 @@ public class MotorAgente {
 
     public ResultadoAgente ejecutar(PerfilAgente perfil, ContextoHerramienta contexto,
                                     List<TurnoConversacion> historial, String entrada) {
+        return ejecutar(perfil, contexto, historial, entrada, true);
+    }
+
+    /**
+     * Igual que {@link #ejecutar(PerfilAgente, ContextoHerramienta, List, String)} pero sin la moderación de la
+     * entrada: solo para tareas internas (resumen de bandeja) donde la entrada es una conversación ya recibida por
+     * el canal y se transcribe como datos; la salida la revisa una persona antes de enviarse.
+     */
+    public ResultadoAgente ejecutarSinFiltroEntrada(PerfilAgente perfil, ContextoHerramienta contexto,
+                                                    List<TurnoConversacion> historial, String entrada) {
+        return ejecutar(perfil, contexto, historial, entrada, false);
+    }
+
+    private ResultadoAgente ejecutar(PerfilAgente perfil, ContextoHerramienta contexto,
+                                     List<TurnoConversacion> historial, String entrada, boolean moderar) {
         if (perfil == null || contexto == null || contexto.perfil() != perfil) {
             throw new IllegalArgumentException("El contexto debe corresponder al perfil indicado");
         }
@@ -80,12 +95,14 @@ public class MotorAgente {
             return sinLlamada("", modelo, MotivoFin.ENTRADA_VACIA);
         }
         // Moderación y guard legal ANTES de cualquier llamada a Claude.
-        ChatLegalGuard.Motivo motivoLegal = ChatLegalGuard.revisar(entrada);
-        if (motivoLegal != ChatLegalGuard.Motivo.OK) {
-            return sinLlamada(ChatLegalGuard.respuesta(motivoLegal), modelo, MotivoFin.MODERACION);
-        }
-        if (!moderacion.moderar(entrada).safe()) {
-            return sinLlamada(RESPUESTA_MODERACION, modelo, MotivoFin.MODERACION);
+        if (moderar) {
+            ChatLegalGuard.Motivo motivoLegal = ChatLegalGuard.revisar(entrada);
+            if (motivoLegal != ChatLegalGuard.Motivo.OK) {
+                return sinLlamada(ChatLegalGuard.respuesta(motivoLegal), modelo, MotivoFin.MODERACION);
+            }
+            if (!moderacion.moderar(entrada).safe()) {
+                return sinLlamada(RESPUESTA_MODERACION, modelo, MotivoFin.MODERACION);
+            }
         }
 
         List<HerramientaAgente> herramientas = registro.paraPerfil(perfil);
@@ -204,7 +221,9 @@ public class MotorAgente {
             }
         }
         AccionAgente accion = r.accion();
-        if (accion != null && acciones.stream().noneMatch(a -> a.tipo() == accion.tipo())) {
+        // Sin repetidos por tipo; el carrito admite varios productos (uno por dato distinto).
+        if (accion != null && acciones.stream().noneMatch(a -> a.tipo() == accion.tipo()
+                && (accion.tipo() != AccionAgente.Tipo.AGREGAR_CARRITO || java.util.Objects.equals(a.dato(), accion.dato())))) {
             acciones.add(accion);
         }
         String texto = r.contenido() == null ? "" : r.contenido();

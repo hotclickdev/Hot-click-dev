@@ -32,7 +32,14 @@ public enum PerfilAgente {
 
     /** Asesor de la web pública (ficha de producto / tienda). */
     ASESOR_WEB(Alcance.EMPRESA_O_MARKETPLACE, Set.of(
-        "buscar_productos", "consultar_conocimiento", "pasar_a_persona"));
+        "buscar_productos", "consultar_conocimiento",
+        "agregar_al_carrito", "consultar_pedido_web", "pasar_al_chat_tienda")),
+
+    /**
+     * Resumen y respuesta sugerida para la bandeja (AG-17). Sin herramientas: el modelo solo ve el texto de UNA
+     * conversación que arma el servicio; no consulta datos ni envía nada.
+     */
+    RESUMEN_BANDEJA(Alcance.EMPRESA_O_MARKETPLACE, Set.of());
 
     private final Alcance alcance;
     private final Set<String> herramientas;

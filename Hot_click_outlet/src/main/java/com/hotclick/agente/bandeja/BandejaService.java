@@ -106,6 +106,17 @@ public class BandejaService {
         return new BandejaDtos.Detalle(aDto(s, usuarioId, previa, clock.instant()), BandejaMapeo.turnos(ms));
     }
 
+    /**
+     * Últimos turnos (cronológicos) de una conversación dentro del alcance, para el resumen con IA (AG-17).
+     * Misma verificación de empresa que el resto: fuera de alcance responde como inexistente (404).
+     */
+    public List<ConversacionMensaje> mensajesParaResumen(UUID id, Long scope) {
+        ConversacionSesion s = cargar(id, scope);
+        List<ConversacionMensaje> ms = new ArrayList<>(mensajes.findTop20BySesionIdOrderByIdDesc(s.getId()));
+        Collections.reverse(ms);
+        return ms;
+    }
+
     /** Personas a quienes se puede asignar: el equipo activo del negocio (y quien llama). */
     public List<BandejaDtos.Miembro> equipo(Long scope, Usuario actual) {
         List<MiembroEmpresa> activos = scope == null ? List.of() : miembros.findByEmpresaIdAndEstado(scope, 1);

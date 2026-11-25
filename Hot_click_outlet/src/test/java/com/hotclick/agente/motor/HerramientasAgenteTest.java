@@ -126,7 +126,11 @@ class HerramientasAgenteTest {
         assertThat(PerfilAgente.NEGOCIO_VENTAS.herramientas()).doesNotContain("consultar_finanzas", "proponer_ajustar_stock");
         assertThat(PerfilAgente.HOTCLICK.herramientas()).doesNotContain("consultar_finanzas", "proponer_ajustar_stock");
         assertThat(PerfilAgente.HOTCLICK.herramientas()).contains("explicar_planes", "registrar_lead");
-        for (PerfilAgente p : PerfilAgente.values()) {
+        // AG-28/AG-17: el asesor web no tiene bandeja (usa pasar_al_chat_tienda) y el resumen no tiene tools.
+        assertThat(PerfilAgente.ASESOR_WEB.herramientas()).contains("agregar_al_carrito", "consultar_pedido_web",
+            "pasar_al_chat_tienda").doesNotContain("pasar_a_persona");
+        assertThat(PerfilAgente.RESUMEN_BANDEJA.herramientas()).isEmpty();
+        for (PerfilAgente p : List.of(PerfilAgente.NEGOCIO_VENTAS, PerfilAgente.NEGOCIO_INTERNO, PerfilAgente.HOTCLICK)) {
             assertThat(p.herramientas()).contains("pasar_a_persona");
         }
     }

@@ -7,6 +7,7 @@ import type {
   MiembroBandeja,
   PaginaBandeja,
   ResumenBandeja,
+  ResumenConversacion,
 } from './bandejaTypes'
 import { paramsDeFiltros } from './bandejaHelpers'
 
@@ -18,6 +19,8 @@ export const bandejaService = {
   resumen: () => api.get<ResumenBandeja>('/bandeja/resumen').then((r) => r.data),
   equipo: () => api.get<MiembroBandeja[]>('/bandeja/equipo').then((r) => r.data),
   detalle: (id: string) => api.get<DetalleBandeja>(`/bandeja/${id}/mensajes`).then((r) => r.data),
+  resumenConversacion: (id: string) =>
+    api.get<ResumenConversacion>(`/bandeja/${id}/resumen`).then((r) => r.data),
   responder: (id: string, texto: string) =>
     api.post<MensajeBandeja>(`/bandeja/${id}/responder`, { texto }).then((r) => r.data),
   pausar: (id: string) => api.post<ConversacionBandeja>(`/bandeja/${id}/pausar`).then((r) => r.data),

@@ -64,6 +64,12 @@ public class PublicChatController {
     @Autowired private TextModerationService textModerationService;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private AsistenteCuotaDiaria asistenteCuota;
+    private com.hotclick.security.CompanyScope companyScope;
+
+    @Autowired(required = false)
+    public void setCompanyScope(com.hotclick.security.CompanyScope companyScope) {
+        this.companyScope = companyScope;
+    }
 
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(
@@ -140,8 +146,26 @@ public class PublicChatController {
         boolean marketplace = MarketplaceCatalogo.esMarketplace(slug);
         emitter.onCompletion(emitter::complete);
         emitter.onTimeout(emitter::complete);
-        sseExecutor.execute(() -> chatService.chat(
-            empresaId, marketplace, message, offset, history, context, focusIds, productoId, conModelo, emitter));
+        // El usuario se resuelve aquí (hilo de la petición): el SecurityContext no viaja al hilo del SSE.
+        Long usuarioId = usuarioAutenticado();
+        sseExecutor.execute(() -> {
+            if (usuarioId == null) {
+                chatService.chat(empresaId, marketplace, message, offset, history, context, focusIds, productoId,
+                    conModelo, emitter);
+            } else {
+                chatService.chat(empresaId, marketplace, message, offset, history, context, focusIds, productoId,
+                    conModelo, usuarioId, emitter);
+            }
+        });
+    }
+
+    /** Id del usuario con sesión iniciada (para consultar SUS pedidos en el asesor); null si es anónimo o falla. */
+    private Long usuarioAutenticado() {
+        try {
+            return companyScope == null ? null : companyScope.getCurrentUserId();
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private SseEmitter doneEmitter(SseEmitter emitter) {

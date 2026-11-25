@@ -7,7 +7,8 @@ import {
   puedeResponder,
   textoRespuestaValido,
 } from './bandejaHelpers'
-import type { DetalleBandeja, MiembroBandeja } from './bandejaTypes'
+import type { DetalleBandeja, EstadoResumen, MiembroBandeja } from './bandejaTypes'
+import PanelResumen from './PanelResumen'
 import { InsigniaCanal, InsigniaModo } from './InsigniasConversacion'
 
 type Props = Readonly<{
@@ -22,6 +23,9 @@ type Props = Readonly<{
   onCerrar: () => void
   /** Devuelve true si se envió (para limpiar la caja). */
   onEnviar: (texto: string) => Promise<boolean>
+  /** Panel "Resumen" (AG-17); sin estas props no se muestra. */
+  resumen?: EstadoResumen
+  onGenerarResumen?: () => void
 }>
 
 const BOTON = 'min-h-11 rounded-[10px] border border-hc-border bg-hc-surface px-4 text-sm font-bold text-hc-text transition-colors hover:border-hc-primary disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hc-blue-600)]'
@@ -36,6 +40,7 @@ function claseBurbuja(rol: string): string {
 /** Detalle de una conversación: encabezado con acciones, hilo estilo mensajería y caja para responder. */
 export default function HiloConversacion({
   detalle, equipo, ocupado, onVolver, onPausar, onReanudar, onTomar, onAsignar, onCerrar, onEnviar,
+  resumen, onGenerarResumen,
 }: Props) {
   const { t } = useTranslation()
   const { conversacion: c, mensajes } = detalle
@@ -149,6 +154,13 @@ export default function HiloConversacion({
           </div>
         )}
       </header>
+
+      {onGenerarResumen && (
+        <PanelResumen
+          estado={resumen ?? { tipo: 'inactivo' }} onGenerar={onGenerarResumen}
+          onUsar={(s) => setTexto(s.slice(0, MAX_TEXTO_RESPUESTA))}
+        />
+      )}
 
       <div
         role="log" aria-live="polite" aria-label={t('bandeja.hiloAria')}

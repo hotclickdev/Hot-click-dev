@@ -1,6 +1,8 @@
 package com.hotclick.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotclick.agente.asesor.AsesorWebService;
+import com.hotclick.agente.asesor.ChatTiendaService;
 import com.hotclick.service.publicchat.PublicChatAdvisorHandler;
 import com.hotclick.service.publicchat.PublicChatClaudeClient;
 import com.hotclick.service.publicchat.PublicChatDiscoveryHandler;
@@ -26,22 +28,35 @@ public class PublicChatService {
     private final PublicChatClaudeClient claudeClient;
     private final PublicChatAdvisorHandler advisorHandler;
     private final PublicChatDiscoveryHandler discoveryHandler;
+    private final AsesorWebService asesorWeb;
+    private final ChatTiendaService chatTienda;
 
     public PublicChatService(ObjectMapper objectMapper, InputSanitizer sanitizer,
                              PublicChatIntentHelper intentHelper,
                              PublicChatClaudeClient claudeClient, PublicChatAdvisorHandler advisorHandler,
-                             PublicChatDiscoveryHandler discoveryHandler) {
+                             PublicChatDiscoveryHandler discoveryHandler,
+                             AsesorWebService asesorWeb, ChatTiendaService chatTienda) {
         this.objectMapper = objectMapper;
         this.sanitizer = sanitizer;
         this.intentHelper = intentHelper;
         this.claudeClient = claudeClient;
         this.advisorHandler = advisorHandler;
         this.discoveryHandler = discoveryHandler;
+        this.asesorWeb = asesorWeb;
+        this.chatTienda = chatTienda;
     }
 
     public void chat(Long empresaId, boolean marketplace, String userMessage, int offset,
                      List<Map<String, Object>> history, String context,
                      List<Long> focusIds, Long productoId, boolean conModelo, SseEmitter emitter) {
+        chat(empresaId, marketplace, userMessage, offset, history, context, focusIds, productoId, conModelo,
+            null, emitter);
+    }
+
+    /** @param usuarioId usuario autenticado (resuelto en el hilo de la petición) o null si es anónimo. */
+    public void chat(Long empresaId, boolean marketplace, String userMessage, int offset,
+                     List<Map<String, Object>> history, String context,
+                     List<Long> focusIds, Long productoId, boolean conModelo, Long usuarioId, SseEmitter emitter) {
         try {
             String msg = sanitizer.cleanWithLimit(userMessage == null ? "" : userMessage, MAX_MSG_LENGTH);
             if (msg.isBlank()) {
@@ -83,6 +98,13 @@ public class PublicChatService {
                 return;
             }
 
+            // AG-28: acciones del asesor (carrito, estado de pedido) por el motor con tools; solo con modelo disponible.
+            if (conModelo
+                    && asesorWeb.tryHandle(empresaId, marketplace, claudeClient.getEmpresaChatInfo(empresaId).nombre(),
+                        userMessage, history, productoId, usuarioId, emitter)) {
+                return;
+            }
+
             if (intentHelper.isBusinessInfoQuery(userMessage)) {
                 boolean en = intentHelper.isEnglish(userMessage);
                 emitter.send(SseEmitter.event().name("products")
@@ -107,8 +129,12 @@ public class PublicChatService {
                 List<String> waOpts = en
                     ? List.of("Show me popular products", "What's on sale?")
                     : List.of("Ver productos populares", "¿Qué hay en oferta?");
+                // AG-28: botón al chat de la tienda, solo si su plan lo permite (misma regla que /api/public/branding).
+                List<Map<String, String>> botones = chatTienda.urlWhatsapp(empresaId, marketplace)
+                    .map(u -> List.of(Map.of("tipo", "whatsapp", "label", en ? "Store chat" : "Chat de la tienda", "url", u)))
+                    .orElse(List.of());
                 emitter.send(SseEmitter.event().name("done")
-                    .data(objectMapper.writeValueAsString(Map.of("opts", waOpts))));
+                    .data(objectMapper.writeValueAsString(Map.of("opts", waOpts, "acciones", botones))));
                 emitter.complete();
                 return;
             }

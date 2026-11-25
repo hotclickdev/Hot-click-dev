@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { bandejaService } from './bandejaService'
 import { INTERVALO_REFRESCO_MS } from './bandejaHelpers'
 import type { FiltrosBandeja } from './bandejaTypes'
@@ -21,6 +21,11 @@ export function useDetalleConversacion(id: string | null) {
     enabled: id != null,
     refetchInterval: INTERVALO_REFRESCO_MS,
   })
+}
+
+/** Resumen con IA de una conversación (AG-17). Se pide con un botón: cuesta una llamada al modelo. */
+export function useResumenConversacion() {
+  return useMutation({ mutationFn: (id: string) => bandejaService.resumenConversacion(id) })
 }
 
 export function useEquipoBandeja() {

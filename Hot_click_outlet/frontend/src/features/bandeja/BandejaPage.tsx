@@ -3,9 +3,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
 import { bandejaService } from './bandejaService'
-import { FILTROS_INICIALES, mensajeDeError } from './bandejaHelpers'
+import { FILTROS_INICIALES, estadoDeResumen, mensajeDeError } from './bandejaHelpers'
 import type { CanalBandeja, EstadoBandeja, FiltrosBandeja, VistaBandeja } from './bandejaTypes'
-import { CLAVE_BANDEJA, useConversaciones, useDetalleConversacion, useEquipoBandeja, useResumenBandeja } from './useBandeja'
+import {
+  CLAVE_BANDEJA, useConversaciones, useDetalleConversacion, useEquipoBandeja, useResumenBandeja, useResumenConversacion,
+} from './useBandeja'
 import ListaConversaciones from './ListaConversaciones'
 import HiloConversacion from './HiloConversacion'
 
@@ -31,6 +33,7 @@ export default function BandejaPage() {
   const detalle = useDetalleConversacion(seleccionId)
   const equipo = useEquipoBandeja().data ?? []
   const resumen = useResumenBandeja().data
+  const resumenIA = useResumenConversacion()
 
   const cambiar = (parcial: Partial<FiltrosBandeja>) => setFiltros((f) => ({ ...f, pagina: 0, ...parcial }))
   const refrescar = () => qc.invalidateQueries({ queryKey: CLAVE_BANDEJA })
@@ -52,6 +55,13 @@ export default function BandejaPage() {
   }
 
   const id = seleccionId
+  // El resumen mostrado es siempre el de la conversación abierta (al cambiar de conversación vuelve a inactivo).
+  const estadoResumen = estadoDeResumen(
+    id != null && resumenIA.variables === id ? resumenIA.data : undefined,
+    id != null && resumenIA.variables === id && resumenIA.isPending,
+    id != null && resumenIA.variables === id && resumenIA.isError
+      ? mensajeDeError(resumenIA.error, t('bandeja.resumenNoDisponible')) : null,
+  )
   const items = lista.data?.items ?? []
 
   return (
@@ -123,6 +133,8 @@ export default function BandejaPage() {
               onAsignar={(u) => void ejecutar(() => bandejaService.asignar(id, u), t('bandeja.ok.asignada'))}
               onCerrar={() => void ejecutar(() => bandejaService.cerrar(id), t('bandeja.ok.cerrada'))}
               onEnviar={(texto) => ejecutar(() => bandejaService.responder(id, texto), t('bandeja.ok.enviado'))}
+              resumen={estadoResumen}
+              onGenerarResumen={() => resumenIA.mutate(id)}
             />
           ) : (
             <p className="m-auto p-6 text-center text-sm text-hc-muted" role={id ? 'status' : undefined}>

@@ -33,6 +33,8 @@ public class ConfigMotorAgente {
             @Value("${agente.effort.interno:medium}") String esfuerzoInterno,
             @Value("${agente.effort.hotclick:low}") String esfuerzoHotclick,
             @Value("${agente.effort.asesor-web:low}") String esfuerzoAsesorWeb,
+            @Value("${agente.modelo.resumen:claude-haiku-5-5}") String modeloResumen,
+            @Value("${agente.effort.resumen:low}") String esfuerzoResumen,
             @Value("${agente.tono.nombre:el asistente virtual}") String nombreBot,
             @Value("${agente.tono.trato:USTED}") String trato,
             @Value("${agente.tono.emojis:false}") boolean emojis,
@@ -48,6 +50,8 @@ public class ConfigMotorAgente {
         esfuerzos.put(PerfilAgente.NEGOCIO_INTERNO, esfuerzoInterno);
         esfuerzos.put(PerfilAgente.HOTCLICK, esfuerzoHotclick);
         esfuerzos.put(PerfilAgente.ASESOR_WEB, esfuerzoAsesorWeb);
+        modelos.put(PerfilAgente.RESUMEN_BANDEJA, modeloResumen);
+        esfuerzos.put(PerfilAgente.RESUMEN_BANDEJA, esfuerzoResumen);
         TonoAgente.Trato t = "TUTEO".equalsIgnoreCase(trato == null ? "" : trato.trim())
             ? TonoAgente.Trato.TUTEO : TonoAgente.Trato.USTED;
         this.tono = new TonoAgente(nombreBot, t, emojis);
@@ -60,7 +64,7 @@ public class ConfigMotorAgente {
     /** Configuración con los defaults de producción (tests). */
     public static ConfigMotorAgente porDefecto() {
         return new ConfigMotorAgente("claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-haiku-5-5",
-            "low", "medium", "low", "low", "el asistente virtual", "USTED", false, 5, 2048, 40_000, 20);
+            "low", "medium", "low", "low", "claude-haiku-5-5", "low", "el asistente virtual", "USTED", false, 5, 2048, 40_000, 20);
     }
 
     public String modeloDe(PerfilAgente perfil) { return modelos.get(perfil); }

@@ -43,6 +43,17 @@ export type ResumenBandeja = { asignadasAMi: number; sinAsignar: number }
 
 export type MiembroBandeja = { id: number; nombre: string }
 
+/** Respuesta de GET /bandeja/{id}/resumen (AG-17). disponible=false si la IA no pudo generarlo. */
+export type ResumenConversacion = { disponible: boolean; resumen: string; sugerencia: string }
+
+/** Estado del panel "Resumen" (solo presentación). */
+export type EstadoResumen =
+  | { tipo: 'inactivo' }
+  | { tipo: 'cargando' }
+  | { tipo: 'noDisponible' }
+  | { tipo: 'error'; mensaje: string }
+  | { tipo: 'listo'; resumen: string; sugerencia: string }
+
 export type FiltrosBandeja = {
   vista: VistaBandeja
   canal: CanalBandeja | ''
