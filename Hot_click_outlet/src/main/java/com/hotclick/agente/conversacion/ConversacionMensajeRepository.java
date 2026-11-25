@@ -13,6 +13,9 @@ public interface ConversacionMensajeRepository extends JpaRepository<Conversacio
     /** Los últimos 20 turnos, del más reciente al más antiguo. */
     List<ConversacionMensaje> findTop20BySesionIdOrderByIdDesc(UUID sesionId);
 
+    /** El último mensaje de un rol en la conversación (AG-13: marcar la nota de voz transcrita). */
+    java.util.Optional<ConversacionMensaje> findFirstBySesionIdAndRolOrderByIdDesc(UUID sesionId, String rol);
+
     /** Los últimos 200 turnos de una conversación, del más reciente al más antiguo (vista de la bandeja). */
     List<ConversacionMensaje> findTop200BySesionIdOrderByIdDesc(UUID sesionId);
 

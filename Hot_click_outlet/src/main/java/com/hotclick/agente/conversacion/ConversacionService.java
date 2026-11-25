@@ -104,6 +104,25 @@ public class ConversacionService {
         sesiones.save(s);
     }
 
+    /** Prefijo del historial para lo que el cliente dijo en una nota de voz (AG-13). */
+    public static final String PREFIJO_VOZ = "[voz] ";
+
+    /**
+     * Reemplaza el marcador "[audio]" del último mensaje del cliente por la transcripción, con el prefijo
+     * {@link #PREFIJO_VOZ}: el bot conserva el contexto en los turnos siguientes y la bandeja ve que vino de voz.
+     * Solo toca el marcador (si ya llegó otro mensaje, no se pisa nada).
+     */
+    @Transactional
+    public void marcarTranscripcionVoz(UUID sesionId, Long empresaScope, String transcripcion) {
+        ConversacionSesion s = deAlcance(sesionId, empresaScope);
+        mensajes.findFirstBySesionIdAndRolOrderByIdDesc(s.getId(), ConversacionMensaje.ROL_CLIENTE)
+            .filter(m -> "[audio]".equals(m.getContenido()))
+            .ifPresent(m -> {
+                m.setContenido(PREFIJO_VOZ + transcripcion);
+                mensajes.save(m);
+            });
+    }
+
     /** Pausa el bot: a partir de ahora el enrutador no lo invoca. */
     @Transactional
     public ConversacionSesion pausarBot(UUID sesionId, Long empresaScope) {
