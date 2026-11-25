@@ -33,4 +33,15 @@ public interface CanalMensajeria {
                                java.util.List<FilaLista> filas) {
         return enviarTexto(cuenta, destinatario, MensajesInteractivos.respaldoLista(texto, filas));
     }
+
+    /**
+     * Plantilla aprobada de Meta (solo WhatsApp), la única forma de escribir fuera de la ventana de 24 h. Por defecto
+     * no está soportada: quien llama debe comprobar antes que la cuenta es de WhatsApp.
+     * @return id del mensaje (o "simulado")
+     * @throws UnsupportedOperationException si el canal no tiene plantillas
+     */
+    default String enviarPlantilla(CanalCuenta cuenta, String destinatario,
+                                   com.hotclick.service.whatsapp.PlantillaMeta plantilla, java.util.List<String> parametros) {
+        throw new UnsupportedOperationException("El canal no admite plantillas");
+    }
 }

@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +37,8 @@ class WhatsAppMetaApiClient {
     @Value("${whatsapp.token:}")
     private String token;
 
-    /** Versión del Graph API. Meta retira versiones antiguas: revisar al menos cada 6 meses. */
-    @Value("${whatsapp.graph-version:v19.0}")
+    /** Versión del Graph API (META_GRAPH_VERSION, la misma de la conexión). Meta retira versiones: revisar cada 6 meses. */
+    @Value("${meta.graph-version:v23.0}")
     private String graphVersion;
 
     boolean credencialesConfiguradas() {
@@ -72,31 +71,7 @@ class WhatsAppMetaApiClient {
      */
     static Map<String, Object> construirCuerpoPlantilla(String telefono, PlantillaMeta plantilla,
                                                          List<String> parametros) {
-        List<Map<String, Object>> params = new ArrayList<>();
-        for (String p : parametros) {
-            Map<String, Object> param = new LinkedHashMap<>();
-            param.put("type", "text");
-            param.put("text", p);
-            params.add(param);
-        }
-        List<Map<String, Object>> componentes = new ArrayList<>();
-        if (!params.isEmpty()) {
-            Map<String, Object> bodyComp = new LinkedHashMap<>();
-            bodyComp.put("type", "body");
-            bodyComp.put("parameters", params);
-            componentes.add(bodyComp);
-        }
-        Map<String, Object> template = new LinkedHashMap<>();
-        template.put("name", plantilla.nombreTecnico);
-        template.put("language", Map.of("code", PlantillaMeta.IDIOMA));
-        template.put("components", componentes);
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("messaging_product", "whatsapp");
-        body.put("to", telefono);
-        body.put("type", "template");
-        body.put("template", template);
-        return body;
+        return plantilla.cuerpoWhatsApp(telefono, parametros);
     }
 
     private String enviar(Map<String, Object> body) {

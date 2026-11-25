@@ -75,7 +75,8 @@ public class AvisoPagoBotService {
         ContextoPago c = ctx.get();
         boolean aPersona = c.rechazos() >= MAX_RECHAZOS_CON_BOT;
         ConversacionSesion s = sesion(c);
-        enviar(c, s, AvisoFueraDeVentana.Tipo.PAGO_RECHAZADO, textoRechazado(c, aPersona));
+        enviar(c, s, aPersona ? AvisoFueraDeVentana.Tipo.TRASPASO_ASESOR : AvisoFueraDeVentana.Tipo.PAGO_RECHAZADO,
+            textoRechazado(c, aPersona));
         if (aPersona && s != null) {
             try {
                 conversaciones.pausarBot(s.getId(), s.getEmpresaId());
@@ -107,6 +108,7 @@ public class AvisoPagoBotService {
     private Map<String, String> variables(ContextoPago c) {
         Map<String, String> v = new LinkedHashMap<>();
         v.put("pedido", c.numerosPedido());
+        v.put("numeroPedido", c.numerosPedido());
         v.put("total", colones(c.total()));
         v.put("enlace", appUrl + "/c/" + c.codigo());
         return v;

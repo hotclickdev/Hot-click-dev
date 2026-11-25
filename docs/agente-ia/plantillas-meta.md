@@ -67,7 +67,7 @@ Muestra: Ana
 
 | Variable | Uso | Por defecto |
 |----------|-----|-------------|
-| `WHATSAPP_GRAPH_VERSION` | Versión del Graph API de Meta. Meta retira versiones viejas: revisar cada 6 meses | `v19.0` |
+| `META_GRAPH_VERSION` | Versión del Graph API de Meta (compartida con la conexión de cuentas). Meta retira versiones viejas: revisar cada 6 meses | `v23.0` |
 | `WHATSAPP_IA_MODELO` | Modelo de Claude que personaliza mensajes del CRM dentro de ventana | `claude-haiku-5-5` |
 
 ## Escenarios sin plantilla de utilidad (pendiente)

@@ -183,4 +183,25 @@ class BandejaServiceTest {
         assertThat(c.ventanaAbierta()).isTrue();
         assertThat(c.ventanaVenceEn()).isEqualTo(AHORA.minusSeconds(3600).plusSeconds(24 * 3600));
     }
+
+    @Test
+    void unRechazo4xxDeMetaSeConvierteEnRechazoClaroYNoGuardaNada() {
+        org.mockito.Mockito.doThrow(org.springframework.web.client.HttpClientErrorException.create(
+                org.springframework.http.HttpStatus.BAD_REQUEST, "x", org.springframework.http.HttpHeaders.EMPTY, new byte[0], null))
+            .when(canal).enviarTexto(any(), anyString(), anyString());
+
+        assertThatThrownBy(() -> service.responder(sesion.getId(), 7L, "Hola"))
+            .isInstanceOf(BandejaRechazoCanalException.class)
+            .hasMessageContaining("400");
+        verify(mensajes, never()).save(any());
+        assertThat(sesion.getModo()).isEqualTo(ModoConversacion.BOT);
+    }
+
+    @Test
+    void laVistaDeLaConversacionExponeCupoAgotado() {
+        sesion.setCupoAgotado(true);
+        assertThat(BandejaMapeo.conversacion(sesion, 1L, null, AHORA).cupoAgotado()).isTrue();
+        sesion.setCupoAgotado(false);
+        assertThat(BandejaMapeo.conversacion(sesion, 1L, null, AHORA).cupoAgotado()).isFalse();
+    }
 }

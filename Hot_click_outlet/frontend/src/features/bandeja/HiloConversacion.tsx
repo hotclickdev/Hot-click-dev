@@ -9,7 +9,7 @@ import {
 } from './bandejaHelpers'
 import type { DetalleBandeja, EstadoResumen, MiembroBandeja } from './bandejaTypes'
 import PanelResumen from './PanelResumen'
-import { InsigniaCanal, InsigniaModo } from './InsigniasConversacion'
+import { InsigniaCanal, InsigniaCupoAgotado, InsigniaModo } from './InsigniasConversacion'
 
 type Props = Readonly<{
   detalle: DetalleBandeja
@@ -88,6 +88,7 @@ export default function HiloConversacion({
           <InsigniaCanal canal={c.canal} />
           <h2 className="font-mono text-base font-bold text-hc-text">{c.contacto}</h2>
           <InsigniaModo modo={c.modo} />
+          {c.cupoAgotado && <InsigniaCupoAgotado />}
           {!abierta && (
             <span className="rounded-full bg-[var(--hc-n-100)] px-2.5 py-0.5 text-[11px] font-bold text-hc-muted">
               {t('bandeja.estado.CERRADA')}
@@ -97,6 +98,11 @@ export default function HiloConversacion({
         <p className="mt-1 text-sm text-hc-muted">
           {asignado ? t('bandeja.atiende', { nombre: asignado }) : t('bandeja.sinAsignar')}
         </p>
+        {c.cupoAgotado && (
+          <p role="status" className="mt-2 rounded-lg bg-[var(--hc-warning-bg)] p-2 text-sm text-[var(--hc-warning)]">
+            {t('bandeja.cupoAgotadoAviso')}
+          </p>
+        )}
 
         {abierta && (
           <div className="mt-3 flex flex-wrap items-end gap-2">

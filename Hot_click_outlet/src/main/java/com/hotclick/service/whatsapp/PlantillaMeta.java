@@ -1,6 +1,7 @@
 package com.hotclick.service.whatsapp;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,6 +77,38 @@ public enum PlantillaMeta {
             out.add(sanear(ctx == null ? null : ctx.get(k)));
         }
         return out;
+    }
+
+    /**
+     * JSON de la Cloud API para enviar esta plantilla: {@code type:"template"}, nombre, idioma y un
+     * componente body con un parámetro de texto por variable.
+     */
+    public Map<String, Object> cuerpoWhatsApp(String telefono, List<String> parametros) {
+        List<Map<String, Object>> params = new ArrayList<>();
+        for (String p : parametros) {
+            Map<String, Object> param = new LinkedHashMap<>();
+            param.put("type", "text");
+            param.put("text", p);
+            params.add(param);
+        }
+        List<Map<String, Object>> componentes = new ArrayList<>();
+        if (!params.isEmpty()) {
+            Map<String, Object> bodyComp = new LinkedHashMap<>();
+            bodyComp.put("type", "body");
+            bodyComp.put("parameters", params);
+            componentes.add(bodyComp);
+        }
+        Map<String, Object> template = new LinkedHashMap<>();
+        template.put("name", nombreTecnico);
+        template.put("language", Map.of("code", IDIOMA));
+        template.put("components", componentes);
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("messaging_product", "whatsapp");
+        body.put("to", telefono);
+        body.put("type", "template");
+        body.put("template", template);
+        return body;
     }
 
     /** Cuerpo con las variables reemplazadas: es el texto que queda en el registro. */

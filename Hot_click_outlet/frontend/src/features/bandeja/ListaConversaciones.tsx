@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { formatearMomento, nombreAsignado } from './bandejaHelpers'
 import type { ConversacionBandeja, MiembroBandeja } from './bandejaTypes'
-import { InsigniaCanal, InsigniaModo } from './InsigniasConversacion'
+import { InsigniaCanal, InsigniaCupoAgotado, InsigniaModo } from './InsigniasConversacion'
 
 type Props = Readonly<{
   items: ConversacionBandeja[]
@@ -59,6 +59,7 @@ export default function ListaConversaciones({
                 <span className="line-clamp-2 text-sm text-hc-muted">{c.ultimoMensaje || t('bandeja.sinMensajes')}</span>
                 <span className="flex flex-wrap items-center gap-2">
                   <InsigniaModo modo={c.modo} />
+                  {c.cupoAgotado && <InsigniaCupoAgotado />}
                   <span className="text-xs text-hc-muted">
                     {asignado ? t('bandeja.atiende', { nombre: asignado }) : t('bandeja.sinAsignar')}
                   </span>

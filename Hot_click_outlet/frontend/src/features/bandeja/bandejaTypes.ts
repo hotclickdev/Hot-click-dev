@@ -16,6 +16,8 @@ export type ConversacionBandeja = {
   ultimoMensajeEn: string | null
   ventanaAbierta: boolean
   ventanaVenceEn: string | null
+  /** El plan llegó a su cupo de conversaciones con el bot. */
+  cupoAgotado: boolean
 }
 
 export type PaginaBandeja = {
