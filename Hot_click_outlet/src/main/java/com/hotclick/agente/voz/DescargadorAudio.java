@@ -115,7 +115,24 @@ public class DescargadorAudio {
         return VozConfig.MIME_PERMITIDOS.contains(mime);
     }
 
-    private record Bajada(byte[] bytes, String contentType) { }
+    private record Bajada(byte[] bytes, String contentType) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Bajada otra && java.util.Arrays.equals(bytes, otra.bytes)
+                && java.util.Objects.equals(contentType, otra.contentType);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * java.util.Arrays.hashCode(bytes) + java.util.Objects.hashCode(contentType);
+        }
+
+        /** No imprime los bytes del audio. */
+        @Override
+        public String toString() {
+            return "Bajada[" + contentType + "," + (bytes == null ? 0 : bytes.length) + " bytes]";
+        }
+    }
 
     private Bajada bajar(URI uri, String bearer) {
         long max = config.maxBytes();

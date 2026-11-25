@@ -8,6 +8,17 @@ package com.hotclick.agente.voz;
  */
 public record AudioVoz(byte[] bytes, String mime) {
     @Override
+    public boolean equals(Object o) {
+        return o instanceof AudioVoz otro && java.util.Arrays.equals(bytes, otro.bytes)
+            && java.util.Objects.equals(mime, otro.mime);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * java.util.Arrays.hashCode(bytes) + java.util.Objects.hashCode(mime);
+    }
+
+    @Override
     public String toString() {
         return "AudioVoz[" + mime + "," + (bytes == null ? 0 : bytes.length) + " bytes]";
     }
