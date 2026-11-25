@@ -97,3 +97,38 @@ export type UsoBot = {
   topeUsd: number | null
   agenteIncluido: boolean
 }
+
+/** Métricas del bot (AG-32). Solo cifras agregadas. */
+export type EmbudoBot = { conversaciones: number; enlacesCreados: number; enlacesAbiertos: number; enlacesPagados: number }
+export type SegmentoBot = {
+  clave: string
+  conversaciones: number
+  enlacesCreados: number
+  enlacesPagados: number
+  conversionPct: number
+}
+export type VentasBot = {
+  cantidad: number
+  totalColones: number
+  porCanal: Array<{ canal: string; cantidad: number; totalColones: number }>
+}
+export type MetricasBot = {
+  embudo: EmbudoBot
+  porBot: SegmentoBot[]
+  porCanal: SegmentoBot[]
+  ventas: VentasBot
+  traspasosAPersona: number
+  perdidas: { cantidad: number; totalColones: number }
+  costos: { costoUsd: number; costoPorVentaUsd: number | null; conversacionesCobradas: number }
+}
+export type AlertaMetaBot = { campo: string; evento: string | null; limite: string | null; creadoEn: string }
+export type RespuestaMetricasBot = {
+  desde: string
+  hasta: string
+  /** NEGOCIO o HOTCLICK (el ADMIN). */
+  alcance: 'NEGOCIO' | 'HOTCLICK'
+  propias: MetricasBot
+  /** Solo el ADMIN: total de todos los bots. */
+  plataforma: MetricasBot | null
+  alertasMeta: AlertaMetaBot[] | null
+}

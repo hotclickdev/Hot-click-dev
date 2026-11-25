@@ -104,6 +104,13 @@ export default function BandejaPage() {
             {ESTADOS.map((s) => <option key={s} value={s}>{t(`bandeja.estado.${s}`)}</option>)}
           </select>
         </label>
+        <button
+          type="button" aria-pressed={filtros.notaBaja} onClick={() => cambiar({ notaBaja: !filtros.notaBaja })}
+          title={t('bandeja.notaBajaAyuda')}
+          className={`min-h-11 rounded-full px-4 text-sm font-bold transition-colors ${filtros.notaBaja ? 'bg-hc-primary text-white' : 'border border-hc-border bg-hc-surface text-hc-text'}`}
+        >
+          {t('bandeja.notaBaja')}
+        </button>
       </div>
 
       {lista.isError && (

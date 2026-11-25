@@ -15,7 +15,7 @@ export function estadoDeResumen(
   return { tipo: 'listo', resumen: r.resumen, sugerencia: r.sugerencia }
 }
 
-export const FILTROS_INICIALES: FiltrosBandeja = { vista: 'TODAS', canal: '', estado: 'ABIERTA', pagina: 0 }
+export const FILTROS_INICIALES: FiltrosBandeja = { vista: 'TODAS', canal: '', estado: 'ABIERTA', pagina: 0, notaBaja: false }
 
 /** Parámetros del GET /api/bandeja; el canal vacío no se manda. */
 export function paramsDeFiltros(f: FiltrosBandeja, tamano: number): Record<string, string | number> {
@@ -26,6 +26,7 @@ export function paramsDeFiltros(f: FiltrosBandeja, tamano: number): Record<strin
     tamano,
   }
   if (f.canal) p.canal = f.canal
+  if (f.notaBaja) p.notaBaja = 'true'
   return p
 }
 

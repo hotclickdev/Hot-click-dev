@@ -15,7 +15,6 @@ import com.hotclick.agente.metricas.MetricasRepositorio.FilaVentas;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -59,7 +58,6 @@ public class MetricasService {
     /**
      * @param empresaId empresa del llamador, o null solo para el ADMIN de plataforma
      */
-    @Transactional(readOnly = true)
     public MetricasDtos.Respuesta consultar(Long empresaId, LocalDate desde, LocalDate hasta) {
         LocalDate fin = hasta == null ? LocalDate.now(clock) : hasta;
         LocalDate inicio = desde == null ? fin.minusDays(DIAS_POR_DEFECTO - 1L) : desde;

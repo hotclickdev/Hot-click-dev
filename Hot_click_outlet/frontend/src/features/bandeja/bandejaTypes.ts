@@ -16,6 +16,8 @@ export type ConversacionBandeja = {
   ultimoMensajeEn: string | null
   ventanaAbierta: boolean
   ventanaVenceEn: string | null
+  /** Nota 1 a 5 de la encuesta de satisfacción (AG-38); null si no la respondió. */
+  notaEncuesta?: number | null
 }
 
 export type PaginaBandeja = {
@@ -59,4 +61,6 @@ export type FiltrosBandeja = {
   canal: CanalBandeja | ''
   estado: EstadoBandeja
   pagina: number
+  /** Solo chats cuya encuesta quedó con nota baja (1 o 2). */
+  notaBaja: boolean
 }
