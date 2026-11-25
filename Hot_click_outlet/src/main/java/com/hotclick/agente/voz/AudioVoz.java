@@ -9,8 +9,8 @@ package com.hotclick.agente.voz;
 public record AudioVoz(byte[] bytes, String mime) {
     @Override
     public boolean equals(Object o) {
-        return o instanceof AudioVoz otro && java.util.Arrays.equals(bytes, otro.bytes)
-            && java.util.Objects.equals(mime, otro.mime);
+        return o instanceof AudioVoz(byte[] otrosBytes, String otroMime) && java.util.Arrays.equals(bytes, otrosBytes)
+            && java.util.Objects.equals(mime, otroMime);
     }
 
     @Override

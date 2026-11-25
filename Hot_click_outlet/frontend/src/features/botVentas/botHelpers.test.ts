@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { anchoBarra, errorDeRango, pasosEmbudo, rangoPorDefecto, aPedido, cambiarDia, cupoAgotado, porcentajeCupo, errorDeConfig, indiceSiguiente, mensajeDeError, pinValido } from './botHelpers'
+import { anchoBarra, errorDeRango, pasosEmbudo, rangoPorDefecto, aPedido, cambiarDia, cupoAgotado, porcentajeCupo, errorDeConfig, indiceSiguiente, mensajeDeError, pinValido, PESTANAS, PESTANAS_PLATAFORMA } from './botHelpers'
 import type { ConfigBot } from './botTypes'
 
 const config: ConfigBot = {
@@ -99,5 +99,13 @@ describe('métricas del bot: ayudas', () => {
     expect(anchoBarra(3, 0)).toBe(0)
     expect(pasosEmbudo({ conversaciones: 4, enlacesCreados: 3, enlacesAbiertos: 2, enlacesPagados: 1 }).map((p) => p.valor))
       .toEqual([4, 3, 2, 1])
+  })
+})
+
+describe('pestañas del bot en la consola de plataforma', () => {
+  it('solo ofrece las que la API permite al ADMIN sin negocio', () => {
+    expect(PESTANAS_PLATAFORMA).toEqual(['conocimiento', 'canales', 'leads', 'metricas'])
+    for (const p of PESTANAS_PLATAFORMA) expect(PESTANAS).toContain(p)
+    for (const p of ['config', 'equipo', 'simulador', 'campanas'] as const) expect(PESTANAS_PLATAFORMA).not.toContain(p)
   })
 })

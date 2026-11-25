@@ -10,7 +10,7 @@ public record EstadoEntrante(List<EstadoMensaje> mensajes, List<EstadoPlantilla>
 
     public static final EstadoEntrante VACIO = new EstadoEntrante(List.of(), List.of());
 
-    public boolean vacio() {
+    public boolean sinEventos() {
         return mensajes.isEmpty() && plantillas.isEmpty();
     }
 

@@ -65,6 +65,9 @@ export function formatearFecha(iso: string | null | undefined): string {
 export const PESTANAS = ['config', 'conocimiento', 'canales', 'equipo', 'simulador', 'leads', 'metricas', 'campanas'] as const
 export type Pestana = (typeof PESTANAS)[number]
 
+/** Pestañas del bot de HotClick en la consola de plataforma: las demás necesitan un negocio (la API responde 403 al ADMIN). */
+export const PESTANAS_PLATAFORMA: readonly Pestana[] = ['conocimiento', 'canales', 'leads', 'metricas']
+
 /** Índice de la pestaña a la que mueven las flechas, Inicio y Fin (patrón de pestañas WAI-ARIA); null si la tecla no aplica. */
 export function indiceSiguiente(actual: number, tecla: string, total: number): number | null {
   if (tecla === 'ArrowRight') return (actual + 1) % total
