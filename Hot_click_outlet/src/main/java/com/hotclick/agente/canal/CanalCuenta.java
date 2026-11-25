@@ -1,5 +1,6 @@
 package com.hotclick.agente.canal;
 
+import com.hotclick.utils.Constants;
 import com.hotclick.agente.webhook.MensajeEntrante;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,10 +53,10 @@ public class CanalCuenta {
     private EstadoCanal estado = EstadoCanal.ACTIVA;
 
     @Column(name = "fecha_creacion", nullable = false)
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private LocalDateTime fechaCreacion = LocalDateTime.now(Constants.ZONA_CR);
 
     @Column(name = "fecha_actualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion = LocalDateTime.now();
+    private LocalDateTime fechaActualizacion = LocalDateTime.now(Constants.ZONA_CR);
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
