@@ -112,11 +112,21 @@ public class ConversacionService {
         return sesiones.save(s);
     }
 
+    /** El negocio agotó su cupo o su tope de gasto: el bot se detiene y la conversación queda marcada para la bandeja. */
+    @Transactional
+    public ConversacionSesion pausarPorCupo(UUID sesionId, Long empresaScope) {
+        ConversacionSesion s = deAlcance(sesionId, empresaScope);
+        s.setModo(ModoConversacion.PERSONA);
+        s.setCupoAgotado(true);
+        return sesiones.save(s);
+    }
+
     /** Devuelve la conversación al bot y la libera de quien la tenía. */
     @Transactional
     public ConversacionSesion reanudarBot(UUID sesionId, Long empresaScope) {
         ConversacionSesion s = deAlcance(sesionId, empresaScope);
         s.setModo(ModoConversacion.BOT);
+        s.setCupoAgotado(false);
         s.setUsuarioAsignadoId(null);
         return sesiones.save(s);
     }

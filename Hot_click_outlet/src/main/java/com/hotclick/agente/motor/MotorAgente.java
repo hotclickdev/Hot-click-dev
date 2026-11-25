@@ -50,6 +50,13 @@ public class MotorAgente {
     private final ClaudeUsoRegistrador usoRegistrador;
     private final ClaudePrecios precios;
     private final ObjectMapper mapper;
+    private java.util.List<CostoAgenteListener> costoListeners = java.util.List.of();
+
+    /** Costo por llamada para el tope de gasto por negocio (AG-29). Opcional. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setCostoListeners(java.util.List<CostoAgenteListener> listeners) {
+        this.costoListeners = listeners == null ? java.util.List.of() : java.util.List.copyOf(listeners);
+    }
 
     public MotorAgente(ClienteClaude cliente, RegistroHerramientas registro, ConfigMotorAgente config,
                        TextModerationService moderacion, ClaudeUsoRegistrador usoRegistrador,
@@ -121,6 +128,7 @@ public class MotorAgente {
             UsoTokens vuelta = UsoTokens.desdeUsage(nodo.path("usage"));
             uso = uso.mas(vuelta);
             usoRegistrador.registrar(contexto.empresaId(), vuelta);
+            notificarCosto(contexto.empresaId(), modelo, vuelta);
 
             JsonNode contenido = nodo.path("content");
             String stop = nodo.path("stop_reason").asText("");
@@ -296,6 +304,18 @@ public class MotorAgente {
             "Gracias por escribirnos. Para ayudarle mejor, le paso con una persona del equipo, que le responderá en breve.",
             "Gracias por escribirnos. Para ayudarte mejor, te paso con una persona del equipo, que te responderá en breve.");
         return resultado(texto, todas, uso, modelo, motivo, llamadas);
+    }
+
+    private void notificarCosto(Long empresaId, String modelo, UsoTokens vuelta) {
+        if (costoListeners.isEmpty() || vuelta.esVacio()) return;
+        double usd = precios.paraModelo(modelo).costoUsd(vuelta.entrada(), vuelta.salida(), vuelta.cacheLectura(), vuelta.cacheEscritura());
+        for (CostoAgenteListener l : costoListeners) {
+            try {
+                l.costo(empresaId, usd);
+            } catch (RuntimeException e) {
+                log.warn("[agente-motor] no se pudo registrar el costo: {}", e.getClass().getSimpleName());
+            }
+        }
     }
 
     private ResultadoAgente sinLlamada(String texto, String modelo, MotivoFin motivo) {
