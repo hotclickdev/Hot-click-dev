@@ -42,6 +42,8 @@ public class TotpSecretEncryptionService {
 
     private static final byte[]  AAD_PIN   = "hotclick-pin-cert".getBytes(StandardCharsets.UTF_8);
 
+    private static final byte[]  AAD_CANAL = "hotclick-canal-token".getBytes(StandardCharsets.UTF_8);
+
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${totp.encryption.key:}")
@@ -80,6 +82,15 @@ public class TotpSecretEncryptionService {
 
     public String decryptPin(String stored) {
         return decrypt(stored, AAD_PIN);
+    }
+
+    /** Token de acceso de una cuenta de canal (Meta): misma clave AES-GCM, AAD propio (no descifra como PIN ni TOTP). */
+    public String encryptTokenCanal(String token) {
+        return encrypt(token, AAD_CANAL);
+    }
+
+    public String decryptTokenCanal(String stored) {
+        return decrypt(stored, AAD_CANAL);
     }
 
     private String encrypt(String plaintext, byte[] aad) {

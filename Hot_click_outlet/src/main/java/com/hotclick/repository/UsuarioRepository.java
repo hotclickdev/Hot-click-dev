@@ -187,4 +187,23 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     void updateTotpReplayProtection(@Param("id")    Long          id,
                                     @Param("code")  String        code,
                                     @Param("usedAt") java.time.LocalDateTime usedAt);
+
+    /**
+     * AG-05: ¿el usuario activo pertenece al equipo de la empresa? Misma regla de membresía que
+     * {@link #countMiembrosActivosByEmpresaId}. Se usa para asignar conversaciones solo a gente del mismo negocio.
+     */
+    @Query("""
+        SELECT COUNT(u) > 0 FROM Usuario u WHERE u.id = :usuarioId AND u.estado = 1 AND (
+          EXISTS (SELECT 1 FROM MiembroEmpresa m WHERE m.usuario = u AND m.empresa.id = :empresaId AND m.estado = 1)
+          OR (u.empresa.id = :empresaId AND NOT EXISTS
+              (SELECT 1 FROM MiembroEmpresa m2 WHERE m2.usuario = u AND m2.empresa.id = :empresaId)))
+        """)
+    boolean esMiembroActivoDeEmpresa(@Param("usuarioId") Long usuarioId, @Param("empresaId") Long empresaId);
+
+    /** AG-05: personal de plataforma (rol ADMIN) activo, para conversaciones del bot de HotClick (sin empresa). */
+    @Query("""
+        SELECT COUNT(u) > 0 FROM Usuario u WHERE u.id = :usuarioId AND u.estado = 1
+          AND EXISTS (SELECT 1 FROM u.roles r WHERE r.nombreRol = 'ADMIN')
+        """)
+    boolean esAdminActivo(@Param("usuarioId") Long usuarioId);
 }
