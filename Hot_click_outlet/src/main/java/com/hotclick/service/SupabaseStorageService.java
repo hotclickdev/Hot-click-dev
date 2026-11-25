@@ -29,6 +29,14 @@ public class SupabaseStorageService {
     @Value("${aws.s3.bucket}")
     private String bucket;
 
+    /**
+     * Bucket para objetos privados (certificados .p12, XML y fotos D-105, comprobantes SINPE).
+     * Vacío = el mismo {@code aws.s3.bucket} (AWS: la privacidad la da la ausencia de ACL pública).
+     * En OCI la lectura pública es por bucket, así que lo privado va en un bucket aparte.
+     */
+    @Value("${aws.s3.private-bucket:}")
+    private String privateBucket;
+
     @Value("${aws.s3.public-url}")
     private String publicUrl;
 
@@ -44,28 +52,33 @@ public class SupabaseStorageService {
         this.uploadHelper = new StorageUploadHelper(s3Client, this.validator, publicObjectAcl);
     }
 
+    /** Bucket donde viven los objetos privados: el privado si está configurado, si no el general. */
+    String bucketPrivado() {
+        return privateBucket == null || privateBucket.isBlank() ? bucket : privateBucket.trim();
+    }
+
     @CircuitBreaker(name = "s3", fallbackMethod = "subirCertificadoFallback")
     @Retry(name = "s3")
     public String subirCertificado(MultipartFile file, Long empresaId) throws IOException {
-        return uploadHelper.subirCertificado(file, empresaId, bucket);
+        return uploadHelper.subirCertificado(file, empresaId, bucketPrivado());
     }
 
     @CircuitBreaker(name = "s3", fallbackMethod = "subirXmlPrivadoFallback")
     @Retry(name = "s3")
     public String subirXmlPrivado(byte[] xml, String key) {
-        return uploadHelper.subirXmlPrivado(xml, key, bucket);
+        return uploadHelper.subirXmlPrivado(xml, key, bucketPrivado());
     }
 
     @CircuitBreaker(name = "s3", fallbackMethod = "subirImagenPrivadaFallback")
     @Retry(name = "s3")
     public String subirImagenPrivada(MultipartFile file, String key) throws IOException {
-        return uploadHelper.subirImagenPrivada(file, key, bucket);
+        return uploadHelper.subirImagenPrivada(file, key, bucketPrivado());
     }
 
     @CircuitBreaker(name = "s3", fallbackMethod = "leerPrivadoFallback")
     @Retry(name = "s3")
     public byte[] leerPrivado(String key) {
-        return uploadHelper.leerPrivado(key, bucket);
+        return uploadHelper.leerPrivado(key, bucketPrivado());
     }
 
     public String subirImagen(MultipartFile file) throws IOException {
@@ -189,7 +202,7 @@ public class SupabaseStorageService {
         if (s3Presigner == null || clave == null || clave.isBlank() || clave.contains("..") || clave.startsWith("/")) {
             throw new IllegalStateException("No se puede firmar el comprobante");
         }
-        var get = software.amazon.awssdk.services.s3.model.GetObjectRequest.builder().bucket(bucket).key(clave).build();
+        var get = software.amazon.awssdk.services.s3.model.GetObjectRequest.builder().bucket(bucketPrivado()).key(clave).build();
         return s3Presigner.presignGetObject(r -> r.signatureDuration(duracion).getObjectRequest(get)).url().toString();
     }
 }
