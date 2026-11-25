@@ -1,5 +1,6 @@
 package com.hotclick.agente.redteam;
 
+import com.hotclick.utils.Constants;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.agente.canal.CanalCuenta;
@@ -477,8 +478,8 @@ class RedTeamCanalTest {
             e.setCanal("WHATSAPP");
             e.setContactoExterno(TEL);
             e.setEstado(estado);
-            e.setCreado(LocalDateTime.now().minusHours(2));
-            e.setVence(LocalDateTime.now().plusHours(horasParaVencer));
+            e.setCreado(LocalDateTime.now(Constants.ZONA_CR).minusHours(2));
+            e.setVence(LocalDateTime.now(Constants.ZONA_CR).plusHours(horasParaVencer));
             return e;
         }
     }
