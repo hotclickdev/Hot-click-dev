@@ -1,0 +1,1 @@
+import{t as e}from"./api-CpR2pm53.js";function t(e){if(!e||typeof e!=`object`)return!1;let t=e;return typeof t.id==`number`&&typeof t.nombre==`string`&&typeof t.cantidad==`number`}function n(e){return Array.isArray(e)?e.filter(t).map(e=>({...e,fotoUrl:e.fotoUrl??null})):[]}var r={conProductos:()=>e.get(`/categorias/publicas/con-productos`).then(e=>n(e.data))};export{r as t};
