@@ -1,5 +1,6 @@
 package com.hotclick.agente.canal;
 
+import com.hotclick.utils.Constants;
 import com.hotclick.agente.webhook.MensajeEntrante;
 import com.hotclick.exception.RecursoNoEncontradoException;
 import com.hotclick.service.TotpSecretEncryptionService;
@@ -55,7 +56,7 @@ public class CanalCuentaService {
         c.setNombre(nombre);
         if (tokenPlano != null && !tokenPlano.isBlank()) c.setTokenCifrado(cifrado.encryptTokenCanal(tokenPlano));
         c.setEstado(EstadoCanal.ACTIVA);
-        c.setFechaActualizacion(LocalDateTime.now());
+        c.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         return repo.save(c);
     }
 
@@ -88,14 +89,14 @@ public class CanalCuentaService {
         CanalCuenta c = deAlcance(id, empresaScope);
         c.setEstado(EstadoCanal.DESCONECTADA);
         c.setTokenCifrado(null);
-        c.setFechaActualizacion(LocalDateTime.now());
+        c.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         return repo.save(c);
     }
 
     private CanalCuenta cambiarEstado(Long id, Long empresaScope, EstadoCanal estado) {
         CanalCuenta c = deAlcance(id, empresaScope);
         c.setEstado(estado);
-        c.setFechaActualizacion(LocalDateTime.now());
+        c.setFechaActualizacion(LocalDateTime.now(Constants.ZONA_CR));
         return repo.save(c);
     }
 

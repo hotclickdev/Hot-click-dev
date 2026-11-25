@@ -30,9 +30,13 @@ public class PagoExpiradoCancelador {
     private final PedidoRepository pedidoRepository;
     private final StockReservationService stockReservationService;
     private final PedidoGrupoService pedidoGrupoService;
-    /** AG-08: opcional (las pruebas unitarias no lo traen). */
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    /** AG-08: opcional (las pruebas unitarias no lo traen); se inyecta por setter. */
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setEventPublisher(org.springframework.context.ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
+    }
 
     public PagoExpiradoCancelador(PagoRepository pagoRepository, PedidoRepository pedidoRepository,
                                   StockReservationService stockReservationService,

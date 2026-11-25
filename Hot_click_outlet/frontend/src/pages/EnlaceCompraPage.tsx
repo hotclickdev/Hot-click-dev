@@ -29,7 +29,7 @@ export default function EnlaceCompraPage() {
   useEffect(() => {
     if (!codigo) return
     let vigente = true
-    ;(async () => {
+    void (async () => {
       try {
         const abierto = await abrirEnlace(codigo)
         if (!vigente) return
