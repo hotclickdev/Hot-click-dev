@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-B4-ka8v3.js";function t(){return e()}export{t};

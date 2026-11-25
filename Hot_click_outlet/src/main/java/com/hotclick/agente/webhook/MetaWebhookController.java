@@ -145,7 +145,7 @@ public class MetaWebhookController {
 
     /** Acuses de entrega/lectura y estado de plantillas. Idempotentes: no pasan por la deduplicación de mensajes. */
     private void despacharEstados(EstadoEntrante estados) {
-        if (estadoHandlers == null || estados.vacio()) return;
+        if (estadoHandlers == null || estados.sinEventos()) return;
         List<EstadoEntranteHandler> hs = estadoHandlers.orderedStream().toList();
         for (EstadoEntrante.EstadoMensaje m : estados.mensajes()) {
             for (EstadoEntranteHandler h : hs) {

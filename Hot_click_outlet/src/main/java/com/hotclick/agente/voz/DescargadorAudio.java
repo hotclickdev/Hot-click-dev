@@ -5,17 +5,23 @@ import com.hotclick.agente.canal.CanalCuentaService;
 import com.hotclick.agente.conexion.MetaGraphCliente;
 import com.hotclick.agente.voz.AudioRechazadoException.Motivo;
 import com.hotclick.agente.webhook.MensajeEntrante;
+import org.apache.hc.client5.http.DnsResolver;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Locale;
@@ -25,7 +31,8 @@ import java.util.Set;
  * Descarga segura de notas de voz (AG-13). WhatsApp: Graph da la URL temporal a partir del id de media y se baja con
  * el token de la cuenta del canal. Instagram y Messenger: el webhook trae la URL, que solo se acepta si es https de
  * un dominio de Meta (lista blanca, contra SSRF); a esas URLs nunca se les manda el token. Sin redirecciones, con
- * timeout, tope de tamaño (también al leer el flujo) y tipos MIME permitidos. El audio vive solo en memoria; nada se
+ * timeout, tope de tamaño (también al leer el flujo) y tipos MIME permitidos. Contra DNS rebinding, el cliente se
+ * conecta solo a IPs validadas por {@link ResolutorDnsSeguro} (nunca a una IP interna). El audio vive solo en memoria; nada se
  * registra del contenido, de la URL ni del remitente.
  */
 @Component
@@ -118,8 +125,8 @@ public class DescargadorAudio {
     private record Bajada(byte[] bytes, String contentType) {
         @Override
         public boolean equals(Object o) {
-            return o instanceof Bajada otra && java.util.Arrays.equals(bytes, otra.bytes)
-                && java.util.Objects.equals(contentType, otra.contentType);
+            return o instanceof Bajada(byte[] otrosBytes, String otroTipo) && java.util.Arrays.equals(bytes, otrosBytes)
+                && java.util.Objects.equals(contentType, otroTipo);
         }
 
         @Override
@@ -170,18 +177,33 @@ public class DescargadorAudio {
         return out.toByteArray();
     }
 
-    private static RestTemplate nuevoCliente(VozConfig config) {
-        SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory() {
-            @Override
-            protected void prepareConnection(HttpURLConnection connection, String httpMethod) throws java.io.IOException {
-                super.prepareConnection(connection, httpMethod);
-                // Una redirección podría llevar fuera de la lista blanca (SSRF) y arrastrar el token.
-                connection.setInstanceFollowRedirects(false);
-            }
-        };
-        int ms = (int) Duration.ofSeconds(config.timeoutSegundos()).toMillis();
-        f.setConnectTimeout(Math.min(ms, 5_000));
-        f.setReadTimeout(ms);
-        return new RestTemplate(f);
+    /**
+     * Cliente HTTP de la descarga: sin redirecciones (podrían llevar fuera de la lista blanca y arrastrar el token),
+     * sin cookies y con {@link ResolutorDnsSeguro}, que fija la IP validada como la IP de la conexión.
+     */
+    static RestTemplate nuevoCliente(VozConfig config) {
+        return new RestTemplate(new HttpComponentsClientHttpRequestFactory(clienteHttp(config, new ResolutorDnsSeguro())));
+    }
+
+    static CloseableHttpClient clienteHttp(VozConfig config, DnsResolver dns) {
+        long ms = Duration.ofSeconds(config.timeoutSegundos()).toMillis();
+        ConnectionConfig conexion = ConnectionConfig.custom()
+            .setConnectTimeout(Timeout.ofMilliseconds(Math.min(ms, 5_000)))
+            .setSocketTimeout(Timeout.ofMilliseconds(ms))
+            .build();
+        RequestConfig pedido = RequestConfig.custom()
+            .setResponseTimeout(Timeout.ofMilliseconds(ms))
+            .setRedirectsEnabled(false)
+            .build();
+        return HttpClients.custom()
+            .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
+                .setDnsResolver(dns)
+                .setDefaultConnectionConfig(conexion)
+                .build())
+            .setDefaultRequestConfig(pedido)
+            .disableRedirectHandling()
+            .disableCookieManagement()
+            .disableAutomaticRetries()
+            .build();
     }
 }

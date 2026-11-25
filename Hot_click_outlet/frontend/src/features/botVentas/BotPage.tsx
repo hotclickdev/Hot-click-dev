@@ -23,17 +23,20 @@ const PANELES: Record<Pestana, () => React.JSX.Element> = {
 }
 
 /** Panel del bot de ventas (AG-19, AG-20, AG-22, AG-27, AG-36): configuración, conocimiento, canales, equipo, simulador, leads y campañas. */
-export default function BotPage({ inicial = 'config' }: Readonly<{ inicial?: Pestana }>) {
+export default function BotPage({
+  inicial,
+  pestanas = PESTANAS,
+}: Readonly<{ inicial?: Pestana; pestanas?: readonly Pestana[] }>) {
   const { t } = useTranslation()
-  const [activa, setActiva] = useState<Pestana>(inicial)
+  const [activa, setActiva] = useState<Pestana>(inicial ?? pestanas[0] ?? 'config')
   const botones = useRef<Array<HTMLButtonElement | null>>([])
   const Panel = PANELES[activa]
 
   const alTeclear = (e: React.KeyboardEvent, i: number) => {
-    const n = indiceSiguiente(i, e.key, PESTANAS.length)
+    const n = indiceSiguiente(i, e.key, pestanas.length)
     if (n == null) return
     e.preventDefault()
-    setActiva(PESTANAS[n])
+    setActiva(pestanas[n])
     botones.current[n]?.focus()
   }
 
@@ -43,7 +46,7 @@ export default function BotPage({ inicial = 'config' }: Readonly<{ inicial?: Pes
       <p className="mt-1 text-sm text-hc-muted">{t('bot.subtitulo')}</p>
       <div className="mt-4 max-w-xl"><UsoMes /></div>
       <div role="tablist" aria-label={t('bot.pestanasAria')} className="mt-4 flex gap-2 overflow-x-auto pb-1">
-        {PESTANAS.map((p, i) => (
+        {pestanas.map((p, i) => (
           <button
             key={p} type="button" role="tab" id={`bot-tab-${p}`} aria-selected={activa === p}
             aria-controls={`bot-panel-${p}`} tabIndex={activa === p ? 0 : -1}

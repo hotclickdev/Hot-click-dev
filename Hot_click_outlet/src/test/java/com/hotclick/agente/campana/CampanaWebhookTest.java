@@ -58,9 +58,9 @@ class CampanaWebhookTest extends CampanaFixture {
               "messages":[{"from":"WAID","id":"wamid.1","timestamp":"1","type":"text","text":{"body":"hola"}}]}}]}]}""");
 
         assertThat(parser.parsear(msg)).hasSize(1);
-        assertThat(parser.parsearEstados(msg).vacio()).isTrue();
-        assertThat(parser.parsearEstados(null).vacio()).isTrue();
-        assertThat(parser.parsearEstados(om.readTree("{\"object\":\"page\",\"entry\":[{}]}")).vacio()).isTrue();
+        assertThat(parser.parsearEstados(msg).sinEventos()).isTrue();
+        assertThat(parser.parsearEstados(null).sinEventos()).isTrue();
+        assertThat(parser.parsearEstados(om.readTree("{\"object\":\"page\",\"entry\":[{}]}")).sinEventos()).isTrue();
         assertThat(parser.parsearEstados(om.readTree(
             "{\"object\":\"whatsapp_business_account\",\"entry\":[{\"changes\":[{\"field\":\"messages\",\"value\":{\"statuses\":[1,{\"id\":5}]}}]}]}")).mensajes())
             .isEmpty();
