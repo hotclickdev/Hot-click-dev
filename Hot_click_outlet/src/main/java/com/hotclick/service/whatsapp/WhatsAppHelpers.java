@@ -67,6 +67,15 @@ public final class WhatsAppHelpers {
             case "GUIA_ASIGNADA" ->
                 "Hola " + nombre + ", tu pedido " + ctx.getOrDefault("numeroPedido", "") +
                 " está en camino. Guía: " + ctx.getOrDefault("guia", "") + ".";
+            case "POST_ENTREGA_RESENA" ->
+                "Hola " + nombre + ", tu pedido figura como entregado. Si algo no llegó bien, respondé a este mensaje.";
+            case "NUEVO_PEDIDO_EMPRENDEDOR" ->
+                "Nuevo pedido " + ctx.getOrDefault("numeroPedido", "") + " en " + ctx.getOrDefault("nombreEmpresa", "tu tienda") +
+                ": " + ctx.getOrDefault("productos", "") + ". Total ₡" + ctx.getOrDefault("total", "") +
+                ". Pago: " + ctx.getOrDefault("metodoPago", "") + ". Envío: " + ctx.getOrDefault("metodoEnvio", "") + ".";
+            case "NUEVO_PEDIDO_ADMIN" ->
+                "Nuevo pedido " + ctx.getOrDefault("numeroPedido", "") + " de " + ctx.getOrDefault("nombreCliente", "Invitado") +
+                " en " + ctx.getOrDefault("nombreEmpresa", "HotClick") + ". Total ₡" + ctx.getOrDefault("total", "") + ".";
             case "CARRITO_ABANDONADO" ->
                 "Hola " + nombre + ", te dejaste algo en el carrito. Terminá tu compra cuando quieras.";
             case "REACTIVACION" ->

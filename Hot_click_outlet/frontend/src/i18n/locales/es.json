@@ -5142,6 +5142,8 @@
     "resumenUsar": "Usar sugerencia",
     "resumenNoDisponible": "No se pudo generar el resumen ahora. Probá de nuevo en un rato.",
     "resumenAviso": "Generado con IA. Revisalo y editalo antes de enviar: no se envía solo.",
+    "cupoAgotado": "Cupo agotado",
+    "cupoAgotadoAviso": "El plan llegó a su cupo de conversaciones con el bot. El bot ya no responde en este chat: atiéndelo tú o amplía tu plan.",
     "avisoVentana": "Pasaron más de 24 horas desde el último mensaje de la persona: el canal ya no permite escribirle. Podés responder cuando ella escriba de nuevo.",
     "avisoCerrada": "La conversación está cerrada.",
     "errorGenerico": "No se pudo completar la acción. Intentá de nuevo.",

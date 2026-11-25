@@ -3,6 +3,7 @@ package com.hotclick.agente.canal;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.agente.webhook.MensajeEntrante;
+import com.hotclick.service.whatsapp.PlantillaMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -25,22 +26,35 @@ import java.util.Map;
 public class MetaCanalMensajeria implements CanalMensajeria {
 
     private static final Logger log = LoggerFactory.getLogger(MetaCanalMensajeria.class);
-    static final String GRAPH = "https://graph.facebook.com/v19.0/";
+    static final String VERSION_POR_DEFECTO = "v23.0";
     static final int MAX_WHATSAPP = 4096;
     static final int MAX_SOCIAL = 1000;
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final CanalCuentaService cuentas;
     private final RestTemplate http;
+    private final String graph;
 
     @org.springframework.beans.factory.annotation.Autowired
-    public MetaCanalMensajeria(CanalCuentaService cuentas) {
-        this(cuentas, nuevoCliente());
+    public MetaCanalMensajeria(CanalCuentaService cuentas,
+                               @org.springframework.beans.factory.annotation.Value("${meta.graph-version:v23.0}") String graphVersion) {
+        this(cuentas, nuevoCliente(), graphVersion);
     }
 
     MetaCanalMensajeria(CanalCuentaService cuentas, RestTemplate http) {
+        this(cuentas, http, VERSION_POR_DEFECTO);
+    }
+
+    MetaCanalMensajeria(CanalCuentaService cuentas, RestTemplate http, String graphVersion) {
         this.cuentas = cuentas;
         this.http = http;
+        this.graph = "https://graph.facebook.com/" + versionValida(graphVersion) + "/";
+    }
+
+    /** Solo vNN.N; cualquier otra cosa (vacío, mal escrito) cae a la versión por defecto. */
+    static String versionValida(String v) {
+        String x = v == null ? "" : v.trim().toLowerCase(java.util.Locale.ROOT);
+        return x.matches("v\\d{1,2}\\.\\d") ? x : VERSION_POR_DEFECTO;
     }
 
     @Override
@@ -58,6 +72,16 @@ public class MetaCanalMensajeria implements CanalMensajeria {
             : Map.of("recipient", Map.of("id", destinatario), "messaging_type", "RESPONSE",
                      "message", Map.of("text", cuerpoTexto));
         return post(cuenta, token, body);
+    }
+
+    @Override
+    public String enviarPlantilla(CanalCuenta cuenta, String destinatario, PlantillaMeta plantilla, List<String> parametros) {
+        validar(cuenta, destinatario);
+        if (plantilla == null || !MensajesInteractivos.esWhatsapp(cuenta.getTipo()))
+            throw new UnsupportedOperationException("Solo WhatsApp tiene plantillas");
+        String token = tokenOSimulado(cuenta);
+        if (token == null) return "simulado";
+        return post(cuenta, token, plantilla.cuerpoWhatsApp(destinatario, parametros == null ? List.of() : parametros));
     }
 
     @Override
@@ -130,7 +154,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
 
     private String post(CanalCuenta cuenta, String token, Map<String, Object> body) {
         boolean wa = MensajesInteractivos.esWhatsapp(cuenta.getTipo());
-        String url = wa ? GRAPH + cuenta.getIdExterno() + "/messages" : GRAPH + "me/messages";
+        String url = wa ? graph + cuenta.getIdExterno() + "/messages" : graph + "me/messages";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(token);

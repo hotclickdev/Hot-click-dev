@@ -188,6 +188,8 @@ public class BandejaService {
             canal.enviarTexto(cuenta, s.getContactoExterno(), limpio);
         } catch (IllegalStateException e) {
             throw new BandejaConflictoException("El canal no está disponible para responder en este momento");
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            throw new BandejaRechazoCanalException(e.getStatusCode().value());
         }
         Instant ahora = clock.instant();
         ConversacionMensaje m = new ConversacionMensaje();

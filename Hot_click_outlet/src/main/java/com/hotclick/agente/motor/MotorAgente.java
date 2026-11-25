@@ -97,11 +97,11 @@ public class MotorAgente {
     private ResultadoAgente ejecutar(PerfilAgente perfil, ContextoHerramienta contexto,
                                      List<TurnoConversacion> historial, String entrada, OpcionesMotor opciones,
                                      boolean moderar) {
-        OpcionesMotor op = opciones == null ? OpcionesMotor.POR_DEFECTO : opciones;
-        TonoAgente tono = op.tono() == null ? config.tono() : op.tono();
         if (perfil == null || contexto == null || contexto.perfil() != perfil) {
             throw new IllegalArgumentException("El contexto debe corresponder al perfil indicado");
         }
+        OpcionesMotor op = java.util.Objects.requireNonNullElse(opciones, OpcionesMotor.POR_DEFECTO);
+        TonoAgente tono = java.util.Objects.requireNonNullElse(op.tono(), config.tono());
         String modelo = config.modeloDe(perfil);
         if (entrada == null || entrada.isBlank()) {
             return sinLlamada("", modelo, MotivoFin.ENTRADA_VACIA);

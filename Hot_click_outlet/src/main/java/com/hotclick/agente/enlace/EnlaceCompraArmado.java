@@ -63,15 +63,22 @@ final class EnlaceCompraArmado {
         return new Armado(lineas, total);
     }
 
+    /**
+     * Mensaje único para producto inexistente, no publicable o de otra tienda. No lleva el nombre: el id lo genera el
+     * modelo (manipulable por inyección de prompt) y el nombre de un producto oculto o de otra tienda no debe salir
+     * por el chat ni servir de oráculo para enumerar ids (AG-14).
+     */
+    static final String MSG_NO_DISPONIBLE = "Uno de los productos no está disponible. Use solo ids de buscar_productos.";
+
     static void validarProducto(Producto p, Long empresaId, int cantidad) {
-        if (p == null) throw new EnlaceCompraException("Un producto ya no existe");
+        if (p == null) throw new EnlaceCompraException(MSG_NO_DISPONIBLE);
         // Misma regla que el catálogo público (activo, visible, negocio ACTIVO y público) y no vendido.
         boolean comprable = StockReservationService.esPublicableEnMemoria(p)
             && p.getEmpresa() != null && !Boolean.TRUE.equals(p.getVendido());
-        if (!comprable) throw new EnlaceCompraException("«" + p.getNombreProducto() + "» no está disponible");
+        if (!comprable) throw new EnlaceCompraException(MSG_NO_DISPONIBLE);
         if (empresaId != null && !empresaId.equals(p.getEmpresa().getId())) {
             // Mismo mensaje que «no disponible»: el bot de una tienda no debe poder sondear otras tiendas.
-            throw new EnlaceCompraException("«" + p.getNombreProducto() + "» no está disponible");
+            throw new EnlaceCompraException(MSG_NO_DISPONIBLE);
         }
         if (p.esACotizar() || OrderPricingService.precioEfectivo(p) == null) {
             throw new EnlaceCompraException("«" + p.getNombreProducto() + "» es a cotizar: no se puede vender por enlace");

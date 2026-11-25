@@ -14,13 +14,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+/**
+ * Cliente de la Cloud API de Meta (WhatsApp). Envía texto libre (solo válido dentro de la
+ * ventana de 24 h) o plantillas aprobadas. Timeouts de 5 s (conexión) y 10 s (lectura).
+ * Modo de fallo: si Meta cae o rechaza, se lanza excepción y el sender deja el registro en ERROR;
+ * no hay reintento automático para no duplicar avisos.
+ */
 @Component
 class WhatsAppMetaApiClient {
 
     private static final Logger log = LoggerFactory.getLogger(WhatsAppMetaApiClient.class);
-    private static final String META_URL = "https://graph.facebook.com/v19.0/%s/messages";
+    private static final String META_URL = "https://graph.facebook.com/%s/%s/messages";
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @Value("${whatsapp.phone-id:}")
@@ -29,23 +37,49 @@ class WhatsAppMetaApiClient {
     @Value("${whatsapp.token:}")
     private String token;
 
+    /** Versión del Graph API (META_GRAPH_VERSION, la misma de la conexión). Meta retira versiones: revisar cada 6 meses. */
+    @Value("${meta.graph-version:v23.0}")
+    private String graphVersion;
+
     boolean credencialesConfiguradas() {
         return phoneId != null && !phoneId.isBlank() && token != null && !token.isBlank();
     }
 
     String llamarMetaApi(String telefono, String texto) {
-        Map<String, Object> body = Map.of(
-            "messaging_product", "whatsapp",
-            "to",                telefono,
-            "type",              "text",
-            "text",              Map.of("body", texto, "preview_url", false)
-        );
+        Map<String, Object> body = construirCuerpoTexto(telefono, texto);
+        return enviar(body);
+    }
 
+    /** Envía una plantilla aprobada con los parámetros del cuerpo ({{1}}...{{n}}). */
+    String llamarMetaApiPlantilla(String telefono, PlantillaMeta plantilla, List<String> parametros) {
+        return enviar(construirCuerpoPlantilla(telefono, plantilla, parametros));
+    }
+
+    static Map<String, Object> construirCuerpoTexto(String telefono, String texto) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("messaging_product", "whatsapp");
+        body.put("to", telefono);
+        body.put("type", "text");
+        body.put("text", Map.of("body", texto, "preview_url", false));
+        return body;
+    }
+
+    /**
+     * JSON de una plantilla: {@code type:"template"}, nombre, idioma y componente body con un
+     * parámetro de texto por variable. Si en el futuro una plantilla lleva botón URL, se agrega un
+     * componente {@code button/sub_type:url/index:0} con su sufijo.
+     */
+    static Map<String, Object> construirCuerpoPlantilla(String telefono, PlantillaMeta plantilla,
+                                                         List<String> parametros) {
+        return plantilla.cuerpoWhatsApp(telefono, parametros);
+    }
+
+    private String enviar(Map<String, Object> body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(token);
 
-        String url = String.format(META_URL, phoneId);
+        String url = String.format(META_URL, graphVersion, phoneId);
         ResponseEntity<String> resp = httpClient().exchange(
             url, HttpMethod.POST, new HttpEntity<>(body, headers), String.class);
 

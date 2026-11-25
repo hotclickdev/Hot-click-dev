@@ -22,14 +22,15 @@ public final class BandejaDtos {
             Instant ultimoMensajeEn,
             boolean ventanaAbierta,
             Instant ventanaVenceEn,
+            boolean cupoAgotado,
             Integer notaEncuesta) {
 
         /** Sin nota de encuesta (conversación que no la tiene o aún no la responde). */
         public Conversacion(UUID id, String canal, String contacto, String modo, String estado, Long asignadoAId,
                             boolean asignadaAMi, String ultimoMensaje, Instant ultimoMensajeEn,
-                            boolean ventanaAbierta, Instant ventanaVenceEn) {
+                            boolean ventanaAbierta, Instant ventanaVenceEn, boolean cupoAgotado) {
             this(id, canal, contacto, modo, estado, asignadoAId, asignadaAMi, ultimoMensaje, ultimoMensajeEn,
-                ventanaAbierta, ventanaVenceEn, null);
+                ventanaAbierta, ventanaVenceEn, cupoAgotado, null);
         }
     }
 

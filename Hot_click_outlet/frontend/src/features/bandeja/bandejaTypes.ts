@@ -18,6 +18,8 @@ export type ConversacionBandeja = {
   ventanaVenceEn: string | null
   /** Nota 1 a 5 de la encuesta de satisfacción (AG-38); null si no la respondió. */
   notaEncuesta?: number | null
+  /** El plan llegó a su cupo de conversaciones con el bot. */
+  cupoAgotado: boolean
 }
 
 export type PaginaBandeja = {

@@ -137,6 +137,11 @@ public class BandejaController {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseDTO.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(BandejaRechazoCanalException.class)
+    public ResponseEntity<ResponseDTO> rechazoDelCanal(BandejaRechazoCanalException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ResponseDTO.error(ex.getMessage()));
+    }
+
     /** null = ADMIN de plataforma (bot de HotClick); si no, la empresa del tenant, y su plan debe incluir la feature. */
     private Long alcance() {
         Long scope = companyScope.requireEmpresaIdOrAdmin();

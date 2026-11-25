@@ -37,4 +37,8 @@ public interface ConversacionSesionRepository extends JpaRepository<Conversacion
     @Query("UPDATE ConversacionSesion s SET s.encuestaNota = :nota, s.encuestaRespondidaEn = :ahora "
         + "WHERE s.id = :id AND s.encuestaEnviadaEn IS NOT NULL AND s.encuestaNota IS NULL")
     int guardarNotaEncuesta(@Param("id") UUID id, @Param("nota") int nota, @Param("ahora") Instant ahora);
+
+    /** Ventana de 24 h de un contacto: ¿alguna conversación suya del canal tuvo un mensaje del cliente desde {@code desde}? */
+    boolean existsByCanalAndContactoExternoAndUltimoMensajeClienteAfter(
+        String canal, String contactoExterno, Instant desde);
 }
