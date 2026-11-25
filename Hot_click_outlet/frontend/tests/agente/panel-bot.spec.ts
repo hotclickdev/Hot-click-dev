@@ -41,14 +41,8 @@ async function mockPanel(page: Page, guardados: unknown[], simulados: unknown[])
   })
 }
 
-/**
- * HALLAZGO AG-33: BotPage solo está montada en sellerAdminRoutes.tsx, que ninguna ruta usa (el menú del vendedor
- * apunta a /pyme/bot y /pyme/bandeja, que no existen en SellerRoutes: pantalla en blanco). Hasta que se monte,
- * estos flujos no se pueden recorrer en el navegador; se dejan como fixme con su mock listo, no se borran.
- */
+/** Panel del bot en el área del vendedor (`/pyme/bot`, montado en SellerRoutes). */
 test.describe('Panel del bot (/pyme/bot)', () => {
-  test.fixme(true, 'BotPage no está montada en ninguna ruta del vendedor (ver comentario)')
-
   test('muestra uso del mes, guarda configuración, lista canales y simula una conversación', async ({ page }) => {
     const guardados: unknown[] = []
     const simulados: unknown[] = []

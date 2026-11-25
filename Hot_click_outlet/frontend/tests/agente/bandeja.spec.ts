@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { json, prepararNavegador, sesionAdmin, SIN_DATOS, TENANT_PYME } from '../helpers/agenteFixtures'
+import { json, prepararNavegador, sesionAdmin, sesionVendedor, SIN_DATOS, TENANT_PYME } from '../helpers/agenteFixtures'
 
 test.use(process.env.CI ? {} : { channel: 'chrome' })
 
@@ -92,5 +92,17 @@ test.describe('Bandeja de los bots (/plataforma/bandeja)', () => {
     await page.getByRole('button', { name: 'Enviar', exact: true }).click()
     await expect(hilo).toContainText('Ya te preparo el enlace de compra.')
     expect(llamadas.some((l) => l.startsWith(`/bandeja/${ID}/responder`))).toBe(true)
+  })
+})
+
+test.describe('Bandeja en el área del vendedor (/pyme/bandeja)', () => {
+  test('el dueño del negocio ve sus conversaciones', async ({ page }) => {
+    await prepararNavegador(page, sesionVendedor())
+    await mockBandeja(page, [])
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto('/pyme/bandeja', { waitUntil: 'domcontentloaded' })
+
+    await expect(page.getByRole('heading', { name: 'Bandeja', level: 1 })).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Conversaciones' }).getByRole('button')).toHaveCount(1)
   })
 })
