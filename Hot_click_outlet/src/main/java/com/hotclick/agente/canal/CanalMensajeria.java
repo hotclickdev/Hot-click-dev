@@ -28,6 +28,14 @@ public interface CanalMensajeria {
         return enviarTexto(cuenta, destinatario, MensajesInteractivos.respaldoBotones(texto, botones));
     }
 
+    /**
+     * Texto con UN botón que abre un enlace (WhatsApp: botón de llamada a la acción; título ≤ 20). Por defecto, el
+     * texto seguido del enlace. Solo para enlaces https del propio HotClick: nunca datos del cliente en la URL.
+     */
+    default String enviarBotonUrl(CanalCuenta cuenta, String destinatario, String texto, String tituloBoton, String url) {
+        return enviarTexto(cuenta, destinatario, texto + "\n" + url);
+    }
+
     /** Lista de hasta 10 filas (WhatsApp). Por defecto, texto con lista numerada. */
     default String enviarLista(CanalCuenta cuenta, String destinatario, String texto, String textoBoton,
                                java.util.List<FilaLista> filas) {

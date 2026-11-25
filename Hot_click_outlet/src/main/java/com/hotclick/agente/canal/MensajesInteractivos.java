@@ -81,6 +81,16 @@ final class MensajesInteractivos {
         return waEnvoltorio(to, inter);
     }
 
+    /** Mensaje interactivo de WhatsApp con un botón que abre una URL (cta_url). */
+    static Map<String, Object> waBotonUrl(String to, String texto, String tituloBoton, String url) {
+        Map<String, Object> inter = new LinkedHashMap<>();
+        inter.put("type", "cta_url");
+        inter.put("body", Map.of("text", recortar(texto, WA_MAX_CUERPO)));
+        inter.put("action", Map.of("name", "cta_url",
+            "parameters", Map.of("display_text", recortar(tituloBoton, MAX_TITULO_BOTON), "url", url)));
+        return waEnvoltorio(to, inter);
+    }
+
     static Map<String, Object> waBotones(String to, String texto, List<Boton> botones) {
         return waEnvoltorio(to, waBotonesInteractive(recortar(texto, WA_MAX_CUERPO), botones));
     }
