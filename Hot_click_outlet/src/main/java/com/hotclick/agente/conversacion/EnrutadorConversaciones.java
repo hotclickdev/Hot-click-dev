@@ -10,7 +10,9 @@ import com.hotclick.agente.webhook.MensajeEntranteHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import com.hotclick.security.RateLimiter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
@@ -82,6 +84,35 @@ public class EnrutadorConversaciones implements MensajeEntranteHandler {
             log.info("[agente] bot detenido por cupo o tope de gasto ({})", conv);
             return;
         }
+        // AG-14: ráfaga de un mismo contacto. El cupo no cubre a HotClick ni al modo interno, y aun con cupo una sola
+        // persona podía agotar el tope de gasto del negocio. El mensaje ya quedó guardado (la persona lo ve en la
+        // bandeja); solo se omite la llamada a Claude. Llave por id de conversación: sin teléfono en la tabla.
+        if (!dentroDelLimite(conv)) {
+            log.warn("[agente] ráfaga de mensajes: el bot no responde este turno ({})", conv);
+            return;
+        }
         despacho.despachar(conv, mensaje);
+    }
+
+    private RateLimiter limitador;
+    private int maxPorMinuto = 10;
+    private int maxPorHora = 60;
+
+    /** Límite por conversación (opcional: sin limitador, como en las pruebas que no lo configuran, no aplica). */
+    @Autowired(required = false)
+    public void setLimitador(RateLimiter limitador,
+                             @Value("${agente.limite.mensajes-por-minuto:10}") int maxPorMinuto,
+                             @Value("${agente.limite.mensajes-por-hora:60}") int maxPorHora) {
+        this.limitador = limitador;
+        this.maxPorMinuto = Math.max(1, maxPorMinuto);
+        this.maxPorHora = Math.max(1, maxPorHora);
+    }
+
+    private boolean dentroDelLimite(ConversacionActiva conv) {
+        if (limitador == null || conv.sesionId() == null) return true;
+        String base = "agente:conv:" + conv.sesionId();
+        // Fail-closed como los demás topes de costo: si la BD del limitador falla, no se llama a Claude.
+        return limitador.tryAcquireEstricto(base + ":m", maxPorMinuto, 60)
+            && limitador.tryAcquireEstricto(base + ":h", maxPorHora, 3600);
     }
 }
