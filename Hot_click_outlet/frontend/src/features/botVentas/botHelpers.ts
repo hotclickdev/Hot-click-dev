@@ -62,7 +62,7 @@ export function formatearFecha(iso: string | null | undefined): string {
   }).format(f)
 }
 
-export const PESTANAS = ['config', 'conocimiento', 'canales', 'equipo', 'simulador', 'leads'] as const
+export const PESTANAS = ['config', 'conocimiento', 'canales', 'equipo', 'simulador', 'leads', 'campanas'] as const
 export type Pestana = (typeof PESTANAS)[number]
 
 /** Índice de la pestaña a la que mueven las flechas, Inicio y Fin (patrón de pestañas WAI-ARIA); null si la tecla no aplica. */

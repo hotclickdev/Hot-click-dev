@@ -36,9 +36,9 @@ describe('panel del bot: pestañas', () => {
   it('es un tablist accesible con las seis secciones y solo la activa en el orden de tabulación', () => {
     const html = pantalla(createElement(BotPage))
     expect(html).toContain('role="tablist"')
-    expect((html.match(/role="tab"/g) ?? []).length).toBe(6)
+    expect((html.match(/role="tab"/g) ?? []).length).toBe(7)
     expect(html).toContain('aria-selected="true"')
-    expect((html.match(/tabindex="-1"/g) ?? []).length).toBe(5)
+    expect((html.match(/tabindex="-1"/g) ?? []).length).toBe(6)
     expect(html).toContain('role="tabpanel"')
     for (const t of ['Configuración', 'Conocimiento', 'Canales', 'Equipo y PIN', 'Simulador', 'Leads']) {
       expect(html).toContain(t)

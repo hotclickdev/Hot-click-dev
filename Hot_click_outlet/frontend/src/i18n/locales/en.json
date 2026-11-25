@@ -4888,7 +4888,8 @@
       "canales": "Channels",
       "equipo": "Team and PIN",
       "simulador": "Simulator",
-      "leads": "Leads"
+      "leads": "Leads",
+      "campanas": "Campaigns"
     },
     "cargando": "Loading…",
     "errorCargar": "We couldn't load the information. Try again in a moment.",
@@ -5040,6 +5041,115 @@
         "CONTACTADO": "Contacted",
         "CONVERTIDO": "Converted",
         "DESCARTADO": "Discarded"
+      }
+    },
+    "campanas": {
+      "titulo": "Campaigns",
+      "lista": "Campaigns",
+      "vacioTitulo": "No campaigns yet",
+      "vacioMensaje": "Create a campaign with a Meta-approved template. Only people who opted in to offers receive it.",
+      "ver": "View",
+      "lanzar": "Launch campaign",
+      "lanzada": "Campaign running. Messages go out in batches.",
+      "cancelar": "Cancel pending sends",
+      "cancelada": "Campaign cancelled.",
+      "descartar": "Discard draft",
+      "estados": {
+        "BORRADOR": "Draft",
+        "EN_CURSO": "Running",
+        "COMPLETADA": "Completed",
+        "CANCELADA": "Cancelled"
+      },
+      "segmentos": {
+        "TODOS": "Everyone who opted in to offers",
+        "COMPRADORES_RECIENTES": "Bought in the last days",
+        "INTERES_CATEGORIA": "Interested in a category",
+        "LEADS": "Bot leads"
+      },
+      "consentimientos": {
+        "titulo": "Who opted in to offers",
+        "resumen": "{{activos}} contacts opted in and {{revocados}} opted out.",
+        "ayuda": "We only message people who tapped “Yes, I want offers” in the chat or ticked it at checkout. Anyone who writes STOP gets nothing more."
+      },
+      "plantillas": {
+        "titulo": "Marketing templates",
+        "ayuda": "Meta reviews each template before you can use it. It can take from minutes to a couple of days.",
+        "nueva": "New template",
+        "formulario": "New marketing template",
+        "nombre": "Technical name",
+        "nombreAyuda": "Lowercase letters, numbers and underscore only. Example: december_offer",
+        "texto": "Message text",
+        "textoAyuda": "Use {{v1}}, {{v2}}… for data that changes (for example the name). It cannot start or end with a variable.",
+        "variableAlBorde": "The text cannot start or end with a variable.",
+        "ejemplo": "Example for {{n}}",
+        "aviso": "Meta charges your business for every marketing message.",
+        "enviar": "Send to Meta",
+        "enviada": "Template sent to Meta. It is pending approval.",
+        "vacioTitulo": "No templates yet",
+        "vacioMensaje": "Create a template so you can launch campaigns.",
+        "lista": "Marketing templates",
+        "actualizar": "Refresh status",
+        "motivo": "Reason: {{motivo}}",
+        "estados": {
+          "PENDIENTE": "Pending at Meta",
+          "APROBADA": "Approved",
+          "RECHAZADA": "Rejected"
+        }
+      },
+      "nueva": {
+        "boton": "New campaign",
+        "formulario": "New campaign",
+        "ayuda": "It is saved as a draft: nothing is sent until you see the estimated cost and confirm.",
+        "nombre": "Campaign name",
+        "plantilla": "Approved template",
+        "elegir": "Choose an option",
+        "sinAprobadas": "You do not have Meta-approved templates yet.",
+        "valor": "Value for {{n}}",
+        "valorAyuda": "Write {nombre} to use each customer’s first name.",
+        "segmento": "Audience",
+        "segmentoAyuda": "It is always limited to people who opted in to offers.",
+        "dias": "Window in days",
+        "categoria": "Category",
+        "guardar": "Save draft",
+        "creada": "Draft saved."
+      },
+      "estimacion": {
+        "conConsentimiento": "{{n}} contacts match the audience and opted in to offers.",
+        "excluidosBaja": "{{n}} are excluded because they asked to opt out (STOP).",
+        "excluidosTope": "{{n}} are excluded because they already received this week’s maximum.",
+        "permitidos": "It will be sent to {{n}} contacts.",
+        "topeMes": "You have {{resta}} marketing messages left this month (your plan limit: {{tope}}).",
+        "costo": "Estimated cost Meta charges your business: {{costo}}",
+        "costoAviso": "This is an estimate based on Meta’s marketing rate; Meta bills your WhatsApp Business account for the real charge."
+      },
+      "confirmar": {
+        "titulo": "Confirm send",
+        "texto": "You are about to send to {{n}} contacts at an estimated cost of {{costo}}. Confirm?",
+        "si": "Yes, send"
+      },
+      "metricas": {
+        "titulo": "Campaign results",
+        "enviados": "Sent",
+        "entregados": "Delivered",
+        "leidos": "Read",
+        "respondidos": "Replied",
+        "fallidos": "Failed",
+        "omitidos": "Skipped"
+      },
+      "catalogo": {
+        "titulo": "Meta catalog",
+        "ayuda": "Syncs your visible products with your Commerce Manager catalog so the bot can send cards with photo and price on WhatsApp and Instagram.",
+        "idCatalogo": "Catalog id",
+        "idAyuda": "You can find it in Commerce Manager, in the catalog details.",
+        "conectar": "Connect catalog",
+        "conectado": "Catalog connected.",
+        "estado": "Catalog {{id}} connected with {{n}} synced products.",
+        "ultimaSync": "Last sync: {{fecha}}",
+        "error": "The last sync failed (code {{codigo}}). It retries every night.",
+        "sincronizar": "Sync now",
+        "sincronizando": "Syncing…",
+        "sincronizado": "Sync finished.",
+        "desconectar": "Disconnect"
       }
     }
   },
