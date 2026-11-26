@@ -30,6 +30,8 @@ import java.util.Map;
  */
 @Component
 public class MetaCanalMensajeria implements CanalMensajeria {
+    private static final String SIMULADO = "simulado";
+
 
     private static final Logger log = LoggerFactory.getLogger(MetaCanalMensajeria.class);
     private static final String INTEGRACION = "meta-graph";
@@ -70,7 +72,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
         if (texto == null || texto.isBlank())
             throw new IllegalArgumentException("destinatario y texto son obligatorios");
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         boolean wa = MensajesInteractivos.esWhatsapp(cuenta.getTipo());
         String cuerpoTexto = recortar(texto, wa ? MAX_WHATSAPP : MAX_SOCIAL);
         Map<String, Object> body = wa
@@ -87,7 +89,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
         if (plantilla == null || !MensajesInteractivos.esWhatsapp(cuenta.getTipo()))
             throw new UnsupportedOperationException("Solo WhatsApp tiene plantillas");
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         return post(cuenta, token, plantilla.cuerpoWhatsApp(destinatario, parametros == null ? List.of() : parametros));
     }
 
@@ -97,7 +99,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
         if (p == null || p.nombre() == null || p.nombre().isBlank())
             throw new IllegalArgumentException("el producto y su nombre son obligatorios");
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         Map<String, Object> body = MensajesInteractivos.esWhatsapp(cuenta.getTipo())
             ? MensajesInteractivos.waProducto(destinatario, p)
             : MensajesInteractivos.socialProducto(destinatario, p);
@@ -113,7 +115,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
             && (wa || ref.metaProductoId() != null);
         if (!completa) return enviarProducto(cuenta, destinatario, respaldo);
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         Map<String, Object> body = wa
             ? MensajesInteractivos.waProductoCatalogo(destinatario, ref.catalogoId(), ref.retailerId(),
                 respaldo == null ? "Mira este producto"
@@ -139,7 +141,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
                 cuenta, destinatario, catalogoId, titulo, cuerpo, retailerIds, respaldos);
         }
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         try {
             return post(cuenta, token,
                 MensajesInteractivos.waListaProductos(destinatario, catalogoId, titulo, cuerpo, retailerIds));
@@ -165,7 +167,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
         if (nombrePlantilla == null || nombrePlantilla.isBlank())
             throw new IllegalArgumentException("la plantilla es obligatoria");
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         try {
             return post(cuenta, token, MensajesInteractivos.waPlantilla(destinatario, nombrePlantilla,
                 idioma == null || idioma.isBlank() ? "es" : idioma, parametros == null ? List.of() : parametros));
@@ -203,7 +205,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
         if (texto == null || texto.isBlank() || botones == null || MensajesInteractivos.botonesValidos(botones, 1).isEmpty())
             throw new IllegalArgumentException("texto y al menos un botón son obligatorios");
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         Map<String, Object> body = MensajesInteractivos.esWhatsapp(cuenta.getTipo())
             ? MensajesInteractivos.waBotones(destinatario, texto, botones)
             : MensajesInteractivos.socialQuickReplies(destinatario, texto, botones);
@@ -219,7 +221,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
         String respaldo = texto + "\n" + url;
         if (!MensajesInteractivos.esWhatsapp(cuenta.getTipo())) return enviarTexto(cuenta, destinatario, respaldo);
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         return conRespaldo(cuenta, destinatario, token,
             MensajesInteractivos.waBotonUrl(destinatario, texto, tituloBoton, url), respaldo);
     }
@@ -239,7 +241,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
         if (!MensajesInteractivos.esWhatsapp(cuenta.getTipo()))
             return enviarTexto(cuenta, destinatario, respaldo); // IG/Messenger no tienen lista
         String token = tokenOSimulado(cuenta);
-        if (token == null) return "simulado";
+        if (token == null) return SIMULADO;
         return conRespaldo(cuenta, destinatario, token,
             MensajesInteractivos.waLista(destinatario, texto, textoBoton, filas), respaldo);
     }

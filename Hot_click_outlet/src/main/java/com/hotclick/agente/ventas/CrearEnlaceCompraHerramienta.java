@@ -22,6 +22,11 @@ import java.util.Map;
  */
 @Component
 public class CrearEnlaceCompraHerramienta implements HerramientaAgente {
+    private static final String DESCRIPTION = "description";
+    private static final String PRODUCTO_ID = "productoId";
+    private static final String CANTIDAD = "cantidad";
+    private static final String ITEMS = "items";
+
 
     static final int MAX_ITEMS = 10;
 
@@ -42,26 +47,26 @@ public class CrearEnlaceCompraHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         Map<String, Object> item = EsquemasVentas.objeto(Map.of(
-            "productoId", Map.of("type", "integer", "description", "Id del producto devuelto por buscar_productos"),
-            "cantidad", Map.of("type", "integer", "description", "Unidades a comprar")),
-            List.of("productoId", "cantidad"));
+            PRODUCTO_ID, Map.of("type", "integer", DESCRIPTION, "Id del producto devuelto por buscar_productos"),
+            CANTIDAD, Map.of("type", "integer", DESCRIPTION, "Unidades a comprar")),
+            List.of(PRODUCTO_ID, CANTIDAD));
         return EsquemasVentas.objeto(Map.of(
-            "items", Map.of("type", "array", "description", "Productos a comprar", "items", item)),
-            List.of("items"));
+            ITEMS, Map.of("type", "array", DESCRIPTION, "Productos a comprar", ITEMS, item)),
+            List.of(ITEMS));
     }
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
-        JsonNode nodo = input == null ? null : input.path("items");
+        JsonNode nodo = input == null ? null : input.path(ITEMS);
         if (nodo == null || !nodo.isArray() || nodo.isEmpty() || nodo.size() > MAX_ITEMS) {
             return ResultadoHerramienta.error("Indique entre 1 y " + MAX_ITEMS + " productos.");
         }
         List<EnlaceCompraService.ItemSolicitado> items = new ArrayList<>();
         for (JsonNode n : nodo) {
-            if (!n.path("productoId").canConvertToLong() || !n.path("cantidad").canConvertToInt()) {
+            if (!n.path(PRODUCTO_ID).canConvertToLong() || !n.path(CANTIDAD).canConvertToInt()) {
                 return ResultadoHerramienta.error("Producto o cantidad inválidos.");
             }
-            items.add(new EnlaceCompraService.ItemSolicitado(n.path("productoId").asLong(), n.path("cantidad").asInt()));
+            items.add(new EnlaceCompraService.ItemSolicitado(n.path(PRODUCTO_ID).asLong(), n.path(CANTIDAD).asInt()));
         }
         try {
             if (contexto.canal() == null) return ResultadoHerramienta.error("Canal no disponible; derive a una persona.");

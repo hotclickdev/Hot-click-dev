@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 /** Reglas del PIN del modo interno (sin acceso a datos). */
 final class PinPolitica {
 
-    private static final Pattern FORMATO = Pattern.compile("^[0-9]{4,6}$");
+    private static final Pattern FORMATO = Pattern.compile("^\\d{4,6}$");
 
     private PinPolitica() {}
 

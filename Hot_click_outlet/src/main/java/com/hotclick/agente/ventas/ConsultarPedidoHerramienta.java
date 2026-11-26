@@ -23,6 +23,9 @@ import java.util.Map;
  */
 @Component
 public class ConsultarPedidoHerramienta implements HerramientaAgente {
+    private static final String NUMERO_PEDIDO = "numeroPedido";
+    private static final String CORREO_PEDIDO = "correoPedido";
+
 
     static final int VENTANA_PEDIDOS = 200;
     static final int MAX_RESULTADOS = 3;
@@ -45,10 +48,10 @@ public class ConsultarPedidoHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         return EsquemasVentas.objeto(Map.of(
-            "numeroPedido", EsquemasVentas.texto("Número de pedido si la persona lo dio; cadena vacía si no"),
-            "correoPedido", EsquemasVentas.texto("Correo con el que se hizo el pedido; solo se usa en Instagram y "
+            NUMERO_PEDIDO, EsquemasVentas.texto("Número de pedido si la persona lo dio; cadena vacía si no"),
+            CORREO_PEDIDO, EsquemasVentas.texto("Correo con el que se hizo el pedido; solo se usa en Instagram y "
                 + "Messenger (en WhatsApp va cadena vacía)")),
-            List.of("numeroPedido", "correoPedido"));
+            List.of(NUMERO_PEDIDO, CORREO_PEDIDO));
     }
 
     @Override
@@ -61,7 +64,7 @@ public class ConsultarPedidoHerramienta implements HerramientaAgente {
         if (empresaId == null || contacto.length() < 8) {
             return ResultadoHerramienta.error("No se pudo verificar la identidad de quien escribe; derive a una persona.");
         }
-        String numero = input == null ? "" : input.path("numeroPedido").asText("").trim();
+        String numero = input == null ? "" : input.path(NUMERO_PEDIDO).asText("").trim();
 
         List<Pedido> propios = pedidos.recientesDeEmpresa(empresaId, PageRequest.of(0, VENTANA_PEDIDOS)).stream()
             // Defensa en profundidad: aunque el repositorio filtra, se vuelve a verificar la empresa.
@@ -85,8 +88,8 @@ public class ConsultarPedidoHerramienta implements HerramientaAgente {
         if (empresaId == null) {
             return ResultadoHerramienta.error("No se pudo verificar la identidad de quien escribe; derive a una persona.");
         }
-        String numero = input == null ? "" : input.path("numeroPedido").asText("").trim();
-        String correo = input == null ? "" : input.path("correoPedido").asText("").trim().toLowerCase(Locale.ROOT);
+        String numero = input == null ? "" : input.path(NUMERO_PEDIDO).asText("").trim();
+        String correo = input == null ? "" : input.path(CORREO_PEDIDO).asText("").trim().toLowerCase(Locale.ROOT);
         if (numero.isEmpty() || correo.isEmpty()) {
             return ResultadoHerramienta.ok("Por este canal no puedo identificar a la persona por su teléfono. Pida el "
                 + "número de pedido y el correo electrónico con el que compró, y vuelva a consultar.");

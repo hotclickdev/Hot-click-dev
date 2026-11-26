@@ -15,6 +15,8 @@ import java.util.Map;
  */
 @Component
 public class ConsultarConocimientoHerramienta implements HerramientaAgente {
+    private static final String PREGUNTA = "pregunta";
+
 
     private final ConocimientoService conocimiento;
 
@@ -32,12 +34,12 @@ public class ConsultarConocimientoHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         return EsquemasVentas.objeto(Map.of(
-            "pregunta", EsquemasVentas.texto("Pregunta de la persona")), List.of("pregunta"));
+            PREGUNTA, EsquemasVentas.texto("Pregunta de la persona")), List.of(PREGUNTA));
     }
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
-        String pregunta = input == null ? "" : input.path("pregunta").asText("").trim();
+        String pregunta = input == null ? "" : input.path(PREGUNTA).asText("").trim();
         if (pregunta.isEmpty()) return ResultadoHerramienta.error("Falta la pregunta.");
         List<ConocimientoRepository.Fila> r = conocimiento.buscar(contexto.empresaId(), pregunta);
         if (r.isEmpty()) {

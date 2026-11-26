@@ -21,6 +21,8 @@ import java.util.Optional;
  */
 @Repository
 public class CatalogoRepositorio {
+    private static final String ESTADO = "estado";
+
 
     public record Conexion(Long empresaId, String catalogoId, String estado, Instant ultimaSync, String ultimoError) { }
 
@@ -31,7 +33,7 @@ public class CatalogoRepositorio {
     public record Item(String huella, String estado, String metaProductoId) { }
 
     private static final RowMapper<Conexion> CONEXION = (rs, i) -> new Conexion(rs.getLong("fk_id_empresa"),
-        rs.getString("catalogo_id"), rs.getString("estado"),
+        rs.getString("catalogo_id"), rs.getString(ESTADO),
         rs.getTimestamp("ultima_sync_en") == null ? null : rs.getTimestamp("ultima_sync_en").toInstant(),
         rs.getString("ultimo_error"));
 
@@ -123,7 +125,7 @@ public class CatalogoRepositorio {
         jdbc.query("SELECT fk_id_producto, huella, estado, meta_producto_id FROM hot_click_agente_catalogo_item_tb "
             + "WHERE fk_id_empresa = ?", rs -> {
                 out.put(rs.getLong("fk_id_producto"),
-                    new Item(rs.getString("huella"), rs.getString("estado"), rs.getString("meta_producto_id")));
+                    new Item(rs.getString("huella"), rs.getString(ESTADO), rs.getString("meta_producto_id")));
             }, empresaId);
         return out;
     }
@@ -131,7 +133,7 @@ public class CatalogoRepositorio {
     public Optional<Item> item(Long empresaId, long productoId) {
         return jdbc.query("SELECT huella, estado, meta_producto_id FROM hot_click_agente_catalogo_item_tb "
             + "WHERE fk_id_empresa = ? AND fk_id_producto = ?",
-            (rs, i) -> new Item(rs.getString("huella"), rs.getString("estado"), rs.getString("meta_producto_id")),
+            (rs, i) -> new Item(rs.getString("huella"), rs.getString(ESTADO), rs.getString("meta_producto_id")),
             empresaId, productoId).stream().findFirst();
     }
 

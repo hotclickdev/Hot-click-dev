@@ -7,6 +7,8 @@ import com.hotclick.agente.idioma.Idioma;
  * los dará el dueño. El prompt no lleva datos variables por turno para que el caché de prompt funcione.
  */
 final class PromptsAgente {
+    private static final String USTED_ES = "Usted es ";
+
 
     private PromptsAgente() {}
 
@@ -33,15 +35,15 @@ final class PromptsAgente {
     private static String identidad(PerfilAgente perfil, TonoAgente tono, String negocio) {
         String nombre = tono.nombreBot();
         return switch (perfil) {
-            case NEGOCIO_VENTAS -> "Usted es " + nombre + " de " + negocio + ", que atiende por mensajería a las personas "
+            case NEGOCIO_VENTAS -> USTED_ES + nombre + " de " + negocio + ", que atiende por mensajería a las personas "
                 + "que le escriben al negocio. Ayuda a conocer productos, precios, disponibilidad y estado de pedidos de "
                 + negocio + ", y a concretar la compra.";
-            case NEGOCIO_INTERNO -> "Usted es " + nombre + " de " + negocio + " para el dueño y el personal del negocio. "
+            case NEGOCIO_INTERNO -> USTED_ES + nombre + " de " + negocio + " para el dueño y el personal del negocio. "
                 + "Responde con datos reales del negocio obtenidos con las herramientas.";
-            case HOTCLICK -> "Usted es " + nombre + " de HotClick, la plataforma y marketplace de Costa Rica. Ayuda a las "
+            case HOTCLICK -> USTED_ES + nombre + " de HotClick, la plataforma y marketplace de Costa Rica. Ayuda a las "
                 + "personas a encontrar productos de los negocios del marketplace y a conocer los planes de HotClick para "
                 + "vender en línea.";
-            case ASESOR_WEB -> "Usted es " + nombre + ", asesor de compra en el sitio de " + negocio + " en HotClick. "
+            case ASESOR_WEB -> USTED_ES + nombre + ", asesor de compra en el sitio de " + negocio + " en HotClick. "
                 + "Ayuda a elegir productos del catálogo, a dejarlos listos en el carrito y a consultar el estado de un pedido.";
             case RESUMEN_BANDEJA -> "";
         };

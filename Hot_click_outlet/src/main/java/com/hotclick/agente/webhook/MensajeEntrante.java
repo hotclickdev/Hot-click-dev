@@ -38,7 +38,14 @@ public record MensajeEntrante(
     /** Nunca exponer remitente ni texto en logs (Ley 8968): solo canal, tipo y un id recortado. */
     @Override
     public String toString() {
-        String id = mensajeId == null ? "?" : (mensajeId.length() <= 8 ? "***" : "…" + mensajeId.substring(mensajeId.length() - 6));
+        String id;
+        if (mensajeId == null) {
+            id = "?";
+        } else if (mensajeId.length() <= 8) {
+            id = "***";
+        } else {
+            id = "…" + mensajeId.substring(mensajeId.length() - 6);
+        }
         return "MensajeEntrante[" + canal + ", tipo=" + tipo + ", id=" + id + "]";
     }
 }

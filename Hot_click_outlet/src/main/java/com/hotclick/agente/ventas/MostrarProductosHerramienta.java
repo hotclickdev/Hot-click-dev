@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
  */
 @Component
 public class MostrarProductosHerramienta implements HerramientaAgente {
+    private static final String PRODUCTO_IDS = "productoIds";
+
 
     private final TarjetasCatalogoService tarjetas;
 
@@ -42,10 +44,10 @@ public class MostrarProductosHerramienta implements HerramientaAgente {
 
     @Override
     public Map<String, Object> inputSchema() {
-        Map<String, Object> props = Map.of("productoIds", Map.of("type", "array",
+        Map<String, Object> props = Map.of(PRODUCTO_IDS, Map.of("type", "array",
             "description", "Ids devueltos por buscar_productos (hasta " + TarjetasCatalogoService.MAX_TARJETAS + ")",
             "items", Map.of("type", "integer")));
-        return EsquemasVentas.objeto(props, List.of("productoIds"));
+        return EsquemasVentas.objeto(props, List.of(PRODUCTO_IDS));
     }
 
     @Override
@@ -53,7 +55,7 @@ public class MostrarProductosHerramienta implements HerramientaAgente {
         if (contexto.empresaId() == null || !tarjetas.disponible(contexto.empresaId())) {
             return ResultadoHerramienta.error("No hay tarjetas de producto disponibles; describa los productos en texto.");
         }
-        JsonNode nodo = input == null ? null : input.path("productoIds");
+        JsonNode nodo = input == null ? null : input.path(PRODUCTO_IDS);
         if (nodo == null || !nodo.isArray() || nodo.isEmpty()) return ResultadoHerramienta.error("Indique al menos un producto.");
         Set<Long> pedidos = new LinkedHashSet<>();
         for (JsonNode n : nodo) {

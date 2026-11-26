@@ -12,6 +12,8 @@ import java.util.Map;
  */
 @Component
 public class PasarAPersonaHerramienta implements HerramientaAgente {
+    private static final String MOTIVO = "motivo";
+
 
     static final int MOTIVO_MAX = 300;
 
@@ -26,13 +28,13 @@ public class PasarAPersonaHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         return EsquemasAgente.objeto(
-            Map.of("motivo", EsquemasAgente.texto("Motivo breve de la derivación, para quien tome la conversación")),
-            List.of("motivo"));
+            Map.of(MOTIVO, EsquemasAgente.texto("Motivo breve de la derivación, para quien tome la conversación")),
+            List.of(MOTIVO));
     }
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
-        String motivo = input.path("motivo").asText("").trim();
+        String motivo = input.path(MOTIVO).asText("").trim();
         if (motivo.length() > MOTIVO_MAX) motivo = motivo.substring(0, MOTIVO_MAX);
         return ResultadoHerramienta.conAccion(
             "Listo: el equipo fue avisado y una persona continuará la conversación. Despídase en una frase corta.",

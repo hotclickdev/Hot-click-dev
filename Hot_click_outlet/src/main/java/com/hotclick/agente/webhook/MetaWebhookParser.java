@@ -21,6 +21,11 @@ import java.util.List;
  */
 @Component
 public class MetaWebhookParser {
+    private static final String BUTTON = "button";
+    private static final String PAYLOAD = "payload";
+    private static final String MESSAGES = "messages";
+    private static final String TIMESTAMP = "timestamp";
+
 
     static final int MAX_ID = 200;
     static final int MAX_TEXTO = 4096;
@@ -54,7 +59,7 @@ public class MetaWebhookParser {
             for (JsonNode change : entry.path("changes")) {
                 String campo = change.path("field").asText("");
                 JsonNode value = change.path("value");
-                if ("messages".equals(campo)) {
+                if (MESSAGES.equals(campo)) {
                     for (JsonNode st : value.path("statuses")) estadoMensaje(st, mensajes);
                 } else if ("message_template_status_update".equals(campo)) {
                     String id = texto(value.path("message_template_id"));
@@ -76,15 +81,15 @@ public class MetaWebhookParser {
         JsonNode errores = st.path("errors");
         int codigo = errores.isArray() && !errores.isEmpty() ? errores.get(0).path("code").asInt(0) : 0;
         out.add(new EstadoEntrante.EstadoMensaje(id, estado.toLowerCase(java.util.Locale.ROOT),
-            st.path("timestamp").asLong(0), codigo));
+            st.path(TIMESTAMP).asLong(0), codigo));
     }
 
     private void whatsapp(JsonNode entry, List<MensajeEntrante> out) {
         for (JsonNode change : entry.path("changes")) {
-            if (!"messages".equals(change.path("field").asText())) continue;
+            if (!MESSAGES.equals(change.path("field").asText())) continue;
             JsonNode value = change.path("value");
             String cuenta = texto(value.path("metadata").path("phone_number_id"));
-            for (JsonNode m : value.path("messages")) {
+            for (JsonNode m : value.path(MESSAGES)) {
                 String id = texto(m.path("id"));
                 String de = texto(m.path("from"));
                 if (id == null || de == null || cuenta == null || id.length() > MAX_ID) continue;
@@ -100,9 +105,9 @@ public class MetaWebhookParser {
                         txt = texto(elegido.path("title"));
                         boton = texto(elegido.path("id"));
                     }
-                    case "button" -> {
-                        txt = texto(m.path("button").path("text"));
-                        boton = texto(m.path("button").path("payload"));
+                    case BUTTON -> {
+                        txt = texto(m.path(BUTTON).path("text"));
+                        boton = texto(m.path(BUTTON).path(PAYLOAD));
                     }
                     case "audio", "image", "video", "document", "sticker" -> {
                         media = texto(m.path(tipo).path("id"));
@@ -111,7 +116,7 @@ public class MetaWebhookParser {
                     default -> { /* ubicación, contactos, reacciones: solo se registra el tipo */ }
                 }
                 out.add(new MensajeEntrante(Canal.WHATSAPP, cuenta, de, nombreContacto(value, de),
-                        id, tipo, recortar(txt), media, m.path("timestamp").asLong(0), idBoton(boton)));
+                        id, tipo, recortar(txt), media, m.path(TIMESTAMP).asLong(0), idBoton(boton)));
             }
         }
     }
@@ -128,7 +133,7 @@ public class MetaWebhookParser {
         for (JsonNode ev : entry.path("messaging")) {
             String de = texto(ev.path("sender").path("id"));
             if (cuenta == null || de == null || de.equals(cuenta)) continue;
-            long ts = ev.path("timestamp").asLong(0) / 1000L;
+            long ts = ev.path(TIMESTAMP).asLong(0) / 1000L;
             JsonNode msg = ev.path("message");
             if (msg.isObject()) {
                 if (msg.path("is_echo").asBoolean(false)) continue;
@@ -140,9 +145,9 @@ public class MetaWebhookParser {
                 JsonNode adj = msg.path("attachments");
                 if (txt == null && adj.isArray() && !adj.isEmpty()) {
                     tipo = adj.get(0).path("type").asText("adjunto");
-                    media = texto(adj.get(0).path("payload").path("url"));
+                    media = texto(adj.get(0).path(PAYLOAD).path("url"));
                 }
-                String boton = idBoton(texto(msg.path("quick_reply").path("payload")));
+                String boton = idBoton(texto(msg.path("quick_reply").path(PAYLOAD)));
                 out.add(new MensajeEntrante(canal, cuenta, de, null, id, tipo, recortar(txt), media, ts, boton));
                 continue;
             }
@@ -152,7 +157,7 @@ public class MetaWebhookParser {
                 if (id == null || id.length() > MAX_ID) continue;
                 String txt = texto(pb.path("title"));
                 out.add(new MensajeEntrante(canal, cuenta, de, null, id, "postback", recortar(txt), null, ts,
-                        idBoton(texto(pb.path("payload")))));
+                        idBoton(texto(pb.path(PAYLOAD)))));
             }
         }
     }

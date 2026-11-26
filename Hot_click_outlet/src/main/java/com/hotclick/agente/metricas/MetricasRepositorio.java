@@ -17,6 +17,8 @@ import java.util.List;
  */
 @Repository
 public class MetricasRepositorio {
+    private static final String CANAL = "canal";
+
 
     /** Estados de un pedido que ya cobró (los mismos que usa el vencimiento de enlaces). */
     private static final String ESTADOS_PAGADOS =
@@ -77,7 +79,7 @@ public class MetricasRepositorio {
             + "WHERE s.fk_id_canal_cuenta IS NOT NULL AND (s.perfil IS NULL OR s.perfil <> 'NEGOCIO_INTERNO') "
             + "AND s.iniciada_en >= ? AND s.iniciada_en < ? AND " + alcance.filtro("s.fk_id_empresa") + " "
             + "GROUP BY COALESCE(s.perfil, 'SIN_PERFIL'), s.canal";
-        return jdbc.query(sql, (rs, i) -> new FilaConversaciones(rs.getString("perfil"), rs.getString("canal"),
+        return jdbc.query(sql, (rs, i) -> new FilaConversaciones(rs.getString("perfil"), rs.getString(CANAL),
             rs.getLong("n"), rs.getLong("a_persona")), args.toArray());
     }
 
@@ -93,7 +95,7 @@ public class MetricasRepositorio {
             + "LEFT JOIN hot_click_chat_sesion_tb s ON s.id_sesion = e.fk_id_chat_sesion "
             + "WHERE e.creado >= ? AND e.creado < ? AND " + alcance.filtro("e.fk_id_empresa") + " "
             + "GROUP BY COALESCE(s.perfil, 'SIN_PERFIL'), e.canal";
-        return jdbc.query(sql, (rs, i) -> new FilaEnlaces(rs.getString("perfil"), rs.getString("canal"),
+        return jdbc.query(sql, (rs, i) -> new FilaEnlaces(rs.getString("perfil"), rs.getString(CANAL),
             rs.getLong("creados"), rs.getLong("abiertos"), rs.getLong("pagados"), rs.getLong("vencidos"),
             rs.getLong("total_vencidos")), args.toArray());
     }
@@ -107,7 +109,7 @@ public class MetricasRepositorio {
             + "WHERE p.origen_canal IS NOT NULL AND p.estado_pedido IN " + ESTADOS_PAGADOS + " "
             + "AND p.fecha_pedido >= ? AND p.fecha_pedido < ? AND " + alcance.filtro("p.fk_id_empresa") + " "
             + "GROUP BY p.origen_canal";
-        return jdbc.query(sql, (rs, i) -> new FilaVentas(rs.getString("canal"), rs.getLong("n"), rs.getLong("total")),
+        return jdbc.query(sql, (rs, i) -> new FilaVentas(rs.getString(CANAL), rs.getLong("n"), rs.getLong("total")),
             args.toArray());
     }
 

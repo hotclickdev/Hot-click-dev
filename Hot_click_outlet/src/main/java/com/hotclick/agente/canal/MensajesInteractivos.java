@@ -16,6 +16,14 @@ import java.util.Map;
 
 /** Construye los cuerpos JSON de mensajes con foto, precio y botones por canal, y el respaldo en texto. Sin E/S. */
 final class MensajesInteractivos {
+    private static final String TITLE = "title";
+    private static final String TEMPLATE = "template";
+    private static final String PAYLOAD = "payload";
+    private static final String IMAGE = "image";
+    private static final String MESSAGING_PRODUCT = "messaging_product";
+    private static final String CLAVE_WHATSAPP = "whatsapp";
+    private static final String ACTION = "action";
+
 
     static final int WA_MAX_BOTONES = 3;
     static final int WA_MAX_FILAS = 10;
@@ -73,14 +81,14 @@ final class MensajesInteractivos {
 
     /** Solo imagen con pie (para canales/usos sin botones). */
     static Map<String, Object> waImagen(String to, TarjetaProducto t) {
-        return Map.of("messaging_product", "whatsapp", "to", to, "type", "image",
-            "image", Map.of("link", t.imagenUrl(), "caption", textoProducto(t, WA_MAX_CAPTION)));
+        return Map.of(MESSAGING_PRODUCT, CLAVE_WHATSAPP, "to", to, "type", IMAGE,
+            IMAGE, Map.of("link", t.imagenUrl(), "caption", textoProducto(t, WA_MAX_CAPTION)));
     }
 
     static Map<String, Object> waProducto(String to, TarjetaProducto t) {
         Map<String, Object> inter = waBotonesInteractive(textoProducto(t, WA_MAX_CUERPO), t.botonesEfectivos());
         if (imagenValida(t.imagenUrl()))
-            inter.put("header", Map.of("type", "image", "image", Map.of("link", t.imagenUrl())));
+            inter.put("header", Map.of("type", IMAGE, IMAGE, Map.of("link", t.imagenUrl())));
         return waEnvoltorio(to, inter);
     }
 
@@ -89,7 +97,7 @@ final class MensajesInteractivos {
         Map<String, Object> inter = new LinkedHashMap<>();
         inter.put("type", "cta_url");
         inter.put("body", Map.of("text", recortar(texto, WA_MAX_CUERPO)));
-        inter.put("action", Map.of("name", "cta_url",
+        inter.put(ACTION, Map.of("name", "cta_url",
             "parameters", Map.of("display_text", recortar(tituloBoton, MAX_TITULO_BOTON), "url", url)));
         return waEnvoltorio(to, inter);
     }
@@ -102,11 +110,11 @@ final class MensajesInteractivos {
         List<Map<String, Object>> bs = new ArrayList<>();
         for (Boton b : botonesValidos(botones, WA_MAX_BOTONES))
             bs.add(Map.of("type", "reply", "reply",
-                Map.of("id", recortarId(b.id(), WA_MAX_ID_BOTON), "title", recortar(b.titulo(), MAX_TITULO_BOTON))));
+                Map.of("id", recortarId(b.id(), WA_MAX_ID_BOTON), TITLE, recortar(b.titulo(), MAX_TITULO_BOTON))));
         Map<String, Object> inter = new LinkedHashMap<>();
         inter.put("type", "button");
         inter.put("body", Map.of("text", cuerpo));
-        inter.put("action", Map.of("buttons", bs));
+        inter.put(ACTION, Map.of("buttons", bs));
         return inter;
     }
 
@@ -117,7 +125,7 @@ final class MensajesInteractivos {
             if (rows.size() == WA_MAX_FILAS) break;
             Map<String, Object> r = new LinkedHashMap<>();
             r.put("id", recortarId(f.id(), WA_MAX_ID_FILA));
-            r.put("title", recortar(f.titulo(), WA_MAX_TITULO_FILA));
+            r.put(TITLE, recortar(f.titulo(), WA_MAX_TITULO_FILA));
             if (f.descripcion() != null && !f.descripcion().isBlank())
                 r.put("description", recortar(f.descripcion(), WA_MAX_DESC_FILA));
             rows.add(r);
@@ -126,8 +134,8 @@ final class MensajesInteractivos {
         Map<String, Object> inter = new LinkedHashMap<>();
         inter.put("type", "list");
         inter.put("body", Map.of("text", recortar(texto, WA_MAX_CUERPO)));
-        inter.put("action", Map.of("button", recortar(etiqueta, MAX_TITULO_BOTON),
-            "sections", List.of(Map.of("title", "Opciones", "rows", rows))));
+        inter.put(ACTION, Map.of("button", recortar(etiqueta, MAX_TITULO_BOTON),
+            "sections", List.of(Map.of(TITLE, "Opciones", "rows", rows))));
         return waEnvoltorio(to, inter);
     }
 
@@ -140,10 +148,10 @@ final class MensajesInteractivos {
         template.put("language", Map.of("code", idioma));
         if (!params.isEmpty()) template.put("components", List.of(Map.of("type", "body", "parameters", params)));
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("messaging_product", "whatsapp");
+        body.put(MESSAGING_PRODUCT, CLAVE_WHATSAPP);
         body.put("to", to);
-        body.put("type", "template");
-        body.put("template", template);
+        body.put("type", TEMPLATE);
+        body.put(TEMPLATE, template);
         return body;
     }
 
@@ -158,7 +166,7 @@ final class MensajesInteractivos {
         Map<String, Object> inter = new LinkedHashMap<>();
         inter.put("type", "product");
         inter.put("body", Map.of("text", recortar(cuerpo, WA_MAX_CUERPO)));
-        inter.put("action", Map.of("catalog_id", catalogoId, "product_retailer_id", retailerId));
+        inter.put(ACTION, Map.of("catalog_id", catalogoId, "product_retailer_id", retailerId));
         return waEnvoltorio(to, inter);
     }
 
@@ -175,13 +183,13 @@ final class MensajesInteractivos {
         inter.put("type", "product_list");
         inter.put("header", Map.of("type", "text", "text", recortar(titulo, 60)));
         inter.put("body", Map.of("text", recortar(cuerpo, WA_MAX_CUERPO)));
-        inter.put("action", Map.of("catalog_id", catalogoId,
-            "sections", List.of(Map.of("title", recortar(titulo, 24), "product_items", items))));
+        inter.put(ACTION, Map.of("catalog_id", catalogoId,
+            "sections", List.of(Map.of(TITLE, recortar(titulo, 24), "product_items", items))));
         return waEnvoltorio(to, inter);
     }
 
     private static Map<String, Object> waEnvoltorio(String to, Map<String, Object> interactive) {
-        return Map.of("messaging_product", "whatsapp", "to", to, "type", "interactive", "interactive", interactive);
+        return Map.of(MESSAGING_PRODUCT, CLAVE_WHATSAPP, "to", to, "type", "interactive", "interactive", interactive);
     }
 
     // ---------- Instagram y Messenger (Send API) ----------
@@ -189,32 +197,32 @@ final class MensajesInteractivos {
     /** Generic template con una tarjeta: imagen, título (nombre), subtítulo (precio) y hasta 3 botones postback. */
     static Map<String, Object> socialProducto(String psid, TarjetaProducto t) {
         Map<String, Object> el = new LinkedHashMap<>();
-        el.put("title", recortar(t.nombre(), SOCIAL_MAX_TITULO));
+        el.put(TITLE, recortar(t.nombre(), SOCIAL_MAX_TITULO));
         String sub = precioColones(t.precio())
             + (t.descripcion() == null || t.descripcion().isBlank() ? "" : " · " + t.descripcion().trim());
         el.put("subtitle", recortar(sub, SOCIAL_MAX_TITULO));
         if (imagenValida(t.imagenUrl())) el.put("image_url", t.imagenUrl());
         List<Map<String, Object>> bs = new ArrayList<>();
         for (Boton b : botonesValidos(t.botonesEfectivos(), SOCIAL_MAX_BOTONES))
-            bs.add(Map.of("type", "postback", "title", recortar(b.titulo(), MAX_TITULO_BOTON),
-                "payload", recortarId(b.id(), SOCIAL_MAX_PAYLOAD)));
+            bs.add(Map.of("type", "postback", TITLE, recortar(b.titulo(), MAX_TITULO_BOTON),
+                PAYLOAD, recortarId(b.id(), SOCIAL_MAX_PAYLOAD)));
         el.put("buttons", bs);
         Map<String, Object> payload = Map.of("template_type", "generic", "elements", List.of(el));
-        return socialEnvoltorio(psid, Map.of("attachment", Map.of("type", "template", "payload", payload)));
+        return socialEnvoltorio(psid, Map.of("attachment", Map.of("type", TEMPLATE, PAYLOAD, payload)));
     }
 
     /** Plantilla {@code product} de Messenger e Instagram: el id es el del producto en Meta, no el retailer id. */
     static Map<String, Object> socialProductoCatalogo(String psid, String metaProductoId) {
         Map<String, Object> payload = Map.of("template_type", "product", "elements", List.of(Map.of("id", metaProductoId)));
-        return socialEnvoltorio(psid, Map.of("attachment", Map.of("type", "template", "payload", payload)));
+        return socialEnvoltorio(psid, Map.of("attachment", Map.of("type", TEMPLATE, PAYLOAD, payload)));
     }
 
     /** Texto con quick replies (hasta 13, título ≤ 20). */
     static Map<String, Object> socialQuickReplies(String psid, String texto, List<Boton> botones) {
         List<Map<String, Object>> qr = new ArrayList<>();
         for (Boton b : botonesValidos(botones, SOCIAL_MAX_QUICK))
-            qr.add(Map.of("content_type", "text", "title", recortar(b.titulo(), MAX_TITULO_BOTON),
-                "payload", recortarId(b.id(), SOCIAL_MAX_PAYLOAD)));
+            qr.add(Map.of("content_type", "text", TITLE, recortar(b.titulo(), MAX_TITULO_BOTON),
+                PAYLOAD, recortarId(b.id(), SOCIAL_MAX_PAYLOAD)));
         return socialEnvoltorio(psid,
             Map.of("text", recortar(texto, MetaCanalMensajeria.MAX_SOCIAL), "quick_replies", qr));
     }

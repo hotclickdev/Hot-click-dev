@@ -45,7 +45,7 @@ class BitacoraAgenteTest {
     void laEntidadSoloGuardaIdsNoTextoDeClientes() {
         // Contrato: ningún campo de la bitácora es texto libre (accion y resultado son códigos cortos).
         assertThat(java.util.Arrays.stream(AgenteAccion.class.getDeclaredFields())
-            .map(f -> f.getName()).toList())
+            .map(java.lang.reflect.Field::getName).toList())
             .containsExactlyInAnyOrder("EJECUTADA", "CANCELADA", "RECHAZADA", "ERROR", "id", "empresaId", "usuarioId",
                 "canal", "accion", "resultado", "entidadId", "fechaCreacion");
     }

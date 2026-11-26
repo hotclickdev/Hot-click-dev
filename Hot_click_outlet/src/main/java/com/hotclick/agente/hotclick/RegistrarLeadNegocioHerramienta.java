@@ -20,6 +20,9 @@ import java.util.Map;
  */
 @Component
 public class RegistrarLeadNegocioHerramienta implements HerramientaAgente {
+    private static final String NOMBRE = "nombre";
+    private static final String TIPO_NEGOCIO = "tipoNegocio";
+
 
     /** Ruta del SPA donde un negocio se registra como vendedor. */
     static final String RUTA_REGISTRO = "/registro-empresa";
@@ -43,17 +46,17 @@ public class RegistrarLeadNegocioHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         Map<String, Object> props = new LinkedHashMap<>();
-        props.put("nombre", EsquemasHotClick.texto("Nombre del negocio o de la persona"));
-        props.put("tipoNegocio", EsquemasHotClick.texto("Qué vende o a qué se dedica el negocio"));
+        props.put(NOMBRE, EsquemasHotClick.texto("Nombre del negocio o de la persona"));
+        props.put(TIPO_NEGOCIO, EsquemasHotClick.texto("Qué vende o a qué se dedica el negocio"));
         props.put("interes", EsquemasHotClick.texto("Qué plan o duda le interesa, si lo mencionó; vacío si no"));
-        return EsquemasHotClick.objeto(props, List.of("nombre", "tipoNegocio"));
+        return EsquemasHotClick.objeto(props, List.of(NOMBRE, TIPO_NEGOCIO));
     }
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
         if (input == null) return ResultadoHerramienta.error("Falta el nombre o qué vende el negocio.");
-        String nombre = input.path("nombre").asText("").trim();
-        String tipo = input.path("tipoNegocio").asText("").trim();
+        String nombre = input.path(NOMBRE).asText("").trim();
+        String tipo = input.path(TIPO_NEGOCIO).asText("").trim();
         if (nombre.isEmpty() || tipo.isEmpty()) return ResultadoHerramienta.error("Falta el nombre o qué vende el negocio.");
         String contacto = RegistrarLeadHerramienta.ContactoLead.de(contexto);
         if (contacto == null) return ResultadoHerramienta.error("No hay contacto para registrar; derive a una persona.");

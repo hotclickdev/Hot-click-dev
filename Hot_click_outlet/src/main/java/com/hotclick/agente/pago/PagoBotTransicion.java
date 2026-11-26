@@ -88,7 +88,7 @@ public class PagoBotTransicion {
                 && (entrega == null || p.getFechaEntregaEstimada().isAfter(entrega))) {
                 entrega = p.getFechaEntregaEstimada();
             }
-            if (numeros.length() > 0) numeros.append(", ");
+            if (!numeros.isEmpty()) numeros.append(", ");
             numeros.append(p.getNumeroPedido());
         }
         return new ContextoPago(e.getId(), e.getEmpresaId(), e.getChatSesionId(), e.getCodigo(),
