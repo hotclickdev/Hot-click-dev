@@ -23,6 +23,8 @@ type TenantState = {
   loadError: boolean
   estadoEmpresa: string | null
   visibilidadPublica: boolean | null
+  /** `GET /tenant/info`: true solo si este negocio recibiría hoy el primer mes gratis. Ausente = false. */
+  primerMesGratisDisponible: boolean
   loadTenantInfo: () => Promise<void>
   loadTenantUso: () => Promise<void>
   setEmpresaStatus: (status: { estadoEmpresa?: string | null; visibilidadPublica?: boolean }) => void
@@ -78,6 +80,7 @@ const useTenantStore = create<TenantState>((set, get) => ({
 
   estadoEmpresa: null,
   visibilidadPublica: null,
+  primerMesGratisDisponible: false,
 
   // ── Acciones ─────────────────────────────────────────────────────────────
 
@@ -101,6 +104,7 @@ const useTenantStore = create<TenantState>((set, get) => ({
         comisionPorcentaje: data.comisionPorcentaje ?? 0,
         comisionMinimaCrc:  data.comisionMinimaCrc  ?? 0,
         features:     data.features     ?? {},
+        primerMesGratisDisponible: data.primerMesGratisDisponible === true,
         loaded: true,
         loading: false,
         loadError: false,
@@ -167,7 +171,7 @@ const useTenantStore = create<TenantState>((set, get) => ({
     trialDias: -1, fechaVenc: null, features: {},
     usoProductos: 0, usoUsuarios: 0,
     loaded: false, loading: false, loadError: false,
-    estadoEmpresa: null, visibilidadPublica: null,
+    estadoEmpresa: null, visibilidadPublica: null, primerMesGratisDisponible: false,
   }),
 }))
 

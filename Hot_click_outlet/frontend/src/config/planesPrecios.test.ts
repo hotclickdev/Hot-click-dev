@@ -112,3 +112,23 @@ describe('Primer mes gratis (diasPrueba del backend)', () => {
     expect(NOTA_UNA_VEZ_POR_NEGOCIO).toBe('Una vez por negocio.')
   })
 })
+
+describe('Primer mes gratis según sesión y elegibilidad', () => {
+  it('anónimo: ve la oferta genérica de diasPrueba', async () => {
+    const { diasVisiblesPrimerMes } = await import('./planesPrecios')
+    expect(diasVisiblesPrimerMes(30, { logueado: false })).toBe(30)
+    expect(diasVisiblesPrimerMes(14, { logueado: false, elegible: false })).toBe(14)
+    expect(diasVisiblesPrimerMes(0, { logueado: false })).toBe(0)
+  })
+  it('con sesión y elegible (primerMesGratisDisponible true): ve la oferta', async () => {
+    const { diasVisiblesPrimerMes } = await import('./planesPrecios')
+    expect(diasVisiblesPrimerMes(30, { logueado: true, elegible: true })).toBe(30)
+    expect(diasVisiblesPrimerMes(0, { logueado: true, elegible: true })).toBe(0)
+  })
+  it('con sesión y no elegible, false o ausente: solo precio normal', async () => {
+    const { diasVisiblesPrimerMes } = await import('./planesPrecios')
+    expect(diasVisiblesPrimerMes(30, { logueado: true, elegible: false })).toBe(0)
+    expect(diasVisiblesPrimerMes(30, { logueado: true })).toBe(0)
+    expect(diasVisiblesPrimerMes(30, { logueado: true, elegible: null })).toBe(0)
+  })
+})

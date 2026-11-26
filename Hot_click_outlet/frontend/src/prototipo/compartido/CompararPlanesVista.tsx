@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Boton } from './ui'
 import { NOTA_UNA_VEZ_POR_NEGOCIO } from '@/config/planesPrecios'
+import { useDiasPrimerMes } from '@/pages/planes/useOfertaPrimerMes'
 import { billingService } from '@/services/billingService'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
@@ -214,7 +215,9 @@ export default function CompararPlanesVista({
 
 /** «Primer mes gratis, luego …» + «Una vez por negocio.» si el backend ofrece días gratis para el plan. */
 function PruebaGratisPlan({ plan }: { plan: PlanUi }) {
-  if (!plan.pruebaGratis) return null
+  const visibles = useDiasPrimerMes()
+  // Con sesión, solo si el backend confirma que este negocio aún tiene su mes gratis.
+  if (!plan.pruebaGratis || visibles(1) === 0) return null
   return (
     <div className="text-xs text-hc-muted">
       <p className="font-semibold text-hc-success">{plan.pruebaGratis}</p>

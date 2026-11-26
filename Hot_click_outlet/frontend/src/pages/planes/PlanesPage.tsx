@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import api from '@/services/api'
+import { useDiasPrimerMes } from './useOfertaPrimerMes'
 import { mensualidadMeta, notaMonedaMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
 import { NOTA_UNA_VEZ_POR_NEGOCIO, PLAN_PRECIOS, diasPruebaPlan, textoPrimerMesLuego, textoMonedaPlanes, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 
@@ -96,6 +97,7 @@ export default function PlanesPage() {
   }, [])
 
   const { montos, moneda } = useMensualidadesPlanes()
+  const diasVisibles = useDiasPrimerMes()
   const descripcionMeta = `Compará Emprendedor (${mensualidadMeta(montos.EMPRENDEDOR, moneda)} + ${textoComision(PLAN_PRECIOS.EMPRENDEDOR.comisionPct)}), PYME (${mensualidadMeta(montos.PYME, moneda)} + ${textoComision(PLAN_PRECIOS.PYME.comisionPct)}) y Negocio Plus (${mensualidadMeta(montos.NEGOCIO_PLUS, moneda)} + ${textoComision(PLAN_PRECIOS.NEGOCIO_PLUS.comisionPct)}). Sin mínimo por venta. ${notaMonedaMeta(moneda)}`
 
   const dePlan = (clave: string) => planes.find((p) => p.nombre === clave)
@@ -139,7 +141,7 @@ export default function PlanesPage() {
                 <p className="font-display text-[18px] font-semibold">{(() => { const d = dePlan(plan.clave); return d ? `${textoMensualidad(mensualDe(d), false, d.moneda ?? moneda)} + ${textoComision(comisionDe(d), minimaDe(d))}` : textoPlan(plan.clave, null, false, moneda) })()}</p>
                 {(() => {
                   const d = dePlan(plan.clave)
-                  const oferta = d ? textoPrimerMesLuego(diasPruebaPlan(plan.clave, d.diasPrueba), mensualDe(d), d.moneda ?? moneda) : null
+                  const oferta = d ? textoPrimerMesLuego(diasVisibles(diasPruebaPlan(plan.clave, d.diasPrueba)), mensualDe(d), d.moneda ?? moneda) : null
                   return oferta ? (
                     <div data-testid="oferta-primer-mes" className="text-[13px] leading-5">
                       <p className="font-semibold">{oferta}</p>

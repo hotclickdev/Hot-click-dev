@@ -59,6 +59,8 @@ export type TenantInfo = {
   comisionPorcentaje?: number
   comisionMinimaCrc?: number
   features?: TenantFeatures
+  /** true solo si este negocio aún tiene disponible el primer mes gratis. */
+  primerMesGratisDisponible?: boolean
 }
 
 export type TenantUso = {
