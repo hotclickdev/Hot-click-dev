@@ -25,7 +25,7 @@ describe('planLandingCopy: el cupo de Emprendedor no va fijo', () => {
   })
 
   it('ya no promete «gratis» a secas: período sin mensualidad con cupo y precio posterior', () => {
-    const copy = copyLanding('emprendedor', 25, { periodo: '3 meses', mensualUsd: 9 })
+    const copy = copyLanding('emprendedor', 25, { periodo: '3 meses', mensualUsd: 9, moneda: 'USD' })
     expect(copy.subheadline).toBe('Sin mensualidad por 3 meses para los primeros 25 negocios; después, US$9/mes + 9% por venta, sin mínimo.')
     const texto = textoEmprendedor(copy)
     expect(texto).not.toMatch(/gratis/i)
@@ -33,10 +33,24 @@ describe('planLandingCopy: el cupo de Emprendedor no va fijo', () => {
     expect(texto).toMatch(/sin mensualidad por 3 meses/i)
   })
 
+  it('CRC: muestra colones y la nota de moneda en colones', () => {
+    const copy = copyLanding('emprendedor', 25, { periodo: '3 meses', mensualUsd: 5900, moneda: 'CRC' })
+    expect(copy.subheadline).toBe('Sin mensualidad por 3 meses para los primeros 25 negocios; después, ₡5.900/mes + 9% por venta, sin mínimo.')
+    const texto = textoEmprendedor(copy)
+    expect(texto).not.toContain('US$')
+    expect(texto).toContain('la mensualidad también se cobra en colones')
+  })
+
+  it('moneda desconocida: sin monto aunque venga cifra', () => {
+    const texto = textoEmprendedor(copyLanding('emprendedor', 25, { periodo: '3 meses', mensualUsd: 9, moneda: 'EUR' }))
+    expect(texto).not.toMatch(/US\$|₡|€|\b9\/mes/)
+    expect(texto).toContain('mensualidad del plan')
+  })
+
   it('sin datos del backend no inventa período ni monto', () => {
     const texto = textoEmprendedor(copyLanding('emprendedor'))
     expect(texto).toMatch(/sin mensualidad por un período/i)
-    expect(texto).toContain('mensualidad en dólares')
+    expect(texto).toContain('mensualidad del plan')
     expect(texto).not.toMatch(/US\$\d|gratis|\d+ (meses|días)/i)
   })
 

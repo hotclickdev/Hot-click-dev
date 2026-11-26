@@ -36,6 +36,8 @@ public class EmprendePublicController {
         // Mensualidad USD de Emprendedor sin cupo, solo desde config; null si no está fijada (la UI no inventa monto).
         BigDecimal usd = preciosPlanes.precioUsd("EMPRENDEDOR").filter(v -> v.signum() > 0).orElse(null);
         m.put("mensualidadUsdSinCupo", usd);
+        // Moneda de ese monto (CRC, USD...) desde PLANES_MONEDA; null si no está configurada (la UI no asume moneda).
+        m.put("moneda", preciosPlanes.monedaPublica().orElse(null));
         return m;
     }
 }

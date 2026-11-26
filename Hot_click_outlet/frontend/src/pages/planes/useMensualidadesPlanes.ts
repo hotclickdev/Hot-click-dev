@@ -1,34 +1,44 @@
 import { useEffect, useState } from 'react'
 import api from '@/services/api'
-import { textoMensualidad, type ClavePlan } from '@/config/planesPrecios'
+import { monedaDePlanes, textoMensualidad, type ClavePlan, type MonedaPlan } from '@/config/planesPrecios'
 
-type PlanConPrecio = { nombre: string; precioUsd?: number | null }
+type PlanConPrecio = { nombre: string; precioUsd?: number | null; moneda?: string | null }
+
+export type MensualidadesPlanes = { montos: Partial<Record<ClavePlan, number>>; moneda: string | null }
 
 /**
- * Mensualidad USD por plan, tal como la publica el backend (`GET /api/planes` → precioUsd). Sin dato (cargando, error o
- * plan sin precio) queda null: nunca se inventa un monto.
+ * Mensualidad por plan y su moneda, tal como las publica el backend (`GET /api/planes` → precioUsd + moneda; el monto
+ * está en la moneda de PLANES_MONEDA). Sin dato (cargando, error o plan sin precio) queda vacío: nunca se inventa un monto.
  */
-export function useMensualidadesPlanes(): Partial<Record<ClavePlan, number>> {
-  const [montos, setMontos] = useState<Partial<Record<ClavePlan, number>>>({})
+export function useMensualidadesPlanes(): MensualidadesPlanes {
+  const [estado, setEstado] = useState<MensualidadesPlanes>({ montos: {}, moneda: null })
   useEffect(() => {
     let vivo = true
     api.get<PlanConPrecio[]>('/planes')
       .then((r) => {
         if (!vivo || !Array.isArray(r.data)) return
-        const siguiente: Partial<Record<ClavePlan, number>> = {}
+        const montos: Partial<Record<ClavePlan, number>> = {}
         for (const p of r.data) {
           const n = Number(p.precioUsd)
-          if (Number.isFinite(n) && n > 0) siguiente[p.nombre as ClavePlan] = n
+          if (Number.isFinite(n) && n > 0) montos[p.nombre as ClavePlan] = n
         }
-        setMontos(siguiente)
+        setEstado({ montos, moneda: monedaDePlanes(r.data) })
       })
       .catch(() => undefined)
     return () => { vivo = false }
   }, [])
-  return montos
+  return estado
 }
 
-/** «US$24/mes» o, sin monto, «mensualidad en dólares» (para frases en minúscula como las meta description). */
-export function mensualidadMeta(monto?: number | null): string {
-  return textoMensualidad(monto).replace(/^M/, 'm')
+/** «₡12.900/mes», «US$24/mes» o, sin monto, «mensualidad del plan» (para frases en minúscula como las meta description). */
+export function mensualidadMeta(monto?: number | null, moneda?: MonedaPlan): string {
+  return textoMensualidad(monto, false, moneda).replace(/^M/, 'm')
+}
+
+/** Cierre de las meta description: «Productos en colones; mensualidad en colones.» según la moneda del backend. */
+export function notaMonedaMeta(moneda?: MonedaPlan): string {
+  const c = typeof moneda === 'string' ? moneda.trim().toUpperCase() : ''
+  if (c === 'CRC') return 'Productos y mensualidad en colones.'
+  if (c === 'USD') return 'Productos en colones; mensualidad en dólares.'
+  return 'Productos en colones; mensualidad con tarjeta.'
 }

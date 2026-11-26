@@ -62,7 +62,7 @@ export default function PlanLandingLayout({ planId, mostrarCupo = false }: Props
   // «Sin mensualidad» solo si el backend confirma cupo gratis; si no, US$/mes desde config.
   const { cupo } = useCupoEmprende()
   // El número de negocios del cupo sale del backend (cupo.limite); sin dato, el texto queda sin cifra.
-  const copy = copyLanding(planId, limiteCupo(cupo), { periodo: cupo?.periodoGratis, mensualUsd: cupo?.mensualidadUsdSinCupo })
+  const copy = copyLanding(planId, limiteCupo(cupo), { periodo: cupo?.periodoGratis, mensualUsd: cupo?.mensualidadUsdSinCupo, moneda: cupo?.moneda })
   const destino = `/registro-empresa?plan=${copy.query}`
   const hayCupoGratis = cupo != null && cupo.cuposGratisDisponibles > 0
   const precio = planId === 'emprendedor' && cupo != null

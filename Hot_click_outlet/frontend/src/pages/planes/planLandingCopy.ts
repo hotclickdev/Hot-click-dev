@@ -1,4 +1,4 @@
-import { PLAN_PRECIOS, textoComision, textoMensualidad } from '@/config/planesPrecios'
+import { PLAN_PRECIOS, etiquetaMensualidad, textoComision, textoMensualidad, type MonedaPlan } from '@/config/planesPrecios'
 
 const PYME = PLAN_PRECIOS.PYME
 const PLUS = PLAN_PRECIOS.NEGOCIO_PLUS
@@ -35,8 +35,10 @@ export function textoPrimerosNegocios(limite?: number | null): string {
 export type DatosCupoCopy = {
   /** «3 meses», de `periodoGratis` en /public/emprende/cupos. */
   periodo?: string | null
-  /** Mensualidad USD de lista, de `mensualidadUsdSinCupo`. */
+  /** Mensualidad de lista, de `mensualidadUsdSinCupo` (monto en `moneda`; nombre legado). */
   mensualUsd?: number | null
+  /** Moneda ISO del monto (`moneda` de /public/emprende/cupos). Sin ella no se arma monto. */
+  moneda?: MonedaPlan
 }
 
 /** «sin mensualidad por 3 meses» o, sin dato, «sin mensualidad por un período». */
@@ -45,12 +47,21 @@ function textoSinMensualidad(periodo?: string | null): string {
   return p ? `sin mensualidad por ${p}` : 'sin mensualidad por un período'
 }
 
+/** «Los productos se venden en colones; la mensualidad se cobra en dólares.» según la moneda del backend. */
+function textoNotaMoneda(moneda?: MonedaPlan): string {
+  const e = etiquetaMensualidad(moneda)
+  if (e === 'Mensualidad en colones') return 'Los productos se venden en colones y la mensualidad también se cobra en colones.'
+  if (e === 'Mensualidad en dólares') return 'Los productos se venden en colones; la mensualidad se cobra en dólares.'
+  return 'Los productos se venden en colones; la mensualidad se cobra con tarjeta.'
+}
+
 function copyEmprendedor(limite?: number | null, datos: DatosCupoCopy = {}): PlanLandingCopy {
   const primeros = textoPrimerosNegocios(limite)
   const sinMensualidad = textoSinMensualidad(datos.periodo)
   const porPeriodo = sinMensualidad.replace('sin mensualidad ', '')
-  // «US$9/mes» si el backend mandó monto; si no, «mensualidad en dólares» (nunca se inventa un monto).
-  const despues = textoMensualidad(datos.mensualUsd).replace(/^M/, 'm')
+  // «₡12.900/mes» o «US$9/mes» si el backend mandó monto y moneda; si no, «mensualidad del plan» (nunca se inventa un monto).
+  const despues = textoMensualidad(datos.mensualUsd, false, datos.moneda).replace(/^M/, 'm')
+  const notaMoneda = textoNotaMoneda(datos.moneda)
   const comision = textoComision(EMP.comisionPct)
   return {
     planId: 'emprendedor',
@@ -72,7 +83,7 @@ function copyEmprendedor(limite?: number | null, datos: DatosCupoCopy = {}): Pla
     ],
     faq: [
       { pregunta: '¿Me cobran la tarjeta al registrarme?', respuesta: `Mientras haya cupo, no: no pagás mensualidad ${porPeriodo} y solo pagás ${comision}, sin mínimo. Después, o si el cupo ya se llenó, pagás ${despues} + ${comision}. La mensualidad la ves antes de pagar.` },
-      { pregunta: '¿Hay cupo limitado?', respuesta: `Sí, ${primeros} no pagan mensualidad ${porPeriodo}. Terminado ese período, Emprendedor paga ${despues} + ${comision}. Los productos se venden en colones; la mensualidad se cobra en dólares.` },
+      { pregunta: '¿Hay cupo limitado?', respuesta: `Sí, ${primeros} no pagan mensualidad ${porPeriodo}. Terminado ese período, Emprendedor paga ${despues} + ${comision}. ${notaMoneda}` },
     ],
   }
 }
@@ -85,8 +96,8 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     query: 'pyme',
     eyebrow: 'Para crecer',
     headline: 'Operá el negocio en un solo panel',
-    subheadline: 'Equipo, inventario y caja. Mensualidad en dólares más comisión por venta, sin mínimo.',
-    precio: `${textoMensualidad()} + ${textoComision(PYME.comisionPct)}`,
+    subheadline: 'Equipo, inventario y caja. Mensualidad del plan más comisión por venta, sin mínimo.',
+    precio: `${etiquetaMensualidad()} + ${textoComision(PYME.comisionPct)}`,
     ctaLabel: 'Suscribirme a PYME',
     paraQuienSi: [
       'Ya vendés seguido, con 2 a 5 personas en el equipo',
@@ -107,8 +118,8 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
     query: 'negocio-plus',
     eyebrow: 'Para operar en serio',
     headline: 'Todas las sucursales en un panel',
-    subheadline: 'Pedidos por local, equipo sin tope y CRM. Mensualidad en dólares más comisión por venta, sin mínimo.',
-    precio: `${textoMensualidad()} + ${textoComision(PLUS.comisionPct)}`,
+    subheadline: 'Pedidos por local, equipo sin tope y CRM. Mensualidad del plan más comisión por venta, sin mínimo.',
+    precio: `${etiquetaMensualidad()} + ${textoComision(PLUS.comisionPct)}`,
     ctaLabel: 'Suscribirme a Negocio Plus',
     paraQuienSi: [
       'Tenés más de un local',

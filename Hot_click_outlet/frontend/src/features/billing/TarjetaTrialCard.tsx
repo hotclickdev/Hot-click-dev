@@ -5,7 +5,7 @@ import useAuthStore from '@/store/authStore'
 import { emprendeCupoService } from '@/services/emprendeCupoService'
 import OnvoSuscripcionEmbed from './OnvoSuscripcionEmbed'
 import { useTrialTarjeta } from './useTrialTarjeta'
-import { debeConsultarTarjeta, formatoUsd, mostrarBotonAgregarTarjeta, vistaTarjetaTrial } from './trialTarjeta'
+import { debeConsultarTarjeta, formatoMensualidadPlan, mostrarBotonAgregarTarjeta, vistaTarjetaTrial } from './trialTarjeta'
 
 const ROLES_DUENO = new Set(['EMPRENDEDOR', 'ADMIN'])
 
@@ -46,7 +46,7 @@ export default function TarjetaTrialCard() {
     if (!esDueno || estadoPlan !== 'TRIAL') return
     let vivo = true
     emprendeCupoService.get()
-      .then(({ data }) => { if (vivo) setMensualidad(formatoUsd(data?.mensualidadUsdSinCupo)) })
+      .then(({ data }) => { if (vivo) setMensualidad(formatoMensualidadPlan(data?.mensualidadUsdSinCupo, data?.moneda)) })
       .catch(() => { /* sin monto: el texto no menciona precio, no se inventa */ })
     return () => { vivo = false }
   }, [esDueno, estadoPlan])

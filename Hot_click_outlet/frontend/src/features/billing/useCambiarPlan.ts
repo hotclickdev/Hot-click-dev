@@ -29,6 +29,7 @@ export type PagoPlanOnvo = {
   publishableKey?: string
   planNombre?: string
   montoUsd?: number
+  moneda?: string
 }
 
 export type PagoPlanPendiente = PagoPlanOnvo
@@ -45,6 +46,7 @@ export function pagoPendienteDe(result: CambiarPlanResultado): PagoPlanPendiente
       planNombre: result.planNombre,
     }
     if (typeof result.montoUsd === 'number' && result.montoUsd > 0) pago.montoUsd = result.montoUsd
+    if (typeof result.moneda === 'string' && result.moneda) pago.moneda = result.moneda
     return pago
   }
   return null

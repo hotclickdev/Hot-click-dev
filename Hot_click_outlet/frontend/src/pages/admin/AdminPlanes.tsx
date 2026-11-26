@@ -10,7 +10,7 @@ import CloseIcon from '@/components/ui/CloseIcon'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
 import { montoCobroVisible, rotuloPrecioLista, textoPrecioCatalogo } from '@/features/billing/montoPlan'
-import { TEXTO_MONEDA_PLANES } from '@/config/planesPrecios'
+import { monedaDePlanes, textoMonedaPlanes } from '@/config/planesPrecios'
 import TarjetaTrialCard from '@/features/billing/TarjetaTrialCard'
 import { useCambiarPlan } from '@/features/billing/useCambiarPlan'
 import SolicitudCambioPlanForm from '@/features/billing/SolicitudCambioPlanForm'
@@ -21,6 +21,8 @@ type PlanSaas = {
   id: Id
   nombre: string
   precioUsd?: number | string
+  /** Moneda ISO del monto (PLANES_MONEDA del backend). */
+  moneda?: string | null
   precioMensual?: number
   comisionPorcentaje?: number | string
   descripcion?: string
@@ -236,7 +238,7 @@ export default function AdminPlanes() {
       )}
 
       <p className="text-xs text-center" style={{ color: 'var(--hc-muted)' }}>
-        {TEXTO_MONEDA_PLANES}
+        {textoMonedaPlanes(monedaDePlanes(planes))}
         Bajar de un plan ya pagado se pide con una solicitud; HotClick la revisa.
       </p>
 

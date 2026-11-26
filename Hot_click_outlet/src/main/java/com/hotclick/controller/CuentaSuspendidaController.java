@@ -77,10 +77,10 @@ public class CuentaSuspendidaController {
         if (suspendida) {
             onvoChange.planPendienteDeSuspension(empresaId).ifPresent((Plan p) -> {
                 out.put("planPendiente", p.getNombre());
-                // ALTO precios: lo que cobra ONVO (USD de config). Sin config: sin monto, la UI deshabilita «Pagar».
+                // ALTO precios: lo que cobra ONVO (monto y moneda de config). Sin config: sin monto, la UI deshabilita «Pagar».
                 preciosPlanes.precioPublicoUsd(p.getNombre()).ifPresent(usd -> {
                     out.put("montoPendiente", usd);
-                    out.put("moneda", "USD");
+                    out.put("moneda", preciosPlanes.monedaPublica().orElse(null));
                 });
             });
         }

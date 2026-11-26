@@ -93,6 +93,7 @@ public class TenantController {
         m.put("activo", p.activo());
         m.put("maxCreditosAi", p.maxCreditosAi());
         m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.nombre()).orElse(null));
+        m.put("moneda", preciosPlanes.monedaPublica().orElse(null));
         m.put("comisionPorcentaje", p.comisionPorcentaje());
         m.put("comisionMinimaCrc", p.comisionMinimaCrc());
         return m;

@@ -328,32 +328,56 @@ test.describe('Wizard conversacional Emprendedor', () => {
     await expect(page.getByRole('heading', { name: 'Confirmá el cambio' })).toBeVisible()
   }
 
-  test('cambiar plan: paso 1 elegir plan con mock API', async ({ page }) => {
+  test('cambiar plan: paso 1 elegir plan con mock API (USD)', async ({ page }) => {
     await abrirCambiarPlan(page, [
-      { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0, precioUsd: 9 },
-      { id: 2, nombre: 'PYME', precioMensual: 9900, precioUsd: 24 },
-      { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900, precioUsd: 49 },
+      { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0, precioUsd: 9, moneda: 'USD' },
+      { id: 2, nombre: 'PYME', precioMensual: 9900, precioUsd: 24, moneda: 'USD' },
+      { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900, precioUsd: 49, moneda: 'USD' },
     ])
     await expect(page.getByText('US$9/mes').first()).toBeVisible()
     await expect(page.getByText('Precio de lista').first()).toBeVisible()
     await expect(page.getByText('US$49/mes').first()).toBeVisible()
     await elegirPymeYContinuar(page)
-    // La mensualidad es la de ONVO en USD (precioUsd), no los colones legados de precioMensual.
+    // La mensualidad es la de ONVO en la moneda del backend (precioUsd + moneda), no los colones legados de precioMensual.
     await expect(page.getByText('US$24/mes').first()).toBeVisible()
     await expect(page.getByText(/₡\s?9\.900/)).toHaveCount(0)
   })
 
+  test('cambiar plan: moneda CRC muestra la mensualidad en colones de la config', async ({ page }) => {
+    await abrirCambiarPlan(page, [
+      { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0, precioUsd: 5900, moneda: 'CRC' },
+      { id: 2, nombre: 'PYME', precioMensual: 9900, precioUsd: 12900, moneda: 'CRC' },
+      { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900, precioUsd: 24900, moneda: 'CRC' },
+    ])
+    await expect(page.getByText('₡5.900/mes').first()).toBeVisible()
+    await expect(page.getByText('₡24.900/mes').first()).toBeVisible()
+    await elegirPymeYContinuar(page)
+    await expect(page.getByText('₡12.900/mes').first()).toBeVisible()
+    await expect(page.getByText(/US\$/)).toHaveCount(0)
+  })
+
   test('cambiar plan: sin precioUsd no inventa monto ni muestra colones', async ({ page }) => {
     await abrirCambiarPlan(page, [
-      { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0 },
-      { id: 2, nombre: 'PYME', precioMensual: 9900 },
-      { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900 },
+      { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0, moneda: 'CRC' },
+      { id: 2, nombre: 'PYME', precioMensual: 9900, moneda: 'CRC' },
+      { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900, moneda: 'CRC' },
     ])
     await elegirPymeYContinuar(page)
-    await expect(page.getByText('Mensualidad en dólares').first()).toBeVisible()
+    await expect(page.getByText('Mensualidad en colones').first()).toBeVisible()
     await expect(page.getByText(/₡\s?(9\.900|24\.900)/)).toHaveCount(0)
     await expect(page.getByText(/US\$(9|24|49)\/mes/)).toHaveCount(0)
     await expect(page.getByText('Precio de lista')).toHaveCount(0)
+  })
+
+  test('cambiar plan: moneda desconocida usa texto neutro y no inventa monto', async ({ page }) => {
+    await abrirCambiarPlan(page, [
+      { id: 1, nombre: 'EMPRENDEDOR', precioMensual: 0, precioUsd: 9, moneda: 'EUR' },
+      { id: 2, nombre: 'PYME', precioMensual: 9900, precioUsd: 24, moneda: 'EUR' },
+      { id: 3, nombre: 'NEGOCIO_PLUS', precioMensual: 24900, precioUsd: 49, moneda: 'EUR' },
+    ])
+    await elegirPymeYContinuar(page)
+    await expect(page.getByText('Mensualidad del plan').first()).toBeVisible()
+    await expect(page.getByText(/US\$|₡\s?\d|€/)).toHaveCount(0)
   })
 
   test('encargos: cotizar abre pasos de respuesta', async ({ page }) => {

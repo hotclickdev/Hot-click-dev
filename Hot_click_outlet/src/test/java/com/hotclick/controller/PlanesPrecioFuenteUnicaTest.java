@@ -173,32 +173,35 @@ class PlanesPrecioFuenteUnicaTest {
     }
 
     @Test
-    @DisplayName("Moneda de cobro configurada distinta de USD: no se publica un monto en dólares")
-    void monedaNoUsdNoPublica() throws Exception {
+    @DisplayName("Moneda CRC configurada: se publica el monto configurado junto con moneda CRC")
+    void monedaCrcPublicaMontoYMoneda() throws Exception {
         planesDeBd();
-        mvc(new PreciosPlanesConfig("9", "24", "49", "crc")).perform(get("/api/planes"))
+        mvc(new PreciosPlanesConfig("5900", "12900", "24900", "crc")).perform(get("/api/planes"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[1].precioUsd").value(nullValue()))
-            .andExpect(jsonPath("$[2].precioUsd").value(nullValue()));
+            .andExpect(jsonPath("$[1].precioUsd").value(12900))
+            .andExpect(jsonPath("$[2].precioUsd").value(24900))
+            .andExpect(jsonPath("$[1].moneda").value("CRC"));
     }
 
     @Test
-    @DisplayName("precioPublicoUsd: solo con moneda USD explícita; nula, vacía, otra moneda, 0 o vacío no publican")
+    @DisplayName("precioPublicoUsd: requiere moneda configurada (USD, CRC...); nula, vacía, 0 o sin precio no publican")
     void precioPublicoUsdReglas() {
         assertThat(new PreciosPlanesConfig("9", "24", "49", "USD").precioPublicoUsd("PYME")).contains(new BigDecimal("24"));
         assertThat(new PreciosPlanesConfig("9", "24", "49", "usd").precioPublicoUsd("negocio_plus")).contains(new BigDecimal("49"));
-        // Fail-closed de moneda: sin USD explícito (nula o vacía) no se publica precio.
+        assertThat(new PreciosPlanesConfig("9", "12900", "49", "crc").precioPublicoUsd("PYME")).contains(new BigDecimal("12900"));
+        assertThat(new PreciosPlanesConfig("9", "12900", "49", "crc").monedaPublica()).contains("CRC");
+        assertThat(new PreciosPlanesConfig("9", "24", "49").monedaPublica()).isEmpty();
+        // Fail-closed de moneda: sin moneda configurada (nula o vacía) no se publica precio.
         assertThat(new PreciosPlanesConfig("9", "24", "49", null).precioPublicoUsd("NEGOCIO_PLUS")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "24", "49", "").precioPublicoUsd("PYME")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "24", "49", " ").precioPublicoUsd("PYME")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "24", "49").precioPublicoUsd("PYME")).isEmpty();
-        assertThat(new PreciosPlanesConfig("9", "24", "49", "eur").precioPublicoUsd("PYME")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "0", "49", "usd").precioPublicoUsd("PYME")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "24", "49", "usd").precioPublicoUsd("OTRO")).isEmpty();
         assertThat(new PreciosPlanesConfig("9", "24", "49", "usd").precioPublicoUsd(null)).isEmpty();
     }
 
-    @org.junit.jupiter.params.ParameterizedTest(name = "GET /api/planes sin moneda USD explícita («{0}»): todos los precioUsd null")
+    @org.junit.jupiter.params.ParameterizedTest(name = "GET /api/planes sin moneda configurada («{0}»): todos los precioUsd null")
     @org.junit.jupiter.params.provider.NullAndEmptySource
     @ValueSource(strings = {" "})
     void sinMonedaNoPublica(String moneda) throws Exception {
@@ -344,6 +347,13 @@ class PlanesPrecioFuenteUnicaTest {
     }
 
     @Test
+    @DisplayName("Suspendida con moneda CRC: montoPendiente y moneda salen de la config (no se fuerza USD)")
+    void suspendidaMonedaCrc() {
+        Map<String, Object> out = estadoSuspendida(new PreciosPlanesConfig("5900", "12900", "24900", "crc"));
+        assertThat(out).containsEntry("montoPendiente", new BigDecimal("12900")).containsEntry("moneda", "CRC");
+    }
+
+    @Test
     @DisplayName("Suspendida sin precio configurado: no se muestra monto (la UI deshabilita Pagar)")
     void suspendidaSinConfig() {
         Map<String, Object> out = estadoSuspendida(new PreciosPlanesConfig("9", "", "49", "usd"));
@@ -353,13 +363,17 @@ class PlanesPrecioFuenteUnicaTest {
     }
 
     @Test
-    @DisplayName("/api/billing/planes usa la misma regla: moneda no USD → 409 PLAN_SIN_PRECIO; USD → 9/24/49")
+    @DisplayName("/api/billing/planes usa la misma regla: sin moneda → 409 PLAN_SIN_PRECIO; USD y CRC publican monto y moneda")
     @SuppressWarnings("unchecked")
     void billingPlanesMismaRegla() {
         planesDeBd();
         java.util.function.Function<PreciosPlanesConfig, SuscripcionController> ctrl = precios -> billing(precios);
-        assertThat(ctrl.apply(new PreciosPlanesConfig("9", "24", "49", "crc")).listarPlanes().getStatusCode().value())
+        assertThat(ctrl.apply(new PreciosPlanesConfig("9", "24", "49", "")).listarPlanes().getStatusCode().value())
             .isEqualTo(409);
+        var crc = ctrl.apply(new PreciosPlanesConfig("5900", "12900", "24900", "crc")).listarPlanes();
+        assertThat((List<Map<String, Object>>) crc.getBody()).extracting(m -> m.get("precioUsd"))
+            .containsExactly(new BigDecimal("5900"), new BigDecimal("12900"), new BigDecimal("24900"));
+        assertThat((List<Map<String, Object>>) crc.getBody()).extracting(m -> m.get("moneda")).containsOnly("CRC");
         var ok = ctrl.apply(new PreciosPlanesConfig("9", "24", "49", "usd")).listarPlanes();
         assertThat((List<Map<String, Object>>) ok.getBody()).extracting(m -> m.get("precioUsd"))
             .containsExactly(new BigDecimal("9"), new BigDecimal("24"), new BigDecimal("49"));

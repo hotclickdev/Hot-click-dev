@@ -43,7 +43,7 @@ async function montar(page: Page, esc: Escenario, ruta = '/emprendedor/opciones/
       return route.fulfill(ok({ elegible: true, tarjetaGuardada: guardada, trialDias: esc.trialDias ?? 5 }))
     }
     if (path.endsWith('/public/emprende/cupos')) {
-      return route.fulfill(ok({ cuposGratisDisponibles: 0, mensualidadUsdSinCupo: 9.99 }))
+      return route.fulfill(ok({ cuposGratisDisponibles: 0, mensualidadUsdSinCupo: 9.99, moneda: 'USD' }))
     }
     if (path.endsWith('/billing/planes')) return route.fulfill(ok([]))
     return route.fulfill(ok([]))

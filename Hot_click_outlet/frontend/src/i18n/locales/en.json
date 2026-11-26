@@ -316,6 +316,8 @@
     "precioMensualidad": "₡0 /mo",
     "precioMensualidadUsd": "{{monto}}/mo",
     "precioMensualidadDolares": "Monthly fee in US dollars",
+    "precioMensualidadColones": "Monthly fee in colones",
+    "precioMensualidadNeutra": "Plan monthly fee",
     "precioComision": "{{comision}}% commission per sale, no minimum (payment gateway included)",
     "ctaFinalTitle": "Ready to sell with no monthly fee?"
   },
