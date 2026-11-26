@@ -4,12 +4,11 @@ import com.hotclick.agente.canal.CanalCuenta;
 import com.hotclick.agente.canal.CanalCuentaRepository;
 import com.hotclick.agente.canal.CanalMensajeria;
 import com.hotclick.agente.canal.EstadoCanal;
-import com.hotclick.agente.conversacion.ConversacionMensaje;
 import com.hotclick.agente.conversacion.ConversacionMensajeRepository;
 import com.hotclick.agente.conversacion.ConversacionService;
 import com.hotclick.agente.conversacion.ConversacionSesion;
 import com.hotclick.agente.conversacion.ConversacionSesionRepository;
-import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
 import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.pago.AvisoUnicoRepository;
 import com.hotclick.agente.pago.EnvioConversacion;
@@ -20,7 +19,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -87,7 +85,8 @@ public class AvisoComprobanteService {
             log.info("[agente-comprobante] aviso ya enviado, comprobante={}", comprobanteId);
             return false;
         }
-        String texto = TextosFijos.comprobante(idiomaDe(s), ctx.get().numeroPedido());
+        String texto = TextosFijos.comprobante(
+            IdiomaConversacion.deMensajes(mensajes.findTop20BySesionIdOrderByIdDesc(s.getId())), ctx.get().numeroPedido());
         try {
             canal.enviarTexto(cuenta, s.getContactoExterno(), texto);
         } catch (RuntimeException ex) {
@@ -107,14 +106,5 @@ public class AvisoComprobanteService {
     private boolean estaDeBaja(ConversacionSesion s) {
         ListaBajasAgente.Contacto c = new ListaBajasAgente.Contacto(s.getEmpresaId(), s.getCanal(), s.getContactoExterno());
         return bajas.getIfAvailable(() -> ListaBajasAgente.NINGUNA).dadosDeBaja(List.of(c)).contains(c);
-    }
-
-    /** Idioma de los últimos mensajes del cliente (AG-39); español si no hay pistas. */
-    private Idioma idiomaDe(ConversacionSesion s) {
-        List<String> clientes = new ArrayList<>();
-        for (ConversacionMensaje m : mensajes.findTop20BySesionIdOrderByIdDesc(s.getId())) {
-            if (ConversacionMensaje.ROL_CLIENTE.equals(m.getRol())) clientes.add(m.getContenido());
-        }
-        return Idioma.detectar(null, clientes);
     }
 }

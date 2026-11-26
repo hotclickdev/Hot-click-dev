@@ -1,5 +1,7 @@
 package com.hotclick.agente.canal;
 
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.webhook.MensajeEntrante.Canal;
 
 import java.math.BigDecimal;
@@ -225,27 +227,35 @@ final class MensajesInteractivos {
 
     static String respaldoProducto(TarjetaProducto t) {
         StringBuilder sb = new StringBuilder(textoProducto(t, Integer.MAX_VALUE));
-        if (imagenValida(t.imagenUrl())) sb.append("\nFoto: ").append(t.imagenUrl());
-        sb.append("\n\n").append(opcionesNumeradas(t.botonesEfectivos().stream().map(Boton::titulo).toList()));
+        if (imagenValida(t.imagenUrl())) sb.append('\n').append(TextosFijos.foto(t.idioma())).append(' ').append(t.imagenUrl());
+        sb.append("\n\n").append(opcionesNumeradas(t.idioma(), t.botonesEfectivos().stream().map(Boton::titulo).toList()));
         return sb.toString();
     }
 
     static String respaldoBotones(String texto, List<Boton> botones) {
-        return texto + "\n\n" + opcionesNumeradas(
+        return respaldoBotones(texto, botones, Idioma.ES);
+    }
+
+    static String respaldoBotones(String texto, List<Boton> botones, Idioma idioma) {
+        return texto + "\n\n" + opcionesNumeradas(idioma,
             botones.stream().filter(b -> b != null && b.titulo() != null).map(Boton::titulo).toList());
     }
 
     static String respaldoLista(String texto, List<FilaLista> filas) {
+        return respaldoLista(texto, filas, Idioma.ES);
+    }
+
+    static String respaldoLista(String texto, List<FilaLista> filas, Idioma idioma) {
         List<String> ts = new ArrayList<>();
         for (FilaLista f : filas) {
             if (f == null || f.titulo() == null) continue;
             ts.add(f.descripcion() == null || f.descripcion().isBlank() ? f.titulo() : f.titulo() + " - " + f.descripcion());
         }
-        return texto + "\n\n" + opcionesNumeradas(ts);
+        return texto + "\n\n" + opcionesNumeradas(idioma, ts);
     }
 
-    private static String opcionesNumeradas(List<String> titulos) {
-        StringBuilder sb = new StringBuilder("Responde con el número:");
+    private static String opcionesNumeradas(Idioma idioma, List<String> titulos) {
+        StringBuilder sb = new StringBuilder(TextosFijos.responderConNumero(idioma));
         for (int i = 0; i < titulos.size(); i++) sb.append('\n').append(i + 1).append(". ").append(titulos.get(i));
         return sb.toString();
     }

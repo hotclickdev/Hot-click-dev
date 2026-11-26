@@ -9,6 +9,9 @@ import com.hotclick.agente.conversacion.ConversacionSesion;
 import com.hotclick.agente.conversacion.ConversacionSesionRepository;
 import com.hotclick.agente.conversacion.EstadoConversacion;
 import com.hotclick.agente.conversacion.PerfilConversacion;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.metricas.EncuestaService.Resultado;
 import com.hotclick.agente.seguimiento.ListaBajasAgente;
 import com.hotclick.agente.webhook.MensajeEntrante;
@@ -50,6 +53,7 @@ class EncuestaServiceTest {
     private CanalMensajeria canal;
     private ListaBajasAgente bajas;
     private EncuestaService servicio;
+    private IdiomaConversacion idiomas;
     private UUID id;
     private ConversacionSesion sesion;
     private CanalCuenta cuenta;
@@ -60,7 +64,8 @@ class EncuestaServiceTest {
         cuentas = mock(CanalCuentaRepository.class);
         canal = mock(CanalMensajeria.class);
         bajas = mock(ListaBajasAgente.class);
-        servicio = new EncuestaService(sesiones, cuentas, canal, proveedor(bajas), Clock.fixed(AHORA, ZoneOffset.UTC));
+        idiomas = mock(IdiomaConversacion.class);
+        servicio = new EncuestaService(sesiones, cuentas, canal, proveedor(bajas), idiomas, Clock.fixed(AHORA, ZoneOffset.UTC));
 
         id = UUID.randomUUID();
         sesion = sesion(id, AHORA.minusSeconds(600));
@@ -68,6 +73,7 @@ class EncuestaServiceTest {
         sesion.setPerfil(PerfilConversacion.NEGOCIO_VENTAS);
         cuenta = cuenta(EstadoCanal.ACTIVA);
         when(sesiones.findById(id)).thenReturn(Optional.of(sesion));
+        when(idiomas.deSesion(id)).thenReturn(Idioma.ES);
         when(cuentas.findById(5L)).thenReturn(Optional.of(cuenta));
         when(bajas.dadosDeBaja(any())).thenReturn(Set.of());
         when(sesiones.reclamarEncuesta(eq(id), any())).thenReturn(1);
@@ -79,7 +85,7 @@ class EncuestaServiceTest {
         assertThat(servicio.enviarAlCerrar(id, 7L)).isEqualTo(Resultado.ENVIADA);
 
         ArgumentCaptor<List<FilaLista>> filas = ArgumentCaptor.forClass(List.class);
-        verify(canal).enviarLista(eq(cuenta), eq(CONTACTO), anyString(), anyString(), filas.capture());
+        verify(canal).enviarLista(eq(cuenta), eq(CONTACTO), anyString(), anyString(), filas.capture(), eq(Idioma.ES));
         assertThat(filas.getValue()).hasSize(5);
         assertThat(filas.getValue().get(0).id()).isEqualTo("encuesta:" + id + ":1");
         assertThat(filas.getValue().get(4).id()).isEqualTo("encuesta:" + id + ":5");
@@ -87,11 +93,27 @@ class EncuestaServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void laEncuestaYElAgradecimientoSalenEnElIdiomaDeLaConversacion() {
+        when(idiomas.deSesion(id)).thenReturn(Idioma.EN);
+        when(sesiones.guardarNotaEncuesta(eq(id), eq(5), any())).thenReturn(1);
+
+        servicio.enviarAlCerrar(id, 7L);
+        ArgumentCaptor<List<FilaLista>> filas = ArgumentCaptor.forClass(List.class);
+        verify(canal).enviarLista(eq(cuenta), eq(CONTACTO), eq(TextosFijos.encuestaPregunta(Idioma.EN)),
+            eq(TextosFijos.encuestaBoton(Idioma.EN)), filas.capture(), eq(Idioma.EN));
+        assertThat(filas.getValue().get(0).titulo()).isEqualTo("1 - Very bad");
+
+        servicio.registrarRespuesta(cuenta, CONTACTO, "encuesta:" + id + ":5");
+        verify(canal).enviarTexto(cuenta, CONTACTO, TextosFijos.encuestaGracias(Idioma.EN));
+    }
+
+    @Test
     void unaSolaVezPorConversacion() {
         when(sesiones.reclamarEncuesta(eq(id), any())).thenReturn(0);
 
         assertThat(servicio.enviarAlCerrar(id, 7L)).isEqualTo(Resultado.YA_ENVIADA);
-        verify(canal, never()).enviarLista(any(), anyString(), anyString(), anyString(), anyList());
+        verify(canal, never()).enviarLista(any(), anyString(), anyString(), anyString(), anyList(), any());
     }
 
     @Test
@@ -104,7 +126,7 @@ class EncuestaServiceTest {
         assertThat(servicio.enviarAlCerrar(null, null)).isEqualTo(Resultado.NO_APLICA);   // ADMIN no ve las de un negocio
         sesion.setPerfil(PerfilConversacion.NEGOCIO_INTERNO);
         assertThat(servicio.enviarAlCerrar(id, 7L)).isEqualTo(Resultado.NO_APLICA);
-        verify(canal, never()).enviarLista(any(), anyString(), anyString(), anyString(), anyList());
+        verify(canal, never()).enviarLista(any(), anyString(), anyString(), anyString(), anyList(), any());
     }
 
     @Test
@@ -120,7 +142,7 @@ class EncuestaServiceTest {
         when(bajas.dadosDeBaja(any())).thenReturn(Set.of(new ListaBajasAgente.Contacto(7L, "WHATSAPP", CONTACTO)));
 
         assertThat(servicio.enviarAlCerrar(id, 7L)).isEqualTo(Resultado.EN_BAJA);
-        verify(canal, never()).enviarLista(any(), anyString(), anyString(), anyString(), anyList());
+        verify(canal, never()).enviarLista(any(), anyString(), anyString(), anyString(), anyList(), any());
     }
 
     @Test
@@ -128,12 +150,12 @@ class EncuestaServiceTest {
         cuenta.setTipo(MensajeEntrante.Canal.INSTAGRAM);
 
         assertThat(servicio.enviarAlCerrar(id, 7L)).isEqualTo(Resultado.NO_APLICA);
-        verify(canal, never()).enviarLista(any(), anyString(), anyString(), anyString(), anyList());
+        verify(canal, never()).enviarLista(any(), anyString(), anyString(), anyString(), anyList(), any());
     }
 
     @Test
     void siMetaFallaSeLiberaLaReclamacion() {
-        doThrow(new IllegalStateException("meta")).when(canal).enviarLista(any(), anyString(), anyString(), anyString(), anyList());
+        doThrow(new IllegalStateException("meta")).when(canal).enviarLista(any(), anyString(), anyString(), anyString(), anyList(), any());
 
         assertThat(servicio.enviarAlCerrar(id, 7L)).isEqualTo(Resultado.ERROR);
         verify(sesiones).liberarEncuesta(id);
@@ -148,7 +170,7 @@ class EncuestaServiceTest {
         assertThat(servicio.registrarRespuesta(cuenta, CONTACTO, "encuesta:" + id + ":4")).isTrue();
 
         verify(sesiones).guardarNotaEncuesta(id, 4, AHORA);
-        verify(canal).enviarTexto(cuenta, CONTACTO, EncuestaService.GRACIAS);
+        verify(canal).enviarTexto(cuenta, CONTACTO, TextosFijos.encuestaGracias(Idioma.ES));
     }
 
     @Test
@@ -157,7 +179,7 @@ class EncuestaServiceTest {
 
         servicio.registrarRespuesta(cuenta, CONTACTO, "encuesta:" + id + ":1");
 
-        verify(canal).enviarTexto(cuenta, CONTACTO, EncuestaService.GRACIAS_NOTA_BAJA);
+        verify(canal).enviarTexto(cuenta, CONTACTO, TextosFijos.encuestaGraciasNotaBaja(Idioma.ES));
     }
 
     @Test

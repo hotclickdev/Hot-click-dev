@@ -1,15 +1,48 @@
 package com.hotclick.agente.campana;
 
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.campana.PlantillaCampanaRepositorio.Estado;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.campana.PlantillaCampanaRepositorio.Fila;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.CanalCuenta;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.CanalMensajeria;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.EstadoCanal;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conexion.MetaGraphCliente.PlantillaRemota;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conexion.MetaRechazoException;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.cupo.ConfirmacionBajaEnvio;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.webhook.EstadoEntrante;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.webhook.MensajeEntrante;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.webhook.MensajeEntrante.Canal;
 import com.hotclick.model.Empresa;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +59,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -87,9 +121,29 @@ class ConsentimientoYPlantillaTest extends CampanaFixture {
         assertThat(consentimientos.puedeOfrecer(EMPRESA, "WHATSAPP", TEL_LUIS)).isFalse();
     }
 
+    private final IdiomaConversacion idiomas = mock(IdiomaConversacion.class);
+
+    @Test
+    @DisplayName("el ofrecimiento y la confirmación salen en el idioma de la conversación del contacto")
+    void ofertaYConfirmacionEnIngles() {
+        when(idiomas.deContacto(any(), eq(TEL_ANA))).thenReturn(Idioma.EN);
+        OfertaConsentimientoService oferta = new OfertaConsentimientoService(consentimientos, canal,
+            new EmpresaConNombre().repo, idiomas);
+
+        assertThat(oferta.ofrecer(cuentaWa, TEL_ANA)).isTrue();
+        ArgumentCaptor<List> botones = ArgumentCaptor.forClass(List.class);
+        verify(canal).enviarBotones(eq(cuentaWa), eq(TEL_ANA), anyString(), botones.capture(), eq(Idioma.EN));
+        assertThat(((com.hotclick.agente.canal.Boton) botones.getValue().get(0)).titulo())
+            .isEqualTo(TextosFijos.ofertaBotonSi(Idioma.EN));
+
+        ConfirmacionBajaEnvio envio = mock(ConfirmacionBajaEnvio.class);
+        interceptor(envio).interceptar(cuentaWa, toque(OfertaConsentimientoService.ID_SI, TEL_ANA));
+        verify(envio).enviar(eq(cuentaWa), eq(TEL_ANA), startsWith("Done, you will receive offers from"));
+    }
+
     private InterceptorConsentimiento interceptor(ConfirmacionBajaEnvio envio) {
         EmpresaConNombre empresa = new EmpresaConNombre();
-        OfertaConsentimientoService oferta = new OfertaConsentimientoService(consentimientos, canal, empresa.repo);
+        OfertaConsentimientoService oferta = new OfertaConsentimientoService(consentimientos, canal, empresa.repo, idiomas);
         return new InterceptorConsentimiento(consentimientos, bajas, envio, oferta);
     }
 
@@ -156,12 +210,13 @@ class ConsentimientoYPlantillaTest extends CampanaFixture {
     @Test
     @DisplayName("el ofrecimiento sale con los dos botones; no se envía a quien ya consintió")
     void ofertaConBotones() {
+        when(idiomas.deContacto(any(), any())).thenReturn(Idioma.ES);
         OfertaConsentimientoService oferta = new OfertaConsentimientoService(consentimientos, canal,
-            new EmpresaConNombre().repo);
+            new EmpresaConNombre().repo, idiomas);
 
         assertThat(oferta.ofrecer(cuentaWa, TEL_ANA)).isTrue();
         ArgumentCaptor<List> botones = ArgumentCaptor.forClass(List.class);
-        verify(canal).enviarBotones(eq(cuentaWa), eq(TEL_ANA), anyString(), botones.capture());
+        verify(canal).enviarBotones(eq(cuentaWa), eq(TEL_ANA), anyString(), botones.capture(), eq(Idioma.ES));
         assertThat(botones.getValue()).hasSize(2);
 
         consiente(EMPRESA, TEL_LUIS, "Luis");

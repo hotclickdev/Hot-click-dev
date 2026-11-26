@@ -1,9 +1,24 @@
 package com.hotclick.agente.cupo;
 
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.CanalCuenta;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.interno.HasherInterno;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.seguimiento.ListaBajasAgente;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.webhook.MensajeEntrante;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.webhook.MensajeEntrante.Canal;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
@@ -32,6 +47,7 @@ class InterceptorBajaAgenteTest {
     private AgenteBajaService bajas;
     private ConfirmacionBajaEnvio envio;
     private InterceptorBajaAgente interceptor;
+    private IdiomaConversacion idiomas;
     private CanalCuenta cuenta;
 
     @BeforeEach
@@ -42,7 +58,8 @@ class InterceptorBajaAgenteTest {
         Empresa e = new Empresa();
         e.setNombreEmpresa("Tienda Uno");
         when(empresas.findById(7L)).thenReturn(Optional.of(e));
-        interceptor = new InterceptorBajaAgente(bajas, empresas, envio);
+        idiomas = mock(IdiomaConversacion.class);
+        interceptor = new InterceptorBajaAgente(bajas, empresas, envio, idiomas);
         cuenta = CupoTestSupport.cuenta(7L);
     }
 
@@ -59,6 +76,28 @@ class InterceptorBajaAgenteTest {
             assertThat(bajas.estaDeBaja(7L, "WHATSAPP", CONTACTO)).as(texto).isTrue();
         }
         verify(envio, org.mockito.Mockito.times(5)).enviar(eq(cuenta), eq(CONTACTO), contains("Tienda Uno"));
+    }
+
+    @Test
+    @DisplayName("STOP o ACTIVAR solos se confirman en el idioma del historial del contacto")
+    void confirmacionUsaElIdiomaDelHistorial() {
+        when(idiomas.deContacto(any(), eq(CONTACTO))).thenReturn(Idioma.EN);
+
+        interceptor.interceptar(cuenta, msg("STOP"));
+        verify(envio).enviar(any(), eq(CONTACTO), eq(TextosFijos.baja(Idioma.EN, "Tienda Uno")));
+
+        interceptor.interceptar(cuenta, msg("ACTIVAR"));
+        verify(envio).enviar(any(), eq(CONTACTO), eq(TextosFijos.activar(Idioma.EN, "Tienda Uno")));
+    }
+
+    @Test
+    @DisplayName("si el mensaje trae pistas de idioma (portugués) manda sobre el historial")
+    void elTextoActualManda() {
+        when(idiomas.deContacto(any(), eq(CONTACTO))).thenReturn(Idioma.EN);
+
+        interceptor.interceptar(cuenta, msg("Nao quero mensagens"));
+
+        verify(envio).enviar(any(), eq(CONTACTO), eq(TextosFijos.baja(Idioma.PT, "Tienda Uno")));
     }
 
     @Test

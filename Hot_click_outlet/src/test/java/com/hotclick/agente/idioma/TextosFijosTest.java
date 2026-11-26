@@ -23,7 +23,27 @@ class TextosFijosTest {
         i -> TextosFijos.comprobante(i, "PED-123"),
         TextosFijos::vozDeshabilitada,
         TextosFijos::vozFallo,
-        TextosFijos::vozLarga);
+        TextosFijos::vozLarga,
+        TextosFijos::encuestaPregunta,
+        TextosFijos::encuestaBoton,
+        TextosFijos::encuestaGracias,
+        TextosFijos::encuestaGraciasNotaBaja,
+        i -> String.join("|", TextosFijos.encuestaTitulos(i)),
+        i -> TextosFijos.ofertaPregunta(i, "NEGOCIO_X"),
+        TextosFijos::ofertaBotonSi,
+        TextosFijos::ofertaBotonNo,
+        i -> TextosFijos.ofertaAceptada(i, "NEGOCIO_X"),
+        i -> TextosFijos.ofertaRechazada(i, "NEGOCIO_X"),
+        i -> TextosFijos.ofertaDeBaja(i, "NEGOCIO_X"),
+        TextosFijos::botonVerMas,
+        TextosFijos::botonHablarConPersona,
+        TextosFijos::responderConNumero,
+        TextosFijos::productosTitulo,
+        TextosFijos::productosCuerpo);
+
+    /** Textos que en portugués coinciden con el español (misma palabra en los dos idiomas). */
+    private static final List<Function<Idioma, String>> IGUALES_ES_PT = List.of(
+        TextosFijos::botonComprar, TextosFijos::foto);
 
     @Test
     void todosLosTextosExistenEnLosTresIdiomas() {
@@ -31,6 +51,26 @@ class TextosFijosTest {
             for (Idioma i : Idioma.values()) {
                 assertThat(f.apply(i)).as(i.name()).isNotBlank();
             }
+        }
+    }
+
+    @Test
+    void textosCortosDeBotonesEntranEnLosLimitesDeWhatsApp() {
+        for (Idioma i : Idioma.values()) {
+            for (String t : List.of(TextosFijos.encuestaBoton(i), TextosFijos.ofertaBotonSi(i),
+                    TextosFijos.ofertaBotonNo(i), TextosFijos.botonComprar(i), TextosFijos.botonVerMas(i),
+                    TextosFijos.botonHablarConPersona(i))) {
+                assertThat(t.length()).as(i + ": " + t).isLessThanOrEqualTo(20);
+            }
+            assertThat(TextosFijos.encuestaTitulos(i)).hasSize(5).allSatisfy(t -> assertThat(t.length()).isLessThanOrEqualTo(24));
+            assertThat(TextosFijos.productosTitulo(i).length()).isLessThanOrEqualTo(60);
+        }
+    }
+
+    @Test
+    void elPortuguesLlevaTildesYNoQuedanFormasSinTilde() {
+        for (Function<Idioma, String> f : TEXTOS) {
+            assertThat(f.apply(Idioma.PT)).doesNotContain(" voce ", " nao ", " Nao ", "eletronico", "promocoes");
         }
     }
 
@@ -46,6 +86,10 @@ class TextosFijosTest {
         for (Function<Idioma, String> f : TEXTOS) {
             assertThat(f.apply(Idioma.EN)).isNotEqualTo(f.apply(Idioma.ES));
             assertThat(f.apply(Idioma.PT)).isNotEqualTo(f.apply(Idioma.ES));
+        }
+        for (Function<Idioma, String> f : IGUALES_ES_PT) {
+            assertThat(f.apply(Idioma.EN)).isNotEqualTo(f.apply(Idioma.ES));
+            assertThat(f.apply(Idioma.PT)).isNotBlank();
         }
     }
 
@@ -64,6 +108,10 @@ class TextosFijosTest {
             assertThat(TextosFijos.baja(i, "NEGOCIO_X")).contains("NEGOCIO_X");
             assertThat(TextosFijos.activar(i, "NEGOCIO_X")).contains("NEGOCIO_X");
             assertThat(TextosFijos.comprobante(i, "PED-123")).contains("PED-123");
+            assertThat(TextosFijos.ofertaPregunta(i, "NEGOCIO_X")).contains("NEGOCIO_X");
+            assertThat(TextosFijos.ofertaAceptada(i, "NEGOCIO_X")).contains("NEGOCIO_X");
+            assertThat(TextosFijos.ofertaRechazada(i, "NEGOCIO_X")).contains("NEGOCIO_X");
+            assertThat(TextosFijos.ofertaDeBaja(i, "NEGOCIO_X")).contains("NEGOCIO_X");
         }
     }
 

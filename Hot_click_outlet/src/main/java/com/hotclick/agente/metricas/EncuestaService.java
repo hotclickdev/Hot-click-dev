@@ -1,16 +1,52 @@
 package com.hotclick.agente.metricas;
 
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.CanalCuenta;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.CanalCuentaRepository;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.CanalMensajeria;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.EstadoCanal;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.canal.FilaLista;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conversacion.ConversacionSesion;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conversacion.ConversacionSesionRepository;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conversacion.EstadoConversacion;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conversacion.PerfilConversacion;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.pago.EnvioConversacion;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.seguimiento.ListaBajasAgente;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.webhook.MensajeEntrante;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,13 +78,6 @@ public class EncuestaService {
     static final String PREFIJO = "encuesta:";
     /** Notas que cuentan como «baja» para la vista de revisión. */
     public static final int NOTA_BAJA_MAX = 2;
-    static final String TEXTO_PREGUNTA = "Gracias por escribirnos. ¿Cómo calificas la atención que recibiste?";
-    static final String TEXTO_BOTON = "Calificar";
-    static final String GRACIAS = "¡Gracias por tu opinión!";
-    static final String GRACIAS_NOTA_BAJA = "Gracias por contarnos. Lamentamos que no haya sido una buena experiencia "
-        + "y lo vamos a revisar.";
-    private static final List<String> TITULOS = List.of("1 - Muy mala", "2 - Mala", "3 - Regular", "4 - Buena",
-        "5 - Excelente");
 
     public enum Resultado { ENVIADA, YA_ENVIADA, NO_APLICA, FUERA_DE_VENTANA, EN_BAJA, ERROR }
 
@@ -59,16 +88,18 @@ public class EncuestaService {
     private final CanalCuentaRepository cuentas;
     private final CanalMensajeria canal;
     private final ObjectProvider<ListaBajasAgente> bajas;
+    private final IdiomaConversacion idiomas;
     private final Clock reloj;
 
     @Autowired
     public EncuestaService(ConversacionSesionRepository sesiones, CanalCuentaRepository cuentas, CanalMensajeria canal,
-                           ObjectProvider<ListaBajasAgente> bajas) {
-        this(sesiones, cuentas, canal, bajas, Clock.systemUTC());
+                           ObjectProvider<ListaBajasAgente> bajas, IdiomaConversacion idiomas) {
+        this(sesiones, cuentas, canal, bajas, idiomas, Clock.systemUTC());
     }
 
     EncuestaService(ConversacionSesionRepository sesiones, CanalCuentaRepository cuentas, CanalMensajeria canal,
-                    ObjectProvider<ListaBajasAgente> bajas, Clock reloj) {
+                    ObjectProvider<ListaBajasAgente> bajas, IdiomaConversacion idiomas, Clock reloj) {
+        this.idiomas = idiomas;
         this.sesiones = sesiones;
         this.cuentas = cuentas;
         this.canal = canal;
@@ -99,7 +130,9 @@ public class EncuestaService {
         if (estaDeBaja(s)) return Resultado.EN_BAJA;
         if (sesiones.reclamarEncuesta(s.getId(), ahora) != 1) return Resultado.YA_ENVIADA;
         try {
-            canal.enviarLista(cuenta, s.getContactoExterno(), TEXTO_PREGUNTA, TEXTO_BOTON, filas(s.getId()));
+            Idioma idioma = idiomas.deSesion(s.getId());
+            canal.enviarLista(cuenta, s.getContactoExterno(), TextosFijos.encuestaPregunta(idioma),
+                TextosFijos.encuestaBoton(idioma), filas(s.getId(), idioma), idioma);
         } catch (RuntimeException e) {
             sesiones.liberarEncuesta(s.getId());
             log.warn("[agente-encuesta] no se pudo enviar la encuesta: {}", e.getClass().getSimpleName());
@@ -123,14 +156,15 @@ public class EncuestaService {
             && Objects.equals(s.getCanalCuentaId(), cuenta.getId())
             && Objects.equals(s.getContactoExterno(), remitenteId);
         if (propia && sesiones.guardarNotaEncuesta(s.getId(), r.get().nota(), reloj.instant()) == 1) {
-            agradecer(cuenta, remitenteId, r.get().nota());
+            agradecer(cuenta, remitenteId, r.get().nota(), idiomas.deSesion(s.getId()));
         }
         return true;
     }
 
-    private void agradecer(CanalCuenta cuenta, String remitenteId, int nota) {
+    private void agradecer(CanalCuenta cuenta, String remitenteId, int nota, Idioma idioma) {
         try {
-            canal.enviarTexto(cuenta, remitenteId, nota <= NOTA_BAJA_MAX ? GRACIAS_NOTA_BAJA : GRACIAS);
+            canal.enviarTexto(cuenta, remitenteId, nota <= NOTA_BAJA_MAX
+                ? TextosFijos.encuestaGraciasNotaBaja(idioma) : TextosFijos.encuestaGracias(idioma));
         } catch (RuntimeException e) {
             log.warn("[agente-encuesta] nota guardada pero no se pudo agradecer: {}", e.getClass().getSimpleName());
         }
@@ -142,10 +176,11 @@ public class EncuestaService {
     }
 
     /** Las cinco notas (más de 3 opciones: va como lista). */
-    static List<FilaLista> filas(UUID sesionId) {
+    static List<FilaLista> filas(UUID sesionId, Idioma idioma) {
+        List<String> titulos = TextosFijos.encuestaTitulos(idioma);
         List<FilaLista> filas = new ArrayList<>();
-        for (int nota = 1; nota <= TITULOS.size(); nota++) {
-            filas.add(new FilaLista(idFila(sesionId, nota), TITULOS.get(nota - 1)));
+        for (int nota = 1; nota <= titulos.size(); nota++) {
+            filas.add(new FilaLista(idFila(sesionId, nota), titulos.get(nota - 1)));
         }
         return filas;
     }

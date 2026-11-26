@@ -2,9 +2,9 @@ package com.hotclick.agente.voz;
 
 import com.hotclick.agente.canal.CanalMensajeria;
 import com.hotclick.agente.conversacion.ConversacionActiva;
-import com.hotclick.agente.conversacion.ConversacionMensaje;
 import com.hotclick.agente.conversacion.ConversacionService;
 import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
 import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.motor.CostoAgenteListener;
 import com.hotclick.agente.webhook.MensajeEntrante;
@@ -13,9 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Notas de voz del cliente (AG-13). El despacho lo invoca (ya fuera del hilo del webhook) cuando llega un audio:
@@ -118,15 +115,8 @@ public class VozEntranteService {
         });
     }
 
-    /** Idioma de la conversación según los mensajes anteriores del cliente (AG-39); español si no hay pistas. */
     static Idioma idiomaDe(ConversacionActiva conv) {
-        List<String> previos = new ArrayList<>();
-        if (conv.historial() != null) {
-            for (ConversacionActiva.Turno t : conv.historial()) {
-                if (ConversacionMensaje.ROL_CLIENTE.equals(t.rol()) && t.texto() != null) previos.add(0, t.texto());
-            }
-        }
-        return Idioma.detectar(null, previos);
+        return IdiomaConversacion.deHistorial(conv);
     }
 
     private void responder(ConversacionActiva conv, String texto) {

@@ -1,5 +1,7 @@
 package com.hotclick.agente.canal;
 
+import com.hotclick.agente.idioma.Idioma;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotclick.agente.webhook.MensajeEntrante;
@@ -191,6 +193,12 @@ public class MetaCanalMensajeria implements CanalMensajeria {
 
     @Override
     public String enviarBotones(CanalCuenta cuenta, String destinatario, String texto, List<Boton> botones) {
+        return enviarBotones(cuenta, destinatario, texto, botones, Idioma.ES);
+    }
+
+    @Override
+    public String enviarBotones(CanalCuenta cuenta, String destinatario, String texto, List<Boton> botones,
+                                Idioma idioma) {
         validar(cuenta, destinatario);
         if (texto == null || texto.isBlank() || botones == null || MensajesInteractivos.botonesValidos(botones, 1).isEmpty())
             throw new IllegalArgumentException("texto y al menos un botón son obligatorios");
@@ -199,7 +207,7 @@ public class MetaCanalMensajeria implements CanalMensajeria {
         Map<String, Object> body = MensajesInteractivos.esWhatsapp(cuenta.getTipo())
             ? MensajesInteractivos.waBotones(destinatario, texto, botones)
             : MensajesInteractivos.socialQuickReplies(destinatario, texto, botones);
-        return conRespaldo(cuenta, destinatario, token, body, MensajesInteractivos.respaldoBotones(texto, botones));
+        return conRespaldo(cuenta, destinatario, token, body, MensajesInteractivos.respaldoBotones(texto, botones, idioma));
     }
 
     @Override
@@ -218,10 +226,16 @@ public class MetaCanalMensajeria implements CanalMensajeria {
 
     @Override
     public String enviarLista(CanalCuenta cuenta, String destinatario, String texto, String textoBoton, List<FilaLista> filas) {
+        return enviarLista(cuenta, destinatario, texto, textoBoton, filas, Idioma.ES);
+    }
+
+    @Override
+    public String enviarLista(CanalCuenta cuenta, String destinatario, String texto, String textoBoton,
+                              List<FilaLista> filas, Idioma idioma) {
         validar(cuenta, destinatario);
         if (texto == null || texto.isBlank() || filas == null || filas.isEmpty())
             throw new IllegalArgumentException("texto y al menos una fila son obligatorios");
-        String respaldo = MensajesInteractivos.respaldoLista(texto, filas);
+        String respaldo = MensajesInteractivos.respaldoLista(texto, filas, idioma);
         if (!MensajesInteractivos.esWhatsapp(cuenta.getTipo()))
             return enviarTexto(cuenta, destinatario, respaldo); // IG/Messenger no tienen lista
         String token = tokenOSimulado(cuenta);
