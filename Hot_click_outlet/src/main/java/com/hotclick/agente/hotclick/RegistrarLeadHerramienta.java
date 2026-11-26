@@ -23,6 +23,9 @@ import java.util.Optional;
  */
 @Component
 public class RegistrarLeadHerramienta implements HerramientaAgente {
+    private static final String TIENDA = "tienda";
+    private static final String INTERES = "interes";
+
 
     private final LeadService leads;
 
@@ -42,23 +45,23 @@ public class RegistrarLeadHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         Map<String, Object> props = new LinkedHashMap<>();
-        props.put("tienda", EsquemasHotClick.texto("Identificador de la tienda tal como lo devolvió buscar_productos"));
-        props.put("interes", EsquemasHotClick.texto("Qué busca o quiere comprar, en pocas palabras"));
+        props.put(TIENDA, EsquemasHotClick.texto("Identificador de la tienda tal como lo devolvió buscar_productos"));
+        props.put(INTERES, EsquemasHotClick.texto("Qué busca o quiere comprar, en pocas palabras"));
         props.put("nombre", EsquemasHotClick.texto("Nombre de la persona, si lo dio; vacío si no"));
-        return EsquemasHotClick.objeto(props, List.of("tienda", "interes"));
+        return EsquemasHotClick.objeto(props, List.of(TIENDA, INTERES));
     }
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
         if (input == null) return ResultadoHerramienta.error("Falta qué le interesa a la persona.");
-        String interes = input.path("interes").asText("").trim();
+        String interes = input.path(INTERES).asText("").trim();
         if (interes.isEmpty()) return ResultadoHerramienta.error("Falta qué le interesa a la persona.");
         String contacto = ContactoLead.de(contexto);
         if (contacto == null) return ResultadoHerramienta.error("No hay contacto para registrar; derive a una persona.");
 
         Long empresaId = contexto.empresaId();
         if (empresaId == null) {
-            Optional<Long> tienda = leads.empresaPublicaPorSlug(input.path("tienda").asText(""));
+            Optional<Long> tienda = leads.empresaPublicaPorSlug(input.path(TIENDA).asText(""));
             if (tienda.isEmpty()) {
                 return ResultadoHerramienta.error("Tienda no válida: use el valor 'tienda' de buscar_productos.");
             }
