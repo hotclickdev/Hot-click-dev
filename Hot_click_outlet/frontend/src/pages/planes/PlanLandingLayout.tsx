@@ -7,6 +7,7 @@ import EmprendeSeccion from '../emprende/EmprendeSeccion'
 import { copyLanding, type LandingPlanId } from './planLandingCopy'
 import { limiteCupo } from '../emprende/primerosNegocios'
 import useCupoEmprende from '../emprende/useCupoEmprende'
+import OfertaPrimerMes from './OfertaPrimerMes'
 import { PLAN_PRECIOS, textoComision, textoMensualidadEmprendedor } from '@/config/planesPrecios'
 
 const TONO_VARS: Record<string, CSSProperties> = {
@@ -87,6 +88,8 @@ export default function PlanLandingLayout({ planId, mostrarCupo = false }: Props
           <p className="text-sm font-semibold mb-6" style={{ color: 'var(--hc-text)' }}>
             {precio}
           </p>
+          {planId === 'pyme' ? <OfertaPrimerMes plan="PYME" className="text-sm mb-6" style={{ color: 'var(--hc-text)' }} /> : null}
+          {planId === 'plus' ? <OfertaPrimerMes plan="NEGOCIO_PLUS" className="text-sm mb-6" style={{ color: 'var(--hc-text)' }} /> : null}
           <Link
             to={destino}
             className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl text-sm font-semibold min-h-[48px]"

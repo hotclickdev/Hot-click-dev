@@ -1,4 +1,4 @@
-import { PLAN_PRECIOS, textoComision, type ClavePlan } from '@/config/planesPrecios'
+import { PLAN_PRECIOS, diasPruebaPlan, textoComision, textoPrimerMesLuego, type ClavePlan } from '@/config/planesPrecios'
 import { montoPlanVisible, rotuloPrecioLista, textoPrecioCatalogo } from '@/features/billing/montoPlan'
 import type { PasoFormulario } from '@/prototipo/compartido/formularioPorPasosHelpers'
 import type { Id } from '@/types/api'
@@ -18,6 +18,8 @@ export type PlanUi = {
   monto: string | null
   beneficios: readonly string[]
   cta: string | null
+  /** «Primer mes gratis, luego ₡12.900/mes» si el backend ofrece días gratis para este plan; si no, null. */
+  pruebaGratis: string | null
 }
 
 /** Beneficios sin montos: la comisión, los productos y las bodegas salen del plan del API (NP-1/NP-2). */
@@ -38,6 +40,8 @@ export type PlanApiTuPlan = {
   comisionMinimaCrc?: number
   maxProductos?: number
   maxBodegas?: number
+  /** Días gratis que ofrece el plan (0 o ausente = ninguno). */
+  diasPrueba?: number | null
 }
 
 function beneficiosDesdeApi(p: PlanApiTuPlan): string[] {
@@ -89,6 +93,7 @@ export function mapApiPlanToUi(p: PlanApiTuPlan): PlanUi {
     monto: montoPlanVisible(p),
     beneficios: beneficiosDesdeApi(p),
     cta: CTA_PLAN[p.nombre] ?? `Cambiar a ${p.nombre}`,
+    pruebaGratis: textoPrimerMesLuego(diasPruebaPlan(p.nombre, p.diasPrueba), Number(p.precioUsd), p.moneda),
   }
 }
 

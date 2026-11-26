@@ -14,6 +14,10 @@ export type CambiarPlanResultado = {
   mensaje?: string
   mock?: boolean
   proveedor?: 'ONVO'
+  /** Días gratis que se le dieron a ESTE negocio (0 o ausente = cobro inmediato). */
+  trialDias?: number
+  /** Fecha del primer cobro (AAAA-MM-DD) cuando hay trial; opcional. */
+  primerCobro?: string
 }
 
 /** GET /billing/trial/tarjeta: solo el propietario; el negocio sale del JWT. */
