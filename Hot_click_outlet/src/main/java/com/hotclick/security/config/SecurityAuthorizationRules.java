@@ -154,6 +154,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/public/pedidos/seguimiento/*").permitAll()
             // Estado de retiro por token aleatorio — solo {estado, tienda}
             .requestMatchers(GET,  "/api/public/retiro/*").permitAll()
+            // AG-07: enlace de compra del bot de IA — el código aleatorio (24 caracteres) es la credencial; 404 uniforme
+            .requestMatchers(GET,  "/api/public/enlace/*").permitAll()
             .requestMatchers(GET,  "/api/encargos").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/aprobar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/encargos/*/rechazar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
@@ -221,6 +223,29 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST,   "/api/empresa/equipo").hasRole(Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,    "/api/empresa/equipo/*/rol").hasRole(Constants.ROL_EMPRENDEDOR)
             .requestMatchers(DELETE, "/api/empresa/equipo/*").hasRole(Constants.ROL_EMPRENDEDOR)
+            // Bots de venta con IA (AG-03): cuentas de WhatsApp/IG/FB conectadas; aislamiento por CompanyScope + feature
+            .requestMatchers(GET,  "/api/agente/canales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/agente/canales/*/pausar", "/api/agente/canales/*/reanudar",
+                "/api/agente/canales/*/desconectar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Conexión de cuentas de Meta (AG-23/AG-30): ADMIN (HotClick) o EMPRENDEDOR; el controlador exige además
+            // PROPIETARIO o administrador del negocio, la feature "ai" y el alcance por CompanyScope
+            .requestMatchers(GET,  "/api/agente/conexion/config").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/agente/conexion/whatsapp", "/api/agente/conexion/meta-paginas",
+                "/api/agente/conexion/meta-paginas/listar").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Bandeja de conversaciones de los bots (AG-16): ADMIN (bot de HotClick) / EMPRENDEDOR (su negocio + equipo)
+            .requestMatchers("/api/bandeja", "/api/bandeja/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Leads del bot (AG-27): negocio ve los suyos, ADMIN los de HotClick; alcance por CompanyScope
+            .requestMatchers(GET, "/api/agente/leads", "/api/agente/leads/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Panel del bot (AG-19/AG-22/AG-20): config, conocimiento, simulador y modo interno; alcance por CompanyScope + feature
+            .requestMatchers(GET, "/api/agente/config", "/api/agente/conocimiento").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT, "/api/agente/config").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/agente/conocimiento", "/api/agente/simulador").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT, "/api/agente/conocimiento/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(DELETE, "/api/agente/conocimiento/*").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers("/api/agente/interno/vinculacion", "/api/agente/interno/vinculacion/**").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            // Uso del mes del bot (AG-29): conversaciones, cupo, costo de IA y tope; alcance por CompanyScope
+            .requestMatchers(GET, "/api/agente/uso").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(GET, "/api/agente/metricas").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             // Sucursales (Negocio Plus) — ADMIN / EMPRENDEDOR; aislamiento por CompanyScope
             .requestMatchers(GET,  "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(POST, "/api/sucursales").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
@@ -322,6 +347,7 @@ final class SecurityAuthorizationRules {
                 "/ayuda", "/registro-empresa/activar-plan",
                 "/pos/pago", "/pos/pago/**",
                 "/recuperar-carrito", "/recuperar-carrito/**",
+                "/c/*",
                 "/seguimiento/*",
                 "/servicios", "/servicios/**",
                 "/admin/empresas", "/admin/empresas/**",

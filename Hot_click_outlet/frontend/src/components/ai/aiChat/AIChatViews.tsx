@@ -5,6 +5,7 @@ import { TypingDots, AIAvatar } from '../AITypingBubble'
 import { MarkdownSpan } from './MarkdownSpan'
 import { accionesSeguras } from './aiChatHelpers'
 import type { AiChatMensaje } from './aiChatHelpers'
+import AccionesCarrito from './AccionesCarrito'
 import type { Producto } from '@/types/producto'
 
 type AIChatMessageListProps = {
@@ -15,7 +16,7 @@ type AIChatMessageListProps = {
   enviar: (mensajeDirecto?: string) => void
   setMensajes: Dispatch<SetStateAction<AiChatMensaje[]>>
   removeMsg: (msg: AiChatMensaje) => (list: AiChatMensaje[]) => AiChatMensaje[]
-  handleAdd: (producto: Producto) => void
+  handleAdd: (producto: Producto, cantidad?: number) => void
   isCarritoContext: boolean
   hasProductsInLastMsg: boolean
 }
@@ -118,6 +119,8 @@ export function AIChatMessageList({
             ))}
           </div>
         )}
+
+        {!m.typing && m.rol === 'assistant' && <AccionesCarrito mensaje={m} onAgregar={handleAdd} />}
 
         {acciones.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-0.5" data-testid="ai-chat-acciones">

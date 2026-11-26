@@ -1,0 +1,1 @@
+import{o as e}from"./rolldown-runtime-DAXXjFlN.js";import{s as t}from"./vendor-clerk-D8Xu90H0.js";import n,{t as r}from"./BotPage-gx4eWZom.js";var i=e(t(),1);function a(){return(0,i.jsx)(n,{pestanas:r})}export{a as default};

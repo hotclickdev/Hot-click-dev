@@ -26,6 +26,8 @@ const DineroPlataforma = lazy(() => import('@/pages/plataforma/DineroPlataforma'
 const OperacionPlataforma = lazy(() => import('@/pages/plataforma/OperacionPlataforma'))
 const SeguridadPlataforma = lazy(() => import('@/pages/plataforma/SeguridadPlataforma'))
 const IaPlataforma = lazy(() => import('@/pages/plataforma/IaPlataforma'))
+const BandejaPage = lazy(() => import('@/features/bandeja/BandejaPage'))
+const BotPlataformaPage = lazy(() => import('@/features/botVentas/BotPlataformaPage'))
 const ReglasPlataforma = lazy(() => import('@/pages/plataforma/ReglasPlataforma'))
 const CrmPlataforma = lazy(() => import('@/pages/plataforma/CrmPlataforma'))
 // CRM fase 0–1: chunk propio (Refine + piezas shadcn/Tremor) que solo baja al entrar.
@@ -71,6 +73,7 @@ const CookiesPage = lazy(() => import('@/pages/CookiesPage'))
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
 const PaymentStatusPage = lazy(() => import('@/pages/PaymentStatusPage'))
 const RecuperarCarritoPage = lazy(() => import('@/pages/RecuperarCarritoPage'))
+const EnlaceCompraPage = lazy(() => import('@/pages/EnlaceCompraPage'))
 const ServiciosHotPage = lazy(() => import('@/pages/ServiciosHotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const SinConexionPage = lazy(() => import('@/pages/SinConexionPage'))
@@ -163,6 +166,7 @@ export default function AppRoutes() {
       <Route path="/acuerdo-vendedores" element={<AcuerdoVendedoresPage />} />
       <Route path="/cookies" element={<CookiesPage />} />
       <Route path="/recuperar-carrito/:token" element={<RecuperarCarritoPage />} />
+      <Route path="/c/:codigo" element={<EnlaceCompraPage />} />
       <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
       <Route path="/encargo/:token" element={<EncargoPublicPage />} />
       <Route path="/seguimiento/:token" element={<SeguimientoPedidoPage />} />
@@ -208,6 +212,8 @@ export default function AppRoutes() {
         <Route path="operacion/:vista" element={<OperacionPlataforma />} />
         <Route path="seguridad" element={<SeguridadPlataforma />} />
         <Route path="ia" element={<IaPlataforma />} />
+        <Route path="bandeja" element={<BandejaPage />} />
+        <Route path="bot" element={<BotPlataformaPage />} />
         <Route path="reglas" element={<ReglasPlataforma />} />
       </Route>
 

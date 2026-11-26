@@ -109,6 +109,8 @@ class PlanesActivosSnapshotPostgresTest {
                 tiene_gift_cards BOOLEAN NOT NULL DEFAULT FALSE,
                 activo BOOLEAN NOT NULL DEFAULT TRUE,
                 max_creditos_ai INTEGER NOT NULL DEFAULT 0,
+                tiene_agente BOOLEAN NOT NULL DEFAULT FALSE,
+                max_conversaciones_agente INTEGER NOT NULL DEFAULT 0,
                 precio_usd NUMERIC(8,2) NOT NULL DEFAULT 0,
                 comision_porcentaje NUMERIC(5,2) NOT NULL DEFAULT 0,
                 comision_minima_crc INTEGER NOT NULL DEFAULT 0)

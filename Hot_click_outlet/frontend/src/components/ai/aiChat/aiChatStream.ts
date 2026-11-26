@@ -59,7 +59,7 @@ function applySseEvent(
       if (!last) return prev
       return [...prev.slice(0, -1), {
         rol: 'assistant', texto: assembled, productos, categorias: [],
-        opts: backendOpts,
+        opts: backendOpts, acciones: parsed.acciones ?? [],
       }]
     })
     return { assembled, productos }

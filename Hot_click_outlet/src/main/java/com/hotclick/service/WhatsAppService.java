@@ -22,12 +22,12 @@ import java.util.Map;
  * simula el envío (log en BD con estado SIMULADO) para poder
  * desarrollar y probar sin credenciales reales.
  *
- * Flujo: contexto del cliente → WaPlantilla aleatoria → Gemini personaliza → Meta API envía
+ * Flujo: contexto del cliente → dentro de la ventana de 24 h texto fijo (Claude personaliza solo el CRM);
+ * fuera de ella, plantilla de Meta (PlantillaMeta) → Meta API envía
  */
 @Service
 public class WhatsAppService {
 
-    @Autowired private GeminiService geminiService;
     @Autowired private WhatsAppMessageSender messageSender;
     @Autowired private com.hotclick.repository.WaMensajeLogRepository waLogRepo;
     /** P8-02: tope de WhatsApp manuales del CRM por negocio por hora (además del límite por IP). */
@@ -169,7 +169,7 @@ public class WhatsAppService {
         ctx.put("puntos",   String.valueOf(u.getPuntosFidelidad()));
 
         WaPlantilla plantilla = WaPlantilla.varianteAleatoria(escenario);
-        return messageSender.enviar(u, empresaId, null, plantilla, ctx);
+        return messageSender.enviar(u, empresaId, null, plantilla, ctx, true);
     }
 
     static Map<String, String> validarCtxCrm(String escenario, Map<String, ?> ctxExtra) {

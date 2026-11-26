@@ -81,6 +81,15 @@ public class PaymentCheckoutRequest {
     public String getDireccionEntrega() { return direccionEntrega; }
     public void setDireccionEntrega(String direccionEntrega) { this.direccionEntrega = direccionEntrega; }
 
+    /**
+     * AG-07: código del enlace de compra del bot de IA del que viene este carrito (opcional). El servidor valida que
+     * exista y esté vigente; uno inválido se ignora y la compra sigue normal.
+     */
+    @Size(max = 64, message = "Código de enlace inválido")
+    private String enlaceCodigo;
+    public String getEnlaceCodigo() { return enlaceCodigo; }
+    public void setEnlaceCodigo(String enlaceCodigo) { this.enlaceCodigo = enlaceCodigo; }
+
     /** Token del QR del POS — al confirmar el pago marca la sesión del cajero. */
     private String posQrToken;
 

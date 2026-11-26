@@ -35,6 +35,8 @@ describe('consola de plataforma', () => {
     expect(destinoPlataformaDesdeAdmin('/admin/empresas/no')).toBe('/plataforma/negocios')
     expect(destinoPlataformaDesdeAdmin('/admin/pagos')).toBe('/plataforma/dinero/cobros')
     expect(destinoPlataformaDesdeAdmin('/admin/crm')).toBe('/plataforma/crm')
+    expect(destinoPlataformaDesdeAdmin('/admin/bot')).toBe('/plataforma/bot')
+    expect(destinoPlataformaDesdeAdmin('/admin/bandeja')).toBe('/plataforma/bandeja')
     expect(destinoPlataformaDesdeAdmin('/admin/pos')).toBe('/plataforma')
   })
 

@@ -30,6 +30,13 @@ public class PagoExpiradoCancelador {
     private final PedidoRepository pedidoRepository;
     private final StockReservationService stockReservationService;
     private final PedidoGrupoService pedidoGrupoService;
+    /** AG-08: opcional (las pruebas unitarias no lo traen); se inyecta por setter. */
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setEventPublisher(org.springframework.context.ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
+    }
 
     public PagoExpiradoCancelador(PagoRepository pagoRepository, PedidoRepository pedidoRepository,
                                   StockReservationService stockReservationService,
@@ -43,7 +50,7 @@ public class PagoExpiradoCancelador {
     /** true si lo canceló; false si ya no estaba PENDIENTE (otra entrega lo capturó mientras tanto). */
     @Transactional
     public boolean cancelar(Long pagoId) {
-        return cerrar(pagoId, Constants.PAGO_CANCELADO, "por expiración de pago TTL");
+        return cerrar(pagoId, Constants.PAGO_CANCELADO, "por expiración de pago TTL", false);
     }
 
     /**
@@ -53,10 +60,10 @@ public class PagoExpiradoCancelador {
      */
     @Transactional
     public boolean marcarFallido(Long pagoId) {
-        return cerrar(pagoId, Constants.PAGO_FALLIDO, "por pago rechazado en ONVO");
+        return cerrar(pagoId, Constants.PAGO_FALLIDO, "por pago rechazado en ONVO", true);
     }
 
-    private boolean cerrar(Long pagoId, String estadoPago, String motivo) {
+    private boolean cerrar(Long pagoId, String estadoPago, String motivo, boolean rechazado) {
         Pago pago = pagoRepository.findByIdForUpdate(pagoId).orElse(null);
         if (pago == null || !Constants.PAGO_PENDIENTE.equals(pago.getEstadoPago())) {
             return false;
@@ -74,6 +81,8 @@ public class PagoExpiradoCancelador {
         for (Pedido pedido : pedidosActualizados) {
             pedido.setEstadoPedido(Constants.PEDIDO_CANCELADO);
             log.info("Pedido {} cancelado {}", pedido.getNumeroPedido(), motivo);
+            // AG-08: rechazo real de un pedido del bot (el vencimiento por TTL no avisa como rechazo).
+            if (rechazado) com.hotclick.agente.pago.PedidoBotEventos.publicarRechazado(pedido, eventPublisher);
         }
         pagoRepository.saveAll(List.of(pago));
         pedidoRepository.saveAll(pedidosActualizados);

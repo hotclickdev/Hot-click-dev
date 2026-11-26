@@ -95,13 +95,13 @@ export function useAiChat({
     exitIntentEnabled, exitShown, setExitShown,
   })
 
-  const handleAdd = useCallback((producto: Producto) => {
+  const handleAdd = useCallback((producto: Producto, cantidad = 1) => {
     if (requiereFichaEncargo(producto)) return
     const agregado = addItem({
       id: producto.id, nombre: producto.nombre, sku: producto.sku ?? '',
       precio: producto.precio, precioVenta: producto.precio,
       imagenPrincipalUrl: producto.imagenUrl ?? null, stock: topeStock(producto.stock),
-    } as unknown as Producto, 1)
+    } as unknown as Producto, cantidad)
     if (!avisarSiTopeCarrito(agregado, (m) => toast({ message: m, type: 'error' }))) return
     onProductAdd?.(producto)
   }, [addItem, onProductAdd, toast])

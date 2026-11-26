@@ -42,6 +42,11 @@ public class TotpSecretEncryptionService {
 
     private static final byte[]  AAD_PIN   = "hotclick-pin-cert".getBytes(StandardCharsets.UTF_8);
 
+    private static final byte[]  AAD_CANAL = "hotclick-canal-token".getBytes(StandardCharsets.UTF_8);
+
+    private static final byte[]  AAD_LEAD  = "hotclick-lead-contacto".getBytes(StandardCharsets.UTF_8);
+    private static final byte[]  AAD_CAMPANA = "hotclick-campana-contacto".getBytes(StandardCharsets.UTF_8);
+
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${totp.encryption.key:}")
@@ -80,6 +85,33 @@ public class TotpSecretEncryptionService {
 
     public String decryptPin(String stored) {
         return decrypt(stored, AAD_PIN);
+    }
+
+    /** Token de acceso de una cuenta de canal (Meta): misma clave AES-GCM, AAD propio (no descifra como PIN ni TOTP). */
+    public String encryptTokenCanal(String token) {
+        return encrypt(token, AAD_CANAL);
+    }
+
+    public String decryptTokenCanal(String stored) {
+        return decrypt(stored, AAD_CANAL);
+    }
+
+    /** Contacto de un lead del bot (AG-27): misma clave AES-GCM, AAD propio (no descifra como TOTP, PIN ni token de canal). */
+    public String encryptContactoLead(String contacto) {
+        return encrypt(contacto, AAD_LEAD);
+    }
+
+    public String decryptContactoLead(String stored) {
+        return decrypt(stored, AAD_LEAD);
+    }
+
+    /** Contacto con consentimiento de campañas (AG-36): misma clave, AAD propio. */
+    public String encryptContactoCampana(String contacto) {
+        return encrypt(contacto, AAD_CAMPANA);
+    }
+
+    public String decryptContactoCampana(String stored) {
+        return decrypt(stored, AAD_CAMPANA);
     }
 
     private String encrypt(String plaintext, byte[] aad) {

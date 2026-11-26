@@ -31,6 +31,8 @@ const PedidosPage = lazy(() => import('./PedidosPage'))
 const PedidoDetallePage = lazy(() => import('./PedidoDetallePage'))
 const RecoleccionSellerPage = lazy(() => import('./RecoleccionSellerPage'))
 const EncargosSellerPage = lazy(() => import('./EncargosSellerPage'))
+const BandejaPage = lazy(() => import('@/features/bandeja/BandejaPage'))
+const BotPage = lazy(() => import('@/features/botVentas/BotPage'))
 
 function SpinnerRuta() {
   return (
@@ -97,6 +99,8 @@ export default function SellerRoutes({ extra }: { extra?: ReactNode }) {
         <Route path="plan/actualizado" element={page(PlanActualizadoPage)} />
         <Route path="pedidos" element={page(PedidosPage)} />
         <Route path="pedidos/:id" element={page(PedidoDetallePage)} />
+        <Route path="bandeja" element={page(BandejaPage)} />
+        <Route path="bot" element={page(BotPage)} />
         {extra}
       </Route>
     </Routes>

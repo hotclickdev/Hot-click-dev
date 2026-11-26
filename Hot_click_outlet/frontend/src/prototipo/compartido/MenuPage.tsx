@@ -4,6 +4,8 @@ import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
 import useAuthStore from '@/store/authStore'
 import { useEncargosPendientesCount } from '@/features/encargos/useEncargos'
+import { useResumenBandeja } from '@/features/bandeja/useBandeja'
+import useTenantStore from '@/store/tenantStore'
 import { Boton } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { verSucursales } from './menuRoles'
@@ -15,6 +17,7 @@ import { EASE_PREMIUM } from './motion/formularioMotionTokens'
 const ACCIONES = [
   { segmento: 'productos', titulo: 'PRODUCTOS SUBIDOS', detalle: 'Gestioná tu catálogo' },
   { segmento: 'encargos', titulo: 'ENCARGOS', detalle: 'Cotizá pedidos a medida', conBadge: true },
+  { segmento: 'bandeja', titulo: 'BANDEJA', detalle: 'Chats de tus bots de venta', conBadge: true, soloConIa: true },
   { segmento: 'recoleccion', titulo: 'RECOLECCIÓN Y ENTREGA', detalle: 'HotClick recolecta y entrega' },
   { segmento: 'reportes', titulo: 'VER REPORTES', detalle: 'Ventas y rendimiento' },
   { segmento: 'opciones', titulo: 'OPCIONES', detalle: 'Ajustes de tu negocio' },
@@ -25,6 +28,7 @@ type AccionMenu = {
   titulo: string
   detalle: string
   conBadge?: boolean
+  soloConIa?: boolean
 }
 
 /**
@@ -38,13 +42,18 @@ export default function MenuPage() {
   const { data: pendientesEncargos = 0 } = useEncargosPendientesCount()
   const userRole = useAuthStore((s) => s.userRole)
   const esPlus = plan.id === 'negocioPlus'
+  const iaActiva = useTenantStore((s) => s.hasFeature('ai'))
+  const { data: resumenBandeja } = useResumenBandeja(iaActiva)
+  const base: AccionMenu[] = ACCIONES.filter((a) => !('soloConIa' in a && a.soloConIa) || iaActiva)
   const acciones: AccionMenu[] = esPlus && verSucursales(userRole)
     ? [
-        ...ACCIONES.slice(0, 3),
+        ...base.slice(0, 4),
         { segmento: 'sucursales', titulo: 'MIS SUCURSALES', detalle: 'Ventas e inventario del grupo' },
-        ...ACCIONES.slice(3),
+        ...base.slice(4),
       ]
-    : [...ACCIONES]
+    : [...base]
+  const contador = (segmento: string) =>
+    segmento === 'bandeja' ? (resumenBandeja?.asignadasAMi ?? 0) : pendientesEncargos
 
   return (
     <EntradaPagina>
@@ -60,9 +69,9 @@ export default function MenuPage() {
                   className="relative flex min-h-[52px] w-full items-center justify-center rounded-[10px] border border-hc-border bg-hc-surface px-5 text-[15px] font-bold text-hc-text"
                 >
                   {accion.titulo}
-                  {pendientesEncargos > 0 ? (
+                  {contador(accion.segmento) > 0 ? (
                     <span className="absolute right-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
-                      {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
+                      {contador(accion.segmento) > 99 ? '99+' : contador(accion.segmento)}
                     </span>
                   ) : null}
                 </Link>
@@ -109,9 +118,9 @@ export default function MenuPage() {
               >
                 <p className="text-base font-bold">{accion.titulo}</p>
                 <p className="mt-2 text-[13px] text-hc-muted">{accion.detalle}</p>
-                {accion.conBadge && pendientesEncargos > 0 ? (
+                {accion.conBadge && contador(accion.segmento) > 0 ? (
                   <span className="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-hc-primary text-[11px] font-bold text-white">
-                    {pendientesEncargos > 99 ? '99+' : pendientesEncargos}
+                    {contador(accion.segmento) > 99 ? '99+' : contador(accion.segmento)}
                   </span>
                 ) : null}
               </Link>

@@ -109,6 +109,13 @@ public class AiQuotaService {
             uso.entrada(), uso.salida(), uso.cacheLectura(), uso.cacheEscritura());
     }
 
+    /** Marca como simulador (panel del bot) las llamadas y tokens de una prueba. Best-effort: nunca propaga. */
+    @Transactional
+    public void registrarSimulador(Long empresaId, int llamadas, long tokens) {
+        LocalDate hoy = LocalDate.now(Constants.ZONA_CR);
+        aiUsoRepository.sumarSimulador(empresaId, hoy.getYear(), hoy.getMonthValue(), llamadas, tokens);
+    }
+
     /** Resumen del consumo del mes actual para el dashboard. */
     @Transactional(readOnly = true)
     public Map<String, Object> getUsoMes(Long empresaId) {

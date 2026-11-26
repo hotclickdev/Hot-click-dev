@@ -1,6 +1,7 @@
 package com.hotclick.scheduler;
 import com.hotclick.utils.Constants;
 
+import com.hotclick.agente.lead.TipoLead;
 import com.hotclick.repository.IpBloqueadaRepository;
 import com.hotclick.service.EncargoService;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -11,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -29,6 +31,18 @@ import java.time.LocalDateTime;
  *   - hot_click_cola_facturacion_offline_tb:     30 días (estado COMPLETADO o AGOTADO)
  *
  *   - hot_click_embudo_sesion_tb:                90 días (sesión anónima del embudo)
+ *   - hot_click_lead_tb:                         180 días COMPRADOR, 365 días NEGOCIO (AG-27)
+ *   - hot_click_agente_conv_mes_tb:              3 meses (conversaciones contadas del cupo, AG-29)
+ *   - hot_click_agente_uso_mes_tb:               24 meses (conversaciones y costo de IA: facturación y métricas, AG-29)
+ *   - hot_click_agente_aviso_unico_tb:           180 días (guarda de idempotencia de avisos del bot, AG-34/AG-40; sin datos personales)
+ *   - hot_click_agente_baja_tb:                  NUNCA se purga (ver limpiarAgenteCupo)
+ *   - hot_click_agente_consentimiento_tb:       REVOCADOS a los 5 años de la revocación (prueba del consentimiento,
+ *                                                AG-36); los ACTIVOS se conservan mientras dure la relación
+ *   - hot_click_agente_campana_tb (+ envíos):    12 meses desde que termina (completada o cancelada, AG-36)
+ *   - hot_click_agente_catalogo_item_tb:         ELIMINADOS a los 30 días (control de sincronización con Meta, AG-37)
+ *   - hot_click_agente_alerta_meta_tb:          90 días (avisos de Meta de cuenta y calidad, AG-32)
+ *   - hot_click_agente_resena_aviso_tb:          365 días (guarda de "reseña ya pedida" por pedido, AG-35)
+ *   - encuesta de satisfacción (AG-38):          vive en hot_click_chat_sesion_tb: se borra con la sesión (30 días)
  *
  * Corre a las 2:30 AM con ShedLock — solo un pod lo ejecuta en multi-pod.
  * Borra en lotes pequeños (LIMIT 500) para no generar un lock masivo en la tabla.
@@ -67,10 +81,39 @@ public class DataRetentionScheduler {
         total += marcarEncargosVencidos();
         total += limpiarEncargosViejos();
         total += limpiarEmbudoSesiones();
+        total += limpiarEnlacesCompra();
+        total += limpiarAgenteAcciones();
+        total += limpiarLeads();
+        total += limpiarAgenteCupo();
+        total += limpiarAgenteCampanas();
+        total += limpiarAgenteMetricas();
+        total += limpiarAvisosUnicosAgente();
 
         long ms = System.currentTimeMillis() - inicio;
         if (total > 0) {
             log.info("[retention] {} registro(s) eliminado(s) en {}ms", total, ms);
+        }
+    }
+
+    /** AG-21: bitácora del modo interno del bot y vinculaciones revocadas, 90 días. */
+    private int limpiarAgenteAcciones() {
+        try {
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR)
+                    .minusDays(Constants.DIAS_RETENCION_AGENTE_ACCION);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_agente_accion_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_accion_tb WHERE fecha_creacion < ? LIMIT 500)",
+                corte);
+            n += jdbc.update(
+                "DELETE FROM hot_click_agente_vinculacion_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_vinculacion_tb WHERE estado = 'REVOCADA' " +
+                "AND fecha_revocacion < ? LIMIT 500)",
+                corte);
+            if (n > 0) log.info("[retention] agente_accion/vinculacion: {} eliminados (> 90 días)", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] agente_accion: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
         }
     }
 
@@ -117,6 +160,157 @@ public class DataRetentionScheduler {
             total += n;
         } while (n == 500);
         if (total > 0) log.info("[retention] ai_mensaje: {} eliminados (> 30 días)", total);
+        return total;
+    }
+
+    /**
+     * AG-07: los enlaces de compra del bot guardan el contacto del cliente (su número de WhatsApp). Se borran 90 días
+     * después de que vencen (ítems en cascada); el pedido conserva la atribución en {@code origen_canal} y su FK al
+     * enlace pasa a NULL (ON DELETE SET NULL). 90 días cubre soporte, reclamos de pago y la ventana de contracargos.
+     */
+    private int limpiarEnlacesCompra() {
+        try {
+            LocalDateTime corte = LocalDateTime.now(Constants.ZONA_CR).minusDays(90);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_enlace_compra_tb WHERE id_enlace_compra IN (" +
+                "  SELECT id_enlace_compra FROM hot_click_enlace_compra_tb WHERE vence < ? LIMIT 500)", corte);
+            if (n > 0) log.info("[retention] enlace_compra: {} eliminados (vencidos hace > 90 días)", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] enlace_compra: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    /**
+     * AG-27: leads del bot (contacto cifrado + nombre + interés, datos personales Ley 8968). Compradores 6 meses
+     * (180 días), negocios 12 meses (365 días), contados desde su creación.
+     */
+    private int limpiarLeads() {
+        try {
+            int total = 0;
+            LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+            for (TipoLead tipo : TipoLead.values()) {
+                total += borrarLeadsViejos(tipo, ahora.minusDays(tipo.retencionDias()));
+            }
+            return total;
+        } catch (Exception e) {
+            log.warn("[retention] lead: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    private int borrarLeadsViejos(TipoLead tipo, LocalDateTime corte) {
+        int total = 0, n;
+        do {
+            n = jdbc.update(
+                "DELETE FROM hot_click_lead_tb WHERE id_lead IN (" +
+                "SELECT id_lead FROM hot_click_lead_tb WHERE tipo = ? AND creado_en < ? LIMIT 500)",
+                tipo.name(), corte);
+            total += n;
+        } while (n == 500);
+        if (total > 0) log.info("[retention] lead {}: {} eliminados (> {} días)", tipo, total, tipo.retencionDias());
+        return total;
+    }
+
+    /**
+     * AG-34 / AG-40: la guarda de "un solo aviso" (comprobante, pasos de onboarding) solo hace falta mientras el
+     * evento pueda repetirse o la ventana de 24 h siga abierta; 180 días la cubre con margen. Sin datos personales.
+     */
+    private int limpiarAvisosUnicosAgente() {
+        try {
+            Instant corte = Instant.now().minus(java.time.Duration.ofDays(180));
+            int total = 0, n;
+            do {
+                n = jdbc.update(
+                    "DELETE FROM hot_click_agente_aviso_unico_tb WHERE ctid IN (" +
+                    "SELECT ctid FROM hot_click_agente_aviso_unico_tb WHERE creado_en < ? LIMIT 500)",
+                    java.sql.Timestamp.from(corte));
+                total += n;
+            } while (n == 500);
+            if (total > 0) log.info("[retention] agente_aviso_unico: {} eliminados (> 180 días)", total);
+            return total;
+        } catch (Exception e) {
+            log.warn("[retention] agente_aviso_unico: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    /**
+     * AG-29: conversaciones contadas del cupo (hash del contacto) 3 meses y uso mensual (conversaciones y costo de IA)
+     * 24 meses, por la columna {@code mes} (primer día del mes). {@code hot_click_agente_baja_tb} NO se purga nunca:
+     * solo guarda el hash del contacto, el canal y la fecha, y la baja (STOP) debe respetarse siempre; borrarla
+     * volvería a enviar recordatorios a quien pidió no recibirlos.
+     */
+    private int limpiarAgenteCupo() {
+        try {
+            LocalDate mesActual = LocalDate.now(Constants.ZONA_CR).withDayOfMonth(1);
+            int total = borrarPorMes("hot_click_agente_conv_mes_tb", mesActual.minusMonths(3));
+            total += borrarPorMes("hot_click_agente_uso_mes_tb", mesActual.minusMonths(24));
+            return total;
+        } catch (Exception e) {
+            log.warn("[retention] agente_cupo: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    /**
+     * AG-36 y AG-37. El consentimiento revocado se guarda 5 años como prueba (ya sin contacto ni nombre). Las campañas
+     * terminadas (con sus envíos, por cascada) 12 meses. Los productos eliminados del catálogo de Meta, 30 días.
+     */
+    private int limpiarAgenteCampanas() {
+        try {
+            Instant ahora = Instant.now();
+            int n = jdbc.update(
+                "DELETE FROM hot_click_agente_consentimiento_tb WHERE id_consentimiento IN (" +
+                "SELECT id_consentimiento FROM hot_click_agente_consentimiento_tb WHERE estado = 'REVOCADO' " +
+                "AND revocado_en < ? LIMIT 500)", java.sql.Timestamp.from(ahora.minus(java.time.Duration.ofDays(5 * 365L))));
+            n += jdbc.update(
+                "DELETE FROM hot_click_agente_campana_tb WHERE id_campana IN (" +
+                "SELECT id_campana FROM hot_click_agente_campana_tb WHERE estado IN ('COMPLETADA', 'CANCELADA') " +
+                "AND finalizada_en < ? LIMIT 500)", java.sql.Timestamp.from(ahora.minus(java.time.Duration.ofDays(365))));
+            n += jdbc.update(
+                "DELETE FROM hot_click_agente_catalogo_item_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_catalogo_item_tb WHERE estado = 'ELIMINADO' " +
+                "AND sincronizado_en < ? LIMIT 500)", java.sql.Timestamp.from(ahora.minus(java.time.Duration.ofDays(30))));
+            if (n > 0) log.info("[retention] agente campañas/consentimientos/catálogo: {} eliminados", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] agente_campanas: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    /** AG-32 y AG-35: avisos de Meta (90 días) y guarda de reseña por pedido (365 días). Lotes de 500. */
+    private int limpiarAgenteMetricas() {
+        try {
+            java.time.OffsetDateTime ahora = java.time.OffsetDateTime.now(Constants.ZONA_CR);
+            int n = jdbc.update(
+                "DELETE FROM hot_click_agente_alerta_meta_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_alerta_meta_tb WHERE creado_en < ? LIMIT 500)",
+                ahora.minusDays(Constants.DIAS_RETENCION_AGENTE_ALERTA_META));
+            n += jdbc.update(
+                "DELETE FROM hot_click_agente_resena_aviso_tb WHERE ctid IN (" +
+                "SELECT ctid FROM hot_click_agente_resena_aviso_tb WHERE enviado_en < ? LIMIT 500)",
+                ahora.minusDays(Constants.DIAS_RETENCION_AGENTE_RESENA_AVISO));
+            if (n > 0) log.info("[retention] agente_alerta_meta/resena_aviso: {} eliminados", n);
+            return n;
+        } catch (Exception e) {
+            log.warn("[retention] agente_metricas: tabla no disponible, omitiendo — {}", e.getClass().getSimpleName());
+            return 0;
+        }
+    }
+
+    /** Nombres de tabla fijos del propio código (nunca entrada externa). Lotes de 500. */
+    private int borrarPorMes(String tabla, LocalDate corte) {
+        int total = 0, n;
+        do {
+            n = jdbc.update(
+                "DELETE FROM " + tabla + " WHERE ctid IN (" +
+                "SELECT ctid FROM " + tabla + " WHERE mes < ? LIMIT 500)", corte);
+            total += n;
+        } while (n == 500);
+        if (total > 0) log.info("[retention] {}: {} eliminados", tabla, total);
         return total;
     }
 

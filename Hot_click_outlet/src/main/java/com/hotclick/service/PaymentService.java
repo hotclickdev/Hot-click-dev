@@ -55,11 +55,15 @@ public class PaymentService {
     @Autowired private GuestCancelTokenService          guestCancelTokenService;
     @Autowired private com.hotclick.service.payment.ReservaAntiBotService reservaAntiBot;
     @Autowired private com.hotclick.service.analytics.AtribucionPedidoService atribucionPedidoService;
+    /** AG-07: enlace de compra del bot (libera su reserva antes de reservar para el pedido y vincula pedido ↔ enlace). */
+    @Autowired(required = false) private com.hotclick.agente.enlace.EnlaceCompraVinculo enlaceCompraVinculo;
 
     @Transactional
     public PaymentCheckoutResponse checkout(PaymentCheckoutRequest req, String correoUsuario) {
         checkoutValidator.validateCartNotEmpty(req);
         CheckoutValidator.exigirDireccionSiHayEnvio(req);
+        // AG-07/AG-09: libera la reserva del enlace del bot (el pedido reserva la suya) y completa el teléfono.
+        Long enlaceCompraId = enlaceCompraVinculo == null ? null : enlaceCompraVinculo.preparar(req).orElse(null);
 
         String provider = checkoutValidator.resolveProvider(req, providerFactory);
         String emailEfectivo = checkoutValidator.resolveEffectiveEmail(correoUsuario, req);
@@ -71,6 +75,7 @@ public class PaymentService {
         CheckoutGrupoFactory.Grupo grupo = checkoutGrupoFactory.crear(
             req, reservation, bodegaDefault, provider, usuario, Constants.PEDIDO_PENDIENTE);
         Pedido principal = grupo.principal();
+        if (enlaceCompraId != null) enlaceCompraVinculo.vincular(enlaceCompraId, grupo.pedidos());
         atribucionPedidoService.guardarSiPresente(principal, req.getAtribucion());
         posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), principal.getId());
 
@@ -81,6 +86,7 @@ public class PaymentService {
                 pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
                 pedido.setMetodoPago("GIFT_CARD");
                 pedidoRepository.save(pedido);
+                com.hotclick.agente.pago.PedidoBotEventos.publicarPagado(pedido, eventPublisher);
                 if (s.pricing().gcMonto() > 0) {
                     giftCardService.canjear(s.pricing().gcCodigo(), pedido, s.pricing().gcMonto());
                 }

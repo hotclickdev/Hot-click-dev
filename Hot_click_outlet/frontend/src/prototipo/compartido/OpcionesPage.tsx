@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { FilaOpcion } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import useAuthStore from '@/store/authStore'
+import useTenantStore from '@/store/tenantStore'
 import MmGuiaToggle from './MmGuiaToggle'
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
@@ -17,6 +18,7 @@ export default function OpcionesPage() {
   const ruta = useSellerRuta()
   const cerrarSesionCompleta = useCerrarSesion()
   const userName = useAuthStore((s) => s.userName) ?? plan.usuario
+  const iaActiva = useTenantStore((s) => s.hasFeature('ai'))
 
   function cerrarSesion() {
     cerrarSesionCompleta()
@@ -58,6 +60,11 @@ export default function OpcionesPage() {
           <ItemFila>
             <FilaOpcion to={ruta('consultas')} label="Consultas con Hot" />
           </ItemFila>
+          {iaActiva ? (
+            <ItemFila>
+              <FilaOpcion to={ruta('bot')} label="Bot de ventas" />
+            </ItemFila>
+          ) : null}
           <ItemFila>
             <FilaOpcion to={ruta(plan.extraOpcion.to)} label={plan.extraOpcion.label} />
           </ItemFila>

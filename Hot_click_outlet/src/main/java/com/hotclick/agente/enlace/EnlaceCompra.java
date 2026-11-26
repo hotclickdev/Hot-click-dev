@@ -1,0 +1,130 @@
+package com.hotclick.agente.enlace;
+
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Enlace de compra que envía un bot de IA al cliente (AG-07). El código es un secreto de portador: quien lo tiene
+ * puede abrir el carrito. Por eso nunca se expone el id interno ni se loguea el código completo.
+ */
+@Entity
+@Table(name = "hot_click_enlace_compra_tb")
+public class EnlaceCompra {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_enlace_compra")
+    private Long id;
+
+    @Column(name = "codigo", nullable = false, length = 64, updatable = false)
+    private String codigo;
+
+    /** null = enlace del marketplace (productos de cualquier tienda aprobada). */
+    @Column(name = "fk_id_empresa")
+    private Long empresaId;
+
+    /** Id (UUID) de la conversación del agente. Sin FK: la tabla la crea otra historia. */
+    @Column(name = "fk_id_chat_sesion")
+    private UUID chatSesionId;
+
+    @Column(name = "contacto_externo", length = 100)
+    private String contactoExterno;
+
+    @Column(name = "nombre_cliente", length = 120)
+    private String nombreCliente;
+
+    @Column(name = "canal", nullable = false, length = 20)
+    private String canal;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false, length = 15)
+    private EnlaceCompraEstado estado = EnlaceCompraEstado.CREADO;
+
+    @Column(name = "fk_id_pedido")
+    private Long pedidoId;
+
+    @Column(name = "precio_total_creado", nullable = false)
+    private int precioTotalCreado;
+
+    @Column(name = "creado", nullable = false)
+    private LocalDateTime creado;
+
+    @Column(name = "abierto")
+    private LocalDateTime abierto;
+
+    @Column(name = "vence", nullable = false)
+    private LocalDateTime vence;
+
+    /** Hasta cuándo está reservado el stock de este enlace (AG-09); null = sin reserva vigente. */
+    @Column(name = "reserva_hasta")
+    private LocalDateTime reservaHasta;
+
+    @Column(name = "recordatorios_enviados", nullable = false)
+    private int recordatoriosEnviados;
+
+    /** AG-08: pagos rechazados de este enlace; al segundo la conversación pasa a una persona. */
+    @Column(name = "rechazos_pago", nullable = false)
+    private int rechazosPago;
+
+    /** AG-08: aviso de pago (PAGADO/RECHAZADO) que no salió por estar el cliente fuera de la ventana de 24 h. */
+    @Column(name = "aviso_pendiente", length = 20)
+    private String avisoPendiente;
+
+    /** AG-12: cuándo salió el recordatorio 2 (abierto sin pagar); null = aún no. */
+    @Column(name = "recordatorio_checkout_en")
+    private LocalDateTime recordatorioCheckoutEn;
+
+    @OneToMany(mappedBy = "enlace", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
+    private List<EnlaceCompraItem> items = new ArrayList<>();
+
+    public void agregarItem(EnlaceCompraItem item) {
+        item.setEnlace(this);
+        items.add(item);
+    }
+
+    public boolean estaVigente(LocalDateTime ahora) {
+        return estado.permiteAbrir() && vence.isAfter(ahora);
+    }
+
+    public Long getId() { return id; }
+    public String getCodigo() { return codigo; }
+    public void setCodigo(String codigo) { this.codigo = codigo; }
+    public Long getEmpresaId() { return empresaId; }
+    public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
+    public UUID getChatSesionId() { return chatSesionId; }
+    public void setChatSesionId(UUID chatSesionId) { this.chatSesionId = chatSesionId; }
+    public String getContactoExterno() { return contactoExterno; }
+    public void setContactoExterno(String contactoExterno) { this.contactoExterno = contactoExterno; }
+    public String getNombreCliente() { return nombreCliente; }
+    public void setNombreCliente(String nombreCliente) { this.nombreCliente = nombreCliente; }
+    public String getCanal() { return canal; }
+    public void setCanal(String canal) { this.canal = canal; }
+    public EnlaceCompraEstado getEstado() { return estado; }
+    public void setEstado(EnlaceCompraEstado estado) { this.estado = estado; }
+    public Long getPedidoId() { return pedidoId; }
+    public void setPedidoId(Long pedidoId) { this.pedidoId = pedidoId; }
+    public int getPrecioTotalCreado() { return precioTotalCreado; }
+    public void setPrecioTotalCreado(int precioTotalCreado) { this.precioTotalCreado = precioTotalCreado; }
+    public LocalDateTime getCreado() { return creado; }
+    public void setCreado(LocalDateTime creado) { this.creado = creado; }
+    public LocalDateTime getAbierto() { return abierto; }
+    public void setAbierto(LocalDateTime abierto) { this.abierto = abierto; }
+    public LocalDateTime getVence() { return vence; }
+    public void setVence(LocalDateTime vence) { this.vence = vence; }
+    public LocalDateTime getReservaHasta() { return reservaHasta; }
+    public void setReservaHasta(LocalDateTime reservaHasta) { this.reservaHasta = reservaHasta; }
+    public int getRecordatoriosEnviados() { return recordatoriosEnviados; }
+    public void setRecordatoriosEnviados(int recordatoriosEnviados) { this.recordatoriosEnviados = recordatoriosEnviados; }
+    public int getRechazosPago() { return rechazosPago; }
+    public void setRechazosPago(int rechazosPago) { this.rechazosPago = rechazosPago; }
+    public String getAvisoPendiente() { return avisoPendiente; }
+    public void setAvisoPendiente(String avisoPendiente) { this.avisoPendiente = avisoPendiente; }
+    public LocalDateTime getRecordatorioCheckoutEn() { return recordatorioCheckoutEn; }
+    public void setRecordatorioCheckoutEn(LocalDateTime v) { this.recordatorioCheckoutEn = v; }
+    public List<EnlaceCompraItem> getItems() { return items; }
+}

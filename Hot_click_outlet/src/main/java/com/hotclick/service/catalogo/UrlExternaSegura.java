@@ -79,7 +79,8 @@ public final class UrlExternaSegura {
         return uri;
     }
 
-    static boolean esInterna(InetAddress ip) {
+    /** true si la IP es de red interna (loopback, privada, link-local, CGNAT, ULA, multicast...). */
+    public static boolean esInterna(InetAddress ip) {
         if (ip.isLoopbackAddress() || ip.isAnyLocalAddress() || ip.isLinkLocalAddress()
                 || ip.isSiteLocalAddress() || ip.isMulticastAddress()) return true;
         byte[] b = ip.getAddress();
