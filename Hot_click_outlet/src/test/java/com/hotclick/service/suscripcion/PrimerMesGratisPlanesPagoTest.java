@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -68,7 +69,7 @@ class PrimerMesGratisPlanesPagoTest {
 
     @BeforeEach
     void setUp() {
-        politica = politica(30, "PYME,NEGOCIO_PLUS");
+        politica = new TrialPlanesPagoService(new TrialPlanesPagoConfig(30, "PYME,NEGOCIO_PLUS"), empresaRepo, suscripcionRepo);
         service = new SuscripcionOnvoChangeService(
             suscripcionRepo, empresaRepo, planRepo, onvoBilling, onvoService, planSupport, null);
         ReflectionTestUtils.setField(service, "self", service);
@@ -237,7 +238,8 @@ class PrimerMesGratisPlanesPagoTest {
     void subidaCobradaSinMesNuevo() throws Exception {
         String fuente = Files.readString(Path.of(
             "src/main/java/com/hotclick/service/suscripcion/SuscripcionOnvoChangeService.java"));
-        assertThat(fuente).containsPattern("int diasTrial = subidaCobrada \\? 0\\s+: conPrimerMes\\(");
+        assertThat(fuente).containsPattern("int diasBase = subidaCobrada \\? 0\\s+: diasTrialReemplazo\\(")
+            .containsPattern("primerMes = !subidaCobrada &&");
     }
 
     // ---------------------------------------------------------------- cerrarTrial
@@ -257,30 +259,19 @@ class PrimerMesGratisPlanesPagoTest {
     }
 
     @Test
-    @DisplayName("cerrarTrial no manda a PAST_DUE a un ex-Emprendedor en su primer mes gratis de PYME")
-    void cerrarTrialRespetaPrimerMes() {
+    @DisplayName("M-1: cerrarTrial se comporta como antes: el Emprendedor sin tarjeta pasa a PAST_DUE aunque haya elegido PYME")
+    void cerrarTrialSinExcepcionDePrimerMes() {
         emprendedorConDias(0);
         empresa.setTrialEmprendedorHasta(HOY.minusDays(1));
         Suscripcion sub = subTrial(planPyme, HOY.plusDays(20));
         when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
 
-        assertThat(trialService().cerrarTrial(10L, HOY)).isFalse();
-
-        assertThat(empresa.getEstadoPlan()).isEqualTo(Constants.ESTADO_PLAN_TRIAL);
-        assertThat(sub.getEstado()).isEqualTo("TRIAL");
-        verify(suscripcionRepo, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("cerrarTrial vuelve a aplicar cuando el mes gratis de PYME ya vencio sin cobro")
-    void cerrarTrialAplicaTrasMesGratis() {
-        emprendedorConDias(0);
-        empresa.setTrialEmprendedorHasta(HOY.minusDays(40));
-        Suscripcion sub = subTrial(planPyme, HOY.minusDays(1));
-        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(sub));
-
         assertThat(trialService().cerrarTrial(10L, HOY)).isTrue();
+
         assertThat(empresa.getEstadoPlan()).isEqualTo("PAST_DUE");
+        assertThat(sub.getEstado()).isEqualTo("PAST_DUE");
+        // fecha_fin nunca se empuja hacia adelante: queda como mucho en el ultimo dia del trial Emprendedor.
+        assertThat(sub.getFechaFin()).isEqualTo(HOY.minusDays(1));
     }
 
     @Test
@@ -293,6 +284,165 @@ class PrimerMesGratisPlanesPagoTest {
 
         assertThat(trialService().cerrarTrial(10L, HOY)).isTrue();
         assertThat(empresa.getEstadoPlan()).isEqualTo("PAST_DUE");
+    }
+
+    // ---------------------------------------------------------------- A-1 / decision 2: elegibilidad en runtime
+
+    @Test
+    @DisplayName("A-1: negocio con historial de plan de pago (sub PYME/NP activada alguna vez) no es elegible")
+    void historialDePagoNoEsElegible() {
+        when(suscripcionRepo.tuvoPlanDePago(10L)).thenReturn(true);
+        assertThat(politica.elegible(empresa, "PYME")).isFalse();
+        assertThat(politica.diasTrial(empresa, "PYME", HOY)).isZero();
+        assertThat(politica.disponible(empresa)).isFalse();
+    }
+
+    @Test
+    @DisplayName("A-1: plan actual PYME / NEGOCIO_PLUS cuenta como historial de pago")
+    void planActualDePagoNoEsElegible() {
+        empresa.setPlanSaas("NEGOCIO_PLUS");
+        assertThat(politica.elegible(empresa, "PYME")).isFalse();
+    }
+
+    @Test
+    @DisplayName("Decision 2: suspendido por impago o en PAST_DUE / VENCIDO no es elegible (paga de inmediato)")
+    void impagoNoEsElegible() {
+        empresa.setEstadoEmpresa(Constants.ESTADO_EMPRESA_SUSPENDIDO_IMPAGO);
+        assertThat(politica.elegible(empresa, "PYME")).isFalse();
+        empresa.setEstadoEmpresa(Constants.ESTADO_EMPRESA_EXTENSION_IMPAGO);
+        assertThat(politica.elegible(empresa, "PYME")).isFalse();
+        empresa.setEstadoEmpresa("ACTIVO");
+        for (String estado : new String[] {"PAST_DUE", "VENCIDO"}) {
+            empresa.setEstadoPlan(estado);
+            assertThat(politica.elegible(empresa, "PYME")).as(estado).isFalse();
+        }
+        empresa.setEstadoPlan("ACTIVO");
+        assertThat(politica.elegible(empresa, "PYME")).isTrue();
+    }
+
+    @Test
+    @DisplayName("Decision 2: un negocio suspendido que paga la mensualidad no recibe dias gratis (cobro inmediato)")
+    void suspendidoPagaSinMes() {
+        empresa.setEstadoPlan("VENCIDO");
+        assertThat(politica.diasTrial(empresa, "PYME", HOY)).isZero();
+    }
+
+    @Test
+    @DisplayName("A-2: disponible() es true solo para el negocio que recibiria el mes gratis")
+    void disponibleSoloSiRecibiria() {
+        assertThat(politica.disponible(empresa)).isTrue();
+        empresa.setPrimerMesGratisUsadoEn(LocalDateTime.now());
+        assertThat(politica.disponible(empresa)).isFalse();
+        assertThat(politica(0, "PYME").disponible(new Empresa())).isFalse();
+    }
+
+    // ---------------------------------------------------------------- M-4: marca por UPDATE condicional
+
+    @Test
+    @DisplayName("M-4: la marca se escribe con UPDATE condicional del repo y la columna es updatable=false")
+    void marcaPorUpdateCondicional() throws Exception {
+        service.cambiarPlan(10L, 2L);
+        verify(empresaRepo).marcarPrimerMesGratis(eq(10L), any(LocalDateTime.class));
+        verify(empresaRepo, never()).save(any());
+        var col = Empresa.class.getDeclaredField("primerMesGratisUsadoEn")
+            .getAnnotation(jakarta.persistence.Column.class);
+        assertThat(col.updatable()).isFalse();
+        String q = EmpresaRepository.class.getMethod("marcarPrimerMesGratis", Long.class, LocalDateTime.class)
+            .getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        assertThat(q).contains("primerMesGratisUsadoEn IS NULL");
+    }
+
+    // ---------------------------------------------------------------- M-5: se decide una vez, dentro del lock
+
+    @Test
+    @DisplayName("M-5: si bajo el lock el negocio ya no es elegible (otra pestaña lo marcó), ONVO recibe cobro inmediato")
+    void decisionBajoElLock() {
+        Empresa bloqueada = new Empresa();
+        bloqueada.setId(10L);
+        bloqueada.setPlanSaas("EMPRENDEDOR");
+        bloqueada.setEstadoPlan("ACTIVO");
+        bloqueada.setEstadoEmpresa("ACTIVO");
+        bloqueada.setPrimerMesGratisUsadoEn(LocalDateTime.now().minusMinutes(1));
+        when(empresaRepo.findByIdForUpdate(10L)).thenReturn(Optional.of(bloqueada));
+        when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap()))
+            .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_4", "item_1"));
+
+        Map<String, Object> out = service.cambiarPlan(10L, 2L);
+
+        assertThat(out).doesNotContainKey("trialDias");
+        verify(onvoBilling, never()).crearSuscripcionIncompleta(any(), any(), anyMap(), anyInt());
+        verify(empresaRepo, never()).marcarPrimerMesGratis(any(), any());
+    }
+
+    // ---------------------------------------------------------------- M-1: sin empujar fecha_fin de filas PAST_DUE
+
+    @Test
+    @DisplayName("M-1: una fila existente que no esta en TRIAL (p. ej. PAST_DUE) no recibe fecha_fin nueva por el mes gratis")
+    void noEmpujaFechaFinDeFilaPastDue() {
+        emprendedorConDias(10);
+        Suscripcion existente = new Suscripcion();
+        existente.setEmpresa(empresa);
+        existente.setPlan(planEmprendedor);
+        existente.setEstado("PAST_DUE");
+        LocalDate fin = HOY.minusDays(1);
+        existente.setFechaFin(fin);
+        when(suscripcionRepo.findActivaByEmpresaId(10L)).thenReturn(Optional.of(existente));
+
+        service.cambiarPlan(10L, 2L);
+
+        assertThat(existente.getFechaFin()).isEqualTo(fin);
+    }
+
+    // ---------------------------------------------------------------- decision 3: liberar la marca (admin)
+
+    @Test
+    @DisplayName("Admin: liberarMarca exige motivo, limpia con UPDATE, audita y evict del cache del tenant")
+    void liberarMarca() {
+        var auditoria = org.mockito.Mockito.mock(com.hotclick.service.AuditoriaAdminRegistroService.class);
+        Cache cache = org.mockito.Mockito.mock(Cache.class);
+        when(cacheManager.getCache("tenantInfo")).thenReturn(cache);
+        when(empresaRepo.limpiarPrimerMesGratis(10L)).thenReturn(1);
+        ReflectionTestUtils.setField(politica, "auditoria", auditoria);
+        ReflectionTestUtils.setField(politica, "cacheManager", cacheManager);
+
+        assertThatThrownBy(() -> politica.liberarMarca(10L, "  ")).isInstanceOf(IllegalArgumentException.class);
+        verify(empresaRepo, never()).limpiarPrimerMesGratis(any());
+
+        assertThat(politica.liberarMarca(10L, "Abandono antes de la tarjeta")).isTrue();
+
+        verify(empresaRepo).limpiarPrimerMesGratis(10L);
+        verify(auditoria).registrar(eq("PRIMER_MES_GRATIS_LIBERAR"), eq("Empresa"), eq(10L), eq(10L),
+            org.mockito.ArgumentMatchers.contains("Abandono antes de la tarjeta"));
+        verify(cache).evict(10L);
+    }
+
+    @Test
+    @DisplayName("Admin: el endpoint exige ADMIN (clase y regla /api/admin/billing/**) y validacion del motivo")
+    void endpointSoloAdminYValidado() throws Exception {
+        var clase = com.hotclick.controller.AdminBillingController.class;
+        assertThat(clase.getAnnotation(org.springframework.security.access.prepost.PreAuthorize.class).value())
+            .isEqualTo("hasRole('ADMIN')");
+        var m = clase.getMethod("liberarPrimerMesGratis", Long.class, com.hotclick.dto.LiberarPrimerMesGratisRequest.class);
+        assertThat(m.getParameters()[1].isAnnotationPresent(jakarta.validation.Valid.class)).isTrue();
+        var motivo = com.hotclick.dto.LiberarPrimerMesGratisRequest.class.getRecordComponents()[0];
+        assertThat(motivo.getAccessor().getAnnotations()).isNotEmpty();
+        String reglas = Files.readString(Path.of(
+            "src/main/java/com/hotclick/security/config/SecurityAuthorizationRules.java"));
+        assertThat(reglas).contains("\"/api/admin/billing/**\").hasRole(Constants.ROL_ADMIN)");
+    }
+
+    // ---------------------------------------------------------------- A-2: /tenant/info
+
+    @Test
+    @DisplayName("A-2: TenantInfoBuilder publica primerMesGratisDisponible segun la elegibilidad del negocio")
+    void tenantInfoPublicaDisponibilidad() {
+        var flags = org.mockito.Mockito.mock(com.hotclick.service.FeatureFlagService.class);
+        var builder = new com.hotclick.service.tenant.TenantInfoBuilder(empresaRepo, flags);
+        ReflectionTestUtils.setField(builder, "trialPlanesPago", politica);
+
+        assertThat(builder.getTenantInfo(10L).get("primerMesGratisDisponible")).isEqualTo(true);
+        empresa.setPrimerMesGratisUsadoEn(LocalDateTime.now());
+        assertThat(builder.getTenantInfo(10L).get("primerMesGratisDisponible")).isEqualTo(false);
     }
 
     // ---------------------------------------------------------------- config y verificacion ONVO
@@ -334,5 +484,19 @@ class PrimerMesGratisPlanesPagoTest {
             .doesNotContain("NOT NULL").doesNotContain("UPDATE ");
         assertThat(Files.readString(Path.of("Actualizado.sql")))
             .contains("V244").contains("primer_mes_gratis_usado_en");
+    }
+
+    @Test
+    @DisplayName("V245: backfill idempotente (solo marca NULL) por historial de plan de pago, sin DDL destructivo; espejo en Actualizado.sql")
+    void migracionV245Backfill() throws IOException {
+        String sql = Files.readString(Path.of("src/main/resources/db/migration/V245__primer_mes_gratis_backfill_historial_pago.sql")).lines()
+            .filter(l -> !l.trim().startsWith("--")).collect(java.util.stream.Collectors.joining("\n")).toUpperCase();
+        assertThat(sql).contains("UPDATE HOT_CLICK_EMPRESA_TB");
+        assertThat(sql).contains("PRIMER_MES_GRATIS_USADO_EN IS NULL");
+        assertThat(sql).contains("PLAN_SAAS IN ('PYME', 'NEGOCIO_PLUS')");
+        assertThat(sql).contains("S.ESTADO IN ('ACTIVO', 'PAST_DUE', 'CANCELADO', 'VENCIDO')");
+        assertThat(sql).doesNotContain("DROP ").doesNotContain("DELETE ").doesNotContain("TRUNCATE")
+            .doesNotContain("ALTER ").doesNotContain("= NULL");
+        assertThat(Files.readString(Path.of("Actualizado.sql"))).contains("V245").contains("hot_click_suscripcion_tb s");
     }
 }

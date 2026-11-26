@@ -116,6 +116,18 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
                                           @Param("cursor") Long cursor,
                                           Pageable pageable);
 
+    /** V244: marca el primer mes gratis solo si sigue sin usar (UPDATE condicional: un save() obsoleto no la resetea). */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Empresa e SET e.primerMesGratisUsadoEn = :ahora WHERE e.id = :id AND e.primerMesGratisUsadoEn IS NULL")
+    int marcarPrimerMesGratis(@Param("id") Long id, @Param("ahora") java.time.LocalDateTime ahora);
+
+    /** Solo para el endpoint admin auditado que libera la marca (soporte). */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Empresa e SET e.primerMesGratisUsadoEn = NULL WHERE e.id = :id AND e.primerMesGratisUsadoEn IS NOT NULL")
+    int limpiarPrimerMesGratis(@Param("id") Long id);
+
     /** Suscripción impaga (día 9): suspende solo tiendas ACTIVO. No borra nada. */
     @Modifying
     @Transactional
