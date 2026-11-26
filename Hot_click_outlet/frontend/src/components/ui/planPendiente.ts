@@ -25,6 +25,8 @@ export type PagoDesdeAviso = {
   customerId?: string
   publishableKey?: string
   planNombre?: string
+  trialDias?: number
+  primerCobro?: string
 }
 
 /**
@@ -46,8 +48,29 @@ export function accionCompletarPago(data: unknown): { tipo: 'pagar'; pago: PagoD
       customerId: texto(d.customerId),
       publishableKey: texto(d.publishableKey),
       planNombre: texto(d.planNombre),
+      ...trialDeRespuesta(d),
     },
   }
+}
+
+/** `trialDias` > 0 (y `primerCobro` válido) de una respuesta de cobro; vacío si no hay período gratis. */
+function trialDeRespuesta(d: Record<string, unknown>): { trialDias?: number; primerCobro?: string } {
+  const n = Number(d.trialDias)
+  if (!Number.isInteger(n) || n <= 0) return {}
+  const fecha = typeof d.primerCobro === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.primerCobro) ? d.primerCobro : undefined
+  return fecha ? { trialDias: n, primerCobro: fecha } : { trialDias: n }
+}
+
+/**
+ * Texto del checkout con período gratis: la tarjeta se registra ahora y el primer cobro llega después. Con fecha
+ * reusa «Tu primer cobro es el …». null si no hay días gratis (checkout normal, sin promesa de gratuidad).
+ */
+export function textoCheckoutTrial(trialDias?: number | null, primerCobro?: string | null): string | null {
+  if (typeof trialDias !== 'number' || !Number.isInteger(trialDias) || trialDias <= 0) return null
+  const base = 'Registramos tu tarjeta ahora, pero no te cobramos todavía.'
+  return primerCobro && /^\d{4}-\d{2}-\d{2}$/.test(primerCobro)
+    ? `${base} Tu primer cobro es el ${fechaVisible(primerCobro)}, al terminar el período gratis.`
+    : `${base} El primer cobro se hace al terminar el período gratis.`
 }
 
 /** Aviso a mostrar: falta el pago, o trial con método de pago guardado (ONVO cobra al terminar el trial). */

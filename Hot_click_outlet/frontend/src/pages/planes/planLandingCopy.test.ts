@@ -67,3 +67,26 @@ describe('planLandingCopy: el cupo de Emprendedor no va fijo', () => {
     expect(copyLanding('plus', 25)).toBe(PLAN_LANDING_COPY.plus)
   })
 })
+
+describe('planLandingCopy: primer mes gratis (diasPrueba)', () => {
+  it('PYME con 30 días y CRC: «Primer mes gratis, luego ₡12.900/mes» + nota una vez por negocio', () => {
+    const c = copyLanding('pyme', null, { diasPrueba: 30, mensualUsd: 12900, moneda: 'CRC' })
+    expect(c.prueba).toBe('Primer mes gratis, luego ₡12.900/mes')
+    expect(c.notaPrueba).toBe('Una vez por negocio.')
+  })
+
+  it('Negocio Plus con 14 días y USD: «Primeros 14 días gratis, luego US$49/mes»', () => {
+    expect(copyLanding('plus', null, { diasPrueba: 14, mensualUsd: 49, moneda: 'USD' }).prueba)
+      .toBe('Primeros 14 días gratis, luego US$49/mes')
+  })
+
+  it('diasPrueba 0 o ausente: el copy sale igual que antes, sin promesa de gratis', () => {
+    expect(copyLanding('pyme', null, { diasPrueba: 0, mensualUsd: 12900, moneda: 'CRC' })).toBe(PLAN_LANDING_COPY.pyme)
+    expect(copyLanding('plus', null, { mensualUsd: 49, moneda: 'USD' })).toBe(PLAN_LANDING_COPY.plus)
+    expect(copyLanding('plus')).toBe(PLAN_LANDING_COPY.plus)
+  })
+
+  it('Emprendedor ignora diasPrueba', () => {
+    expect(copyLanding('emprendedor', 25, { diasPrueba: 30 }).prueba).toBeUndefined()
+  })
+})

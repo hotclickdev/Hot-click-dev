@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
 import PymeHeroPanel from './PymeHeroPanel'
+import OfertaPrimerMes from '../planes/OfertaPrimerMes'
 
 const copy = PLAN_LANDING_COPY.pyme
 
@@ -60,6 +61,7 @@ export default function PymeHero() {
           >
             {copy.precio}
           </motion.p>
+          <OfertaPrimerMes plan="PYME" className="text-sm sm:text-base" style={{ color: 'var(--hc-text)', fontFamily: 'var(--hc-font-mono)' }} />
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

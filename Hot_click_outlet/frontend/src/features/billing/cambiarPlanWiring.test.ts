@@ -60,3 +60,20 @@ describe('Auditor 5 S-01: /cambiar-plan cobra por ONVO', () => {
     expect(pagoPendienteDe({ status: 'activado', subscriptionId: 'sub_1' })).toBeNull()
   })
 })
+
+describe('cambiar-plan con trialDias (primer mes gratis)', () => {
+  it('trialDias > 0 llega al cobro pendiente (con fecha del primer cobro si viene)', async () => {
+    const { pagoPendienteDe } = await import('./useCambiarPlan')
+    const base = { status: 'requiere_pago' as const, subscriptionId: 'sub_1', publishableKey: 'pk', planNombre: 'PYME' }
+    expect(pagoPendienteDe({ ...base, trialDias: 30, primerCobro: '2027-01-26' }))
+      .toMatchObject({ trialDias: 30, primerCobro: '2027-01-26' })
+    expect(pagoPendienteDe({ ...base, trialDias: 14 })).toMatchObject({ trialDias: 14 })
+    expect(pagoPendienteDe({ ...base, trialDias: 14 })?.primerCobro).toBeUndefined()
+  })
+  it('trialDias 0 o ausente: sin trial en el cobro', async () => {
+    const { pagoPendienteDe } = await import('./useCambiarPlan')
+    const base = { status: 'requiere_pago' as const, subscriptionId: 'sub_1' }
+    expect(pagoPendienteDe({ ...base, trialDias: 0 })?.trialDias).toBeUndefined()
+    expect(pagoPendienteDe(base)?.trialDias).toBeUndefined()
+  })
+})

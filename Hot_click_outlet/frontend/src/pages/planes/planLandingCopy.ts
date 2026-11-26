@@ -1,4 +1,4 @@
-import { PLAN_PRECIOS, etiquetaMensualidad, textoComision, textoMensualidad, type MonedaPlan } from '@/config/planesPrecios'
+import { NOTA_UNA_VEZ_POR_NEGOCIO, PLAN_PRECIOS, diasPruebaPlan, etiquetaMensualidad, textoComision, textoMensualidad, textoPrimerMesLuego, type MonedaPlan } from '@/config/planesPrecios'
 
 const PYME = PLAN_PRECIOS.PYME
 const PLUS = PLAN_PRECIOS.NEGOCIO_PLUS
@@ -16,6 +16,10 @@ export type PlanLandingCopy = {
   subheadline: string
   precio: string
   ctaLabel: string
+  /** «Primer mes gratis, luego ₡12.900/mes»; solo PyME y Negocio Plus con `diasPrueba` > 0 del backend. */
+  prueba?: string | null
+  /** «Una vez por negocio.» (acompaña a `prueba`). */
+  notaPrueba?: string | null
   paraQuienSi: string[]
   paraQuienNo: string[]
   faq: { pregunta: string; respuesta: string }[]
@@ -39,6 +43,8 @@ export type DatosCupoCopy = {
   mensualUsd?: number | null
   /** Moneda ISO del monto (`moneda` de /public/emprende/cupos). Sin ella no se arma monto. */
   moneda?: MonedaPlan
+  /** Días gratis del plan (`diasPrueba` de /api/planes). Solo PyME y Negocio Plus; 0 o ausente = sin oferta. */
+  diasPrueba?: number | null
 }
 
 /** «sin mensualidad por 3 meses» o, sin dato, «sin mensualidad por un período». */
@@ -141,5 +147,9 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
  * Sin `limite` devuelve el texto de respaldo (sin número).
  */
 export function copyLanding(planId: LandingPlanId, limite?: number | null, datos?: DatosCupoCopy): PlanLandingCopy {
-  return planId === 'emprendedor' ? copyEmprendedor(limite, datos) : PLAN_LANDING_COPY[planId]
+  if (planId === 'emprendedor') return copyEmprendedor(limite, datos)
+  const base = PLAN_LANDING_COPY[planId]
+  const clave = planId === 'pyme' ? 'PYME' : 'NEGOCIO_PLUS'
+  const prueba = textoPrimerMesLuego(diasPruebaPlan(clave, datos?.diasPrueba), datos?.mensualUsd, datos?.moneda)
+  return prueba ? { ...base, prueba, notaPrueba: NOTA_UNA_VEZ_POR_NEGOCIO } : base
 }

@@ -47,3 +47,21 @@ describe('planesPageHelpers', () => {
     expect(validarPasoElegirPlan(pyme, 'EMPRENDEDOR')).toBeNull()
   })
 })
+
+describe('planesPageHelpers: primer mes gratis', () => {
+  it('PYME con diasPrueba 30 en CRC y USD', () => {
+    expect(mapApiPlanToUi({ id: 2, nombre: 'PYME', precioUsd: 12900, moneda: 'CRC', diasPrueba: 30 }).pruebaGratis)
+      .toBe('Primer mes gratis, luego ₡12.900/mes')
+    expect(mapApiPlanToUi({ id: 2, nombre: 'PYME', precioUsd: 24, moneda: 'USD', diasPrueba: 30 }).pruebaGratis)
+      .toBe('Primer mes gratis, luego US$24/mes')
+  })
+  it('Negocio Plus con 14 días', () => {
+    expect(mapApiPlanToUi({ id: 3, nombre: 'NEGOCIO_PLUS', precioUsd: 49, moneda: 'USD', diasPrueba: 14 }).pruebaGratis)
+      .toBe('Primeros 14 días gratis, luego US$49/mes')
+  })
+  it('0, ausente o Emprendedor: sin oferta', () => {
+    expect(mapApiPlanToUi({ id: 2, nombre: 'PYME', precioUsd: 24, moneda: 'USD', diasPrueba: 0 }).pruebaGratis).toBeNull()
+    expect(mapApiPlanToUi({ id: 2, nombre: 'PYME', precioUsd: 24, moneda: 'USD' }).pruebaGratis).toBeNull()
+    expect(mapApiPlanToUi({ id: 8, nombre: 'EMPRENDEDOR', precioUsd: 9, moneda: 'USD', diasPrueba: 30 }).pruebaGratis).toBeNull()
+  })
+})

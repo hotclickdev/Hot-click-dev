@@ -70,3 +70,45 @@ describe('BAJO área 9: mensualidadesUsd para /vender', () => {
     expect(mensualidadesUsd(null)).toEqual({})
   })
 })
+
+describe('Primer mes gratis (diasPrueba del backend)', () => {
+  it('30 o 31 días: «Primer mes gratis»; otro número: «Primeros N días gratis»', async () => {
+    const { textoPrimerMesGratis } = await import('./planesPrecios')
+    expect(textoPrimerMesGratis(30)).toBe('Primer mes gratis')
+    expect(textoPrimerMesGratis(31)).toBe('Primer mes gratis')
+    expect(textoPrimerMesGratis(14)).toBe('Primeros 14 días gratis')
+    expect(textoPrimerMesGratis(1)).toBe('Primer día gratis')
+  })
+
+  it('0, ausente o inválido: sin oferta (nunca se promete gratis)', async () => {
+    const { textoPrimerMesGratis, textoPrimerMesLuego } = await import('./planesPrecios')
+    for (const malo of [0, -5, null, undefined, '', 'abc', 2.5]) {
+      expect(textoPrimerMesGratis(malo)).toBeNull()
+      expect(textoPrimerMesLuego(malo, 12900, 'CRC')).toBeNull()
+    }
+  })
+
+  it('«luego {monto}/mes» con la moneda del backend: CRC, USD o sin dato', async () => {
+    const { textoPrimerMesLuego } = await import('./planesPrecios')
+    expect(textoPrimerMesLuego(30, 12900, 'CRC')).toBe('Primer mes gratis, luego ₡12.900/mes')
+    expect(textoPrimerMesLuego(30, 24, 'USD')).toBe('Primer mes gratis, luego US$24/mes')
+    expect(textoPrimerMesLuego(14, 24, 'USD')).toBe('Primeros 14 días gratis, luego US$24/mes')
+    expect(textoPrimerMesLuego(30, null, null)).toBe('Primer mes gratis, luego mensualidad del plan')
+    expect(textoPrimerMesLuego(30, 12900, 'EUR')).not.toMatch(/12\.900|₡|US\$/)
+  })
+
+  it('Emprendedor nunca muestra esta oferta; diasPruebaPlanes solo toma PYME y Negocio Plus', async () => {
+    const { diasPruebaPlan, diasPruebaPlanes, NOTA_UNA_VEZ_POR_NEGOCIO } = await import('./planesPrecios')
+    expect(diasPruebaPlan('EMPRENDEDOR', 30)).toBe(0)
+    expect(diasPruebaPlan('PYME', 30)).toBe(30)
+    expect(diasPruebaPlan('PYME', undefined)).toBe(0)
+    expect(diasPruebaPlanes([
+      { nombre: 'EMPRENDEDOR', diasPrueba: 30 },
+      { nombre: 'PYME', diasPrueba: 30 },
+      { nombre: 'NEGOCIO_PLUS', diasPrueba: 14 },
+      { nombre: 'OTRO', diasPrueba: 30 },
+    ])).toEqual({ PYME: 30, NEGOCIO_PLUS: 14 })
+    expect(diasPruebaPlanes(null)).toEqual({})
+    expect(NOTA_UNA_VEZ_POR_NEGOCIO).toBe('Una vez por negocio.')
+  })
+})

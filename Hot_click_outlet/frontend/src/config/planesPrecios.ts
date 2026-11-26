@@ -117,3 +117,45 @@ export function monedaDePlanes(planes: unknown): string | null {
   }
   return null
 }
+
+/**
+ * Primer mes gratis (PyME y Negocio Plus). `diasPrueba` llega del backend en cada plan de `GET /billing/planes` y
+ * `GET /api/planes`: días gratis genéricos que ofrece ese plan (0 o ausente = sin oferta). Aquí no hay ninguna cifra:
+ * Emprendedor queda siempre en 0 (tiene su propio cupo y sus textos).
+ */
+export const NOTA_UNA_VEZ_POR_NEGOCIO = 'Una vez por negocio.'
+
+/** Días gratis válidos (entero > 0) o 0. Emprendedor siempre 0: su prueba es el cupo, no esta oferta. */
+export function diasPruebaPlan(clave: string | null | undefined, dias: unknown): number {
+  if (clave == null || clave === 'EMPRENDEDOR' || !(clave in PLAN_PRECIOS)) return 0
+  const n = Number(dias)
+  return Number.isInteger(n) && n > 0 ? n : 0
+}
+
+/** «Primer mes gratis» (30 o 31 días), «Primeros N días gratis» o null si no hay oferta. */
+export function textoPrimerMesGratis(dias: unknown): string | null {
+  const n = Number(dias)
+  if (!Number.isInteger(n) || n <= 0) return null
+  if (n === 30 || n === 31) return 'Primer mes gratis'
+  return n === 1 ? 'Primer día gratis' : `Primeros ${n} días gratis`
+}
+
+/** «Primer mes gratis, luego ₡12.900/mes» (monto con la moneda del backend; sin monto, «luego mensualidad del plan»). */
+export function textoPrimerMesLuego(dias: unknown, monto?: number | null, moneda?: MonedaPlan): string | null {
+  const gratis = textoPrimerMesGratis(dias)
+  if (!gratis) return null
+  const luego = textoMensualidad(monto, false, moneda).replace(/^M/, 'm')
+  return `${gratis}, luego ${luego}`
+}
+
+/** Mapa clave → días gratis de los planes del backend (solo PyME y Negocio Plus con diasPrueba > 0). */
+export function diasPruebaPlanes(planes: unknown): Partial<Record<ClavePlan, number>> {
+  const out: Partial<Record<ClavePlan, number>> = {}
+  if (!Array.isArray(planes)) return out
+  for (const p of planes as Array<{ nombre?: unknown; diasPrueba?: unknown }>) {
+    const nombre = typeof p?.nombre === 'string' ? p.nombre : null
+    const n = diasPruebaPlan(nombre, p?.diasPrueba)
+    if (nombre && n > 0) out[nombre as ClavePlan] = n
+  }
+  return out
+}

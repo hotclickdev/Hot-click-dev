@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import api from '@/services/api'
 import { mensualidadMeta, notaMonedaMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
-import { PLAN_PRECIOS, textoMonedaPlanes, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
+import { NOTA_UNA_VEZ_POR_NEGOCIO, PLAN_PRECIOS, diasPruebaPlan, textoPrimerMesLuego, textoMonedaPlanes, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 
 type PlanApi = {
   nombre: string
@@ -23,6 +23,8 @@ type PlanApi = {
   comisionPorcentaje?: number
   comisionMinimaCrc?: number
   moneda?: string | null
+  /** Días gratis que ofrece el plan (0 o ausente = ninguno). */
+  diasPrueba?: number | null
 }
 
 type PlanVista = { clave: ClavePlan; titulo: string; para: string; detalle: string; destacado?: boolean }
@@ -135,6 +137,16 @@ export default function PlanesPage() {
                 <h3 className="font-display text-[22px] font-bold">{plan.titulo}</h3>
                 <p className={`text-[14px] leading-5 ${plan.destacado ? 'text-hc-n-0/85' : 'text-hc-n-600'}`}>{plan.para}</p>
                 <p className="font-display text-[18px] font-semibold">{(() => { const d = dePlan(plan.clave); return d ? `${textoMensualidad(mensualDe(d), false, d.moneda ?? moneda)} + ${textoComision(comisionDe(d), minimaDe(d))}` : textoPlan(plan.clave, null, false, moneda) })()}</p>
+                {(() => {
+                  const d = dePlan(plan.clave)
+                  const oferta = d ? textoPrimerMesLuego(diasPruebaPlan(plan.clave, d.diasPrueba), mensualDe(d), d.moneda ?? moneda) : null
+                  return oferta ? (
+                    <div data-testid="oferta-primer-mes" className="text-[13px] leading-5">
+                      <p className="font-semibold">{oferta}</p>
+                      <p className="opacity-80">{NOTA_UNA_VEZ_POR_NEGOCIO}</p>
+                    </div>
+                  ) : null
+                })()}
                 <Link
                   to={plan.detalle}
                   className={`mt-auto flex min-h-[44px] items-center justify-center rounded-[12px] text-[14px] font-semibold ${plan.destacado ? 'bg-hc-n-0 text-hc-blue-600' : 'border border-hc-n-200 text-hc-blue-600'}`}
