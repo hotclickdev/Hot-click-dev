@@ -62,4 +62,34 @@ public final class TextosFijos {
                 + "Si necesitas una copia, responde por aquí y te ayudamos a conseguirla.";
         };
     }
+
+    // ── Notas de voz (respaldos cuando no se puede transcribir) ──────────────────────────────────────────────────
+    // BORRADOR EN/PT: revisar el dueño. Español conserva el texto de siempre (trato de usted).
+
+    /** Sin proveedor de transcripción: se pide que escriban el mensaje. */
+    public static String vozDeshabilitada(Idioma idioma) {
+        return switch (o(idioma)) {
+            case EN -> "I can't listen to voice notes right now. Could you type your message? I'm happy to help!";
+            case PT -> "No momento não consigo ouvir áudios. Pode escrever sua mensagem? Será um prazer ajudar!";
+            case ES -> "Por ahora no puedo escuchar notas de voz. ¿Me lo podría escribir? Con gusto le ayudo.";
+        };
+    }
+
+    /** Fallo de descarga, proveedor o audio vacío. */
+    public static String vozFallo(Idioma idioma) {
+        return switch (o(idioma)) {
+            case EN -> "I couldn't understand your voice note. Could you type your message, please?";
+            case PT -> "Não consegui entender seu áudio. Pode escrever sua mensagem, por favor?";
+            case ES -> "No logré entender su nota de voz. ¿Me podría escribir su mensaje, por favor?";
+        };
+    }
+
+    /** Audio sobre el límite de tamaño o duración. */
+    public static String vozLarga(Idioma idioma) {
+        return switch (o(idioma)) {
+            case EN -> "Your voice note is too long for me to process. Could you type the main points, please?";
+            case PT -> "Seu áudio é muito longo para eu processar. Pode escrever o principal, por favor?";
+            case ES -> "Su nota de voz es muy larga para procesarla. ¿Me podría escribir lo principal, por favor?";
+        };
+    }
 }

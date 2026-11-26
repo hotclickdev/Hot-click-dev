@@ -2,7 +2,10 @@ package com.hotclick.agente.voz;
 
 import com.hotclick.agente.canal.CanalMensajeria;
 import com.hotclick.agente.conversacion.ConversacionActiva;
+import com.hotclick.agente.conversacion.ConversacionMensaje;
 import com.hotclick.agente.conversacion.ConversacionService;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.motor.CostoAgenteListener;
 import com.hotclick.agente.webhook.MensajeEntrante;
 import org.slf4j.Logger;
@@ -10,6 +13,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Notas de voz del cliente (AG-13). El despacho lo invoca (ya fuera del hilo del webhook) cuando llega un audio:
@@ -27,13 +33,6 @@ public class VozEntranteService {
 
     private static final Logger log = LoggerFactory.getLogger(VozEntranteService.class);
     private static final int MAX_TEXTO = 4000;
-
-    static final String TEXTO_DESHABILITADO =
-        "Por ahora no puedo escuchar notas de voz. ¿Me lo podría escribir? Con gusto le ayudo.";
-    static final String TEXTO_FALLO =
-        "No logré entender su nota de voz. ¿Me podría escribir su mensaje, por favor?";
-    static final String TEXTO_LARGA =
-        "Su nota de voz es muy larga para procesarla. ¿Me podría escribir lo principal, por favor?";
 
     private final ObjectProvider<TranscriptorVoz> transcriptor;
     private final DescargadorAudio descargador;
@@ -62,7 +61,7 @@ public class VozEntranteService {
         TranscriptorVoz t = transcriptor.getIfAvailable();
         if (t == null || !t.habilitado()) {
             log.info("[agente-voz] sin proveedor de transcripción: se pide texto ({})", mensaje);
-            responder(conv, TEXTO_DESHABILITADO);
+            responder(conv, TextosFijos.vozDeshabilitada(idiomaDe(conv)));
             return null;
         }
         try {
@@ -71,31 +70,32 @@ public class VozEntranteService {
             return aplicar(conv, mensaje, r);
         } catch (AudioRechazadoException e) {
             log.warn("[agente-voz] audio rechazado ({}): {}", e.motivo(), mensaje);
-            responder(conv, e.motivo() == AudioRechazadoException.Motivo.DEMASIADO_GRANDE ? TEXTO_LARGA : TEXTO_FALLO);
+            responder(conv, e.motivo() == AudioRechazadoException.Motivo.DEMASIADO_GRANDE
+                ? TextosFijos.vozLarga(idiomaDe(conv)) : TextosFijos.vozFallo(idiomaDe(conv)));
             return null;
         } catch (RuntimeException e) {
             // Sin mensaje de la excepción: podría traer URL, token o texto del cliente.
             log.warn("[agente-voz] falló la transcripción ({}): {}", e.getClass().getSimpleName(), mensaje);
-            responder(conv, TEXTO_FALLO);
+            responder(conv, TextosFijos.vozFallo(idiomaDe(conv)));
             return null;
         }
     }
 
     private MensajeEntrante aplicar(ConversacionActiva conv, MensajeEntrante m, ResultadoVoz r) {
         if (r == null) {
-            responder(conv, TEXTO_FALLO);
+            responder(conv, TextosFijos.vozFallo(idiomaDe(conv)));
             return null;
         }
         // El costo se cuenta aunque luego se descarte: el proveedor ya lo cobró.
         contarSegundos(conv, r.segundos());
         String texto = r.texto() == null ? "" : r.texto().strip();
         if (texto.isEmpty()) {
-            responder(conv, TEXTO_FALLO);
+            responder(conv, TextosFijos.vozFallo(idiomaDe(conv)));
             return null;
         }
         if (r.segundos() > config.maxSegundos()) {
             log.warn("[agente-voz] nota de voz sobre el límite de duración ({} s): {}", r.segundos(), m);
-            responder(conv, TEXTO_LARGA);
+            responder(conv, TextosFijos.vozLarga(idiomaDe(conv)));
             return null;
         }
         if (texto.length() > MAX_TEXTO) texto = texto.substring(0, MAX_TEXTO);
@@ -116,6 +116,17 @@ public class VozEntranteService {
                 log.warn("[agente-voz] no se pudo registrar el costo de voz: {}", e.getClass().getSimpleName());
             }
         });
+    }
+
+    /** Idioma de la conversación según los mensajes anteriores del cliente (AG-39); español si no hay pistas. */
+    static Idioma idiomaDe(ConversacionActiva conv) {
+        List<String> previos = new ArrayList<>();
+        if (conv.historial() != null) {
+            for (ConversacionActiva.Turno t : conv.historial()) {
+                if (ConversacionMensaje.ROL_CLIENTE.equals(t.rol()) && t.texto() != null) previos.add(0, t.texto());
+            }
+        }
+        return Idioma.detectar(null, previos);
     }
 
     private void responder(ConversacionActiva conv, String texto) {

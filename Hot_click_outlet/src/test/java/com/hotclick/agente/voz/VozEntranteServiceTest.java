@@ -8,6 +8,8 @@ import com.hotclick.agente.conversacion.ModoConversacion;
 import com.hotclick.agente.conversacion.PerfilConversacion;
 import com.hotclick.agente.conversacion.RespondedorDespacho;
 import com.hotclick.agente.conversacion.spi.AgenteRespondedor;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.motor.CostoAgenteListener;
 import com.hotclick.agente.webhook.MensajeEntrante;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,8 +85,8 @@ class VozEntranteServiceTest {
 
         assertThat(servicio.procesar(conv, audio)).isNull();
 
-        verify(canal).enviarTexto(conv.cuenta(), "contacto", VozEntranteService.TEXTO_DESHABILITADO);
-        verify(conversaciones).registrarSalienteBot(conv.sesionId(), 7L, VozEntranteService.TEXTO_DESHABILITADO);
+        verify(canal).enviarTexto(conv.cuenta(), "contacto", TextosFijos.vozDeshabilitada(Idioma.ES));
+        verify(conversaciones).registrarSalienteBot(conv.sesionId(), 7L, TextosFijos.vozDeshabilitada(Idioma.ES));
         verify(descargador, never()).descargar(any(), any());
     }
 
@@ -94,7 +96,7 @@ class VozEntranteServiceTest {
 
         assertThat(servicio.procesar(conv, audio)).isNull();
 
-        verify(canal).enviarTexto(conv.cuenta(), "contacto", VozEntranteService.TEXTO_FALLO);
+        verify(canal).enviarTexto(conv.cuenta(), "contacto", TextosFijos.vozFallo(Idioma.ES));
         verify(conversaciones, never()).marcarTranscripcionVoz(any(), any(), any());
     }
 
@@ -105,7 +107,7 @@ class VozEntranteServiceTest {
 
         assertThat(servicio.procesar(conv, audio)).isNull();
 
-        verify(canal).enviarTexto(conv.cuenta(), "contacto", VozEntranteService.TEXTO_LARGA);
+        verify(canal).enviarTexto(conv.cuenta(), "contacto", TextosFijos.vozLarga(Idioma.ES));
         verify(transcriptor, never()).transcribir(any());
     }
 
@@ -116,7 +118,7 @@ class VozEntranteServiceTest {
 
         assertThat(servicio.procesar(conv, audio)).isNull();
 
-        verify(canal).enviarTexto(conv.cuenta(), "contacto", VozEntranteService.TEXTO_FALLO);
+        verify(canal).enviarTexto(conv.cuenta(), "contacto", TextosFijos.vozFallo(Idioma.ES));
     }
 
     @Test
@@ -125,7 +127,7 @@ class VozEntranteServiceTest {
 
         assertThat(servicio.procesar(conv, audio)).isNull();
 
-        verify(canal).enviarTexto(conv.cuenta(), "contacto", VozEntranteService.TEXTO_LARGA);
+        verify(canal).enviarTexto(conv.cuenta(), "contacto", TextosFijos.vozLarga(Idioma.ES));
         verify(costo).costo(eq(7L), anyDouble());
         verify(conversaciones, never()).marcarTranscripcionVoz(any(), any(), any());
     }
@@ -136,7 +138,7 @@ class VozEntranteServiceTest {
 
         assertThat(servicio.procesar(conv, audio)).isNull();
 
-        verify(canal).enviarTexto(conv.cuenta(), "contacto", VozEntranteService.TEXTO_FALLO);
+        verify(canal).enviarTexto(conv.cuenta(), "contacto", TextosFijos.vozFallo(Idioma.ES));
     }
 
     @Test
@@ -161,6 +163,34 @@ class VozEntranteServiceTest {
         assertThat(s.procesar(conv, audio)).isNotNull();
 
         verify(costo, never()).costo(any(), anyDouble());
+    }
+
+    @Test
+    void respaldoSaleEnElIdiomaDeLaConversacion() {
+        when(transcriptor.transcribir(any())).thenThrow(new TranscripcionException("boom"));
+        ConversacionActiva en = new ConversacionActiva(UUID.randomUUID(), PerfilConversacion.NEGOCIO_VENTAS, 7L,
+            new CanalCuenta(), "contacto", null, ModoConversacion.BOT, Instant.now(),
+            List.of(new ConversacionActiva.Turno("user", "Hello, how much is the shipping to my hotel?", Instant.now())));
+
+        servicio.procesar(en, audio);
+
+        verify(canal).enviarTexto(en.cuenta(), "contacto", TextosFijos.vozFallo(Idioma.EN));
+    }
+
+    @Test
+    void respaldoDeDeshabilitadoYLargaSalenEnPortugues() {
+        ConversacionActiva pt = new ConversacionActiva(UUID.randomUUID(), PerfilConversacion.NEGOCIO_VENTAS, 7L,
+            new CanalCuenta(), "contacto", null, ModoConversacion.BOT, Instant.now(),
+            List.of(new ConversacionActiva.Turno("user", "Ola, quanto custa o frete? Quero comprar", Instant.now())));
+        when(transcriptor.habilitado()).thenReturn(false);
+        servicio.procesar(pt, audio);
+        verify(canal).enviarTexto(pt.cuenta(), "contacto", TextosFijos.vozDeshabilitada(Idioma.PT));
+
+        when(transcriptor.habilitado()).thenReturn(true);
+        when(descargador.descargar(any(), any()))
+            .thenThrow(new AudioRechazadoException(AudioRechazadoException.Motivo.DEMASIADO_GRANDE));
+        servicio.procesar(pt, audio);
+        verify(canal).enviarTexto(pt.cuenta(), "contacto", TextosFijos.vozLarga(Idioma.PT));
     }
 
     // ── cableado ──────────────────────────────────────────────────────────
