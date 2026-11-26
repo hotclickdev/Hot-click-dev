@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { NOTA_UNA_VEZ_POR_NEGOCIO, textoPrimerMesLuego, type ClavePlan } from '@/config/planesPrecios'
 import { useMensualidadesPlanes } from './useMensualidadesPlanes'
+import { useDiasPrimerMes } from './useOfertaPrimerMes'
 
 type Props = {
   plan: Exclude<ClavePlan, 'EMPRENDEDOR'>
@@ -14,7 +15,8 @@ type Props = {
  */
 export default function OfertaPrimerMes({ plan, className, style }: Props) {
   const { montos, moneda, diasPrueba } = useMensualidadesPlanes()
-  const linea = textoPrimerMesLuego(diasPrueba[plan], montos[plan], moneda)
+  const visibles = useDiasPrimerMes()
+  const linea = textoPrimerMesLuego(visibles(diasPrueba[plan]), montos[plan], moneda)
   if (!linea) return null
   return (
     <div className={className} style={style} data-testid="oferta-primer-mes">

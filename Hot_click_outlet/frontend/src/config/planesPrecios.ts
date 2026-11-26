@@ -159,3 +159,16 @@ export function diasPruebaPlanes(planes: unknown): Partial<Record<ClavePlan, num
   }
   return out
 }
+
+/**
+ * Días de «Primer mes gratis» que se pueden mostrar. Anónimo: los `diasPrueba` genéricos del plan. Con sesión: solo si el
+ * backend marcó `primerMesGratisDisponible === true` para ese negocio; ausente o false → 0 (precio normal).
+ */
+export function diasVisiblesPrimerMes(
+  dias: number | undefined | null,
+  sesion: { logueado: boolean; elegible?: boolean | null },
+): number {
+  const n = Number(dias)
+  if (!Number.isInteger(n) || n <= 0) return 0
+  return sesion.logueado && sesion.elegible !== true ? 0 : n
+}

@@ -15,19 +15,34 @@ export type MensualidadesPlanes = {
  * Mensualidad por plan y su moneda, tal como las publica el backend (`GET /api/planes` → precioUsd + moneda; el monto
  * está en la moneda de PLANES_MONEDA). Sin dato (cargando, error o plan sin precio) queda vacío: nunca se inventa un monto.
  */
+let cache: Promise<PlanConPrecio[] | null> | null = null
+
+/** Una sola llamada a /planes por carga de página (hero, comparativa y tarjetas la comparten). */
+export function cargarPlanesCompartido(): Promise<PlanConPrecio[] | null> {
+  if (!cache) {
+    cache = api.get<PlanConPrecio[]>('/planes')
+      .then((r) => (Array.isArray(r.data) ? r.data : null))
+      .catch(() => { cache = null; return null })
+  }
+  return cache
+}
+
+/** Solo para pruebas: olvida la respuesta guardada. */
+export function reiniciarCachePlanes(): void { cache = null }
+
 export function useMensualidadesPlanes(): MensualidadesPlanes {
   const [estado, setEstado] = useState<MensualidadesPlanes>({ montos: {}, moneda: null, diasPrueba: {} })
   useEffect(() => {
     let vivo = true
-    api.get<PlanConPrecio[]>('/planes')
-      .then((r) => {
-        if (!vivo || !Array.isArray(r.data)) return
+    cargarPlanesCompartido()
+      .then((planes) => {
+        if (!vivo || !planes) return
         const montos: Partial<Record<ClavePlan, number>> = {}
-        for (const p of r.data) {
+        for (const p of planes) {
           const n = Number(p.precioUsd)
           if (Number.isFinite(n) && n > 0) montos[p.nombre as ClavePlan] = n
         }
-        setEstado({ montos, moneda: monedaDePlanes(r.data), diasPrueba: diasPruebaPlanes(r.data) })
+        setEstado({ montos, moneda: monedaDePlanes(planes), diasPrueba: diasPruebaPlanes(planes) })
       })
       .catch(() => undefined)
     return () => { vivo = false }
