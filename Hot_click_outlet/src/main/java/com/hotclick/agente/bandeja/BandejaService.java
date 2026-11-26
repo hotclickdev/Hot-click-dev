@@ -42,6 +42,9 @@ import java.util.UUID;
  */
 @Service
 public class BandejaService {
+    private static final String PERFIL = "perfil";
+    private static final String EMPRESA_ID = "empresaId";
+
 
     static final Duration VENTANA = BandejaMapeo.VENTANA;
     static final int MAX_TEXTO = 1000;
@@ -222,9 +225,9 @@ public class BandejaService {
         return (root, q, cb) -> {
             List<Predicate> ps = new ArrayList<>();
             ps.add(cb.isNotNull(root.get("canalCuentaId")));
-            ps.add(cb.or(cb.isNull(root.get("perfil")),
-                cb.notEqual(root.get("perfil"), PerfilConversacion.NEGOCIO_INTERNO)));
-            ps.add(scope == null ? cb.isNull(root.get("empresaId")) : cb.equal(root.get("empresaId"), scope));
+            ps.add(cb.or(cb.isNull(root.get(PERFIL)),
+                cb.notEqual(root.get(PERFIL), PerfilConversacion.NEGOCIO_INTERNO)));
+            ps.add(scope == null ? cb.isNull(root.get(EMPRESA_ID)) : cb.equal(root.get(EMPRESA_ID), scope));
             ps.add(cb.equal(root.get("estado"), estado == null ? EstadoConversacion.ABIERTA : estado));
             if (canalFiltro != null && !canalFiltro.isBlank()) {
                 ps.add(cb.equal(root.get("canal"), canalFiltro.trim().toUpperCase(Locale.ROOT)));
@@ -239,9 +242,9 @@ public class BandejaService {
         return (root, q, cb) -> {
             List<Predicate> ps = new ArrayList<>();
             ps.add(cb.isNotNull(root.get("canalCuentaId")));
-            ps.add(cb.or(cb.isNull(root.get("perfil")),
-                cb.notEqual(root.get("perfil"), PerfilConversacion.NEGOCIO_INTERNO)));
-            ps.add(scope == null ? cb.isNull(root.get("empresaId")) : cb.equal(root.get("empresaId"), scope));
+            ps.add(cb.or(cb.isNull(root.get(PERFIL)),
+                cb.notEqual(root.get(PERFIL), PerfilConversacion.NEGOCIO_INTERNO)));
+            ps.add(scope == null ? cb.isNull(root.get(EMPRESA_ID)) : cb.equal(root.get(EMPRESA_ID), scope));
             ps.add(cb.isNotNull(root.get("encuestaNota")));
             ps.add(cb.le(root.<Integer>get("encuestaNota"), com.hotclick.agente.metricas.EncuestaService.NOTA_BAJA_MAX));
             if (canalFiltro != null && !canalFiltro.isBlank()) {
