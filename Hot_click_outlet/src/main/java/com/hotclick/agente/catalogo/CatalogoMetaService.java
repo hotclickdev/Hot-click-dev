@@ -40,6 +40,8 @@ import java.util.regex.Pattern;
  */
 @Service
 public class CatalogoMetaService {
+    private static final String CLAVE_SINCRONIZADO = "SINCRONIZADO";
+
 
     private static final Logger log = LoggerFactory.getLogger(CatalogoMetaService.class);
     static final Pattern ID_CATALOGO = Pattern.compile("\\d{5,25}");
@@ -133,12 +135,12 @@ public class CatalogoMetaService {
         Set<Long> bajas = new HashSet<>();
         if (item.isPresent()) {
             String huella = ItemCatalogo.huella(item.get());
-            boolean igual = previo.isPresent() && "SINCRONIZADO".equals(previo.get().estado())
+            boolean igual = previo.isPresent() && CLAVE_SINCRONIZADO.equals(previo.get().estado())
                 && huella.equals(previo.get().huella());
             if (igual) return; // nada cambió: no se llama a Meta
             pedidos.add(ItemCatalogo.pedidoUpdate(item.get()));
             altas.put(productoId, huella);
-        } else if (previo.isPresent() && "SINCRONIZADO".equals(previo.get().estado())) {
+        } else if (previo.isPresent() && CLAVE_SINCRONIZADO.equals(previo.get().estado())) {
             pedidos.add(ItemCatalogo.pedidoDelete(productoId));
             bajas.add(productoId);
         } else {
@@ -171,7 +173,7 @@ public class CatalogoMetaService {
                 visiblesIds.add(p.id());
                 String huella = ItemCatalogo.huella(item.get());
                 Item previo = existentes.get(p.id());
-                if (previo == null || !"SINCRONIZADO".equals(previo.estado()) || !huella.equals(previo.huella())) {
+                if (previo == null || !CLAVE_SINCRONIZADO.equals(previo.estado()) || !huella.equals(previo.huella())) {
                     pedidos.add(ItemCatalogo.pedidoUpdate(item.get()));
                     altas.put(p.id(), huella);
                 }
@@ -180,7 +182,7 @@ public class CatalogoMetaService {
         }
         Set<Long> bajas = new HashSet<>();
         for (Map.Entry<Long, Item> e : existentes.entrySet()) {
-            if ("SINCRONIZADO".equals(e.getValue().estado()) && !visiblesIds.contains(e.getKey())) {
+            if (CLAVE_SINCRONIZADO.equals(e.getValue().estado()) && !visiblesIds.contains(e.getKey())) {
                 pedidos.add(ItemCatalogo.pedidoDelete(e.getKey()));
                 bajas.add(e.getKey());
             }
