@@ -15,6 +15,8 @@ import java.util.Map;
  */
 @Component
 public class ConfigMotorAgente {
+    private static final String CLAUDE_HAIKU_5_5 = "claude-haiku-5-5";
+
 
     private final Map<PerfilAgente, String> modelos = new EnumMap<>(PerfilAgente.class);
     private final Map<PerfilAgente, String> esfuerzos = new EnumMap<>(PerfilAgente.class);
@@ -63,8 +65,8 @@ public class ConfigMotorAgente {
 
     /** Configuración con los defaults de producción (tests). */
     public static ConfigMotorAgente porDefecto() {
-        return new ConfigMotorAgente("claude-haiku-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-haiku-5-5",
-            "low", "medium", "low", "low", "claude-haiku-5-5", "low", "el asistente virtual", "USTED", false, 5, 2048, 40_000, 20);
+        return new ConfigMotorAgente(CLAUDE_HAIKU_5_5, "claude-sonnet-5-5", CLAUDE_HAIKU_5_5, CLAUDE_HAIKU_5_5,
+            "low", "medium", "low", "low", CLAUDE_HAIKU_5_5, "low", "el asistente virtual", "USTED", false, 5, 2048, 40_000, 20);
     }
 
     public String modeloDe(PerfilAgente perfil) { return modelos.get(perfil); }

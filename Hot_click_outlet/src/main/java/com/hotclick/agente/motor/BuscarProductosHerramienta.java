@@ -24,6 +24,9 @@ import java.util.Map;
  */
 @Component
 public class BuscarProductosHerramienta implements HerramientaAgente {
+    private static final String CONSULTA = "consulta";
+    private static final String LIMITE = "limite";
+
 
     private static final Logger log = LoggerFactory.getLogger(BuscarProductosHerramienta.class);
     static final int LIMITE_DEFECTO = 5;
@@ -51,21 +54,21 @@ public class BuscarProductosHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         Map<String, Object> props = new LinkedHashMap<>();
-        props.put("consulta", EsquemasAgente.texto("Qué busca la persona, en sus palabras (ej: 'bolso de cuero negro')"));
-        props.put("limite", EsquemasAgente.entero("Cantidad máxima de resultados, de 1 a " + LIMITE_MAXIMO + " (por defecto " + LIMITE_DEFECTO + ")"));
-        return EsquemasAgente.objeto(props, List.of("consulta"));
+        props.put(CONSULTA, EsquemasAgente.texto("Qué busca la persona, en sus palabras (ej: 'bolso de cuero negro')"));
+        props.put(LIMITE, EsquemasAgente.entero("Cantidad máxima de resultados, de 1 a " + LIMITE_MAXIMO + " (por defecto " + LIMITE_DEFECTO + ")"));
+        return EsquemasAgente.objeto(props, List.of(CONSULTA));
     }
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
-        String consulta = input.path("consulta").asText("").trim();
+        String consulta = input.path(CONSULTA).asText("").trim();
         if (consulta.isEmpty()) {
             return ResultadoHerramienta.error("Falta la consulta de búsqueda.");
         }
         if (consulta.length() > CONSULTA_MAX) {
             consulta = consulta.substring(0, CONSULTA_MAX);
         }
-        int limite = input.path("limite").isInt() ? input.path("limite").asInt() : LIMITE_DEFECTO;
+        int limite = input.path(LIMITE).isInt() ? input.path(LIMITE).asInt() : LIMITE_DEFECTO;
         limite = Math.max(1, Math.min(LIMITE_MAXIMO, limite));
 
         boolean marketplace = contexto.esMarketplace();

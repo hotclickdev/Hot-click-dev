@@ -35,6 +35,8 @@ import java.util.Optional;
  */
 @Service
 public class MotorAgente {
+    private static final String CONTENT = "content";
+
 
     private static final Logger log = LoggerFactory.getLogger(MotorAgente.class);
 
@@ -171,7 +173,7 @@ public class MotorAgente {
             usoRegistrador.registrar(contexto.empresaId(), vuelta);
             notificarCosto(contexto.empresaId(), modelo, vuelta);
 
-            JsonNode contenido = nodo.path("content");
+            JsonNode contenido = nodo.path(CONTENT);
             String stop = nodo.path("stop_reason").asText("");
             switch (stop) {
                 case "end_turn", "stop_sequence" -> {
@@ -257,7 +259,7 @@ public class MotorAgente {
         Map<String, Object> tr = new LinkedHashMap<>();
         tr.put("type", "tool_result");
         tr.put("tool_use_id", id);
-        tr.put("content", texto);
+        tr.put(CONTENT, texto);
         if (r.esError()) tr.put("is_error", true);
         return tr;
     }
@@ -326,7 +328,7 @@ public class MotorAgente {
     private static Map<String, Object> mensaje(String rol, Object contenido) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("role", rol);
-        m.put("content", contenido);
+        m.put(CONTENT, contenido);
         return m;
     }
 
