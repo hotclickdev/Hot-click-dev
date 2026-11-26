@@ -117,6 +117,9 @@ public class TrialEmprendedorService {
         if (sub != null && "ACTIVO".equals(sub.getEstado())) {
             return false; // hay un cobro confirmado: no se toca
         }
+        if (enPrimerMesGratisDePlanPago(sub, hoy)) {
+            return false; // primer mes gratis de PYME/NEGOCIO_PLUS en curso: no es el trial Emprendedor, no se cierra
+        }
         if (sub == null) {
             sub = nuevaSuscripcionImpaga(e, hasta);
         }
@@ -143,6 +146,22 @@ public class TrialEmprendedorService {
         evictTenant(id);
         log.info("[trial-emprendedor] trial terminado sin cobro: empresa={} pasa a PAST_DUE (gracia {} día(s))", id, diasGracia);
         return true;
+    }
+
+    /**
+     * true si el negocio eligió PYME / NEGOCIO_PLUS con primer mes gratis (V244) y ese período sigue vigente: la fila
+     * está en TRIAL con suscripción ONVO, el plan elegido (vigente o pendiente) es de pago y {@code fecha_fin} (fin del
+     * mes gratis) no pasó. Mientras dure, el fin del trial Emprendedor no lo manda a impago; cuando {@code fecha_fin}
+     * pasa sin cobro confirmado, vuelve a aplicar el cierre normal.
+     */
+    static boolean enPrimerMesGratisDePlanPago(Suscripcion sub, LocalDate hoy) {
+        if (sub == null || !"TRIAL".equals(sub.getEstado()) || sub.getFechaFin() == null
+            || sub.getFechaFin().isBefore(hoy)
+            || sub.getOnvoSubscriptionId() == null || sub.getOnvoSubscriptionId().isBlank()) {
+            return false;
+        }
+        Plan elegido = sub.getPlanPendiente() != null ? sub.getPlanPendiente() : sub.getPlan();
+        return elegido != null && TrialPlanesPagoConfig.esPlanDePagoConTrial(elegido.getNombre());
     }
 
     /** Fila local para que el área 5 vea al negocio sin tarjeta; null si falta el plan base. */

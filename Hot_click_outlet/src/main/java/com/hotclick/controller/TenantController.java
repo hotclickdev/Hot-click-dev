@@ -23,6 +23,10 @@ public class TenantController {
     private final PruebaPlanService pruebaPlanService;
     private final PreciosPlanesConfig preciosPlanes;
 
+    /** Oferta genérica de primer mes gratis (V244). Sin bean (tests con constructor) => diasPrueba 0. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.suscripcion.TrialPlanesPagoConfig trialPlanesPago;
+
     public TenantController(TenantService tenantService, PlanesActivosLector planesActivos,
                             PruebaPlanService pruebaPlanService, PreciosPlanesConfig preciosPlanes) {
         this.tenantService = tenantService;
@@ -96,6 +100,7 @@ public class TenantController {
         m.put("moneda", preciosPlanes.monedaPublica().orElse(null));
         m.put("comisionPorcentaje", p.comisionPorcentaje());
         m.put("comisionMinimaCrc", p.comisionMinimaCrc());
+        m.put("diasPrueba", trialPlanesPago == null ? 0 : trialPlanesPago.diasOferta(p.nombre()));
         return m;
     }
 }

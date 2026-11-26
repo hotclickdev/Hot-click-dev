@@ -378,4 +378,24 @@ class PlanesPrecioFuenteUnicaTest {
         assertThat((List<Map<String, Object>>) ok.getBody()).extracting(m -> m.get("precioUsd"))
             .containsExactly(new BigDecimal("9"), new BigDecimal("24"), new BigDecimal("49"));
     }
+
+    @Test
+    @DisplayName("diasPrueba: N en PYME y NEGOCIO_PLUS, 0 en EMPRENDEDOR, en /api/planes y /billing/planes; 0 si N=0")
+    @SuppressWarnings("unchecked")
+    void diasPruebaEnAmbosEndpoints() {
+        planesDeBd();
+        var cfg = new PreciosPlanesConfig("9", "24", "49", "usd");
+        for (int n : new int[] {30, 0}) {
+            var trial = new com.hotclick.service.suscripcion.TrialPlanesPagoConfig(n, "PYME,NEGOCIO_PLUS");
+            var tenant = new TenantController(mock(TenantService.class), lector(), mock(PruebaPlanService.class), cfg);
+            org.springframework.test.util.ReflectionTestUtils.setField(tenant, "trialPlanesPago", trial);
+            var b = billing(cfg);
+            org.springframework.test.util.ReflectionTestUtils.setField(b, "trialPlanesPago", trial);
+            var tenantBody = (List<Map<String, Object>>) tenant.planesPublicos().getBody();
+            var billingBody = (List<Map<String, Object>>) b.listarPlanes().getBody();
+            for (var body : List.of(tenantBody, billingBody)) {
+                assertThat(body).extracting(m -> m.get("diasPrueba")).containsExactly(0, n, n);
+            }
+        }
+    }
 }

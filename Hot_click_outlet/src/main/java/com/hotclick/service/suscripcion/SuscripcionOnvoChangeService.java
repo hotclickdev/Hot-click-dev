@@ -69,6 +69,10 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     @Autowired(required = false)
     private TransactionTemplate tx;
 
+    /** Primer mes gratis de PYME/NEGOCIO_PLUS (V244). Sin bean (tests unitarios) solo rigen los días del trial Emprendedor. */
+    @Autowired(required = false)
+    private TrialPlanesPagoService trialPlanes;
+
     /** Tope de espera por el lock de fila (5 s, PostgreSQL). Sin bean (tests unitarios) no se aplica. */
     @Autowired(required = false)
     private LockTimeoutPorFila lockTimeout;
@@ -303,7 +307,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
     }
 
     /** Suscripción ONVO que quedó guardada para el negocio ({@code creada} = la creó esta llamada y no otra concurrente). */
-    record AltaOnvo(String customerId, String subscriptionId, boolean creada) {}
+    record AltaOnvo(String customerId, String subscriptionId, boolean creada, int diasTrial) {}
 
     /** Primera suscripción no cancelada del negocio; si hay más de una avisa (sin PII) en vez de tirar IncorrectResultSize. */
     private Suscripcion primeraActiva(Long empresaId) {
@@ -373,12 +377,14 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
                 throw new IllegalStateException("Ya hay una suscripción ONVO en curso con otro precio.");
             }
             log.warn("[onvo-alta] alta concurrente evitada empresa={} sub={}", empresaId, sub.getOnvoSubscriptionId());
-            return new AltaOnvo(sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId(), false);
+            return new AltaOnvo(sub.getOnvoCustomerId(), sub.getOnvoSubscriptionId(), false, diasTrial);
         }
         // Customer: el ya guardado, si no el creado antes del lock; solo si faltara ambos (raro) se crea acá.
         String customerId = sub != null && sub.getOnvoCustomerId() != null && !sub.getOnvoCustomerId().isBlank()
             ? sub.getOnvoCustomerId()
             : (customerPrevio != null ? customerPrevio : asegurarCustomer(empresa, sub));
+        // Primer mes gratis: se decide DENTRO del lock con el negocio releido (una sola vez por negocio).
+        diasTrial = conPrimerMes(empresa, plan, diasTrial);
         Map<String, String> meta = Map.of(
             "empresa_id", String.valueOf(empresaId),
             "plan_id", String.valueOf(plan.getId()),
@@ -400,8 +406,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
             throw e;
         }
         creadaEnOnvo[0] = onvoSub.id();
-        persistirAltaOnvo(empresa, sub, plan, customerId, onvoSub.id(), priceId);
-        return new AltaOnvo(customerId, onvoSub.id(), true);
+        persistirAltaOnvo(empresa, sub, plan, customerId, onvoSub.id(), priceId, diasTrial);
+        return new AltaOnvo(customerId, onvoSub.id(), true, diasTrial);
+    }
+
+    /** Días finales de un alta de plan de pago: los base (Emprendedor / vieja) o, si el negocio es elegible, max(base, N). */
+    private int conPrimerMes(Empresa empresa, Plan plan, int diasBase) {
+        return trialPlanes == null || plan == null ? diasBase : trialPlanes.aplicar(empresa, plan.getNombre(), diasBase);
     }
 
     /** Timeout / red caída: {@code ResourceAccessException}, aunque el breaker la haya envuelto en su fallback. */
@@ -702,7 +713,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
         // Subida sobre una suscripción cobrada: sin trial, ONVO cobra el precio completo al confirmar (allow_incomplete).
         int diasTrial = subidaCobrada ? 0
-            : diasTrialReemplazo(empresa, sub, planDestino, estado, enOnvo, java.time.Instant.now());
+            : conPrimerMes(empresa, planDestino,
+                diasTrialReemplazo(empresa, sub, planDestino, estado, enOnvo, java.time.Instant.now()));
         log.warn("[onvo] reemplazo de suscripción sin cobro empresa={} estado={} sub={} diasTrial={}",
             empresaId, estado, enmascarar(anterior), diasTrial);
         Map<String, String> meta = Map.of(
@@ -741,7 +753,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
                     return null;
                 }
                 fila.setOnvoSubscriptionId(null);
-                persistirAltaOnvo(bloqueada, fila, planDestino, customerId, nuevaId, priceId);
+                persistirAltaOnvo(bloqueada, fila, planDestino, customerId, nuevaId, priceId, diasTrial);
                 return null;
             });
         } catch (RuntimeException ex) {
@@ -862,7 +874,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         // cobraría ya y perdería esos días. ONVO solo acepta trialPeriodDays al crear (trialStart/trialEnd son de solo
         // lectura): se reemplaza por una nueva en trialing con los días que le quedan (sin cobro) y el SDK solo guarda
         // la tarjeta; ONVO cobra al terminar el trial.
-        int diasLocales = TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR));
+        int diasLocales = conPrimerMes(empresa, plan,
+            TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR)));
         if ("incomplete".equals(OnvoBillingClient.estadoDe(enOnvo)) && diasLocales > 0) {
             String priceId = OnvoBillingClient.primerPriceId(enOnvo);
             log.warn("[onvo] completarPago: suscripción sin trial con {} día(s) de trial local; se reemplaza empresa={}",
@@ -915,7 +928,8 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         // Trial Emprendedor: ONVO no cobra durante los días que le quedan y después cobra US$9 cada mes en automático.
         // MEDIO-2: los días de trial que le quedan al negocio se conservan para CUALQUIER plan pago (antes solo
         // Emprendedor): una pyme en trial que elige otro plan no puede perderlos ni pagar de inmediato.
-        int diasTrial = TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR));
+        int diasTrial = conPrimerMes(empresa, planDestino,
+            TrialEmprendedorService.diasRestantes(empresa, LocalDate.now(Constants.ZONA_CR)));
         // M1: misma garantía que el trial: el lock del negocio decide quién crea; la otra llamada reutiliza el id guardado.
         AltaOnvo alta = altaOnvoUnica(empresaId, empresa, subExistente, planDestino, priceId, diasTrial);
 
@@ -929,7 +943,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         }
 
         Map<String, Object> out = respuestaRequierePago(empresa, planDestino, alta.customerId(), alta.subscriptionId());
-        if (diasTrial > 0) out.put("trialDias", diasTrial);
+        if (alta.diasTrial() > 0) out.put("trialDias", alta.diasTrial());
         return out;
     }
 
@@ -966,7 +980,7 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
      * ONVO). Corre dentro del lock de fila del negocio.
      */
     private void persistirAltaOnvo(Empresa empresa, Suscripcion existente, Plan plan, String customerId,
-                                   String subscriptionId, String priceId) {
+                                   String subscriptionId, String priceId, int diasTrial) {
         if (existente != null && existente.getOnvoSubscriptionId() != null
             && !existente.getOnvoSubscriptionId().isBlank()
             && !existente.getOnvoSubscriptionId().equals(subscriptionId)) {
@@ -998,6 +1012,13 @@ public class SuscripcionOnvoChangeService implements PlanPagoConfirmado {
         if (sub.getFechaFin() == null && TrialEmprendedorService.tuvoTrial(empresa)
             && empresa.getTrialEmprendedorHasta() != null) {
             sub.setFechaFin(empresa.getTrialEmprendedorHasta());
+        }
+        // Primer mes gratis (V244): la fila lleva fecha_fin = último día del trial (el más largo entre Emprendedor y N) y
+        // el negocio queda marcado para siempre (mismo lock, misma transacción que el id ONVO). Con tarjeta, ONVO cobra ahí.
+        if (trialPlanes != null && trialPlanes.marcarSiCorresponde(empresa, plan.getNombre(), diasTrial)) {
+            LocalDate finTrial = LocalDate.now(Constants.ZONA_CR).plusDays(diasTrial);
+            if (sub.getFechaFin() == null || sub.getFechaFin().isBefore(finTrial)) sub.setFechaFin(finTrial);
+            empresaRepo.save(empresa);
         }
         suscripcionRepo.save(sub);
     }
