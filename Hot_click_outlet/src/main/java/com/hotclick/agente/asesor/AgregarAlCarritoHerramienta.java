@@ -21,6 +21,9 @@ import java.util.Map;
  */
 @Component
 public class AgregarAlCarritoHerramienta implements HerramientaAgente {
+    private static final String PRODUCTO_ID = "productoId";
+    private static final String CANTIDAD = "cantidad";
+
 
     static final int CANTIDAD_MAXIMA = 10;
 
@@ -41,24 +44,24 @@ public class AgregarAlCarritoHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         Map<String, Object> props = new LinkedHashMap<>();
-        props.put("productoId", Map.of("type", "integer", "description", "Id del producto"));
-        props.put("cantidad", Map.of("type", "integer",
+        props.put(PRODUCTO_ID, Map.of("type", "integer", "description", "Id del producto"));
+        props.put(CANTIDAD, Map.of("type", "integer",
             "description", "Unidades, de 1 a " + CANTIDAD_MAXIMA + " (1 si no lo dijo)"));
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
         schema.put("properties", props);
-        schema.put("required", List.of("productoId", "cantidad"));
+        schema.put("required", List.of(PRODUCTO_ID, CANTIDAD));
         schema.put("additionalProperties", false);
         return schema;
     }
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
-        if (input == null || !input.path("productoId").canConvertToLong() || !input.path("productoId").isNumber()) {
+        if (input == null || !input.path(PRODUCTO_ID).canConvertToLong() || !input.path(PRODUCTO_ID).isNumber()) {
             return ResultadoHerramienta.error("Falta el id del producto.");
         }
-        long productoId = input.path("productoId").asLong();
-        int pedida = input.path("cantidad").isInt() ? input.path("cantidad").asInt() : 1;
+        long productoId = input.path(PRODUCTO_ID).asLong();
+        int pedida = input.path(CANTIDAD).isInt() ? input.path(CANTIDAD).asInt() : 1;
         int cantidad = Math.max(1, Math.min(CANTIDAD_MAXIMA, pedida));
 
         // Mismo gate de visibilidad que el catálogo público; la tienda sale del contexto (marketplace = sin filtro).

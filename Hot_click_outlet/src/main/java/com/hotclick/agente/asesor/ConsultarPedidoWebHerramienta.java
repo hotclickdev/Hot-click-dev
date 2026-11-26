@@ -26,6 +26,9 @@ import java.util.Map;
  */
 @Component
 public class ConsultarPedidoWebHerramienta implements HerramientaAgente {
+    private static final String NUMERO_PEDIDO = "numeroPedido";
+    private static final String CORREO_OTELEFONO = "correoOTelefono";
+
 
     static final int MAX_RESULTADOS = 3;
     static final String NO_ENCONTRADO = "No se encontró un pedido con esos datos. No confirme ni niegue pedidos de "
@@ -48,21 +51,21 @@ public class ConsultarPedidoWebHerramienta implements HerramientaAgente {
     @Override
     public Map<String, Object> inputSchema() {
         Map<String, Object> props = new LinkedHashMap<>();
-        props.put("numeroPedido", Map.of("type", "string", "description", "Número de pedido; cadena vacía si no lo dio"));
-        props.put("correoOTelefono", Map.of("type", "string",
+        props.put(NUMERO_PEDIDO, Map.of("type", "string", "description", "Número de pedido; cadena vacía si no lo dio"));
+        props.put(CORREO_OTELEFONO, Map.of("type", "string",
             "description", "Correo o teléfono con que compró; cadena vacía si no lo dio"));
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
         schema.put("properties", props);
-        schema.put("required", List.of("numeroPedido", "correoOTelefono"));
+        schema.put("required", List.of(NUMERO_PEDIDO, CORREO_OTELEFONO));
         schema.put("additionalProperties", false);
         return schema;
     }
 
     @Override
     public ResultadoHerramienta ejecutar(ContextoHerramienta contexto, JsonNode input) {
-        String numero = texto(input, "numeroPedido");
-        String prueba = texto(input, "correoOTelefono");
+        String numero = texto(input, NUMERO_PEDIDO);
+        String prueba = texto(input, CORREO_OTELEFONO);
         List<Pedido> visibles;
         if (contexto.usuarioId() != null) {
             visibles = pedidos.delUsuario(contexto.usuarioId(), PageRequest.of(0, 20)).stream()
@@ -117,6 +120,6 @@ public class ConsultarPedidoWebHerramienta implements HerramientaAgente {
     private static String texto(JsonNode input, String campo) {
         String t = input == null ? "" : input.path(campo).asText("").trim();
         if (t.length() > 100) t = t.substring(0, 100);
-        return campo.equals("numeroPedido") ? t.toUpperCase(Locale.ROOT) : t;
+        return campo.equals(NUMERO_PEDIDO) ? t.toUpperCase(Locale.ROOT) : t;
     }
 }
