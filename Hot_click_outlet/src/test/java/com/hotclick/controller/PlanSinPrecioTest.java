@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@DisplayName("Precio mensual USD por configuración: 9/24/49 o 409 PLAN_SIN_PRECIO")
+@DisplayName("Precio mensual por configuración (moneda de PLANES_MONEDA): monto publicado con su moneda o 409 PLAN_SIN_PRECIO")
 class PlanSinPrecioTest {
 
     private final PlanRepository planRepo = mock(PlanRepository.class);
@@ -82,7 +82,7 @@ class PlanSinPrecioTest {
     @SuppressWarnings("unchecked")
     void configurado() {
         stubPlanes(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME"), plan(3, "NEGOCIO_PLUS")));
-        // Moneda USD explícita: sin ella no se publica precio (ver sinMonedaEnLista).
+        // Moneda ISO válida: sin ella no se publica precio (ver sinMonedaEnLista).
         var r = controller(new PreciosPlanesConfig("9", "24", "49", "usd")).listarPlanes();
         assertThat(r.getStatusCode().value()).isEqualTo(200);
         var lista = (List<Map<String, Object>>) r.getBody();
@@ -100,15 +100,28 @@ class PlanSinPrecioTest {
         assertThat(body).containsEntry("codigo", "PLAN_SIN_PRECIO").containsEntry("plan", "PYME");
     }
 
-    @org.junit.jupiter.params.ParameterizedTest(name = "Sin moneda USD explícita («{0}»), /billing/planes responde 409 PLAN_SIN_PRECIO")
+    @org.junit.jupiter.params.ParameterizedTest(name = "Sin moneda válida («{0}»), /billing/planes responde 409 PLAN_SIN_PRECIO")
     @org.junit.jupiter.params.provider.NullAndEmptySource
-    @org.junit.jupiter.params.provider.ValueSource(strings = {" ", "crc", "eur"})
+    @org.junit.jupiter.params.provider.ValueSource(strings = {" ", "dolares", "us", "12$"})
     @SuppressWarnings("unchecked")
     void sinMonedaEnLista(String moneda) {
         stubPlanes(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME"), plan(3, "NEGOCIO_PLUS")));
         var r = controller(new PreciosPlanesConfig("9", "24", "49", moneda)).listarPlanes();
         assertThat(r.getStatusCode().value()).isEqualTo(409);
         assertThat((Map<String, Object>) r.getBody()).containsEntry("codigo", "PLAN_SIN_PRECIO");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "Con moneda ISO válida («{0}»), /billing/planes publica el monto y la moneda en mayúsculas")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"crc", "CRC", "usd", "eur"})
+    @SuppressWarnings("unchecked")
+    void monedaIsoValidaPublica(String moneda) {
+        stubPlanes(List.of(plan(1, "EMPRENDEDOR"), plan(2, "PYME"), plan(3, "NEGOCIO_PLUS")));
+        var r = controller(new PreciosPlanesConfig("5900", "12900", "24900", moneda)).listarPlanes();
+        assertThat(r.getStatusCode().value()).isEqualTo(200);
+        var lista = (List<Map<String, Object>>) r.getBody();
+        assertThat(lista).extracting(m -> m.get("precioUsd"))
+            .containsExactly(new BigDecimal("5900"), new BigDecimal("12900"), new BigDecimal("24900"));
+        assertThat(lista).extracting(m -> m.get("moneda")).containsOnly(moneda.toUpperCase());
     }
 
     @Test @DisplayName("Checkout de un plan sin precio: 409 PLAN_SIN_PRECIO y no se inicia cobro")
