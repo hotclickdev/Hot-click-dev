@@ -54,7 +54,8 @@ public class ConfigMotorAgente {
         esfuerzos.put(PerfilAgente.ASESOR_WEB, esfuerzoAsesorWeb);
         modelos.put(PerfilAgente.RESUMEN_BANDEJA, modeloResumen);
         esfuerzos.put(PerfilAgente.RESUMEN_BANDEJA, esfuerzoResumen);
-        TonoAgente.Trato t = "TUTEO".equalsIgnoreCase(trato == null ? "" : trato.trim())
+        String tratoNormalizado = trato == null ? "" : trato.trim();
+        TonoAgente.Trato t = "TUTEO".equalsIgnoreCase(tratoNormalizado)
             ? TonoAgente.Trato.TUTEO : TonoAgente.Trato.USTED;
         this.tono = new TonoAgente(nombreBot, t, emojis);
         this.maxIteraciones = Math.max(1, maxIteraciones);

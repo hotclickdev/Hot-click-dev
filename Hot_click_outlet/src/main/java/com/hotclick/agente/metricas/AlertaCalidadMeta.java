@@ -81,11 +81,11 @@ public class AlertaCalidadMeta {
         StringBuilder eventos = new StringBuilder();
         for (AlertaMetaRepositorio.Aviso a : avisos) {
             if (a.evento() == null) continue;
-            if (eventos.length() > 0) eventos.append(", ");
+            if (!eventos.isEmpty()) eventos.append(", ");
             eventos.append(a.evento().toLowerCase(Locale.ROOT).replace('_', ' '));
         }
         return "Meta avisó un cambio en la cuenta o en la calidad de un número de WhatsApp conectado a los bots ("
-            + avisos.size() + " aviso(s)" + (eventos.length() > 0 ? ": " + eventos : "")
+            + avisos.size() + " aviso(s)" + (!eventos.isEmpty() ? ": " + eventos : "")
             + "). Revisá Canales y las Métricas del bot en el panel.";
     }
 }

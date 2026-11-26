@@ -96,7 +96,6 @@ class FlujoVentaWhatsAppIntegracionTest {
     private static final String URL_COMPRA = "https://tienda.example/c/CodigoDePrueba01";
     private static final String GRAPH_MENSAJES = "https://graph.facebook.com/v23.0/PNID-PRUEBA/messages";
     private static final String CONTACTO = "contacto-prueba-1";
-    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final CanalCuentaService cuentas = mock(CanalCuentaService.class);
     private final ConversacionSesionRepository sesiones = mock(ConversacionSesionRepository.class);

@@ -41,7 +41,7 @@ public final class RotacionTiendas {
         List<String> orden = new ArrayList<>(porTienda.keySet());
         orden.sort((a, b) -> {
             int c = Long.compare(mezcla(semilla, a), mezcla(semilla, b));
-            return c != 0 ? c : a.compareTo(b);
+            return c == 0 ? a.compareTo(b) : c;
         });
         if (orden.remove(claveMejor)) orden.add(claveMejor);
 
