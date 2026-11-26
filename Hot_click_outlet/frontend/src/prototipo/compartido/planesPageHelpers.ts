@@ -8,7 +8,7 @@ export type PlanUi = {
   id: Id
   nombreApi: string
   nombre: string
-  /** Mensualidad en USD (precioUsd = lo que cobra ONVO); sin monto, «Mensualidad en dólares». Nunca colones. */
+  /** Mensualidad en la moneda del backend (precioUsd + moneda = lo que cobra ONVO); sin monto, etiqueta sin cifra. */
   precio: string
   /** «Precio de lista» para Emprendedor con monto; si no, null. */
   rotuloPrecio: string | null
@@ -32,6 +32,8 @@ export type PlanApiTuPlan = {
   nombre: string
   precioMensual?: number
   precioUsd?: number | null
+  /** Moneda ISO del monto (PLANES_MONEDA del backend). */
+  moneda?: string | null
   comisionPorcentaje?: number | string
   comisionMinimaCrc?: number
   maxProductos?: number

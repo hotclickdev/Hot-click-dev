@@ -1,4 +1,5 @@
 import { formatUSD } from '@/utils/format'
+import { formatoMontoPlan } from '@/config/planesPrecios'
 import { esperandoCupo } from '@/services/emprendeCupoService'
 import type { TrialTarjetaEstado } from '@/services/billingService'
 
@@ -71,6 +72,12 @@ export function estadoHttp(err: unknown): number | null {
 export function formatoUsd(monto: number | null | undefined): string | null {
   if (typeof monto !== 'number' || !Number.isFinite(monto) || monto <= 0) return null
   return formatUSD(monto)
+}
+
+/** «₡12.900» o «US$9» con la moneda del backend; null si falta el monto o la moneda no se conoce (no se inventa un precio). */
+export function formatoMensualidadPlan(monto: number | null | undefined, moneda: string | null | undefined): string | null {
+  if (typeof monto !== 'number' || !Number.isFinite(monto) || monto <= 0) return null
+  return formatoMontoPlan(monto, moneda)
 }
 
 /** Intentos para ver reflejada la tarjeta en ONVO tras confirmar en el SDK (ms entre intentos). */

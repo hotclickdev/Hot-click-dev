@@ -86,6 +86,7 @@ public class SuscripcionController {
             Map<String, Object> m = com.hotclick.service.suscripcion.PlanPublicoMapper.base(p);
             m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.nombre()).orElseThrow(
                 () -> new com.hotclick.exception.PlanSinPrecioException(p.nombre())));
+            m.put("moneda", preciosPlanes.monedaPublica().orElse(null));
             m.put("comisionPorcentaje", p.comisionPorcentaje());
             m.put("comisionMinimaCrc", 0); // V185: sin mínimo por venta
             return m;

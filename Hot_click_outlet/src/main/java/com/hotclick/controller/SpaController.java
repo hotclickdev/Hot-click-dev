@@ -169,7 +169,7 @@ public class SpaController {
     public ResponseEntity<String> pymePage() {
         return landing("PYME: operá tu negocio en un solo panel | HotClick",
             "Plan PYME: " + mensualidad("PYME") + " + 7,5% por venta, sin mínimo. Equipo, inventario y caja en un solo panel. "
-                + NOTA_MONEDA, "/para-pymes");
+                + notaMoneda(), "/para-pymes");
     }
 
     @GetMapping(value = "/negocio-plus-plan", produces = MediaType.TEXT_HTML_VALUE)
@@ -177,7 +177,7 @@ public class SpaController {
     public ResponseEntity<String> negocioPlusPage() {
         return landing("Negocio Plus: todas tus sucursales en un panel | HotClick",
             "Plan Negocio Plus: " + mensualidad("NEGOCIO_PLUS") + " + 6% por venta, sin mínimo. Pedidos por local, equipo sin tope y CRM. "
-                + NOTA_MONEDA, "/negocio-plus-plan");
+                + notaMoneda(), "/negocio-plus-plan");
     }
 
     @GetMapping(value = "/planes", produces = MediaType.TEXT_HTML_VALUE)
@@ -185,7 +185,7 @@ public class SpaController {
     public ResponseEntity<String> planesPage() {
         return landing("Planes para vender en HotClick | HotClick",
             "Compará Emprendedor (" + mensualidad("EMPRENDEDOR") + " + 9%), PYME (" + mensualidad("PYME") + " + 7,5%) y Negocio Plus ("
-                + mensualidad("NEGOCIO_PLUS") + " + 6%) por venta, sin mínimo. " + NOTA_MONEDA, "/planes");
+                + mensualidad("NEGOCIO_PLUS") + " + 6%) por venta, sin mínimo. " + notaMoneda(), "/planes");
     }
 
     @GetMapping(value = {
@@ -272,7 +272,13 @@ public class SpaController {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static final String NOTA_MONEDA = "Productos en colones; la mensualidad se cobra en dólares.";
+    /** Nota de moneda según PLANES_MONEDA; moneda desconocida o sin configurar: texto neutro, sin asumir dólares. */
+    private String notaMoneda() {
+        String m = preciosPlanes == null ? null : preciosPlanes.monedaPublica().orElse(null);
+        if ("CRC".equals(m)) return "Productos y mensualidad en colones.";
+        if ("USD".equals(m)) return "Productos en colones; la mensualidad se cobra en dólares.";
+        return "Productos en colones; la mensualidad se cobra con tarjeta.";
+    }
 
     private ResponseEntity<String> landing(String title, String desc, String path) {
         return ResponseEntity.ok()
@@ -281,20 +287,29 @@ public class SpaController {
             .body(spaSeoSupport.injectLandingPlan(indexHtmlContent, title, desc, path));
     }
 
-    /** «US$24/mes» si hay precio publicable en la config; si no, «mensualidad en dólares» (sin inventar monto). */
+    /** «US$24/mes» o «₡12.900/mes» según la moneda configurada; sin precio o con otra moneda, texto neutro (sin inventar monto). */
     private String mensualidad(String plan) {
-        Optional<BigDecimal> usd = preciosPlanes == null ? Optional.empty() : preciosPlanes.precioPublicoUsd(plan);
-        return usd.map(v -> "US$" + v.stripTrailingZeros().toPlainString() + "/mes").orElse("mensualidad en dólares");
+        Optional<BigDecimal> monto = preciosPlanes == null ? Optional.empty() : preciosPlanes.precioPublicoUsd(plan);
+        String moneda = preciosPlanes == null ? null : preciosPlanes.monedaPublica().orElse(null);
+        if (monto.isPresent() && "USD".equals(moneda)) {
+            return "US$" + monto.get().stripTrailingZeros().toPlainString() + "/mes";
+        }
+        if (monto.isPresent() && "CRC".equals(moneda)) {
+            String miles = String.format(java.util.Locale.ROOT, "%,d", monto.get().setScale(0, java.math.RoundingMode.HALF_UP).longValue())
+                .replace(',', '.');
+            return "₡" + miles + "/mes";
+        }
+        return "mensualidad del plan";
     }
 
     private String descEmprende() {
         String base = "Plan Emprendedor: ";
         String despues = mensualidad("EMPRENDEDOR") + " + 9% por venta, sin mínimo. ";
         if (trialEmprendedor == null || trialEmprendedor.cupo() <= 0) {
-            return base + despues + NOTA_MONEDA;
+            return base + despues + notaMoneda();
         }
         return base + trialEmprendedor.periodoGratis() + " sin mensualidad para los primeros " + trialEmprendedor.cupo()
-            + " negocios; después " + despues + NOTA_MONEDA;
+            + " negocios; después " + despues + notaMoneda();
     }
 
     private ResponseEntity<String> serveSpa() {
