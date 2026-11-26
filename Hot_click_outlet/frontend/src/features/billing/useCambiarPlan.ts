@@ -29,6 +29,11 @@ export type PagoPlanOnvo = {
   publishableKey?: string
   planNombre?: string
   montoUsd?: number
+  moneda?: string
+  /** Días gratis concedidos a este negocio: la tarjeta se registra ahora y el primer cobro es después. */
+  trialDias?: number
+  /** Fecha del primer cobro (AAAA-MM-DD), si el backend la manda. */
+  primerCobro?: string
 }
 
 export type PagoPlanPendiente = PagoPlanOnvo
@@ -45,6 +50,9 @@ export function pagoPendienteDe(result: CambiarPlanResultado): PagoPlanPendiente
       planNombre: result.planNombre,
     }
     if (typeof result.montoUsd === 'number' && result.montoUsd > 0) pago.montoUsd = result.montoUsd
+    if (typeof result.moneda === 'string' && result.moneda) pago.moneda = result.moneda
+    if (Number.isInteger(result.trialDias) && (result.trialDias as number) > 0) pago.trialDias = result.trialDias
+    if (pago.trialDias && typeof result.primerCobro === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(result.primerCobro)) pago.primerCobro = result.primerCobro
     return pago
   }
   return null

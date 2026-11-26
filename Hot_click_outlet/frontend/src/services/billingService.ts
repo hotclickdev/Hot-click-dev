@@ -7,11 +7,17 @@ export type CambiarPlanResultado = {
   customerId?: string
   publishableKey?: string
   planNombre?: string
-  /** Precio USD de la config que el verificador compara con el price de ONVO. */
+  /** Monto de la config (en `moneda`) que el verificador compara con el price de ONVO; nombre legado. */
   montoUsd?: number
+  /** Moneda ISO del cobro (CRC, USD) según PLANES_MONEDA del backend. */
+  moneda?: string
   mensaje?: string
   mock?: boolean
   proveedor?: 'ONVO'
+  /** Días gratis que se le dieron a ESTE negocio (0 o ausente = cobro inmediato). */
+  trialDias?: number
+  /** Fecha del primer cobro (AAAA-MM-DD) cuando hay trial; opcional. */
+  primerCobro?: string
 }
 
 /** GET /billing/trial/tarjeta: solo el propietario; el negocio sale del JWT. */

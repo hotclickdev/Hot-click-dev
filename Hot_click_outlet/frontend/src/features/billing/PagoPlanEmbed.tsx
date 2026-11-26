@@ -1,4 +1,5 @@
 import OnvoSuscripcionEmbed from './OnvoSuscripcionEmbed'
+import { textoCheckoutTrial } from '@/components/ui/planPendiente'
 import type { PagoPlanPendiente } from './useCambiarPlan'
 
 type Props = {
@@ -13,12 +14,16 @@ type Props = {
 
 /** Auditor 5 S-01: abre el cobro de mensualidad ONVO que devolvió /cambiar-plan. */
 export default function PagoPlanEmbed({ pago, onPagado }: Props) {
+  const aviso = textoCheckoutTrial(pago.trialDias, pago.primerCobro)
   return (
-    <OnvoSuscripcionEmbed
-      subscriptionId={pago.subscriptionId}
-      customerId={pago.customerId}
-      publishableKey={pago.publishableKey}
-      onSuccess={onPagado}
-    />
+    <>
+      {aviso ? <p role="status" className="mb-3 text-sm">{aviso}</p> : null}
+      <OnvoSuscripcionEmbed
+        subscriptionId={pago.subscriptionId}
+        customerId={pago.customerId}
+        publishableKey={pago.publishableKey}
+        onSuccess={onPagado}
+      />
+    </>
   )
 }

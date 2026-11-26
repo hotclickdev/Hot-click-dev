@@ -203,6 +203,19 @@ class OnvoBillingMediosTest {
     }
 
     @Test
+    @DisplayName("B-3: trialing sin tarjeta devuelve trialDias (días que faltan) para el aviso del modal")
+    void completarPago_trialingDevuelveTrialDias() {
+        Map<String, Object> enTrial = subOnvo("trialing");
+        enTrial.put("trialEnd", java.time.Instant.now().plus(java.time.Duration.ofDays(20)).minusSeconds(3600).toString());
+        doReturn(enTrial).when(onvoBilling).obtenerSuscripcion(SUB);
+
+        Map<String, Object> out = service.completarPago(20L);
+
+        assertThat(out.get("status")).isEqualTo("requiere_pago");
+        assertThat(out.get("trialDias")).isEqualTo(20);
+    }
+
+    @Test
     @DisplayName("MEDIO-2: sin trial local, Completar pago abre el cobro de la misma suscripción (sin reemplazo)")
     void completarPago_sinTrialLocal() {
         doReturn(subOnvo("incomplete")).when(onvoBilling).obtenerSuscripcion(SUB);

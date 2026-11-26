@@ -34,6 +34,10 @@ public class SuscripcionController {
     private final AuthSupport authSupport;
     private final com.hotclick.service.suscripcion.CobroSuscripcionService cobroSuscripcionService;
     private final com.hotclick.service.suscripcion.PreciosPlanesConfig preciosPlanes;
+
+    /** Oferta genérica de primer mes gratis (V244). Sin bean (tests con constructor) => diasPrueba 0. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.suscripcion.TrialPlanesPagoConfig trialPlanesPago;
     private final com.hotclick.security.PropietarioGuard propietarioGuard;
     /** MEDIO-3: opcional para no romper los slices MVC que no lo declaran; sin él el endpoint responde 503. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -86,8 +90,10 @@ public class SuscripcionController {
             Map<String, Object> m = com.hotclick.service.suscripcion.PlanPublicoMapper.base(p);
             m.put("precioUsd", preciosPlanes.precioPublicoUsd(p.nombre()).orElseThrow(
                 () -> new com.hotclick.exception.PlanSinPrecioException(p.nombre())));
+            m.put("moneda", preciosPlanes.monedaPublica().orElse(null));
             m.put("comisionPorcentaje", p.comisionPorcentaje());
             m.put("comisionMinimaCrc", 0); // V185: sin mínimo por venta
+            m.put("diasPrueba", trialPlanesPago == null ? 0 : trialPlanesPago.diasOferta(p.nombre()));
             return m;
         }).toList();
         return ResponseEntity.ok(result);

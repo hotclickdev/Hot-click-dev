@@ -6,8 +6,10 @@ export type CupoEmprende = {
   cuposGratisDisponibles: number
   /** Duración del trial en palabras, derivada de TRIAL_EMPRENDEDOR_DIAS (p. ej. «3 meses»). */
   periodoGratis?: string | null
-  /** Mensualidad USD de Emprendedor sin cupo, desde config del backend; null si no está fijada. */
+  /** Mensualidad de Emprendedor sin cupo (monto en `moneda`; nombre legado), desde config del backend; null si no está fijada. */
   mensualidadUsdSinCupo?: number | null
+  /** Moneda ISO (CRC, USD) del monto anterior, según PLANES_MONEDA; null/ausente si el backend no la fija. */
+  moneda?: string | null
 }
 
 export const emprendeCupoService = {

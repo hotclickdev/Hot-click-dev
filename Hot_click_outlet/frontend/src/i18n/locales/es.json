@@ -316,6 +316,8 @@
     "precioMensualidad": "Sin mensualidad",
     "precioMensualidadUsd": "{{monto}}/mes",
     "precioMensualidadDolares": "Mensualidad en dólares",
+    "precioMensualidadColones": "Mensualidad en colones",
+    "precioMensualidadNeutra": "Mensualidad del plan",
     "precioComision": "Comisión {{comision}}% por venta, sin mínimo (incluye la pasarela de pago)",
     "ctaFinalTitle": "¿Listo para vender en HotClick?"
   },

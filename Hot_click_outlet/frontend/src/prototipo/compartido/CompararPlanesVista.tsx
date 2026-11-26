@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Boton } from './ui'
+import { NOTA_UNA_VEZ_POR_NEGOCIO } from '@/config/planesPrecios'
+import { useDiasPrimerMes } from '@/pages/planes/useOfertaPrimerMes'
 import { billingService } from '@/services/billingService'
 import PagoPlanEmbed from '@/features/billing/PagoPlanEmbed'
 import { EstadoActivacionPago, MontoPlanPago } from '@/features/billing/AvisoPagoPlan'
@@ -211,12 +213,26 @@ export default function CompararPlanesVista({
   })
 }
 
+/** «Primer mes gratis, luego …» + «Una vez por negocio.» si el backend ofrece días gratis para el plan. */
+function PruebaGratisPlan({ plan }: { plan: PlanUi }) {
+  const visibles = useDiasPrimerMes()
+  // Con sesión, solo si el backend confirma que este negocio aún tiene su mes gratis.
+  if (!plan.pruebaGratis || visibles(1) === 0) return null
+  return (
+    <div className="text-xs text-hc-muted">
+      <p className="font-semibold text-hc-success">{plan.pruebaGratis}</p>
+      <p>{NOTA_UNA_VEZ_POR_NEGOCIO}</p>
+    </div>
+  )
+}
+
 function ResumenPlan({ plan }: { plan: PlanUi }) {
   return (
     <div className="space-y-4 rounded-xl border border-hc-border bg-hc-surface p-5">
       <div>
         <p className="font-display text-lg font-bold">{plan.nombre}</p>
         <p className="font-display text-[22px] font-bold text-hc-primary">{plan.precio}</p>
+        <PruebaGratisPlan plan={plan} />
         {plan.rotuloPrecio ? <p className="text-xs text-hc-muted">{plan.rotuloPrecio}</p> : null}
       </div>
       <ul className="flex flex-col gap-2">
@@ -252,6 +268,7 @@ function TarjetaPlan({
       <article className={`flex flex-1 flex-col gap-3 rounded-xl p-5 md:px-5 md:py-6 ${borde}`}>
         <p className="font-display text-base font-bold md:text-lg">{plan.nombre}</p>
         <p className="font-display text-lg font-bold text-hc-primary md:text-[22px]">{plan.precio}</p>
+        <PruebaGratisPlan plan={plan} />
         {plan.rotuloPrecio ? <p className="-mt-2 text-[11px] text-hc-muted">{plan.rotuloPrecio}</p> : null}
         <ul className="flex flex-col gap-2">
           {plan.beneficios.map((b) => (
@@ -291,6 +308,7 @@ function TarjetaPlan({
         <div>
           <p className="font-display text-lg font-bold">{plan.nombre}</p>
           <p className="text-sm text-hc-muted">{plan.precio}</p>
+          <PruebaGratisPlan plan={plan} />
           {plan.rotuloPrecio ? <p className="text-xs text-hc-muted">{plan.rotuloPrecio}</p> : null}
         </div>
         {actual ? (

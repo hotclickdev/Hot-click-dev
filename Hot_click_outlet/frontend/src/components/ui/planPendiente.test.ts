@@ -87,7 +87,30 @@ describe('QA #536: trial SIN método de pago → «Completar pago» abre el SDK 
     expect(accion.tipo).toBe('pagar')
     expect(accion).toEqual({
       tipo: 'pagar',
-      pago: { proveedor: 'ONVO', subscriptionId: 'sub_trial', customerId: 'cus_1', publishableKey: 'pk_test', planNombre: 'PYME' },
+      pago: { proveedor: 'ONVO', subscriptionId: 'sub_trial', customerId: 'cus_1', publishableKey: 'pk_test', planNombre: 'PYME', trialDias: 90 },
     })
+  })
+})
+
+describe('checkout con período gratis (trialDias)', () => {
+  it('con trialDias y fecha: tarjeta registrada ahora y «Tu primer cobro es el …»', async () => {
+    const { textoCheckoutTrial } = await import('./planPendiente')
+    const t = textoCheckoutTrial(30, '2027-02-01')
+    expect(t).toMatch(/Registramos tu tarjeta ahora/)
+    expect(t).toContain('Tu primer cobro es el 1 de febrero de 2027')
+  })
+  it('con trialDias sin fecha: explica que el primer cobro es al terminar el período gratis', async () => {
+    const { textoCheckoutTrial } = await import('./planPendiente')
+    expect(textoCheckoutTrial(14)).toMatch(/primer cobro se hace al terminar el período gratis/)
+  })
+  it('0, ausente o inválido: sin texto (checkout normal)', async () => {
+    const { textoCheckoutTrial } = await import('./planPendiente')
+    for (const x of [0, -1, undefined, null, 1.5]) expect(textoCheckoutTrial(x, '2027-02-01')).toBeNull()
+  })
+  it('completar-pago: trialDias de la respuesta llega al cobro', () => {
+    const r = accionCompletarPago({ status: 'requiere_pago', subscriptionId: 's1', trialDias: 30, primerCobro: '2027-02-01' })
+    expect(r).toMatchObject({ tipo: 'pagar', pago: { trialDias: 30, primerCobro: '2027-02-01' } })
+    const sin = accionCompletarPago({ status: 'requiere_pago', subscriptionId: 's1', trialDias: 0 })
+    expect(sin.tipo === 'pagar' && sin.pago.trialDias).toBeUndefined()
   })
 })

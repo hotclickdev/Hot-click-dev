@@ -83,7 +83,22 @@ class SpaLandingsPlanSeoTest {
     @Test
     void sinPrecioConfiguradoNoInventaMonto() {
         ReflectionTestUtils.setField(controller, "preciosPlanes", new PreciosPlanesConfig("", "", "", "usd"));
-        assertThat(controller.pymePage().getBody()).contains("mensualidad en dólares + 7,5% por venta").doesNotContain("US$");
+        assertThat(controller.pymePage().getBody()).contains("mensualidad del plan + 7,5% por venta").doesNotContain("US$");
+    }
+
+    @Test
+    void monedaCrcMuestraColones() {
+        ReflectionTestUtils.setField(controller, "preciosPlanes", new PreciosPlanesConfig("5900", "12900", "24900", "crc"));
+        String pyme = controller.pymePage().getBody();
+        assertThat(pyme).contains("₡12.900/mes + 7,5% por venta").doesNotContain("US$").doesNotContain("dólares");
+        assertThat(controller.negocioPlusPage().getBody()).contains("₡24.900/mes + 6% por venta");
+    }
+
+    @Test
+    void monedaDesconocidaNoInventaMonto() {
+        ReflectionTestUtils.setField(controller, "preciosPlanes", new PreciosPlanesConfig("9", "24", "49", "eur"));
+        assertThat(controller.pymePage().getBody()).contains("mensualidad del plan + 7,5% por venta")
+            .doesNotContain("US$").doesNotContain("€");
     }
 
     @Test

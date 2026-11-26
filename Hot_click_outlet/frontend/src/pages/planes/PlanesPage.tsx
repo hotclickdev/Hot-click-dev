@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import MainLayout from '@/layouts/MainLayout'
 import api from '@/services/api'
-import { mensualidadMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
-import { PLAN_PRECIOS, TEXTO_MONEDA_PLANES, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
+import { useDiasPrimerMes } from './useOfertaPrimerMes'
+import { mensualidadMeta, notaMonedaMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
+import { NOTA_UNA_VEZ_POR_NEGOCIO, PLAN_PRECIOS, diasPruebaPlan, textoPrimerMesLuego, textoMonedaPlanes, textoComision, textoMensualidad, textoPlan, type ClavePlan } from '@/config/planesPrecios'
 
 type PlanApi = {
   nombre: string
@@ -22,6 +23,9 @@ type PlanApi = {
   precioMensual?: number
   comisionPorcentaje?: number
   comisionMinimaCrc?: number
+  moneda?: string | null
+  /** Días gratis que ofrece el plan (0 o ausente = ninguno). */
+  diasPrueba?: number | null
 }
 
 type PlanVista = { clave: ClavePlan; titulo: string; para: string; detalle: string; destacado?: boolean }
@@ -36,7 +40,7 @@ const PLANES: PlanVista[] = [
 type Fila = { etiqueta: string; valor: (p: PlanApi) => string }
 
 const respaldo = (p: PlanApi) => PLAN_PRECIOS[p.nombre as ClavePlan]
-/** USD desde config del backend (precioUsd, el monto que cobra ONVO); null → «Mensualidad en dólares». Nunca precioMensual (colones). */
+/** Monto de la config del backend (precioUsd, en la moneda `moneda`; es lo que cobra ONVO); null → etiqueta sin cifra. Nunca precioMensual (colones). */
 const mensualDe = (p: PlanApi) => (p as { precioUsd?: number | null }).precioUsd ?? null
 const comisionDe = (p: PlanApi) => Number(p.comisionPorcentaje ?? respaldo(p)?.comisionPct ?? 0)
 /** V185: sin mínimo por venta; si un backend viejo manda 700 se ignora. */
@@ -55,20 +59,20 @@ const FILAS: Fila[] = [
   { etiqueta: 'Compras a proveedores', valor: (p) => si(p.tieneCompras) },
   { etiqueta: 'Clientes (CRM)', valor: (p) => si(p.tieneCrm) },
   { etiqueta: 'Tarjetas de regalo', valor: (p) => si(p.tieneGiftCards) },
-  { etiqueta: 'Mensualidad', valor: (p) => textoMensualidad(mensualDe(p)) },
+  { etiqueta: 'Mensualidad', valor: (p) => textoMensualidad(mensualDe(p), false, p.moneda) },
   { etiqueta: 'Comisión por venta', valor: (p) => textoComision(comisionDe(p), minimaDe(p)) },
 ]
 
-const POR_QUE = [
+const porQue = (moneda: string | null | undefined) => [
   { titulo: 'Tu tienda sigue siendo tuya', texto: 'Seguí vendiendo en tu local, en tu feria o en tus redes. HotClick suma compradores que hoy no te encuentran.' },
-  { titulo: 'Hecho para Costa Rica', texto: `Envíos dentro del país. ${TEXTO_MONEDA_PLANES}` },
+  { titulo: 'Hecho para Costa Rica', texto: `Envíos dentro del país. ${textoMonedaPlanes(moneda)}` },
   { titulo: 'Cobrá en persona con la misma cuenta', texto: 'La caja (POS) viene incluida en todos los planes.' },
   { titulo: 'Reglas claras', texto: 'Antes de registrarte ves cuánto pagás de mensualidad y de comisión. No hay costos escondidos.' },
 ]
 
-const COMPARACION = [
+const comparacion = (moneda: string | null | undefined) => [
   { otros: 'Otros marketplaces venden sus propios productos y compiten con vos.', nosotros: 'En HotClick vendés vos.' },
-  { otros: 'Algunas plataformas esconden costos hasta que ya estás adentro.', nosotros: `Emprendedor tiene un período sin mensualidad para los primeros negocios (con cupo limitado); después paga mensualidad en dólares + ${PLAN_PRECIOS.EMPRENDEDOR.comisionPct}% por venta, sin mínimo.` },
+  { otros: 'Algunas plataformas esconden costos hasta que ya estás adentro.', nosotros: `Emprendedor tiene un período sin mensualidad para los primeros negocios (con cupo limitado); después paga ${mensualidadMeta(null, moneda)} + ${PLAN_PRECIOS.EMPRENDEDOR.comisionPct}% por venta, sin mínimo.` },
   { otros: 'Inventario, caja y tienda en línea en tres herramientas separadas.', nosotros: 'Todo en un solo lugar.' },
 ]
 
@@ -92,8 +96,9 @@ export default function PlanesPage() {
     return () => { vivo = false }
   }, [])
 
-  const montos = useMensualidadesPlanes()
-  const descripcionMeta = `Compará Emprendedor (${mensualidadMeta(montos.EMPRENDEDOR)} + ${textoComision(PLAN_PRECIOS.EMPRENDEDOR.comisionPct)}), PYME (${mensualidadMeta(montos.PYME)} + ${textoComision(PLAN_PRECIOS.PYME.comisionPct)}) y Negocio Plus (${mensualidadMeta(montos.NEGOCIO_PLUS)} + ${textoComision(PLAN_PRECIOS.NEGOCIO_PLUS.comisionPct)}). Sin mínimo por venta. Productos en colones; mensualidad en dólares.`
+  const { montos, moneda } = useMensualidadesPlanes()
+  const diasVisibles = useDiasPrimerMes()
+  const descripcionMeta = `Compará Emprendedor (${mensualidadMeta(montos.EMPRENDEDOR, moneda)} + ${textoComision(PLAN_PRECIOS.EMPRENDEDOR.comisionPct)}), PYME (${mensualidadMeta(montos.PYME, moneda)} + ${textoComision(PLAN_PRECIOS.PYME.comisionPct)}) y Negocio Plus (${mensualidadMeta(montos.NEGOCIO_PLUS, moneda)} + ${textoComision(PLAN_PRECIOS.NEGOCIO_PLUS.comisionPct)}). Sin mínimo por venta. ${notaMonedaMeta(moneda)}`
 
   const dePlan = (clave: string) => planes.find((p) => p.nombre === clave)
 
@@ -114,7 +119,7 @@ export default function PlanesPage() {
         <section aria-labelledby="por-que" className="flex flex-col gap-4">
           <h2 id="por-que" className="font-display text-[20px] font-bold text-hc-n-900">¿Por qué vender en HotClick?</h2>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {POR_QUE.map((p) => (
+            {porQue(moneda).map((p) => (
               <div key={p.titulo} className="rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4">
                 <h3 className="font-sans text-[15px] font-semibold text-hc-n-900">{p.titulo}</h3>
                 <p className="mt-1 text-[14px] leading-5 text-hc-n-600">{p.texto}</p>
@@ -133,7 +138,17 @@ export default function PlanesPage() {
               >
                 <h3 className="font-display text-[22px] font-bold">{plan.titulo}</h3>
                 <p className={`text-[14px] leading-5 ${plan.destacado ? 'text-hc-n-0/85' : 'text-hc-n-600'}`}>{plan.para}</p>
-                <p className="font-display text-[18px] font-semibold">{(() => { const d = dePlan(plan.clave); return d ? `${textoMensualidad(mensualDe(d))} + ${textoComision(comisionDe(d), minimaDe(d))}` : textoPlan(plan.clave) })()}</p>
+                <p className="font-display text-[18px] font-semibold">{(() => { const d = dePlan(plan.clave); return d ? `${textoMensualidad(mensualDe(d), false, d.moneda ?? moneda)} + ${textoComision(comisionDe(d), minimaDe(d))}` : textoPlan(plan.clave, null, false, moneda) })()}</p>
+                {(() => {
+                  const d = dePlan(plan.clave)
+                  const oferta = d ? textoPrimerMesLuego(diasVisibles(diasPruebaPlan(plan.clave, d.diasPrueba)), mensualDe(d), d.moneda ?? moneda) : null
+                  return oferta ? (
+                    <div data-testid="oferta-primer-mes" className="text-[13px] leading-5">
+                      <p className="font-semibold">{oferta}</p>
+                      <p className="opacity-80">{NOTA_UNA_VEZ_POR_NEGOCIO}</p>
+                    </div>
+                  ) : null
+                })()}
                 <Link
                   to={plan.detalle}
                   className={`mt-auto flex min-h-[44px] items-center justify-center rounded-[12px] text-[14px] font-semibold ${plan.destacado ? 'bg-hc-n-0 text-hc-blue-600' : 'border border-hc-n-200 text-hc-blue-600'}`}
@@ -177,7 +192,7 @@ export default function PlanesPage() {
         <section aria-labelledby="diferencia" className="flex flex-col gap-4">
           <h2 id="diferencia" className="font-display text-[20px] font-bold text-hc-n-900">En qué nos diferenciamos</h2>
           <div className="flex flex-col gap-3">
-            {COMPARACION.map((c) => (
+            {comparacion(moneda).map((c) => (
               <div key={c.otros} className="grid gap-2 rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-4 md:grid-cols-2 md:gap-6">
                 <p className="text-[14px] leading-5 text-hc-n-600">{c.otros}</p>
                 <p className="text-[14px] font-medium leading-5 text-hc-n-900">{c.nosotros}</p>

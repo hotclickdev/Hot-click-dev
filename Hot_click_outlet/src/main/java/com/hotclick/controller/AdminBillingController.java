@@ -22,6 +22,9 @@ public class AdminBillingController {
     private final AdminBillingService billingService;
     private final CompanyScope companyScope;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.suscripcion.TrialPlanesPagoService trialPlanesPago;
+
     public AdminBillingController(AdminBillingService billingService, CompanyScope companyScope) {
         this.billingService = billingService;
         this.companyScope = companyScope;
@@ -31,6 +34,20 @@ public class AdminBillingController {
     public ResponseDTO listar(@RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "50") int size) {
         return ResponseDTO.success("Billing de plataforma", billingService.listarConsola(page, size));
+    }
+
+    /**
+     * Soporte: libera la marca del primer mes gratis de un negocio (p. ej. abandonó antes de guardar la tarjeta).
+     * Solo ADMIN; motivo obligatorio; queda en la auditoría. No concede nada por sí sola: la elegibilidad exige además
+     * no tener historial de pago ni estar en impago.
+     */
+    @org.springframework.web.bind.annotation.PostMapping("/empresas/{id}/primer-mes-gratis/liberar")
+    public ResponseDTO liberarPrimerMesGratis(@PathVariable Long id,
+            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody
+            com.hotclick.dto.LiberarPrimerMesGratisRequest body) {
+        companyScope.assertCanAccess(id);
+        boolean habia = trialPlanesPago.liberarMarca(id, body.motivo());
+        return ResponseDTO.success(habia ? "Marca liberada" : "El negocio no tenía marca", java.util.Map.of("liberada", habia));
     }
 
     @GetMapping("/empresas/{id}")

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 import { PLAN_LANDING_COPY } from '../planes/planLandingCopy'
+import OfertaPrimerMes from '../planes/OfertaPrimerMes'
 
 const copy = PLAN_LANDING_COPY.plus
 const [mensual, comision] = copy.precio.split(' + ')
@@ -26,6 +27,7 @@ export default function NegocioPlusPrecioDestacado() {
           {mensual}
         </p>
         <p className="text-[15px] mt-1 text-white/70">{comision ? `+ ${comision}` : null}</p>
+        <OfertaPrimerMes plan="NEGOCIO_PLUS" className="mt-2 text-[15px] text-white" />
       </div>
       <ul className="flex flex-col gap-3">
         {PERKS.map((key) => (

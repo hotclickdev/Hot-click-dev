@@ -14,15 +14,18 @@ describe('planesPageHelpers', () => {
   })
 
   it('Precio activo de /admin/billing/planes: USD de precioUsd, nunca colones de precioMensual', () => {
-    const plus = mapApiPlanToUi({ id: 10, nombre: 'NEGOCIO_PLUS', precioMensual: 28900, precioUsd: 49 })
+    const plus = mapApiPlanToUi({ id: 10, nombre: 'NEGOCIO_PLUS', precioMensual: 28900, precioUsd: 49, moneda: 'USD' })
     expect(plus.precio).toBe('US$49/mes')
     expect(plus.rotuloPrecio).toBeNull()
-    const emp = mapApiPlanToUi({ id: 8, nombre: 'EMPRENDEDOR', precioMensual: 0, precioUsd: 9 })
+    const emp = mapApiPlanToUi({ id: 8, nombre: 'EMPRENDEDOR', precioMensual: 0, precioUsd: 9, moneda: 'USD' })
     expect(emp.precio).toBe('US$9/mes')
     expect(emp.rotuloPrecio).toBe('Precio de lista')
     const sinMonto = mapApiPlanToUi({ id: 2, nombre: 'PYME', precioMensual: 12900, precioUsd: null })
     expect(sinMonto.precio).not.toMatch(/₡|12\.900|Gratis/)
-    expect(sinMonto.precio).toMatch(/d[oó]lares/i)
+    expect(sinMonto.precio).toBe('Mensualidad del plan')
+    const crc = mapApiPlanToUi({ id: 2, nombre: 'PYME', precioMensual: 0, precioUsd: 12900, moneda: 'CRC' })
+    expect(crc.precio).toBe('₡12.900/mes')
+    expect(crc.monto).toBe('₡12.900/mes')
   })
 
   it('NP-3: plan de pago con correo sin verificar pide el código', () => {
@@ -42,5 +45,23 @@ describe('planesPageHelpers', () => {
 
   it('validarPasoElegirPlan acepta plan distinto', () => {
     expect(validarPasoElegirPlan(pyme, 'EMPRENDEDOR')).toBeNull()
+  })
+})
+
+describe('planesPageHelpers: primer mes gratis', () => {
+  it('PYME con diasPrueba 30 en CRC y USD', () => {
+    expect(mapApiPlanToUi({ id: 2, nombre: 'PYME', precioUsd: 12900, moneda: 'CRC', diasPrueba: 30 }).pruebaGratis)
+      .toBe('Primer mes gratis, luego ₡12.900/mes')
+    expect(mapApiPlanToUi({ id: 2, nombre: 'PYME', precioUsd: 24, moneda: 'USD', diasPrueba: 30 }).pruebaGratis)
+      .toBe('Primer mes gratis, luego US$24/mes')
+  })
+  it('Negocio Plus con 14 días', () => {
+    expect(mapApiPlanToUi({ id: 3, nombre: 'NEGOCIO_PLUS', precioUsd: 49, moneda: 'USD', diasPrueba: 14 }).pruebaGratis)
+      .toBe('Primeros 14 días gratis, luego US$49/mes')
+  })
+  it('0, ausente o Emprendedor: sin oferta', () => {
+    expect(mapApiPlanToUi({ id: 2, nombre: 'PYME', precioUsd: 24, moneda: 'USD', diasPrueba: 0 }).pruebaGratis).toBeNull()
+    expect(mapApiPlanToUi({ id: 2, nombre: 'PYME', precioUsd: 24, moneda: 'USD' }).pruebaGratis).toBeNull()
+    expect(mapApiPlanToUi({ id: 8, nombre: 'EMPRENDEDOR', precioUsd: 9, moneda: 'USD', diasPrueba: 30 }).pruebaGratis).toBeNull()
   })
 })

@@ -3,11 +3,11 @@ import MainLayout from '@/layouts/MainLayout'
 import EnlaceTodosLosPlanes from './EnlaceTodosLosPlanes'
 import NegocioPlusLanding from '../negocioplus/NegocioPlusLanding'
 import { PLAN_PRECIOS, textoComision } from '@/config/planesPrecios'
-import { mensualidadMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
+import { mensualidadMeta, notaMonedaMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
 
 export default function NegocioPlusLandingPage() {
-  const montos = useMensualidadesPlanes()
-  const descripcion = `Plan Negocio Plus: ${mensualidadMeta(montos.NEGOCIO_PLUS)} + ${textoComision(PLAN_PRECIOS.NEGOCIO_PLUS.comisionPct)}, sin mínimo. Pedidos por local, equipo sin tope y CRM de clientes. Productos en colones; mensualidad en dólares.`
+  const { montos, moneda } = useMensualidadesPlanes()
+  const descripcion = `Plan Negocio Plus: ${mensualidadMeta(montos.NEGOCIO_PLUS, moneda)} + ${textoComision(PLAN_PRECIOS.NEGOCIO_PLUS.comisionPct)}, sin mínimo. Pedidos por local, equipo sin tope y CRM de clientes. ${notaMonedaMeta(moneda)}`
   return (
     <MainLayout>
       <Helmet>

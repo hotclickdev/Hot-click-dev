@@ -19,6 +19,10 @@ public class TenantInfoBuilder {
     private final EmpresaRepository empresaRepo;
     private final FeatureFlagService flagService;
 
+    /** A-2: elegibilidad del negocio para el primer mes gratis. Sin bean (tests) el campo sale en false. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.suscripcion.TrialPlanesPagoService trialPlanesPago;
+
     public TenantInfoBuilder(EmpresaRepository empresaRepo, FeatureFlagService flagService) {
         this.empresaRepo = empresaRepo;
         this.flagService = flagService;
@@ -40,6 +44,8 @@ public class TenantInfoBuilder {
         info.put("trialDias",    empresa.getTrialDiasRestantes());
         info.put("fechaVenc",    empresa.getFechaVencPlan());
         info.put("timezone",     empresa.getTimezone());
+        // A-2: true solo si ESTE negocio recibiría el primer mes gratis en PYME/NEGOCIO_PLUS ahora mismo.
+        info.put("primerMesGratisDisponible", trialPlanesPago != null && trialPlanesPago.disponible(empresa));
 
         if (plan != null) {
             info.put("maxUsuarios",    plan.getMaxUsuarios());

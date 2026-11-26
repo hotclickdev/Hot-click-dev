@@ -3,11 +3,11 @@ import MainLayout from '@/layouts/MainLayout'
 import EnlaceTodosLosPlanes from './EnlaceTodosLosPlanes'
 import PymeLanding from '../pyme/PymeLanding'
 import { PLAN_PRECIOS, textoComision } from '@/config/planesPrecios'
-import { mensualidadMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
+import { mensualidadMeta, notaMonedaMeta, useMensualidadesPlanes } from './useMensualidadesPlanes'
 
 export default function PymeLandingPage() {
-  const montos = useMensualidadesPlanes()
-  const descripcion = `Plan PYME: ${mensualidadMeta(montos.PYME)} + ${textoComision(PLAN_PRECIOS.PYME.comisionPct)}, sin mínimo. Equipo, inventario y caja en un solo panel. Productos en colones; mensualidad en dólares.`
+  const { montos, moneda } = useMensualidadesPlanes()
+  const descripcion = `Plan PYME: ${mensualidadMeta(montos.PYME, moneda)} + ${textoComision(PLAN_PRECIOS.PYME.comisionPct)}, sin mínimo. Equipo, inventario y caja en un solo panel. ${notaMonedaMeta(moneda)}`
   return (
     <MainLayout>
       <Helmet>

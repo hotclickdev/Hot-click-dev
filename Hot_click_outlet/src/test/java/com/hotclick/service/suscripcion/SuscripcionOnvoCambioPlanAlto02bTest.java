@@ -255,7 +255,7 @@ class SuscripcionOnvoCambioPlanAlto02bTest {
     void reemplazo_trialing_conservaDiasDeOnvo() {
         conSuscripcionOnvo("trialing", "price_emp", null);
         @SuppressWarnings("unchecked") Map<String, Object> enOnvo = new java.util.HashMap<>((Map<String, Object>) onvoBilling.obtenerSuscripcion("sub_vieja"));
-        enOnvo.put("trialEnd", java.time.Instant.now().plus(java.time.Duration.ofDays(12)).plusSeconds(3600).toString());
+        enOnvo.put("trialEnd", java.time.Instant.now().plus(java.time.Duration.ofDays(12)).minusSeconds(3600).toString());
         org.mockito.Mockito.doReturn(enOnvo).when(onvoBilling).obtenerSuscripcion("sub_vieja");
         when(onvoBilling.crearSuscripcionIncompleta(eq("cus_1"), eq("price_pyme"), anyMap(), eq(12)))
             .thenReturn(new OnvoBillingClient.OnvoSubscription("sub_nueva", "si_2"));
@@ -268,11 +268,17 @@ class SuscripcionOnvoCambioPlanAlto02bTest {
     }
 
     @Test
-    @DisplayName("Días de trial: hacia abajo, mínimo 0; sin trialEnd en ONVO se usa la fecha local")
+    @DisplayName("Días de trial: hacia arriba (B-1: no se pierde un día al reemplazar), mínimo 0; sin trialEnd se usa la fecha local")
     void diasTrialRestantes_redondeoYFallback() {
         java.time.Instant ahora = java.time.Instant.parse("2026-11-04T12:00:00Z");
         assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(
-            Map.of("trialEnd", "2026-11-07T11:59:59Z"), empresa, null, ahora)).isEqualTo(2);
+            Map.of("trialEnd", "2026-11-07T11:59:59Z"), empresa, null, ahora)).isEqualTo(3);
+        // B-1: creada con 30 días y reemplazada 1 hora después: faltan 29d23h y deben seguir siendo 30.
+        assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(
+            Map.of("trialEnd", ahora.plus(java.time.Duration.ofDays(30)).minusSeconds(3600).toString()), empresa, null, ahora))
+            .isEqualTo(30);
+        assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(
+            Map.of("trialEnd", ahora.plus(java.time.Duration.ofDays(30)).toString()), empresa, null, ahora)).isEqualTo(30);
         assertThat(SuscripcionOnvoChangeService.diasTrialRestantes(
             Map.of("trialEnd", "2026-11-01T00:00:00Z"), empresa, null, ahora)).isZero();
         Suscripcion local = new Suscripcion();

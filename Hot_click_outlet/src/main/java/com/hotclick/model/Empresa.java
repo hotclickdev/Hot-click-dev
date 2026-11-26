@@ -184,6 +184,10 @@ public class Empresa {
     @Column(name = "trial_emprendedor_titular_correo", length = 160, unique = true)
     private String trialEmprendedorTitularCorreo;
 
+    /** V244: cuándo recibió el primer mes gratis de un plan de pago (PYME/NEGOCIO_PLUS). Una vez por negocio; nunca se limpia. updatable=false: solo la escriben los UPDATE condicionales del repo (un save() obsoleto no puede resetearla).  */
+    @Column(name = "primer_mes_gratis_usado_en", updatable = false)
+    private java.time.LocalDateTime primerMesGratisUsadoEn;
+
     @Column(name = "timezone", length = 50)
     private String timezone = "America/Costa_Rica";
 
@@ -406,6 +410,8 @@ public class Empresa {
 
     public LocalDate getTrialHasta() { return trialHasta; }
     public void setTrialHasta(LocalDate trialHasta) { this.trialHasta = trialHasta; }
+    public java.time.LocalDateTime getPrimerMesGratisUsadoEn() { return primerMesGratisUsadoEn; }
+    public void setPrimerMesGratisUsadoEn(java.time.LocalDateTime v) { this.primerMesGratisUsadoEn = v; }
     public LocalDate getTrialEmprendedorHasta() { return trialEmprendedorHasta; }
     public void setTrialEmprendedorHasta(LocalDate v) { this.trialEmprendedorHasta = v; }
     public Integer getTrialEmprendedorPos() { return trialEmprendedorPos; }
