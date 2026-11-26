@@ -59,5 +59,61 @@ registra el cambio en el PR.
 
 ## Estado
 
-Entregado sin ejecutar: k6 no esta instalado en la maquina de desarrollo donde se escribio y la regla es no apuntar
-a ningun servidor real. Primera corrida pendiente en el servidor de pruebas.
+Primera corrida real: 2026-11-26, en una PC de desarrollo (no en ningun servidor remoto).
+
+### Entorno
+
+- Windows 11, Ryzen 7 5800X, 32 GB de RAM. k6 1.2.3, Java 21, PostgreSQL 16.4 portable (binarios zip de EDB) en
+  `127.0.0.1`, sin pgvector (no hay binario ya compilado para Windows; no se compilo).
+- App: `java -Xmx2g -jar hot-click-outlet-1.0.0.jar --spring.profiles.active=dev`, con `SPRING_DATASOURCE_URL`,
+  `META_APP_SECRET` y `META_WEBHOOK_VERIFY_TOKEN` inventados y pasados solo por variables de entorno. Sin clave de
+  Claude ni token de Graph API: el motor y el envio quedan apagados/simulados, que es lo que pide la regla de oro.
+- La app y k6 corren en la misma maquina, asi que compiten por CPU; los numeros son un techo optimista de latencia
+  de red (loopback) y no sustituyen una corrida en el servidor de pruebas.
+
+### Como reproducirlo
+
+1. Postgres local vacio con base `hotclick_dev` y el usuario `hotclick_dev` (como `docker-compose.dev.yml`).
+2. Arrancar la app con perfil `dev` (Hibernate `ddl-auto=update` crea las tablas de entidades; el perfil dev solo
+   hace baseline de Flyway, no repite V1..VN).
+3. El perfil dev no aplica las migraciones nuevas. Aplicar a mano, en orden, solo en esa base local:
+   `V244`, `V245`, `V246`, `V249`, `V250`, `V254`, `V255`, `V257`, `V258`, `V259`, `V260` de
+   `Hot_click_outlet/src/main/resources/db/migration/` (V249 es idempotente y omite la columna de embeddings si no
+   hay pgvector). Sin V244 no existe la tabla de deduplicacion persistente.
+4. Insertar un canal de prueba: fila `WHATSAPP` con `id_externo = PNID-PRUEBA`, estado `ACTIVA`, sin token.
+5. `k6 run -e BASE_URL=http://127.0.0.1:<puerto> -e META_APP_SECRET=<el inventado> -e PHONE_NUMBER_ID=PNID-PRUEBA
+   loadtest/k6-webhook-meta.js` (para ver p99 en el resumen agregar `--summary-trend-stats="avg,med,p(95),p(99),max"`).
+
+Limitaciones conocidas del montaje local: la aplicacion registra un error de un job programado por tablas que
+no existen en esa base parcial (`hot_click_lead_tb`); no afecta al webhook.
+
+### Resultados
+
+| Corrida | Config | Peticiones | Throughput | p95 firmados | p99 firmados | p95 firma invalida | Errores |
+|---|---|---|---|---|---|---|---|
+| 1 | 20 VUs, meseta 2 min | 156 680 | ~979 req/s | 33.7 ms | no impreso (umbral p99 < 1500 ms: cumplido) | 14.0 ms | 0 % |
+| 2 | 20 VUs, meseta 1 min | 50 420 | ~504 req/s | 59.1 ms | 86.8 ms | 17.9 ms | 0 % |
+
+- Todos los umbrales se cumplieron en ambas corridas; 100 % de los mensajes firmados recibio 200 y todos los de firma
+  falsa recibieron 403 (601 en la corrida 1). Cero 5xx.
+- Maximo observado: 496 ms (corrida 1) y 499 ms (corrida 2), picos aislados.
+- La corrida 2 salio mas lenta que la 1 (la tabla de eventos ya tenia ~156 mil filas y se comparte CPU con k6): hay
+  variacion entre corridas y conviene repetir en el servidor de pruebas antes de fijar numeros.
+- Deduplicacion: 5 envios seguidos del mismo `id` con firma valida devolvieron 200 los cinco; el controlador registro
+  "1 nuevo(s)" y luego "0 nuevo(s)" cuatro veces, y la tabla de eventos procesados quedo con una sola fila.
+- Memoria de la app al terminar: ~1.0 GB de working set con `-Xmx2g`.
+- Con el motor apagado el webhook no se degrada con la carga; no se mide aqui el costo de una llamada real a Claude.
+
+### Umbrales
+
+Se mantienen los de la linea base (p95 < 500 ms, p99 < 1500 ms, firma invalida p95 < 200 ms): lo medido esta uno
+o dos ordenes de magnitud por debajo, pero el entorno es loopback y sin motor, asi que apretarlos aqui daria falsas
+alarmas en el servidor de pruebas. Reajustar tras la primera corrida en ese servidor.
+
+### Pendiente
+
+- Repetir en el servidor de pruebas (con red real, pgvector y el motor simulado) y ajustar umbrales.
+- Esta corrida no ejercita pgvector ni el motor de IA. Alternativa barata para una corrida repetible sin PC local:
+  un job manual (`workflow_dispatch`) de GitHub Actions con un servicio `pgvector/pgvector:pg16`, que arranque la app
+  con perfil dev, aplique las migraciones de la lista anterior, inserte el canal de prueba y ejecute k6 con
+  `grafana/setup-k6-action`, subiendo el resumen como artefacto. Es solo una propuesta: no esta en `.github/workflows`.
