@@ -5,6 +5,8 @@ import com.hotclick.agente.canal.CanalMensajeria;
 import com.hotclick.agente.canal.CanalMensajeria.ReferenciaCatalogo;
 import com.hotclick.agente.canal.CanalCuentaService;
 import com.hotclick.agente.canal.TarjetaProducto;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.catalogo.CatalogoRepositorio.Conexion;
 import com.hotclick.agente.catalogo.CatalogoRepositorio.Item;
 import com.hotclick.agente.catalogo.CatalogoRepositorio.ProductoFila;
@@ -57,6 +59,11 @@ public class TarjetasCatalogoService {
 
     /** @return true si se envió alguna tarjeta (nativa o normal). */
     public boolean enviar(CanalCuenta cuenta, String destinatario, List<Long> productoIds) {
+        return enviar(cuenta, destinatario, productoIds, Idioma.ES);
+    }
+
+    /** Igual que la versión sin idioma; el idioma es el de los textos fijos de la tarjeta. */
+    public boolean enviar(CanalCuenta cuenta, String destinatario, List<Long> productoIds, Idioma idioma) {
         if (cuenta == null || cuenta.getEmpresaId() == null || destinatario == null || productoIds == null
                 || productoIds.isEmpty()) return false;
         Long empresaId = cuenta.getEmpresaId();
@@ -64,13 +71,13 @@ public class TarjetasCatalogoService {
             Optional<Conexion> cx = repo.conexionActiva(empresaId);
             List<ProductoFila> productos = visiblesDe(empresaId, productoIds);
             if (productos.isEmpty()) return false;
-            List<TarjetaProducto> respaldos = productos.stream().map(TarjetasCatalogoService::tarjeta).toList();
+            List<TarjetaProducto> respaldos = productos.stream().map(p -> tarjeta(p, idioma)).toList();
             if (cx.isEmpty()) return false; // sin catálogo conectado no se hace nada
             Map<Long, Item> sincronizados = repo.items(empresaId);
             boolean todosEnMeta = productos.stream().allMatch(p -> estaSincronizado(sincronizados.get(p.id())));
             if (todosEnMeta && productos.size() > 1 && cuenta.getTipo() == Canal.WHATSAPP) {
-                canal.enviarListaProductosCatalogo(cuenta, destinatario, cx.get().catalogoId(), "Productos para vos",
-                    "Estas opciones pueden servirte", productos.stream().map(p -> ItemCatalogo.retailerId(p.id())).toList(),
+                canal.enviarListaProductosCatalogo(cuenta, destinatario, cx.get().catalogoId(), TextosFijos.productosTitulo(idioma),
+                    TextosFijos.productosCuerpo(idioma), productos.stream().map(p -> ItemCatalogo.retailerId(p.id())).toList(),
                     respaldos);
                 return true;
             }
@@ -112,6 +119,11 @@ public class TarjetasCatalogoService {
     }
 
     static TarjetaProducto tarjeta(ProductoFila p) {
-        return new TarjetaProducto(p.id(), p.nombre(), BigDecimal.valueOf(p.precio()), p.imagenUrl(), p.descripcion(), null);
+        return tarjeta(p, Idioma.ES);
+    }
+
+    static TarjetaProducto tarjeta(ProductoFila p, Idioma idioma) {
+        return new TarjetaProducto(p.id(), p.nombre(), BigDecimal.valueOf(p.precio()), p.imagenUrl(), p.descripcion(), null,
+            idioma);
     }
 }

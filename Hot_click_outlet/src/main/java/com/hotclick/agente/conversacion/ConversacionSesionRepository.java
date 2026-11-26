@@ -17,6 +17,10 @@ public interface ConversacionSesionRepository extends JpaRepository<Conversacion
     Optional<ConversacionSesion> findFirstByCanalCuentaIdAndContactoExternoAndEstado(
         Long canalCuentaId, String contactoExterno, EstadoConversacion estado);
 
+    /** La sesión más reciente del contacto en esa cuenta, abierta o cerrada (para detectar su idioma). */
+    Optional<ConversacionSesion> findFirstByCanalCuentaIdAndContactoExternoOrderByUltimoMensajeEnDesc(
+        Long canalCuentaId, String contactoExterno);
+
     /** AG-38: reclama el envío de la encuesta. 1 = esta llamada la reclamó; 0 = ya se había mandado. Atómico. */
     @Modifying
     @Transactional

@@ -2,6 +2,7 @@ package com.hotclick.agente.cupo;
 
 import com.hotclick.agente.canal.CanalCuenta;
 import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
 import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conversacion.spi.InterceptorMensajeEntrante;
 import com.hotclick.agente.webhook.MensajeEntrante;
@@ -39,8 +40,11 @@ public class InterceptorBajaAgente implements InterceptorMensajeEntrante {
     private final AgenteBajaService bajas;
     private final EmpresaRepository empresas;
     private final ConfirmacionBajaEnvio envio;
+    private final IdiomaConversacion idiomas;
 
-    public InterceptorBajaAgente(AgenteBajaService bajas, EmpresaRepository empresas, ConfirmacionBajaEnvio envio) {
+    public InterceptorBajaAgente(AgenteBajaService bajas, EmpresaRepository empresas, ConfirmacionBajaEnvio envio,
+                                IdiomaConversacion idiomas) {
+        this.idiomas = idiomas;
         this.bajas = bajas;
         this.empresas = empresas;
         this.envio = envio;
@@ -58,12 +62,12 @@ public class InterceptorBajaAgente implements InterceptorMensajeEntrante {
         try {
             if (baja) {
                 bajas.registrar(empresaId, canal, m.remitenteId());
-                envio.enviar(cuenta, m.remitenteId(), TextosFijos.baja(Idioma.deTexto(m.texto()), nombreNegocio(empresaId)));
+                envio.enviar(cuenta, m.remitenteId(), TextosFijos.baja(idiomaDe(cuenta, m), nombreNegocio(empresaId)));
                 log.info("[agente-baja] contacto dado de baja ({})", m);
                 return true;
             }
             if (!bajas.quitar(empresaId, canal, m.remitenteId())) return false; // no estaba de baja: mensaje normal
-            envio.enviar(cuenta, m.remitenteId(), TextosFijos.activar(Idioma.deTexto(m.texto()), nombreNegocio(empresaId)));
+            envio.enviar(cuenta, m.remitenteId(), TextosFijos.activar(idiomaDe(cuenta, m), nombreNegocio(empresaId)));
             log.info("[agente-baja] contacto reactivado ({})", m);
             return true;
         } catch (RuntimeException e) {
@@ -71,6 +75,12 @@ public class InterceptorBajaAgente implements InterceptorMensajeEntrante {
             log.warn("[agente-baja] no se pudo procesar la baja: {}", e.getClass().getSimpleName());
             return false;
         }
+    }
+
+    /** Idioma del mensaje; "STOP" o "ACTIVAR" solos no dicen nada, así que se mira el historial del contacto. */
+    private Idioma idiomaDe(CanalCuenta cuenta, MensajeEntrante m) {
+        Idioma d = Idioma.deTexto(m.texto());
+        return d != null ? d : idiomas.deContacto(cuenta.getId(), m.remitenteId());
     }
 
     /** Minúsculas, sin tildes, sin signos y con espacios simples. */

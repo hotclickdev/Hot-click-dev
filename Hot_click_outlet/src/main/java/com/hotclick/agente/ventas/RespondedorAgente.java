@@ -122,14 +122,14 @@ public class RespondedorAgente implements AgenteRespondedor {
         if (texto.isBlank()) return;
 
         enviar(conv, texto);
-        enviarTarjetas(conv, r);
+        enviarTarjetas(conv, r, idioma);
         if (traspaso) {
             conversaciones.pausarBot(conv.sesionId(), conv.empresaId());
         }
     }
 
     /** AG-37: tarjetas nativas del catálogo de Meta si el bot las pidió; sin catálogo conectado no se envía nada. */
-    private void enviarTarjetas(ConversacionActiva conv, ResultadoAgente r) {
+    private void enviarTarjetas(ConversacionActiva conv, ResultadoAgente r, Idioma idioma) {
         TarjetasCatalogoService t = tarjetas == null ? null : tarjetas.getIfAvailable();
         if (t == null || conv.empresaId() == null) return;
         List<Long> ids = new ArrayList<>();
@@ -144,7 +144,7 @@ public class RespondedorAgente implements AgenteRespondedor {
             }
         }
         if (ids.isEmpty()) return;
-        if (t.enviar(conv.cuenta(), conv.contacto(), ids)) {
+        if (t.enviar(conv.cuenta(), conv.contacto(), ids, idioma)) {
             conversaciones.registrarSalienteBot(conv.sesionId(), conv.empresaId(), "[Tarjetas de producto]");
         }
     }
@@ -175,7 +175,7 @@ public class RespondedorAgente implements AgenteRespondedor {
 
     /** WhatsApp entrega el título del botón, no su id: el de traspaso se reconoce también por su título. */
     static boolean esTituloHablarConPersona(String texto) {
-        return texto != null && texto.strip().equalsIgnoreCase(Boton.hablarConPersona().titulo());
+        return Boton.esTituloHablarConPersona(texto);
     }
 
     static PerfilAgente perfilDe(PerfilConversacion p) {

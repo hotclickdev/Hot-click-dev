@@ -1,5 +1,7 @@
 package com.hotclick.agente.canal;
 
+import com.hotclick.agente.idioma.Idioma;
+
 /**
  * Salida de mensajes por un canal de Meta usando el token de la cuenta (no el número global de HotClick).
  * Sin token en la cuenta funciona en modo simulado (no llama a Meta). Nunca registra destinatario, texto ni token.
@@ -25,7 +27,13 @@ public interface CanalMensajeria {
 
     /** Texto con botones (WhatsApp: máx. 3, ids ≤ 256, títulos ≤ 20). Por defecto, texto con lista numerada. */
     default String enviarBotones(CanalCuenta cuenta, String destinatario, String texto, java.util.List<Boton> botones) {
-        return enviarTexto(cuenta, destinatario, MensajesInteractivos.respaldoBotones(texto, botones));
+        return enviarBotones(cuenta, destinatario, texto, botones, Idioma.ES);
+    }
+
+    /** Igual que la versión sin idioma; el idioma solo afecta al respaldo en texto. */
+    default String enviarBotones(CanalCuenta cuenta, String destinatario, String texto, java.util.List<Boton> botones,
+                                 Idioma idioma) {
+        return enviarTexto(cuenta, destinatario, MensajesInteractivos.respaldoBotones(texto, botones, idioma));
     }
 
     /**
@@ -39,7 +47,13 @@ public interface CanalMensajeria {
     /** Lista de hasta 10 filas (WhatsApp). Por defecto, texto con lista numerada. */
     default String enviarLista(CanalCuenta cuenta, String destinatario, String texto, String textoBoton,
                                java.util.List<FilaLista> filas) {
-        return enviarTexto(cuenta, destinatario, MensajesInteractivos.respaldoLista(texto, filas));
+        return enviarLista(cuenta, destinatario, texto, textoBoton, filas, Idioma.ES);
+    }
+
+    /** Igual que la lista sin idioma; el idioma solo afecta al respaldo en texto. */
+    default String enviarLista(CanalCuenta cuenta, String destinatario, String texto, String textoBoton,
+                               java.util.List<FilaLista> filas, Idioma idioma) {
+        return enviarTexto(cuenta, destinatario, MensajesInteractivos.respaldoLista(texto, filas, idioma));
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.hotclick.agente.campana;
 
 import com.hotclick.agente.canal.CanalCuenta;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.agente.conversacion.spi.InterceptorMensajeEntrante;
 import com.hotclick.agente.cupo.AgenteBajaService;
 import com.hotclick.agente.cupo.ConfirmacionBajaEnvio;
@@ -57,22 +59,22 @@ public class InterceptorConsentimiento implements InterceptorMensajeEntrante {
         Long empresaId = cuenta.getEmpresaId();
         String canal = cuenta.getTipo().name();
         String negocio = oferta.nombreNegocio(empresaId);
+        Idioma idioma = oferta.idiomaDe(cuenta, m.remitenteId());
         if (bajas.estaDeBaja(empresaId, canal, m.remitenteId())) {
             // STOP gana: el opt-in no levanta la baja.
-            envio.enviar(cuenta, m.remitenteId(), "Para volver a recibir mensajes de " + negocio + " escribí ACTIVAR.");
+            envio.enviar(cuenta, m.remitenteId(), TextosFijos.ofertaDeBaja(idioma, negocio));
             return true;
         }
         consentimientos.registrarDesdeBoton(empresaId, canal, m.remitenteId(), m.nombre(), m.mensajeId());
-        envio.enviar(cuenta, m.remitenteId(), "Listo, vas a recibir ofertas de " + negocio
-            + " por este chat. Escribí STOP cuando quieras dejar de recibirlas.");
+        envio.enviar(cuenta, m.remitenteId(), TextosFijos.ofertaAceptada(idioma, negocio));
         log.info("[campana-consent] opt-in por botón ({})", m);
         return true;
     }
 
     private boolean rechazar(CanalCuenta cuenta, MensajeEntrante m) {
         consentimientos.revocar(cuenta.getEmpresaId(), cuenta.getTipo().name(), m.remitenteId());
-        envio.enviar(cuenta, m.remitenteId(), "Listo, no te vamos a enviar ofertas de "
-            + oferta.nombreNegocio(cuenta.getEmpresaId()) + ".");
+        envio.enviar(cuenta, m.remitenteId(), TextosFijos.ofertaRechazada(oferta.idiomaDe(cuenta, m.remitenteId()),
+            oferta.nombreNegocio(cuenta.getEmpresaId())));
         return true;
     }
 }

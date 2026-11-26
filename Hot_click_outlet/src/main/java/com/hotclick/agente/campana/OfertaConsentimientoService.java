@@ -3,6 +3,9 @@ package com.hotclick.agente.campana;
 import com.hotclick.agente.canal.Boton;
 import com.hotclick.agente.canal.CanalCuenta;
 import com.hotclick.agente.canal.CanalMensajeria;
+import com.hotclick.agente.idioma.Idioma;
+import com.hotclick.agente.idioma.IdiomaConversacion;
+import com.hotclick.agente.idioma.TextosFijos;
 import com.hotclick.model.Empresa;
 import com.hotclick.repository.EmpresaRepository;
 import org.slf4j.Logger;
@@ -27,21 +30,32 @@ public class OfertaConsentimientoService {
     private final ConsentimientoService consentimientos;
     private final CanalMensajeria canal;
     private final EmpresaRepository empresas;
+    private final IdiomaConversacion idiomas;
 
     public OfertaConsentimientoService(ConsentimientoService consentimientos, CanalMensajeria canal,
-                                       EmpresaRepository empresas) {
+                                       EmpresaRepository empresas, IdiomaConversacion idiomas) {
+        this.idiomas = idiomas;
         this.consentimientos = consentimientos;
         this.canal = canal;
         this.empresas = empresas;
     }
 
     public static List<Boton> botones() {
-        return List.of(new Boton(ID_SI, "Sí, quiero ofertas"), new Boton(ID_NO, "No, gracias"));
+        return botones(Idioma.ES);
+    }
+
+    public static List<Boton> botones(Idioma idioma) {
+        return List.of(new Boton(ID_SI, TextosFijos.ofertaBotonSi(idioma)),
+            new Boton(ID_NO, TextosFijos.ofertaBotonNo(idioma)));
     }
 
     static String texto(String negocio) {
-        return "¿Querés recibir ofertas y novedades de " + negocio + " por este chat? "
-            + "Podés dejar de recibirlas cuando quieras escribiendo STOP.";
+        return TextosFijos.ofertaPregunta(Idioma.ES, negocio);
+    }
+
+    /** Idioma de la conversación más reciente del contacto (para los textos fijos del opt-in). */
+    Idioma idiomaDe(CanalCuenta cuenta, String contacto) {
+        return idiomas.deContacto(cuenta.getId(), contacto);
     }
 
     /** @return true si se envió el ofrecimiento. Nunca lanza: un fallo de Meta no debe afectar a quien llama. */
@@ -50,7 +64,9 @@ public class OfertaConsentimientoService {
         Long empresaId = cuenta.getEmpresaId();
         try {
             if (!consentimientos.puedeOfrecer(empresaId, cuenta.getTipo().name(), contacto)) return false;
-            canal.enviarBotones(cuenta, contacto, texto(nombreNegocio(empresaId)), botones());
+            Idioma idioma = idiomaDe(cuenta, contacto);
+            canal.enviarBotones(cuenta, contacto, TextosFijos.ofertaPregunta(idioma, nombreNegocio(empresaId)),
+                botones(idioma), idioma);
             return true;
         } catch (RuntimeException e) {
             log.warn("[campana-consent] no se pudo ofrecer el opt-in empresa={}: {}", empresaId, e.getClass().getSimpleName());
