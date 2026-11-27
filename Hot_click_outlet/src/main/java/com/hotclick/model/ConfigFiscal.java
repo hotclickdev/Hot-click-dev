@@ -26,6 +26,10 @@ public class ConfigFiscal {
     private Integer onvoPagoMinimoCrc;
     @Column(name = "onvo_costo_pago_crc", nullable = false)
     private Integer onvoCostoPagoCrc;
+    @Column(name = "fec_habilitada", nullable = false)
+    private boolean fecHabilitada;
+    @Column(name = "fec_permitir_no_inscrito", nullable = false)
+    private boolean fecPermitirNoInscrito;
 
     public Long getId() { return id; }
     public String getRegimenHotclick() { return regimenHotclick; }
@@ -33,4 +37,6 @@ public class ConfigFiscal {
     public Integer getDiasEnviarFactura() { return diasEnviarFactura; }
     public Integer getOnvoPagoMinimoCrc() { return onvoPagoMinimoCrc; }
     public Integer getOnvoCostoPagoCrc() { return onvoCostoPagoCrc; }
+    public boolean isFecHabilitada() { return fecHabilitada; }
+    public boolean isFecPermitirNoInscrito() { return fecPermitirNoInscrito; }
 }

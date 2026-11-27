@@ -16,4 +16,13 @@ public record ReglasFiscalesRequest(
     @NotNull @DecimalMin("0") @DecimalMax("50") @Digits(integer = 2, fraction = 2) BigDecimal extraNoInscritoPct,
     @NotNull @Min(1) @Max(60) Integer diasEnviarFactura,
     @NotNull @Min(0) @Max(10_000_000) Integer onvoPagoMinimoCrc,
-    @NotNull @Min(0) @Max(100_000) Integer onvoCostoPagoCrc) {}
+    @NotNull @Min(0) @Max(100_000) Integer onvoCostoPagoCrc,
+    /** Opcionales: null = no cambiar. La FEC solo se enciende con régimen TRADICIONAL. */
+    Boolean fecHabilitada,
+    Boolean fecPermitirNoInscrito) {
+
+    public ReglasFiscalesRequest(String regimen, BigDecimal extraNoInscritoPct, Integer diasEnviarFactura,
+                                 Integer onvoPagoMinimoCrc, Integer onvoCostoPagoCrc) {
+        this(regimen, extraNoInscritoPct, diasEnviarFactura, onvoPagoMinimoCrc, onvoCostoPagoCrc, null, null);
+    }
+}

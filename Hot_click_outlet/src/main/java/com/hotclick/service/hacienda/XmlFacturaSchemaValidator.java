@@ -54,7 +54,7 @@ public class XmlFacturaSchemaValidator {
         }
     }
 
-    private static Schema cargar(String classpath) {
+    static Schema cargar(String classpath) {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         try {
             factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
@@ -69,7 +69,7 @@ public class XmlFacturaSchemaValidator {
     }
 
     /** Solo resuelve el import de xmldsig y lo trae del classpath. */
-    private static LSResourceResolver resolverXmldsig() {
+    static LSResourceResolver resolverXmldsig() {
         return (type, namespaceURI, publicId, systemId, baseURI) -> {
             boolean esDsig = "http://www.w3.org/2000/09/xmldsig#".equals(namespaceURI)
                 || (systemId != null && systemId.endsWith("xmldsig-core-schema.xsd"));

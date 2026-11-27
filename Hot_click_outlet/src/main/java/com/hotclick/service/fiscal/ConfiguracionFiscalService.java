@@ -31,6 +31,14 @@ public class ConfiguracionFiscalService {
     public record Reglas(String regimen, BigDecimal extraNoInscritoPct, int diasEnviarFactura,
                          int onvoPagoMinimoCrc, int onvoCostoPagoCrc) {}
 
+    /**
+     * Interruptor de la Factura Electrónica de Compra (FEC, tipo 08). Apagada por defecto: solo corre con el
+     * régimen TRADICIONAL y {@code habilitada}. {@code permitirNoInscrito} sigue sin confirmarse con Hacienda.
+     */
+    public record Fec(boolean habilitada, boolean permitirNoInscrito) {}
+
+    public static final Fec FEC_APAGADA = new Fec(false, false);
+
     public static final Reglas DEFAULTS = new Reglas("SIMPLIFICADO", new BigDecimal("14.00"), 7, 20_000, 0);
 
     private static final Logger log = LoggerFactory.getLogger(ConfiguracionFiscalService.class);
@@ -51,6 +59,37 @@ public class ConfiguracionFiscalService {
             log.warn("config fiscal no disponible ({}); se usan los valores por defecto", e.getClass().getSimpleName());
             return DEFAULTS;
         }
+    }
+
+    /** Lee el interruptor de la FEC; ante cualquier fallo de BD devuelve apagado (falla cerrado). */
+    public Fec fec() {
+        try {
+            List<Fec> v = jdbc.query(
+                "SELECT fec_habilitada, fec_permitir_no_inscrito FROM hot_click_config_fiscal_tb WHERE id = 1",
+                (rs, i) -> new Fec(rs.getBoolean(1), rs.getBoolean(2)));
+            return v.isEmpty() ? FEC_APAGADA : v.get(0);
+        } catch (DataAccessException e) {
+            log.warn("interruptor FEC no disponible ({}); queda apagado", e.getClass().getSimpleName());
+            return FEC_APAGADA;
+        }
+    }
+
+    /** La FEC solo corre con el régimen de HotClick TRADICIONAL y el interruptor encendido. */
+    public boolean fecActiva() {
+        return activa(reglas().regimen(), fec());
+    }
+
+    public static boolean activa(String regimen, Fec fec) {
+        return "TRADICIONAL".equals(regimen) && fec != null && fec.habilitada();
+    }
+
+    /** Con régimen SIMPLIFICADO la FEC se guarda siempre apagada, sin importar lo pedido. */
+    @Transactional
+    public Fec actualizarFec(String regimen, Fec pedido) {
+        Fec limpia = new Fec("TRADICIONAL".equals(regimen) && pedido.habilitada(), pedido.permitirNoInscrito());
+        jdbc.update("UPDATE hot_click_config_fiscal_tb SET fec_habilitada = ?, fec_permitir_no_inscrito = ? WHERE id = 1",
+            limpia.habilitada(), limpia.permitirNoInscrito());
+        return limpia;
     }
 
     @Transactional

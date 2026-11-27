@@ -25,7 +25,7 @@ import java.util.Map;
 @Service
 public class QuincenaAdminService {
 
-    static final List<String> ESTADOS = List.of("PAGADO", "ENVIADO", "ENTREGADO", "LISTO");
+    public static final List<String> ESTADOS = List.of("PAGADO", "ENVIADO", "ENTREGADO", "LISTO");
 
     private final PedidoRepository pedidoRepo;
     private final AggregatorService aggregator;

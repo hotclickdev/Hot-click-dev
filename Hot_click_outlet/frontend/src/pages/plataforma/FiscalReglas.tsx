@@ -5,7 +5,10 @@ import { Aviso, BOTON_PRIMARIO, Carga, TARJETA, TITULO } from './piezas'
 const INPUT = 'h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3.5 text-[15px] text-hc-n-900 outline-none focus:border-hc-blue-600'
 
 type Estado = 'carga' | 'listo' | 'error'
-type Form = { regimen: string; extra: string; dias: string; minimo: string; costo: string }
+type Form = {
+  regimen: string; extra: string; dias: string; minimo: string; costo: string
+  fec: boolean; fecNoInscrito: boolean
+}
 
 function aForm(r: ReglasFiscales): Form {
   return {
@@ -14,6 +17,8 @@ function aForm(r: ReglasFiscales): Form {
     dias: String(r.diasEnviarFactura),
     minimo: String(r.onvoPagoMinimoCrc),
     costo: String(r.onvoCostoPagoCrc),
+    fec: r.fecHabilitada === true,
+    fecNoInscrito: r.fecPermitirNoInscrito === true,
   }
 }
 
@@ -29,7 +34,7 @@ function entero(v: string, max: number, min = 0): boolean {
 
 /** Solo ADMIN: reglas fiscales de la plataforma. El servidor valida los rangos de nuevo. */
 export default function FiscalReglas() {
-  const [form, setForm] = useState<Form>({ regimen: 'SIMPLIFICADO', extra: '', dias: '', minimo: '', costo: '' })
+  const [form, setForm] = useState<Form>({ regimen: 'SIMPLIFICADO', extra: '', dias: '', minimo: '', costo: '', fec: false, fecNoInscrito: false })
   const [estado, setEstado] = useState<Estado>('carga')
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState<{ ok: boolean; texto: string } | null>(null)
@@ -60,6 +65,8 @@ export default function FiscalReglas() {
         diasEnviarFactura: Number(form.dias),
         onvoPagoMinimoCrc: Number(form.minimo),
         onvoCostoPagoCrc: Number(form.costo),
+        fecHabilitada: form.regimen === 'TRADICIONAL' && form.fec,
+        fecPermitirNoInscrito: form.fecNoInscrito,
       })
       setMensaje({ ok: true, texto: 'Reglas guardadas. Aplican a las próximas comisiones.' })
     } catch (err) {
@@ -70,8 +77,9 @@ export default function FiscalReglas() {
     }
   }
 
-  const campo = (clave: keyof Form, valor: string) => setForm((f) => ({ ...f, [clave]: valor }))
+  const campo = (clave: 'regimen' | 'extra' | 'dias' | 'minimo' | 'costo', valor: string) => setForm((f) => ({ ...f, [clave]: valor }))
 
+  const tradicional = form.regimen === 'TRADICIONAL'
   if (estado === 'carga') return <Carga />
   if (estado === 'error') return <Aviso>No se pudieron cargar las reglas fiscales.</Aviso>
   return (
@@ -116,6 +124,24 @@ export default function FiscalReglas() {
           <span className="text-xs text-hc-n-600">Solo informativo.</span>
         </label>
       </div>
+      <fieldset className="flex flex-col gap-3 rounded-xl border border-hc-n-200 p-4">
+        <legend className="px-1 text-[13px] font-semibold text-hc-n-900">Factura electrónica de compra (FEC)</legend>
+        <p className="text-xs text-hc-n-600">
+          Una FEC por quincena a cada negocio en régimen simplificado, cuando HotClick pasa al régimen tradicional.
+          {!tradicional && ' Mientras HotClick esté en régimen simplificado (RTS) la FEC no se usa y queda apagada.'}
+        </p>
+        <label className="flex items-center gap-2 text-sm text-hc-n-900">
+          <input type="checkbox" checked={tradicional && form.fec} disabled={!tradicional}
+            onChange={(ev) => setForm((f) => ({ ...f, fec: ev.target.checked }))} />
+          Activar la FEC por quincena
+        </label>
+        <label className="flex items-center gap-2 text-sm text-hc-n-900">
+          <input type="checkbox" checked={form.fecNoInscrito}
+            onChange={(ev) => setForm((f) => ({ ...f, fecNoInscrito: ev.target.checked }))} />
+          Incluir también a los negocios no inscritos
+        </label>
+        <span className="text-xs text-hc-n-600">Los no inscritos van como «No contribuyente»; Hacienda todavía no lo confirmó. Déjalo apagado hasta tener confirmación.</span>
+      </fieldset>
       {invalido && <p className="text-xs text-hc-primary">Revisá los valores: extra de 0 a 50, días de 1 a 60 y montos enteros.</p>}
       {mensaje && <p role="status" className={`text-sm ${mensaje.ok ? 'text-hc-n-900' : 'text-hc-primary'}`}>{mensaje.texto}</p>}
       <div><button type="submit" className={BOTON_PRIMARIO} disabled={guardando || invalido}>{guardando ? 'Guardando…' : 'Guardar reglas'}</button></div>

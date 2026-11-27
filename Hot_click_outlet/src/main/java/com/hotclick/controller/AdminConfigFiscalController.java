@@ -4,6 +4,7 @@ import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.fiscal.ReglasFiscalesRequest;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.fiscal.ConfiguracionFiscalService;
+import com.hotclick.service.fiscal.ConfiguracionFiscalService.Fec;
 import com.hotclick.service.fiscal.ConfiguracionFiscalService.Reglas;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +32,7 @@ public class AdminConfigFiscalController {
     @GetMapping("/api/admin/configuracion/fiscal")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> obtener() {
-        return ResponseEntity.ok(ResponseDTO.success("Reglas fiscales", datos(config.reglas())));
+        return ResponseEntity.ok(ResponseDTO.success("Reglas fiscales", datos(config.reglas(), config.fec())));
     }
 
     @PutMapping("/api/admin/configuracion/fiscal")
@@ -45,20 +46,29 @@ public class AdminConfigFiscalController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Revisá los valores de las reglas fiscales."));
         }
+        Fec fecAnterior = config.fec();
+        Fec fecNueva = config.actualizarFec(nuevas.regimen(), new Fec(
+            body.fecHabilitada() != null ? body.fecHabilitada() : fecAnterior.habilitada(),
+            body.fecPermitirNoInscrito() != null ? body.fecPermitirNoInscrito() : fecAnterior.permitirNoInscrito()));
         auditoria.registrar("REGLAS_FISCALES_ACTUALIZADAS", "CONFIG_FISCAL", 1L, null,
             "regimen " + anterior.regimen() + "->" + nuevas.regimen()
                 + ", extra " + anterior.extraNoInscritoPct() + "->" + nuevas.extraNoInscritoPct()
-                + ", dias " + anterior.diasEnviarFactura() + "->" + nuevas.diasEnviarFactura());
-        return ResponseEntity.ok(ResponseDTO.success("Reglas fiscales actualizadas", datos(nuevas)));
+                + ", dias " + anterior.diasEnviarFactura() + "->" + nuevas.diasEnviarFactura()
+                + ", fec " + fecAnterior.habilitada() + "->" + fecNueva.habilitada()
+                + ", fecNoInscrito " + fecAnterior.permitirNoInscrito() + "->" + fecNueva.permitirNoInscrito());
+        return ResponseEntity.ok(ResponseDTO.success("Reglas fiscales actualizadas", datos(nuevas, fecNueva)));
     }
 
-    private static Map<String, Object> datos(Reglas r) {
+    private static Map<String, Object> datos(Reglas r, Fec fec) {
         Map<String, Object> d = new LinkedHashMap<>();
         d.put("regimen", r.regimen());
         d.put("extraNoInscritoPct", r.extraNoInscritoPct());
         d.put("diasEnviarFactura", r.diasEnviarFactura());
         d.put("onvoPagoMinimoCrc", r.onvoPagoMinimoCrc());
         d.put("onvoCostoPagoCrc", r.onvoCostoPagoCrc());
+        d.put("fecHabilitada", fec.habilitada());
+        d.put("fecPermitirNoInscrito", fec.permitirNoInscrito());
+        d.put("fecActiva", ConfiguracionFiscalService.activa(r.regimen(), fec));
         return d;
     }
 }
