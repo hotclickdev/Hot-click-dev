@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-Cd22FpPS.js";function t(){return e()}export{t};
