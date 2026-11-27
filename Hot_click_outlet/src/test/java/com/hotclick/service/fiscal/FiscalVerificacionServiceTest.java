@@ -127,7 +127,7 @@ class FiscalVerificacionServiceTest {
         when(scope.isAdminIT()).thenReturn(false);
         assertThatThrownBy(() -> svc.verificar(5L, true, null)).isInstanceOf(TenantAccessDeniedException.class);
         assertThatThrownBy(() -> svc.detalle(5L)).isInstanceOf(TenantAccessDeniedException.class);
-        assertThatThrownBy(() -> svc.pendientes()).isInstanceOf(TenantAccessDeniedException.class);
+        assertThatThrownBy(() -> new FiscalPendientesService(repo, scope).pendientes()).isInstanceOf(TenantAccessDeniedException.class);
         verify(repo, never()).save(any());
         assertThat(empresa.isFiscalVerificado()).isFalse();
     }

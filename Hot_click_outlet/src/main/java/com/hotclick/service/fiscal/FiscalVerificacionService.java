@@ -8,13 +8,11 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.utils.Constants;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,7 +23,6 @@ import java.util.Map;
 @Service
 public class FiscalVerificacionService {
 
-    public static final int MAX_PENDIENTES = 200;
     static final int MAX_MOTIVO = 200;
 
     private final EmpresaRepository empresaRepository;
@@ -39,24 +36,6 @@ public class FiscalVerificacionService {
         this.empresaRepository = empresaRepository;
         this.companyScope = companyScope;
         this.auditoria = auditoria;
-    }
-
-    @Transactional(readOnly = true)
-    public List<Map<String, Object>> pendientes() {
-        exigirAdmin();
-        return empresaRepository.findFiscalPendientes(PageRequest.of(0, MAX_PENDIENTES)).stream()
-            .map(FiscalVerificacionService::filaPendiente).toList();
-    }
-
-    private static Map<String, Object> filaPendiente(Empresa e) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("empresaId", e.getId());
-        m.put("nombre", e.getNombreComercial() != null && !e.getNombreComercial().isBlank()
-            ? e.getNombreComercial() : e.getNombreEmpresa());
-        m.put("situacionFiscal", e.getSituacionFiscal());
-        m.put("fechaSituacionFiscal", e.getFechaSituacionFiscal());
-        m.put("verifAuto", e.getFiscalVerifAuto());
-        return m;
     }
 
     /** Datos declarados por el negocio, para que el ADMIN los compare con Hacienda. */

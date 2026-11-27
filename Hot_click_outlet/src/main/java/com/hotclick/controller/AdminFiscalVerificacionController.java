@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.ResponseDTO;
 import com.hotclick.dto.fiscal.VerificarFiscalRequest;
+import com.hotclick.service.fiscal.FiscalPendientesService;
 import com.hotclick.service.fiscal.FiscalVerificacionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -17,13 +18,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminFiscalVerificacionController {
 
     private final FiscalVerificacionService verificacion;
+    private final FiscalPendientesService pendientes;
 
-    public AdminFiscalVerificacionController(FiscalVerificacionService verificacion) { this.verificacion = verificacion; }
+    public AdminFiscalVerificacionController(FiscalVerificacionService verificacion, FiscalPendientesService pendientes) {
+        this.verificacion = verificacion;
+        this.pendientes = pendientes;
+    }
 
     @GetMapping("/api/admin/empresas/fiscal/pendientes")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> pendientes() {
-        return ResponseEntity.ok(ResponseDTO.success("Pendientes de verificar", verificacion.pendientes()));
+        return ResponseEntity.ok(ResponseDTO.success("Pendientes de verificar", pendientes.pendientes()));
     }
 
     @GetMapping("/api/admin/empresas/{id}/fiscal")
