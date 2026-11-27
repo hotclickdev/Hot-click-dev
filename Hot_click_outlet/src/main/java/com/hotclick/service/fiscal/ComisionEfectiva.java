@@ -16,11 +16,12 @@ public final class ComisionEfectiva {
 
     public static Desglose calcular(BigDecimal planPct, SituacionFiscal situacion, BigDecimal extraNoInscritoPct) {
         BigDecimal plan = escala(planPct);
-        BigDecimal extra = situacion == SituacionFiscal.NO_INSCRITO ? escala(extraNoInscritoPct) : escala(BigDecimal.ZERO);
+        BigDecimal extra = situacion == SituacionFiscal.NO_INSCRITO ? escala(extraNoInscritoPct) : escala(null);
         return new Desglose(plan, extra, plan.add(extra), situacion);
     }
 
     private static BigDecimal escala(BigDecimal v) {
-        return (v == null ? BigDecimal.ZERO : v).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+        if (v == null || v.signum() < 0) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        return v.setScale(2, RoundingMode.HALF_UP);
     }
 }
