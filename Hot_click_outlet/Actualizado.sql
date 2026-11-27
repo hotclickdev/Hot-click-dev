@@ -4760,11 +4760,6 @@ CREATE TABLE IF NOT EXISTS hot_click_config_fiscal_tb (
     CONSTRAINT ck_config_fiscal_costo CHECK (onvo_costo_pago_crc BETWEEN 0 AND 100000)
 );
 
-INSERT INTO hot_click_config_fiscal_tb (id, regimen_hotclick, extra_no_inscrito_pct, dias_enviar_factura,
-                                        onvo_pago_minimo_crc, onvo_costo_pago_crc)
-VALUES (1, 'SIMPLIFICADO', 14.00, 7, 20000, 0)
-ON CONFLICT (id) DO NOTHING;
-
 -- Situación fiscal del negocio. NULL = sin declarar (no se cobra el extra).
 -- Valores: INSCRITO | REGIMEN_SIMPLIFICADO | NO_INSCRITO (validado en la aplicación).
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS situacion_fiscal VARCHAR(25);

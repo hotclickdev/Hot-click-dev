@@ -1,3 +1,4 @@
+-- La fila id=1 no se siembra: sin ella el servicio usa los valores por defecto y la crea al primer guardado.
 -- V244 (Fase 1 "Base fiscal"): reglas fiscales de la plataforma (fila única id=1, editables por ADMIN)
 -- y situación fiscal por negocio. Aditiva e idempotente: no borra ni reescribe datos existentes.
 CREATE TABLE IF NOT EXISTS hot_click_config_fiscal_tb (
@@ -13,11 +14,6 @@ CREATE TABLE IF NOT EXISTS hot_click_config_fiscal_tb (
     CONSTRAINT ck_config_fiscal_minimo CHECK (onvo_pago_minimo_crc BETWEEN 0 AND 10000000),
     CONSTRAINT ck_config_fiscal_costo CHECK (onvo_costo_pago_crc BETWEEN 0 AND 100000)
 );
-
-INSERT INTO hot_click_config_fiscal_tb (id, regimen_hotclick, extra_no_inscrito_pct, dias_enviar_factura,
-                                        onvo_pago_minimo_crc, onvo_costo_pago_crc)
-VALUES (1, 'SIMPLIFICADO', 14.00, 7, 20000, 0)
-ON CONFLICT (id) DO NOTHING;
 
 -- Situación fiscal del negocio. NULL = sin declarar (no se cobra el extra).
 -- Valores: INSCRITO | REGIMEN_SIMPLIFICADO | NO_INSCRITO (validado en la aplicación).
