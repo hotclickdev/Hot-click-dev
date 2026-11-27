@@ -15,6 +15,9 @@ export type ReglasFiscales = {
   diasEnviarFactura: number
   onvoPagoMinimoCrc: number
   onvoCostoPagoCrc: number
+  /** Opcionales al guardar (sin valor = no cambiar). La FEC solo se enciende con régimen TRADICIONAL. */
+  fecHabilitada?: boolean
+  fecPermitirNoInscrito?: boolean
 }
 
 export const fiscalService = {

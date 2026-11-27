@@ -25,7 +25,7 @@ import java.util.List;
 @Service
 public class XmlFacturaBuilder {
 
-    private static final DateTimeFormatter DT_FMT =
+    static final DateTimeFormatter DT_FMT =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss-06:00");
 
     private static final String NS_FACTURA =
@@ -65,7 +65,7 @@ public class XmlFacturaBuilder {
         return xml.toString();
     }
 
-    private static void validarEmisor(Empresa empresa) {
+    static void validarEmisor(Empresa empresa) {
         if (empresa.getCedulaJuridica() == null || empresa.getCedulaJuridica().isBlank()) {
             throw new IllegalStateException("El emisor no tiene cédula para el XML");
         }
@@ -254,7 +254,7 @@ public class XmlFacturaBuilder {
         return s == null || s.isBlank();
     }
 
-    private static String esc(String s) {
+    static String esc(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 .replace("\"", "&quot;").replace("'", "&apos;");

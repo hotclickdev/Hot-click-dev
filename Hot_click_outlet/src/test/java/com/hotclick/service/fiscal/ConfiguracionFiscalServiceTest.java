@@ -48,4 +48,13 @@ class ConfiguracionFiscalServiceTest {
         rechaza(reglas("SIMPLIFICADO", "14", 7, -1, 0));
         rechaza(reglas("SIMPLIFICADO", "14", 7, 0, 100_001));
     }
+
+    @Test
+    void fecSoloActivaConTradicionalYInterruptor() {
+        var on = new ConfiguracionFiscalService.Fec(true, false);
+        var off = ConfiguracionFiscalService.FEC_APAGADA;
+        assertThat(ConfiguracionFiscalService.activa("TRADICIONAL", on)).isTrue();
+        assertThat(ConfiguracionFiscalService.activa("SIMPLIFICADO", on)).isFalse();
+        assertThat(ConfiguracionFiscalService.activa("TRADICIONAL", off)).isFalse();
+    }
 }
