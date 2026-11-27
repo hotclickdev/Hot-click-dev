@@ -241,17 +241,13 @@ class XmlFacturaBuilderTest {
     }
 
     @Test
-    @DisplayName("pago mixto: gift card (99 con descripcion) + SINPE suman el total")
-    void medioPagoMixtoGiftCard() {
-        Pedido pedido = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1000, 1);
-        pedido.setMetodoPago("SINPE");
-        pedido.setTotalPedido(1130);
-        pedido.setGiftCardMonto(300);
-        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedido);
-        assertThat(xml).contains("<TipoMedioPago>06</TipoMedioPago>", "<TotalMedioPago>830</TotalMedioPago>",
-            "<TipoMedioPago>99</TipoMedioPago>", "<MedioPagoOtros>Gift card HotClick</MedioPagoOtros>",
-            "<TotalMedioPago>300</TotalMedioPago>");
-        validarOficial(xml, true);
+    @DisplayName("PayPal, Stripe y gift card ya no se usan: no tienen codigo propio")
+    void mediosRetiradosSinCodigo() {
+        for (String m : new String[] {"PAYPAL", "STRIPE", "GIFT_CARD"}) {
+            assertThat(com.hotclick.service.hacienda.MediosPagoHacienda.codigoDe(m)).as(m).isNull();
+        }
+        assertThat(xmlConMetodo("TARJETA")).doesNotContain("<TipoMedioPago>99</TipoMedioPago>")
+            .doesNotContain("<TipoMedioPago>07</TipoMedioPago>");
     }
 
     @Test
@@ -272,10 +268,10 @@ class XmlFacturaBuilderTest {
     }
 
     @Test
-    @DisplayName("mas de 4 medios: se conservan 3 y el resto se agrupa en 99 (max 4 MedioPago)")
-    void medioPagoMasDeCuatro() {
-        String[] metodos = {"EFECTIVO", "TARJETA", "SINPE", "TRANSFERENCIA", "PAYPAL"};
-        int[] precios = {5000, 4000, 3000, 2000, 1000};
+    @DisplayName("POS con los 4 medios (efectivo, tarjeta, SINPE, transferencia): 4 MedioPago de mayor a menor")
+    void medioPagoCuatroMedios() {
+        String[] metodos = {"EFECTIVO", "TARJETA", "SINPE", "TRANSFERENCIA"};
+        int[] precios = {5000, 4000, 3000, 2000};
         List<Pedido> pedidos = new java.util.ArrayList<>();
         for (int i = 0; i < metodos.length; i++) {
             Pedido p = pedidoCon(producto("Cable", BigDecimal.ZERO, "10"), precios[i], 1);
@@ -285,10 +281,9 @@ class XmlFacturaBuilderTest {
         }
         String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedidos);
         assertThat(cuenta(xml, "<MedioPago>")).isEqualTo(4);
-        assertThat(xml).contains("<TotalComprobante>15000</TotalComprobante>",
-            "<TotalMedioPago>5000</TotalMedioPago>", "<TotalMedioPago>4000</TotalMedioPago>",
-            "<TotalMedioPago>3000</TotalMedioPago>", "<TotalMedioPago>3000</TotalMedioPago>",
-            "<MedioPagoOtros>Otros medios de pago</MedioPagoOtros>");
+        assertThat(xml).contains("<TotalComprobante>14000</TotalComprobante>",
+            "<TotalMedioPago>5000</TotalMedioPago>", "<TotalMedioPago>2000</TotalMedioPago>")
+            .doesNotContain("<MedioPagoOtros>");
         validarOficial(xml, true);
     }
 

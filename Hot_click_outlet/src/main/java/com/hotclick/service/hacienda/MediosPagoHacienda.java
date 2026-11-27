@@ -14,7 +14,8 @@ import java.util.Map;
  * Medio de pago del comprobante Hacienda 4.4 (TipoMedioPago, MedioPagoOtros, TotalMedioPago).
  * Códigos verificados contra el XSD v4.4 del repo: 01 efectivo, 02 tarjeta, 03 cheque, 04 transferencia,
  * 05 recaudado por terceros, 06 SINPE Móvil, 07 plataforma digital, 99 otros (exige MedioPagoOtros, 3 a 100 caracteres).
- * El esquema admite como máximo 4 MedioPago.
+ * HotClick solo cobra con ONVO (tarjeta o SINPE Móvil) y, en el POS, efectivo o transferencia: como mucho 4 códigos,
+ * el máximo de MedioPago que admite el esquema.
  */
 public final class MediosPagoHacienda {
 
@@ -24,14 +25,8 @@ public final class MediosPagoHacienda {
     public static final String TARJETA = "02";
     public static final String TRANSFERENCIA = "04";
     public static final String SINPE_MOVIL = "06";
-    public static final String PLATAFORMA_DIGITAL = "07";
-    public static final String OTROS = "99";
-    public static final int MAX_MEDIOS = 4;
 
-    static final String DESCRIPCION_GIFT_CARD = "Gift card HotClick";
-    static final String DESCRIPCION_AGRUPADO = "Otros medios de pago";
-
-    /** Un MedioPago del XML. {@code otros} solo se llena para el código 99. */
+    /** Un MedioPago del XML. {@code otros} queda para el código 99, que HotClick no usa hoy. */
     public record Medio(String codigo, String otros, long monto) { }
 
     private MediosPagoHacienda() { }
@@ -41,20 +36,17 @@ public final class MediosPagoHacienda {
         if (metodo == null || metodo.isBlank()) return null;
         return switch (metodo.trim().toUpperCase(Locale.ROOT)) {
             case "EFECTIVO", "CASH" -> EFECTIVO;
-            case "TARJETA", "ONVO", "STRIPE", "CARD" -> TARJETA;
+            case "TARJETA", "ONVO", "CARD" -> TARJETA;
             case "TRANSFERENCIA", "DEPOSITO" -> TRANSFERENCIA;
             case "SINPE", "SINPE_MOVIL" -> SINPE_MOVIL;
-            case "PAYPAL" -> PLATAFORMA_DIGITAL;
-            case "GIFT_CARD" -> OTROS;
             default -> null;
         };
     }
 
     /**
      * Arma los MedioPago de una compra (uno o varios paquetes) cuya suma es exactamente {@code total}.
-     * Cada paquete aporta su método (y su gift card como 99); el total se reparte entre paquetes en proporción a
-     * {@code totalPedido}. Método desconocido: 01 y warning sin datos personales. Más de 4 medios: se conservan los
-     * 3 de mayor monto y el resto se agrupa en 99 "Otros medios de pago".
+     * Cada paquete aporta su método; el total se reparte entre paquetes en proporción a {@code totalPedido}.
+     * Método desconocido: 01 y warning sin datos personales. Salen ordenados de mayor a menor monto.
      */
     public static List<Medio> de(List<Pedido> pedidos, long total) {
         if (pedidos == null || pedidos.isEmpty() || total <= 0) {
@@ -77,11 +69,7 @@ public final class MediosPagoHacienda {
             }
             parte = Math.max(0, Math.min(parte, total - asignado));
             asignado += parte;
-
-            long gc = p.getGiftCardMonto() == null ? 0 : Math.min(Math.max(p.getGiftCardMonto(), 0), parte);
-            if (gc > 0) porCodigo.merge(OTROS, gc, Long::sum);
-            long resto = parte - gc;
-            if (resto > 0) porCodigo.merge(codigoPedido(p), resto, Long::sum);
+            if (parte > 0) porCodigo.merge(codigoPedido(p), parte, Long::sum);
         }
         if (porCodigo.isEmpty()) {
             return List.of(new Medio(EFECTIVO, null, total));
@@ -91,29 +79,10 @@ public final class MediosPagoHacienda {
 
     private static List<Medio> agrupar(Map<String, Long> porCodigo) {
         List<Map.Entry<String, Long>> orden = new ArrayList<>(porCodigo.entrySet());
-        orden.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+        orden.sort((x, y) -> Long.compare(y.getValue(), x.getValue()));
         List<Medio> out = new ArrayList<>();
-        if (orden.size() <= MAX_MEDIOS) {
-            for (var e : orden) out.add(medio(e.getKey(), e.getValue()));
-            return out;
-        }
-        long agrupado = porCodigo.getOrDefault(OTROS, 0L);
-        int conservados = 0;
-        for (var e : orden) {
-            if (OTROS.equals(e.getKey())) continue;
-            if (conservados < MAX_MEDIOS - 1) {
-                out.add(new Medio(e.getKey(), null, e.getValue()));
-                conservados++;
-            } else {
-                agrupado += e.getValue();
-            }
-        }
-        out.add(new Medio(OTROS, DESCRIPCION_AGRUPADO, agrupado));
+        for (var e : orden) out.add(new Medio(e.getKey(), null, e.getValue()));
         return out;
-    }
-
-    private static Medio medio(String codigo, long monto) {
-        return OTROS.equals(codigo) ? new Medio(OTROS, DESCRIPCION_GIFT_CARD, monto) : new Medio(codigo, null, monto);
     }
 
     private static String codigoPedido(Pedido p) {
