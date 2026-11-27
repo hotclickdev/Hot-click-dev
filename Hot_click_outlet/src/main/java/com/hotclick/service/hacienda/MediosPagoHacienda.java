@@ -41,7 +41,7 @@ public final class MediosPagoHacienda {
         if (metodo == null || metodo.isBlank()) return null;
         return switch (metodo.trim().toUpperCase(Locale.ROOT)) {
             case "EFECTIVO", "CASH" -> EFECTIVO;
-            case "TARJETA", "ONVO", "STRIPE", "TILOPAY", "CARD" -> TARJETA;
+            case "TARJETA", "ONVO", "STRIPE", "CARD" -> TARJETA;
             case "TRANSFERENCIA", "DEPOSITO" -> TRANSFERENCIA;
             case "SINPE", "SINPE_MOVIL" -> SINPE_MOVIL;
             case "PAYPAL" -> PLATAFORMA_DIGITAL;
