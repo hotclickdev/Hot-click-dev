@@ -29,11 +29,14 @@ public class AdminBillingService {
     private final SuscripcionRepository suscripcionRepo;
     private final FacturaSaasRepository facturaRepo;
     private final BillingLedgerRepository ledgerRepo;
+    private final com.hotclick.service.fiscal.ComisionEfectivaService comisionEfectiva;
 
     public AdminBillingService(EmpresaRepository empresaRepo,
                                SuscripcionRepository suscripcionRepo,
                                FacturaSaasRepository facturaRepo,
-                               BillingLedgerRepository ledgerRepo) {
+                               BillingLedgerRepository ledgerRepo,
+                               com.hotclick.service.fiscal.ComisionEfectivaService comisionEfectiva) {
+        this.comisionEfectiva = comisionEfectiva;
         this.empresaRepo = empresaRepo;
         this.suscripcionRepo = suscripcionRepo;
         this.facturaRepo = facturaRepo;
@@ -82,7 +85,13 @@ public class AdminBillingService {
             + ledgerRepo.countByEmpresaIdAndTipo(empresaId, BillingLedger.TIPO_COBRO_FALLIDO);
 
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("empresa", AdminBillingMapper.filaLista(e, sub, fallos));
+        Map<String, Object> fila = AdminBillingMapper.filaLista(e, sub, fallos);
+        // Fase 1 base fiscal: la ficha muestra la comisión efectiva (plan + extra si NO_INSCRITO).
+        var desglose = comisionEfectiva.desglose((java.math.BigDecimal) fila.get("comisionPorcentaje"), e.getSituacionFiscal());
+        fila.put("situacionFiscal", e.getSituacionFiscal());
+        fila.put("comisionExtraPct", desglose.extraPct());
+        fila.put("comisionEfectivaPct", desglose.efectivaPct());
+        out.put("empresa", fila);
         out.put("suscripcion", AdminBillingMapper.detalleSuscripcion(sub));
         out.put("facturas", facturaRepo
             .findByEmpresaIdOrderByFechaCreacionDesc(empresaId, PageRequest.of(0, FACTURAS_PAGE))

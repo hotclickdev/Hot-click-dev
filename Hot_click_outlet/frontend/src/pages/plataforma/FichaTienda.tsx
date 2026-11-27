@@ -312,6 +312,11 @@ function Membresia({ id }: { id: string }) {
       <p className="text-sm">Vence {texto(fila.fechaVencPlan, 'sin fecha')}</p>
       <p className="text-sm">Cobros fallidos {texto(fila.fallosCobro, '0')}</p>
       <p className="text-sm">Mensualidad {colones(fila.precioMensual)} · comisión {texto(fila.comisionPorcentaje, '—')}%</p>
+      <p className="text-sm">
+        Comisión efectiva {texto(fila.comisionEfectivaPct, texto(fila.comisionPorcentaje, '—'))}%
+        {Number(fila.comisionExtraPct) > 0 ? ` (incluye ${texto(fila.comisionExtraPct, '0')}% extra por no estar inscrito)` : ''}
+      </p>
+      <p className="text-sm">Situación fiscal {texto(fila.situacionFiscal, 'sin declarar')}</p>
     </section>
   )
 }

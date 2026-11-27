@@ -7,21 +7,22 @@ import { Aviso, Carga, Chip, Encabezado, MarcoIcono, Segmento, TARJETA } from '.
 import { formatPrice } from '@/utils/format'
 import useAuthStore from '@/store/authStore'
 import EnviosReglas from './EnviosReglas'
+import FiscalReglas from './FiscalReglas'
 
 type CargaEstado = 'carga' | 'listo' | 'error'
 
 export default function ReglasPlataforma() {
-  type Vista = 'planes' | 'accesos' | 'tecnico' | 'envios'
+  type Vista = 'planes' | 'accesos' | 'tecnico' | 'envios' | 'fiscal'
   const [vista, setVista] = useState<Vista>('planes')
   // A-2: los montos de envío los edita solo ADMIN (el backend también lo exige).
   const esAdmin = useAuthStore((s) => s.userRole) === 'ADMIN'
   return (
     <div className="flex flex-col gap-4">
-      <Encabezado titulo="Reglas" detalle="Planes, operadores, interruptores y envíos." />
+      <Encabezado titulo="Reglas" detalle="Planes, operadores, interruptores, envíos y reglas fiscales." />
       <Segmento
         opciones={[
           { id: 'planes', label: 'Planes' }, { id: 'accesos', label: 'Accesos' }, { id: 'tecnico', label: 'Técnico' },
-          ...(esAdmin ? [{ id: 'envios', label: 'Envíos' }] : []),
+          ...(esAdmin ? [{ id: 'envios', label: 'Envíos' }, { id: 'fiscal', label: 'Fiscal' }] : []),
         ]}
         valor={vista}
         onChange={(id) => setVista(id as Vista)}
@@ -30,6 +31,7 @@ export default function ReglasPlataforma() {
       {vista === 'accesos' && <Accesos />}
       {vista === 'tecnico' && <Tecnico />}
       {vista === 'envios' && esAdmin && <EnviosReglas />}
+      {vista === 'fiscal' && esAdmin && <FiscalReglas />}
       <p className="text-xs text-hc-n-600">La comisión del plan se lee aquí. Dinero no la edita.</p>
     </div>
   )

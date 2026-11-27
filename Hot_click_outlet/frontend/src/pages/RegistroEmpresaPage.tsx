@@ -33,7 +33,7 @@ import {
 
 const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
-  'Solo el nombre: el resto lo completás después.',
+  'Nombre del negocio y tu situación ante Hacienda; el resto lo completás después.',
   'Con estos datos iniciás sesión en el panel.',
 ]
 const STEP_LABELS = ['Tu empresa', 'Tu cuenta']
@@ -89,7 +89,7 @@ export default function RegistroEmpresaPage() {
   const [form, setForm] = useState<RegistroEmpresaForm>({
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
-    inscritoTributacion: false,
+    situacionFiscal: '',
   })
   const ubicacion = useUbicacionDespachoForm()
 
@@ -105,6 +105,10 @@ export default function RegistroEmpresaPage() {
     setError('')
     if (!form.nombreEmpresa.trim()) {
       setError('El nombre del negocio es requerido')
+      return
+    }
+    if (!form.situacionFiscal) {
+      setError('Contanos si estás inscrito en Hacienda')
       return
     }
     // Registro corto: la ubicación es opcional acá; si empezó a llenarla, tiene que quedar completa.
@@ -147,7 +151,7 @@ export default function RegistroEmpresaPage() {
         correoAdmin:          form.correoAdmin.trim().toLowerCase(),
         passwordAdmin:        form.passwordAdmin,
         telefonoAdmin:        telefonoOpcional(form.telefonoAdmin),
-        inscritoTributacion:  form.inscritoTributacion,
+        situacionFiscal:      form.situacionFiscal,
         ...(ubicacionIniciada(ubicacion.ubicacion) ? payloadUbicacionRegistro(ubicacion.ubicacion) : {}),
         declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
@@ -266,7 +270,7 @@ export default function RegistroEmpresaPage() {
                       error={error}
                       onCampo={actualizarCampo}
                       onTelefono={(val) => setForm((p) => ({ ...p, telefonoEmpresa: val }))}
-                      onInscritoTributacionChange={(v) => setForm((p) => ({ ...p, inscritoTributacion: v }))}
+                      onSituacionFiscalChange={(v) => setForm((p) => ({ ...p, situacionFiscal: v }))}
                       onSubmit={handleNext}
                     />
                   )}

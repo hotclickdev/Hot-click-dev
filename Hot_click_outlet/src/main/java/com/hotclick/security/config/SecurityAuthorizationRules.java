@@ -212,6 +212,10 @@ final class SecurityAuthorizationRules {
             .requestMatchers(PUT,  "/api/empresa/perfil").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(PUT,  "/api/empresa/perfil/visibilidad").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(PUT,  "/api/empresa/perfil/fiscal").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            // Situación fiscal y comisión efectiva del negocio (empresa siempre de la sesión; escritura del propietario)
+            .requestMatchers(GET,  "/api/empresa/fiscal").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(PUT,  "/api/empresa/fiscal/situacion").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            .requestMatchers(POST, "/api/empresa/fiscal/inscripcion").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(PUT, "/api/empresa/perfil/pin-cert").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
@@ -237,6 +241,8 @@ final class SecurityAuthorizationRules {
             // Billing de plataforma — ADMIN only (distinto de /api/billing self-serve)
             .requestMatchers("/api/admin/billing/**").hasRole(Constants.ROL_ADMIN)
             .requestMatchers("/api/admin/consola/**").hasRole(Constants.ROL_ADMIN)
+            // Base fiscal: reglas fiscales de la plataforma — ADMIN only
+            .requestMatchers("/api/admin/configuracion/fiscal").hasRole(Constants.ROL_ADMIN)
             // Staff por permiso global.* (ADMIN tiene todos; SUPPORT/FINANCE/TRUST el suyo)
             .requestMatchers("/api/admin/empresas/**").hasAnyAuthority(
                 "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_COMPANIES)

@@ -42,9 +42,9 @@ describe('registro Pyme: opcional y errores legibles', () => {
     expect(telefonoOpcional('+50600000002')).toBe('+50600000002')
     expect(errorRegistroLegible('telefonoAdmin: formato inválido')).toBe('Teléfono personal: formato inválido')
   })
-  it('ATV no viene premarcado', async () => {
+  it('la situación fiscal no viene premarcada', async () => {
     const { readFileSync } = await import('node:fs')
     const src = readFileSync(new URL('../RegistroEmpresaPage.tsx', import.meta.url), 'utf8')
-    expect(src).toContain('inscritoTributacion: false')
+    expect(src).toContain("situacionFiscal: ''")
   })
 })

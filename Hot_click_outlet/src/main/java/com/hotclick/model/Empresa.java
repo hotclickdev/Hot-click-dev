@@ -138,6 +138,28 @@ public class Empresa {
     @Column(name = "ambiente_hacienda", length = 4)
     private String ambienteHacienda = "STAG";
 
+    // ── Situación fiscal del negocio (Fase 1 base fiscal, V244) ───────────────
+    // Separada de la configuración de emisión de arriba: define la comisión efectiva del marketplace.
+
+    /** INSCRITO | REGIMEN_SIMPLIFICADO | NO_INSCRITO; null = sin declarar. */
+    @Column(name = "situacion_fiscal", length = 25)
+    private String situacionFiscal;
+
+    @Column(name = "cedula_fiscal", length = 12)
+    private String cedulaFiscal;
+
+    @Column(name = "nombre_fiscal", length = 150)
+    private String nombreFiscal;
+
+    @Column(name = "actividad_fiscal", length = 150)
+    private String actividadFiscal;
+
+    @Column(name = "correo_facturacion", length = 150)
+    private String correoFacturacion;
+
+    @Column(name = "fecha_situacion_fiscal")
+    private LocalDateTime fechaSituacionFiscal;
+
     // ── Billing Stripe (F14) ─────────────────────────────────────────────────
 
     @Column(name = "stripe_customer_id", length = 100)
@@ -381,6 +403,19 @@ public class Empresa {
 
     public String getAmbienteHacienda() { return ambienteHacienda != null ? ambienteHacienda : "STAG"; }
     public void setAmbienteHacienda(String v) { this.ambienteHacienda = v; }
+
+    public String getSituacionFiscal() { return situacionFiscal; }
+    public void setSituacionFiscal(String v) { this.situacionFiscal = v; }
+    public String getCedulaFiscal() { return cedulaFiscal; }
+    public void setCedulaFiscal(String v) { this.cedulaFiscal = v; }
+    public String getNombreFiscal() { return nombreFiscal; }
+    public void setNombreFiscal(String v) { this.nombreFiscal = v; }
+    public String getActividadFiscal() { return actividadFiscal; }
+    public void setActividadFiscal(String v) { this.actividadFiscal = v; }
+    public String getCorreoFacturacion() { return correoFacturacion; }
+    public void setCorreoFacturacion(String v) { this.correoFacturacion = v; }
+    public LocalDateTime getFechaSituacionFiscal() { return fechaSituacionFiscal; }
+    public void setFechaSituacionFiscal(LocalDateTime v) { this.fechaSituacionFiscal = v; }
 
     public boolean isConfiguracionFiscalCompleta() {
         return cedulaJuridica != null && !cedulaJuridica.isBlank()

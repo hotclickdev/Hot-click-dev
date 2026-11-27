@@ -86,6 +86,11 @@ public class EmprendedorRegistroService {
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmpresa);
         empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());
+        var situacionFiscal = com.hotclick.service.fiscal.SituacionFiscal.desde(dto.getSituacionFiscal());
+        if (situacionFiscal.isPresent()) {
+            empresa.setSituacionFiscal(situacionFiscal.get().name());
+            empresa.setFechaSituacionFiscal(LocalDateTime.now(Constants.ZONA_CR));
+        }
         ResultadoAltaCupo alta = cupoEmprendedorService.aplicarAlta(empresa, correoEmpresa);
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setVisibilidadPublica(false);
