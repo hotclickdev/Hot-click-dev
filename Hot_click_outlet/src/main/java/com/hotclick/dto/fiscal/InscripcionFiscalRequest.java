@@ -1,5 +1,6 @@
 package com.hotclick.dto.fiscal;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -10,4 +11,4 @@ public record InscripcionFiscalRequest(
     @NotBlank @Size(max = 20) String cedula,
     @NotBlank @Size(min = 2, max = 150) String nombre,
     @NotBlank @Size(min = 2, max = 150) String actividad,
-    @NotBlank @Size(max = 150) String correo) {}
+    @NotBlank @Email(message = "El correo para facturas no es válido") @Size(max = 150) String correo) {}

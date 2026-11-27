@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { correoValido, formatoPct, leerEstadoFiscal, normalizarCedula, tipoCedula } from './fiscal'
+import { correoValido, formatoPct, leerEstadoFiscal, mensajePendiente, normalizarCedula, selloVerifAuto, tipoCedula } from './fiscal'
 
 describe('cédula fiscal', () => {
   it('acepta 9, 10, 11 y 12 dígitos con o sin guiones', () => {
@@ -33,7 +33,28 @@ describe('correo y porcentaje', () => {
   })
 })
 
+describe('mensajes de verificación', () => {
+  it('el vendedor ve un mensaje distinto según la comprobación con Hacienda', () => {
+    expect(mensajePendiente('COINCIDE')).toContain('coinciden con Hacienda; HotClick los confirma pronto')
+    expect(mensajePendiente('NO_COINCIDE')).toContain('no coinciden con Hacienda: revisá cédula o nombre')
+    expect(mensajePendiente('NO_ENCONTRADO')).toContain('revisá cédula o nombre')
+    expect(mensajePendiente('ERROR_CONSULTA')).toContain('Pendiente de verificación')
+    expect(mensajePendiente(null)).toContain('el extra se quita cuando HotClick lo confirme')
+  })
+  it('el sello del ADMIN nombra los campos que no coinciden', () => {
+    expect(selloVerifAuto('COINCIDE', [])).toEqual({ texto: 'Coincide con Hacienda', tono: 'ok' })
+    expect(selloVerifAuto('NO_COINCIDE', ['nombre', 'regimen']).texto).toBe('No coincide: nombre, régimen')
+    expect(selloVerifAuto('ERROR_CONSULTA', undefined).tono).toBe('neutro')
+    expect(selloVerifAuto(null, undefined).texto).toContain('No se pudo consultar')
+  })
+})
+
 describe('leerEstadoFiscal', () => {
+  it('lee verificación y pendiente', () => {
+    const e = leerEstadoFiscal({ situacionFiscal: 'INSCRITO', fiscalVerificado: false, pendienteVerificacion: true, tieneDatosFiscales: true, verifAuto: 'COINCIDE' })
+    expect(e).toMatchObject({ verificado: false, pendiente: true, tieneDatos: true, verifAuto: 'COINCIDE' })
+    expect(leerEstadoFiscal({ verifAuto: 'raro' }).verifAuto).toBeNull()
+  })
   it('lee la respuesta con y sin sobre', () => {
     const d = { situacionFiscal: 'NO_INSCRITO', comisionPlanPct: 9, comisionExtraPct: 14, comisionEfectivaPct: 23, diasEnviarFactura: 7 }
     expect(leerEstadoFiscal(d).comisionEfectivaPct).toBe(23)

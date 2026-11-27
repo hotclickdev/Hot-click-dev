@@ -87,7 +87,7 @@ public class AdminBillingService {
         Map<String, Object> out = new LinkedHashMap<>();
         Map<String, Object> fila = AdminBillingMapper.filaLista(e, sub, fallos);
         // Fase 1 base fiscal: la ficha muestra la comisión efectiva (plan + extra si NO_INSCRITO).
-        var desglose = comisionEfectiva.desglose((java.math.BigDecimal) fila.get("comisionPorcentaje"), e.getSituacionFiscal());
+        var desglose = comisionEfectiva.desglose((java.math.BigDecimal) fila.get("comisionPorcentaje"), e.getSituacionFiscal(), e.isFiscalVerificado());
         fila.put("situacionFiscal", e.getSituacionFiscal());
         fila.put("comisionExtraPct", desglose.extraPct());
         fila.put("comisionEfectivaPct", desglose.efectivaPct());

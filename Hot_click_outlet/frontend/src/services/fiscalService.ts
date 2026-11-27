@@ -25,4 +25,10 @@ export const fiscalService = {
   /** Solo ADMIN. */
   getReglas: () => api.get('/admin/configuracion/fiscal'),
   putReglas: (reglas: ReglasFiscales) => api.put('/admin/configuracion/fiscal', reglas),
+  /** Solo ADMIN: verificación de la inscripción de un negocio. */
+  pendientes: () => api.get('/admin/empresas/fiscal/pendientes'),
+  detalleAdmin: (empresaId: string | number) => api.get(`/admin/empresas/${empresaId}/fiscal`),
+  reconsultar: (empresaId: string | number) => api.post(`/admin/empresas/${empresaId}/fiscal/reconsultar`),
+  verificar: (empresaId: string | number, decision: 'APROBAR' | 'RECHAZAR', motivo?: string) =>
+    api.post(`/admin/empresas/${empresaId}/fiscal/verificar`, { decision, motivo: motivo || undefined }),
 }

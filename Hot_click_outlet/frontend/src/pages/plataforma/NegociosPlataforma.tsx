@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { adminService } from '@/services/orderService'
-import { filtrarNegocios, idSeguro, texto } from './normalizar'
+import { fiscalService } from '@/services/fiscalService'
+import useAuthStore from '@/store/authStore'
+import { filtrarNegocios, idSeguro, texto, type Fila } from './normalizar'
 import { FichaTienda } from './FichaTienda'
 import TiendaRapidaPanel from './TiendaRapidaPanel'
 import { Aviso, BOTON_PRIMARIO, Carga, Chip, Encabezado, MarcoIcono, Segmento, TARJETA } from './piezas'
@@ -54,14 +56,34 @@ function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: nu
   const [filtro, setFiltro] = useState('todos')
   const [filtroDestacado, setFiltroDestacado] = useState('todos')
   const consulta = params.get('q') ?? ''
+  // Base fiscal: negocios con inscripción por verificar (solo ADMIN); los que Hacienda confirmó van primero.
+  const esAdmin = useAuthStore((s) => s.userRole) === 'ADMIN'
+  const [soloFiscal, setSoloFiscal] = useState(false)
+  const [fiscalPend, setFiscalPend] = useState<Map<string, string | null>>(new Map())
   const { filas, estado, mensaje, recargar } = useCola('negocios', () => adminService.getEmpresas())
   useEffect(() => {
     if (marca === 0) return
     recargar({ silencio: true })
   }, [marca, recargar])
+  useEffect(() => {
+    if (!esAdmin) return
+    fiscalService.pendientes()
+      .then(({ data }) => {
+        const lista = Array.isArray(data) ? data : Array.isArray((data as { data?: unknown })?.data) ? (data as { data: unknown[] }).data : []
+        const mapa = new Map<string, string | null>()
+        for (const f of lista as Array<Record<string, unknown>>) mapa.set(String(f.empresaId), typeof f.verifAuto === 'string' ? f.verifAuto : null)
+        setFiscalPend(mapa)
+      })
+      .catch((err: unknown) => console.error(err))
+  }, [esAdmin, marca])
   const porEstado = useMemo(() => filtrarNegocios(filas, filtro, consulta), [filas, filtro, consulta])
   const conteo = useMemo(() => contarDestacados(porEstado), [porEstado])
-  const visibles = useMemo(() => filtrarPorDestacado(porEstado, filtroDestacado), [porEstado, filtroDestacado])
+  const visibles = useMemo(() => {
+    const base = filtrarPorDestacado(porEstado, filtroDestacado)
+    if (!soloFiscal) return base
+    const orden = (f: Fila) => (fiscalPend.get(idSeguro(f) ?? '') === 'COINCIDE' ? 0 : 1)
+    return base.filter((f) => fiscalPend.has(idSeguro(f) ?? '')).sort((a, b) => orden(a) - orden(b))
+  }, [porEstado, filtroDestacado, soloFiscal, fiscalPend])
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,6 +98,12 @@ function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: nu
           </button>
         ))}
       </div>
+      {esAdmin && (
+        <button type="button" aria-pressed={soloFiscal} onClick={() => setSoloFiscal((v) => !v)}
+          className={`inline-flex min-h-11 items-center self-start rounded-full border px-3 text-[13px] font-semibold ${soloFiscal ? 'border-hc-blue-600 bg-hc-blue-600 text-white' : 'border-hc-n-200 bg-hc-surface text-hc-n-900'}`}>
+          Fiscal por verificar · {fiscalPend.size}
+        </button>
+      )}
       {estado === 'carga' && <Carga />}
       {estado === 'error' && <Aviso>{mensaje}</Aviso>}
       {estado === 'listo' && visibles.length === 0 && <Aviso>Nada en este filtro.</Aviso>}
@@ -94,6 +122,7 @@ function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: nu
                     <Chip tono="azul">{texto(fila.plan, texto(fila.planSaas, 'Sin plan'))}</Chip>
                     <Chip tono={texto(fila.estadoEmpresa).toUpperCase() === 'ACTIVO' ? 'ok' : 'alerta'}>{etiquetaEstado(texto(fila.estadoEmpresa, '—'))}</Chip>
                     <Chip>{fila.visibilidadPublica === true ? 'Catálogo visible' : 'Catálogo oculto'}</Chip>
+                    {fiscalPend.has(negocioId) && <Chip tono={fiscalPend.get(negocioId) === 'COINCIDE' ? 'ok' : 'alerta'}>{fiscalPend.get(negocioId) === 'COINCIDE' ? 'Fiscal: coincide' : 'Fiscal por verificar'}</Chip>}
                     {fila.destacado === true && <Chip tono="azul">{ETIQUETA_DESTACADO}</Chip>}
                     {fila.destacado === true && textoOrden(fila) && <Chip>{`Orden ${textoOrden(fila)}`}</Chip>}
                   </span>

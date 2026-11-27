@@ -8,12 +8,50 @@ export const SITUACIONES: ReadonlyArray<{ id: SituacionFiscal; etiqueta: string;
   { id: 'NO_INSCRITO', etiqueta: 'No, todavía no', detalle: 'Pagás un extra de comisión hasta inscribirte.' },
 ]
 
+export type VerifAuto = 'COINCIDE' | 'NO_COINCIDE' | 'NO_ENCONTRADO' | 'ERROR_CONSULTA'
+
 export type EstadoFiscal = {
   situacionFiscal: SituacionFiscal | null
+  /** Un ADMIN confirmó la inscripción: recién ahí se quita el extra. */
+  verificado: boolean
+  /** Declaró una inscripción con datos y falta que un ADMIN la confirme. */
+  pendiente: boolean
+  tieneDatos: boolean
+  /** Resultado de comparar con Hacienda; el vendedor solo ve el estado, nunca lo que respondió Hacienda. */
+  verifAuto: VerifAuto | null
   comisionPlanPct: number
   comisionExtraPct: number
   comisionEfectivaPct: number
   diasEnviarFactura: number
+}
+
+export function esVerifAuto(valor: unknown): valor is VerifAuto {
+  return valor === 'COINCIDE' || valor === 'NO_COINCIDE' || valor === 'NO_ENCONTRADO' || valor === 'ERROR_CONSULTA'
+}
+
+export const MENSAJE_SIN_DECLARAR = 'Sin declarar: se cobra el extra hasta que declares.'
+
+/** Mensaje al vendedor con una inscripción pendiente de verificar, según lo que dijo la comprobación automática. */
+export function mensajePendiente(verifAuto: VerifAuto | null): string {
+  if (verifAuto === 'COINCIDE') return 'Recibimos tus datos y coinciden con Hacienda; HotClick los confirma pronto. El extra se quita cuando lo confirme.'
+  if (verifAuto === 'NO_COINCIDE' || verifAuto === 'NO_ENCONTRADO') {
+    return 'Tus datos no coinciden con Hacienda: revisá cédula o nombre. Podés volver a enviarlos.'
+  }
+  return 'Pendiente de verificación: el extra se quita cuando HotClick lo confirme.'
+}
+
+const CAMPOS: Record<string, string> = {
+  cedula: 'cédula', situacion: 'situación', regimen: 'régimen', nombre: 'nombre', actividad: 'actividad',
+}
+
+/** Sello para el ADMIN: coincide, no coincide (qué campo) o no se pudo consultar. */
+export function selloVerifAuto(verifAuto: VerifAuto | null, diferencias: unknown): { texto: string; tono: 'ok' | 'alerta' | 'neutro' } {
+  if (verifAuto === 'COINCIDE') return { texto: 'Coincide con Hacienda', tono: 'ok' }
+  if (verifAuto === 'NO_COINCIDE' || verifAuto === 'NO_ENCONTRADO') {
+    const lista = Array.isArray(diferencias) ? diferencias.map((d) => CAMPOS[String(d)] ?? String(d)) : []
+    return { texto: `No coincide${lista.length ? `: ${lista.join(', ')}` : ''}`, tono: 'alerta' }
+  }
+  return { texto: 'No se pudo consultar a Hacienda', tono: 'neutro' }
 }
 
 export function esSituacion(valor: unknown): valor is SituacionFiscal {
@@ -60,6 +98,10 @@ export function leerEstadoFiscal(raw: unknown): EstadoFiscal {
   const o = base.data && typeof base.data === 'object' ? (base.data as Record<string, unknown>) : base
   return {
     situacionFiscal: esSituacion(o.situacionFiscal) ? o.situacionFiscal : null,
+    verificado: o.fiscalVerificado === true,
+    pendiente: o.pendienteVerificacion === true,
+    tieneDatos: o.tieneDatosFiscales === true,
+    verifAuto: esVerifAuto(o.verifAuto) ? o.verifAuto : null,
     comisionPlanPct: num(o.comisionPlanPct),
     comisionExtraPct: num(o.comisionExtraPct),
     comisionEfectivaPct: num(o.comisionEfectivaPct),

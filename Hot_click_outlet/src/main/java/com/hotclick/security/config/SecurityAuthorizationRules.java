@@ -243,6 +243,12 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/consola/**").hasRole(Constants.ROL_ADMIN)
             // Base fiscal: reglas fiscales de la plataforma — ADMIN only
             .requestMatchers("/api/admin/configuracion/fiscal").hasRole(Constants.ROL_ADMIN)
+            // Base fiscal: verificación de la inscripción en Hacienda — solo ADMIN (el staff con global.companies no)
+            .requestMatchers("/api/admin/empresas/fiscal/pendientes").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers("/api/admin/empresas/*/fiscal").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers(POST, "/api/admin/empresas/*/fiscal/verificar").hasRole(Constants.ROL_ADMIN)
+            .requestMatchers(POST, "/api/admin/empresas/*/fiscal/reconsultar").hasRole(Constants.ROL_ADMIN)
+
             // Staff por permiso global.* (ADMIN tiene todos; SUPPORT/FINANCE/TRUST el suyo)
             .requestMatchers("/api/admin/empresas/**").hasAnyAuthority(
                 "ROLE_" + Constants.ROL_ADMIN, Constants.PERM_GLOBAL_COMPANIES)

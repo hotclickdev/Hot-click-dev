@@ -5,6 +5,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Plan;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.CompanyScope;
+import com.hotclick.security.RateLimiter;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.fiscal.EmpresaFiscalService.Inscripcion;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -29,6 +32,8 @@ class EmpresaFiscalServiceTest {
     private AuditoriaAdminRegistroService auditoria;
     private EmpresaFiscalService svc;
     private Empresa empresa;
+    private FiscalVerificacionAuto auto;
+    private RateLimiter rateLimiter;
 
     @BeforeEach
     void setUp() {
@@ -37,7 +42,12 @@ class EmpresaFiscalServiceTest {
         auditoria = mock(AuditoriaAdminRegistroService.class);
         ConfiguracionFiscalService config = mock(ConfiguracionFiscalService.class);
         when(config.reglas()).thenReturn(ConfiguracionFiscalService.DEFAULTS);
-        svc = new EmpresaFiscalService(repo, scope, new ComisionEfectivaService(config), config, auditoria);
+        auto = mock(FiscalVerificacionAuto.class);
+        rateLimiter = mock(RateLimiter.class);
+        when(rateLimiter.tryAcquireEstricto(anyString(), anyInt(), anyInt())).thenReturn(true);
+        when(auto.comprobar(any(), any(), any(), any()))
+            .thenReturn(new FiscalVerificacionAuto.Resultado(FiscalVerificacionAuto.COINCIDE, "{}"));
+        svc = new EmpresaFiscalService(repo, scope, new ComisionEfectivaService(config), config, auditoria, auto, rateLimiter);
         Plan plan = new Plan();
         plan.setComisionPorcentaje(new BigDecimal("9"));
         empresa = new Empresa();
@@ -56,7 +66,7 @@ class EmpresaFiscalServiceTest {
     }
 
     @Test
-    @DisplayName("Inscripción válida: guarda datos, pasa a INSCRITO y la comisión vuelve a la del plan")
+    @DisplayName("Inscripción válida: guarda datos, queda pendiente de verificar y el extra sigue")
     void inscripcionOk() {
         assertThat((BigDecimal) svc.obtener(5L).get("comisionEfectivaPct")).isEqualByComparingTo("23.00");
         Map<String, Object> r = svc.registrarInscripcion(5L, datos("3-101-123456"));
@@ -64,9 +74,63 @@ class EmpresaFiscalServiceTest {
         assertThat(empresa.getCedulaFiscal()).isEqualTo("3101123456");
         assertThat(empresa.getCorreoFacturacion()).isEqualTo("facturas@negocio.cr");
         assertThat(empresa.getFechaSituacionFiscal()).isNotNull();
-        assertThat((BigDecimal) r.get("comisionEfectivaPct")).isEqualByComparingTo("9.00");
+        assertThat((BigDecimal) r.get("comisionEfectivaPct")).isEqualByComparingTo("23.00");
+        assertThat(r.get("pendienteVerificacion")).isEqualTo(true);
+        assertThat(empresa.isFiscalVerificado()).isFalse();
         verify(repo).save(empresa);
         verify(auditoria).registrar(eq("FISCAL_INSCRIPCION"), eq("EMPRESA"), eq(5L), eq(5L), eq("INSCRITO"));
+    }
+
+    @Test
+    @DisplayName("Coincide con Hacienda: queda guardado, pero el extra sigue hasta que un ADMIN apruebe")
+    void coincideNoQuitaElExtra() {
+        Map<String, Object> r = svc.registrarInscripcion(5L, datos("3101123456"));
+        assertThat(empresa.getFiscalVerifAuto()).isEqualTo("COINCIDE");
+        assertThat(empresa.getFiscalVerifAutoFecha()).isNotNull();
+        assertThat(r.get("verifAuto")).isEqualTo("COINCIDE");
+        assertThat((BigDecimal) r.get("comisionEfectivaPct")).isEqualByComparingTo("23.00");
+    }
+
+    @Test
+    @DisplayName("No coincide, no encontrado o error de la API: se guarda el resultado y el envío no se bloquea")
+    void resultadosNoBloquean() {
+        for (String estado : new String[] {"NO_COINCIDE", "NO_ENCONTRADO", "ERROR_CONSULTA"}) {
+            when(auto.comprobar(any(), any(), any(), any())).thenReturn(new FiscalVerificacionAuto.Resultado(estado, "{}"));
+            svc.registrarInscripcion(5L, datos("3101123456"));
+            assertThat(empresa.getFiscalVerifAuto()).isEqualTo(estado);
+            assertThat(empresa.getSituacionFiscal()).isEqualTo("INSCRITO");
+            assertThat(empresa.getCedulaFiscal()).isEqualTo("3101123456");
+        }
+    }
+
+    @Test
+    @DisplayName("El vendedor no recibe lo que respondió Hacienda, solo el estado")
+    void vendedorSinDatosDeHacienda() {
+        when(auto.comprobar(any(), any(), any(), any()))
+            .thenReturn(new FiscalVerificacionAuto.Resultado("NO_COINCIDE", "{\"nombre\":\"OTRA PERSONA\"}"));
+        Map<String, Object> r = svc.registrarInscripcion(5L, datos("3101123456"));
+        assertThat(r.toString()).doesNotContain("OTRA PERSONA");
+        assertThat(r).doesNotContainKeys("hacienda", "verifAutoDetalle");
+    }
+
+    @Test
+    @DisplayName("Límite de 5 envíos por día: el sexto da 429 y no consulta a Hacienda ni guarda")
+    void limiteDeIntentos() {
+        when(rateLimiter.tryAcquireEstricto(anyString(), anyInt(), anyInt()))
+            .thenReturn(true, true, true, true, true, false);
+        for (int i = 0; i < 5; i++) svc.registrarInscripcion(5L, datos("3101123456"));
+        verify(auto, times(5)).comprobar(any(), any(), any(), any());
+        assertThatThrownBy(() -> svc.registrarInscripcion(5L, datos("3101123456"))).isInstanceOf(LimiteIntentosFiscalException.class);
+        verify(auto, times(5)).comprobar(any(), any(), any(), any());
+        verify(rateLimiter, times(6)).tryAcquireEstricto(eq("empresa:5:fiscal:inscripcion"), eq(5), eq(86400));
+    }
+
+    @Test
+    @DisplayName("Una cédula mal formada no gasta intentos ni llama a Hacienda")
+    void cedulaInvalidaNoConsulta() {
+        rechaza(datos("123"));
+        verifyNoInteractions(auto);
+        verify(rateLimiter, never()).tryAcquireEstricto(anyString(), anyInt(), anyInt());
     }
 
     @Test

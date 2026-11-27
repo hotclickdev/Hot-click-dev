@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { fiscalService } from '@/services/fiscalService'
 import {
-  MENSAJE_CEDULA, SITUACIONES, correoValido, formatoPct, leerEstadoFiscal, normalizarCedula,
+  MENSAJE_CEDULA, MENSAJE_SIN_DECLARAR, SITUACIONES, correoValido, formatoPct, leerEstadoFiscal, mensajePendiente, normalizarCedula,
   type EstadoFiscal, type SituacionFiscal,
 } from '@/utils/fiscal'
 import { Block, FormGroup, StyledInput, mensajeErrorConfig } from './configUi'
@@ -66,7 +66,7 @@ export default function ComisionFiscalCard() {
       setEstado(leerEstadoFiscal(data))
       setAbierto(false)
       setDatos(VACIO)
-      setMensaje({ ok: true, texto: 'Listo. Tu comisión volvió a la de tu plan.' })
+      setMensaje({ ok: true, texto: mensajePendiente(leerEstadoFiscal(data).verifAuto) })
     } catch (err) {
       setMensaje({ ok: false, texto: mensajeErrorConfig(err, 'No se pudo registrar. Revisá los datos.') })
     } finally {
@@ -85,14 +85,15 @@ export default function ComisionFiscalCard() {
           </p>
           <p style={{ fontSize: '12px', color: 'var(--hc-muted)', margin: '2px 0 0' }}>
             {estado.comisionExtraPct > 0
-              ? `Plan ${formatoPct(estado.comisionPlanPct)} + ${formatoPct(estado.comisionExtraPct)} extra por no estar inscrito en Hacienda.`
+              ? `Plan ${formatoPct(estado.comisionPlanPct)} + ${formatoPct(estado.comisionExtraPct)} extra por no tener la inscripción en Hacienda confirmada.`
               : `Comisión de tu plan (${formatoPct(estado.comisionPlanPct)}).`}
           </p>
         </div>
 
         {estado.situacionFiscal === null && (
           <fieldset style={{ border: 0, padding: 0, margin: 0 }} disabled={enviando}>
-            <legend style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>¿Estás inscrito en Hacienda?</legend>
+            <legend style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>¿Estás inscrito en Hacienda?</legend>
+            <p style={{ fontSize: '13px', margin: '0 0 8px' }}>{MENSAJE_SIN_DECLARAR}</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {SITUACIONES.map((s) => (
                 <button key={s.id} type="button" className="cfg-btn" onClick={() => void declarar(s.id)}>{s.etiqueta}</button>
@@ -101,10 +102,10 @@ export default function ComisionFiscalCard() {
           </fieldset>
         )}
 
-        {estado.situacionFiscal === 'NO_INSCRITO' && !abierto && (
+        {(estado.situacionFiscal === 'NO_INSCRITO' || (estado.situacionFiscal !== null && !estado.tieneDatos && !estado.verificado)) && !abierto && (
           <div>
             <p style={{ fontSize: '13px', margin: '0 0 8px' }}>
-              Cuando te inscribás en Hacienda, contanos tus datos y tu comisión vuelve a la de tu plan.
+              Cuando te inscribás en Hacienda, contanos tus datos; tu comisión vuelve a la de tu plan cuando HotClick los confirme.
             </p>
             <button type="button" className="cfg-btn cfg-btn-primary" onClick={() => { setAbierto(true); setMensaje(null) }}>
               Ya me inscribí
@@ -112,7 +113,14 @@ export default function ComisionFiscalCard() {
           </div>
         )}
 
-        {estado.situacionFiscal !== null && estado.situacionFiscal !== 'NO_INSCRITO' && (
+        {estado.pendiente && !abierto && (
+          <div>
+            <p style={{ fontSize: '13px', margin: '0 0 8px' }}>{mensajePendiente(estado.verifAuto)}</p>
+            <button type="button" className="cfg-btn" onClick={() => { setAbierto(true); setMensaje(null) }}>Corregir mis datos</button>
+          </div>
+        )}
+
+        {estado.verificado && (
           <p style={{ fontSize: '13px', margin: 0 }}>
             Situación: <strong>{SITUACIONES.find((s) => s.id === estado.situacionFiscal)?.etiqueta}</strong>.
             {' '}Enviás tu factura a HotClick dentro de {estado.diasEnviarFactura} días de cada venta.

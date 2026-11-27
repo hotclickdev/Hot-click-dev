@@ -129,7 +129,7 @@ class AdminBillingServiceTest {
             .thenReturn(new PageImpl<>(List.of()));
         when(ledgerRepo.findByEmpresaIdOrderByFechaEventoDesc(eq(10L), any(PageRequest.class)))
             .thenReturn(List.of());
-        when(comisionEfectiva.desglose(any(), any())).thenReturn(new com.hotclick.service.fiscal.ComisionEfectiva.Desglose(
+        when(comisionEfectiva.desglose(any(), any(), org.mockito.ArgumentMatchers.anyBoolean())).thenReturn(new com.hotclick.service.fiscal.ComisionEfectiva.Desglose(
             new BigDecimal("9.00"), new BigDecimal("14.00"), new BigDecimal("23.00"),
             com.hotclick.service.fiscal.SituacionFiscal.NO_INSCRITO));
 

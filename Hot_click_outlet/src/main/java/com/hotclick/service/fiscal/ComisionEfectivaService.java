@@ -19,16 +19,21 @@ public class ComisionEfectivaService {
 
     public ComisionEfectiva.Desglose paraEmpresa(Empresa empresa) {
         Plan plan = empresa.getPlan();
-        return desglose(plan != null ? plan.getComisionPorcentaje() : null, empresa.getSituacionFiscal());
+        return desglose(plan != null ? plan.getComisionPorcentaje() : null, empresa.getSituacionFiscal(),
+            empresa.isFiscalVerificado());
     }
 
     /** Variante para quien ya resolvió el plan (p. ej. por suscripción) y solo tiene el porcentaje. */
     public ComisionEfectiva.Desglose desglose(BigDecimal planPct, String situacionFiscal) {
-        return ComisionEfectiva.calcular(planPct, SituacionFiscal.desde(situacionFiscal).orElse(null),
+        return desglose(planPct, situacionFiscal, false);
+    }
+
+    public ComisionEfectiva.Desglose desglose(BigDecimal planPct, String situacionFiscal, boolean verificado) {
+        return ComisionEfectiva.calcular(planPct, SituacionFiscal.desde(situacionFiscal).orElse(null), verificado,
             config.reglas().extraNoInscritoPct());
     }
 
-    /** Porcentaje efectivo (plan + extra si NO_INSCRITO), con 2 decimales. */
+    /** Porcentaje efectivo (plan + extra si no hay inscripción verificada), con 2 decimales. */
     public BigDecimal porcentajeEfectivo(Empresa empresa) {
         return paraEmpresa(empresa).efectivaPct();
     }

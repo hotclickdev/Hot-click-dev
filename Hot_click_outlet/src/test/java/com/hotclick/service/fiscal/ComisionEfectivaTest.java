@@ -26,13 +26,32 @@ class ComisionEfectivaTest {
     }
 
     @Test
-    @DisplayName("INSCRITO, REGIMEN_SIMPLIFICADO y sin declarar pagan solo el plan")
-    void sinExtra() {
-        for (SituacionFiscal s : new SituacionFiscal[] {SituacionFiscal.INSCRITO, SituacionFiscal.REGIMEN_SIMPLIFICADO, null}) {
-            var d = ComisionEfectiva.calcular(new BigDecimal("7.5"), s, EXTRA);
+    @DisplayName("Sin declarar paga plan + extra, igual que NO_INSCRITO")
+    void sinDeclararPagaExtra() {
+        var d = ComisionEfectiva.calcular(new BigDecimal("7.5"), null, true, EXTRA);
+        assertThat(d.efectivaPct()).isEqualByComparingTo("21.50");
+        assertThat(d.extraPct()).isEqualByComparingTo("14.00");
+    }
+
+    @Test
+    @DisplayName("INSCRITO y REGIMEN_SIMPLIFICADO sin verificar siguen pagando el extra")
+    void declaradoSinVerificarPagaExtra() {
+        for (SituacionFiscal s : new SituacionFiscal[] {SituacionFiscal.INSCRITO, SituacionFiscal.REGIMEN_SIMPLIFICADO}) {
+            assertThat(ComisionEfectiva.calcular(new BigDecimal("7.5"), s, false, EXTRA).efectivaPct()).isEqualByComparingTo("21.50");
+            assertThat(ComisionEfectiva.calcular(new BigDecimal("7.5"), s, EXTRA).efectivaPct()).isEqualByComparingTo("21.50");
+        }
+    }
+
+    @Test
+    @DisplayName("Solo INSCRITO o REGIMEN_SIMPLIFICADO verificado paga el plan")
+    void verificadoSoloPlan() {
+        for (SituacionFiscal s : new SituacionFiscal[] {SituacionFiscal.INSCRITO, SituacionFiscal.REGIMEN_SIMPLIFICADO}) {
+            var d = ComisionEfectiva.calcular(new BigDecimal("7.5"), s, true, EXTRA);
             assertThat(d.efectivaPct()).isEqualByComparingTo("7.50");
             assertThat(d.extraPct()).isEqualByComparingTo("0");
         }
+        assertThat(ComisionEfectiva.calcular(new BigDecimal("7.5"), SituacionFiscal.NO_INSCRITO, true, EXTRA).efectivaPct())
+            .isEqualByComparingTo("21.50");
     }
 
     @Test
@@ -52,12 +71,14 @@ class ComisionEfectivaTest {
         plan.setComisionPorcentaje(new BigDecimal("6"));
         Empresa e = new Empresa();
         e.setPlan(plan);
-        assertThat(svc.porcentajeEfectivo(e)).isEqualByComparingTo("6.00");
+        assertThat(svc.porcentajeEfectivo(e)).isEqualByComparingTo("20.00");
         e.setSituacionFiscal("NO_INSCRITO");
         assertThat(svc.porcentajeEfectivo(e)).isEqualByComparingTo("20.00");
         e.setSituacionFiscal("INSCRITO");
+        assertThat(svc.porcentajeEfectivo(e)).isEqualByComparingTo("20.00");
+        e.setFiscalVerificado(true);
         assertThat(svc.porcentajeEfectivo(e)).isEqualByComparingTo("6.00");
         e.setSituacionFiscal("basura");
-        assertThat(svc.porcentajeEfectivo(e)).isEqualByComparingTo("6.00");
+        assertThat(svc.porcentajeEfectivo(e)).isEqualByComparingTo("20.00");
     }
 }

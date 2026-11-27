@@ -159,4 +159,10 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
     @Query("SELECT e.id, e.nombreEmpresa, e.estadoEmpresa FROM Empresa e WHERE e.estadoEmpresa IN :estados ORDER BY e.id")
     List<Object[]> findResumenByEstados(@Param("estados") java.util.Collection<String> estados,
                                         org.springframework.data.domain.Pageable page);
+
+    /** Base fiscal: inscripciones declaradas (con datos) que un ADMIN aún no verificó; primero las que Hacienda confirmó y luego las más antiguas. */
+    @Query("SELECT e FROM Empresa e WHERE e.situacionFiscal IN ('INSCRITO', 'REGIMEN_SIMPLIFICADO') "
+        + "AND e.fiscalVerificado = false AND e.cedulaFiscal IS NOT NULL "
+        + "ORDER BY CASE WHEN e.fiscalVerifAuto = 'COINCIDE' THEN 0 ELSE 1 END, e.fechaSituacionFiscal ASC")
+    List<Empresa> findFiscalPendientes(Pageable pageable);
 }

@@ -2,6 +2,7 @@ package com.hotclick.controller;
 
 import com.hotclick.dto.fiscal.InscripcionFiscalRequest;
 import com.hotclick.dto.fiscal.ReglasFiscalesRequest;
+import com.hotclick.dto.fiscal.VerificarFiscalRequest;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.security.PropietarioGuard;
 import com.hotclick.service.fiscal.EmpresaFiscalService;
@@ -42,6 +43,20 @@ class FiscalControllersAutorizacionTest {
     }
 
     @Test
+    @DisplayName("Los endpoints de verificación fiscal (lista, detalle y verificar) exigen rol ADMIN")
+    void verificacionSoloAdmin() {
+        int revisados = 0;
+        for (Method m : AdminFiscalVerificacionController.class.getDeclaredMethods()) {
+            if (!Modifier.isPublic(m.getModifiers())) continue;
+            PreAuthorize pa = m.getAnnotation(PreAuthorize.class);
+            assertThat(pa).as(m.getName()).isNotNull();
+            assertThat(pa.value()).isEqualTo("hasRole('ADMIN')");
+            revisados++;
+        }
+        assertThat(revisados).isEqualTo(4);
+    }
+
+    @Test
     @DisplayName("Quien no es propietario recibe 403 y el servicio no se toca")
     void noPropietario403() {
         CompanyScope scope = mock(CompanyScope.class);
@@ -77,5 +92,9 @@ class FiscalControllersAutorizacionTest {
         assertThat(v.validate(new ReglasFiscalesRequest("SIMPLIFICADO", null, 7, 20000, 0))).isNotEmpty();
         assertThat(v.validate(new InscripcionFiscalRequest("NO_INSCRITO", "101230456", "Ana", "Ventas", "a@b.cr"))).isNotEmpty();
         assertThat(v.validate(inscripcion())).isEmpty();
+        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "101230456", "Ana", "Ventas", "no-es-correo"))).isNotEmpty();
+        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "101230456", "Ana", "Ventas", "a@@b.cr"))).isNotEmpty();
+        assertThat(v.validate(new VerificarFiscalRequest("APROBAR", "ok"))).isEmpty();
+        assertThat(v.validate(new VerificarFiscalRequest("TAL VEZ", null))).isNotEmpty();
     }
 }

@@ -23,3 +23,9 @@ ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS nombre_fiscal VARCHAR(
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS actividad_fiscal VARCHAR(150);
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS correo_facturacion VARCHAR(150);
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fecha_situacion_fiscal TIMESTAMP;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_verificado BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_verificado_por BIGINT;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fecha_fiscal_verificado TIMESTAMP;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_verif_auto VARCHAR(20);
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_verif_auto_detalle VARCHAR(2000);
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_verif_auto_fecha TIMESTAMP;

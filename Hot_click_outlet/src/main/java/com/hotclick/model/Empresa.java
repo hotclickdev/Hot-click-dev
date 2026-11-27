@@ -160,6 +160,27 @@ public class Empresa {
     @Column(name = "fecha_situacion_fiscal")
     private LocalDateTime fechaSituacionFiscal;
 
+    /** El extra por no estar inscrito solo se quita cuando un ADMIN verifica lo declarado. */
+    @Column(name = "fiscal_verificado", nullable = false)
+    private boolean fiscalVerificado = false;
+
+    @Column(name = "fiscal_verificado_por")
+    private Long fiscalVerificadoPor;
+
+    @Column(name = "fecha_fiscal_verificado")
+    private LocalDateTime fechaFiscalVerificado;
+
+    /** Comprobación automática contra la API pública de Hacienda: COINCIDE | NO_COINCIDE | NO_ENCONTRADO | ERROR_CONSULTA. */
+    @Column(name = "fiscal_verif_auto", length = 20)
+    private String fiscalVerifAuto;
+
+    /** JSON corto con lo que respondió Hacienda y las diferencias; solo lo necesario para comparar. */
+    @Column(name = "fiscal_verif_auto_detalle", length = 2000)
+    private String fiscalVerifAutoDetalle;
+
+    @Column(name = "fiscal_verif_auto_fecha")
+    private LocalDateTime fiscalVerifAutoFecha;
+
     // ── Billing Stripe (F14) ─────────────────────────────────────────────────
 
     @Column(name = "stripe_customer_id", length = 100)
@@ -416,6 +437,18 @@ public class Empresa {
     public void setCorreoFacturacion(String v) { this.correoFacturacion = v; }
     public LocalDateTime getFechaSituacionFiscal() { return fechaSituacionFiscal; }
     public void setFechaSituacionFiscal(LocalDateTime v) { this.fechaSituacionFiscal = v; }
+    public boolean isFiscalVerificado() { return fiscalVerificado; }
+    public void setFiscalVerificado(boolean v) { this.fiscalVerificado = v; }
+    public Long getFiscalVerificadoPor() { return fiscalVerificadoPor; }
+    public void setFiscalVerificadoPor(Long v) { this.fiscalVerificadoPor = v; }
+    public LocalDateTime getFechaFiscalVerificado() { return fechaFiscalVerificado; }
+    public void setFechaFiscalVerificado(LocalDateTime v) { this.fechaFiscalVerificado = v; }
+    public String getFiscalVerifAuto() { return fiscalVerifAuto; }
+    public void setFiscalVerifAuto(String v) { this.fiscalVerifAuto = v; }
+    public String getFiscalVerifAutoDetalle() { return fiscalVerifAutoDetalle; }
+    public void setFiscalVerifAutoDetalle(String v) { this.fiscalVerifAutoDetalle = v; }
+    public LocalDateTime getFiscalVerifAutoFecha() { return fiscalVerifAutoFecha; }
+    public void setFiscalVerifAutoFecha(LocalDateTime v) { this.fiscalVerifAutoFecha = v; }
 
     public boolean isConfiguracionFiscalCompleta() {
         return cedulaJuridica != null && !cedulaJuridica.isBlank()

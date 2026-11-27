@@ -7,6 +7,7 @@ import com.hotclick.exception.EmpresaRequeridaException;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.security.PropietarioGuard;
 import com.hotclick.service.fiscal.EmpresaFiscalService;
+import com.hotclick.service.fiscal.LimiteIntentosFiscalException;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,6 +66,8 @@ public class EmpresaFiscalController {
             Map<String, Object> data = fiscal.registrarInscripcion(empresaId, new EmpresaFiscalService.Inscripcion(
                 body.situacion(), body.cedula(), body.nombre(), body.actividad(), body.correo()));
             return ResponseEntity.ok(ResponseDTO.success("Inscripción registrada", data));
+        } catch (LimiteIntentosFiscalException e) {
+            return ResponseEntity.status(429).body(ResponseDTO.error(e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
         }
