@@ -207,6 +207,91 @@ class XmlFacturaBuilderTest {
         return e;
     }
 
+    // ---- Medio de pago real (Fase 4A, v4.4) ----
+
+    private String xmlConMetodo(String metodo) {
+        Pedido pedido = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1000, 1);
+        pedido.setMetodoPago(metodo);
+        pedido.setTotalPedido(1130);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedido);
+        validarOficial(xml, true);
+        return xml;
+    }
+
+    private static long cuenta(String xml, String fragmento) {
+        return xml.split(java.util.regex.Pattern.quote(fragmento), -1).length - 1;
+    }
+
+    @Test
+    @DisplayName("medio de pago: efectivo, tarjeta (ONVO), SINPE y transferencia mapean a 01, 02, 06 y 04")
+    void medioPagoUnico() {
+        assertThat(xmlConMetodo("EFECTIVO")).contains("<TipoMedioPago>01</TipoMedioPago>");
+        assertThat(xmlConMetodo("TARJETA")).contains("<TipoMedioPago>02</TipoMedioPago>");
+        assertThat(xmlConMetodo("ONVO")).contains("<TipoMedioPago>02</TipoMedioPago>");
+        String sinpe = xmlConMetodo("sinpe");
+        assertThat(sinpe).contains("<TipoMedioPago>06</TipoMedioPago>").contains("<TotalMedioPago>1130</TotalMedioPago>");
+        assertThat(xmlConMetodo("TRANSFERENCIA")).contains("<TipoMedioPago>04</TipoMedioPago>");
+    }
+
+    @Test
+    @DisplayName("medio de pago desconocido o vacio conserva 01")
+    void medioPagoDesconocido() {
+        assertThat(xmlConMetodo("TRUEQUE")).contains("<TipoMedioPago>01</TipoMedioPago>");
+        assertThat(xmlConMetodo(null)).contains("<TipoMedioPago>01</TipoMedioPago>");
+    }
+
+    @Test
+    @DisplayName("pago mixto: gift card (99 con descripcion) + SINPE suman el total")
+    void medioPagoMixtoGiftCard() {
+        Pedido pedido = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1000, 1);
+        pedido.setMetodoPago("SINPE");
+        pedido.setTotalPedido(1130);
+        pedido.setGiftCardMonto(300);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedido);
+        assertThat(xml).contains("<TipoMedioPago>06</TipoMedioPago>", "<TotalMedioPago>830</TotalMedioPago>",
+            "<TipoMedioPago>99</TipoMedioPago>", "<MedioPagoOtros>Gift card HotClick</MedioPagoOtros>",
+            "<TotalMedioPago>300</TotalMedioPago>");
+        validarOficial(xml, true);
+    }
+
+    @Test
+    @DisplayName("compra con 2 paquetes y metodos distintos: dos MedioPago que suman TotalComprobante")
+    void medioPagoDosPaquetes() {
+        Pedido a = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1000, 1);
+        a.setMetodoPago("TARJETA");
+        a.setTotalPedido(1130);
+        Pedido b = pedidoCon(producto("Cable", new BigDecimal("13"), "08"), 1000, 1);
+        b.setMetodoPago("SINPE");
+        b.setTotalPedido(1130);
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), List.of(a, b));
+        assertThat(xml).contains("<TotalComprobante>2260</TotalComprobante>");
+        assertThat(cuenta(xml, "<MedioPago>")).isEqualTo(2);
+        assertThat(xml).contains("<TipoMedioPago>02</TipoMedioPago>", "<TipoMedioPago>06</TipoMedioPago>");
+        assertThat(cuenta(xml, "<TotalMedioPago>1130</TotalMedioPago>")).isEqualTo(2);
+        validarOficial(xml, true);
+    }
+
+    @Test
+    @DisplayName("mas de 4 medios: se conservan 3 y el resto se agrupa en 99 (max 4 MedioPago)")
+    void medioPagoMasDeCuatro() {
+        String[] metodos = {"EFECTIVO", "TARJETA", "SINPE", "TRANSFERENCIA", "PAYPAL"};
+        int[] precios = {5000, 4000, 3000, 2000, 1000};
+        List<Pedido> pedidos = new java.util.ArrayList<>();
+        for (int i = 0; i < metodos.length; i++) {
+            Pedido p = pedidoCon(producto("Cable", BigDecimal.ZERO, "10"), precios[i], 1);
+            p.setMetodoPago(metodos[i]);
+            p.setTotalPedido(precios[i]);
+            pedidos.add(p);
+        }
+        String xml = builder.construir(comprobante(ComprobanteFiscal.TIPO_FACTURA), empresa(), pedidos);
+        assertThat(cuenta(xml, "<MedioPago>")).isEqualTo(4);
+        assertThat(xml).contains("<TotalComprobante>15000</TotalComprobante>",
+            "<TotalMedioPago>5000</TotalMedioPago>", "<TotalMedioPago>4000</TotalMedioPago>",
+            "<TotalMedioPago>3000</TotalMedioPago>", "<TotalMedioPago>3000</TotalMedioPago>",
+            "<MedioPagoOtros>Otros medios de pago</MedioPagoOtros>");
+        validarOficial(xml, true);
+    }
+
     private static Pedido pedidoConIva() {
         return pedidoCon(producto("Cable USB", new BigDecimal("13"), "08"), 1000, 2);
     }

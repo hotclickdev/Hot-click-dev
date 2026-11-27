@@ -9,6 +9,7 @@ import com.hotclick.service.hacienda.CedulaEmisor;
 import com.hotclick.service.hacienda.CodigoCabys;
 import com.hotclick.service.hacienda.CalculadoraIva;
 import com.hotclick.service.hacienda.ImpuestoLinea;
+import com.hotclick.service.hacienda.MediosPagoHacienda;
 import com.hotclick.service.hacienda.HaciendaConfiguracionException;
 import org.springframework.stereotype.Service;
 
@@ -60,7 +61,8 @@ public class XmlFacturaBuilder {
         CalculadoraIva.Resumen resumen = CalculadoraIva.resumen(empresa, esFactura, pedidos);
         appendDetalle(xml, pedidos, empresa, esFactura);
         appendOtrosCargos(xml, resumen.otrosCargos());
-        appendResumen(xml, resumen, desglosePorTarifa(pedidos, empresa, esFactura));
+        appendResumen(xml, resumen, desglosePorTarifa(pedidos, empresa, esFactura),
+            MediosPagoHacienda.de(pedidos, resumen.totalComprobante()));
         xml.append("</").append(rootTag).append(">\n");
         return xml.toString();
     }
@@ -218,7 +220,8 @@ public class XmlFacturaBuilder {
         xml.append("  </OtrosCargos>\n");
     }
 
-    private static void appendResumen(StringBuilder xml, CalculadoraIva.Resumen t, java.util.Map<String, Long> desglose) {
+    private static void appendResumen(StringBuilder xml, CalculadoraIva.Resumen t, java.util.Map<String, Long> desglose,
+                                      List<MediosPagoHacienda.Medio> medios) {
         xml.append("  <ResumenFactura>\n");
         xml.append("    <CodigoTipoMoneda>\n");
         xml.append("      <CodigoMoneda>CRC</CodigoMoneda>\n");
@@ -242,10 +245,15 @@ public class XmlFacturaBuilder {
         if (t.otrosCargos() > 0) {
             xml.append("    <TotalOtrosCargos>").append(t.otrosCargos()).append("</TotalOtrosCargos>\n");
         }
-        xml.append("    <MedioPago>\n");
-        xml.append("      <TipoMedioPago>01</TipoMedioPago>\n");
-        xml.append("      <TotalMedioPago>").append(t.totalComprobante()).append("</TotalMedioPago>\n");
-        xml.append("    </MedioPago>\n");
+        for (MediosPagoHacienda.Medio m : medios) {
+            xml.append("    <MedioPago>\n");
+            xml.append("      <TipoMedioPago>").append(m.codigo()).append("</TipoMedioPago>\n");
+            if (m.otros() != null) {
+                xml.append("      <MedioPagoOtros>").append(esc(m.otros())).append("</MedioPagoOtros>\n");
+            }
+            xml.append("      <TotalMedioPago>").append(m.monto()).append("</TotalMedioPago>\n");
+            xml.append("    </MedioPago>\n");
+        }
         xml.append("    <TotalComprobante>").append(t.totalComprobante()).append("</TotalComprobante>\n");
         xml.append("  </ResumenFactura>\n");
     }
