@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,18 +44,19 @@ public class FiscalVerificacionService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> pendientes() {
         exigirAdmin();
-        List<Map<String, Object>> filas = new ArrayList<>();
-        for (Empresa e : empresaRepository.findFiscalPendientes(PageRequest.of(0, MAX_PENDIENTES))) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("empresaId", e.getId());
-            m.put("nombre", e.getNombreComercial() != null && !e.getNombreComercial().isBlank()
-                ? e.getNombreComercial() : e.getNombreEmpresa());
-            m.put("situacionFiscal", e.getSituacionFiscal());
-            m.put("fechaSituacionFiscal", e.getFechaSituacionFiscal());
-            m.put("verifAuto", e.getFiscalVerifAuto());
-            filas.add(m);
-        }
-        return filas;
+        return empresaRepository.findFiscalPendientes(PageRequest.of(0, MAX_PENDIENTES)).stream()
+            .map(FiscalVerificacionService::filaPendiente).toList();
+    }
+
+    private static Map<String, Object> filaPendiente(Empresa e) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("empresaId", e.getId());
+        m.put("nombre", e.getNombreComercial() != null && !e.getNombreComercial().isBlank()
+            ? e.getNombreComercial() : e.getNombreEmpresa());
+        m.put("situacionFiscal", e.getSituacionFiscal());
+        m.put("fechaSituacionFiscal", e.getFechaSituacionFiscal());
+        m.put("verifAuto", e.getFiscalVerifAuto());
+        return m;
     }
 
     /** Datos declarados por el negocio, para que el ADMIN los compare con Hacienda. */
