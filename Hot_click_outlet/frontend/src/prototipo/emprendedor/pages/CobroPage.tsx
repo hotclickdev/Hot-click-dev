@@ -1,4 +1,5 @@
 import MetodosCobroPanel from '@/prototipo/compartido/MetodosCobroPanel'
+import PestanasDinero from '@/prototipo/compartido/PestanasDinero'
 import EmprendedorPageFrame from '../ui/EmprendedorPageFrame'
 import { RUTA_EMPRENDEDOR } from '../constants'
 
@@ -8,11 +9,11 @@ import { RUTA_EMPRENDEDOR } from '../constants'
 export default function CobroPage() {
   return (
     <EmprendedorPageFrame
-      titulo="Métodos de cobro"
-      subtitulo="Cuentas donde te llega el dinero de tus ventas"
+      titulo="Mi dinero"
+      subtitulo="Cuentas donde te llega el dinero y la factura de cada quincena a HotClick"
       volverA={`${RUTA_EMPRENDEDOR}/opciones`}
     >
-      <MetodosCobroPanel agregarTo={`${RUTA_EMPRENDEDOR}/opciones/cobro/nuevo`} />
+      <PestanasDinero cobro={<MetodosCobroPanel agregarTo={`${RUTA_EMPRENDEDOR}/opciones/cobro/nuevo`} />} />
     </EmprendedorPageFrame>
   )
 }

@@ -13,6 +13,8 @@ export type EnlacePago = {
   creadoEn: string
   pagadoEn: string | null
   cerradoEn: string | null
+  /** Factura del negocio que cobra el enlace; sin ella no se cancela sola al aprobar una factura. */
+  facturaNegocioId?: number | null
 }
 
 export type ComisionOnvo = {
@@ -34,8 +36,8 @@ export const onvoCobroService = {
   comision: (empresaId: string | number) => api.get(`/admin/empresas/${empresaId}/onvo/comision`),
   sincronizar: (empresaId: string | number) => api.post(`/admin/empresas/${empresaId}/onvo/comision/sincronizar`),
   enlaces: (empresaId: string | number) => api.get(`/admin/empresas/${empresaId}/onvo/enlaces-pago`),
-  crearEnlace: (empresaId: string | number, montoCrc: number, motivo: string) =>
-    api.post(`/admin/empresas/${empresaId}/onvo/enlaces-pago`, { montoCrc, motivo }),
+  crearEnlace: (empresaId: string | number, montoCrc: number, motivo: string, facturaNegocioId?: number | null) =>
+    api.post(`/admin/empresas/${empresaId}/onvo/enlaces-pago`, { montoCrc, motivo, facturaNegocioId: facturaNegocioId ?? undefined }),
   cancelarEnlace: (enlaceId: number) => api.post(`/admin/onvo/enlaces-pago/${enlaceId}/cancelar`),
   interruptores: () => api.get('/admin/configuracion/onvo-cobro'),
   guardarInterruptores: (valores: InterruptoresOnvo) => api.put('/admin/configuracion/onvo-cobro', valores),

@@ -79,6 +79,21 @@ public class TelegramNotificacionClienteService {
         return "🛒 *Nueva venta en tu tienda*";
     }
 
+    // ── Factura del negocio a HotClick (Fase 2 fiscal) ───────────────────────────────────────────────────────
+
+    /** Recordatorio de enviar la factura de la quincena. Sin montos ni cédulas en el texto. */
+    @Async
+    public void notificarRecordatorioFacturaHotclick(Long empresaId, long diasRestantes) {
+        if (!bot.isConfigured() || empresaId == null) return;
+        try {
+            String plazo = diasRestantes > 0 ? "Te quedan *" + diasRestantes + "* día(s)." : "El plazo ya venció.";
+            enviarATodos(empresaId, "🧾 *Enviá tu factura de la quincena a HotClick*\n\n" + plazo
+                + "\nSubí el XML en Mi dinero, pestaña Factura a HotClick.");
+        } catch (Exception e) {
+            log.error("[telegram-notif] fallo recordando factura empresa={} — {}", empresaId, e.getClass().getSimpleName());
+        }
+    }
+
     // ── Aprobación de productos / promociones ──────────────────────────────────
 
     @Async

@@ -6,7 +6,10 @@ import InterruptoresOnvo from './InterruptoresOnvo'
 const INPUT = 'h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3.5 text-[15px] text-hc-n-900 outline-none focus:border-hc-blue-600'
 
 type Estado = 'carga' | 'listo' | 'error'
-type Form = { regimen: string; extra: string; dias: string; minimo: string; costo: string }
+type Form = {
+  regimen: string; extra: string; dias: string; minimo: string; costo: string
+  receptor: boolean; tolerancia: string; base: 'NETO' | 'BRUTO'
+}
 
 function aForm(r: ReglasFiscales): Form {
   return {
@@ -15,6 +18,9 @@ function aForm(r: ReglasFiscales): Form {
     dias: String(r.diasEnviarFactura),
     minimo: String(r.onvoPagoMinimoCrc),
     costo: String(r.onvoCostoPagoCrc),
+    receptor: r.mensajeReceptorHabilitado === true,
+    tolerancia: String(r.toleranciaFacturaNegocioCrc ?? 1),
+    base: r.baseFacturaNegocio === 'BRUTO' ? 'BRUTO' : 'NETO',
   }
 }
 
@@ -30,7 +36,9 @@ function entero(v: string, max: number, min = 0): boolean {
 
 /** Solo ADMIN: reglas fiscales de la plataforma. El servidor valida los rangos de nuevo. */
 export default function FiscalReglas() {
-  const [form, setForm] = useState<Form>({ regimen: 'SIMPLIFICADO', extra: '', dias: '', minimo: '', costo: '' })
+  const [form, setForm] = useState<Form>({
+    regimen: 'SIMPLIFICADO', extra: '', dias: '', minimo: '', costo: '', receptor: false, tolerancia: '1', base: 'NETO',
+  })
   const [estado, setEstado] = useState<Estado>('carga')
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState<{ ok: boolean; texto: string } | null>(null)
@@ -47,7 +55,7 @@ export default function FiscalReglas() {
   }, [])
 
   const invalido = !extraValido(form.extra) || !entero(form.dias, 60, 1)
-    || !entero(form.minimo, 10_000_000) || !entero(form.costo, 100_000)
+    || !entero(form.minimo, 10_000_000) || !entero(form.costo, 100_000) || !entero(form.tolerancia, 1000)
 
   async function guardar(e: FormEvent) {
     e.preventDefault()
@@ -61,6 +69,9 @@ export default function FiscalReglas() {
         diasEnviarFactura: Number(form.dias),
         onvoPagoMinimoCrc: Number(form.minimo),
         onvoCostoPagoCrc: Number(form.costo),
+        mensajeReceptorHabilitado: form.receptor,
+        toleranciaFacturaNegocioCrc: Number(form.tolerancia),
+        baseFacturaNegocio: form.base,
       })
       setMensaje({ ok: true, texto: 'Reglas guardadas. Aplican a las próximas comisiones.' })
     } catch (err) {
@@ -71,7 +82,8 @@ export default function FiscalReglas() {
     }
   }
 
-  const campo = (clave: keyof Form, valor: string) => setForm((f) => ({ ...f, [clave]: valor }))
+  const campo = (clave: 'regimen' | 'extra' | 'dias' | 'minimo' | 'costo' | 'tolerancia', valor: string) =>
+    setForm((f) => ({ ...f, [clave]: valor }))
 
   if (estado === 'carga') return <Carga />
   if (estado === 'error') return <Aviso>No se pudieron cargar las reglas fiscales.</Aviso>
@@ -118,7 +130,38 @@ export default function FiscalReglas() {
           <span className="text-xs text-hc-n-600">Solo informativo.</span>
         </label>
       </div>
-      {invalido && <p className="text-xs text-hc-primary">Revisá los valores: extra de 0 a 50, días de 1 a 60 y montos enteros.</p>}
+      <div className="flex flex-col gap-3 border-t border-hc-n-200 pt-4">
+        <h3 className="text-[15px] font-bold text-hc-n-900">Factura del negocio a HotClick</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-hc-n-900">Base de la factura</span>
+            <select className={INPUT} value={form.base}
+              onChange={(ev) => setForm((f) => ({ ...f, base: ev.target.value === 'BRUTO' ? 'BRUTO' : 'NETO' }))}>
+              <option value="NETO">Neto (productos menos la comisión)</option>
+              <option value="BRUTO">Bruto (precio de los productos)</option>
+            </select>
+            <span className="text-xs text-hc-n-600">El envío nunca entra. Lo decide el contador.</span>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-hc-n-900">Tolerancia del total (₡)</span>
+            <input className={INPUT} inputMode="numeric" value={form.tolerancia} aria-invalid={!entero(form.tolerancia, 1000)}
+              onChange={(ev) => campo('tolerancia', ev.target.value.replace(/\D/g, '').slice(0, 4))} />
+            <span className="text-xs text-hc-n-600">Decisión interna, de 0 a 1000. Hacienda no fija una.</span>
+          </label>
+        </div>
+        <label className="flex items-start gap-3">
+          <input type="checkbox" className="mt-1 h-5 w-5" checked={form.receptor} aria-label="Enviar el mensaje receptor a Hacienda"
+            onChange={(ev) => setForm((f) => ({ ...f, receptor: ev.target.checked }))} />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-[13px] font-semibold text-hc-n-900">Enviar el mensaje receptor a Hacienda</span>
+            <span className="text-xs text-hc-n-600">
+              Solo aplica en régimen tradicional. Aunque lo encendás, el envío sigue bloqueado hasta tener el XSD oficial
+              de MensajeReceptor 4.4.
+            </span>
+          </span>
+        </label>
+      </div>
+      {invalido && <p className="text-xs text-hc-primary">Revisá los valores: extra de 0 a 50, días de 1 a 60, tolerancia de 0 a 1000 y montos enteros.</p>}
       {mensaje && <p role="status" className={`text-sm ${mensaje.ok ? 'text-hc-n-900' : 'text-hc-primary'}`}>{mensaje.texto}</p>}
       <div><button type="submit" className={BOTON_PRIMARIO} disabled={guardando || invalido}>{guardando ? 'Guardando…' : 'Guardar reglas'}</button></div>
     </form>

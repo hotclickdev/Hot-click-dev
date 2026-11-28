@@ -198,19 +198,37 @@ class EnlacePagoOnvoServiceTest {
     }
 
     @Test
-    @DisplayName("Factura recibida: cancela los enlaces abiertos de esa empresa y nunca lanza")
+    @DisplayName("Factura aprobada: cancela solo los enlaces abiertos de ESA factura; sin factura no cancela nada; nunca lanza")
     void facturaRecibida() {
         EnlacePagoOnvo e = abierto();
-        when(repo.findByEmpresaIdAndEstado(7L, EnlacePagoOnvo.CREADO)).thenReturn(List.of(e));
+        e.setFacturaNegocioId(40L);
+        when(repo.findByEmpresaIdAndFacturaNegocioIdAndEstado(7L, 40L, EnlacePagoOnvo.CREADO)).thenReturn(List.of(e));
         when(provider.expirarSesionParaCancelar("sess_1")).thenReturn(true);
         EnlacePagoOnvoLotes lotes = new EnlacePagoOnvoLotes(svc);
-        assertThat(lotes.alRecibirFactura(7L)).isEqualTo(1);
+        assertThat(lotes.alRecibirFactura(7L, 40L)).isEqualTo(1);
         assertThat(e.getEstado()).isEqualTo(EnlacePagoOnvo.CANCELADO);
+        // Otra factura del mismo negocio, o ninguna: no se toca ningún enlace.
+        assertThat(lotes.alRecibirFactura(7L, 41L)).isZero();
+        assertThat(lotes.alRecibirFactura(7L, null)).isZero();
+        verify(repo, never()).findByEmpresaIdAndEstado(7L, EnlacePagoOnvo.CREADO);
 
         EnlacePagoOnvo otro = new EnlacePagoOnvo();
         org.springframework.test.util.ReflectionTestUtils.setField(otro, "id", 9L);
-        when(repo.findByEmpresaIdAndEstado(8L, EnlacePagoOnvo.CREADO)).thenReturn(List.of(otro));
-        assertThat(lotes.alRecibirFactura(8L)).isZero();
+        when(repo.findByEmpresaIdAndFacturaNegocioIdAndEstado(8L, 50L, EnlacePagoOnvo.CREADO)).thenReturn(List.of(otro));
+        assertThat(lotes.alRecibirFactura(8L, 50L)).isZero();
+    }
+
+    @Test
+    @DisplayName("Crear enlace atado a una factura: tiene que ser de ese negocio; si no, 400 y no se llama a ONVO")
+    void crearConFactura() {
+        when(config.enlacesPagoActivos()).thenReturn(true);
+        when(empresaRepo.existsById(7L)).thenReturn(true);
+        com.hotclick.repository.FacturaNegocioRepository facturas = mock(com.hotclick.repository.FacturaNegocioRepository.class);
+        svc.setFacturasParaTest(facturas);
+        when(facturas.findByIdAndEmpresaId(40L, 7L)).thenReturn(java.util.Optional.empty());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> svc.crear(7L, 5_000, "Factura tardía", 40L))
+            .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("no es de este negocio");
+        verifyNoInteractions(onvo);
     }
 
     @Test

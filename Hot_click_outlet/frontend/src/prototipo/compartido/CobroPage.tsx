@@ -1,4 +1,5 @@
 import MetodosCobroPanel from './MetodosCobroPanel'
+import PestanasDinero from './PestanasDinero'
 import EntradaPagina from './motion/EntradaPagina'
 import { EncabezadoPagina } from './ui'
 import { useSellerRuta } from './SellerPlanContext'
@@ -12,11 +13,11 @@ export default function CobroPage() {
     <main className="px-5 pb-8 pt-[60px] md:max-w-[760px] md:px-12 md:py-12 md:pt-12">
       <EntradaPagina>
         <EncabezadoPagina
-          titulo="Métodos de cobro"
-          subtitulo="Cuentas donde te llega el dinero de tus ventas"
+          titulo="Mi dinero"
+          subtitulo="Cuentas donde te llega el dinero y la factura de cada quincena a HotClick"
           volverA={ruta('opciones')}
         />
-        <MetodosCobroPanel agregarTo={ruta('cobro/nuevo')} />
+        <PestanasDinero cobro={<MetodosCobroPanel agregarTo={ruta('cobro/nuevo')} />} />
       </EntradaPagina>
     </main>
   )

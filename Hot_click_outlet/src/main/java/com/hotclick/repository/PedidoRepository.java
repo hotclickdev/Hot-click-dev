@@ -361,4 +361,53 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
                                      @Param("desde") java.time.LocalDateTime desde,
                                      @Param("hasta") java.time.LocalDateTime hasta,
                                      org.springframework.data.domain.Pageable pageable);
+
+    // ── Fase 2 fiscal: factura que cada negocio le emite a HotClick por la quincena ─────────────────────────────
+
+    /** Pedidos de UN negocio en la quincena (mismos estados que la liquidación). Acotado por Pageable. */
+    @Query("""
+        SELECT p FROM Pedido p
+        WHERE p.empresa.id = :empresaId
+          AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta
+          AND p.estadoPedido IN :estados
+          AND p.esPrueba = false
+        ORDER BY p.id
+        """)
+    List<Pedido> pedidosParaFacturaNegocio(@Param("empresaId") Long empresaId,
+                                           @Param("desde") java.time.LocalDateTime desde,
+                                           @Param("hasta") java.time.LocalDateTime hasta,
+                                           @Param("estados") Collection<String> estados,
+                                           Pageable pageable);
+
+    /** Ventas por producto (id, nombre, CAByS, cantidad, subtotal) de UN negocio en la quincena. Acotado por Pageable. */
+    @Query("""
+        SELECT pr.id, pr.nombreProducto, pr.codigoCabys, SUM(i.cantidad), SUM(i.subtotalItem)
+        FROM PedidoItem i JOIN i.pedido p JOIN i.producto pr
+        WHERE p.empresa.id = :empresaId
+          AND p.fechaPedido >= :desde AND p.fechaPedido < :hasta
+          AND p.estadoPedido IN :estados
+          AND p.esPrueba = false
+        GROUP BY pr.id, pr.nombreProducto, pr.codigoCabys
+        ORDER BY SUM(i.subtotalItem) DESC
+        """)
+    List<Object[]> productosParaFacturaNegocio(@Param("empresaId") Long empresaId,
+                                               @Param("desde") java.time.LocalDateTime desde,
+                                               @Param("hasta") java.time.LocalDateTime hasta,
+                                               @Param("estados") Collection<String> estados,
+                                               Pageable pageable);
+
+    /** Negocios con ventas en la quincena (sin la empresa plataforma). Acotado por Pageable. */
+    @Query("""
+        SELECT DISTINCT p.empresa.id FROM Pedido p
+        WHERE p.fechaPedido >= :desde AND p.fechaPedido < :hasta
+          AND p.estadoPedido IN :estados
+          AND p.esPrueba = false
+          AND p.empresa.id <> :plataformaId
+        ORDER BY p.empresa.id
+        """)
+    List<Long> empresasConVentasParaFacturaNegocio(@Param("desde") java.time.LocalDateTime desde,
+                                                   @Param("hasta") java.time.LocalDateTime hasta,
+                                                   @Param("estados") Collection<String> estados,
+                                                   @Param("plataformaId") Long plataformaId,
+                                                   Pageable pageable);
 }

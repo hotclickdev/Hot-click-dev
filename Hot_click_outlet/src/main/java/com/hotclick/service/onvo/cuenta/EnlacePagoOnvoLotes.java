@@ -16,12 +16,12 @@ public class EnlacePagoOnvoLotes {
     public EnlacePagoOnvoLotes(EnlacePagoOnvoService enlaces) { this.enlaces = enlaces; }
 
     /**
-     * Hook para cuando exista la recepción de facturas: cancela los enlaces abiertos de la empresa porque la
-     * factura llegó a tiempo. Nunca lanza; devuelve cuántos quedaron cancelados.
+     * Al aprobarse una factura del negocio: cancela solo los enlaces abiertos atados a ESA factura. Un enlace sin
+     * factura (o de otra quincena) no se toca. Nunca lanza; devuelve cuántos quedaron cancelados.
      */
-    public int alRecibirFactura(Long empresaId) {
+    public int alRecibirFactura(Long empresaId, Long facturaNegocioId) {
         int cancelados = 0;
-        for (Long id : enlaces.idsAbiertosDe(empresaId)) {
+        for (Long id : enlaces.idsAbiertosDeFactura(empresaId, facturaNegocioId)) {
             try {
                 if (EnlacePagoOnvo.CANCELADO.equals(enlaces.cancelar(id).getEstado())) cancelados++;
             } catch (RuntimeException ex) {

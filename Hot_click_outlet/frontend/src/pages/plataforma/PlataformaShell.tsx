@@ -13,6 +13,7 @@ const NAV = [
   { id: 'negocios', label: 'Tiendas', to: '/plataforma/negocios' },
   { id: 'operacion', label: 'Pedidos', to: '/plataforma/pedidos' },
   { id: 'dinero', label: 'Quincena', to: '/plataforma/dinero', badge: 'dinero' },
+  { id: 'dinero', label: 'Facturas de negocios', to: '/plataforma/facturas-negocios' },
   { id: 'moderacion', label: 'Revisar', to: '/plataforma/moderacion', badge: 'moderacion' },
   { id: 'negocios', label: 'CRM', to: '/plataforma/crm' },
   { id: 'inicio', label: 'Control', to: '/plataforma/control' },

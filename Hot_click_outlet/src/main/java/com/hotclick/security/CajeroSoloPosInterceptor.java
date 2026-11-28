@@ -31,7 +31,9 @@ public class CajeroSoloPosInterceptor implements HandlerInterceptor {
         "/api/crm/clientes/buscar",
         // Situación fiscal y comisión del negocio: el equipo (cajero incluido) la ve para la factura electrónica; las
         // escrituras (/situacion, /inscripcion) no están acá y siguen en 403. Solo GET por LECTURAS.
-        "/api/empresa/fiscal");
+        "/api/empresa/fiscal",
+        // Estado de la factura del negocio a HotClick (solo GET); subir el XML sigue en 403 para el cajero.
+        "/api/empresa/facturas-hotclick");
     /**
      * Escrituras del POS fuera de /api/pos (decisión del Mentor, #475): alta rápida de cliente de la venta y ticket de
      * soporte. Solo POST exacto; ambos controllers toman la empresa del token (nunca del body). PUT/PATCH/DELETE de
