@@ -127,24 +127,26 @@ public class OnvoPaymentProvider implements PaymentProvider {
         return new PaymentSession(session.id(), session.url());
     }
 
-    /** Deja una sola marca por pedido: con cuenta conectada y % vigente la crea; si no, la borra. */
+    /** Deja una sola marca por pedido: con cuenta conectada y % vigente las crea; si no, las borra. */
     void marcarRetencion(List<Long> pedidoIds, String onvoAccountId, java.math.BigDecimal feePct) {
-        if (retencionRepo == null || pedidoIds == null) return;
-        boolean borrar = onvoAccountId == null || feePct == null;
-        for (Long pedidoId : pedidoIds) {
-            if (pedidoId == null) continue;
-            if (borrar) {
-                try { retencionRepo.borrarPorPedido(pedidoId); }
-                catch (RuntimeException e) { log.warn("[onvo] No se pudo limpiar la marca de retención: {}", e.getClass().getSimpleName()); }
-                continue;
-            }
-            retencionRepo.borrarPorPedido(pedidoId);
-            com.hotclick.model.PedidoRetencionOnvo r = new com.hotclick.model.PedidoRetencionOnvo();
-            r.setPedidoId(pedidoId);
-            r.setOnvoAccountId(onvoAccountId);
-            r.setFeePct(feePct);
-            retencionRepo.save(r);
+        if (retencionRepo == null || pedidoIds == null || pedidoIds.isEmpty()) return;
+        if (onvoAccountId == null || feePct == null) {
+            try { retencionRepo.borrarPorPedidos(pedidoIds); }
+            catch (RuntimeException e) { log.warn("[onvo] No se pudo limpiar la marca de retención: {}", e.getClass().getSimpleName()); }
+            return;
         }
+        retencionRepo.borrarPorPedidos(pedidoIds);
+        retencionRepo.saveAll(pedidoIds.stream().filter(java.util.Objects::nonNull)
+            .collect(java.util.stream.Collectors.mapping(id -> nuevaMarca(id, onvoAccountId, feePct),
+                java.util.stream.Collectors.toList())));
+    }
+
+    private static com.hotclick.model.PedidoRetencionOnvo nuevaMarca(Long pedidoId, String onvoAccountId, java.math.BigDecimal feePct) {
+        com.hotclick.model.PedidoRetencionOnvo r = new com.hotclick.model.PedidoRetencionOnvo();
+        r.setPedidoId(pedidoId);
+        r.setOnvoAccountId(onvoAccountId);
+        r.setFeePct(feePct);
+        return r;
     }
 
     /**

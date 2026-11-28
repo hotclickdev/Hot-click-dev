@@ -35,4 +35,9 @@ public interface PedidoRetencionOnvoRepository extends JpaRepository<PedidoReten
     @Transactional
     @Query("delete from PedidoRetencionOnvo r where r.pedidoId = :pedidoId")
     int borrarPorPedido(@Param("pedidoId") Long pedidoId);
+
+    @Modifying
+    @Transactional
+    @Query("delete from PedidoRetencionOnvo r where r.pedidoId in :ids")
+    int borrarPorPedidos(@Param("ids") java.util.Collection<Long> ids);
 }

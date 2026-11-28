@@ -72,11 +72,13 @@ class OnvoOnBehalfOfTest {
         ReflectionTestUtils.setField(p, "retencionRepo", retencion);
         p.crearSesion(pedido(), new Usuario());
         verify(onvo).crearCheckoutSession(eq(1000), anyString(), anyString(), anyString(), any(), anyMap(), eq("cl_abc123"));
-        ArgumentCaptor<PedidoRetencionOnvo> cap = ArgumentCaptor.forClass(PedidoRetencionOnvo.class);
-        verify(retencion).save(cap.capture());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Iterable<PedidoRetencionOnvo>> cap = ArgumentCaptor.forClass(Iterable.class);
+        verify(retencion).saveAll(cap.capture());
         verify(retencion).asignarSesion(eq("cs_1"), eq(List.of(1L)));
-        assertThat(cap.getValue().getPedidoId()).isEqualTo(1L);
-        assertThat(cap.getValue().getFeePct()).isEqualByComparingTo("9.00");
+        PedidoRetencionOnvo guardada = cap.getValue().iterator().next();
+        assertThat(guardada.getPedidoId()).isEqualTo(1L);
+        assertThat(guardada.getFeePct()).isEqualByComparingTo("9.00");
     }
 
     @Test
@@ -93,8 +95,8 @@ class OnvoOnBehalfOfTest {
         ReflectionTestUtils.setField(p, "retencionRepo", retencion);
         p.crearSesion(pedido(), new Usuario());
         verify(onvo, never()).crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap(), anyString());
-        verify(retencion, never()).save(any());
-        verify(retencion).borrarPorPedido(1L);
+        verify(retencion, never()).saveAll(any());
+        verify(retencion).borrarPorPedidos(List.of(1L));
     }
 
     private OnvoPaymentProvider providerActivo(OnvoService onvo, ComisionOnvoSyncService sync, PedidoRetencionOnvoRepository retencion) {
@@ -130,7 +132,7 @@ class OnvoOnBehalfOfTest {
         providerActivo(onvo, sync, retencion).crearSesion(cobro, new Usuario());
 
         verify(onvo, never()).crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap(), anyString());
-        verify(retencion, never()).save(any());
+        verify(retencion, never()).saveAll(any());
         verify(retencion, never()).asignarSesion(any(), any());
     }
 
@@ -149,7 +151,7 @@ class OnvoOnBehalfOfTest {
         providerActivo(onvo, sync, retencion).crearSesion(cobro, new Usuario());
 
         verify(onvo).crearCheckoutSession(eq(50_000), anyString(), anyString(), anyString(), any(), anyMap(), eq("cl_abc123"));
-        verify(retencion, times(2)).save(any());
+        verify(retencion).saveAll(any());
         verify(retencion).asignarSesion(eq("cs_1"), eq(List.of(1L, 2L)));
     }
 
@@ -233,7 +235,7 @@ class OnvoOnBehalfOfTest {
         ReflectionTestUtils.setField(p, "retencionRepo", retencion);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> p.crearSesion(pedido(), new Usuario()))
             .isInstanceOf(IllegalStateException.class);
-        verify(retencion, atLeastOnce()).borrarPorPedido(1L);
+        verify(retencion, atLeastOnce()).borrarPorPedidos(List.of(1L));
     }
 
     @Test

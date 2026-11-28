@@ -5,6 +5,7 @@ import com.hotclick.model.EnlacePagoOnvo;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.onvo.cuenta.ComisionOnvoSyncService;
 import com.hotclick.service.onvo.cuenta.EnlacePagoOnvoService;
+import com.hotclick.service.onvo.cuenta.RetencionOnvoRevisionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -35,12 +36,12 @@ public class AdminOnvoCobroController {
     private final ComisionOnvoSyncService sync;
     private final EnlacePagoOnvoService enlaces;
     private final AuditoriaAdminRegistroService auditoria;
-    private final com.hotclick.repository.PedidoRetencionOnvoRepository retenciones;
+    private final RetencionOnvoRevisionService revision;
 
     public AdminOnvoCobroController(ComisionOnvoSyncService sync, EnlacePagoOnvoService enlaces,
                                     AuditoriaAdminRegistroService auditoria,
-                                    com.hotclick.repository.PedidoRetencionOnvoRepository retenciones) {
-        this.retenciones = retenciones;
+                                    RetencionOnvoRevisionService revision) {
+        this.revision = revision;
         this.sync = sync;
         this.enlaces = enlaces;
         this.auditoria = auditoria;
@@ -52,27 +53,20 @@ public class AdminOnvoCobroController {
     @GetMapping("/api/admin/onvo/retenciones-por-revisar")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> retencionesPorRevisar() {
-        var l = retenciones.findByEstadoOrderByCreadoEnAsc(com.hotclick.model.PedidoRetencionOnvo.POR_REVISAR,
-                org.springframework.data.domain.PageRequest.of(0, 100)).stream().limit(100)
+        var l = revision.porRevisar().stream().limit(RetencionOnvoRevisionService.MAX_LISTA)
             .map(r -> new RetencionPorRevisarDto(r.getPedidoId(), r.getFeePct(), r.getCreadoEn())).toList();
         return ResponseEntity.ok(ResponseDTO.success("Retenciones por revisar", l));
     }
 
-    /**
-     * Resolución manual: CONFIRMAR_RETENIDA (ONVO sí retuvo: la marca pasa a RETENIDA) o PLATAFORMA (se cobró a la
-     * plataforma: se quita la marca). No acredita nada solo: el ajuste del wallet, si hace falta, lo hace el ADMIN.
-     */
+    /** Resolución manual: CONFIRMAR_RETENIDA o PLATAFORMA. Queda auditada. */
     @PostMapping("/api/admin/onvo/retenciones-por-revisar/{pedidoId}/resolver")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> resolverRetencion(@PathVariable Long pedidoId, @RequestParam String decision) {
-        var marca = retenciones.findByPedidoId(pedidoId).filter(com.hotclick.model.PedidoRetencionOnvo::porRevisar).orElse(null);
-        if (marca == null) return ResponseEntity.status(404).body(ResponseDTO.error("No hay una retención por revisar para ese pedido"));
-        if ("CONFIRMAR_RETENIDA".equals(decision)) {
-            marca.setEstado(com.hotclick.model.PedidoRetencionOnvo.RETENIDA);
-            retenciones.save(marca);
-        } else if ("PLATAFORMA".equals(decision)) {
-            retenciones.borrarPorPedido(pedidoId);
-        } else {
+        var r = revision.resolver(pedidoId, decision);
+        if (r == RetencionOnvoRevisionService.Resolucion.NO_HAY) {
+            return ResponseEntity.status(404).body(ResponseDTO.error("No hay una retención por revisar para ese pedido"));
+        }
+        if (r == RetencionOnvoRevisionService.Resolucion.DECISION_INVALIDA) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Decisión inválida"));
         }
         auditoria.registrarSiAdmin("ONVO_RETENCION_RESOLVER", "PEDIDO", pedidoId, null, decision);
