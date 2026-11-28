@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 @DisplayName("Base fiscal: comprobación automática contra Hacienda (API simulada, nunca la real)")
 class FiscalVerificacionAutoTest {
 
-    private static final String CEDULA = "3101123456";
+    private static final String CEDULA = "3111111111";
     private HaciendaContribuyenteService hacienda;
     private FiscalVerificacionAuto auto;
 

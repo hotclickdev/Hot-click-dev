@@ -1,15 +1,14 @@
 import { useCallback } from 'react'
 import usePedidoExtrasStore from '@/store/pedidoExtrasStore'
 import { ejecutarValidarCupon } from './ejecutarValidarCupon'
-import { ejecutarValidarGiftCard } from './ejecutarValidarGiftCard'
 
 /**
- * Cupón y gift card del pedido, compartidos entre el carrito y el checkout (store `pedidoExtras`).
- * Usa las mismas validaciones del checkout original (`ejecutarValidarCupon` / `ejecutarValidarGiftCard`).
+ * Cupón del pedido, compartido entre el carrito y el checkout (store `pedidoExtras`).
+ * Usa la misma validación del checkout original (`ejecutarValidarCupon`).
  */
-export function useCodigosPedido(token: string | null) {
+export function useCodigosPedido() {
   const s = usePedidoExtrasStore()
-  const { cuponInput, gcInput } = s
+  const { cuponInput } = s
 
   const validarCupon = useCallback(async () => {
     await ejecutarValidarCupon({
@@ -21,18 +20,6 @@ export function useCodigosPedido(token: string | null) {
     })
   }, [cuponInput, s.setCuponEstado, s.setCuponError, s.setCuponDescuento, s.setCuponCodigo])
 
-  const validarGiftCard = useCallback(async () => {
-    await ejecutarValidarGiftCard({
-      gcInput,
-      token,
-      setGcEstado: s.setGcEstado,
-      setGiftCard: (gift) => {
-        s.setGcSaldo(gift?.saldo ?? 0)
-        s.setGcCodigo(gift?.codigo ?? null)
-      },
-    })
-  }, [gcInput, token, s.setGcEstado, s.setGcSaldo, s.setGcCodigo])
-
   const cambiarCupon = useCallback((valor: string) => {
     s.setCuponInput(valor)
     s.setCuponEstado('idle')
@@ -41,55 +28,22 @@ export function useCodigosPedido(token: string | null) {
     s.setCuponError('')
   }, [s])
 
-  const cambiarGiftCard = useCallback((valor: string) => {
-    s.setGcInput(valor)
-    s.setGcEstado('idle')
-    s.setGcSaldo(0)
-    s.setGcCodigo(null)
-  }, [s])
-
-  /** Un solo campo: con sesión prueba primero como tarjeta de regalo y si no, como cupón. */
-  const cambiarCodigo = useCallback((valor: string) => {
-    cambiarCupon(valor)
-    cambiarGiftCard(valor)
-  }, [cambiarCupon, cambiarGiftCard])
-
-  const aplicarCodigo = useCallback(async () => {
-    if (token) {
-      await validarGiftCard()
-      if (usePedidoExtrasStore.getState().gcEstado === 'valid') return
-      s.setGcEstado('idle')
-    }
-    await validarCupon()
-  }, [token, validarGiftCard, validarCupon, s])
-
   return {
-    cambiarCodigo,
-    aplicarCodigo,
     cuponInput,
     cuponEstado: s.cuponEstado,
     cuponError: s.cuponError,
     cuponDescuento: s.cuponDescuento,
     cuponCodigo: s.cuponCodigo,
-    gcInput,
-    gcEstado: s.gcEstado,
-    gcSaldo: s.gcSaldo,
-    gcCodigo: s.gcCodigo,
     validarCupon,
-    validarGiftCard,
     cambiarCupon,
     quitarCupon: () => cambiarCupon(''),
-    cambiarGiftCard,
-    quitarGiftCard: () => cambiarGiftCard(''),
   }
 }
 
 export type CodigosPedido = ReturnType<typeof useCodigosPedido>
 
-/** Descuento del cupón (porcentaje sobre el subtotal), gift card y total tras ambos. */
-export function totalesConCodigos(subtotal: number, envio: number, cuponPorcentaje: number, gcSaldo: number) {
+/** Descuento del cupón (porcentaje sobre el subtotal) y total tras el descuento y el envío. */
+export function totalesConCodigos(subtotal: number, envio: number, cuponPorcentaje: number) {
   const descuento = cuponPorcentaje > 0 ? Math.round((subtotal * cuponPorcentaje) / 100) : 0
-  const base = subtotal - descuento + envio
-  const giftCard = gcSaldo > 0 ? Math.min(gcSaldo, base) : 0
-  return { descuento, giftCard, total: base - giftCard }
+  return { descuento, total: subtotal - descuento + envio }
 }

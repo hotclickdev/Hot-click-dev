@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 class FiscalControllersAutorizacionTest {
 
     private static InscripcionFiscalRequest inscripcion() {
-        return new InscripcionFiscalRequest("INSCRITO", "101230456", "Ana", "Ventas", "a@b.cr");
+        return new InscripcionFiscalRequest("INSCRITO", "111111111", "Ana", "Ventas", "a@example.com", true);
     }
 
     @Test
@@ -90,11 +90,17 @@ class FiscalControllersAutorizacionTest {
         assertThat(v.validate(new ReglasFiscalesRequest("SIMPLIFICADO", new BigDecimal("51"), 7, 20000, 0))).isNotEmpty();
         assertThat(v.validate(new ReglasFiscalesRequest("SIMPLIFICADO", new BigDecimal("14.00"), 0, 20000, 0))).isNotEmpty();
         assertThat(v.validate(new ReglasFiscalesRequest("SIMPLIFICADO", null, 7, 20000, 0))).isNotEmpty();
-        assertThat(v.validate(new InscripcionFiscalRequest("NO_INSCRITO", "101230456", "Ana", "Ventas", "a@b.cr"))).isNotEmpty();
+        assertThat(v.validate(new InscripcionFiscalRequest("NO_INSCRITO", "111111111", "Ana", "Ventas", "a@example.com", true))).isNotEmpty();
         assertThat(v.validate(inscripcion())).isEmpty();
-        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "101230456", "Ana", "Ventas", "no-es-correo"))).isNotEmpty();
-        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "101230456", "Ana", "Ventas", "a@@b.cr"))).isNotEmpty();
-        assertThat(v.validate(new VerificarFiscalRequest("APROBAR", "ok"))).isEmpty();
-        assertThat(v.validate(new VerificarFiscalRequest("TAL VEZ", null))).isNotEmpty();
+        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "111111111", "Ana", "Ventas", "no-es-correo", true))).isNotEmpty();
+        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "111111111", "Ana", "Ventas", "a@@example.com", true))).isNotEmpty();
+        assertThat(v.validate(new VerificarFiscalRequest("APROBAR", "ok", "abc"))).isEmpty();
+        assertThat(v.validate(new VerificarFiscalRequest("TAL VEZ", null, "abc"))).isNotEmpty();
+        assertThat(v.validate(new VerificarFiscalRequest("APROBAR", null, null))).isNotEmpty();
+        // Declaración jurada obligatoria: sin aceptarla (false o ausente) la validación falla, es decir, 400.
+        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "111111111", "Ana", "Ventas", "a@example.com", false))).isNotEmpty();
+        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "111111111", "Ana", "Ventas", "a@example.com", null))).isNotEmpty();
+        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "111111111", "Ana", "Ventas", "a@b", true))).isNotEmpty();
+        assertThat(v.validate(new InscripcionFiscalRequest("INSCRITO", "111111111", "Ana", "Ventas", "a@example", true))).isNotEmpty();
     }
 }

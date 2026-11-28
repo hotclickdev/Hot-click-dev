@@ -56,7 +56,6 @@ class PaymentServiceTest {
     @Mock private AggregatorService         aggregatorService;
     @Mock private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     @Mock private CuponService              cuponService;
-    @Mock private GiftCardService           giftCardService;
     @Mock private WebhookDispatcherService  webhookDispatcher;
     @Mock private PaymentProvider           mockProvider;
     @Mock private ApplicationEventPublisher eventPublisher;
@@ -160,7 +159,7 @@ class PaymentServiceTest {
 
         CheckoutPaquetesPlanner checkoutPaquetesPlanner = new CheckoutPaquetesPlanner();
         CheckoutGrupoFactory checkoutGrupoFactory = new CheckoutGrupoFactory(
-            checkoutValidator, checkoutPaquetesPlanner, orderPricingService, checkoutOrderFactory, giftCardService);
+            checkoutValidator, checkoutPaquetesPlanner, orderPricingService, checkoutOrderFactory);
         PedidoGrupoService pedidoGrupoService = new PedidoGrupoService(pedidoRepository, pagoRepository);
 
         service = new PaymentService();
@@ -170,7 +169,6 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(service, "providerFactory", providerFactory);
         ReflectionTestUtils.setField(service, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(service, "pagoRepository", pagoRepository);
-        ReflectionTestUtils.setField(service, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(service, "eventPublisher", eventPublisher);
         ReflectionTestUtils.setField(service, "checkoutValidator", checkoutValidator);
         ReflectionTestUtils.setField(checkoutValidator, "onvoEnabled", true);
@@ -194,7 +192,6 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoRepository", pedidoRepository);
         ReflectionTestUtils.setField(orderConfirmationService, "cuponService", cuponService);
-        ReflectionTestUtils.setField(orderConfirmationService, "giftCardService", giftCardService);
         ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoGrupoService", pedidoGrupoService);

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { Suspense, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { HotClickMark } from '@/components/ui/BrandLogo'
@@ -111,9 +111,23 @@ export default function PlataformaShell({ children }: { children: ReactNode }) {
               <ItemNav key={`m-${item.to}`} item={item} cuenta={'badge' in item ? cuentas[item.badge] : undefined} compacto />
             ))}
           </nav>
-          <main className="flex-1 px-4 py-4 md:px-6 md:py-5">{children}</main>
+          <main className="flex-1 px-4 py-4 md:px-6 md:py-5">
+            {/* Cada pantalla es lazy: el Suspense va aquí para que el menú y la cabecera no parpadeen al navegar. */}
+            <Suspense fallback={<CargandoPantalla />}>{children}</Suspense>
+          </main>
         </div>
       </div>
+    </div>
+  )
+}
+
+function CargandoPantalla() {
+  return (
+    <div role="status" aria-live="polite" className="grid gap-3" data-testid="cargando-pantalla">
+      <span className="sr-only">Cargando…</span>
+      <div className="h-8 w-48 animate-pulse rounded-lg bg-hc-n-200 motion-reduce:animate-none" />
+      <div className="h-32 animate-pulse rounded-[14px] bg-hc-n-200 motion-reduce:animate-none" />
+      <div className="h-32 animate-pulse rounded-[14px] bg-hc-n-200 motion-reduce:animate-none" />
     </div>
   )
 }

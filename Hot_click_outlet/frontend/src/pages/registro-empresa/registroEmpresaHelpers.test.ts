@@ -46,5 +46,6 @@ describe('registro Pyme: opcional y errores legibles', () => {
     const { readFileSync } = await import('node:fs')
     const src = readFileSync(new URL('../RegistroEmpresaPage.tsx', import.meta.url), 'utf8')
     expect(src).toContain("situacionFiscal: ''")
+    expect(src).toContain('aceptaDeclaracionFiscal: false')
   })
 })

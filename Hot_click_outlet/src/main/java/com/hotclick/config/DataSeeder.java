@@ -89,15 +89,15 @@ public class DataSeeder implements ApplicationRunner {
         seedPlan("EMPRENDEDOR", descripcionEmprendedor(trialConfig != null ? trialConfig.cupo() : null),
             empUsd, empPct, 0, empPrecio,
             2, 50, 1, 1,
-            true /*pos (V174)*/, false, false, true, false, false, 0, false);
+            true /*pos (V174)*/, false, false, true, false, false, 0);
         seedPlan("PYME", "Mensualidad + comisión por venta.",
             pymeUsd, pymePct, 0, pymePrecio,
             5, 500, 2, 2,
-            true, false, true, true, true, false, 80, true);
+            true, false, true, true, true, false, 80);
         seedPlan("NEGOCIO_PLUS", "Mensualidad + comisión por venta sin tope.",
             plusUsd, plusPct, 0, plusPrecio,
             -1, -1, -1, -1,
-            true, true, true, true, true, false, -1, true);
+            true, true, true, true, true, false, -1);
         backfillSinPlan();
     }
 
@@ -110,7 +110,7 @@ public class DataSeeder implements ApplicationRunner {
         BigDecimal precioUsd, BigDecimal comision, int comisionMinimaCrc, int precioMensualCrc,
         int maxUsuarios, int maxProductos, int maxBodegas, int maxCajas,
         boolean pos, boolean crm, boolean compras, boolean reportes,
-        boolean ai, boolean api, int creditosAi, boolean giftCards
+        boolean ai, boolean api, int creditosAi
     ) {
         var existente = planRepository.findByNombre(nombre);
         if (existente.isPresent()) {
@@ -139,7 +139,6 @@ public class DataSeeder implements ApplicationRunner {
         plan.setTieneReportes(reportes);
         plan.setTieneAi(ai);
         plan.setTieneApi(api);
-        plan.setTieneGiftCards(giftCards);
         plan.setMaxCreditosAi(creditosAi);
         plan.setActivo(true);
         planRepository.save(plan);

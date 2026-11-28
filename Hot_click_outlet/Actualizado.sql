@@ -4760,7 +4760,7 @@ CREATE TABLE IF NOT EXISTS hot_click_config_fiscal_tb (
     CONSTRAINT ck_config_fiscal_costo CHECK (onvo_costo_pago_crc BETWEEN 0 AND 100000)
 );
 
--- Situación fiscal del negocio. NULL = sin declarar (no se cobra el extra).
+-- Situación fiscal del negocio. NULL = sin declarar: paga el extra igual que NO_INSCRITO.
 -- Valores: INSCRITO | REGIMEN_SIMPLIFICADO | NO_INSCRITO (validado en la aplicación).
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS situacion_fiscal VARCHAR(25);
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS cedula_fiscal VARCHAR(12);
@@ -4775,6 +4775,9 @@ ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fecha_fiscal_verificad
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_verif_auto VARCHAR(20);
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_verif_auto_detalle VARCHAR(2000);
 ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_verif_auto_fecha TIMESTAMP;
+-- Declaración jurada: quién aceptó ser representante o autorizado y que los datos son verdaderos, y cuándo (sin IP).
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_declaracion_fecha TIMESTAMP;
+ALTER TABLE hot_click_empresa_tb ADD COLUMN IF NOT EXISTS fiscal_declaracion_por BIGINT;
 
 -- V261 (Fase 3 fiscal): comisión por negocio sincronizada a ONVO (marketplaceAppFee) y enlaces de pago único
 -- para cobrar facturas tardías. Aditiva e idempotente: no borra ni reescribe datos.

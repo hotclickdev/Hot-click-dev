@@ -59,7 +59,7 @@ function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: nu
   // Base fiscal: negocios con inscripción por verificar (solo ADMIN); los que Hacienda confirmó van primero.
   const esAdmin = useAuthStore((s) => s.userRole) === 'ADMIN'
   const [soloFiscal, setSoloFiscal] = useState(false)
-  const [fiscalPend, setFiscalPend] = useState<Map<string, string | null>>(new Map())
+  const [fiscalPend, setFiscalPend] = useState<Map<string, { verif: string | null; duplicada: boolean }>>(new Map())
   const { filas, estado, mensaje, recargar } = useCola('negocios', () => adminService.getEmpresas())
   useEffect(() => {
     if (marca === 0) return
@@ -70,8 +70,8 @@ function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: nu
     fiscalService.pendientes()
       .then(({ data }) => {
         const lista = Array.isArray(data) ? data : Array.isArray((data as { data?: unknown })?.data) ? (data as { data: unknown[] }).data : []
-        const mapa = new Map<string, string | null>()
-        for (const f of lista as Array<Record<string, unknown>>) mapa.set(String(f.empresaId), typeof f.verifAuto === 'string' ? f.verifAuto : null)
+        const mapa = new Map<string, { verif: string | null; duplicada: boolean }>()
+        for (const f of lista as Array<Record<string, unknown>>) mapa.set(String(f.empresaId), { verif: typeof f.verifAuto === 'string' ? f.verifAuto : null, duplicada: f.cedulaDuplicada === true })
         setFiscalPend(mapa)
       })
       .catch((err: unknown) => console.error(err))
@@ -81,7 +81,7 @@ function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: nu
   const visibles = useMemo(() => {
     const base = filtrarPorDestacado(porEstado, filtroDestacado)
     if (!soloFiscal) return base
-    const orden = (f: Fila) => (fiscalPend.get(idSeguro(f) ?? '') === 'COINCIDE' ? 0 : 1)
+    const orden = (f: Fila) => (fiscalPend.get(idSeguro(f) ?? '')?.verif === 'COINCIDE' ? 0 : 1)
     return base.filter((f) => fiscalPend.has(idSeguro(f) ?? '')).sort((a, b) => orden(a) - orden(b))
   }, [porEstado, filtroDestacado, soloFiscal, fiscalPend])
 
@@ -122,7 +122,8 @@ function ListaNegocios({ activo, marca, onRapida }: { activo?: string; marca: nu
                     <Chip tono="azul">{texto(fila.plan, texto(fila.planSaas, 'Sin plan'))}</Chip>
                     <Chip tono={texto(fila.estadoEmpresa).toUpperCase() === 'ACTIVO' ? 'ok' : 'alerta'}>{etiquetaEstado(texto(fila.estadoEmpresa, '—'))}</Chip>
                     <Chip>{fila.visibilidadPublica === true ? 'Catálogo visible' : 'Catálogo oculto'}</Chip>
-                    {fiscalPend.has(negocioId) && <Chip tono={fiscalPend.get(negocioId) === 'COINCIDE' ? 'ok' : 'alerta'}>{fiscalPend.get(negocioId) === 'COINCIDE' ? 'Fiscal: coincide' : 'Fiscal por verificar'}</Chip>}
+                    {fiscalPend.has(negocioId) && <Chip tono={fiscalPend.get(negocioId)?.verif === 'COINCIDE' ? 'ok' : 'alerta'}>{fiscalPend.get(negocioId)?.verif === 'COINCIDE' ? 'Fiscal: coincide' : 'Fiscal por verificar'}</Chip>}
+                    {fiscalPend.get(negocioId)?.duplicada === true && <Chip tono="alerta">Cédula repetida</Chip>}
                     {fila.destacado === true && <Chip tono="azul">{ETIQUETA_DESTACADO}</Chip>}
                     {fila.destacado === true && textoOrden(fila) && <Chip>{`Orden ${textoOrden(fila)}`}</Chip>}
                   </span>

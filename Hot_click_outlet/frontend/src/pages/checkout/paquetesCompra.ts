@@ -65,12 +65,6 @@ export type OpcionEntrega = {
   retiro?: RetiroPaquete
 }
 
-export type GiftCardAplicada = {
-  codigo: string
-  saldo: number
-  empresaId: number | null
-}
-
 export type PaqueteEntregaPayload = {
   empresaId: number
   metodoEnvio: string
@@ -225,29 +219,12 @@ export function descuentoSinpePaquete(
   return descuentoSinpe(base, pct)
 }
 
-/** La tarjeta de regalo solo cubre el paquete de su negocio, hasta su total (ya con el descuento SINPE). */
-export function montoGiftCard(
-  paquetes: PaqueteCompra[],
-  envios: Record<string, string>,
-  cupon: CuponCarrito | null,
-  giftCard: GiftCardAplicada | null,
-  descuentos: DescuentosSinpe = {},
-): number {
-  if (!giftCard || giftCard.saldo <= 0) return 0
-  const paquete = paquetes.find((p) => p.empresaId != null && p.empresaId === giftCard.empresaId)
-  if (!paquete) return 0
-  const totalPaquete = paquete.subtotal - descuentoPaquete(paquete, cupon) + costoEnvio(envios[paquete.clave])
-    - descuentoSinpePaquete(paquete, envios, cupon, descuentos)
-  return Math.min(giftCard.saldo, Math.max(0, totalPaquete))
-}
-
 export type TotalesCompra = {
   cantidadProductos: number
   subtotal: number
   envio: number
   descuento: number
   descuentoSinpe: number
-  giftCard: number
   total: number
 }
 
@@ -255,21 +232,18 @@ export function totalesCompra(
   paquetes: PaqueteCompra[],
   envios: Record<string, string>,
   cupon: CuponCarrito | null,
-  giftCard: GiftCardAplicada | null = null,
   descuentos: DescuentosSinpe = {},
 ): TotalesCompra {
   const subtotal = paquetes.reduce((suma, p) => suma + p.subtotal, 0)
   const envio = envioTotal(paquetes, envios)
   const descuento = descuentoCupon(paquetes, cupon)
   const sinpe = paquetes.reduce((suma, p) => suma + descuentoSinpePaquete(p, envios, cupon, descuentos), 0)
-  const gift = montoGiftCard(paquetes, envios, cupon, giftCard, descuentos)
   return {
     cantidadProductos: paquetes.reduce((suma, p) => suma + p.cantidadProductos, 0),
     subtotal,
     envio,
     descuento,
     descuentoSinpe: sinpe,
-    giftCard: gift,
-    total: Math.max(0, subtotal - descuento + envio - sinpe - gift),
+    total: Math.max(0, subtotal - descuento + envio - sinpe),
   }
 }

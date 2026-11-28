@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
-import { ejecutarValidarGiftCard } from './ejecutarValidarGiftCard'
 import { ejecutarValidarCupon } from './ejecutarValidarCupon'
 import { ejecutarValidateDomicilio, ejecutarPagarCheckout } from './ejecutarPagarCheckout'
 import { ejecutarSubirComprobante, ejecutarSinpeWhatsApp } from './ejecutarSubirComprobante'
@@ -40,8 +39,6 @@ type CheckoutActionsDeps = {
   aceptaDatos: boolean
   bodegaRetiro: BodegaRetiro | null
   cuponCodigo: string | null
-  gcCodigo: string | null
-  gcInput: string
   cuponInput: string
   paquetes: PaqueteCheckout[]
   metodoEnvioPorPaquete: Record<string, string>
@@ -50,9 +47,6 @@ type CheckoutActionsDeps = {
   validatePhone: (v: string) => string
   validateAddress: (v: string) => string
   validateGuestEmail: (v: string) => string
-  setGcEstado: (value: string) => void
-  setGcSaldo: (value: number) => void
-  setGcCodigo: (value: string | null) => void
   setCuponEstado: (value: string) => void
   setCuponError: (value: string) => void
   setCuponDescuento: (value: number) => void
@@ -73,7 +67,7 @@ type CheckoutActionsDeps = {
 }
 
 /**
- * Handlers de checkout — flujo bit-idéntico al original (pago, SINPE, cupón, gift card).
+ * Handlers de checkout — flujo bit-idéntico al original (pago, SINPE, cupón).
  */
 export function useCheckoutActions(deps: CheckoutActionsDeps) {
   const {
@@ -102,8 +96,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     aceptaDatos,
     bodegaRetiro,
     cuponCodigo,
-    gcCodigo,
-    gcInput,
     cuponInput,
     paquetes,
     metodoEnvioPorPaquete,
@@ -112,9 +104,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     validatePhone,
     validateAddress,
     validateGuestEmail,
-    setGcEstado,
-    setGcSaldo,
-    setGcCodigo,
     setCuponEstado,
     setCuponError,
     setCuponDescuento,
@@ -133,18 +122,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     setSinpeUploadEstado,
     setSinpeUploadError,
   } = deps
-
-  const validarGiftCard = useCallback(async () => {
-    await ejecutarValidarGiftCard({
-      gcInput,
-      token,
-      setGcEstado,
-      setGiftCard: (gift) => {
-        setGcSaldo(gift?.saldo ?? 0)
-        setGcCodigo(gift?.codigo ?? '')
-      },
-    })
-  }, [gcInput, token, setGcEstado, setGcSaldo, setGcCodigo])
 
   const validarCupon = useCallback(async () => {
     await ejecutarValidarCupon({ cuponInput, setCuponEstado, setCuponError, setCuponDescuento, setCuponCodigo })
@@ -179,7 +156,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
       setSinpeNombreErr, setSinpeCedulaErr, telefono,
       metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
       notas, direccion, direccionPedido, provincia, canton, sinpeEmail, totalFinal, items, bodegaRetiro,
-      cuponCodigo, gcCodigo, sinpeTelefono, sinpeTipoIdentificacion, iniciarPago, sinpeManualHabilitado, tarjetaOnvoHabilitada,
+      cuponCodigo, sinpeTelefono, sinpeTipoIdentificacion, iniciarPago, sinpeManualHabilitado, tarjetaOnvoHabilitada,
       avisarSinMetodo: () => showToast(t('checkout.f.sinMetodoPago'), 'error'),
     })
   }, [
@@ -214,7 +191,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     items,
     bodegaRetiro,
     cuponCodigo,
-    gcCodigo,
     sinpeTelefono,
     sinpeTipoIdentificacion,
     iniciarPago,
@@ -249,7 +225,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
   ])
 
   return {
-    validarGiftCard,
     validarCupon,
     validateDomicilio,
     handlePagar,

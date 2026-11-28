@@ -106,9 +106,6 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET, "/api/planes").permitAll()
             .requestMatchers(GET, "/api/billing/planes").permitAll()
             .requestMatchers("/api/billing/**").authenticated()
-            // Gift cards — validación pública en checkout; admin CRUD protegido por @PreAuthorize
-            .requestMatchers(GET, "/api/gift-cards/validar").authenticated()
-            .requestMatchers("/api/admin/gift-cards/**").authenticated()
             // White label branding y chat público — sin auth
             .requestMatchers(GET,  "/api/public/branding").permitAll()
             // A-2: montos de envío, solo lectura (la escritura es /api/admin/configuracion/envio, ADMIN)
@@ -341,7 +338,6 @@ final class SecurityAuthorizationRules {
                 "/admin/mi-empresa", "/admin/security",
                 "/admin/billing", "/admin/billing/**",
                 "/admin/offline", "/admin/offline/**",
-                "/admin/gift-cards", "/admin/gift-cards/**",
                 "/checkout/qr", "/checkout/qr/**").permitAll()
             // Visitante (aprobado 2-oct-2026): páginas públicas en entrada directa y fallback SPA para el 404.
             // Van después de "/api/**" y de todas las reglas de rol, así que no cambian ninguna.

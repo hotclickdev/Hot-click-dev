@@ -47,8 +47,8 @@ class RateLimitRutaInvalidaFilasYLogTest {
     }
 
     private static int llamarInvalida(RateLimitingFilter f, String ip) throws Exception {
-        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/gift-cards/%zz");
-        req.setRequestURI("/api/gift-cards/%zz");
+        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/division-territorial/%zz");
+        req.setRequestURI("/api/division-territorial/%zz");
         req.addHeader("X-Test-Ip", ip);
         MockHttpServletResponse res = new MockHttpServletResponse();
         f.doFilter(req, res, new MockFilterChain());

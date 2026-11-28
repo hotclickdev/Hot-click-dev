@@ -17,7 +17,7 @@ export const PRIORITY_ROUTES = [
     strong: ['/checkout'],
     specName: /checkout/,
     priority: 'high',
-    notes: 'Pago + SINPE + gift card',
+    notes: 'Pago + SINPE',
   },
   {
     id: 'admin-pos',

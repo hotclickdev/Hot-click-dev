@@ -80,7 +80,7 @@ public class CheckoutOrderFactory {
         pedido.setNumeroPedido(Constants.generarNumeroPedido("ORD-"));
         pedido.setFechaPedido(LocalDateTime.now(Constants.ZONA_CR));
         pedido.setSubtotal(subtotal);
-        pedido.setTotalPedido(pricing.totalConGC());
+        pedido.setTotalPedido(pricing.total());
         pedido.setCostoEnvio(pricing.costoEnvio());
         if ("ENVIO_RAPIDO".equals(metodoEnvio)) {
             // Uber Flash 8:00–19:00: fuera de la ventana el pedido queda en cola para el día siguiente.
@@ -90,8 +90,6 @@ public class CheckoutOrderFactory {
         pedido.setUtilidadBruta(subtotal - costoTotal - pricing.descuento());
         pedido.setDescuentoTotal(pricing.descuento());
         pedido.setCuponCodigo(pricing.codigoCuponAplicado());
-        pedido.setGiftCardCodigo(pricing.gcMonto() > 0 ? pricing.gcCodigo() : null);
-        pedido.setGiftCardMonto(pricing.gcMonto());
         pedido.setMontoImpuesto(pricing.impuesto());
         pedido.setAplicaImpuesto(pricing.impuesto() > 0);
         if (subtotal > 0) {

@@ -42,16 +42,18 @@ test.describe('Carrito por paquetes (Figma 28:989, 30:2268, 51:1820)', () => {
     await expect(page).toHaveURL(/\/checkout/)
   })
 
-  test('móvil: notas, cupón, gift card, WhatsApp y pie con el total', async ({ page }) => {
+  // Alto de 560 px: sin el campo de gift card el carrito es más corto y el resumen entraría entero en pantalla,
+  // lo que oculta el pie fijo (comportamiento esperado); así el pie sigue a la vista.
+  test('móvil: notas, cupón (sin gift card), WhatsApp y pie con el total', async ({ page }) => {
     await mockApis(page)
     await seedPedido(page)
-    await page.setViewportSize({ width: 390, height: 844 })
+    await page.setViewportSize({ width: 390, height: 560 })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
 
     await expect(page.getByText('Tu pedido (1)')).toBeVisible()
     await expect(page.getByLabel('Notas para el pedido (opcional)')).toBeVisible()
     await expect(page.getByLabel('Código de cupón')).toBeVisible()
-    await expect(page.getByLabel('Código de tarjeta de regalo')).toBeDisabled()
+    await expect(page.getByLabel('Código de tarjeta de regalo')).toHaveCount(0)
 
     const whatsapp = page.getByRole('button', { name: 'Pedir por WhatsApp' })
     await expect(whatsapp).toBeVisible()
@@ -64,7 +66,7 @@ test.describe('Carrito por paquetes (Figma 28:989, 30:2268, 51:1820)', () => {
   test('las notas se escriben en el carrito y el pedido sigue al checkout', async ({ page }) => {
     await mockApis(page)
     await seedPedido(page)
-    await page.setViewportSize({ width: 390, height: 844 })
+    await page.setViewportSize({ width: 390, height: 560 })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
     await page.getByLabel('Notas para el pedido (opcional)').fill('Tocar el timbre dos veces')
     await page.getByRole('button', { name: /Continuar compra · ₡/ }).click()

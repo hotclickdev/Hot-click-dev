@@ -6,7 +6,6 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.AuditoriaAdminRegistroService;
-import com.hotclick.utils.CedulaCr;
 import com.hotclick.utils.Constants;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,8 @@ import java.util.Map;
 public class EmpresaFiscalService {
 
     /** Datos del formulario "Ya me inscribí". */
-    public record Inscripcion(String situacion, String cedula, String nombre, String actividad, String correo) {}
+    public record Inscripcion(String situacion, String cedula, String nombre, String actividad, String correo,
+                              boolean aceptaDeclaracion) {}
 
     private final EmpresaRepository empresaRepository;
     private final CompanyScope companyScope;
@@ -34,6 +34,8 @@ public class EmpresaFiscalService {
 
     /** Cada envío consulta a Hacienda: tope diario por negocio para que no sirva de buscador de cédulas ajenas. */
     static final int MAX_ENVIOS_DIA = 5;
+    public static final String MENSAJE_DECLARACION =
+        "Tenés que declarar que sos representante legal o autorizado del negocio y que los datos fiscales son verdaderos.";
     static final int VENTANA_SEG = 24 * 60 * 60;
 
     public EmpresaFiscalService(EmpresaRepository empresaRepository, CompanyScope companyScope,
@@ -83,10 +85,9 @@ public class EmpresaFiscalService {
         if (s != SituacionFiscal.INSCRITO && s != SituacionFiscal.REGIMEN_SIMPLIFICADO) {
             throw new IllegalArgumentException("Elegí Inscrito o Régimen Simplificado.");
         }
-        String cedula = CedulaCr.realONulo(in.cedula());
-        if (cedula == null) {
-            throw new IllegalArgumentException("La cédula no es válida: física 9 dígitos, jurídica 10, DIMEX 11 o 12.");
-        }
+        if (!in.aceptaDeclaracion()) throw new IllegalArgumentException(MENSAJE_DECLARACION);
+        String cedula = CedulaFiscal.normalizar(in.cedula());
+        if (cedula == null) throw new IllegalArgumentException(CedulaFiscal.MENSAJE);
         String nombre = texto(in.nombre(), "El nombre como aparece en Hacienda", 2, 150);
         String actividad = texto(in.actividad(), "La actividad económica", 2, 150);
         String correo = correo(in.correo());
@@ -95,26 +96,19 @@ public class EmpresaFiscalService {
         }
         // Si la API falla queda ERROR_CONSULTA y el envío no se bloquea; el ADMIN puede reintentar.
         FiscalVerificacionAuto.Resultado auto = verificacionAuto.comprobar(cedula, s, nombre, actividad);
-        e.setSituacionFiscal(s.name());
-        e.setCedulaFiscal(cedula);
-        e.setNombreFiscal(nombre);
-        e.setActividadFiscal(actividad);
-        e.setCorreoFacturacion(correo);
-        e.setFiscalVerifAuto(auto.estado());
-        e.setFiscalVerifAutoDetalle(auto.detalle());
-        e.setFiscalVerifAutoFecha(LocalDateTime.now(Constants.ZONA_CR));
-        e.setFechaSituacionFiscal(LocalDateTime.now(Constants.ZONA_CR));
-        e.setFiscalVerificado(false);
-        e.setFiscalVerificadoPor(null);
-        e.setFechaFiscalVerificado(null);
-        empresaRepository.save(e);
+        // UPDATE dirigido solo a las columnas fiscales: no pisa cambios hechos al resto de la empresa mientras tanto.
+        empresaRepository.actualizarInscripcionFiscal(e.getId(), s.name(), cedula, nombre, actividad, correo,
+            LocalDateTime.now(Constants.ZONA_CR), auto.estado(), auto.detalle(), companyScope.getCurrentUserId());
+        e = cargar(empresaId);
         // Sin la cédula ni el correo en el detalle de auditoría.
         auditoria.registrar("FISCAL_INSCRIPCION", "EMPRESA", e.getId(), e.getId(), s.name());
         return vista(e);
     }
 
     private Empresa cargar(Long empresaId) {
-        Empresa e = empresaRepository.findById(empresaId)
+        // Con el plan cargado (fetch join): registrarInscripcion no es transaccional y open-in-view=false, así que un
+        // proxy LAZY del plan fallaría al armar la comisión de la respuesta (QA-FISCAL-1).
+        Empresa e = empresaRepository.findByIdWithPlan(empresaId)
             .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
         companyScope.assertCanAccess(e.getId());
         return e;
@@ -155,7 +149,9 @@ public class EmpresaFiscalService {
     private static String correo(String v) {
         String t = v == null ? "" : v.trim().toLowerCase(Locale.ROOT);
         // El formato lo valida @Email en InscripcionFiscalRequest; acá solo un piso por si se llama sin el DTO.
-        if (t.length() > 150 || t.indexOf('@') < 1 || t.contains(" ")) {
+        int arroba = t.indexOf('@');
+        if (t.length() > 150 || arroba < 1 || t.contains(" ") || t.indexOf('@', arroba + 1) >= 0
+            || t.indexOf('.', arroba) <= arroba + 1 || t.endsWith(".")) {
             throw new IllegalArgumentException("El correo para facturas no parece válido.");
         }
         return t;

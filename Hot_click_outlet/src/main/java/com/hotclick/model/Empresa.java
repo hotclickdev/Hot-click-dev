@@ -141,7 +141,7 @@ public class Empresa {
     // ── Situación fiscal del negocio (Fase 1 base fiscal, V244) ───────────────
     // Separada de la configuración de emisión de arriba: define la comisión efectiva del marketplace.
 
-    /** INSCRITO | REGIMEN_SIMPLIFICADO | NO_INSCRITO; null = sin declarar. */
+    /** INSCRITO | REGIMEN_SIMPLIFICADO | NO_INSCRITO; null = sin declarar (paga el extra). */
     @Column(name = "situacion_fiscal", length = 25)
     private String situacionFiscal;
 
@@ -180,6 +180,13 @@ public class Empresa {
 
     @Column(name = "fiscal_verif_auto_fecha")
     private LocalDateTime fiscalVerifAutoFecha;
+
+    /** Declaración jurada: cuándo y quién (id de usuario, sin IP) aceptó que los datos fiscales son verdaderos. */
+    @Column(name = "fiscal_declaracion_fecha")
+    private LocalDateTime fiscalDeclaracionFecha;
+
+    @Column(name = "fiscal_declaracion_por")
+    private Long fiscalDeclaracionPor;
 
     // ── Billing Stripe (F14) ─────────────────────────────────────────────────
 
@@ -449,6 +456,10 @@ public class Empresa {
     public void setFiscalVerifAutoDetalle(String v) { this.fiscalVerifAutoDetalle = v; }
     public LocalDateTime getFiscalVerifAutoFecha() { return fiscalVerifAutoFecha; }
     public void setFiscalVerifAutoFecha(LocalDateTime v) { this.fiscalVerifAutoFecha = v; }
+    public LocalDateTime getFiscalDeclaracionFecha() { return fiscalDeclaracionFecha; }
+    public void setFiscalDeclaracionFecha(LocalDateTime v) { this.fiscalDeclaracionFecha = v; }
+    public Long getFiscalDeclaracionPor() { return fiscalDeclaracionPor; }
+    public void setFiscalDeclaracionPor(Long v) { this.fiscalDeclaracionPor = v; }
 
     public boolean isConfiguracionFiscalCompleta() {
         return cedulaJuridica != null && !cedulaJuridica.isBlank()

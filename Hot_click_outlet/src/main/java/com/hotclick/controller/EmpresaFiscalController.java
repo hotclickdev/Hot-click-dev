@@ -64,7 +64,8 @@ public class EmpresaFiscalController {
         if (!propietarioGuard.puedeGestionarEmpresa(empresaId)) return soloPropietario();
         try {
             Map<String, Object> data = fiscal.registrarInscripcion(empresaId, new EmpresaFiscalService.Inscripcion(
-                body.situacion(), body.cedula(), body.nombre(), body.actividad(), body.correo()));
+                body.situacion(), body.cedula(), body.nombre(), body.actividad(), body.correo(),
+                Boolean.TRUE.equals(body.aceptaDeclaracion())));
             return ResponseEntity.ok(ResponseDTO.success("Inscripción registrada", data));
         } catch (LimiteIntentosFiscalException e) {
             return ResponseEntity.status(429).body(ResponseDTO.error(e.getMessage()));

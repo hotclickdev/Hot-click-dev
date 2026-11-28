@@ -5,7 +5,6 @@ import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.service.CuponService;
-import com.hotclick.service.GiftCardService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -43,12 +42,11 @@ class CheckoutIvaRegimenTest {
     private static OrderPricingService pricing() {
         OrderPricingService s = new OrderPricingService();
         ReflectionTestUtils.setField(s, "cuponService", mock(CuponService.class));
-        ReflectionTestUtils.setField(s, "giftCardService", mock(GiftCardService.class));
         return s;
     }
 
     private static OrderPricingResult precio(PaymentCheckoutRequest r, CheckoutPaquetesPlanner.Paquete paq) {
-        return pricing().calcularPaquete(r, paq.bodega(), paq.subtotal(), "RETIRO", Integer.MAX_VALUE, paq.lineasIva());
+        return pricing().calcularPaquete(r, paq.bodega(), paq.subtotal(), "RETIRO", paq.lineasIva());
     }
 
     private static int total(PaymentCheckoutRequest r, CheckoutPaquetesPlanner.Paquete paq) {
@@ -87,7 +85,7 @@ class CheckoutIvaRegimenTest {
         OrderPricingService s = pricing();
         ReflectionTestUtils.setField(s, "cuponService", cupones);
         r.setCodigoCupon("PROMO10");
-        return s.calcularPaquete(r, paq.bodega(), paq.subtotal(), envio, Integer.MAX_VALUE, paq.lineasIva());
+        return s.calcularPaquete(r, paq.bodega(), paq.subtotal(), envio, paq.lineasIva());
     }
 
     /** Pedido como lo arma el checkout con el resultado del pricing (precio, descuento, envío e IVA). */

@@ -5,7 +5,6 @@ import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
-import com.hotclick.service.GiftCardService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,16 +22,13 @@ public class CheckoutGrupoFactory {
     private final CheckoutPaquetesPlanner planner;
     private final OrderPricingService orderPricingService;
     private final CheckoutOrderFactory checkoutOrderFactory;
-    private final GiftCardService giftCardService;
 
     public CheckoutGrupoFactory(CheckoutValidator checkoutValidator, CheckoutPaquetesPlanner planner,
-                                OrderPricingService orderPricingService, CheckoutOrderFactory checkoutOrderFactory,
-                                GiftCardService giftCardService) {
+                                OrderPricingService orderPricingService, CheckoutOrderFactory checkoutOrderFactory) {
         this.checkoutValidator = checkoutValidator;
         this.planner = planner;
         this.orderPricingService = orderPricingService;
         this.checkoutOrderFactory = checkoutOrderFactory;
-        this.giftCardService = giftCardService;
     }
 
     public record Subpedido(Pedido pedido, OrderPricingResult pricing) {}
@@ -40,10 +36,6 @@ public class CheckoutGrupoFactory {
     public record Grupo(List<Subpedido> subpedidos, int totalCobro) {
         public Pedido principal() { return subpedidos.get(0).pedido(); }
         public List<Pedido> pedidos() { return subpedidos.stream().map(Subpedido::pedido).toList(); }
-        /** Todo el pedido lo cubre la tarjeta de regalo: no hace falta pasarela. */
-        public boolean cubiertoPorGiftCard() {
-            return totalCobro == 0 && subpedidos.stream().anyMatch(s -> s.pricing().gcMonto() > 0);
-        }
     }
 
     /**
@@ -91,7 +83,6 @@ public class CheckoutGrupoFactory {
             .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new)));
 
         String grupoPago = "GP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
-        int gcRestante = saldoGiftCard(req);
         int totalCobro = 0;
         List<Subpedido> subpedidos = new ArrayList<>();
         int[] envios = enviosPorNegocio(paquetes);
@@ -100,8 +91,7 @@ public class CheckoutGrupoFactory {
         for (int i = 0; i < paquetes.size(); i++) {
             CheckoutPaquetesPlanner.Paquete paquete = paquetes.get(i);
             OrderPricingResult pricing = orderPricingService.calcularPaquete(
-                req, paquete.bodega(), paquete.subtotal(), paquete.metodoEnvio(), gcRestante, paquete.lineasIva(), envios[i]);
-            gcRestante -= pricing.gcMonto();
+                req, paquete.bodega(), paquete.subtotal(), paquete.metodoEnvio(), paquete.lineasIva(), envios[i]);
             Pedido pedido = checkoutOrderFactory.crearSubpedido(pricing, paquete.subtotal(), paquete.costoTotal(),
                 provider, usuario, paquete.bodega(), paquete.metodoEnvio(), paquete.notas(), grupoPago, estadoInicial);
             checkoutOrderFactory.aplicarDestino(pedido, req.getDireccionEntrega(), destino,
@@ -110,7 +100,7 @@ public class CheckoutGrupoFactory {
             pedido.setStockReservadoEn(java.time.LocalDateTime.now(com.hotclick.utils.Constants.ZONA_CR));
             checkoutOrderFactory.addItemSnapshots(pedido, paquete.items(), reservation.productosMap());
             subpedidos.add(new Subpedido(pedido, pricing));
-            totalCobro += pricing.totalConGC();
+            totalCobro += pricing.total();
         }
         return new Grupo(subpedidos, totalCobro);
     }
@@ -141,12 +131,6 @@ public class CheckoutGrupoFactory {
         if (b != null && b.getEmpresa() != null && b.getEmpresa().getId() != null) return "E" + b.getEmpresa().getId();
         if (b != null && b.getId() != null) return "B" + b.getId();
         return "P" + indice;
-    }
-
-    private int saldoGiftCard(PaymentCheckoutRequest req) {
-        String codigo = req.getCodigoGiftCard();
-        if (codigo == null || codigo.isBlank()) return 0;
-        return giftCardService.validarPublico(codigo).map(gc -> gc.getSaldoActual()).orElse(0);
     }
 
     /**

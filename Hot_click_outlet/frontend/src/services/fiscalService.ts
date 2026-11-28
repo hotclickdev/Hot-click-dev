@@ -7,6 +7,8 @@ export type InscripcionFiscal = {
   nombre: string
   actividad: string
   correo: string
+  /** Declaración jurada: sin aceptarla el servidor responde 400. */
+  aceptaDeclaracion: boolean
 }
 
 export type ReglasFiscales = {
@@ -29,6 +31,7 @@ export const fiscalService = {
   pendientes: () => api.get('/admin/empresas/fiscal/pendientes'),
   detalleAdmin: (empresaId: string | number) => api.get(`/admin/empresas/${empresaId}/fiscal`),
   reconsultar: (empresaId: string | number) => api.post(`/admin/empresas/${empresaId}/fiscal/reconsultar`),
-  verificar: (empresaId: string | number, decision: 'APROBAR' | 'RECHAZAR', motivo?: string) =>
-    api.post(`/admin/empresas/${empresaId}/fiscal/verificar`, { decision, motivo: motivo || undefined }),
+  /** `huella` es la del detalle que el ADMIN vio: si el negocio cambió sus datos, el servidor responde 409. */
+  verificar: (empresaId: string | number, decision: 'APROBAR' | 'RECHAZAR', huella: string, motivo?: string) =>
+    api.post(`/admin/empresas/${empresaId}/fiscal/verificar`, { decision, huella, motivo: motivo || undefined }),
 }
