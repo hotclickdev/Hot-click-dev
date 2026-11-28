@@ -1021,8 +1021,6 @@
     "notasTitulo": "Notes for the order (optional)",
     "notasPh": "Special instructions, preferred time, etc.",
     "notasAyuda": "The store receives your note with the package.",
-    "cuponPh": "Coupon code",
-    "agregarCupon": "Add coupon",
     "envioTotal_one": "Total shipping ({{count}} package)",
     "envioTotal_other": "Total shipping ({{count}} packages)"
   },
@@ -1438,18 +1436,6 @@
     "guestPhoneRequired": "Phone *",
     "guestPhoneHelp": "Required for home delivery (8 digits)",
     "guestLoginLink": "Already have an account? Sign in",
-    "codigo": {
-      "cuponTitulo": "Discount coupon",
-      "aplicar": "Apply",
-      "quitar": "Remove",
-      "validando": "Checking…",
-      "cuponPlaceholder": "Coupon code",
-      "cuponAria": "Coupon code",
-      "cuponInvalidoTitulo": "Invalid or unavailable code",
-      "cuponValidoTitulo": "Valid coupon",
-      "cuponDescuento": "{{porcentaje}}% discount applied",
-      "lineaDescuento": "Discount ({{porcentaje}}%)"
-    },
     "shippingVaries": "Varies",
     "encomiendaNote": "HotClick does not charge the shipping fee — you pay it directly to the courier on delivery.",
     "f": {
@@ -1522,7 +1508,6 @@
       "ocultar": "Hide",
       "ver": "Show",
       "productosResumen": "Products",
-      "tienesCupon": "Have a coupon?",
       "metodoResumen": {
         "ENVIO_NORMAL_GAM": "Standard shipping",
         "ENVIO_NORMAL_FUERA_GAM": "Standard shipping",
@@ -1569,8 +1554,7 @@
       "subirComprobante": "Error uploading the receipt. Please try again.",
       "adjuntarComprobante": "You must attach an image of the receipt",
       "nombreRequerido": "Full name is required",
-      "cedulaRequerida": "ID number is required",
-      "cuponInvalido": "Invalid or unavailable code"
+      "cedulaRequerida": "ID number is required"
     }
   },
   "payment": {
@@ -2475,20 +2459,6 @@
     "removeWishlist": "Remove from favorites",
     "addWishlist": "Add to favorites",
     "addedToast": "added"
-  },
-  "promo": {
-    "firstPurchase": "on your first purchase",
-    "title": "Welcome to HotClick!",
-    "subtitle": "Enter your email and we'll send you a unique discount code.",
-    "emailPlaceholder": "you@email.com",
-    "getCoupon": "Get my coupon",
-    "sending": "Sending...",
-    "noThanks": "No thanks",
-    "successTitle": "Check your email!",
-    "successSub": "We sent you your code. Enter it at checkout on your first purchase.",
-    "viewProducts": "View products",
-    "close": "Close",
-    "discount": "13% off"
   },
   "exitIntent": {
     "title": "Still thinking?",
@@ -4040,19 +4010,10 @@
       "continuarTotal": "Continue to checkout · {{total}}",
       "movidoFavoritos": "{{nombre}} moved to favorites"
     },
-    "cupon": {
-      "aplicado": "Coupon {{codigo}} applied",
-      "quitar": "Remove",
-      "placeholder": "Coupon code",
-      "validando": "Checking…",
-      "aplicar": "Apply",
-      "agregar": "Add coupon"
-    },
     "resumen": {
       "productos": "Products ({{count}})",
       "envio_one": "Shipping ({{count}} package)",
       "envio_other": "Shipping ({{count}} packages)",
-      "descuento": "Coupon {{codigo}}",
       "descuentoSinpe": "Discount for paying with SINPE or cash",
       "totalEstimado": "Estimated total",
       "notaMovil": "You pay everything together to HotClick. Each store ships its package. VAT included in each product's price.",
@@ -4152,7 +4113,6 @@
       "ocultar": "Hide",
       "ver": "Show",
       "productos": "Products",
-      "tenesCupon": "Have a coupon?",
       "pagar": "Pay {{total}}",
       "consentimiento": "I authorize the processing of my data and its transfer to the seller solely to coordinate the delivery of the order, in accordance with the",
       "privacidad": "Privacy Policy",

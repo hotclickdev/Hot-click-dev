@@ -5,13 +5,9 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import type { PaqueteCarrito } from '@/pages/carrito/cartHelpers'
-import { CampoCodigo, LineaCodigo, TarjetaCodigos, TituloValido } from './CodigoDescuento'
-import { formatoRebaja } from './codigoDescuentoHelpers'
 import { formatPrice } from '@/utils/format'
 import { destinoSinpeVisible } from './checkoutHelpers'
-import { ICONOS_CHECKOUT } from './iconosCheckout'
 import type { CheckoutFormState } from './useCheckoutForm'
-import type { CodigosPedido } from './useCodigosPedido'
 import { PAGO_EFECTIVO, PAGO_SINPE, metodoProximamente, metodoSeleccionable, proveedorDe } from './pagoPrincipal'
 import { metodosDisponibles } from './metodosPago'
 import { TIPOS_IDENTIFICACION_SINPE } from '@/utils/sinpeOnvo'
@@ -134,56 +130,19 @@ function NotaEfectivo() {
   return <p className="rounded-[8px] bg-hc-warning-bg px-3 py-2 text-[12px] leading-4 text-hc-warning">{t('checkout.f.efectivoNota')}</p>
 }
 
-type CodigosCheckoutProps = {
-  codigos: CodigosPedido
-  descuento: number
-}
-
-/** Cupón en un campo con «Aplicar» (Figma `55:2220` válido, `55:2284` inválido). */
-export function CodigosCheckout({ codigos, descuento }: CodigosCheckoutProps) {
-  const { t } = useTranslation()
-  return (
-    <TarjetaCodigos titulo={t('checkout.codigo.cuponTitulo')}>
-      <CampoCodigo
-        valor={codigos.cuponInput}
-        estado={codigos.cuponEstado}
-        placeholder={t('checkout.codigo.cuponPlaceholder')}
-        ariaLabel={t('checkout.codigo.cuponAria')}
-        maxLength={30}
-        onCambiar={codigos.cambiarCupon}
-        onAplicar={codigos.validarCupon}
-        onQuitar={codigos.quitarCupon}
-        invalido={{ titulo: codigos.cuponError || t('checkout.codigo.cuponInvalidoTitulo') }}
-        detalleValido={(
-          <>
-            <TituloValido texto={t('checkout.codigo.cuponValidoTitulo')} />
-            <LineaCodigo etiqueta={t('checkout.codigo.cuponDescuento', { porcentaje: codigos.cuponDescuento })} valor={formatoRebaja(descuento)} rebaja />
-          </>
-        )}
-        t={t}
-      />
-    </TarjetaCodigos>
-  )
-}
-
 type ResumenPagoMovilProps = {
   paquetes: PaqueteCarrito[]
   unidades: number
   subtotal: number
   envio: number
   envioVaria: boolean
-  descuento: number
-  cuponPorcentaje: number
-  codigos: CodigosPedido
 }
 
-/** "Resumen · 4 productos en 3 paquetes" con "¿Tenés un cupón?" (Figma `29:1408`). */
-export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVaria, descuento, cuponPorcentaje, codigos }: ResumenPagoMovilProps) {
+/** "Resumen · 4 productos en 3 paquetes" (Figma `29:1408`). */
+export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVaria }: ResumenPagoMovilProps) {
   const { t } = useTranslation()
   const [abierto, setAbierto] = useState(true)
-  const [codigosAbiertos, setCodigosAbiertos] = useState(Boolean(codigos.cuponCodigo))
   return (
-    <>
     <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal]">
       <div className="flex items-center gap-2 font-semibold">
         <h2 className="min-w-0 flex-1 font-sans text-[14px] tracking-normal text-hc-n-900">
@@ -214,20 +173,8 @@ export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVar
         <p className="font-medium text-hc-n-600">{t('cart.envioLinea', { count: paquetes.length })}</p>
         <p className="font-semibold text-hc-n-900">{envioVaria && envio === 0 ? t('checkout.f.varia') : formatPrice(envio)}</p>
       </div>
-      {descuento > 0 && (
-        <div className="flex items-start justify-between text-[13px]">
-          <p className="font-medium text-hc-n-600">{t('checkout.codigo.lineaDescuento', { porcentaje: cuponPorcentaje })}</p>
-          <p className="font-semibold text-hc-success-text">{formatoRebaja(descuento)}</p>
-        </div>
-      )}
       <p className="text-[11px] leading-[15px] text-hc-n-600">{t('cart.notaResumenEscritorio')}</p>
-      <button type="button" onClick={() => setCodigosAbiertos((v) => !v)} aria-expanded={codigosAbiertos} className="flex items-center gap-[6px] text-left text-[13px] font-semibold text-hc-blue-600">
-        <IconoFigma src={ICONOS_CHECKOUT.cupon} size={14} className="text-hc-success" />
-        {t('checkout.f.tienesCupon')}
-      </button>
     </section>
-    {codigosAbiertos && <CodigosCheckout codigos={codigos} descuento={descuento} />}
-    </>
   )
 }
 

@@ -230,13 +230,6 @@ class SecurityEndpointsTest extends BaseIntegrationTest {
     // ── Webhooks — públicos (sin auth) ────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /api/cupones/validar sin token → no 401 (invitado en checkout)")
-    void cuponesValidar_public_noAuth() throws Exception {
-        mockMvc.perform(get("/api/cupones/validar").param("codigo", "NOEXISTE"))
-            .andExpect(status().isBadRequest());
-    }
-
-    @Test
     @DisplayName("DELETE /api/public/shopping-assistant/session/{id} sin token → no 401")
     void shoppingAssistantExpire_public_noAuth() throws Exception {
         mockMvc.perform(delete("/api/public/shopping-assistant/session/00000000-0000-4000-8000-000000000000"))

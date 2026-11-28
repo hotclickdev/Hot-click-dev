@@ -1021,8 +1021,6 @@
     "notasTitulo": "Notas para o pedido (opcional)",
     "notasPh": "Instruções especiais, horário preferido, etc.",
     "notasAyuda": "A loja recebe a sua nota junto com o pacote.",
-    "cuponPh": "Código do cupom",
-    "agregarCupon": "Adicionar cupom",
     "envioTotal_one": "Envio total ({{count}} pacote)",
     "envioTotal_other": "Envio total ({{count}} pacotes)"
   },
@@ -1438,18 +1436,6 @@
     "guestPhoneRequired": "Telefone *",
     "guestPhoneHelp": "Obrigatório para entrega a domicílio (8 dígitos)",
     "guestLoginLink": "Já tem conta? Entrar",
-    "codigo": {
-      "cuponTitulo": "Cupom de desconto",
-      "aplicar": "Aplicar",
-      "quitar": "Remover",
-      "validando": "Validando…",
-      "cuponPlaceholder": "Código do cupom",
-      "cuponAria": "Código do cupom",
-      "cuponInvalidoTitulo": "Código inválido ou indisponível",
-      "cuponValidoTitulo": "Cupom válido",
-      "cuponDescuento": "{{porcentaje}}% de desconto aplicado",
-      "lineaDescuento": "Desconto ({{porcentaje}}%)"
-    },
     "shippingVaries": "Varia",
     "encomiendaNote": "A HotClick não cobra o frete — você paga diretamente à transportadora na entrega.",
     "f": {
@@ -1522,7 +1508,6 @@
       "ocultar": "Ocultar",
       "ver": "Ver",
       "productosResumen": "Produtos",
-      "tienesCupon": "Tem um cupom?",
       "metodoResumen": {
         "ENVIO_NORMAL_GAM": "Envio normal",
         "ENVIO_NORMAL_FUERA_GAM": "Envio normal",
@@ -1569,8 +1554,7 @@
       "subirComprobante": "Erro ao enviar o comprovante. Tente novamente.",
       "adjuntarComprobante": "Você deve anexar uma imagem do comprovante",
       "nombreRequerido": "O nome completo é obrigatório",
-      "cedulaRequerida": "O número do documento é obrigatório",
-      "cuponInvalido": "Código inválido ou indisponível"
+      "cedulaRequerida": "O número do documento é obrigatório"
     }
   },
   "payment": {
@@ -2475,20 +2459,6 @@
     "removeWishlist": "Remover dos favoritos",
     "addWishlist": "Adicionar aos favoritos",
     "addedToast": "adicionado"
-  },
-  "promo": {
-    "firstPurchase": "na sua primeira compra",
-    "title": "Bem-vindo ao HotClick!",
-    "subtitle": "Insira seu e-mail e te enviamos um código de desconto único e intransferível.",
-    "emailPlaceholder": "voce@email.com",
-    "getCoupon": "Receber meu cupom",
-    "sending": "Enviando...",
-    "noThanks": "Não, obrigado",
-    "successTitle": "Verifique seu e-mail!",
-    "successSub": "Enviamos seu código. Insira-o no checkout na sua primeira compra.",
-    "viewProducts": "Ver produtos",
-    "close": "Fechar",
-    "discount": "13% de desconto"
   },
   "exitIntent": {
     "title": "Ainda pensando?",
@@ -4040,19 +4010,10 @@
       "continuarTotal": "Continuar compra · {{total}}",
       "movidoFavoritos": "{{nombre}} foi para os favoritos"
     },
-    "cupon": {
-      "aplicado": "Cupom {{codigo}} aplicado",
-      "quitar": "Remover",
-      "placeholder": "Código do cupom",
-      "validando": "Validando…",
-      "aplicar": "Aplicar",
-      "agregar": "Adicionar cupom"
-    },
     "resumen": {
       "productos": "Produtos ({{count}})",
       "envio_one": "Frete ({{count}} pacote)",
       "envio_other": "Frete ({{count}} pacotes)",
-      "descuento": "Cupom {{codigo}}",
       "descuentoSinpe": "Desconto por pagar com SINPE ou dinheiro",
       "totalEstimado": "Total estimado",
       "notaMovil": "Você paga tudo junto à HotClick. Cada loja despacha seu pacote. IVA incluído no preço de cada produto.",
@@ -4152,7 +4113,6 @@
       "ocultar": "Ocultar",
       "ver": "Ver",
       "productos": "Produtos",
-      "tenesCupon": "Tem um cupom?",
       "pagar": "Pagar {{total}}",
       "consentimiento": "Autorizo o tratamento dos meus dados e sua transferência ao vendedor com o único fim de coordenar a entrega do pedido, conforme a",
       "privacidad": "Política de Privacidade",

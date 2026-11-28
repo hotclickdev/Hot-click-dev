@@ -56,22 +56,14 @@ test('carrito a 1440 (P12): el encabezado del paquete usa n/50 (38:1359) y el he
   await sinDesborde(page)
 })
 
-const AGREGAR_CUPON = 'Agregar cupón'
-
 for (const ancho of [390, 1440]) {
-  test(`cupón inválido a ${ancho} (P13): el aviso usa el alias bg-hc-danger-bg con el color de --hc-danger-bg`, async ({ page }) => {
+  test(`carrito a ${ancho}: los cupones se retiraron, no hay campo ni botón de cupón`, async ({ page }) => {
     await preparar(page)
-    await page.route('**/api/cupones/validar**', (route) =>
-      route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ message: 'Cupón vencido' }) }))
     await page.setViewportSize({ width: ancho, height: ancho === 390 ? 844 : 900 })
     await page.goto('/carrito', { waitUntil: 'domcontentloaded' })
-    // En escritorio el campo vive en el resumen, detrás de "Agregar cupón" (ResumenCarrito).
-    if (ancho === 1440) await page.getByRole('button', { name: AGREGAR_CUPON }).click()
-    const campo = page.getByRole('textbox', { name: 'Código de cupón' }).locator('visible=true')
-    await campo.fill('VENCIDO')
-    await campo.press('Enter')
-    const aviso = page.getByRole('alert').filter({ hasText: 'Cupón vencido' }).locator('visible=true')
-    await expect(aviso).toHaveCSS('background-color', await colorDeToken(page, '--hc-danger-bg', 'backgroundColor'))
+    await expect(page.getByRole('heading', { name: /^Tu pedido llega en/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /cup[oó]n/i })).toHaveCount(0)
+    await expect(page.getByRole('textbox', { name: /cup[oó]n/i })).toHaveCount(0)
     await sinDesborde(page)
   })
 }

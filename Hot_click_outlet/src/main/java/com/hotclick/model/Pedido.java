@@ -49,6 +49,8 @@ public class Pedido extends BaseEntity {
     @Column(name = "subtotal", nullable = false)
     private Integer subtotal;
 
+    // Solo lectura para el JSON: el descuento lo calcula el servidor; un cliente no puede fijarlo.
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     @Column(name = "descuento_total")
     private Integer descuentoTotal = 0;
 
@@ -121,6 +123,8 @@ public class Pedido extends BaseEntity {
     @Column(name = "notificaciones", columnDefinition = "text")
     private String notificaciones = "[]";
 
+    // Cupones retirados: la columna queda para pedidos históricos; un cliente no puede fijarla.
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     @Column(name = "cupon_codigo", length = 20)
     private String cuponCodigo;
 

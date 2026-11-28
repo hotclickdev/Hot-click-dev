@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/Toast'
-import { ejecutarValidarCupon } from './ejecutarValidarCupon'
 import { ejecutarValidateDomicilio, ejecutarPagarCheckout } from './ejecutarPagarCheckout'
 import { ejecutarSubirComprobante, ejecutarSinpeWhatsApp } from './ejecutarSubirComprobante'
 import type { BodegaRetiro, ItemCheckout, PaqueteCheckout } from './checkoutHelpers'
@@ -38,8 +37,6 @@ type CheckoutActionsDeps = {
   pagoData: PagoDataAcciones | null
   aceptaDatos: boolean
   bodegaRetiro: BodegaRetiro | null
-  cuponCodigo: string | null
-  cuponInput: string
   paquetes: PaqueteCheckout[]
   metodoEnvioPorPaquete: Record<string, string>
   necesitaDireccion: boolean
@@ -47,10 +44,6 @@ type CheckoutActionsDeps = {
   validatePhone: (v: string) => string
   validateAddress: (v: string) => string
   validateGuestEmail: (v: string) => string
-  setCuponEstado: (value: string) => void
-  setCuponError: (value: string) => void
-  setCuponDescuento: (value: number) => void
-  setCuponCodigo: (value: string | null) => void
   setDireccionError: Dispatch<SetStateAction<string>>
   setDireccionDirty: Dispatch<SetStateAction<boolean>>
   setTelefonoError: Dispatch<SetStateAction<string>>
@@ -95,8 +88,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     pagoData,
     aceptaDatos,
     bodegaRetiro,
-    cuponCodigo,
-    cuponInput,
     paquetes,
     metodoEnvioPorPaquete,
     necesitaDireccion,
@@ -104,10 +95,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     validatePhone,
     validateAddress,
     validateGuestEmail,
-    setCuponEstado,
-    setCuponError,
-    setCuponDescuento,
-    setCuponCodigo,
     setDireccionError,
     setDireccionDirty,
     setTelefonoError,
@@ -122,10 +109,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     setSinpeUploadEstado,
     setSinpeUploadError,
   } = deps
-
-  const validarCupon = useCallback(async () => {
-    await ejecutarValidarCupon({ cuponInput, setCuponEstado, setCuponError, setCuponDescuento, setCuponCodigo })
-  }, [cuponInput, setCuponEstado, setCuponError, setCuponDescuento, setCuponCodigo])
 
   const validateDomicilio = useCallback(() => {
     return ejecutarValidateDomicilio({
@@ -156,7 +139,7 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
       setSinpeNombreErr, setSinpeCedulaErr, telefono,
       metodoEnvio, paquetes, metodoEnvioPorPaquete, necesitaDireccion,
       notas, direccion, direccionPedido, provincia, canton, sinpeEmail, totalFinal, items, bodegaRetiro,
-      cuponCodigo, sinpeTelefono, sinpeTipoIdentificacion, iniciarPago, sinpeManualHabilitado, tarjetaOnvoHabilitada,
+      sinpeTelefono, sinpeTipoIdentificacion, iniciarPago, sinpeManualHabilitado, tarjetaOnvoHabilitada,
       avisarSinMetodo: () => showToast(t('checkout.f.sinMetodoPago'), 'error'),
     })
   }, [
@@ -190,7 +173,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
     totalFinal,
     items,
     bodegaRetiro,
-    cuponCodigo,
     sinpeTelefono,
     sinpeTipoIdentificacion,
     iniciarPago,
@@ -225,7 +207,6 @@ export function useCheckoutActions(deps: CheckoutActionsDeps) {
   ])
 
   return {
-    validarCupon,
     validateDomicilio,
     handlePagar,
     handleSinpeWhatsApp,

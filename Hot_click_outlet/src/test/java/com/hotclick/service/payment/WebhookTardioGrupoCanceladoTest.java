@@ -4,7 +4,6 @@ import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
-import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
@@ -42,7 +41,6 @@ class WebhookTardioGrupoCanceladoTest {
 
     @Mock private PedidoRepository pedidoRepository;
     @Mock private PagoRepository pagoRepository;
-    @Mock private CuponService cuponService;
     @Mock private StockReservationService stockReservationService;
     @Mock private PaymentNotificationsFacade paymentNotificationsFacade;
     @Mock private PosQrVentaService posQrVentaService;

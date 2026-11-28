@@ -114,16 +114,6 @@ export type CheckoutFormState = {
   setGuestPhoneError: Dispatch<SetStateAction<string>>
   guestPhoneDirty: boolean
   setGuestPhoneDirty: Dispatch<SetStateAction<boolean>>
-  cuponInput: string
-  setCuponInput: (value: string) => void
-  cuponEstado: string
-  setCuponEstado: (value: string) => void
-  cuponDescuento: number
-  setCuponDescuento: (value: number) => void
-  cuponCodigo: string | null
-  setCuponCodigo: (value: string | null) => void
-  cuponError: string
-  setCuponError: (value: string) => void
   aceptaDatos: boolean
   setAceptaDatos: Dispatch<SetStateAction<boolean>>
   validatePhone: (v: string) => string
@@ -131,7 +121,6 @@ export type CheckoutFormState = {
   validateGuestEmail: (v: string) => string
   costoEnvio: number
   subtotalCart: number
-  descuentoMonto: number
   totalFinal: number
 }
 
@@ -270,12 +259,8 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     return mensajeEmailInvitado(v, t)
   }
 
-  // Notas y cupón viven en el store compartido con el carrito (Figma 51:1820).
-  const {
-    notas, setNotas,
-    cuponInput, setCuponInput, cuponEstado, setCuponEstado, cuponDescuento, setCuponDescuento,
-    cuponCodigo, setCuponCodigo, cuponError, setCuponError,
-  } = usePedidoExtrasStore()
+  // Las notas viven en el store compartido con el carrito (Figma 51:1820).
+  const { notas, setNotas } = usePedidoExtrasStore()
 
   // Con sesión el nombre arranca con el de la cuenta (se puede corregir en «Tus datos»).
   const nombreCuenta = useAuthStore((s) => s.userName)
@@ -330,9 +315,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   // MED-3 Auditor 3 (b): un envío por negocio (el más caro de sus bodegas), igual que `CheckoutGrupoFactory`.
   const costoEnvio = envioPorNegocio(paquetes, metodoEnvioPorPaquete)
   const subtotalCart = total()
-  const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0
-  const baseConCupon = subtotalCart - descuentoMonto + costoEnvio
-  const totalFinal = baseConCupon
+  const totalFinal = subtotalCart + costoEnvio
 
   return {
     bodegaRetiro,
@@ -411,16 +394,6 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setGuestPhoneError,
     guestPhoneDirty,
     setGuestPhoneDirty,
-    cuponInput,
-    setCuponInput,
-    cuponEstado,
-    setCuponEstado,
-    cuponDescuento,
-    setCuponDescuento,
-    cuponCodigo,
-    setCuponCodigo,
-    cuponError,
-    setCuponError,
     aceptaDatos,
     setAceptaDatos,
     validatePhone,
@@ -428,7 +401,6 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     validateGuestEmail,
     costoEnvio,
     subtotalCart,
-    descuentoMonto,
     totalFinal,
   }
 }
