@@ -75,7 +75,8 @@ class BaseFiscalFlujoHttpTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
-        jdbcTemplate.execute("DROP TABLE IF EXISTS hot_click_rol_permiso_tb");
+        // DELETE y no DROP: la tabla rol-permiso es nativa del esquema de pruebas y otras clases (que comparten el contexto) la usan.
+        jdbcTemplate.update("DELETE FROM hot_click_rol_permiso_tb");
         jdbcTemplate.update("DELETE FROM hot_click_permiso_tb");
         miembroEmpresaRepository.deleteAll();
         usuarioRepository.findAll().forEach(u -> { u.setEmpresa(null); u.setEmpresaRegistro(null); usuarioRepository.save(u); });
