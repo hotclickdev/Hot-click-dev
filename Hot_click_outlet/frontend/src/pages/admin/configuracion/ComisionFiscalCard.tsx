@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { fiscalService } from '@/services/fiscalService'
 import {
-  MENSAJE_CEDULA, MENSAJE_SIN_DECLARAR, SITUACIONES, correoValido, formatoPct, leerEstadoFiscal, mensajePendiente, normalizarCedula,
+  MENSAJE_CEDULA, MENSAJE_SIN_DECLARAR, TEXTO_DECLARACION, SITUACIONES, correoValido, formatoPct, leerEstadoFiscal, mensajePendiente, normalizarCedula,
   type EstadoFiscal, type SituacionFiscal,
 } from '@/utils/fiscal'
 import { Block, FormGroup, StyledInput, mensajeErrorConfig } from './configUi'
@@ -18,6 +18,7 @@ export default function ComisionFiscalCard() {
   const [estado, setEstado] = useState<EstadoFiscal | null>(null)
   const [abierto, setAbierto] = useState(false)
   const [datos, setDatos] = useState<Datos>(VACIO)
+  const [acepta, setAcepta] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [mensaje, setMensaje] = useState<Mensaje | null>(null)
 
@@ -49,6 +50,7 @@ export default function ComisionFiscalCard() {
     if (datos.nombre.trim().length < 2) return 'Poné el nombre como aparece en Hacienda.'
     if (datos.actividad.trim().length < 2) return 'Poné tu actividad económica.'
     if (!correoValido(datos.correo)) return 'El correo para facturas no parece válido.'
+    if (!acepta) return 'Tenés que aceptar la declaración para enviar tus datos.'
     return null
   }
 
@@ -61,11 +63,12 @@ export default function ComisionFiscalCard() {
     try {
       const { data } = await fiscalService.yaMeInscribi({
         ...datos, cedula: datos.cedula.trim(), nombre: datos.nombre.trim(),
-        actividad: datos.actividad.trim(), correo: datos.correo.trim(),
+        actividad: datos.actividad.trim(), correo: datos.correo.trim(), aceptaDeclaracion: acepta,
       })
       setEstado(leerEstadoFiscal(data))
       setAbierto(false)
       setDatos(VACIO)
+      setAcepta(false)
       setMensaje({ ok: true, texto: mensajePendiente(leerEstadoFiscal(data).verifAuto) })
     } catch (err) {
       setMensaje({ ok: false, texto: mensajeErrorConfig(err, 'No se pudo registrar. Revisá los datos.') })
@@ -149,6 +152,11 @@ export default function ComisionFiscalCard() {
             <FormGroup label="Correo para facturas" fieldId="fiscal-correo">
               <StyledInput id="fiscal-correo" type="email" value={datos.correo} maxLength={150} onChange={(ev) => campo('correo', ev.target.value)} />
             </FormGroup>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', minHeight: '44px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={acepta} onChange={(ev) => setAcepta(ev.target.checked)}
+                style={{ marginTop: '3px', width: '16px', height: '16px', accentColor: 'var(--hc-accent)' }} />
+              <span style={{ fontSize: '12px', lineHeight: 1.6 }}>{TEXTO_DECLARACION}</span>
+            </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="submit" className="cfg-btn cfg-btn-primary" disabled={enviando}>{enviando ? 'Guardando…' : 'Guardar'}</button>
               <button type="button" className="cfg-btn" disabled={enviando} onClick={() => setAbierto(false)}>Cancelar</button>

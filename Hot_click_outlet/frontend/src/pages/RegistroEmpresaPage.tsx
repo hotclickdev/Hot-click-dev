@@ -20,6 +20,7 @@ import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
+import { exigeDeclaracion } from '@/utils/fiscal'
 import { cumplePoliticaContrasena, MENSAJE_POLITICA_CONTRASENA } from '@/utils/politicaContrasena'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
@@ -90,6 +91,7 @@ export default function RegistroEmpresaPage() {
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
     situacionFiscal: '',
+    aceptaDeclaracionFiscal: false,
   })
   const ubicacion = useUbicacionDespachoForm()
 
@@ -109,6 +111,10 @@ export default function RegistroEmpresaPage() {
     }
     if (!form.situacionFiscal) {
       setError('Contanos si estás inscrito en Hacienda')
+      return
+    }
+    if (exigeDeclaracion(form.situacionFiscal) && !form.aceptaDeclaracionFiscal) {
+      setError('Aceptá la declaración para continuar')
       return
     }
     // Registro corto: la ubicación es opcional acá; si empezó a llenarla, tiene que quedar completa.
@@ -152,6 +158,7 @@ export default function RegistroEmpresaPage() {
         passwordAdmin:        form.passwordAdmin,
         telefonoAdmin:        telefonoOpcional(form.telefonoAdmin),
         situacionFiscal:      form.situacionFiscal,
+        ...(exigeDeclaracion(form.situacionFiscal) ? { aceptaDeclaracionFiscal: form.aceptaDeclaracionFiscal } : {}),
         ...(ubicacionIniciada(ubicacion.ubicacion) ? payloadUbicacionRegistro(ubicacion.ubicacion) : {}),
         declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
@@ -270,7 +277,8 @@ export default function RegistroEmpresaPage() {
                       error={error}
                       onCampo={actualizarCampo}
                       onTelefono={(val) => setForm((p) => ({ ...p, telefonoEmpresa: val }))}
-                      onSituacionFiscalChange={(v) => setForm((p) => ({ ...p, situacionFiscal: v }))}
+                      onSituacionFiscalChange={(v) => setForm((p) => ({ ...p, situacionFiscal: v, aceptaDeclaracionFiscal: exigeDeclaracion(v) ? p.aceptaDeclaracionFiscal : false }))}
+                      onAceptaDeclaracionChange={(v) => setForm((p) => ({ ...p, aceptaDeclaracionFiscal: v }))}
                       onSubmit={handleNext}
                     />
                   )}

@@ -37,6 +37,8 @@ export type RegistroEmpresaForm = {
   telefonoAdmin: string
   /** ¿Estás inscrito en Hacienda? Vacío hasta que el vendedor elige. */
   situacionFiscal: SituacionFiscal | ''
+  /** Declaración jurada: obligatoria cuando dice estar inscrito. */
+  aceptaDeclaracionFiscal: boolean
 }
 
 export type AuthRegistroEmpresa = AuthResponse & { otpEnviado?: boolean }

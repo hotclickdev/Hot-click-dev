@@ -46,7 +46,7 @@ const CAMPOS: Record<string, string> = {
 
 /** Sello para el ADMIN: coincide, no coincide (qué campo) o no se pudo consultar. */
 export function selloVerifAuto(verifAuto: VerifAuto | null, diferencias: unknown): { texto: string; tono: 'ok' | 'alerta' | 'neutro' } {
-  if (verifAuto === 'COINCIDE') return { texto: 'Coincide con Hacienda', tono: 'ok' }
+  if (verifAuto === 'COINCIDE') return { texto: 'Coincide con Hacienda (no prueba titularidad)', tono: 'ok' }
   if (verifAuto === 'NO_COINCIDE' || verifAuto === 'NO_ENCONTRADO') {
     const lista = Array.isArray(diferencias) ? diferencias.map((d) => CAMPOS[String(d)] ?? String(d)) : []
     return { texto: `No coincide${lista.length ? `: ${lista.join(', ')}` : ''}`, tono: 'alerta' }
@@ -58,12 +58,25 @@ export function esSituacion(valor: unknown): valor is SituacionFiscal {
   return valor === 'INSCRITO' || valor === 'REGIMEN_SIMPLIFICADO' || valor === 'NO_INSCRITO'
 }
 
-/** Cédula de Costa Rica: solo dígitos, con guiones o espacios de formato. Devuelve los dígitos o null. */
+/**
+ * Cédula de Costa Rica por tipo (igual que el servidor): física de 9 dígitos sin 0 inicial, jurídica de 10 que empieza
+ * con 3, DIMEX de 11 o 12. Solo dígitos, con guiones o espacios de formato. Devuelve los dígitos o null.
+ */
 export function normalizarCedula(valor: string): string | null {
   const t = valor.trim()
   if (!/^[0-9][0-9 -]*$/.test(t)) return null
   const digitos = t.replace(/\D/g, '')
-  return digitos.length >= 9 && digitos.length <= 12 ? digitos : null
+  if (digitos.length === 9) return digitos.startsWith('0') ? null : digitos
+  if (digitos.length === 10) return digitos.startsWith('3') ? digitos : null
+  return digitos.length === 11 || digitos.length === 12 ? digitos : null
+}
+
+export const TEXTO_DECLARACION =
+  'Declaro que soy representante legal o autorizado de este negocio y que los datos fiscales son verdaderos. Me hago responsable de su veracidad.'
+
+/** Solo quien dice estar inscrito (Inscrito o Régimen Simplificado) acepta la declaración. */
+export function exigeDeclaracion(situacion: SituacionFiscal | ''): boolean {
+  return situacion === 'INSCRITO' || situacion === 'REGIMEN_SIMPLIFICADO'
 }
 
 /** 9 dígitos = física, 10 = jurídica, 11 o 12 = DIMEX. */
@@ -74,7 +87,7 @@ export function tipoCedula(digitos: string): 'FISICA' | 'JURIDICA' | 'DIMEX' | n
   return null
 }
 
-export const MENSAJE_CEDULA = 'Cédula física de 9 dígitos, jurídica de 10 o DIMEX de 11 o 12.'
+export const MENSAJE_CEDULA = 'Cédula física de 9 dígitos (sin 0 inicial), jurídica de 10 (empieza con 3) o DIMEX de 11 o 12.'
 
 export function correoValido(valor: string): boolean {
   const t = valor.trim()

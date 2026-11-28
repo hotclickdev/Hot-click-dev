@@ -7,13 +7,21 @@ import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.security.CompanyScope;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.utils.Constants;
+import com.hotclick.utils.CedulaCr;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Verificación de la inscripción en Hacienda por un ADMIN de plataforma. El extra de comisión solo se quita al
@@ -24,6 +32,8 @@ import java.util.Map;
 public class FiscalVerificacionService {
 
     static final int MAX_MOTIVO = 200;
+    static final int MAX_OTROS = 5;
+    static final String MENSAJE_CAMBIO = "El negocio cambió sus datos, recargá.";
 
     private final EmpresaRepository empresaRepository;
     private final CompanyScope companyScope;
@@ -52,8 +62,21 @@ public class FiscalVerificacionService {
         m.put("correoFacturacion", e.getCorreoFacturacion());
         m.put("fechaSituacionFiscal", e.getFechaSituacionFiscal());
         m.put("fiscalVerificado", e.isFiscalVerificado());
+        // Declaración jurada del negocio (cuándo y qué usuario; sin IP).
+        m.put("declaracionFecha", e.getFiscalDeclaracionFecha());
+        m.put("declaracionPor", e.getFiscalDeclaracionPor());
         m.put("fechaFiscalVerificado", e.getFechaFiscalVerificado());
         m.put("pendienteVerificacion", pendiente(e));
+        // Huella de lo que el ADMIN está viendo: verificar la exige igual, para no aprobar datos que ya cambiaron.
+        m.put("huella", huella(e));
+        // Cédula declarada por otro negocio (posible cédula ajena) y contra la cédula ya conocida de esta cuenta.
+        List<Long> otros = e.getCedulaFiscal() == null ? List.of()
+            : empresaRepository.idsConMismaCedulaFiscal(e.getCedulaFiscal(), e.getId(), PageRequest.of(0, MAX_OTROS));
+        m.put("cedulaFiscalDuplicada", !otros.isEmpty());
+        m.put("otrosNegociosMismaCedula", otros);
+        String conocida = cedulaConocidaDeLaCuenta(e);
+        m.put("cedulaCuenta", conocida);
+        m.put("cedulaCoincideConCuenta", conocida == null || e.getCedulaFiscal() == null ? null : conocida.equals(e.getCedulaFiscal()));
         // Comprobación automática: lo que respondió Hacienda, para compararlo con lo declarado.
         m.put("verifAuto", e.getFiscalVerifAuto());
         m.put("verifAutoFecha", e.getFiscalVerifAutoFecha());
@@ -61,8 +84,11 @@ public class FiscalVerificacionService {
         return m;
     }
 
-    /** "Consultar Hacienda de nuevo": repite la comprobación con los datos ya declarados. No decide nada. */
-    @Transactional
+    /**
+     * "Consultar Hacienda de nuevo": repite la comprobación con los datos ya declarados. No decide nada.
+     * Sin @Transactional: la llamada a Hacienda va primero y fuera de transacción; después un UPDATE dirigido a las
+     * columnas de la comprobación, solo si el negocio no cambió sus datos mientras tanto.
+     */
     public Map<String, Object> reconsultar(Long empresaId) {
         exigirAdmin();
         Empresa e = cargar(empresaId);
@@ -71,21 +97,28 @@ public class FiscalVerificacionService {
             || e.getCedulaFiscal() == null || e.getCedulaFiscal().isBlank()) {
             throw new IllegalStateException("Este negocio no declaró una inscripción para consultar.");
         }
-        FiscalVerificacionAuto.Resultado r = verificacionAuto.comprobar(e.getCedulaFiscal(), declarada,
+        // Lo consultado: el UPDATE solo aplica si la fila sigue con esta misma cédula y fecha de declaración.
+        String cedulaConsultada = e.getCedulaFiscal();
+        LocalDateTime declaracionConsultada = e.getFechaSituacionFiscal();
+        FiscalVerificacionAuto.Resultado r = verificacionAuto.comprobar(cedulaConsultada, declarada,
             e.getNombreFiscal(), e.getActividadFiscal());
-        e.setFiscalVerifAuto(r.estado());
-        e.setFiscalVerifAutoDetalle(r.detalle());
-        e.setFiscalVerifAutoFecha(LocalDateTime.now(Constants.ZONA_CR));
-        empresaRepository.save(e);
+        int filas = empresaRepository.actualizarVerifAutoFiscal(e.getId(), cedulaConsultada, declaracionConsultada,
+            r.estado(), r.detalle(), LocalDateTime.now(Constants.ZONA_CR));
+        if (filas == 0) throw new IllegalStateException(MENSAJE_CAMBIO);
         auditoria.registrar("FISCAL_RECONSULTA", "EMPRESA", e.getId(), e.getId(), r.estado());
         return detalle(empresaId);
     }
 
     @Transactional
     @CacheEvict(value = "tenantInfo", key = "#empresaId")
-    public Map<String, Object> verificar(Long empresaId, boolean aprobar, String motivo) {
+    public Map<String, Object> verificar(Long empresaId, boolean aprobar, String motivo, String huellaVista) {
         exigirAdmin();
         Empresa e = cargar(empresaId);
+        // M2: el ADMIN aprueba o rechaza exactamente lo que vio; si el negocio reenvió datos, hay que recargar.
+        if (huellaVista == null || !MessageDigest.isEqual(huellaVista.getBytes(StandardCharsets.UTF_8),
+            huella(e).getBytes(StandardCharsets.UTF_8))) {
+            throw new IllegalStateException(MENSAJE_CAMBIO);
+        }
         if (!pendiente(e)) {
             throw new IllegalStateException("Este negocio no tiene una inscripción pendiente de verificar.");
         }
@@ -105,6 +138,25 @@ public class FiscalVerificacionService {
         auditoria.registrar("FISCAL_VERIFICACION", "EMPRESA", e.getId(), e.getId(),
             (aprobar ? "APROBAR" : "RECHAZAR") + (limpio.isEmpty() ? "" : ": " + limpio));
         return detalle(empresaId);
+    }
+
+    /** SHA-256 de lo declarado (situación, cédula, nombre, actividad, correo y fecha de la declaración). */
+    public static String huella(Empresa e) {
+        String base = String.join("\u001f", Objects.toString(e.getSituacionFiscal(), ""),
+            Objects.toString(e.getCedulaFiscal(), ""), Objects.toString(e.getNombreFiscal(), ""),
+            Objects.toString(e.getActividadFiscal(), ""), Objects.toString(e.getCorreoFacturacion(), ""),
+            Objects.toString(e.getFechaSituacionFiscal(), ""));
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(base.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    /** Cédula ya conocida de la cuenta (la de la configuración fiscal o la del registro), solo si es una cédula real. */
+    static String cedulaConocidaDeLaCuenta(Empresa e) {
+        String c = CedulaCr.realONulo(e.getCedulaJuridica());
+        return c != null ? c : CedulaCr.realONulo(e.getRucCedula());
     }
 
     static boolean pendiente(Empresa e) {

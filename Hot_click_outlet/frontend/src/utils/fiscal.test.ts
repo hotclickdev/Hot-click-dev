@@ -1,31 +1,45 @@
 import { describe, expect, it } from 'vitest'
-import { correoValido, formatoPct, leerEstadoFiscal, mensajePendiente, normalizarCedula, selloVerifAuto, tipoCedula } from './fiscal'
+import { correoValido, exigeDeclaracion, formatoPct, leerEstadoFiscal, mensajePendiente, normalizarCedula, selloVerifAuto, tipoCedula } from './fiscal'
 
 describe('cédula fiscal', () => {
-  it('acepta 9, 10, 11 y 12 dígitos con o sin guiones', () => {
-    expect(normalizarCedula('1-0123-0456')).toBe('101230456')
-    expect(normalizarCedula('3 101 123456')).toBe('3101123456')
-    expect(normalizarCedula('15500012345')).toBe('15500012345')
-    expect(normalizarCedula('155000123456')).toBe('155000123456')
+  it('acepta física (9, sin 0 inicial), jurídica (10, empieza con 3) y DIMEX (11 o 12), con o sin guiones', () => {
+    expect(normalizarCedula('1-1111-1111')).toBe('111111111')
+    expect(normalizarCedula('3 111 111111')).toBe('3111111111')
+    expect(normalizarCedula('11111111111')).toBe('11111111111')
+    expect(normalizarCedula('111111111111')).toBe('111111111111')
   })
-  it('rechaza largos fuera de rango, letras y vacío', () => {
-    expect(normalizarCedula('12345678')).toBeNull()
-    expect(normalizarCedula('1234567890123')).toBeNull()
-    expect(normalizarCedula('ABC123456')).toBeNull()
+  it('rechaza tipo inválido, largos fuera de rango, letras y vacío', () => {
+    expect(normalizarCedula('011111111')).toBeNull()
+    expect(normalizarCedula('1111111111')).toBeNull()
+    expect(normalizarCedula('2111111111')).toBeNull()
+    expect(normalizarCedula('11111111')).toBeNull()
+    expect(normalizarCedula('1111111111111')).toBeNull()
+    expect(normalizarCedula('ABC111111')).toBeNull()
     expect(normalizarCedula('')).toBeNull()
   })
   it('clasifica el tipo por largo', () => {
-    expect(tipoCedula('101230456')).toBe('FISICA')
-    expect(tipoCedula('3101123456')).toBe('JURIDICA')
-    expect(tipoCedula('15500012345')).toBe('DIMEX')
+    expect(tipoCedula('111111111')).toBe('FISICA')
+    expect(tipoCedula('3111111111')).toBe('JURIDICA')
+    expect(tipoCedula('11111111111')).toBe('DIMEX')
     expect(tipoCedula('1234')).toBeNull()
+  })
+})
+
+describe('declaración jurada', () => {
+  it('solo la exige quien dice estar inscrito', () => {
+    expect(exigeDeclaracion('INSCRITO')).toBe(true)
+    expect(exigeDeclaracion('REGIMEN_SIMPLIFICADO')).toBe(true)
+    expect(exigeDeclaracion('NO_INSCRITO')).toBe(false)
+    expect(exigeDeclaracion('')).toBe(false)
   })
 })
 
 describe('correo y porcentaje', () => {
   it('valida el correo de facturas', () => {
-    expect(correoValido('facturas@negocio.cr')).toBe(true)
+    expect(correoValido('facturas@example.com')).toBe(true)
     expect(correoValido('sin-arroba')).toBe(false)
+    expect(correoValido('a@b')).toBe(false)
+    expect(correoValido('a@b.')).toBe(false)
   })
   it('formatea el porcentaje con coma decimal', () => {
     expect(formatoPct(23)).toBe('23 %')
@@ -42,7 +56,7 @@ describe('mensajes de verificación', () => {
     expect(mensajePendiente(null)).toContain('el extra se quita cuando HotClick lo confirme')
   })
   it('el sello del ADMIN nombra los campos que no coinciden', () => {
-    expect(selloVerifAuto('COINCIDE', [])).toEqual({ texto: 'Coincide con Hacienda', tono: 'ok' })
+    expect(selloVerifAuto('COINCIDE', [])).toEqual({ texto: 'Coincide con Hacienda (no prueba titularidad)', tono: 'ok' })
     expect(selloVerifAuto('NO_COINCIDE', ['nombre', 'regimen']).texto).toBe('No coincide: nombre, régimen')
     expect(selloVerifAuto('ERROR_CONSULTA', undefined).tono).toBe('neutro')
     expect(selloVerifAuto(null, undefined).texto).toContain('No se pudo consultar')

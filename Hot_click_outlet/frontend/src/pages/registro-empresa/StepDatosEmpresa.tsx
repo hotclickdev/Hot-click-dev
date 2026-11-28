@@ -9,7 +9,7 @@ import { WHATSAPP_HOTCLICK, urlWhatsApp } from '@/pages/carrito/cartHelpers'
 import type { ChangeEvent, FormEvent } from 'react'
 import type { UbicacionDespachoForm } from '@/hooks/useUbicacionDespachoForm'
 import type { RegistroEmpresaForm } from './registroEmpresaHelpers'
-import { SITUACIONES, type SituacionFiscal } from '@/utils/fiscal'
+import { SITUACIONES, TEXTO_DECLARACION, exigeDeclaracion, type SituacionFiscal } from '@/utils/fiscal'
 
 const MENSAJE_WA_TRIBUTACION =
   'Hola HotClick, quiero vender pero aún no estoy inscrito en Tributación Directa. ¿Me ayudan con el proceso de inscripción?'
@@ -20,7 +20,9 @@ const HREF_WA_TRIBUTACION = urlWhatsApp(encodeURIComponent(MENSAJE_WA_TRIBUTACIO
  * Pregunta obligatoria "¿Estás inscrito en Hacienda?". No bloquea el registro: quien responde "No" se registra igual
  * (paga un extra de comisión hasta inscribirse y puede avisarlo después desde su panel con "Ya me inscribí").
  */
-function PreguntaHacienda({ valor, onChange }: { valor: SituacionFiscal | ''; onChange: (v: SituacionFiscal) => void }) {
+function PreguntaHacienda({ valor, onChange, acepta, onAcepta }: {
+  valor: SituacionFiscal | ''; onChange: (v: SituacionFiscal) => void; acepta: boolean; onAcepta: (v: boolean) => void
+}) {
   return (
     <fieldset className="space-y-2.5" style={{ border: 0, padding: 0, margin: 0 }}>
       <legend className="text-sm font-semibold mb-2" style={{ color: 'var(--hc-text)' }}>¿Estás inscrito en Hacienda? *</legend>
@@ -48,6 +50,13 @@ function PreguntaHacienda({ valor, onChange }: { valor: SituacionFiscal | ''; on
           </label>
         )
       })}
+      {exigeDeclaracion(valor) && (
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '0.5rem 0.75rem', minHeight: 44 }}>
+          <input type="checkbox" checked={acepta} onChange={(e) => onAcepta(e.target.checked)} required
+            style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--hc-accent)', width: 16, height: 16, cursor: 'pointer' }} />
+          <span style={{ fontSize: 12, color: 'var(--hc-muted)', lineHeight: 1.6 }}>{TEXTO_DECLARACION} *</span>
+        </label>
+      )}
       {valor === 'NO_INSCRITO' && (
         <p className="text-xs leading-relaxed px-1" style={{ color: 'var(--hc-muted)' }}>
           Podés registrarte igual. Cuando te inscribás, avisalo en tu panel y volvés a la comisión de tu plan.{' '}
@@ -61,7 +70,7 @@ function PreguntaHacienda({ valor, onChange }: { valor: SituacionFiscal | ''; on
 }
 
 export default function StepDatosEmpresa({
-  form, ubicacion, error, onCampo, onTelefono, onSituacionFiscalChange, onSubmit,
+  form, ubicacion, error, onCampo, onTelefono, onSituacionFiscalChange, onAceptaDeclaracionChange, onSubmit,
 }: {
   form: RegistroEmpresaForm
   ubicacion: UbicacionDespachoForm
@@ -69,13 +78,15 @@ export default function StepDatosEmpresa({
   onCampo: (campo: keyof RegistroEmpresaForm) => (evento: ChangeEvent<HTMLInputElement>) => void
   onTelefono: (val: string) => void
   onSituacionFiscalChange: (v: SituacionFiscal) => void
+  onAceptaDeclaracionChange: (v: boolean) => void
   onSubmit: (e: FormEvent) => void
 }) {
   return (
     <motion.form key="s0" {...STEP_MOTION} onSubmit={onSubmit} className="space-y-4">
       <Input label="Nombre del negocio *" placeholder="Ej: Mi Tienda Tica"
         value={form.nombreEmpresa} onChange={onCampo('nombreEmpresa')} required />
-      <PreguntaHacienda valor={form.situacionFiscal} onChange={onSituacionFiscalChange} />
+      <PreguntaHacienda valor={form.situacionFiscal} onChange={onSituacionFiscalChange}
+        acepta={form.aceptaDeclaracionFiscal} onAcepta={onAceptaDeclaracionChange} />
       <p className="text-xs leading-relaxed" style={{ color: 'var(--hc-muted)' }}>
         Con el nombre y tu situación ante Hacienda alcanza para empezar. Ubicación, contacto y datos de facturación los completás después en tu panel.
       </p>

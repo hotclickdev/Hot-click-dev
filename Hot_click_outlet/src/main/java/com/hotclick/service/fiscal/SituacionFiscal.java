@@ -3,7 +3,7 @@ package com.hotclick.service.fiscal;
 import java.util.Locale;
 import java.util.Optional;
 
-/** Situación del negocio ante Hacienda. Un negocio sin declarar se guarda como null (no se cobra extra). */
+/** Situación del negocio ante Hacienda. Un negocio sin declarar se guarda como null y paga el extra igual que NO_INSCRITO. */
 public enum SituacionFiscal {
     INSCRITO,
     REGIMEN_SIMPLIFICADO,

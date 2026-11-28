@@ -48,7 +48,13 @@ export default function FiscalVerificacion({ id, alCambiar }: { id: string; alCa
       alCambiar?.()
     } catch (err) {
       console.error(err)
-      setMensaje('No se pudo completar. Revisá que haya una inscripción declarada y probá de nuevo.')
+      if ((err as { response?: { status?: number } })?.response?.status === 409) {
+        // El negocio reenvió sus datos (o la fila cambió): se recarga lo que ve el ADMIN antes de decidir otra vez.
+        setMensaje('El negocio cambió sus datos, recargá.')
+        cargar()
+      } else {
+        setMensaje('No se pudo completar. Revisá que haya una inscripción declarada y probá de nuevo.')
+      }
     } finally {
       setOcupado(false)
     }
@@ -64,6 +70,11 @@ export default function FiscalVerificacion({ id, alCambiar }: { id: string; alCa
   const verificado = fila.fiscalVerificado === true
   const actividades = Array.isArray(hacienda.actividades) ? hacienda.actividades.map(String) : []
   const declaro = texto(fila.cedulaFiscal) !== ''
+  const huella = texto(fila.huella)
+  const duplicada = fila.cedulaFiscalDuplicada === true
+  const otros = Array.isArray(fila.otrosNegociosMismaCedula) ? fila.otrosNegociosMismaCedula.map(String) : []
+  const cedulaCuenta = texto(fila.cedulaCuenta)
+  const coincideCuenta = fila.cedulaCoincideConCuenta
 
   return (
     <section className={`${TARJETA} flex flex-col gap-4`}>
@@ -75,6 +86,11 @@ export default function FiscalVerificacion({ id, alCambiar }: { id: string; alCa
         {declaro && <Chip tono={sello.tono}>{sello.texto}</Chip>}
       </div>
 
+      {duplicada && (
+        <p role="alert" className="rounded-xl bg-hc-danger-bg px-3 py-2 text-sm font-semibold text-hc-primary-text">
+          Esta cédula también la declararon otros negocios ({otros.map((o) => `#${o}`).join(', ')}). Puede ser una cédula ajena: revisalo a mano.
+        </p>
+      )}
       {!declaro ? (
         <p className="text-sm text-hc-n-600">Situación declarada: {texto(fila.situacionFiscal, 'sin declarar')}. No hay datos para verificar.</p>
       ) : (
@@ -84,9 +100,11 @@ export default function FiscalVerificacion({ id, alCambiar }: { id: string; alCa
             <dl className="flex flex-col gap-2">
               {dato('Situación', texto(fila.situacionFiscal))}
               {dato('Cédula', texto(fila.cedulaFiscal))}
+              {cedulaCuenta !== '' && dato('Cédula ya conocida de la cuenta', `${cedulaCuenta}${coincideCuenta === false ? ' (no coincide con la declarada)' : coincideCuenta === true ? ' (coincide)' : ''}`)}
               {dato('Nombre', texto(fila.nombreFiscal))}
               {dato('Actividad', texto(fila.actividadFiscal))}
               {dato('Correo para facturas', texto(fila.correoFacturacion))}
+              {dato('Declaración jurada', fila.declaracionFecha ? `Aceptada el ${texto(fila.declaracionFecha).slice(0, 10)} por el usuario #${texto(fila.declaracionPor, '?')}` : 'No consta')}
             </dl>
           </div>
           <div>
@@ -121,12 +139,12 @@ export default function FiscalVerificacion({ id, alCambiar }: { id: string; alCa
               onClick={() => void ejecutar(() => fiscalService.reconsultar(id), 'Consulta a Hacienda actualizada.')}>
               Consultar Hacienda de nuevo
             </button>
-            <button type="button" className={BOTON_PRIMARIO} disabled={ocupado || !pendiente}
-              onClick={() => void ejecutar(() => fiscalService.verificar(id, 'APROBAR', motivo.trim()), 'Aprobado: el negocio paga solo la comisión de su plan.')}>
+            <button type="button" className={BOTON_PRIMARIO} disabled={ocupado || !pendiente || huella === ''}
+              onClick={() => void ejecutar(() => fiscalService.verificar(id, 'APROBAR', huella, motivo.trim()), 'Aprobado: el negocio paga solo la comisión de su plan.')}>
               Aprobar
             </button>
             <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado || !pendiente}
-              onClick={() => void ejecutar(() => fiscalService.verificar(id, 'RECHAZAR', motivo.trim()), 'Rechazado: el negocio vuelve a no inscrito, con el extra.')}>
+              onClick={() => void ejecutar(() => fiscalService.verificar(id, 'RECHAZAR', huella, motivo.trim()), 'Rechazado: el negocio vuelve a no inscrito, con el extra.')}>
               Rechazar
             </button>
           </div>

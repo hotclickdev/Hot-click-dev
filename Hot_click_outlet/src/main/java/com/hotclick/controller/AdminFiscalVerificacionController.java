@@ -53,7 +53,7 @@ public class AdminFiscalVerificacionController {
     public ResponseEntity<ResponseDTO> verificar(@PathVariable Long id, @Valid @RequestBody VerificarFiscalRequest body) {
         try {
             return ResponseEntity.ok(ResponseDTO.success("Verificación registrada",
-                verificacion.verificar(id, "APROBAR".equals(body.decision()), body.motivo())));
+                verificacion.verificar(id, "APROBAR".equals(body.decision()), body.motivo(), body.huella())));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(ResponseDTO.error(e.getMessage()));
         }
