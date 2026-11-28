@@ -56,6 +56,11 @@ public class OnvoWebhookController {
 
     void setReembolsoOnvoParaTest(com.hotclick.service.reembolso.ReembolsoOnvoService s) { this.reembolsoOnvoService = s; }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.service.onvo.cuenta.EnlacePagoOnvoService enlacePagoService;
+
+    void setEnlacePagoParaTest(com.hotclick.service.onvo.cuenta.EnlacePagoOnvoService s) { this.enlacePagoService = s; }
+
     void setSinpeMarketplaceParaTest(com.hotclick.service.sinpe.SinpeOnvoMarketplaceService s) { this.sinpeMarketplace = s; }
 
     /** Tope de cuerpo y de intentos con secret inválido por minuto (un secret válido nunca se limita). */
@@ -117,6 +122,13 @@ public class OnvoWebhookController {
                     if (sessionId == null) {
                         log.error("[onvo-webhook] checkout-session.succeeded sin id");
                         return ResponseEntity.badRequest().body(Map.of("error", "missing id"));
+                    }
+                    // Enlace de pago único (factura tardía): no es un pedido; se resuelve aparte y es idempotente.
+                    if (enlacePagoService != null) {
+                        var enlace = enlacePagoService.confirmarPorWebhook(sessionId);
+                        if (enlace != com.hotclick.service.onvo.cuenta.EnlacePagoOnvoService.ResultadoWebhook.NO_ES_ENLACE) {
+                            return respuestaEnlace(enlace, type);
+                        }
                     }
                     ResponseEntity<Map<String, String>> resp = respuestaVerificacion(
                         onvoPaymentProvider.procesarPagoVerificado(sessionId, "webhook"), type);
@@ -193,6 +205,17 @@ public class OnvoWebhookController {
             case PENDIENTE -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
             case NO_ENCONTRADO -> ResponseEntity.status(404).body(Map.of("error", "not found"));
             case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));
+        };
+    }
+
+    static ResponseEntity<Map<String, String>> respuestaEnlace(
+            com.hotclick.service.onvo.cuenta.EnlacePagoOnvoService.ResultadoWebhook r, String type) {
+        return switch (r) {
+            case PAGADO -> ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "enlace-pago"));
+            case DUPLICADO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
+            case NO_VERIFICADO -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
+            case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));
+            case NO_ES_ENLACE -> ResponseEntity.ok(Map.of("status", "ok", "type", type));
         };
     }
 

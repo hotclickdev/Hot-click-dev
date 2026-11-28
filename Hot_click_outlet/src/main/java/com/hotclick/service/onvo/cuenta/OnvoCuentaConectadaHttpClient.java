@@ -45,6 +45,20 @@ public class OnvoCuentaConectadaHttpClient implements OnvoCuentaConectadaClient 
     }
 
     @Override
+    public void actualizarComision(String accountId, java.math.BigDecimal porcentaje) {
+        if (accountId == null || !accountId.matches("[A-Za-z0-9_]{1,100}")) {
+            throw new IllegalArgumentException("Id de cuenta conectada inválido");
+        }
+        Map<?, ?> r = exchange("/connected-accounts/" + accountId, HttpMethod.POST,
+            Map.of("marketplaceAppFee", porcentaje.setScale(2, java.math.RoundingMode.HALF_UP)));
+        Object fee = r.get("marketplaceAppFee");
+        // Fail-closed: si ONVO responde otro valor, no se da por sincronizado.
+        if (fee != null && new java.math.BigDecimal(String.valueOf(fee)).compareTo(porcentaje) != 0) {
+            throw new IllegalStateException("ONVO devolvió una comisión distinta a la enviada");
+        }
+    }
+
+    @Override
     public boolean isSimulado() { return false; }
 
     private Map<?, ?> exchange(String path, HttpMethod metodo, Object body) {
