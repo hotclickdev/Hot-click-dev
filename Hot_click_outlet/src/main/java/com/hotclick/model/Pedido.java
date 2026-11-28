@@ -125,9 +125,12 @@ public class Pedido extends BaseEntity {
     private String cuponCodigo;
 
     // ── Gift card (F17) ───────────────────────────────────────────────────────
+    // Solo lectura para el JSON: pedidos históricos se leen, pero un cliente no puede fijarlos.
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     @Column(name = "gift_card_codigo", length = 30)
     private String giftCardCodigo;
 
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     @Column(name = "gift_card_monto")
     private Integer giftCardMonto = 0;
 

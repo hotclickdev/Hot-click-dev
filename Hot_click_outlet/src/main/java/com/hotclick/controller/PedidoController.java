@@ -94,9 +94,15 @@ public class PedidoController {
             return ResponseEntity.badRequest()
                 .body(ResponseDTO.error("El pedido no puede tener más de " + PaymentCheckoutRequest.MAX_ITEMS + " productos distintos"));
         }
+        // Las gift cards se retiraron: este endpoint ya no admite ese método de pago.
+        if ("GIFT_CARD".equalsIgnoreCase(pedido.getMetodoPago())) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error("Las gift cards ya no están disponibles."));
+        }
         // Fail-closed, fuera del try: sin negocio → 403 (EmpresaRequeridaException); no caer al catálogo global.
         Empresa empresa = empresaDelScope();
         try {
+            pedido.setGiftCardCodigo(null);
+            pedido.setGiftCardMonto(0);
             pedido.setId(null); // el body es la entidad: nunca actualizar un pedido existente por id del cliente
             pedido.setEmpresa(empresa);
             pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
