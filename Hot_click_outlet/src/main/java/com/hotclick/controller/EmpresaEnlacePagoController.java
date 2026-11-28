@@ -17,6 +17,8 @@ public class EmpresaEnlacePagoController {
 
     public record AvisoEnlace(Long id, int montoCrc, String motivo, String url) {}
 
+    private static final int MAX_LIST_ABIERTOS = 20;
+
     private final CompanyScope companyScope;
     private final EnlacePagoOnvoService enlaces;
 
@@ -28,7 +30,7 @@ public class EmpresaEnlacePagoController {
     @GetMapping("/abiertos")
     public ResponseEntity<ResponseDTO> abiertos() {
         Long empresaId = companyScope.requireEmpresaId();
-        List<AvisoEnlace> l = enlaces.abiertosDe(empresaId).stream()
+        List<AvisoEnlace> l = enlaces.abiertosDe(empresaId).stream().limit(MAX_LIST_ABIERTOS)
             .map(e -> new AvisoEnlace(e.getId(), e.getMontoCrc(), e.getMotivo(), e.getUrl())).toList();
         return ResponseEntity.ok(ResponseDTO.success("Enlaces de pago abiertos", l));
     }

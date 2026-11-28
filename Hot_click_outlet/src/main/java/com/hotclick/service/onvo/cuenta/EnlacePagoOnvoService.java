@@ -29,6 +29,7 @@ public class EnlacePagoOnvoService {
     public static final int MONTO_MAX_CRC = 10_000_000;
     public static final int MOTIVO_MIN = 5;
     public static final int MOTIVO_MAX = 200;
+    public static final int MAX_LIST_ENLACES = 50;
     static final String TIPO_METADATA = "ENLACE_FACTURA_TARDIA";
 
     /** Resultado del webhook checkout-session.succeeded para una sesión. */
@@ -118,22 +119,6 @@ public class EnlacePagoOnvoService {
         return repo.save(e);
     }
 
-    /**
-     * Hook para cuando exista la recepción de facturas: cancela los enlaces abiertos de la empresa porque la
-     * factura llegó a tiempo. Nunca lanza; devuelve cuántos quedaron cancelados.
-     */
-    public int alRecibirFactura(Long empresaId) {
-        int n = 0;
-        for (EnlacePagoOnvo e : repo.findByEmpresaIdAndEstado(empresaId, EnlacePagoOnvo.CREADO)) {
-            try {
-                if (cancelar(e.getId()).getEstado().equals(EnlacePagoOnvo.CANCELADO)) n++;
-            } catch (RuntimeException ex) {
-                log.warn("[onvo-enlace] No se pudo cancelar id={} al recibir factura: {}", e.getId(), ex.getClass().getSimpleName());
-            }
-        }
-        return n;
-    }
-
     /** Webhook checkout-session.succeeded: idempotente; solo marca PAGADO si ONVO confirma paid por GET. */
     public ResultadoWebhook confirmarPorWebhook(String sessionId) {
         EnlacePagoOnvo e = repo.findByOnvoSessionId(sessionId).orElse(null);
@@ -162,27 +147,36 @@ public class EnlacePagoOnvoService {
         return ResultadoWebhook.PAGADO;
     }
 
-    /** Red de seguridad si el webhook se pierde: relee los abiertos y los cierra como PAGADO o EXPIRADO. */
-    public void conciliar() {
-        for (EnlacePagoOnvo e : repo.findByEstadoOrderByCreadoEnAsc(EnlacePagoOnvo.CREADO, PageRequest.of(0, lote))) {
-            try {
-                Map<?, ?> s = onvoService.obtenerCheckoutSession(e.getOnvoSessionId());
-                if (s == null || s.isEmpty()) continue;
-                if ("paid".equalsIgnoreCase(String.valueOf(s.get("paymentStatus")))) {
-                    confirmarPagadoPorGet(e);
-                } else if ("expired".equalsIgnoreCase(String.valueOf(s.get("status")))) {
-                    e.setEstado(EnlacePagoOnvo.EXPIRADO);
-                    e.setCerradoEn(LocalDateTime.now());
-                    repo.save(e);
-                }
-            } catch (RuntimeException ex) {
-                log.warn("[onvo-enlace] Conciliación falló id={}: {}", e.getId(), ex.getClass().getSimpleName());
-            }
+    /** Ids de los enlaces abiertos de una empresa (a lo sumo uno por la regla de creación). */
+    public List<Long> idsAbiertosDe(Long empresaId) {
+        return repo.findByEmpresaIdAndEstado(empresaId, EnlacePagoOnvo.CREADO)
+            .stream().mapToLong(EnlacePagoOnvo::getId).boxed().toList();
+    }
+
+    /** Ids de los enlaces abiertos más antiguos, por lote, para la conciliación. */
+    public List<Long> idsAbiertosLote() {
+        return repo.findByEstadoOrderByCreadoEnAsc(EnlacePagoOnvo.CREADO, PageRequest.of(0, lote))
+            .stream().mapToLong(EnlacePagoOnvo::getId).boxed().toList();
+    }
+
+    /** Red de seguridad si el webhook se pierde: relee uno abierto y lo cierra como PAGADO o EXPIRADO. */
+    public void conciliarUno(Long enlaceId) {
+        EnlacePagoOnvo e = repo.findById(enlaceId).orElse(null);
+        if (e == null || !e.abierto()) return;
+        Map<?, ?> s = onvoService.obtenerCheckoutSession(e.getOnvoSessionId());
+        if (s == null || s.isEmpty()) return;
+        if ("paid".equalsIgnoreCase(String.valueOf(s.get("paymentStatus")))) {
+            confirmarPagadoPorGet(e);
+        } else if ("expired".equalsIgnoreCase(String.valueOf(s.get("status")))) {
+            e.setEstado(EnlacePagoOnvo.EXPIRADO);
+            e.setCerradoEn(LocalDateTime.now());
+            repo.save(e);
         }
     }
 
+    /** Los más recientes, con tope. */
     public List<EnlacePagoOnvo> listar(Long empresaId) {
-        return repo.findByEmpresaIdOrderByCreadoEnDesc(empresaId);
+        return repo.findByEmpresaIdOrderByCreadoEnDesc(empresaId, PageRequest.of(0, MAX_LIST_ENLACES));
     }
 
     /** Solo los abiertos de la empresa de la sesión (aviso al negocio). */

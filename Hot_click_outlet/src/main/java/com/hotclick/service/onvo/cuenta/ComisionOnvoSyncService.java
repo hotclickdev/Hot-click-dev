@@ -106,25 +106,13 @@ public class ComisionOnvoSyncService {
         }
     }
 
-    /**
-     * Conciliación periódica: detecta cambios de plan, de situación fiscal o de aprobación (sin tocar esos
-     * servicios) y reintenta los pendientes. Recorre todas las cuentas con id de ONVO por páginas.
-     */
-    public int conciliar() {
-        int cambios = 0;
-        for (int pagina = 0; ; pagina++) {
-            List<EmpresaCuentaOnvo> cuentas = repo.findByOnvoAccountIdIsNotNullOrderByIdAsc(PageRequest.of(pagina, lote));
-            for (EmpresaCuentaOnvo c : cuentas) {
-                try {
-                    Resultado r = sincronizar(c.getEmpresaId(), false);
-                    if (r == Resultado.SINCRONIZADO || r == Resultado.PENDIENTE) cambios++;
-                } catch (RuntimeException e) {
-                    log.warn("[onvo-comision] Conciliación falló empresa={}: {}", c.getEmpresaId(), e.getClass().getSimpleName());
-                }
-            }
-            if (cuentas.size() < lote) break;
-        }
-        return cambios;
+    /** Tamaño de página con que el job recorre las cuentas. */
+    public int lote() { return lote; }
+
+    /** Ids de empresa con cuenta conectada, por páginas (el job los recorre y sincroniza uno a uno). */
+    public List<Long> empresasConCuenta(int pagina) {
+        return repo.findByOnvoAccountIdIsNotNullOrderByIdAsc(PageRequest.of(pagina, lote))
+            .stream().mapToLong(EmpresaCuentaOnvo::getEmpresaId).boxed().toList();
     }
 
     /**

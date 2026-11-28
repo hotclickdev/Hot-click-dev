@@ -122,16 +122,17 @@ class ComisionOnvoSyncServiceTest {
     }
 
     @Test
-    @DisplayName("Conciliación: reintenta pendientes y detecta cambios sin tocar los servicios fiscales")
+    @DisplayName("Conciliación (poller): reintenta pendientes y detecta cambios sin tocar los servicios fiscales")
     void conciliacion() {
         cuenta.setFeeEnviadoPct(new BigDecimal("9.00"));
         when(repo.findByOnvoAccountIdIsNotNullOrderByIdAsc(any(Pageable.class))).thenReturn(List.of(cuenta));
         ComisionOnvoSyncService s = svc(true);
-        assertThat(s.conciliar()).isZero();
+        ComisionOnvoSyncPoller poller = new ComisionOnvoSyncPoller(s, mock(EnlacePagoOnvoLotes.class));
+        assertThat(poller.conciliarComisiones()).isEqualTo(1);
         verifyNoInteractions(client);
 
         when(comision.porcentajeEfectivo(empresa)).thenReturn(new BigDecimal("7.50"));
-        assertThat(s.conciliar()).isEqualTo(1);
+        assertThat(poller.conciliarComisiones()).isEqualTo(1);
         verify(client).actualizarComision("cl_abc123", new BigDecimal("7.50"));
     }
 

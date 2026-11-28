@@ -30,6 +30,8 @@ public class AdminOnvoCobroController {
         }
     }
 
+    private static final int MAX_LIST_ENLACES = EnlacePagoOnvoService.MAX_LIST_ENLACES;
+
     private final ComisionOnvoSyncService sync;
     private final EnlacePagoOnvoService enlaces;
     private final AuditoriaAdminRegistroService auditoria;
@@ -66,7 +68,7 @@ public class AdminOnvoCobroController {
     @GetMapping("/api/admin/empresas/{id}/onvo/enlaces-pago")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> listar(@PathVariable Long id) {
-        List<EnlaceDto> l = enlaces.listar(id).stream().map(EnlaceDto::de).toList();
+        List<EnlaceDto> l = enlaces.listar(id).stream().limit(MAX_LIST_ENLACES).map(EnlaceDto::de).toList();
         return ResponseEntity.ok(ResponseDTO.success("Enlaces de pago", l));
     }
 

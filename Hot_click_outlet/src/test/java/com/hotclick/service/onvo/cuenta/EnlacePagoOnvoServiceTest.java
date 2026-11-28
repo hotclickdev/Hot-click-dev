@@ -159,12 +159,14 @@ class EnlacePagoOnvoServiceTest {
         EnlacePagoOnvo e = abierto();
         when(repo.findByEmpresaIdAndEstado(7L, EnlacePagoOnvo.CREADO)).thenReturn(List.of(e));
         when(provider.expirarSesionParaCancelar("sess_1")).thenReturn(true);
-        assertThat(svc.alRecibirFactura(7L)).isEqualTo(1);
+        EnlacePagoOnvoLotes lotes = new EnlacePagoOnvoLotes(svc);
+        assertThat(lotes.alRecibirFactura(7L)).isEqualTo(1);
         assertThat(e.getEstado()).isEqualTo(EnlacePagoOnvo.CANCELADO);
 
         EnlacePagoOnvo otro = new EnlacePagoOnvo();
+        org.springframework.test.util.ReflectionTestUtils.setField(otro, "id", 9L);
         when(repo.findByEmpresaIdAndEstado(8L, EnlacePagoOnvo.CREADO)).thenReturn(List.of(otro));
-        assertThat(svc.alRecibirFactura(8L)).isZero();
+        assertThat(lotes.alRecibirFactura(8L)).isZero();
     }
 
     @Test
@@ -172,12 +174,14 @@ class EnlacePagoOnvoServiceTest {
     void conciliar() {
         EnlacePagoOnvo pagado = abierto();
         EnlacePagoOnvo expirado = new EnlacePagoOnvo();
+        org.springframework.test.util.ReflectionTestUtils.setField(expirado, "id", 2L);
         expirado.setOnvoSessionId("sess_2");
+        when(repo.findById(2L)).thenReturn(Optional.of(expirado));
         when(repo.findByEstadoOrderByCreadoEnAsc(eq(EnlacePagoOnvo.CREADO), any(Pageable.class)))
             .thenReturn(List.of(pagado, expirado));
         doReturn(Map.of("paymentStatus", "paid")).when(onvo).obtenerCheckoutSession("sess_1");
         doReturn(Map.of("status", "expired", "paymentStatus", "unpaid")).when(onvo).obtenerCheckoutSession("sess_2");
-        svc.conciliar();
+        new EnlacePagoOnvoLotes(svc).conciliar();
         assertThat(pagado.getEstado()).isEqualTo(EnlacePagoOnvo.PAGADO);
         assertThat(expirado.getEstado()).isEqualTo(EnlacePagoOnvo.EXPIRADO);
     }
