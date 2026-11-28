@@ -140,7 +140,7 @@ class CheckoutTotalesSinCuponesTest {
         "SINPE,    RETIRO_EN_TIENDA, 18000, 2000",
         "SINPE,    ENVIO_NORMAL_GAM, 21600, 2400",
         "EFECTIVO, ENVIO_NORMAL_GAM, 21600, 2400",
-        "TILOPAY,  ENVIO_NORMAL_GAM, 24000, 0",
+        "STRIPE,   ENVIO_NORMAL_GAM, 24000, 0",
     })
     void unNegocio(String provider, String metodo, int cobro, int descuento) {
         Empresa a = empresa(61L, "10", "TRADICIONAL");
