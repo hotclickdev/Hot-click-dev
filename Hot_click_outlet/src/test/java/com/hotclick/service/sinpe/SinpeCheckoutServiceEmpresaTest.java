@@ -6,7 +6,6 @@ import com.hotclick.model.*;
 import com.hotclick.repository.*;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
-import com.hotclick.service.GiftCardService;
 import com.hotclick.service.analytics.AtribucionPedidoService;
 import com.hotclick.service.payment.*;
 import com.hotclick.utils.Constants;
@@ -43,7 +42,6 @@ class SinpeCheckoutServiceEmpresaTest {
     @Mock private RolRepository rolRepository;
     @Mock private PagoRepository pagoRepository;
     @Mock private CuponService cuponService;
-    @Mock private GiftCardService giftCardService;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private SinpeOnvoMarketplaceService sinpeOnvo;
     @Mock private GuestCancelTokenService guestCancelTokenService;
@@ -102,7 +100,7 @@ class SinpeCheckoutServiceEmpresaTest {
         ReflectionTestUtils.setField(checkoutOrderFactory, "encargoService", encargoService);
         CheckoutPaquetesPlanner planner = new CheckoutPaquetesPlanner();
         CheckoutGrupoFactory checkoutGrupoFactory = new CheckoutGrupoFactory(
-            checkoutValidator, planner, orderPricingService, checkoutOrderFactory, giftCardService);
+            checkoutValidator, planner, orderPricingService, checkoutOrderFactory);
 
         service = new SinpeCheckoutService();
         org.springframework.test.util.ReflectionTestUtils.setField(service, "sinpeOnvo", sinpeOnvo);

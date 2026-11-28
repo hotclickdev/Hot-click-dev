@@ -69,7 +69,7 @@ class RateLimitHeadYRutaInvalidaTest {
     @ParameterizedTest(name = "HEAD {0} agota {1} y da 429")
     @CsvSource({
         "/api/hacienda/contribuyente/123456789, 10",
-        "/api/gift-cards/validar, 30",
+        "/api/division-territorial/validar, 30",
         "/api/categorias, 60",
         "/api/public/tienda-rapida/tokenficticio, 20"
     })
@@ -84,7 +84,7 @@ class RateLimitHeadYRutaInvalidaTest {
     @ParameterizedTest(name = "HEAD y GET comparten cupo en {0}")
     @CsvSource({
         "/api/hacienda/contribuyente/123456789, 10",
-        "/api/gift-cards/validar, 30",
+        "/api/division-territorial/validar, 30",
         "/api/categorias, 60"
     })
     void headYGet_comparten_elMismoCupo(String uri, int max) throws Exception {
@@ -150,12 +150,12 @@ class RateLimitHeadYRutaInvalidaTest {
     void rutaInvalida_cuentaContraUnCupoPorIp_yLuegoDa429() throws Exception {
         RateLimitingFilter f = filtro(limitadorQueCuenta());
         for (int i = 0; i < 20; i++) {
-            assertThat(llamar(f, "GET", "/api/gift-cards/%zz")).as("inválida #%d", i + 1).isEqualTo(400);
+            assertThat(llamar(f, "GET", "/api/division-territorial/%zz")).as("inválida #%d", i + 1).isEqualTo(400);
         }
-        assertThat(llamar(f, "GET", "/api/gift-cards/%zz")).as("excede el cupo").isEqualTo(429);
+        assertThat(llamar(f, "GET", "/api/division-territorial/%zz")).as("excede el cupo").isEqualTo(429);
         assertThat(llamar(f, "POST", "/api/auth/%")).as("otro método, misma IP").isEqualTo(429);
         // Otra IP tiene su propio cupo.
-        assertThat(llamar(f, "GET", "/api/gift-cards/%zz", "7.7.7.7")).isEqualTo(400);
+        assertThat(llamar(f, "GET", "/api/division-territorial/%zz", "7.7.7.7")).isEqualTo(400);
         // Las rutas válidas de la IP castigada no consumen ni sufren ese cupo.
         assertThat(llamar(f, "GET", "/api/health")).isEqualTo(200);
     }
@@ -163,9 +163,9 @@ class RateLimitHeadYRutaInvalidaTest {
     @Test
     void rutaInvalida_noGastaElCupoDeLasRutasValidas() throws Exception {
         RateLimitingFilter f = filtro(limitadorQueCuenta());
-        for (int i = 0; i < 15; i++) llamar(f, "GET", "/api/gift-cards/%zz");
-        for (int i = 0; i < 30; i++) assertThat(llamar(f, "GET", "/api/gift-cards/validar")).isEqualTo(200);
-        assertThat(llamar(f, "GET", "/api/gift-cards/validar")).isEqualTo(429);
+        for (int i = 0; i < 15; i++) llamar(f, "GET", "/api/division-territorial/%zz");
+        for (int i = 0; i < 30; i++) assertThat(llamar(f, "GET", "/api/division-territorial/validar")).isEqualTo(200);
+        assertThat(llamar(f, "GET", "/api/division-territorial/validar")).isEqualTo(429);
     }
 
     @Test
@@ -178,11 +178,11 @@ class RateLimitHeadYRutaInvalidaTest {
         logger.setLevel(Level.WARN);
         try {
             RateLimitingFilter f = filtro(limitadorQueCuenta());
-            for (int i = 0; i < 100; i++) llamar(f, "GET", "/api/gift-cards/%zz");
+            for (int i = 0; i < 100; i++) llamar(f, "GET", "/api/division-territorial/%zz");
             long rutaInvalida = appender.list.stream()
                 .filter(e -> e.getFormattedMessage().contains("ruta no canónica")).count();
             assertThat(rutaInvalida).as("100 requests inválidas de la misma IP").isEqualTo(1);
-            llamar(f, "GET", "/api/gift-cards/%zz", "6.6.6.6");
+            llamar(f, "GET", "/api/division-territorial/%zz", "6.6.6.6");
             long conOtraIp = appender.list.stream()
                 .filter(e -> e.getFormattedMessage().contains("ruta no canónica")).count();
             assertThat(conOtraIp).as("otra IP tiene su propio log").isEqualTo(2);

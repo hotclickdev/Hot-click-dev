@@ -71,7 +71,7 @@ class RateLimitBajosIpNulaIpv6MuestreoTest {
         return res.getStatus();
     }
 
-    private static final String INVALIDA = "/api/gift-cards/%zz";
+    private static final String INVALIDA = "/api/division-territorial/%zz";
 
     // ───────────── B1: ipInvalida null ─────────────
 

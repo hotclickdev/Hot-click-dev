@@ -226,17 +226,25 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Gift card que no existe: no paga el pedido")
-    void giftCardInexistente() throws Exception {
+    @DisplayName("Las gift cards ya no existen: un cliente viejo que manda código o monto no descuenta ni paga nada")
+    void giftCardRetiradaSeIgnora() throws Exception {
+        // El campo codigoGiftCard salió del contrato (decisión del dueño). Un cliente desactualizado puede seguir
+        // mandándolo, junto con un monto inventado: el servidor lo ignora y cobra el precio completo.
         String body = """
             {"bodegaId":%d,"metodoEnvio":"%s","provider":"ONVO","codigoGiftCard":"NO-EXISTE-123",
+             "giftCardMonto":999999,"montoGiftCard":999999,
              "items":[{"productoId":%d,"cantidad":1}]}
             """.formatted(bodega.getId(), Constants.ENVIO_RETIRO, producto.getId());
         mockMvc.perform(post("/api/payments/checkout").header("Authorization", userToken)
                 .contentType(MediaType.APPLICATION_JSON).content(body))
-            // Un código inexistente no descuenta nada: el pedido queda PENDIENTE (sesión simulada), nunca pagado.
+            // El código no descuenta nada: el pedido queda PENDIENTE (sesión simulada), nunca pagado.
             .andExpect(status().is2xxSuccessful());
-        assertThat(pedidoRepository.findAll()).allSatisfy(p -> assertThat(p.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE));
+        assertThat(pedidoRepository.findAll()).allSatisfy(p -> {
+            assertThat(p.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+            assertThat(p.getTotalPedido()).isGreaterThanOrEqualTo(producto.getPrecioVenta());
+            assertThat(p.getGiftCardMonto()).isZero();
+            assertThat(p.getGiftCardCodigo()).isNull();
+        });
         sinPagadoNiCorreo();
     }
 

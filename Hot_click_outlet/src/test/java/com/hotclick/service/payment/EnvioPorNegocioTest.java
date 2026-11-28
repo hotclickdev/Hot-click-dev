@@ -7,7 +7,6 @@ import com.hotclick.model.Pedido;
 import com.hotclick.model.Producto;
 import com.hotclick.security.TenantContext;
 import com.hotclick.service.CuponService;
-import com.hotclick.service.GiftCardService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -62,18 +61,17 @@ class EnvioPorNegocioTest {
     private static CheckoutGrupoFactory factory() {
         OrderPricingService pricing = new OrderPricingService();
         ReflectionTestUtils.setField(pricing, "cuponService", mock(CuponService.class));
-        ReflectionTestUtils.setField(pricing, "giftCardService", mock(GiftCardService.class));
         CheckoutOrderFactory orders = mock(CheckoutOrderFactory.class);
         when(orders.crearSubpedido(any(), anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any()))
             .thenAnswer(inv -> {
                 OrderPricingResult r = inv.getArgument(0);
                 Pedido p = new Pedido();
-                p.setCostoEnvio(r.costoEnvio()); p.setTotalPedido(r.totalConGC());
+                p.setCostoEnvio(r.costoEnvio()); p.setTotalPedido(r.total());
                 p.setBodega(inv.getArgument(5)); p.setMetodoEnvio(inv.getArgument(6));
                 return p;
             });
         return new CheckoutGrupoFactory(new CheckoutValidator(), new CheckoutPaquetesPlanner(), pricing,
-            orders, mock(GiftCardService.class));
+            orders);
     }
 
     private CheckoutGrupoFactory.Grupo crear(PaymentCheckoutRequest r) {

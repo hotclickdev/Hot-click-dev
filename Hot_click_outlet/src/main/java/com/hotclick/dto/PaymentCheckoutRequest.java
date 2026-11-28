@@ -55,9 +55,6 @@ public class PaymentCheckoutRequest {
     /** Código de cupón de descuento (opcional). */
     private String codigoCupon;
 
-    /** Código de gift card (opcional). Solo para usuarios autenticados. */
-    private String codigoGiftCard;
-
     /** Dirección de entrega (señas, cantón, provincia). Solo se guarda en paquetes con envío. */
     @jakarta.validation.constraints.Size(max = 500, message = "La dirección es demasiado larga")
     private String direccionEntrega;
@@ -144,8 +141,6 @@ public class PaymentCheckoutRequest {
     public String getCodigoCupon() { return codigoCupon; }
     public void setCodigoCupon(String codigoCupon) { this.codigoCupon = codigoCupon; }
 
-    public String getCodigoGiftCard() { return codigoGiftCard; }
-    public void setCodigoGiftCard(String codigoGiftCard) { this.codigoGiftCard = codigoGiftCard; }
 
     /** Token del widget Turnstile (opcional; solo se exige con hotclick.checkout.turnstile.habilitado). */
     private String turnstileToken;

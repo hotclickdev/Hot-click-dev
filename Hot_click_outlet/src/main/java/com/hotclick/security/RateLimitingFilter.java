@@ -67,7 +67,6 @@ import java.util.Map;
  *   /api/marcas/publicas           →  60 / 60s
  *   /api/categorias/**             →  60 / 60s
  *   /api/blog/publico/**           →  60 / 60s
- *   /api/gift-cards/validar        →  30 / 60s  (además 10 / 60s por usuario, fail-closed, en el controlador)
  *   /api/public/pedidos/seguimiento/** → 20 / 60s
  *   /api/public/tienda-rapida/**   →  20 / 60s
  *   /api/auth/equipo-invitacion/** →  20 / 60s  (no hay GET hoy; por si alguien lo agrega o prueba el path viejo)
@@ -216,8 +215,6 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         new GetLimit("/api/hacienda/contribuyente",      10,  60), // proxy a API Hacienda CR
         // Estado del QR POS consulta ONVO en cada llamada; cajero (3 s) y cliente (2,5 s) suelen compartir IP
         new GetLimit("/api/pos/qr/pago",               120,  60),
-        // Segunda capa por IP (la principal es por usuario, fail-closed, en GiftCardController): probar códigos con saldo
-        new GetLimit("/api/gift-cards/validar",          30,  60),
         new GetLimit("/api/img",                         60,  60),
         new GetLimit("/api/convenios/publicos",          60,  60),
         new GetLimit("/api/marcas/publicas",             60,  60),

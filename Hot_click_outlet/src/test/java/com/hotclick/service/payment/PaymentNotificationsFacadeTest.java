@@ -12,7 +12,6 @@ import com.hotclick.service.analytics.PostHogCaptureService;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.hotclick.service.GiftCardService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,44 +54,6 @@ class PaymentNotificationsFacadeTest {
     }
 
     @Test
-    @DisplayName("pago 100% gift card captura pedido_pagado y avisa venta")
-    void giftCardCompletaCapturaPostHog() {
-        Pedido pedido = pedidoPagado();
-
-        facade.onGiftCardFullPayment(pedido, "GC-TEST");
-
-        verify(postHogCaptureService).capturarPedidoPagado(eq(pedido), isNull());
-        verify(ventaAvisoService).avisarVentaConfirmada(pedido);
-    }
-
-    @Test
-    @DisplayName("el log de pago 100% con gift card no trae el código completo: solo los últimos 4")
-    void giftCardCompletaNoLoguea_elCodigoCompleto() {
-        Logger logger = (Logger) org.slf4j.LoggerFactory.getLogger(PaymentNotificationsFacade.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
-        try {
-            facade.onGiftCardFullPayment(pedidoPagado(), "NAVIDAD-2026-SECRETO");
-        } finally {
-            logger.detachAppender(appender);
-        }
-        String log = appender.list.stream().map(ILoggingEvent::getFormattedMessage).reduce("", (a, b) -> a + "\n" + b);
-        assertThat(log).contains("ORD-PH-1").contains("****RETO").doesNotContain("NAVIDAD").doesNotContain("SECRETO");
-    }
-
-    @Test
-    @DisplayName("enmascarar: últimos 4; vacío, nulo o corto no revela nada")
-    void enmascarar() {
-        assertThat(GiftCardService.enmascarar("GC-ABCD-EFGH-JKLM")).isEqualTo("****JKLM");
-        assertThat(GiftCardService.enmascarar("  abc-1234567  ")).isEqualTo("****4567");
-        assertThat(GiftCardService.enmascarar("ABCD1234")).isEqualTo("****");
-        assertThat(GiftCardService.enmascarar("AB")).isEqualTo("****");
-        assertThat(GiftCardService.enmascarar(null)).isEqualTo("****");
-        assertThat(GiftCardService.enmascarar("   ")).isEqualTo("****");
-    }
-
-    @Test
     @DisplayName("pago fallido no captura pedido_pagado")
     void fallidoNoCapturaPostHog() {
         Pedido pedido = pedidoPagado();
@@ -111,9 +72,8 @@ class PaymentNotificationsFacadeTest {
         Pedido pedido = pedidoPagado();
 
         facade.onPedidoConfirmado(pedido, pagoStripe());
-        facade.onGiftCardFullPayment(pedido, "GC-TEST");
 
-        verify(ventaAvisoService, times(2)).avisarVentaConfirmada(pedido);
+        verify(ventaAvisoService, times(1)).avisarVentaConfirmada(pedido);
     }
 
     private static Pedido pedidoPagado() {
