@@ -83,6 +83,7 @@ class RutasExcluidasLectorTest extends BaseIntegrationTest {
         "POST /api/sinpe/guest/{numeroPedido}/comprobante",
         "POST /api/sinpe/{numeroPedido}/comprobante",
         "POST /api/tienda/{slug}/pedidos",
+        "POST /api/webhooks/meta",
         "POST /api/webhooks/onvo",
         "POST /api/webhooks/payxpert",
         "POST /api/webhooks/sentry",

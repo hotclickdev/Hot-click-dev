@@ -4743,3 +4743,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_retiro_token_pedido
 -- barrido de vencidos
 CREATE INDEX IF NOT EXISTS idx_pedido_retiro_token_barrido
     ON hot_click_pedido_retiro_token_tb (estado, expira);
+
+-- V244 · AG-02: dedup persistente de mensajes entrantes de Meta (WhatsApp, Instagram, Messenger).
+CREATE TABLE IF NOT EXISTS hot_click_canal_evento_procesado_tb (
+    evento_id VARCHAR(200) NOT NULL PRIMARY KEY,
+    canal     VARCHAR(20)  NOT NULL,
+    creado    TIMESTAMP    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_canal_evento_procesado_creado ON hot_click_canal_evento_procesado_tb (creado);
