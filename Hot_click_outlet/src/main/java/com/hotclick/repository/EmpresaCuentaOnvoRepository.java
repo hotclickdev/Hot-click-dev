@@ -10,5 +10,6 @@ import java.util.Optional;
 
 public interface EmpresaCuentaOnvoRepository extends JpaRepository<EmpresaCuentaOnvo, Long> {
     Optional<EmpresaCuentaOnvo> findByEmpresaId(Long empresaId);
+    List<EmpresaCuentaOnvo> findByOnvoAccountIdIsNotNullOrderByIdAsc(Pageable pageable);
     List<EmpresaCuentaOnvo> findByEstadoInOrderByActualizadoEnAsc(Collection<String> estados, Pageable pageable);
 }

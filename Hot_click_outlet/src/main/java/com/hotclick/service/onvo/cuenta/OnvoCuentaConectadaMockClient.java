@@ -22,5 +22,8 @@ public class OnvoCuentaConectadaMockClient implements OnvoCuentaConectadaClient 
     }
 
     @Override
+    public void actualizarComision(String accountId, java.math.BigDecimal porcentaje) { /* simulado */ }
+
+    @Override
     public boolean isSimulado() { return true; }
 }

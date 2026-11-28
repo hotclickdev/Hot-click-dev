@@ -28,5 +28,11 @@ public interface OnvoCuentaConectadaClient {
 
     String regenerarOnboarding(String accountId);
 
+    /**
+     * POST /v1/connected-accounts/{id} {marketplaceAppFee}: porcentaje (0 a 100, múltiplo de 0.01). ONVO documenta
+     * que repetir la misma actualización deja los mismos valores (idempotente).
+     */
+    void actualizarComision(String accountId, java.math.BigDecimal porcentaje);
+
     boolean isSimulado();
 }

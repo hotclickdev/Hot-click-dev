@@ -19,6 +19,7 @@ import type { QuickLink } from './dashboard/QuickLinks'
 import RecentSales from './dashboard/RecentSales'
 import SalesChart from './dashboard/SalesChart'
 import SetupBanner from './dashboard/SetupBanner'
+import AvisoEnlacePago from './dashboard/AvisoEnlacePago'
 import {
   BarChartIcon,
   BoltIcon,
@@ -159,6 +160,7 @@ function DashboardDecision() {
     <div className="space-y-6">
       {header}
       {mostrarSetup && <SetupBanner onDismiss={dismissSetup} />}
+      <AvisoEnlacePago />
       <KpiCards cards={cards} />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
