@@ -110,22 +110,21 @@ describe('totalesCompra', () => {
   const paquetes = agruparPaquetes([item(1, 7), item(2, 8, { cantidad: 2 })])
   const envios = { 'empresa-7': ENVIO.NORMAL_GAM, 'empresa-8': ENVIO.RAPIDO }
 
-  it('el cupón solo descuenta el paquete de su negocio', () => {
-    const totales = totalesCompra(paquetes, envios, { codigo: 'LUNA10', descuento: 10, empresaId: 8 })
-    expect(totales).toMatchObject({ cantidadProductos: 3, subtotal: 30000, envio: 9000, descuento: 2000, total: 37000 })
+  it('suma productos y envío por negocio', () => {
+    const totales = totalesCompra(paquetes, envios)
+    expect(totales).toMatchObject({ cantidadProductos: 3, subtotal: 30000, envio: 9000, total: 39000 })
   })
 
-  it('el descuento SINPE va por negocio sobre productos − cupón + envío', () => {
-    const cupon = { codigo: 'LUNA10', descuento: 10, empresaId: 8 }
-    const totales = totalesCompra(paquetes, envios, cupon, { 8: 5 })
-    expect(totales).toMatchObject({ descuento: 2000, descuentoSinpe: 1150, total: 35850 })
+  it('el descuento SINPE va por negocio sobre productos + envío', () => {
+    const totales = totalesCompra(paquetes, envios, { 8: 5 })
+    expect(totales).toMatchObject({ descuentoSinpe: 1250, total: 37750 })
   })
 
   it('redondea el descuento SINPE como el backend (mitad hacia arriba)', () => {
-    expect(totalesCompra(paquetes, envios, null, { 7: 0.025 }).descuentoSinpe).toBe(4)
+    expect(totalesCompra(paquetes, envios, { 7: 0.025 }).descuentoSinpe).toBe(4)
   })
 
   it('sin descuentos SINPE (tarjeta) el total no cambia', () => {
-    expect(totalesCompra(paquetes, envios, null, {})).toMatchObject({ descuentoSinpe: 0, total: 39000 })
+    expect(totalesCompra(paquetes, envios, {})).toMatchObject({ descuentoSinpe: 0, total: 39000 })
   })
 })

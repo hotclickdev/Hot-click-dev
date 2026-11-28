@@ -111,6 +111,19 @@ class PedidoCatalogoIdorIntegrationTest extends BaseIntegrationTest {
         assertThat(pedidoRepository.count()).isZero();
     }
 
+    @Test
+    @DisplayName("Cupones retirados: cuponCodigo y descuentoTotal del body se ignoran y no descuentan")
+    void cuponDelBodySeIgnora() throws Exception {
+        String json = "{\"metodoPago\":\"EFECTIVO\",\"metodoEnvio\":\"RETIRO\",\"cuponCodigo\":\"PROMO99\",\"descuentoTotal\":999999,"
+            + "\"usuarioFinal\":{\"id\":" + cliA.getId() + "},\"bodega\":{\"id\":" + bodA.getId() + "},\"items\":[{\"producto\":{\"id\":" + prodA.getId() + "},\"cantidad\":1}]}";
+        mockMvc.perform(post("/api/pedidos").header("Authorization", tokenA)
+            .contentType(MediaType.APPLICATION_JSON).content(json)).andExpect(status().isOk());
+        var p = pedidoRepository.findAll().get(0);
+        assertThat(p.getCuponCodigo()).isNull();
+        assertThat(p.getDescuentoTotal()).isZero();
+        assertThat(p.getTotalPedido()).isEqualTo(p.getSubtotal() + (p.getCostoEnvio() != null ? p.getCostoEnvio() : 0));
+    }
+
     private Empresa empresa(String nombre, String slug) {
         Empresa e = new Empresa();
         e.setNombreEmpresa(nombre);

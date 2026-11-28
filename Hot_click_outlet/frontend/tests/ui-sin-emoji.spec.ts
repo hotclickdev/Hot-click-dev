@@ -273,28 +273,6 @@ test('el header móvil no usa un botón Menú ni una cruz de carácter', async (
   await expect(favoritos).not.toContainText('✕')
 })
 
-test('el popup de bienvenida cierra sin cruz de carácter', async ({ page }) => {
-  await page.route('**/api/**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data: [] }),
-    })
-  })
-  await page.addInitScript(() => {
-    localStorage.removeItem('hc-promo-seen')
-    sessionStorage.setItem('hc-paginas-sesion', '2')
-  })
-  await page.goto('/', { waitUntil: 'domcontentloaded' })
-  const dialog = page.getByRole('dialog')
-  await expect(dialog).toBeVisible({ timeout: 8000 })
-  await expect(dialog).not.toContainText('✕')
-  const cerrar = page.getByRole('button', { name: 'Cerrar' })
-  await expect(cerrar).not.toContainText('✕')
-  await cerrar.click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
-})
-
 test('más, reenviar y loader no usan caracteres decorativos', () => {
   expect(leer('../src/components/ui/TextoMas.tsx')).toContain('tipo="mas"')
   expect(leer('../src/components/ui/TrustGlyph.tsx')).toContain('reenviar:')

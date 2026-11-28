@@ -55,7 +55,6 @@ class PaymentServiceTest {
     @Mock private N8nWebhookService         n8nWebhookService;
     @Mock private AggregatorService         aggregatorService;
     @Mock private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
-    @Mock private CuponService              cuponService;
     @Mock private WebhookDispatcherService  webhookDispatcher;
     @Mock private PaymentProvider           mockProvider;
     @Mock private ApplicationEventPublisher eventPublisher;
@@ -191,7 +190,6 @@ class PaymentServiceTest {
         ReflectionTestUtils.setField(orderConfirmationService, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoRepository", pedidoRepository);
-        ReflectionTestUtils.setField(orderConfirmationService, "cuponService", cuponService);
         ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoGrupoService", pedidoGrupoService);

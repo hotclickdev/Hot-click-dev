@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { analytics } from '@/utils/analytics'
-import type { CuponCarrito, ItemCarrito, PersonalizacionCarrito } from '@/types/carrito'
+import type { ItemCarrito, PersonalizacionCarrito } from '@/types/carrito'
 import type { Producto } from '@/types/producto'
 import type { Id } from '@/types/api'
 import { formatPrice } from '@/utils/format'
@@ -26,8 +26,6 @@ type ProductoConExtras = Producto & {
 type CartState = {
   items: ItemCarrito[]
   cartUpdatedAt: number | null
-  cupon: CuponCarrito | null
-  setCupon: (cupon: CuponCarrito | null) => void
   /** false si no se agregó porque el carrito ya tiene MAX_LINEAS_CARRITO productos distintos. */
   addItem: (product: ProductoConExtras, qty?: number) => boolean
   removeItem: (id: Id, cartLineId?: string) => void
@@ -50,9 +48,7 @@ const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       cartUpdatedAt: null,
-      cupon: null,
 
-      setCupon: (cupon) => set({ cupon }),
 
       addItem: (product, qty = 1) => {
         const { items } = get()
@@ -123,7 +119,7 @@ const useCartStore = create<CartState>()(
         })
       },
 
-      clearCart: () => set({ items: [], cartUpdatedAt: null, cupon: null }),
+      clearCart: () => set({ items: [], cartUpdatedAt: null }),
 
       getCartItems: () => get().items,
 

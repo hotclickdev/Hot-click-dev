@@ -103,6 +103,9 @@ public class PedidoController {
         try {
             pedido.setGiftCardCodigo(null);
             pedido.setGiftCardMonto(0);
+            // Cupones retirados: ni código ni descuento vienen del cliente.
+            pedido.setCuponCodigo(null);
+            pedido.setDescuentoTotal(0);
             pedido.setId(null); // el body es la entidad: nunca actualizar un pedido existente por id del cliente
             pedido.setEmpresa(empresa);
             pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);

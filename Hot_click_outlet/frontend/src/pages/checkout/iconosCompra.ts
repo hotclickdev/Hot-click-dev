@@ -12,8 +12,6 @@ import compraSegura from '@/assets/figma/compra/compra-segura.svg'
 import comprobante from '@/assets/figma/compra/comprobante.svg'
 import copiar from '@/assets/figma/compra/copiar.svg'
 import correo from '@/assets/figma/compra/correo.svg'
-import cupon from '@/assets/figma/compra/cupon.svg'
-import cuponChico from '@/assets/figma/compra/cupon-chico.svg'
 import destello from '@/assets/figma/compra/destello.svg'
 import efectivo from '@/assets/figma/compra/efectivo.svg'
 import eliminar from '@/assets/figma/compra/eliminar.svg'
@@ -58,8 +56,6 @@ export const ICONOS_COMPRA = {
   comprobante,
   copiar,
   correo,
-  cupon,
-  cuponChico,
   destello,
   efectivo,
   eliminar,
