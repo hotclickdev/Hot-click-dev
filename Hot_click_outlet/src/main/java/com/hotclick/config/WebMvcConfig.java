@@ -67,8 +67,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                                  "/api/admin/asignar/**", "/api/admin/mesas", "/api/admin/mesas/**",
                                  "/api/admin/importar/**", "/api/admin/reset-datos",
                                  "/api/admin/reset-confirmacion", "/api/admin/reset-codigo",
-                                 // gift cards (crear/cancelar/listar códigos con saldo) y ficha con IA (costo)
-                                 "/api/admin/gift-cards", "/api/admin/gift-cards/**",
+                                 // ficha con IA (costo)
                                  "/api/admin/productos/generar-ia",
                                  // MED-1..4 re-auditoría área 2: KPIs financieros, IA (cuota del negocio), pronóstico,
                                  // inventario valorizado y sucursales (crear/renombrar/desactivar)

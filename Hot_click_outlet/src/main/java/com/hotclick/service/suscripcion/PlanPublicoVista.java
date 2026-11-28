@@ -12,14 +12,14 @@ public record PlanPublicoVista(
         Long id, String nombre, String descripcion, Integer precioMensual,
         Integer maxUsuarios, Integer maxProductos, Integer maxBodegas, Integer maxCajas,
         Boolean tienePos, Boolean tieneCrm, Boolean tieneCompras, Boolean tieneReportes,
-        Boolean tieneAi, Boolean tieneApi, Boolean tieneGiftCards,
+        Boolean tieneAi, Boolean tieneApi,
         Boolean activo, Integer maxCreditosAi, BigDecimal comisionPorcentaje, Integer comisionMinimaCrc) {
 
     public static PlanPublicoVista de(Plan p) {
         return new PlanPublicoVista(p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecioMensual(),
             p.getMaxUsuarios(), p.getMaxProductos(), p.getMaxBodegas(), p.getMaxCajas(),
             p.getTienePos(), p.getTieneCrm(), p.getTieneCompras(), p.getTieneReportes(),
-            p.getTieneAi(), p.getTieneApi(), p.getTieneGiftCards(),
+            p.getTieneAi(), p.getTieneApi(),
             p.getActivo(), p.getMaxCreditosAi(), p.getComisionPorcentaje(), p.getComisionMinimaCrc());
     }
 }

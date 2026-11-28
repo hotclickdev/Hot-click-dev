@@ -75,7 +75,6 @@ test('servicios, convenios, executive y blog no usan emojis de UI', () => {
   expect(leer('../src/pages/BlogPostPage.tsx')).not.toContain('📄')
   expect(leer('../src/pages/HomePage.tsx')).not.toContain('🏷')
   expect(leer('../src/components/ui/accessibility/HojaIdiomaAccesibilidad.tsx')).not.toContain('🌙')
-  expect(leer('../src/pages/admin/AdminGiftCards.tsx')).not.toContain('🎁')
   expect(leer('../src/pages/admin/AdminOfertas.tsx')).not.toContain('🏷️')
   expect(leer('../src/pages/admin/configuracion/SeccionTienda.tsx')).not.toContain('📱')
 })

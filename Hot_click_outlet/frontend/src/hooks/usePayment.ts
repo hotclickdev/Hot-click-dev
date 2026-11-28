@@ -58,7 +58,7 @@ export function montoCobroServidor(data: PagoData | null): number | null {
 }
 
 /**
- * Flujo de pago ONVO/SINPE/gift card. Mismo orden de llamadas que el hook original.
+ * Flujo de pago ONVO/SINPE. Mismo orden de llamadas que el hook original.
  */
 export function usePayment() {
   const [estado, setEstado] = useState('idle')
@@ -89,9 +89,7 @@ export function usePayment() {
       if (sessionStorage.getItem(POS_QR_TOKEN_KEY)) {
         sessionStorage.removeItem(POS_QR_TOKEN_KEY)
       }
-      if (data.proveedor === 'GIFT_CARD') {
-        setEstado('gift_card_paid')
-      } else if (!data.redirectUrl || data.proveedor === 'SINPE' || data.proveedor === 'EFECTIVO') {
+      if (!data.redirectUrl || data.proveedor === 'SINPE' || data.proveedor === 'EFECTIVO') {
         setEstado('sinpe_pendiente')
       } else if (data.proveedor === 'ONVO' && !esUrlPagoOnvo(data.redirectUrl)) {
         setError(MENSAJE_URL_PAGO_INVALIDA)

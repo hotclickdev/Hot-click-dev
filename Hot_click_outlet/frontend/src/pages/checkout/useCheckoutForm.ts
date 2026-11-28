@@ -124,14 +124,6 @@ export type CheckoutFormState = {
   setCuponCodigo: (value: string | null) => void
   cuponError: string
   setCuponError: (value: string) => void
-  gcInput: string
-  setGcInput: (value: string) => void
-  gcEstado: string
-  setGcEstado: (value: string) => void
-  gcSaldo: number
-  setGcSaldo: (value: number) => void
-  gcCodigo: string | null
-  setGcCodigo: (value: string | null) => void
   aceptaDatos: boolean
   setAceptaDatos: Dispatch<SetStateAction<boolean>>
   validatePhone: (v: string) => string
@@ -140,7 +132,6 @@ export type CheckoutFormState = {
   costoEnvio: number
   subtotalCart: number
   descuentoMonto: number
-  gcAplicado: number
   totalFinal: number
 }
 
@@ -279,12 +270,11 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     return mensajeEmailInvitado(v, t)
   }
 
-  // Notas, cupón y gift card viven en el store compartido con el carrito (Figma 51:1820).
+  // Notas y cupón viven en el store compartido con el carrito (Figma 51:1820).
   const {
     notas, setNotas,
     cuponInput, setCuponInput, cuponEstado, setCuponEstado, cuponDescuento, setCuponDescuento,
     cuponCodigo, setCuponCodigo, cuponError, setCuponError,
-    gcInput, setGcInput, gcEstado, setGcEstado, gcSaldo, setGcSaldo, gcCodigo, setGcCodigo,
   } = usePedidoExtrasStore()
 
   // Con sesión el nombre arranca con el de la cuenta (se puede corregir en «Tus datos»).
@@ -342,8 +332,7 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
   const subtotalCart = total()
   const descuentoMonto = cuponDescuento > 0 ? Math.round(subtotalCart * cuponDescuento / 100) : 0
   const baseConCupon = subtotalCart - descuentoMonto + costoEnvio
-  const gcAplicado = gcSaldo > 0 ? Math.min(gcSaldo, baseConCupon) : 0
-  const totalFinal = baseConCupon - gcAplicado
+  const totalFinal = baseConCupon
 
   return {
     bodegaRetiro,
@@ -432,14 +421,6 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     setCuponCodigo,
     cuponError,
     setCuponError,
-    gcInput,
-    setGcInput,
-    gcEstado,
-    setGcEstado,
-    gcSaldo,
-    setGcSaldo,
-    gcCodigo,
-    setGcCodigo,
     aceptaDatos,
     setAceptaDatos,
     validatePhone,
@@ -448,7 +429,6 @@ export function useCheckoutForm({ items, total }: UseCheckoutFormParams): Checko
     costoEnvio,
     subtotalCart,
     descuentoMonto,
-    gcAplicado,
     totalFinal,
   }
 }

@@ -4,7 +4,6 @@ import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.service.CuponService;
-import com.hotclick.service.GiftCardService;
 import com.hotclick.service.wallet.ComisionPrecioMath;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,6 @@ import java.util.Locale;
 public class OrderPricingService {
 
     @Autowired private CuponService    cuponService;
-    @Autowired private GiftCardService giftCardService;
     /** A-2: montos de envío fijados por ADMIN; sin bean (tests unitarios) valen los defaults (4.000 / 5.500 / 5.000). */
     @Autowired(required = false) private com.hotclick.service.envio.ConfiguracionEnvioService configuracionEnvio;
 
@@ -55,14 +53,9 @@ public class OrderPricingService {
     }
 
     public OrderPricingResult calculate(PaymentCheckoutRequest req, Bodega bodega, int subtotal) {
-        return calcularPaquete(req, bodega, subtotal, req.getMetodoEnvio(), Integer.MAX_VALUE);
+        return calcularPaquete(req, bodega, subtotal, req.getMetodoEnvio());
     }
 
-    /**
-     * Precio de un paquete (una bodega de origen).
-     *
-     * @param gcSaldoRestante saldo de la tarjeta de regalo que aún no usaron otros paquetes del mismo checkout
-     */
     public static final String MSG_CUPON_INVALIDO = "El cupón no es válido para estos productos. Quitalo o probá con otro.";
 
     /** CMP-2: un cupón escrito que no aplica a ningún negocio del carrito se rechaza (antes se ignoraba en silencio). */
@@ -73,8 +66,8 @@ public class OrderPricingService {
     }
 
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
-                                              String metodoEnvio, int gcSaldoRestante) {
-        return calcularPaquete(req, bodega, subtotal, metodoEnvio, gcSaldoRestante, java.util.List.of());
+                                              String metodoEnvio) {
+        return calcularPaquete(req, bodega, subtotal, metodoEnvio, java.util.List.of());
     }
 
     /**
@@ -82,9 +75,9 @@ public class OrderPricingService {
      *                  con CalculadoraIva sobre el neto después de descuentos, igual que el XML.
      */
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
-                                              String metodoEnvio, int gcSaldoRestante,
+                                              String metodoEnvio,
                                               java.util.List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva) {
-        return calcularPaquete(req, bodega, subtotal, metodoEnvio, gcSaldoRestante, lineasIva, calcularCostoEnvio(metodoEnvio));
+        return calcularPaquete(req, bodega, subtotal, metodoEnvio, lineasIva, calcularCostoEnvio(metodoEnvio));
     }
 
     /**
@@ -92,7 +85,7 @@ public class OrderPricingService {
      * una vez por empresa, no por bodega; los demás paquetes del mismo negocio llegan con 0.
      */
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
-                                              String metodoEnvio, int gcSaldoRestante,
+                                              String metodoEnvio,
                                               java.util.List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva,
                                               int costoEnvio) {
         Long empresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
@@ -114,19 +107,8 @@ public class OrderPricingService {
             bodega.getEmpresa(), req.isFacturaElectronica(), lineasIva, descuento));
         int total = Math.max(0, subtotal - descuento + costoEnvio) + impuesto;
 
-        int    gcMonto  = 0;
-        String gcCodigo = req.getCodigoGiftCard() != null ? req.getCodigoGiftCard().trim().toUpperCase(java.util.Locale.ROOT) : null;
-        if (gcCodigo != null && !gcCodigo.isBlank() && empresaId != null && gcSaldoRestante > 0) {
-            var gcOpt = giftCardService.validar(gcCodigo, empresaId);
-            if (gcOpt.isPresent()) {
-                gcMonto = Math.min(total, Math.min(gcOpt.get().getSaldoActual(), gcSaldoRestante));
-            }
-        }
-        int totalConGC  = total - gcMonto;
-        boolean pagoGC  = gcMonto > 0 && totalConGC == 0;
-
         return new OrderPricingResult(
-            costoEnvio, descuento, codigoCuponAplicado, gcMonto, gcCodigo, total, totalConGC, pagoGC, Math.max(0, impuesto));
+            costoEnvio, descuento, codigoCuponAplicado, total, Math.max(0, impuesto));
     }
 
     private int descuentoSinpeSiAplica(String provider, Bodega bodega, int base) {

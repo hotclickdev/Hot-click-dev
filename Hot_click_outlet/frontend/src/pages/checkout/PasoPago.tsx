@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import type { PaqueteCarrito } from '@/pages/carrito/cartHelpers'
 import { CampoCodigo, LineaCodigo, TarjetaCodigos, TituloValido } from './CodigoDescuento'
-import { formatoRebaja, saldoRestanteGiftCard } from './codigoDescuentoHelpers'
+import { formatoRebaja } from './codigoDescuentoHelpers'
 import { formatPrice } from '@/utils/format'
 import { destinoSinpeVisible } from './checkoutHelpers'
 import { ICONOS_CHECKOUT } from './iconosCheckout'
@@ -136,36 +136,25 @@ function NotaEfectivo() {
 
 type CodigosCheckoutProps = {
   codigos: CodigosPedido
-  token: string | null
   descuento: number
-  giftCard: number
 }
 
-/** Tarjeta de regalo o cupón en un solo campo con «Aplicar» (Figma `55:2220` válida, `55:2284` inválida). */
-export function CodigosCheckout({ codigos, token, descuento, giftCard }: CodigosCheckoutProps) {
+/** Cupón en un campo con «Aplicar» (Figma `55:2220` válido, `55:2284` inválido). */
+export function CodigosCheckout({ codigos, descuento }: CodigosCheckoutProps) {
   const { t } = useTranslation()
-  const esGift = codigos.gcEstado === 'valid'
-  const estado = esGift ? 'valid' : codigos.cuponEstado
   return (
-    <TarjetaCodigos titulo={t(token ? 'checkout.codigo.unicoTitulo' : 'checkout.codigo.cuponTitulo')}>
+    <TarjetaCodigos titulo={t('checkout.codigo.cuponTitulo')}>
       <CampoCodigo
         valor={codigos.cuponInput}
-        estado={estado}
-        placeholder={t(token ? 'checkout.codigo.unicoPlaceholder' : 'checkout.codigo.cuponPlaceholder')}
-        ariaLabel={t(token ? 'checkout.codigo.unicoAria' : 'checkout.codigo.cuponAria')}
+        estado={codigos.cuponEstado}
+        placeholder={t('checkout.codigo.cuponPlaceholder')}
+        ariaLabel={t('checkout.codigo.cuponAria')}
         maxLength={30}
-        onCambiar={token ? codigos.cambiarCodigo : codigos.cambiarCupon}
-        onAplicar={token ? codigos.aplicarCodigo : codigos.validarCupon}
-        onQuitar={() => codigos.cambiarCodigo('')}
-        invalido={{ titulo: codigos.cuponError || t(token ? 'checkout.codigo.unicoInvalido' : 'checkout.codigo.cuponInvalidoTitulo') }}
-        detalleValido={esGift ? (
-          <>
-            <TituloValido texto={t('checkout.codigo.giftValidoTitulo')} />
-            <LineaCodigo etiqueta={t('checkout.codigo.saldoDisponible')} valor={formatPrice(codigos.gcSaldo)} />
-            <LineaCodigo etiqueta={t('checkout.codigo.seAplica')} valor={formatoRebaja(giftCard)} rebaja />
-            <LineaCodigo etiqueta={t('checkout.codigo.saldoRestante')} valor={formatPrice(saldoRestanteGiftCard(codigos.gcSaldo, giftCard))} />
-          </>
-        ) : (
+        onCambiar={codigos.cambiarCupon}
+        onAplicar={codigos.validarCupon}
+        onQuitar={codigos.quitarCupon}
+        invalido={{ titulo: codigos.cuponError || t('checkout.codigo.cuponInvalidoTitulo') }}
+        detalleValido={(
           <>
             <TituloValido texto={t('checkout.codigo.cuponValidoTitulo')} />
             <LineaCodigo etiqueta={t('checkout.codigo.cuponDescuento', { porcentaje: codigos.cuponDescuento })} valor={formatoRebaja(descuento)} rebaja />
@@ -185,24 +174,16 @@ type ResumenPagoMovilProps = {
   envioVaria: boolean
   descuento: number
   cuponPorcentaje: number
-  giftCard: number
   codigos: CodigosPedido
-  token: string | null
 }
 
 /** "Resumen · 4 productos en 3 paquetes" con "¿Tenés un cupón?" (Figma `29:1408`). */
-export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVaria, descuento, cuponPorcentaje, giftCard, codigos, token }: ResumenPagoMovilProps) {
+export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVaria, descuento, cuponPorcentaje, codigos }: ResumenPagoMovilProps) {
   const { t } = useTranslation()
   const [abierto, setAbierto] = useState(true)
-  const [codigosAbiertos, setCodigosAbiertos] = useState(Boolean(codigos.cuponCodigo || codigos.gcCodigo))
+  const [codigosAbiertos, setCodigosAbiertos] = useState(Boolean(codigos.cuponCodigo))
   return (
     <>
-    {token && (
-      <>
-        <p className="text-[12px] leading-4 text-hc-n-600">{t('checkout.f.sesionGift')}</p>
-        <CodigosCheckout codigos={codigos} token={token} descuento={descuento} giftCard={giftCard} />
-      </>
-    )}
     <section className="flex flex-col gap-[10px] rounded-[14px] border border-hc-n-200 bg-hc-n-0 p-[14px] leading-[normal]">
       <div className="flex items-center gap-2 font-semibold">
         <h2 className="min-w-0 flex-1 font-sans text-[14px] tracking-normal text-hc-n-900">
@@ -239,21 +220,13 @@ export function ResumenPagoMovil({ paquetes, unidades, subtotal, envio, envioVar
           <p className="font-semibold text-hc-success-text">{formatoRebaja(descuento)}</p>
         </div>
       )}
-      {giftCard > 0 && (
-        <div className="flex items-start justify-between text-[13px]">
-          <p className="font-medium text-hc-n-600">{t('checkout.codigo.lineaGift', { codigo: codigos.gcCodigo ?? '' })}</p>
-          <p className="font-semibold text-hc-success-text">{formatoRebaja(giftCard)}</p>
-        </div>
-      )}
-      <p className="text-[11px] leading-[15px] text-hc-n-600">{giftCard > 0 ? t('checkout.codigo.notaRestante') : t('cart.notaResumenEscritorio')}</p>
-      {!token && (
-        <button type="button" onClick={() => setCodigosAbiertos((v) => !v)} aria-expanded={codigosAbiertos} className="flex items-center gap-[6px] text-left text-[13px] font-semibold text-hc-blue-600">
-          <IconoFigma src={ICONOS_CHECKOUT.cupon} size={14} className="text-hc-success" />
-          {t('checkout.f.tienesCupon')}
-        </button>
-      )}
+      <p className="text-[11px] leading-[15px] text-hc-n-600">{t('cart.notaResumenEscritorio')}</p>
+      <button type="button" onClick={() => setCodigosAbiertos((v) => !v)} aria-expanded={codigosAbiertos} className="flex items-center gap-[6px] text-left text-[13px] font-semibold text-hc-blue-600">
+        <IconoFigma src={ICONOS_CHECKOUT.cupon} size={14} className="text-hc-success" />
+        {t('checkout.f.tienesCupon')}
+      </button>
     </section>
-    {!token && codigosAbiertos && <CodigosCheckout codigos={codigos} token={token} descuento={descuento} giftCard={giftCard} />}
+    {codigosAbiertos && <CodigosCheckout codigos={codigos} descuento={descuento} />}
     </>
   )
 }

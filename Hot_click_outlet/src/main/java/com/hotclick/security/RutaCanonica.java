@@ -13,7 +13,7 @@ import java.util.Deque;
  *
  * <p>El contenedor entrega {@code getRequestURI()} SIN decodificar, pero Spring MVC enruta sobre la ruta
  * decodificada y sin parámetros de ruta. Comparar la URI cruda con las claves del filtro dejaba evadir el tope
- * escribiendo {@code /api/gift-cards/%76alidar} (o {@code ;x}, {@code //}, {@code /./}) y llegar igual al
+ * escribiendo {@code /api/marcas/%70ublicas} (o {@code ;x}, {@code //}, {@code /./}) y llegar igual al
  * controlador. Aquí se reproduce el mismo saneo y, ante la duda, se cuenta contra el cupo (fail-closed):
  * <ol>
  *   <li>quita parámetros de ruta ({@code ;jsessionid=..., ;x}) de cada segmento,</li>

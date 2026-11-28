@@ -77,7 +77,7 @@ public class TenantLimitChecker {
 
     /**
      * Verifica que el plan de la empresa tenga habilitada una feature booleana
-     * (ej. "giftCards"). Lanza PlanLimitException (HTTP 403) si no la tiene.
+     * (ej. "crm"). Lanza PlanLimitException (HTTP 403) si no la tiene.
      */
     @Transactional(readOnly = true)
     public void verificarFeature(Long empresaId, String feature) {
@@ -100,7 +100,6 @@ public class TenantLimitChecker {
             case "reportes"   -> Boolean.TRUE.equals(plan.getTieneReportes());
             case "ai"         -> Boolean.TRUE.equals(plan.getTieneAi());
             case "api"        -> Boolean.TRUE.equals(plan.getTieneApi());
-            case "giftCards"  -> Boolean.TRUE.equals(plan.getTieneGiftCards());
             // SEG-E: varias ubicaciones solo si el plan permite más de una bodega (-1 = sin tope).
             case "sucursales" -> plan.getMaxBodegas() != null && (plan.getMaxBodegas() < 0 || plan.getMaxBodegas() > 1);
             default           -> true;
@@ -108,7 +107,6 @@ public class TenantLimitChecker {
         if (habilitada) return;
 
         String label = switch (feature) {
-            case "giftCards" -> "Gift Cards";
             case "crm" -> "el CRM de clientes";
             case "sucursales" -> "varias sucursales";
             default -> feature;

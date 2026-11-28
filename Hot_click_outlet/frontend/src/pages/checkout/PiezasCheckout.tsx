@@ -62,17 +62,15 @@ type PieCheckoutProps = {
   etiqueta: string
   onClick: () => void
   deshabilitado?: boolean
-  /** "Total restante a pagar" cuando una tarjeta de regalo cubre parte del pedido (Figma `55:2220`). */
-  restante?: boolean
 }
 
 /** Pie fijo con Total y el botón rojo del paso (Figma `28:1136`). */
-export function PieCheckoutMovil({ total, etiqueta, onClick, deshabilitado, restante }: PieCheckoutProps) {
+export function PieCheckoutMovil({ total, etiqueta, onClick, deshabilitado }: PieCheckoutProps) {
   const { t } = useTranslation()
   return (
     <div className="sticky bottom-0 z-40 flex flex-col gap-[10px] border-t border-hc-n-200 bg-hc-n-0 px-4 pb-6 pt-3 leading-[normal]">
       <div className="flex items-center justify-between text-hc-n-900">
-        <p className="text-[15px] font-semibold leading-[18px]">{t(restante ? 'checkout.codigo.totalRestante' : 'checkout.total')}</p>
+        <p className="text-[15px] font-semibold leading-[18px]">{t('checkout.total')}</p>
         <p className="font-display text-[17px] font-bold leading-[21px]">{formatPrice(total)}</p>
       </div>
       <button

@@ -59,7 +59,7 @@ export default function CheckoutLayout({
 }: CheckoutLayoutProps) {
   const { t } = useTranslation()
   const esDesktop = useEsDesktop()
-  const codigos = useCodigosPedido(token)
+  const codigos = useCodigosPedido()
   const { setPaso } = form
   const [consentimientoPendiente, setConsentimientoPendiente] = useState(false)
 
@@ -212,8 +212,7 @@ export default function CheckoutLayout({
               envioVaria={hayEnvioQueVaria}
               descuento={form.descuentoMonto}
               cuponPorcentaje={form.cuponDescuento}
-              giftCard={form.gcAplicado}
-              codigosEscritorio={<CodigosCheckout codigos={codigos} token={token} descuento={form.descuentoMonto} giftCard={form.gcAplicado} />}
+              codigosEscritorio={<CodigosCheckout codigos={codigos} descuento={form.descuentoMonto} />}
             />
           </div>
         </div>
@@ -244,9 +243,7 @@ export default function CheckoutLayout({
                 envioVaria={hayEnvioQueVaria}
                 descuento={form.descuentoMonto}
                 cuponPorcentaje={form.cuponDescuento}
-                giftCard={form.gcAplicado}
                 codigos={codigos}
-                token={token}
               />
               {consentimiento}
             </>
@@ -257,7 +254,6 @@ export default function CheckoutLayout({
           etiqueta={paso === 1 ? t('checkout.f.continuarEntrega') : paso === 2 ? t('checkout.f.continuarPago') : textoPagar}
           onClick={paso === PASO_PAGO ? pagar : continuar}
           deshabilitado={paso === PASO_PAGO && ocupado}
-          restante={form.gcAplicado > 0}
         />
       </div>
     </MainLayout>

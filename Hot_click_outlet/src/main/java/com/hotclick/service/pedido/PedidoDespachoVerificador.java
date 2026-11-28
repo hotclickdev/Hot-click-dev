@@ -16,7 +16,8 @@ import java.util.Optional;
  * <ul>
  *   <li>Con {@link Pago} (del pedido o de su grupo de checkout): solo si está {@code CAPTURADO}. Un pago
  *       de pasarela pendiente, fallido o cancelado no habilita nada, diga lo que diga el pedido.</li>
- *   <li>Sin {@link Pago}: solo un pedido cubierto entero por gift card (lo marca el checkout). Las
+ *   <li>Sin {@link Pago}: solo un pedido histórico cubierto entero por gift card (el checkout ya no las admite; se conserva
+ *       para no dejar sin despachar los pedidos pagados así antes de retirarlas). Las
  *       confirmaciones manuales (PAGADO con referencia, efectivo al retirar, venta manual creada como
  *       pagada) dejan un {@link Pago} {@value Constants#PROVEEDOR_MANUAL} CAPTURADO, así que entran por
  *       la primera regla.</li>
@@ -32,7 +33,7 @@ public class PedidoDespachoVerificador {
         this.pedidoGrupoService = pedidoGrupoService;
     }
 
-    /** True si el pedido tiene un pago verificado (Pago CAPTURADO o gift card que cubre todo). */
+    /** True si el pedido tiene un pago verificado (Pago CAPTURADO o pedido histórico cubierto por gift card). */
     public boolean pagoVerificado(Pedido pedido) {
         Optional<Pago> pago = pedidoGrupoService.pagoDelGrupo(pedido);
         if (pago.isPresent()) {

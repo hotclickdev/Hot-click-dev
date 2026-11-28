@@ -50,29 +50,26 @@ describe('teléfono del checkout', () => {
   })
 })
 
-describe('totales con cupón y gift card', () => {
-  it('aplica el porcentaje al subtotal y la gift card sobre el total con envío', () => {
-    expect(totalesConCodigos(100000, 12000, 10, 0)).toEqual({ descuento: 10000, giftCard: 0, total: 102000 })
-    expect(totalesConCodigos(100000, 12000, 0, 50000)).toEqual({ descuento: 0, giftCard: 50000, total: 62000 })
-    expect(totalesConCodigos(10000, 4000, 0, 90000)).toEqual({ descuento: 0, giftCard: 14000, total: 0 })
+describe('totales con cupón', () => {
+  it('aplica el porcentaje al subtotal y suma el envío', () => {
+    expect(totalesConCodigos(100000, 12000, 10)).toEqual({ descuento: 10000, total: 102000 })
+    expect(totalesConCodigos(100000, 12000, 0)).toEqual({ descuento: 0, total: 112000 })
   })
 })
 
 describe('store de extras del pedido', () => {
   beforeEach(() => usePedidoExtrasStore.getState().reiniciar())
 
-  it('conserva notas, cupón y gift card y se reinicia', () => {
+  it('conserva notas y cupón y se reinicia', () => {
     const s = usePedidoExtrasStore.getState()
     s.setNotas('timbre roto')
     s.setCuponCodigo('BIENVENIDA')
     s.setCuponDescuento(15)
-    s.setGcSaldo(5000)
     expect(usePedidoExtrasStore.getState().notas).toBe('timbre roto')
     expect(usePedidoExtrasStore.getState().cuponDescuento).toBe(15)
     usePedidoExtrasStore.getState().reiniciar()
     expect(usePedidoExtrasStore.getState().notas).toBe('')
     expect(usePedidoExtrasStore.getState().cuponCodigo).toBeNull()
-    expect(usePedidoExtrasStore.getState().gcSaldo).toBe(0)
   })
 })
 

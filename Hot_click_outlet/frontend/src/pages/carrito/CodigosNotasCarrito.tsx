@@ -4,8 +4,7 @@ import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
 import { LineaCodigo, TituloValido } from '@/pages/checkout/CodigoDescuento'
-import { formatoRebaja, saldoRestanteGiftCard } from '@/pages/checkout/codigoDescuentoHelpers'
-import { formatPrice } from '@/utils/format'
+import { formatoRebaja } from '@/pages/checkout/codigoDescuentoHelpers'
 import type { CodigosPedido } from '@/pages/checkout/useCodigosPedido'
 
 const MAX_NOTAS = 300
@@ -31,12 +30,10 @@ export function NotasPedido({ notas, onCambiar }: { notas: string; onCambiar: (v
 
 type FilaCodigoProps = {
   icono: string
-  /** El glifo del cupón y el del regalo vienen de assets distintos; ambos se pintan con máscara. */
   placeholder: string
   ariaLabel: string
   valor: string
   estado: string
-  deshabilitado?: boolean
   maxLength: number
   onCambiar: (valor: string) => void
   onAplicar: () => void
@@ -45,8 +42,8 @@ type FilaCodigoProps = {
   valido: ReactNode
 }
 
-/** Campo de código con "Aplicar": Figma `51:1965` (cupón) y `52:2165` (gift card). */
-function FilaCodigo({ icono, placeholder, ariaLabel, valor, estado, deshabilitado, maxLength, onCambiar, onAplicar, onQuitar, invalido, valido }: FilaCodigoProps) {
+/** Campo de código con "Aplicar": Figma `51:1965` (cupón). */
+function FilaCodigo({ icono, placeholder, ariaLabel, valor, estado, maxLength, onCambiar, onAplicar, onQuitar, invalido, valido }: FilaCodigoProps) {
   const { t } = useTranslation()
   const aplicado = estado === 'valid'
   return (
@@ -61,7 +58,6 @@ function FilaCodigo({ icono, placeholder, ariaLabel, valor, estado, deshabilitad
             placeholder={placeholder}
             aria-label={ariaLabel}
             aria-invalid={estado === 'invalid'}
-            disabled={deshabilitado}
             maxLength={maxLength}
             className="hc-input-libre min-w-0 flex-1 bg-transparent text-[14px] leading-[normal] text-hc-n-900 outline-none placeholder:text-hc-n-500 disabled:cursor-not-allowed"
           />
@@ -72,8 +68,8 @@ function FilaCodigo({ icono, placeholder, ariaLabel, valor, estado, deshabilitad
           <button
             type="button"
             onClick={onAplicar}
-            disabled={deshabilitado || estado === 'loading' || !valor.trim()}
-            className={`shrink-0 text-[14px] font-semibold leading-[normal] text-hc-blue-600 disabled:cursor-not-allowed ${deshabilitado ? 'opacity-40' : ''}`}
+            disabled={estado === 'loading' || !valor.trim()}
+            className="shrink-0 text-[14px] font-semibold leading-[normal] text-hc-blue-600 disabled:cursor-not-allowed"
           >
             {estado === 'loading' ? t('checkout.codigo.validando') : t('checkout.codigo.aplicar')}
           </button>
@@ -92,17 +88,12 @@ function FilaCodigo({ icono, placeholder, ariaLabel, valor, estado, deshabilitad
 
 type CodigosCarritoProps = {
   codigos: CodigosPedido
-  /** La gift card solo se aplica con sesión iniciada. */
-  conSesion: boolean
-  /** Muestra el campo de gift card (móvil `51:1820`). */
-  incluirGiftCard: boolean
   /** Aplicado para ajustar el tope del descuento que ve el cliente. */
   descuentoMonto: number
-  giftCardAplicada: number
 }
 
-/** Cupón y gift card del carrito. */
-export function CodigosCarrito({ codigos, conSesion, incluirGiftCard, descuentoMonto, giftCardAplicada }: CodigosCarritoProps) {
+/** Cupón del carrito. */
+export function CodigosCarrito({ codigos, descuentoMonto }: CodigosCarritoProps) {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-[10px]">
@@ -124,37 +115,6 @@ export function CodigosCarrito({ codigos, conSesion, incluirGiftCard, descuentoM
           </>
         )}
       />
-      {incluirGiftCard && (
-        <>
-          <FilaCodigo
-            icono={ICONOS_COMPRADOR.codigoRegalo}
-            placeholder={t('cart.giftCardPh')}
-            ariaLabel={t('checkout.codigo.giftAria')}
-            valor={codigos.gcInput}
-            estado={codigos.gcEstado}
-            deshabilitado={!conSesion}
-            maxLength={30}
-            onCambiar={codigos.cambiarGiftCard}
-            onAplicar={codigos.validarGiftCard}
-            onQuitar={codigos.quitarGiftCard}
-            invalido={(
-              <>
-                <p className="text-[13px] font-semibold text-hc-red-600">{t('checkout.codigo.giftInvalidoTitulo')}</p>
-                <p className="text-[12px] leading-4 text-hc-text-secondary">{t('checkout.codigo.giftInvalidoAyuda')}</p>
-              </>
-            )}
-            valido={(
-              <>
-                <TituloValido texto={t('checkout.codigo.giftValidoTitulo')} />
-                <LineaCodigo etiqueta={t('checkout.codigo.saldoDisponible')} valor={formatPrice(codigos.gcSaldo)} />
-                <LineaCodigo etiqueta={t('checkout.codigo.seAplica')} valor={formatoRebaja(giftCardAplicada)} rebaja />
-                <LineaCodigo etiqueta={t('checkout.codigo.saldoRestante')} valor={formatPrice(saldoRestanteGiftCard(codigos.gcSaldo, giftCardAplicada))} />
-              </>
-            )}
-          />
-          <p className="text-[11px] leading-[15px] text-hc-n-600">{t('cart.giftCardAyuda')}</p>
-        </>
-      )}
     </div>
   )
 }

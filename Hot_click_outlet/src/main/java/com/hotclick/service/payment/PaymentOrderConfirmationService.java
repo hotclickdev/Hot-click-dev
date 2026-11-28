@@ -6,7 +6,6 @@ import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
-import com.hotclick.service.GiftCardService;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
 import org.hibernate.Hibernate;
@@ -55,7 +54,6 @@ public class PaymentOrderConfirmationService {
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private PagoRepository             pagoRepository;
     @Autowired private CuponService               cuponService;
-    @Autowired private GiftCardService            giftCardService;
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private PaymentNotificationsFacade paymentNotificationsFacade;
     @Autowired private PosQrVentaService          posQrVentaService;
@@ -136,9 +134,6 @@ public class PaymentOrderConfirmationService {
             pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
             pedidoRepository.save(pedido);
 
-            if (pedido.getGiftCardCodigo() != null && pedido.getGiftCardMonto() != null && pedido.getGiftCardMonto() > 0) {
-                giftCardService.canjear(pedido.getGiftCardCodigo(), pedido, pedido.getGiftCardMonto());
-            }
             encargoService.marcarPagadosPorPedido(pedido.getId());
             paymentNotificationsFacade.onPedidoConfirmado(pedido, pago);
             posQrVentaService.marcarPagadoPorPedidoTienda(pedido.getId());
@@ -297,7 +292,7 @@ public class PaymentOrderConfirmationService {
         paymentNotificationsFacade.onSobreventa(pago, numeros.toString());
     }
 
-    /** Lo que el proveedor cobró por el paquete: total menos la parte pagada con gift card. */
+    /** Lo que el proveedor cobró por el paquete: total menos la parte pagada con gift card (solo pedidos históricos; hoy siempre 0). */
     private static int montoCobrado(Pedido pedido) {
         int total = pedido.getTotalPedido() == null ? 0 : pedido.getTotalPedido();
         int gift = pedido.getGiftCardMonto() == null ? 0 : pedido.getGiftCardMonto();

@@ -13,7 +13,7 @@ Cada landing habla con una sola persona y tiene un solo botón principal.
 Precios y límites ya definidos en base (V114/V115), no se inventan:
 
 - **Emprendedor:** ₡0/mes, comisión 8% por venta (mínimo ₡400). Hasta 50 productos, 2 usuarios, 1 bodega y 1 caja. Pagos con tarjeta y SINPE, envíos en Costa Rica, reportes básicos. Cupo de los primeros 70.
-- **PYME:** ₡9.900/mes + 4% por venta. Hasta 500 productos, 5 usuarios, 2 bodegas y 2 cajas. Compras e inventario, gift cards, reportes avanzados, consultas con Hot (IA, 80 créditos/mes).
+- **PYME:** ₡9.900/mes + 4% por venta. Hasta 500 productos, 5 usuarios, 2 bodegas y 2 cajas. Compras e inventario, reportes avanzados, consultas con Hot (IA, 80 créditos/mes).
 - **Negocio Plus:** ₡24.900/mes + 4% por venta. Productos, usuarios, bodegas y cajas sin tope. Todo lo de PYME, más varias sucursales, pedidos por local, CRM e IA sin límite de créditos.
 
 ```mermaid
@@ -54,7 +54,7 @@ flowchart LR
 
 **Promesa:** “Operá el negocio en un solo panel: equipo, inventario y caja, por ₡9.900 al mes.”
 
-**Miedo:** “¿Por qué pagar si el otro plan es gratis?” Porque el gratis cobra 8% y se queda en 50 productos y sin módulo de compras. PYME baja la comisión a 4% y agrega equipo, compras, gift cards e IA. La página muestra un ejemplo corto: en una venta de ₡50.000, Emprendedor deja ₡4.000 de comisión y PYME deja ₡2.000, más la mensualidad. Quien vende seguido recupera los ₡9.900; quien vende poco no es el cliente de esta página.
+**Miedo:** “¿Por qué pagar si el otro plan es gratis?” Porque el gratis cobra 8% y se queda en 50 productos y sin módulo de compras. PYME baja la comisión a 4% y agrega equipo, compras e IA. La página muestra un ejemplo corto: en una venta de ₡50.000, Emprendedor deja ₡4.000 de comisión y PYME deja ₡2.000, más la mensualidad. Quien vende seguido recupera los ₡9.900; quien vende poco no es el cliente de esta página.
 
 **CTA único:** “Suscribirme a PYME — ₡9.900/mes”. Precio visible en el primer pantallazo, no escondido.
 

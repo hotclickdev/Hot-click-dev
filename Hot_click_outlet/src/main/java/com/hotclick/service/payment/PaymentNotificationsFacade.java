@@ -3,7 +3,6 @@ package com.hotclick.service.payment;
 import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.service.AggregatorService;
-import com.hotclick.service.GiftCardService;
 import com.hotclick.service.N8nWebhookService;
 import com.hotclick.service.NotificacionEmailService;
 import com.hotclick.service.VentaAvisoService;
@@ -44,14 +43,6 @@ public class PaymentNotificationsFacade {
         ));
     }
 
-    public void onGiftCardFullPayment(Pedido pedido, String gcCodigo) {
-        if (pedido == null) return;
-        ventaAvisoService.avisarVentaConfirmada(pedido);
-        n8nWebhookService.notificarPedidoNuevo(pedido);
-        capturarPedidoPagado(pedido, null);
-        log.info("Pedido {} pagado 100% con gift card {}", pedido.getNumeroPedido(), GiftCardService.enmascarar(gcCodigo));
-    }
-
     public void onPedidoConfirmado(Pedido pedido, Pago pago) {
         if (pedido == null || pago == null) return;
         // QA-B02-5: la billetera se acredita en la misma transacción que confirma el pago, antes de
@@ -59,7 +50,7 @@ public class PaymentNotificationsFacade {
         aggregatorService.acreditarVentaEnTransaccion(pedido);
         touchUsuarioFinalForAsync(pedido);
         // Los avisos salen recién cuando el cobro hizo COMMIT: si la transacción se revierte
-        // (stock, gift card, cupón…), el comprador no recibe un "pedido confirmado" falso.
+        // (stock, cupón…), el comprador no recibe un "pedido confirmado" falso.
         // Los datos del webhook se leen acá, donde pedido y pago ya se validaron no nulos.
         Map<String, Object> datos = new java.util.HashMap<>(); // admite null, a diferencia de Map.of
         datos.put("numeroPedido", pedido.getNumeroPedido());

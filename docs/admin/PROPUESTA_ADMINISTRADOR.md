@@ -37,7 +37,7 @@ HotClick es dos negocios en uno, en Costa Rica, en colones enteros.
    | Plan | Mensualidad | Comisión por venta | Tope que el panel tiene que respetar |
    |------|-------------|--------------------|----------------------------------------|
    | Emprendedor | ₡0 | 8% (mínimo ₡400) | 50 productos, 2 usuarios, 1 bodega, 1 caja. Sin contacto directo al comprador. |
-   | PYME | ₡9.900 | 4% | 500 productos, 5 usuarios, 2 bodegas, 2 cajas. Compras, gift cards, contacto directo, IA con cupo. |
+   | PYME | ₡9.900 | 4% | 500 productos, 5 usuarios, 2 bodegas, 2 cajas. Compras, contacto directo, IA con cupo. |
    | Negocio Plus | ₡24.900 | 4% | Sin tope de productos, usuarios, bodegas ni cajas. Sucursales, pedidos por local, CRM. |
 
    Hay textos de marketing y seeders viejos con otra comisión (9%, mínimo ₡600 o ₡700). El panel tiene que leer el plan de la base, no un número escrito en la landing.
@@ -241,7 +241,7 @@ HotClick cobra comisión sobre la venta y, en PYME y Plus, la mensualidad. El en
 | D105 | Recibir el comprobante de HotClick por la comisión del periodo. | Dueño | Falta |
 | D106 | Ver un SINPE rechazado y no despachar ese pedido. | Dueño | Parcial |
 | D107 | Ver un contracargo de tarjeta y el monto retenido. | Dueño | Falta |
-| D108 | Gift card: venderla, cobrar con ella y ver el saldo vivo. Solo PYME y Plus. | Dueño | Parcial |
+| D108 | Gift card: venderla, cobrar con ella y ver el saldo vivo. Solo PYME y Plus. | Dueño | Descartada (el dueño quitó las gift cards de la web) |
 | D109 | El mínimo de comisión de Emprendedor (₡400) se ve en la venta chica, no solo en el contrato. | Dueño | Falta |
 | D110 | Conciliar el cierre de caja del día contra las ventas registradas. | Dueño | Parcial |
 | D111 | Separar ventas de web y ventas de caja en el mismo reporte de dinero. | Dueño | Parcial |
@@ -378,7 +378,7 @@ El dueño es responsable de los datos de sus clientes. HotClick tiene que aislar
 | D185 | Hacer una orden de compra. | Dueño | Parcial |
 | D186 | Recibir la mercadería y meterla al stock al costo de esa compra. | Dueño | Parcial |
 | D187 | Adjuntar el XML de la compra del proveedor. | Dueño | Falta |
-| D188 | Emitir y cobrar gift cards. | Dueño | Parcial |
+| D188 | Emitir y cobrar gift cards. | Dueño | Descartada (el dueño quitó las gift cards de la web) |
 | D189 | Ver el contacto directo publicado en la ficha (WhatsApp, redes, teléfono, web). | Dueño | Listo |
 | D190 | Usar el copilot con los datos de su tienda, con cupo de créditos. | Dueño | Parcial |
 | D191 | Pedir una descripción o una respuesta de cliente y publicarla solo si el dueño la acepta. | Dueño | Parcial |
@@ -406,7 +406,7 @@ El dueño es responsable de los datos de sus clientes. HotClick tiene que aislar
 | ID | Acción | Quién | Hoy |
 |----|--------|-------|-----|
 | D205 | Al llegar a 50 productos, explicar el tope y el camino a PYME. | Dueño | Parcial |
-| D206 | No mostrar compras, CRM, gift cards ni contacto directo como si ya los tuviera. | Sistema | Parcial |
+| D206 | No mostrar compras, CRM ni contacto directo como si ya los tuviera. | Sistema | Parcial |
 | D207 | Mostrar en cada venta el 8% y el mínimo de ₡400. | Dueño | Falta |
 | D208 | Si el cupo de negocios gratis se llena, el alta deja de prometer ₡0 y ofrece PYME. | Sistema | Parcial |
 | D209 | Caja disponible también en este plan, alineado en base, copia y pantalla. Hoy la base dice que no y la caja sí abre. | Sistema | Parcial |
