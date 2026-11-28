@@ -66,6 +66,14 @@ export function IconoDominio({ id, className = 'size-5' }: { id: string; classNa
       </svg>
     )
   }
+  if (id === 'contador') {
+    return (
+      <svg className={className} {...trazo}>
+        <rect x="5" y="3" width="14" height="18" rx="2" />
+        <path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2" />
+      </svg>
+    )
+  }
   if (id === 'reglas') {
     return (
       <svg className={className} {...trazo}>

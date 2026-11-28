@@ -20,6 +20,7 @@ const NAV = [
   { id: 'seguridad', label: 'Acceso', to: '/plataforma/seguridad' },
   { id: 'ia', label: 'IA', to: '/plataforma/ia' },
   { id: 'reglas', label: 'Reglas', to: '/plataforma/reglas' },
+  { id: 'contador', label: 'Contador IA', to: '/plataforma/contador' },
 ] as const
 
 /** Cascarón denso: riel azul, trabajo en cuadros y la cuenta arriba a la derecha. */

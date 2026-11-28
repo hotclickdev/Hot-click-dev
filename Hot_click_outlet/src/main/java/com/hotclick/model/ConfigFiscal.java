@@ -26,6 +26,16 @@ public class ConfigFiscal {
     private Integer onvoPagoMinimoCrc;
     @Column(name = "onvo_costo_pago_crc", nullable = false)
     private Integer onvoCostoPagoCrc;
+    // V263: con DEFAULT para que el INSERT de la fila única sin estas columnas (V244) siga funcionando en el esquema de pruebas.
+    /** V263: salario base (₡) para el tope anual de compras del RTS. */
+    @Column(name = "salario_base_crc", columnDefinition = "INTEGER NOT NULL DEFAULT 462200")
+    private Integer salarioBaseCrc;
+    /** V263: tope mensual de gasto en IA del Contador (USD). */
+    @Column(name = "tope_ia_mes_usd", columnDefinition = "NUMERIC(8,2) NOT NULL DEFAULT 20.00")
+    private BigDecimal topeIaMesUsd;
+    /** V263: preguntas por día y ADMIN al Contador IA. */
+    @Column(name = "limite_preguntas_dia", columnDefinition = "INTEGER NOT NULL DEFAULT 30")
+    private Integer limitePreguntasDia;
 
     @Column(name = "onvo_cobro_a_nombre_negocio", nullable = false, columnDefinition = "boolean default false")
     private Boolean onvoCobroANombreNegocio = false;
@@ -40,4 +50,7 @@ public class ConfigFiscal {
     public Integer getDiasEnviarFactura() { return diasEnviarFactura; }
     public Integer getOnvoPagoMinimoCrc() { return onvoPagoMinimoCrc; }
     public Integer getOnvoCostoPagoCrc() { return onvoCostoPagoCrc; }
+    public Integer getSalarioBaseCrc() { return salarioBaseCrc; }
+    public BigDecimal getTopeIaMesUsd() { return topeIaMesUsd; }
+    public Integer getLimitePreguntasDia() { return limitePreguntasDia; }
 }

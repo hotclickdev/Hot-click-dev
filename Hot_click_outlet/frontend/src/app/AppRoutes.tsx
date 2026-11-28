@@ -27,6 +27,7 @@ const OperacionPlataforma = lazy(() => import('@/pages/plataforma/OperacionPlata
 const SeguridadPlataforma = lazy(() => import('@/pages/plataforma/SeguridadPlataforma'))
 const IaPlataforma = lazy(() => import('@/pages/plataforma/IaPlataforma'))
 const ReglasPlataforma = lazy(() => import('@/pages/plataforma/ReglasPlataforma'))
+const ContadorPlataforma = lazy(() => import('@/pages/plataforma/ContadorPlataforma'))
 const CrmPlataforma = lazy(() => import('@/pages/plataforma/CrmPlataforma'))
 // CRM fase 0–1: chunk propio (Refine + piezas shadcn/Tremor) que solo baja al entrar.
 const CrmLayout = lazy(() => import('@/features/crm/CrmLayout'))
@@ -209,6 +210,7 @@ export default function AppRoutes() {
         <Route path="seguridad" element={<SeguridadPlataforma />} />
         <Route path="ia" element={<IaPlataforma />} />
         <Route path="reglas" element={<ReglasPlataforma />} />
+        <Route path="contador" element={<ContadorPlataforma />} />
       </Route>
 
       <Route path="/caja" element={<CajaAcceso />}>
