@@ -48,11 +48,13 @@ public class FacturaNegocioAdminService {
     private final RateLimiter rateLimiter;
     private final ConfiguracionFiscalService config;
     private final AuditoriaAdminRegistroService auditoria;
+    private final org.springframework.context.ApplicationEventPublisher eventos;
 
     public FacturaNegocioAdminService(FacturaNegocioRepository repo, EmpresaRepository empresas, CompanyScope companyScope,
                                       FacturaNegocioGeneracionService generacion, TelegramNotificacionClienteService telegram,
                                       RateLimiter rateLimiter, ConfiguracionFiscalService config,
-                                      AuditoriaAdminRegistroService auditoria) {
+                                      AuditoriaAdminRegistroService auditoria,
+                                      org.springframework.context.ApplicationEventPublisher eventos) {
         this.repo = repo;
         this.empresas = empresas;
         this.companyScope = companyScope;
@@ -61,14 +63,21 @@ public class FacturaNegocioAdminService {
         this.rateLimiter = rateLimiter;
         this.config = config;
         this.auditoria = auditoria;
+        this.eventos = eventos;
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> listar(String estado, LocalDate desde, int pagina, int tamano) {
+        return listar(estado, desde, null, pagina, tamano);
+    }
+
+    /** Con {@code empresaId} opcional (la ficha del negocio elige a qué factura atar un enlace de cobro). */
+    @Transactional(readOnly = true)
+    public Map<String, Object> listar(String estado, LocalDate desde, Long empresaId, int pagina, int tamano) {
         exigirAdmin();
         String filtro = estado == null || estado.isBlank() ? null : estado.trim().toUpperCase(java.util.Locale.ROOT);
         if (filtro != null && !ESTADOS.contains(filtro)) throw new IllegalArgumentException("Estado inválido.");
-        Page<FacturaNegocio> page = repo.buscarAdmin(filtro, desde,
+        Page<FacturaNegocio> page = repo.buscarAdmin(filtro, desde, empresaId,
             PageRequest.of(Math.max(0, pagina), Math.clamp(tamano, 1, MAX_PAGINA)));
         List<Long> ids = FacturaNegocioVista.empresaIds(page.getContent());
         Map<Long, String> nombres = empresas.findAllById(ids).stream()
@@ -88,18 +97,55 @@ public class FacturaNegocioAdminService {
         return vista(f);
     }
 
+    /**
+     * "Aprobar factura": solo una RECIBIDA (pasó todas las validaciones) pasa a ACEPTADA. Recién ahí se aplica el
+     * mensaje receptor y se publica {@link FacturaNegocioRecibidaEvent} (cancela los enlaces de cobro de esa factura).
+     * Solo ADMIN, nunca impersonando, y queda en la auditoría. Dos aprobaciones a la vez: la versión corta la segunda.
+     */
     @Transactional
-    public Map<String, Object> marcarRevisada(Long id) {
+    public Map<String, Object> aprobar(Long id) {
         exigirAdmin();
         FacturaNegocio f = cargar(id);
+        if (!FacturaNegocio.RECIBIDA.equals(f.getEstado())) {
+            throw new IllegalStateException("Solo se aprueba una factura recibida y pendiente de revisión.");
+        }
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        f.setEstado(FacturaNegocio.ACEPTADA);
+        marcarRevision(f, ahora);
+        MensajeReceptorCodigos.aplicar(f, tradicional(), config.reglasFactura().mensajeReceptorHabilitado(), ahora);
+        repo.saveAndFlush(f);
+        auditoria.registrar("FACTURA_NEGOCIO_APROBADA", ENTIDAD, f.getId(), f.getEmpresaId(), f.getEstado());
+        eventos.publishEvent(new FacturaNegocioRecibidaEvent(f.getEmpresaId(), f.getId()));
+        return vista(f);
+    }
+
+    /** "Rechazar": una RECIBIDA vuelve a RECHAZADA con el motivo del ADMIN; el negocio puede subir otra. */
+    @Transactional
+    public Map<String, Object> rechazar(Long id, String motivo) {
+        exigirAdmin();
+        FacturaNegocio f = cargar(id);
+        if (!FacturaNegocio.RECIBIDA.equals(f.getEstado())) {
+            throw new IllegalStateException("Solo se rechaza una factura recibida y pendiente de revisión.");
+        }
+        String limpio = motivo == null ? "" : motivo.replaceAll("[<>\\p{Cntrl}]", " ").trim();
+        if (limpio.length() < 5 || limpio.length() > 300) {
+            throw new IllegalArgumentException("Escribí un motivo de 5 a 300 caracteres.");
+        }
+        LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
+        f.setEstado(FacturaNegocio.RECHAZADA);
+        f.setClaveXml(null);
+        f.setMensajeValidacion(FacturaNegocioVista.empaquetar(java.util.List.of("HotClick la rechazó: " + limpio), java.util.List.of()));
+        marcarRevision(f, ahora);
+        repo.saveAndFlush(f);
+        auditoria.registrar("FACTURA_NEGOCIO_RECHAZADA", ENTIDAD, f.getId(), f.getEmpresaId(), f.getEstado());
+        return vista(f);
+    }
+
+    private void marcarRevision(FacturaNegocio f, LocalDateTime ahora) {
         f.setRevisada(true);
         f.setRevisadaPor(companyScope.idActorAuditoria());
         f.setFechaRevision(ahora);
         f.setFechaActualizacion(ahora);
-        repo.save(f);
-        auditoria.registrar("FACTURA_NEGOCIO_REVISADA", ENTIDAD, f.getId(), f.getEmpresaId(), f.getEstado());
-        return vista(f);
     }
 
     /** Aviso al negocio (aviso en su panel + Telegram si lo tiene vinculado). Solo si todavía debe la factura. */

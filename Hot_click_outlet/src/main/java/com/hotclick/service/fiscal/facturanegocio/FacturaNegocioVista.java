@@ -30,6 +30,7 @@ public final class FacturaNegocioVista {
         m.put("fechaLimite", f.getFechaLimite());
         m.put("diasRestantes", FacturaNegocioCalculo.diasRestantes(hoy, f.getFechaLimite()));
         m.put("estado", f.getEstado());
+        m.put("mensajeEstado", FacturaNegocio.RECIBIDA.equals(f.getEstado()) ? FacturaNegocioService.MENSAJE_EN_REVISION : null);
         m.put("clave", f.getClaveXml());
         m.put("totalFacturaCrc", f.getTotalFacturaCrc());
         m.put("totalIvaCrc", f.getTotalIvaCrc());

@@ -21,13 +21,17 @@ import java.util.List;
 @RestController
 public class AdminOnvoCobroController {
 
-    public record CrearEnlaceRequest(@NotNull Integer montoCrc, @NotBlank @Size(max = 200) String motivo) {}
+    /** {@code facturaNegocioId} opcional: la factura (quincena) que cobra el enlace; sin ella no se cancela solo. */
+    public record CrearEnlaceRequest(@NotNull Integer montoCrc, @NotBlank @Size(max = 200) String motivo,
+                                     @jakarta.validation.constraints.Positive Long facturaNegocioId) {
+        public CrearEnlaceRequest(Integer montoCrc, String motivo) { this(montoCrc, motivo, null); }
+    }
 
     public record EnlaceDto(Long id, Long empresaId, int montoCrc, String motivo, String estado, String url,
-                            LocalDateTime creadoEn, LocalDateTime pagadoEn, LocalDateTime cerradoEn) {
+                            LocalDateTime creadoEn, LocalDateTime pagadoEn, LocalDateTime cerradoEn, Long facturaNegocioId) {
         static EnlaceDto de(EnlacePagoOnvo e) {
             return new EnlaceDto(e.getId(), e.getEmpresaId(), e.getMontoCrc(), e.getMotivo(), e.getEstado(),
-                e.abierto() ? e.getUrl() : null, e.getCreadoEn(), e.getPagadoEn(), e.getCerradoEn());
+                e.abierto() ? e.getUrl() : null, e.getCreadoEn(), e.getPagadoEn(), e.getCerradoEn(), e.getFacturaNegocioId());
         }
     }
 
@@ -136,7 +140,7 @@ public class AdminOnvoCobroController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO> crear(@PathVariable Long id, @Valid @RequestBody CrearEnlaceRequest body) {
         try {
-            EnlacePagoOnvo e = enlaces.crear(id, body.montoCrc(), body.motivo());
+            EnlacePagoOnvo e = enlaces.crear(id, body.montoCrc(), body.motivo(), body.facturaNegocioId());
             auditoria.registrarSiAdmin("ONVO_ENLACE_CREAR", "ENLACE_PAGO", e.getId(), id, "monto=" + e.getMontoCrc());
             return ResponseEntity.ok(ResponseDTO.success("Enlace creado", EnlaceDto.de(e)));
         } catch (EnlacePagoOnvoService.EnlaceConflictoException e) {

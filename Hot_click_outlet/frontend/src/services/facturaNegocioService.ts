@@ -20,6 +20,8 @@ export type FacturaNegocio = {
   fechaLimite: string
   diasRestantes: number
   estado: EstadoFacturaNegocio
+  /** Solo en RECIBIDA: "Recibida, pendiente de revisión de HotClick." */
+  mensajeEstado?: string | null
   clave: string | null
   totalFacturaCrc: number | null
   totalIvaCrc: number | null
@@ -81,12 +83,17 @@ export const facturaNegocioService = {
     return api.post(`/empresa/facturas-hotclick/${id}/xml`, fd)
   },
   /** Solo ADMIN. */
-  listar: (filtros: { estado?: string; desde?: string; page?: number }) =>
+  listar: (filtros: { estado?: string; desde?: string; page?: number; empresaId?: number | string }) =>
     api.get('/admin/facturas-negocio', {
-      params: { estado: filtros.estado || undefined, desde: filtros.desde || undefined, page: filtros.page ?? 0, size: 50 },
+      params: {
+        estado: filtros.estado || undefined, desde: filtros.desde || undefined,
+        empresaId: filtros.empresaId || undefined, page: filtros.page ?? 0, size: 50,
+      },
     }),
   detalle: (id: number) => api.get(`/admin/facturas-negocio/${id}`),
-  marcarRevisada: (id: number) => api.post(`/admin/facturas-negocio/${id}/revisada`),
+  /** RECIBIDA → ACEPTADA; recién ahí se cancelan los enlaces de cobro atados a esa factura. */
+  aprobar: (id: number) => api.post(`/admin/facturas-negocio/${id}/aprobar`),
+  rechazar: (id: number, motivo: string) => api.post(`/admin/facturas-negocio/${id}/rechazar`, { motivo }),
   recordar: (id: number) => api.post(`/admin/facturas-negocio/${id}/recordar`),
   generar: () => api.post('/admin/facturas-negocio/generar'),
 }

@@ -59,7 +59,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 /**
  * QA (PR #679): flujo completo de la factura del negocio sobre H2 con los servicios reales y por HTTP.
- * Quincena cerrada → generación (PENDIENTE / NO_APLICA) → subida de XML firmado → ACEPTADA → evento → cancelación de
+ * Quincena cerrada → generación (PENDIENTE / NO_APLICA) → subida de XML firmado → RECIBIDA → aprobación del ADMIN → ACEPTADA → evento → cancelación de
  * enlaces de ONVO (simulado); XML inválido → RECHAZADA; plazo vencido → VENCIDA. Más la matriz de autorización que
  * no cubre {@link com.hotclick.integration.FacturaNegocioHttpTest} (editor, staff con global.companies), aislamiento,
  * límite de subidas, tamaño y XXE por HTTP. Almacenamiento y ONVO simulados. Cédulas y correos ficticios.
@@ -101,7 +101,7 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
             Constants.ROL_EMPRENDEDOR, empA.getId(), empA.getSlug(), adminUser.getId(), adminUser.getCorreo());
         tStaff = tokenPara(staffConPermiso(), Constants.ROL_SUPPORT);
         when(supabaseStorageService.subirXmlPrivado(any(), anyString())).thenReturn("privado/qa.xml");
-        when(onvo.idsAbiertosDe(anyLong())).thenReturn(List.of());
+        when(onvo.idsAbiertosDeFactura(anyLong(), anyLong())).thenReturn(List.of());
         when(onvo.cancelar(anyLong())).thenAnswer(inv -> {
             EnlacePagoOnvo e = new EnlacePagoOnvo();
             e.setEstado(EnlacePagoOnvo.CANCELADO);
@@ -251,6 +251,7 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
         f.setMontoCrc(1130);
         f.setFechaLimite(limite);
         f.setEstado(estado);
+        f.setCedulaFiscalEsperada(CED_NEGOCIO);
         f.setFechaCreacion(LocalDateTime.now());
         f.setFechaActualizacion(LocalDateTime.now());
         return facturaRepository.saveAndFlush(f);
@@ -338,17 +339,21 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("XML válido + respuesta ACEPTADO → ACEPTADA, guarda la clave y cancela los enlaces de ONVO abiertos")
+    @DisplayName("XML válido + respuesta ACEPTADO → RECIBIDA; el ADMIN la aprueba → ACEPTADA y cancela los enlaces de ESA factura")
     void aceptadaDisparaEvento() throws Exception {
         FacturaNegocio f = pendiente(empA);
-        when(onvo.idsAbiertosDe(empA.getId())).thenReturn(List.of(71L, 72L));
+        when(onvo.idsAbiertosDeFactura(empA.getId(), f.getId())).thenReturn(List.of(71L, 72L));
 
         Resp r = hacer(subir(f.getId(), xmlValido(), respuestaHacienda("1")), tDuenoA);
         assertThat(r.status()).as(r.body()).isEqualTo(200);
-        assertThat((String) JsonPath.read(r.body(), "$.data.estado")).as(r.body()).isEqualTo(FacturaNegocio.ACEPTADA);
+        assertThat((String) JsonPath.read(r.body(), "$.data.estado")).as(r.body()).isEqualTo(FacturaNegocio.RECIBIDA);
+        assertThat((String) JsonPath.read(r.body(), "$.data.mensajeEstado")).contains("pendiente de revisión");
         assertThat((List<?>) JsonPath.read(r.body(), "$.data.errores")).isEmpty();
         assertThat((List<?>) JsonPath.read(r.body(), "$.data.avisos")).isEmpty();
+        // Recibida: todavía no se cancela nada.
+        verify(onvo, after(500).never()).cancelar(anyLong());
 
+        assertThat(st(post("/api/admin/facturas-negocio/" + f.getId() + "/aprobar"), adminToken)).isEqualTo(200);
         FacturaNegocio g = recargar(f);
         assertThat(g.getEstado()).isEqualTo(FacturaNegocio.ACEPTADA);
         assertThat(g.getClaveXml()).isEqualTo(CLAVE);
@@ -372,7 +377,7 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
         List<String> errores = JsonPath.read(r.body(), "$.data.errores");
         assertThat(errores).anyMatch(e -> e.contains("firma digital"));
         assertThat(recargar(f).getClaveXml()).isNull();
-        verify(onvo, after(500).never()).idsAbiertosDe(anyLong());
+        verify(onvo, after(500).never()).idsAbiertosDeFactura(any(), any());
     }
 
     @Test
@@ -384,18 +389,26 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
         assertThat((String) JsonPath.read(r.body(), "$.data.respuestaHacienda")).isEqualTo("RECHAZADO");
         assertThat((List<String>) JsonPath.read(r.body(), "$.data.errores")).anyMatch(e -> e.contains("Hacienda no aceptó"));
         assertThat(recargar(f).getClaveXml()).isNull();
-        verify(onvo, after(500).never()).idsAbiertosDe(anyLong());
+        verify(onvo, after(500).never()).idsAbiertosDeFactura(any(), any());
     }
 
     @Test
-    @DisplayName("RIESGO documentado: firma autofirmada y sin respuesta de Hacienda queda ACEPTADA (solo aviso) y cancela enlaces")
-    void autofirmadaSinRespuestaSeAcepta() throws Exception {
+    @DisplayName("Riesgo corregido: firma autofirmada sin respuesta de Hacienda queda RECIBIDA (nunca ACEPTADA sola) y no cancela enlaces; "
+        + "un certificado sin la cédula del emisor queda RECHAZADA")
+    void autofirmadaSinRespuestaNoSeAcepta() throws Exception {
         FacturaNegocio f = pendiente(empA);
-        when(onvo.idsAbiertosDe(empA.getId())).thenReturn(List.of(90L));
+        when(onvo.idsAbiertosDeFactura(empA.getId(), f.getId())).thenReturn(List.of(90L));
         Resp r = hacer(subir(f.getId(), xmlValido(), null), tDuenoA);
-        assertThat((String) JsonPath.read(r.body(), "$.data.estado")).isEqualTo(FacturaNegocio.ACEPTADA);
+        assertThat((String) JsonPath.read(r.body(), "$.data.estado")).isEqualTo(FacturaNegocio.RECIBIDA);
         assertThat((List<String>) JsonPath.read(r.body(), "$.data.avisos")).anyMatch(a -> a.contains("respuesta de Hacienda"));
-        verify(onvo, timeout(5_000)).cancelar(90L);
+        verify(onvo, after(500).never()).cancelar(anyLong());
+
+        FacturaNegocio otra = pendiente(empD);
+        byte[] ajena = com.hotclick.service.hacienda.CertificadoDePrueba.firmar(FacturaNegocioXmlValidadorTest.xmlBase())
+            .getBytes(StandardCharsets.UTF_8);
+        Resp s = hacer(subir(otra.getId(), ajena, null), tDuenoD);
+        assertThat((String) JsonPath.read(s.body(), "$.data.estado")).isEqualTo(FacturaNegocio.RECHAZADA);
+        assertThat((List<String>) JsonPath.read(s.body(), "$.data.errores")).anyMatch(e -> e.contains("no es de la cédula del emisor"));
     }
 
     @Test
@@ -418,10 +431,11 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
         assertThat((Integer) JsonPath.read(hacer(post("/api/admin/facturas-negocio/generar"), adminToken).body(),
             "$.data.vencidas")).isZero();
 
-        // Factura tardía: la VENCIDA todavía se puede subir y queda ACEPTADA (cancela el cobro por atraso).
-        when(onvo.idsAbiertosDe(empA.getId())).thenReturn(List.of(5L));
+        // Factura tardía: la VENCIDA todavía se puede subir; queda RECIBIDA y al aprobarla se cancela su cobro por atraso.
+        when(onvo.idsAbiertosDeFactura(empA.getId(), vencePend.getId())).thenReturn(List.of(5L));
         Resp s = hacer(subir(vencePend.getId(), xmlValido(), respuestaHacienda("1")), tDuenoA);
-        assertThat((String) JsonPath.read(s.body(), "$.data.estado")).isEqualTo(FacturaNegocio.ACEPTADA);
+        assertThat((String) JsonPath.read(s.body(), "$.data.estado")).isEqualTo(FacturaNegocio.RECIBIDA);
+        assertThat(st(post("/api/admin/facturas-negocio/" + vencePend.getId() + "/aprobar"), adminToken)).isEqualTo(200);
         verify(onvo, timeout(5_000)).cancelar(5L);
     }
 
@@ -439,7 +453,7 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
         List<Supplier<MockHttpServletRequestBuilder>> rutas = List.of(
             () -> get("/api/admin/facturas-negocio"),
             () -> get("/api/admin/facturas-negocio/" + id),
-            () -> post("/api/admin/facturas-negocio/" + id + "/revisada"),
+            () -> post("/api/admin/facturas-negocio/" + id + "/aprobar"),
             () -> post("/api/admin/facturas-negocio/" + id + "/recordar"),
             () -> post("/api/admin/facturas-negocio/generar"));
         for (var ruta : rutas) {
@@ -468,12 +482,12 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Clave repetida entre negocios: A la usa y queda ACEPTADA; D (misma cédula) sube la misma → RECHAZADA")
+    @DisplayName("Clave repetida entre negocios: A la usa y queda RECIBIDA; D (misma cédula) sube la misma → RECHAZADA")
     void claveRepetidaEntreNegocios() throws Exception {
         FacturaNegocio fa = pendiente(empA);
         FacturaNegocio fd = pendiente(empD);
         assertThat((String) JsonPath.read(hacer(subir(fa.getId(), xmlValido(), null), tDuenoA).body(), "$.data.estado"))
-            .isEqualTo(FacturaNegocio.ACEPTADA);
+            .isEqualTo(FacturaNegocio.RECIBIDA);
         Resp r = hacer(subir(fd.getId(), xmlValido(), null), tDuenoD);
         assertThat((String) JsonPath.read(r.body(), "$.data.estado")).isEqualTo(FacturaNegocio.RECHAZADA);
         assertThat((List<String>) JsonPath.read(r.body(), "$.data.errores")).anyMatch(e -> e.contains("ya se subió antes"));
@@ -540,6 +554,6 @@ class FacturaNegocioFlujoQaHttpTest extends BaseIntegrationTest {
         assertThat(r.body()).contains("mañana");
         assertThat(recargar(fa).getEstado()).isEqualTo(FacturaNegocio.RECHAZADA);
         assertThat(st(subir(fd.getId(), basura, null), tDuenoD)).isEqualTo(200);
-        verify(onvo, never()).idsAbiertosDe(anyLong());
+        verify(onvo, never()).idsAbiertosDeFactura(any(), any());
     }
 }

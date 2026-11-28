@@ -23,4 +23,27 @@ public final class MensajeReceptorCodigos {
     public static final String ESTADO_BLOQUEADO_SIN_XSD = "BLOQUEADO_SIN_XSD";
 
     private MensajeReceptorCodigos() {}
+
+    /**
+     * Se aplica al aprobar la factura. En RTS no se envía: queda aceptada internamente. En tradicional se guarda el
+     * plazo legal; con el interruptor apagado no se envía nada, y encendido igual queda bloqueado mientras no exista el
+     * XSD oficial de MensajeReceptor 4.4 en el repo.
+     */
+    public static void aplicar(com.hotclick.model.FacturaNegocio f, boolean tradicional, boolean habilitado,
+                               java.time.LocalDateTime ahora) {
+        if (!tradicional) {
+            f.setMensajeReceptorEstado(ESTADO_ACEPTADA_INTERNA);
+            f.setMensajeReceptorDetalle("HotClick está en el Régimen Simplificado: no se envía mensaje receptor.");
+            return;
+        }
+        f.setFechaLimiteMensajeReceptor(FacturaNegocioCalculo.plazoMensajeReceptor(f.getPeriodoHasta()));
+        if (!habilitado) {
+            f.setMensajeReceptorEstado(ESTADO_NO_ENVIADO_INTERRUPTOR);
+            f.setMensajeReceptorDetalle("El envío del mensaje receptor está apagado en la configuración fiscal.");
+        } else if (!XSD_DISPONIBLE) {
+            f.setMensajeReceptorEstado(ESTADO_BLOQUEADO_SIN_XSD);
+            f.setMensajeReceptorDetalle("No hay XSD oficial de MensajeReceptor 4.4: el envío queda bloqueado.");
+        }
+        f.setMensajeReceptorFecha(ahora);
+    }
 }

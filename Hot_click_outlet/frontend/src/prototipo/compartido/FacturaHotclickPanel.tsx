@@ -88,7 +88,9 @@ export default function FacturaHotclickPanel() {
       const r = await facturaNegocioService.subirXml(pendiente.id, xml, respuesta)
       const f = datosDe<FacturaNegocio>(r)
       setUltimo(f)
-      setMensaje(f?.estado === 'ACEPTADA' ? 'Factura aceptada. ¡Gracias!' : 'La factura no se aceptó. Revisá los motivos.')
+      setMensaje(f?.estado === 'RECIBIDA'
+        ? (f.mensajeEstado ?? 'Recibida, pendiente de revisión de HotClick.')
+        : 'La factura no se aceptó. Revisá los motivos.')
       cargar()
     } catch (err) {
       const status = (err as { response?: { status?: number; data?: { message?: string } } })?.response

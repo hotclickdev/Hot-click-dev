@@ -48,3 +48,12 @@ ALTER TABLE hot_click_config_fiscal_tb ADD COLUMN IF NOT EXISTS hacienda_mensaje
 ALTER TABLE hot_click_config_fiscal_tb ADD COLUMN IF NOT EXISTS tolerancia_factura_negocio_crc INTEGER NOT NULL DEFAULT 1;
 -- Base de la factura del negocio: NETO (producto menos comisión) o BRUTO (precio del producto). Lo decide el contador del dueño.
 ALTER TABLE hot_click_config_fiscal_tb ADD COLUMN IF NOT EXISTS base_factura_negocio VARCHAR(10) NOT NULL DEFAULT 'NETO';
+
+-- Revisión de seguridad de la Fase 2 (aditivo):
+-- cédula fiscal verificada al generar el registro (el XML se valida contra esta foto, no contra la actual);
+ALTER TABLE hot_click_factura_negocio_tb ADD COLUMN IF NOT EXISTS cedula_fiscal_esperada VARCHAR(12);
+-- bloqueo optimista contra dos subidas o aprobaciones a la vez;
+ALTER TABLE hot_click_factura_negocio_tb ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+-- el enlace de pago puede quedar atado a una factura: solo esa factura lo cancela al aprobarse.
+ALTER TABLE hot_click_enlace_pago_onvo_tb ADD COLUMN IF NOT EXISTS fk_factura_negocio BIGINT;
+CREATE INDEX IF NOT EXISTS idx_enlace_pago_factura_negocio ON hot_click_enlace_pago_onvo_tb (fk_factura_negocio);

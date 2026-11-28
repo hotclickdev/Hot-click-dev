@@ -171,7 +171,9 @@ class FacturaNegocioHttpTest extends BaseIntegrationTest {
         List<Supplier<MockHttpServletRequestBuilder>> rutas = List.of(
             () -> get("/api/admin/facturas-negocio"),
             () -> get("/api/admin/facturas-negocio/" + id),
-            () -> post("/api/admin/facturas-negocio/" + id + "/revisada"),
+            () -> post("/api/admin/facturas-negocio/" + id + "/aprobar"),
+            () -> post("/api/admin/facturas-negocio/" + id + "/rechazar")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"motivo\":\"motivo de prueba\"}"),
             () -> post("/api/admin/facturas-negocio/" + id + "/recordar"),
             () -> post("/api/admin/facturas-negocio/generar"));
         for (int i = 0; i < rutas.size(); i++) {
@@ -184,8 +186,19 @@ class FacturaNegocioHttpTest extends BaseIntegrationTest {
         String lista = body(get("/api/admin/facturas-negocio"), adminToken);
         assertThat((Integer) JsonPath.read(lista, "$.data.total")).isEqualTo(2);
         assertThat(st(get("/api/admin/facturas-negocio/" + id), adminToken)).isEqualTo(200);
-        assertThat(st(post("/api/admin/facturas-negocio/" + id + "/revisada"), adminToken)).isEqualTo(200);
-        assertThat(facturaRepository.findById(facA.getId()).orElseThrow().isRevisada()).isTrue();
+        // PENDIENTE no se aprueba (409); una RECIBIDA sí, y queda ACEPTADA y revisada.
+        assertThat(st(post("/api/admin/facturas-negocio/" + id + "/aprobar"), adminToken)).isEqualTo(409);
+        FacturaNegocio f = facturaRepository.findById(facA.getId()).orElseThrow();
+        f.setEstado(FacturaNegocio.RECIBIDA);
+        facturaRepository.saveAndFlush(f);
+        assertThat(st(post("/api/admin/facturas-negocio/" + id + "/aprobar"), adminToken)).isEqualTo(200);
+        FacturaNegocio aprobada = facturaRepository.findById(facA.getId()).orElseThrow();
+        assertThat(aprobada.getEstado()).isEqualTo(FacturaNegocio.ACEPTADA);
+        assertThat(aprobada.isRevisada()).isTrue();
+        assertThat(st(post("/api/admin/facturas-negocio/" + id + "/aprobar"), adminToken)).isEqualTo(409);
+        assertThat(st(get("/api/admin/facturas-negocio?empresaId=" + empB.getId()), adminToken)).isEqualTo(200);
+        assertThat((Integer) JsonPath.read(body(get("/api/admin/facturas-negocio?empresaId=" + empB.getId()), adminToken),
+            "$.data.total")).isEqualTo(1);
         assertThat(st(post("/api/admin/facturas-negocio/generar"), adminToken)).isEqualTo(200);
     }
 }

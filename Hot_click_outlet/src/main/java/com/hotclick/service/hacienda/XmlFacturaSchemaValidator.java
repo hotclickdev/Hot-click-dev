@@ -54,6 +54,24 @@ public class XmlFacturaSchemaValidator {
         }
     }
 
+    /**
+     * Valida un documento ya leído con un parser seguro (sin volver a parsear el texto): el XML que llega de afuera
+     * se lee una sola vez, con DOCTYPE prohibido, y el XSD trabaja sobre ese mismo árbol.
+     * @throws ComprobanteInvalidoException si no cumple el XSD oficial.
+     */
+    public void validar(org.w3c.dom.Node documento, boolean esFactura) {
+        try {
+            Validator validator = (esFactura ? schemaFactura : schemaTiquete).newValidator();
+            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            validator.validate(new javax.xml.transform.dom.DOMSource(documento));
+        } catch (SAXException | IOException e) {
+            log.warn("[hacienda-xsd] XML no cumple el XSD oficial 4.4: {}", HaciendaLogSanitizer.error(e));
+            throw new ComprobanteInvalidoException(
+                "El comprobante no cumple el formato oficial 4.4 de Hacienda: " + HaciendaLogSanitizer.mensaje(e.getMessage()), e);
+        }
+    }
+
     private static Schema cargar(String classpath) {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         try {

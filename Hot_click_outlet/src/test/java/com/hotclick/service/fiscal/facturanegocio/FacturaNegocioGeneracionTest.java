@@ -100,6 +100,7 @@ class FacturaNegocioGeneracionTest {
     private Empresa empresa(String situacion, boolean verificado) {
         Empresa e = new Empresa();
         e.setId(5L);
+        e.setCedulaFiscal("3-101-123456");
         e.setSituacionFiscal(situacion);
         e.setFiscalVerificado(verificado);
         when(empresas.findById(5L)).thenReturn(Optional.of(e));
@@ -121,9 +122,10 @@ class FacturaNegocioGeneracionTest {
     }
 
     @Test
-    @DisplayName("INSCRITO verificado: PENDIENTE con monto, plazo de 7 días y desglose")
+    @DisplayName("INSCRITO verificado: PENDIENTE con monto, plazo de 7 días, desglose y foto de la cédula verificada")
     void inscritoVerificadoPendiente() {
         FacturaNegocio f = generadaCon("INSCRITO", true);
+        assertThat(f.getCedulaFiscalEsperada()).isEqualTo("3101123456");
         assertThat(f.getEstado()).isEqualTo(FacturaNegocio.PENDIENTE);
         assertThat(f.getMontoCrc()).isEqualTo(9_100);
         assertThat(f.getFechaLimite()).isEqualTo(LocalDate.of(2026, 3, 22));
@@ -196,23 +198,99 @@ class FacturaNegocioGeneracionTest {
     }
 
     @Test
-    @DisplayName("Evento: al aceptarse, cancela los enlaces de cobro abiertos; un fallo de ONVO no se propaga")
+    @DisplayName("Evento: cancela solo los enlaces de ESA factura; sin factura no hace nada; un fallo de ONVO no se propaga")
     void listener() {
         EnlacePagoOnvoLotes enlaces = mock(EnlacePagoOnvoLotes.class);
         var l = new FacturaNegocioEnlacePagoListener(enlaces);
-        l.alRecibir(new FacturaNegocioRecibidaEvent(5L));
-        verify(enlaces).alRecibirFactura(5L);
-        when(enlaces.alRecibirFactura(6L)).thenThrow(new RuntimeException("onvo"));
-        l.alRecibir(new FacturaNegocioRecibidaEvent(6L));
+        l.alRecibir(new FacturaNegocioRecibidaEvent(5L, 40L));
+        verify(enlaces).alRecibirFactura(5L, 40L);
+        when(enlaces.alRecibirFactura(6L, 41L)).thenThrow(new RuntimeException("onvo"));
+        l.alRecibir(new FacturaNegocioRecibidaEvent(6L, 41L));
+        l.alRecibir(new FacturaNegocioRecibidaEvent(7L, null));
         l.alRecibir(null);
-        verify(enlaces, times(2)).alRecibirFactura(anyLong());
+        verify(enlaces, times(2)).alRecibirFactura(anyLong(), anyLong());
     }
 
     // ── ADMIN ───────────────────────────────────────────────────────────────────────────────────────────────
 
+    private final org.springframework.context.ApplicationEventPublisher eventos =
+        mock(org.springframework.context.ApplicationEventPublisher.class);
+
+    private FacturaNegocioAdminService adminReal() {
+        CompanyScope scope = mock(CompanyScope.class);
+        when(scope.isAdminIT()).thenReturn(true);
+        when(scope.idActorAuditoria()).thenReturn(99L);
+        return admin(scope, mock(RateLimiter.class), mock(TelegramNotificacionClienteService.class));
+    }
+
+    private FacturaNegocio recibida() {
+        FacturaNegocio f = new FacturaNegocio();
+        org.springframework.test.util.ReflectionTestUtils.setField(f, "id", 40L);
+        f.setEmpresaId(5L);
+        f.setEstado(FacturaNegocio.RECIBIDA);
+        f.setClaveXml("clave");
+        f.setFechaLimite(P.hasta().plusDays(7));
+        f.setPeriodoDesde(P.desde());
+        f.setPeriodoHasta(P.hasta());
+        when(repo.findById(40L)).thenReturn(Optional.of(f));
+        when(empresas.findById(5L)).thenReturn(Optional.empty());
+        return f;
+    }
+
+    @Test
+    @DisplayName("Aprobar factura: RECIBIDA → ACEPTADA, revisada por el ADMIN y publica el evento con la factura")
+    void aprobar() {
+        FacturaNegocio f = recibida();
+        adminReal().aprobar(40L);
+        assertThat(f.getEstado()).isEqualTo(FacturaNegocio.ACEPTADA);
+        assertThat(f.isRevisada()).isTrue();
+        assertThat(f.getRevisadaPor()).isEqualTo(99L);
+        // RTS: no se envía mensaje receptor; queda aceptada internamente.
+        assertThat(f.getMensajeReceptorEstado()).isEqualTo(MensajeReceptorCodigos.ESTADO_ACEPTADA_INTERNA);
+        verify(repo).saveAndFlush(f);
+        verify(eventos).publishEvent(new FacturaNegocioRecibidaEvent(5L, 40L));
+    }
+
+    @Test
+    @DisplayName("Aprobar solo desde RECIBIDA: PENDIENTE, RECHAZADA o ACEPTADA dan 409 y no publican nada")
+    void aprobarSoloRecibida() {
+        FacturaNegocio f = recibida();
+        for (String e : new String[] {FacturaNegocio.PENDIENTE, FacturaNegocio.RECHAZADA, FacturaNegocio.ACEPTADA}) {
+            f.setEstado(e);
+            assertThatThrownBy(() -> adminReal().aprobar(40L)).isInstanceOf(IllegalStateException.class);
+        }
+        verifyNoInteractions(eventos);
+    }
+
+    @Test
+    @DisplayName("Tradicional: al aprobar guarda el plazo; interruptor apagado no envía; encendido queda bloqueado sin XSD")
+    void aprobarTradicional() {
+        when(config.reglas()).thenReturn(new ConfiguracionFiscalService.Reglas("TRADICIONAL", new BigDecimal("14.00"), 7, 20_000, 0));
+        FacturaNegocio f = recibida();
+        adminReal().aprobar(40L);
+        assertThat(f.getMensajeReceptorEstado()).isEqualTo(MensajeReceptorCodigos.ESTADO_NO_ENVIADO_INTERRUPTOR);
+        assertThat(f.getFechaLimiteMensajeReceptor()).isEqualTo(LocalDate.of(2026, 4, 10));
+        when(config.reglasFactura()).thenReturn(new ConfiguracionFiscalService.ReglasFactura(true, 1, "NETO"));
+        FacturaNegocio g = recibida();
+        adminReal().aprobar(40L);
+        assertThat(g.getMensajeReceptorEstado()).isEqualTo(MensajeReceptorCodigos.ESTADO_BLOQUEADO_SIN_XSD);
+    }
+
+    @Test
+    @DisplayName("Rechazar: RECIBIDA → RECHAZADA con motivo, libera la clave y no publica; motivo corto da 400")
+    void rechazar() {
+        FacturaNegocio f = recibida();
+        assertThatThrownBy(() -> adminReal().rechazar(40L, "no")).isInstanceOf(IllegalArgumentException.class);
+        adminReal().rechazar(40L, "El total no coincide con lo vendido");
+        assertThat(f.getEstado()).isEqualTo(FacturaNegocio.RECHAZADA);
+        assertThat(f.getClaveXml()).isNull();
+        assertThat(f.getMensajeValidacion()).contains("HotClick la rechazó");
+        verifyNoInteractions(eventos);
+    }
+
     private FacturaNegocioAdminService admin(CompanyScope scope, RateLimiter rate, TelegramNotificacionClienteService tg) {
         return new FacturaNegocioAdminService(repo, empresas, scope, mock(FacturaNegocioGeneracionService.class), tg, rate,
-            config, mock(AuditoriaAdminRegistroService.class));
+            config, mock(AuditoriaAdminRegistroService.class), eventos);
     }
 
     @Test
@@ -224,13 +302,14 @@ class FacturaNegocioGeneracionTest {
         var s = admin(imp, mock(RateLimiter.class), mock(TelegramNotificacionClienteService.class));
         assertThatThrownBy(() -> s.listar(null, null, 0, 10)).isInstanceOf(TenantAccessDeniedException.class);
         assertThatThrownBy(() -> s.detalle(1L)).isInstanceOf(TenantAccessDeniedException.class);
-        assertThatThrownBy(() -> s.marcarRevisada(1L)).isInstanceOf(TenantAccessDeniedException.class);
+        assertThatThrownBy(() -> s.aprobar(1L)).isInstanceOf(TenantAccessDeniedException.class);
+        assertThatThrownBy(() -> s.rechazar(1L, "motivo de prueba")).isInstanceOf(TenantAccessDeniedException.class);
         assertThatThrownBy(() -> s.recordar(1L)).isInstanceOf(TenantAccessDeniedException.class);
         assertThatThrownBy(() -> s.generar(null)).isInstanceOf(TenantAccessDeniedException.class);
         CompanyScope vendedor = mock(CompanyScope.class);
         var s2 = admin(vendedor, mock(RateLimiter.class), mock(TelegramNotificacionClienteService.class));
         assertThatThrownBy(() -> s2.detalle(1L)).isInstanceOf(TenantAccessDeniedException.class);
-        verifyNoInteractions(repo);
+        verifyNoInteractions(repo, eventos);
     }
 
     @Test
@@ -255,8 +334,6 @@ class FacturaNegocioGeneracionTest {
         verify(tg).notificarRecordatorioFacturaHotclick(5L, 3L);
         f.setEstado(FacturaNegocio.ACEPTADA);
         assertThatThrownBy(() -> s.recordar(1L)).isInstanceOf(IllegalStateException.class);
-        s.marcarRevisada(1L);
-        assertThat(f.isRevisada()).isTrue();
         assertThatThrownBy(() -> s.listar("RARO", null, 0, 10)).isInstanceOf(IllegalArgumentException.class);
     }
 }

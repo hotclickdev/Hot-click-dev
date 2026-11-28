@@ -31,14 +31,16 @@ public interface FacturaNegocioRepository extends JpaRepository<FacturaNegocio, 
         SELECT f FROM FacturaNegocio f
         WHERE (:estado IS NULL OR f.estado = :estado)
           AND (:desde IS NULL OR f.periodoDesde = :desde)
+          AND (:empresaId IS NULL OR f.empresaId = :empresaId)
         ORDER BY f.periodoDesde DESC, f.empresaId ASC
         """)
-    Page<FacturaNegocio> buscarAdmin(@Param("estado") String estado, @Param("desde") LocalDate desde, Pageable pageable);
+    Page<FacturaNegocio> buscarAdmin(@Param("estado") String estado, @Param("desde") LocalDate desde,
+                                     @Param("empresaId") Long empresaId, Pageable pageable);
 
     /** Plazo vencido sin factura aceptada: PENDIENTE o RECHAZADA pasan a VENCIDA. No cobra nada. */
     @Modifying
     @Query("""
-        UPDATE FacturaNegocio f SET f.estado = 'VENCIDA', f.fechaActualizacion = :ahora
+        UPDATE FacturaNegocio f SET f.estado = 'VENCIDA', f.fechaActualizacion = :ahora, f.version = f.version + 1
         WHERE f.estado IN ('PENDIENTE', 'RECHAZADA') AND f.fechaLimite < :hoy
         """)
     int marcarVencidas(@Param("hoy") LocalDate hoy, @Param("ahora") LocalDateTime ahora);

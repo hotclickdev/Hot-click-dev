@@ -11,5 +11,6 @@ public interface EnlacePagoOnvoRepository extends JpaRepository<EnlacePagoOnvo, 
     Optional<EnlacePagoOnvo> findByOnvoSessionId(String onvoSessionId);
     List<EnlacePagoOnvo> findByEmpresaIdOrderByCreadoEnDesc(Long empresaId, Pageable pageable);
     List<EnlacePagoOnvo> findByEmpresaIdAndEstado(Long empresaId, String estado);
+    List<EnlacePagoOnvo> findByEmpresaIdAndFacturaNegocioIdAndEstado(Long empresaId, Long facturaNegocioId, String estado);
     List<EnlacePagoOnvo> findByEstadoOrderByCreadoEnAsc(String estado, Pageable pageable);
 }

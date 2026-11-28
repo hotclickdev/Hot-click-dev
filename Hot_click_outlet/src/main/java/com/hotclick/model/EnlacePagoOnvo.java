@@ -37,6 +37,10 @@ public class EnlacePagoOnvo {
     @Column(name = "url", nullable = false, length = 1000)
     private String url;
 
+    /** Factura del negocio que cobra este enlace (opcional). Sin ella, el enlace no se cancela solo. */
+    @Column(name = "fk_factura_negocio")
+    private Long facturaNegocioId;
+
     @Column(name = "estado", nullable = false, length = 15)
     private String estado = CREADO;
 
@@ -62,6 +66,8 @@ public class EnlacePagoOnvo {
     public void setOnvoSessionId(String v) { this.onvoSessionId = v; }
     public String getUrl() { return url; }
     public void setUrl(String v) { this.url = v; }
+    public Long getFacturaNegocioId() { return facturaNegocioId; }
+    public void setFacturaNegocioId(Long v) { this.facturaNegocioId = v; }
     public String getEstado() { return estado; }
     public void setEstado(String v) { this.estado = v; }
     public LocalDateTime getCreadoEn() { return creadoEn; }

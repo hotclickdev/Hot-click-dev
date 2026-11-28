@@ -62,6 +62,11 @@ public class SupabaseStorageService {
         return uploadHelper.subirImagenPrivada(file, key, bucket);
     }
 
+    /** Borra un objeto privado. Sin reintentos ni fallback: quien llama decide qué hacer si falla. */
+    public void eliminarPrivado(String key) {
+        uploadHelper.eliminarPrivado(key, bucket);
+    }
+
     @CircuitBreaker(name = "s3", fallbackMethod = "leerPrivadoFallback")
     @Retry(name = "s3")
     public byte[] leerPrivado(String key) {

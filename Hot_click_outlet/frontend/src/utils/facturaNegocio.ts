@@ -5,7 +5,7 @@ export const MAX_BYTES_XML = 1024 * 1024
 
 const ETIQUETAS: Record<EstadoFacturaNegocio, string> = {
   PENDIENTE: 'Pendiente',
-  RECIBIDA: 'Recibida',
+  RECIBIDA: 'Recibida, pendiente de revisión de HotClick',
   ACEPTADA: 'Aceptada',
   RECHAZADA: 'Rechazada',
   VENCIDA: 'Vencida',

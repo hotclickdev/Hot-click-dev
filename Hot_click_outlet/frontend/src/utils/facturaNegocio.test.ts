@@ -5,6 +5,7 @@ describe('factura del negocio a HotClick', () => {
   it('etiquetas y tonos de cada estado', () => {
     expect(etiquetaEstado('NO_APLICA')).toBe('No aplica')
     expect(etiquetaEstado('ACEPTADA')).toBe('Aceptada')
+    expect(etiquetaEstado('RECIBIDA')).toBe('Recibida, pendiente de revisión de HotClick')
     expect(etiquetaEstado('OTRO')).toBe('OTRO')
     expect(tonoEstado('ACEPTADA')).toBe('ok')
     expect(tonoEstado('VENCIDA')).toBe('alerta')

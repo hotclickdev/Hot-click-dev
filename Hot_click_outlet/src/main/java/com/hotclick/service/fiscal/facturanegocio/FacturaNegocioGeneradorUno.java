@@ -6,6 +6,7 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.FacturaNegocio;
 import com.hotclick.repository.EmpresaRepository;
 import com.hotclick.repository.FacturaNegocioRepository;
+import com.hotclick.service.fiscal.CedulaFiscal;
 import com.hotclick.service.fiscal.ConfiguracionFiscalService;
 import com.hotclick.service.fiscal.facturanegocio.FacturaNegocioCalculo.Periodo;
 import com.hotclick.utils.Constants;
@@ -54,6 +55,8 @@ public class FacturaNegocioGeneradorUno {
         f.setMontoCrc(m.monto());
         f.setFechaLimite(FacturaNegocioCalculo.fechaLimite(periodo.hasta(), config.reglas().diasEnviarFactura()));
         f.setEstado(aplica ? FacturaNegocio.PENDIENTE : FacturaNegocio.NO_APLICA);
+        // Foto de la cédula fiscal verificada: el XML se valida contra esta, no contra la que el negocio tenga después.
+        if (aplica) f.setCedulaFiscalEsperada(CedulaFiscal.normalizar(empresa.getCedulaFiscal()));
         f.setDesgloseJson(desglose(m));
         f.setFechaCreacion(ahora);
         f.setFechaActualizacion(ahora);

@@ -71,8 +71,9 @@ class FacturaNegocioXmlValidadorTest {
         return new XmlFacturaBuilder().construir(cf, e, pedido);
     }
 
+    /** Firmado con un certificado cuyo SERIALNUMBER trae la cédula del negocio (como los del BCCR). */
     static byte[] firmado(UnaryOperator<String> cambio) {
-        return CertificadoDePrueba.firmar(cambio.apply(xmlBase())).getBytes(StandardCharsets.UTF_8);
+        return CertificadoNegocioDePrueba.firmar(cambio.apply(xmlBase())).getBytes(StandardCharsets.UTF_8);
     }
 
     static byte[] valido() { return firmado(UnaryOperator.identity()); }
@@ -129,6 +130,65 @@ class FacturaNegocioXmlValidadorTest {
     @DisplayName("XML que no es XML válido")
     void basura() {
         assertThat(unido(validar("esto no es xml".getBytes(StandardCharsets.UTF_8)))).contains("no es un XML válido");
+    }
+
+    @Test
+    @DisplayName("Certificado sin la cédula del emisor en SERIALNUMBER: se rechaza aunque la firma sea íntegra")
+    void certificadoDeOtraCedula() {
+        byte[] xml = CertificadoDePrueba.firmar(xmlBase()).getBytes(StandardCharsets.UTF_8);
+        var r = validar(xml);
+        assertThat(r.valida()).isFalse();
+        assertThat(unido(r)).contains("no es de la cédula del emisor").doesNotContain("firma digital del XML no es válida");
+    }
+
+    @Test
+    @DisplayName("SERIALNUMBER del certificado: se lee del sujeto y se compara sin ceros de relleno")
+    void serialNumber() {
+        var cert = CertificadoNegocioDePrueba.certificado();
+        assertThat(FirmaXadesVerificador.serialNumber(cert.getSubjectX500Principal())).isEqualTo("CPJ-3-101-123456");
+        assertThat(FirmaXadesVerificador.serialContieneCedula(cert, "003101123456")).isTrue();
+        assertThat(FirmaXadesVerificador.serialContieneCedula(cert, "3101999999")).isFalse();
+        assertThat(FirmaXadesVerificador.serialContieneCedula(cert, null)).isFalse();
+        assertThat(FirmaXadesVerificador.CADENA_BCCR_VALIDADA).isFalse();
+    }
+
+    @Test
+    @DisplayName("Firma sin referencia URI=\"\" con transformación enveloped: no cubre el documento y se rechaza")
+    void firmaSinReferenciaRaiz() throws Exception {
+        var r = validar(firmaSinEnveloped(xmlBase()).getBytes(StandardCharsets.UTF_8));
+        assertThat(unido(r)).contains("no cubre el documento completo");
+    }
+
+    @Test
+    @DisplayName("Firma correcta: cubre el documento y el certificado es del emisor")
+    void firmaCompleta() {
+        var doc = XmlSeguro.parsear(valido());
+        var v = FirmaXadesVerificador.verificar(doc, CED_NEGOCIO);
+        assertThat(v.completa()).isTrue();
+        assertThat(v.referenciaRaiz()).isTrue();
+        assertThat(v.serialCoincide()).isTrue();
+    }
+
+    /** Firma XMLDSig con referencia URI="" pero solo con canonicalización (sin enveloped). */
+    static String firmaSinEnveloped(String xml) throws Exception {
+        var dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        var doc = dbf.newDocumentBuilder().parse(new java.io.ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+        var fac = javax.xml.crypto.dsig.XMLSignatureFactory.getInstance("DOM");
+        var c14n = fac.newTransform(javax.xml.crypto.dsig.CanonicalizationMethod.INCLUSIVE,
+            (javax.xml.crypto.dsig.spec.TransformParameterSpec) null);
+        var ref = fac.newReference("", fac.newDigestMethod(javax.xml.crypto.dsig.DigestMethod.SHA256, null), List.of(c14n), null, null);
+        var si = fac.newSignedInfo(fac.newCanonicalizationMethod(javax.xml.crypto.dsig.CanonicalizationMethod.INCLUSIVE,
+                (javax.xml.crypto.dsig.spec.C14NMethodParameterSpec) null),
+            fac.newSignatureMethod("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", null), List.of(ref));
+        var kif = fac.getKeyInfoFactory();
+        var ki = kif.newKeyInfo(List.of(kif.newX509Data(List.of(CertificadoNegocioDePrueba.certificado()))));
+        fac.newXMLSignature(si, ki).sign(new javax.xml.crypto.dsig.dom.DOMSignContext(CertificadoNegocioDePrueba.llave(),
+            doc.getDocumentElement()));
+        var sw = new java.io.StringWriter();
+        javax.xml.transform.TransformerFactory.newInstance().newTransformer()
+            .transform(new javax.xml.transform.dom.DOMSource(doc), new javax.xml.transform.stream.StreamResult(sw));
+        return sw.toString();
     }
 
     // ── seguridad del parseo ────────────────────────────────────────────────────────────────────────────────

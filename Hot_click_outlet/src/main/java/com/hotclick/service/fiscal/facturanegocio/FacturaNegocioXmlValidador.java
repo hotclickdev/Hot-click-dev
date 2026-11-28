@@ -9,7 +9,6 @@ import org.w3c.dom.Element;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -56,7 +55,7 @@ public class FacturaNegocioXmlValidador {
             return new Resultado(false, errores, avisos, null, null, null, null);
         }
         try {
-            xsd.validar(new String(xml, StandardCharsets.UTF_8), true);
+            xsd.validar(doc, true);
         } catch (ComprobanteInvalidoException e) {
             errores.add("El XML no cumple el formato oficial 4.4 de Hacienda. Revisá que sea el XML firmado que "
                 + "generó tu sistema de facturación.");
@@ -86,10 +85,20 @@ public class FacturaNegocioXmlValidador {
             errores.add("El total de la factura (₡" + total + ") no coincide con lo que te corresponde facturar "
                 + "esta quincena (₡" + esperado.montoCrc() + ").");
         }
-        if (FirmaXadesVerificador.verificar(doc) != FirmaXadesVerificador.Estado.VALIDA) {
+        revisarFirma(FirmaXadesVerificador.verificar(doc, esperado.cedulaEmisor()), errores);
+        return new Resultado(errores.isEmpty(), errores, avisos, clave, emisor, total, iva);
+    }
+
+    static void revisarFirma(FirmaXadesVerificador.Verificacion v, List<String> errores) {
+        if (v.estado() != FirmaXadesVerificador.Estado.VALIDA) {
             errores.add("La firma digital del XML no es válida: el archivo se modificó después de firmarse o no está firmado.");
         }
-        return new Resultado(errores.isEmpty(), errores, avisos, clave, emisor, total, iva);
+        if (v.estado() != FirmaXadesVerificador.Estado.AUSENTE && !v.referenciaRaiz()) {
+            errores.add("La firma no cubre el documento completo (falta la referencia al documento con la transformación enveloped).");
+        }
+        if (v.estado() != FirmaXadesVerificador.Estado.AUSENTE && !v.serialCoincide()) {
+            errores.add("El certificado de la firma no es de la cédula del emisor.");
+        }
     }
 
     // ── clave numérica ───────────────────────────────────────────────────────────────────────────────────────

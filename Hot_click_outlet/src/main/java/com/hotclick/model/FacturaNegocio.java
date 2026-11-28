@@ -112,6 +112,13 @@ public class FacturaNegocio {
     @Column(name = "respuesta_hacienda_estado", length = 20)
     private String respuestaHaciendaEstado;
 
+    @Column(name = "cedula_fiscal_esperada", length = 12)
+    private String cedulaFiscalEsperada;
+
+    @jakarta.persistence.Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 
@@ -119,6 +126,9 @@ public class FacturaNegocio {
     private LocalDateTime fechaActualizacion;
 
     public Long getId() { return id; }
+    public String getCedulaFiscalEsperada() { return cedulaFiscalEsperada; }
+    public void setCedulaFiscalEsperada(String v) { this.cedulaFiscalEsperada = v; }
+    public long getVersion() { return version; }
     public Long getEmpresaId() { return empresaId; }
     public void setEmpresaId(Long empresaId) { this.empresaId = empresaId; }
     public LocalDate getPeriodoDesde() { return periodoDesde; }

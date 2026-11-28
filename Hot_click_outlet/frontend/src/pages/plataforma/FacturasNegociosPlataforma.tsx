@@ -6,24 +6,41 @@ import { formatPrice } from '@/utils/format'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, Encabezado, TARJETA, TITULO } from './piezas'
 
 const INPUT = 'h-11 rounded-xl border border-hc-n-200 bg-hc-surface px-3 text-sm text-hc-n-900 outline-none focus:border-hc-blue-600'
-const ESTADOS = ['PENDIENTE', 'ACEPTADA', 'RECHAZADA', 'VENCIDA', 'NO_APLICA'] as const
+const ESTADOS = ['PENDIENTE', 'RECIBIDA', 'ACEPTADA', 'RECHAZADA', 'VENCIDA', 'NO_APLICA'] as const
 
 function mensajeDe(err: unknown, porDefecto: string): string {
   return (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? porDefecto
 }
 
+type Accion = 'aprobar' | 'rechazar' | 'recordar'
+const TEXTO_EXITO: Record<Accion, string> = {
+  aprobar: 'Factura aprobada.',
+  rechazar: 'Factura rechazada. El negocio puede subir otra.',
+  recordar: 'Recordatorio enviado.',
+}
+
 function Detalle({ f, onCambio }: Readonly<{ f: FacturaNegocioAdmin; onCambio: (f: FacturaNegocioAdmin) => void }>) {
   const [ocupado, setOcupado] = useState(false)
   const [mensaje, setMensaje] = useState<string | null>(null)
+  const [motivo, setMotivo] = useState('')
 
-  async function accion(tipo: 'revisada' | 'recordar') {
+  async function llamar(tipo: Accion) {
+    if (tipo === 'aprobar') return facturaNegocioService.aprobar(f.id)
+    if (tipo === 'rechazar') return facturaNegocioService.rechazar(f.id, motivo.trim())
+    return facturaNegocioService.recordar(f.id)
+  }
+
+  async function accion(tipo: Accion) {
+    if (tipo === 'rechazar' && motivo.trim().length < 5) {
+      setMensaje('Escribí el motivo del rechazo (al menos 5 caracteres).')
+      return
+    }
     setOcupado(true)
     setMensaje(null)
     try {
-      const r = tipo === 'revisada' ? await facturaNegocioService.marcarRevisada(f.id) : await facturaNegocioService.recordar(f.id)
-      const nueva = datosDe<FacturaNegocioAdmin>(r)
+      const nueva = datosDe<FacturaNegocioAdmin>(await llamar(tipo))
       if (nueva) onCambio(nueva)
-      setMensaje(tipo === 'revisada' ? 'Marcada como revisada.' : 'Recordatorio enviado.')
+      setMensaje(TEXTO_EXITO[tipo])
     } catch (err) {
       setMensaje(mensajeDe(err, 'No se pudo completar la acción.'))
     } finally {
@@ -56,9 +73,19 @@ function Detalle({ f, onCambio }: Readonly<{ f: FacturaNegocioAdmin; onCambio: (
         </div>
       )}
       {f.avisos.map((a) => <p key={a} className="text-sm text-hc-n-600">{a}</p>)}
+      {f.estado === 'RECIBIDA' && (
+        <label className="flex flex-col gap-1 text-xs font-semibold text-hc-n-600">
+          <span>Motivo si la rechazás</span>
+          <input className={INPUT} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)} />
+        </label>
+      )}
+      <p className="text-xs text-hc-n-600">
+        La firma se revisa contra el certificado del XML, no contra la cadena del BCCR: revisá la factura antes de aprobarla.
+      </p>
       {mensaje && <output className="block text-sm text-hc-n-900">{mensaje}</output>}
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado || f.revisada} onClick={() => accion('revisada')}>Marcar revisada</button>
+        <button type="button" className={BOTON_PRIMARIO} disabled={ocupado || f.estado !== 'RECIBIDA'} onClick={() => accion('aprobar')}>Aprobar factura</button>
+        <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado || f.estado !== 'RECIBIDA'} onClick={() => accion('rechazar')}>Rechazar</button>
         <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado} onClick={() => accion('recordar')}>Recordar</button>
         <Link className={BOTON_SECUNDARIO} to={`/plataforma/negocios/${f.empresaId}`}>Ficha del negocio (enlace de pago)</Link>
       </div>

@@ -62,8 +62,22 @@ public class EnlacePagoOnvoService {
         this.lote = lote;
     }
 
-    /** El monto y el motivo se validan acá (servidor); el cliente nunca decide más que esos dos datos. */
+    /** Factura del negocio (opcional) a la que se ata un enlace: tiene que ser de ese negocio. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.repository.FacturaNegocioRepository facturas;
+
+    void setFacturasParaTest(com.hotclick.repository.FacturaNegocioRepository r) { this.facturas = r; }
+
+    /** Sin factura: el enlace no queda atado y no se cancela solo al recibir una factura. */
     public EnlacePagoOnvo crear(Long empresaId, Integer montoCrc, String motivo) {
+        return crear(empresaId, montoCrc, motivo, null);
+    }
+
+    /**
+     * El monto, el motivo y la factura se validan acá (servidor). La factura, si viene, tiene que ser del negocio:
+     * solo esa factura cancela el enlace cuando HotClick la aprueba.
+     */
+    public EnlacePagoOnvo crear(Long empresaId, Integer montoCrc, String motivo, Long facturaNegocioId) {
         // Apagado por defecto hasta validar con el sandbox de ONVO. Listar, cancelar y el webhook siguen funcionando.
         if (config == null || !config.enlacesPagoActivos()) {
             throw new EnlaceConflictoException("Enlaces de pago desactivados");
@@ -78,6 +92,10 @@ public class EnlacePagoOnvoService {
         if (empresaId == null || !empresaRepository.existsById(empresaId)) {
             throw new IllegalArgumentException("Empresa no encontrada");
         }
+        if (facturaNegocioId != null
+            && (facturas == null || facturas.findByIdAndEmpresaId(facturaNegocioId, empresaId).isEmpty())) {
+            throw new IllegalArgumentException("La factura no es de este negocio");
+        }
         if (!repo.findByEmpresaIdAndEstado(empresaId, EnlacePagoOnvo.CREADO).isEmpty()) {
             throw new EnlaceConflictoException("El negocio ya tiene un enlace de pago abierto. Cancelalo o esperá a que se pague.");
         }
@@ -88,6 +106,7 @@ public class EnlacePagoOnvoService {
         e.setEmpresaId(empresaId);
         e.setMontoCrc(montoCrc);
         e.setMotivo(m);
+        e.setFacturaNegocioId(facturaNegocioId);
         e.setOnvoSessionId(sesion.id());
         e.setUrl(sesion.url());
         try {
@@ -160,6 +179,13 @@ public class EnlacePagoOnvoService {
         repo.save(e);
         log.info("[onvo-enlace] Enlace pagado id={} empresa={}", e.getId(), e.getEmpresaId());
         return ResultadoWebhook.PAGADO;
+    }
+
+    /** Ids de los enlaces abiertos atados a una factura del negocio. Sin factura, ninguno. */
+    public List<Long> idsAbiertosDeFactura(Long empresaId, Long facturaNegocioId) {
+        if (empresaId == null || facturaNegocioId == null) return List.of();
+        return repo.findByEmpresaIdAndFacturaNegocioIdAndEstado(empresaId, facturaNegocioId, EnlacePagoOnvo.CREADO)
+            .stream().mapToLong(EnlacePagoOnvo::getId).boxed().toList();
     }
 
     /** Ids de los enlaces abiertos de una empresa (a lo sumo uno por la regla de creación). */

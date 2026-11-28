@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { onvoCobroService, type ComisionOnvo, type EnlacePago, type InterruptoresOnvo } from '@/services/onvoCobroService'
 import { formatPrice } from '@/utils/format'
+import { facturaNegocioService, datosDe, type PaginaFacturasAdmin } from '@/services/facturaNegocioService'
+import { etiquetaEstado as etiquetaFactura, textoPeriodo } from '@/utils/facturaNegocio'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, TARJETA, TITULO } from './piezas'
 import { etiquetaEstado, interruptoresDe, pct, resumenComision, textoCobroNegocio, validarEnlace } from './enlacePago'
 
@@ -22,6 +24,8 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
   const [mensaje, setMensaje] = useState('')
   const [monto, setMonto] = useState('')
   const [motivo, setMotivo] = useState('')
+  const [facturas, setFacturas] = useState<PaginaFacturasAdmin['contenido']>([])
+  const [facturaId, setFacturaId] = useState('')
 
   const cargar = useCallback(() => {
     Promise.all([onvoCobroService.comision(id), onvoCobroService.enlaces(id), onvoCobroService.interruptores().catch(() => null)])
@@ -44,6 +48,14 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
 
   useEffect(() => { cargar() }, [cargar])
 
+  // Facturas del negocio a las que se puede atar un enlace (opcional). Si falla, se puede crear sin factura.
+  useEffect(() => {
+    facturaNegocioService.listar({ empresaId: id })
+      .then((r) => setFacturas((datosDe<PaginaFacturasAdmin>(r)?.contenido ?? [])
+        .filter((f) => f.estado !== 'ACEPTADA' && f.estado !== 'NO_APLICA')))
+      .catch(() => setFacturas([]))
+  }, [id])
+
   async function ejecutar(accion: () => Promise<unknown>, exito: string, falla: string) {
     setOcupado(true)
     setMensaje('')
@@ -64,9 +76,10 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
     const v = validarEnlace(monto, motivo)
     if (!v.ok) { setMensaje(v.error); return }
     void ejecutar(async () => {
-      await onvoCobroService.crearEnlace(id, v.monto, v.motivo)
+      await onvoCobroService.crearEnlace(id, v.monto, v.motivo, facturaId ? Number(facturaId) : null)
       setMonto('')
       setMotivo('')
+      setFacturaId('')
     }, 'Enlace creado.', 'No se pudo crear el enlace.')
   }
 
@@ -104,7 +117,7 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
       <h3 className="text-[15px] font-bold text-hc-n-900">Enlace de pago</h3>
       {interruptores.enlacesPago ? (
         <>
-          <p className="text-xs text-hc-n-600">Para cobrar una factura tardía. Se cobra a HotClick; se cancela si la factura llega antes del pago.</p>
+          <p className="text-xs text-hc-n-600">Para cobrar una factura tardía. Se cobra a HotClick.</p>
           <div className="grid gap-3 sm:grid-cols-[160px_1fr_auto]">
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-semibold text-hc-n-900">Monto (₡)</span>
@@ -120,6 +133,19 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
               <button type="button" className={BOTON_PRIMARIO} disabled={ocupado} onClick={crear}>Crear enlace</button>
             </div>
           </div>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-hc-n-900">Factura de la quincena (opcional)</span>
+            <select className="h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3.5 text-[15px] text-hc-n-900 outline-none focus:border-hc-blue-600"
+              value={facturaId} onChange={(e) => setFacturaId(e.target.value)}>
+              <option value="">Sin factura: no se cancela sola</option>
+              {facturas.map((f) => (
+                <option key={f.id} value={String(f.id)}>
+                  {textoPeriodo(f.periodoDesde, f.periodoHasta)} · {formatPrice(f.montoCrc)} · {etiquetaFactura(f.estado)}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-hc-n-600">Si la atás a una factura, el enlace se cancela solo cuando HotClick aprueba esa factura.</span>
+          </label>
         </>
       ) : (
         <p className="text-sm text-hc-n-600">Enlaces de pago desactivados. Los que ya existen se pueden copiar o cancelar.</p>

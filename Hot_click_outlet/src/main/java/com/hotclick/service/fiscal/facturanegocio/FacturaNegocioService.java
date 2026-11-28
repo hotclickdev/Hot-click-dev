@@ -9,7 +9,6 @@ import com.hotclick.security.CompanyScope;
 import com.hotclick.security.RateLimiter;
 import com.hotclick.service.AuditoriaAdminRegistroService;
 import com.hotclick.service.SupabaseStorageService;
-import com.hotclick.service.fiscal.CedulaFiscal;
 import com.hotclick.service.fiscal.ConfiguracionFiscalService;
 import com.hotclick.service.fiscal.facturanegocio.FacturaNegocioCalculo.Periodo;
 import com.hotclick.service.hacienda.CedulaEmisor;
@@ -17,7 +16,8 @@ import com.hotclick.service.hacienda.HaciendaConfiguracionException;
 import com.hotclick.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -44,8 +44,15 @@ public class FacturaNegocioService {
     static final String REGIMEN_TRADICIONAL = "TRADICIONAL";
     static final Set<String> ESTADOS_SUBIBLES = Set.of(FacturaNegocio.PENDIENTE, FacturaNegocio.RECHAZADA, FacturaNegocio.VENCIDA);
     public static final String MENSAJE_NO_APLICA = "No te corresponde facturar: ya pagás el recargo del 14 %.";
+    static final String MENSAJE_YA_NO_APLICA = "Tu negocio ya no está inscrito y verificado: no te corresponde facturar ahora.";
+    public static final String MENSAJE_EN_REVISION = "Recibida, pendiente de revisión de HotClick.";
     static final String AVISO_SIN_RESPUESTA = "No subiste la respuesta de Hacienda. Revisá en tu sistema de facturación "
         + "que Hacienda haya aceptado esta factura.";
+
+    /** Otra subida o la misma factura se guardó al mismo tiempo (409). */
+    public static class ConflictoFacturaException extends IllegalStateException {
+        public ConflictoFacturaException() { super("Otra subida de esta factura se procesó al mismo tiempo. Recargá y revisá el estado."); }
+    }
 
     /** Límite diario de subidas alcanzado. */
     public static class LimiteSubidasException extends RuntimeException {
@@ -60,14 +67,12 @@ public class FacturaNegocioService {
     private final FacturaNegocioMontoService montos;
     private final ConfiguracionFiscalService config;
     private final SupabaseStorageService storage;
-    private final ApplicationEventPublisher eventos;
     private final AuditoriaAdminRegistroService auditoria;
 
     public FacturaNegocioService(FacturaNegocioRepository repo, EmpresaRepository empresas, CompanyScope companyScope,
                                  RateLimiter rateLimiter, FacturaNegocioXmlValidador validador,
                                  FacturaNegocioMontoService montos, ConfiguracionFiscalService config,
-                                 SupabaseStorageService storage, ApplicationEventPublisher eventos,
-                                 AuditoriaAdminRegistroService auditoria) {
+                                 SupabaseStorageService storage, AuditoriaAdminRegistroService auditoria) {
         this.repo = repo;
         this.empresas = empresas;
         this.companyScope = companyScope;
@@ -76,7 +81,6 @@ public class FacturaNegocioService {
         this.montos = montos;
         this.config = config;
         this.storage = storage;
-        this.eventos = eventos;
         this.auditoria = auditoria;
     }
 
@@ -111,53 +115,80 @@ public class FacturaNegocioService {
     }
 
     /**
-     * Sube el XML de la factura (y, opcional, la respuesta de Hacienda) y lo revisa. Queda ACEPTADA o RECHAZADA con los
-     * motivos. Solo el propietario (lo exige el controlador). Sin @Transactional: el archivo se guarda en el
-     * almacenamiento antes de escribir en la base.
+     * Sube el XML de la factura (y, opcional, la respuesta de Hacienda) y lo revisa. Si pasa todo queda RECIBIDA
+     * (pendiente de que un ADMIN la apruebe: la cadena del certificado contra el BCCR no se valida todavía); si no,
+     * RECHAZADA con los motivos. Solo el propietario (lo exige el controlador). Sin @Transactional: el archivo se guarda
+     * en el almacenamiento antes de escribir en la base, y si la escritura choca se borra.
      */
     public Map<String, Object> subirXml(Long empresaId, Long facturaId, byte[] xml, byte[] respuestaHacienda) {
         Empresa e = cargarEmpresa(empresaId);
         FacturaNegocio f = cargarSubible(e.getId(), facturaId);
+        // La situación fiscal se vuelve a mirar al subir: si dejó de estar inscrito y verificado, no factura.
+        if (!FacturaNegocioCalculo.leCorrespondeFacturar(e.getSituacionFiscal(), e.isFiscalVerificado())) {
+            throw new IllegalStateException(MENSAJE_YA_NO_APLICA);
+        }
         if (!rateLimiter.tryAcquireEstricto("empresa:" + e.getId() + ":factura-negocio:xml", MAX_SUBIDAS_DIA, VENTANA_SEG)) {
             throw new LimiteSubidasException();
         }
-        ConfiguracionFiscalService.ReglasFactura reglas = config.reglasFactura();
         FacturaNegocioXmlValidador.Resultado r = validador.validar(xml, new FacturaNegocioXmlValidador.Esperado(
-            CedulaFiscal.normalizar(e.getCedulaFiscal()), cedulaHotclick(), f.getMontoCrc(), reglas.toleranciaCrc(),
+            f.getCedulaFiscalEsperada(), cedulaHotclick(), f.getMontoCrc(), config.reglasFactura().toleranciaCrc(),
             clave -> repo.existsByClaveXmlAndIdNot(clave, f.getId())));
         List<String> errores = new ArrayList<>(r.errores());
         List<String> avisos = new ArrayList<>(r.avisos());
         boolean conRespuesta = respuestaHacienda != null && respuestaHacienda.length > 0;
         String estadoRespuesta = revisarRespuesta(conRespuesta ? respuestaHacienda : null, r.clave(), errores, avisos);
-        boolean aceptada = errores.isEmpty();
+        boolean recibida = errores.isEmpty();
         String base = "facturas-negocio/" + e.getId() + "/" + f.getId() + "-" + System.currentTimeMillis();
-        String xmlPath = guardar(xml, base + ".xml");
-        String respuestaPath = conRespuesta ? guardar(respuestaHacienda, base + "-respuesta.xml") : null;
+        List<String> archivos = new ArrayList<>();
+        archivos.add(guardar(xml, base + ".xml"));
+        if (conRespuesta) archivos.add(guardar(respuestaHacienda, base + "-respuesta.xml"));
 
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
-        f.setEstado(aceptada ? FacturaNegocio.ACEPTADA : FacturaNegocio.RECHAZADA);
-        // La clave solo se fija al aceptar: el índice único impide usar la misma factura dos veces.
-        f.setClaveXml(aceptada ? r.clave() : null);
+        f.setEstado(recibida ? FacturaNegocio.RECIBIDA : FacturaNegocio.RECHAZADA);
+        // La clave se fija si pasó todo: el índice único impide usar la misma factura dos veces.
+        f.setClaveXml(recibida ? r.clave() : null);
         f.setCedulaEmisor(cedulaCorta(r.cedulaEmisor()));
         f.setTotalFacturaCrc(r.totalComprobanteCrc());
         f.setTotalIvaCrc(r.totalImpuestoCrc());
-        f.setXmlPath(xmlPath);
-        f.setXmlRespuestaPath(respuestaPath);
+        f.setXmlPath(archivos.get(0));
+        f.setXmlRespuestaPath(conRespuesta ? archivos.get(1) : null);
         f.setRespuestaHaciendaEstado(estadoRespuesta);
         f.setMensajeValidacion(FacturaNegocioVista.empaquetar(errores, avisos));
         f.setFechaRecibida(ahora);
         f.setFechaActualizacion(ahora);
-        if (aceptada) aplicarMensajeReceptor(f, reglas);
-        FacturaNegocio guardada = repo.save(f);
+        FacturaNegocio guardada = guardarRegistro(f, archivos);
         auditoria.registrar("FACTURA_NEGOCIO_SUBIDA", "FACTURA_NEGOCIO", guardada.getId(), e.getId(), guardada.getEstado());
-        if (aceptada) eventos.publishEvent(new FacturaNegocioRecibidaEvent(e.getId()));
         return FacturaNegocioVista.negocio(guardada, LocalDate.now(Constants.ZONA_CR), tradicional());
+    }
+
+    /**
+     * Dos subidas a la vez (versión) o la misma clave guardada por otra factura (índice único): 409 y se borran los
+     * archivos que quedaron huérfanos en el almacenamiento.
+     */
+    private FacturaNegocio guardarRegistro(FacturaNegocio f, List<String> archivos) {
+        try {
+            return repo.saveAndFlush(f);
+        } catch (DataIntegrityViolationException | ObjectOptimisticLockingFailureException ex) {
+            borrarHuerfanos(archivos);
+            throw new ConflictoFacturaException();
+        }
+    }
+
+    void borrarHuerfanos(List<String> archivos) {
+        for (String a : archivos) {
+            try {
+                storage.eliminarPrivado(a);
+            } catch (RuntimeException ex) {
+                log.warn("[factura-negocio] no se pudo borrar un XML huérfano: {}", ex.getClass().getSimpleName());
+            }
+        }
     }
 
     private FacturaNegocio cargarSubible(Long empresaId, Long facturaId) {
         FacturaNegocio f = repo.findByIdAndEmpresaId(facturaId, empresaId)
             .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada"));
         if (FacturaNegocio.NO_APLICA.equals(f.getEstado())) throw new IllegalStateException(MENSAJE_NO_APLICA);
+        if (FacturaNegocio.RECIBIDA.equals(f.getEstado())) throw new IllegalStateException(MENSAJE_EN_REVISION);
         if (!ESTADOS_SUBIBLES.contains(f.getEstado())) {
             throw new IllegalStateException("Esta quincena ya tiene una factura aceptada.");
         }
@@ -177,28 +208,6 @@ public class FacturaNegocioService {
 
     private static String cedulaCorta(String cedula) {
         return cedula != null && cedula.length() <= 12 ? cedula : null;
-    }
-
-    /**
-     * Mensaje receptor (aceptación ante Hacienda). En RTS no se envía: la factura queda aceptada internamente. En
-     * tradicional se guarda el plazo legal; con el interruptor apagado no se envía nada, y encendido igual queda
-     * bloqueado mientras no exista el XSD oficial de MensajeReceptor 4.4 en el repo.
-     */
-    void aplicarMensajeReceptor(FacturaNegocio f, ConfiguracionFiscalService.ReglasFactura reglas) {
-        if (!tradicional()) {
-            f.setMensajeReceptorEstado(MensajeReceptorCodigos.ESTADO_ACEPTADA_INTERNA);
-            f.setMensajeReceptorDetalle("HotClick está en el Régimen Simplificado: no se envía mensaje receptor.");
-            return;
-        }
-        f.setFechaLimiteMensajeReceptor(FacturaNegocioCalculo.plazoMensajeReceptor(f.getPeriodoHasta()));
-        if (!reglas.mensajeReceptorHabilitado()) {
-            f.setMensajeReceptorEstado(MensajeReceptorCodigos.ESTADO_NO_ENVIADO_INTERRUPTOR);
-            f.setMensajeReceptorDetalle("El envío del mensaje receptor está apagado en la configuración fiscal.");
-        } else if (!MensajeReceptorCodigos.XSD_DISPONIBLE) {
-            f.setMensajeReceptorEstado(MensajeReceptorCodigos.ESTADO_BLOQUEADO_SIN_XSD);
-            f.setMensajeReceptorDetalle("No hay XSD oficial de MensajeReceptor 4.4: el envío queda bloqueado.");
-        }
-        f.setMensajeReceptorFecha(LocalDateTime.now(Constants.ZONA_CR));
     }
 
     /** Datos de HotClick como receptor, para que el negocio arme la factura. Sin cédula configurada, va null. */
