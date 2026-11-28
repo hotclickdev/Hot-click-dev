@@ -135,7 +135,20 @@ public class CheckoutGrupoFactory {
      * pero por el total del grupo. Copia en memoria: nunca se persiste.
      */
     public static Pedido paraCobro(Pedido principal, int totalGrupo) {
+        return paraCobro(principal, totalGrupo, List.of(principal));
+    }
+
+    /**
+     * Igual, pero sabiendo todos los pedidos del grupo: si todos son del mismo negocio que el principal, la copia
+     * lleva sus ids (el cobro a nombre de la cuenta conectada los marca a todos); si hay otro negocio, queda vacía
+     * y el cobro va a la plataforma (el total del grupo incluye plata de otros negocios).
+     */
+    public static Pedido paraCobro(Pedido principal, int totalGrupo, List<Pedido> pedidosGrupo) {
         Pedido cobro = new Pedido();
+        Long empresaId = principal.getEmpresaId();
+        boolean mismoNegocio = empresaId != null && pedidosGrupo != null && !pedidosGrupo.isEmpty()
+            && pedidosGrupo.stream().allMatch(p -> empresaId.equals(p.getEmpresaId()));
+        cobro.setIdsGrupoMismoNegocio(mismoNegocio ? pedidosGrupo.stream().map(Pedido::getId).toList() : List.of());
         cobro.setId(principal.getId());
         cobro.setNumeroPedido(principal.getNumeroPedido());
         cobro.setTotalPedido(totalGrupo);

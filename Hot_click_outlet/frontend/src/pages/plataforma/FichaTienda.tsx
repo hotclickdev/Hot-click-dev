@@ -11,6 +11,7 @@ import { filasDe, texto, type Fila } from './normalizar'
 import { CambioPlan } from './CambioPlan'
 import { NotaNegocio } from './NotaNegocio'
 import FiscalVerificacion from './FiscalVerificacion'
+import ComisionOnvoPanel from './ComisionOnvoPanel'
 import { HojaConfirmacion } from './HojaConfirmacion'
 import { ETIQUETA_DESTACADO, ETIQUETA_SIN_DESTACAR, PRECIO_DESTACADO, confirmacionDestacado, textoDesde, textoOrden } from './destacados'
 import { aprobacionService } from '@/services/aprobacionService'
@@ -79,6 +80,7 @@ function Cuerpo({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
         <Metrica icono="negocios" etiqueta="Personas" valor={texto(fila.totalUsuarios, '—')} />
       </div>
       <Cuenta id={id} fila={fila} onCambio={onCambio} />
+      {esAdmin && <ComisionOnvoPanel id={id} />}
       <NotaNegocio empresaId={id} negocio={nombre} />
       <Trabada id={id} />
       <Segmento opciones={esAdmin ? [...BLOQUES, { id: 'fiscal', label: 'Datos fiscales' }] : BLOQUES} valor={bloque} onChange={setBloque} />
