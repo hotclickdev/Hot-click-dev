@@ -245,6 +245,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/empresas/*/fiscal").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/admin/empresas/*/fiscal/verificar").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/admin/empresas/*/fiscal/reconsultar").hasRole(Constants.ROL_ADMIN)
+            // Fase 5 Contador IA: solo ADMIN de plataforma (el servicio además rechaza la impersonación)
+            .requestMatchers("/api/admin/contador/**").hasRole(Constants.ROL_ADMIN)
 
             // Staff por permiso global.* (ADMIN tiene todos; SUPPORT/FINANCE/TRUST el suyo)
             .requestMatchers("/api/admin/empresas/**").hasAnyAuthority(
