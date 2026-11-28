@@ -137,6 +137,21 @@ class ComisionOnvoSyncServiceTest {
     }
 
     @Test
+    @DisplayName("feeVigente solo lee lo guardado: nunca llama a ONVO (se usa en el checkout)")
+    void feeVigenteSoloLee() {
+        ComisionOnvoSyncService s = svc(true);
+        assertThat(s.feeVigente(7L)).isNull();                    // nunca sincronizado
+        cuenta.setFeeEnviadoPct(new BigDecimal("9.00"));
+        assertThat(s.feeVigente(7L)).isEqualByComparingTo("9.00");
+        cuenta.setFeePendiente(true);
+        assertThat(s.feeVigente(7L)).isNull();                    // pendiente
+        cuenta.setFeePendiente(false);
+        when(comision.porcentajeEfectivo(empresa)).thenReturn(new BigDecimal("23.00"));
+        assertThat(s.feeVigente(7L)).isNull();                    // el efectivo cambió y aún no se sincroniza
+        verifyNoInteractions(client);
+    }
+
+    @Test
     @DisplayName("Estado para la ficha: pendiente si el enviado no coincide con el efectivo")
     void estado() {
         cuenta.setFeeEnviadoPct(new BigDecimal("6.00"));

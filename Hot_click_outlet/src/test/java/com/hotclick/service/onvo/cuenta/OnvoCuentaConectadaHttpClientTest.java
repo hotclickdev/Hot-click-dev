@@ -55,6 +55,32 @@ class OnvoCuentaConectadaHttpClientTest {
     }
 
     @Test
+    @DisplayName("actualizarComision exige que ONVO devuelva marketplaceAppFee igual al enviado")
+    void actualizarComisionConfirmaElValor() {
+        RestTemplate rt = new RestTemplate();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(rt).build();
+        var c = new OnvoCuentaConectadaHttpClient(rt, KEY);
+        String url = "https://api.onvopay.com/v1/connected-accounts/cl_1";
+        server.expect(requestTo(url)).andExpect(method(HttpMethod.POST))
+            .andExpect(jsonPath("$.marketplaceAppFee").value(9.0))
+            .andRespond(withSuccess("{\"id\":\"cl_1\",\"marketplaceAppFee\":9}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(url))
+            .andRespond(withSuccess("{\"id\":\"cl_1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(url))
+            .andRespond(withSuccess("{\"id\":\"cl_1\",\"marketplaceAppFee\":5}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(url))
+            .andRespond(withSuccess("{\"id\":\"cl_1\",\"marketplaceAppFee\":\"x\"}", MediaType.APPLICATION_JSON));
+
+        java.math.BigDecimal nueve = new java.math.BigDecimal("9.00");
+        c.actualizarComision("cl_1", nueve);
+        // Sin el campo en la respuesta: fallo (antes se daba por bueno), y lo mismo con valor distinto o ilegible.
+        assertThatThrownBy(() -> c.actualizarComision("cl_1", nueve)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> c.actualizarComision("cl_1", nueve)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> c.actualizarComision("cl_1", nueve)).isInstanceOf(IllegalStateException.class);
+        server.verify();
+    }
+
+    @Test
     void sinLlaveNoLlamaYFallaCerrado() {
         RestTemplate rt = new RestTemplate();
         MockRestServiceServer server = MockRestServiceServer.bindTo(rt).build();

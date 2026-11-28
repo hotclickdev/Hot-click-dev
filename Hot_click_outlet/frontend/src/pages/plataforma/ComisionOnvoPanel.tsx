@@ -24,7 +24,18 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
 
   const cargar = useCallback(() => {
     Promise.all([onvoCobroService.comision(id), onvoCobroService.enlaces(id)])
-      .then(([c, e]) => { setComision(datos<ComisionOnvo>(c)); setEnlaces(datos<EnlacePago[]>(e)); setEstado('listo') })
+      .then(([c, e]) => {
+        const nueva = datos<ComisionOnvo>(c)
+        const lista = datos<EnlacePago[]>(e)
+        // Respuesta inesperada (p. ej. HTML de la SPA): se muestra el aviso de error, nunca se rompe la ficha.
+        if (!nueva || typeof nueva !== 'object' || typeof nueva.tieneCuenta !== 'boolean' || !Array.isArray(lista)) {
+          setEstado('error')
+          return
+        }
+        setComision(nueva)
+        setEnlaces(lista)
+        setEstado('listo')
+      })
       .catch((err: unknown) => { console.error(err); setEstado('error') })
   }, [id])
 

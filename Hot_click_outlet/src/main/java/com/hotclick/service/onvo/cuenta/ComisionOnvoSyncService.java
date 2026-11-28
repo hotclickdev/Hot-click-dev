@@ -116,12 +116,12 @@ public class ComisionOnvoSyncService {
     }
 
     /**
-     * Porcentaje que ONVO retendrá en un cobro a nombre de la cuenta conectada, o null si no se puede garantizar:
-     * intenta sincronizar y solo devuelve el valor si coincide con el efectivo y no hay pendiente. Con null el cobro
+     * Porcentaje que ONVO retendrá en un cobro a nombre de la cuenta conectada, o null si no se puede garantizar.
+     * Solo LEE lo guardado (nunca llama a ONVO: se usa en el checkout; sincronizar es del job y del botón ADMIN) y
+     * devuelve el valor únicamente si coincide con el efectivo y no hay pendiente. Con null el cobro
      * va a nombre de la plataforma y HotClick descuenta la comisión como siempre (nunca se cobra dos veces).
      */
     public BigDecimal feeVigente(Long empresaId) {
-        sincronizarSeguro(empresaId);
         try {
             Empresa e = empresaRepository.findById(empresaId).orElse(null);
             EmpresaCuentaOnvo c = repo.findByEmpresaId(empresaId).orElse(null);

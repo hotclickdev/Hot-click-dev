@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { etiquetaEstado, pct, resumenComision, validarEnlace } from './enlacePago'
+import { esUrlHttps, etiquetaEstado, pct, resumenComision, validarEnlace } from './enlacePago'
 
 describe('enlace de pago único', () => {
   it('acepta monto y motivo válidos y limpia separadores', () => {
@@ -26,5 +26,11 @@ describe('enlace de pago único', () => {
     expect(resumenComision({ ...base, tieneCuenta: false }).tono).toBe('neutro')
     expect(pct(7.5)).toBe('7.50 %')
     expect(pct(null)).toBe('—')
+  })
+  it('solo acepta https:// como destino del botón de pago', () => {
+    expect(esUrlHttps('https://checkout.onvopay.com/s/abc')).toBe(true)
+    for (const url of ['http://x.test', 'javascript:alert(1)', 'data:text/html,x', '//x.test', 'no es url', '', null, undefined, 5]) {
+      expect(esUrlHttps(url)).toBe(false)
+    }
   })
 })

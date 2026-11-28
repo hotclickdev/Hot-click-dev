@@ -33,7 +33,7 @@ public class EnlacePagoOnvoService {
     static final String TIPO_METADATA = "ENLACE_FACTURA_TARDIA";
 
     /** Resultado del webhook checkout-session.succeeded para una sesión. */
-    public enum ResultadoWebhook { NO_ES_ENLACE, PAGADO, DUPLICADO, NO_VERIFICADO, NO_CONSULTABLE }
+    public enum ResultadoWebhook { NO_ES_ENLACE, PAGADO, DUPLICADO, NO_VERIFICADO, DATOS_DISTINTOS, NO_CONSULTABLE }
 
     /** Conflicto de negocio (409): enlace ya abierto, no cancelable, ONVO sin confirmar. */
     public static class EnlaceConflictoException extends RuntimeException {
@@ -84,7 +84,11 @@ public class EnlacePagoOnvoService {
         e.setOnvoSessionId(sesion.id());
         e.setUrl(sesion.url());
         try {
-            e = repo.save(e);
+            e = repo.saveAndFlush(e);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            // Dos altas a la vez: el índice único parcial deja pasar solo un enlace abierto por negocio.
+            provider.expirarSesionParaCancelar(sesion.id());
+            throw new EnlaceConflictoException("El negocio ya tiene un enlace de pago abierto. Cancelalo o esperá a que se pague.");
         } catch (RuntimeException ex) {
             log.error("[onvo-enlace] Sesión creada en ONVO pero no se pudo guardar empresa={} sesion={}",
                 empresaId, OnvoService.enmascarar(sesion.id()));
@@ -136,6 +140,10 @@ public class EnlacePagoOnvoService {
         }
         if (sesion == null || sesion.isEmpty()) return ResultadoWebhook.NO_CONSULTABLE;
         if (!"paid".equalsIgnoreCase(String.valueOf(sesion.get("paymentStatus")))) return ResultadoWebhook.NO_VERIFICADO;
+        if (!montoYMonedaCoinciden(e, sesion)) {
+            log.error("[ALERTA-PAGO] Enlace {} pagado con monto o moneda distintos a los del enlace: no se marca PAGADO", e.getId());
+            return ResultadoWebhook.DATOS_DISTINTOS;
+        }
         if (!EnlacePagoOnvo.CREADO.equals(e.getEstado())) {
             log.warn("[onvo-enlace] Pago recibido en un enlace {}: id={}", e.getEstado(), e.getId());
         }
@@ -157,6 +165,19 @@ public class EnlacePagoOnvoService {
     public List<Long> idsAbiertosLote() {
         return repo.findByEstadoOrderByCreadoEnAsc(EnlacePagoOnvo.CREADO, PageRequest.of(0, lote))
             .stream().mapToLong(EnlacePagoOnvo::getId).boxed().toList();
+    }
+
+    /** ONVO cobra en unidad menor (colones x 100, igual que se envió): el total y la moneda tienen que coincidir. */
+    static boolean montoYMonedaCoinciden(EnlacePagoOnvo e, Map<?, ?> sesion) {
+        Object total = sesion.get("amountTotal");
+        Object moneda = sesion.get("currency");
+        if (total == null || moneda == null) return false;
+        try {
+            return new java.math.BigDecimal(String.valueOf(total)).compareTo(java.math.BigDecimal.valueOf(e.getMontoCrc() * 100L)) == 0
+                && "CRC".equalsIgnoreCase(String.valueOf(moneda));
+        } catch (NumberFormatException ex) {
+            return false;
+        }
     }
 
     /** Red de seguridad si el webhook se pierde: relee uno abierto y lo cierra como PAGADO o EXPIRADO. */

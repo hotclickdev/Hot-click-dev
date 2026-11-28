@@ -210,6 +210,12 @@ public class AggregatorService {
         }
     }
 
+    /** La retención de este pedido quedó POR_REVISAR (ONVO no confirmó la cuenta): la resuelve un ADMIN a mano. */
+    public boolean retencionPorRevisar(Long pedidoId) {
+        if (retencionRepo == null || pedidoId == null) return false;
+        return retencionRepo.findByPedidoId(pedidoId).map(com.hotclick.model.PedidoRetencionOnvo::porRevisar).orElse(false);
+    }
+
     boolean retenidoPorOnvo(Pedido pedido) {
         return retencionOnvoPct(pedido.getId()).isPresent();
     }

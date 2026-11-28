@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,6 +74,7 @@ class OnvoOnBehalfOfTest {
         verify(onvo).crearCheckoutSession(eq(1000), anyString(), anyString(), anyString(), any(), anyMap(), eq("cl_abc123"));
         ArgumentCaptor<PedidoRetencionOnvo> cap = ArgumentCaptor.forClass(PedidoRetencionOnvo.class);
         verify(retencion).save(cap.capture());
+        verify(retencion).asignarSesion(eq("cs_1"), eq(List.of(1L)));
         assertThat(cap.getValue().getPedidoId()).isEqualTo(1L);
         assertThat(cap.getValue().getFeePct()).isEqualByComparingTo("9.00");
     }
@@ -93,6 +95,126 @@ class OnvoOnBehalfOfTest {
         verify(onvo, never()).crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap(), anyString());
         verify(retencion, never()).save(any());
         verify(retencion).borrarPorPedido(1L);
+    }
+
+    private OnvoPaymentProvider providerActivo(OnvoService onvo, ComisionOnvoSyncService sync, PedidoRetencionOnvoRepository retencion) {
+        CuentaOnvoService cuentas = mock(CuentaOnvoService.class);
+        when(cuentas.onBehalfOfPara(any())).thenReturn("cl_abc123");
+        OnvoPaymentProvider p = provider(onvo, cuentas);
+        ReflectionTestUtils.setField(p, "comisionSync", sync);
+        ReflectionTestUtils.setField(p, "retencionRepo", retencion);
+        return p;
+    }
+
+    private Pedido pedidoDe(long id, long empresaId) {
+        Empresa e = new Empresa();
+        e.setId(empresaId);
+        Pedido p = new Pedido();
+        p.setId(id);
+        p.setEmpresa(e);
+        return p;
+    }
+
+    @Test
+    @DisplayName("Carrito de DOS negocios: cobro a la plataforma y sin marca (el total incluye plata ajena)")
+    void grupoDeDosNegocios() throws Exception {
+        OnvoService onvo = onvoListo();
+        ComisionOnvoSyncService sync = mock(ComisionOnvoSyncService.class);
+        when(sync.feeVigente(anyLong())).thenReturn(new BigDecimal("9.00"));
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        Pedido principal = pedidoDe(1L, 7L);
+        Pedido ajeno = pedidoDe(2L, 8L);
+        Pedido cobro = com.hotclick.service.payment.CheckoutGrupoFactory.paraCobro(principal, 50_000, List.of(principal, ajeno));
+        cobro.setNumeroPedido("HC-1");
+
+        providerActivo(onvo, sync, retencion).crearSesion(cobro, new Usuario());
+
+        verify(onvo, never()).crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap(), anyString());
+        verify(retencion, never()).save(any());
+        verify(retencion, never()).asignarSesion(any(), any());
+    }
+
+    @Test
+    @DisplayName("Carrito de UN negocio con varios paquetes: onBehalfOf y marca en todos los pedidos del grupo")
+    void grupoDeUnNegocio() throws Exception {
+        OnvoService onvo = onvoListo();
+        ComisionOnvoSyncService sync = mock(ComisionOnvoSyncService.class);
+        when(sync.feeVigente(7L)).thenReturn(new BigDecimal("9.00"));
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        Pedido principal = pedidoDe(1L, 7L);
+        Pedido segundo = pedidoDe(2L, 7L);
+        Pedido cobro = com.hotclick.service.payment.CheckoutGrupoFactory.paraCobro(principal, 50_000, List.of(principal, segundo));
+        cobro.setNumeroPedido("HC-1");
+
+        providerActivo(onvo, sync, retencion).crearSesion(cobro, new Usuario());
+
+        verify(onvo).crearCheckoutSession(eq(50_000), anyString(), anyString(), anyString(), any(), anyMap(), eq("cl_abc123"));
+        verify(retencion, times(2)).save(any());
+        verify(retencion).asignarSesion(eq("cs_1"), eq(List.of(1L, 2L)));
+    }
+
+    private OnvoPaymentProvider conMarca(OnvoService onvo, PedidoRetencionOnvoRepository retencion) {
+        PedidoRetencionOnvo marca = new PedidoRetencionOnvo();
+        marca.setPedidoId(1L);
+        marca.setOnvoAccountId("cl_abc123");
+        marca.setFeePct(new BigDecimal("9.00"));
+        when(retencion.findByOnvoSessionId("cs_1")).thenReturn(List.of(marca));
+        return providerActivo(onvo, mock(ComisionOnvoSyncService.class), retencion);
+    }
+
+    @Test
+    @DisplayName("Sesión a nombre de la cuenta esperada: la marca sigue como está")
+    void sesionConLaCuentaEsperada() {
+        OnvoService onvo = mock(OnvoService.class);
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        doReturn(Map.of("onBehalfOfId", "cl_abc123")).when(onvo).obtenerCheckoutSession("cs_1");
+        conMarca(onvo, retencion).validarRetencionDeSesion("cs_1");
+        verify(retencion, never()).borrarPorSesion(any());
+        verify(retencion, never()).cambiarEstadoPorSesion(any(), any());
+    }
+
+    @Test
+    @DisplayName("ONVO confirma que la sesión fue SIN onBehalfOf (cobro a la plataforma): se borra la marca")
+    void sesionSinOnBehalfOfConfirmado() {
+        OnvoService onvo = mock(OnvoService.class);
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        java.util.Map<String, Object> sinCuenta = new java.util.HashMap<>();
+        sinCuenta.put("onBehalfOfId", null);
+        doReturn(sinCuenta).when(onvo).obtenerCheckoutSession("cs_1");
+        conMarca(onvo, retencion).validarRetencionDeSesion("cs_1");
+        verify(retencion).borrarPorSesion("cs_1");
+        verify(retencion, never()).cambiarEstadoPorSesion(any(), any());
+    }
+
+    @Test
+    @DisplayName("ONVO no devuelve onBehalfOfId: NO se borra la marca; queda POR_REVISAR (sin acreditar wallet)")
+    void sesionSinClaveQuedaPorRevisar() {
+        OnvoService onvo = mock(OnvoService.class);
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        doReturn(Map.of("paymentStatus", "paid")).when(onvo).obtenerCheckoutSession("cs_1");
+        conMarca(onvo, retencion).validarRetencionDeSesion("cs_1");
+        verify(retencion, never()).borrarPorSesion(any());
+        verify(retencion).cambiarEstadoPorSesion(PedidoRetencionOnvo.POR_REVISAR, "cs_1");
+    }
+
+    @Test
+    @DisplayName("ONVO devuelve otra cuenta: NO se borra la marca; queda POR_REVISAR")
+    void sesionConOtraCuentaQuedaPorRevisar() {
+        OnvoService onvo = mock(OnvoService.class);
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        doReturn(Map.of("onBehalfOfId", "cl_otra")).when(onvo).obtenerCheckoutSession("cs_1");
+        conMarca(onvo, retencion).validarRetencionDeSesion("cs_1");
+        verify(retencion, never()).borrarPorSesion(any());
+        verify(retencion).cambiarEstadoPorSesion(PedidoRetencionOnvo.POR_REVISAR, "cs_1");
+    }
+
+    @Test
+    @DisplayName("Sin marcas para la sesión no se consulta ONVO")
+    void sinMarcasNoConsulta() {
+        OnvoService onvo = mock(OnvoService.class);
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        providerActivo(onvo, mock(ComisionOnvoSyncService.class), retencion).validarRetencionDeSesion("cs_9");
+        verify(onvo, never()).obtenerCheckoutSession(any());
     }
 
     @Test

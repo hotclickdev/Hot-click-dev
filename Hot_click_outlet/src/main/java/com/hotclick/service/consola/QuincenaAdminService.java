@@ -95,6 +95,7 @@ public class QuincenaAdminService {
             // ONVO ya retuvo la comisión y le paga el neto al negocio: no se gira ni se descuenta otra vez.
             acumulado.retenidoOnvo += liquidacion.detalle().resultado().totalComision();
             acumulado.netoOnvo += liquidacion.neto();
+            if (aggregator.retencionPorRevisar(pedido.getId())) acumulado.retencionPorRevisar++;
         } else acumulado.netoBanco += liquidacion.neto();
         acumulado.plan = liquidacion.detalle().plan();
         acumulado.porcentaje = liquidacion.detalle().porcentaje();
@@ -126,6 +127,7 @@ public class QuincenaAdminService {
         mapa.put("comision", acumulado.comision);
         mapa.put("retenidoOnvo", acumulado.retenidoOnvo);
         mapa.put("netoOnvo", acumulado.netoOnvo);
+        mapa.put("retencionPorRevisar", acumulado.retencionPorRevisar);
         mapa.put("envio", acumulado.envio);
         mapa.put("neto", acumulado.neto);
         mapa.put("pasarela", acumulado.pasarela);
@@ -189,6 +191,7 @@ public class QuincenaAdminService {
         private long netoBanco;
         private long retenidoOnvo;
         private long netoOnvo;
+        private long retencionPorRevisar;
         private Long efectivoAnotado;
         private Cuenta cuenta = new Cuenta(false, false);
     }

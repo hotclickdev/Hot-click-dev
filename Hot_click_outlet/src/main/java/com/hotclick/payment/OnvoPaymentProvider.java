@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -84,17 +85,22 @@ public class OnvoPaymentProvider implements PaymentProvider {
 
         // onBehalfOf solo con cuenta conectada ACTIVA (confirmada por GET a ONVO). Si no, el cobro
         // sigue como hasta hoy a nombre de la plataforma: no se bloquea ni se inventa una cuenta.
-        String onBehalfOf = cuentaOnvoService != null ? cuentaOnvoService.onBehalfOfPara(pedido.getEmpresa()) : null;
-        // A nombre de la cuenta conectada solo si ONVO ya tiene el % de HotClick (marketplaceAppFee) sincronizado:
-        // si no, ONVO no retendría nada y el negocio cobraría completo. Sin % vigente, cobro a la plataforma como siempre.
+        // Pedidos que se cobran juntos: el suelto, o el grupo SOLO si todos son del mismo negocio. Con varios negocios
+        // el total incluye plata ajena: cobro a la plataforma y sin marca.
+        List<Long> idsMarca = pedido.getIdsGrupoMismoNegocio() != null ? pedido.getIdsGrupoMismoNegocio()
+            : (pedido.getId() != null ? List.of(pedido.getId()) : List.<Long>of());
+        String onBehalfOf = idsMarca.isEmpty() || cuentaOnvoService == null
+            ? null : cuentaOnvoService.onBehalfOfPara(pedido.getEmpresa());
+        // A nombre de la cuenta conectada solo si el % de HotClick (marketplaceAppFee) ya consta como sincronizado
+        // (solo lectura: nunca se llama a ONVO para sincronizar durante el checkout).
         java.math.BigDecimal fee = null;
         if (onBehalfOf != null) {
             fee = comisionSync != null && pedido.getEmpresaId() != null ? comisionSync.feeVigente(pedido.getEmpresaId()) : null;
             if (fee == null) onBehalfOf = null;
         }
-        // La marca de retención se guarda antes del cobro (si el cobro falla se borra): un pedido retenido por ONVO
-        // nunca debe quedar sin marca, o HotClick descontaría la comisión por segunda vez.
-        marcarRetencion(pedido.getId(), onBehalfOf, fee);
+        // Las marcas se guardan antes del cobro (si el cobro falla se borran): un pedido retenido por ONVO nunca debe
+        // quedar sin marca, o HotClick descontaría la comisión por segunda vez.
+        marcarRetencion(idsMarca, onBehalfOf, fee);
         OnvoService.OnvoCheckoutSession session;
         try {
             session = onBehalfOf == null
@@ -103,8 +109,17 @@ public class OnvoPaymentProvider implements PaymentProvider {
                 : onvoService.crearCheckoutSession(pedido.getTotalPedido(), descripcion, successUrl, cancelUrl,
                     usuario.getCorreo(), metadata, onBehalfOf);
         } catch (RuntimeException e) {
-            marcarRetencion(pedido.getId(), null, null);
+            marcarRetencion(idsMarca, null, null);
             throw e;
+        }
+        if (onBehalfOf != null && retencionRepo != null) {
+            try {
+                retencionRepo.asignarSesion(session.id(), idsMarca);
+            } catch (RuntimeException e) {
+                // Sin la sesión la marca no se podría contrastar con ONVO: se borra y se liquida como siempre.
+                log.warn("[onvo] No se pudo guardar la sesión en la marca de retención: {}", e.getClass().getSimpleName());
+                marcarRetencion(idsMarca, null, null);
+            }
         }
 
         log.info("[onvo] Checkout session creada: {} pedido={}", OnvoService.enmascarar(session.id()), pedido.getNumeroPedido());
@@ -113,19 +128,51 @@ public class OnvoPaymentProvider implements PaymentProvider {
     }
 
     /** Deja una sola marca por pedido: con cuenta conectada y % vigente la crea; si no, la borra. */
-    void marcarRetencion(Long pedidoId, String onvoAccountId, java.math.BigDecimal feePct) {
-        if (retencionRepo == null || pedidoId == null) return;
-        if (onvoAccountId == null || feePct == null) {
-            try { retencionRepo.borrarPorPedido(pedidoId); }
-            catch (RuntimeException e) { log.warn("[onvo] No se pudo limpiar la marca de retención: {}", e.getClass().getSimpleName()); }
+    void marcarRetencion(List<Long> pedidoIds, String onvoAccountId, java.math.BigDecimal feePct) {
+        if (retencionRepo == null || pedidoIds == null) return;
+        boolean borrar = onvoAccountId == null || feePct == null;
+        for (Long pedidoId : pedidoIds) {
+            if (pedidoId == null) continue;
+            if (borrar) {
+                try { retencionRepo.borrarPorPedido(pedidoId); }
+                catch (RuntimeException e) { log.warn("[onvo] No se pudo limpiar la marca de retención: {}", e.getClass().getSimpleName()); }
+                continue;
+            }
+            retencionRepo.borrarPorPedido(pedidoId);
+            com.hotclick.model.PedidoRetencionOnvo r = new com.hotclick.model.PedidoRetencionOnvo();
+            r.setPedidoId(pedidoId);
+            r.setOnvoAccountId(onvoAccountId);
+            r.setFeePct(feePct);
+            retencionRepo.save(r);
+        }
+    }
+
+    /**
+     * Antes de capturar: contrasta la marca de retención con lo que ONVO dice de la sesión pagada.
+     * - {@code onBehalfOfId} igual a la cuenta esperada: la marca sigue (ONVO retuvo la comisión).
+     * - La sesión viene SIN onBehalfOf (la clave llega vacía): se cobró a la plataforma; solo en ese caso se borra la
+     *   marca y el pago se liquida como siempre.
+     * - No viene la clave o trae otra cuenta: no se sabe quién cobró; la marca queda POR_REVISAR (sin acreditar al
+     *   wallet ni descontar comisión a mano) y un ADMIN lo resuelve. El pago se captura igual.
+     * Si no se puede leer la sesión, el error sale y no se captura (ONVO reintenta).
+     */
+    void validarRetencionDeSesion(String checkoutSessionId) {
+        if (retencionRepo == null) return;
+        List<com.hotclick.model.PedidoRetencionOnvo> marcas = retencionRepo.findByOnvoSessionId(checkoutSessionId);
+        if (marcas.isEmpty()) return;
+        Map<?, ?> sesion = onvoService.obtenerCheckoutSession(checkoutSessionId);
+        boolean hayClave = sesion != null && sesion.containsKey("onBehalfOfId");
+        String cuenta = hayClave && sesion.get("onBehalfOfId") != null ? String.valueOf(sesion.get("onBehalfOfId")).trim() : "";
+        if (hayClave && cuenta.isEmpty()) {
+            retencionRepo.borrarPorSesion(checkoutSessionId);
+            log.warn("[onvo] ONVO confirma que la sesión {} se cobró a la plataforma (sin onBehalfOf): se quita la marca y se liquida como siempre",
+                OnvoService.enmascarar(checkoutSessionId));
             return;
         }
-        retencionRepo.borrarPorPedido(pedidoId);
-        com.hotclick.model.PedidoRetencionOnvo r = new com.hotclick.model.PedidoRetencionOnvo();
-        r.setPedidoId(pedidoId);
-        r.setOnvoAccountId(onvoAccountId);
-        r.setFeePct(feePct);
-        retencionRepo.save(r);
+        if (cuenta.equals(marcas.get(0).getOnvoAccountId())) return;
+        retencionRepo.cambiarEstadoPorSesion(com.hotclick.model.PedidoRetencionOnvo.POR_REVISAR, checkoutSessionId);
+        log.error("[ALERTA-RETENCION] La sesión {} se creó a nombre de una cuenta conectada pero ONVO {}: retención POR REVISAR (sin acreditar wallet); resolver en el panel ADMIN",
+            OnvoService.enmascarar(checkoutSessionId), hayClave ? "devolvió otra cuenta" : "no devolvió onBehalfOfId");
     }
 
     /**
@@ -502,6 +549,7 @@ public class OnvoPaymentProvider implements PaymentProvider {
      * (un 500 haría que ONVO reintente sin sentido).
      */
     OnvoCapturaService.Captura capturar(String checkoutSessionId, String intentId, String origen) {
+        validarRetencionDeSesion(checkoutSessionId);
         try {
             return onvoCapturaService.capturarVerificado(checkoutSessionId,
                 "{\"verificado\":\"GET ONVO\",\"paymentIntentId\":\"" + intentId + "\"}", origen);

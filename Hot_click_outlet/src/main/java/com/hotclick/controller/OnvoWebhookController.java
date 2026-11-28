@@ -213,7 +213,7 @@ public class OnvoWebhookController {
         return switch (r) {
             case PAGADO -> ResponseEntity.ok(Map.of("status", "ok", "type", type, "scope", "enlace-pago"));
             case DUPLICADO -> ResponseEntity.ok(Map.of("status", "duplicate", "type", type));
-            case NO_VERIFICADO -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
+            case NO_VERIFICADO, DATOS_DISTINTOS -> ResponseEntity.status(409).body(Map.of("error", "not verified"));
             case NO_CONSULTABLE -> ResponseEntity.status(503).body(Map.of("error", "unavailable"));
             case NO_ES_ENLACE -> ResponseEntity.ok(Map.of("status", "ok", "type", type));
         };

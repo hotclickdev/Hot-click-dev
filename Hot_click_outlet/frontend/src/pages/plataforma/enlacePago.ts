@@ -38,3 +38,13 @@ export function resumenComision(c: ComisionOnvo): { texto: string; tono: 'ok' | 
 export function pct(valor: number | null | undefined): string {
   return valor == null ? '—' : `${valor.toFixed(2)} %`
 }
+
+/** Solo https:// se usa como destino del botón de pago: nada de javascript:, data: ni http. */
+export function esUrlHttps(url: unknown): url is string {
+  if (typeof url !== 'string') return false
+  try {
+    return new URL(url).protocol === 'https:'
+  } catch {
+    return false
+  }
+}

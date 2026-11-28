@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { onvoCobroService, type AvisoEnlace } from '@/services/onvoCobroService'
 import { formatPrice } from '@/utils/format'
+import { esUrlHttps } from '@/pages/plataforma/enlacePago'
 
 /** Aviso al negocio: HotClick le abrió un enlace de pago (factura tardía). Solo ve los de su empresa. */
 export default function AvisoEnlacePago() {
@@ -10,7 +11,7 @@ export default function AvisoEnlacePago() {
     onvoCobroService.abiertos()
       .then(({ data }) => {
         const cuerpo = data as { data?: AvisoEnlace[] }
-        setAvisos(Array.isArray(cuerpo?.data) ? cuerpo.data : [])
+        setAvisos(Array.isArray(cuerpo?.data) ? cuerpo.data.filter((a) => esUrlHttps(a.url)) : [])
       })
       .catch(() => setAvisos([]))
   }, [])

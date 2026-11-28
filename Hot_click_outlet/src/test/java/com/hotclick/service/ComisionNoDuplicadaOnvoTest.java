@@ -138,6 +138,26 @@ class ComisionNoDuplicadaOnvoTest {
     private static Long eq7() { return org.mockito.ArgumentMatchers.eq(EMPRESA); }
 
     @Test
+    @DisplayName("Retención POR_REVISAR: no se acredita al wallet, no se descuenta a mano, y la quincena la marca")
+    void porRevisarNoAcredita() {
+        Pedido p = pedido(7L);
+        PedidoRetencionOnvo r = new PedidoRetencionOnvo();
+        r.setPedidoId(7L);
+        r.setOnvoAccountId("cl_abc123");
+        r.setFeePct(new BigDecimal("9.00"));
+        r.setEstado(PedidoRetencionOnvo.POR_REVISAR);
+        when(retencionRepo.findByPedidoId(7L)).thenReturn(Optional.of(r));
+        aggregator.acreditarVentaEnTransaccion(p);
+        verify(wallet, never()).acreditarVenta(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong());
+        assertThat(aggregator.retencionPorRevisar(7L)).isTrue();
+        assertThat(aggregator.liquidarPedido(p).retenidoOnvo()).isTrue();
+
+        when(pedidoRepo.findConEmpresaEnPeriodo(any(), any(), any())).thenReturn(List.of(p));
+        assertThat(unaLinea().get("retencionPorRevisar")).isEqualTo(1L);
+        assertThat(unaLinea().get("aGirar")).isEqualTo(0L);
+    }
+
+    @Test
     @DisplayName("liquidarPedido: retenido = comisión de ONVO sobre el total cobrado; no retenido = cálculo del plan")
     void liquidarPedido() {
         Pedido retenidoPedido = pedido(5L);

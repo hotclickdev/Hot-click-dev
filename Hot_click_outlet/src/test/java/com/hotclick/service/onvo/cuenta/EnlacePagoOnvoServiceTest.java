@@ -43,9 +43,15 @@ class EnlacePagoOnvoServiceTest {
         svc = new EnlacePagoOnvoService(repo, empresaRepo, onvo, provider, "https://app.test", 50);
         when(empresaRepo.existsById(7L)).thenReturn(true);
         when(repo.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(repo.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         when(repo.findByEmpresaIdAndEstado(7L, EnlacePagoOnvo.CREADO)).thenReturn(List.of());
         when(onvo.crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap()))
             .thenReturn(new OnvoService.OnvoCheckoutSession("sess_1", "https://pay.test/s1"));
+    }
+
+    /** Sesión pagada de ONVO por 50.000 colones (unidad menor: x 100). */
+    private static Map<String, Object> pagada() {
+        return Map.of("paymentStatus", "paid", "status", "complete", "amountTotal", 5_000_000, "currency", "CRC");
     }
 
     private EnlacePagoOnvo abierto() {
@@ -115,7 +121,7 @@ class EnlacePagoOnvoServiceTest {
     void cancelarYaPagado() {
         EnlacePagoOnvo e = abierto();
         when(provider.expirarSesionParaCancelar("sess_1")).thenReturn(false);
-        doReturn(Map.of("paymentStatus", "paid")).when(onvo).obtenerCheckoutSession("sess_1");
+        doReturn(pagada()).when(onvo).obtenerCheckoutSession("sess_1");
         assertThatThrownBy(() -> svc.cancelar(1L)).isInstanceOf(EnlaceConflictoException.class);
         assertThat(e.getEstado()).isEqualTo(EnlacePagoOnvo.PAGADO);
     }
@@ -133,12 +139,34 @@ class EnlacePagoOnvoServiceTest {
     @DisplayName("Webhook: paid por GET marca PAGADO; la segunda entrega es duplicada y no relee ONVO")
     void webhookIdempotente() {
         EnlacePagoOnvo e = abierto();
-        doReturn(Map.of("paymentStatus", "paid", "status", "complete")).when(onvo).obtenerCheckoutSession("sess_1");
+        doReturn(pagada()).when(onvo).obtenerCheckoutSession("sess_1");
         assertThat(svc.confirmarPorWebhook("sess_1")).isEqualTo(ResultadoWebhook.PAGADO);
         assertThat(e.getEstado()).isEqualTo(EnlacePagoOnvo.PAGADO);
         assertThat(e.getPagadoEn()).isNotNull();
         assertThat(svc.confirmarPorWebhook("sess_1")).isEqualTo(ResultadoWebhook.DUPLICADO);
         verify(onvo, times(1)).obtenerCheckoutSession("sess_1");
+    }
+
+    @Test
+    @DisplayName("Webhook: pagada pero con otro monto, otra moneda o sin esos datos → no se marca PAGADO")
+    void webhookMontoYMoneda() {
+        EnlacePagoOnvo e = abierto();
+        doReturn(Map.of("paymentStatus", "paid", "amountTotal", 100, "currency", "CRC")).when(onvo).obtenerCheckoutSession("sess_1");
+        assertThat(svc.confirmarPorWebhook("sess_1")).isEqualTo(ResultadoWebhook.DATOS_DISTINTOS);
+        doReturn(Map.of("paymentStatus", "paid", "amountTotal", 5_000_000, "currency", "USD")).when(onvo).obtenerCheckoutSession("sess_1");
+        assertThat(svc.confirmarPorWebhook("sess_1")).isEqualTo(ResultadoWebhook.DATOS_DISTINTOS);
+        doReturn(Map.of("paymentStatus", "paid")).when(onvo).obtenerCheckoutSession("sess_1");
+        assertThat(svc.confirmarPorWebhook("sess_1")).isEqualTo(ResultadoWebhook.DATOS_DISTINTOS);
+        assertThat(e.getEstado()).isEqualTo(EnlacePagoOnvo.CREADO);
+    }
+
+    @Test
+    @DisplayName("Alta simultánea: el índice único rechaza el segundo enlace abierto → 409 y se expira su sesión")
+    void altaSimultanea() {
+        when(repo.saveAndFlush(any())).thenThrow(new org.springframework.dao.DataIntegrityViolationException("uq"));
+        assertThatThrownBy(() -> svc.crear(7L, 50_000, "Factura tardía"))
+            .isInstanceOf(EnlaceConflictoException.class);
+        verify(provider).expirarSesionParaCancelar("sess_1");
     }
 
     @Test
@@ -179,7 +207,7 @@ class EnlacePagoOnvoServiceTest {
         when(repo.findById(2L)).thenReturn(Optional.of(expirado));
         when(repo.findByEstadoOrderByCreadoEnAsc(eq(EnlacePagoOnvo.CREADO), any(Pageable.class)))
             .thenReturn(List.of(pagado, expirado));
-        doReturn(Map.of("paymentStatus", "paid")).when(onvo).obtenerCheckoutSession("sess_1");
+        doReturn(pagada()).when(onvo).obtenerCheckoutSession("sess_1");
         doReturn(Map.of("status", "expired", "paymentStatus", "unpaid")).when(onvo).obtenerCheckoutSession("sess_2");
         new EnlacePagoOnvoLotes(svc).conciliar();
         assertThat(pagado.getEstado()).isEqualTo(EnlacePagoOnvo.PAGADO);

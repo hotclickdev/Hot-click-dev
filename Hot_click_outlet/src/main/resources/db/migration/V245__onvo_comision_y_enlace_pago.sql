@@ -1,4 +1,4 @@
--- V261 (Fase 3 fiscal): comisión por negocio sincronizada a ONVO (marketplaceAppFee) y enlaces de pago único
+-- V245 (Fase 3 fiscal): comisión por negocio sincronizada a ONVO (marketplaceAppFee) y enlaces de pago único
 -- para cobrar facturas tardías. Aditiva e idempotente: no borra ni reescribe datos.
 ALTER TABLE hot_click_empresa_cuenta_onvo_tb ADD COLUMN IF NOT EXISTS fee_enviado_pct NUMERIC(5,2);
 ALTER TABLE hot_click_empresa_cuenta_onvo_tb ADD COLUMN IF NOT EXISTS fee_enviado_en TIMESTAMP;
@@ -29,7 +29,12 @@ CREATE TABLE IF NOT EXISTS hot_click_pedido_retencion_onvo_tb (
     id_retencion BIGSERIAL PRIMARY KEY,
     fk_id_pedido BIGINT NOT NULL,
     onvo_account_id VARCHAR(100) NOT NULL,
+    onvo_session_id VARCHAR(100),
+    estado VARCHAR(12) NOT NULL DEFAULT 'RETENIDA',
     fee_pct NUMERIC(5,2) NOT NULL,
     creado_en TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_retencion_onvo_pedido ON hot_click_pedido_retencion_onvo_tb (fk_id_pedido);
+CREATE INDEX IF NOT EXISTS ix_pedido_retencion_onvo_sesion ON hot_click_pedido_retencion_onvo_tb (onvo_session_id);
+-- Un solo enlace de pago abierto por negocio, también ante altas simultáneas.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_enlace_pago_abierto_empresa ON hot_click_enlace_pago_onvo_tb (fk_id_empresa) WHERE estado = 'CREADO';

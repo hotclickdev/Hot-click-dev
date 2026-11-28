@@ -76,7 +76,7 @@ public class PaymentService {
         PaymentSession session;
         try {
             session = providerFactory.get(provider)
-                .crearSesion(CheckoutGrupoFactory.paraCobro(principal, grupo.totalCobro()), usuario);
+                .crearSesion(CheckoutGrupoFactory.paraCobro(principal, grupo.totalCobro(), grupo.pedidos()), usuario);
         } catch (RuntimeException e) {
             liberarGrupoTrasFalloDeSesion(grupo.pedidos(), e);
             throw e;
