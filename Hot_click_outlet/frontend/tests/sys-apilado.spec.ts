@@ -5,7 +5,7 @@ test.use(process.env.CI ? {} : { channel: 'chrome' })
 /**
  * Apilado de los elementos fijos del sistema (A4). Orden vigente:
  * flotantes 40 < header y barra inferior 50 < tarjeta de instalar 55 < aviso de actualización 60
- * < aviso de cookies 65 < hojas (cupón, salida, idioma y accesibilidad, preferencias) 70.
+ * < aviso de cookies 65 < hojas (salida, idioma y accesibilidad, preferencias) 70.
  * Lo que se comprueba es quién recibe el clic en el centro de cada control.
  */
 
@@ -24,37 +24,6 @@ async function recibeElClic(control: Locator): Promise<boolean> {
   })
 }
 
-async function sinConsentimiento(page: Page) {
-  await page.addInitScript(() => {
-    sessionStorage.setItem('hc-return-banner-dismissed', '1')
-    // 3 páginas vistas: el cupón de bienvenida se ofrece a la tercera, 2 s después.
-    sessionStorage.setItem('hc-paginas-sesion', '2')
-  })
-}
-
-for (const [nombre, ancho, alto] of [['390', 390, 844], ['1440', 1440, 900]] as const) {
-  test.describe(`Cupón y aviso de cookies a la vez (${nombre})`, () => {
-    test.use({ viewport: { width: ancho, height: alto } })
-
-    test('el aviso de cookies no tapa la hoja del cupón', async ({ page }) => {
-      test.setTimeout(60_000)
-      await apiVacia(page)
-      await sinConsentimiento(page)
-      await page.goto('/', { waitUntil: 'domcontentloaded' })
-
-      const campo = page.getByPlaceholder('tu@correo.com')
-      await expect(campo).toBeVisible({ timeout: 15_000 })
-      // El aviso sale a los 12 s: con la hoja ya abierta no puede quedar encima.
-      const aviso = page.getByRole('region', { name: /cookies/i })
-      await expect(aviso).toBeVisible({ timeout: 20_000 })
-
-      expect(await recibeElClic(campo)).toBe(true)
-      expect(await recibeElClic(page.getByRole('button', { name: 'No gracias' }))).toBe(true)
-      expect(await recibeElClic(page.getByRole('button', { name: 'Recibir mi cupón' }))).toBe(true)
-    })
-  })
-}
-
 test.describe('Aviso de cookies sin hojas abiertas (390)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
@@ -63,7 +32,6 @@ test.describe('Aviso de cookies sin hojas abiertas (390)', () => {
     await apiVacia(page)
     await page.addInitScript(() => {
       sessionStorage.setItem('hc-return-banner-dismissed', '1')
-      localStorage.setItem('hc-promo-seen', String(Date.now()))
     })
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     const aviso = page.getByRole('region', { name: /cookies/i })
@@ -82,7 +50,6 @@ test.describe('Hojas contra flotantes y barra inferior (390)', () => {
     await apiVacia(page)
     await page.addInitScript(() => {
       sessionStorage.setItem('hc-return-banner-dismissed', '1')
-      localStorage.setItem('hc-promo-seen', String(Date.now()))
       localStorage.setItem('hotclick-cookie-consent', JSON.stringify({ analytics: false, functional: true, timestamp: Date.now() }))
     })
     await page.goto('/', { waitUntil: 'domcontentloaded' })

@@ -6,9 +6,8 @@ test.use(process.env.CI ? {} : { channel: 'chrome' })
 /**
  * Checkout (P03): pasos de Figma 28:1083, 29:1248, 29:1344 a 390 y 30:2385 a 1440 sin desborde
  * horizontal ni errores de consola, campos de 15 px como el frame y tokens de color de SHELL.
- * P05: cupón válido (55:2220) e inválido (55:2284) en el paso 3 con sesión.
+ * Los cupones se retiraron: el paso 3 no ofrece campo ni botón de cupón.
  */
-type EstadoCupon = 'valida' | 'invalida'
 
 /** Catálogo oficial de división territorial con la forma que lee el cliente (lista de provincias → cantones → distritos). */
 const DIVISION_TERRITORIAL = [
@@ -19,14 +18,12 @@ const json = (body: unknown, status = 200) => ({ status, contentType: 'applicati
 
 /**
  * API simulada con la forma vigente de cada endpoint que consulta el checkout; el resto responde vacío.
- * Con `cupon` agrega sesión y la respuesta de `/cupones/validar`: 200 con el descuento si es válido, 404 si no existe.
+ * Con `conSesion` agrega una sesión de comprador.
  */
-async function preparar(page: Page, cupon?: EstadoCupon) {
+async function preparar(page: Page, conSesion = false) {
   await page.route('**/api/**', async (route) => {
     const url = route.request().url()
     if (url.includes('/division-territorial')) return route.fulfill(json({ success: true, data: DIVISION_TERRITORIAL }))
-    if (url.includes('/cupones/validar') && cupon === 'valida') return route.fulfill(json({ success: true, data: { descuento: 10, codigo: 'HC-CUPON' } }))
-    if (url.includes('/cupones/validar')) return route.fulfill(json({ success: false, message: 'Código inválido o no disponible' }, 404))
     return route.fulfill(json({ success: true, data: [] }))
   })
   await page.addInitScript((conSesion) => {
@@ -37,12 +34,11 @@ async function preparar(page: Page, cupon?: EstadoCupon) {
       }))
     }
     localStorage.setItem('hotclick-cookie-consent', JSON.stringify({ analytics: false, functional: true, timestamp: Date.now() }))
-    localStorage.setItem('hc-promo-seen', String(Date.now()))
     localStorage.setItem('hotclick-cart', JSON.stringify({
       state: { items: [{ id: 1, nombre: 'Mouse', precio: 5000, cantidad: 1, stock: 4 }], cartUpdatedAt: Date.now() },
       version: 0,
     }))
-  }, Boolean(cupon))
+  }, conSesion)
 }
 
 /** Campos de texto y selects visibles; `esperados` = cuántos tiene que haber (en móvil el paso 3 no tiene ninguno). */
@@ -96,36 +92,20 @@ for (const ancho of [390, 1440]) {
 }
 
 for (const ancho of [390, 1440]) {
-  for (const cupon of ['valida', 'invalida'] as const) {
-    test(`cupón ${cupon} a ${ancho}: estado del campo, totales y sin desborde`, async ({ page }) => {
-      const errores: string[] = []
-      // El 404 de /cupones/validar es parte del escenario «inválida»: Chrome lo registra como error de recurso.
-      page.on('console', (m) => { if (m.type() === 'error' && m.location().url.includes('/api/cupones/validar') === false) errores.push(m.text()) })
-      page.on('pageerror', (e) => errores.push(e.message))
-      const movil = ancho === 390
-      await preparar(page, cupon)
-      await page.setViewportSize({ width: ancho, height: movil ? 844 : 900 })
-      await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
-      await llenarDatosYEntrega(page, movil, true)
-      // En escritorio el campo va dentro del despliegue «Agregar cupón» del resumen; en móvil está en el paso 3.
-      // Las gift cards ya no existen: no hay campo de tarjeta de regalo ni sus textos, solo el cupón.
-      await page.getByRole('button', { name: movil ? '¿Tenés un cupón?' : 'Agregar cupón' }).click()
-      const campo = page.getByLabel('Código de cupón')
-      await campo.fill('HC-CUPON')
-      await campo.press('Enter')
-      await expect(page.getByText(/tarjeta de regalo|gift card/i)).toHaveCount(0)
-
-      if (cupon === 'valida') {
-        await expect(page.getByText('Cupón válido')).toBeVisible()
-        await expect(page.getByRole('button', { name: 'Quitar' })).toBeVisible()
-      } else {
-        const alerta = page.getByRole('alert').filter({ hasText: 'Código inválido o no disponible' })
-        await expect(alerta).toBeVisible()
-        await expect(alerta).toHaveCSS('background-color', await colorDeToken(page, '--hc-danger-bg', 'backgroundColor'))
-        await expect(page.getByRole('button', { name: 'Quitar' })).toHaveCount(0)
-      }
-      await sinDesborde(page)
-      expect(errores).toEqual([])
-    })
-  }
+  test(`checkout con sesión a ${ancho}: los cupones se retiraron, no hay campo ni botón de cupón`, async ({ page }) => {
+    const errores: string[] = []
+    page.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()) })
+    page.on('pageerror', (e) => errores.push(e.message))
+    const movil = ancho === 390
+    await preparar(page, true)
+    await page.setViewportSize({ width: ancho, height: movil ? 844 : 900 })
+    await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
+    await llenarDatosYEntrega(page, movil, true)
+    await expect(page.getByRole('checkbox').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /cup[oó]n/i })).toHaveCount(0)
+    await expect(page.getByLabel(/cup[oó]n/i)).toHaveCount(0)
+    await expect(page.getByText(/tarjeta de regalo|gift card/i)).toHaveCount(0)
+    await sinDesborde(page)
+    expect(errores).toEqual([])
+  })
 }

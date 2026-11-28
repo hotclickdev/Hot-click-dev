@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/flotantes/flotantesHelpers'
 import SearchPanel from '@/components/ui/SearchPanel'
 import ExitIntentModal from '@/components/ui/ExitIntentModal'
-import PromoWelcomePopup from '@/components/ui/PromoWelcomePopup'
 import ReturnVisitorBanner from '@/components/ui/ReturnVisitorBanner'
 
 /** La búsqueda por foto tiene su propia pantalla (Figma de CAT, ruta `/buscar/foto`). */
@@ -125,7 +124,6 @@ export default function MainLayout(props: MainLayoutProps) {
       {barraInferior && <BarraInferior />}
       <SearchPanel />
       <ExitIntentModal />
-      <PromoWelcomePopup />
     </div>
   )
 }

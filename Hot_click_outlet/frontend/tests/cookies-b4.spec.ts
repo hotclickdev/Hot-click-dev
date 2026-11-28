@@ -15,12 +15,10 @@ async function apiVacia(page: Page) {
   )
 }
 
-async function sinConsentimiento(page: Page, conCupon: boolean) {
-  await page.addInitScript((mostrarCupon) => {
+async function sinConsentimiento(page: Page) {
+  await page.addInitScript(() => {
     sessionStorage.setItem('hc-return-banner-dismissed', '1')
-    if (mostrarCupon) sessionStorage.setItem('hc-paginas-sesion', '2')
-    else localStorage.setItem('hc-promo-seen', String(Date.now()))
-  }, conCupon)
+  })
 }
 
 async function abrirHome(page: Page) {
@@ -49,7 +47,7 @@ test.describe('Aviso de cookies — móvil 390', () => {
   test('la tarjeta coincide con 45:2152 y no desborda', async ({ page }) => {
     test.setTimeout(60_000)
     await apiVacia(page)
-    await sinConsentimiento(page, false)
+    await sinConsentimiento(page)
     await abrirHome(page)
     const medida = await caja(page)
     dentroDeUnPx(medida.x, TARJETA.x)
@@ -63,7 +61,7 @@ test.describe('Aviso de cookies — móvil 390', () => {
   test('Solo esenciales guarda y oculta el aviso', async ({ page }) => {
     test.setTimeout(60_000)
     await apiVacia(page)
-    await sinConsentimiento(page, false)
+    await sinConsentimiento(page)
     const aviso = await abrirHome(page)
     await page.getByRole('button', { name: 'Solo esenciales' }).click()
     await expect(aviso).toHaveCount(0)
@@ -74,7 +72,7 @@ test.describe('Aviso de cookies — móvil 390', () => {
   test('Aceptar todo guarda y oculta el aviso', async ({ page }) => {
     test.setTimeout(60_000)
     await apiVacia(page)
-    await sinConsentimiento(page, false)
+    await sinConsentimiento(page)
     const aviso = await abrirHome(page)
     await page.getByRole('button', { name: 'Aceptar todo' }).click()
     await expect(aviso).toHaveCount(0)
@@ -85,7 +83,7 @@ test.describe('Aviso de cookies — móvil 390', () => {
   test('Configurar abre la hoja y Guardar preferencias persiste', async ({ page }) => {
     test.setTimeout(60_000)
     await apiVacia(page)
-    await sinConsentimiento(page, false)
+    await sinConsentimiento(page)
     await abrirHome(page)
     await page.getByRole('button', { name: 'Configurar' }).click()
     const hoja = page.getByRole('dialog', { name: 'Preferencias de cookies' })
@@ -96,23 +94,6 @@ test.describe('Aviso de cookies — móvil 390', () => {
     const guardado = await page.evaluate(() => localStorage.getItem('hotclick-cookie-consent') ?? '')
     expect(JSON.parse(guardado).analytics).toBe(true)
   })
-
-  test('el aviso no tapa el cupón', async ({ page }) => {
-    test.setTimeout(60_000)
-    await apiVacia(page)
-    await sinConsentimiento(page, true)
-    await page.goto('/', { waitUntil: 'domcontentloaded' })
-    const campo = page.getByPlaceholder('tu@correo.com')
-    await expect(campo).toBeVisible({ timeout: 15_000 })
-    const aviso = page.getByRole('region', { name: 'Usamos cookies para mejorar tu experiencia' })
-    await expect(aviso).toBeVisible({ timeout: 20_000 })
-    const recibe = await campo.evaluate((el) => {
-      const r = el.getBoundingClientRect()
-      const encima = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)
-      return encima === el || el.contains(encima)
-    })
-    expect(recibe).toBe(true)
-  })
 })
 
 test.describe('Aviso de cookies — 1440 sin frame', () => {
@@ -121,7 +102,7 @@ test.describe('Aviso de cookies — 1440 sin frame', () => {
   test('el aviso no desborda y no se afirma una coordenada', async ({ page }) => {
     test.setTimeout(60_000)
     await apiVacia(page)
-    await sinConsentimiento(page, false)
+    await sinConsentimiento(page)
     await abrirHome(page)
     const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(desborde).toBeLessThanOrEqual(0)

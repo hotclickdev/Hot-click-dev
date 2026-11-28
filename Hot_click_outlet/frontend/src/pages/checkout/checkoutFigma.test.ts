@@ -6,7 +6,6 @@ import { opcionesEnvio, paquetesDesdeItems } from './checkoutHelpers'
 import type { ItemCheckout } from './checkoutHelpers'
 import { digitosTelefono, formatoTelefonoCampo, telefonoDesdeCampo } from './pasosCheckoutHelpers'
 import { cantonesDeProvincia, direccionCompleta, esDestinoGAM, PROVINCIAS_CR } from './ubicacionesCR'
-import { totalesConCodigos } from './useCodigosPedido'
 
 /** Almacenamiento en memoria: el entorno de pruebas es Node, sin `localStorage` ni `sessionStorage`. */
 function almacenamientoEnMemoria() {
@@ -50,26 +49,14 @@ describe('teléfono del checkout', () => {
   })
 })
 
-describe('totales con cupón', () => {
-  it('aplica el porcentaje al subtotal y suma el envío', () => {
-    expect(totalesConCodigos(100000, 12000, 10)).toEqual({ descuento: 10000, total: 102000 })
-    expect(totalesConCodigos(100000, 12000, 0)).toEqual({ descuento: 0, total: 112000 })
-  })
-})
-
 describe('store de extras del pedido', () => {
   beforeEach(() => usePedidoExtrasStore.getState().reiniciar())
 
-  it('conserva notas y cupón y se reinicia', () => {
-    const s = usePedidoExtrasStore.getState()
-    s.setNotas('timbre roto')
-    s.setCuponCodigo('BIENVENIDA')
-    s.setCuponDescuento(15)
+  it('conserva las notas y se reinicia', () => {
+    usePedidoExtrasStore.getState().setNotas('timbre roto')
     expect(usePedidoExtrasStore.getState().notas).toBe('timbre roto')
-    expect(usePedidoExtrasStore.getState().cuponDescuento).toBe(15)
     usePedidoExtrasStore.getState().reiniciar()
     expect(usePedidoExtrasStore.getState().notas).toBe('')
-    expect(usePedidoExtrasStore.getState().cuponCodigo).toBeNull()
   })
 })
 
