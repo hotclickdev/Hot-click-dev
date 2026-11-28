@@ -82,8 +82,7 @@ public class QuincenaAdminService {
         String clave = pedido.getEmpresaId() + "|" + pedido.getFechaPedido().toLocalDate();
         Acumulado acumulado = grupos.computeIfAbsent(clave, k -> nuevo(pedido, efectivo));
         long total = pedido.getTotalPedido() != null ? pedido.getTotalPedido() : 0L;
-        long envio = pedido.getCostoEnvio() != null ? pedido.getCostoEnvio() : 0L;
-        Liquidacion liquidacion = aggregator.liquidar(pedido.getEmpresaId(), total, envio);
+        Liquidacion liquidacion = aggregator.liquidarPedido(pedido);
         boolean esEfectivo = esEfectivo(pedido.getMetodoPago());
         acumulado.productos += Math.max(0L, total - liquidacion.envio());
         acumulado.comision += liquidacion.detalle().resultado().totalComision();
@@ -92,7 +91,11 @@ public class QuincenaAdminService {
         acumulado.pasarela += liquidacion.detalle().resultado().comisionGw();
         acumulado.operar += liquidacion.detalle().resultado().comisionSaas();
         if (esEfectivo) acumulado.efectivoPedidos += total;
-        else acumulado.netoBanco += liquidacion.neto();
+        else if (liquidacion.retenidoOnvo()) {
+            // ONVO ya retuvo la comisión y le paga el neto al negocio: no se gira ni se descuenta otra vez.
+            acumulado.retenidoOnvo += liquidacion.detalle().resultado().totalComision();
+            acumulado.netoOnvo += liquidacion.neto();
+        } else acumulado.netoBanco += liquidacion.neto();
         acumulado.plan = liquidacion.detalle().plan();
         acumulado.porcentaje = liquidacion.detalle().porcentaje();
     }
@@ -121,6 +124,8 @@ public class QuincenaAdminService {
         mapa.put("porcentaje", acumulado.porcentaje);
         mapa.put("productos", acumulado.productos);
         mapa.put("comision", acumulado.comision);
+        mapa.put("retenidoOnvo", acumulado.retenidoOnvo);
+        mapa.put("netoOnvo", acumulado.netoOnvo);
         mapa.put("envio", acumulado.envio);
         mapa.put("neto", acumulado.neto);
         mapa.put("pasarela", acumulado.pasarela);
@@ -182,6 +187,8 @@ public class QuincenaAdminService {
         private long operar;
         private long efectivoPedidos;
         private long netoBanco;
+        private long retenidoOnvo;
+        private long netoOnvo;
         private Long efectivoAnotado;
         private Cuenta cuenta = new Cuenta(false, false);
     }

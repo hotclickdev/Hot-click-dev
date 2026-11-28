@@ -4,7 +4,11 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Usuario;
 import com.hotclick.service.OnvoService;
+import com.hotclick.model.PedidoRetencionOnvo;
+import com.hotclick.repository.PedidoRetencionOnvoRepository;
+import com.hotclick.service.onvo.cuenta.ComisionOnvoSyncService;
 import com.hotclick.service.onvo.cuenta.CuentaOnvoService;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -54,14 +58,60 @@ class OnvoOnBehalfOfTest {
     }
 
     @Test
-    @DisplayName("Cuenta ACTIVA → sesión con onBehalfOf")
+    @DisplayName("Cuenta ACTIVA con % sincronizado → sesión con onBehalfOf y marca de retención del pedido")
     void activaUsaOnBehalfOf() throws Exception {
         OnvoService onvo = onvoListo();
         CuentaOnvoService cuentas = mock(CuentaOnvoService.class);
         when(cuentas.onBehalfOfPara(any())).thenReturn("cl_abc123");
-        Usuario u = new Usuario();
-        provider(onvo, cuentas).crearSesion(pedido(), u);
+        ComisionOnvoSyncService sync = mock(ComisionOnvoSyncService.class);
+        when(sync.feeVigente(7L)).thenReturn(new BigDecimal("9.00"));
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        OnvoPaymentProvider p = provider(onvo, cuentas);
+        ReflectionTestUtils.setField(p, "comisionSync", sync);
+        ReflectionTestUtils.setField(p, "retencionRepo", retencion);
+        p.crearSesion(pedido(), new Usuario());
         verify(onvo).crearCheckoutSession(eq(1000), anyString(), anyString(), anyString(), any(), anyMap(), eq("cl_abc123"));
+        ArgumentCaptor<PedidoRetencionOnvo> cap = ArgumentCaptor.forClass(PedidoRetencionOnvo.class);
+        verify(retencion).save(cap.capture());
+        assertThat(cap.getValue().getPedidoId()).isEqualTo(1L);
+        assertThat(cap.getValue().getFeePct()).isEqualByComparingTo("9.00");
+    }
+
+    @Test
+    @DisplayName("Cuenta ACTIVA pero % no sincronizado → cobro a la plataforma, sin marca (HotClick descuenta como siempre)")
+    void activaSinPorcentajeVigente() throws Exception {
+        OnvoService onvo = onvoListo();
+        CuentaOnvoService cuentas = mock(CuentaOnvoService.class);
+        when(cuentas.onBehalfOfPara(any())).thenReturn("cl_abc123");
+        ComisionOnvoSyncService sync = mock(ComisionOnvoSyncService.class);
+        when(sync.feeVigente(7L)).thenReturn(null);
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        OnvoPaymentProvider p = provider(onvo, cuentas);
+        ReflectionTestUtils.setField(p, "comisionSync", sync);
+        ReflectionTestUtils.setField(p, "retencionRepo", retencion);
+        p.crearSesion(pedido(), new Usuario());
+        verify(onvo, never()).crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap(), anyString());
+        verify(retencion, never()).save(any());
+        verify(retencion).borrarPorPedido(1L);
+    }
+
+    @Test
+    @DisplayName("Si ONVO falla al crear la sesión, la marca de retención se borra")
+    void falloBorraMarca() {
+        OnvoService onvo = onvoListo();
+        when(onvo.crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap(), anyString()))
+            .thenThrow(new IllegalStateException("x"));
+        CuentaOnvoService cuentas = mock(CuentaOnvoService.class);
+        when(cuentas.onBehalfOfPara(any())).thenReturn("cl_abc123");
+        ComisionOnvoSyncService sync = mock(ComisionOnvoSyncService.class);
+        when(sync.feeVigente(7L)).thenReturn(new BigDecimal("9.00"));
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        OnvoPaymentProvider p = provider(onvo, cuentas);
+        ReflectionTestUtils.setField(p, "comisionSync", sync);
+        ReflectionTestUtils.setField(p, "retencionRepo", retencion);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> p.crearSesion(pedido(), new Usuario()))
+            .isInstanceOf(IllegalStateException.class);
+        verify(retencion, atLeastOnce()).borrarPorPedido(1L);
     }
 
     @Test

@@ -22,3 +22,14 @@ CREATE TABLE IF NOT EXISTS hot_click_enlace_pago_onvo_tb (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_enlace_pago_session ON hot_click_enlace_pago_onvo_tb (onvo_session_id);
 CREATE INDEX IF NOT EXISTS ix_enlace_pago_empresa_estado ON hot_click_enlace_pago_onvo_tb (fk_id_empresa, estado);
+
+-- Pedidos cobrados en ONVO a nombre de una cuenta conectada con su % ya sincronizado: ONVO retiene la comisión
+-- de HotClick (marketplaceAppFee), así que HotClick no la vuelve a descontar ni acredita el neto al wallet.
+CREATE TABLE IF NOT EXISTS hot_click_pedido_retencion_onvo_tb (
+    id_retencion BIGSERIAL PRIMARY KEY,
+    fk_id_pedido BIGINT NOT NULL,
+    onvo_account_id VARCHAR(100) NOT NULL,
+    fee_pct NUMERIC(5,2) NOT NULL,
+    creado_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_retencion_onvo_pedido ON hot_click_pedido_retencion_onvo_tb (fk_id_pedido);

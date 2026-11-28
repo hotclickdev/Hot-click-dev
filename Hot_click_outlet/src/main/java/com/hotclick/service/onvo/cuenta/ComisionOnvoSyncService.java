@@ -127,6 +127,24 @@ public class ComisionOnvoSyncService {
         return cambios;
     }
 
+    /**
+     * Porcentaje que ONVO retendrá en un cobro a nombre de la cuenta conectada, o null si no se puede garantizar:
+     * intenta sincronizar y solo devuelve el valor si coincide con el efectivo y no hay pendiente. Con null el cobro
+     * va a nombre de la plataforma y HotClick descuenta la comisión como siempre (nunca se cobra dos veces).
+     */
+    public BigDecimal feeVigente(Long empresaId) {
+        sincronizarSeguro(empresaId);
+        try {
+            Empresa e = empresaRepository.findById(empresaId).orElse(null);
+            EmpresaCuentaOnvo c = repo.findByEmpresaId(empresaId).orElse(null);
+            if (e == null || c == null || c.getFeeEnviadoPct() == null || c.isFeePendiente()) return null;
+            BigDecimal efectivo = comision.porcentajeEfectivo(e).setScale(2, RoundingMode.HALF_UP);
+            return c.getFeeEnviadoPct().compareTo(efectivo) == 0 ? c.getFeeEnviadoPct() : null;
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
     public Estado estado(Long empresaId) {
         Empresa e = empresaRepository.findById(empresaId)
             .orElseThrow(() -> new IllegalArgumentException("Empresa no encontrada"));
