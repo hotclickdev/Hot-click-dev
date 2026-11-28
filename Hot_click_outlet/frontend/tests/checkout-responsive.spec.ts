@@ -109,7 +109,7 @@ for (const ancho of [390, 1440]) {
       await llenarDatosYEntrega(page, movil, true)
       // En escritorio el campo va dentro del despliegue «Agregar cupón» del resumen; en móvil está en el paso 3.
       // Las gift cards ya no existen: no hay campo de tarjeta de regalo ni sus textos, solo el cupón.
-      if (!movil) await page.getByRole('button', { name: 'Agregar cupón' }).click()
+      await page.getByRole('button', { name: movil ? '¿Tenés un cupón?' : 'Agregar cupón' }).click()
       const campo = page.getByLabel('Código de cupón')
       await campo.fill('HC-CUPON')
       await campo.press('Enter')
