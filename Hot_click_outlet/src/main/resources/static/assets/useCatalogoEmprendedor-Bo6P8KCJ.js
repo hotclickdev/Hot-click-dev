@@ -1,0 +1,1 @@
+import{t as e}from"./useCatalogoVendedor-wnJI_KcM.js";function t(){return e()}export{t};
