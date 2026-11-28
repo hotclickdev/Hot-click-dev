@@ -4,7 +4,7 @@ import { facturaNegocioService, datosDe, type FacturaNegocio, type ResumenFactur
 import { sePuedeSubir, textoAvisoPanel } from '@/utils/facturaNegocio'
 
 /** Aviso del panel mientras el negocio debe la factura de la quincena a HotClick. */
-export default function AvisoFacturaHotclick({ to, className = '' }: { to: string; className?: string }) {
+export default function AvisoFacturaHotclick({ to, className = '' }: Readonly<{ to: string; className?: string }>) {
   const [pendiente, setPendiente] = useState<FacturaNegocio | null>(null)
 
   useEffect(() => {
@@ -21,13 +21,13 @@ export default function AvisoFacturaHotclick({ to, className = '' }: { to: strin
 
   if (!pendiente) return null
   return (
-    <div role="region" aria-label="Factura a HotClick"
+    <section aria-label="Factura a HotClick"
       className={`flex w-full flex-wrap items-center gap-3 rounded-[14px] border border-hc-n-200 bg-hc-surface p-4 ${className}`}>
       <p className="min-w-0 flex-1 text-sm font-bold text-hc-n-900">{textoAvisoPanel(pendiente.diasRestantes)}</p>
       <Link to={to}
         className="inline-flex h-12 items-center justify-center rounded-xl bg-hc-primary px-4 text-[15px] font-semibold text-white">
         Subir factura
       </Link>
-    </div>
+    </section>
   )
 }

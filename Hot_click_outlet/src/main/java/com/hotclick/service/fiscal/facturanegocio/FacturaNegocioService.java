@@ -92,7 +92,7 @@ public class FacturaNegocioService {
         List<FacturaNegocio> registros = repo.findByEmpresaIdOrderByPeriodoDesdeDesc(e.getId(), PageRequest.of(0, MAX_HISTORIAL))
             .getContent();
         List<Map<String, Object>> historial = FacturaNegocioVista.lista(registros, hoy, tradicional);
-        m.put("pendiente", FacturaNegocioVista.primeraPorSubir(historial, ESTADOS_SUBIBLES));
+        m.put("pendiente", FacturaNegocioVista.primeraPorSubir(historial, ESTADOS_SUBIBLES).orElse(null));
         m.put("historial", historial);
         Periodo actual = FacturaNegocioCalculo.quincenaDe(hoy);
         FacturaNegocioMontoService.Monto enCurso = montos.calcular(e.getId(), actual, config.reglasFactura().base());
@@ -117,12 +117,7 @@ public class FacturaNegocioService {
      */
     public Map<String, Object> subirXml(Long empresaId, Long facturaId, byte[] xml, byte[] respuestaHacienda) {
         Empresa e = cargarEmpresa(empresaId);
-        FacturaNegocio f = repo.findByIdAndEmpresaId(facturaId, e.getId())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada"));
-        if (FacturaNegocio.NO_APLICA.equals(f.getEstado())) throw new IllegalStateException(MENSAJE_NO_APLICA);
-        if (!ESTADOS_SUBIBLES.contains(f.getEstado())) {
-            throw new IllegalStateException("Esta quincena ya tiene una factura aceptada.");
-        }
+        FacturaNegocio f = cargarSubible(e.getId(), facturaId);
         if (!rateLimiter.tryAcquireEstricto("empresa:" + e.getId() + ":factura-negocio:xml", MAX_SUBIDAS_DIA, VENTANA_SEG)) {
             throw new LimiteSubidasException();
         }
@@ -132,25 +127,18 @@ public class FacturaNegocioService {
             clave -> repo.existsByClaveXmlAndIdNot(clave, f.getId())));
         List<String> errores = new ArrayList<>(r.errores());
         List<String> avisos = new ArrayList<>(r.avisos());
-        String estadoRespuesta = null;
-        if (respuestaHacienda != null && respuestaHacienda.length > 0) {
-            MensajeHaciendaValidador.Resultado mh = MensajeHaciendaValidador.validar(respuestaHacienda, r.clave());
-            estadoRespuesta = mh.estado();
-            if (!mh.aceptado()) errores.add(mh.error());
-        } else {
-            avisos.add(AVISO_SIN_RESPUESTA);
-        }
+        boolean conRespuesta = respuestaHacienda != null && respuestaHacienda.length > 0;
+        String estadoRespuesta = revisarRespuesta(conRespuesta ? respuestaHacienda : null, r.clave(), errores, avisos);
         boolean aceptada = errores.isEmpty();
         String base = "facturas-negocio/" + e.getId() + "/" + f.getId() + "-" + System.currentTimeMillis();
         String xmlPath = guardar(xml, base + ".xml");
-        String respuestaPath = respuestaHacienda != null && respuestaHacienda.length > 0
-            ? guardar(respuestaHacienda, base + "-respuesta.xml") : null;
+        String respuestaPath = conRespuesta ? guardar(respuestaHacienda, base + "-respuesta.xml") : null;
 
         LocalDateTime ahora = LocalDateTime.now(Constants.ZONA_CR);
         f.setEstado(aceptada ? FacturaNegocio.ACEPTADA : FacturaNegocio.RECHAZADA);
         // La clave solo se fija al aceptar: el índice único impide usar la misma factura dos veces.
         f.setClaveXml(aceptada ? r.clave() : null);
-        f.setCedulaEmisor(r.cedulaEmisor() != null && r.cedulaEmisor().length() <= 12 ? r.cedulaEmisor() : null);
+        f.setCedulaEmisor(cedulaCorta(r.cedulaEmisor()));
         f.setTotalFacturaCrc(r.totalComprobanteCrc());
         f.setTotalIvaCrc(r.totalImpuestoCrc());
         f.setXmlPath(xmlPath);
@@ -164,6 +152,31 @@ public class FacturaNegocioService {
         auditoria.registrar("FACTURA_NEGOCIO_SUBIDA", "FACTURA_NEGOCIO", guardada.getId(), e.getId(), guardada.getEstado());
         if (aceptada) eventos.publishEvent(new FacturaNegocioRecibidaEvent(e.getId()));
         return FacturaNegocioVista.negocio(guardada, LocalDate.now(Constants.ZONA_CR), tradicional());
+    }
+
+    private FacturaNegocio cargarSubible(Long empresaId, Long facturaId) {
+        FacturaNegocio f = repo.findByIdAndEmpresaId(facturaId, empresaId)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada"));
+        if (FacturaNegocio.NO_APLICA.equals(f.getEstado())) throw new IllegalStateException(MENSAJE_NO_APLICA);
+        if (!ESTADOS_SUBIBLES.contains(f.getEstado())) {
+            throw new IllegalStateException("Esta quincena ya tiene una factura aceptada.");
+        }
+        return f;
+    }
+
+    /** Respuesta de Hacienda opcional: si viene, tiene que decir aceptado y ser de esta clave; si no, queda un aviso. */
+    static String revisarRespuesta(byte[] respuesta, String clave, List<String> errores, List<String> avisos) {
+        if (respuesta == null) {
+            avisos.add(AVISO_SIN_RESPUESTA);
+            return null;
+        }
+        MensajeHaciendaValidador.Resultado mh = MensajeHaciendaValidador.validar(respuesta, clave);
+        if (!mh.aceptado()) errores.add(mh.error());
+        return mh.estado();
+    }
+
+    private static String cedulaCorta(String cedula) {
+        return cedula != null && cedula.length() <= 12 ? cedula : null;
     }
 
     /**

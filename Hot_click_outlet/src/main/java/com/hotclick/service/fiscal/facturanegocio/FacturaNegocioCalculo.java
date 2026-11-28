@@ -121,6 +121,7 @@ public final class FacturaNegocioCalculo {
     }
 
     static boolean habil(LocalDate d) {
-        return d.getDayOfWeek() != DayOfWeek.SATURDAY && d.getDayOfWeek() != DayOfWeek.SUNDAY;
+        DayOfWeek dia = d.getDayOfWeek();
+        return !DayOfWeek.SATURDAY.equals(dia) && !DayOfWeek.SUNDAY.equals(dia);
     }
 }

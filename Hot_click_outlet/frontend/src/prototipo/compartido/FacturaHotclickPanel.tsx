@@ -13,7 +13,7 @@ const TONO: Record<string, string> = {
   azul: 'bg-hc-blue-50 text-hc-blue-600',
 }
 
-function ChipEstado({ estado }: { estado: string }) {
+function ChipEstado({ estado }: Readonly<{ estado: string }>) {
   return (
     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${TONO[tonoEstado(estado)]}`}>
       {etiquetaEstado(estado)}
@@ -21,7 +21,7 @@ function ChipEstado({ estado }: { estado: string }) {
   )
 }
 
-function Desglose({ lineas }: { lineas: LineaDesglose[] }) {
+function Desglose({ lineas }: Readonly<{ lineas: LineaDesglose[] }>) {
   if (lineas.length === 0) return <p className="text-sm text-hc-n-600">Sin ventas de productos en esta quincena.</p>
   return (
     <div className="overflow-x-auto">
@@ -46,10 +46,10 @@ function Desglose({ lineas }: { lineas: LineaDesglose[] }) {
   )
 }
 
-function Resultado({ f }: { f: FacturaNegocio }) {
+function Resultado({ f }: Readonly<{ f: FacturaNegocio }>) {
   if (f.errores.length === 0 && f.avisos.length === 0) return null
   return (
-    <div className="flex flex-col gap-2" role="status">
+    <div className="flex flex-col gap-2" aria-live="polite">
       {f.errores.length > 0 && (
         <ul className="list-disc space-y-1 pl-5 text-sm text-hc-primary">
           {f.errores.map((e) => <li key={e}>{e}</li>)}
@@ -137,7 +137,7 @@ export default function FacturaHotclickPanel() {
                 <span className="font-semibold text-hc-n-900">Respuesta de Hacienda (opcional)</span>
                 <input type="file" accept=".xml,application/xml,text/xml" onChange={(ev) => setRespuesta(ev.target.files?.[0] ?? null)} />
               </label>
-              {mensaje && <p role="status" className="text-sm text-hc-n-900">{mensaje}</p>}
+              {mensaje && <output className="block text-sm text-hc-n-900">{mensaje}</output>}
               <div><button type="submit" className={BOTON} disabled={enviando}>{enviando ? 'Revisando…' : 'Subir factura'}</button></div>
             </form>
           )}

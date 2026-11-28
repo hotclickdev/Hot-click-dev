@@ -66,12 +66,13 @@ public final class FacturaNegocioVista {
         return r;
     }
 
-    /** La más reciente que todavía se puede subir (PENDIENTE, RECHAZADA o VENCIDA), o null. */
-    public static Map<String, Object> primeraPorSubir(List<Map<String, Object>> vistas, java.util.Set<String> estados) {
+    /** La más reciente que todavía se puede subir (PENDIENTE, RECHAZADA o VENCIDA). */
+    public static java.util.Optional<Map<String, Object>> primeraPorSubir(List<Map<String, Object>> vistas,
+                                                                        java.util.Set<String> estados) {
         for (Map<String, Object> v : vistas) {
-            if (estados.contains(String.valueOf(v.get("estado")))) return v;
+            if (estados.contains(String.valueOf(v.get("estado")))) return java.util.Optional.of(v);
         }
-        return null;
+        return java.util.Optional.empty();
     }
 
     /** Vista ADMIN de una página: el nombre del negocio sale de un mapa ya cargado en lote (sin consulta por fila). */

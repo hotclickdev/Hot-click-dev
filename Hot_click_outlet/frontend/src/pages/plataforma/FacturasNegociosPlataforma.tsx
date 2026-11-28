@@ -12,7 +12,7 @@ function mensajeDe(err: unknown, porDefecto: string): string {
   return (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? porDefecto
 }
 
-function Detalle({ f, onCambio }: { f: FacturaNegocioAdmin; onCambio: (f: FacturaNegocioAdmin) => void }) {
+function Detalle({ f, onCambio }: Readonly<{ f: FacturaNegocioAdmin; onCambio: (f: FacturaNegocioAdmin) => void }>) {
   const [ocupado, setOcupado] = useState(false)
   const [mensaje, setMensaje] = useState<string | null>(null)
 
@@ -56,7 +56,7 @@ function Detalle({ f, onCambio }: { f: FacturaNegocioAdmin; onCambio: (f: Factur
         </div>
       )}
       {f.avisos.map((a) => <p key={a} className="text-sm text-hc-n-600">{a}</p>)}
-      {mensaje && <p role="status" className="text-sm text-hc-n-900">{mensaje}</p>}
+      {mensaje && <output className="block text-sm text-hc-n-900">{mensaje}</output>}
       <div className="flex flex-wrap gap-2">
         <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado || f.revisada} onClick={() => accion('revisada')}>Marcar revisada</button>
         <button type="button" className={BOTON_SECUNDARIO} disabled={ocupado} onClick={() => accion('recordar')}>Recordar</button>
@@ -107,14 +107,14 @@ export default function FacturasNegociosPlataforma() {
         detalle="Cada negocio inscrito y verificado le factura a HotClick sus productos de la quincena, con 7 días de plazo." />
       <div className={`${TARJETA} flex flex-wrap items-end gap-3`}>
         <label className="flex flex-col gap-1 text-xs font-semibold text-hc-n-600">
-          Estado
+          <span>Estado</span>
           <select className={INPUT} value={estado} onChange={(e) => { setEstado(e.target.value); setPagina(0) }}>
             <option value="">Todos</option>
             {ESTADOS.map((e) => <option key={e} value={e}>{etiquetaEstado(e)}</option>)}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-semibold text-hc-n-600">
-          Quincena (inicio)
+          <span>Quincena (inicio)</span>
           <input type="date" className={INPUT} value={desde} onChange={(e) => { setDesde(e.target.value); setPagina(0) }} />
         </label>
         <button type="button" className={BOTON_PRIMARIO} disabled={generando} onClick={generar}>

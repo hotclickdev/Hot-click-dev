@@ -5,7 +5,7 @@ import FacturaHotclickPanel from './FacturaHotclickPanel'
 type Pestana = 'cobro' | 'factura'
 
 /** "Mi dinero": métodos de cobro y la factura que el negocio le emite a HotClick cada quincena. */
-export default function PestanasDinero({ cobro }: { cobro: ReactNode }) {
+export default function PestanasDinero({ cobro }: Readonly<{ cobro: ReactNode }>) {
   const [params, setParams] = useSearchParams()
   const actual: Pestana = params.get('tab') === 'factura' ? 'factura' : 'cobro'
   const elegir = (p: Pestana) => setParams(p === 'factura' ? { tab: 'factura' } : {}, { replace: true })

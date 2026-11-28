@@ -33,7 +33,8 @@ export function sePuedeSubir(estado: string): boolean {
 /** Aviso del panel: "Enviá tu factura de la quincena (te quedan N días)". */
 export function textoAvisoPanel(dias: number): string {
   if (dias <= 0) return 'Enviá tu factura de la quincena (el plazo vence hoy o ya venció)'
-  return `Enviá tu factura de la quincena (te ${dias === 1 ? 'queda 1 día' : `quedan ${dias} días`})`
+  const resto = dias === 1 ? 'queda 1 día' : 'quedan ' + dias + ' días'
+  return `Enviá tu factura de la quincena (te ${resto})`
 }
 
 /** Revisa el archivo antes de subirlo: XML y como máximo 1 MB. */

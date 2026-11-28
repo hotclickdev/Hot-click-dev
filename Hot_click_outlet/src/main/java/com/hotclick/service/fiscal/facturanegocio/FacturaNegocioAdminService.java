@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 public class FacturaNegocioAdminService {
 
     static final int MAX_PAGINA = 100;
+    static final String ENTIDAD = "FACTURA_NEGOCIO";
     static final Set<String> ESTADOS = Set.of(FacturaNegocio.PENDIENTE, FacturaNegocio.RECIBIDA, FacturaNegocio.ACEPTADA,
         FacturaNegocio.RECHAZADA, FacturaNegocio.VENCIDA, FacturaNegocio.NO_APLICA);
     static final Set<String> RECORDABLES = Set.of(FacturaNegocio.PENDIENTE, FacturaNegocio.RECHAZADA, FacturaNegocio.VENCIDA);
@@ -68,7 +69,7 @@ public class FacturaNegocioAdminService {
         String filtro = estado == null || estado.isBlank() ? null : estado.trim().toUpperCase(java.util.Locale.ROOT);
         if (filtro != null && !ESTADOS.contains(filtro)) throw new IllegalArgumentException("Estado inválido.");
         Page<FacturaNegocio> page = repo.buscarAdmin(filtro, desde,
-            PageRequest.of(Math.max(0, pagina), Math.min(Math.max(1, tamano), MAX_PAGINA)));
+            PageRequest.of(Math.max(0, pagina), Math.clamp(tamano, 1, MAX_PAGINA)));
         List<Long> ids = FacturaNegocioVista.empresaIds(page.getContent());
         Map<Long, String> nombres = empresas.findAllById(ids).stream()
             .collect(Collectors.toMap(Empresa::getId, FacturaNegocioAdminService::nombre, (a, b) -> a));
@@ -97,7 +98,7 @@ public class FacturaNegocioAdminService {
         f.setFechaRevision(ahora);
         f.setFechaActualizacion(ahora);
         repo.save(f);
-        auditoria.registrar("FACTURA_NEGOCIO_REVISADA", "FACTURA_NEGOCIO", f.getId(), f.getEmpresaId(), f.getEstado());
+        auditoria.registrar("FACTURA_NEGOCIO_REVISADA", ENTIDAD, f.getId(), f.getEmpresaId(), f.getEstado());
         return vista(f);
     }
 
@@ -119,7 +120,7 @@ public class FacturaNegocioAdminService {
         repo.save(f);
         telegram.notificarRecordatorioFacturaHotclick(f.getEmpresaId(),
             FacturaNegocioCalculo.diasRestantes(hoy(), f.getFechaLimite()));
-        auditoria.registrar("FACTURA_NEGOCIO_RECORDADA", "FACTURA_NEGOCIO", f.getId(), f.getEmpresaId(), f.getEstado());
+        auditoria.registrar("FACTURA_NEGOCIO_RECORDADA", ENTIDAD, f.getId(), f.getEmpresaId(), f.getEstado());
         return vista(f);
     }
 
@@ -129,7 +130,7 @@ public class FacturaNegocioAdminService {
         LocalDate dia = fecha != null ? fecha : hoy();
         Map<String, Object> r = new LinkedHashMap<>(generacion.generar(FacturaNegocioCalculo.quincenaCerrada(dia)));
         r.put("vencidas", generacion.vencer(hoy()));
-        auditoria.registrar("FACTURA_NEGOCIO_GENERADA", "FACTURA_NEGOCIO", null, null,
+        auditoria.registrar("FACTURA_NEGOCIO_GENERADA", ENTIDAD, null, null,
             r.get("desde") + ".." + r.get("hasta") + " creadas=" + r.get("creadas"));
         return r;
     }

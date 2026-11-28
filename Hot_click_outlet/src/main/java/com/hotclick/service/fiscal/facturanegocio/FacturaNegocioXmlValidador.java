@@ -26,6 +26,7 @@ public class FacturaNegocioXmlValidador {
     /** Redondeo aritmético permitido entre líneas y totales (los montos traen hasta 5 decimales). */
     static final BigDecimal TOLERANCIA_ARITMETICA = BigDecimal.ONE;
     static final String TIPO_FACTURA = "01";
+    static final String RESUMEN = "ResumenFactura";
 
     /** Lo que se espera de esta factura: quién la emite, a quién, cuánto, y cómo saber si la clave ya se usó. */
     public record Esperado(String cedulaEmisor, String cedulaReceptor, long montoCrc, long toleranciaCrc,
@@ -78,8 +79,8 @@ public class FacturaNegocioXmlValidador {
         }
 
         Totales t = revisarLineas(raiz, errores);
-        Long total = redondear(XmlSeguro.numero(raiz, "ResumenFactura", "TotalComprobante"));
-        Long iva = redondear(XmlSeguro.numero(raiz, "ResumenFactura", "TotalImpuesto"));
+        Long total = redondear(XmlSeguro.numero(raiz, RESUMEN, "TotalComprobante"));
+        Long iva = redondear(XmlSeguro.numero(raiz, RESUMEN, "TotalImpuesto"));
         revisarResumen(raiz, t, errores);
         if (total != null && Math.abs(total - esperado.montoCrc()) > Math.max(0, esperado.toleranciaCrc())) {
             errores.add("El total de la factura (₡" + total + ") no coincide con lo que te corresponde facturar "
@@ -107,7 +108,7 @@ public class FacturaNegocioXmlValidador {
             int dd = Integer.parseInt(clave.substring(3, 5));
             int mm = Integer.parseInt(clave.substring(5, 7));
             int aa = Integer.parseInt(clave.substring(7, 9));
-            LocalDate.of(2000 + aa, mm, dd);
+            if (LocalDate.of(2000 + aa, mm, dd).getYear() < 2000) errores.add("La fecha dentro de la clave no es válida.");
         } catch (DateTimeException e) {
             errores.add("La fecha dentro de la clave (DDMMAA) no es una fecha válida.");
         }
@@ -133,53 +134,60 @@ public class FacturaNegocioXmlValidador {
     record Totales(BigDecimal venta, BigDecimal descuentos, BigDecimal ventaNeta, BigDecimal impuesto, int lineas) {}
 
     static Totales revisarLineas(Element raiz, List<String> errores) {
-        BigDecimal venta = BigDecimal.ZERO;
-        BigDecimal descuentos = BigDecimal.ZERO;
-        BigDecimal neta = BigDecimal.ZERO;
-        BigDecimal impuesto = BigDecimal.ZERO;
+        Totales t = new Totales(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0);
         List<Element> lineas = XmlSeguro.hijos(XmlSeguro.hijo(raiz, "DetalleServicio"), "LineaDetalle");
         if (lineas.isEmpty()) errores.add("La factura no tiene líneas de detalle.");
         boolean faltaCabys = false;
         for (int i = 0; i < lineas.size(); i++) {
             Element l = lineas.get(i);
-            String n = "Línea " + (i + 1) + ": ";
             if (!CodigoCabys.valido(XmlSeguro.texto(l, "CodigoCABYS"))) faltaCabys = true;
-            BigDecimal cantidad = cero(XmlSeguro.numero(l, "Cantidad"));
-            BigDecimal precio = cero(XmlSeguro.numero(l, "PrecioUnitario"));
-            BigDecimal montoTotal = cero(XmlSeguro.numero(l, "MontoTotal"));
-            BigDecimal desc = BigDecimal.ZERO;
-            for (Element d : XmlSeguro.hijos(l, "Descuento")) desc = desc.add(cero(XmlSeguro.numero(d, "MontoDescuento")));
-            BigDecimal subTotal = cero(XmlSeguro.numero(l, "SubTotal"));
-            BigDecimal base = XmlSeguro.numero(l, "BaseImponible");
-            BigDecimal impLinea = BigDecimal.ZERO;
-            for (Element imp : XmlSeguro.hijos(l, "Impuesto")) {
-                BigDecimal tarifa = cero(XmlSeguro.numero(imp, "Tarifa"));
-                BigDecimal monto = cero(XmlSeguro.numero(imp, "Monto"));
-                BigDecimal esperado = (base != null ? base : subTotal).multiply(tarifa)
-                    .divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP);
-                if (difiere(esperado, monto)) {
-                    errores.add(n + "el IVA no corresponde a la tarifa (" + tarifa.stripTrailingZeros().toPlainString()
-                        + " %) sobre la base imponible.");
-                }
-                impLinea = impLinea.add(monto);
-            }
-            BigDecimal impNeto = XmlSeguro.numero(l, "ImpuestoNeto");
-            if (impNeto == null) impNeto = impLinea;
-            BigDecimal totalLinea = cero(XmlSeguro.numero(l, "MontoTotalLinea"));
-            if (difiere(cantidad.multiply(precio), montoTotal)) errores.add(n + "cantidad por precio unitario no da el monto total.");
-            if (difiere(montoTotal.subtract(desc), subTotal)) errores.add(n + "el subtotal no es el monto total menos los descuentos.");
-            if (difiere(subTotal.add(impNeto), totalLinea)) errores.add(n + "el total de la línea no es el subtotal más el impuesto.");
-            venta = venta.add(montoTotal);
-            descuentos = descuentos.add(desc);
-            neta = neta.add(subTotal);
-            impuesto = impuesto.add(impNeto);
+            t = sumar(t, revisarLinea(l, "Línea " + (i + 1) + ": ", errores));
         }
         if (faltaCabys) errores.add("Todas las líneas necesitan un código CAByS válido de 13 dígitos.");
-        return new Totales(venta, descuentos, neta, impuesto, lineas.size());
+        return t;
+    }
+
+    private static Totales sumar(Totales a, Totales b) {
+        return new Totales(a.venta().add(b.venta()), a.descuentos().add(b.descuentos()), a.ventaNeta().add(b.ventaNeta()),
+            a.impuesto().add(b.impuesto()), a.lineas() + b.lineas());
+    }
+
+    /** Recalcula una línea: cantidad × precio, descuentos, IVA por tarifa y total de la línea. */
+    static Totales revisarLinea(Element l, String n, List<String> errores) {
+        BigDecimal cantidad = cero(XmlSeguro.numero(l, "Cantidad"));
+        BigDecimal precio = cero(XmlSeguro.numero(l, "PrecioUnitario"));
+        BigDecimal montoTotal = cero(XmlSeguro.numero(l, "MontoTotal"));
+        BigDecimal desc = BigDecimal.ZERO;
+        for (Element d : XmlSeguro.hijos(l, "Descuento")) desc = desc.add(cero(XmlSeguro.numero(d, "MontoDescuento")));
+        BigDecimal subTotal = cero(XmlSeguro.numero(l, "SubTotal"));
+        BigDecimal base = XmlSeguro.numero(l, "BaseImponible");
+        BigDecimal impLinea = revisarImpuestos(l, base != null ? base : subTotal, n, errores);
+        BigDecimal impNeto = XmlSeguro.numero(l, "ImpuestoNeto");
+        if (impNeto == null) impNeto = impLinea;
+        BigDecimal totalLinea = cero(XmlSeguro.numero(l, "MontoTotalLinea"));
+        if (difiere(cantidad.multiply(precio), montoTotal)) errores.add(n + "cantidad por precio unitario no da el monto total.");
+        if (difiere(montoTotal.subtract(desc), subTotal)) errores.add(n + "el subtotal no es el monto total menos los descuentos.");
+        if (difiere(subTotal.add(impNeto), totalLinea)) errores.add(n + "el total de la línea no es el subtotal más el impuesto.");
+        return new Totales(montoTotal, desc, subTotal, impNeto, 1);
+    }
+
+    private static BigDecimal revisarImpuestos(Element l, BigDecimal base, String n, List<String> errores) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Element imp : XmlSeguro.hijos(l, "Impuesto")) {
+            BigDecimal tarifa = cero(XmlSeguro.numero(imp, "Tarifa"));
+            BigDecimal monto = cero(XmlSeguro.numero(imp, "Monto"));
+            BigDecimal esperado = base.multiply(tarifa).divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP);
+            if (difiere(esperado, monto)) {
+                errores.add(n + "el IVA no corresponde a la tarifa (" + tarifa.stripTrailingZeros().toPlainString()
+                    + " %) sobre la base imponible.");
+            }
+            total = total.add(monto);
+        }
+        return total;
     }
 
     static void revisarResumen(Element raiz, Totales t, List<String> errores) {
-        Element r = XmlSeguro.hijo(raiz, "ResumenFactura");
+        Element r = XmlSeguro.hijo(raiz, RESUMEN);
         if (r == null) {
             errores.add("La factura no tiene el resumen de totales (ResumenFactura).");
             return;

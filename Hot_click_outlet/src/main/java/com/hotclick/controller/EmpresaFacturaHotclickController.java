@@ -19,7 +19,7 @@ import java.io.IOException;
 
 /**
  * "Mi dinero → Factura a HotClick". La empresa sale siempre de la sesión (CompanyScope); un registro de otro negocio
- * responde 404. Ver: todo el equipo (cajero incluido). Subir el XML: solo el propietario y nunca en sesión de soporte.
+ * responde 404. Lectura: el equipo completo (cajero incluido). Subir el XML: solo el propietario y nunca en sesión de soporte.
  */
 @RestController
 @RequestMapping("/api/empresa/facturas-hotclick")

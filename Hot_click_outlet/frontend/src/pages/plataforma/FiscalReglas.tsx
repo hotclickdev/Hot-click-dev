@@ -150,7 +150,7 @@ export default function FiscalReglas() {
           </label>
         </div>
         <label className="flex items-start gap-3">
-          <input type="checkbox" className="mt-1 h-5 w-5" checked={form.receptor}
+          <input type="checkbox" className="mt-1 h-5 w-5" checked={form.receptor} aria-label="Enviar el mensaje receptor a Hacienda"
             onChange={(ev) => setForm((f) => ({ ...f, receptor: ev.target.checked }))} />
           <span className="flex flex-col gap-0.5">
             <span className="text-[13px] font-semibold text-hc-n-900">Enviar el mensaje receptor a Hacienda</span>

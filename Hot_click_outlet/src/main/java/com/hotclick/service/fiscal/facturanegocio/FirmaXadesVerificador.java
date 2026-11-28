@@ -40,7 +40,7 @@ public final class FirmaXadesVerificador {
         }
     }
 
-    private static X509Certificate certificado(Document doc) throws Exception {
+    private static X509Certificate certificado(Document doc) throws java.security.cert.CertificateException {
         NodeList certs = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "X509Certificate");
         if (certs.getLength() == 0) return null;
         String b64 = certs.item(0).getTextContent().replaceAll("\\s", "");
