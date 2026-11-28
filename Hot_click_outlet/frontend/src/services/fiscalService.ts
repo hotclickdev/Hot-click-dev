@@ -17,6 +17,12 @@ export type ReglasFiscales = {
   diasEnviarFactura: number
   onvoPagoMinimoCrc: number
   onvoCostoPagoCrc: number
+  /** Fase 2: envío del mensaje receptor (solo tradicional). Apagado por defecto. */
+  mensajeReceptorHabilitado?: boolean
+  /** Fase 2: diferencia permitida (₡) entre la factura del negocio y lo que se le debe. */
+  toleranciaFacturaNegocioCrc?: number
+  /** Fase 2: NETO (productos menos comisión) o BRUTO (precio de los productos). */
+  baseFacturaNegocio?: 'NETO' | 'BRUTO'
 }
 
 export const fiscalService = {

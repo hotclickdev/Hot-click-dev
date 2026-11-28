@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import BrandLogo from '@/components/ui/BrandLogo'
 import EnlacePrimario from '../ui/EnlacePrimario'
 import AvisoFaltaUbicacion from '../ui/AvisoFaltaUbicacion'
+import AvisoFacturaHotclick from '@/prototipo/compartido/AvisoFacturaHotclick'
 import { RUTA_EMPRENDEDOR } from '../constants'
 import { consolaService } from '@/pages/plataforma/consola'
 import { RUTA_ONBOARDING_RAPIDO, onboardingPendiente } from '@/pages/plataforma/tiendaRapida'
@@ -46,6 +47,7 @@ export default function MenuPage() {
       <EntradaPagina className="flex w-full flex-col items-center gap-2 md:items-stretch">
         <HeroMarca />
         <AvisoFaltaUbicacion className="mb-2" />
+        <AvisoFacturaHotclick to={`${RUTA_EMPRENDEDOR}/opciones/cobro?tab=factura`} className="mb-2" />
         <OnboardingPrimeraVez rol="emprendedor" />
         <div className="mb-2 w-full empty:hidden"><TarjetaTrialCard /></div>
         <ListaStagger className="flex w-full flex-col gap-2">

@@ -8,6 +8,7 @@ import { Boton } from './ui'
 import { useSellerPlan, useSellerRuta } from './SellerPlanContext'
 import { verSucursales } from './menuRoles'
 import OnboardingPrimeraVez from './OnboardingPrimeraVez'
+import AvisoFacturaHotclick from './AvisoFacturaHotclick'
 import EntradaPagina from './motion/EntradaPagina'
 import { ListaStagger, ItemListaStagger } from './motion/ListaStagger'
 import { EASE_PREMIUM } from './motion/formularioMotionTokens'
@@ -48,6 +49,9 @@ export default function MenuPage() {
 
   return (
     <EntradaPagina>
+      <div className="px-6 pt-6 empty:hidden md:px-12">
+        <AvisoFacturaHotclick to={`${ruta('cobro')}?tab=factura`} />
+      </div>
       <div className="flex min-h-[calc(100dvh-4rem)] flex-col items-center px-6 pb-8 pt-[90px] md:hidden">
         <HeroMenu badge={plan.badge} />
         <OnboardingPrimeraVez rol={plan.id} />

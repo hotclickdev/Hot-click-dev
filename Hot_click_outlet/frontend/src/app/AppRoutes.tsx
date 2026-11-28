@@ -23,6 +23,7 @@ const PedidoDetalle = lazy(() => import('@/pages/plataforma/PedidoDetalle'))
 const CompradorPlataforma = lazy(() => import('@/pages/plataforma/CompradorPlataforma'))
 const ModeracionPlataforma = lazy(() => import('@/pages/plataforma/ModeracionPlataforma'))
 const DineroPlataforma = lazy(() => import('@/pages/plataforma/DineroPlataforma'))
+const FacturasNegociosPlataforma = lazy(() => import('@/pages/plataforma/FacturasNegociosPlataforma'))
 const OperacionPlataforma = lazy(() => import('@/pages/plataforma/OperacionPlataforma'))
 const SeguridadPlataforma = lazy(() => import('@/pages/plataforma/SeguridadPlataforma'))
 const IaPlataforma = lazy(() => import('@/pages/plataforma/IaPlataforma'))
@@ -196,6 +197,7 @@ export default function AppRoutes() {
         <Route path="moderacion/reportes" element={<ModeracionPlataforma />} />
         <Route path="dinero" element={<DineroPlataforma />} />
         <Route path="dinero/:vista" element={<DineroPlataforma />} />
+        <Route path="facturas-negocios" element={<FacturasNegociosPlataforma />} />
         <Route path="crm" element={<CrmLayout />}>
           <Route index element={<CrmPlataforma />} />
           <Route path="compras" element={<CrmCompras />} />
