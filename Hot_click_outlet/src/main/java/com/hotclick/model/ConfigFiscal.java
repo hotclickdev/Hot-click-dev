@@ -27,7 +27,17 @@ public class ConfigFiscal {
     @Column(name = "onvo_costo_pago_crc", nullable = false)
     private Integer onvoCostoPagoCrc;
 
+    @Column(name = "hacienda_mensaje_receptor_habilitado", nullable = false, columnDefinition = "boolean default false")
+    private boolean haciendaMensajeReceptorHabilitado;
+    @Column(name = "tolerancia_factura_negocio_crc", nullable = false, columnDefinition = "integer default 1")
+    private Integer toleranciaFacturaNegocioCrc = 1;
+    @Column(name = "base_factura_negocio", nullable = false, length = 10, columnDefinition = "varchar(10) default 'NETO'")
+    private String baseFacturaNegocio = "NETO";
+
     public Long getId() { return id; }
+    public boolean isHaciendaMensajeReceptorHabilitado() { return haciendaMensajeReceptorHabilitado; }
+    public Integer getToleranciaFacturaNegocioCrc() { return toleranciaFacturaNegocioCrc; }
+    public String getBaseFacturaNegocio() { return baseFacturaNegocio; }
     public String getRegimenHotclick() { return regimenHotclick; }
     public BigDecimal getExtraNoInscritoPct() { return extraNoInscritoPct; }
     public Integer getDiasEnviarFactura() { return diasEnviarFactura; }
