@@ -170,16 +170,6 @@ public class NotificacionEmailService {
 
     @Async
 
-    public void enviarCuponBienvenida(String email, String codigo) {
-
-        negocioEmailSender.enviarCuponBienvenida(email, codigo);
-
-    }
-
-
-
-    @Async
-
     public void enviarBienvenidaEmprendedor(String correo, String nombre, String nombreEmpresa, boolean pendienteAprobacion) {
 
         negocioEmailSender.enviarBienvenidaEmprendedor(correo, nombre, nombreEmpresa, pendienteAprobacion);

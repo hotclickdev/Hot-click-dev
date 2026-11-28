@@ -6,7 +6,6 @@ export type TourDemo =
   | { type: 'orders'; items: { numero: string; estado: string; total: string }[] }
   | { type: 'pos'; items: { nombre: string; cant: number; precio: string }[]; total: string; metodo: string }
   | { type: 'finance'; items: { label: string; value: string }[] }
-  | { type: 'offer'; badge: string; cupon: string }
   | { type: 'ai'; pregunta: string; respuesta: string }
   | { type: 'team'; items: { nombre: string; rol: string }[] }
 

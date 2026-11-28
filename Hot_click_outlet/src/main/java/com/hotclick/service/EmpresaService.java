@@ -20,7 +20,7 @@ public class EmpresaService {
      * Resuelve el id de empresa a partir de un slug público.
      * Aplica las mismas restricciones que SlugTenantInterceptor (ACTIVO +
      * visibilidadPublica + membresia confirmada) para que un slug de una tienda
-     * inactiva, privada o sin membresia no sirva para sondear cupones.
+     * inactiva, privada o sin membresia no se resuelva.
      */
     public Optional<Long> obtenerIdPorSlug(String slug) {
         if (slug == null || slug.isBlank()) {

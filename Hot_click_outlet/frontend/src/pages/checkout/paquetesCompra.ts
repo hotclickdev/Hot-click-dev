@@ -1,6 +1,5 @@
 import { precioUnitarioEfectivo } from '@/utils/precioProducto'
 import type { ProductoRelacion } from '@/types/producto'
-import type { CuponCarrito } from '@/types/carrito'
 import { descuentoSinpe } from '@/utils/comisionPrecio'
 
 /** Métodos de envío que entiende `OrderPricingService.calcularCostoEnvio`. */
@@ -190,32 +189,17 @@ export function payloadPaquetes(paquetes: PaqueteCompra[], envios: Record<string
     })
 }
 
-/** Igual que `OrderPricingService`: el cupón solo aplica al paquete de su negocio. */
-function cuponAplica(paquete: PaqueteCompra, empresaIdCupon: number | null): boolean {
-  return paquete.empresaId == null || paquete.empresaId === empresaIdCupon
-}
-
-export function descuentoPaquete(paquete: PaqueteCompra, cupon: CuponCarrito | null): number {
-  if (!cupon || cupon.descuento <= 0 || !cuponAplica(paquete, cupon.empresaId)) return 0
-  return Math.round(paquete.subtotal * cupon.descuento / 100)
-}
-
-export function descuentoCupon(paquetes: PaqueteCompra[], cupon: CuponCarrito | null): number {
-  return paquetes.reduce((suma, p) => suma + descuentoPaquete(p, cupon), 0)
-}
-
 /** `empresaId → %` de descuento por pagar con SINPE o efectivo; vacío si el método no aplica. */
 export type DescuentosSinpe = Record<number, number>
 
-/** Igual que `OrderPricingService.descuentoSinpeSiAplica`: % sobre productos − cupón + envío del paquete. */
+/** Igual que `OrderPricingService.descuentoSinpeSiAplica`: % sobre productos + envío del paquete. */
 export function descuentoSinpePaquete(
   paquete: PaqueteCompra,
   envios: Record<string, string>,
-  cupon: CuponCarrito | null,
   descuentos: DescuentosSinpe,
 ): number {
   const pct = paquete.empresaId == null ? 0 : descuentos[paquete.empresaId] ?? 0
-  const base = paquete.subtotal - descuentoPaquete(paquete, cupon) + costoEnvio(envios[paquete.clave])
+  const base = paquete.subtotal + costoEnvio(envios[paquete.clave])
   return descuentoSinpe(base, pct)
 }
 
@@ -223,7 +207,6 @@ export type TotalesCompra = {
   cantidadProductos: number
   subtotal: number
   envio: number
-  descuento: number
   descuentoSinpe: number
   total: number
 }
@@ -231,19 +214,16 @@ export type TotalesCompra = {
 export function totalesCompra(
   paquetes: PaqueteCompra[],
   envios: Record<string, string>,
-  cupon: CuponCarrito | null,
   descuentos: DescuentosSinpe = {},
 ): TotalesCompra {
   const subtotal = paquetes.reduce((suma, p) => suma + p.subtotal, 0)
   const envio = envioTotal(paquetes, envios)
-  const descuento = descuentoCupon(paquetes, cupon)
-  const sinpe = paquetes.reduce((suma, p) => suma + descuentoSinpePaquete(p, envios, cupon, descuentos), 0)
+  const sinpe = paquetes.reduce((suma, p) => suma + descuentoSinpePaquete(p, envios, descuentos), 0)
   return {
     cantidadProductos: paquetes.reduce((suma, p) => suma + p.cantidadProductos, 0),
     subtotal,
     envio,
-    descuento,
     descuentoSinpe: sinpe,
-    total: Math.max(0, subtotal - descuento + envio - sinpe),
+    total: Math.max(0, subtotal + envio - sinpe),
   }
 }

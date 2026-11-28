@@ -9,10 +9,9 @@ import { formatPrice } from '@/utils/format'
 import CheckoutPayError from './CheckoutPayError'
 import PasoDatos from './PasoDatos'
 import PasoEntrega from './PasoEntrega'
-import { CodigosCheckout, ConsentimientoDatos, FacturaElectronicaCheckout, MetodosPago, ResumenPagoMovil } from './PasoPago'
+import { ConsentimientoDatos, FacturaElectronicaCheckout, MetodosPago, ResumenPagoMovil } from './PasoPago'
 import { CabeceraCompraSegura, IndicadorPasos, PieCheckoutMovil } from './PiezasCheckout'
 import { pasoMaximoCheckout, useVolver } from './pasosCheckoutHelpers'
-import { useCodigosPedido } from './useCodigosPedido'
 import { useEsDesktop } from './useEsDesktop'
 import type { ItemCheckout } from './checkoutHelpers'
 import { metodoPagoPrincipal } from './pagoPrincipal'
@@ -59,7 +58,6 @@ export default function CheckoutLayout({
 }: CheckoutLayoutProps) {
   const { t } = useTranslation()
   const esDesktop = useEsDesktop()
-  const codigos = useCodigosPedido()
   const { setPaso } = form
   const [consentimientoPendiente, setConsentimientoPendiente] = useState(false)
 
@@ -210,9 +208,6 @@ export default function CheckoutLayout({
               botonDeshabilitado={ocupado}
               consentimiento={consentimiento}
               envioVaria={hayEnvioQueVaria}
-              descuento={form.descuentoMonto}
-              cuponPorcentaje={form.cuponDescuento}
-              codigosEscritorio={<CodigosCheckout codigos={codigos} descuento={form.descuentoMonto} />}
             />
           </div>
         </div>
@@ -241,9 +236,6 @@ export default function CheckoutLayout({
                 subtotal={form.subtotalCart}
                 envio={form.costoEnvio}
                 envioVaria={hayEnvioQueVaria}
-                descuento={form.descuentoMonto}
-                cuponPorcentaje={form.cuponDescuento}
-                codigos={codigos}
               />
               {consentimiento}
             </>

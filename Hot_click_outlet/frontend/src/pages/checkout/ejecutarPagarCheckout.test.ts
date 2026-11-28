@@ -24,7 +24,7 @@ function deps(metodoPago: string, sinpeManualHabilitado?: boolean) {
       sinpeNombre: 'Ana', sinpeCedula: '', setSinpeNombreErr: noop, setSinpeCedulaErr: noop,
       telefono: '', metodoEnvio: 'RETIRO_EN_TIENDA', paquetes: [], metodoEnvioPorPaquete: {},
       necesitaDireccion: false, notas: '', direccion: '', sinpeEmail: '', totalFinal: 0,
-      items: [], bodegaRetiro: null, cuponCodigo: null, gcCodigo: null, sinpeTelefono: '',
+      items: [], bodegaRetiro: null, gcCodigo: null, sinpeTelefono: '',
       iniciarPago, sinpeManualHabilitado, avisarSinMetodo,
     } as unknown as Parameters<typeof ejecutarPagarCheckout>[0],
   }

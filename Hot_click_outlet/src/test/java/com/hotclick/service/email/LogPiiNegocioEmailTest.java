@@ -44,7 +44,6 @@ class LogPiiNegocioEmailTest {
     void soltar() { logger.detachAppender(appender); }
 
     private void todos() {
-        sender.enviarCuponBienvenida(CORREO, "C1");
         sender.enviarBienvenidaEmprendedor(CORREO, "Ana", "Tienda", true);
         sender.enviarAprobacionNegocio(CORREO, "Ana", "Tienda");
         sender.enviarRechazoNegocio(CORREO, "Ana", "Tienda", "m");
@@ -67,7 +66,7 @@ class LogPiiNegocioEmailTest {
     @Test
     void envioOk_sinCorreo() {
         todos();
-        sinPii(6);
+        sinPii(5);
     }
 
     @Test
@@ -75,6 +74,6 @@ class LogPiiNegocioEmailTest {
         doThrow(new IllegalStateException("Resend rechazó " + CORREO))
             .when(resend).send(anyString(), any(), any());
         todos();
-        sinPii(11);
+        sinPii(10);
     }
 }

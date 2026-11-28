@@ -6,7 +6,6 @@ import campoTelefono from '@/assets/figma/checkout/campo-telefono.svg'
 import campoUsuario from '@/assets/figma/checkout/campo-usuario.svg'
 import candadoCompraSegura from '@/assets/figma/checkout/candado-compra-segura.svg'
 import copiar from '@/assets/figma/checkout/copiar.svg'
-import cupon from '@/assets/figma/checkout/cupon.svg'
 import pagoEfectivo from '@/assets/figma/checkout/pago-efectivo.svg'
 import pagoSinpe from '@/assets/figma/checkout/pago-sinpe.svg'
 import pagoTarjeta from '@/assets/figma/checkout/pago-tarjeta.svg'
@@ -37,7 +36,6 @@ export const ICONOS_CHECKOUT = {
   campoUsuario,
   candadoCompraSegura,
   copiar,
-  cupon,
   pagoEfectivo,
   pagoSinpe,
   pagoTarjeta,

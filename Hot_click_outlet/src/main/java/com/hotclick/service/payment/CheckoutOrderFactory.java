@@ -89,7 +89,6 @@ public class CheckoutOrderFactory {
         pedido.setCostoTotalProductos(costoTotal);
         pedido.setUtilidadBruta(subtotal - costoTotal - pricing.descuento());
         pedido.setDescuentoTotal(pricing.descuento());
-        pedido.setCuponCodigo(pricing.codigoCuponAplicado());
         pedido.setMontoImpuesto(pricing.impuesto());
         pedido.setAplicaImpuesto(pricing.impuesto() > 0);
         if (subtotal > 0) {

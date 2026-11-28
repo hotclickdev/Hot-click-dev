@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
 import { formatPrice } from '@/utils/format'
-import { formatoRebaja } from '@/pages/checkout/codigoDescuentoHelpers'
 import type { PaqueteCarrito } from './cartHelpers'
 
 type ResumenCarritoProps = {
@@ -16,11 +15,6 @@ type ResumenCarritoProps = {
   onContinuar: () => void
   /** Carrito de escritorio: "Pedir por WhatsApp" como enlace de texto bajo el botón (función previa; Figma `30:2351` no lo dibuja). */
   onWhatsApp?: () => void
-  /** Descuento del cupón ya aplicado (0 si no hay). */
-  descuento?: number
-  cuponPorcentaje?: number
-  /** Campo de cupón que despliega "Agregar cupón" en la columna de escritorio. */
-  codigosEscritorio?: ReactNode
   /** Checkout de escritorio (Figma `30:2492`): el botón es "Pagar" y el aviso de consentimiento va antes. */
   textoBoton?: string
   consentimiento?: ReactNode
@@ -29,24 +23,13 @@ type ResumenCarritoProps = {
   envioVaria?: boolean
 }
 
-/** Línea de descuento aplicado (cupón): no está en Figma, solo aparece al aplicar un código. */
-function LineaRebaja({ etiqueta, monto, clase }: { etiqueta: string; monto: number; clase: string }) {
-  return (
-    <div className={`flex items-center justify-between ${clase}`}>
-      <p className="font-medium text-hc-n-600">{etiqueta}</p>
-      <p className="font-semibold text-hc-success-text">{formatoRebaja(monto)}</p>
-    </div>
-  )
-}
-
 /** Resumen del pedido: Figma `37:1647` (móvil, dentro del flujo) y `30:2351` (escritorio, columna lateral). */
 export default function ResumenCarrito({
   paquetes, unidades, subtotal, envio, total, escritorio, onContinuar, onWhatsApp,
-  descuento = 0, cuponPorcentaje = 0, codigosEscritorio, textoBoton, consentimiento, botonDeshabilitado, envioVaria = false,
+  textoBoton, consentimiento, botonDeshabilitado, envioVaria = false,
 }: ResumenCarritoProps) {
   const { t } = useTranslation()
   const [detalleAbierto, setDetalleAbierto] = useState(true)
-  const [codigosAbiertos, setCodigosAbiertos] = useState(false)
 
   if (escritorio) {
     return (
@@ -74,21 +57,6 @@ export default function ResumenCarrito({
           <p className="font-medium text-hc-n-600">{t('cart.envioLinea', { count: paquetes.length })}</p>
           <p className="font-semibold text-hc-n-900">{envioVaria && envio === 0 ? t('checkout.f.varia') : formatPrice(envio)}</p>
         </div>
-        {descuento > 0 && <LineaRebaja etiqueta={t('checkout.codigo.lineaDescuento', { porcentaje: cuponPorcentaje })} monto={descuento} clase="text-[13px]" />}
-        {codigosEscritorio && (
-          <>
-            <button
-              type="button"
-              onClick={() => setCodigosAbiertos((v) => !v)}
-              aria-expanded={codigosAbiertos}
-              className="flex items-center gap-[6px] text-left text-[13px] font-semibold text-hc-blue-600"
-            >
-              <IconoFigma src={ICONOS_CHECKOUT.cupon} size={14} className="text-hc-blue-600" />
-              {t('cart.agregarCupon')}
-            </button>
-            {codigosAbiertos && codigosEscritorio}
-          </>
-        )}
         <div className="h-px bg-hc-n-200" />
         <div className="flex items-center justify-between text-hc-n-900">
           <p className="text-[16px] font-semibold">{t('cart.total')}</p>
@@ -143,7 +111,6 @@ export default function ResumenCarrito({
           ))}
         </div>
       )}
-      {descuento > 0 && <LineaRebaja etiqueta={t('checkout.codigo.lineaDescuento', { porcentaje: cuponPorcentaje })} monto={descuento} clase="text-[14px]" />}
       <div className="h-px bg-hc-n-200" />
       <div className="flex items-center justify-between font-display font-bold text-hc-n-900">
         <p className="text-[16px]">{t('cart.totalEstimado')}</p>

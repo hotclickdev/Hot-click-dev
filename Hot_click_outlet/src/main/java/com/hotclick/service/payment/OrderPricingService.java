@@ -3,7 +3,6 @@ package com.hotclick.service.payment;
 import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
-import com.hotclick.service.CuponService;
 import com.hotclick.service.wallet.ComisionPrecioMath;
 import com.hotclick.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import java.util.Locale;
 @Service
 public class OrderPricingService {
 
-    @Autowired private CuponService    cuponService;
     /** A-2: montos de envío fijados por ADMIN; sin bean (tests unitarios) valen los defaults (4.000 / 5.500 / 5.000). */
     @Autowired(required = false) private com.hotclick.service.envio.ConfiguracionEnvioService configuracionEnvio;
 
@@ -56,15 +54,6 @@ public class OrderPricingService {
         return calcularPaquete(req, bodega, subtotal, req.getMetodoEnvio());
     }
 
-    public static final String MSG_CUPON_INVALIDO = "El cupón no es válido para estos productos. Quitalo o probá con otro.";
-
-    /** CMP-2: un cupón escrito que no aplica a ningún negocio del carrito se rechaza (antes se ignoraba en silencio). */
-    public void exigirCuponValido(String codigoCupon, java.util.Collection<Long> empresaIds) {
-        if (codigoCupon == null || codigoCupon.isBlank()) return;
-        boolean aplica = empresaIds.stream().anyMatch(id -> cuponService.validarParaEmpresa(codigoCupon, id).isPresent());
-        if (!aplica) throw new IllegalArgumentException(MSG_CUPON_INVALIDO);
-    }
-
     public OrderPricingResult calcularPaquete(PaymentCheckoutRequest req, Bodega bodega, int subtotal,
                                               String metodoEnvio) {
         return calcularPaquete(req, bodega, subtotal, metodoEnvio, java.util.List.of());
@@ -88,18 +77,8 @@ public class OrderPricingService {
                                               String metodoEnvio,
                                               java.util.List<com.hotclick.service.hacienda.CalculadoraIva.Linea> lineasIva,
                                               int costoEnvio) {
-        Long empresaId = bodega.getEmpresa() != null ? bodega.getEmpresa().getId() : null;
-
+        // Los cupones se retiraron (decisión del dueño): el único descuento del checkout es el de SINPE/efectivo.
         int descuento = 0;
-        String codigoCuponAplicado = null;
-        String codigoCupon = req.getCodigoCupon();
-        if (codigoCupon != null && !codigoCupon.isBlank()) {
-            var cuponOpt = cuponService.validarParaEmpresa(codigoCupon, empresaId);
-            if (cuponOpt.isPresent()) {
-                descuento = com.hotclick.service.hacienda.MontoExacto.aInt(Math.round(subtotal * cuponOpt.get().getDescuentoPorcentaje() / 100.0));
-                codigoCuponAplicado = cuponOpt.get().getCodigo();
-            }
-        }
 
         int base = subtotal - descuento + costoEnvio;
         descuento += descuentoSinpeSiAplica(req.getProvider(), bodega, base);
@@ -108,7 +87,7 @@ public class OrderPricingService {
         int total = Math.max(0, subtotal - descuento + costoEnvio) + impuesto;
 
         return new OrderPricingResult(
-            costoEnvio, descuento, codigoCuponAplicado, total, Math.max(0, impuesto));
+            costoEnvio, descuento, total, Math.max(0, impuesto));
     }
 
     private int descuentoSinpeSiAplica(String provider, Bodega bodega, int base) {

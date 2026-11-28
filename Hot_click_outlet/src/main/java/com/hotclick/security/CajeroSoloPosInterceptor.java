@@ -14,7 +14,7 @@ import java.util.Set;
 
 /**
  * Rol de equipo CAJERO: deny por defecto. El miembro lleva rol Spring EMPRENDEDOR, así que sin esta guarda
- * entraría a pedidos, clientes, cupones, gastos, etc. Solo opera el POS del negocio de su token: todo
+ * entraría a pedidos, clientes, gastos, etc. Solo opera el POS del negocio de su token: todo
  * {@code /api/pos/**} y las lecturas que el POS necesita (catálogo, categorías y bodegas) más su propia cuenta.
  * Cualquier otra ruta de {@code /api/**} (ver exclusiones en WebMvcConfig) recibe 403.
  */

@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Envío de emails transaccionales de negocio (cupones, onboarding, equipo).
+ * Envío de emails transaccionales de negocio (onboarding, equipo).
  * Extraído bit-idéntico de NotificacionEmailService — no cambia comportamiento.
  */
 @Component
@@ -20,15 +20,6 @@ public class NotificacionNegocioEmailSender {
     @Autowired private ResendEmailService resendEmailService;
     @Autowired private NegocioEmailBuilder negocioEmailBuilder;
     @Autowired private EmailLayoutHelper emailLayoutHelper;
-
-    public void enviarCuponBienvenida(String email, String codigo) {
-        try {
-            resendEmailService.send(email, negocioEmailBuilder.asuntoCuponBienvenida(), negocioEmailBuilder.buildCuponBienvenida(codigo));
-            log.info("Email cupón bienvenida enviado");
-        } catch (Exception e) {
-            log.error("No se pudo enviar email de cupón: {}", e.getClass().getSimpleName());
-        }
-    }
 
     public void enviarBienvenidaEmprendedor(String correo, String nombre, String nombreEmpresa, boolean pendienteAprobacion) {
         try {

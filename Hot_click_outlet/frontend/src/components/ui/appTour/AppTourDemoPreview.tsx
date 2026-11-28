@@ -68,13 +68,6 @@ export function DemoPreview({ demo, color }: { demo?: TourDemo; color: string })
         </div>
       )}
 
-      {demo.type === 'offer' && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="px-2 py-1 rounded-lg text-[11px] font-bold" style={{ backgroundColor: `${color}1a`, color }}>{demo.badge}</span>
-          <span className="px-2 py-1 rounded-lg text-[11px] font-mono" style={{ backgroundColor: 'var(--hc-surface)', border: '1px dashed var(--hc-border)', color: 'var(--hc-text)' }}>{demo.cupon}</span>
-        </div>
-      )}
-
       {demo.type === 'ai' && (
         <div className="space-y-1.5">
           <div className="text-xs px-2.5 py-1.5 rounded-xl ml-auto w-fit max-w-[85%]" style={{ backgroundColor: `${color}1a`, color: 'var(--hc-text)' }}>{demo.pregunta}</div>

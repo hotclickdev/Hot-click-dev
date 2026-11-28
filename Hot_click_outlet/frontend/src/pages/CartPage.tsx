@@ -15,14 +15,13 @@ import AvisoVariosEmprendimientos from '@/components/comprador/AvisoVariosEmpren
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { cantidadEmprendimientos } from '@/pages/checkout/checkoutHelpers'
 import { ICONOS_CHECKOUT } from '@/pages/checkout/iconosCheckout'
-import { totalesConCodigos, useCodigosPedido } from '@/pages/checkout/useCodigosPedido'
 import { useEsDesktop } from '@/pages/checkout/useEsDesktop'
 import { isValidEmail } from '@/utils/validators'
 import type { Producto } from '@/types/producto'
 import type { ItemCarrito } from '@/types/carrito'
 import type { Id } from '@/types/api'
 import CartEmptyState from './carrito/CartEmptyState'
-import { CodigosCarrito, NotasPedido } from './carrito/CodigosNotasCarrito'
+import { NotasPedido } from './carrito/CodigosNotasCarrito'
 import { AsistentePedido, GuardarPorCorreo, PieCarritoMovil } from './carrito/ExtrasCarritoMovil'
 import { useEnPantalla } from './carrito/useEnPantalla'
 import PaqueteCarritoTarjeta from './carrito/PaqueteCarritoTarjeta'
@@ -69,7 +68,6 @@ export default function CartPage() {
   const toast = useToast()
   const { t } = useTranslation()
   const esDesktop = useEsDesktop()
-  const codigos = useCodigosPedido()
   const notas = usePedidoExtrasStore((s) => s.notas)
   const setNotas = usePedidoExtrasStore((s) => s.setNotas)
   const reiniciarExtras = usePedidoExtrasStore((s) => s.reiniciar)
@@ -98,7 +96,7 @@ export default function CartPage() {
   const envio = totalEnvioEstimado(paquetes)
   // QA7-D1: sin destino el carrito no promete un envío; el checkout lo cotiza con el servidor.
   const envioPendiente = paquetes.some((p) => p.envioVaria)
-  const { descuento, total: totalEstimado } = totalesConCodigos(subtotal, envio, codigos.cuponDescuento)
+  const totalEstimado = subtotal + envio
 
   async function guardarCorreo() {
     if (!isValidEmail(correo)) return
@@ -216,9 +214,6 @@ export default function CartPage() {
               escritorio
               onContinuar={continuar}
               onWhatsApp={abrirWhatsAppPedido}
-              descuento={descuento}
-              cuponPorcentaje={codigos.cuponDescuento}
-              codigosEscritorio={<CodigosCarrito codigos={codigos} descuentoMonto={descuento} />}
             />
           </div>
         </div>
@@ -240,7 +235,6 @@ export default function CartPage() {
         </div>
         {tarjetas}
         <NotasPedido notas={notas} onCambiar={setNotas} />
-        <CodigosCarrito codigos={codigos} descuentoMonto={descuento} />
         <div ref={setResumenMovil}>
         <ResumenCarrito
           paquetes={paquetes}
@@ -251,8 +245,6 @@ export default function CartPage() {
           envioVaria={envioPendiente}
           escritorio={false}
           onContinuar={continuar}
-          descuento={descuento}
-          cuponPorcentaje={codigos.cuponDescuento}
         />
         </div>
         {guardarPorCorreo}

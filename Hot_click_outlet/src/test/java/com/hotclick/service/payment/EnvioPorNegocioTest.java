@@ -6,11 +6,9 @@ import com.hotclick.model.Empresa;
 import com.hotclick.model.Pedido;
 import com.hotclick.model.Producto;
 import com.hotclick.security.TenantContext;
-import com.hotclick.service.CuponService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,7 +58,6 @@ class EnvioPorNegocioTest {
 
     private static CheckoutGrupoFactory factory() {
         OrderPricingService pricing = new OrderPricingService();
-        ReflectionTestUtils.setField(pricing, "cuponService", mock(CuponService.class));
         CheckoutOrderFactory orders = mock(CheckoutOrderFactory.class);
         when(orders.crearSubpedido(any(), anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any()))
             .thenAnswer(inv -> {

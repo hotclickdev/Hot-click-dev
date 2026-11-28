@@ -4,7 +4,6 @@ import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.dto.PaymentCheckoutResponse;
 import com.hotclick.model.*;
 import com.hotclick.repository.*;
-import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
 import com.hotclick.service.analytics.AtribucionPedidoService;
 import com.hotclick.service.payment.*;
@@ -41,7 +40,6 @@ class SinpeCheckoutServiceEmpresaTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private RolRepository rolRepository;
     @Mock private PagoRepository pagoRepository;
-    @Mock private CuponService cuponService;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private SinpeOnvoMarketplaceService sinpeOnvo;
     @Mock private GuestCancelTokenService guestCancelTokenService;

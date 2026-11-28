@@ -32,7 +32,7 @@ Cada negocio numera sus SKU con el formato `E{empresa}-0001`. El identificador g
 
 **Venta en el local.** Punto de venta con turno de caja, historial y cobro por código QR. Inventario con kardex, códigos de barra, captura offline y paquetes. Compras a proveedores en los planes que lo incluyen.
 
-**Administración del negocio.** Productos (alta asistida, carga masiva e importación), pedidos con guía de Correos de Costa Rica, finanzas, billetera, reportes, clientes, equipo, marcas, categorías, promociones, cupones, garantías y tickets de soporte.
+**Administración del negocio.** Productos (alta asistida, carga masiva e importación), pedidos con guía de Correos de Costa Rica, finanzas, billetera, reportes, clientes, equipo, marcas, categorías, promociones, garantías y tickets de soporte.
 
 **Plataforma.** Empresas, usuarios, aprobaciones, pagos, liquidaciones, facturas electrónicas de Hacienda, planes, seguridad, observabilidad y atribución de anuncios.
 

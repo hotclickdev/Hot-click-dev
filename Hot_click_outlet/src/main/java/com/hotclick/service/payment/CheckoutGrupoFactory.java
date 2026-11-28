@@ -78,9 +78,6 @@ public class CheckoutGrupoFactory {
                 empresasVendedoras(paquete, reservation.productosMap()));
             checkoutValidator.validarRetiroPaquete(paquete.metodoEnvio(), paquete.bodega());
         }
-        orderPricingService.exigirCuponValido(req.getCodigoCupon(), paquetes.stream()
-            .map(p -> p.bodega().getEmpresa() != null ? p.bodega().getEmpresa().getId() : null)
-            .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new)));
 
         String grupoPago = "GP-" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
         int totalCobro = 0;

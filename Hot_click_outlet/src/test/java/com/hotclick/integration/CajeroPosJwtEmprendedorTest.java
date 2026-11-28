@@ -47,7 +47,7 @@ class CajeroPosJwtEmprendedorTest extends BaseIntegrationTest {
             .andReturn().getResponse().getStatus();
         assertThat(st).isNotEqualTo(403).isNotEqualTo(401);
         // y fuera del POS sigue acotado por el interceptor, no por el claim
-        int fuera = mockMvc.perform(get("/api/cupones").header("Authorization", "Bearer " + jwt))
+        int fuera = mockMvc.perform(get("/api/gastos").header("Authorization", "Bearer " + jwt))
             .andReturn().getResponse().getStatus();
         assertThat(fuera).isEqualTo(403);
     }
