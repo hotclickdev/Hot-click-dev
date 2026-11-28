@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-Cax7jSIZ.js";function t(){return e()}export{t};
