@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { esUrlHttps, etiquetaEstado, pct, resumenComision, validarEnlace } from './enlacePago'
+import { interruptoresDe, textoCobroNegocio, esUrlHttps, etiquetaEstado, pct, resumenComision, validarEnlace } from './enlacePago'
 
 describe('enlace de pago único', () => {
   it('acepta monto y motivo válidos y limpia separadores', () => {
@@ -32,5 +32,13 @@ describe('enlace de pago único', () => {
     for (const url of ['http://x.test', 'javascript:alert(1)', 'data:text/html,x', '//x.test', 'no es url', '', null, undefined, 5]) {
       expect(esUrlHttps(url)).toBe(false)
     }
+  })
+  it('los interruptores de ONVO quedan apagados salvo un true explícito', () => {
+    expect(interruptoresDe({ cobroANombreNegocio: true, enlacesPago: false })).toEqual({ cobroANombreNegocio: true, enlacesPago: false })
+    for (const raro of [undefined, null, '<html>', 'true', { cobroANombreNegocio: 1, enlacesPago: 'si' }, []]) {
+      expect(interruptoresDe(raro)).toEqual({ cobroANombreNegocio: false, enlacesPago: false })
+    }
+    expect(textoCobroNegocio(false)).toBe('Cobro a nombre del negocio: desactivado')
+    expect(textoCobroNegocio(true)).toBe('Cobro a nombre del negocio: activado')
   })
 })

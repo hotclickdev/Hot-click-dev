@@ -44,23 +44,30 @@ public class EnlacePagoOnvoService {
     private final EmpresaRepository empresaRepository;
     private final OnvoService onvoService;
     private final OnvoPaymentProvider provider;
+    private final com.hotclick.service.fiscal.ConfiguracionFiscalService config;
     private final String appUrl;
     private final int lote;
 
     public EnlacePagoOnvoService(EnlacePagoOnvoRepository repo, EmpresaRepository empresaRepository,
                                  OnvoService onvoService, OnvoPaymentProvider provider,
+                                 com.hotclick.service.fiscal.ConfiguracionFiscalService config,
                                  @Value("${app.url:http://localhost:3000}") String appUrl,
                                  @Value("${onvo.enlaces.lote:50}") int lote) {
         this.repo = repo;
         this.empresaRepository = empresaRepository;
         this.onvoService = onvoService;
         this.provider = provider;
+        this.config = config;
         this.appUrl = appUrl;
         this.lote = lote;
     }
 
     /** El monto y el motivo se validan acá (servidor); el cliente nunca decide más que esos dos datos. */
     public EnlacePagoOnvo crear(Long empresaId, Integer montoCrc, String motivo) {
+        // Apagado por defecto hasta validar con el sandbox de ONVO. Listar, cancelar y el webhook siguen funcionando.
+        if (config == null || !config.enlacesPagoActivos()) {
+            throw new EnlaceConflictoException("Enlaces de pago desactivados");
+        }
         if (montoCrc == null || montoCrc < MONTO_MIN_CRC || montoCrc > MONTO_MAX_CRC) {
             throw new IllegalArgumentException("El monto debe estar entre " + MONTO_MIN_CRC + " y " + MONTO_MAX_CRC + " colones");
         }

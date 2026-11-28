@@ -38,3 +38,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_retencion_onvo_pedido ON hot_click_p
 CREATE INDEX IF NOT EXISTS ix_pedido_retencion_onvo_sesion ON hot_click_pedido_retencion_onvo_tb (onvo_session_id);
 -- Un solo enlace de pago abierto por negocio, también ante altas simultáneas.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_enlace_pago_abierto_empresa ON hot_click_enlace_pago_onvo_tb (fk_id_empresa) WHERE estado = 'CREADO';
+
+-- Interruptores del cobro por ONVO, apagados hasta validarlos contra el sandbox de ONVO.
+ALTER TABLE hot_click_config_fiscal_tb ADD COLUMN IF NOT EXISTS onvo_cobro_a_nombre_negocio BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE hot_click_config_fiscal_tb ADD COLUMN IF NOT EXISTS onvo_enlaces_pago BOOLEAN NOT NULL DEFAULT FALSE;

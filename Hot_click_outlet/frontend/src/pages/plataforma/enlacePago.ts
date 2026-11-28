@@ -1,4 +1,4 @@
-import type { ComisionOnvo, EstadoEnlace } from '@/services/onvoCobroService'
+import type { ComisionOnvo, EstadoEnlace, InterruptoresOnvo } from '@/services/onvoCobroService'
 
 export const MONTO_MIN_CRC = 1000
 export const MONTO_MAX_CRC = 10_000_000
@@ -47,4 +47,16 @@ export function esUrlHttps(url: unknown): url is string {
   } catch {
     return false
   }
+}
+
+export const ADVERTENCIA_SANDBOX = 'Activar solo después de validar con el sandbox de ONVO.'
+
+/** Cualquier respuesta que no sea claramente booleana deja ambos apagados (fail-closed). */
+export function interruptoresDe(valor: unknown): InterruptoresOnvo {
+  const o = valor && typeof valor === 'object' ? valor as Record<string, unknown> : {}
+  return { cobroANombreNegocio: o.cobroANombreNegocio === true, enlacesPago: o.enlacesPago === true }
+}
+
+export function textoCobroNegocio(activo: boolean): string {
+  return `Cobro a nombre del negocio: ${activo ? 'activado' : 'desactivado'}`
 }

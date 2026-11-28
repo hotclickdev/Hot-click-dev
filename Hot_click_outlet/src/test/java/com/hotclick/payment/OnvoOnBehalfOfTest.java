@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
+import com.hotclick.service.fiscal.ConfiguracionFiscalService;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +71,7 @@ class OnvoOnBehalfOfTest {
         OnvoPaymentProvider p = provider(onvo, cuentas);
         ReflectionTestUtils.setField(p, "comisionSync", sync);
         ReflectionTestUtils.setField(p, "retencionRepo", retencion);
+        ReflectionTestUtils.setField(p, "configFiscal", interruptor(true));
         p.crearSesion(pedido(), new Usuario());
         verify(onvo).crearCheckoutSession(eq(1000), anyString(), anyString(), anyString(), any(), anyMap(), eq("cl_abc123"));
         @SuppressWarnings("unchecked")
@@ -105,7 +107,14 @@ class OnvoOnBehalfOfTest {
         OnvoPaymentProvider p = provider(onvo, cuentas);
         ReflectionTestUtils.setField(p, "comisionSync", sync);
         ReflectionTestUtils.setField(p, "retencionRepo", retencion);
+        ReflectionTestUtils.setField(p, "configFiscal", interruptor(true));
         return p;
+    }
+
+    private static ConfiguracionFiscalService interruptor(boolean cobroANombreNegocio) {
+        ConfiguracionFiscalService c = mock(ConfiguracionFiscalService.class);
+        when(c.cobroANombreNegocioActivo()).thenReturn(cobroANombreNegocio);
+        return c;
     }
 
     private Pedido pedidoDe(long id, long empresaId) {
@@ -211,6 +220,67 @@ class OnvoOnBehalfOfTest {
     }
 
     @Test
+    @DisplayName("Interruptor APAGADO (o sin config): nunca onBehalfOf ni marcas, aunque la cuenta esté activa y con % sincronizado")
+    void interruptorApagado() throws Exception {
+        for (ConfiguracionFiscalService cfg : new ConfiguracionFiscalService[] {interruptor(false), null}) {
+            OnvoService onvo = onvoListo();
+            ComisionOnvoSyncService sync = mock(ComisionOnvoSyncService.class);
+            when(sync.feeVigente(7L)).thenReturn(new BigDecimal("9.00"));
+            PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+            OnvoPaymentProvider p = providerActivo(onvo, sync, retencion);
+            ReflectionTestUtils.setField(p, "configFiscal", cfg);
+            p.crearSesion(pedido(), new Usuario());
+            verify(onvo, never()).crearCheckoutSession(anyInt(), anyString(), anyString(), anyString(), any(), anyMap(), anyString());
+            verify(retencion, never()).saveAll(any());
+            verify(retencion, never()).asignarSesion(any(), any());
+            verify(sync, never()).feeVigente(anyLong());
+        }
+    }
+
+    @Test
+    @DisplayName("B1: si no se puede guardar la sesión en la marca, se expira la sesión y se relanza el error")
+    void falloAlAsignarSesionExpira() {
+        OnvoService onvo = onvoListo();
+        ComisionOnvoSyncService sync = mock(ComisionOnvoSyncService.class);
+        when(sync.feeVigente(7L)).thenReturn(new BigDecimal("9.00"));
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        when(retencion.asignarSesion(any(), any())).thenThrow(new IllegalStateException("bd"));
+        OnvoPaymentProvider p = providerActivo(onvo, sync, retencion);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> p.crearSesion(pedido(), new Usuario()))
+            .isInstanceOf(IllegalStateException.class);
+        verify(onvo).expirarCheckoutSessionTipado("cs_1");
+        verify(retencion, atLeastOnce()).borrarPorPedidos(List.of(1L));
+    }
+
+    @Test
+    @DisplayName("B2: ONVO devuelve la sesión vacía → error para que reintente; no pasa a POR_REVISAR")
+    void sesionVaciaReintenta() {
+        OnvoService onvo = mock(OnvoService.class);
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        doReturn(Map.of()).when(onvo).obtenerCheckoutSession("cs_1");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> conMarca(onvo, retencion).validarRetencionDeSesion("cs_1"))
+            .isInstanceOf(IllegalStateException.class);
+        verify(retencion, never()).cambiarEstadoPorSesion(any(), any());
+        verify(retencion, never()).borrarPorSesion(any());
+    }
+
+    @Test
+    @DisplayName("B2: la cuenta coincide y la marca estaba POR_REVISAR → vuelve a RETENIDA")
+    void porRevisarVuelveARetenida() {
+        OnvoService onvo = mock(OnvoService.class);
+        PedidoRetencionOnvoRepository retencion = mock(PedidoRetencionOnvoRepository.class);
+        PedidoRetencionOnvo marca = new PedidoRetencionOnvo();
+        marca.setPedidoId(1L);
+        marca.setOnvoAccountId("cl_abc123");
+        marca.setFeePct(new BigDecimal("9.00"));
+        marca.setEstado(PedidoRetencionOnvo.POR_REVISAR);
+        when(retencion.findByOnvoSessionId("cs_1")).thenReturn(List.of(marca));
+        doReturn(Map.of("onBehalfOfId", "cl_abc123")).when(onvo).obtenerCheckoutSession("cs_1");
+        providerActivo(onvo, mock(ComisionOnvoSyncService.class), retencion).validarRetencionDeSesion("cs_1");
+        verify(retencion).cambiarEstadoPorSesion(PedidoRetencionOnvo.RETENIDA, "cs_1");
+    }
+
+    @Test
     @DisplayName("Sin marcas para la sesión no se consulta ONVO")
     void sinMarcasNoConsulta() {
         OnvoService onvo = mock(OnvoService.class);
@@ -233,6 +303,7 @@ class OnvoOnBehalfOfTest {
         OnvoPaymentProvider p = provider(onvo, cuentas);
         ReflectionTestUtils.setField(p, "comisionSync", sync);
         ReflectionTestUtils.setField(p, "retencionRepo", retencion);
+        ReflectionTestUtils.setField(p, "configFiscal", interruptor(true));
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> p.crearSesion(pedido(), new Usuario()))
             .isInstanceOf(IllegalStateException.class);
         verify(retencion, atLeastOnce()).borrarPorPedidos(List.of(1L));

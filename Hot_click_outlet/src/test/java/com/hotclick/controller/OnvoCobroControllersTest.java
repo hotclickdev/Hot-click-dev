@@ -94,7 +94,7 @@ class OnvoCobroControllersTest {
             assertThat(pa.value()).isEqualTo("hasRole('ADMIN')");
             revisados++;
         }
-        assertThat(revisados).isEqualTo(7);
+        assertThat(revisados).isEqualTo(9);
     }
 
     @Test

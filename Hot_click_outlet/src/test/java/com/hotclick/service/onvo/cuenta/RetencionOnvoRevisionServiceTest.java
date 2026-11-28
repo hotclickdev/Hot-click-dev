@@ -15,11 +15,13 @@ import static org.mockito.Mockito.*;
 class RetencionOnvoRevisionServiceTest {
 
     private final PedidoRetencionOnvoRepository repo = mock(PedidoRetencionOnvoRepository.class);
-    private final RetencionOnvoRevisionService svc = new RetencionOnvoRevisionService(repo);
+    private final com.hotclick.service.OnvoService onvo = mock(com.hotclick.service.OnvoService.class);
+    private final RetencionOnvoRevisionService svc = new RetencionOnvoRevisionService(repo, onvo);
 
     private PedidoRetencionOnvo marca(String estado) {
         PedidoRetencionOnvo m = new PedidoRetencionOnvo();
         m.setPedidoId(5L);
+        m.setOnvoSessionId("cs_5");
         m.setEstado(estado);
         when(repo.findByPedidoId(5L)).thenReturn(Optional.of(m));
         return m;
@@ -35,11 +37,36 @@ class RetencionOnvoRevisionServiceTest {
     }
 
     @Test
-    @DisplayName("PLATAFORMA quita la marca")
-    void plataforma() {
+    @DisplayName("PLATAFORMA: solo si ONVO confirma por GET que la sesión fue sin onBehalfOf; entonces quita la marca")
+    void plataformaConfirmada() {
         marca(PedidoRetencionOnvo.POR_REVISAR);
+        java.util.Map<String, Object> sinCuenta = new java.util.HashMap<>();
+        sinCuenta.put("onBehalfOfId", null);
+        doReturn(sinCuenta).when(onvo).obtenerCheckoutSession("cs_5");
         assertThat(svc.resolver(5L, "PLATAFORMA")).isEqualTo(Resolucion.RESUELTA);
         verify(repo).borrarPorPedido(5L);
+    }
+
+    @Test
+    @DisplayName("PLATAFORMA con una sesión que ONVO cobró a nombre del negocio: se rechaza (409) y no se borra nada")
+    void plataformaRechazadaSiPagoAlNegocio() {
+        marca(PedidoRetencionOnvo.POR_REVISAR);
+        doReturn(java.util.Map.of("onBehalfOfId", "cl_abc123")).when(onvo).obtenerCheckoutSession("cs_5");
+        assertThat(svc.resolver(5L, "PLATAFORMA")).isEqualTo(Resolucion.ONVO_PAGO_AL_NEGOCIO);
+        verify(repo, never()).borrarPorPedido(anyLong());
+    }
+
+    @Test
+    @DisplayName("PLATAFORMA sin confirmación (sin la clave, sesión vacía o ONVO caído): no se borra")
+    void plataformaSinConfirmacion() {
+        marca(PedidoRetencionOnvo.POR_REVISAR);
+        doReturn(java.util.Map.of("paymentStatus", "paid")).when(onvo).obtenerCheckoutSession("cs_5");
+        assertThat(svc.resolver(5L, "PLATAFORMA")).isEqualTo(Resolucion.NO_CONFIRMADO);
+        doReturn(java.util.Map.of()).when(onvo).obtenerCheckoutSession("cs_5");
+        assertThat(svc.resolver(5L, "PLATAFORMA")).isEqualTo(Resolucion.NO_CONSULTABLE);
+        when(onvo.obtenerCheckoutSession("cs_5")).thenThrow(new IllegalStateException("x"));
+        assertThat(svc.resolver(5L, "PLATAFORMA")).isEqualTo(Resolucion.NO_CONSULTABLE);
+        verify(repo, never()).borrarPorPedido(anyLong());
     }
 
     @Test

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { fiscalService, type ReglasFiscales } from '@/services/fiscalService'
 import { Aviso, BOTON_PRIMARIO, Carga, TARJETA, TITULO } from './piezas'
+import InterruptoresOnvo from './InterruptoresOnvo'
 
 const INPUT = 'h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3.5 text-[15px] text-hc-n-900 outline-none focus:border-hc-blue-600'
 
@@ -75,6 +76,7 @@ export default function FiscalReglas() {
   if (estado === 'carga') return <Carga />
   if (estado === 'error') return <Aviso>No se pudieron cargar las reglas fiscales.</Aviso>
   return (
+    <div className="flex flex-col gap-4">
     <form onSubmit={guardar} className={`${TARJETA} flex flex-col gap-4`} noValidate>
       <div>
         <h2 className={TITULO}>Reglas fiscales</h2>
@@ -120,5 +122,7 @@ export default function FiscalReglas() {
       {mensaje && <p role="status" className={`text-sm ${mensaje.ok ? 'text-hc-n-900' : 'text-hc-primary'}`}>{mensaje.texto}</p>}
       <div><button type="submit" className={BOTON_PRIMARIO} disabled={guardando || invalido}>{guardando ? 'Guardando…' : 'Guardar reglas'}</button></div>
     </form>
+    <InterruptoresOnvo />
+    </div>
   )
 }

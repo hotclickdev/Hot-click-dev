@@ -13,11 +13,15 @@ public class RetencionOnvoRevisionService {
 
     public static final int MAX_LISTA = 100;
 
-    public enum Resolucion { RESUELTA, NO_HAY, DECISION_INVALIDA }
+    public enum Resolucion { RESUELTA, NO_HAY, DECISION_INVALIDA, ONVO_PAGO_AL_NEGOCIO, NO_CONFIRMADO, NO_CONSULTABLE }
 
     private final PedidoRetencionOnvoRepository repo;
+    private final com.hotclick.service.OnvoService onvoService;
 
-    public RetencionOnvoRevisionService(PedidoRetencionOnvoRepository repo) { this.repo = repo; }
+    public RetencionOnvoRevisionService(PedidoRetencionOnvoRepository repo, com.hotclick.service.OnvoService onvoService) {
+        this.repo = repo;
+        this.onvoService = onvoService;
+    }
 
     /** Las más antiguas primero, con tope. */
     public List<PedidoRetencionOnvo> porRevisar() {
@@ -37,9 +41,27 @@ public class RetencionOnvoRevisionService {
             return Resolucion.RESUELTA;
         }
         if ("PLATAFORMA".equals(decision)) {
+            // Antes de aceptar que se cobró a la plataforma, ONVO tiene que confirmarlo (GET de la sesión).
+            Resolucion previa = confirmarCobroAPlataforma(marca);
+            if (previa != Resolucion.RESUELTA) return previa;
             repo.borrarPorPedido(pedidoId);
             return Resolucion.RESUELTA;
         }
         return Resolucion.DECISION_INVALIDA;
+    }
+
+    /** RESUELTA solo si la sesión viene sin onBehalfOf (clave presente y vacía). */
+    private Resolucion confirmarCobroAPlataforma(PedidoRetencionOnvo marca) {
+        if (marca.getOnvoSessionId() == null) return Resolucion.NO_CONFIRMADO;
+        java.util.Map<?, ?> sesion;
+        try {
+            sesion = onvoService.obtenerCheckoutSession(marca.getOnvoSessionId());
+        } catch (RuntimeException e) {
+            return Resolucion.NO_CONSULTABLE;
+        }
+        if (sesion == null || sesion.isEmpty()) return Resolucion.NO_CONSULTABLE;
+        if (!sesion.containsKey("onBehalfOfId")) return Resolucion.NO_CONFIRMADO;
+        Object cuenta = sesion.get("onBehalfOfId");
+        return cuenta == null || String.valueOf(cuenta).isBlank() ? Resolucion.RESUELTA : Resolucion.ONVO_PAGO_AL_NEGOCIO;
     }
 }

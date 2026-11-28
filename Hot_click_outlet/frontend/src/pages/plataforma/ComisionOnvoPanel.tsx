@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { onvoCobroService, type ComisionOnvo, type EnlacePago } from '@/services/onvoCobroService'
+import { onvoCobroService, type ComisionOnvo, type EnlacePago, type InterruptoresOnvo } from '@/services/onvoCobroService'
 import { formatPrice } from '@/utils/format'
 import { Aviso, BOTON_PRIMARIO, BOTON_SECUNDARIO, Carga, Chip, TARJETA, TITULO } from './piezas'
-import { etiquetaEstado, pct, resumenComision, validarEnlace } from './enlacePago'
+import { etiquetaEstado, interruptoresDe, pct, resumenComision, textoCobroNegocio, validarEnlace } from './enlacePago'
 
 function datos<T>(respuesta: { data: unknown }): T {
   const cuerpo = respuesta.data as { data?: T }
@@ -16,6 +16,7 @@ function datos<T>(respuesta: { data: unknown }): T {
 export default function ComisionOnvoPanel({ id }: { id: string }) {
   const [comision, setComision] = useState<ComisionOnvo | null>(null)
   const [enlaces, setEnlaces] = useState<EnlacePago[]>([])
+  const [interruptores, setInterruptores] = useState<InterruptoresOnvo>({ cobroANombreNegocio: false, enlacesPago: false })
   const [estado, setEstado] = useState<'carga' | 'listo' | 'error'>('carga')
   const [ocupado, setOcupado] = useState(false)
   const [mensaje, setMensaje] = useState('')
@@ -23,8 +24,8 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
   const [motivo, setMotivo] = useState('')
 
   const cargar = useCallback(() => {
-    Promise.all([onvoCobroService.comision(id), onvoCobroService.enlaces(id)])
-      .then(([c, e]) => {
+    Promise.all([onvoCobroService.comision(id), onvoCobroService.enlaces(id), onvoCobroService.interruptores().catch(() => null)])
+      .then(([c, e, sw]) => {
         const nueva = datos<ComisionOnvo>(c)
         const lista = datos<EnlacePago[]>(e)
         // Respuesta inesperada (p. ej. HTML de la SPA): se muestra el aviso de error, nunca se rompe la ficha.
@@ -33,6 +34,8 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
           return
         }
         setComision(nueva)
+        // Sin respuesta clara del interruptor se muestra apagado (fail-closed).
+        setInterruptores(interruptoresDe(sw ? datos<unknown>(sw) : null))
         setEnlaces(lista)
         setEstado('listo')
       })
@@ -96,23 +99,31 @@ export default function ComisionOnvoPanel({ id }: { id: string }) {
         </button>
       </div>
 
+      <p className="text-sm font-semibold text-hc-n-900">{textoCobroNegocio(interruptores.cobroANombreNegocio)}</p>
+
       <h3 className="text-[15px] font-bold text-hc-n-900">Enlace de pago</h3>
-      <p className="text-xs text-hc-n-600">Para cobrar una factura tardía. Se cobra a HotClick; se cancela si la factura llega antes del pago.</p>
-      <div className="grid gap-3 sm:grid-cols-[160px_1fr_auto]">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-semibold text-hc-n-900">Monto (₡)</span>
-          <input inputMode="numeric" className="h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3.5 text-[15px] text-hc-n-900 outline-none focus:border-hc-blue-600"
-            value={monto} onChange={(e) => setMonto(e.target.value)} />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-semibold text-hc-n-900">Motivo</span>
-          <input className="h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3.5 text-[15px] text-hc-n-900 outline-none focus:border-hc-blue-600"
-            value={motivo} maxLength={200} onChange={(e) => setMotivo(e.target.value)} />
-        </label>
-        <div className="flex items-end">
-          <button type="button" className={BOTON_PRIMARIO} disabled={ocupado} onClick={crear}>Crear enlace</button>
-        </div>
-      </div>
+      {interruptores.enlacesPago ? (
+        <>
+          <p className="text-xs text-hc-n-600">Para cobrar una factura tardía. Se cobra a HotClick; se cancela si la factura llega antes del pago.</p>
+          <div className="grid gap-3 sm:grid-cols-[160px_1fr_auto]">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-semibold text-hc-n-900">Monto (₡)</span>
+              <input inputMode="numeric" className="h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3.5 text-[15px] text-hc-n-900 outline-none focus:border-hc-blue-600"
+                value={monto} onChange={(e) => setMonto(e.target.value)} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-semibold text-hc-n-900">Motivo</span>
+              <input className="h-12 w-full rounded-xl border border-hc-n-200 bg-hc-surface px-3.5 text-[15px] text-hc-n-900 outline-none focus:border-hc-blue-600"
+                value={motivo} maxLength={200} onChange={(e) => setMotivo(e.target.value)} />
+            </label>
+            <div className="flex items-end">
+              <button type="button" className={BOTON_PRIMARIO} disabled={ocupado} onClick={crear}>Crear enlace</button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <p className="text-sm text-hc-n-600">Enlaces de pago desactivados. Los que ya existen se pueden copiar o cancelar.</p>
+      )}
 
       {enlaces.length === 0 ? (
         <p className="text-sm text-hc-n-600">Este negocio no tiene enlaces de pago.</p>

@@ -37,14 +37,35 @@ public class AdminOnvoCobroController {
     private final EnlacePagoOnvoService enlaces;
     private final AuditoriaAdminRegistroService auditoria;
     private final RetencionOnvoRevisionService revision;
+    private final com.hotclick.service.fiscal.ConfiguracionFiscalService configFiscal;
 
     public AdminOnvoCobroController(ComisionOnvoSyncService sync, EnlacePagoOnvoService enlaces,
                                     AuditoriaAdminRegistroService auditoria,
-                                    RetencionOnvoRevisionService revision) {
+                                    RetencionOnvoRevisionService revision,
+                                    com.hotclick.service.fiscal.ConfiguracionFiscalService configFiscal) {
         this.revision = revision;
+        this.configFiscal = configFiscal;
         this.sync = sync;
         this.enlaces = enlaces;
         this.auditoria = auditoria;
+    }
+
+    public record SwitchesOnvoRequest(@NotNull Boolean cobroANombreNegocio, @NotNull Boolean enlacesPago) {}
+
+    /** Interruptores del cobro por ONVO (apagados por defecto hasta validar con el sandbox). Solo ADMIN. */
+    @GetMapping("/api/admin/configuracion/onvo-cobro")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO> switches() {
+        return ResponseEntity.ok(ResponseDTO.success("Interruptores de ONVO", configFiscal.switchesOnvo()));
+    }
+
+    @PutMapping("/api/admin/configuracion/onvo-cobro")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseDTO> guardarSwitches(@Valid @RequestBody SwitchesOnvoRequest body) {
+        var nuevo = configFiscal.actualizarSwitchesOnvo(body.cobroANombreNegocio(), body.enlacesPago());
+        auditoria.registrarSiAdmin("ONVO_INTERRUPTORES", "CONFIG", 1L, null,
+            "cobroANombreNegocio=" + nuevo.cobroANombreNegocio() + " enlacesPago=" + nuevo.enlacesPago());
+        return ResponseEntity.ok(ResponseDTO.success("Interruptores guardados", nuevo));
     }
 
     public record RetencionPorRevisarDto(Long pedidoId, java.math.BigDecimal feePct, java.time.LocalDateTime creadoEn) {}
@@ -68,6 +89,15 @@ public class AdminOnvoCobroController {
         }
         if (r == RetencionOnvoRevisionService.Resolucion.DECISION_INVALIDA) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Decisión inválida"));
+        }
+        if (r == RetencionOnvoRevisionService.Resolucion.ONVO_PAGO_AL_NEGOCIO) {
+            return ResponseEntity.status(409).body(ResponseDTO.error("ONVO sí le pagó al negocio"));
+        }
+        if (r == RetencionOnvoRevisionService.Resolucion.NO_CONFIRMADO) {
+            return ResponseEntity.status(409).body(ResponseDTO.error("ONVO no confirma que se cobró a la plataforma"));
+        }
+        if (r == RetencionOnvoRevisionService.Resolucion.NO_CONSULTABLE) {
+            return ResponseEntity.status(503).body(ResponseDTO.error("No se pudo consultar a ONVO; reintentá"));
         }
         auditoria.registrarSiAdmin("ONVO_RETENCION_RESOLVER", "PEDIDO", pedidoId, null, decision);
         return ResponseEntity.ok(ResponseDTO.success("Retención resuelta", decision));

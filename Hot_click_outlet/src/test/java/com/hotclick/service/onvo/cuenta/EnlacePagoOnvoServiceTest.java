@@ -33,6 +33,7 @@ class EnlacePagoOnvoServiceTest {
     private OnvoService onvo;
     private OnvoPaymentProvider provider;
     private EnlacePagoOnvoService svc;
+    private com.hotclick.service.fiscal.ConfiguracionFiscalService config;
 
     @BeforeEach
     void setUp() {
@@ -40,7 +41,9 @@ class EnlacePagoOnvoServiceTest {
         empresaRepo = mock(EmpresaRepository.class);
         onvo = mock(OnvoService.class);
         provider = mock(OnvoPaymentProvider.class);
-        svc = new EnlacePagoOnvoService(repo, empresaRepo, onvo, provider, "https://app.test", 50);
+        config = mock(com.hotclick.service.fiscal.ConfiguracionFiscalService.class);
+        when(config.enlacesPagoActivos()).thenReturn(true);
+        svc = new EnlacePagoOnvoService(repo, empresaRepo, onvo, provider, config, "https://app.test", 50);
         when(empresaRepo.existsById(7L)).thenReturn(true);
         when(repo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(repo.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
@@ -79,6 +82,19 @@ class EnlacePagoOnvoServiceTest {
     }
 
     private static int eq50k() { return org.mockito.ArgumentMatchers.eq(50_000); }
+
+    @Test
+    @DisplayName("Interruptor APAGADO: crear responde conflicto «Enlaces de pago desactivados» sin llamar a ONVO; cancelar y webhook siguen")
+    void interruptorApagado() {
+        when(config.enlacesPagoActivos()).thenReturn(false);
+        assertThatThrownBy(() -> svc.crear(7L, 50_000, "Factura tardía"))
+            .isInstanceOf(EnlaceConflictoException.class).hasMessage("Enlaces de pago desactivados");
+        verifyNoInteractions(onvo);
+        // Un enlace existente se puede cancelar y se marca pagado aunque el interruptor esté apagado.
+        EnlacePagoOnvo e = abierto();
+        when(provider.expirarSesionParaCancelar("sess_1")).thenReturn(true);
+        assertThat(svc.cancelar(1L).getEstado()).isEqualTo(EnlacePagoOnvo.CANCELADO);
+    }
 
     @Test
     @DisplayName("Crear rechaza monto fuera de rango, motivo corto, empresa inexistente y segundo enlace abierto")
