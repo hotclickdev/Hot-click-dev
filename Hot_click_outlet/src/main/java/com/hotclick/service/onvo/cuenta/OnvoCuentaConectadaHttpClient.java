@@ -45,6 +45,21 @@ public class OnvoCuentaConectadaHttpClient implements OnvoCuentaConectadaClient 
     }
 
     @Override
+    public void actualizarComision(String accountId, java.math.BigDecimal porcentaje) {
+        if (accountId == null || !accountId.matches("[A-Za-z0-9_]{1,100}")) {
+            throw new IllegalArgumentException("Id de cuenta conectada inválido");
+        }
+        Map<?, ?> r = exchange("/connected-accounts/" + accountId, HttpMethod.POST,
+            Map.of("marketplaceAppFee", porcentaje.setScale(2, java.math.RoundingMode.HALF_UP)));
+        Object fee = r.get("marketplaceAppFee");
+        // Fail-closed: ONVO tiene que devolver el valor y ser el mismo que se envió; sin eso no se da por sincronizado.
+        if (fee == null) {
+            throw new IllegalStateException("ONVO no confirmó la comisión (respuesta sin marketplaceAppFee)");
+        }
+        BigDecimalConfirmacion.exigirIgual(fee, porcentaje);
+    }
+
+    @Override
     public boolean isSimulado() { return false; }
 
     private Map<?, ?> exchange(String path, HttpMethod metodo, Object body) {
@@ -62,5 +77,19 @@ public class OnvoCuentaConectadaHttpClient implements OnvoCuentaConectadaClient 
     private static String texto(Map<?, ?> m, String k) {
         Object v = m.get(k);
         return v == null || String.valueOf(v).isBlank() ? null : String.valueOf(v);
+    }
+
+    private static final class BigDecimalConfirmacion {
+        static void exigirIgual(Object devuelto, java.math.BigDecimal enviado) {
+            java.math.BigDecimal v;
+            try {
+                v = new java.math.BigDecimal(String.valueOf(devuelto));
+            } catch (NumberFormatException e) {
+                throw new IllegalStateException("ONVO devolvió una comisión ilegible");
+            }
+            if (v.compareTo(enviado) != 0) {
+                throw new IllegalStateException("ONVO devolvió una comisión distinta a la enviada");
+            }
+        }
     }
 }

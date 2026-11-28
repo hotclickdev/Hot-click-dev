@@ -34,6 +34,13 @@ public class ConfigFiscal {
     @Column(name = "base_factura_negocio", nullable = false, length = 10, columnDefinition = "varchar(10) default 'NETO'")
     private String baseFacturaNegocio = "NETO";
 
+    @Column(name = "onvo_cobro_a_nombre_negocio", nullable = false, columnDefinition = "boolean default false")
+    private Boolean onvoCobroANombreNegocio = false;
+    @Column(name = "onvo_enlaces_pago", nullable = false, columnDefinition = "boolean default false")
+    private Boolean onvoEnlacesPago = false;
+
+    public Boolean getOnvoCobroANombreNegocio() { return onvoCobroANombreNegocio; }
+    public Boolean getOnvoEnlacesPago() { return onvoEnlacesPago; }
     public Long getId() { return id; }
     public boolean isHaciendaMensajeReceptorHabilitado() { return haciendaMensajeReceptorHabilitado; }
     public Integer getToleranciaFacturaNegocioCrc() { return toleranciaFacturaNegocioCrc; }

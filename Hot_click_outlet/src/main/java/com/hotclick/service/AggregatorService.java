@@ -61,6 +61,12 @@ public class AggregatorService {
     private final WalletDlqTxOps dlqTxOps;
     private final EmpresaRepository empresaRepo;
 
+    /** Opcional: pedidos cobrados con marketplaceAppFee de ONVO (ONVO ya retuvo la comisión de HotClick). */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hotclick.repository.PedidoRetencionOnvoRepository retencionRepo;
+
+    void setRetencionRepoParaTest(com.hotclick.repository.PedidoRetencionOnvoRepository r) { this.retencionRepo = r; }
+
     public AggregatorService(WalletService walletService,
                              WalletDlqTxOps dlqTxOps,
                              EmpresaRepository empresaRepo) {
@@ -94,6 +100,10 @@ public class AggregatorService {
         }
         if (bruto <= 0) {
             log.warn("[aggregator] Pedido {} total ≤ 0 — no se acredita wallet", pedido.getId());
+            return;
+        }
+        if (retenidoPorOnvo(pedido)) {
+            log.info("[aggregator] Pedido {} cobrado con comisión retenida por ONVO: no se acredita wallet (ONVO paga al negocio)", pedido.getId());
             return;
         }
         if (walletService.ventaYaAcreditada(pedido.getId())) {
@@ -143,6 +153,10 @@ public class AggregatorService {
             return;
         }
 
+        if (retenidoPorOnvo(pedido)) {
+            log.info("[aggregator] Pedido {} cobrado con comisión retenida por ONVO: no se acredita wallet (ONVO paga al negocio)", pedido.getId());
+            return;
+        }
         long costoEnvio = pedido.getCostoEnvio() != null ? pedido.getCostoEnvio() : 0L;
         Liquidacion liquidacion = liquidar(empresaId, bruto, costoEnvio);
         Resultado calc = liquidacion.detalle().resultado();
@@ -180,7 +194,49 @@ public class AggregatorService {
     public record DetalleComision(String plan, BigDecimal porcentaje, long minimo, Resultado resultado) {}
 
     /** Lo que recibe el negocio por un pedido: {@code neto = productos - comisión + envío}. */
-    public record Liquidacion(long envio, DetalleComision detalle, long neto) {}
+    public record Liquidacion(long envio, DetalleComision detalle, long neto, boolean retenidoOnvo) {
+        public Liquidacion(long envio, DetalleComision detalle, long neto) { this(envio, detalle, neto, false); }
+    }
+
+    /** % que ONVO retuvo para HotClick en este pedido, si se cobró a una cuenta conectada con su % sincronizado. */
+    public java.util.Optional<BigDecimal> retencionOnvoPct(Long pedidoId) {
+        if (retencionRepo == null || pedidoId == null) return java.util.Optional.empty();
+        try {
+            return retencionRepo.findByPedidoId(pedidoId).map(com.hotclick.model.PedidoRetencionOnvo::getFeePct);
+        } catch (RuntimeException e) {
+            // Fail-closed: si no se puede saber, no se acredita ni se calcula como retenido a ciegas.
+            log.error("[aggregator] No se pudo leer la retención ONVO del pedido {}: {}", pedidoId, e.getClass().getSimpleName());
+            throw e;
+        }
+    }
+
+    /** La retención de este pedido quedó POR_REVISAR (ONVO no confirmó la cuenta): la resuelve un ADMIN a mano. */
+    public boolean retencionPorRevisar(Long pedidoId) {
+        if (retencionRepo == null || pedidoId == null) return false;
+        return retencionRepo.findByPedidoId(pedidoId).map(com.hotclick.model.PedidoRetencionOnvo::porRevisar).orElse(false);
+    }
+
+    boolean retenidoPorOnvo(Pedido pedido) {
+        return retencionOnvoPct(pedido.getId()).isPresent();
+    }
+
+    /**
+     * Liquidación de un pedido concreto. Si ONVO ya retuvo la comisión (marketplaceAppFee), no se descuenta otra
+     * vez: se informa lo que retuvo ONVO ({@code pct} sobre el total cobrado, que es lo que aplica ONVO) y el
+     * neto es lo que ONVO le paga al negocio. Sin cuenta conectada, el cálculo es el de siempre.
+     */
+    public Liquidacion liquidarPedido(Pedido pedido) {
+        long bruto = pedido.getTotalPedido() != null ? pedido.getTotalPedido() : 0L;
+        long costoEnvio = pedido.getCostoEnvio() != null ? pedido.getCostoEnvio() : 0L;
+        java.util.Optional<BigDecimal> retenido = retencionOnvoPct(pedido.getId());
+        if (retenido.isEmpty()) return liquidar(pedido.getEmpresaId(), bruto, costoEnvio);
+        long envio = Math.max(0L, Math.min(costoEnvio, bruto));
+        BigDecimal pct = retenido.get();
+        Resultado r = AggregatorCommissionMath.calcular(bruto, pct, false, 0, 0);
+        Empresa empresa = pedido.getEmpresaId() == null ? null : empresaRepo.findByIdWithPlan(pedido.getEmpresaId()).orElse(null);
+        DetalleComision detalle = new DetalleComision(nombrePlan(empresa, empresa != null ? empresa.getPlan() : null), pct, 0, r);
+        return new Liquidacion(envio, detalle, r.neto(), true);
+    }
 
     /** La comisión se cobra sobre los productos; el envío se le paga completo al negocio. */
     public Liquidacion liquidar(Long empresaId, long bruto, long costoEnvio) {

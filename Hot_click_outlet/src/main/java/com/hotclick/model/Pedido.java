@@ -254,6 +254,17 @@ public class Pedido extends BaseEntity {
      * P-07 BAJO: avisos de la entrega manual sin stock suficiente (no persiste). Va en la respuesta al admin
      * para que vea qué faltó; el descuento sigue ocurriendo una sola vez.
      */
+    /**
+     * Solo en la copia que va a la pasarela ({@code CheckoutGrupoFactory.paraCobro}): ids de los pedidos del grupo
+     * que se cobran juntos si TODOS son del mismo negocio. null = pedido suelto; vacío = grupo de varios negocios
+     * (nunca se cobra a nombre de una cuenta conectada). No persiste.
+     */
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<Long> idsGrupoMismoNegocio;
+    public List<Long> getIdsGrupoMismoNegocio() { return idsGrupoMismoNegocio; }
+    public void setIdsGrupoMismoNegocio(List<Long> ids) { this.idsGrupoMismoNegocio = ids; }
+
     @Transient
     @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
     private List<String> advertenciasStock = new ArrayList<>();

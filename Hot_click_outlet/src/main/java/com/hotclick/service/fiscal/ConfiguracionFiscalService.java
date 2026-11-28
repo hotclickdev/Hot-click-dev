@@ -43,6 +43,10 @@ public class ConfiguracionFiscalService {
     public record ReglasFactura(boolean mensajeReceptorHabilitado, int toleranciaCrc, String base) {}
 
     public static final ReglasFactura FACTURA_DEFAULTS = new ReglasFactura(false, 1, BASE_NETO);
+    /** Interruptores del cobro por ONVO. Ambos apagados por defecto hasta validarlos contra el sandbox de ONVO. */
+    public record SwitchesOnvo(boolean cobroANombreNegocio, boolean enlacesPago) {}
+
+    public static final SwitchesOnvo SWITCHES_APAGADOS = new SwitchesOnvo(false, false);
 
     public static final Reglas DEFAULTS = new Reglas("SIMPLIFICADO", new BigDecimal("14.00"), 7, 20_000, 0);
 
@@ -109,6 +113,35 @@ public class ConfiguracionFiscalService {
             throw new IllegalArgumentException("tolerancia fuera de rango");
         }
         return new ReglasFactura(r.mensajeReceptorHabilitado(), r.toleranciaCrc(), r.base().trim().toUpperCase(Locale.ROOT));
+    }
+
+    /** Si no se puede leer (fila o columna ausente, error de base), ambos quedan apagados: fail-closed. */
+    public SwitchesOnvo switchesOnvo() {
+        try {
+            List<SwitchesOnvo> v = jdbc.query(
+                "SELECT onvo_cobro_a_nombre_negocio, onvo_enlaces_pago FROM hot_click_config_fiscal_tb WHERE id = 1",
+                (rs, i) -> new SwitchesOnvo(rs.getBoolean(1), rs.getBoolean(2)));
+            return v.isEmpty() ? SWITCHES_APAGADOS : v.get(0);
+        } catch (DataAccessException e) {
+            log.warn("interruptores de ONVO no disponibles ({}); quedan apagados", e.getClass().getSimpleName());
+            return SWITCHES_APAGADOS;
+        }
+    }
+
+    public boolean cobroANombreNegocioActivo() { return switchesOnvo().cobroANombreNegocio(); }
+
+    public boolean enlacesPagoActivos() { return switchesOnvo().enlacesPago(); }
+
+    @Transactional
+    public SwitchesOnvo actualizarSwitchesOnvo(boolean cobroANombreNegocio, boolean enlacesPago) {
+        int filas = jdbc.update(
+            "UPDATE hot_click_config_fiscal_tb SET onvo_cobro_a_nombre_negocio = ?, onvo_enlaces_pago = ? WHERE id = 1",
+            cobroANombreNegocio, enlacesPago);
+        if (filas == 0) {
+            jdbc.update("INSERT INTO hot_click_config_fiscal_tb (id, onvo_cobro_a_nombre_negocio, onvo_enlaces_pago) VALUES (1, ?, ?)",
+                cobroANombreNegocio, enlacesPago);
+        }
+        return new SwitchesOnvo(cobroANombreNegocio, enlacesPago);
     }
 
     @Transactional

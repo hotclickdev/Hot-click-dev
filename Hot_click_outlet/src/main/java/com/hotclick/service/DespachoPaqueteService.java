@@ -65,7 +65,7 @@ public class DespachoPaqueteService {
         if (pedido.getEmpresaId() == null || bruto <= 0) {
             return new Pago(bruto - envio, envio, 0, null, 0, null, 0);
         }
-        Liquidacion liquidacion = aggregatorService.liquidar(pedido.getEmpresaId(), bruto, envio);
+        Liquidacion liquidacion = aggregatorService.liquidarPedido(pedido);
         DetalleComision detalle = liquidacion.detalle();
         return new Pago(bruto - liquidacion.envio(), liquidacion.envio(), detalle.resultado().totalComision(),
             detalle.porcentaje(), detalle.minimo(), detalle.plan(), liquidacion.neto());
