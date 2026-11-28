@@ -4,17 +4,14 @@ import com.hotclick.dto.PaymentCheckoutRequest;
 import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
-import com.hotclick.service.CuponService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 @DisplayName("Checkout — M4: IVA según régimen y tipo de comprobante")
 class CheckoutIvaRegimenTest {
@@ -40,9 +37,7 @@ class CheckoutIvaRegimenTest {
     }
 
     private static OrderPricingService pricing() {
-        OrderPricingService s = new OrderPricingService();
-        ReflectionTestUtils.setField(s, "cuponService", mock(CuponService.class));
-        return s;
+        return new OrderPricingService();
     }
 
     private static OrderPricingResult precio(PaymentCheckoutRequest r, CheckoutPaquetesPlanner.Paquete paq) {
@@ -77,15 +72,11 @@ class CheckoutIvaRegimenTest {
         assertThat(total(req(true, 1), paq)).isEqualTo(5000);
     }
 
-    private static OrderPricingResult conCupon(PaymentCheckoutRequest r, CheckoutPaquetesPlanner.Paquete paq, String envio) {
-        CuponService cupones = mock(CuponService.class);
-        com.hotclick.model.Cupon c = new com.hotclick.model.Cupon();
-        c.setCodigo("PROMO10"); c.setDescuentoPorcentaje(10);
-        org.mockito.Mockito.when(cupones.validarParaEmpresa("PROMO10", 7L)).thenReturn(java.util.Optional.of(c));
-        OrderPricingService s = pricing();
-        ReflectionTestUtils.setField(s, "cuponService", cupones);
-        r.setCodigoCupon("PROMO10");
-        return s.calcularPaquete(r, paq.bodega(), paq.subtotal(), envio, paq.lineasIva());
+    /** Los cupones se retiraron: el descuento que queda en el checkout es el de SINPE (10 % del negocio). */
+    private static OrderPricingResult conDescuentoSinpe(PaymentCheckoutRequest r, CheckoutPaquetesPlanner.Paquete paq, String envio) {
+        paq.bodega().getEmpresa().setPctDescuentoSinpe(new BigDecimal("10"));
+        r.setProvider("SINPE");
+        return pricing().calcularPaquete(r, paq.bodega(), paq.subtotal(), envio, paq.lineasIva());
     }
 
     /** Pedido como lo arma el checkout con el resultado del pricing (precio, descuento, envío e IVA). */
@@ -107,31 +98,31 @@ class CheckoutIvaRegimenTest {
     }
 
     @Test
-    @DisplayName("simplificado + factura con cupón y envío: IVA sobre el neto y cobro = TotalComprobante del XML")
-    void facturaConCuponYEnvioCuadraConXml() {
+    @DisplayName("simplificado + factura con descuento SINPE y envío: IVA sobre el neto y cobro = TotalComprobante del XML")
+    void facturaConDescuentoYEnvioCuadraConXml() {
         Empresa e = empresa("SIMPLIFICADO");
         var paq = planear(e, true, 2);
-        var res = conCupon(req(true, 2), paq, "ENVIO_RAPIDO");
-        assertThat(res.descuento()).isEqualTo(1000);
-        assertThat(res.impuesto()).isEqualTo(1170);                 // 13 % de 9 000, no de 10 000
-        assertThat(res.total()).isEqualTo(9000 + 5000 + 1170);
+        var res = conDescuentoSinpe(req(true, 2), paq, "ENVIO_RAPIDO");
+        assertThat(res.descuento()).isEqualTo(1500);                // 10 % de 10 000 + 5 000 de envío
+        assertThat(res.impuesto()).isEqualTo(1105);                 // 13 % de 8 500, no de 10 000
+        assertThat(res.total()).isEqualTo(10000 - 1500 + 5000 + 1105);
         assertThat(com.hotclick.service.pos.PosVentaIvaRegimenTest.totalXml(
             pedido(e, paq, res), com.hotclick.model.ComprobanteFiscal.TIPO_FACTURA)).isEqualTo(res.total());
     }
 
     @Test
-    @DisplayName("tradicional y tiquete con cupón y envío: el XML cuadra con lo cobrado")
-    void sinIvaSumadoConCuponYEnvioCuadraConXml() {
+    @DisplayName("tradicional y tiquete con descuento SINPE y envío: el XML cuadra con lo cobrado")
+    void sinIvaSumadoConDescuentoYEnvioCuadraConXml() {
         Empresa t = empresa("TRADICIONAL");
         var paqT = planear(t, true, 3);
-        var resT = conCupon(req(true, 3), paqT, "ENVIO_RAPIDO");
+        var resT = conDescuentoSinpe(req(true, 3), paqT, "ENVIO_RAPIDO");
         assertThat(resT.impuesto()).isZero();
         assertThat(com.hotclick.service.pos.PosVentaIvaRegimenTest.totalXml(
             pedido(t, paqT, resT), com.hotclick.model.ComprobanteFiscal.TIPO_FACTURA)).isEqualTo(resT.total());
 
         Empresa s = empresa("SIMPLIFICADO");
         var paqS = planear(s, false, 3);
-        var resS = conCupon(req(false, 3), paqS, "ENVIO_RAPIDO");
+        var resS = conDescuentoSinpe(req(false, 3), paqS, "ENVIO_RAPIDO");
         assertThat(com.hotclick.service.pos.PosVentaIvaRegimenTest.totalXml(
             pedido(s, paqS, resS), com.hotclick.model.ComprobanteFiscal.TIPO_TIQUETE)).isEqualTo(resS.total());
     }

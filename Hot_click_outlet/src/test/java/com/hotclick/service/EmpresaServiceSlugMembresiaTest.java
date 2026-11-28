@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@DisplayName("El slug de cupones no resuelve una tienda sin membresia")
+@DisplayName("El slug público no resuelve una tienda sin membresia")
 class EmpresaServiceSlugMembresiaTest {
 
     @Test

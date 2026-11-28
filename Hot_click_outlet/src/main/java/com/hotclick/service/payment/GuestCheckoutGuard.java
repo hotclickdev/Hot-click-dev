@@ -244,7 +244,7 @@ public class GuestCheckoutGuard {
         if (header != null && !header.isBlank() && header.length() <= 128) return "k:" + header.trim();
         StringBuilder sb = new StringBuilder().append(ip).append('|').append(correo).append('|')
             .append(req.getBodegaId()).append('|').append(req.getMetodoEnvio()).append('|')
-            .append(req.getProvider()).append('|').append(req.getCodigoCupon()).append('|');
+            .append(req.getProvider()).append('|');
         if (req.getItems() != null) {
             req.getItems().stream()
                 .sorted(java.util.Comparator.comparing(i -> String.valueOf(i.getProductoId())))

@@ -10,27 +10,6 @@ public class NegocioEmailBuilder {
 
     @Autowired private EmailLayoutHelper layout;
 
-    /** Asunto del cupón de bienvenida (Figma 30:1768). */
-    public String asuntoCuponBienvenida() {
-        return "Tu 13% de descuento para la primera compra";
-    }
-
-    /**
-     * Cupón de bienvenida (Figma «Correo · Cupón de bienvenida», 30:1768).
-     * Figma dice «Válido por 30 días», pero el cupón no vence en el backend. Decisión B17:
-     * no se promete vencimiento; se dejan las condiciones reales (una sola compra, una vez por persona).
-     */
-    public String buildCuponBienvenida(String codigo) {
-        return layout.abrirHtml()
-            + layout.headerConIcono(EmailLayoutHelper.FONDO_ALERTA, "regalo", "Tu 13% para la primera compra",
-                "Usalo en cualquier producto del catálogo al pagar.")
-            + layout.abrirCuerpo()
-            + layout.codigoDestacado("Tu código", layout.esc(codigo), EmailLayoutHelper.FONDO_ALERTA, false)
-            + layout.cta(layout.urlSitio("/productos"), "Usar mi cupón")
-            + layout.notaPequena("Válido para una sola compra, una vez por persona. Ingresalo en el campo «¿Tenés un cupón?» al pagar.")
-            + layout.footer("¿Dudas?");
-    }
-
     /** Asunto de la bienvenida: no dice «lista» si el negocio aún espera aprobación. */
     public String asuntoBienvenidaEmprendedor(String nombreEmpresa, boolean pendienteAprobacion) {
         return (pendienteAprobacion ? "Recibimos tu negocio en HotClick — " : "Tu tienda está lista en HotClick — ")

@@ -51,7 +51,6 @@ class PaymentServiceF37Test {
     @Mock EmpresaRepository         empresaRepository;
     @Mock NotificacionEmailService  notificacionEmailService;
     @Mock VentaAvisoService         ventaAvisoService;
-    @Mock CuponService              cuponService;
     @Mock WebhookDispatcherService  webhookDispatcher;
     @Mock PasswordEncoder           passwordEncoder;
     @Mock PaymentProvider           mockProvider;
@@ -150,7 +149,6 @@ class PaymentServiceF37Test {
         ReflectionTestUtils.setField(orderConfirmationService, "encargoService", encargoService);
         ReflectionTestUtils.setField(orderConfirmationService, "posQrVentaService", posQrVentaService);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoRepository", pedidoRepository);
-        ReflectionTestUtils.setField(orderConfirmationService, "cuponService", cuponService);
         ReflectionTestUtils.setField(orderConfirmationService, "stockReservationService", stockReservationService);
         ReflectionTestUtils.setField(orderConfirmationService, "paymentNotificationsFacade", paymentNotificationsFacade);
         ReflectionTestUtils.setField(orderConfirmationService, "pedidoGrupoService", pedidoGrupoService);
@@ -201,7 +199,6 @@ class PaymentServiceF37Test {
         pedido.setEstadoPedido(Constants.PEDIDO_PENDIENTE);
         pedido.setNumeroPedido("ORD-ABCDEF123456");
         pedido.setTotalPedido(15000);
-        pedido.setCuponCodigo(null);
         pedido.setGiftCardCodigo(null);
         pedido.setEstado(Constants.ESTADO_ACTIVO);
         pedido.setItems(List.of());
@@ -243,7 +240,6 @@ class PaymentServiceF37Test {
         when(providerFactory.get("ONVO")).thenReturn(mockProvider);
         when(mockProvider.crearSesion(any(), any()))
             .thenReturn(new PaymentSession("PAY-001", "https://paypal.com/pay"));
-        when(cuponService.validarCodigo(any())).thenReturn(Optional.empty());
         doNothing().when(webhookDispatcher).dispatch(any(), anyString(), any());
 
         PaymentCheckoutRequest req = new PaymentCheckoutRequest();

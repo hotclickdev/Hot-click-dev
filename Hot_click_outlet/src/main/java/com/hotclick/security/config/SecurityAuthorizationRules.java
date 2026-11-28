@@ -117,7 +117,6 @@ final class SecurityAuthorizationRules {
             .requestMatchers(POST, "/api/public/shopping-assistant/search-by-image").permitAll()
             .requestMatchers(POST, "/api/public/shopping-assistant/feedback").permitAll()
             .requestMatchers(DELETE, "/api/public/shopping-assistant/session/**").permitAll()
-            .requestMatchers(GET, "/api/cupones/validar").permitAll()
             .requestMatchers(GET, "/api/testimonios/producto/*/resenas").permitAll()
             .requestMatchers(POST, "/api/public/solicitud-especial").permitAll()
             .requestMatchers("/api/admin/branding").authenticated()

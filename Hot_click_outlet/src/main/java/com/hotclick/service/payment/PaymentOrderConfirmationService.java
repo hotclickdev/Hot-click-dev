@@ -4,7 +4,6 @@ import com.hotclick.model.Pago;
 import com.hotclick.model.Pedido;
 import com.hotclick.repository.PagoRepository;
 import com.hotclick.repository.PedidoRepository;
-import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
@@ -30,7 +29,7 @@ public class PaymentOrderConfirmationService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentOrderConfirmationService.class);
 
-    /** Estados posteriores al pago: confirmar de nuevo descontaría stock y cupones otra vez. */
+    /** Estados posteriores al pago: confirmar de nuevo descontaría stock otra vez. */
     static final Set<String> YA_CONFIRMADOS = Set.of(
         Constants.PEDIDO_PAGADO, Constants.PEDIDO_EN_PREPARACION, Constants.PEDIDO_LISTO_RETIRO,
         Constants.PEDIDO_ENVIADO, Constants.PEDIDO_ENTREGADO, Constants.PEDIDO_COMPLETADO);
@@ -53,7 +52,6 @@ public class PaymentOrderConfirmationService {
 
     @Autowired private PedidoRepository           pedidoRepository;
     @Autowired private PagoRepository             pagoRepository;
-    @Autowired private CuponService               cuponService;
     @Autowired private StockReservationService    stockReservationService;
     @Autowired private PaymentNotificationsFacade paymentNotificationsFacade;
     @Autowired private PosQrVentaService          posQrVentaService;
@@ -108,7 +106,6 @@ public class PaymentOrderConfirmationService {
             return Resultado.SOBREVENTA;
         }
 
-        boolean cuponMarcado = false;
         boolean algunoReclamado = false;
         java.util.List<Long> perdidos = new java.util.ArrayList<>();
         // SCALE1: el grupo de pago es acotado (paquetes de una compra); un UPDATE condicional por paquete.
@@ -124,10 +121,6 @@ public class PaymentOrderConfirmationService {
                 continue;
             }
             algunoReclamado = true;
-            if (!cuponMarcado) {
-                marcarCuponUsadoUnaVez(grupo);
-                cuponMarcado = true;
-            }
             Hibernate.initialize(pedido.getItems());
             stockReservationService.confirmAndConsumeStock(pedido, paymentServiceSelf, eventPublisher);
 
@@ -209,24 +202,6 @@ public class PaymentOrderConfirmationService {
         Long compraId = principal.getCompraId();
         if (compraId != null && eventPublisher != null) {
             eventPublisher.publishEvent(new CompraPagadaEvent(compraId));
-        }
-    }
-
-    /**
-     * Un cupón se usa una sola vez por checkout, aunque su descuento se haya aplicado a varios
-     * paquetes (cupón de plataforma) — evita consumir el límite de usos N veces.
-     */
-    private void marcarCuponUsadoUnaVez(List<Pedido> grupo) {
-        for (Pedido pedido : grupo) {
-            String codigo = pedido.getCuponCodigo();
-            if (codigo == null) continue;
-            Long empresaId = pedido.getEmpresaId();
-            if (cuponService.esDeEmpresa(codigo, empresaId)) {
-                cuponService.marcarUsado(codigo, empresaId);
-            } else {
-                cuponService.marcarUsado(codigo);
-            }
-            return;
         }
     }
 

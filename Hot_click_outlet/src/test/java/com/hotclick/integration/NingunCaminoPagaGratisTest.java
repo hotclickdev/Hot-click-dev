@@ -273,6 +273,61 @@ class NingunCaminoPagaGratisTest extends BaseIntegrationTest {
         }
     }
 
+    @Test
+    @DisplayName("Los cupones ya no existen: un cliente viejo que manda codigoCupon o descuento paga el precio real")
+    void cuponRetiradoSeIgnora() throws Exception {
+        // codigoCupon salió de PaymentCheckoutRequest (decisión del dueño): el servidor lo ignora, igual que un
+        // descuento inventado, y lo que se manda a ONVO es lo mismo que en un checkout sin esos campos.
+        String limpio = """
+            {"bodegaId":%d,"metodoEnvio":"%s","provider":"ONVO","items":[{"productoId":%d,"cantidad":1}]}
+            """.formatted(bodega.getId(), Constants.ENVIO_RETIRO, producto.getId());
+        String conCupon = """
+            {"bodegaId":%d,"metodoEnvio":"%s","provider":"ONVO","codigoCupon":"PROMO99","cuponCodigo":"PROMO99",
+             "codigoDescuento":"PROMO99","descuento":999999,"descuentoTotal":999999,"descuentoPorcentaje":99,
+             "items":[{"productoId":%d,"cantidad":1}]}
+            """.formatted(bodega.getId(), Constants.ENVIO_RETIRO, producto.getId());
+        mockMvc.perform(post("/api/payments/checkout").header("Authorization", userToken)
+                .contentType(MediaType.APPLICATION_JSON).content(limpio))
+            .andExpect(status().is2xxSuccessful());
+        org.mockito.ArgumentCaptor<Integer> montoLimpio = org.mockito.ArgumentCaptor.forClass(Integer.class);
+        verify(onvoService).crearCheckoutSession(montoLimpio.capture(), anyString(), anyString(), anyString(), any(), anyMap());
+        clearInvocations(onvoService);
+        pagoRepository.deleteAll();
+        pedidoRepository.deleteAll();
+        mockMvc.perform(post("/api/payments/checkout").header("Authorization", userToken)
+                .contentType(MediaType.APPLICATION_JSON).content(conCupon))
+            .andExpect(status().is2xxSuccessful());
+        org.mockito.ArgumentCaptor<Integer> montoOnvo = org.mockito.ArgumentCaptor.forClass(Integer.class);
+        verify(onvoService).crearCheckoutSession(montoOnvo.capture(), anyString(), anyString(), anyString(), any(), anyMap());
+        assertThat(montoOnvo.getValue()).isEqualTo(montoLimpio.getValue()).isGreaterThanOrEqualTo(producto.getPrecioVenta());
+        assertThat(pedidoRepository.findAll()).allSatisfy(p -> {
+            assertThat(p.getEstadoPedido()).isEqualTo(Constants.PEDIDO_PENDIENTE);
+            assertThat(p.getTotalPedido()).isEqualTo(montoOnvo.getValue());
+            assertThat(p.getDescuentoTotal()).isZero();
+            assertThat(p.getCuponCodigo()).isNull();
+        });
+        sinPagadoNiCorreo();
+    }
+
+    @Test
+    @DisplayName("Los endpoints de cupones ya no existen (404 o 403, nunca 2xx)")
+    void endpointsCuponesRetirados() throws Exception {
+        var get = new String[]{"/api/cupones/validar?codigo=X", "/api/cupones", "/api/cupones/estadisticas",
+            "/api/tienda/cupones/validar?codigo=X"};
+        for (String ruta : get) {
+            int st = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(ruta)
+                .header("Authorization", tokenEmp)).andReturn().getResponse().getStatus();
+            assertThat(st).as(ruta).isIn(403, 404);
+            int anonimo = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(ruta)
+                .header("X-Tenant-Slug", empresa.getSlug())).andReturn().getResponse().getStatus();
+            assertThat(anonimo).as("sin token " + ruta).isIn(401, 403, 404);
+        }
+        int solicitar = mockMvc.perform(post("/api/cupones/solicitar").header("Authorization", tokenEmp)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"qa@example.com\"}"))
+            .andReturn().getResponse().getStatus();
+        assertThat(solicitar).isIn(403, 404);
+    }
+
     // ── Panel del vendedor ────────────────────────────────────────────────────
 
     @ParameterizedTest(name = "[{index}] método {0} → 400, sigue PENDIENTE")

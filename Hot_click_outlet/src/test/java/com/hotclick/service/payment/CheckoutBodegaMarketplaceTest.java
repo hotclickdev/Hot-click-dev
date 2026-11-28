@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("E2E-CMP-01 | bodega del vendedor en el marketplace")
 class CheckoutBodegaMarketplaceTest {
 
-    /** Marca que la validación de bodegas pasó y el flujo siguió al cupón. */
+    /** Marca que la validación de bodegas pasó y el flujo siguió al cálculo del envío. */
     static class PasoValidacion extends RuntimeException {}
 
     private static final long COMPRADOR = 52L, VENDEDOR = 53L, TERCERA = 54L;
@@ -59,7 +59,7 @@ class CheckoutBodegaMarketplaceTest {
         when(planner.planificar(any(), any(), any())).thenReturn(List.of(new CheckoutPaquetesPlanner.Paquete(
             bodegaPaquete, items, 1000, 500, Constants.ENVIO_RETIRO, null)));
         OrderPricingService pricing = mock(OrderPricingService.class);
-        doThrow(new PasoValidacion()).when(pricing).exigirCuponValido(any(), any());
+        doThrow(new PasoValidacion()).when(pricing).calcularCostoEnvio(any());
         CheckoutGrupoFactory f = new CheckoutGrupoFactory(new CheckoutValidator(), planner, pricing,
             mock(CheckoutOrderFactory.class));
         f.crear(req, new StockReservationResult(1000, 500, productos), null, "ONVO", null, "PENDIENTE");

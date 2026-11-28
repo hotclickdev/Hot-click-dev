@@ -7,7 +7,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("NegocioEmailBuilder — cupón de bienvenida (Figma: Correo · Cupón de bienvenida)")
+@DisplayName("NegocioEmailBuilder — correos de negocio")
 class NegocioEmailBuilderTest {
 
     private final NegocioEmailBuilder builder = new NegocioEmailBuilder();
@@ -15,33 +15,6 @@ class NegocioEmailBuilderTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(builder, "layout", new EmailLayoutHelper());
-    }
-
-    @Test
-    @DisplayName("Muestra el código de cupón")
-    void muestraCodigo() {
-        String html = builder.buildCuponBienvenida("HOLA13");
-        assertThat(html).contains("HOLA13").contains("13%");
-    }
-
-    @Test
-    @DisplayName("Escapa el código de cupón por si llega con caracteres de HTML")
-    void escapaCodigo() {
-        String html = builder.buildCuponBienvenida("<script>1</script>");
-        assertThat(html).doesNotContain("<script>1</script>").contains("&lt;script&gt;");
-    }
-
-    @Test
-    @DisplayName("Sigue la estructura de Figma y no promete un vencimiento que el cupón no tiene")
-    void estructuraDeFigma() {
-        String html = builder.buildCuponBienvenida("HOLA13");
-        assertThat(html)
-            .contains("Tu 13% para la primera compra")
-            .contains("Tu código")
-            .contains("Usar mi cupón")
-            .contains("/email/icono-regalo.png")
-            .doesNotContain("30 días");
-        assertThat(builder.asuntoCuponBienvenida()).isEqualTo("Tu 13% de descuento para la primera compra");
     }
 
     @Test
@@ -97,7 +70,6 @@ class NegocioEmailBuilderTest {
             b.buildProductoModerado("Ana", "X", true, "n"),
             b.buildCambioCobroPendiente("Ana", "IBAN", "****1"),
             b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", false, "tk"),
-            b.buildCuponBienvenida("C1"),
             b.buildResenaResultado("Ana", true, "X"));
     }
 
@@ -117,7 +89,6 @@ class NegocioEmailBuilderTest {
         for (String appUrl : new String[] {null, " "}) {
             NegocioEmailBuilder b = conAppUrl(appUrl);
             assertThat(b.buildBienvenidaEmprendedor("Ana", "X", true)).contains("href=\"https://hotclick.lat/admin\"");
-            assertThat(b.buildCuponBienvenida("C1")).contains("href=\"https://hotclick.lat/productos\"");
             assertThat(b.buildInvitacionMiembro("a@b.com", "Ana", "EDITOR", "X", false, "tk")).contains("href=\"https://hotclick.lat/equipo/invitacion#t=tk\"");
         }
     }

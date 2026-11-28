@@ -141,7 +141,7 @@ class CajeroRolEquipoTest extends BaseIntegrationTest {
     @Test
     void cajeroRecibe403FueraDelPos() throws Exception {
         for (String ruta : List.of("/api/pedidos", "/api/crm/clientes", "/api/empresa/equipo", "/api/gastos",
-                "/api/cupones", "/api/facturas", "/api/empresa/perfil")) {
+                "/api/facturas", "/api/empresa/perfil")) {
             assertThat(st(get(ruta), tCajeroA)).as(ruta).isEqualTo(403);
         }
         assertThat(st(post("/api/bodegas").contentType(MediaType.APPLICATION_JSON).content("{}"), tCajeroA)).isEqualTo(403);
