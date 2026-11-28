@@ -106,7 +106,9 @@ public class EmpresaFiscalService {
     }
 
     private Empresa cargar(Long empresaId) {
-        Empresa e = empresaRepository.findById(empresaId)
+        // Con el plan cargado (fetch join): registrarInscripcion no es transaccional y open-in-view=false, así que un
+        // proxy LAZY del plan fallaría al armar la comisión de la respuesta (QA-FISCAL-1).
+        Empresa e = empresaRepository.findByIdWithPlan(empresaId)
             .orElseThrow(() -> RecursoNoEncontradoException.conDetalle("Empresa no encontrada", "empresaId=" + empresaId));
         companyScope.assertCanAccess(e.getId());
         return e;

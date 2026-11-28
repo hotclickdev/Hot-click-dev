@@ -28,7 +28,10 @@ public class CajeroSoloPosInterceptor implements HandlerInterceptor {
     private static final List<String> SOLO_LECTURA = List.of("/api/productos", "/api/productos/**",
         "/api/categorias", "/api/categorias/**", "/api/bodegas", "/api/bodegas/**",
         // ClienteSelector / POSPaymentPanel buscan al cliente de la venta (solo lectura; crear cliente no)
-        "/api/crm/clientes/buscar");
+        "/api/crm/clientes/buscar",
+        // Situación fiscal y comisión del negocio: el equipo (cajero incluido) la ve para la factura electrónica; las
+        // escrituras (/situacion, /inscripcion) no están acá y siguen en 403. Solo GET por LECTURAS.
+        "/api/empresa/fiscal");
     /**
      * Escrituras del POS fuera de /api/pos (decisión del Mentor, #475): alta rápida de cliente de la venta y ticket de
      * soporte. Solo POST exacto; ambos controllers toman la empresa del token (nunca del body). PUT/PATCH/DELETE de

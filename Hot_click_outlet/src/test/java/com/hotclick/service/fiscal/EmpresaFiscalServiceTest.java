@@ -60,7 +60,7 @@ class EmpresaFiscalServiceTest {
         empresa.setId(5L);
         empresa.setPlan(plan);
         empresa.setSituacionFiscal("NO_INSCRITO");
-        when(repo.findById(5L)).thenReturn(Optional.of(empresa));
+        when(repo.findByIdWithPlan(5L)).thenReturn(Optional.of(empresa));
         // El UPDATE dirigido aplica sobre la fila lo que el servicio le pasa (simula la base de datos).
         when(repo.actualizarInscripcionFiscal(anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(),
             any(LocalDateTime.class), anyString(), anyString(), any())).thenAnswer(inv -> {

@@ -13,7 +13,6 @@ import com.hotclick.utils.Constants;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -166,20 +165,6 @@ class BaseFiscalFlujoHttpTest extends BaseIntegrationTest {
     }
 
 
-    /**
-     * BUG QA-FISCAL-1 (reportado, no corregido en este PR): registrarInscripcion no es transaccional y con
-     * open-in-view=false lee plan.getComisionPorcentaje() sobre un proxy LAZY ya sin sesión, así que responde 500
-     * (después de guardar) a todo negocio que tenga plan. Estos helpers envían el formulario con el plan quitado de
-     * la fila y lo restauran, para que el resto del flujo se pueda probar. {@link #inscripcionConPlanDa200} lo reproduce.
-     */
-    private Empresa empDe(String token) {
-        if (token == null) return null;
-        if (token.equals(tDuenoB)) return empB;
-        if (token.equals(tDuenoA) || token.equals(tCajeroA) || token.equals(tEditorA)
-            || token.equals(tImpLectura) || token.equals(tImpEscritura)) return empA;
-        return null;
-    }
-
     private int inscr(String token, String cedula) throws Exception {
         return inscrJson(token, inscripcion(cedula));
     }
@@ -195,29 +180,19 @@ class BaseFiscalFlujoHttpTest extends BaseIntegrationTest {
     private record Resp(int status, String body) {}
 
     private Resp inscrReq(String token, String json) throws Exception {
-        Empresa e = empDe(token);
-        Long plan = e == null ? null : jdbcTemplate.queryForObject(
-            "SELECT fk_id_plan FROM hot_click_empresa_tb WHERE id_empresa = ?", Long.class, e.getId());
-        if (plan != null) jdbcTemplate.update("UPDATE hot_click_empresa_tb SET fk_id_plan = NULL WHERE id_empresa = ?", e.getId());
-        try {
-            var rq = json(post("/api/empresa/fiscal/inscripcion"), json);
-            if (token != null) rq.header("Authorization", token);
-            var r = mockMvc.perform(rq).andReturn().getResponse();
-            return new Resp(r.getStatus(), r.getContentAsString());
-        } finally {
-            if (plan != null) jdbcTemplate.update("UPDATE hot_click_empresa_tb SET fk_id_plan = ? WHERE id_empresa = ?", plan, e.getId());
-        }
+        var rq = json(post("/api/empresa/fiscal/inscripcion"), json);
+        if (token != null) rq.header("Authorization", token);
+        var r = mockMvc.perform(rq).andReturn().getResponse();
+        return new Resp(r.getStatus(), r.getContentAsString());
     }
 
     @Test
-    @Disabled("BUG QA-FISCAL-1: POST /api/empresa/fiscal/inscripcion da 500 (LazyInitializationException en Plan) con un negocio que tiene plan. Quitar @Disabled al corregir.")
-    @DisplayName("Inscripción de un negocio CON plan debe dar 200 (hoy 500 por proxy LAZY fuera de sesión)")
+    @DisplayName("Inscripción de un negocio CON plan debe dar 200 (QA-FISCAL-1: el plan se carga con fetch join)")
     void inscripcionConPlanDa200() throws Exception {
         assertThat(st(inscribir(CED_A), tDuenoA)).isEqualTo(200);
     }
 
     @Test
-    @Disabled("BUG QA-FISCAL-2: CajeroSoloPosInterceptor deja al CAJERO solo con /api/pos y pocas lecturas; GET /api/empresa/fiscal da 403 aunque el PO decidió que el cajero ve los datos fiscales. Quitar @Disabled al agregar la ruta a SOLO_LECTURA.")
     @DisplayName("El cajero VE la situación fiscal (GET 200) pero no la escribe (403)")
     void cajeroVeDatosFiscales() throws Exception {
         assertThat(st(get("/api/empresa/fiscal"), tCajeroA)).isEqualTo(200);
