@@ -213,6 +213,9 @@ final class SecurityAuthorizationRules {
             .requestMatchers(GET,  "/api/empresa/fiscal").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
             .requestMatchers(PUT,  "/api/empresa/fiscal/situacion").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/fiscal/inscripcion").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
+            // Fase 2 fiscal: factura del negocio a HotClick (empresa de la sesión; subir el XML solo el propietario)
+            .requestMatchers(GET,  "/api/empresa/facturas-hotclick").hasAnyRole(Constants.ROL_ADMIN, Constants.ROL_EMPRENDEDOR)
+            .requestMatchers(POST, "/api/empresa/facturas-hotclick/*/xml").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/cert-p12").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(PUT, "/api/empresa/perfil/pin-cert").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/empresa/perfil/logo").hasAnyRole(Constants.ROL_EMPRENDEDOR, Constants.ROL_ADMIN)
@@ -245,6 +248,8 @@ final class SecurityAuthorizationRules {
             .requestMatchers("/api/admin/empresas/*/fiscal").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/admin/empresas/*/fiscal/verificar").hasRole(Constants.ROL_ADMIN)
             .requestMatchers(POST, "/api/admin/empresas/*/fiscal/reconsultar").hasRole(Constants.ROL_ADMIN)
+            // Fase 2 fiscal: facturas que los negocios le emiten a HotClick — solo ADMIN
+            .requestMatchers("/api/admin/facturas-negocio", "/api/admin/facturas-negocio/**").hasRole(Constants.ROL_ADMIN)
 
             // Staff por permiso global.* (ADMIN tiene todos; SUPPORT/FINANCE/TRUST el suyo)
             .requestMatchers("/api/admin/empresas/**").hasAnyAuthority(
