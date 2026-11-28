@@ -20,6 +20,7 @@ import { isTokenAlive } from '@/utils/authToken'
 import { rutaLoginConRetorno } from '@/utils/authRedirect'
 import { destinoVender, RUTA_PANEL_VENDEDOR, RUTA_REGISTRO_EMPRESA, RUTA_REGISTRAR_NEGOCIO } from '@/utils/destinoVender'
 import { mensajeErrorAuth } from './auth/authHelpers'
+import { exigeDeclaracion } from '@/utils/fiscal'
 import { cumplePoliticaContrasena, MENSAJE_POLITICA_CONTRASENA } from '@/utils/politicaContrasena'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 import EmprendeCupoBanner from './emprende/EmprendeCupoBanner'
@@ -33,7 +34,7 @@ import {
 
 const STEP_TITLES = ['Tu empresa', 'Tu cuenta de acceso']
 const STEP_DESCS = [
-  'Solo el nombre: el resto lo completás después.',
+  'Nombre del negocio y tu situación ante Hacienda; el resto lo completás después.',
   'Con estos datos iniciás sesión en el panel.',
 ]
 const STEP_LABELS = ['Tu empresa', 'Tu cuenta']
@@ -89,7 +90,8 @@ export default function RegistroEmpresaPage() {
   const [form, setForm] = useState<RegistroEmpresaForm>({
     nombreEmpresa: '', correoEmpresa: '', telefonoEmpresa: '',
     nombreAdmin: '', correoAdmin: '', passwordAdmin: '', telefonoAdmin: '',
-    inscritoTributacion: false,
+    situacionFiscal: '',
+    aceptaDeclaracionFiscal: false,
   })
   const ubicacion = useUbicacionDespachoForm()
 
@@ -105,6 +107,14 @@ export default function RegistroEmpresaPage() {
     setError('')
     if (!form.nombreEmpresa.trim()) {
       setError('El nombre del negocio es requerido')
+      return
+    }
+    if (!form.situacionFiscal) {
+      setError('Contanos si estás inscrito en Hacienda')
+      return
+    }
+    if (exigeDeclaracion(form.situacionFiscal) && !form.aceptaDeclaracionFiscal) {
+      setError('Aceptá la declaración para continuar')
       return
     }
     // Registro corto: la ubicación es opcional acá; si empezó a llenarla, tiene que quedar completa.
@@ -147,7 +157,8 @@ export default function RegistroEmpresaPage() {
         correoAdmin:          form.correoAdmin.trim().toLowerCase(),
         passwordAdmin:        form.passwordAdmin,
         telefonoAdmin:        telefonoOpcional(form.telefonoAdmin),
-        inscritoTributacion:  form.inscritoTributacion,
+        situacionFiscal:      form.situacionFiscal,
+        ...(exigeDeclaracion(form.situacionFiscal) ? { aceptaDeclaracionFiscal: form.aceptaDeclaracionFiscal } : {}),
         ...(ubicacionIniciada(ubicacion.ubicacion) ? payloadUbicacionRegistro(ubicacion.ubicacion) : {}),
         declaraMayoriaEdad: true,
         ...(turnstileToken ? { turnstileToken } : {}),
@@ -266,7 +277,8 @@ export default function RegistroEmpresaPage() {
                       error={error}
                       onCampo={actualizarCampo}
                       onTelefono={(val) => setForm((p) => ({ ...p, telefonoEmpresa: val }))}
-                      onInscritoTributacionChange={(v) => setForm((p) => ({ ...p, inscritoTributacion: v }))}
+                      onSituacionFiscalChange={(v) => setForm((p) => ({ ...p, situacionFiscal: v, aceptaDeclaracionFiscal: exigeDeclaracion(v) ? p.aceptaDeclaracionFiscal : false }))}
+                      onAceptaDeclaracionChange={(v) => setForm((p) => ({ ...p, aceptaDeclaracionFiscal: v }))}
                       onSubmit={handleNext}
                     />
                   )}

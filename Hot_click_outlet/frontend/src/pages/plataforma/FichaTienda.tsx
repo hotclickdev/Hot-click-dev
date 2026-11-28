@@ -10,6 +10,7 @@ import { prefijoPorPlan } from '@/utils/planPaths'
 import { filasDe, texto, type Fila } from './normalizar'
 import { CambioPlan } from './CambioPlan'
 import { NotaNegocio } from './NotaNegocio'
+import FiscalVerificacion from './FiscalVerificacion'
 import { HojaConfirmacion } from './HojaConfirmacion'
 import { ETIQUETA_DESTACADO, ETIQUETA_SIN_DESTACAR, PRECIO_DESTACADO, confirmacionDestacado, textoDesde, textoOrden } from './destacados'
 import { aprobacionService } from '@/services/aprobacionService'
@@ -60,6 +61,8 @@ export function FichaTienda({ id, alCambiar }: { id: string; alCambiar?: () => v
 
 function Cuerpo({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () => void }) {
   const [bloque, setBloque] = useState('productos')
+  // La verificación fiscal (aprobar o rechazar) es solo de ADMIN; el backend también lo exige.
+  const esAdmin = useAuthStore((s) => s.userRole) === 'ADMIN'
   const nombre = texto(fila.nombreComercial, texto(fila.nombreEmpresa, 'Negocio'))
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -78,11 +81,12 @@ function Cuerpo({ id, fila, onCambio }: { id: string; fila: Fila; onCambio: () =
       <Cuenta id={id} fila={fila} onCambio={onCambio} />
       <NotaNegocio empresaId={id} negocio={nombre} />
       <Trabada id={id} />
-      <Segmento opciones={BLOQUES} valor={bloque} onChange={setBloque} />
+      <Segmento opciones={esAdmin ? [...BLOQUES, { id: 'fiscal', label: 'Datos fiscales' }] : BLOQUES} valor={bloque} onChange={setBloque} />
+      {bloque === 'fiscal' && esAdmin && <FiscalVerificacion id={id} alCambiar={onCambio} />}
       {bloque === 'historia' && <Historia id={id} />}
       {bloque === 'membresia' && <Membresia id={id} />}
       {bloque === 'sancion' && <Sancion id={id} />}
-      {bloque !== 'historia' && bloque !== 'membresia' && bloque !== 'sancion' && <Bloque id={id} bloque={bloque} />}
+      {bloque !== 'historia' && bloque !== 'membresia' && bloque !== 'sancion' && bloque !== 'fiscal' && <Bloque id={id} bloque={bloque} />}
     </div>
   )
 }
@@ -312,6 +316,11 @@ function Membresia({ id }: { id: string }) {
       <p className="text-sm">Vence {texto(fila.fechaVencPlan, 'sin fecha')}</p>
       <p className="text-sm">Cobros fallidos {texto(fila.fallosCobro, '0')}</p>
       <p className="text-sm">Mensualidad {colones(fila.precioMensual)} · comisión {texto(fila.comisionPorcentaje, '—')}%</p>
+      <p className="text-sm">
+        Comisión efectiva {texto(fila.comisionEfectivaPct, texto(fila.comisionPorcentaje, '—'))}%
+        {Number(fila.comisionExtraPct) > 0 ? ` (incluye ${texto(fila.comisionExtraPct, '0')}% extra por no estar inscrito)` : ''}
+      </p>
+      <p className="text-sm">Situación fiscal {texto(fila.situacionFiscal, 'sin declarar')}</p>
     </section>
   )
 }

@@ -138,6 +138,56 @@ public class Empresa {
     @Column(name = "ambiente_hacienda", length = 4)
     private String ambienteHacienda = "STAG";
 
+    // ── Situación fiscal del negocio (Fase 1 base fiscal, V244) ───────────────
+    // Separada de la configuración de emisión de arriba: define la comisión efectiva del marketplace.
+
+    /** INSCRITO | REGIMEN_SIMPLIFICADO | NO_INSCRITO; null = sin declarar (paga el extra). */
+    @Column(name = "situacion_fiscal", length = 25)
+    private String situacionFiscal;
+
+    @Column(name = "cedula_fiscal", length = 12)
+    private String cedulaFiscal;
+
+    @Column(name = "nombre_fiscal", length = 150)
+    private String nombreFiscal;
+
+    @Column(name = "actividad_fiscal", length = 150)
+    private String actividadFiscal;
+
+    @Column(name = "correo_facturacion", length = 150)
+    private String correoFacturacion;
+
+    @Column(name = "fecha_situacion_fiscal")
+    private LocalDateTime fechaSituacionFiscal;
+
+    /** El extra por no estar inscrito solo se quita cuando un ADMIN verifica lo declarado. */
+    @Column(name = "fiscal_verificado", nullable = false)
+    private boolean fiscalVerificado = false;
+
+    @Column(name = "fiscal_verificado_por")
+    private Long fiscalVerificadoPor;
+
+    @Column(name = "fecha_fiscal_verificado")
+    private LocalDateTime fechaFiscalVerificado;
+
+    /** Comprobación automática contra la API pública de Hacienda: COINCIDE | NO_COINCIDE | NO_ENCONTRADO | ERROR_CONSULTA. */
+    @Column(name = "fiscal_verif_auto", length = 20)
+    private String fiscalVerifAuto;
+
+    /** JSON corto con lo que respondió Hacienda y las diferencias; solo lo necesario para comparar. */
+    @Column(name = "fiscal_verif_auto_detalle", length = 2000)
+    private String fiscalVerifAutoDetalle;
+
+    @Column(name = "fiscal_verif_auto_fecha")
+    private LocalDateTime fiscalVerifAutoFecha;
+
+    /** Declaración jurada: cuándo y quién (id de usuario, sin IP) aceptó que los datos fiscales son verdaderos. */
+    @Column(name = "fiscal_declaracion_fecha")
+    private LocalDateTime fiscalDeclaracionFecha;
+
+    @Column(name = "fiscal_declaracion_por")
+    private Long fiscalDeclaracionPor;
+
     // ── Billing Stripe (F14) ─────────────────────────────────────────────────
 
     @Column(name = "stripe_customer_id", length = 100)
@@ -381,6 +431,35 @@ public class Empresa {
 
     public String getAmbienteHacienda() { return ambienteHacienda != null ? ambienteHacienda : "STAG"; }
     public void setAmbienteHacienda(String v) { this.ambienteHacienda = v; }
+
+    public String getSituacionFiscal() { return situacionFiscal; }
+    public void setSituacionFiscal(String v) { this.situacionFiscal = v; }
+    public String getCedulaFiscal() { return cedulaFiscal; }
+    public void setCedulaFiscal(String v) { this.cedulaFiscal = v; }
+    public String getNombreFiscal() { return nombreFiscal; }
+    public void setNombreFiscal(String v) { this.nombreFiscal = v; }
+    public String getActividadFiscal() { return actividadFiscal; }
+    public void setActividadFiscal(String v) { this.actividadFiscal = v; }
+    public String getCorreoFacturacion() { return correoFacturacion; }
+    public void setCorreoFacturacion(String v) { this.correoFacturacion = v; }
+    public LocalDateTime getFechaSituacionFiscal() { return fechaSituacionFiscal; }
+    public void setFechaSituacionFiscal(LocalDateTime v) { this.fechaSituacionFiscal = v; }
+    public boolean isFiscalVerificado() { return fiscalVerificado; }
+    public void setFiscalVerificado(boolean v) { this.fiscalVerificado = v; }
+    public Long getFiscalVerificadoPor() { return fiscalVerificadoPor; }
+    public void setFiscalVerificadoPor(Long v) { this.fiscalVerificadoPor = v; }
+    public LocalDateTime getFechaFiscalVerificado() { return fechaFiscalVerificado; }
+    public void setFechaFiscalVerificado(LocalDateTime v) { this.fechaFiscalVerificado = v; }
+    public String getFiscalVerifAuto() { return fiscalVerifAuto; }
+    public void setFiscalVerifAuto(String v) { this.fiscalVerifAuto = v; }
+    public String getFiscalVerifAutoDetalle() { return fiscalVerifAutoDetalle; }
+    public void setFiscalVerifAutoDetalle(String v) { this.fiscalVerifAutoDetalle = v; }
+    public LocalDateTime getFiscalVerifAutoFecha() { return fiscalVerifAutoFecha; }
+    public void setFiscalVerifAutoFecha(LocalDateTime v) { this.fiscalVerifAutoFecha = v; }
+    public LocalDateTime getFiscalDeclaracionFecha() { return fiscalDeclaracionFecha; }
+    public void setFiscalDeclaracionFecha(LocalDateTime v) { this.fiscalDeclaracionFecha = v; }
+    public Long getFiscalDeclaracionPor() { return fiscalDeclaracionPor; }
+    public void setFiscalDeclaracionPor(Long v) { this.fiscalDeclaracionPor = v; }
 
     public boolean isConfiguracionFiscalCompleta() {
         return cedulaJuridica != null && !cedulaJuridica.isBlank()

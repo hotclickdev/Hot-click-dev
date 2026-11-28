@@ -67,6 +67,16 @@ public class RegistroEmpresaDTO {
     public String getTelefonoAdmin()          { return telefonoAdmin; }
     public void setTelefonoAdmin(String v)         { this.telefonoAdmin = v; }
 
+    /** Situación ante Hacienda declarada al registrarse: INSCRITO | REGIMEN_SIMPLIFICADO | NO_INSCRITO (opcional). */
+    @Pattern(regexp = "^$|INSCRITO|REGIMEN_SIMPLIFICADO|NO_INSCRITO", message = "Situación fiscal inválida")
+    private String situacionFiscal;
+    /** Declaración jurada: obligatoria cuando se declara INSCRITO o REGIMEN_SIMPLIFICADO. */
+    private Boolean aceptaDeclaracionFiscal;
+    public Boolean getAceptaDeclaracionFiscal() { return aceptaDeclaracionFiscal; }
+    public void setAceptaDeclaracionFiscal(Boolean v) { this.aceptaDeclaracionFiscal = v; }
+    public String getSituacionFiscal() { return situacionFiscal; }
+    public void setSituacionFiscal(String v) { this.situacionFiscal = v; }
+
     private String turnstileToken;
     public String getTurnstileToken() { return turnstileToken; }
     public void setTurnstileToken(String v) { this.turnstileToken = v; }

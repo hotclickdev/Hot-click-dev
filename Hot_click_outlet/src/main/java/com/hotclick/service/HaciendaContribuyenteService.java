@@ -33,8 +33,15 @@ public class HaciendaContribuyenteService {
         String tipoIdentificacion,
         String estadoInscripcion,
         String regimen,
-        boolean inscrito
-    ) {}
+        boolean inscrito,
+        java.util.List<String> actividades
+    ) {
+        /** Forma anterior (sin actividades): se conserva para quien ya construye el DTO con 6 datos. */
+        public ContribuyenteDTO(String cedula, String nombre, String tipoIdentificacion, String estadoInscripcion,
+                                String regimen, boolean inscrito) {
+            this(cedula, nombre, tipoIdentificacion, estadoInscripcion, regimen, inscrito, java.util.List.of());
+        }
+    }
 
     private final RestTemplate restTemplate;
     private final EmpresaRepository empresaRepository;
@@ -103,8 +110,21 @@ public class HaciendaContribuyenteService {
             regimen = (String) ((Map<String, Object>) regimenObj).getOrDefault("descripcion", "");
         }
 
+        // actividades: lista de { codigo, descripcion, estado }; solo se guarda "codigo descripcion" (máx. 10).
+        java.util.List<String> actividades = new java.util.ArrayList<>();
+        if (resp.get("actividades") instanceof java.util.List<?> lista) {
+            for (Object o : lista) {
+                if (actividades.size() >= 10) break;
+                if (o instanceof Map<?, ?> a) {
+                    String texto = (String.valueOf(a.get("codigo") == null ? "" : a.get("codigo")) + " "
+                        + String.valueOf(a.get("descripcion") == null ? "" : a.get("descripcion"))).trim();
+                    if (!texto.isEmpty()) actividades.add(texto);
+                }
+            }
+        }
+
         boolean inscrito = "INSCRITO".equalsIgnoreCase(estado);
-        return new ContribuyenteDTO(cedula, nombre, tipo, estado, regimen, inscrito);
+        return new ContribuyenteDTO(cedula, nombre, tipo, estado, regimen, inscrito, actividades);
     }
 
     private ContribuyenteDTO noEncontrado(String cedula) {

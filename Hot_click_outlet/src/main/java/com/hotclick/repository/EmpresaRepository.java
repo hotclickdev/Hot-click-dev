@@ -159,4 +159,47 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
     @Query("SELECT e.id, e.nombreEmpresa, e.estadoEmpresa FROM Empresa e WHERE e.estadoEmpresa IN :estados ORDER BY e.id")
     List<Object[]> findResumenByEstados(@Param("estados") java.util.Collection<String> estados,
                                         org.springframework.data.domain.Pageable page);
+
+    /** Base fiscal: inscripciones declaradas (con datos) que un ADMIN aún no verificó; primero las que Hacienda confirmó y luego las más antiguas. */
+    @Query("SELECT e FROM Empresa e WHERE e.situacionFiscal IN ('INSCRITO', 'REGIMEN_SIMPLIFICADO') "
+        + "AND e.fiscalVerificado = false AND e.cedulaFiscal IS NOT NULL "
+        + "ORDER BY CASE WHEN e.fiscalVerifAuto = 'COINCIDE' THEN 0 ELSE 1 END, e.fechaSituacionFiscal ASC")
+    List<Empresa> findFiscalPendientes(Pageable pageable);
+
+    /** Base fiscal: otros negocios que declararon la misma cédula (tope por Pageable). */
+    @Query("SELECT e.id FROM Empresa e WHERE e.cedulaFiscal = :cedula AND e.id <> :id ORDER BY e.id")
+    List<Long> idsConMismaCedulaFiscal(@Param("cedula") String cedula, @Param("id") Long id, Pageable pageable);
+
+    /** Base fiscal: de estas cédulas, las que declaran 2 o más negocios. */
+    @Query("SELECT e.cedulaFiscal FROM Empresa e WHERE e.cedulaFiscal IN :cedulas "
+        + "GROUP BY e.cedulaFiscal HAVING COUNT(e) > 1")
+    List<String> cedulasFiscalesRepetidas(@Param("cedulas") java.util.Collection<String> cedulas);
+
+    /**
+     * Base fiscal: escribe SOLO las columnas fiscales de "Ya me inscribí" (la consulta a Hacienda ya se hizo fuera de
+     * transacción), sin pisar el resto de la fila con una copia vieja de la entidad. Anula una verificación previa.
+     */
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query("UPDATE Empresa e SET e.situacionFiscal = :situacion, e.cedulaFiscal = :cedula, e.nombreFiscal = :nombre, "
+        + "e.actividadFiscal = :actividad, e.correoFacturacion = :correo, e.fechaSituacionFiscal = :fecha, "
+        + "e.fiscalVerificado = false, e.fiscalVerificadoPor = null, e.fechaFiscalVerificado = null, "
+        + "e.fiscalVerifAuto = :auto, e.fiscalVerifAutoDetalle = :detalle, e.fiscalVerifAutoFecha = :fecha, "
+        + "e.fiscalDeclaracionFecha = :fecha, e.fiscalDeclaracionPor = :declaroPor WHERE e.id = :id")
+    int actualizarInscripcionFiscal(@Param("id") Long id, @Param("situacion") String situacion,
+                                    @Param("cedula") String cedula, @Param("nombre") String nombre,
+                                    @Param("actividad") String actividad, @Param("correo") String correo,
+                                    @Param("fecha") java.time.LocalDateTime fecha, @Param("auto") String auto,
+                                    @Param("detalle") String detalle, @Param("declaroPor") Long declaroPor);
+
+    /** Base fiscal: guarda solo el resultado de la comprobación, y solo si los datos consultados siguen siendo los mismos. */
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query("UPDATE Empresa e SET e.fiscalVerifAuto = :auto, e.fiscalVerifAutoDetalle = :detalle, "
+        + "e.fiscalVerifAutoFecha = :fecha WHERE e.id = :id AND e.cedulaFiscal = :cedula "
+        + "AND e.fechaSituacionFiscal = :fechaSituacion")
+    int actualizarVerifAutoFiscal(@Param("id") Long id, @Param("cedula") String cedula,
+                                  @Param("fechaSituacion") java.time.LocalDateTime fechaSituacion,
+                                  @Param("auto") String auto, @Param("detalle") String detalle,
+                                  @Param("fecha") java.time.LocalDateTime fecha);
 }

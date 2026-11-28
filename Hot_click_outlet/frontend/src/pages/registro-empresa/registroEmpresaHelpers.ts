@@ -1,4 +1,5 @@
 import type { AuthResponse } from '@/types/auth'
+import type { SituacionFiscal } from '@/utils/fiscal'
 
 export type PerkRegistro = { id: string; title: string; desc: string }
 
@@ -34,7 +35,10 @@ export type RegistroEmpresaForm = {
   correoAdmin: string
   passwordAdmin: string
   telefonoAdmin: string
-  inscritoTributacion: boolean
+  /** ¿Estás inscrito en Hacienda? Vacío hasta que el vendedor elige. */
+  situacionFiscal: SituacionFiscal | ''
+  /** Declaración jurada: obligatoria cuando dice estar inscrito. */
+  aceptaDeclaracionFiscal: boolean
 }
 
 export type AuthRegistroEmpresa = AuthResponse & { otpEnviado?: boolean }

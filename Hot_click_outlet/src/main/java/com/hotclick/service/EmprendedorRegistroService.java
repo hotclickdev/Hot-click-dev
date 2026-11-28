@@ -60,6 +60,9 @@ public class EmprendedorRegistroService {
         if (usuarioRepository.existsByCorreo(dto.getCorreoAdmin().trim().toLowerCase(java.util.Locale.ROOT)))
             throw new com.hotclick.exception.CorreoYaRegistradoException();
 
+        // Declaración jurada: obligatoria si declara estar inscrito (antes de crear nada).
+        com.hotclick.service.fiscal.DeclaracionFiscal.exigir(dto.getSituacionFiscal(), dto.getAceptaDeclaracionFiscal());
+
         // Generar slug si no viene
         String slug = dto.getSlug() != null && !dto.getSlug().isBlank()
             ? slugify(dto.getSlug())
@@ -86,6 +89,14 @@ public class EmprendedorRegistroService {
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmpresa);
         empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());
+        var situacionFiscal = com.hotclick.service.fiscal.SituacionFiscal.desde(dto.getSituacionFiscal());
+        if (situacionFiscal.isPresent()) {
+            empresa.setSituacionFiscal(situacionFiscal.get().name());
+            empresa.setFechaSituacionFiscal(LocalDateTime.now(Constants.ZONA_CR));
+            if (situacionFiscal.get() != com.hotclick.service.fiscal.SituacionFiscal.NO_INSCRITO) {
+                empresa.setFiscalDeclaracionFecha(LocalDateTime.now(Constants.ZONA_CR));
+            }
+        }
         ResultadoAltaCupo alta = cupoEmprendedorService.aplicarAlta(empresa, correoEmpresa);
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setVisibilidadPublica(false);
@@ -121,6 +132,8 @@ public class EmprendedorRegistroService {
         usuario.getRoles().add(rolEmprendedor);
 
         Usuario saved = usuarioRepository.save(usuario);
+        // Declaración jurada: queda el id de quien la aceptó (el administrador recién creado).
+        if (empresa.getFiscalDeclaracionFecha() != null) empresa.setFiscalDeclaracionPor(saved.getId());
 
         // Recargar con empresa inicializada para evitar LazyInitializationException
         // cuando buildAuthResponse accede a empresa.getSlug() fuera de la transacción

@@ -67,6 +67,7 @@ public class AuthNuevoNegocioHandler {
             Optional<UbicacionDespachoAlta> ubicacion = bodegaDespachoInicialService.normalizar(dto.ubicacionDespacho());
 
             AltaNegocio alta = crearEmpresa(dto);
+            if (alta.empresa().getFiscalDeclaracionFecha() != null) alta.empresa().setFiscalDeclaracionPor(currentUser.getId());
             miembroEmpresaRepository.save(new MiembroEmpresa(currentUser, alta.empresa(), "PROPIETARIO"));
             asegurarRolEmprendedor(currentUser);
             ubicacion.ifPresent(u -> bodegaDespachoInicialService.crear(alta.empresa(), currentUser, u));
@@ -97,6 +98,11 @@ public class AuthNuevoNegocioHandler {
         if (dto.getCorreoEmpresa() == null || dto.getCorreoEmpresa().isBlank()) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("El correo oficial del negocio es requerido"));
         }
+        try {
+            com.hotclick.service.fiscal.DeclaracionFiscal.exigir(dto.getSituacionFiscal(), dto.getAceptaDeclaracionFiscal());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ResponseDTO.error(e.getMessage()));
+        }
         String correoEmpresa = dto.getCorreoEmpresa().trim().toLowerCase(Locale.ROOT);
         if (empresaRepository.existsByCorreoEmpresa(correoEmpresa)) {
             return ResponseEntity.badRequest().body(ResponseDTO.error("Ese correo de negocio ya está en uso"));
@@ -118,6 +124,14 @@ public class AuthNuevoNegocioHandler {
         empresa.setSlug(slug);
         empresa.setCorreoEmpresa(correoEmpresa);
         empresa.setTelefonoEmpresa(dto.getTelefonoEmpresa());
+        var situacionFiscal = com.hotclick.service.fiscal.SituacionFiscal.desde(dto.getSituacionFiscal());
+        if (situacionFiscal.isPresent()) {
+            empresa.setSituacionFiscal(situacionFiscal.get().name());
+            empresa.setFechaSituacionFiscal(LocalDateTime.now(Constants.ZONA_CR));
+            if (situacionFiscal.get() != com.hotclick.service.fiscal.SituacionFiscal.NO_INSCRITO) {
+                empresa.setFiscalDeclaracionFecha(LocalDateTime.now(Constants.ZONA_CR));
+            }
+        }
         ResultadoAltaCupo cupo = cupoEmprendedorService.aplicarAlta(empresa, correoEmpresa);
         empresa.setEstadoEmpresa("PENDIENTE_APROBACION");
         empresa.setFechaRegistro(LocalDateTime.now(Constants.ZONA_CR));

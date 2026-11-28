@@ -40,6 +40,7 @@ class AdminBillingServiceTest {
     @Mock SuscripcionRepository suscripcionRepo;
     @Mock FacturaSaasRepository facturaRepo;
     @Mock BillingLedgerRepository ledgerRepo;
+    @Mock com.hotclick.service.fiscal.ComisionEfectivaService comisionEfectiva;
 
     @InjectMocks AdminBillingService service;
 
@@ -128,12 +129,16 @@ class AdminBillingServiceTest {
             .thenReturn(new PageImpl<>(List.of()));
         when(ledgerRepo.findByEmpresaIdOrderByFechaEventoDesc(eq(10L), any(PageRequest.class)))
             .thenReturn(List.of());
+        when(comisionEfectiva.desglose(any(), any(), org.mockito.ArgumentMatchers.anyBoolean())).thenReturn(new com.hotclick.service.fiscal.ComisionEfectiva.Desglose(
+            new BigDecimal("9.00"), new BigDecimal("14.00"), new BigDecimal("23.00"),
+            com.hotclick.service.fiscal.SituacionFiscal.NO_INSCRITO));
 
         Map<String, Object> out = service.detalleEmpresa(10L);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> empresa = (Map<String, Object>) out.get("empresa");
         assertThat(empresa.get("nombre")).isEqualTo("Café Luz");
+        assertThat(empresa.get("comisionEfectivaPct")).isEqualTo(new BigDecimal("23.00"));
         @SuppressWarnings("unchecked")
         Map<String, Object> suscripcion = (Map<String, Object>) out.get("suscripcion");
         assertThat(suscripcion.get("proveedor")).isEqualTo("ONVO");

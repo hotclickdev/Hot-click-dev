@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { paymentService } from '@/services/paymentService'
 import Spinner from '@/components/ui/Spinner'
 import useAuthStore from '@/store/authStore'
+import ComisionFiscalCard from './ComisionFiscalCard'
 import { Block, FormGroup, StyledInput, SectionHeader, mensajeErrorConfig } from './configUi'
 import {
   COMISION_GATEWAY_FIJO_DEFAULT,
@@ -91,6 +92,8 @@ export default function SeccionComision({ toast }: SeccionComisionProps) {
         title={t('adminConfig.comisionTitle')}
         desc={t('adminConfig.comisionDesc')}
       />
+
+      <ComisionFiscalCard />
 
       <Block
         label={t('adminConfig.comisionTarjetaBlock')}
