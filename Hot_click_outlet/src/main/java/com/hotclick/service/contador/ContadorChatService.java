@@ -149,8 +149,9 @@ public class ContadorChatService {
         }
     }
 
-    private Resultado cerrarConRespuesta(Long adminId, String pregunta, String crudo, boolean dependeDeConfig, UsoTokens uso,
+    private Resultado cerrarConRespuesta(Long adminId, String pregunta, String textoModelo, boolean dependeDeConfig, UsoTokens uso,
                                          int restantes) {
+        String crudo = textoModelo == null ? "" : textoModelo;
         String respuesta = "No sé. Te recomiendo confirmarlo con un contador público o con Hacienda.";
         String fuente = null;
         String confianza = NO_SE;

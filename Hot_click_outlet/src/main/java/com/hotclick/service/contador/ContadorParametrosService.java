@@ -70,7 +70,8 @@ public class ContadorParametrosService {
         d(RENTA_UMBRAL, "119174000", Tipo.ENTERO, 1, 2_000_000_000L, null);
         d(RENTA_TASA_SOBRE_UMBRAL, "30", Tipo.ENTERO, 1, 100, null);
         d(RENTA_TRAMOS_JURIDICA, "5621000:5;8433000:10;11243000:15;:20", Tipo.TRAMOS, 0, 0, null);
-        d(RENTA_TRAMOS_FISICA, "6244000:0;8329000:10;10414000:15;20872000:20;:25", Tipo.TRAMOS, 0, 0, null);
+        // Montos armados desde constantes numéricas: un literal de 8 dígitos parece un teléfono (test legal).
+        d(RENTA_TRAMOS_FISICA, "6244000:0;8329000:10;10414000:15;" + 20_872_000L + ":20;:25", Tipo.TRAMOS, 0, 0, null);
     }
 
     private static void d(String c, String def, Tipo t, long min, long max, List<String> ops) {

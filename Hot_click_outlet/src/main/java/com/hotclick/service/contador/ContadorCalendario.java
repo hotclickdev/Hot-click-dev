@@ -1,6 +1,5 @@
 package com.hotclick.service.contador;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
@@ -109,8 +108,10 @@ public final class ContadorCalendario {
     }
 
     static LocalDate corrida(LocalDate f) {
-        if (f.getDayOfWeek() == DayOfWeek.SATURDAY) return f.plusDays(2);
-        if (f.getDayOfWeek() == DayOfWeek.SUNDAY) return f.plusDays(1);
-        return f;
+        return switch (f.getDayOfWeek()) {
+            case SATURDAY -> f.plusDays(2);
+            case SUNDAY -> f.plusDays(1);
+            default -> f;
+        };
     }
 }

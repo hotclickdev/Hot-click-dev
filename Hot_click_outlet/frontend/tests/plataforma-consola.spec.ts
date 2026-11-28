@@ -89,8 +89,9 @@ test.describe('Consola de plataforma', () => {
 
     await expect(page.getByRole('heading', { name: 'Inicio' })).toBeVisible()
     const nav = page.getByRole('navigation', { name: 'Dominios de HotClick' })
-    for (const nombre of ['Inicio', 'Tiendas', 'Pedidos', 'Quincena', 'Revisar', 'CRM', 'Control', 'Campo', 'Acceso', 'IA', 'Reglas']) {
-      await expect(nav.getByRole('link', { name: nombre })).toBeVisible()
+    for (const nombre of ['Inicio', 'Tiendas', 'Pedidos', 'Quincena', 'Revisar', 'CRM', 'Control', 'Campo', 'Acceso', 'IA', 'Reglas', 'Contador IA']) {
+      // «IA» no debe coincidir con «Contador IA»: el nombre empieza por la etiqueta (después puede ir la insignia).
+      await expect(nav.getByRole('link', { name: new RegExp(`^${nombre}`) })).toBeVisible()
     }
     await expect(page.getByText('Visitas').first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'Altas' })).toHaveCount(0)

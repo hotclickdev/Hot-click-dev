@@ -29,12 +29,12 @@ public class ContadorHerramientas {
     public static final String NORMATIVA = "buscar_normativa";
     public static final Set<String> NOMBRES = Set.of(VENTAS, COMPRAS, CONFIG, CALENDARIO, NORMATIVA);
 
-    private final VentasFiscalesService ventas;
-    private final ComprasFiscalesProvider compras;
+    private final VentasFiscalesService ventasSvc;
+    private final ComprasFiscalesProvider comprasSvc;
     private final ContadorFiscalService fiscal;
     private final ContadorParametrosService parametros;
     private final ContadorAjustesService ajustes;
-    private final ContadorNormativaService normativa;
+    private final ContadorNormativaService normativaSvc;
     private final com.hotclick.service.fiscal.ConfiguracionFiscalService reglas;
     private final ObjectMapper mapper;
 
@@ -42,12 +42,12 @@ public class ContadorHerramientas {
                                 ContadorParametrosService parametros, ContadorAjustesService ajustes,
                                 ContadorNormativaService normativa,
                                 com.hotclick.service.fiscal.ConfiguracionFiscalService reglas, ObjectMapper mapper) {
-        this.ventas = ventas;
-        this.compras = compras;
+        this.ventasSvc = ventas;
+        this.comprasSvc = compras;
         this.fiscal = fiscal;
         this.parametros = parametros;
         this.ajustes = ajustes;
-        this.normativa = normativa;
+        this.normativaSvc = normativa;
         this.reglas = reglas;
         this.mapper = mapper;
     }
@@ -72,11 +72,11 @@ public class ContadorHerramientas {
         try {
             if (nombre == null || !NOMBRES.contains(nombre)) return "{\"error\":\"herramienta no disponible\"}";
             Object r = switch (nombre) {
-                case VENTAS -> ventas.delAnio(anio(entrada, hoy));
+                case VENTAS -> ventasSvc.delAnio(anio(entrada, hoy));
                 case COMPRAS -> comprasAnio(anio(entrada, hoy));
                 case CONFIG -> config();
                 case CALENDARIO -> fiscal.calendario(hoy);
-                default -> normativa.buscar(entrada == null ? "" : entrada.path("consulta").asText(""));
+                default -> normativaSvc.buscar(entrada == null ? "" : entrada.path("consulta").asText(""));
             };
             String json = mapper.writeValueAsString(r);
             return json.length() > 12_000 ? json.substring(0, 12_000) : json;
@@ -94,7 +94,7 @@ public class ContadorHerramientas {
     }
 
     private Map<String, Object> comprasAnio(int anio) {
-        ResumenCompras[] r = compras.anio(anio);
+        ResumenCompras[] r = comprasSvc.anio(anio);
         List<Map<String, Object>> meses = new ArrayList<>();
         boolean hay = false;
         for (int i = 0; i < 12; i++) {
