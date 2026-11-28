@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import i18n from '@/i18n'
-import { claseBordeCodigo, formatoRebaja, saldoRestanteGiftCard } from './codigoDescuentoHelpers'
+import { claseBordeCodigo, formatoRebaja } from './codigoDescuentoHelpers'
 import { CampoCodigo, LineaCodigo, TituloValido } from './CodigoDescuento'
 
 const aqui = dirname(fileURLToPath(import.meta.url))
@@ -14,16 +14,16 @@ const nada = () => {}
 
 function campo(estado: string) {
   return renderToStaticMarkup(createElement(CampoCodigo, {
-    valor: 'HC-GIFT-9Z1X',
+    valor: 'BIENVENIDA10',
     estado,
     placeholder: 'Código',
-    ariaLabel: 'Código de tarjeta de regalo',
+    ariaLabel: 'Código de cupón',
     maxLength: 30,
     onCambiar: nada,
     onAplicar: nada,
     onQuitar: nada,
-    invalido: { titulo: t('checkout.codigo.giftInvalidoTitulo'), ayuda: t('checkout.codigo.giftInvalidoAyuda') },
-    detalleValido: createElement(TituloValido, { texto: t('checkout.codigo.giftValidoTitulo') }),
+    invalido: { titulo: t('checkout.codigo.cuponInvalidoTitulo') },
+    detalleValido: createElement(TituloValido, { texto: t('checkout.codigo.cuponValidoTitulo') }),
     t,
   }))
 }
@@ -36,25 +36,18 @@ describe('código de descuento · helpers', () => {
     expect(claseBordeCodigo('loading')).toBe('border-hc-border')
   })
 
-  it('saldo restante nunca es negativo', () => {
-    expect(saldoRestanteGiftCard(50000, 50000)).toBe(0)
-    expect(saldoRestanteGiftCard(50000, 45900)).toBe(4100)
-    expect(saldoRestanteGiftCard(1000, 5000)).toBe(0)
-  })
-
   it('la rebaja lleva el signo menos y colones enteros', () => {
     expect(formatoRebaja(50000)).toBe('− ₡50.000')
   })
 })
 
 describe('código de descuento · presentación (Figma 55:2284 / 55:2220)', () => {
-  it('inválido: borde rojo, aviso con ícono, título y ayuda, botón Aplicar', () => {
+  it('inválido: borde rojo, aviso con ícono y título, botón Aplicar', () => {
     const html = campo('invalid')
     expect(html).toContain('border-hc-red-500')
     expect(html).toContain('role="alert"')
     expect(html).toContain('bg-hc-danger-bg')
-    expect(html).toContain('Código inválido, vencido o sin saldo')
-    expect(html).toContain('Revisá que esté bien escrito.')
+    expect(html).toContain('Código inválido o no disponible')
     expect(html).toContain('>Aplicar<')
     expect(html).toContain('aria-invalid="true"')
   })
@@ -63,7 +56,7 @@ describe('código de descuento · presentación (Figma 55:2284 / 55:2220)', () =
     const html = campo('valid')
     expect(html).toContain('border-hc-success')
     expect(html).toContain('bg-hc-success-bg')
-    expect(html).toContain('Tarjeta de regalo válida')
+    expect(html).toContain('Cupón válido')
     expect(html).toContain('>Quitar<')
     expect(html).not.toContain('>Aplicar<')
   })
@@ -80,11 +73,11 @@ describe('código de descuento · presentación (Figma 55:2284 / 55:2220)', () =
     expect(html).toContain('text-hc-success')
   })
 
-  it('el paso de pago y el carrito no tienen colores hardcodeados ni textos fijos de gift card/cupón', () => {
+  it('el paso de pago y el carrito no tienen colores hardcodeados ni textos fijos de cupón', () => {
     const resumen = readFileSync(resolve(aqui, 'PasoPago.tsx'), 'utf8') + readFileSync(resolve(aqui, '../carrito/CodigosNotasCarrito.tsx'), 'utf8')
     expect(resumen).not.toMatch(/#f87171|#10b981|emerald-400|text-red-400/)
     expect(resumen).not.toContain('Código inválido, vencido o sin saldo')
-    expect(resumen).not.toContain('¿Tenés una gift card?')
+    expect(resumen).not.toMatch(/gift ?card/i)
     expect(resumen).toContain('<TarjetaCodigos')
   })
 })
@@ -93,7 +86,7 @@ describe('código de descuento · i18n', () => {
   it('todas las claves existen en es, en y pt', () => {
     const idiomas = ['es', 'en', 'pt'] as const
     const claves = Object.keys(i18n.getResourceBundle('es', 'translation').checkout.codigo)
-    expect(claves.length).toBeGreaterThan(10)
+    expect(claves.length).toBeGreaterThan(5)
     for (const lng of idiomas) {
       const codigo = i18n.getResourceBundle(lng, 'translation').checkout.codigo
       const ordenar = (lista: string[]) => [...lista].sort((a, b) => a.localeCompare(b))

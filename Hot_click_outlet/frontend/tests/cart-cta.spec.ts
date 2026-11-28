@@ -42,7 +42,7 @@ test.describe('Carrito por paquetes (Figma 28:989, 30:2268, 51:1820)', () => {
     await expect(page).toHaveURL(/\/checkout/)
   })
 
-  test('móvil: notas, cupón, gift card, WhatsApp y pie con el total', async ({ page }) => {
+  test('móvil: notas, cupón (sin gift card), WhatsApp y pie con el total', async ({ page }) => {
     await mockApis(page)
     await seedPedido(page)
     await page.setViewportSize({ width: 390, height: 844 })
@@ -51,7 +51,7 @@ test.describe('Carrito por paquetes (Figma 28:989, 30:2268, 51:1820)', () => {
     await expect(page.getByText('Tu pedido (1)')).toBeVisible()
     await expect(page.getByLabel('Notas para el pedido (opcional)')).toBeVisible()
     await expect(page.getByLabel('Código de cupón')).toBeVisible()
-    await expect(page.getByLabel('Código de tarjeta de regalo')).toBeDisabled()
+    await expect(page.getByLabel('Código de tarjeta de regalo')).toHaveCount(0)
 
     const whatsapp = page.getByRole('button', { name: 'Pedir por WhatsApp' })
     await expect(whatsapp).toBeVisible()

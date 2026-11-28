@@ -3,21 +3,22 @@ import type { ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import IconoFigma from '@/components/comprador/IconoFigma'
 import { ICONOS_COMPRADOR } from '@/components/comprador/iconosComprador'
+import { ICONOS_CHECKOUT } from './iconosCheckout'
 import { claseBordeCodigo } from './codigoDescuentoHelpers'
 
 /*
- * Tarjeta de regalo o cupón (Figma 04 · Comprar, 55:2220 válida · 55:2284 inválida).
- * Solo presentación: la validación sigue en ejecutarValidarGiftCard / ejecutarValidarCupon.
+ * Código de cupón (Figma 04 · Comprar, 55:2220 válido · 55:2284 inválido).
+ * Solo presentación: la validación sigue en ejecutarValidarCupon.
  */
 
 const ANIMACION = { initial: { opacity: 0, y: -4 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0 } }
 
-/** Tarjeta contenedora con el encabezado del Figma (ícono de regalo + título). */
+/** Tarjeta contenedora con el encabezado del Figma (ícono de cupón + título). */
 export function TarjetaCodigos({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <section className="flex w-full flex-col gap-[10px] rounded-[14px] border border-hc-border bg-hc-surface p-4">
       <div className="flex w-full items-center gap-2">
-        <IconoFigma src={ICONOS_COMPRADOR.codigoRegalo} size={20} className="text-hc-blue-600" />
+        <IconoFigma src={ICONOS_CHECKOUT.cupon} size={20} className="text-hc-blue-600" />
         <h3 className="text-[15px] font-semibold text-hc-text">{titulo}</h3>
       </div>
       {children}

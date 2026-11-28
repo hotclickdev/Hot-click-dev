@@ -10,11 +10,6 @@ export function claseBordeCodigo(estado: string): string {
   return 'border-hc-border'
 }
 
-/** Saldo de la tarjeta de regalo que queda después de aplicarla al pedido. */
-export function saldoRestanteGiftCard(saldo: number, aplicado: number): number {
-  return Math.max(0, saldo - aplicado)
-}
-
 /** Monto restado del total, con el signo menos del Figma: "− ₡50.000". */
 export function formatoRebaja(monto: number): string {
   return `− ${formatPrice(monto)}`

@@ -86,7 +86,6 @@ type PagarCheckoutDeps = {
   items: ItemCheckout[]
   bodegaRetiro: BodegaRetiro | null
   cuponCodigo: string | null
-  gcCodigo: string | null
   sinpeTelefono: string
   /** Tipo ONVO (0-5/9) de la identificación SINPE del comprador. */
   sinpeTipoIdentificacion?: number
@@ -132,7 +131,6 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
     items,
     bodegaRetiro,
     cuponCodigo,
-    gcCodigo,
     sinpeTelefono,
     sinpeTipoIdentificacion,
     setSinpeCedulaErr,
@@ -250,7 +248,6 @@ export function ejecutarPagarCheckout(deps: PagarCheckoutDeps) {
       codigoCupon: cuponCodigo || null,
       // M4: «Quiero factura electrónica» (en régimen simplificado el backend suma el IVA).
       ...campoFactura(leerFacturaElectronica()),
-      codigoGiftCard: gcCodigo || null,
       ...(atrib
         ? {
             atribucion: {

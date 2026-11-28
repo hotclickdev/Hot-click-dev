@@ -69,7 +69,7 @@ export default function CartPage() {
   const toast = useToast()
   const { t } = useTranslation()
   const esDesktop = useEsDesktop()
-  const codigos = useCodigosPedido(token)
+  const codigos = useCodigosPedido()
   const notas = usePedidoExtrasStore((s) => s.notas)
   const setNotas = usePedidoExtrasStore((s) => s.setNotas)
   const reiniciarExtras = usePedidoExtrasStore((s) => s.reiniciar)
@@ -98,7 +98,7 @@ export default function CartPage() {
   const envio = totalEnvioEstimado(paquetes)
   // QA7-D1: sin destino el carrito no promete un envío; el checkout lo cotiza con el servidor.
   const envioPendiente = paquetes.some((p) => p.envioVaria)
-  const { descuento, giftCard, total: totalEstimado } = totalesConCodigos(subtotal, envio, codigos.cuponDescuento, codigos.gcSaldo)
+  const { descuento, total: totalEstimado } = totalesConCodigos(subtotal, envio, codigos.cuponDescuento)
 
   async function guardarCorreo() {
     if (!isValidEmail(correo)) return
@@ -218,8 +218,7 @@ export default function CartPage() {
               onWhatsApp={abrirWhatsAppPedido}
               descuento={descuento}
               cuponPorcentaje={codigos.cuponDescuento}
-              giftCard={giftCard}
-              codigosEscritorio={<CodigosCarrito codigos={codigos} conSesion={Boolean(token)} incluirGiftCard={Boolean(token)} descuentoMonto={descuento} giftCardAplicada={giftCard} />}
+              codigosEscritorio={<CodigosCarrito codigos={codigos} descuentoMonto={descuento} />}
             />
           </div>
         </div>
@@ -241,7 +240,7 @@ export default function CartPage() {
         </div>
         {tarjetas}
         <NotasPedido notas={notas} onCambiar={setNotas} />
-        <CodigosCarrito codigos={codigos} conSesion={Boolean(token)} incluirGiftCard descuentoMonto={descuento} giftCardAplicada={giftCard} />
+        <CodigosCarrito codigos={codigos} descuentoMonto={descuento} />
         <div ref={setResumenMovil}>
         <ResumenCarrito
           paquetes={paquetes}
@@ -254,7 +253,6 @@ export default function CartPage() {
           onContinuar={continuar}
           descuento={descuento}
           cuponPorcentaje={codigos.cuponDescuento}
-          giftCard={giftCard}
         />
         </div>
         {guardarPorCorreo}

@@ -97,7 +97,7 @@ export const PLAN_LANDING_COPY: Record<LandingPlanId, PlanLandingCopy> = {
       'Recién arrancás y vendés poco — probá Emprendedor',
     ],
     faq: [
-      { pregunta: '¿Por qué pagar PYME si Emprendedor casi no cuesta al empezar?', respuesta: `El período sin mensualidad de Emprendedor es temporal y con cupo limitado; después también tiene mensualidad. Emprendedor se queda en menos productos y sin compras, y PYME suma equipo, compras, gift cards e IA. Comisión de PYME: ${textoComision(PYME.comisionPct)}, sin mínimo.` },
+      { pregunta: '¿Por qué pagar PYME si Emprendedor casi no cuesta al empezar?', respuesta: `El período sin mensualidad de Emprendedor es temporal y con cupo limitado; después también tiene mensualidad. Emprendedor se queda en menos productos y sin compras, y PYME suma equipo, compras e IA. Comisión de PYME: ${textoComision(PYME.comisionPct)}, sin mínimo.` },
       { pregunta: '¿Cuándo se activa mi suscripción?', respuesta: 'Al confirmar el pago con la pasarela, tu plan PYME queda activo de inmediato.' },
     ],
   },
