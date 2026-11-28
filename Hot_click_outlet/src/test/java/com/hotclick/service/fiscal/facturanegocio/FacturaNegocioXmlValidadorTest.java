@@ -301,6 +301,33 @@ class FacturaNegocioXmlValidadorTest {
         assertThat(ampliada.valida()).isTrue();
     }
 
+    @Test
+    @DisplayName("Tolerancia sin redondear: 1130,49 contra 1129 con tolerancia 1 se rechaza; 1130 contra 1129 pasa")
+    void toleranciaSinRedondeo() {
+        byte[] xml = firmado(x -> x.replace("<TotalComprobante>1130</TotalComprobante>", "<TotalComprobante>1130.49</TotalComprobante>"));
+        var fuera = validador.validar(xml, new FacturaNegocioXmlValidador.Esperado(CED_NEGOCIO, CED_HOTCLICK, 1129, 1, c -> false));
+        assertThat(unido(fuera)).contains("no coincide con lo que te corresponde facturar");
+        var justo = validador.validar(valido(), new FacturaNegocioXmlValidador.Esperado(CED_NEGOCIO, CED_HOTCLICK, 1129, 1, c -> false));
+        assertThat(unido(justo)).doesNotContain("no coincide con lo que te corresponde facturar");
+    }
+
+    @Test
+    @DisplayName("Fecha de la clave: entre el inicio de la quincena y el día de la subida; fuera de eso se rechaza")
+    void fechaDeLaClave() {
+        // La clave de prueba es del 27/08/2026.
+        java.time.LocalDate fecha = java.time.LocalDate.of(2026, 8, 27);
+        var dentro = validador.validar(valido(), new FacturaNegocioXmlValidador.Esperado(CED_NEGOCIO, CED_HOTCLICK, MONTO, 1,
+            c -> false, fecha.minusDays(10), fecha));
+        assertThat(dentro.valida()).isTrue();
+        var antes = validador.validar(valido(), new FacturaNegocioXmlValidador.Esperado(CED_NEGOCIO, CED_HOTCLICK, MONTO, 1,
+            c -> false, fecha.plusDays(1), fecha.plusDays(5)));
+        assertThat(unido(antes)).contains("tiene que estar entre el inicio de la quincena");
+        var futura = validador.validar(valido(), new FacturaNegocioXmlValidador.Esperado(CED_NEGOCIO, CED_HOTCLICK, MONTO, 1,
+            c -> false, fecha.minusDays(10), fecha.minusDays(1)));
+        assertThat(unido(futura)).contains("tiene que estar entre el inicio de la quincena");
+        assertThat(FacturaNegocioXmlValidador.fechaDeClave(CLAVE)).isEqualTo(fecha);
+    }
+
     // ── líneas, IVA y CAByS ─────────────────────────────────────────────────────────────────────────────────
 
     @Test

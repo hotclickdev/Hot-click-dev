@@ -132,7 +132,7 @@ public class FacturaNegocioService {
         }
         FacturaNegocioXmlValidador.Resultado r = validador.validar(xml, new FacturaNegocioXmlValidador.Esperado(
             f.getCedulaFiscalEsperada(), cedulaHotclick(), f.getMontoCrc(), config.reglasFactura().toleranciaCrc(),
-            clave -> repo.existsByClaveXmlAndIdNot(clave, f.getId())));
+            clave -> repo.existsByClaveXmlAndIdNot(clave, f.getId()), f.getPeriodoDesde(), LocalDate.now(Constants.ZONA_CR)));
         List<String> errores = new ArrayList<>(r.errores());
         List<String> avisos = new ArrayList<>(r.avisos());
         boolean conRespuesta = respuestaHacienda != null && respuestaHacienda.length > 0;

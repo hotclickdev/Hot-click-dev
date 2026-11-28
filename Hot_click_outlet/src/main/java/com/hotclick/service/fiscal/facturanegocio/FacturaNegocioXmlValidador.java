@@ -28,8 +28,17 @@ public class FacturaNegocioXmlValidador {
     static final String RESUMEN = "ResumenFactura";
 
     /** Lo que se espera de esta factura: quién la emite, a quién, cuánto, y cómo saber si la clave ya se usó. */
+    /**
+     * {@code fechaDesde}/{@code fechaHasta}: la fecha de la clave tiene que caer entre el inicio de la quincena y el
+     * día de la subida. Sin fechas (null) no se revisa.
+     */
     public record Esperado(String cedulaEmisor, String cedulaReceptor, long montoCrc, long toleranciaCrc,
-                           Predicate<String> claveYaUsada) {}
+                           Predicate<String> claveYaUsada, LocalDate fechaDesde, LocalDate fechaHasta) {
+        public Esperado(String cedulaEmisor, String cedulaReceptor, long montoCrc, long toleranciaCrc,
+                        Predicate<String> claveYaUsada) {
+            this(cedulaEmisor, cedulaReceptor, montoCrc, toleranciaCrc, claveYaUsada, null, null);
+        }
+    }
 
     public record Resultado(boolean valida, List<String> errores, List<String> avisos, String clave,
                             String cedulaEmisor, Long totalComprobanteCrc, Long totalImpuestoCrc) {}
@@ -65,6 +74,7 @@ public class FacturaNegocioXmlValidador {
         String emisor = soloDigitos(XmlSeguro.texto(raiz, "Emisor", "Identificacion", "Numero"));
         String receptor = soloDigitos(XmlSeguro.texto(raiz, "Receptor", "Identificacion", "Numero"));
         revisarClave(clave, emisor, XmlSeguro.texto(raiz, "NumeroConsecutivo"), errores);
+        revisarFechaClave(clave, esperado.fechaDesde(), esperado.fechaHasta(), errores);
         if (clave != null && esperado.claveYaUsada() != null && esperado.claveYaUsada().test(clave)) {
             errores.add("Esta factura (su clave) ya se subió antes. Cada factura se puede usar una sola vez.");
         }
@@ -78,11 +88,14 @@ public class FacturaNegocioXmlValidador {
         }
 
         Totales t = revisarLineas(raiz, errores);
-        Long total = redondear(XmlSeguro.numero(raiz, RESUMEN, "TotalComprobante"));
+        BigDecimal totalExacto = XmlSeguro.numero(raiz, RESUMEN, "TotalComprobante");
+        Long total = redondear(totalExacto);
         Long iva = redondear(XmlSeguro.numero(raiz, RESUMEN, "TotalImpuesto"));
         revisarResumen(raiz, t, errores);
-        if (total != null && Math.abs(total - esperado.montoCrc()) > Math.max(0, esperado.toleranciaCrc())) {
-            errores.add("El total de la factura (₡" + total + ") no coincide con lo que te corresponde facturar "
+        // Sin redondear: con tolerancia 1, ₡1130,49 contra ₡1129 ya está fuera.
+        if (totalExacto != null && totalExacto.subtract(BigDecimal.valueOf(esperado.montoCrc())).abs()
+            .compareTo(BigDecimal.valueOf(Math.max(0, esperado.toleranciaCrc()))) > 0) {
+            errores.add("El total de la factura (₡" + totalExacto.stripTrailingZeros().toPlainString() + ") no coincide con lo que te corresponde facturar "
                 + "esta quincena (₡" + esperado.montoCrc() + ").");
         }
         revisarFirma(FirmaXadesVerificador.verificar(doc, esperado.cedulaEmisor()), errores);
@@ -107,6 +120,26 @@ public class FacturaNegocioXmlValidador {
      * 50 dígitos: 506 + DDMMAA + cédula del emisor (12) + consecutivo (20) + situación (1) + código de seguridad (8).
      * El consecutivo lleva el tipo de comprobante en las posiciones 9 y 10 (01 = factura).
      */
+    /** La fecha DDMMAA de la clave tiene que estar entre el inicio de la quincena y el día de la subida. */
+    static void revisarFechaClave(String clave, LocalDate desde, LocalDate hasta, List<String> errores) {
+        if (clave == null || !clave.matches("\\d{50}") || desde == null || hasta == null) return;
+        LocalDate fecha = fechaDeClave(clave);
+        if (fecha == null) return;
+        if (fecha.isBefore(desde) || fecha.isAfter(hasta)) {
+            errores.add("La fecha de la factura (" + fecha + ") tiene que estar entre el inicio de la quincena ("
+                + desde + ") y hoy (" + hasta + ").");
+        }
+    }
+
+    static LocalDate fechaDeClave(String clave) {
+        try {
+            return LocalDate.of(2000 + Integer.parseInt(clave.substring(7, 9)), Integer.parseInt(clave.substring(5, 7)),
+                Integer.parseInt(clave.substring(3, 5)));
+        } catch (DateTimeException | NumberFormatException | IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
     static void revisarClave(String clave, String emisor, String consecutivo, List<String> errores) {
         if (clave == null || !clave.matches("\\d{50}")) {
             errores.add("La clave de la factura tiene que tener exactamente 50 dígitos.");
