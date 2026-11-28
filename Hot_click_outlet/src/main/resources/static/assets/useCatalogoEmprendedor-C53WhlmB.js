@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-CI-ND_sD.js";function t(){return e()}export{t};
