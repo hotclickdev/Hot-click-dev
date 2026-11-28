@@ -8,7 +8,6 @@ import com.hotclick.repository.PedidoRepository;
 import com.hotclick.repository.WebhookEventRepository;
 import com.hotclick.service.CuponService;
 import com.hotclick.service.EncargoService;
-import com.hotclick.service.GiftCardService;
 import com.hotclick.service.PaymentService;
 import com.hotclick.service.pos.PosQrVentaService;
 import com.hotclick.utils.Constants;
@@ -52,7 +51,6 @@ class CobroSobreGrupoCanceladoTest {
     @Mock private PedidoRepository pedidoRepository;
     @Mock private PagoRepository pagoRepository;
     @Mock private CuponService cuponService;
-    @Mock private GiftCardService giftCardService;
     @Mock private StockReservationService stockReservationService;
     @Mock private PaymentNotificationsFacade paymentNotificationsFacade;
     @Mock private PosQrVentaService posQrVentaService;

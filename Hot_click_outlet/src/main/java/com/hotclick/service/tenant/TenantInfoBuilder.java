@@ -63,7 +63,6 @@ public class TenantInfoBuilder {
         features.put("reportes", membresiaActiva && (planTiene(plan, "reportes") || flagsEmpresa.contains("reportes")));
         features.put("ai",       membresiaActiva && (planTiene(plan, "ai") || flagsEmpresa.contains("ai_copilot")));
         features.put("api",      membresiaActiva && (planTiene(plan, "api") || flagsEmpresa.contains("api_keys")));
-        features.put("giftCards", membresiaActiva && planTiene(plan, "giftCards"));
         features.put("facturacion_electronica", membresiaActiva && flagsEmpresa.contains("facturacion_electronica"));
         features.put("mobile_pos",    membresiaActiva && flagsEmpresa.contains("mobile_pos"));
         features.put("self_checkout", membresiaActiva && flagsEmpresa.contains("self_checkout"));
@@ -83,7 +82,6 @@ public class TenantInfoBuilder {
             case "reportes" -> Boolean.TRUE.equals(plan.getTieneReportes());
             case "ai"       -> Boolean.TRUE.equals(plan.getTieneAi());
             case "api"      -> Boolean.TRUE.equals(plan.getTieneApi());
-            case "giftCards" -> Boolean.TRUE.equals(plan.getTieneGiftCards());
             default         -> false;
         };
     }

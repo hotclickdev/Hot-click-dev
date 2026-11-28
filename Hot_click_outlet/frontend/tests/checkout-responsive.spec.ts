@@ -6,10 +6,9 @@ test.use(process.env.CI ? {} : { channel: 'chrome' })
 /**
  * Checkout (P03): pasos de Figma 28:1083, 29:1248, 29:1344 a 390 y 30:2385 a 1440 sin desborde
  * horizontal ni errores de consola, campos de 15 px como el frame y tokens de color de SHELL.
- * P05: tarjeta de regalo válida (55:2220) e inválida (55:2284) en el paso 3 con sesión.
+ * P05: cupón válido (55:2220) e inválido (55:2284) en el paso 3 con sesión.
  */
-const RESPUESTA_GIFT = { valida: { valida: true, saldoActual: 3000, codigo: 'HC-REGALO' }, invalida: { valida: false } }
-type EstadoGift = keyof typeof RESPUESTA_GIFT
+type EstadoCupon = 'valida' | 'invalida'
 
 /** Catálogo oficial de división territorial con la forma que lee el cliente (lista de provincias → cantones → distritos). */
 const DIVISION_TERRITORIAL = [
@@ -20,14 +19,13 @@ const json = (body: unknown, status = 200) => ({ status, contentType: 'applicati
 
 /**
  * API simulada con la forma vigente de cada endpoint que consulta el checkout; el resto responde vacío.
- * Con `gift` agrega sesión y la respuesta de `/gift-cards/validar`; si la tarjeta no es válida, el cliente prueba el
- * código como cupón y `/cupones/validar` responde 404 (código inexistente).
+ * Con `cupon` agrega sesión y la respuesta de `/cupones/validar`: 200 con el descuento si es válido, 404 si no existe.
  */
-async function preparar(page: Page, gift?: EstadoGift) {
+async function preparar(page: Page, cupon?: EstadoCupon) {
   await page.route('**/api/**', async (route) => {
     const url = route.request().url()
     if (url.includes('/division-territorial')) return route.fulfill(json({ success: true, data: DIVISION_TERRITORIAL }))
-    if (url.includes('/gift-cards/validar') && gift) return route.fulfill(json({ success: true, data: RESPUESTA_GIFT[gift] }))
+    if (url.includes('/cupones/validar') && cupon === 'valida') return route.fulfill(json({ success: true, data: { descuento: 10, codigo: 'HC-CUPON' } }))
     if (url.includes('/cupones/validar')) return route.fulfill(json({ success: false, message: 'Código inválido o no disponible' }, 404))
     return route.fulfill(json({ success: true, data: [] }))
   })
@@ -44,7 +42,7 @@ async function preparar(page: Page, gift?: EstadoGift) {
       state: { items: [{ id: 1, nombre: 'Mouse', precio: 5000, cantidad: 1, stock: 4 }], cartUpdatedAt: Date.now() },
       version: 0,
     }))
-  }, Boolean(gift))
+  }, Boolean(cupon))
 }
 
 /** Campos de texto y selects visibles; `esperados` = cuántos tiene que haber (en móvil el paso 3 no tiene ninguno). */
@@ -98,40 +96,33 @@ for (const ancho of [390, 1440]) {
 }
 
 for (const ancho of [390, 1440]) {
-  for (const gift of ['valida', 'invalida'] as const) {
-    test(`tarjeta de regalo ${gift} a ${ancho}: estado del campo, totales y sin desborde`, async ({ page }) => {
+  for (const cupon of ['valida', 'invalida'] as const) {
+    test(`cupón ${cupon} a ${ancho}: estado del campo, totales y sin desborde`, async ({ page }) => {
       const errores: string[] = []
       // El 404 de /cupones/validar es parte del escenario «inválida»: Chrome lo registra como error de recurso.
       page.on('console', (m) => { if (m.type() === 'error' && m.location().url.includes('/api/cupones/validar') === false) errores.push(m.text()) })
       page.on('pageerror', (e) => errores.push(e.message))
       const movil = ancho === 390
-      await preparar(page, gift)
+      await preparar(page, cupon)
       await page.setViewportSize({ width: ancho, height: movil ? 844 : 900 })
       await page.goto('/checkout', { waitUntil: 'domcontentloaded' })
       await llenarDatosYEntrega(page, movil, true)
       // En escritorio el campo va dentro del despliegue «Agregar cupón» del resumen; en móvil está en el paso 3.
-      // Con sesión es un solo campo «tarjeta de regalo o cupón»: se prueba como tarjeta y, si no, como cupón.
-      if (!movil) await page.getByRole('button', { name: 'Agregar cupón' }).click()
-      const campo = page.getByLabel('Código de tarjeta de regalo o cupón')
-      await campo.fill('HC-REGALO')
+      // Las gift cards ya no existen: no hay campo de tarjeta de regalo ni sus textos, solo el cupón.
+      await page.getByRole('button', { name: movil ? '¿Tenés un cupón?' : 'Agregar cupón' }).click()
+      const campo = page.getByLabel('Código de cupón')
+      await campo.fill('HC-CUPON')
       await campo.press('Enter')
+      await expect(page.getByText(/tarjeta de regalo|gift card/i)).toHaveCount(0)
 
-      if (gift === 'valida') {
-        await expect(page.getByText('Tarjeta de regalo válida')).toBeVisible()
+      if (cupon === 'valida') {
+        await expect(page.getByText('Cupón válido')).toBeVisible()
         await expect(page.getByRole('button', { name: 'Quitar' })).toBeVisible()
-        if (movil) {
-          await expect(page.getByText('Total restante a pagar')).toBeVisible()
-          await expect(page.getByText('Tarjeta de regalo HC-REGALO')).toBeVisible()
-          await expect(page.getByText(/^Pagás el resto con SINPE Móvil, tarjeta o efectivo/)).toBeVisible()
-        } else {
-          await expect(page.getByText('Tarjeta de regalo', { exact: true })).toBeVisible()
-        }
       } else {
         const alerta = page.getByRole('alert').filter({ hasText: 'Código inválido o no disponible' })
         await expect(alerta).toBeVisible()
         await expect(alerta).toHaveCSS('background-color', await colorDeToken(page, '--hc-danger-bg', 'backgroundColor'))
         await expect(page.getByRole('button', { name: 'Quitar' })).toHaveCount(0)
-        await expect(page.getByText('Total restante a pagar')).toHaveCount(0)
       }
       await sinDesborde(page)
       expect(errores).toEqual([])

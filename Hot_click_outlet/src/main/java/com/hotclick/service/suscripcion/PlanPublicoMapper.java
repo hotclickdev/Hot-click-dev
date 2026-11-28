@@ -30,7 +30,6 @@ public final class PlanPublicoMapper {
         m.put("tieneReportes", p.tieneReportes());
         m.put("tieneAi", p.tieneAi());
         m.put("tieneApi", p.tieneApi());
-        m.put("tieneGiftCards", p.tieneGiftCards());
         return m;
     }
 }

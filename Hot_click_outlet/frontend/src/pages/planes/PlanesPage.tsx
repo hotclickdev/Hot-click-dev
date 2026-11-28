@@ -17,7 +17,6 @@ type PlanApi = {
   tieneCompras: boolean
   tieneReportes: boolean
   tieneAi: boolean
-  tieneGiftCards: boolean
   maxCreditosAi: number
   precioMensual?: number
   comisionPorcentaje?: number
@@ -40,7 +39,7 @@ const respaldo = (p: PlanApi) => PLAN_PRECIOS[p.nombre as ClavePlan]
 const mensualDe = (p: PlanApi) => (p as { precioUsd?: number | null }).precioUsd ?? null
 const comisionDe = (p: PlanApi) => Number(p.comisionPorcentaje ?? respaldo(p)?.comisionPct ?? 0)
 /** V185: sin mínimo por venta; si un backend viejo manda 700 se ignora. */
-const minimaDe = (_p: PlanApi) => 0
+const minimaDe = (): number => 0
 
 const limite = (n: number) => (n < 0 ? 'Ilimitado' : String(n))
 const si = (b: boolean) => (b ? 'Sí' : '—')
@@ -54,9 +53,8 @@ const FILAS: Fila[] = [
   { etiqueta: 'Asistente con IA', valor: (p) => (p.tieneAi ? (p.maxCreditosAi < 0 ? 'Sí · sin límite' : `Sí · ${p.maxCreditosAi} créditos`) : '—') },
   { etiqueta: 'Compras a proveedores', valor: (p) => si(p.tieneCompras) },
   { etiqueta: 'Clientes (CRM)', valor: (p) => si(p.tieneCrm) },
-  { etiqueta: 'Tarjetas de regalo', valor: (p) => si(p.tieneGiftCards) },
   { etiqueta: 'Mensualidad', valor: (p) => textoMensualidad(mensualDe(p)) },
-  { etiqueta: 'Comisión por venta', valor: (p) => textoComision(comisionDe(p), minimaDe(p)) },
+  { etiqueta: 'Comisión por venta', valor: (p) => textoComision(comisionDe(p), minimaDe()) },
 ]
 
 const POR_QUE = [
@@ -133,7 +131,7 @@ export default function PlanesPage() {
               >
                 <h3 className="font-display text-[22px] font-bold">{plan.titulo}</h3>
                 <p className={`text-[14px] leading-5 ${plan.destacado ? 'text-hc-n-0/85' : 'text-hc-n-600'}`}>{plan.para}</p>
-                <p className="font-display text-[18px] font-semibold">{(() => { const d = dePlan(plan.clave); return d ? `${textoMensualidad(mensualDe(d))} + ${textoComision(comisionDe(d), minimaDe(d))}` : textoPlan(plan.clave) })()}</p>
+                <p className="font-display text-[18px] font-semibold">{(() => { const d = dePlan(plan.clave); return d ? `${textoMensualidad(mensualDe(d))} + ${textoComision(comisionDe(d), minimaDe())}` : textoPlan(plan.clave) })()}</p>
                 <Link
                   to={plan.detalle}
                   className={`mt-auto flex min-h-[44px] items-center justify-center rounded-[12px] text-[14px] font-semibold ${plan.destacado ? 'bg-hc-n-0 text-hc-blue-600' : 'border border-hc-n-200 text-hc-blue-600'}`}

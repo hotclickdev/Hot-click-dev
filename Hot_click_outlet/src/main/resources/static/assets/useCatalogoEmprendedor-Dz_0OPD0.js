@@ -1,1 +1,0 @@
-import{t as e}from"./useCatalogoVendedor-BUu_aR5p.js";function t(){return e()}export{t};

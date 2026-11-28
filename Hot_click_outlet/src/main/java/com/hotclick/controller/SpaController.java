@@ -257,7 +257,6 @@ public class SpaController {
         "/checkout/qr/{token}",
         "/pos/pago",
         "/pos/pago/{*path}",
-        "/admin/gift-cards",
         "/admin/branding",
         "/admin/plugins",
         "/admin/inventario",

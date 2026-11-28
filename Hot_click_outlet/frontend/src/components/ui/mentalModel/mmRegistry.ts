@@ -144,22 +144,6 @@ export const MM_GUIAS: readonly MmGuia[] = [
     ],
   },
   {
-    path: '/admin/gift-cards',
-    roles: ['EMPRENDEDOR', 'PROPIETARIO', 'EDITOR', 'LECTOR'],
-    pasos: [
-      {
-        ancla: 'seller-giftcards-nueva',
-        titulo: 'Emitir gift card',
-        texto: 'Creá una tarjeta de regalo con monto y código para que tu cliente la use en el checkout.',
-      },
-      {
-        ancla: 'seller-giftcards-lista',
-        titulo: 'Tus gift cards',
-        texto: 'Acá ves el saldo y estado de cada una, y podés cancelarlas si hace falta.',
-      },
-    ],
-  },
-  {
     path: '/admin/pos',
     roles: ['ADMIN', 'EMPRENDEDOR', 'CAJERO', 'GERENTE', 'SUPERVISOR'],
     pasos: [

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import TrustGlyph from '@/components/ui/TrustGlyph'
 
-const ITEMS = ['incluyeItem1', 'incluyeItem2', 'incluyeItem3', 'incluyeItem4', 'incluyeItem5', 'incluyeItem6'] as const
+const ITEMS = ['incluyeItem1', 'incluyeItem2', 'incluyeItem3', 'incluyeItem4', 'incluyeItem5'] as const
 
 /** Grilla de lo que trae el plan PYME + badge de créditos de IA incluidos. */
 export default function PymeQueIncluye() {

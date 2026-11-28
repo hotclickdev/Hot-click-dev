@@ -116,19 +116,6 @@ public class StockReservationService {
         return copia;
     }
 
-    public void consumeForGiftCard(Pedido pedido) {
-        boolean reservo = pedido.getStockReservadoEn() != null;
-        pedido.setStockReservadoEn(null);
-        for (PedidoItem item : itemsOrdenados(pedido.getItems())) {
-            Producto p = productoRepository.findByIdForUpdate(item.getProducto().getId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Producto", item.getProducto().getId()));
-            p.setStockActual(Math.max(0, p.getStockActual() - item.getCantidad()));
-            if (reservo) p.setStockReservado(Math.max(0, p.getStockReservado() - item.getCantidad()));
-            if (Boolean.TRUE.equals(p.getEsUnico())) { p.setVendido(true); p.setVisibleCatalogo(false); }
-            productoRepository.save(p);
-        }
-    }
-
     /**
      * M-08: ids de los productos del grupo a los que les falta stock para confirmar el cobro (vacío = alcanza).
      * Bloquea todas las filas en orden ascendente de id (mismo orden que el resto) y suma lo pedido por producto

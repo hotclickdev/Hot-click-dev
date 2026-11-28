@@ -4,7 +4,6 @@ import useAuthStore from '@/store/authStore'
 import { usePayment } from '@/hooks/usePayment'
 import CheckoutEmpty from './checkout/CheckoutEmpty'
 import CheckoutLoading from './checkout/CheckoutLoading'
-import CheckoutPaidGiftCard from './checkout/CheckoutPaidGiftCard'
 import CheckoutSinpePending from './checkout/CheckoutSinpePending'
 import CheckoutLayout from './checkout/CheckoutLayout'
 import { useCheckoutForm } from './checkout/useCheckoutForm'
@@ -25,7 +24,7 @@ export default function CheckoutPage() {
 
   const { clearCart: clearCartFn } = useCartStore()
   useEffect(() => {
-    if (estado === 'gift_card_paid' || estado === 'sinpe_pendiente') clearCartFn()
+    if (estado === 'sinpe_pendiente') clearCartFn()
   }, [estado, clearCartFn])
 
   useEffect(() => {
@@ -33,7 +32,7 @@ export default function CheckoutPage() {
   }, [])
 
   useEffect(() => {
-    if (estado === 'sinpe_pendiente' || estado === 'gift_card_paid') {
+    if (estado === 'sinpe_pendiente') {
       globalThis.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (estado === 'failed') {
       errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -70,8 +69,6 @@ export default function CheckoutPage() {
     aceptaDatos: form.aceptaDatos,
     bodegaRetiro: form.bodegaRetiro,
     cuponCodigo: form.cuponCodigo,
-    gcCodigo: form.gcCodigo,
-    gcInput: form.gcInput,
     cuponInput: form.cuponInput,
     paquetes: form.paquetes,
     metodoEnvioPorPaquete: form.metodoEnvioPorPaquete,
@@ -80,9 +77,6 @@ export default function CheckoutPage() {
     validatePhone: form.validatePhone,
     validateAddress: form.validateAddress,
     validateGuestEmail: form.validateGuestEmail,
-    setGcEstado: form.setGcEstado,
-    setGcSaldo: form.setGcSaldo,
-    setGcCodigo: form.setGcCodigo,
     setCuponEstado: form.setCuponEstado,
     setCuponError: form.setCuponError,
     setCuponDescuento: form.setCuponDescuento,
@@ -124,8 +118,6 @@ export default function CheckoutPage() {
       />
     )
   }
-
-  if (estado === 'gift_card_paid') return <CheckoutPaidGiftCard pagoData={pagoData} />
 
   if (estado === 'redirecting' || estado === 'loading') {
     return <CheckoutLoading estado={estado} />

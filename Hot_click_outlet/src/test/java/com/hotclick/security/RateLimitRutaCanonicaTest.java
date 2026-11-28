@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Seguridad (#390): la capa por IP de RateLimitingFilter se evadía con una URI codificada
- * (/api/gift-cards/%76alidar). Con un limitador que cuenta de verdad, cada variante de la ruta tiene que
+ * (/api/division-territorial/%76alidar). Con un limitador que cuenta de verdad, cada variante de la ruta tiene que
  * agotar el MISMO cupo que la ruta plana y recibir 429. Cubre varios GetLimit, un POST exacto y un PrefixLimit.
  */
 class RateLimitRutaCanonicaTest {
@@ -65,15 +65,15 @@ class RateLimitRutaCanonicaTest {
 
     private static List<Caso> casos() {
         return List.of(
-            // GetLimit 1: segunda capa de gift cards (el caso reportado)
-            new Caso("GET", "/api/gift-cards/validar", 30, List.of(
-                "/api/gift-cards/%76alidar", "/api/gift-cards/%76alidar;a=b",
-                "/api/gift-cards/valida%72", "/api/gift-cards/valida%72/",
-                "/%61pi/gift-cards/validar", "/api/gift-cards/%76%61%6c%69%64%61%72", "/api/gift-cards/%76%61%6C%69%64%61%72",
-                "/api/gift-cards/%2576alidar", "/api/gift-cards/%252576alidar",
-                "/api/gift-cards/validar;jsessionid=ABC", "/api/gift-cards/validar;x", "/api/gift-cards;x=1/validar",
-                "/api/gift-cards/validar/", "/api/gift-cards/validar//", "//api//gift-cards//validar",
-                "/api/./gift-cards/./validar", "/api/x/../gift-cards/validar", "/api/%2e/gift-cards/validar", "/api/x/%2E%2e/gift-cards/validar")),
+            // GetLimit 1: división territorial (proxy al IGN); mismo tope y misma evasión por ruta que se reportó
+            new Caso("GET", "/api/division-territorial/validar", 30, List.of(
+                "/api/division-territorial/%76alidar", "/api/division-territorial/%76alidar;a=b",
+                "/api/division-territorial/valida%72", "/api/division-territorial/valida%72/",
+                "/%61pi/division-territorial/validar", "/api/division-territorial/%76%61%6c%69%64%61%72", "/api/division-territorial/%76%61%6C%69%64%61%72",
+                "/api/division-territorial/%2576alidar", "/api/division-territorial/%252576alidar",
+                "/api/division-territorial/validar;jsessionid=ABC", "/api/division-territorial/validar;x", "/api/division-territorial;x=1/validar",
+                "/api/division-territorial/validar/", "/api/division-territorial/validar//", "//api//division-territorial//validar",
+                "/api/./division-territorial/./validar", "/api/x/../division-territorial/validar", "/api/%2e/division-territorial/validar", "/api/x/%2E%2e/division-territorial/validar")),
             // GetLimit 2: proxy a Hacienda (prefijo con comodín)
             new Caso("GET", "/api/hacienda/contribuyente/123456789", 10, List.of(
                 "/api/hacienda/%63ontribuyente/123456789", "/%61pi/hacienda/contribuyente/123456789",
@@ -128,8 +128,8 @@ class RateLimitRutaCanonicaTest {
     void contextPath_noDejaEvadirNiCambiaElCupo() throws Exception {
         RateLimitingFilter f = filtro(limitadorQueCuenta());
         String[] formas = {
-            "/hotclick/api/gift-cards/validar", "/hotclick/api/gift-cards/%76alidar",
-            "/%68otclick/api/gift-cards/validar", "/hotclick;jsessionid=A/api/gift-cards/validar"
+            "/hotclick/api/division-territorial/validar", "/hotclick/api/division-territorial/%76alidar",
+            "/%68otclick/api/division-territorial/validar", "/hotclick;jsessionid=A/api/division-territorial/validar"
         };
         for (int i = 0; i < 30; i++) {
             assertThat(llamar(f, "GET", formas[i % formas.length], "/hotclick")).isNotEqualTo(429);
@@ -143,8 +143,8 @@ class RateLimitRutaCanonicaTest {
     void rutaPlana_siguePasandoHastaElTope_yOtraIpNoComparteCupo() throws Exception {
         // Regresión del comportamiento previo: la ruta plana ya contaba y 30 pasan, la 31 no.
         RateLimitingFilter f = filtro(limitadorQueCuenta());
-        for (int i = 0; i < 30; i++) assertThat(llamar(f, "GET", "/api/gift-cards/validar")).isEqualTo(200);
-        assertThat(llamar(f, "GET", "/api/gift-cards/validar")).isEqualTo(429);
+        for (int i = 0; i < 30; i++) assertThat(llamar(f, "GET", "/api/division-territorial/validar")).isEqualTo(200);
+        assertThat(llamar(f, "GET", "/api/division-territorial/validar")).isEqualTo(429);
         // Una ruta sin límite no se ve afectada por la canonización.
         assertThat(llamar(f, "GET", "/api/health")).isEqualTo(200);
         assertThat(llamar(f, "GET", "/api/%68ealth")).isEqualTo(200);
@@ -154,8 +154,8 @@ class RateLimitRutaCanonicaTest {
     void rutasInvalidas_fallanCerradoConBadRequest_sinPasarAlControlador() throws Exception {
         RateLimitingFilter f = filtro(limitadorQueCuenta());
         Map<String, Integer> resultados = new LinkedHashMap<>();
-        for (String uri : new String[]{"/api/gift-cards/%zz", "/api/gift-cards/%", "/api/gift-cards/%00validar",
-                "/api/gift-cards/%0d%0avalidar", "/api/gift-cards/%FFvalidar", "/api/gift-cards/%25252576alidar"}) {
+        for (String uri : new String[]{"/api/division-territorial/%zz", "/api/division-territorial/%", "/api/division-territorial/%00validar",
+                "/api/division-territorial/%0d%0avalidar", "/api/division-territorial/%FFvalidar", "/api/division-territorial/%25252576alidar"}) {
             MockHttpServletRequest req = new MockHttpServletRequest("GET", uri);
             req.setRequestURI(uri);
             MockHttpServletResponse res = new MockHttpServletResponse();

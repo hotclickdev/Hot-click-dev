@@ -178,7 +178,6 @@ const PREFIJOS_TENANT_OPS = [
   '/admin/compras',
   '/admin/proveedores',
   '/admin/ventas',
-  '/admin/gift-cards',
   '/admin/cotizaciones',
   '/admin/clientes',
   '/admin/asignar-compra',

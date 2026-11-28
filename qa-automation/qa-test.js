@@ -73,7 +73,6 @@ const ADMIN_ROUTES = [
   { name: 'Admin · Billing (planes)', path: '/admin/billing/planes' },
   { name: 'Admin · Billing (suscripción)', path: '/admin/billing/suscripcion' },
   { name: 'Admin · Cola offline', path: '/admin/offline/cola' },
-  { name: 'Admin · Gift cards', path: '/admin/gift-cards' },
   { name: 'Admin · Cupones', path: '/admin/cupones' },
   { name: 'Admin · Branding', path: '/admin/branding' },
   { name: 'Admin · Homepage', path: '/admin/homepage' },

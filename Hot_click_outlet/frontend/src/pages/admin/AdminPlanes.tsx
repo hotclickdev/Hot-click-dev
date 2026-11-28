@@ -32,7 +32,6 @@ type PlanSaas = {
   tieneReportes?: boolean
   tieneAi?: boolean
   tieneApi?: boolean
-  tieneGiftCards?: boolean
 }
 
 function listaPlanes(data: unknown): PlanSaas[] {
@@ -109,7 +108,6 @@ function PlanCard({ plan, esCurrent, loading, onSelect }: {
         <Feature ok={plan.tienePos} label="POS / Caja registradora" />
         <Feature ok={plan.tieneCrm} label="CRM / Clientes" />
         <Feature ok={plan.tieneCompras}  label="Módulo de compras" />
-        <Feature ok={plan.tieneGiftCards} label="Gift Cards" />
         <Feature ok={plan.tieneReportes} label="Reportes avanzados" />
         <Feature ok={plan.tieneAi}       label="Consultas con Hot" />
         <Feature ok={plan.tieneApi}      label="API Keys / Webhooks" />

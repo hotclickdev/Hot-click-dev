@@ -37,7 +37,6 @@ public class PaymentService {
     @Autowired private PaymentProviderFactory           providerFactory;
     @Autowired private PedidoRepository                 pedidoRepository;
     @Autowired private PagoRepository                 pagoRepository;
-    @Autowired private GiftCardService                  giftCardService;
     @Autowired private ApplicationEventPublisher        eventPublisher;
 
     @Autowired private CheckoutValidator                checkoutValidator;
@@ -73,23 +72,6 @@ public class PaymentService {
         Pedido principal = grupo.principal();
         atribucionPedidoService.guardarSiPresente(principal, req.getAtribucion());
         posQrVentaService.vincularPedidoTienda(req.getPosQrToken(), principal.getId());
-
-        if (grupo.cubiertoPorGiftCard()) {
-            for (CheckoutGrupoFactory.Subpedido s : grupo.subpedidos()) {
-                Pedido pedido = s.pedido();
-                stockReservationService.consumeForGiftCard(pedido);
-                pedido.setEstadoPedido(Constants.PEDIDO_PAGADO);
-                pedido.setMetodoPago("GIFT_CARD");
-                pedidoRepository.save(pedido);
-                if (s.pricing().gcMonto() > 0) {
-                    giftCardService.canjear(s.pricing().gcCodigo(), pedido, s.pricing().gcMonto());
-                }
-                paymentNotificationsFacade.onGiftCardFullPayment(pedido, s.pricing().gcCodigo());
-            }
-            posQrVentaService.marcarPagadoPorPedidoTienda(principal.getId());
-            return conCancelToken(new PaymentCheckoutResponse(principal.getId(), principal.getNumeroPedido(),
-                null, "PAGADO", 0, "GIFT_CARD"), grupo);
-        }
 
         PaymentSession session;
         try {

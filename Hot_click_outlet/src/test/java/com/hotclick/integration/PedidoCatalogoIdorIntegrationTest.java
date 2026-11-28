@@ -87,6 +87,30 @@ class PedidoCatalogoIdorIntegrationTest extends BaseIntegrationTest {
         assertThat(pedidoRepository.findAll().get(0).getEmpresa().getId()).isEqualTo(empA.getId());
     }
 
+    private org.springframework.test.web.servlet.ResultActions crearConGift(String metodoPago) throws Exception {
+        String json = "{\"metodoPago\":\"" + metodoPago + "\",\"metodoEnvio\":\"RETIRO\",\"giftCardCodigo\":\"GC-FALSA-123\",\"giftCardMonto\":999999,"
+            + "\"usuarioFinal\":{\"id\":" + cliA.getId() + "},\"bodega\":{\"id\":" + bodA.getId() + "},\"items\":[{\"producto\":{\"id\":" + prodA.getId() + "},\"cantidad\":1}]}";
+        return mockMvc.perform(post("/api/pedidos").header("Authorization", tokenA)
+            .contentType(MediaType.APPLICATION_JSON).content(json));
+    }
+
+    @Test
+    @DisplayName("Gift cards retiradas: giftCardCodigo y giftCardMonto del body se ignoran y no descuentan")
+    void giftCardDelBodySeIgnora() throws Exception {
+        crearConGift("EFECTIVO").andExpect(status().isOk());
+        var p = pedidoRepository.findAll().get(0);
+        assertThat(p.getGiftCardCodigo()).isNull();
+        assertThat(p.getGiftCardMonto()).isZero();
+        assertThat(p.getTotalPedido()).isGreaterThanOrEqualTo(2000);
+    }
+
+    @Test
+    @DisplayName("Gift cards retiradas: metodoPago=GIFT_CARD → 400 y sin pedido")
+    void metodoPagoGiftCardRechazado() throws Exception {
+        crearConGift("GIFT_CARD").andExpect(status().isBadRequest());
+        assertThat(pedidoRepository.count()).isZero();
+    }
+
     private Empresa empresa(String nombre, String slug) {
         Empresa e = new Empresa();
         e.setNombreEmpresa(nombre);

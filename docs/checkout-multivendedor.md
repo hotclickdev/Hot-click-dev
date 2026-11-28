@@ -42,7 +42,9 @@ lo que mantiene compatibles la tienda por slug, el QR de mesa y los clientes vie
 Cada subpedido acredita a su empresa. La comisión se calcula sobre `total − envío` y el envío se suma entero al
 neto: el vendedor recibe su venta menos la comisión más el envío que pagó.
 
-### Tarjeta de regalo pública
+### Tarjeta de regalo pública (retirada)
+
+> Retirada por decisión del dueño: ya no existe `/api/gift-cards/validar` ni el campo `codigoGiftCard` del checkout (si un cliente viejo lo manda, el servidor lo ignora). Se conserva la tabla y los pedidos históricos. Lo de abajo es historia.
 
 `GET /api/gift-cards/validar` responde sin sesión y dice a qué tienda aplica. Tiene límite de 10 consultas por
 minuto por IP.

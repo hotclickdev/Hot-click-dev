@@ -5,7 +5,6 @@ import com.hotclick.model.Bodega;
 import com.hotclick.model.Empresa;
 import com.hotclick.model.Producto;
 import com.hotclick.security.TenantContext;
-import com.hotclick.service.GiftCardService;
 import com.hotclick.utils.Constants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -62,7 +61,7 @@ class CheckoutBodegaMarketplaceTest {
         OrderPricingService pricing = mock(OrderPricingService.class);
         doThrow(new PasoValidacion()).when(pricing).exigirCuponValido(any(), any());
         CheckoutGrupoFactory f = new CheckoutGrupoFactory(new CheckoutValidator(), planner, pricing,
-            mock(CheckoutOrderFactory.class), mock(GiftCardService.class));
+            mock(CheckoutOrderFactory.class));
         f.crear(req, new StockReservationResult(1000, 500, productos), null, "ONVO", null, "PENDIENTE");
     }
 
