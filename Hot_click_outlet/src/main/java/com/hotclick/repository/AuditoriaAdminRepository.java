@@ -18,10 +18,15 @@ public interface AuditoriaAdminRepository extends JpaRepository<AuditoriaAdmin, 
 
     Page<AuditoriaAdmin> findAllByOrderByFechaDesc(Pageable pageable);
 
+    /**
+     * Los filtros de texto van con {@code CAST(... AS String)}: con un null sin tipo, PostgreSQL lo toma como
+     * {@code bytea} y falla con {@code function lower(bytea) does not exist} (el panel manda null en cada carga).
+     */
     @Query("""
         SELECT a FROM AuditoriaAdmin a
-        WHERE (:accion IS NULL OR a.accion = :accion)
-          AND (:adminEmail IS NULL OR LOWER(a.adminEmail) LIKE LOWER(CONCAT('%', :adminEmail, '%')))
+        WHERE (CAST(:accion AS String) IS NULL OR a.accion = CAST(:accion AS String))
+          AND (CAST(:adminEmail AS String) IS NULL
+               OR LOWER(a.adminEmail) LIKE LOWER(CONCAT('%', CAST(:adminEmail AS String), '%')))
           AND (:empresaId IS NULL OR a.empresaId = :empresaId)
           AND a.fecha >= :desde
           AND a.fecha <= :hasta
