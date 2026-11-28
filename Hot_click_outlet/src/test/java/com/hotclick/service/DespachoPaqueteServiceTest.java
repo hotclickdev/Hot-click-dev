@@ -54,7 +54,7 @@ class DespachoPaqueteServiceTest {
         when(pedidoRepository.findByCompra_IdOrderByNumeroPaqueteAsc(50L)).thenReturn(List.of(propio, bruma, ceiba));
         DetalleComision detalle = new DetalleComision(
             "EMPRENDEDOR", new BigDecimal("9"), 400, new Resultado(1470, 1176, 26754, 2646));
-        when(aggregatorService.liquidar(9L, 33400L, 4000L)).thenReturn(new Liquidacion(4000, detalle, 30754));
+        when(aggregatorService.liquidarPedido(propio)).thenReturn(new Liquidacion(4000, detalle, 30754));
 
         DespachoPaqueteDTO dto = service.armar(1L);
 

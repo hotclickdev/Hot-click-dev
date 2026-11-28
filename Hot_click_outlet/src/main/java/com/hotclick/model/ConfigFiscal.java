@@ -37,6 +37,13 @@ public class ConfigFiscal {
     @Column(name = "limite_preguntas_dia", columnDefinition = "INTEGER NOT NULL DEFAULT 30")
     private Integer limitePreguntasDia;
 
+    @Column(name = "onvo_cobro_a_nombre_negocio", nullable = false, columnDefinition = "boolean default false")
+    private Boolean onvoCobroANombreNegocio = false;
+    @Column(name = "onvo_enlaces_pago", nullable = false, columnDefinition = "boolean default false")
+    private Boolean onvoEnlacesPago = false;
+
+    public Boolean getOnvoCobroANombreNegocio() { return onvoCobroANombreNegocio; }
+    public Boolean getOnvoEnlacesPago() { return onvoEnlacesPago; }
     public Long getId() { return id; }
     public String getRegimenHotclick() { return regimenHotclick; }
     public BigDecimal getExtraNoInscritoPct() { return extraNoInscritoPct; }

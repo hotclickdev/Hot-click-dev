@@ -54,6 +54,22 @@ public class EmpresaCuentaOnvo {
     @Column(name = "actualizado_en", nullable = false)
     private LocalDateTime actualizadoEn = LocalDateTime.now();
 
+    /** Última comisión (marketplaceAppFee, %) enviada con éxito a ONVO y cuándo. */
+    @Column(name = "fee_enviado_pct", precision = 5, scale = 2)
+    private java.math.BigDecimal feeEnviadoPct;
+
+    @Column(name = "fee_enviado_en")
+    private LocalDateTime feeEnviadoEn;
+
+    @Column(name = "fee_pendiente", nullable = false)
+    private boolean feePendiente;
+
+    @Column(name = "fee_intentos", nullable = false)
+    private int feeIntentos;
+
+    @Column(name = "fee_ultimo_error", length = 300)
+    private String feeUltimoError;
+
     @PreUpdate
     void alActualizar() { actualizadoEn = LocalDateTime.now(); }
 
@@ -80,4 +96,14 @@ public class EmpresaCuentaOnvo {
     public void setUltimaConsultaEn(LocalDateTime v) { this.ultimaConsultaEn = v; }
     public LocalDateTime getCreadoEn() { return creadoEn; }
     public LocalDateTime getActualizadoEn() { return actualizadoEn; }
+    public java.math.BigDecimal getFeeEnviadoPct() { return feeEnviadoPct; }
+    public void setFeeEnviadoPct(java.math.BigDecimal v) { this.feeEnviadoPct = v; }
+    public LocalDateTime getFeeEnviadoEn() { return feeEnviadoEn; }
+    public void setFeeEnviadoEn(LocalDateTime v) { this.feeEnviadoEn = v; }
+    public boolean isFeePendiente() { return feePendiente; }
+    public void setFeePendiente(boolean v) { this.feePendiente = v; }
+    public int getFeeIntentos() { return feeIntentos; }
+    public void setFeeIntentos(int v) { this.feeIntentos = v; }
+    public String getFeeUltimoError() { return feeUltimoError; }
+    public void setFeeUltimoError(String v) { this.feeUltimoError = v; }
 }
