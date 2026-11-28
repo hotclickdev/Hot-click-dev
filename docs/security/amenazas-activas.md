@@ -11,6 +11,7 @@ Lista que el merge exige actualizar si cambia login, roles, tenant, Stripe o el 
 | tenant-carrito | tenant | Borrar el carrito de otra sesión | `sessionId` | `CartAbandonadoSecurityTest` | cubierto |
 | stripe-firma | stripe | Webhook sin firma | `BillingWebhookController` eliminado (Stripe retirado del checkout): `POST /api/webhooks/stripe` devuelve 404 | `StripeRetiradoTest.webhookStripeNoExiste` | cubierto |
 | csp-sin-stripe | login | Scripts o conexiones a Stripe permitidos por la CSP sin uso real | `SecurityHeadersWriter` sin `js.stripe.com`, `api.stripe.com` ni `hooks.stripe.com`; Tilopay y Clerk siguen porque están en uso | `StripeRetiradoTest.cspSinStripe` | cubierto |
+| gift-card-retirada | tenant | Un cliente viejo manda `codigoGiftCard` o un monto en el checkout para descontar o pagar sin cobro, o llama `/api/gift-cards/**` | Las gift cards se retiraron: no hay controlador ni rutas, `PaymentCheckoutRequest` ya no tiene el campo (el servidor lo ignora) y el precio no lo usa | `NingunCaminoPagaGratisTest.giftCardRetiradaSeIgnora` | cubierto |
 | copilot-sesion | copilot | Chat sin negocio resuelto | `TenantContext` nulo corta antes de Claude | `AiCopilotServiceChatStreamTest` | cubierto |
 | copilot-args | copilot | El modelo manda `empresaId` en la tool | el schema no tiene ese campo; el id entra por la sesión | gate `seguridad-merge` | cubierto |
 | copilot-mutacion | copilot | El modelo aplica un cambio de pedido | `proponer_*` y confirmación por botón | sin test de que no ejecuta | hueco |
